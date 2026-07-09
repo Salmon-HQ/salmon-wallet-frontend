@@ -9,6 +9,7 @@ import {
   useAvailableNetworks,
   useBalance,
   useUserConfig,
+  useAnalyticsConsent,
   useCurrencyContext,
   useLanguage,
   useAddressbook,
@@ -273,6 +274,9 @@ export function HomePage(): React.ReactElement {
     },
   });
   const { developerNetworks, toggleDeveloperNetworks, explorer, explorers, changeExplorer, isLoading: explorerLoading } = userConfig;
+
+  // Anonymous usage-analytics consent (opt-in)
+  const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
 
   // Language
   const { language: currentLanguage, availableLanguages, languageNames, changeLanguage } = useLanguage();
@@ -875,6 +879,8 @@ export function HomePage(): React.ReactElement {
         initialPanels={settingsInitialPanels}
         developerNetworksEnabled={developerNetworks}
         onDeveloperNetworksToggle={toggleDeveloperNetworks}
+        analyticsEnabled={analyticsConsent}
+        onAnalyticsToggle={setAnalyticsConsent}
         onRemoveWallet={() => { setSettingsVisible(false); setRemoveWalletDialogVisible(true); }}
         onRemoveAllWallets={() => { setSettingsVisible(false); setRemoveAllWalletsDialogVisible(true); }}
       />

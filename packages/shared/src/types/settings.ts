@@ -63,6 +63,16 @@ export interface SettingsSheetBaseProps {
   onDeveloperNetworksToggle?: (enabled: boolean) => void;
 
   /**
+   * Whether anonymous usage analytics is enabled (opt-in, default off).
+   */
+  analyticsEnabled?: boolean;
+
+  /**
+   * Callback when the anonymous usage-analytics toggle is changed.
+   */
+  onAnalyticsToggle?: (enabled: boolean) => void;
+
+  /**
    * Callback when remove wallet action is triggered.
    */
   onRemoveWallet?: () => void;
@@ -315,7 +325,7 @@ export interface AccountKeyInfo {
  */
 export interface SettingsOptionBase {
   /** Unique identifier for the option */
-  id: SettingsScreen | 'developerNetworks';
+  id: SettingsScreen | 'developerNetworks' | 'analytics';
   /** Translation key for the label */
   labelKey: string;
   /** Optional description translation key */
@@ -355,6 +365,7 @@ export const SETTINGS_ITEM_SLUGS: Record<string, string> = {
   trustedApps: 'trusted-apps',
   developerNetworks: 'developer-networks',
   network: 'developer-networks',
+  analytics: 'analytics',
   about: 'about',
   support: 'support',
   removeWallet: 'remove-wallet',

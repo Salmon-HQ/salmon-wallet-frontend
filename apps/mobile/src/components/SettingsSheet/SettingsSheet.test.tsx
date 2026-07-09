@@ -60,6 +60,7 @@ jest.mock('@salmon/shared', () => ({
     canGoBack: false,
   }),
   getSettingsItemTestId: (id: string) => `settings-item-${id}`,
+  trackEvent: jest.fn(),
   letterSpacing: {
     wider: 1,
   },
@@ -95,10 +96,10 @@ describe('SettingsSheet', () => {
       />
     );
 
-    const switchControl = view.UNSAFE_getAllByType(Switch).at(-1);
+    const switchControl = view.getByTestId('settings-developer-networks-toggle');
     expect(switchControl).toBeTruthy();
 
-    fireEvent(switchControl!, 'valueChange', true);
+    fireEvent(switchControl, 'valueChange', true);
 
     expect(onDeveloperNetworksToggle).toHaveBeenCalledWith(true);
   });

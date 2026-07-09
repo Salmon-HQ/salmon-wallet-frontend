@@ -32,6 +32,7 @@ import {
   fontFamilyNative,
   useSettingsPanelStack,
   getSettingsItemTestId,
+  trackEvent,
   type SettingsScreen,
   type SettingsPanelEntry,
 letterSpacing, } from '@salmon/shared';
@@ -103,6 +104,7 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
       { id: 'addressBook', icon: 'book-outline', labelKey: 'settings.address_book' },
       { id: 'trustedApps', icon: 'apps-outline', labelKey: 'settings.trusted_apps' },
       { id: 'network', icon: 'code-slash-outline', labelKey: 'settings.developer_networks', isToggle: true },
+      { id: 'analytics', icon: 'stats-chart-outline', labelKey: 'settings.analytics', isToggle: true },
     ],
   },
   {
@@ -144,6 +146,8 @@ export function SettingsSheet({
   initialPanels,
   developerNetworksEnabled = false,
   onDeveloperNetworksToggle,
+  analyticsEnabled = false,
+  onAnalyticsToggle,
   onRemoveWallet,
   onRemoveAllWallets,
   onHeaderChange,
@@ -160,6 +164,12 @@ export function SettingsSheet({
 
   // Top fade gradient opacity
   const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
+
+  // Anonymous usage event: the settings surface was opened. No-op unless the
+  // user has opted in (the analytics client gates on consent).
+  useEffect(() => {
+    if (visible) trackEvent('settings_opened');
+  }, [visible]);
 
   // Reset stack when sheet closes
   useEffect(() => {
@@ -254,14 +264,6 @@ export function SettingsSheet({
     [handlePush, onClose, onRemoveAllWallets, onRemoveWallet, panelRegistry]
   );
 
-  const handleDeveloperNetworksToggle = useCallback(
-    (value: boolean) => {
-      if (onDeveloperNetworksToggle) {
-        onDeveloperNetworksToggle(value);
-      }
-    },
-    [onDeveloperNetworksToggle]
-  );
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetY = event.nativeEvent.contentOffset.y;
@@ -292,6 +294,15 @@ export function SettingsSheet({
       const isDanger = option.isDanger || sectionIsDanger;
 
       if (option.isToggle) {
+        const isAnalytics = option.id === 'analytics';
+        const checked = isAnalytics ? analyticsEnabled : developerNetworksEnabled;
+        const onToggle = isAnalytics ? onAnalyticsToggle : onDeveloperNetworksToggle;
+        const descriptionKey = isAnalytics
+          ? 'settings.analytics_description'
+          : 'settings.developer_networks_description';
+        const toggleTestId = isAnalytics
+          ? 'settings-analytics-toggle'
+          : 'settings-developer-networks-toggle';
         return (
           <View
             key={`toggle-${option.labelKey}`}
@@ -299,22 +310,20 @@ export function SettingsSheet({
             style={[styles.optionRow, styles.optionRowSurface, styles.optionRowNeutral]}
             accessibilityRole="switch"
             accessibilityLabel={label}
-            accessibilityState={{ checked: developerNetworksEnabled }}
+            accessibilityState={{ checked }}
           >
             <View style={styles.iconContainer}>
               <Ionicons name={option.icon} size={24} color={colors.text.primary} />
             </View>
             <View style={styles.toggleLabelContainer}>
               <Text style={styles.optionLabel}>{label}</Text>
-              <Text style={styles.toggleDescription}>
-                {t('settings.developer_networks_description')}
-              </Text>
+              <Text style={styles.toggleDescription}>{t(descriptionKey)}</Text>
             </View>
             <View style={styles.toggleControl}>
               <Switch
-                testID="settings-developer-networks-toggle"
-                value={developerNetworksEnabled}
-                onValueChange={handleDeveloperNetworksToggle}
+                testID={toggleTestId}
+                value={checked}
+                onValueChange={(value) => onToggle?.(value)}
                 trackColor={{ false: colors.background.card, true: colors.accent.primary }}
                 thumbColor={colors.text.primary}
               />
@@ -347,7 +356,7 @@ export function SettingsSheet({
         </TouchableOpacity>
       );
     },
-    [t, handleOptionPress, developerNetworksEnabled, handleDeveloperNetworksToggle]
+    [t, handleOptionPress, developerNetworksEnabled, onDeveloperNetworksToggle, analyticsEnabled, onAnalyticsToggle]
   );
 
   const renderSection = useCallback(

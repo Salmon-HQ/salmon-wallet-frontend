@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import {
   useAccountsContext,
   useUserConfig,
+  useAnalyticsConsent,
   useAvailableNetworks,
   useCurrencyContext,
   useAddressbook,
@@ -122,6 +123,9 @@ export default function TabLayout() {
   const { developerNetworks, toggleDeveloperNetworks, explorer, explorers, changeExplorer, isLoading: explorerLoading } = useUserConfig({
     activeBlockchainAccount: userConfigAccount,
   });
+
+  // Anonymous usage-analytics consent (opt-in)
+  const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
 
   // Language
   const { currentLanguage, availableLanguages, changeLanguage } = useLanguage();
@@ -691,6 +695,8 @@ export default function TabLayout() {
             initialPanels={settingsInitialPanels}
             developerNetworksEnabled={developerNetworks}
             onDeveloperNetworksToggle={toggleDeveloperNetworks}
+            analyticsEnabled={analyticsConsent}
+            onAnalyticsToggle={setAnalyticsConsent}
             onRemoveWallet={handleRemoveWallet}
             onRemoveAllWallets={handleRemoveAllWallets}
             onHeaderChange={handleSettingsHeaderChange}

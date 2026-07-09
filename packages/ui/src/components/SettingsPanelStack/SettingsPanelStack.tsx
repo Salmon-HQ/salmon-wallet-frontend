@@ -20,6 +20,7 @@ import ExploreIcon from '@mui/icons-material/Explore';
 import ContactsIcon from '@mui/icons-material/Contacts';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import CodeIcon from '@mui/icons-material/Code';
+import InsightsIcon from '@mui/icons-material/Insights';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import InfoIcon from '@mui/icons-material/Info';
@@ -34,6 +35,7 @@ import {
   spacing,
   useSettingsPanelStack,
   getSettingsItemTestId,
+  trackEvent,
   type SettingsScreen,
   fontSize,
   fontWeight,
@@ -49,7 +51,7 @@ import type { SettingsPanelStackProps } from './types';
 
 // Re-use the same section/item types from the old SettingsSheet
 interface SettingsItem {
-  id: SettingsScreen | 'developerNetworks';
+  id: SettingsScreen | 'developerNetworks' | 'analytics';
   labelKey: string;
   descriptionKey?: string;
   type: 'navigation' | 'toggle' | 'action';
@@ -81,6 +83,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   addressBook: <ContactsIcon />,
   trustedApps: <VerifiedUserIcon />,
   developerNetworks: <CodeIcon />,
+  analytics: <InsightsIcon />,
   removeWallet: <DeleteIcon />,
   removeAll: <DeleteForeverIcon />,
   about: <InfoIcon />,
@@ -113,6 +116,7 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
       { id: 'addressBook', labelKey: 'settings.address_book', type: 'navigation' },
       { id: 'trustedApps', labelKey: 'settings.trusted_apps', type: 'navigation' },
       { id: 'developerNetworks', labelKey: 'settings.developer_networks', descriptionKey: 'settings.developer_networks_desc', type: 'toggle' },
+      { id: 'analytics', labelKey: 'settings.analytics', descriptionKey: 'settings.analytics_description', type: 'toggle' },
       { id: 'about', labelKey: 'settings.about', type: 'navigation' },
       { id: 'support', labelKey: 'settings.help_support', type: 'navigation' },
     ],
@@ -252,6 +256,8 @@ export function SettingsPanelStack({
   initialPanels,
   developerNetworksEnabled = false,
   onDeveloperNetworksToggle,
+  analyticsEnabled = false,
+  onAnalyticsToggle,
   onRemoveWallet,
   onRemoveAllWallets,
 }: SettingsPanelStackProps): React.ReactElement {
@@ -263,6 +269,12 @@ export function SettingsPanelStack({
   const [slideDirection, setSlideDirection] = useState<'in' | 'out'>('in');
   const animationTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const initialPanelsPushedRef = useRef(false);
+
+  // Anonymous usage event: the settings surface was opened. No-op unless the
+  // user has opted in (the analytics client gates on consent).
+  useEffect(() => {
+    if (visible) trackEvent('settings_opened');
+  }, [visible]);
 
   // Push initial panels when drawer opens (no animation, instant)
   useEffect(() => {
@@ -331,7 +343,7 @@ export function SettingsPanelStack({
   const handleItemClick = useCallback(
     (item: SettingsItem) => {
       if (item.type === 'navigation') {
-        if (item.id !== 'developerNetworks') {
+        if (item.id !== 'developerNetworks' && item.id !== 'analytics') {
           handlePush(item.id);
         }
       } else if (item.type === 'action') {
@@ -345,13 +357,27 @@ export function SettingsPanelStack({
     [handlePush, onRemoveWallet, onRemoveAllWallets],
   );
 
-  const handleToggleChange = useCallback(
-    (_event: React.ChangeEvent<HTMLInputElement>) => {
-      if (onDeveloperNetworksToggle) {
-        onDeveloperNetworksToggle(!developerNetworksEnabled);
+  // Resolves the checked state, handler, and test id for each toggle item, so
+  // the toggle row renders generically instead of hard-coding one setting.
+  const toggleConfigFor = useCallback(
+    (id: string): { checked: boolean; onToggle?: (enabled: boolean) => void; testId: string } | null => {
+      if (id === 'developerNetworks') {
+        return {
+          checked: developerNetworksEnabled,
+          onToggle: onDeveloperNetworksToggle,
+          testId: 'settings-developer-networks-toggle',
+        };
       }
+      if (id === 'analytics') {
+        return {
+          checked: analyticsEnabled,
+          onToggle: onAnalyticsToggle,
+          testId: 'settings-analytics-toggle',
+        };
+      }
+      return null;
     },
-    [onDeveloperNetworksToggle, developerNetworksEnabled],
+    [developerNetworksEnabled, onDeveloperNetworksToggle, analyticsEnabled, onAnalyticsToggle],
   );
 
   const renderItem = useCallback(
@@ -361,24 +387,23 @@ export function SettingsPanelStack({
       const description = item.descriptionKey ? t(item.descriptionKey) : undefined;
 
       if (item.type === 'toggle') {
+        const toggle = toggleConfigFor(item.id);
+        const checked = toggle?.checked ?? false;
+        const fireToggle = () => toggle?.onToggle?.(!checked);
         return (
           <StyledListItem key={item.id}>
             <StyledListItemButton
               data-testid={getSettingsItemTestId(item.id)}
-              onClick={() => {
-                if (onDeveloperNetworksToggle) {
-                  onDeveloperNetworksToggle(!developerNetworksEnabled);
-                }
-              }}
+              onClick={fireToggle}
             >
               <StyledListItemIcon>{icon}</StyledListItemIcon>
               <StyledListItemText primary={label} secondary={description} />
               <StyledSwitch
                 edge="end"
-                checked={developerNetworksEnabled}
-                onChange={handleToggleChange}
+                checked={checked}
+                onChange={fireToggle}
                 onClick={(e) => e.stopPropagation()}
-                slotProps={{ input: { 'data-testid': 'settings-developer-networks-toggle', 'aria-label': label } as React.InputHTMLAttributes<HTMLInputElement> }}
+                slotProps={{ input: { 'data-testid': toggle?.testId ?? getSettingsItemTestId(item.id), 'aria-label': label } as React.InputHTMLAttributes<HTMLInputElement> }}
               />
             </StyledListItemButton>
           </StyledListItem>
@@ -401,7 +426,7 @@ export function SettingsPanelStack({
         </StyledListItem>
       );
     },
-    [t, developerNetworksEnabled, handleToggleChange, handleItemClick, onDeveloperNetworksToggle],
+    [t, toggleConfigFor, handleItemClick],
   );
 
   const renderSection = useCallback(

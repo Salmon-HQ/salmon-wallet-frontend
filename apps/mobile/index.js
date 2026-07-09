@@ -72,7 +72,7 @@ if (typeof process === 'undefined') {
 // =============================================================================
 // 4. Initialize Storage & Stash - Required before useAccounts hook
 // =============================================================================
-const { initStorage, initStash, createAsyncStorageAdapter } = require('@salmon/shared');
+const { initStorage, initStash, initAnalytics, createAsyncStorageAdapter } = require('@salmon/shared');
 const AsyncStorage = require('@react-native-async-storage/async-storage').default;
 
 // Create adapter using AsyncStorage for persistent storage
@@ -85,6 +85,9 @@ initStorage({ platform: 'mobile', adapter });
 
 // Initialize stash for session data (in-memory for mobile)
 initStash('mobile');
+
+// Anonymous, opt-in usage analytics (no events until the user opts in).
+initAnalytics({ platform: 'mobile', appVersion: process.env.EXPO_PUBLIC_APP_VERSION || '3.0.0' });
 
 // =============================================================================
 // 5. Load Expo Router - This starts the app

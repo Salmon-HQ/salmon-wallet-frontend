@@ -133,6 +133,8 @@
     "developer_networks": "Redes de Desarrollo",
     "developer_networks_description": "Mostrar redes testnet y devnet",
     "developer_networks_desc": "Mostrar redes testnet y devnet",
+    "analytics": "Datos de Uso Anónimos",
+    "analytics_description": "Compartí estadísticas de uso anónimas y no identificatorias para ayudar a mejorar Salmon. Nunca incluye direcciones, saldos ni montos. Desactivado por defecto.",
     "app_version": "Versión v{{version}}",
     "remove_wallet": "Eliminar Billetera",
     "remove_all_wallets": "Eliminar Todas las Billeteras",

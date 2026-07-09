@@ -133,6 +133,8 @@
     "developer_networks": "Developer Networks",
     "developer_networks_description": "Show testnet and devnet networks",
     "developer_networks_desc": "Show testnet and devnet networks",
+    "analytics": "Anonymous Usage Data",
+    "analytics_description": "Share anonymous, non-identifying usage stats to help improve Salmon. Never includes addresses, balances, or amounts. Off by default.",
     "app_version": "Version v{{version}}",
     "remove_wallet": "Remove Wallet",
     "remove_all_wallets": "Remove All Wallets",
