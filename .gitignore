@@ -92,6 +92,9 @@ CLAUDE.local.md
 **/AGENTS.local.md
 **/CLAUDE.local.md
 .claude/settings.local.json
+# Local-only security map (documents known wallet security gaps — must not be
+# published to this public repo). Kept local like AGENTS.local.md.
+.claude/skills/security-context/
 .code-review-graph/
 
 # Local planning notes — not part of the repo contract
