@@ -35,6 +35,7 @@ import {
   type NetworkAdapter,
   type BlockchainType,
 } from '@salmon/shared';
+import { AnalyticsConsentPrompt } from '../../../src/components/AnalyticsConsentPrompt/AnalyticsConsentPrompt';
 import {
   GlassTabBar,
   SettingsSheet,
@@ -125,7 +126,12 @@ export default function TabLayout() {
   });
 
   // Anonymous usage-analytics consent (opt-in)
-  const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
+  const {
+    consent: analyticsConsent,
+    setConsent: setAnalyticsConsent,
+    needsConsentPrompt,
+    resolveConsentPrompt,
+  } = useAnalyticsConsent();
 
   // Language
   const { currentLanguage, availableLanguages, changeLanguage } = useLanguage();
@@ -688,6 +694,7 @@ export default function TabLayout() {
           />
         }
         settingsContent={
+          <>
           <SettingsSheet
             visible={settingsVisible}
             onClose={handleSettingsClose}
@@ -701,6 +708,12 @@ export default function TabLayout() {
             onRemoveAllWallets={handleRemoveAllWallets}
             onHeaderChange={handleSettingsHeaderChange}
           />
+          <AnalyticsConsentPrompt
+            visible={needsConsentPrompt}
+            onAccept={() => resolveConsentPrompt(true)}
+            onDecline={() => resolveConsentPrompt(false)}
+          />
+          </>
         }
         walletsContent={
           <WalletSwitcherSheet

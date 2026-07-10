@@ -210,6 +210,8 @@ export const STORAGE_KEYS = {
   ANALYTICS_CONSENT: 'salmon_analytics_consent',
   /** Random per-install analytics id — NOT derived from any wallet data */
   ANALYTICS_INSTALL_ID: 'salmon_analytics_install_id',
+  /** Whether the first-run analytics consent prompt has been answered */
+  ANALYTICS_CONSENT_PROMPTED: 'salmon_analytics_consent_prompted',
 
   // -- Cross-chain settlement --
   /** Pending StealthEX bridge exchanges awaiting completion (BridgeSettlement) */

@@ -9,6 +9,7 @@ const globals = {
   "AddressAddPanel": true,
   "AddressBookPanel": true,
   "AddressEditPanel": true,
+  "AnalyticsConsentDialog": true,
   "AutoMount": true,
   "AutoMountOptions": true,
   "BackupPanel": true,

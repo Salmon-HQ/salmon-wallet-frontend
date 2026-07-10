@@ -58,6 +58,7 @@ import {
   ScalesBackground,
   ReceiveSheet,
   SettingsPanelStack,
+  AnalyticsConsentDialog,
   WalletSwitcherSheet,
   ConfirmDialog,
   CurrencySelector,
@@ -276,7 +277,12 @@ export function HomePage(): React.ReactElement {
   const { developerNetworks, toggleDeveloperNetworks, explorer, explorers, changeExplorer, isLoading: explorerLoading } = userConfig;
 
   // Anonymous usage-analytics consent (opt-in)
-  const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
+  const {
+    consent: analyticsConsent,
+    setConsent: setAnalyticsConsent,
+    needsConsentPrompt,
+    resolveConsentPrompt,
+  } = useAnalyticsConsent();
 
   // Language
   const { language: currentLanguage, availableLanguages, languageNames, changeLanguage } = useLanguage();
@@ -883,6 +889,12 @@ export function HomePage(): React.ReactElement {
         onAnalyticsToggle={setAnalyticsConsent}
         onRemoveWallet={() => { setSettingsVisible(false); setRemoveWalletDialogVisible(true); }}
         onRemoveAllWallets={() => { setSettingsVisible(false); setRemoveAllWalletsDialogVisible(true); }}
+      />
+
+      <AnalyticsConsentDialog
+        open={needsConsentPrompt}
+        onAccept={() => resolveConsentPrompt(true)}
+        onDecline={() => resolveConsentPrompt(false)}
       />
 
       <WalletSwitcherSheet

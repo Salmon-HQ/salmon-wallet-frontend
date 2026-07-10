@@ -329,3 +329,7 @@ export { AddressEditPanel } from './AddressEditPanel';
 // AboutPanel - App info and external links
 export { AboutPanel } from './AboutPanel';
 export type { AboutPanelProps } from './AboutPanel';
+
+// AnalyticsConsentDialog - first-run opt-in consent prompt (web + extension)
+export { AnalyticsConsentDialog } from './AnalyticsConsentDialog';
+export type { AnalyticsConsentDialogProps } from './AnalyticsConsentDialog';

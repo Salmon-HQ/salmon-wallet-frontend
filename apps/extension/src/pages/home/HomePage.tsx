@@ -73,6 +73,7 @@ import {
   TransactionDetailModal,
   ReceiveSheet,
   SettingsPanelStack,
+  AnalyticsConsentDialog,
   WalletSwitcherSheet,
   ConfirmDialog,
   ScalesBackground,
@@ -355,7 +356,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   } = userConfig;
 
   // Anonymous usage-analytics consent (opt-in)
-  const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
+  const {
+    consent: analyticsConsent,
+    setConsent: setAnalyticsConsent,
+    needsConsentPrompt,
+    resolveConsentPrompt,
+  } = useAnalyticsConsent();
 
   // Language selection
   const { currentLanguage, supportedLanguages, setLanguage } = useLanguage();
@@ -1380,6 +1386,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         onAnalyticsToggle={setAnalyticsConsent}
         onRemoveWallet={handleRemoveWallet}
         onRemoveAllWallets={handleRemoveAllWallets}
+      />
+
+      <AnalyticsConsentDialog
+        open={needsConsentPrompt}
+        onAccept={() => resolveConsentPrompt(true)}
+        onDecline={() => resolveConsentPrompt(false)}
       />
 
       {/* Wallet Switcher Sheet */}

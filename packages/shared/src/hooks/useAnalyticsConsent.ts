@@ -20,11 +20,16 @@ export interface UseAnalyticsConsentResult {
   setConsent: (enabled: boolean) => Promise<void>;
   /** Convenience flip of the current value. */
   toggleConsent: () => Promise<void>;
+  /** True when the first-run consent prompt has not been answered yet. */
+  needsConsentPrompt: boolean;
+  /** Answers the first-run prompt: sets consent and marks it as decided. */
+  resolveConsentPrompt: (enabled: boolean) => Promise<void>;
 }
 
 export function useAnalyticsConsent(): UseAnalyticsConsentResult {
   const [consent, setConsentState] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [needsConsentPrompt, setNeedsConsentPrompt] = useState<boolean>(false);
 
   useEffect(() => {
     let active = true;
@@ -40,6 +45,7 @@ export function useAnalyticsConsent(): UseAnalyticsConsentResult {
       .then(() => {
         if (active) {
           setConsentState(client.getConsent());
+          setNeedsConsentPrompt(!client.getPrompted());
           setIsLoading(false);
         }
       })
@@ -63,5 +69,14 @@ export function useAnalyticsConsent(): UseAnalyticsConsentResult {
     return setConsent(!getAnalytics()?.getConsent());
   }, [setConsent]);
 
-  return { consent, isLoading, setConsent, toggleConsent };
+  const resolveConsentPrompt = useCallback(async (enabled: boolean): Promise<void> => {
+    const client = getAnalytics();
+    setNeedsConsentPrompt(false);
+    if (!client) return;
+    await client.setConsent(enabled);
+    await client.markPrompted();
+    setConsentState(client.getConsent());
+  }, []);
+
+  return { consent, isLoading, setConsent, toggleConsent, needsConsentPrompt, resolveConsentPrompt };
 }

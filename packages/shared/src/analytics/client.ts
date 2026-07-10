@@ -42,6 +42,7 @@ class AnalyticsClient {
   private readonly sessionId = createSessionId();
   private installId: string | null = null;
   private consent = false;
+  private prompted = false;
   private queue: AnalyticsEventPayload[] = [];
   private flushing = false;
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -69,6 +70,8 @@ class AnalyticsClient {
       const storage = getStorage();
       const consent = await storage.getItem<boolean>(STORAGE_KEYS.ANALYTICS_CONSENT);
       this.consent = consent === true;
+      const prompted = await storage.getItem<boolean>(STORAGE_KEYS.ANALYTICS_CONSENT_PROMPTED);
+      this.prompted = prompted === true;
       if (this.consent) {
         this.installId = await getOrCreateInstallId();
         this.startTimer();
@@ -80,6 +83,21 @@ class AnalyticsClient {
 
   getConsent(): boolean {
     return this.consent;
+  }
+
+  /** Whether the user has already answered the first-run consent prompt. */
+  getPrompted(): boolean {
+    return this.prompted;
+  }
+
+  /** Records that the first-run consent prompt has been answered (either way). */
+  async markPrompted(): Promise<void> {
+    this.prompted = true;
+    try {
+      await getStorage().setItem(STORAGE_KEYS.ANALYTICS_CONSENT_PROMPTED, true);
+    } catch {
+      // Best-effort; in-memory flag still prevents re-showing this session.
+    }
   }
 
   /** Grants or withdraws consent, persisting the choice. */
