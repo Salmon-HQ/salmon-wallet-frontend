@@ -35,7 +35,6 @@ import {
   type NetworkAdapter,
   type BlockchainType,
 } from '@salmon/shared';
-import { AnalyticsConsentPrompt } from '../../../src/components/AnalyticsConsentPrompt/AnalyticsConsentPrompt';
 import {
   GlassTabBar,
   SettingsSheet,
@@ -125,12 +124,11 @@ export default function TabLayout() {
     activeBlockchainAccount: userConfigAccount,
   });
 
-  // Anonymous usage-analytics consent (opt-in)
+  // Anonymous usage-analytics consent (opt-in). The first-run prompt now lives
+  // in onboarding (analytics-consent screen); here we only bind the Settings toggle.
   const {
     consent: analyticsConsent,
     setConsent: setAnalyticsConsent,
-    needsConsentPrompt,
-    resolveConsentPrompt,
   } = useAnalyticsConsent();
 
   // Language
@@ -694,7 +692,6 @@ export default function TabLayout() {
           />
         }
         settingsContent={
-          <>
           <SettingsSheet
             visible={settingsVisible}
             onClose={handleSettingsClose}
@@ -708,12 +705,6 @@ export default function TabLayout() {
             onRemoveAllWallets={handleRemoveAllWallets}
             onHeaderChange={handleSettingsHeaderChange}
           />
-          <AnalyticsConsentPrompt
-            visible={needsConsentPrompt}
-            onAccept={() => resolveConsentPrompt(true)}
-            onDecline={() => resolveConsentPrompt(false)}
-          />
-          </>
         }
         walletsContent={
           <WalletSwitcherSheet

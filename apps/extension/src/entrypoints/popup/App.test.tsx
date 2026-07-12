@@ -36,6 +36,7 @@ vi.mock('@salmon/shared', () => ({
   }],
   useInactivityTimeout: (config: unknown) => mockUseInactivityTimeout(config),
   useSettleAfterTx: () => vi.fn(),
+  useAnalyticsConsent: () => ({ resolveConsentPrompt: vi.fn() }),
 }));
 
 vi.mock('@salmon/shared/utils/account', () => ({
@@ -86,6 +87,10 @@ vi.mock('../../pages/auth/PasswordPage', () => ({
 
 vi.mock('../../pages/auth/SuccessPage', () => ({
   SuccessPage: () => null,
+}));
+
+vi.mock('../../pages/auth/AnalyticsConsentPage', () => ({
+  AnalyticsConsentPage: () => null,
 }));
 
 vi.mock('../../pages/auth/DerivedAccountsPage', () => ({

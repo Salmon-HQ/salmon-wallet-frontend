@@ -11,7 +11,6 @@ declare global {
   const AddressAddPanel: typeof import('/Users/lucamazzarello_/Desktop/Repositories/salmon-wallet-v3/apps/extension/src/components/index').AddressAddPanel
   const AddressBookPanel: typeof import('/Users/lucamazzarello_/Desktop/Repositories/salmon-wallet-v3/apps/extension/src/components/index').AddressBookPanel
   const AddressEditPanel: typeof import('/Users/lucamazzarello_/Desktop/Repositories/salmon-wallet-v3/apps/extension/src/components/index').AddressEditPanel
-  const AnalyticsConsentDialog: typeof import('/Users/lucamazzarello_/Desktop/Repositories/salmon-wallet-v3/apps/extension/src/components/index').AnalyticsConsentDialog
   const BackupPanel: typeof import('/Users/lucamazzarello_/Desktop/Repositories/salmon-wallet-v3/apps/extension/src/components/index').BackupPanel
   const BalanceCardCarousel: typeof import('/Users/lucamazzarello_/Desktop/Repositories/salmon-wallet-v3/apps/extension/src/components/index').BalanceCardCarousel
   const ConfirmDialog: typeof import('/Users/lucamazzarello_/Desktop/Repositories/salmon-wallet-v3/apps/extension/src/components/index').ConfirmDialog

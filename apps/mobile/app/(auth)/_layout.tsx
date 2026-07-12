@@ -70,6 +70,14 @@ export default function AuthLayout() {
         }}
       />
 
+      {/* First-run anonymous-analytics consent (final onboarding step) */}
+      <Stack.Screen
+        name="analytics-consent"
+        options={{
+          gestureEnabled: false,
+        }}
+      />
+
       {/* Success confirmation */}
       <Stack.Screen
         name="success"

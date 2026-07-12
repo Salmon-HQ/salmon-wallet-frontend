@@ -73,7 +73,6 @@ import {
   TransactionDetailModal,
   ReceiveSheet,
   SettingsPanelStack,
-  AnalyticsConsentDialog,
   WalletSwitcherSheet,
   ConfirmDialog,
   ScalesBackground,
@@ -355,12 +354,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     isLoading: explorerLoading,
   } = userConfig;
 
-  // Anonymous usage-analytics consent (opt-in)
+  // Anonymous usage-analytics consent (opt-in). The first-run prompt now lives
+  // in onboarding (analytics-consent step); here we only bind the Settings toggle.
   const {
     consent: analyticsConsent,
     setConsent: setAnalyticsConsent,
-    needsConsentPrompt,
-    resolveConsentPrompt,
   } = useAnalyticsConsent();
 
   // Language selection
@@ -1386,12 +1384,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         onAnalyticsToggle={setAnalyticsConsent}
         onRemoveWallet={handleRemoveWallet}
         onRemoveAllWallets={handleRemoveAllWallets}
-      />
-
-      <AnalyticsConsentDialog
-        open={needsConsentPrompt}
-        onAccept={() => resolveConsentPrompt(true)}
-        onDecline={() => resolveConsentPrompt(false)}
       />
 
       {/* Wallet Switcher Sheet */}

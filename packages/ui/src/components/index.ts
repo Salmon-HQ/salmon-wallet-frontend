@@ -209,6 +209,7 @@ export type {
 
 // AuthFlow - Shared auth screens for web and extension
 export {
+  AnalyticsConsentPage,
   CreateWalletPage,
   DerivedAccountsPage,
   PasswordPage,
@@ -217,6 +218,7 @@ export {
   SuccessPage,
 } from './AuthFlow';
 export type {
+  AnalyticsConsentPageProps,
   CreateWalletPageProps,
   DerivedAccountsPageProps,
   PasswordPageProps,
@@ -330,6 +332,3 @@ export { AddressEditPanel } from './AddressEditPanel';
 export { AboutPanel } from './AboutPanel';
 export type { AboutPanelProps } from './AboutPanel';
 
-// AnalyticsConsentDialog - first-run opt-in consent prompt (web + extension)
-export { AnalyticsConsentDialog } from './AnalyticsConsentDialog';
-export type { AnalyticsConsentDialogProps } from './AnalyticsConsentDialog';

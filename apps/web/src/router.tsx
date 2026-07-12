@@ -38,6 +38,7 @@ export const router = createBrowserRouter([
           { path: 'create', lazy: () => import('./pages/auth/CreatePage').then((m) => ({ Component: m.CreatePage })) },
           { path: 'recover', lazy: () => import('./pages/auth/RecoverPage').then((m) => ({ Component: m.RecoverPage })) },
           { path: 'password', lazy: () => import('./pages/auth/PasswordPage').then((m) => ({ Component: m.PasswordPage })) },
+          { path: 'analytics-consent', lazy: () => import('./pages/auth/AnalyticsConsentPage').then((m) => ({ Component: m.AnalyticsConsentPage })) },
           { path: 'success', lazy: () => import('./pages/auth/SuccessPage').then((m) => ({ Component: m.SuccessPage })) },
           { path: 'derived', lazy: () => import('./pages/auth/DerivedAccountsPage').then((m) => ({ Component: m.DerivedAccountsPage })) },
         ],

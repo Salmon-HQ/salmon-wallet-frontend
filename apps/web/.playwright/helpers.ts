@@ -39,6 +39,13 @@ export async function unlockOrRecover(page: Page): Promise<EntryState> {
     await page.getByTestId('password-input').fill(password());
     await page.getByTestId('password-confirm-input').fill(password());
     await page.getByTestId('password-submit-button').click();
+    // First-run analytics consent is now the final onboarding step. Decline so
+    // this helper leaves analytics OFF by default; specs that assert on the
+    // prompt itself drive it explicitly (see analytics-consent-prompt.spec.ts).
+    await page
+      .getByTestId('analytics-consent-decline')
+      .click({ timeout: 60_000 })
+      .catch(() => {});
     await page
       .getByTestId('success-go-to-wallet-button')
       .click({ timeout: 60_000 })

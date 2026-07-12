@@ -43,7 +43,6 @@ export {
   WalletHeader,
   WalletSwitcherSheet,
   SettingsPanelStack,
-  AnalyticsConsentDialog,
 } from '@salmon/ui';
 
 export type {

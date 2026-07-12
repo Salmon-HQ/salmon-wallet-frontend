@@ -58,7 +58,6 @@ import {
   ScalesBackground,
   ReceiveSheet,
   SettingsPanelStack,
-  AnalyticsConsentDialog,
   WalletSwitcherSheet,
   ConfirmDialog,
   CurrencySelector,
@@ -276,12 +275,11 @@ export function HomePage(): React.ReactElement {
   });
   const { developerNetworks, toggleDeveloperNetworks, explorer, explorers, changeExplorer, isLoading: explorerLoading } = userConfig;
 
-  // Anonymous usage-analytics consent (opt-in)
+  // Anonymous usage-analytics consent (opt-in). The first-run prompt now lives
+  // in onboarding (auth/analytics-consent); here we only bind the Settings toggle.
   const {
     consent: analyticsConsent,
     setConsent: setAnalyticsConsent,
-    needsConsentPrompt,
-    resolveConsentPrompt,
   } = useAnalyticsConsent();
 
   // Language
@@ -889,12 +887,6 @@ export function HomePage(): React.ReactElement {
         onAnalyticsToggle={setAnalyticsConsent}
         onRemoveWallet={() => { setSettingsVisible(false); setRemoveWalletDialogVisible(true); }}
         onRemoveAllWallets={() => { setSettingsVisible(false); setRemoveAllWalletsDialogVisible(true); }}
-      />
-
-      <AnalyticsConsentDialog
-        open={needsConsentPrompt}
-        onAccept={() => resolveConsentPrompt(true)}
-        onDecline={() => resolveConsentPrompt(false)}
       />
 
       <WalletSwitcherSheet
