@@ -1,0 +1,22 @@
+appId: io.salmonwallet.app
+---
+# Assumes Home. Opts into anonymous usage analytics via the Settings toggle,
+# then returns to Home.
+#
+# Analytics are opt-in and the client is a total no-op without consent, so any
+# flow that needs events to actually be emitted must run this first. The
+# onboarding prelude (onboard-walletA) declines the first-run prompt by design.
+- runFlow: ./open-settings.yaml
+- scrollUntilVisible:
+    element:
+      id: "settings-analytics-toggle"
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: "settings-analytics-toggle"
+- waitForAnimationToEnd:
+    timeout: 2000
+- runFlow: ./settings-close.yaml
+- extendedWaitUntil:
+    visible: "Switch wallet account"
+    timeout: 20000

@@ -15,40 +15,48 @@ appId: io.salmonwallet.app
 - waitForAnimationToEnd:
     timeout: 4000
 - assertVisible: "Add Account"
-# Tap "Create New Account" row by coord
 - tapOn:
-    point: "50%,19%"
+    id: "account-add-method-derive"
+# Wait for the scan to actually render a row. "Scanning for accounts" can be
+# absent for a beat before the list appears, so keying off its disappearance
+# taps into an empty screen.
 - extendedWaitUntil:
-    notVisible: "Scanning for accounts"
-    timeout: 60000
-# Select first derived row (Solana) — checkbox at left ~10%, row y ~22%
-- tapOn:
-    point: "10%,22%"
+    visible: ".*Solana.*SOL"
+    timeout: 90000
+# Select the derived row by its accessibility text (address + path + balance).
+# A point tap at the checkbox misses and leaves Continue disabled.
+- tapOn: ".*Solana.*SOL"
 - waitForAnimationToEnd:
-    timeout: 1000
-- tapOn: "Continue"
+    timeout: 2000
+- tapOn:
+    id: "account-add-derive-continue-button"
 - extendedWaitUntil:
-    visible: "Confirm"
-    timeout: 15000
+    visible: "Account Name"
+    timeout: 20000
 # Confirm
-- tapOn:
-    point: "50%,27%"
+- tapOn: "Confirm"
 - waitForAnimationToEnd:
-    timeout: 8000
-# Confirm auto-closes to Home; Account 2 becomes active. Re-open switcher.
-- tapOn:
-    point: "92%,11%"
-- waitForAnimationToEnd:
-    timeout: 3000
+    timeout: 15000
+# Confirm pops the panel back to the Settings sheet (not Home). Close it, then
+# re-open the wallet switcher to verify the new account.
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 30000
+- runFlow: ../../../subflows/settings-close.yaml
+- extendedWaitUntil:
+    visible: "Switch wallet account"
+    timeout: 20000
 - tapOn: "Switch wallet account"
 - extendedWaitUntil:
     visible: "Your Wallets"
-    timeout: 5000
-- assertVisible: "Account 2"
+    timeout: 8000
+# The row's accessibility text is "Account 2, <short address>", and Maestro
+# full-matches, so a bare "Account 2" never matches.
+- assertVisible: "Account 2, .*"
 - takeScreenshot: screenshots/actions/account/account-2-added
-# Trash icon on Account 2 row (~85%, ~24% on iPhone 17 Pro Max)
+# Trash icon on the Account 2 row.
 - tapOn:
-    point: "85%,24%"
+    point: "83%,26%"
 - extendedWaitUntil:
     visible: "Delete Account?"
     timeout: 5000
@@ -65,5 +73,5 @@ appId: io.salmonwallet.app
       - waitForAnimationToEnd:
           timeout: 3000
 - assertVisible: "Your Wallets"
-- assertNotVisible: "Account 2"
+- assertNotVisible: "Account 2, .*"
 - takeScreenshot: screenshots/actions/account/account-2-removed

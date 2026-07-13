@@ -206,6 +206,26 @@ Por diseño no hay forma de: atribuir a un usuario real, cohortizar por wallet,
 medir balances/TVL, ni ligar eventos a una address. `install_id` se pierde si el
 usuario reinstala o retira el consentimiento.
 
+## Estado de verificación
+
+14 de los 15 eventos fueron verificados **end-to-end** contra el stack local de
+`salmon-api` (Maestro en iOS Simulator → app → `POST /v1/events` → NDJSON), con
+las props correctas (p. ej. `send_completed {chain: solana, success: true}`,
+`network_switched {chain: bitcoin}`).
+
+`nft_sent` está cableado pero **no verificado**: disparalo requiere transferir un
+NFT real on-chain, y esa transacción no se autorizó. La única cobertura pendiente.
+
+Los eventos se disparan desde los flows committeados de `apps/mobile/.maestro/`.
+Como el consent está *declinado* por defecto en `subflows/onboard-walletA.yaml`,
+para que la suite emita eventos hay que optar-in: usá
+`subflows/enable-analytics.yaml` (toggle de Settings) o, para una corrida de
+verificación, cambiá ese `tapOn` a `analytics-consent-accept` temporalmente.
+
+> **Cuidado con el flush**: el cliente batchea (20 eventos o 30s). Si encadenás
+> flows, el `clearState` del siguiente mata la cola en memoria y se pierden los
+> eventos. Corré un flow por vez y esperá ~35s antes del siguiente.
+
 ## Verificación local
 
 El stack local de `salmon-api` (`docker-compose.yml`) sirve la API de la wallet

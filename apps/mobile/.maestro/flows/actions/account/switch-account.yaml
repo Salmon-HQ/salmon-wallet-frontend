@@ -1,0 +1,59 @@
+appId: io.salmonwallet.app
+---
+# Switch the ACTIVE account between two wallets.
+#
+# smoke/mobile/wallet-switcher.yaml only opens and closes the switcher sheet —
+# it never selects a different account, so the actual switch path (which changes
+# persistent state) had no coverage. This flow adds a second account, then
+# switches back to the first.
+- runFlow: ../../../subflows/onboard-walletA.yaml
+
+# --- Add a derived account; it becomes the active one ---
+- tapOn: "Switch wallet account"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible: "Your Wallets"
+- tapOn: "Add New Account"
+- extendedWaitUntil:
+    visible:
+      id: "account-add-method-derive"
+    timeout: 10000
+- tapOn:
+    id: "account-add-method-derive"
+- extendedWaitUntil:
+    visible: ".*Solana.*SOL"
+    timeout: 90000
+- tapOn: ".*Solana.*SOL"
+- waitForAnimationToEnd:
+    timeout: 2000
+- tapOn:
+    id: "account-add-derive-continue-button"
+- extendedWaitUntil:
+    visible: "Account Name"
+    timeout: 20000
+- tapOn: "Confirm"
+- waitForAnimationToEnd:
+    timeout: 15000
+# The panel pops back to the Settings sheet.
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 30000
+- runFlow: ../../../subflows/settings-close.yaml
+- extendedWaitUntil:
+    visible: "Switch wallet account"
+    timeout: 20000
+
+# --- Switch back to Account #1 ---
+- tapOn: "Switch wallet account"
+- extendedWaitUntil:
+    visible: "Your Wallets"
+    timeout: 8000
+# Row accessibility text is exactly "Account #1" (the active row reads
+# "Account 2, active"), and Maestro full-matches.
+- tapOn: "Account #1"
+- waitForAnimationToEnd:
+    timeout: 8000
+- extendedWaitUntil:
+    visible: "Switch wallet account"
+    timeout: 25000
+- takeScreenshot: screenshots/actions/account/switched-back-to-1

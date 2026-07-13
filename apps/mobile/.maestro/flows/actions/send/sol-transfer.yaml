@@ -5,6 +5,13 @@ appId: io.salmonwallet.app
 - tapOn:
     id: "home-send-button"
 - assertVisible: "Select Token"
+# The token list is populated from the balance query, which is still in flight
+# right after onboarding. Wait for the SOL row instead of tapping into an empty
+# list.
+- extendedWaitUntil:
+    visible:
+      id: "send-token-row-SOL"
+    timeout: 30000
 - tapOn:
     id: "send-token-row-SOL"
 - waitForAnimationToEnd:

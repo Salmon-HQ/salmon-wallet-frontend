@@ -6,8 +6,14 @@ appId: io.salmonwallet.app
     id: "wallet-header-account-switcher"
 - tapOn:
     id: "home-receive-button"
+# Assert on the sheet's contents, not the BottomSheetContainer's own testID —
+# that wrapper does not surface in the accessibility hierarchy.
+- extendedWaitUntil:
+    visible:
+      id: "receive-qr-code"
+    timeout: 10000
 - assertVisible:
-    id: "receive-sheet"
+    id: "receive-address"
 - assertVisible:
     id: "receive-copy-button"
 - takeScreenshot: screenshots/smoke/receive/sheet-default

@@ -9,9 +9,19 @@ appId: io.salmonwallet.app
 - tapOn:
     id: "address-book-address-input"
 - inputText: ${SALMON_TEST_WALLET_B_ADDR}
+# Save stays disabled until the async address validation resolves. Tapping it
+# straight after inputText is a no-op, and the contact is silently not saved.
+- waitForAnimationToEnd:
+    timeout: 8000
 - tapOn:
     id: "address-book-save-button"
 - waitForAnimationToEnd:
-    timeout: 5000
+    timeout: 6000
+# Assert on the Address Book list, not on "Wallet B" alone — that string is also
+# the label input's own text, so it stays visible even when the save never ran.
+- extendedWaitUntil:
+    visible:
+      id: "address-book-add-button"
+    timeout: 10000
 - assertVisible: "Wallet B"
 - takeScreenshot: screenshots/actions/address-book/address-book-saved-confirm
