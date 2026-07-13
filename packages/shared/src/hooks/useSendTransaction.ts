@@ -32,6 +32,7 @@ import type {
   SendTransactionStatus,
 } from '../types/send';
 import { useSettleUntilChanged } from '../query/invalidation';
+import { trackEvent } from '../analytics';
 
 // ============================================================================
 // Types
@@ -147,6 +148,12 @@ export function useSendTransaction({
         );
 
         setStatus('success');
+        // Anonymous funnel event: a transfer succeeded. Only a coarse chain
+        // family — never the address, amount or token mint.
+        trackEvent('send_completed', {
+          chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
+          success: true,
+        });
         // Return the txId immediately so the UI can show the success screen,
         // then settle in the background. `settling` stays true until the
         // indexer reflects the new balance (or the ceiling is hit), letting the

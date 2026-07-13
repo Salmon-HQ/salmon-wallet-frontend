@@ -41,6 +41,7 @@ import {
 } from '../blockchain/solana/swap';
 import { getSwapOrder, executeSwapApi } from '../api/services/solana';
 import { getTokenList } from '../api/services/tokens';
+import { trackEvent } from '../analytics';
 import type {
   SwapQuote,
   SwapQuoteParams,
@@ -234,6 +235,9 @@ export function useSwap({
       if (result.status === 'success') {
         setTxId(result.txId);
         setStatus('success');
+        // Anonymous funnel event: a swap succeeded. Jupiter swaps are
+        // Solana↔Solana. No amounts, addresses or mints — only coarse, allowed props.
+        trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: true });
       } else {
         setError(result.error || 'Swap execution failed');
         setStatus('failed');
