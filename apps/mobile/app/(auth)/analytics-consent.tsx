@@ -5,8 +5,8 @@
  * onboarding step before the wallet home. Either choice persists via
  * `resolveConsentPrompt` and advances to success.
  *
- * Design: same onboarding layout as biometric-setup.tsx / success.tsx — dark
- * gradient background, content block, action buttons pinned to the bottom.
+ * Design: same onboarding layout as biometric-setup.tsx / success.tsx — logo,
+ * themed icon, centered copy, action buttons pinned to the bottom.
  */
 
 import {
@@ -17,11 +17,14 @@ import {
   useAnalyticsConsent,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../../src/components';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const ICON_SIZE = 80;
 
 export default function AnalyticsConsentScreen() {
   const { t } = useTranslation();
@@ -43,6 +46,10 @@ export default function AnalyticsConsentScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.centerContent} testID="analytics-consent-screen">
+          <View style={styles.iconContainer}>
+            <Ionicons name="stats-chart-outline" size={ICON_SIZE} color={colors.text.primary} />
+          </View>
+
           <Text style={styles.title}>{t('settings.analytics_prompt_title')}</Text>
           <Text style={styles.body}>{t('settings.analytics_prompt_body')}</Text>
           <Text style={styles.bullet}>{'✓ '}{t('settings.analytics_prompt_include')}</Text>
@@ -83,27 +90,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: contentPadding.screen,
   },
   centerContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 'auto',
-    gap: spacing.sm,
+  },
+  iconContainer: {
+    marginBottom: spacing.xl,
   },
   title: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: 28,
-    lineHeight: 36,
-    marginBottom: spacing.xs,
+    fontSize: 32,
+    lineHeight: 40,
+    marginBottom: spacing.md,
+    textAlign: 'center',
   },
   body: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: 16,
     lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: spacing.md,
   },
   bullet: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: 15,
     lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
   },
   foot: {
     color: colors.text.secondary,
@@ -111,7 +127,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     opacity: 0.8,
-    marginTop: spacing.xs,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
   buttonsContainer: {
     marginTop: 'auto',
