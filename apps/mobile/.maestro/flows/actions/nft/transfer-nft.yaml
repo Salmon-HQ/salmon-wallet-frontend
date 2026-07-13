@@ -1,0 +1,51 @@
+appId: io.salmonwallet.app
+---
+# Send an NFT from Wallet A → Wallet B. Fires a real on-chain transfer.
+#
+# Was transfer-salmon.yaml (Salmon Logo, B → A). Neither test wallet holds that
+# NFT any more, so the flow could never find it and always failed.
+#
+# Wallet A's only other collectible is a "JUP" airdrop, which is a phishing NFT
+# ("claim now: jupbonus.lol"). The wallet flags it as spam and renders no Send
+# button, so it cannot be used here — correctly.
+#
+# That leaves "Mindfolk Founder #5154", which smoke/nft/detail.yaml also asserts
+# on. The NFT therefore ping-pongs: after this runs it sits in Wallet B, and
+# smoke/nft/detail.yaml will fail until it is sent back. To restore, flip the
+# onboard subflow to Wallet B and the recipient to SALMON_TEST_WALLET_A_ADDR.
+- runFlow: ../../../subflows/onboard-walletA.yaml
+- takeScreenshot: screenshots/actions/nft/nft-walletA-home
+- tapOn:
+    id: "tab-collectibles"
+- extendedWaitUntil:
+    visible: "My Collectibles"
+    timeout: 20000
+- takeScreenshot: screenshots/actions/nft/nft-walletA-collectibles
+- tapOn: "NFT: Mindfolk Founder #5154"
+- waitForAnimationToEnd:
+    timeout: 6000
+- takeScreenshot: screenshots/actions/nft/nft-detail
+# The detail sheet scrolls (image, description, attributes, details); the Send
+# and Burn buttons sit below the fold, so they are not on screen on open.
+- scrollUntilVisible:
+    element:
+      id: "nft-detail-send-button"
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: "nft-detail-send-button"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: screenshots/actions/nft/nft-send-form
+- tapOn:
+    id: "input-address-input"
+- inputText: ${SALMON_TEST_WALLET_B_ADDR}
+- tapOn: "Recipient"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    id: "nft-send-confirm-button"
+- extendedWaitUntil:
+    visible: "NFT sent"
+    timeout: 120000
+- takeScreenshot: screenshots/actions/nft/nft-sent

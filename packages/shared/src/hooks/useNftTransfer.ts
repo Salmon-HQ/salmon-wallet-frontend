@@ -2,10 +2,11 @@
  * useNftTransfer Hook
  *
  * Shared hook for multi-chain NFT transfers.
- * Delegates to the account's transfer() method, which internally routes
- * to the appropriate blockchain transfer service.
  *
- * - Solana: transfers SPL token with amount=1 via account.transfer()
+ * - Solana: asks the backend for an unsigned transaction built with Metaplex
+ *   (`transferV1`, or Bubblegum for compressed assets) and signs it locally.
+ *   A plain SPL transfer is NOT usable here: programmable NFTs keep their token
+ *   account frozen and reject it with `Account is frozen` (error 0x11).
  * - Bitcoin: not supported (ordinal transfers require special UTXO selection)
  */
 
@@ -17,6 +18,10 @@ import type {
 } from '../utils/nft';
 import { useSettleUntilChanged } from '../query/invalidation';
 import { trackEvent } from '../analytics';
+import { createNftTransferTransaction } from '../api/services/nft-transfer';
+import { signAndSendPreparedSolanaTransactions } from '../blockchain/solana/prepared-transactions';
+import type { SolanaAccount } from '../blockchain/solana';
+import type { SolanaNetworkId } from '../types/blockchain';
 
 export type NftTransferStatus = 'idle' | 'sending' | 'success' | 'failed';
 
@@ -67,7 +72,31 @@ export function useNftTransfer({ account, onTransferSuccess }: UseNftTransferPar
 
         if (nft.blockchain === 'solana') {
           const solanaNft = nft as SolanaNftData;
-          result = await account.transfer(recipientAddress, solanaNft.mint, 1);
+          // Do NOT use a plain SPL transfer here. A programmable NFT (pNFT)
+          // keeps its token account permanently frozen, so an SPL transfer
+          // fails with `Account is frozen` (custom program error 0x11). The
+          // backend builds the transaction with Metaplex `transferV1` (or
+          // Bubblegum for compressed assets), which covers every variant the
+          // wallet can hold; the client only signs and sends it.
+          const prepared = await createNftTransferTransaction(
+            {
+              mintAddress: solanaNft.mint,
+              ownerAddress: account.getReceiveAddress(),
+              destinationAddress: recipientAddress,
+            },
+            account.getNetworkId() as SolanaNetworkId
+          );
+
+          const signatures = await signAndSendPreparedSolanaTransactions(
+            account as SolanaAccount,
+            prepared
+          );
+
+          const txId = signatures[signatures.length - 1];
+          if (!txId) {
+            throw new Error('NFT transfer did not return a transaction signature');
+          }
+          result = { txId };
         } else {
           // TODO: Bitcoin ordinal transfers require inscription-aware UTXO selection.
           // QuickNode's Ordinals & Runes API provides ord_getOutput(txid:vout) which
