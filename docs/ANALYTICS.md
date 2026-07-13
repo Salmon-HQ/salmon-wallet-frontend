@@ -208,13 +208,30 @@ usuario reinstala o retira el consentimiento.
 
 ## Estado de verificación
 
-14 de los 15 eventos fueron verificados **end-to-end** contra el stack local de
+**Los 15 eventos** fueron verificados **end-to-end** contra el stack local de
 `salmon-api` (Maestro en iOS Simulator → app → `POST /v1/events` → NDJSON), con
-las props correctas (p. ej. `send_completed {chain: solana, success: true}`,
-`network_switched {chain: bitcoin}`).
+las props correctas:
 
-`nft_sent` está cableado pero **no verificado**: disparalo requiere transferir un
-NFT real on-chain, y esa transacción no se autorizó. La única cobertura pendiente.
+```json
+{"event":"send_completed","props":{"chain":"solana","success":true}}
+{"event":"swap_completed","props":{"from_chain":"solana","to_chain":"solana","success":true}}
+{"event":"network_switched","props":{"chain":"bitcoin"}}
+{"event":"nft_sent","props":{"chain":"solana"}}
+{"event":"nft_viewed","props":{"chain":"solana"}}
+```
+
+Incluye transacciones reales on-chain (send, swap y transferencia de NFT).
+
+> Verificar `nft_sent` destapó un bug real: la wallet mandaba un SPL transfer
+> plano, que **siempre** falla en un NFT programable (pNFT) con
+> `Account is frozen` (error 0x11) — los pNFT mantienen su token account
+> congelada a propósito. Se arregló construyendo la transacción en el backend
+> con Metaplex `transferV1`. El evento no se emitía porque la transferencia
+> genuinamente fallaba: la instrumentación estaba bien, no inventaba éxitos.
+
+Plataformas: verificado en **iOS**. Android comparte el mismo bundle JS. Web y
+extension están cableados (typecheck + unit tests verdes) pero **sin verificar
+end-to-end** todavía.
 
 Los eventos se disparan desde los flows committeados de `apps/mobile/.maestro/`.
 Como el consent está *declinado* por defecto en `subflows/onboard-walletA.yaml`,
