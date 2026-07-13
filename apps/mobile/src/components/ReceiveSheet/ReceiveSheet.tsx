@@ -10,6 +10,8 @@ import {
   s,
   vs,
   lineHeight,
+  trackFirstTime,
+  STORAGE_KEYS,
 } from '@salmon/shared';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -73,6 +75,14 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
   useEffect(() => {
     if (!visible) {
       setCopied(false);
+    }
+  }, [visible]);
+
+  // Anonymous activation event: the first time the receive screen is opened.
+  // Reported once per install; no-op without consent and no address involved.
+  useEffect(() => {
+    if (visible) {
+      void trackFirstTime('first_receive_viewed', STORAGE_KEYS.ANALYTICS_FIRST_RECEIVE);
     }
   }, [visible]);
 

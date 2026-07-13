@@ -1,5 +1,6 @@
 import { useCallback, useMemo, type Dispatch, type SetStateAction } from 'react';
 
+import { trackEvent } from '../analytics';
 import { setStorageItem, STORAGE_KEYS } from '../storage';
 import type { Account } from '../types/account';
 import type { BlockchainAccount } from '../types/blockchain';
@@ -60,6 +61,10 @@ export function useAccountsSelection({
       const account = findAccount(targetId);
       if (!account) return;
 
+      // Anonymous feature-adoption event: the active wallet was switched.
+      // No account id, name or address — just that a switch happened.
+      trackEvent('wallet_switched');
+
       setSwitchingNetwork(true);
       setAccountId(targetId);
       setPathIndex(networkId ? getDefaultPathIndex(account, networkId) : 0);
@@ -78,6 +83,12 @@ export function useAccountsSelection({
 
       const { networksAccounts } = activeAccount;
       if (!Object.keys(networksAccounts).includes(targetId)) return;
+
+      // Anonymous feature-adoption event: the active network was switched.
+      // Only the coarse target chain family — never the full network id.
+      trackEvent('network_switched', {
+        chain: targetId.split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
+      });
 
       setSwitchingNetwork(true);
 

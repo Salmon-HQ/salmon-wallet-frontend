@@ -31,6 +31,8 @@ import {
   duration,
   durationMs,
   easing,
+  trackFirstTime,
+  STORAGE_KEYS,
 } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 import { QRCode } from '../QRCode';
@@ -141,6 +143,14 @@ export function ReceiveSheet({
   useEffect(() => {
     if (!visible) {
       setCopied(false);
+    }
+  }, [visible]);
+
+  // Anonymous activation event: the first time the receive screen is opened.
+  // Reported once per install; no-op without consent and no address involved.
+  useEffect(() => {
+    if (visible) {
+      void trackFirstTime('first_receive_viewed', STORAGE_KEYS.ANALYTICS_FIRST_RECEIVE);
     }
   }, [visible]);
 

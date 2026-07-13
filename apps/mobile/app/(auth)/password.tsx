@@ -46,6 +46,7 @@ import {
   removeStashItem,
   spacing,
   STASH_KEYS,
+  trackEvent,
   useAccountsContext,
   validatePassword,
   getPasswordIssue,
@@ -242,6 +243,12 @@ export default function PasswordScreen() {
       // The derived key is already cached in stash from addAccount, so this is fast.
       await actions.unlockAccounts(password);
       console.log(`[perf] recovery: TOTAL ${Date.now() - t0}ms`);
+
+      // Anonymous funnel event: a wallet was created or recovered. No seed,
+      // address or key material — just which flow completed. No-op unless the
+      // user has opted in; consent is requested a couple of steps later, so a
+      // user's very first onboard is not counted (only later ones, once on).
+      trackEvent(flowType === 'create' ? 'wallet_created' : 'wallet_recovered');
 
       // Navigate to biometric setup (auto-skips to success if unavailable)
       router.replace('/(auth)/biometric-setup');

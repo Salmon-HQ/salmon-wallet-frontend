@@ -61,6 +61,8 @@ export {
   type AnalyticsClient,
 } from './client';
 
+export { trackFirstTime } from './first-time';
+
 export type {
   AnalyticsPlatform,
   AnalyticsPropValue,

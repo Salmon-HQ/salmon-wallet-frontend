@@ -13,6 +13,7 @@ import {
   PASSWORD_CONSTRAINTS,
   s,
   spacing,
+  trackEvent,
   useAccountsContext,
   validatePassword,
   getPasswordIssue,
@@ -196,6 +197,10 @@ export function PasswordPage({
 
       onCreating?.();
       await actions.addAccount(account, password);
+      // Anonymous funnel event: a wallet was created or recovered. No seed,
+      // address or key material — just which flow completed. No-op unless the
+      // user has opted into analytics (the client gates on consent).
+      trackEvent(flowType === 'create' ? 'wallet_created' : 'wallet_recovered');
       onSuccess();
     } catch (err) {
       console.error('Failed to create account:', err);

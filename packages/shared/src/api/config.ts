@@ -58,6 +58,7 @@ function getEnvVar(name: string): string | undefined {
     API_PORT: process.env.EXPO_PUBLIC_API_PORT,
     API_URL: process.env.EXPO_PUBLIC_API_URL,
     STATIC_API_URL: process.env.EXPO_PUBLIC_STATIC_API_URL,
+    ANALYTICS_URL: process.env.EXPO_PUBLIC_ANALYTICS_URL,
   } as Record<string, string | undefined>)[name];
 
   if (expoValue) return expoValue;
@@ -72,6 +73,7 @@ function getEnvVar(name: string): string | undefined {
     API_PORT: process.env.VITE_API_PORT,
     API_URL: process.env.VITE_API_URL,
     STATIC_API_URL: process.env.VITE_STATIC_API_URL,
+    ANALYTICS_URL: process.env.VITE_ANALYTICS_URL,
   } as Record<string, string | undefined>)[name];
 
   if (viteValue) return viteValue;
@@ -200,6 +202,21 @@ export function getStaticApiUrl(env?: Environment): string {
   }
 
   return STATIC_API_URLS[environment];
+}
+
+/**
+ * Optional dedicated ingest URL for anonymous usage analytics.
+ *
+ * When set (`EXPO_PUBLIC_ANALYTICS_URL` / `VITE_ANALYTICS_URL`), analytics
+ * batches POST here instead of the wallet's `API_URL`. This lets the wallet keep
+ * talking to its normal backend (e.g. prod, so onboarding still loads balances)
+ * while events are routed to a separate sink — a local dev server, for example.
+ *
+ * Returns `undefined` when unset; the transport then falls back to the shared
+ * API client / `API_URL`.
+ */
+export function getAnalyticsUrl(): string | undefined {
+  return getEnvVar('ANALYTICS_URL');
 }
 
 /**

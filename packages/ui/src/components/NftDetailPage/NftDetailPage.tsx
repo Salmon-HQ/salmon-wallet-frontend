@@ -9,7 +9,7 @@
  * blockchain-specific details, and Send/Burn action buttons.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Typography from '@mui/material/Typography';
@@ -39,6 +39,7 @@ import {
   easing,
   blur,
   borderWidth,
+  trackEvent,
 } from '@salmon/shared';
 
 import { BlurContainer } from '../BlurContainer';
@@ -241,6 +242,13 @@ export function NftDetailPage({
   className,
 }: NftDetailPageProps): React.ReactElement {
   const { t } = useTranslation();
+
+  // Anonymous funnel event: an NFT detail view was opened. Only the coarse
+  // chain family — never the mint, name or media. No-op without consent.
+  useEffect(() => {
+    trackEvent('nft_viewed', { chain: nft.blockchain });
+  }, [nft.blockchain]);
+
   const handleSendPress = useCallback(() => {
     onSendPress?.();
   }, [onSendPress]);

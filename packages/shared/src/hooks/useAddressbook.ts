@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { trackEvent } from '../analytics';
 import { getStorage, STORAGE_KEYS } from '../storage';
 import type {
   StoredAddress,
@@ -132,6 +133,9 @@ export function useAddressbook({
       };
       const newStored = [...storedContacts, entry];
       await persistAndResolve(newStored);
+      // Anonymous feature-adoption event: a contact was saved. No address, name
+      // or network — just that the address book was used.
+      trackEvent('address_book_used');
     },
     [storedContacts, persistAndResolve],
   );

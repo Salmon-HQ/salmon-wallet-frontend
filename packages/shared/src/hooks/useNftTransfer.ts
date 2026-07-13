@@ -16,6 +16,7 @@ import type {
   SolanaNftData,
 } from '../utils/nft';
 import { useSettleUntilChanged } from '../query/invalidation';
+import { trackEvent } from '../analytics';
 
 export type NftTransferStatus = 'idle' | 'sending' | 'success' | 'failed';
 
@@ -79,6 +80,11 @@ export function useNftTransfer({ account, onTransferSuccess }: UseNftTransferPar
         }
 
         setStatus('success');
+        // Anonymous funnel event: an NFT transfer succeeded. Only the coarse
+        // chain family — never the recipient, mint or token id.
+        trackEvent('nft_sent', {
+          chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
+        });
         const accountId = account.getReceiveAddress();
         const networkId = account.getNetworkId();
         const transferredMint =

@@ -53,6 +53,7 @@ jest.mock('@salmon/shared', () => ({
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, base: 8, headerPadding: 16 },
   fontWeight: { medium: '500' },
   formatRawAmount: () => '0',
+  trackEvent: jest.fn(),
   useNftTransfer: () => ({ sendNft: jest.fn(), reset: jest.fn() }),
   getTransactionUrl: () => null,
   getDefaultExplorer: () => 'solscan',

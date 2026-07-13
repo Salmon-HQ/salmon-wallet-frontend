@@ -32,7 +32,8 @@ import type {
   SendTransactionStatus,
 } from '../types/send';
 import { useSettleUntilChanged } from '../query/invalidation';
-import { trackEvent } from '../analytics';
+import { trackEvent, trackFirstTime } from '../analytics';
+import { STORAGE_KEYS } from '../storage';
 
 // ============================================================================
 // Types
@@ -154,6 +155,8 @@ export function useSendTransaction({
           chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
           success: true,
         });
+        // First successful send is an activation milestone — reported once per install.
+        void trackFirstTime('first_send_completed', STORAGE_KEYS.ANALYTICS_FIRST_SEND);
         // Return the txId immediately so the UI can show the success screen,
         // then settle in the background. `settling` stays true until the
         // indexer reflects the new balance (or the ceiling is hit), letting the
