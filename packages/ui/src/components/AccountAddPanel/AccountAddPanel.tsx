@@ -34,6 +34,7 @@ import {
   NETWORK_DISPLAY,
   getScanNetworks,
   EncryptionMaterialMissingError,
+  trackEvent,
   type AccountAddStep,
   type DerivedAccountInfo,
   opacity,
@@ -196,6 +197,10 @@ export function AccountAddPanel({
         startIndex,
       });
       await accountActions.addAccount(account);
+      // Anonymous funnel event: an account was added from inside the app. A
+      // derived account reuses the active seed (create); an imported seed is a
+      // recovery. No seed, address or key material — just which flow completed.
+      trackEvent(selectedDerived ? 'wallet_created' : 'wallet_recovered');
       onComplete();
     } catch (err) {
       setLoading(false);

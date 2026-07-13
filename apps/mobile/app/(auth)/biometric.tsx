@@ -18,6 +18,7 @@ import {
   getStashItem,
   spacing,
   STASH_KEYS,
+  trackEvent,
 } from '@salmon/shared';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -85,6 +86,9 @@ export default function BiometricScreen() {
 
       if (stored) {
         await setEnableBiometric(true);
+        // Anonymous funnel event: biometric unlock was enabled. No-op unless the
+        // user has opted into analytics (the client gates on consent).
+        trackEvent('biometric_enabled');
         router.replace('/(auth)/success');
       } else {
         setError(t('wallet.create.biometric_error'));
