@@ -13,7 +13,8 @@ import type { AnalyticsConsentPageProps } from './types';
  * First-run, opt-in anonymous-analytics consent — the final onboarding step
  * before the wallet home (web + extension). Presentational only: the caller
  * wires accept/decline to `useAnalyticsConsent().resolveConsentPrompt` and then
- * advances the flow. Full-screen onboarding page, styled to match SuccessPage.
+ * advances the flow. Onboarding layout (themed icon + centered heading, like
+ * SuccessPage); the include/exclude points read as a left-aligned bullet list.
  */
 const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
   display: 'flex',
@@ -30,7 +31,6 @@ const CenterContent = styled(Box)({
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  textAlign: 'center',
 });
 
 const Title = styled(Typography)({
@@ -49,16 +49,32 @@ const Body = styled(Typography)({
   fontSize: 16,
   lineHeight: '24px',
   textAlign: 'center',
-  marginBottom: spacing.md,
 });
 
-const Bullet = styled(Typography)({
+const Details = styled(Box)({
+  width: '100%',
+  marginTop: spacing.xl,
+});
+
+const BulletRow = styled(Box)({
+  display: 'flex',
+  marginBottom: spacing.sm,
+});
+
+const BulletMark = styled('span')({
+  width: 20,
+  flexShrink: 0,
   color: colors.text.secondary,
   fontFamily: fontFamily.sans,
   fontSize: 15,
   lineHeight: '22px',
-  textAlign: 'center',
-  marginBottom: spacing.xs,
+});
+
+const BulletText = styled(Typography)({
+  color: colors.text.secondary,
+  fontFamily: fontFamily.sans,
+  fontSize: 15,
+  lineHeight: '22px',
 });
 
 const Footnote = styled(Typography)({
@@ -67,8 +83,7 @@ const Footnote = styled(Typography)({
   fontSize: 13,
   lineHeight: '20px',
   opacity: 0.8,
-  textAlign: 'center',
-  marginTop: spacing.sm,
+  marginTop: spacing.md,
 });
 
 const ButtonsContainer = styled(Box)({
@@ -95,9 +110,18 @@ export function AnalyticsConsentPage({
         <InsightsIcon sx={{ fontSize: 72, color: colors.text.primary, marginBottom: `${spacing.xl}px` }} />
         <Title>{t('settings.analytics_prompt_title')}</Title>
         <Body>{t('settings.analytics_prompt_body')}</Body>
-        <Bullet>{'✓ '}{t('settings.analytics_prompt_include')}</Bullet>
-        <Bullet>{'✕ '}{t('settings.analytics_prompt_exclude')}</Bullet>
-        <Footnote>{t('settings.analytics_prompt_footnote')}</Footnote>
+
+        <Details>
+          <BulletRow>
+            <BulletMark>✓</BulletMark>
+            <BulletText>{t('settings.analytics_prompt_include')}</BulletText>
+          </BulletRow>
+          <BulletRow>
+            <BulletMark>✕</BulletMark>
+            <BulletText>{t('settings.analytics_prompt_exclude')}</BulletText>
+          </BulletRow>
+          <Footnote>{t('settings.analytics_prompt_footnote')}</Footnote>
+        </Details>
       </CenterContent>
 
       <ButtonsContainer>

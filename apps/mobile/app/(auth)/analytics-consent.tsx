@@ -5,8 +5,9 @@
  * onboarding step before the wallet home. Either choice persists via
  * `resolveConsentPrompt` and advances to success.
  *
- * Design: same onboarding layout as biometric-setup.tsx / success.tsx — logo,
- * themed icon, centered copy, action buttons pinned to the bottom.
+ * Design: onboarding layout (themed icon + centered heading, like
+ * biometric-setup.tsx / success.tsx). The include/exclude points read as a
+ * left-aligned bullet list with a hanging indent; buttons pinned to the bottom.
  */
 
 import {
@@ -52,9 +53,18 @@ export default function AnalyticsConsentScreen() {
 
           <Text style={styles.title}>{t('settings.analytics_prompt_title')}</Text>
           <Text style={styles.body}>{t('settings.analytics_prompt_body')}</Text>
-          <Text style={styles.bullet}>{'✓ '}{t('settings.analytics_prompt_include')}</Text>
-          <Text style={styles.bullet}>{'✕ '}{t('settings.analytics_prompt_exclude')}</Text>
-          <Text style={styles.foot}>{t('settings.analytics_prompt_footnote')}</Text>
+
+          <View style={styles.details}>
+            <View style={styles.bulletRow}>
+              <Text style={styles.bulletMark}>✓</Text>
+              <Text style={styles.bulletText}>{t('settings.analytics_prompt_include')}</Text>
+            </View>
+            <View style={styles.bulletRow}>
+              <Text style={styles.bulletMark}>✕</Text>
+              <Text style={styles.bulletText}>{t('settings.analytics_prompt_exclude')}</Text>
+            </View>
+            <Text style={styles.foot}>{t('settings.analytics_prompt_footnote')}</Text>
+          </View>
         </View>
 
         <View style={styles.buttonsContainer}>
@@ -111,15 +121,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     textAlign: 'center',
-    marginBottom: spacing.md,
   },
-  bullet: {
+  details: {
+    alignSelf: 'stretch',
+    marginTop: spacing.xl,
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.sm,
+  },
+  bulletMark: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: 15,
     lineHeight: 22,
-    textAlign: 'center',
-    marginBottom: spacing.xs,
+    width: 20,
+  },
+  bulletText: {
+    flex: 1,
+    color: colors.text.secondary,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: 15,
+    lineHeight: 22,
   },
   foot: {
     color: colors.text.secondary,
@@ -127,8 +150,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     opacity: 0.8,
-    textAlign: 'center',
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
   },
   buttonsContainer: {
     marginTop: 'auto',
