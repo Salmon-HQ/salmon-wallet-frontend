@@ -29,6 +29,7 @@ export default defineConfig({
           VITE_API_PORT: env.VITE_API_PORT ?? '',
           VITE_API_URL: env.VITE_API_URL ?? '',
           VITE_STATIC_API_URL: env.VITE_STATIC_API_URL ?? '',
+          VITE_ANALYTICS_URL: env.VITE_ANALYTICS_URL ?? '',
           NODE_ENV: process.env.NODE_ENV ?? 'development',
         }),
       },

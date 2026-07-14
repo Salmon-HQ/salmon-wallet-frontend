@@ -1,51 +1,48 @@
 /**
- * Anonymous usage-analytics e2e (web).
+ * Anonymous usage-analytics e2e (extension popup).
  *
- * Proves the opt-in contract end-to-end in the browser:
+ * The extension side of apps/web/.playwright/tests/analytics.spec.ts. Proves the
+ * opt-in contract inside the popup:
  *  1. With consent OFF, opening Settings emits NO `/v1/events` request.
  *  2. After toggling "Anonymous Usage Data" ON, opening Settings emits a
- *     `settings_opened` event, and its payload carries only anonymous,
- *     categorical data — never an address or mint.
+ *     `settings_opened` event whose payload carries only anonymous, categorical
+ *     data — never an address or mint — and reports `platform: extension`.
  *
- * Requires a seeded wallet to reach the home surface: `SALMON_TEST_SEED_A`
- * (or an existing locked wallet + `SALMON_TEST_PASSWORD`). Skips when the
- * backend is unreachable or those fixtures are absent (repo e2e policy).
- *
- * By default the `/v1/events` POST is stubbed, so the test asserts the client
+ * By default the `/v1/events` POST is stubbed, so the spec asserts the client
  * contract without depending on a running ingest endpoint. Set
  * `SALMON_ANALYTICS_LIVE=1` to let the request through to the real backend
- * instead: the test then also asserts the ingest accepted the batch, which is
- * what proves the whole path (browser → salmon-api → sink) rather than just the
- * half of it that runs in the page. Point the app at the sink with
+ * instead: the spec then also asserts the ingest accepted the batch, which is
+ * what proves the whole path (popup → salmon-api → sink) rather than just the
+ * half that runs in the page. Point the build at the sink with
  * `VITE_ANALYTICS_URL` (or `VITE_API_URL`) when running live.
+ *
+ * Requires SALMON_TEST_SEED_A + SALMON_TEST_PASSWORD; skips when the backend is
+ * unreachable (repo e2e policy).
  */
-import { test, expect, type Request } from '@playwright/test';
+import { test, expect } from '../fixtures';
 import { isBackendUp } from '../env';
 import { unlockOrRecover, waitHome } from '../helpers';
+import type { Request } from '@playwright/test';
 
 const BASE58_OR_HEX = /\b([1-9A-HJ-NP-Za-km-z]{32,44}|0x[0-9a-fA-F]{40})\b/;
 
 const LIVE = process.env.SALMON_ANALYTICS_LIVE === '1';
 
 let backendUp = false;
-const haveWalletFixture = Boolean(process.env.SALMON_TEST_SEED_A || process.env.SALMON_TEST_PASSWORD);
 
 test.beforeAll(async () => {
   backendUp = await isBackendUp();
 });
 
-test('opt-in gates analytics and keeps the payload anonymous', async ({ page }) => {
-  test.setTimeout(120_000); // recover flow (client-side derivation + API) is slow
+test('opt-in gates analytics and keeps the payload anonymous', async ({ popup }) => {
+  test.setTimeout(120_000); // recover (client-side derivation + API) is slow
   test.skip(!backendUp, 'salmon-api not reachable');
-  test.skip(!haveWalletFixture, 'no seeded-wallet fixture (SALMON_TEST_SEED_A / SALMON_TEST_PASSWORD)');
+  test.skip(!process.env.SALMON_TEST_SEED_A, 'no seeded-wallet fixture (SALMON_TEST_SEED_A)');
 
-  // Capture every analytics POST. Stubbed by default so the test never depends
-  // on a running ingest endpoint; in live mode it goes through to the backend
-  // and we record what the ingest actually answered.
   const eventRequests: Request[] = [];
   const ingestStatuses: number[] = [];
 
-  await page.route('**/v1/events', async (route) => {
+  await popup.route('**/v1/events', async (route) => {
     eventRequests.push(route.request());
     if (LIVE) {
       await route.continue();
@@ -54,28 +51,38 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ page }) 
     await route.fulfill({ status: 202, contentType: 'application/json', body: '{"accepted":1}' });
   });
 
-  page.on('response', (response) => {
+  popup.on('response', (response) => {
     if (response.url().includes('/v1/events')) ingestStatuses.push(response.status());
   });
 
-  await page.goto('/');
-  await unlockOrRecover(page);
-  await waitHome(page);
+  await unlockOrRecover(popup);
+  await waitHome(popup);
 
-  const home = page.getByTestId('home-screen');
+  const home = popup.getByTestId('home-screen');
   test.skip((await home.count()) === 0, 'could not reach home (wallet fixture did not unlock)');
 
-  const openSettings = () => page.getByTestId('wallet-header-settings-button').click();
-  const closeSettings = () => page.getByTestId('settings-close-button').click();
+  const openSettings = () => popup.getByTestId('wallet-header-settings-button').click();
+  const closeSettings = () => popup.getByTestId('settings-close-button').click();
+
+  // The suite shares one persistent profile, so a previous run may have left
+  // analytics ON. Normalize to OFF before asserting the gate.
+  await openSettings();
+  const toggle = popup.getByTestId('settings-analytics-toggle');
+  await expect(toggle).toBeVisible();
+  if (await toggle.isChecked().catch(() => false)) {
+    await toggle.click();
+  }
+  await closeSettings();
+  eventRequests.length = 0;
 
   // 1) Consent OFF → opening settings must not emit anything.
   await openSettings();
-  await expect(page.getByTestId('settings-analytics-toggle')).toBeVisible();
-  await page.waitForTimeout(500);
+  await expect(toggle).toBeVisible();
+  await popup.waitForTimeout(500);
   expect(eventRequests, 'no events before opt-in').toHaveLength(0);
 
   // 2) Opt in, then reopen settings → a settings_opened event fires.
-  await page.getByTestId('settings-analytics-toggle').click();
+  await toggle.click();
   await closeSettings();
   await openSettings();
 
@@ -87,7 +94,7 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ page }) 
   const payload = JSON.parse(body);
   const names = payload.events.map((e: { event: string }) => e.event);
   expect(names).toContain('settings_opened');
-  expect(payload.context.platform).toBe('web');
+  expect(payload.context.platform).toBe('extension');
   expect(body, 'payload must not contain an address or mint').not.toMatch(BASE58_OR_HEX);
 
   // 3) Live mode: the batch actually reached the ingest and was accepted.
