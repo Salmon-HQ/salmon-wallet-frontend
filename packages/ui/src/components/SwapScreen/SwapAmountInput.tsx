@@ -301,6 +301,7 @@ export function SwapAmountInput({
                   <QuickFillButton
                     key={option.label}
                     onClick={() => handleQuickFill(option.value)}
+                    data-testid={testID ? `${testID}-quickfill-${option.label}` : undefined}
                   >
                     <QuickFillText>{option.label}</QuickFillText>
                   </QuickFillButton>
