@@ -22,7 +22,18 @@ loadTestEnv();
 const suiteRoot = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(suiteRoot, '..');
 const extDist = path.join(appRoot, 'dist/chrome-mv3');
-const profileDir = path.join(suiteRoot, 'profiles', 'default');
+
+type ExtensionOptions = {
+  /** Which directory under `profiles/` to run in. */
+  profileName: string;
+  /**
+   * Wipe the profile before launching. Needed by any spec that has to see
+   * onboarding, or that asserts on once-per-install behavior — the analytics
+   * `first_*` events burn a persisted flag, so a reused profile only ever
+   * emits them once.
+   */
+  freshProfile: boolean;
+};
 
 type ExtensionFixtures = {
   context: BrowserContext;
@@ -30,12 +41,20 @@ type ExtensionFixtures = {
   popup: Page;
 };
 
-export const test = base.extend<ExtensionFixtures>({
-  context: async ({}, use) => {
+export const test = base.extend<ExtensionOptions & ExtensionFixtures>({
+  profileName: ['default', { option: true }],
+  freshProfile: [false, { option: true }],
+
+  context: async ({ profileName, freshProfile }, use) => {
     if (!fs.existsSync(extDist)) {
       throw new Error(
         `Missing extension build at ${extDist}. Run: pnpm --filter @salmon/extension build`
       );
+    }
+
+    const profileDir = path.join(suiteRoot, 'profiles', profileName);
+    if (freshProfile) {
+      fs.rmSync(profileDir, { recursive: true, force: true });
     }
     fs.mkdirSync(profileDir, { recursive: true });
 

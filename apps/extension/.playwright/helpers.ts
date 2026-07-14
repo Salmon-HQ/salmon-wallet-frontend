@@ -13,7 +13,16 @@ const seedA = (): string => process.env.SALMON_TEST_SEED_A ?? '';
 
 export type EntryState = 'unlocked' | 'recovered' | 'home';
 
-export async function unlockOrRecover(page: Page): Promise<EntryState> {
+export type Consent = 'accept' | 'decline';
+
+/**
+ * @param consent - Which button to press on the first-run consent screen.
+ *   Defaults to `decline`, so analytics stay OFF unless a spec asks for them.
+ */
+export async function unlockOrRecover(
+  page: Page,
+  { consent = 'decline' }: { consent?: Consent } = {},
+): Promise<EntryState> {
   const passwordInput = page.getByTestId('lock-password-input');
   if (await passwordInput.count()) {
     await passwordInput.fill(password());
@@ -33,11 +42,9 @@ export async function unlockOrRecover(page: Page): Promise<EntryState> {
     await page.getByTestId('password-input').fill(password());
     await page.getByTestId('password-confirm-input').fill(password());
     await page.getByTestId('password-submit-button').click();
-    // First-run analytics consent is now the final onboarding step. Decline so
-    // this helper leaves analytics OFF by default (the prompt itself is covered
-    // by its own spec).
+    // First-run analytics consent is the final onboarding step.
     await page
-      .getByTestId('analytics-consent-decline')
+      .getByTestId(`analytics-consent-${consent}`)
       .click({ timeout: 60_000 })
       .catch(() => {});
     await page
