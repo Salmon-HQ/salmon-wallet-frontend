@@ -18,10 +18,12 @@ export type Consent = 'accept' | 'decline';
 /**
  * @param consent - Which button to press on the first-run consent screen.
  *   Defaults to `decline`, so analytics stay OFF unless a spec asks for them.
+ * @param seed - Which wallet to recover. Defaults to Wallet A; pass
+ *   SALMON_TEST_SEED_B when a spec needs Wallet B to sign.
  */
 export async function unlockOrRecover(
   page: Page,
-  { consent = 'decline' }: { consent?: Consent } = {},
+  { consent = 'decline', seed = seedA() }: { consent?: Consent; seed?: string } = {},
 ): Promise<EntryState> {
   const passwordInput = page.getByTestId('lock-password-input');
   if (await passwordInput.count()) {
@@ -37,7 +39,7 @@ export async function unlockOrRecover(
     // Auto-waiting actions (no fixed sleeps): each step waits for its target
     // to be actionable. recover-next-button is visibility-toggled until the
     // seed validates; success appears only after the creation loading screen.
-    await page.getByTestId('recover-seed-input').fill(seedA());
+    await page.getByTestId('recover-seed-input').fill(seed);
     await page.getByTestId('recover-next-button').click({ timeout: 30_000 });
     await page.getByTestId('password-input').fill(password());
     await page.getByTestId('password-confirm-input').fill(password());
