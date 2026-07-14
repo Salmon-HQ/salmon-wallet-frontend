@@ -289,6 +289,7 @@ export function AccountAddPanel({
                 {derivedAccounts.map((item) => (
                   <DerivedAccountCard
                     key={`${item.networkId}-${item.address}`}
+                    testID={`account-add-derived-${item.address}`}
                     address={item.address}
                     networkName={item.networkName}
                     path={item.path}
