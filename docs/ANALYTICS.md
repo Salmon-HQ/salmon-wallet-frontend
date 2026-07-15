@@ -229,9 +229,24 @@ Incluye transacciones reales on-chain (send, swap y transferencia de NFT).
 > con Metaplex `transferV1`. El evento no se emitía porque la transferencia
 > genuinamente fallaba: la instrumentación estaba bien, no inventaba éxitos.
 
-Plataformas: verificado en **iOS**. Android comparte el mismo bundle JS. Web y
-extension están cableados (typecheck + unit tests verdes) pero **sin verificar
-end-to-end** todavía.
+Plataformas:
+
+- **iOS**: los 15 eventos, vía Maestro (`apps/mobile/.maestro/`).
+- **Extension** y **Web**: verificados end-to-end contra el mismo ingest local,
+  con Playwright. En ambas el techo es **13/15**: `onboarding_started` se emite
+  antes de la pantalla de consent (y `track()` es no-op sin consent, así que se
+  pierde siempre) y `biometric_enabled` es mobile-only. Los 13 restantes aterrizan
+  en el NDJSON con un único `install_id` por corrida — 8 no-on-chain
+  (`analytics-coverage.spec.ts`) y 5 con transacciones reales de mainnet
+  (`analytics-coverage-onchain.spec.ts`, gateado por `SALMON_E2E_ONCHAIN=1`).
+- **Android**: comparte el bundle JS; no re-verificado en esta ronda.
+
+> El spec on-chain de web hace **un** solo leg de swap, no un round-trip:
+> `swap_completed` y `first_swap_completed` disparan ambos en la primera pierna,
+> y la de vuelta sólo agregaba fragilidad (el balance del form no refresca dentro
+> de la sesión tras un swap, y el token recién comprado tarda en indexarse). Es un
+> spec **manual**: antes de correrlo, mirá los holdings y dimensioná el leg al
+> mínimo de $1 (el mismo criterio que el spec de extension ya documenta).
 
 Los eventos se disparan desde los flows committeados de `apps/mobile/.maestro/`.
 Como el consent está *declinado* por defecto en `subflows/onboard-walletA.yaml`,
