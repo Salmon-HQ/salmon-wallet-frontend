@@ -1,210 +1,179 @@
-# Analytics anónimas — catálogo de eventos y métricas
+# Anonymous analytics — event catalog and metrics
 
-Este documento es la referencia de **qué medimos, con qué datos, y qué métricas
-se pueden calcular con eso**. Es un documento de *estado real*: marca lo que hoy
-se emite de verdad y, explícitamente, lo que **no se puede** medir con el diseño
-actual. No promete cobertura que no existe.
+This document is the reference for **what we measure, with what data, and what metrics can be computed from it**. It is a *ground-truth* document: it marks what is actually emitted today and, explicitly, what **cannot** be measured with the current design. It does not promise coverage that does not exist.
 
-## Postura de privacidad
+## Privacy posture
 
-Las analytics son **anónimas y opt-in**. El usuario arranca sin consentimiento y
-el cliente es **no-op total** hasta que lo otorga: no valida, no encola, no
-persiste y no envía nada.
+Analytics are **anonymous and opt-in**. The user starts with no consent and the client is a **total no-op** until it is granted: it does not validate, does not enqueue, does not persist, and does not send anything.
 
-La anonimidad se garantiza por **allow-list, no por deny-list**:
+Anonymity is guaranteed by an **allow-list, not a deny-list**:
 
-- Solo pueden emitirse los 11 eventos del catálogo.
-- Un evento solo puede llevar props de `ALLOWED_PROP_KEYS`.
-- Un guardrail rechaza cualquier valor que parezca address o mint (base58 32–44,
-  hex 0x+40), números crudos y strings largos (>32 chars).
-- **Nunca** viaja una address, un monto exacto, un mint, ni nada derivado de la
-  seed.
+- Only the 11 catalog events may be emitted.
+- An event may only carry props from `ALLOWED_PROP_KEYS`.
+- A guardrail rejects any value that looks like an address or mint (base58 32–44, hex 0x+40), raw numbers, and long strings (>32 chars).
+- **Never** does an address, an exact amount, a mint, or anything derived from the seed travel.
 
-La validación corre **dos veces, independientemente**: en el cliente antes de
-enviar, y de nuevo en el backend al ingerir (defensa en profundidad — un cliente
-adulterado o desactualizado no puede colar PII).
+Validation runs **twice, independently**: on the client before sending, and again on the backend at ingest (defense in depth — a tampered or outdated client cannot sneak PII through).
 
-Retirar el consentimiento **borra la cola y el install id**.
+Withdrawing consent **clears the queue and the install id**.
 
-## Dónde vive cada cosa
+## Where each thing lives
 
-| Pieza | Ubicación |
+| Piece | Location |
 |---|---|
-| Catálogo (fuente de verdad) | `packages/shared/src/analytics/events.ts` |
-| Guardrail de anonimidad | `packages/shared/src/analytics/schema.ts` |
-| Cliente (consent, batching, retry) | `packages/shared/src/analytics/client.ts` |
-| Transport HTTP | `packages/shared/src/analytics/transport.ts` |
-| Eventos "primera vez" | `packages/shared/src/analytics/first-time.ts` |
-| Hook de consentimiento | `packages/shared/src/hooks/useAnalyticsConsent.ts` |
-| Espejo en el backend | `salmon-api/src/analytics/event-schema.js` |
-| Ingesta en el backend | `salmon-api/src/analytics/handler.js` (`POST /v1/events`) |
+| Catalog (source of truth) | `packages/shared/src/analytics/events.ts` |
+| Anonymity guardrail | `packages/shared/src/analytics/schema.ts` |
+| Client (consent, batching, retry) | `packages/shared/src/analytics/client.ts` |
+| HTTP transport | `packages/shared/src/analytics/transport.ts` |
+| "First-time" events | `packages/shared/src/analytics/first-time.ts` |
+| Consent hook | `packages/shared/src/hooks/useAnalyticsConsent.ts` |
+| Backend mirror | `salmon-api/src/analytics/event-schema.js` |
+| Backend ingest | `salmon-api/src/analytics/handler.js` (`POST /v1/events`) |
 
-> El catálogo del wallet y el espejo de `salmon-api` **deben mantenerse en sync**.
-> Un cambio en uno obliga al otro.
+> The wallet catalog and the `salmon-api` mirror **must be kept in sync**. A change in one forces the other.
 
-## Contexto adjunto a todo evento
+## Context attached to every event
 
-No lo manda cada evento: lo agrega el envelope del batch y el handler.
+Not sent by each event: the batch envelope and the handler add it.
 
-| Campo | Qué es |
+| Field | What it is |
 |---|---|
-| `install_id` | Random por instalación. **No** derivado de la wallet ni de la seed. |
-| `session_id` | Efímero, rota por sesión. |
+| `install_id` | Random per install. **Not** derived from the wallet or the seed. |
+| `session_id` | Ephemeral, rotates per session. |
 | `platform` | `mobile` \| `web` \| `extension` |
-| `app_version` | Versión de la app. |
-| `ts` | Epoch ms del cliente (cuándo ocurrió). |
-| `received_at` | Epoch ms del server (cuándo se ingirió). |
-| `dt` | `YYYY-MM-DD` — clave de partición. |
+| `app_version` | App version. |
+| `ts` | Client epoch ms (when it happened). |
+| `received_at` | Server epoch ms (when it was ingested). |
+| `dt` | `YYYY-MM-DD` — partition key. |
 
-## Props permitidas
+## Allowed props
 
-Solo estas cinco claves. Cualquier otra es rechazada.
+Only these five keys. Anything else is rejected.
 
-| Prop | Valores |
+| Prop | Values |
 |---|---|
 | `chain` | `solana` \| `bitcoin` \| `ethereum` |
-| `from_chain` | idem |
-| `to_chain` | idem |
+| `from_chain` | same |
+| `to_chain` | same |
 | `success` | `true` \| `false` |
 | `amount_bucket` | `0-10` \| `10-100` \| `100-1k` \| `1k-10k` \| `10k+` |
 
-## Catálogo: los 11 eventos
+## Catalog: the 11 events
 
-Los eventos se cablean **en el hook compartido cuando existe**, para que una sola
-llamada cubra mobile + web + extension. Los que dependen de UI se cablean en la
-pantalla mobile y en el componente DOM compartido.
+Events are wired **in the shared hook when one exists**, so a single call covers mobile + web + extension. UI-dependent ones are wired in the mobile screen and in the shared DOM component.
 
 ### Onboarding
 
-| Evento | Props | Se dispara en | Cableado en |
+| Event | Props | Fires on | Wired in |
 |---|---|---|---|
-| `wallet_created` | — | Éxito del password, flow `create` | `apps/mobile/app/(auth)/password.tsx` + `packages/ui/.../AuthFlow/PasswordPage.tsx` |
-| `wallet_recovered` | — | Éxito del password, flow `recover` | idem |
+| `wallet_created` | — | Password success, `create` flow | `apps/mobile/app/(auth)/password.tsx` + `packages/ui/.../AuthFlow/PasswordPage.tsx` |
+| `wallet_recovered` | — | Password success, `recover` flow | same |
 
-### Activación (una sola vez por instalación)
+### Activation (once per install)
 
-Usan `trackFirstTime()`: emiten el evento **una vez**, con un flag persistido por
-evento. El flag **solo se consume cuando el evento efectivamente se emitió** (o
-sea, con consent activo), así que un usuario que hace su primer swap *antes* de
-optar-in sigue contando en su primer swap *después* de optar-in.
+These use `trackFirstTime()`: they emit the event **once**, guarded by a persisted flag per event. The flag is **only consumed once the event actually emitted** (i.e. with consent granted), so a user who does their first swap *before* opting in is still counted on their first swap *after* opting in.
 
-| Evento | Props | Se dispara en | Cableado en |
+| Event | Props | Fires on | Wired in |
 |---|---|---|---|
-| `first_send_completed` | — | 1er send exitoso | `packages/shared/src/hooks/useSendTransaction.ts` |
-| `first_swap_completed` | — | 1er swap exitoso | `packages/shared/src/hooks/useSwap.ts` |
+| `first_send_completed` | — | 1st successful send | `packages/shared/src/hooks/useSendTransaction.ts` |
+| `first_swap_completed` | — | 1st successful swap | `packages/shared/src/hooks/useSwap.ts` |
 
-### Uso recurrente
+### Recurring use
 
-| Evento | Props | Se dispara en | Cableado en |
+| Event | Props | Fires on | Wired in |
 |---|---|---|---|
-| `send_completed` | `chain`, `success: true` | Transfer exitoso | `packages/shared/src/hooks/useSendTransaction.ts` |
-| `swap_completed` | `from_chain: solana`, `to_chain: solana`, `success: true` | Swap exitoso (Jupiter = Solana↔Solana) | `packages/shared/src/hooks/useSwap.ts` |
-| `nft_viewed` | `chain` | Abrir detalle de NFT | `apps/mobile/.../NftDetailSheet.tsx` + `packages/ui/.../NftDetailPage.tsx` |
-| `nft_sent` | `chain` | Transfer de NFT exitoso | `packages/shared/src/hooks/useNftTransfer.ts` |
+| `send_completed` | `chain`, `success: true` | Successful transfer | `packages/shared/src/hooks/useSendTransaction.ts` |
+| `swap_completed` | `from_chain: solana`, `to_chain: solana`, `success: true` | Successful swap (Jupiter = Solana↔Solana) | `packages/shared/src/hooks/useSwap.ts` |
+| `nft_viewed` | `chain` | Open NFT detail | `apps/mobile/.../NftDetailSheet.tsx` + `packages/ui/.../NftDetailPage.tsx` |
+| `nft_sent` | `chain` | Successful NFT transfer | `packages/shared/src/hooks/useNftTransfer.ts` |
 
-### Adopción de features
+### Feature adoption
 
-| Evento | Props | Se dispara en | Cableado en |
+| Event | Props | Fires on | Wired in |
 |---|---|---|---|
-| `network_switched` | `chain` (red destino) | `changeNetwork` | `packages/shared/src/hooks/useAccountsSelection.ts` |
+| `network_switched` | `chain` (destination network) | `changeNetwork` | `packages/shared/src/hooks/useAccountsSelection.ts` |
 | `wallet_switched` | — | `changeAccount` | `packages/shared/src/hooks/useAccountsSelection.ts` |
 | `address_book_used` | — | `addContact` | `packages/shared/src/hooks/useAddressbook.ts` |
 
-## Métricas por evento
+## Metrics per event
 
-Qué vamos a calcular con cada uno.
+What we will compute with each one.
 
-### Activación y time-to-value
+### Activation and time-to-value
 
-| Métrica | Cómo se calcula |
+| Metric | How it is computed |
 |---|---|
-| Tasa de activación de send | `installs con first_send_completed / installs consentidas` |
-| Tasa de activación de swap | `installs con first_swap_completed / installs consentidas` |
-| Time-to-first-send / swap | `ts` del `first_*` − `ts` del primer evento de ese `install_id` |
-| Orden de activación | Qué `first_*` ocurre primero por `install_id` (¿swapean antes de enviar?) |
+| Send activation rate | `installs with first_send_completed / consented installs` |
+| Swap activation rate | `installs with first_swap_completed / consented installs` |
+| Time-to-first-send / swap | `ts` of the `first_*` − `ts` of that `install_id`'s first event |
+| Activation order | Which `first_*` happens first per `install_id` (do they swap before sending?) |
 
-### Uso recurrente y engagement
+### Recurring use and engagement
 
-| Métrica | Cómo se calcula |
+| Metric | How it is computed |
 |---|---|
-| Volumen de sends / swaps | `count(send_completed)`, `count(swap_completed)` por `dt` |
-| Mix por chain | `count(send_completed) group by chain` — qué cadenas se usan de verdad |
-| Sends por usuario activo | `count(send_completed) / count(distinct install_id)` |
-| Ratio send vs swap | Qué tipo de operación domina |
-| Uso de NFT | `nft_viewed` → `nft_sent` (view-to-send de NFTs), por `chain` |
+| Send / swap volume | `count(send_completed)`, `count(swap_completed)` by `dt` |
+| Chain mix | `count(send_completed) group by chain` — which chains actually get used |
+| Sends per active user | `count(send_completed) / count(distinct install_id)` |
+| Send vs swap ratio | Which operation type dominates |
+| NFT usage | `nft_viewed` → `nft_sent` (NFT view-to-send), by `chain` |
 
-### Retención
+### Retention
 
-| Métrica | Cómo se calcula |
+| Metric | How it is computed |
 |---|---|
-| DAU / WAU / MAU | `count(distinct install_id) por dt` (o ventana) |
-| Retención D1 / D7 / D30 | Cohortes por primer `dt` visto de cada `install_id` |
+| DAU / WAU / MAU | `count(distinct install_id) by dt` (or window) |
+| D1 / D7 / D30 retention | Cohorts by each `install_id`'s first seen `dt` |
 | Stickiness | `DAU / MAU` |
-| Profundidad de sesión | `count(eventos) group by session_id` |
-| Sesiones por install | `count(distinct session_id) group by install_id` |
+| Session depth | `count(events) group by session_id` |
+| Sessions per install | `count(distinct session_id) group by install_id` |
 
-### Adopción de features
+### Feature adoption
 
-| Métrica | Cómo se calcula |
+| Metric | How it is computed |
 |---|---|
-| % multi-chain | `installs con network_switched / total`, y a qué `chain` cambian |
-| % multi-wallet | `installs con wallet_switched / total` |
-| % que usa address book | `installs con address_book_used / total` |
-| Descubrimiento de features | Qué features toca un install en sus primeros N días |
+| % multi-chain | `installs with network_switched / total`, and which `chain` they switch to |
+| % multi-wallet | `installs with wallet_switched / total` |
+| % using address book | `installs with address_book_used / total` |
+| Feature discovery | Which features an install touches in its first N days |
 
-### Cortes transversales
+### Cross-cuts
 
-Todo lo anterior se puede segmentar por `platform` (mobile / web / extension) y
-por `app_version` (para detectar regresiones o adopción de releases).
+Everything above can be segmented by `platform` (mobile / web / extension) and by `app_version` (to catch regressions or track release adoption).
 
-## Limitaciones conocidas (leer antes de diseñar una métrica)
+## Known limitations (read before designing a metric)
 
-### 1. El funnel de onboarding de primera vez NO es medible
+### 1. The first-time onboarding funnel is NOT measurable
 
-La pantalla de consentimiento está al **final** del onboarding:
+The consent screen is at the **end** of onboarding:
 
 ```
 welcome → create/recover → password → biometric → CONSENT → app
 ```
 
-Como el cliente es no-op sin consent, en el **primer** onboarding los eventos
-`wallet_created` y `wallet_recovered` **no se emiten**. Solo aparecen cuando un
-usuario **ya consentido** vuelve a pasar por ese flujo (p. ej. agrega una segunda
-cuenta).
+Since the client is a no-op without consent, on the **first** onboarding the events `wallet_created` and `wallet_recovered` are **not emitted**. They only appear when an **already-consented** user goes through that flow again (e.g. adds a second account).
 
-Consecuencia: esos 2 eventos miden *"usuario consentido rehaciendo el flujo"*,
-**no adquisición ni conversión de onboarding**. No los uses como funnel de alta.
+Consequence: those 2 events measure *"a consented user redoing the flow"*, **not acquisition or onboarding conversion**. Do not use them as a top-of-funnel.
 
-Es correcto por diseño (opt-in real: no se puede medir a quien todavía no
-consintió). Si se quisiera medir el funnel de alta habría que mover el prompt de
-consent **antes** en el flujo — decisión de producto/legal, no técnica.
+This is correct by design (real opt-in: you cannot measure someone who has not yet consented). To measure the acquisition funnel you would have to move the consent prompt **earlier** in the flow — a product/legal decision, not a technical one.
 
-### 2. No hay tasa de éxito ni de error
+### 2. There is no success or error rate
 
-Solo emitimos en el camino feliz: `success` hoy **siempre vale `true`** y no hay
-eventos de intento ni de fallo. Se pueden contar *completions*, pero **no**
-calcular conversion rate ni error rate: falta el denominador.
+We only emit on the happy path: `success` today **is always `true`** and there are no attempt or failure events. You can count *completions*, but **not** compute a conversion rate or error rate: the denominator is missing.
 
-Para habilitarlo habría que emitir el evento también en el path de error (con
-`success: false`), o agregar eventos de intento al catálogo.
+To enable it you would have to emit the event on the error path too (with `success: false`), or add attempt events to the catalog.
 
-### 3. `amount_bucket` está definido pero no se emite
+### 3. `amount_bucket` is defined but not emitted
 
-La prop existe en el allow-list y el helper `toAmountBucket()` ya está en
-`events.ts`, pero **ningún evento la manda hoy**. No se puede segmentar send/swap
-por tamaño de operación hasta que se pase en `useSendTransaction` / `useSwap`.
+The prop exists in the allow-list and the `toAmountBucket()` helper is already in `events.ts`, but **no event sends it today**. You cannot segment send/swap by operation size until it is passed in `useSendTransaction` / `useSwap`.
 
-### 4. Sin identidad ni valor
+### 4. No identity, no value
 
-Por diseño no hay forma de: atribuir a un usuario real, cohortizar por wallet,
-medir balances/TVL, ni ligar eventos a una address. `install_id` se pierde si el
-usuario reinstala o retira el consentimiento.
+By design there is no way to: attribute to a real user, cohort by wallet, measure balances/TVL, or tie events to an address. `install_id` is lost if the user reinstalls or withdraws consent.
 
-## Estado de verificación
+## Verification status
 
-**Los eventos del catálogo** fueron verificados **end-to-end** contra el stack
-local de `salmon-api` (app → `POST /v1/events` → NDJSON), con las props
-correctas:
+**The catalog events** were verified **end-to-end** against the local `salmon-api` stack (app → `POST /v1/events` → NDJSON), with the correct props:
 
 ```json
 {"event":"send_completed","props":{"chain":"solana","success":true}}
@@ -214,84 +183,60 @@ correctas:
 {"event":"nft_viewed","props":{"chain":"solana"}}
 ```
 
-Incluye transacciones reales on-chain (send, swap y transferencia de NFT).
+This includes real on-chain transactions (send, swap, and NFT transfer).
 
-> Verificar `nft_sent` destapó un bug real: la wallet mandaba un SPL transfer
-> plano, que **siempre** falla en un NFT programable (pNFT) con
-> `Account is frozen` (error 0x11) — los pNFT mantienen su token account
-> congelada a propósito. Se arregló construyendo la transacción en el backend
-> con Metaplex `transferV1`. El evento no se emitía porque la transferencia
-> genuinamente fallaba: la instrumentación estaba bien, no inventaba éxitos.
+> Verifying `nft_sent` uncovered a real bug: the wallet sent a plain SPL transfer, which **always** fails on a programmable NFT (pNFT) with `Account is frozen` (error 0x11) — pNFTs keep their token account frozen on purpose. It was fixed by building the transaction on the backend with Metaplex `transferV1`. The event was not being emitted because the transfer genuinely failed: the instrumentation was correct, it did not invent successes.
 
-El catálogo se recortó de 15 a **11 eventos**: se quitaron `onboarding_started`
-(nunca emitía — corre antes del consent), `biometric_enabled` (mobile-only, sin
-sitio compartido), `settings_opened` (mucho ruido, poca señal) y
-`first_receive_viewed` (mal proxy de activación). Con eso desaparecen los eventos
-inmedibles, así que el techo hoy es **11/11 parejo** en las plataformas web.
+The catalog was trimmed from 15 to **11 events**: `onboarding_started` was removed (it never emitted — it runs before consent), `biometric_enabled` (mobile-only, no shared site), `settings_opened` (much noise, little signal), and `first_receive_viewed` (poor activation proxy). With that the unmeasurable events are gone, so the ceiling today is **11/11 even** on the web platforms.
 
-Plataformas:
+Platforms:
 
-- **Extension** y **Web**: verificados end-to-end contra el ingest local, con
-  Playwright. Los 11 aterrizan en el NDJSON con un único `install_id` por corrida
-  — 6 no-on-chain (`analytics-coverage.spec.ts`) y 5 con transacciones reales de
-  mainnet (`analytics-coverage-onchain.spec.ts`, gateado por `SALMON_E2E_ONCHAIN=1`).
-- **iOS**: verificado vía Maestro (`apps/mobile/.maestro/`) sobre el catálogo
-  previo; los 4 eventos quitados simplemente dejan de dispararse. No re-corrido
-  tras el recorte.
-- **Android**: comparte el bundle JS; no re-verificado en esta ronda.
+- **Extension** and **Web**: verified end-to-end against the local ingest, with Playwright. All 11 land in the NDJSON with a single `install_id` per run — 6 non-on-chain (`analytics-coverage.spec.ts`) and 5 with real mainnet transactions (`analytics-coverage-onchain.spec.ts`, gated by `SALMON_E2E_ONCHAIN=1`).
+- **iOS**: verified via Maestro (`apps/mobile/.maestro/`) against the previous catalog; the 4 removed events simply stop firing. Not re-run after the trim.
+- **Android**: shares the JS bundle; not re-verified this round.
 
-> El spec on-chain de web hace **un** solo leg de swap, no un round-trip:
-> `swap_completed` y `first_swap_completed` disparan ambos en la primera pierna,
-> y la de vuelta sólo agregaba fragilidad (el balance del form no refresca dentro
-> de la sesión tras un swap, y el token recién comprado tarda en indexarse). Es un
-> spec **manual**: antes de correrlo, mirá los holdings y dimensioná el leg al
-> mínimo de $1 (el mismo criterio que el spec de extension ya documenta).
+> The web on-chain spec does **one** swap leg, not a round-trip: `swap_completed` and `first_swap_completed` both fire on the first leg, and the return leg only added fragility (the form balance does not refresh within the session after a swap, and the just-bought token takes time to index). It is a **manual** spec: before running it, look at the holdings and size the leg to the $1 minimum (the same criterion the extension spec already documents).
 
-Los eventos se disparan desde los flows committeados de `apps/mobile/.maestro/`.
-Como el consent está *declinado* por defecto en `subflows/onboard-walletA.yaml`,
-para que la suite emita eventos hay que optar-in: usá
-`subflows/enable-analytics.yaml` (toggle de Settings) o, para una corrida de
-verificación, cambiá ese `tapOn` a `analytics-consent-accept` temporalmente.
+Events fire from the committed flows in `apps/mobile/.maestro/`. Since consent is *declined* by default in `subflows/onboard-walletA.yaml`, for the suite to emit events you must opt in: use `subflows/enable-analytics.yaml` (Settings toggle) or, for a verification run, temporarily change that `tapOn` to `analytics-consent-accept`.
 
-> **Cuidado con el flush**: el cliente batchea (20 eventos o 30s). Si encadenás
-> flows, el `clearState` del siguiente mata la cola en memoria y se pierden los
-> eventos. Corré un flow por vez y esperá ~35s antes del siguiente.
+> **Watch out for the flush**: the client batches (20 events or 30s). If you chain flows, the next one's `clearState` kills the in-memory queue and events are lost. Run one flow at a time and wait ~35s before the next.
 
-## Verificación local
+## Local verification
 
-El stack local de `salmon-api` (`docker-compose.yml`) sirve la API de la wallet
-**y** el ingest de analytics en el mismo puerto, con file-sink a NDJSON:
+The local `salmon-api` stack (`docker-compose.yml`) serves the wallet API **and** the analytics ingest on the same port, with a file-sink to NDJSON:
 
 ```bash
-# en ../salmon-api
+# in ../salmon-api
 docker compose up -d           # mysql + redis + backend (serverless-offline)
 ```
 
-El backend expone `POST /local/v1/events`. Con `ANALYTICS_SINK=file` (ya seteado
-en el compose) los eventos se appendean a `.analytics-local/events.ndjson`.
+The backend exposes `POST /local/v1/events`. With `ANALYTICS_SINK=file` (already set in the compose) events are appended to `.analytics-local/events.ndjson`.
 
-Apuntar la app al stack local:
-
-```bash
-# en apps/mobile — la IP debe ser la LAN del host, no localhost (iOS Simulator)
-EXPO_PUBLIC_API_URL=http://<IP-LAN>:<PORT>/local npx expo start --clear
-```
-
-Como el transport postea a `${API_URL}/v1/events`, los eventos viajan por la
-misma base y caen en el NDJSON local.
-
-Si se necesita mandar los eventos a un sink **distinto** del backend de la wallet
-(p. ej. wallet contra prod pero eventos en local), existe una URL dedicada
-opcional:
+Point the app at the local stack:
 
 ```bash
-EXPO_PUBLIC_ANALYTICS_URL=http://<IP-LAN>:4319   # VITE_ANALYTICS_URL en web/ext
+# in apps/mobile — the IP must be the host LAN, not localhost (iOS Simulator)
+EXPO_PUBLIC_API_URL=http://<LAN-IP>:<PORT>/local npx expo start --clear
 ```
 
-Cuando está seteada, el transport postea ahí en vez de a `API_URL`.
+Since the transport posts to `${API_URL}/v1/events`, events travel over the same base and land in the local NDJSON.
 
-Inspeccionar lo ingerido:
+If you need to send events to a **different** sink than the wallet backend (e.g. wallet against prod but events local), there is an optional dedicated URL:
+
+```bash
+EXPO_PUBLIC_ANALYTICS_URL=http://<LAN-IP>:4319   # VITE_ANALYTICS_URL on web/ext
+```
+
+When set, the transport posts there instead of to `API_URL`.
+
+Inspect what was ingested:
 
 ```bash
 cat ../salmon-api/.analytics-local/events.ndjson | jq -r .event | sort | uniq -c
 ```
+
+## Where the data goes
+
+Once emitted (with consent), a batch is POSTed to an **isolated ingest Lambda** (`salmon-api/src/analytics/handler.js`), separate from the wallet API so a traffic spike cannot compete with it. From there it flows to Amazon S3, kept anonymous the whole way. The full delivery path was verified end-to-end against real AWS: every event and every prop combination arrives intact, and **nothing is lost server-side**. The only place a data point can be lost is **before it leaves the device** — if the app is closed before the batch flushes, that in-memory queue is dropped (it is not persisted), which is the inherent trade-off of lightweight anonymous analytics.
+
+The infrastructure that stores and serves this data is documented separately for operators (it is not needed to understand what the wallet collects).
