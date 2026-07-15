@@ -3,9 +3,10 @@
  *
  * The extension side of apps/web/.playwright/tests/analytics.spec.ts. Proves the
  * opt-in contract inside the popup:
- *  1. With consent OFF, opening Settings emits NO `/v1/events` request.
- *  2. After toggling "Anonymous Usage Data" ON, opening Settings emits a
- *     `settings_opened` event whose payload carries only anonymous, categorical
+ *  1. With consent OFF, a tracked action (switching network) emits NO
+ *     `/v1/events` request.
+ *  2. After toggling "Anonymous Usage Data" ON, the same action emits a
+ *     `network_switched` event whose payload carries only anonymous, categorical
  *     data — never an address or mint — and reports `platform: extension`.
  *
  * By default the `/v1/events` POST is stubbed, so the spec asserts the client
@@ -62,7 +63,25 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ popup })
   test.skip((await home.count()) === 0, 'could not reach home (wallet fixture did not unlock)');
 
   const openSettings = () => popup.getByTestId('wallet-header-settings-button').click();
-  const closeSettings = () => popup.getByTestId('settings-close-button').click();
+  // Wait for the drawer to actually unmount, not just to start closing: its
+  // backdrop lingers over the viewport through the close animation and would eat
+  // the next click (e.g. the carousel).
+  const closeSettings = async () => {
+    await popup.getByTestId('settings-close-button').click();
+    await expect(popup.getByTestId('settings-close-button')).toHaveCount(0, { timeout: 15_000 });
+  };
+  // Move the balance carousel one step, whichever direction is available. The
+  // carousel hides (opacity 0, but still in the DOM) the arrow at its current
+  // end, and there are only two networks — so a fixed "next" click lands on the
+  // hidden arrow once we reach the last one and gets eaten by the card. Click
+  // whichever arrow is actually showing; either direction fires network_switched.
+  const switchNetwork = async () => {
+    const next = popup.getByTestId('balance-carousel-next');
+    const nextActive = await next
+      .evaluate((el) => getComputedStyle(el).opacity !== '0')
+      .catch(() => false);
+    await (nextActive ? next : popup.getByTestId('balance-carousel-prev')).click();
+  };
 
   // The suite shares one persistent profile, so a previous run may have left
   // analytics ON. Normalize to OFF before asserting the gate.
@@ -75,16 +94,17 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ popup })
   await closeSettings();
   eventRequests.length = 0;
 
-  // 1) Consent OFF → opening settings must not emit anything.
-  await openSettings();
-  await expect(toggle).toBeVisible();
+  // 1) Consent OFF → a tracked action must not emit anything.
+  await switchNetwork();
   await popup.waitForTimeout(500);
   expect(eventRequests, 'no events before opt-in').toHaveLength(0);
 
-  // 2) Opt in, then reopen settings → a settings_opened event fires.
+  // 2) Opt in via the Settings toggle, then the same action emits network_switched.
+  await openSettings();
+  await expect(toggle).toBeVisible();
   await toggle.click();
   await closeSettings();
-  await openSettings();
+  await switchNetwork();
 
   // A single event is batched and leaves on the client's flush interval (~30s),
   // not immediately — so wait past one flush tick rather than assuming an eager send.
@@ -93,7 +113,7 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ popup })
   const body = eventRequests[0].postData() ?? '';
   const payload = JSON.parse(body);
   const names = payload.events.map((e: { event: string }) => e.event);
-  expect(names).toContain('settings_opened');
+  expect(names).toContain('network_switched');
   expect(payload.context.platform).toBe('extension');
   expect(body, 'payload must not contain an address or mint').not.toMatch(BASE58_OR_HEX);
 

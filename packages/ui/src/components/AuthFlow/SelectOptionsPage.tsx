@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,6 @@ import {
   ms,
   s,
   spacing,
-  trackEvent,
   vs,
 } from '@salmon/shared';
 import { styled } from '../../utils/styled';
@@ -85,12 +84,6 @@ export function SelectOptionsPage({
   contained = false,
 }: SelectOptionsPageProps): React.ReactElement {
   const { t } = useTranslation();
-
-  // Anonymous funnel event: the onboarding entry screen was shown. No-op unless
-  // the user has already opted into analytics (the client gates on consent).
-  useEffect(() => {
-    trackEvent('onboarding_started');
-  }, []);
 
   return (
     <Container $contained={contained}>

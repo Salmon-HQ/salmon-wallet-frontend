@@ -42,7 +42,7 @@ describe('AnalyticsClient consent gating', () => {
     const client = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport });
     await client.whenReady();
 
-    client.track('onboarding_started');
+    client.track('send_completed');
     await client.flush();
 
     expect(transport.batches).toHaveLength(0);
@@ -91,7 +91,7 @@ describe('AnalyticsClient batching', () => {
     await client.setConsent(true);
 
     client.track('nft_viewed');
-    client.track('settings_opened');
+    client.track('send_completed');
     await settle();
 
     expect(transport.batches).toHaveLength(1);

@@ -19,12 +19,10 @@ import {
   fontFamilyNative,
   fontSize,
   spacing,
-  trackEvent,
   useAccountsContext,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../../src/components';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -39,12 +37,6 @@ export default function WelcomeScreen() {
 
   // Check if there are existing accounts stored
   const hasAccounts = state.accounts && state.accounts.length > 0;
-
-  // Anonymous funnel event: the onboarding entry screen was shown. No-op unless
-  // the user has already opted into analytics (the client gates on consent).
-  useEffect(() => {
-    trackEvent('onboarding_started');
-  }, []);
 
   /**
    * Navigate to account creation flow

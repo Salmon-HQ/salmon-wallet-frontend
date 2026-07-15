@@ -32,7 +32,6 @@ import {
   fontFamilyNative,
   useSettingsPanelStack,
   getSettingsItemTestId,
-  trackEvent,
   type SettingsScreen,
   type SettingsPanelEntry,
 letterSpacing, } from '@salmon/shared';
@@ -164,12 +163,6 @@ export function SettingsSheet({
 
   // Top fade gradient opacity
   const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
-
-  // Anonymous usage event: the settings surface was opened. No-op unless the
-  // user has opted in (the analytics client gates on consent).
-  useEffect(() => {
-    if (visible) trackEvent('settings_opened');
-  }, [visible]);
 
   // Reset stack when sheet closes
   useEffect(() => {

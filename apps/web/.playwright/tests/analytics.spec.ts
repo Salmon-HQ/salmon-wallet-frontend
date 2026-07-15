@@ -2,9 +2,10 @@
  * Anonymous usage-analytics e2e (web).
  *
  * Proves the opt-in contract end-to-end in the browser:
- *  1. With consent OFF, opening Settings emits NO `/v1/events` request.
- *  2. After toggling "Anonymous Usage Data" ON, opening Settings emits a
- *     `settings_opened` event, and its payload carries only anonymous,
+ *  1. With consent OFF, a tracked action (switching network) emits NO
+ *     `/v1/events` request.
+ *  2. After toggling "Anonymous Usage Data" ON, the same action emits a
+ *     `network_switched` event, and its payload carries only anonymous,
  *     categorical data — never an address or mint.
  *
  * Requires a seeded wallet to reach the home surface: `SALMON_TEST_SEED_A`
@@ -65,19 +66,34 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ page }) 
   const home = page.getByTestId('home-screen');
   test.skip((await home.count()) === 0, 'could not reach home (wallet fixture did not unlock)');
 
-  const openSettings = () => page.getByTestId('wallet-header-settings-button').click();
-  const closeSettings = () => page.getByTestId('settings-close-button').click();
+  // Move the balance carousel one step, whichever direction is available. The
+  // carousel hides (opacity 0, but still in the DOM) the arrow at its current
+  // end, and there are only two networks — so a fixed "next" click lands on the
+  // hidden arrow once we reach the last one and gets eaten by the card. Click
+  // whichever arrow is actually showing; either direction fires network_switched.
+  const switchNetwork = async () => {
+    const next = page.getByTestId('balance-carousel-next');
+    const nextActive = await next
+      .evaluate((el) => getComputedStyle(el).opacity !== '0')
+      .catch(() => false);
+    await (nextActive ? next : page.getByTestId('balance-carousel-prev')).click();
+  };
 
-  // 1) Consent OFF → opening settings must not emit anything.
-  await openSettings();
-  await expect(page.getByTestId('settings-analytics-toggle')).toBeVisible();
+  // 1) Consent OFF → a tracked action must not emit anything.
+  await switchNetwork();
   await page.waitForTimeout(500);
   expect(eventRequests, 'no events before opt-in').toHaveLength(0);
 
-  // 2) Opt in, then reopen settings → a settings_opened event fires.
+  // 2) Opt in via the Settings toggle, then the same action emits network_switched.
+  await page.getByTestId('wallet-header-settings-button').click();
+  await expect(page.getByTestId('settings-analytics-toggle')).toBeVisible();
   await page.getByTestId('settings-analytics-toggle').click();
-  await closeSettings();
-  await openSettings();
+  await page.getByTestId('settings-close-button').click();
+  // Wait for the drawer to actually unmount, not just for home to read visible:
+  // its backdrop lingers over the viewport through the close animation and would
+  // eat the carousel click.
+  await expect(page.getByTestId('settings-close-button')).toHaveCount(0, { timeout: 15_000 });
+  await switchNetwork();
 
   // A single event is batched and leaves on the client's flush interval (~30s),
   // not immediately — so wait past one flush tick rather than assuming an eager send.
@@ -86,7 +102,7 @@ test('opt-in gates analytics and keeps the payload anonymous', async ({ page }) 
   const body = eventRequests[0].postData() ?? '';
   const payload = JSON.parse(body);
   const names = payload.events.map((e: { event: string }) => e.event);
-  expect(names).toContain('settings_opened');
+  expect(names).toContain('network_switched');
   expect(payload.context.platform).toBe('web');
   expect(body, 'payload must not contain an address or mint').not.toMatch(BASE58_OR_HEX);
 

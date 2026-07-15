@@ -14,7 +14,6 @@ import {
   useAvailableNetworks,
   useCurrencyContext,
   useAddressbook,
-  trackEvent,
   useOpenLink,
   buildNetworkListFromAccount,
   SUPPORTED_CURRENCIES,
@@ -285,9 +284,6 @@ export default function TabLayout() {
         isBiometricEnabled={enableBiometric}
         onToggleBiometric={async (enabled: boolean) => {
           await setEnableBiometric(enabled);
-          // Anonymous funnel event: biometric unlock was turned on from Settings.
-          // Only the enable direction is a funnel milestone.
-          if (enabled) trackEvent('biometric_enabled');
         }}
         onPasswordChanged={clearBiometricKey}
       />

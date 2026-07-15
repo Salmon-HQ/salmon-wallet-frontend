@@ -6,18 +6,10 @@
  * surface that is supposed to emit, asserting each event actually arrives —
  * the same thing the Maestro suite does for mobile.
  *
- * Scope is the events reachable without spending money on-chain. The remaining
- * five (send_completed, first_send_completed, swap_completed,
+ * Scope is the six events reachable without spending money on-chain. The
+ * remaining five (send_completed, first_send_completed, swap_completed,
  * first_swap_completed, nft_sent) need a real mainnet transaction and live in
  * analytics-coverage-onchain.spec.ts.
- *
- * Deliberately NOT asserted:
- *  - `onboarding_started` fires from the account-selection screen, which runs
- *    BEFORE the consent screen. `track()` is a hard no-op without consent and
- *    does not even queue (client.ts), so on a first install this event is
- *    always dropped — on every platform. It is a known architectural
- *    limitation, documented in docs/ANALYTICS.md, not a wiring bug.
- *  - `biometric_enabled` is mobile-only; the extension has no biometric path.
  *
  * Runs on a FRESH profile: the `first_*` events burn a per-install flag, so a
  * reused profile would only ever emit them once.
@@ -39,8 +31,6 @@ const LIVE = process.env.SALMON_ANALYTICS_LIVE === '1';
 const NFT_MINT = 'CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV';
 
 const EXPECTED_EVENTS = [
-  'first_receive_viewed',
-  'settings_opened',
   'address_book_used',
   'wallet_created',
   'wallet_recovered',
@@ -64,37 +54,37 @@ test.beforeAll(async () => {
 const openSettings = (popup: Page) => popup.getByTestId('wallet-header-settings-button').click();
 
 /**
- * Close the settings drawer. Only works from the root menu: the panels are
- * absolutely positioned over the drawer chrome, so from inside a nested panel
- * the close button is present and "stable" but covered, and the click is
- * swallowed forever.
- */
-const closeSettings = (popup: Page) => popup.getByTestId('settings-close-button').click();
-
-/**
- * Walk back up to the settings root menu, however deep the panel stack is.
+ * Close the settings drawer, from any depth, and land back on home.
  *
- * Do not assert a panel is gone by checking whether the one underneath is
- * "visible": the stack renders the top two panels absolutely on top of each
- * other, so the lower one has a real bounding box and reads as visible even
- * while it is completely covered. Counting back buttons is the honest signal —
- * the root menu has none.
+ * Clicks the MUI backdrop, which fires the Drawer's `onClose` regardless of
+ * where focus or the panel stack happen to be. Closing resets the stack, so the
+ * next `openSettings` lands on the root menu.
  *
- * Depth is not always what it looks like. Saving a contact, for instance, does
- * not navigate anywhere (HomePage's `onSave` only calls `addContact`), so the
- * add form is still on top of the list afterwards and two pops are needed.
+ * Why not the obvious alternatives:
+ *  - Walking back panel by panel hangs: `handlePop` is a no-op while a panel
+ *    animates, and the back button lives inside the transforming panel, so
+ *    clicking it during the transition does nothing and the "count decreased"
+ *    wait times out. That is exactly what left this spec stuck at the settings
+ *    root after the second account import.
+ *  - The close button is covered: the panels are absolutely positioned over the
+ *    drawer chrome, so from inside a nested panel it is present and "stable" but
+ *    behind the panel, and the click is swallowed.
+ *
+ * The backdrop covers the whole viewport; the drawer is anchored right, so the
+ * top-left corner is always backdrop, never the paper.
  */
-async function returnToSettingsMenu(popup: Page): Promise<void> {
-  const back = popup.getByTestId('screen-header-back-button');
-
-  for (let depth = 0; depth < 5; depth += 1) {
-    const remaining = await back.count();
-    if (remaining === 0) break;
-    await back.last().click();
-    await expect(back).toHaveCount(remaining - 1, { timeout: 15_000 });
-  }
-
-  await expect(back).toHaveCount(0, { timeout: 15_000 });
+async function closeSettings(popup: Page): Promise<void> {
+  await popup.locator('.MuiBackdrop-root').last().click({ position: { x: 8, y: 8 } });
+  // The drawer unmounts its root close button when it is actually gone — a more
+  // honest signal than home-screen visibility, since home sits behind the drawer
+  // and reads as "visible" the whole time it is open.
+  await expect(popup.getByTestId('settings-close-button')).toHaveCount(0, { timeout: 15_000 });
+  await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
+  // The panel stack is reset on a `durationMs.slow` (300ms) timer AFTER the
+  // drawer starts closing — which lands right around when the close button
+  // unmounts, so reopening immediately can catch the pre-reset stack and drop
+  // us back into whatever panel was open. Wait past that timer.
+  await popup.waitForTimeout(500);
 }
 
 /** Leave the NFT detail page. The page underneath keeps its own header mounted. */
@@ -134,12 +124,6 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   await waitHome(popup);
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
-  // ── first_receive_viewed
-  await popup.getByTestId('home-receive-button').click();
-  await expect(popup.getByTestId('receive-sheet')).toBeVisible();
-  await popup.getByTestId('sheet-close-button').click();
-  await expect(popup.getByTestId('receive-sheet')).toHaveCount(0);
-
   // ── nft_viewed — opening an NFT detail page.
   await popup.getByTestId('tab-collectibles').click();
   const nftCard = popup.getByTestId(`nft-card-${NFT_MINT}`);
@@ -152,7 +136,7 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   await popup.getByTestId('tab-home').click();
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
 
-  // ── settings_opened
+  // Open settings to reach the address-book and accounts panels below.
   await openSettings(popup);
   await expect(popup.getByTestId('settings-item-accounts')).toBeVisible({ timeout: 10_000 });
 
@@ -168,10 +152,11 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   // there is nothing in the UI to wait on. `address_book_used` landing in the
   // batch is what proves the contact was actually stored.
   await popup.waitForTimeout(1_500);
-  await returnToSettingsMenu(popup);
+  await closeSettings(popup);
 
   // ── wallet_created — a DERIVED account reuses the active seed, which the
   //    funnel counts as a create.
+  await openSettings(popup);
   await popup.getByTestId('settings-item-accounts').click();
   await popup.getByTestId('account-add-button').click();
   await popup.getByTestId('account-add-method-derive').click();
@@ -192,11 +177,7 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   await popup.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
   await expect(popup.getByTestId('account-add-button')).toBeVisible({ timeout: 90_000 });
 
-  // Pop back to the menu before closing: the accounts panel covers the drawer's
-  // close button.
-  await returnToSettingsMenu(popup);
   await closeSettings(popup);
-  await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
 
   // ── wallet_switched — the switcher now holds three accounts; pick another.
   await popup.getByTestId('wallet-header-account-switcher').first().click();

@@ -35,7 +35,6 @@ import {
   spacing,
   useSettingsPanelStack,
   getSettingsItemTestId,
-  trackEvent,
   type SettingsScreen,
   fontSize,
   fontWeight,
@@ -269,12 +268,6 @@ export function SettingsPanelStack({
   const [slideDirection, setSlideDirection] = useState<'in' | 'out'>('in');
   const animationTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const initialPanelsPushedRef = useRef(false);
-
-  // Anonymous usage event: the settings surface was opened. No-op unless the
-  // user has opted in (the analytics client gates on consent).
-  useEffect(() => {
-    if (visible) trackEvent('settings_opened');
-  }, [visible]);
 
   // Push initial panels when drawer opens (no animation, instant)
   useEffect(() => {

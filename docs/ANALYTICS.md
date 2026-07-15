@@ -13,7 +13,7 @@ persiste y no envía nada.
 
 La anonimidad se garantiza por **allow-list, no por deny-list**:
 
-- Solo pueden emitirse los 15 eventos del catálogo.
+- Solo pueden emitirse los 11 eventos del catálogo.
 - Un evento solo puede llevar props de `ALLOWED_PROP_KEYS`.
 - Un guardrail rechaza cualquier valor que parezca address o mint (base58 32–44,
   hex 0x+40), números crudos y strings largos (>32 chars).
@@ -68,7 +68,7 @@ Solo estas cinco claves. Cualquier otra es rechazada.
 | `success` | `true` \| `false` |
 | `amount_bucket` | `0-10` \| `10-100` \| `100-1k` \| `1k-10k` \| `10k+` |
 
-## Catálogo: los 15 eventos
+## Catálogo: los 11 eventos
 
 Los eventos se cablean **en el hook compartido cuando existe**, para que una sola
 llamada cubra mobile + web + extension. Los que dependen de UI se cablean en la
@@ -78,10 +78,8 @@ pantalla mobile y en el componente DOM compartido.
 
 | Evento | Props | Se dispara en | Cableado en |
 |---|---|---|---|
-| `onboarding_started` | — | Mount de la pantalla Welcome/Select | `apps/mobile/app/(auth)/index.tsx` + `packages/ui/.../AuthFlow/SelectOptionsPage.tsx` |
 | `wallet_created` | — | Éxito del password, flow `create` | `apps/mobile/app/(auth)/password.tsx` + `packages/ui/.../AuthFlow/PasswordPage.tsx` |
 | `wallet_recovered` | — | Éxito del password, flow `recover` | idem |
-| `biometric_enabled` | — | Al activar biometría | `apps/mobile/app/(auth)/biometric-setup.tsx` (solo mobile) |
 
 ### Activación (una sola vez por instalación)
 
@@ -92,7 +90,6 @@ optar-in sigue contando en su primer swap *después* de optar-in.
 
 | Evento | Props | Se dispara en | Cableado en |
 |---|---|---|---|
-| `first_receive_viewed` | — | 1ª apertura del sheet de Receive | `apps/mobile/.../ReceiveSheet.tsx` + `packages/ui/.../ReceiveSheet.tsx` |
 | `first_send_completed` | — | 1er send exitoso | `packages/shared/src/hooks/useSendTransaction.ts` |
 | `first_swap_completed` | — | 1er swap exitoso | `packages/shared/src/hooks/useSwap.ts` |
 
@@ -109,7 +106,6 @@ optar-in sigue contando en su primer swap *después* de optar-in.
 
 | Evento | Props | Se dispara en | Cableado en |
 |---|---|---|---|
-| `settings_opened` | — | Abrir settings | `apps/mobile/.../SettingsSheet.tsx` + `packages/ui/.../SettingsPanelStack.tsx` |
 | `network_switched` | `chain` (red destino) | `changeNetwork` | `packages/shared/src/hooks/useAccountsSelection.ts` |
 | `wallet_switched` | — | `changeAccount` | `packages/shared/src/hooks/useAccountsSelection.ts` |
 | `address_book_used` | — | `addContact` | `packages/shared/src/hooks/useAddressbook.ts` |
@@ -124,9 +120,8 @@ Qué vamos a calcular con cada uno.
 |---|---|
 | Tasa de activación de send | `installs con first_send_completed / installs consentidas` |
 | Tasa de activación de swap | `installs con first_swap_completed / installs consentidas` |
-| Tasa de activación de receive | `installs con first_receive_viewed / installs consentidas` |
-| Time-to-first-send / swap / receive | `ts` del `first_*` − `ts` del primer evento de ese `install_id` |
-| Orden de activación | Qué `first_*` ocurre primero por `install_id` (¿reciben antes de enviar?) |
+| Time-to-first-send / swap | `ts` del `first_*` − `ts` del primer evento de ese `install_id` |
+| Orden de activación | Qué `first_*` ocurre primero por `install_id` (¿swapean antes de enviar?) |
 
 ### Uso recurrente y engagement
 
@@ -152,7 +147,6 @@ Qué vamos a calcular con cada uno.
 
 | Métrica | Cómo se calcula |
 |---|---|
-| % que abre settings | `installs con settings_opened / installs consentidas` |
 | % multi-chain | `installs con network_switched / total`, y a qué `chain` cambian |
 | % multi-wallet | `installs con wallet_switched / total` |
 | % que usa address book | `installs con address_book_used / total` |
@@ -174,11 +168,11 @@ welcome → create/recover → password → biometric → CONSENT → app
 ```
 
 Como el cliente es no-op sin consent, en el **primer** onboarding los eventos
-`onboarding_started`, `wallet_created`, `wallet_recovered` y `biometric_enabled`
-**no se emiten**. Solo aparecen cuando un usuario **ya consentido** vuelve a
-pasar por ese flujo (p. ej. agrega una segunda cuenta).
+`wallet_created` y `wallet_recovered` **no se emiten**. Solo aparecen cuando un
+usuario **ya consentido** vuelve a pasar por ese flujo (p. ej. agrega una segunda
+cuenta).
 
-Consecuencia: esos 4 eventos miden *"usuario consentido rehaciendo el flujo"*,
+Consecuencia: esos 2 eventos miden *"usuario consentido rehaciendo el flujo"*,
 **no adquisición ni conversión de onboarding**. No los uses como funnel de alta.
 
 Es correcto por diseño (opt-in real: no se puede medir a quien todavía no
@@ -208,9 +202,9 @@ usuario reinstala o retira el consentimiento.
 
 ## Estado de verificación
 
-**Los 15 eventos** fueron verificados **end-to-end** contra el stack local de
-`salmon-api` (Maestro en iOS Simulator → app → `POST /v1/events` → NDJSON), con
-las props correctas:
+**Los eventos del catálogo** fueron verificados **end-to-end** contra el stack
+local de `salmon-api` (app → `POST /v1/events` → NDJSON), con las props
+correctas:
 
 ```json
 {"event":"send_completed","props":{"chain":"solana","success":true}}
@@ -229,16 +223,21 @@ Incluye transacciones reales on-chain (send, swap y transferencia de NFT).
 > con Metaplex `transferV1`. El evento no se emitía porque la transferencia
 > genuinamente fallaba: la instrumentación estaba bien, no inventaba éxitos.
 
+El catálogo se recortó de 15 a **11 eventos**: se quitaron `onboarding_started`
+(nunca emitía — corre antes del consent), `biometric_enabled` (mobile-only, sin
+sitio compartido), `settings_opened` (mucho ruido, poca señal) y
+`first_receive_viewed` (mal proxy de activación). Con eso desaparecen los eventos
+inmedibles, así que el techo hoy es **11/11 parejo** en las plataformas web.
+
 Plataformas:
 
-- **iOS**: los 15 eventos, vía Maestro (`apps/mobile/.maestro/`).
-- **Extension** y **Web**: verificados end-to-end contra el mismo ingest local,
-  con Playwright. En ambas el techo es **13/15**: `onboarding_started` se emite
-  antes de la pantalla de consent (y `track()` es no-op sin consent, así que se
-  pierde siempre) y `biometric_enabled` es mobile-only. Los 13 restantes aterrizan
-  en el NDJSON con un único `install_id` por corrida — 8 no-on-chain
-  (`analytics-coverage.spec.ts`) y 5 con transacciones reales de mainnet
-  (`analytics-coverage-onchain.spec.ts`, gateado por `SALMON_E2E_ONCHAIN=1`).
+- **Extension** y **Web**: verificados end-to-end contra el ingest local, con
+  Playwright. Los 11 aterrizan en el NDJSON con un único `install_id` por corrida
+  — 6 no-on-chain (`analytics-coverage.spec.ts`) y 5 con transacciones reales de
+  mainnet (`analytics-coverage-onchain.spec.ts`, gateado por `SALMON_E2E_ONCHAIN=1`).
+- **iOS**: verificado vía Maestro (`apps/mobile/.maestro/`) sobre el catálogo
+  previo; los 4 eventos quitados simplemente dejan de dispararse. No re-corrido
+  tras el recorte.
 - **Android**: comparte el bundle JS; no re-verificado en esta ronda.
 
 > El spec on-chain de web hace **un** solo leg de swap, no un round-trip:

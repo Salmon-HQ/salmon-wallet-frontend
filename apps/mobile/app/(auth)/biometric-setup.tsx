@@ -16,7 +16,6 @@ import {
   fontFamilyNative,
   getStashItem,
   spacing,
-  trackEvent,
   type DerivedKeyCache,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../../src/components';
@@ -90,9 +89,6 @@ export default function BiometricSetupScreen() {
 
       if (stored) {
         await setEnableBiometric(true);
-        // Anonymous funnel event: biometric unlock was enabled. No-op unless the
-        // user has opted into analytics (the client gates on consent).
-        trackEvent('biometric_enabled');
         router.replace('/(auth)/analytics-consent');
       } else {
         setError(t('wallet.create.biometric_setup_error'));

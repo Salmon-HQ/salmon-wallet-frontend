@@ -216,8 +216,6 @@ export const STORAGE_KEYS = {
   ANALYTICS_FIRST_SEND: 'salmon_analytics_first_send',
   /** One-shot flag: the first successful swap has been reported (activation) */
   ANALYTICS_FIRST_SWAP: 'salmon_analytics_first_swap',
-  /** One-shot flag: the first receive-screen view has been reported (activation) */
-  ANALYTICS_FIRST_RECEIVE: 'salmon_analytics_first_receive',
 
   // -- Cross-chain settlement --
   /** Pending StealthEX bridge exchanges awaiting completion (BridgeSettlement) */

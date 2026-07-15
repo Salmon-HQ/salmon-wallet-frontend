@@ -1,31 +1,15 @@
 /**
  * Analytics EVENT COVERAGE (web).
  *
- * NOT GREEN YET. Six of the eight events reach the ingest — first_receive_viewed,
- * nft_viewed, settings_opened, address_book_used, wallet_created,
- * wallet_recovered — and then the run hangs somewhere after the second account is
- * imported, before wallet_switched and network_switched. The extension twin of
- * this spec passes 8/8 against the same shared UI, so the wiring is not in doubt;
- * what is unresolved is a web-side interaction in the tail of the flow. Do not
- * read a passing suite as coverage of those last two events until this is fixed.
- *
  * analytics.spec.ts proves the opt-in contract on a single event. This spec
  * proves the catalog: it opts in during onboarding and then drives every
  * surface that is supposed to emit, asserting each event actually arrives —
  * the same thing the Maestro suite does for mobile.
  *
- * Scope is the events reachable without spending money on-chain. The remaining
- * five (send_completed, first_send_completed, swap_completed,
+ * Scope is the six events reachable without spending money on-chain. The
+ * remaining five (send_completed, first_send_completed, swap_completed,
  * first_swap_completed, nft_sent) need a real mainnet transaction and live in
  * analytics-coverage-onchain.spec.ts.
- *
- * Deliberately NOT asserted:
- *  - `onboarding_started` fires from the account-selection screen, which runs
- *    BEFORE the consent screen. `track()` is a hard no-op without consent and
- *    does not even queue (client.ts), so on a first install this event is
- *    always dropped — on every platform. It is a known architectural
- *    limitation, documented in docs/ANALYTICS.md, not a wiring bug.
- *  - `biometric_enabled` is mobile-only; the web app has no biometric path.
  *
  * Each Playwright context starts with empty storage, so onboarding runs fresh
  * and the once-per-install `first_*` flags are unset.
@@ -47,8 +31,6 @@ const LIVE = process.env.SALMON_ANALYTICS_LIVE === '1';
 const NFT_MINT = 'CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV';
 
 const EXPECTED_EVENTS = [
-  'first_receive_viewed',
-  'settings_opened',
   'address_book_used',
   'wallet_created',
   'wallet_recovered',
@@ -99,6 +81,13 @@ async function closeSettings(page: Page): Promise<void> {
   // and reads as "visible" the whole time it is open.
   await expect(page.getByTestId('settings-close-button')).toHaveCount(0, { timeout: 15_000 });
   await expect(page.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
+  // The panel stack is reset on a `durationMs.slow` (300ms) timer AFTER the
+  // drawer starts closing — which lands right around when the close button
+  // unmounts, so reopening immediately can catch the pre-reset stack and drop
+  // us back into whatever panel was open (e.g. the address-book form, whose
+  // input then eats the next click). Wait past that timer so the next open
+  // lands on the root menu.
+  await page.waitForTimeout(500);
 }
 
 /** Leave the NFT detail page. The page underneath keeps its own header mounted. */
@@ -144,12 +133,6 @@ test('every non-on-chain event in the catalog actually fires', async ({ page, br
   await waitHome(page);
   await expect(page.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
-  // ── first_receive_viewed
-  await page.getByTestId('home-receive-button').click();
-  await expect(page.getByTestId('receive-sheet')).toBeVisible();
-  await page.getByTestId('sheet-close-button').click();
-  await expect(page.getByTestId('receive-sheet')).toHaveCount(0);
-
   // ── nft_viewed — opening an NFT detail page (its own /nft/:mint route).
   await page.getByTestId('tab-collectibles').click();
   const nftCard = page.getByTestId(`nft-card-${NFT_MINT}`);
@@ -160,7 +143,7 @@ test('every non-on-chain event in the catalog actually fires', async ({ page, br
   await page.getByTestId('tab-home').click();
   await expect(page.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
 
-  // ── settings_opened
+  // Open settings to reach the address-book and accounts panels below.
   await openSettings(page);
   await expect(page.getByTestId('settings-item-accounts')).toBeVisible({ timeout: 10_000 });
 

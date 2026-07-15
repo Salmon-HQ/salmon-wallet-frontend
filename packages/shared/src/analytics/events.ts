@@ -18,12 +18,9 @@
  */
 export const ANALYTICS_EVENTS = [
   // Onboarding
-  'onboarding_started',
   'wallet_created',
   'wallet_recovered',
-  'biometric_enabled',
   // Activation
-  'first_receive_viewed',
   'first_send_completed',
   'first_swap_completed',
   // Recurring use
@@ -32,7 +29,6 @@ export const ANALYTICS_EVENTS = [
   'nft_viewed',
   'nft_sent',
   // Feature adoption
-  'settings_opened',
   'network_switched',
   'wallet_switched',
   'address_book_used',
