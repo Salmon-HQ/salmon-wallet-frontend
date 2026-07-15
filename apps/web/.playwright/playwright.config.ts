@@ -33,6 +33,11 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',
+    // Playwright waits forever for an unactionable element by default, so a
+    // click on something permanently covered burns the whole test timeout in
+    // silence instead of reporting what covered it. Bound it: no legitimate
+    // click here needs 20s, and the slow ones pass their own timeout.
+    actionTimeout: 20_000,
   },
   // Cross-engine coverage: every web spec runs on Chromium, Firefox and
   // WebKit (Safari). Browser binaries are installed via

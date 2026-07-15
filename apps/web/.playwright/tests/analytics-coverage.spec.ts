@@ -70,37 +70,35 @@ test.beforeAll(async () => {
 const openSettings = (page: Page) => page.getByTestId('wallet-header-settings-button').click();
 
 /**
- * Close the settings drawer. Only works from the root menu: the panels are
- * absolutely positioned over the drawer chrome, so from inside a nested panel
- * the close button is present and "stable" but covered, and the click is
- * swallowed forever.
- */
-const closeSettings = (page: Page) => page.getByTestId('settings-close-button').click();
-
-/**
- * Walk back up to the settings root menu, however deep the panel stack is.
+ * Close the settings drawer, from any depth, and land back on home.
  *
- * Do not assert a panel is gone by checking whether the one underneath is
- * "visible": the stack renders the top two panels absolutely on top of each
- * other, so the lower one has a real bounding box and reads as visible even
- * while it is completely covered. Counting back buttons is the honest signal —
- * the root menu has none.
+ * Clicks the MUI backdrop, which fires the Drawer's `onClose` regardless of
+ * where focus or the panel stack happen to be. Closing resets the stack, so the
+ * next `openSettings` lands on the root menu.
  *
- * Depth is not always what it looks like. Saving a contact, for instance, does
- * not navigate anywhere (HomePage's `onSave` only calls `addContact`), so the
- * add form is still on top of the list afterwards and two pops are needed.
+ * Why not the obvious alternatives:
+ *  - Escape does NOT work here. The Drawer sets `disableEnforceFocus`, so after
+ *    interacting with a nested panel focus sits on document.body — outside the
+ *    modal's portal — and MUI's Escape listener, bound to the modal root, never
+ *    receives the keydown. The drawer stays open.
+ *  - The close button is covered: the panels are absolutely positioned over the
+ *    drawer chrome, so from inside a nested panel it is present and "stable" but
+ *    behind the panel, and the click is swallowed.
+ *  - Walking back panel by panel hangs: `handlePop` is a no-op while a panel
+ *    animates, and the back button lives inside the transforming panel, so it
+ *    never settles into a stable box and is detached mid-retry. That is exactly
+ *    how this spec used to hang in the tail of the flow.
+ *
+ * The backdrop covers the whole viewport; the drawer is anchored right, so the
+ * top-left corner is always backdrop, never the paper.
  */
-async function returnToSettingsMenu(page: Page): Promise<void> {
-  const back = page.getByTestId('screen-header-back-button');
-
-  for (let depth = 0; depth < 5; depth += 1) {
-    const remaining = await back.count();
-    if (remaining === 0) break;
-    await back.last().click();
-    await expect(back).toHaveCount(remaining - 1, { timeout: 15_000 });
-  }
-
-  await expect(back).toHaveCount(0, { timeout: 15_000 });
+async function closeSettings(page: Page): Promise<void> {
+  await page.locator('.MuiBackdrop-root').last().click({ position: { x: 8, y: 8 } });
+  // The drawer unmounts its root close button when it is actually gone — a more
+  // honest signal than home-screen visibility, since home sits behind the drawer
+  // and reads as "visible" the whole time it is open.
+  await expect(page.getByTestId('settings-close-button')).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
 }
 
 /** Leave the NFT detail page. The page underneath keeps its own header mounted. */
@@ -178,10 +176,11 @@ test('every non-on-chain event in the catalog actually fires', async ({ page, br
   // there is nothing in the UI to wait on. `address_book_used` landing in the
   // batch is what proves the contact was actually stored.
   await page.waitForTimeout(1_500);
-  await returnToSettingsMenu(page);
+  await closeSettings(page);
 
   // ── wallet_created — a DERIVED account reuses the active seed, which the
   //    funnel counts as a create.
+  await openSettings(page);
   await page.getByTestId('settings-item-accounts').click();
   await page.getByTestId('account-add-button').click();
   await page.getByTestId('account-add-method-derive').click();
@@ -202,11 +201,7 @@ test('every non-on-chain event in the catalog actually fires', async ({ page, br
   await page.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
   await expect(page.getByTestId('account-add-button')).toBeVisible({ timeout: 90_000 });
 
-  // Pop back to the menu before closing: the accounts panel covers the drawer's
-  // close button.
-  await returnToSettingsMenu(page);
   await closeSettings(page);
-  await expect(page.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
 
   // ── wallet_switched — the switcher now holds three accounts; pick another.
   await page.getByTestId('wallet-header-account-switcher').first().click();
