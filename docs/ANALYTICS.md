@@ -237,6 +237,10 @@ cat ../salmon-api/.analytics-local/events.ndjson | jq -r .event | sort | uniq -c
 
 ## Where the data goes
 
-Once emitted (with consent), a batch is POSTed to an **isolated ingest Lambda** (`salmon-api/src/analytics/handler.js`), separate from the wallet API so a traffic spike cannot compete with it. From there it flows to Amazon S3, kept anonymous the whole way. The full delivery path was verified end-to-end against real AWS: every event and every prop combination arrives intact, and **nothing is lost server-side**. The only place a data point can be lost is **before it leaves the device** — if the app is closed before the batch flushes, that in-memory queue is dropped (it is not persisted), which is the inherent trade-off of lightweight anonymous analytics.
+Once emitted (with consent), a batch is POSTed to an **isolated ingest Lambda** (`salmon-api/src/analytics/handler.js`), separate from the wallet API so a traffic spike cannot compete with it. The backend re-validates the batch against the allow-list and forwards it to **Google Analytics 4** via the Measurement Protocol.
+
+Anonymity holds end-to-end. The handler never reads the client IP, and because GA4 attributes an event to whoever calls it — the backend — **the user's IP never reaches Google; only the server's does.** No Google or Firebase SDK runs in the app, so no device ever talks to Google directly. Each event carries `client_id = install_id`: a random, PII-free per-install token, the only persistent identifier involved.
+
+Delivery is best-effort: the Measurement Protocol answers `2xx` for a well-formed request without validating event contents, so a data point can be lost server-side without an error. It can also be lost **before it leaves the device** — if the app is closed before the batch flushes, that in-memory queue is dropped (it is not persisted). Both are the inherent trade-off of lightweight anonymous analytics. See `salmon-api/docs/ANALYTICS.md` for the sink and the one-time GA4 console setup.
 
 The infrastructure that stores and serves this data is documented separately for operators (it is not needed to understand what the wallet collects).
