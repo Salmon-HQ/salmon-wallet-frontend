@@ -244,11 +244,16 @@ export function useSwap({
       } else {
         setError(result.error || 'Swap execution failed');
         setStatus('failed');
+        // Anonymous funnel event: the swap failed. This makes `success` a real
+        // completion-vs-failure rate. Jupiter swaps are Solana↔Solana.
+        trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: false });
       }
 
       return result;
     } catch (err) {
       console.error('[useSwap] Swap execution failed:', err);
+      // Same failed-swap event for a thrown error (vs a returned fail above).
+      trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: false });
       const errorMessage = err instanceof Error ? err.message : 'Swap execution failed';
       const result: SwapResult = {
         txId: null,

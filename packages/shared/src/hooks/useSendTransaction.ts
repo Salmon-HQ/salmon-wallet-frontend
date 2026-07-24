@@ -178,6 +178,14 @@ export function useSendTransaction({
         return result;
       } catch (err) {
         console.error('[useSendTransaction] Transaction failed:', err);
+        // Anonymous funnel event: the transfer failed. This is what turns
+        // `success` into a real completion-vs-failure rate instead of a
+        // constant. Coarse chain family only — never the address, amount or
+        // token mint. No `first_send_completed`: that milestone is success-only.
+        trackEvent('send_completed', {
+          chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
+          success: false,
+        });
         const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
         setError(errorMessage);
         setStatus('failed');

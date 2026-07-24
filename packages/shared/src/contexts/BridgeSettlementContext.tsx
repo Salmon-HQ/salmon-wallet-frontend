@@ -31,6 +31,7 @@ import React, {
 import type { NetworkId } from '../types/blockchain';
 import type { BridgeTransaction } from '../types/bridge';
 import { getBridgeTransaction } from '../api/services/bridge';
+import { trackEvent, trackFirstTime } from '../analytics';
 import { useSettleAfterTx } from '../query/invalidation';
 import {
   getStorageItem,
@@ -62,6 +63,33 @@ interface BridgeSettlementContextValue {
 }
 
 const BridgeSettlementContext = createContext<BridgeSettlementContextValue | null>(null);
+
+/**
+ * Coarse chain family for analytics, from a `NetworkId` like `solana-mainnet`.
+ * Returns undefined for an absent or unrecognised network so the prop is simply
+ * dropped (never an exact address, and never an out-of-allow-list value). The
+ * bridge only moves funds between the wallet's own chains, so in practice this
+ * is always solana / bitcoin / ethereum.
+ */
+function toChainFamily(networkId?: NetworkId): 'solana' | 'bitcoin' | 'ethereum' | undefined {
+  const family = networkId?.split('-')[0];
+  return family === 'solana' || family === 'bitcoin' || family === 'ethereum' ? family : undefined;
+}
+
+/**
+ * Allow-listed swap props for a bridge exchange. `from_chain` / `to_chain` are
+ * only included when the network resolved to a known family, so an unknown or
+ * absent chain is simply omitted rather than sent as an invalid value.
+ */
+function bridgeSwapProps(ex: PendingBridgeExchange, success: boolean) {
+  const fromChain = toChainFamily(ex.sourceNetworkId);
+  const toChain = toChainFamily(ex.destNetworkId);
+  return {
+    ...(fromChain ? { from_chain: fromChain } : {}),
+    ...(toChain ? { to_chain: toChain } : {}),
+    success,
+  };
+}
 
 // StealthEX exchanges take minutes; a coarse cadence is plenty and keeps the
 // status endpoint from being hammered.
@@ -151,6 +179,14 @@ export function BridgeSettlementProvider({
         if (cancelled || !tx) continue;
 
         if (tx.status === 'success') {
+          // Anonymous funnel event: a cross-chain (bridge) swap settled. This is
+          // the ONLY place bridge swaps are tracked — the Jupiter path lives in
+          // useSwap. Emitting on the polled settlement outcome (not on exchange
+          // creation) means the chains and the success flag are the real result,
+          // and the poll survives navigation/restart so it is still observed.
+          trackEvent('swap_completed', bridgeSwapProps(ex, true));
+          // A bridge can be a user's first swap of any kind.
+          void trackFirstTime('first_swap_completed', STORAGE_KEYS.ANALYTICS_FIRST_SWAP);
           // Payout landed on the destination chain, whose indexer still lags —
           // use the delayed settle schedule there. The source deposit is long
           // since spent, so settle it immediately (no delays).
@@ -169,6 +205,9 @@ export function BridgeSettlementProvider({
           }
           remove(ex.id);
         } else if (tx.status === 'fail' || tx.status === 'refunded') {
+          // The bridge swap failed (or was refunded). Emitting success:false here
+          // is what makes the swap success/failure rate real for cross-chain too.
+          trackEvent('swap_completed', bridgeSwapProps(ex, false));
           // Funds returned on the source side.
           await settleAfterTx({
             networkId: ex.sourceNetworkId,

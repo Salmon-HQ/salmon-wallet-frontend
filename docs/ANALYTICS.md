@@ -76,14 +76,14 @@ These use `trackFirstTime()`: they emit the event **once**, guarded by a persist
 | Event | Props | Fires on | Wired in |
 |---|---|---|---|
 | `first_send_completed` | — | 1st successful send | `packages/shared/src/hooks/useSendTransaction.ts` |
-| `first_swap_completed` | — | 1st successful swap | `packages/shared/src/hooks/useSwap.ts` |
+| `first_swap_completed` | — | 1st successful swap (Jupiter or bridge) | `useSwap.ts` + `contexts/BridgeSettlementContext.tsx` |
 
 ### Recurring use
 
 | Event | Props | Fires on | Wired in |
 |---|---|---|---|
-| `send_completed` | `chain`, `success: true` | Successful transfer | `packages/shared/src/hooks/useSendTransaction.ts` |
-| `swap_completed` | `from_chain: solana`, `to_chain: solana`, `success: true` | Successful swap (Jupiter = Solana↔Solana) | `packages/shared/src/hooks/useSwap.ts` |
+| `send_completed` | `chain`, `success` | Transfer outcome (success **or** failure) | `packages/shared/src/hooks/useSendTransaction.ts` |
+| `swap_completed` | `from_chain`, `to_chain`, `success` | Swap outcome. Jupiter (Solana↔Solana) fires immediately in `useSwap`; a cross-chain **bridge** fires on its real settlement, with the real chains, from the background poller | `useSwap.ts` + `contexts/BridgeSettlementContext.tsx` |
 | `nft_viewed` | `chain` | Open NFT detail | `apps/mobile/.../NftDetailSheet.tsx` + `packages/ui/.../NftDetailPage.tsx` |
 | `nft_sent` | `chain` | Successful NFT transfer | `packages/shared/src/hooks/useNftTransfer.ts` |
 
@@ -157,11 +157,11 @@ Consequence: those 2 events measure *"a consented user redoing the flow"*, **not
 
 This is correct by design (real opt-in: you cannot measure someone who has not yet consented). To measure the acquisition funnel you would have to move the consent prompt **earlier** in the flow — a product/legal decision, not a technical one.
 
-### 2. There is no success or error rate
+### 2. Outcome rate yes, attempt funnel no
 
-We only emit on the happy path: `success` today **is always `true`** and there are no attempt or failure events. You can count *completions*, but **not** compute a conversion rate or error rate: the denominator is missing.
+`send_completed` and `swap_completed` now fire on **both** paths — `success: true` on completion and `success: false` on failure (send/swap error path; bridge `fail`/`refunded` settlement). So a completion-vs-failure rate **is** computable.
 
-To enable it you would have to emit the event on the error path too (with `success: false`), or add attempt events to the catalog.
+What is still missing is an *attempt* event: a user who abandons before submitting the operation is never counted. So `success` gives you the outcome rate among **submitted** operations, not a full funnel conversion rate. Add attempt events to the catalog if you need the latter.
 
 ### 3. `amount_bucket` is defined but not emitted
 
