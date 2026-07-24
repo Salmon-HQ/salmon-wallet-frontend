@@ -110,9 +110,10 @@ export function useNftTransfer({ account, onTransferSuccess }: UseNftTransferPar
 
         setStatus('success');
         // Anonymous funnel event: an NFT transfer succeeded. Only the coarse
-        // chain family — never the recipient, mint or token id.
+        // chain family and a boolean — never the recipient, mint or token id.
         trackEvent('nft_sent', {
           chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
+          success: true,
         });
         const accountId = account.getReceiveAddress();
         const networkId = account.getNetworkId();
@@ -135,6 +136,13 @@ export function useNftTransfer({ account, onTransferSuccess }: UseNftTransferPar
         return result;
       } catch (err) {
         console.error('[useNftTransfer] Transfer failed:', err);
+        // Failed NFT transfer — the same event with success:false, so the NFT
+        // send has a real completion-vs-failure rate too (this path is exactly
+        // where the frozen-pNFT failures used to surface). Solana only.
+        trackEvent('nft_sent', {
+          chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
+          success: false,
+        });
         const errorMessage = err instanceof Error ? err.message : 'NFT transfer failed';
         setError(errorMessage);
         setStatus('failed');
