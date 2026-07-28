@@ -9,10 +9,12 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
+import { signOffchainMessage } from '../blockchain/solana';
 import type { SolanaAccount } from '../blockchain/solana';
 import type {
   DAppSignAllTransactionsApprovalPayload,
   DAppSignMessageApprovalPayload,
+  DAppSignOffchainMessageApprovalPayload,
   DAppSignTransactionApprovalPayload,
   DAppSignAndSendTransactionApprovalPayload,
   DAppTransactionRequest,
@@ -110,6 +112,10 @@ const SIWS_FIELDS: Record<string, keyof ParsedSiwsMessage> = {
  * Parses a Sign-In-With-Solana message (ABNF derived from EIP-4361) into its
  * fields. Best-effort: returns null when the header line does not match, so
  * callers can fall back to showing the raw message verbatim. Never throws.
+ *
+ * TODO(OCMS Fase 2b): remove once native `solana:signIn` replaces the SIWS-over-
+ * raw-signMessage flow. Must land atomically with the app/UI wiring so no
+ * consumer is left calling this against a message that no longer arrives this way.
  */
 export function parseSiwsMessage(text: string): ParsedSiwsMessage | null {
   if (!text) return null;
@@ -193,6 +199,27 @@ export function buildTransactionFromEncodedMessage(encodedMessage: string): Pars
  * lookalike case for the legacy raw `signMessage` path so callers can block or warn
  * before invoking `approveSolanaSignMessage`.
  */
+/**
+ * Thrown by `approveSolanaSignMessage` when the requested bytes deserialize as a
+ * valid Solana transaction message. Refusing to sign is the point: a dApp asking
+ * the raw `signMessage` path to sign transaction bytes is trying to obtain what
+ * looks like a message signature but is structurally a valid transaction
+ * signature — the exact blind-signing attack OCMS (`solana:signOffchainMessage`)
+ * exists to prevent.
+ */
+export class TransactionLookalikeMessageError extends Error {
+  constructor() {
+    super(
+      'This message cannot be signed as plain text because it decodes as a Solana ' +
+        'transaction. Signing it here would let this app move funds without a proper ' +
+        'transaction approval. Ask the app to use signTransaction or ' +
+        'solana:signOffchainMessage instead.',
+    );
+    this.name = 'TransactionLookalikeMessageError';
+    Object.setPrototypeOf(this, TransactionLookalikeMessageError.prototype);
+  }
+}
+
 export function isTransactionLookalike(bytes: Uint8Array): boolean {
   try {
     VersionedMessage.deserialize(bytes);
@@ -261,11 +288,39 @@ export function approveSolanaSignMessage(
   data: number[],
 ): DAppSignMessageApprovalPayload {
   const messageBytes = Uint8Array.from(data);
+  if (isTransactionLookalike(messageBytes)) {
+    throw new TransactionLookalikeMessageError();
+  }
   const signature = nacl.sign.detached(messageBytes, account.keyPair.secretKey);
 
   return {
     signature: bs58.encode(signature),
     publicKey: account.getReceiveAddress(),
+  };
+}
+
+/**
+ * Approves an OCMS v1 `solana:signOffchainMessage` request (Wallet Standard PR#92).
+ * Builds the domain-separated signing buffer via `signOffchainMessage` and returns
+ * a payload that is field-name-compatible with the Wallet Standard output shape —
+ * see `DAppSignOffchainMessageApprovalPayload` for the string-encoding rationale.
+ *
+ * @param account - The signing account
+ * @param data - Raw UTF-8-encoded message bytes, as received from a dApp
+ * @param requiredSigners - Accounts required to sign this message, per the OCMS spec
+ */
+export function approveSolanaSignOffchainMessage(
+  account: SolanaAccount,
+  data: number[],
+  requiredSigners: PublicKey[],
+): DAppSignOffchainMessageApprovalPayload {
+  const messageBytes = Uint8Array.from(data);
+  const { signature, buffer } = signOffchainMessage(account, messageBytes, requiredSigners);
+
+  return {
+    signedOffchainMessage: bs58.encode(buffer),
+    signature: bs58.encode(signature),
+    signatureType: 'ed25519',
   };
 }
 

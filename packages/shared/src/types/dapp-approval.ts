@@ -67,6 +67,19 @@ export interface DAppSignMessageApprovalPayload {
   publicKey: string;
 }
 
+/**
+ * Output shape for `solana:signOffchainMessage` (OCMS v1), field-name-compatible
+ * with the Wallet Standard `SolanaSignOffchainMessageOutput` from PR#92 — but with
+ * `signedOffchainMessage`/`signature` bs58-encoded strings instead of raw
+ * `Uint8Array`, matching how every other payload in this file crosses the
+ * postMessage/bridge boundary as JSON.
+ */
+export interface DAppSignOffchainMessageApprovalPayload {
+  signedOffchainMessage: string;
+  signature: string;
+  signatureType: 'ed25519';
+}
+
 export interface DAppSignTransactionApprovalPayload {
   signature: string;
   publicKey: string;

@@ -1,4 +1,5 @@
 import bs58 from 'bs58';
+import nacl from 'tweetnacl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   Keypair,
@@ -7,12 +8,16 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
+import { verifyOffchainMessage } from '../blockchain/solana';
 import {
+  approveSolanaSignMessage,
+  approveSolanaSignOffchainMessage,
   approveSolanaTransactionRequest,
   isTransactionLookalike,
   loadSolanaTransactionApprovalDetails,
   parseSiwsMessage,
   serializeSignedTransactionFromApproval,
+  TransactionLookalikeMessageError,
 } from './dapp-approval';
 
 vi.mock('../hooks/useAvailableNetworks', () => ({
@@ -250,5 +255,83 @@ describe('isTransactionLookalike', () => {
 
   it('returns false for an empty buffer', () => {
     expect(isTransactionLookalike(new Uint8Array(0))).toBe(false);
+  });
+});
+
+describe('approveSolanaSignMessage', () => {
+  it('signs a normal text message and returns a signature that verifies', () => {
+    // Arrange
+    const salmon = Keypair.generate();
+    const account = {
+      keyPair: salmon,
+      getReceiveAddress: () => salmon.publicKey.toBase58(),
+    };
+    const text = 'Sign in to Salmon Wallet';
+    const data = Array.from(new TextEncoder().encode(text));
+
+    // Act
+    const result = approveSolanaSignMessage(account as never, data);
+
+    // Assert
+    expect(result.publicKey).toBe(salmon.publicKey.toBase58());
+    expect(
+      nacl.sign.detached.verify(
+        Uint8Array.from(data),
+        bs58.decode(result.signature),
+        salmon.publicKey.toBytes(),
+      ),
+    ).toBe(true);
+  });
+
+  it('throws TransactionLookalikeMessageError instead of signing transaction-lookalike bytes', () => {
+    // Arrange
+    const salmon = Keypair.generate();
+    const payer = Keypair.generate();
+    const recentBlockhash = Keypair.generate().publicKey.toBase58();
+    const instruction = SystemProgram.transfer({
+      fromPubkey: payer.publicKey,
+      toPubkey: Keypair.generate().publicKey,
+      lamports: 1,
+    });
+    const message = new TransactionMessage({
+      payerKey: payer.publicKey,
+      recentBlockhash,
+      instructions: [instruction],
+    }).compileToV0Message();
+    const account = {
+      keyPair: salmon,
+      getReceiveAddress: () => salmon.publicKey.toBase58(),
+    };
+    const data = Array.from(message.serialize());
+
+    // Act & Assert
+    expect(() => approveSolanaSignMessage(account as never, data)).toThrow(
+      TransactionLookalikeMessageError,
+    );
+  });
+});
+
+describe('approveSolanaSignOffchainMessage', () => {
+  it('returns signedOffchainMessage/signature/signatureType and a signature that verifies against the account', () => {
+    // Arrange
+    const salmon = Keypair.generate();
+    const account = { keyPair: salmon };
+    const text = 'Please confirm your login';
+    const data = Array.from(new TextEncoder().encode(text));
+
+    // Act
+    const result = approveSolanaSignOffchainMessage(account as never, data, [salmon.publicKey]);
+
+    // Assert
+    expect(result.signatureType).toBe('ed25519');
+    expect(typeof result.signedOffchainMessage).toBe('string');
+    expect(typeof result.signature).toBe('string');
+    expect(
+      verifyOffchainMessage(
+        bs58.decode(result.signedOffchainMessage),
+        bs58.decode(result.signature),
+        salmon.publicKey,
+      ),
+    ).toBe(true);
   });
 });

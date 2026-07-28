@@ -2,6 +2,7 @@
 export { normalizeIpfsUrl, DEAD_DOMAINS, getExplorerUrl, getSolscanUrl, formatOrigin } from './url';
 export {
   approveSolanaSignMessage,
+  approveSolanaSignOffchainMessage,
   approveSolanaTransactionRequest,
   buildTransactionFromEncodedMessage,
   decodeDAppMessage,
@@ -12,6 +13,7 @@ export {
   parseSiwsMessage,
   serializeSignedTransactionFromApproval,
   serializeSignedTransactionsFromApproval,
+  TransactionLookalikeMessageError,
 } from './dapp-approval';
 export type { ParsedSiwsMessage } from './dapp-approval';
 
