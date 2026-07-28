@@ -9,7 +9,9 @@ name: Deploy Web
 #                            bucket and cloudfront:CreateInvalidation on the
 #                            distribution. (Preferred over long-lived keys.)
 #   The role's trust policy must allow GitHub's OIDC provider and restrict
-#   `sub` to this repo (e.g. repo:salmon-wallet/salmon-wallet-v3:ref:refs/heads/main).
+#   `sub` to this repo's prod tags and main branch:
+#     repo:salmon-wallet/salmon-wallet-v3:ref:refs/tags/web/v*   (tag deploys)
+#     repo:salmon-wallet/salmon-wallet-v3:ref:refs/heads/main    (workflow_dispatch)
 #
 # Targets (non-secret; edit here if they change):
 env:
@@ -19,13 +21,8 @@ env:
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'apps/web/**'
-      - 'packages/shared/**'
-      - 'packages/ui/**'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/deploy-web.yml'
+    tags:
+      - web/v*
   workflow_dispatch: {}
 
 # Never run two web deploys at once; cancel superseded runs.
