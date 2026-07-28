@@ -113,9 +113,9 @@ script must confirm context:
   `reports/` whenever you want a clean slate.
 - Profile lives in `profiles/extension/`. Delete to force re-recovery on
   next run.
-- The sibling `.playwright-cli/` directory (created by the global
-  `playwright-cli` skill) is unrelated to this suite and can always be
-  deleted.
+- A sibling `.playwright-cli/` directory (left behind by external
+  browser-automation tooling, if you use any) is unrelated to this suite
+  and can always be deleted.
 
 ## Coding style
 

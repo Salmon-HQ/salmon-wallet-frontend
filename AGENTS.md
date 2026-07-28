@@ -1,81 +1,156 @@
-# AGENTS.md instructions for salmon-wallet-v3
+# AGENTS.md — salmon-wallet-v3
 
-<INSTRUCTIONS>
-## Architecture
+Guidance for any AI agent or automated contributor working in this repo,
+regardless of vendor or tool. **This file is the canonical source of truth
+for repo rules.** Tool-specific files (`CLAUDE.md`, `.claude/`, `.codex/`,
+`.agent/`) point here; if any of them disagrees with this file, this file
+wins. Read `docs/ARCHITECTURE.md` before structural changes.
 
-This repo is a monorepo with ownership split by runtime and reuse level.
+## What this repo is
 
-Main ownership model:
+An open-source, self-custodial crypto wallet (Solana-first, with Bitcoin
+and a future-facing Ethereum surface) shipped as three apps from one
+pnpm + turbo monorepo. The same business logic powers all three apps, so
+ownership boundaries are the core discipline of this codebase.
 
-- `packages/shared` for logic and contracts shared by mobile, web, and extension
-- `packages/ui` for shared React DOM components used by web and extension
-- `apps/mobile` for React Native and mobile-only flows
-- `apps/web` for web-specific app shell and browser wiring
-- `apps/extension` for extension-specific entrypoints and pages
+## Ownership model
 
-Read `docs/ARCHITECTURE.md` before making structural decisions.
+| Location | Owns | Why |
+|---|---|---|
+| `packages/shared` | Cross-platform logic and contracts: API services, blockchain logic, hooks, semantic types, storage, config, crypto, utils, i18n locales, theme tokens | One implementation serves mobile, web, and extension; a bug fixed here is fixed everywhere |
+| `packages/ui` | Shared React DOM components used by web and extension | DOM code cannot run in React Native, so it must not live in `packages/shared` |
+| `apps/mobile` | React Native / Expo app, mobile-only flows, native integrations | RN code cannot run in browsers; keeping it app-local prevents platform leaks into shared packages |
+| `apps/web` | Web app shell, routing, providers, browser-specific wiring | App-shell concerns are not reusable; keeping them local keeps shared packages runtime-agnostic |
+| `apps/extension` | Extension entrypoints (background/content/injected), pages, sheets, browser-extension APIs | Extension runtime constraints (MV3, WXT) must not constrain the other apps |
 
 ## Placement rules
 
-- Put cross-platform services, hooks, blockchain logic, semantic types, storage, and shared config in `packages/shared`.
-- Put shared DOM components in `packages/ui`, not in `packages/shared`.
-- Keep React Native code in `apps/mobile`.
-- Keep browser-only and extension-only runtime code in the owning app.
-- Prefer existing shared contracts over duplicating types or service wrappers in an app.
-- Preserve future-facing Ethereum surface unless removal is explicitly requested.
+- Cross-platform services, hooks, blockchain logic, semantic types, storage,
+  and shared config go in `packages/shared` — so all three apps consume one
+  contract instead of drifting copies.
+- Shared DOM components go in `packages/ui`, never in `packages/shared` —
+  `packages/shared` must stay importable from React Native.
+- React Native code stays in `apps/mobile`; `apps/mobile` must not import
+  `@salmon/ui` — it is DOM-only and would break the native bundle.
+- Browser-only and extension-only runtime code stays in the owning app —
+  platform APIs leaking into shared code break the other platforms silently.
+- Prefer extending an existing shared contract over duplicating types or
+  service wrappers in an app — duplicates drift and double the fix surface.
+- Cross-platform component contracts (`PropsBase`-style types) live in
+  `packages/shared/src/types/ui`; visual/platform-specific props extend them
+  locally per platform.
+- `packages/shared/src/theme` is the single source of design tokens — no
+  hardcoded colors/spacing/typography in apps, or visual drift creeps in.
+- Public barrels expose named exports only — named exports keep re-exports
+  greppable and tree-shakeable.
 
-## Skills
-A skill is a set of local instructions to follow that is stored in a `SKILL.md` file. Below is the list of skills that can be used in this workspace. Each entry includes a name, description, and file path so you can open the source for full instructions when using a specific skill.
+Detailed decision matrices (by platform scope, by artifact type, anti-patterns)
+live in `.agent/skills/salmon-repo-rules/references/`.
 
-### Available skills
-- api-service-authoring: Create or modify shared API services in `packages/shared/src/api/services`, including caching, rate limiting, DI adapters, and service audits. Use for new endpoints, API integrations, shared HTTP/data-fetching logic, or service consistency reviews. (file: .agent/skills/api-service-authoring/SKILL.md)
-- i18n-authoring: Add, update, remove, or audit user-facing translations in Salmon Wallet. Use whenever visible copy changes, new translation keys are needed, or hardcoded UI strings must be replaced with i18n. (file: .agent/skills/i18n-authoring/SKILL.md)
-- e2e-test-labels: Add and maintain stable test/accessibility labels (testID, data-testid, accessibilityRole/Label, aria-label, semantic roles) so Maestro flows and Playwright suites can select elements reliably. Use whenever creating or modifying interactive UI in `apps/mobile`, `apps/web`, `apps/extension`, or `packages/ui`. (file: .agent/skills/e2e-test-labels/SKILL.md)
-- mobile-component-scaffold: Create or modify React Native components in `apps/mobile`, including app-local mobile UI and mobile implementations of shared semantic contracts. Use only when the task explicitly targets `apps/mobile`, React Native, Expo, native UI files, or mobile implementation work. (file: .agent/skills/mobile-component-scaffold/SKILL.md)
-- mobile-test-authoring: Write or audit Jest tests for React Native components and mobile UI behavior in `apps/mobile`. Use only when the task explicitly targets `apps/mobile`, React Native, Expo, or RN-specific test work. (file: .agent/skills/mobile-test-authoring/SKILL.md)
-- salmon-repo-rules: Resolve code placement, package ownership, shared-vs-app boundaries, public exports, and architectural conventions in the Salmon Wallet monorepo. (file: .agent/skills/salmon-repo-rules/SKILL.md)
-- salmon-monorepo-rules: Resolve package ownership, shared-vs-app boundaries, and placement decisions in salmon-wallet-v3. Use when deciding whether code belongs in `packages/shared`, `packages/ui`, `apps/mobile`, `apps/web`, or `apps/extension`. (file: .codex/skills/salmon-monorepo-rules/SKILL.md)
-- salmon-monorepo-safe-change: Safely modify or clean salmon-wallet-v3 without breaking active shared contracts. Use for consumer-sensitive refactors, shared API/hook changes, or cleanup that must be verified across apps and backend contracts. (file: .codex/skills/salmon-monorepo-safe-change/SKILL.md)
-- shared-test-authoring: Write or update tests for code in `packages/shared`, including hooks, API services, utilities, blockchain logic, crypto, and config. (file: .agent/skills/shared-test-authoring/SKILL.md)
-- ui-component-scaffold: Create or modify shared React DOM components in `packages/ui`, including DOM-only components and cross-platform contract + DOM implementation flows. (file: .agent/skills/ui-component-scaffold/SKILL.md)
-- ui-test-authoring: Write or audit tests for shared React DOM components in `packages/ui`. (file: .agent/skills/ui-test-authoring/SKILL.md)
-- find-skills: Helps users discover and install agent skills when they ask questions like "how do I do X", "find a skill for X", "is there a skill that can...", or express interest in extending capabilities. (file: ~/.agents/skills/find-skills/SKILL.md)
-- skill-creator: Guide for creating effective skills. Use when creating a new skill or updating an existing skill that extends Codex's capabilities with specialized knowledge, workflows, or tool integrations. (file: ~/.codex/skills/.system/skill-creator/SKILL.md)
-- skill-installer: Install Codex skills into `$CODEX_HOME/skills` from a curated list or a GitHub repo path. (file: ~/.codex/skills/.system/skill-installer/SKILL.md)
+## Changing or removing existing code
 
-### How to use skills
-- Discovery: The list above is the skills available in this workspace for Codex. Skill bodies live on disk at the listed paths.
-- Trigger rules: If the user names a skill (with `$SkillName` or plain text) OR the task clearly matches a skill's description shown above, you must use that skill for that turn. Multiple mentions mean use them all. Do not carry skills across turns unless re-mentioned.
-- Missing/blocked: If a named skill isn't in the list or the path can't be read, say so briefly and continue with the best fallback.
-- How to use a skill (progressive disclosure):
-  1) After deciding to use a skill, open its `SKILL.md`. Read only enough to follow the workflow.
-  2) When `SKILL.md` references relative paths (e.g., `scripts/foo.py`), resolve them relative to the skill directory listed above first, and only consider other paths if needed.
-  3) If `SKILL.md` points to extra folders such as `references/`, load only the specific files needed for the request; don't bulk-load everything.
-  4) If `scripts/` exist, prefer running or patching them instead of retyping large code blocks.
-  5) If `assets/` or templates exist, reuse them instead of recreating from scratch.
-- Coordination and sequencing:
-  - If multiple skills apply, choose the minimal set that covers the request and state the order you'll use them.
-  - Announce which skill(s) you're using and why in one short line.
-- Context hygiene:
-  - Keep context small: summarize long sections instead of pasting them; only load extra files when needed.
-  - Avoid deep reference-chasing: prefer opening only files directly linked from `SKILL.md` unless you're blocked.
-  - When variants exist, pick only the relevant reference file(s) and note that choice.
-- Safety and fallback: If a skill can't be applied cleanly, state the issue, pick the next-best approach, and continue.
+Shared code has three consumers. Before modifying or deleting anything in
+`packages/shared` or `packages/ui`:
 
-## Testing preferences
-- Prioritize functional tests over UI/UX tests.
-- Add UI/UX tests only when a visible behavior should work differently and the failure is user-relevant.
-- Prefer unit and integration coverage for business logic in this repo before adding E2E coverage.
-- When endpoint behavior matters, E2E tests may target the backend running in Docker from the sibling repo `../salmon-api`.
-- Before adding new E2E coverage, check whether `../salmon-api` already covers the behavior well enough to avoid redundant tests.
-- E2E tests that depend on backend availability should skip when the backend is unreachable or not running.
-- If the backend is reachable but the behavior is wrong, the test must fail rather than skip.
+1. Find the actual consumers (all apps and packages) of the export you are
+   touching — an export that looks dead in one app may be load-bearing in
+   another.
+2. Preserve stable export paths and barrels unless the task explicitly
+   allows breakage — renames ripple through three apps at once.
+3. If backend-facing behavior changes, check the sibling backend repo
+   `../salmon-api` (clone it next to this repo if needed) —
+   `packages/shared/src/api` is the canonical frontend contract with it.
+4. Run the smallest relevant tests before and after the change, and report
+   what was verified and what was intentionally preserved.
+5. Preserve the future-facing Ethereum surface
+   (`packages/shared/src/blockchain/ethereum` and related types) unless
+   removal is explicitly requested — it is intentional scaffolding for
+   planned multi-chain support, not dead code.
+
+## Security-sensitive areas
+
+This is a wallet: mistakes here can lose user funds. Treat these paths as
+high-sensitivity — do not change their behavior without explicit human
+sign-off, and give changes near them extra scrutiny:
+
+- `packages/shared/src/crypto` and `packages/shared/src/storage` (key
+  material, seed encryption, persistence)
+- transaction building/signing paths in `packages/shared/src/blockchain`
+- auth/lock/recovery flows in any app
+
+Never log, echo, screenshot, or commit seed phrases, private keys, or
+passwords — including in tests and E2E flows (test secrets live in
+gitignored `.env.test` files). Never perform irreversible on-chain actions
+(send, swap, burn) or credential operations (e.g. mobile keystore changes)
+autonomously; confirm with the human first.
+
+## When in doubt, ask the human
+
+Stop and ask 1–3 focused questions instead of guessing whenever any of
+these is ambiguous — a wrong guess here is expensive to unwind:
+
+- Placement: `packages/shared` vs `packages/ui` vs an app; is the code
+  truly used by more than one platform?
+- Shared-vs-app boundary: does a platform dependency (browser API, RN API,
+  navigation, biometrics) make it app-local?
+- Public exports: does the change alter an export path, barrel, or contract
+  other apps consume?
+- Contract impact: does a backend, blockchain, or cross-platform UI
+  contract change shape?
+- Removal of anything related to the Ethereum surface.
+- Translations: never guess a Spanish translation (see i18n below).
+- Anything in the security-sensitive areas above.
+
+If the answer could change code placement, API shape, or test scope, ask
+first. The repo skills encode more granular clarification gates per task
+type.
+
+## Code navigation for agents
+
+If a code-graph / semantic-search / blast-radius tool is available in your
+harness (for example, a prebuilt graph database in the repo or an
+impact-analysis tool exposed by your environment), prefer it over raw
+grep/glob/file-reading for exploration and consumer/impact analysis — it is
+cheaper in tokens and better at finding indirect consumers. This is
+optional: fall back to grep/glob/read when no such tool exists or it does
+not cover what you need (dynamic dispatch, generated code, very recent
+changes). Always verify graph-derived claims against the actual source
+before acting on them — graphs reflect parse-time structure, not runtime
+behavior.
+
+## Verification
+
+Run targeted checks for the packages you touched (fast feedback beats a
+full-repo run):
+
+- Typecheck: `pnpm turbo run typecheck --filter=@salmon/<pkg>`
+- Tests: `pnpm turbo run test --filter=@salmon/<pkg>`
+  (packages/shared and packages/ui use Vitest; apps/mobile uses Jest)
+- Lint: `pnpm turbo run lint --filter=@salmon/<pkg>`
+
+Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
+`@salmon/web`, `@salmon/extension`.
+
+## Testing rules
+
+- Prioritize functional tests over UI/UX tests — business logic bugs in a
+  wallet are costlier than visual regressions.
+- Add UI/UX tests only when a visible behavior should work differently and
+  the failure is user-relevant.
+- Prefer unit and integration coverage in the owning package before adding
+  E2E coverage — E2E is slower and flakier per bug caught.
+- Backend-dependent E2E tests may target `../salmon-api` running in Docker.
+  Before adding one, check whether `../salmon-api` already covers the
+  behavior to avoid redundant tests.
+- Tests that depend on backend availability must **skip** when the backend
+  is unreachable, but must **fail** (not skip) when the backend is reachable
+  and the behavior is wrong — silent skips on a live backend hide real
+  contract breaks.
 
 ## End-to-end test suites — per-app ownership
 
-E2E suites live next to the app they exercise. Each is a self-contained
-Node ESM driver — no central runner. Treat each suite as the canonical
-home for its platform's integration tests.
+E2E suites live next to the app they exercise. Do not create a top-level
+`.playwright/` or `.maestro/`.
 
 | App | Suite | Tool |
 |---|---|---|
@@ -83,52 +158,60 @@ home for its platform's integration tests.
 | `apps/web` | `apps/web/.playwright/` | Playwright (chromium against the web dev server) |
 | `apps/mobile` | `apps/mobile/.maestro/` | Maestro (iOS Simulator / Android emulator) |
 
-Rules:
+Each suite has its own `README.md` (setup) and `AGENTS.md` (conventions,
+known failure modes) — read those before extending a suite. Secrets stay in
+gitignored `<suite>/.env.test` with a committed `.env.test.example`.
+Suite-local outputs (`screenshots/`, `snapshots/`, `reports/`, `profiles/`,
+`fixtures/`) are gitignored. Cross-suite code belongs in `packages/shared`
+or `packages/ui` only when more than one suite needs it.
 
-- Do not create a top-level `.playwright/` or `.maestro/`. Tests must live
-  under their owning app.
-- Each suite has its own `README.md` and `AGENTS.md` describing setup,
-  conventions, and known failure modes. Read those before extending the
-  suite.
-- Secrets stay in `<suite>/.env.test` (gitignored). Commit a
-  `.env.test.example` so collaborators know which keys to populate.
-- Suite-local outputs (`screenshots/`, `snapshots/`, `reports/`,
-  `profiles/`, `fixtures/`) are gitignored — only `scripts/` and docs
-  ship.
-- Cross-app code (e.g. shared selectors, fixture builders) belongs in
-  `packages/shared` or `packages/ui` only when more than one suite needs
-  it. Otherwise keep it inside the suite.
+Maestro must be invoked from `apps/mobile/.maestro/` — screenshot paths
+resolve against the cwd, so any other cwd litters stray directories. Details
+in `apps/mobile/.maestro/AGENTS.md`.
 
-### Maestro working-directory rule
+## i18n
 
-Maestro resolves `takeScreenshot` paths relative to the directory the
-CLI is invoked from, not relative to the flow YAML. The Salmon flows
-use `screenshots/<smoke|actions>/...`, which means Maestro must be run
-from `apps/mobile/.maestro/`. Running it from anywhere else creates a
-stray `.maestro/screenshots/` folder at that cwd, polluting the tree
-that Maestro auto-generates around the binary.
+Every user-facing string must exist in both English and Spanish translation
+files, referenced via `t('key.path')` — hardcoded copy breaks localization
+for half the user base. Follow the `i18n-authoring` skill; never guess a
+translation.
 
-Defenses already in place:
+## Skills — detailed how-to
 
-- `apps/*/.maestro/.env.test`, `apps/*/.maestro/screenshots/`,
-  `apps/*/.maestro/snapshots/`, `apps/*/.maestro/reports/` are
-  gitignored.
-- `/.maestro/` (a stray top-level directory) and
-  `**/.maestro/screenshots/` (any nested `.maestro/screenshots/` from
-  bad cwd) are also gitignored, so a wrong-cwd run will not leak files
-  into git.
+Repo-local skills carry the detailed workflows this file intentionally does
+not duplicate. The canonical body of each skill is
+`.agent/skills/<name>/SKILL.md` (mirrored for specific tools in
+`.claude/skills/` and `.codex/skills/`). When a task matches a skill's
+scope, open its `SKILL.md` and follow it.
 
-If you see a `.maestro/` directory anywhere outside `apps/mobile/`, it
-is residue from a wrong-cwd invocation — delete it and re-run from
-`apps/mobile/.maestro/`.
+| Skill | Use for |
+|---|---|
+| `salmon-repo-rules` | Placement, ownership, boundary, export, and audit decisions (detailed matrices in its `references/`) |
+| `api-service-authoring` | Shared API services in `packages/shared/src/api/services` (caching, DI adapters, client selection) |
+| `shared-test-authoring` | Vitest tests for `packages/shared` (hooks, services, blockchain, crypto, config) |
+| `ui-component-scaffold` | Shared DOM components in `packages/ui`, incl. cross-platform contract flow |
+| `ui-test-authoring` | Tests for `packages/ui` components |
+| `mobile-component-scaffold` | React Native components in `apps/mobile`, incl. contract + mobile implementation |
+| `mobile-test-authoring` | Jest tests for `apps/mobile` |
+| `e2e-test-labels` | Stable `testID` / `data-testid` / a11y labels so Maestro and Playwright can select elements |
+| `i18n-authoring` | Adding, changing, or auditing user-facing copy and translation keys |
+
+Usage: load only what the task needs (read the relevant `SKILL.md` and only
+the reference files it points to); if several skills apply, state which and
+in what order; if a skill cannot be applied cleanly, say so and continue
+with the closest fallback.
 
 ## Folder guidance
 
-- Add local `AGENTS.md` or `CLAUDE.md` rules only in folders with real ownership boundaries or platform-specific constraints.
-- Prefer package-level or app-level guidance over file-by-file instruction clutter.
+- Nested `AGENTS.md` files exist only in folders with real ownership
+  boundaries or platform-specific constraints; they refine — never
+  contradict — this file.
+- Prefer package-level or app-level guidance over file-by-file instruction
+  clutter.
 
 ## Documentation rules
 
 - Put durable repo docs in `docs/`.
-- Keep docs responsibility-oriented. Prefer ownership and package-boundary guidance over file-by-file inventories unless the task explicitly asks for file-level documentation.
-</INSTRUCTIONS>
+- Keep docs responsibility-oriented: ownership and package-boundary
+  guidance over file-by-file inventories, unless the task explicitly asks
+  for file-level documentation.

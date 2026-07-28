@@ -3,7 +3,7 @@ name: salmon-repo-rules
 description: "Resolve code placement, package ownership, shared-vs-app boundaries, public exports, and architectural conventions in the Salmon Wallet monorepo. Use this skill whenever a task could change where code lives, which package owns it, whether a contract belongs in packages/shared, whether UI belongs in packages/ui or apps/mobile, or how barrels and theme tokens should be handled. Use it together with the authoring and testing skills whenever structure or ownership could change."
 ---
 
-The canonical placement and ownership ruleset for the Salmon Wallet monorepo. Load the relevant reference, inspect existing code, then act.
+Detailed placement and ownership workflow for the Salmon Wallet monorepo. The canonical high-level rules live in the repo-root `AGENTS.md` (Ownership model, Placement rules, Changing or removing existing code); this skill carries the decision matrices, clarification gates, and audit checklists that file intentionally does not duplicate. Load the relevant reference, inspect existing code, then act.
 
 ## Mandatory stance
 
@@ -30,14 +30,12 @@ If the answer could change code placement, API shape, or test scope, ask first.
 
 ## Core rules
 
-- `packages/shared` — only code shared by `mobile`, `web`, and `extension`.
-- `packages/ui` — only React DOM components shared by `web` and `extension`.
-- `apps/mobile` — React Native components, native integrations, and mobile-only UI flows.
-- Platform-only code stays in its app.
-- `packages/shared/src/theme` is the single source of design tokens.
-- External consumers prefer `@salmon/shared`. Inside `packages/shared`, use relative imports.
-- Public barrels expose named exports only.
-- Hooks over 300 lines and components over 250-300 lines are split candidates.
+Canonical ownership and placement rules (with rationale): repo-root `AGENTS.md`. Skill-level additions not covered there:
+
+- External consumers prefer `@salmon/shared`. Inside `packages/shared`, use relative imports — self-imports through the package name confuse bundlers.
+- Hooks over 300 lines and components over 250-300 lines are split candidates — past that size, mixed concerns hide bugs.
+
+The full rule set with placement shortcuts lives in [references/core-rules.md](references/core-rules.md).
 
 ## Route to the right reference
 

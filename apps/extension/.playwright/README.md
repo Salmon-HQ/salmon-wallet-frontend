@@ -39,11 +39,10 @@ Chromium with Playwright.
 `screenshots/` and `snapshots/` are recreated by `lib.mjs` on first capture
 inside a script run. They are deliberately not checked in.
 
-There is a sibling directory `~/.claude/skills/playwright-cli/` that
-auto-generates `.playwright-cli/` artifacts in any repo where the global
-`playwright-cli` skill runs. That tool is **separate** from this suite —
-`.playwright-cli/` can be deleted at any time without affecting these
-scripts.
+Some external browser-automation tools auto-generate a `.playwright-cli/`
+directory in repos they run in. That tooling is **separate** from this
+suite — `.playwright-cli/` can be deleted at any time without affecting
+these scripts.
 
 ## Prerequisites
 
