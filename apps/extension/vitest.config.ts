@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 import { WxtVitest } from 'wxt/testing'
 import path from 'path'
 
@@ -14,6 +14,8 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     include: ['**/*.{test,spec}.{ts,tsx}'],
+    // Playwright E2E specs have their own runner (`pnpm e2e`); Vitest must not load them.
+    exclude: [...configDefaults.exclude, '.playwright/**'],
     setupFiles: ['./vitest.setup.ts'],
     coverage: {
       provider: 'v8',

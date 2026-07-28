@@ -37,7 +37,6 @@
     "lodash-es": "^4.17.21",
     "micro-key-producer": "^0.8.2",
     "react-content-loader": "^7.1.1",
-    "salmon-wallet-standard": "^0.0.6",
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {

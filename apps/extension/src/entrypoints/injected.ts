@@ -1,6 +1,6 @@
 import '../polyfills/node';
 import { SolanaProvider } from '@/lib/SolanaProvider';
-import { initialize } from 'salmon-wallet-standard';
+import { initialize } from '@/wallet-standard';
 
 /**
  * Injected script that runs in the context of web pages.
