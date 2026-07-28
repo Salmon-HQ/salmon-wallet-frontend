@@ -4,7 +4,12 @@ import type { WalletAccount } from '@wallet-standard/base';
 import { SOLANA_CHAINS } from './solana.js';
 
 const chains = SOLANA_CHAINS;
-const features = ['solana:signAndSendTransaction', 'solana:signMessage', 'solana:signTransaction'] as const;
+const features = [
+    'solana:signAndSendTransaction',
+    'solana:signMessage',
+    'solana:signOffchainMessage',
+    'solana:signTransaction',
+] as const;
 
 export class SalmonWalletAccount implements WalletAccount {
     readonly #address: WalletAccount['address'];

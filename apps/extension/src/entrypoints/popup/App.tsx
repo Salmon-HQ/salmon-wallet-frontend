@@ -20,6 +20,7 @@ import {
   type DAppTransactionRequest,
   DAppSignMessageApprovalPage,
   type DAppSignMessageRequest,
+  type DAppSignOffchainMessageRequest,
 } from '../../pages/dapp';
 import { SelectOptionsPage } from '../../pages/auth/SelectOptionsPage';
 import { CreateWalletPage } from '../../pages/auth/CreateWalletPage';
@@ -98,7 +99,7 @@ function App() {
   // dApp sign message flow (when popup is launched for message signing)
   const [pendingDAppSignMessageRequest, setPendingDAppSignMessageRequest] = useState<{
     origin: string;
-    request: DAppSignMessageRequest;
+    request: DAppSignMessageRequest | DAppSignOffchainMessageRequest;
   } | null>(null);
 
   useEffect(() => {
@@ -112,7 +113,10 @@ function App() {
         const request = JSON.parse(requestStr) as DAppApprovalRequest;
         if (request.method === 'connect' && request.id != null) {
           setPendingDAppRequest({ origin, request });
-        } else if (request.method === 'sign' && request.id != null) {
+        } else if (
+          (request.method === 'sign' || request.method === 'signOffchain') &&
+          request.id != null
+        ) {
           setPendingDAppSignMessageRequest({ origin, request });
         } else if (
           (request.method === 'signTransaction' ||
@@ -134,7 +138,10 @@ function App() {
       const { origin, request } = approval;
       if (request.method === 'connect' && request.id != null) {
         setPendingDAppRequest({ origin, request });
-      } else if (request.method === 'sign' && request.id != null) {
+      } else if (
+        (request.method === 'sign' || request.method === 'signOffchain') &&
+        request.id != null
+      ) {
         setPendingDAppSignMessageRequest({ origin, request });
       } else if (
         (request.method === 'signTransaction' ||

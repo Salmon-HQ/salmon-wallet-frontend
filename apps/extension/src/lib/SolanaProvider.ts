@@ -83,6 +83,24 @@ export interface SignMessageResult {
 }
 
 /**
+ * Input for signing an OCMS v1 off-chain message (Wallet Standard PR#92)
+ */
+export interface SignOffchainMessageInput {
+  messageVersion: number;
+  message: string;
+  requiredSigners: Uint8Array[];
+}
+
+/**
+ * Result from signing an OCMS v1 off-chain message
+ */
+export interface SignOffchainMessageResult {
+  signedOffchainMessage: Uint8Array;
+  signature: Uint8Array;
+  signatureType: 'ed25519';
+}
+
+/**
  * Network type for transaction operations
  */
 export type Network = 'solana-mainnet' | 'solana-devnet' | string;
@@ -332,6 +350,44 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
     const signature = bs58.decode(result.signature);
 
     return { signature: new Uint8Array(signature) };
+  };
+
+  /**
+   * Signs an OCMS v1 off-chain message (`solana:signOffchainMessage`, Wallet
+   * Standard PR#92). The UTF-8 message and required signer public keys travel
+   * to the extension as JSON (byte array + base58 strings); the approval
+   * layer's bs58 payload is decoded back to Uint8Array at this edge.
+   * @param input - messageVersion (v1 only), UTF-8 message, required signers
+   * @returns The full signed OCMS buffer, the signature, and its type
+   */
+  signOffchainMessage = async (
+    input: SignOffchainMessageInput
+  ): Promise<SignOffchainMessageResult> => {
+    if (input.messageVersion !== 1) {
+      throw new Error('Unsupported off-chain message version');
+    }
+    if (typeof input.message !== 'string') {
+      throw new Error('Message must be a string');
+    }
+    if (!Array.isArray(input.requiredSigners)) {
+      throw new Error('requiredSigners must be an array');
+    }
+
+    const response = await this.sendRequest('signOffchain', {
+      data: Array.from(new TextEncoder().encode(input.message)),
+      requiredSigners: input.requiredSigners.map((publicKey) => bs58.encode(publicKey)),
+    });
+    const result = response.result as {
+      signedOffchainMessage: string;
+      signature: string;
+      signatureType: 'ed25519';
+    };
+
+    return {
+      signedOffchainMessage: new Uint8Array(bs58.decode(result.signedOffchainMessage)),
+      signature: new Uint8Array(bs58.decode(result.signature)),
+      signatureType: result.signatureType,
+    };
   };
 
 }

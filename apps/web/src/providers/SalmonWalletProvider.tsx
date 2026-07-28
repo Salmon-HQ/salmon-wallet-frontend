@@ -11,6 +11,7 @@ import {
   type DAppSignAllTransactionsApprovalPayload,
   type DAppSignAndSendTransactionApprovalPayload,
   type DAppSignMessageApprovalPayload,
+  type DAppSignOffchainMessageApprovalPayload,
   type DAppSignTransactionApprovalPayload,
 } from '@salmon/shared';
 import { sendRequest, waitForResponse, type BridgeRequest } from '../utils/walletBridge';
@@ -71,6 +72,52 @@ function createSalmonWallet() {
       if (!response.approved) return null;
       const payload = response.payload as DAppSignMessageApprovalPayload;
       return new Uint8Array(bs58.decode(payload.signature));
+    },
+
+    /**
+     * OCMS v1 `solana:signOffchainMessage` (Wallet Standard PR#92). Input mirrors the
+     * PR#92 feature (UTF-8 `message` string + required signer public keys); output is
+     * the PR#92 shape with the bridge's bs58 strings decoded back to `Uint8Array`.
+     */
+    supportedOffchainMessageVersions: [1] as const,
+
+    async signOffchainMessage(
+      origin: string,
+      input: { messageVersion: number; message: string; requiredSigners: Uint8Array[] },
+    ): Promise<{
+      signedOffchainMessage: Uint8Array;
+      signature: Uint8Array;
+      signatureType: 'ed25519';
+    } | null> {
+      if (input.messageVersion !== 1) {
+        throw new Error('Unsupported off-chain message version');
+      }
+
+      const requestId = generateRequestId();
+      const request: BridgeRequest = {
+        requestId,
+        origin,
+        request: {
+          id: requestId,
+          method: 'signOffchain',
+          params: {
+            data: Array.from(new TextEncoder().encode(input.message)),
+            requiredSigners: input.requiredSigners.map((publicKey) => bs58.encode(publicKey)),
+          },
+        },
+      };
+
+      openApprovalPopup('/dapp/sign-message', requestId, origin, 'salmon-sign-offchain');
+      sendRequest(request);
+      const response = await waitForResponse(requestId);
+
+      if (!response.approved) return null;
+      const payload = response.payload as DAppSignOffchainMessageApprovalPayload;
+      return {
+        signedOffchainMessage: new Uint8Array(bs58.decode(payload.signedOffchainMessage)),
+        signature: new Uint8Array(bs58.decode(payload.signature)),
+        signatureType: payload.signatureType,
+      };
     },
 
     async signTransaction(origin: string, transaction: Uint8Array): Promise<Uint8Array | null> {

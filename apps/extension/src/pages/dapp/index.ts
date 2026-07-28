@@ -6,4 +6,5 @@ export type {
   DAppConnectRequest,
   DAppTransactionRequest,
   DAppSignMessageRequest,
+  DAppSignOffchainMessageRequest,
 } from '@salmon/shared';

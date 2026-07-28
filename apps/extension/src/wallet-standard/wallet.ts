@@ -10,7 +10,7 @@ import type {
     SolanaSignTransactionOutput,
 } from '@solana/wallet-standard-features';
 import { VersionedTransaction } from '@solana/web3.js';
-import type { Wallet } from '@wallet-standard/base';
+import type { Wallet, WalletAccount } from '@wallet-standard/base';
 import type {
     ConnectFeature,
     ConnectMethod,
@@ -32,6 +32,37 @@ import type { Salmon } from './window.js';
 export type SalmonFeature = {
     'salmon:': {
         salmon: Salmon;
+    };
+};
+
+// OCMS v1 (`solana:signOffchainMessage`) types, per Wallet Standard PR#92.
+// Defined locally because the installed @solana/wallet-standard-features does
+// not ship the feature yet; remove once the upstream package includes it.
+
+export type SolanaSignOffchainMessageVersion = 1;
+
+export interface SolanaSignOffchainMessageInput {
+    readonly account: WalletAccount;
+    readonly message: string;
+    readonly messageVersion: SolanaSignOffchainMessageVersion;
+    readonly requiredSigners: readonly Uint8Array[];
+}
+
+export interface SolanaSignOffchainMessageOutput {
+    readonly signedOffchainMessage: Uint8Array;
+    readonly signature: Uint8Array;
+    readonly signatureType?: 'ed25519';
+}
+
+export type SolanaSignOffchainMessageMethod = (
+    ...inputs: readonly SolanaSignOffchainMessageInput[]
+) => Promise<readonly SolanaSignOffchainMessageOutput[]>;
+
+export type SolanaSignOffchainMessageFeature = {
+    'solana:signOffchainMessage': {
+        version: '1.0.0';
+        supportedMessageVersions: readonly SolanaSignOffchainMessageVersion[];
+        signOffchainMessage: SolanaSignOffchainMessageMethod;
     };
 };
 
@@ -65,6 +96,7 @@ export class SalmonWallet implements Wallet {
         SolanaSignAndSendTransactionFeature &
         SolanaSignTransactionFeature &
         SolanaSignMessageFeature &
+        SolanaSignOffchainMessageFeature &
         SalmonFeature {
         return {
             'standard:connect': {
@@ -92,6 +124,11 @@ export class SalmonWallet implements Wallet {
             'solana:signMessage': {
                 version: '1.0.0',
                 signMessage: this.#signMessage,
+            },
+            'solana:signOffchainMessage': {
+                version: '1.0.0',
+                supportedMessageVersions: [1],
+                signOffchainMessage: this.#signOffchainMessage,
             },
             'salmon:': {
                 salmon: this.#salmon,
@@ -269,6 +306,29 @@ export class SalmonWallet implements Wallet {
             for (const input of inputs) {
                 outputs.push(...(await this.#signMessage(input)));
             }
+        }
+
+        return outputs;
+    };
+
+    #signOffchainMessage: SolanaSignOffchainMessageMethod = async (...inputs) => {
+        if (!this.#account) throw new Error('not connected');
+
+        const outputs: SolanaSignOffchainMessageOutput[] = [];
+
+        for (const input of inputs) {
+            const { account, message, messageVersion, requiredSigners } = input;
+            if (account !== this.#account) throw new Error('invalid account');
+            if (messageVersion !== 1) throw new Error('unsupported message version');
+
+            const { signedOffchainMessage, signature, signatureType } =
+                await this.#salmon.signOffchainMessage({
+                    messageVersion,
+                    message,
+                    requiredSigners: requiredSigners.slice(),
+                });
+
+            outputs.push({ signedOffchainMessage, signature, signatureType });
         }
 
         return outputs;

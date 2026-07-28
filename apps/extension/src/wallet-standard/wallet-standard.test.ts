@@ -33,6 +33,11 @@ function createMockSalmon(publicKey: Keypair['publicKey'] | null = null): Salmon
     signTransaction: vi.fn(),
     signAllTransactions: vi.fn(),
     signMessage: vi.fn(async () => ({ signature: new Uint8Array(64).fill(7) })),
+    signOffchainMessage: vi.fn(async () => ({
+      signedOffchainMessage: new Uint8Array(10).fill(1),
+      signature: new Uint8Array(64).fill(9),
+      signatureType: 'ed25519' as const,
+    })),
     on<E extends keyof SalmonEvent>(event: E, listener: SalmonEvent[E]) {
       (listeners[event] ??= []).push(listener as (...args: unknown[]) => unknown);
     },
@@ -124,6 +129,7 @@ describe('SalmonWallet', () => {
       'salmon:',
       'solana:signAndSendTransaction',
       'solana:signMessage',
+      'solana:signOffchainMessage',
       'solana:signTransaction',
       'standard:connect',
       'standard:disconnect',
@@ -135,6 +141,10 @@ describe('SalmonWallet', () => {
     expect(
       wallet.features['solana:signAndSendTransaction'].supportedTransactionVersions,
     ).toEqual(['legacy', 0]);
+    expect(
+      wallet.features['solana:signOffchainMessage'].supportedMessageVersions,
+    ).toEqual([1]);
+    expect(wallet.features['solana:signOffchainMessage'].version).toBe('1.0.0');
   });
 
   it('connects through the provider, exposes the account, and emits a change event', async () => {
@@ -195,6 +205,70 @@ describe('SalmonWallet', () => {
     expect(outputs).toHaveLength(1);
     expect(outputs[0].signedMessage).toBe(message);
     expect(outputs[0].signature).toEqual(new Uint8Array(64).fill(7));
+  });
+
+  it('delegates signOffchainMessage to the provider and returns the PR#92 output shape', async () => {
+    // Arrange
+    const keypair = Keypair.generate();
+    const salmon = createMockSalmon(keypair.publicKey);
+    const wallet = new SalmonWallet(salmon);
+    const account = wallet.accounts[0];
+    const requiredSigners = [keypair.publicKey.toBytes()];
+
+    // Act
+    const outputs = await wallet.features['solana:signOffchainMessage'].signOffchainMessage({
+      account,
+      message: 'hello ocms',
+      messageVersion: 1,
+      requiredSigners,
+    });
+
+    // Assert
+    expect(salmon.signOffchainMessage).toHaveBeenCalledWith({
+      messageVersion: 1,
+      message: 'hello ocms',
+      requiredSigners,
+    });
+    expect(outputs).toHaveLength(1);
+    expect(outputs[0].signedOffchainMessage).toBeInstanceOf(Uint8Array);
+    expect(outputs[0].signedOffchainMessage).toEqual(new Uint8Array(10).fill(1));
+    expect(outputs[0].signature).toEqual(new Uint8Array(64).fill(9));
+    expect(outputs[0].signatureType).toBe('ed25519');
+  });
+
+  it('rejects signOffchainMessage for an unsupported message version', async () => {
+    // Arrange
+    const salmon = createMockSalmon(Keypair.generate().publicKey);
+    const wallet = new SalmonWallet(salmon);
+
+    // Act & Assert
+    await expect(
+      wallet.features['solana:signOffchainMessage'].signOffchainMessage({
+        account: wallet.accounts[0],
+        message: 'hello',
+        messageVersion: 2 as unknown as 1,
+        requiredSigners: [],
+      }),
+    ).rejects.toThrow('unsupported message version');
+    expect(salmon.signOffchainMessage).not.toHaveBeenCalled();
+  });
+
+  it('rejects signOffchainMessage for an account it does not own', async () => {
+    // Arrange
+    const salmon = createMockSalmon(Keypair.generate().publicKey);
+    const wallet = new SalmonWallet(salmon);
+    const foreignWallet = new SalmonWallet(createMockSalmon(Keypair.generate().publicKey));
+
+    // Act & Assert
+    await expect(
+      wallet.features['solana:signOffchainMessage'].signOffchainMessage({
+        account: foreignWallet.accounts[0],
+        message: 'hello',
+        messageVersion: 1,
+        requiredSigners: [],
+      }),
+    ).rejects.toThrow('invalid account');
+    expect(salmon.signOffchainMessage).not.toHaveBeenCalled();
   });
 
   it('rejects signMessage for an account it does not own', async () => {
