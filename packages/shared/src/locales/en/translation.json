@@ -101,7 +101,11 @@
     "siws_view_raw": "View raw message",
     "siws_hide_raw": "Hide raw message",
     "siws_domain_mismatch_title": "Domain mismatch",
-    "siws_domain_mismatch": "The message domain does not match the requesting site."
+    "siws_domain_mismatch": "The message domain does not match the requesting site.",
+    "offchain_message_label": "Off-chain message (OCMS)",
+    "offchain_required_signer": "Required signer",
+    "sign_message_tx_lookalike_title": "Signing blocked",
+    "sign_message_tx_lookalike_warning": "This app is trying to make you sign what is actually a transaction, disguised as a plain message. Salmon has refused to sign it to protect your funds."
   },
   "settings": {
     "title": "Settings",

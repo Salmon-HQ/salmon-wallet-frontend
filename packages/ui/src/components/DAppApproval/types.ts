@@ -15,6 +15,12 @@ export interface DAppSignMessageApprovalViewProps {
   appName?: string;
   appIcon?: string;
   messageText: string;
+  /** Raw message bytes, as received from the dApp. Enables the tx-lookalike guard
+   * and, when `requiredSigners` is also set, OCMS content parsing. */
+  data?: number[];
+  /** Base58 required-signer addresses. Presence marks this as an OCMS
+   * `solana:signOffchainMessage` request rather than a legacy raw `sign`. */
+  requiredSigners?: string[];
   disabled?: boolean;
   loading?: boolean;
   onApprove: () => void | Promise<void>;

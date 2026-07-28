@@ -9,7 +9,7 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
-import { signOffchainMessage } from '../blockchain/solana';
+import { buildOffchainMessageV1, parseOffchainMessageV1, signOffchainMessage } from '../blockchain/solana';
 import type { SolanaAccount } from '../blockchain/solana';
 import type {
   DAppSignAllTransactionsApprovalPayload,
@@ -322,6 +322,27 @@ export function approveSolanaSignOffchainMessage(
     signature: bs58.encode(signature),
     signatureType: 'ed25519',
   };
+}
+
+/**
+ * Rebuilds and decodes an OCMS v1 signing buffer for approval-UI display, using the
+ * same `buildOffchainMessageV1` -> `parseOffchainMessageV1` round-trip that
+ * `approveSolanaSignOffchainMessage` signs — so the approval screen shows exactly what
+ * the user is about to sign, not a separately-derived decode that could drift from it.
+ * Throws if `data` is not valid UTF-8 or `requiredSigners` are not well-formed base58
+ * addresses (mirrors `buildOffchainMessageV1`/`parseOffchainMessageV1`'s own contract).
+ *
+ * @param data - Raw UTF-8-encoded message bytes, as received from a dApp
+ * @param requiredSigners - Required signer addresses, base58-encoded
+ */
+export function parseOffchainMessageForApproval(
+  data: number[],
+  requiredSigners: string[],
+): ReturnType<typeof parseOffchainMessageV1> {
+  const contentBytes = Uint8Array.from(data);
+  const signers = requiredSigners.map((address) => new PublicKey(address));
+  const buffer = buildOffchainMessageV1(contentBytes, signers);
+  return parseOffchainMessageV1(buffer);
 }
 
 export async function approveSolanaTransactionRequest(

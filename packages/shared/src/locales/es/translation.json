@@ -101,7 +101,11 @@
     "siws_view_raw": "Ver mensaje original",
     "siws_hide_raw": "Ocultar mensaje original",
     "siws_domain_mismatch_title": "Dominio no coincide",
-    "siws_domain_mismatch": "El dominio del mensaje no coincide con el sitio solicitante."
+    "siws_domain_mismatch": "El dominio del mensaje no coincide con el sitio solicitante.",
+    "offchain_message_label": "Mensaje off-chain (OCMS)",
+    "offchain_required_signer": "Firmante requerido",
+    "sign_message_tx_lookalike_title": "Firma bloqueada",
+    "sign_message_tx_lookalike_warning": "Esta app está intentando que firmes lo que en realidad es una transacción, disfrazada de mensaje simple. Salmon se negó a firmarla para proteger tus fondos."
   },
   "settings": {
     "title": "Configuración",

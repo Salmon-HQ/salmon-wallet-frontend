@@ -15,6 +15,7 @@ import {
   approveSolanaTransactionRequest,
   isTransactionLookalike,
   loadSolanaTransactionApprovalDetails,
+  parseOffchainMessageForApproval,
   parseSiwsMessage,
   serializeSignedTransactionFromApproval,
   TransactionLookalikeMessageError,
@@ -333,5 +334,29 @@ describe('approveSolanaSignOffchainMessage', () => {
         salmon.publicKey,
       ),
     ).toBe(true);
+  });
+});
+
+describe('parseOffchainMessageForApproval', () => {
+  it('decodes the content and required signatories for approval-UI display', () => {
+    // Arrange
+    const salmon = Keypair.generate();
+    const text = 'Please confirm your login';
+    const data = Array.from(new TextEncoder().encode(text));
+
+    // Act
+    const parsed = parseOffchainMessageForApproval(data, [salmon.publicKey.toBase58()]);
+
+    // Assert
+    expect(parsed.content).toBe(text);
+    expect(parsed.requiredSignatories).toEqual([{ address: salmon.publicKey.toBase58() }]);
+  });
+
+  it('throws when a required signer is not a valid base58 address', () => {
+    // Arrange
+    const data = Array.from(new TextEncoder().encode('hello'));
+
+    // Act & Assert
+    expect(() => parseOffchainMessageForApproval(data, ['not-a-valid-address'])).toThrow();
   });
 });

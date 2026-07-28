@@ -17,6 +17,24 @@ export interface DAppSignMessageRequest {
   };
 }
 
+/**
+ * Request for `solana:signOffchainMessage` (OCMS v1). Mirrors `DAppSignMessageRequest`'s
+ * shape, but carries the required signers alongside the message bytes — OCMS's
+ * domain-separated buffer is built from both, so the approval flow needs both to build
+ * and preview the exact bytes that will be signed (see `buildOffchainMessageV1`).
+ * `requiredSigners` are base58-encoded addresses, matching how every other identifier in
+ * this file crosses the postMessage/bridge boundary as JSON.
+ */
+export interface DAppSignOffchainMessageRequest {
+  id: string | number;
+  method: 'signOffchain';
+  params?: {
+    data?: number[];
+    requiredSigners?: string[];
+    [key: string]: unknown;
+  };
+}
+
 export interface DAppSignTransactionRequest {
   id: string | number;
   method: 'signTransaction';
@@ -56,6 +74,7 @@ export type DAppTransactionRequest =
 export type DAppApprovalRequest =
   | DAppConnectRequest
   | DAppSignMessageRequest
+  | DAppSignOffchainMessageRequest
   | DAppTransactionRequest;
 
 export interface DAppConnectApprovalPayload {

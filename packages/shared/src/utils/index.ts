@@ -10,6 +10,7 @@ export {
   isSecureOrigin,
   isTransactionLookalike,
   loadSolanaTransactionApprovalDetails,
+  parseOffchainMessageForApproval,
   parseSiwsMessage,
   serializeSignedTransactionFromApproval,
   serializeSignedTransactionsFromApproval,

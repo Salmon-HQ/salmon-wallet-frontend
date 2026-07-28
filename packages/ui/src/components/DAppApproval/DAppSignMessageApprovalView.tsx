@@ -10,6 +10,8 @@ import {
   fontFamily,
   fontSize,
   getShortAddress,
+  isTransactionLookalike,
+  parseOffchainMessageForApproval,
   parseSiwsMessage,
   spacing,
 } from '@salmon/shared';
@@ -53,6 +55,8 @@ export function DAppSignMessageApprovalView({
   appName,
   appIcon,
   messageText,
+  data,
+  requiredSigners,
   disabled = false,
   loading = false,
   onApprove,
@@ -65,7 +69,28 @@ export function DAppSignMessageApprovalView({
   const [showRaw, setShowRaw] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const parsed = useMemo(() => parseSiwsMessage(messageText), [messageText]);
+  const isOffchainMessage = requiredSigners !== undefined;
+
+  const offchainParsed = useMemo(() => {
+    if (!isOffchainMessage || !data) return null;
+    try {
+      return parseOffchainMessageForApproval(data, requiredSigners);
+    } catch {
+      return null;
+    }
+  }, [isOffchainMessage, data, requiredSigners]);
+
+  // The tx-lookalike guard only applies to the legacy raw `sign` path — OCMS's
+  // domain-separated buffer prevents this collision by construction.
+  const isLookalikeTransaction = useMemo(() => {
+    if (isOffchainMessage || !data) return false;
+    return isTransactionLookalike(Uint8Array.from(data));
+  }, [isOffchainMessage, data]);
+
+  const parsed = useMemo(
+    () => (isOffchainMessage ? null : parseSiwsMessage(messageText)),
+    [isOffchainMessage, messageText],
+  );
 
   const issuedAtDisplay = useMemo(() => {
     if (!parsed?.issuedAt) return null;
@@ -163,9 +188,37 @@ export function DAppSignMessageApprovalView({
           </Card>
 
           <Card>
-            <Label>{t('dapp.message', 'Message')}</Label>
+            <Label>
+              {isOffchainMessage
+                ? t('dapp.offchain_message_label', 'Off-chain message (OCMS)')
+                : t('dapp.message', 'Message')}
+            </Label>
 
-            {domainMismatch && (
+            {isLookalikeTransaction && (
+              <Box
+                sx={{
+                  marginBottom: `${spacing.md}px`,
+                  padding: `${spacing.md}px`,
+                  borderRadius: 2,
+                  backgroundColor: colors.status.errorBackground,
+                  border: `1px solid ${colors.status.error}`,
+                }}
+              >
+                <Typography
+                  sx={{ color: colors.status.error, fontSize: fontSize.sm, fontWeight: 600 }}
+                >
+                  {t('dapp.sign_message_tx_lookalike_title', 'Signing blocked')}
+                </Typography>
+                <Typography sx={{ color: colors.text.primary, fontSize: fontSize.sm }}>
+                  {t(
+                    'dapp.sign_message_tx_lookalike_warning',
+                    'This app is trying to make you sign what is actually a transaction, disguised as a plain message. Salmon has refused to sign it to protect your funds.',
+                  )}
+                </Typography>
+              </Box>
+            )}
+
+            {!isLookalikeTransaction && domainMismatch && (
               <Box
                 sx={{
                   marginBottom: `${spacing.md}px`,
@@ -189,7 +242,37 @@ export function DAppSignMessageApprovalView({
               </Box>
             )}
 
-            {parsed ? (
+            {isOffchainMessage ? (
+              offchainParsed ? (
+                <>
+                  <Value
+                    sx={{
+                      fontWeight: 400,
+                      marginBottom: `${spacing.md}px`,
+                      whiteSpace: 'pre-wrap',
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    {offchainParsed.content}
+                  </Value>
+
+                  <SummaryGrid>
+                    {offchainParsed.requiredSignatories.map((signatory) => (
+                      <SummaryItem key={signatory.address}>
+                        <SummaryLabel>
+                          {t('dapp.offchain_required_signer', 'Required signer')}
+                        </SummaryLabel>
+                        <SummaryValue sx={monoValueSx}>
+                          {getShortAddress(signatory.address)}
+                        </SummaryValue>
+                      </SummaryItem>
+                    ))}
+                  </SummaryGrid>
+                </>
+              ) : (
+                rawMessageBox
+              )
+            ) : parsed ? (
               <>
                 {parsed.statement && (
                   <Value
@@ -275,7 +358,11 @@ export function DAppSignMessageApprovalView({
         </ScrollArea>
 
         <ButtonsContainer>
-          <PrimaryButton onClick={onApprove} loading={loading} disabled={disabled || loading}>
+          <PrimaryButton
+            onClick={onApprove}
+            loading={loading}
+            disabled={disabled || loading || isLookalikeTransaction}
+          >
             {t('dapp.sign', 'Sign').toUpperCase()}
           </PrimaryButton>
           <SecondaryButton onClick={onReject} disabled={loading}>
