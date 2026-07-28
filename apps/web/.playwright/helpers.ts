@@ -12,7 +12,16 @@ const seedA = (): string => process.env.SALMON_TEST_SEED_A ?? '';
 
 export type EntryState = 'unlocked' | 'recovered' | 'home';
 
-export async function unlockOrRecover(page: Page): Promise<EntryState> {
+export type Consent = 'accept' | 'decline';
+
+/**
+ * @param consent - Which button to press on the first-run consent screen.
+ *   Defaults to `decline`, so analytics stay OFF unless a spec asks for them.
+ */
+export async function unlockOrRecover(
+  page: Page,
+  { consent = 'decline' }: { consent?: Consent } = {},
+): Promise<EntryState> {
   // Wait for the app to finish booting into one of the entry surfaces before
   // branching — otherwise the testid counts race the initial React mount.
   await page
@@ -39,6 +48,11 @@ export async function unlockOrRecover(page: Page): Promise<EntryState> {
     await page.getByTestId('password-input').fill(password());
     await page.getByTestId('password-confirm-input').fill(password());
     await page.getByTestId('password-submit-button').click();
+    // First-run analytics consent is the final onboarding step.
+    await page
+      .getByTestId(`analytics-consent-${consent}`)
+      .click({ timeout: 60_000 })
+      .catch(() => {});
     await page
       .getByTestId('success-go-to-wallet-button')
       .click({ timeout: 60_000 })

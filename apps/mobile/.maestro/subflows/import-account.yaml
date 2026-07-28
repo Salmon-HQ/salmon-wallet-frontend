@@ -1,0 +1,66 @@
+appId: io.salmonwallet.app
+---
+# Import an external seed as an ADDITIONAL account in the running wallet, and
+# leave it active.
+#
+#   - runFlow:
+#       file: ../../../subflows/import-account.yaml
+#       env:
+#         IMPORT_SEED: ${SALMON_TEST_SEED_A}
+#
+# This is the mechanism, not the test: flows/actions/account/import-seed.yaml is
+# what actually covers the import path. Other flows reuse this subflow when they
+# need a second wallet loaded without a clearState, which would wipe the first.
+#
+# Starts from Home and returns to Home.
+- tapOn: "Switch wallet account"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible: "Your Wallets"
+- tapOn: "Add New Account"
+- extendedWaitUntil:
+    visible:
+      id: "account-add-method-import"
+    timeout: 10000
+- tapOn:
+    id: "account-add-method-import"
+- extendedWaitUntil:
+    visible:
+      id: "account-add-seed-input"
+    timeout: 10000
+- tapOn:
+    id: "account-add-seed-input"
+- inputText: ${IMPORT_SEED}
+- waitForAnimationToEnd:
+    timeout: 2000
+# The first tap after inputText lands on the keyboard dismissal, so drive
+# Continue until the name step is reached.
+- tapOn:
+    id: "account-add-seed-continue-button"
+- runFlow:
+    when:
+      notVisible: "Account Name"
+    commands:
+      - tapOn:
+          id: "account-add-seed-continue-button"
+- extendedWaitUntil:
+    visible: "Account Name"
+    timeout: 25000
+# The name field keeps focus, so the keyboard covers the button and a tap on the
+# "Confirm" text lands on the keyboard instead. Dismiss it and go by testID.
+- hideKeyboard
+- waitForAnimationToEnd:
+    timeout: 2000
+- tapOn:
+    id: "account-add-confirm-button"
+- waitForAnimationToEnd:
+    timeout: 30000
+# The panel pops back to the Settings sheet once the account is added. Adding an
+# account derives addresses across every supported network, which is slow.
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 60000
+- runFlow: ./settings-close.yaml
+- extendedWaitUntil:
+    visible: "Switch wallet account"
+    timeout: 20000

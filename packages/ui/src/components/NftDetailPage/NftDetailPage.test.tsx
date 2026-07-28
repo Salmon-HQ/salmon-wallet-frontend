@@ -76,6 +76,7 @@ vi.mock('@salmon/shared', () => ({
   opacity: { high: 0.9, medium: 0.6 },
   shadowsCSS: { header: 'none' },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, base: 10, headerPadding: 20 },
+  trackEvent: vi.fn(),
 }));
 
 vi.mock('../../utils/styled', async () => {

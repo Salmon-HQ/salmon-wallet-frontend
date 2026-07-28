@@ -185,7 +185,11 @@ export function AddressBookPanel({
           <EmptyText>
             {t('settings.addressbook.empty', 'Looks empty in here.\nAdd your first contact clicking the button.')}
           </EmptyText>
-          <AddButton startIcon={<AddCircleOutlineIcon />} onClick={onAddContact}>
+          <AddButton
+            startIcon={<AddCircleOutlineIcon />}
+            onClick={onAddContact}
+            data-testid="address-book-add-button"
+          >
             {t('settings.addressbook.addnew', 'Add New Address')}
           </AddButton>
         </EmptyContainer>

@@ -1,0 +1,52 @@
+appId: io.salmonwallet.app
+---
+# Round-trip an NFT between the two test wallets: A → B, then B → A. Two real
+# on-chain transfers.
+#
+# The round trip is the point. The previous version was one-way, which moved the
+# fixture permanently: after a single run, both this flow and
+# smoke/nft/detail.yaml were looking for an NFT that had left the wallet they
+# expected it in. Ending where it started makes the flow repeatable, the same way
+# actions/account/add-and-remove.yaml is for accounts.
+#
+# The NFT is "Mindfolk Founder #5154" (mint CNM8...), which lives in Wallet A. It
+# is the only collectible either test wallet can actually render — every other
+# one is dropped before it reaches the screen, either by the backend spam filter
+# (the airdrops) or by the client's `filter(nft => nft.media)` (Wallet A's
+# "Salmon Logo", whose IPFS pin is dead). smoke/nft/detail.yaml therefore asserts
+# on this same NFT: a run that dies between the two legs leaves Mindfolk parked
+# in Wallet B, and that flow fails until the next run brings it home.
+#
+# The second leg needs Wallet B signing while Wallet A is already loaded, so the
+# flow imports seed B as a second account rather than clearing state, which would
+# wipe Wallet A.
+- runFlow: ../../../subflows/onboard-walletA.yaml
+- takeScreenshot: screenshots/actions/nft/nft-walletA-home
+
+# --- Leg 1: Wallet A → Wallet B ---
+- runFlow:
+    file: ../../../subflows/send-nft.yaml
+    env:
+      NFT_MINT: CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV
+      DEST_ADDRESS: ${SALMON_TEST_WALLET_B_ADDR}
+- takeScreenshot: screenshots/actions/nft/nft-sent-to-walletB
+
+# --- Load Wallet B alongside Wallet A; the imported account becomes active ---
+- tapOn:
+    id: "tab-home"
+- extendedWaitUntil:
+    visible: "Switch wallet account"
+    timeout: 20000
+- runFlow:
+    file: ../../../subflows/import-account.yaml
+    env:
+      IMPORT_SEED: ${SALMON_TEST_SEED_B}
+- takeScreenshot: screenshots/actions/nft/nft-walletB-imported
+
+# --- Leg 2: Wallet B → Wallet A, restoring the fixture ---
+- runFlow:
+    file: ../../../subflows/send-nft.yaml
+    env:
+      NFT_MINT: CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV
+      DEST_ADDRESS: ${SALMON_TEST_WALLET_A_ADDR}
+- takeScreenshot: screenshots/actions/nft/nft-returned-to-walletA

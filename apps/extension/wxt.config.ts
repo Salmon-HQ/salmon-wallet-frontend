@@ -29,6 +29,7 @@ export default defineConfig({
           VITE_API_PORT: env.VITE_API_PORT ?? '',
           VITE_API_URL: env.VITE_API_URL ?? '',
           VITE_STATIC_API_URL: env.VITE_STATIC_API_URL ?? '',
+          VITE_ANALYTICS_URL: env.VITE_ANALYTICS_URL ?? '',
           NODE_ENV: process.env.NODE_ENV ?? 'development',
         }),
       },
@@ -102,8 +103,12 @@ export default defineConfig({
         gecko: {
           id: 'wallet@salmonwallet.io',
           strict_min_version: '142.0',
+          // No data collection is required. Anonymous usage analytics is
+          // strictly opt-in (off by default), so it is declared as optional
+          // technical/interaction data per Mozilla's data-collection policy.
           data_collection_permissions: {
             required: ['none'],
+            optional: ['technicalAndInteraction'],
           },
         },
       },

@@ -39,6 +39,7 @@ import {
   spacing,
   fontWeight,
   formatRawAmount,
+  trackEvent,
   useNftTransfer,
   getTransactionUrl,
   getDefaultExplorer,
@@ -109,6 +110,14 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     setImageLoading(true);
     setImageError(false);
   }
+
+  // Anonymous funnel event: an NFT detail view was opened. Only the coarse
+  // chain family — never the mint, name or media. No-op without consent.
+  useEffect(() => {
+    if (visible && nft) {
+      trackEvent('nft_viewed', { chain: nft.blockchain });
+    }
+  }, [visible, nft]);
 
   const resetFlowState = useCallback(() => {
     setStep('detail');

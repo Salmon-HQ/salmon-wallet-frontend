@@ -459,6 +459,7 @@ export function TokenSelectorModal({
                 onClick={() => handleSelect(token)}
                 role="button"
                 aria-label={`Select ${token.symbol || token.name}`}
+                data-testid={`token-select-featured-${token.symbol || token.name}`}
               >
                 {token.logo ? (
                   <FeaturedTokenIcon
@@ -516,6 +517,7 @@ export function TokenSelectorModal({
                   onClick={() => handleSelect(token)}
                   role="button"
                   aria-label={`Select ${tokenName}`}
+                  data-testid={`token-select-${token.symbol || tokenName}`}
                 >
                   {/* Token Icon */}
                   {token.logo ? (

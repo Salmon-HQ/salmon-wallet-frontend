@@ -71,6 +71,10 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     borderWidth: borderWidth.accent,
     borderColor: colors.accent.border,
+    // The row stretches this gradient to match the taller Back button
+    // (SecondaryButton has minHeight: buttonHeight); center the inner
+    // PrimaryButton so its label sits in the vertical middle instead of the top.
+    justifyContent: 'center',
     ...shadows.button,
   },
   confirmButton: {

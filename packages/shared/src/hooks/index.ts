@@ -197,6 +197,10 @@ export type {
 export { useSettingsPanelStack } from './useSettingsPanelStack';
 export type { UseSettingsPanelStackResult } from './useSettingsPanelStack';
 
+// Anonymous usage-analytics consent
+export { useAnalyticsConsent } from './useAnalyticsConsent';
+export type { UseAnalyticsConsentResult } from './useAnalyticsConsent';
+
 // Currency context (re-export for discoverability)
 export { useCurrencyContext } from '../contexts/CurrencyContext';
 export type { CurrencyState, CurrencyActions } from '../contexts/CurrencyContext';

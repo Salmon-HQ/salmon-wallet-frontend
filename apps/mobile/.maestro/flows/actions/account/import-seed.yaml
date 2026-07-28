@@ -1,0 +1,51 @@
+appId: io.salmonwallet.app
+---
+# Add an account by IMPORTING an external seed phrase (Wallet B) into an
+# existing wallet. Complements add-and-remove.yaml, which covers the other
+# AccountAddPanel branch (deriving a new account from the active seed).
+#
+# The distinction matters beyond UI: a derived account is a "create", an
+# imported seed is a "recover", and the two emit different analytics events.
+- runFlow: ../../../subflows/onboard-walletA.yaml
+- tapOn: "Switch wallet account"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible: "Your Wallets"
+- tapOn: "Add New Account"
+- extendedWaitUntil:
+    visible:
+      id: "account-add-method-import"
+    timeout: 10000
+- tapOn:
+    id: "account-add-method-import"
+- extendedWaitUntil:
+    visible:
+      id: "account-add-seed-input"
+    timeout: 10000
+- tapOn:
+    id: "account-add-seed-input"
+- inputText: ${SALMON_TEST_SEED_B}
+- waitForAnimationToEnd:
+    timeout: 2000
+# The first tap after inputText lands on the keyboard dismissal, so drive
+# Continue until the name step is reached.
+- tapOn:
+    id: "account-add-seed-continue-button"
+- runFlow:
+    when:
+      notVisible: "Account Name"
+    commands:
+      - tapOn:
+          id: "account-add-seed-continue-button"
+- extendedWaitUntil:
+    visible: "Account Name"
+    timeout: 25000
+- takeScreenshot: screenshots/actions/account/import-seed-name
+- tapOn: "Confirm"
+- waitForAnimationToEnd:
+    timeout: 30000
+# The panel pops back to Settings once the account is added.
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 30000
+- takeScreenshot: screenshots/actions/account/import-seed-added

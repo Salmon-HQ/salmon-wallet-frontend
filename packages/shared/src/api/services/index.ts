@@ -65,6 +65,11 @@ export {
   createBurnTransaction,
 } from './nft-burn';
 
+export {
+  createNftTransferTransaction,
+  type TransferNftParams,
+} from './nft-transfer';
+
 // ============================================================================
 // Bitcoin Service
 // ============================================================================

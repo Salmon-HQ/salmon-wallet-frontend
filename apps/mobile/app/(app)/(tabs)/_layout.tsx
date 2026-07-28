@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import {
   useAccountsContext,
   useUserConfig,
+  useAnalyticsConsent,
   useAvailableNetworks,
   useCurrencyContext,
   useAddressbook,
@@ -122,6 +123,13 @@ export default function TabLayout() {
   const { developerNetworks, toggleDeveloperNetworks, explorer, explorers, changeExplorer, isLoading: explorerLoading } = useUserConfig({
     activeBlockchainAccount: userConfigAccount,
   });
+
+  // Anonymous usage-analytics consent (opt-in). The first-run prompt now lives
+  // in onboarding (analytics-consent screen); here we only bind the Settings toggle.
+  const {
+    consent: analyticsConsent,
+    setConsent: setAnalyticsConsent,
+  } = useAnalyticsConsent();
 
   // Language
   const { currentLanguage, availableLanguages, changeLanguage } = useLanguage();
@@ -274,7 +282,9 @@ export default function TabLayout() {
         onBack={onBack}
         isBiometricAvailable={biometricState.isAvailable && biometricState.isEnrolled}
         isBiometricEnabled={enableBiometric}
-        onToggleBiometric={async (enabled: boolean) => { await setEnableBiometric(enabled); }}
+        onToggleBiometric={async (enabled: boolean) => {
+          await setEnableBiometric(enabled);
+        }}
         onPasswordChanged={clearBiometricKey}
       />
     ),
@@ -691,6 +701,8 @@ export default function TabLayout() {
             initialPanels={settingsInitialPanels}
             developerNetworksEnabled={developerNetworks}
             onDeveloperNetworksToggle={toggleDeveloperNetworks}
+            analyticsEnabled={analyticsConsent}
+            onAnalyticsToggle={setAnalyticsConsent}
             onRemoveWallet={handleRemoveWallet}
             onRemoveAllWallets={handleRemoveAllWallets}
             onHeaderChange={handleSettingsHeaderChange}

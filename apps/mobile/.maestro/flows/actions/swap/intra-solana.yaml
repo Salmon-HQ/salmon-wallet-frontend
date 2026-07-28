@@ -1,38 +1,47 @@
 appId: io.salmonwallet.app
 ---
-# Swap USDC → BONK ($1.5). Walks UI through the quote step and stops
-# before confirming so the on-chain swap is never fired by the suite.
-# Authorize a real swap manually (tap the Swap button) when needed.
+# Walk the swap form (SOL → BONK) up to a live quote and STOP before confirming,
+# so the suite never fires an on-chain swap. The executed path lives in
+# intra-solana-confirm.yaml and is run by hand.
+#
+# Pair choice: both legs are tokens the test wallet actually holds. The pair used
+# to be USDC → BONK, which could never work — the wallet holds no USDC, so the
+# form never got past token selection.
 - runFlow: ../../../subflows/onboard-walletA.yaml
-- tapOn: "Swap"
-- waitForAnimationToEnd:
-    timeout: 5000
-# Initial pair defaults to BTC (not in wallet) — change to USDC
 - tapOn:
-    point: "82%,25%"
+    id: "tab-swap"
 - waitForAnimationToEnd:
-    timeout: 4000
+    timeout: 8000
+# The tappable ids are swap-from-token / swap-to-token; the swap-from / swap-to
+# wrappers do not surface in the accessibility hierarchy. Selector rows carry
+# token-row-<SYMBOL>.
 - tapOn:
-    text: "USD Coin, .* USDC"
-- waitForAnimationToEnd:
-    timeout: 4000
-# Pick receive token (BONK)
+    id: "swap-from-token"
+- extendedWaitUntil:
+    visible:
+      id: "token-row-SOL"
+    timeout: 20000
 - tapOn:
-    point: "82%,42%"
-- waitForAnimationToEnd:
-    timeout: 4000
-- tapOn: "Search..."
-- inputText: "Bonk"
-- hideKeyboard
-- waitForAnimationToEnd:
-    timeout: 3000
-# First Bonk row sits at ~22% once the keyboard is dismissed.
-- tapOn:
-    point: "50%,22%"
-- waitForAnimationToEnd:
-    timeout: 4000
-- tapOn: "Enter an amount"
-- inputText: "1.5"
+    id: "token-row-SOL"
 - waitForAnimationToEnd:
     timeout: 6000
+- tapOn:
+    id: "swap-to-token"
+- extendedWaitUntil:
+    visible:
+      id: "token-row-Bonk"
+    timeout: 20000
+- tapOn:
+    id: "token-row-Bonk"
+- extendedWaitUntil:
+    visible:
+      id: "swap-from-amount"
+    timeout: 20000
+# Use the 50% shortcut rather than typing: the numeric keypad covers the floating
+# Review button and this screen offers no way to dismiss it. It also keeps the
+# leg above the $1.00 USD swap minimum without hard-coding a drifting amount.
+- tapOn: "50%"
+- waitForAnimationToEnd:
+    timeout: 12000
 - takeScreenshot: screenshots/actions/swap/swap-form
+# Stop here — no Review, no Confirm, no on-chain swap.

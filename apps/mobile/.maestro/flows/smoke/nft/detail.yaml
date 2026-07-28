@@ -1,17 +1,42 @@
 appId: io.salmonwallet.app
 ---
-# Walk Collectibles → open Mindfolk NFT detail → close.
-# Wallet A holds Mindfolk; Salmon Logo lives in Wallet B and is exercised by
-# actions/nft/transfer-salmon.yaml.
+# Walk Collectibles → open the NFT detail sheet → close.
+#
+# Asserts on "Mindfolk Founder #5154" (mint CNM8...), in Wallet A. It is the only
+# collectible either test wallet can actually render; everything else is dropped
+# before it reaches the screen:
+#
+#   - the backend drops anything scoring above zero on the spam heuristics, which
+#     takes out every airdrop in both wallets;
+#   - the client drops anything with no image (the `filter(nft => nft.media)` in
+#     packages/shared/src/api/services/solana-nft.ts), which takes out Wallet A's
+#     "Salmon Logo" — its IPFS pin is dead, so there is no image left to load.
+#
+# What is left in Wallet A besides Mindfolk is a phishing "JUP" airdrop, which is
+# not something to hang an assertion on.
+#
+# actions/nft/transfer-nft.yaml round-trips this same NFT (A → B → A) and puts it
+# back where it started, so the two flows stay compatible. A transfer run that
+# dies between its two legs leaves Mindfolk in Wallet B, and this flow will fail
+# until the next run brings it home.
+#
+# The card is tapped by its mint-derived testID rather than by name: Maestro
+# full-matches text, and the phishing NFT's name is padded with zero-width spaces.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - tapOn:
     id: "tab-collectibles"
+- extendedWaitUntil:
+    visible: "My Collectibles"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      id: "nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV"
+    timeout: 30000
+- tapOn:
+    id: "nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV"
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible: "My Collectibles"
-- tapOn: "NFT: Mindfolk Founder #5154"
-- waitForAnimationToEnd:
-    timeout: 5000
+- assertVisible: "Mindfolk Founder #5154"
 - takeScreenshot: screenshots/smoke/nft/detail-mindfolk
 - runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
 - assertVisible: "My Collectibles"

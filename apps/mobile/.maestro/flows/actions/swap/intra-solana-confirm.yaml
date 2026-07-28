@@ -1,0 +1,74 @@
+appId: io.salmonwallet.app
+---
+# Swap BONK → SOL and CONFIRM it. Fires a REAL on-chain swap that spends real
+# funds.
+#
+# Deliberately NOT wired into suites/actions.yaml. Its sibling
+# intra-solana.yaml walks the same form but stops at the quote, so the suite
+# never spends money on a swap. Run this one by hand when the executed path
+# genuinely needs coverage:
+#
+#   maestro --device <UDID> test flows/actions/swap/intra-solana-confirm.yaml
+#
+# Pair choice: both legs are tokens the test wallet actually holds, so each is
+# picked straight from the selector's holdings list. Searching is avoided —
+# rows in the search results do not respond to taps on their text node.
+- runFlow: ../../../subflows/onboard-walletA.yaml
+- tapOn:
+    id: "tab-swap"
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Pay with SOL.
+# The tappable ids are swap-from-token / swap-to-token; the swap-from / swap-to
+# wrappers do not surface in the accessibility hierarchy. Rows in the selector
+# carry token-row-<SYMBOL>.
+- tapOn:
+    id: "swap-from-token"
+- extendedWaitUntil:
+    visible:
+      id: "token-row-SOL"
+    timeout: 20000
+- tapOn:
+    id: "token-row-SOL"
+- waitForAnimationToEnd:
+    timeout: 6000
+
+# Receive BONK.
+- tapOn:
+    id: "swap-to-token"
+- extendedWaitUntil:
+    visible:
+      id: "token-row-Bonk"
+    timeout: 20000
+- tapOn:
+    id: "token-row-Bonk"
+- extendedWaitUntil:
+    visible:
+      id: "swap-from-amount"
+    timeout: 20000
+
+# Set the amount with the 50% shortcut instead of typing.
+#
+# Two reasons. (1) The numeric keypad covers the floating "Review & Swap" button
+# and this screen offers no way to dismiss it — no tap-to-dismiss, and Maestro's
+# hideKeyboard is a no-op here — so a typed amount leaves Review untappable.
+# (2) The swap has a $1.00 USD minimum, and the shortcut keeps the leg above it
+# without hard-coding an amount that drifts with the SOL price.
+- tapOn: "50%"
+- waitForAnimationToEnd:
+    timeout: 12000
+- tapOn:
+    id: "swap-review-button"
+- extendedWaitUntil:
+    visible:
+      id: "swap-confirm-button"
+    timeout: 40000
+- takeScreenshot: screenshots/actions/swap/swap-review
+# Point of no return — spends real funds.
+- tapOn:
+    id: "swap-confirm-button"
+- extendedWaitUntil:
+    visible: "(?i)Swap Complete|Complete"
+    timeout: 120000
+- takeScreenshot: screenshots/actions/swap/swap-success

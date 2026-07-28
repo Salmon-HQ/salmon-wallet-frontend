@@ -209,6 +209,7 @@ export type {
 
 // AuthFlow - Shared auth screens for web and extension
 export {
+  AnalyticsConsentPage,
   CreateWalletPage,
   DerivedAccountsPage,
   PasswordPage,
@@ -217,6 +218,7 @@ export {
   SuccessPage,
 } from './AuthFlow';
 export type {
+  AnalyticsConsentPageProps,
   CreateWalletPageProps,
   DerivedAccountsPageProps,
   PasswordPageProps,
@@ -329,3 +331,4 @@ export { AddressEditPanel } from './AddressEditPanel';
 // AboutPanel - App info and external links
 export { AboutPanel } from './AboutPanel';
 export type { AboutPanelProps } from './AboutPanel';
+

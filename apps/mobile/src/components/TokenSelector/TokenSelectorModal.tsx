@@ -78,6 +78,7 @@ export function TokenSelectorModal({
           backgroundColor={colors.background.tokenItem}
         >
           <TouchableOpacity
+            testID={`token-row-${token.symbol}`}
             style={styles.tokenItem}
             onPress={() => handleSelect(token)}
             activeOpacity={0.7}

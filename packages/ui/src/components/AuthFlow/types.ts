@@ -36,3 +36,8 @@ export interface DerivedAccountsPageProps extends AuthScreenLayoutProps {
   onComplete: () => void;
   onBack: () => void;
 }
+
+export interface AnalyticsConsentPageProps extends AuthScreenLayoutProps {
+  onAccept: () => void;
+  onDecline: () => void;
+}

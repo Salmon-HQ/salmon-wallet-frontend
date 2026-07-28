@@ -6,6 +6,20 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 
+const mockCreateTransferTransaction = vi.fn();
+const mockSignAndSend = vi.fn();
+
+// The Solana path no longer issues a plain SPL transfer: that fails on
+// programmable NFTs with `Account is frozen`. It asks the backend for a
+// Metaplex-built transaction and signs it locally.
+vi.mock('../api/services/nft-transfer', () => ({
+  createNftTransferTransaction: (...args: unknown[]) => mockCreateTransferTransaction(...args),
+}));
+
+vi.mock('../blockchain/solana/prepared-transactions', () => ({
+  signAndSendPreparedSolanaTransactions: (...args: unknown[]) => mockSignAndSend(...args),
+}));
+
 import { useNftTransfer } from './useNftTransfer';
 import { createTestQueryClient, QueryWrapper } from '../test-utils/query-wrapper';
 
@@ -30,6 +44,8 @@ const BITCOIN_NFT = {
   name: 'Ordinal',
 } as any;
 
+const PREPARED = { transaction: 'base64-tx' };
+
 describe('useNftTransfer', () => {
   const account = {
     transfer: vi.fn(),
@@ -40,10 +56,11 @@ describe('useNftTransfer', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    account.transfer.mockResolvedValue({ txId: 'nft-tx-1' });
+    mockCreateTransferTransaction.mockResolvedValue(PREPARED);
+    mockSignAndSend.mockResolvedValue(['nft-tx-1']);
   });
 
-  it('transfers a Solana nft via account.transfer and exposes success state', async () => {
+  it('transfers a Solana nft via a backend-built Metaplex transaction', async () => {
     const { result } = renderHook(() =>
       useNftTransfer({
         account: account as any,
@@ -56,7 +73,17 @@ describe('useNftTransfer', () => {
       transferResult = await result.current.sendNft(SOLANA_NFT, 'recipient-address');
     });
 
-    expect(account.transfer).toHaveBeenCalledWith('recipient-address', 'mint-1', 1);
+    expect(mockCreateTransferTransaction).toHaveBeenCalledWith(
+      {
+        mintAddress: 'mint-1',
+        ownerAddress: 'mock-address',
+        destinationAddress: 'recipient-address',
+      },
+      'solana-mainnet'
+    );
+    expect(mockSignAndSend).toHaveBeenCalledWith(account, PREPARED);
+    // A plain SPL transfer would fail on a programmable NFT, so it must not run.
+    expect(account.transfer).not.toHaveBeenCalled();
     expect(transferResult).toEqual({ txId: 'nft-tx-1' });
     expect(result.current.status).toBe('success');
     expect(result.current.error).toBeNull();
@@ -75,7 +102,7 @@ describe('useNftTransfer', () => {
     );
   });
 
-  it('rejects unsupported ordinal transfers without calling account.transfer', async () => {
+  it('rejects unsupported ordinal transfers without building a transaction', async () => {
     const { result } = renderHook(() =>
       useNftTransfer({
         account: account as any,
@@ -89,12 +116,12 @@ describe('useNftTransfer', () => {
       ).rejects.toThrow('Ordinal transfers are not yet supported');
     });
 
-    expect(account.transfer).not.toHaveBeenCalled();
+    expect(mockCreateTransferTransaction).not.toHaveBeenCalled();
     expect(result.current.status).toBe('failed');
   });
 
   it('surfaces transfer failures and allows reset', async () => {
-    account.transfer.mockRejectedValueOnce(new Error('ata creation failed'));
+    mockSignAndSend.mockRejectedValueOnce(new Error('simulation failed'));
 
     const { result } = renderHook(() =>
       useNftTransfer({
@@ -106,11 +133,11 @@ describe('useNftTransfer', () => {
     await act(async () => {
       await expect(
         result.current.sendNft(SOLANA_NFT, 'recipient-address')
-      ).rejects.toThrow('ata creation failed');
+      ).rejects.toThrow('simulation failed');
     });
 
     expect(result.current.status).toBe('failed');
-    expect(result.current.error).toBe('ata creation failed');
+    expect(result.current.error).toBe('simulation failed');
     expect(result.current.isError).toBe(true);
 
     act(() => {

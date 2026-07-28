@@ -49,6 +49,7 @@ jest.mock('@salmon/shared', () => ({
   validateMnemonic: (value: string) => value === 'valid seed phrase',
   normalizeMnemonic: (value: string) => value.trim().replace(/\s+/g, ' '),
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
+  trackEvent: jest.fn(),
   NETWORK_DISPLAY: { 'solana-mainnet': { blockchain: 'solana' } },
   EncryptionMaterialMissingError: class EncryptionMaterialMissingError extends Error {
     constructor(message?: string) {

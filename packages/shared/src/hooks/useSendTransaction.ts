@@ -32,6 +32,8 @@ import type {
   SendTransactionStatus,
 } from '../types/send';
 import { useSettleUntilChanged } from '../query/invalidation';
+import { trackEvent, trackFirstTime } from '../analytics';
+import { STORAGE_KEYS } from '../storage';
 
 // ============================================================================
 // Types
@@ -147,6 +149,14 @@ export function useSendTransaction({
         );
 
         setStatus('success');
+        // Anonymous funnel event: a transfer succeeded. Only a coarse chain
+        // family — never the address, amount or token mint.
+        trackEvent('send_completed', {
+          chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
+          success: true,
+        });
+        // First successful send is an activation milestone — reported once per install.
+        void trackFirstTime('first_send_completed', STORAGE_KEYS.ANALYTICS_FIRST_SEND);
         // Return the txId immediately so the UI can show the success screen,
         // then settle in the background. `settling` stays true until the
         // indexer reflects the new balance (or the ceiling is hit), letting the
@@ -168,6 +178,14 @@ export function useSendTransaction({
         return result;
       } catch (err) {
         console.error('[useSendTransaction] Transaction failed:', err);
+        // Anonymous funnel event: the transfer failed. This is what turns
+        // `success` into a real completion-vs-failure rate instead of a
+        // constant. Coarse chain family only — never the address, amount or
+        // token mint. No `first_send_completed`: that milestone is success-only.
+        trackEvent('send_completed', {
+          chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
+          success: false,
+        });
         const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
         setError(errorMessage);
         setStatus('failed');

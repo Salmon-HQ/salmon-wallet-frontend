@@ -206,6 +206,16 @@ export const STORAGE_KEYS = {
   CONTACTS: 'salmon_contacts',
   /** Balance visibility preference */
   HIDDEN_BALANCE: 'salmon_hidden_balance',
+  /** Anonymous usage-analytics consent flag (opt-in, default off) */
+  ANALYTICS_CONSENT: 'salmon_analytics_consent',
+  /** Random per-install analytics id — NOT derived from any wallet data */
+  ANALYTICS_INSTALL_ID: 'salmon_analytics_install_id',
+  /** Whether the first-run analytics consent prompt has been answered */
+  ANALYTICS_CONSENT_PROMPTED: 'salmon_analytics_consent_prompted',
+  /** One-shot flag: the first successful send has been reported (activation) */
+  ANALYTICS_FIRST_SEND: 'salmon_analytics_first_send',
+  /** One-shot flag: the first successful swap has been reported (activation) */
+  ANALYTICS_FIRST_SWAP: 'salmon_analytics_first_swap',
 
   // -- Cross-chain settlement --
   /** Pending StealthEX bridge exchanges awaiting completion (BridgeSettlement) */

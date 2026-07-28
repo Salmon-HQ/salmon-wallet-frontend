@@ -39,7 +39,7 @@ export function PasswordPage(): React.ReactElement {
         console.warn('Failed to finalize onboarding session:', error);
       }
 
-      navigate('/auth/success');
+      navigate('/auth/analytics-consent');
     })();
   }, [actions, navigate]);
 

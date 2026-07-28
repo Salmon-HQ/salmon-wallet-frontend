@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   colors,
   useAccountsContext,
+  useAnalyticsConsent,
   useInactivityTimeout,
   useSettleAfterTx,
   DerivedKeyCache,
@@ -25,6 +26,7 @@ import { CreateWalletPage } from '../../pages/auth/CreateWalletPage';
 import { RecoverWalletPage } from '../../pages/auth/RecoverWalletPage';
 import { PasswordPage } from '../../pages/auth/PasswordPage';
 import { SuccessPage } from '../../pages/auth/SuccessPage';
+import { AnalyticsConsentPage } from '../../pages/auth/AnalyticsConsentPage';
 import { DerivedAccountsPage } from '../../pages/auth/DerivedAccountsPage';
 import { clearSessionKey } from '../../utils/sessionKeyCache';
 import { sessionArea } from '../../utils/storageCompat';
@@ -33,7 +35,7 @@ import { sessionArea } from '../../utils/storageCompat';
 // Types
 // ============================================================================
 
-type AuthStep = 'select' | 'create' | 'recover' | 'password' | 'success' | 'derived';
+type AuthStep = 'select' | 'create' | 'recover' | 'password' | 'analytics-consent' | 'success' | 'derived';
 
 interface AuthData {
   mnemonic: string;
@@ -219,6 +221,9 @@ function App() {
   const [authStep, setAuthStep] = useState<AuthStep>('select');
   const [authData, setAuthData] = useState<AuthData | null>(null);
 
+  // First-run analytics consent — resolved on the onboarding consent step.
+  const { resolveConsentPrompt } = useAnalyticsConsent();
+
   // Prevents premature transition to HomePage after account creation
   // (accounts.length becomes > 0 but we're still in the auth flow)
   const [justCreated, setJustCreated] = useState(false);
@@ -308,8 +313,13 @@ function App() {
   }, []);
 
   const handlePasswordSuccess = useCallback(() => {
-    setAuthStep('success');
+    setAuthStep('analytics-consent');
   }, []);
+
+  const handleConsentResolve = useCallback((enabled: boolean) => {
+    void resolveConsentPrompt(enabled);
+    setAuthStep('success');
+  }, [resolveConsentPrompt]);
 
   const handlePasswordBack = useCallback(() => {
     if (authData?.flowType === 'create') {
@@ -423,6 +433,13 @@ function App() {
             onCreating={handleCreating}
             onSuccess={handlePasswordSuccess}
             onBack={handlePasswordBack}
+          />
+        );
+      case 'analytics-consent':
+        return (
+          <AnalyticsConsentPage
+            onAccept={() => handleConsentResolve(true)}
+            onDecline={() => handleConsentResolve(false)}
           />
         );
       case 'success':

@@ -8,6 +8,7 @@ import {
   useAvailableNetworks,
   useBalance,
   useUserConfig,
+  useAnalyticsConsent,
   useTransactions,
   useAddressbook,
   useCoinMarketData,
@@ -352,6 +353,13 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     changeExplorer,
     isLoading: explorerLoading,
   } = userConfig;
+
+  // Anonymous usage-analytics consent (opt-in). The first-run prompt now lives
+  // in onboarding (analytics-consent step); here we only bind the Settings toggle.
+  const {
+    consent: analyticsConsent,
+    setConsent: setAnalyticsConsent,
+  } = useAnalyticsConsent();
 
   // Language selection
   const { currentLanguage, supportedLanguages, setLanguage } = useLanguage();
@@ -1372,6 +1380,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         initialPanels={settingsInitialPanels}
         developerNetworksEnabled={developerNetworks}
         onDeveloperNetworksToggle={toggleDeveloperNetworks}
+        analyticsEnabled={analyticsConsent}
+        onAnalyticsToggle={setAnalyticsConsent}
         onRemoveWallet={handleRemoveWallet}
         onRemoveAllWallets={handleRemoveAllWallets}
       />

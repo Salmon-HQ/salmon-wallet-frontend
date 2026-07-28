@@ -19,6 +19,12 @@ import {
   STORAGE_KEYS,
 } from '../storage';
 
+vi.mock('../analytics', () => ({
+  trackEvent: vi.fn(),
+  trackFirstTime: vi.fn(),
+}));
+import { trackEvent, trackFirstTime } from '../analytics';
+
 const SRC_NET = 'solana-mainnet' as never;
 const SRC_ACCT = 'sol-address';
 const DEST_NET = 'bitcoin-mainnet' as never;
@@ -56,6 +62,7 @@ const isInvalidated = (client: QueryClient, key: readonly unknown[]) =>
 describe('BridgeSettlementProvider', () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.clearAllMocks();
     if (isStorageInitialized()) {
       resetStorage();
     }
@@ -104,6 +111,17 @@ describe('BridgeSettlementProvider', () => {
     expect(isInvalidated(client, destKey)).toBe(true);
     expect(isInvalidated(client, srcKey)).toBe(true);
     expect(result.current.pendingExchanges).toHaveLength(0);
+    // A settled bridge is the ONLY place a cross-chain swap is tracked, with the
+    // real chains (solana -> bitcoin) and success from the actual outcome.
+    expect(trackEvent).toHaveBeenCalledWith('swap_completed', {
+      from_chain: 'solana',
+      to_chain: 'bitcoin',
+      success: true,
+    });
+    expect(trackFirstTime).toHaveBeenCalledWith(
+      'first_swap_completed',
+      STORAGE_KEYS.ANALYTICS_FIRST_SWAP,
+    );
   });
 
   it('settles the source balance on refund and stops tracking', async () => {
@@ -136,6 +154,14 @@ describe('BridgeSettlementProvider', () => {
     expect(isInvalidated(client, srcKey)).toBe(true);
     expect(isInvalidated(client, destKey)).toBe(false);
     expect(result.current.pendingExchanges).toHaveLength(0);
+    // A refunded/failed bridge emits the swap event with success:false, which is
+    // what makes the cross-chain success rate real.
+    expect(trackEvent).toHaveBeenCalledWith('swap_completed', {
+      from_chain: 'solana',
+      to_chain: 'bitcoin',
+      success: false,
+    });
+    expect(trackFirstTime).not.toHaveBeenCalled();
   });
 
   it('keeps tracking while the exchange stays in progress', async () => {

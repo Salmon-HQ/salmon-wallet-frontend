@@ -15,3 +15,6 @@ export type { SuccessPageProps } from './types';
 
 export { DerivedAccountsPage } from './DerivedAccountsPage';
 export type { AuthScreenLayoutProps, DerivedAccountsPageProps } from './types';
+
+export { AnalyticsConsentPage } from './AnalyticsConsentPage';
+export type { AnalyticsConsentPageProps } from './types';

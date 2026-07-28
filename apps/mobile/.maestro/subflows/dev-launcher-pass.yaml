@@ -1,22 +1,50 @@
 appId: io.salmonwallet.app
 ---
-# expo-dev-launcher intercepts after clearState/launch. Load JS bundle, then dismiss any
-# auto-shown dev menu before yielding to caller.
+# expo-dev-launcher intercepts after clearState/launch. Load the JS bundle, then
+# get the dev-client chrome out of the way before yielding to the caller.
+#
+# Every step is guarded by `when:`, so this stays safe across iOS and Android
+# even though the two label some of these controls differently.
 - runFlow:
     when:
       visible: "Development Build"
     commands:
-      - tapOn:
-          text: "Salmon Wallet"
-          below: "DEVELOPMENT SERVERS"
+      # The DEVELOPMENT SERVERS row is labelled with the packager URL, not the
+      # app name — "Salmon Wallet" is the header above it, so keying off that
+      # text taps nothing and the bundle never loads.
+      - tapOn: "http://.*:8081"
       # Bundle download takes 5-30s on cold launch.
       - waitForAnimationToEnd:
           timeout: 60000
+
+# A sheet now covers the app. "Continue" does NOT dismiss it — it expands the
+# one-time intro into the full dev menu. Expand it on purpose: the floating
+# dev-menu button is toggled from in there, and that button renders exactly on
+# top of the wallet's settings gear, so any flow that opens Settings would tap
+# the dev menu instead. clearState wipes the preference, so it has to be
+# switched off on every single launch, not once by hand.
 - runFlow:
     when:
-      visible: "Fast refresh"
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+      - waitForAnimationToEnd:
+          timeout: 3000
+- runFlow:
+    when:
+      visible: "Toggle Dev Menu"
+    commands:
+      - tapOn: "Toggle Dev Menu"
+      - waitForAnimationToEnd:
+          timeout: 2000
+# Close the sheet with the X in its header (accessibility label "Close").
+- runFlow:
+    when:
+      visible: "Close"
     commands:
       - tapOn: "Close"
+      - waitForAnimationToEnd:
+          timeout: 3000
 - extendedWaitUntil:
     visible: "Welcome"
     timeout: 60000

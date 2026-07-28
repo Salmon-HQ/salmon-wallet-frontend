@@ -41,6 +41,8 @@ import {
 } from '../blockchain/solana/swap';
 import { getSwapOrder, executeSwapApi } from '../api/services/solana';
 import { getTokenList } from '../api/services/tokens';
+import { trackEvent, trackFirstTime } from '../analytics';
+import { STORAGE_KEYS } from '../storage';
 import type {
   SwapQuote,
   SwapQuoteParams,
@@ -234,14 +236,24 @@ export function useSwap({
       if (result.status === 'success') {
         setTxId(result.txId);
         setStatus('success');
+        // Anonymous funnel event: a swap succeeded. Jupiter swaps are
+        // Solana↔Solana. No amounts, addresses or mints — only coarse, allowed props.
+        trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: true });
+        // First successful swap is an activation milestone — reported once per install.
+        void trackFirstTime('first_swap_completed', STORAGE_KEYS.ANALYTICS_FIRST_SWAP);
       } else {
         setError(result.error || 'Swap execution failed');
         setStatus('failed');
+        // Anonymous funnel event: the swap failed. This makes `success` a real
+        // completion-vs-failure rate. Jupiter swaps are Solana↔Solana.
+        trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: false });
       }
 
       return result;
     } catch (err) {
       console.error('[useSwap] Swap execution failed:', err);
+      // Same failed-swap event for a thrown error (vs a returned fail above).
+      trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: false });
       const errorMessage = err instanceof Error ? err.message : 'Swap execution failed';
       const result: SwapResult = {
         txId: null,
