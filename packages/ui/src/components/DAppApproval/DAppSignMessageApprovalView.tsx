@@ -361,7 +361,14 @@ export function DAppSignMessageApprovalView({
           <PrimaryButton
             onClick={onApprove}
             loading={loading}
-            disabled={disabled || loading || isLookalikeTransaction}
+            disabled={
+              disabled ||
+              loading ||
+              isLookalikeTransaction ||
+              // Never offer to sign an OCMS request whose exact signing bytes could
+              // not be built and rendered — the user must see what they sign.
+              (isOffchainMessage && !offchainParsed)
+            }
           >
             {t('dapp.sign', 'Sign').toUpperCase()}
           </PrimaryButton>

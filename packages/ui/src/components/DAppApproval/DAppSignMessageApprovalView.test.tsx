@@ -96,7 +96,7 @@ describe('DAppSignMessageApprovalView', () => {
     );
   });
 
-  it('falls back to the raw message text when the OCMS buffer fails to parse', () => {
+  it('falls back to the raw message text and disables Sign when the OCMS buffer fails to parse', () => {
     // Arrange
     mockedParseOffchainMessageForApproval.mockImplementation(() => {
       throw new Error('malformed OCMS buffer');
@@ -115,6 +115,8 @@ describe('DAppSignMessageApprovalView', () => {
     // Assert
     expect(screen.getByText('Off-chain message (OCMS)')).toBeInTheDocument();
     expect(screen.getByText('raw fallback text')).toBeInTheDocument();
+    // The exact signing bytes could not be built/rendered, so signing must not be offered.
+    expect(screen.getByRole('button', { name: 'SIGN' })).toBeDisabled();
   });
 
   it('shows a blocking warning and disables Sign when the message bytes are a transaction lookalike', () => {
