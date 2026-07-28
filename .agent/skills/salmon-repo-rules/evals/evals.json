@@ -18,8 +18,7 @@
       "files": [
         "packages/shared/src/types/ui/index.ts",
         "packages/ui/src/components/index.ts",
-        "apps/mobile/src/components/index.ts",
-        "openspec/config.yaml"
+        "apps/mobile/src/components/index.ts"
       ]
     }
   ]

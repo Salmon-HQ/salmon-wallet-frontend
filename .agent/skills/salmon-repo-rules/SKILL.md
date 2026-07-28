@@ -49,7 +49,7 @@ Pick the reference that matches the task:
 | Creating or editing React Native components in `apps/mobile` | [references/mobile-rules.md](references/mobile-rules.md) |
 | Creating or editing cross-platform UI contracts | [references/contract-rules.md](references/contract-rules.md) |
 
-Read the relevant reference before making changes. Check `openspec/config.yaml` and relevant specs when the work touches architecture or established capabilities.
+Read the relevant reference before making changes.
 
 ## Companion skills
 
