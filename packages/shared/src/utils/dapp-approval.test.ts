@@ -3,11 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   Keypair,
   SystemProgram,
+  Transaction,
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
 import {
   approveSolanaTransactionRequest,
+  isTransactionLookalike,
   loadSolanaTransactionApprovalDetails,
   parseSiwsMessage,
   serializeSignedTransactionFromApproval,
@@ -202,5 +204,51 @@ describe('parseSiwsMessage', () => {
     const parsed = parseSiwsMessage(fullMessage);
     expect(parsed?.domain).toBe('phase.cc');
     expect(parsed?.domain).not.toBe('evil.example');
+  });
+});
+
+describe('isTransactionLookalike', () => {
+  it('returns true for a serialized versioned transaction message', () => {
+    const payer = Keypair.generate();
+    const recentBlockhash = Keypair.generate().publicKey.toBase58();
+    const instruction = SystemProgram.transfer({
+      fromPubkey: payer.publicKey,
+      toPubkey: Keypair.generate().publicKey,
+      lamports: 1,
+    });
+
+    const message = new TransactionMessage({
+      payerKey: payer.publicKey,
+      recentBlockhash,
+      instructions: [instruction],
+    }).compileToV0Message();
+
+    expect(isTransactionLookalike(message.serialize())).toBe(true);
+  });
+
+  it('returns true for a serialized legacy transaction message', () => {
+    const payer = Keypair.generate();
+    const recentBlockhash = Keypair.generate().publicKey.toBase58();
+    const transaction = new Transaction({
+      feePayer: payer.publicKey,
+      recentBlockhash,
+    }).add(
+      SystemProgram.transfer({
+        fromPubkey: payer.publicKey,
+        toPubkey: Keypair.generate().publicKey,
+        lamports: 1,
+      }),
+    );
+
+    expect(isTransactionLookalike(transaction.compileMessage().serialize())).toBe(true);
+  });
+
+  it('returns false for plain UTF-8 text', () => {
+    const plainText = new TextEncoder().encode('Sign in to Salmon Wallet at 2026-07-28T00:00:00Z');
+    expect(isTransactionLookalike(plainText)).toBe(false);
+  });
+
+  it('returns false for an empty buffer', () => {
+    expect(isTransactionLookalike(new Uint8Array(0))).toBe(false);
   });
 });

@@ -7,6 +7,7 @@ export {
   decodeDAppMessage,
   getDAppTransactionRequestSummary,
   isSecureOrigin,
+  isTransactionLookalike,
   loadSolanaTransactionApprovalDetails,
   parseSiwsMessage,
   serializeSignedTransactionFromApproval,

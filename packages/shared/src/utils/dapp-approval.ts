@@ -182,6 +182,33 @@ export function buildTransactionFromEncodedMessage(encodedMessage: string): Pars
   }
 }
 
+/**
+ * Returns true when `bytes` deserialize as a valid Solana `Message`/`VersionedMessage`.
+ *
+ * A dApp can smuggle a real transaction through the raw `signMessage` flow,
+ * disguised as arbitrary data to sign — tricking a wallet into producing what looks
+ * like a message signature but is structurally a valid transaction signature. OCMS's
+ * domain-separated buffer format (see `blockchain/solana/offchain-message.ts`)
+ * prevents this for new-style messages by construction; this guard detects the
+ * lookalike case for the legacy raw `signMessage` path so callers can block or warn
+ * before invoking `approveSolanaSignMessage`.
+ */
+export function isTransactionLookalike(bytes: Uint8Array): boolean {
+  try {
+    VersionedMessage.deserialize(bytes);
+    return true;
+  } catch {
+    // Not a versioned message — fall through to the legacy check.
+  }
+
+  try {
+    Message.from(bytes);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function getDAppTransactionRequestSummary(
   method: DAppTransactionRequest['method'],
 ): DAppTransactionRequest['method'] {

@@ -20,6 +20,7 @@
     "@bonfida/spl-name-service": "^3.0.16",
     "@onsol/tldparser": "^1.0.8",
     "@scure/bip39": "^2.0.1",
+    "@solana/offchain-messages": "^7.0.0",
     "@solana/spl-memo": "^0.2.5",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
