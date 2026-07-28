@@ -1,8 +1,9 @@
 @AGENTS.md
 
-For Claude work in this repo:
+`AGENTS.md` (imported above) is the canonical rule source for this repo.
+Claude-specific wiring only:
 
-- read `docs/ARCHITECTURE.md` before structural changes
-- prefer existing ownership rules over inventing new package placement
-- use `.claude/agents/repo-architect.md` for package ownership and boundary decisions
-- use `.claude/agents/safe-monorepo-auditor.md` for contract-safe cleanup, frontend/backend consumer checks, and verification planning
+- Subagents: `.claude/agents/repo-architect.md` for package ownership and
+  boundary decisions; `.claude/agents/safe-monorepo-auditor.md` for
+  contract-safe cleanup, consumer checks, and verification planning.
+- `.claude/skills/` mirrors the canonical skill bodies in `.agent/skills/`.

@@ -1,5 +1,7 @@
 # AGENTS.md instructions for `apps/mobile`
 
+Refines the repo-root `AGENTS.md` (canonical rules) for this app.
+
 ## Responsibility
 
 - React Native app implementation
@@ -8,9 +10,13 @@
 
 ## Rules
 
-- Keep mobile-only UI and runtime behavior here.
-- Reuse `packages/shared` contracts instead of duplicating business logic locally.
-- Do not import DOM-only UI from `packages/ui`.
+- Keep mobile-only UI and runtime behavior here — native APIs leaking into
+  shared packages break web and extension.
+- Reuse `packages/shared` contracts instead of duplicating business logic
+  locally — duplicates drift from what web and extension ship. Prefer a
+  shared semantic contract with mobile-specific rendering on top.
+- Do not import DOM-only UI from `packages/ui` — it cannot run in React
+  Native.
 
 ## Testing
 
@@ -21,6 +27,16 @@
   for conventions agents must follow when extending the suite.
 
 ## Production builds (.aab / .ipa)
+
+Agent guardrails:
+
+- Do not launch production builds autonomously — point the human at
+  `pnpm build:aab` / `pnpm build:apk` and walk them through the checklist
+  below. Builds are interactive, long-running, and touch EAS managed
+  credentials.
+- Never regenerate, overwrite, or "fix" the Android keystore through
+  `eas credentials` autonomously — losing a published keystore permanently
+  removes the ability to update the Play Store listing. Ask the human first.
 
 Pre-build checklist — run in order before `eas build --profile production`:
 

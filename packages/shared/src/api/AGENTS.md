@@ -1,5 +1,10 @@
 # AGENTS.md instructions for `packages/shared/src/api`
 
+Refines the repo-root `AGENTS.md` (canonical rules) for this folder.
+This folder is the canonical frontend contract with the backend
+(`../salmon-api`) — verify consumer impact before changing request or
+response assumptions.
+
 ## Responsibility
 
 - shared backend client configuration
@@ -7,9 +12,15 @@
 
 ## Rules
 
-- Centralize backend-facing contracts here when they are consumed by multiple apps.
-- Keep endpoint wrappers and shared client behavior here instead of reimplementing them in apps.
-- If an endpoint change affects frontend behavior, check sibling backend repo `../salmon-api`.
+- Centralize backend-facing contracts here when they are consumed by
+  multiple apps — one contract keeps the three apps in sync with the
+  backend.
+- Keep endpoint wrappers and shared client behavior here instead of
+  reimplementing them in apps — app-local copies drift when the backend
+  changes.
+- If an endpoint change affects frontend behavior, check the sibling
+  backend repo `../salmon-api` — the two repos must agree on the wire
+  contract.
 
 ## Testing
 
