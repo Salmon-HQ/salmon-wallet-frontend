@@ -16,7 +16,7 @@ import {
   type DAppSignTransactionApprovalPayload,
   type SolanaSignInInputFields,
 } from '@salmon/shared';
-import { sendRequest, waitForResponse, type BridgeRequest } from '../utils/walletBridge';
+import { sendRequestAndWait, type BridgeRequest } from '../utils/walletBridge';
 
 let registered = false;
 
@@ -48,8 +48,7 @@ function createSalmonWallet() {
       };
 
       openApprovalPopup('/dapp/connect', requestId, origin, 'salmon-connect');
-      sendRequest(request);
-      const response = await waitForResponse(requestId);
+      const response = await sendRequestAndWait(request);
 
       if (!response.approved) return null;
       return response.payload as DAppConnectApprovalPayload;
@@ -68,8 +67,7 @@ function createSalmonWallet() {
       };
 
       openApprovalPopup('/dapp/sign-message', requestId, origin, 'salmon-sign');
-      sendRequest(request);
-      const response = await waitForResponse(requestId);
+      const response = await sendRequestAndWait(request);
 
       if (!response.approved) return null;
       const payload = response.payload as DAppSignMessageApprovalPayload;
@@ -110,8 +108,7 @@ function createSalmonWallet() {
       };
 
       openApprovalPopup('/dapp/sign-message', requestId, origin, 'salmon-sign-offchain');
-      sendRequest(request);
-      const response = await waitForResponse(requestId);
+      const response = await sendRequestAndWait(request);
 
       if (!response.approved) return null;
       const payload = response.payload as DAppSignOffchainMessageApprovalPayload;
@@ -150,8 +147,7 @@ function createSalmonWallet() {
       };
 
       openApprovalPopup('/dapp/sign-in', requestId, origin, 'salmon-sign-in');
-      sendRequest(request);
-      const response = await waitForResponse(requestId);
+      const response = await sendRequestAndWait(request);
 
       if (!response.approved) return null;
       const payload = response.payload as DAppSignInApprovalPayload;
@@ -183,8 +179,7 @@ function createSalmonWallet() {
       };
 
       openApprovalPopup('/dapp/sign-transaction', requestId, origin, 'salmon-sign-tx');
-      sendRequest(request);
-      const response = await waitForResponse(requestId);
+      const response = await sendRequestAndWait(request);
 
       if (!response.approved) return null;
       const payload = response.payload as DAppSignTransactionApprovalPayload;
@@ -212,8 +207,7 @@ function createSalmonWallet() {
       };
 
       openApprovalPopup('/dapp/sign-transaction', requestId, origin, 'salmon-sign-all-tx');
-      sendRequest(request);
-      const response = await waitForResponse(requestId);
+      const response = await sendRequestAndWait(request);
 
       if (!response.approved) return null;
       const payload = response.payload as DAppSignAllTransactionsApprovalPayload;
@@ -244,8 +238,7 @@ function createSalmonWallet() {
       };
 
       openApprovalPopup('/dapp/sign-transaction', requestId, origin, 'salmon-sign-send-tx');
-      sendRequest(request);
-      const response = await waitForResponse(requestId);
+      const response = await sendRequestAndWait(request);
 
       if (!response.approved) return null;
       const payload = response.payload as DAppSignAndSendTransactionApprovalPayload;

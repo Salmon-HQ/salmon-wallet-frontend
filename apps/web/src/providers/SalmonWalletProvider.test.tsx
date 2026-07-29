@@ -7,12 +7,10 @@ import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import bs58 from 'bs58';
 
-const mockSendRequest = vi.fn();
-const mockWaitForResponse = vi.fn();
+const mockSendRequestAndWait = vi.fn();
 
 vi.mock('../utils/walletBridge', () => ({
-  sendRequest: (...args: unknown[]) => mockSendRequest(...args),
-  waitForResponse: (...args: unknown[]) => mockWaitForResponse(...args),
+  sendRequestAndWait: (...args: unknown[]) => mockSendRequestAndWait(...args),
 }));
 
 // The real @salmon/shared barrel drags in heavy chain deps that cannot load in
@@ -59,7 +57,7 @@ describe('SalmonWalletProvider signOffchainMessage', () => {
     const signerBytes = new Uint8Array(32).fill(3);
     const bufferBytes = new Uint8Array([9, 8, 7, 6]);
     const signatureBytes = new Uint8Array(64).fill(5);
-    mockWaitForResponse.mockResolvedValue({
+    mockSendRequestAndWait.mockResolvedValue({
       approved: true,
       payload: {
         signedOffchainMessage: bs58.encode(bufferBytes),
@@ -74,8 +72,8 @@ describe('SalmonWalletProvider signOffchainMessage', () => {
       requiredSigners: [signerBytes],
     });
 
-    expect(mockSendRequest).toHaveBeenCalledTimes(1);
-    const bridgeRequest = mockSendRequest.mock.calls[0][0] as {
+    expect(mockSendRequestAndWait).toHaveBeenCalledTimes(1);
+    const bridgeRequest = mockSendRequestAndWait.mock.calls[0][0] as {
       origin: string;
       request: { method: string; params: { data: number[]; requiredSigners: string[] } };
     };
@@ -103,12 +101,12 @@ describe('SalmonWalletProvider signOffchainMessage', () => {
         requiredSigners: [],
       }),
     ).rejects.toThrow('Unsupported off-chain message version');
-    expect(mockSendRequest).not.toHaveBeenCalled();
+    expect(mockSendRequestAndWait).not.toHaveBeenCalled();
   });
 
   it('returns null when the user rejects', async () => {
     const wallet = getWallet();
-    mockWaitForResponse.mockResolvedValue({ approved: false, error: 'User rejected the request' });
+    mockSendRequestAndWait.mockResolvedValue({ approved: false, error: 'User rejected the request' });
 
     const result = await wallet.signOffchainMessage('https://dapp.example', {
       messageVersion: 1,

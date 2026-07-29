@@ -84,6 +84,9 @@
   "dapp": {
     "connect_title": "Connect to dApp",
     "connect_subtitle": "This site wants to connect to your Salmon wallet",
+    "unlock_subtitle": "Enter your password to approve this request",
+    "no_wallet_title": "No wallet found",
+    "no_wallet_subtitle": "Open Salmon Wallet and set up an account, then try again.",
     "requesting_site": "Requesting site",
     "wallet_address": "Wallet",
     "approve": "Approve",

@@ -39,34 +39,50 @@ export function sendResponse(response: BridgeResponse): void {
   getChannel().postMessage(response);
 }
 
-export function sendRequest(request: BridgeRequest): void {
-  getChannel().postMessage(request);
-}
-
 export function sendSettlementRequest(request: BridgeSettlementRequest): void {
   getChannel().postMessage(request);
 }
 
-export function waitForResponse(
-  requestId: string,
+/**
+ * Posts a request and resolves with its matching response, re-broadcasting the
+ * request on an interval until a response arrives or the timeout elapses.
+ *
+ * A single `sendRequest` is lost if the approval popup has not yet mounted its
+ * `onRequest` listener when the message is posted (BroadcastChannel does not
+ * buffer). The popup can take seconds to appear — longer still when it first
+ * shows an unlock screen — so we keep re-sending the idempotent request until
+ * the popup answers. `setRequest` on the popup side is idempotent, so repeats
+ * are harmless.
+ */
+export function sendRequestAndWait(
+  request: BridgeRequest,
   timeoutMs = 120_000,
+  resendIntervalMs = 300,
 ): Promise<BridgeResponse> {
   return new Promise((resolve, reject) => {
     const channelRef = getChannel();
-    const timer = setTimeout(() => {
+
+    const cleanup = () => {
+      clearInterval(resend);
+      clearTimeout(timer);
       channelRef.removeEventListener('message', handler);
-      reject(new Error('Wallet bridge response timeout'));
-    }, timeoutMs);
+    };
 
     function handler(event: MessageEvent<BridgeResponse>) {
-      if (event.data?.requestId === requestId) {
-        clearTimeout(timer);
-        channelRef.removeEventListener('message', handler);
+      if (event.data?.requestId === request.requestId && typeof event.data?.approved === 'boolean') {
+        cleanup();
         resolve(event.data);
       }
     }
 
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Wallet bridge response timeout'));
+    }, timeoutMs);
+
     channelRef.addEventListener('message', handler);
+    channelRef.postMessage(request);
+    const resend = setInterval(() => channelRef.postMessage(request), resendIntervalMs);
   });
 }
 
