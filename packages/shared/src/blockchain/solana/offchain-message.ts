@@ -69,12 +69,23 @@ export function buildOffchainMessageV1(content: Uint8Array, signers: PublicKey[]
  * @param content - Raw UTF-8-encoded message bytes (as received from a dApp)
  * @param signers - Accounts required to sign this message, per the OCMS spec
  * @returns The signature and the exact buffer it was computed over
+ * @throws If `account` is not among `signers` (the wallet never signs an OCMS
+ *   message that omits the signing account from its required-signatory list)
  */
 export function signOffchainMessage(
   account: SolanaAccount,
   content: Uint8Array,
   signers: PublicKey[],
 ): SignedOffchainMessage {
+  // Refuse to sign a message whose required-signatory list does not include this
+  // account. Otherwise a dApp could obtain the user's signature over an OCMS
+  // message that structurally attributes it to a different set of signers.
+  if (!signers.some((signer) => signer.equals(account.keyPair.publicKey))) {
+    throw new Error(
+      'Refusing to sign: the signing account is not listed in the required signers.',
+    );
+  }
+
   const buffer = buildOffchainMessageV1(content, signers);
   const signature = nacl.sign.detached(buffer, account.keyPair.secretKey);
   return { signature, buffer };

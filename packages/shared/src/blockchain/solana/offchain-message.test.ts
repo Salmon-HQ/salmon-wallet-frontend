@@ -67,6 +67,18 @@ describe('signOffchainMessage', () => {
     // Act & Assert
     expect(() => buildOffchainMessageV1(invalidUtf8, [account.keyPair.publicKey])).toThrow();
   });
+
+  it('refuses to sign when the account is not among the required signers', () => {
+    // Arrange
+    const account = { keyPair: Keypair.generate() };
+    const other = Keypair.generate();
+    const content = encode('Sign as someone else');
+
+    // Act & Assert
+    expect(() => signOffchainMessage(account as never, content, [other.publicKey])).toThrow(
+      /not listed in the required signers/,
+    );
+  });
 });
 
 describe('parseOffchainMessageV1', () => {
