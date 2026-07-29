@@ -48,6 +48,7 @@ vi.mock('@salmon/shared', async () => {
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     }),
     QueryClientProvider,
+    BridgeSettlementProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
   };
 });
 
