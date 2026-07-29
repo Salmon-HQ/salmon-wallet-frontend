@@ -287,6 +287,62 @@ describe('isTransactionLookalike', () => {
   it('returns false for an empty buffer', () => {
     expect(isTransactionLookalike(new Uint8Array(0))).toBe(false);
   });
+
+  /**
+   * GOLDEN CLASSIFICATION CORPUS — migration acceptance gate.
+   *
+   * `isTransactionLookalike` is the guard that stops a dApp from smuggling a real
+   * transaction through `signMessage`, and its behavior is defined entirely by what
+   * @solana/web3.js's deserializers happen to reject. That makes it the most
+   * migration-fragile security check in the repo, so every shape's current answer
+   * is pinned below — including the ones where the current answer is arguably
+   * wrong. The point is to detect change, not to endorse it.
+   *
+   * A flip in any of these under @solana/kit must be reviewed and signed off, not
+   * absorbed by updating the expectation.
+   */
+  describe('classification corpus', () => {
+    // Both messages compile from the same fixture: fee payer seed 1, wallet signer
+    // seed 2, two transfers to seed 3, blockhash '11111111111111111111111111111111'.
+    const LEGACY_MESSAGE_B64 =
+      'AgABBIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cgTl3Dqh9F19Wo1Rmw0x+zMuNipG07jeiXfYPW4/Js5TtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAwIAAgwCAAAAAQAAAAAAAAADAgECDAIAAAACAAAAAAAAAA==';
+    const V0_MESSAGE_B64 =
+      'gAIAAQSKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXIE5dw6ofRdfVqNUZsNMfszLjYqRtO43ol32D1uPybOU7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgMCAAIMAgAAAAEAAAAAAAAAAwIBAgwCAAAAAgAAAAAAAAAA';
+    // The v0 bytes with the version prefix changed from 0x80 to 0x81.
+    const V1_MESSAGE_B64 =
+      'gQIAAQSKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXIE5dw6ofRdfVqNUZsNMfszLjYqRtO43ol32D1uPybOU7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgMCAAIMAgAAAAEAAAAAAAAAAwIBAgwCAAAAAgAAAAAAAAAA';
+    const TRUNCATED_V0_MESSAGE_B64 = 'gAIAAQSKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXIE5dw==';
+
+    const decode = (base64: string) => new Uint8Array(Buffer.from(base64, 'base64'));
+
+    const corpus: [string, string, boolean][] = [
+      ['a legacy message', LEGACY_MESSAGE_B64, true],
+      ['a v0 message', V0_MESSAGE_B64, true],
+      // A v1-versioned message is NOT detected: VersionedMessage.deserialize rejects
+      // version 1, and Message.from refuses versioned bytes, so the wallet would sign
+      // v1 transaction bytes as a plain message. Theoretical today (no v1 format is
+      // deployed). @solana/kit may accept v1 and flip this to true, which would be a
+      // security improvement — but still a behavior change that needs sign-off.
+      ['a v1 message', V1_MESSAGE_B64, false],
+      ['a truncated v0 message', TRUNCATED_V0_MESSAGE_B64, false],
+      ['short random bytes', 'AQIDBAU=', false],
+      ['plain UTF-8 text', 'SGVsbG8gZnJvbSBTYWxtb24gV2FsbGV0', false],
+      ['empty bytes', '', false],
+    ];
+
+    it.each(corpus)('classifies %s as %s', (_name, base64, expected) => {
+      expect(isTransactionLookalike(decode(base64))).toBe(expected);
+    });
+
+    // Trailing bytes do not defeat the guard: VersionedMessage.deserialize ignores
+    // bytes past the end of the message. Good, but pinned so a stricter or looser
+    // codec becomes visible.
+    it('classifies a v0 message with trailing bytes as a transaction', () => {
+      const withGarbage = Uint8Array.from([...decode(V0_MESSAGE_B64), 1, 2, 3, 4]);
+
+      expect(isTransactionLookalike(withGarbage)).toBe(true);
+    });
+  });
 });
 
 describe('approveSolanaSignMessage', () => {
