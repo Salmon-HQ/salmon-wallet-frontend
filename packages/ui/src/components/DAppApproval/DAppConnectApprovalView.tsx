@@ -1,11 +1,10 @@
 import React from 'react';
 import Box from '@mui/material/Box';
+import LanguageIcon from '@mui/icons-material/Language';
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useTranslation } from 'react-i18next';
-import {
-  formatOrigin,
-  getShortAddress,
-  colors,
-} from '@salmon/shared';
+import { formatOrigin, getShortAddress } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import {
   ButtonsContainer,
@@ -18,14 +17,19 @@ import {
   Content,
   FooterNote,
   Header,
+  HintRow,
+  hintIconSx,
   Label,
   LogoWrap,
   LogoImage,
   MonoValue,
   ScrollArea,
+  SectionHeader,
+  sectionIconSx,
   Subtitle,
   Title,
   Value,
+  WarningNotice,
 } from './common';
 import type { DAppConnectApprovalViewProps } from './types';
 
@@ -60,7 +64,10 @@ export function DAppConnectApprovalView({
 
         <ScrollArea>
           <Card>
-            <Label>{t('dapp.requesting_site', 'Requesting site')}</Label>
+            <SectionHeader>
+              <LanguageIcon sx={sectionIconSx} />
+              <Label sx={{ margin: 0 }}>{t('dapp.requesting_site', 'Requesting site')}</Label>
+            </SectionHeader>
             {hasIdentity ? (
               <AppIdentityRow>
                 {appIcon ? <AppIdentityIcon src={appIcon} alt={appName || displayOrigin} /> : null}
@@ -72,31 +79,30 @@ export function DAppConnectApprovalView({
             ) : (
               <Value sx={{ fontSize: 20 }}>{displayOrigin}</Value>
             )}
-            <FooterNote sx={{ marginTop: 1.5 }}>
-              {t(
-                'dapp.connect_permissions_hint',
-                'The site will be able to view your public address and request signatures.',
-              )}
-            </FooterNote>
+            <HintRow>
+              <InfoOutlinedIcon sx={hintIconSx} />
+              <FooterNote>
+                {t(
+                  'dapp.connect_permissions_hint',
+                  'The site will be able to view your public address and request signatures.',
+                )}
+              </FooterNote>
+            </HintRow>
           </Card>
 
           <Card>
-            <Label>{t('dapp.wallet_address', 'Wallet')}</Label>
+            <SectionHeader>
+              <AccountBalanceWalletOutlinedIcon sx={sectionIconSx} />
+              <Label sx={{ margin: 0 }}>{t('dapp.wallet_address', 'Wallet')}</Label>
+            </SectionHeader>
             <Value>{shortAddress || t('dapp.current_wallet', 'Current wallet')}</Value>
             {address && <MonoValue>{address}</MonoValue>}
             {showOriginWarning && (
-              <Box
-                sx={{
-                  marginTop: 2,
-                  padding: 1.5,
-                  borderRadius: 2,
-                  border: `1px solid ${colors.status.warningBorder}`,
-                  backgroundColor: colors.status.warningBackground,
-                }}
-              >
-                <MonoValue sx={{ color: colors.status.warning, marginTop: 0 }}>
-                  {t('dapp.insecure_origin_warning', 'Warning: This origin does not use HTTPS.')}
-                </MonoValue>
+              <Box sx={{ marginTop: 2 }}>
+                <WarningNotice
+                  tone="warning"
+                  title={t('dapp.insecure_origin_warning', 'This origin does not use HTTPS.')}
+                />
               </Box>
             )}
           </Card>

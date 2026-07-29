@@ -1,0 +1,58 @@
+import type { PublicKey, SendOptions, Transaction, TransactionSignature, VersionedTransaction } from '@solana/web3.js';
+
+export interface SalmonEvent {
+    connect(...args: unknown[]): unknown;
+    disconnect(...args: unknown[]): unknown;
+    accountChanged(...args: unknown[]): unknown;
+}
+
+export interface SalmonEventEmitter {
+    on<E extends keyof SalmonEvent>(event: E, listener: SalmonEvent[E], context?: any): void;
+    off<E extends keyof SalmonEvent>(event: E, listener: SalmonEvent[E], context?: any): void;
+}
+
+export interface Salmon extends SalmonEventEmitter {
+    publicKey: PublicKey | null;
+    connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: PublicKey }>;
+    disconnect(): Promise<void>;
+    signAndSendTransaction<T extends Transaction | VersionedTransaction>(
+        transaction: T,
+        network?: string,
+        options?: SendOptions
+    ): Promise<{ signature: TransactionSignature }>;
+    signTransaction<T extends Transaction | VersionedTransaction>(transaction: T, network?: string): Promise<T>;
+    signAllTransactions<T extends Transaction | VersionedTransaction>(transactions: T[], network?: string): Promise<T[]>;
+    signMessage(message: Uint8Array): Promise<{ signature: Uint8Array }>;
+    signOffchainMessage(input: {
+        messageVersion: number;
+        message: string;
+        requiredSigners: Uint8Array[];
+    }): Promise<{ signedOffchainMessage: Uint8Array; signature: Uint8Array; signatureType: 'ed25519' }>;
+    signIn(input: SalmonSignInInput): Promise<SalmonSignInResult>;
+}
+
+/** JSON-safe `SolanaSignInInput` (incl. Wallet Standard PR#93 `useOffchainMessage`). */
+export interface SalmonSignInInput {
+    domain?: string;
+    address?: string;
+    statement?: string;
+    uri?: string;
+    version?: string;
+    chainId?: string;
+    nonce?: string;
+    issuedAt?: string;
+    expirationTime?: string;
+    notBefore?: string;
+    requestId?: string;
+    resources?: string[];
+    useOffchainMessage?: { messageVersion: 1 };
+}
+
+export interface SalmonSignInResult {
+    address: string;
+    publicKey: Uint8Array;
+    signedMessage: Uint8Array;
+    signature: Uint8Array;
+    signatureType: 'ed25519';
+    signedMessageFormat?: { kind: 'offchainMessage'; messageVersion: 1 };
+}

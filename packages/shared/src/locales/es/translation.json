@@ -101,7 +101,19 @@
     "siws_view_raw": "Ver mensaje original",
     "siws_hide_raw": "Ocultar mensaje original",
     "siws_domain_mismatch_title": "Dominio no coincide",
-    "siws_domain_mismatch": "El dominio del mensaje no coincide con el sitio solicitante."
+    "siws_domain": "Dominio",
+    "sign_in_title": "Iniciar sesión",
+    "sign_in_subtitle": "Esta app solicita que inicies sesión con tu cuenta de Solana. Esto no enviará una transacción.",
+    "sign_in_hint": "Salmon construyó este mensaje de inicio de sesión a partir del sitio que estás visitando realmente, por lo que no puede suplantar a otro sitio.",
+    "sign_in_message_label": "Mensaje de inicio de sesión",
+    "sign_in_domain_mismatch": "Esta app pidió iniciar sesión para \"{{requested}}\" pero la solicitud proviene de este sitio. Salmon se negó a firmarla.",
+    "sign_in_offchain_note": "Este mensaje se firmará como un mensaje off-chain de Solana (OCMS).",
+    "sign_in_invalid_request": "Esta solicitud de inicio de sesión es inválida y no se puede firmar.",
+    "sign_in_action": "Iniciar sesión",
+    "offchain_message_label": "Mensaje off-chain (OCMS)",
+    "offchain_required_signer": "Firmante requerido",
+    "sign_message_tx_lookalike_title": "Firma bloqueada",
+    "sign_message_tx_lookalike_warning": "Esta app está intentando que firmes lo que en realidad es una transacción, disfrazada de mensaje simple. Salmon se negó a firmarla para proteger tus fondos."
   },
   "settings": {
     "title": "Configuración",

@@ -84,6 +84,9 @@
   "dapp": {
     "connect_title": "Connect to dApp",
     "connect_subtitle": "This site wants to connect to your Salmon wallet",
+    "unlock_subtitle": "Enter your password to approve this request",
+    "no_wallet_title": "No wallet found",
+    "no_wallet_subtitle": "Open Salmon Wallet and set up an account, then try again.",
     "requesting_site": "Requesting site",
     "wallet_address": "Wallet",
     "approve": "Approve",
@@ -101,7 +104,19 @@
     "siws_view_raw": "View raw message",
     "siws_hide_raw": "Hide raw message",
     "siws_domain_mismatch_title": "Domain mismatch",
-    "siws_domain_mismatch": "The message domain does not match the requesting site."
+    "siws_domain": "Domain",
+    "sign_in_title": "Sign In",
+    "sign_in_subtitle": "This app is requesting you to sign in with your Solana account. This will not submit a transaction.",
+    "sign_in_hint": "Salmon built this sign-in message from the site you are actually visiting, so it cannot impersonate another site.",
+    "sign_in_message_label": "Sign-in message",
+    "sign_in_domain_mismatch": "This app asked to sign in for \"{{requested}}\" but the request came from this site. Salmon has refused to sign it.",
+    "sign_in_offchain_note": "This message will be signed as a Solana off-chain message (OCMS).",
+    "sign_in_invalid_request": "This sign-in request is invalid and cannot be signed.",
+    "sign_in_action": "Sign In",
+    "offchain_message_label": "Off-chain message (OCMS)",
+    "offchain_required_signer": "Required signer",
+    "sign_message_tx_lookalike_title": "Signing blocked",
+    "sign_message_tx_lookalike_warning": "This app is trying to make you sign what is actually a transaction, disguised as a plain message. Salmon has refused to sign it to protect your funds."
   },
   "settings": {
     "title": "Settings",

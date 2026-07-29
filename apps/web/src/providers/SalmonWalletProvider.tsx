@@ -10,10 +10,13 @@ import {
   type DAppConnectApprovalPayload,
   type DAppSignAllTransactionsApprovalPayload,
   type DAppSignAndSendTransactionApprovalPayload,
+  type DAppSignInApprovalPayload,
   type DAppSignMessageApprovalPayload,
+  type DAppSignOffchainMessageApprovalPayload,
   type DAppSignTransactionApprovalPayload,
+  type SolanaSignInInputFields,
 } from '@salmon/shared';
-import { sendRequest, waitForResponse, type BridgeRequest } from '../utils/walletBridge';
+import { sendRequestAndWait, type BridgeRequest } from '../utils/walletBridge';
 
 let registered = false;
 
@@ -45,8 +48,7 @@ function createSalmonWallet() {
       };
 
       openApprovalPopup('/dapp/connect', requestId, origin, 'salmon-connect');
-      sendRequest(request);
-      const response = await waitForResponse(requestId);
+      const response = await sendRequestAndWait(request);
 
       if (!response.approved) return null;
       return response.payload as DAppConnectApprovalPayload;
@@ -65,12 +67,102 @@ function createSalmonWallet() {
       };
 
       openApprovalPopup('/dapp/sign-message', requestId, origin, 'salmon-sign');
-      sendRequest(request);
-      const response = await waitForResponse(requestId);
+      const response = await sendRequestAndWait(request);
 
       if (!response.approved) return null;
       const payload = response.payload as DAppSignMessageApprovalPayload;
       return new Uint8Array(bs58.decode(payload.signature));
+    },
+
+    /**
+     * OCMS v1 `solana:signOffchainMessage` (Wallet Standard PR#92). Input mirrors the
+     * PR#92 feature (UTF-8 `message` string + required signer public keys); output is
+     * the PR#92 shape with the bridge's bs58 strings decoded back to `Uint8Array`.
+     */
+    supportedOffchainMessageVersions: [1] as const,
+
+    async signOffchainMessage(
+      origin: string,
+      input: { messageVersion: number; message: string; requiredSigners: Uint8Array[] },
+    ): Promise<{
+      signedOffchainMessage: Uint8Array;
+      signature: Uint8Array;
+      signatureType: 'ed25519';
+    } | null> {
+      if (input.messageVersion !== 1) {
+        throw new Error('Unsupported off-chain message version');
+      }
+
+      const requestId = generateRequestId();
+      const request: BridgeRequest = {
+        requestId,
+        origin,
+        request: {
+          id: requestId,
+          method: 'signOffchain',
+          params: {
+            data: Array.from(new TextEncoder().encode(input.message)),
+            requiredSigners: input.requiredSigners.map((publicKey) => bs58.encode(publicKey)),
+          },
+        },
+      };
+
+      openApprovalPopup('/dapp/sign-message', requestId, origin, 'salmon-sign-offchain');
+      const response = await sendRequestAndWait(request);
+
+      if (!response.approved) return null;
+      const payload = response.payload as DAppSignOffchainMessageApprovalPayload;
+      return {
+        signedOffchainMessage: new Uint8Array(bs58.decode(payload.signedOffchainMessage)),
+        signature: new Uint8Array(bs58.decode(payload.signature)),
+        signatureType: payload.signatureType,
+      };
+    },
+
+    /**
+     * Native `solana:signIn` (SIWS). Only the dApp's `SolanaSignInInput` crosses
+     * the bridge — the wallet builds the message from the real origin. Output is
+     * the Wallet Standard shape with the bridge's bs58 strings decoded back to
+     * `Uint8Array` (incl. PR#93's `signedMessageFormat` on the OCMS path).
+     */
+    async signIn(
+      origin: string,
+      input: SolanaSignInInputFields = {},
+    ): Promise<{
+      account: { address: string; publicKey: Uint8Array };
+      signedMessage: Uint8Array;
+      signature: Uint8Array;
+      signatureType: 'ed25519';
+      signedMessageFormat?: { kind: 'offchainMessage'; messageVersion: 1 };
+    } | null> {
+      const requestId = generateRequestId();
+      const request: BridgeRequest = {
+        requestId,
+        origin,
+        request: {
+          id: requestId,
+          method: 'signIn',
+          params: { input },
+        },
+      };
+
+      openApprovalPopup('/dapp/sign-in', requestId, origin, 'salmon-sign-in');
+      const response = await sendRequestAndWait(request);
+
+      if (!response.approved) return null;
+      const payload = response.payload as DAppSignInApprovalPayload;
+      return {
+        account: {
+          address: payload.address,
+          publicKey: new Uint8Array(bs58.decode(payload.address)),
+        },
+        signedMessage: new Uint8Array(bs58.decode(payload.signedMessage)),
+        signature: new Uint8Array(bs58.decode(payload.signature)),
+        signatureType: payload.signatureType,
+        ...(payload.signedMessageFormat
+          ? { signedMessageFormat: payload.signedMessageFormat }
+          : {}),
+      };
     },
 
     async signTransaction(origin: string, transaction: Uint8Array): Promise<Uint8Array | null> {
@@ -87,8 +179,7 @@ function createSalmonWallet() {
       };
 
       openApprovalPopup('/dapp/sign-transaction', requestId, origin, 'salmon-sign-tx');
-      sendRequest(request);
-      const response = await waitForResponse(requestId);
+      const response = await sendRequestAndWait(request);
 
       if (!response.approved) return null;
       const payload = response.payload as DAppSignTransactionApprovalPayload;
@@ -116,8 +207,7 @@ function createSalmonWallet() {
       };
 
       openApprovalPopup('/dapp/sign-transaction', requestId, origin, 'salmon-sign-all-tx');
-      sendRequest(request);
-      const response = await waitForResponse(requestId);
+      const response = await sendRequestAndWait(request);
 
       if (!response.approved) return null;
       const payload = response.payload as DAppSignAllTransactionsApprovalPayload;
@@ -148,8 +238,7 @@ function createSalmonWallet() {
       };
 
       openApprovalPopup('/dapp/sign-transaction', requestId, origin, 'salmon-sign-send-tx');
-      sendRequest(request);
-      const response = await waitForResponse(requestId);
+      const response = await sendRequestAndWait(request);
 
       if (!response.approved) return null;
       const payload = response.payload as DAppSignAndSendTransactionApprovalPayload;

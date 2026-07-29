@@ -1,16 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import LanguageIcon from '@mui/icons-material/Language';
+import DrawOutlinedIcon from '@mui/icons-material/DrawOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useTranslation } from 'react-i18next';
 import {
-  colors,
-  copyToClipboard,
-  formatDateTime,
   formatOrigin,
   fontFamily,
   fontSize,
   getShortAddress,
-  parseSiwsMessage,
+  isTransactionLookalike,
+  parseOffchainMessageForApproval,
   spacing,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -25,11 +25,17 @@ import {
   Content,
   FooterNote,
   Header,
+  HintRow,
+  hintIconSx,
   Label,
   LogoWrap,
   LogoImage,
+  MessageSurface,
+  MessageText,
   MonoValue,
   ScrollArea,
+  SectionHeader,
+  sectionIconSx,
   Subtitle,
   SummaryGrid,
   SummaryItem,
@@ -37,10 +43,9 @@ import {
   SummaryValue,
   Title,
   Value,
+  WarningNotice,
 } from './common';
 import type { DAppSignMessageApprovalViewProps } from './types';
-
-const MessageBox = Box;
 
 const monoValueSx = {
   fontFamily: fontFamily.mono,
@@ -53,6 +58,8 @@ export function DAppSignMessageApprovalView({
   appName,
   appIcon,
   messageText,
+  data,
+  requiredSigners,
   disabled = false,
   loading = false,
   onApprove,
@@ -62,66 +69,28 @@ export function DAppSignMessageApprovalView({
   const displayOrigin = formatOrigin(origin);
   const hasIdentity = !!appName || !!appIcon;
 
-  const [showRaw, setShowRaw] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const isOffchainMessage = requiredSigners !== undefined;
 
-  const parsed = useMemo(() => parseSiwsMessage(messageText), [messageText]);
-
-  const issuedAtDisplay = useMemo(() => {
-    if (!parsed?.issuedAt) return null;
-    const ts = Date.parse(parsed.issuedAt);
-    return Number.isNaN(ts) ? parsed.issuedAt : formatDateTime(ts);
-  }, [parsed]);
-
-  const expiresDisplay = useMemo(() => {
-    if (!parsed?.expirationTime) return null;
-    const ts = Date.parse(parsed.expirationTime);
-    return Number.isNaN(ts) ? parsed.expirationTime : formatDateTime(ts);
-  }, [parsed]);
-
-  const domainMismatch = useMemo(() => {
-    if (!parsed?.domain) return false;
+  const offchainParsed = useMemo(() => {
+    if (!isOffchainMessage || !data) return null;
     try {
-      const originHost = new URL(origin).host;
-      const messageHost = parsed.domain.replace(/^[a-z]+:\/\//i, '');
-      return !!originHost && originHost !== messageHost;
+      return parseOffchainMessageForApproval(data, requiredSigners);
     } catch {
-      return false;
+      return null;
     }
-  }, [parsed, origin]);
+  }, [isOffchainMessage, data, requiredSigners]);
 
-  const handleCopyAccount = () => {
-    if (!parsed?.address) return;
-    void copyToClipboard(parsed.address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
+  // The tx-lookalike guard only applies to the legacy raw `sign` path — OCMS's
+  // domain-separated buffer prevents this collision by construction.
+  const isLookalikeTransaction = useMemo(() => {
+    if (isOffchainMessage || !data) return false;
+    return isTransactionLookalike(Uint8Array.from(data));
+  }, [isOffchainMessage, data]);
 
   const rawMessageBox = (
-    <MessageBox
-      sx={{
-        width: '100%',
-        maxHeight: 220,
-        overflowY: 'auto',
-        backgroundColor: 'rgba(255, 255, 255, 0.04)',
-        borderRadius: 2,
-        padding: `${spacing.lg}px`,
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-      }}
-    >
-      <Value
-        sx={{
-          fontFamily: fontFamily.mono,
-          fontSize: fontSize.sm,
-          fontWeight: 400,
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'normal',
-          overflowWrap: 'anywhere',
-        }}
-      >
-        {messageText}
-      </Value>
-    </MessageBox>
+    <MessageSurface>
+      <MessageText>{messageText}</MessageText>
+    </MessageSurface>
   );
 
   return (
@@ -142,7 +111,10 @@ export function DAppSignMessageApprovalView({
 
         <ScrollArea>
           <Card>
-            <Label>{t('dapp.requesting_site', 'Requesting site')}</Label>
+            <SectionHeader>
+              <LanguageIcon sx={sectionIconSx} />
+              <Label sx={{ margin: 0 }}>{t('dapp.requesting_site', 'Requesting site')}</Label>
+            </SectionHeader>
             {hasIdentity ? (
               <AppIdentityRow>
                 {appIcon ? <AppIdentityIcon src={appIcon} alt={appName || displayOrigin} /> : null}
@@ -154,119 +126,60 @@ export function DAppSignMessageApprovalView({
             ) : (
               <Value sx={{ fontSize: 20 }}>{displayOrigin}</Value>
             )}
-            <FooterNote sx={{ marginTop: 1.5 }}>
-              {t(
-                'dapp.sign_message_hint',
-                'Read the message carefully. Message signatures can still authorize actions off-chain.',
-              )}
-            </FooterNote>
+            <HintRow>
+              <LockOutlinedIcon sx={hintIconSx} />
+              <FooterNote>
+                {t(
+                  'dapp.sign_message_hint',
+                  'Read the message carefully. Message signatures can still authorize actions off-chain.',
+                )}
+              </FooterNote>
+            </HintRow>
           </Card>
 
           <Card>
-            <Label>{t('dapp.message', 'Message')}</Label>
+            <SectionHeader>
+              {isOffchainMessage ? (
+                <LockOutlinedIcon sx={sectionIconSx} />
+              ) : (
+                <DrawOutlinedIcon sx={sectionIconSx} />
+              )}
+              <Label sx={{ margin: 0 }}>
+                {isOffchainMessage
+                  ? t('dapp.offchain_message_label', 'Off-chain message (OCMS)')
+                  : t('dapp.message', 'Message')}
+              </Label>
+            </SectionHeader>
 
-            {domainMismatch && (
-              <Box
-                sx={{
-                  marginBottom: `${spacing.md}px`,
-                  padding: `${spacing.md}px`,
-                  borderRadius: 2,
-                  backgroundColor: colors.status.errorBackground,
-                  border: `1px solid ${colors.status.error}`,
-                }}
-              >
-                <Typography
-                  sx={{ color: colors.status.error, fontSize: fontSize.sm, fontWeight: 600 }}
-                >
-                  {t('dapp.siws_domain_mismatch_title', 'Domain mismatch')}
-                </Typography>
-                <Typography sx={{ color: colors.text.primary, fontSize: fontSize.sm }}>
+            {isLookalikeTransaction && (
+              <Box sx={{ marginBottom: `${spacing.md}px` }}>
+                <WarningNotice title={t('dapp.sign_message_tx_lookalike_title', 'Signing blocked')}>
                   {t(
-                    'dapp.siws_domain_mismatch',
-                    'The message domain does not match the requesting site.',
+                    'dapp.sign_message_tx_lookalike_warning',
+                    'This app is trying to make you sign what is actually a transaction, disguised as a plain message. Salmon has refused to sign it to protect your funds.',
                   )}
-                </Typography>
+                </WarningNotice>
               </Box>
             )}
 
-            {parsed ? (
+            {isOffchainMessage && offchainParsed ? (
               <>
-                {parsed.statement && (
-                  <Value
-                    sx={{
-                      fontWeight: 400,
-                      marginBottom: `${spacing.md}px`,
-                      whiteSpace: 'pre-wrap',
-                      overflowWrap: 'anywhere',
-                    }}
-                  >
-                    {parsed.statement}
-                  </Value>
-                )}
+                <MessageSurface>
+                  <MessageText>{offchainParsed.content}</MessageText>
+                </MessageSurface>
 
-                <SummaryGrid>
-                  <SummaryItem
-                    onClick={handleCopyAccount}
-                    sx={{ cursor: 'pointer' }}
-                    title={parsed.address}
-                  >
-                    <SummaryLabel>
-                      {copied ? t('dapp.siws_copied', 'Copied') : t('dapp.siws_account', 'Account')}
-                    </SummaryLabel>
-                    <SummaryValue sx={monoValueSx}>{getShortAddress(parsed.address)}</SummaryValue>
-                  </SummaryItem>
-
-                  {parsed.uri && (
-                    <SummaryItem>
-                      <SummaryLabel>{t('dapp.siws_uri', 'URI')}</SummaryLabel>
-                      <SummaryValue sx={{ wordBreak: 'break-all' }}>{parsed.uri}</SummaryValue>
+                <SummaryGrid sx={{ marginTop: `${spacing.md}px` }}>
+                  {offchainParsed.requiredSignatories.map((signatory) => (
+                    <SummaryItem key={signatory.address}>
+                      <SummaryLabel>
+                        {t('dapp.offchain_required_signer', 'Required signer')}
+                      </SummaryLabel>
+                      <SummaryValue sx={monoValueSx}>
+                        {getShortAddress(signatory.address)}
+                      </SummaryValue>
                     </SummaryItem>
-                  )}
-
-                  {parsed.nonce && (
-                    <SummaryItem>
-                      <SummaryLabel>{t('dapp.siws_nonce', 'Nonce')}</SummaryLabel>
-                      <SummaryValue sx={monoValueSx}>{parsed.nonce}</SummaryValue>
-                    </SummaryItem>
-                  )}
-
-                  {issuedAtDisplay && (
-                    <SummaryItem>
-                      <SummaryLabel>{t('dapp.siws_issued_at', 'Issued at')}</SummaryLabel>
-                      <SummaryValue>{issuedAtDisplay}</SummaryValue>
-                    </SummaryItem>
-                  )}
-
-                  {expiresDisplay && (
-                    <SummaryItem>
-                      <SummaryLabel>{t('dapp.siws_expires', 'Expires')}</SummaryLabel>
-                      <SummaryValue>{expiresDisplay}</SummaryValue>
-                    </SummaryItem>
-                  )}
+                  ))}
                 </SummaryGrid>
-
-                <Box
-                  component="button"
-                  type="button"
-                  onClick={() => setShowRaw((value) => !value)}
-                  sx={{
-                    marginTop: `${spacing.md}px`,
-                    padding: 0,
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: colors.text.secondary,
-                    fontFamily: fontFamily.sans,
-                    fontSize: fontSize.sm,
-                    textAlign: 'left',
-                  }}
-                >
-                  {showRaw
-                    ? t('dapp.siws_hide_raw', 'Hide raw message')
-                    : t('dapp.siws_view_raw', 'View raw message')}
-                </Box>
-
-                {showRaw && <Box sx={{ marginTop: `${spacing.sm}px` }}>{rawMessageBox}</Box>}
               </>
             ) : (
               rawMessageBox
@@ -275,7 +188,18 @@ export function DAppSignMessageApprovalView({
         </ScrollArea>
 
         <ButtonsContainer>
-          <PrimaryButton onClick={onApprove} loading={loading} disabled={disabled || loading}>
+          <PrimaryButton
+            onClick={onApprove}
+            loading={loading}
+            disabled={
+              disabled ||
+              loading ||
+              isLookalikeTransaction ||
+              // Never offer to sign an OCMS request whose exact signing bytes could
+              // not be built and rendered — the user must see what they sign.
+              (isOffchainMessage && !offchainParsed)
+            }
+          >
             {t('dapp.sign', 'Sign').toUpperCase()}
           </PrimaryButton>
           <SecondaryButton onClick={onReject} disabled={loading}>

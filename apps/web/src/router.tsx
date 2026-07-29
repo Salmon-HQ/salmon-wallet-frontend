@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { AuthGuard } from './components/AuthGuard';
+import { DAppApprovalGate } from './components/DAppApprovalGate';
 import { AuthFlowProvider } from './pages/auth/AuthFlowContext';
 import { RootRedirect } from './components/RootRedirect';
 
@@ -50,18 +51,31 @@ export const router = createBrowserRouter([
         lazy: () => import('./pages/lock/LockPage').then((m) => ({ Component: m.LockPage })),
       },
 
-      // dApp approval popups (no auth guard — opened as standalone popups)
+      // dApp approval popups — opened as standalone popups. No AuthGuard (they
+      // must be reachable without the main app shell), but wrapped in
+      // DAppApprovalGate: a fresh popup window starts locked (in-memory stash is
+      // per-window), so the gate prompts for unlock in place before rendering
+      // the approval route.
       {
-        path: '/dapp/connect',
-        lazy: () => import('./pages/dapp/ConnectApprovalPage').then((m) => ({ Component: m.ConnectApprovalPage })),
-      },
-      {
-        path: '/dapp/sign-message',
-        lazy: () => import('./pages/dapp/SignMessageApprovalPage').then((m) => ({ Component: m.SignMessageApprovalPage })),
-      },
-      {
-        path: '/dapp/sign-transaction',
-        lazy: () => import('./pages/dapp/SignTransactionApprovalPage').then((m) => ({ Component: m.SignTransactionApprovalPage })),
+        element: <DAppApprovalGate />,
+        children: [
+          {
+            path: '/dapp/connect',
+            lazy: () => import('./pages/dapp/ConnectApprovalPage').then((m) => ({ Component: m.ConnectApprovalPage })),
+          },
+          {
+            path: '/dapp/sign-message',
+            lazy: () => import('./pages/dapp/SignMessageApprovalPage').then((m) => ({ Component: m.SignMessageApprovalPage })),
+          },
+          {
+            path: '/dapp/sign-in',
+            lazy: () => import('./pages/dapp/SignInApprovalPage').then((m) => ({ Component: m.SignInApprovalPage })),
+          },
+          {
+            path: '/dapp/sign-transaction',
+            lazy: () => import('./pages/dapp/SignTransactionApprovalPage').then((m) => ({ Component: m.SignTransactionApprovalPage })),
+          },
+        ],
       },
 
       // Protected routes — require unlocked wallet

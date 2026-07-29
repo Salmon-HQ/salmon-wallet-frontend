@@ -1,5 +1,7 @@
+import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import {
   borderRadius,
   colors,
@@ -13,8 +15,10 @@ import { styled } from '../../utils/styled';
 export const Container = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
+  width: '100%',
   minHeight: '100vh',
   maxHeight: '100vh',
+  boxSizing: 'border-box',
   padding: spacing.lg,
   background: `linear-gradient(180deg, ${colors.background.primary} 0%, ${colors.background.secondary} 100%)`,
   fontFamily: fontFamily.sans,
@@ -29,6 +33,7 @@ export const Content = styled(Box)({
   maxWidth: 360,
   margin: '0 auto',
   minHeight: 0,
+  boxSizing: 'border-box',
   padding: spacing.lg,
   gap: spacing.lg,
 });
@@ -81,6 +86,7 @@ export const ScrollArea = styled(Box)({
   flex: 1,
   minHeight: 0,
   overflowY: 'auto',
+  overflowX: 'hidden',
   display: 'flex',
   flexDirection: 'column',
   gap: spacing.md,
@@ -97,6 +103,7 @@ export const ScrollArea = styled(Box)({
 
 export const Card = styled(Box)({
   width: '100%',
+  boxSizing: 'border-box',
   padding: spacing.xl,
   background:
     'linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.045) 100%)',
@@ -118,7 +125,8 @@ export const Value = styled(Typography)({
   fontSize: fontSize.md,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
-  wordBreak: 'break-all',
+  wordBreak: 'break-word',
+  overflowWrap: 'anywhere',
 });
 
 export const AppIdentityRow = styled(Box)({
@@ -174,15 +182,20 @@ export const ButtonsContainer = styled(Box)({
 export const SummaryGrid = styled(Box)({
   display: 'grid',
   width: '100%',
-  gridTemplateColumns: '1fr',
+  // Single full-width column: each field is its own list row spanning the whole
+  // parent width, which is more readable than a cramped 2-up grid for long
+  // values. `minmax(0, 1fr)` (not the implicit `minmax(auto, 1fr)` of `1fr`)
+  // lets the column shrink below its content, so long unbreakable values (base58
+  // addresses, URIs) wrap instead of forcing the grid wider than its parent.
+  gridTemplateColumns: 'minmax(0, 1fr)',
   gap: spacing.md,
-  '@media (min-width: 480px)': {
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  },
 });
 
 export const SummaryItem = styled(Box)({
-  padding: spacing.md,
+  minWidth: 0,
+  boxSizing: 'border-box',
+  overflow: 'hidden',
+  padding: `${spacing.md}px ${spacing.md + spacing.xs / 2}px`,
   borderRadius: borderRadius.lg,
   backgroundColor: colors.interactive.surface,
   border: `1px solid ${colors.border.subtle}`,
@@ -191,16 +204,19 @@ export const SummaryItem = styled(Box)({
 export const SummaryLabel = styled(Typography)({
   fontSize: fontSize.xs,
   color: colors.text.secondary,
+  fontWeight: fontWeight.medium,
   textTransform: 'uppercase',
   letterSpacing: '0.08em',
   marginBottom: spacing.xs,
 });
 
 export const SummaryValue = styled(Typography)({
+  minWidth: 0,
   fontSize: fontSize.base,
   color: colors.text.primary,
   fontWeight: fontWeight.semibold,
   wordBreak: 'break-word',
+  overflowWrap: 'anywhere',
 });
 
 export const Divider = styled(Box)({
@@ -214,4 +230,139 @@ export const FooterNote = styled(Typography)({
   fontSize: fontSize.sm,
   color: colors.text.secondary,
   lineHeight: 1.45,
+  overflowWrap: 'anywhere',
 });
+
+/**
+ * Icon + label header for a card section. Pairs a small line icon with the
+ * uppercase {@link Label}, giving each card a scannable identity.
+ */
+export const SectionHeader = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  gap: spacing.sm,
+  marginBottom: spacing.md,
+});
+
+/** Shared sizing/color for the small line icons used in section headers. */
+export const sectionIconSx = {
+  fontSize: 18,
+  color: colors.text.secondary,
+  flexShrink: 0,
+} as const;
+
+/**
+ * Icon + note row for a security or informational hint at the foot of a card.
+ * The icon anchors the note visually without competing with it.
+ */
+export const HintRow = styled(Box)({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: spacing.sm,
+  marginTop: spacing.lg,
+});
+
+export const hintIconSx = {
+  fontSize: 16,
+  color: colors.text.secondary,
+  flexShrink: 0,
+  marginTop: '1px',
+} as const;
+
+/**
+ * Inset, scrollable surface for verbatim content the user must read exactly as
+ * it will be signed (raw SIWS text, raw sign payloads, parsed OCMS content).
+ */
+export const MessageSurface = styled(Box)({
+  width: '100%',
+  boxSizing: 'border-box',
+  maxHeight: 220,
+  overflowY: 'auto',
+  overflowX: 'hidden',
+  backgroundColor: colors.interactive.surface,
+  borderRadius: borderRadius.lg,
+  padding: spacing.lg,
+  border: `1px solid ${colors.border.subtle}`,
+  '&::-webkit-scrollbar': {
+    width: 6,
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: colors.border.default,
+    borderRadius: borderRadius.full,
+  },
+});
+
+export const MessageText = styled(Typography)({
+  fontFamily: fontFamily.mono,
+  fontSize: fontSize.sm,
+  fontWeight: 400,
+  lineHeight: 1.55,
+  color: colors.text.primary,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'normal',
+  overflowWrap: 'anywhere',
+});
+
+const WarningBannerRoot = styled(Box)({
+  display: 'flex',
+  gap: spacing.sm,
+  alignItems: 'flex-start',
+  boxSizing: 'border-box',
+  width: '100%',
+  padding: spacing.md,
+  borderRadius: borderRadius.lg,
+  border: '1px solid',
+});
+
+interface WarningNoticeProps {
+  /** `error` blocks an action (red); `warning` is advisory (amber). */
+  tone?: 'error' | 'warning';
+  title: string;
+  children?: ReactNode;
+}
+
+/**
+ * Consistent, icon-led alert banner shared by every approval screen — the
+ * tx-lookalike "Signing blocked", the SIWS domain-mismatch block, and the
+ * insecure-origin advisory. The triangle icon and tone color make security
+ * state impossible to miss while staying within the dark palette.
+ */
+export function WarningNotice({
+  tone = 'error',
+  title,
+  children,
+}: WarningNoticeProps): ReactNode {
+  const accent = tone === 'warning' ? colors.status.warning : colors.status.error;
+  const background =
+    tone === 'warning' ? colors.status.warningBackground : colors.status.errorBackground;
+
+  return (
+    <WarningBannerRoot sx={{ backgroundColor: background, borderColor: accent }}>
+      <WarningAmberRoundedIcon sx={{ fontSize: 20, color: accent, flexShrink: 0, marginTop: '1px' }} />
+      <Box sx={{ minWidth: 0 }}>
+        <Typography
+          sx={{
+            color: accent,
+            fontSize: fontSize.sm,
+            fontWeight: fontWeight.semibold,
+            marginBottom: '2px',
+          }}
+        >
+          {title}
+        </Typography>
+        {children != null && (
+          <Typography
+            sx={{
+              color: colors.text.primary,
+              fontSize: fontSize.sm,
+              lineHeight: 1.45,
+              overflowWrap: 'anywhere',
+            }}
+          >
+            {children}
+          </Typography>
+        )}
+      </Box>
+    </WarningBannerRoot>
+  );
+}

@@ -19,7 +19,10 @@ import {
   DAppTransactionApprovalPage,
   type DAppTransactionRequest,
   DAppSignMessageApprovalPage,
+  DAppSignInApprovalPage,
+  type DAppSignInRequest,
   type DAppSignMessageRequest,
+  type DAppSignOffchainMessageRequest,
 } from '../../pages/dapp';
 import { SelectOptionsPage } from '../../pages/auth/SelectOptionsPage';
 import { CreateWalletPage } from '../../pages/auth/CreateWalletPage';
@@ -95,10 +98,10 @@ function App() {
     request: DAppTransactionRequest;
   } | null>(null);
 
-  // dApp sign message flow (when popup is launched for message signing)
+  // dApp sign message / sign-in flow (when popup is launched for message signing)
   const [pendingDAppSignMessageRequest, setPendingDAppSignMessageRequest] = useState<{
     origin: string;
-    request: DAppSignMessageRequest;
+    request: DAppSignMessageRequest | DAppSignOffchainMessageRequest | DAppSignInRequest;
   } | null>(null);
 
   useEffect(() => {
@@ -112,7 +115,10 @@ function App() {
         const request = JSON.parse(requestStr) as DAppApprovalRequest;
         if (request.method === 'connect' && request.id != null) {
           setPendingDAppRequest({ origin, request });
-        } else if (request.method === 'sign' && request.id != null) {
+        } else if (
+          (request.method === 'sign' || request.method === 'signOffchain' || request.method === 'signIn') &&
+          request.id != null
+        ) {
           setPendingDAppSignMessageRequest({ origin, request });
         } else if (
           (request.method === 'signTransaction' ||
@@ -134,7 +140,10 @@ function App() {
       const { origin, request } = approval;
       if (request.method === 'connect' && request.id != null) {
         setPendingDAppRequest({ origin, request });
-      } else if (request.method === 'sign' && request.id != null) {
+      } else if (
+        (request.method === 'sign' || request.method === 'signOffchain' || request.method === 'signIn') &&
+        request.id != null
+      ) {
         setPendingDAppSignMessageRequest({ origin, request });
       } else if (
         (request.method === 'signTransaction' ||
@@ -476,6 +485,16 @@ function App() {
     accounts.length > 0 &&
     solanaApprovalAccount
   ) {
+    if (pendingDAppSignMessageRequest.request.method === 'signIn') {
+      return (
+        <DAppSignInApprovalPage
+          origin={pendingDAppSignMessageRequest.origin}
+          request={pendingDAppSignMessageRequest.request}
+          account={solanaApprovalAccount}
+          onDismiss={dismissApprovalWithRefresh}
+        />
+      );
+    }
     return (
       <DAppSignMessageApprovalPage
         origin={pendingDAppSignMessageRequest.origin}

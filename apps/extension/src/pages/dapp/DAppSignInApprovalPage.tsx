@@ -1,27 +1,29 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { PublicKey } from '@solana/web3.js';
 import {
-  DAppSignMessageApprovalView,
+  DAppSignInApprovalView,
 } from '@salmon/ui';
 import {
-  approveSolanaSignMessage,
-  approveSolanaSignOffchainMessage,
-  decodeDAppMessage,
+  approveSolanaSignIn,
+  prepareSignInMessage,
   useDAppMetadata,
   type BlockchainAccount,
-  type DAppSignMessageRequest,
-  type DAppSignOffchainMessageRequest,
+  type DAppSignInRequest,
 } from '@salmon/shared';
 import { isSolanaAccount } from '@salmon/shared/utils/account';
 
 interface Props {
   origin: string;
-  request: DAppSignMessageRequest | DAppSignOffchainMessageRequest;
+  request: DAppSignInRequest;
   account: BlockchainAccount | undefined;
   onDismiss: (approved: boolean) => void;
 }
 
-export function DAppSignMessageApprovalPage({
+/**
+ * Approval page for native `solana:signIn` (SIWS). The SIWS message previewed
+ * and signed here is built by the WALLET from the real `origin` — see
+ * `prepareSignInMessage` / `approveSolanaSignIn` in `@salmon/shared`.
+ */
+export function DAppSignInApprovalPage({
   origin,
   request,
   account,
@@ -30,18 +32,18 @@ export function DAppSignMessageApprovalPage({
   const [loading, setLoading] = useState(false);
   const { metadata } = useDAppMetadata(origin);
 
-  const messageData = useMemo(() => {
-    const data = request.params?.data;
-    if (!data || !Array.isArray(data)) return null;
-    return decodeDAppMessage(data);
-  }, [request.params?.data]);
+  const input = request.params?.input;
 
-  // Presence of requiredSigners switches the shared view into OCMS mode;
-  // undefined keeps the legacy raw-sign rendering (incl. tx-lookalike banner).
-  const requiredSigners = useMemo(
-    () => (request.method === 'signOffchain' ? request.params?.requiredSigners ?? [] : undefined),
-    [request],
-  );
+  // Same builder the signing path uses, so the preview is exactly what gets
+  // signed. null when the request is structurally invalid (view blocks approval).
+  const prepared = useMemo(() => {
+    if (!account || !isSolanaAccount(account)) return null;
+    try {
+      return prepareSignInMessage(input ?? {}, origin, account.getReceiveAddress());
+    } catch {
+      return null;
+    }
+  }, [account, input, origin]);
 
   const sendToBackground = useCallback((data: Record<string, unknown>) => {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
@@ -67,38 +69,29 @@ export function DAppSignMessageApprovalPage({
         throw new Error('Solana account not available');
       }
 
-      const data = request.params?.data;
-      if (!data || !Array.isArray(data)) {
-        throw new Error('Missing message data');
-      }
-
-      const result = request.method === 'signOffchain'
-        ? approveSolanaSignOffchainMessage(
-            account,
-            data,
-            (request.params?.requiredSigners ?? []).map((address) => new PublicKey(address)),
-          )
-        : approveSolanaSignMessage(account, data);
+      const result = approveSolanaSignIn(account, request.params?.input ?? {}, origin);
       sendToBackground({ result });
       onDismiss(true);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Message signing failed';
+      const message = error instanceof Error ? error.message : 'Sign-in failed';
       sendToBackground({ error: message });
       onDismiss(false);
     } finally {
       setLoading(false);
     }
-  }, [account, onDismiss, request, sendToBackground]);
+  }, [account, onDismiss, origin, request, sendToBackground]);
 
   return (
-    <DAppSignMessageApprovalView
+    <DAppSignInApprovalView
       origin={origin}
       appName={metadata?.name}
       appIcon={metadata?.icon}
-      messageText={messageData?.text ?? ''}
-      data={request.params?.data}
-      requiredSigners={requiredSigners}
-      disabled={!account || !messageData}
+      siws={prepared?.fields ?? null}
+      messageText={prepared?.message ?? ''}
+      domainMismatch={prepared?.domainMismatch ?? false}
+      requestedDomain={prepared?.requestedDomain}
+      isOffchainMessage={!!input?.useOffchainMessage}
+      disabled={!account || (prepared?.addressMismatch ?? false)}
       loading={loading}
       onApprove={handleApprove}
       onReject={handleReject}
