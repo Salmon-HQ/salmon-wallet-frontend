@@ -16,6 +16,10 @@ function encode(text: string): Uint8Array {
   return new TextEncoder().encode(text);
 }
 
+// TEST-ONLY deterministic keypairs. Seeds are constants so golden vectors are
+// reproducible; these keys hold no funds and must never be used outside tests.
+const testKeypair = (seed: number) => Keypair.fromSeed(new Uint8Array(32).fill(seed));
+
 describe('signOffchainMessage', () => {
   it('signs a text message and verifies successfully in a round trip', () => {
     // Arrange
@@ -104,5 +108,71 @@ describe('parseOffchainMessageV1', () => {
 
     // Act & Assert
     expect(() => parseOffchainMessageV1(garbage)).toThrow();
+  });
+});
+
+/**
+ * GOLDEN VECTORS — migration acceptance gate.
+ *
+ * These constants pin the exact bytes produced by the @solana/web3.js
+ * implementation as of commit 9e2e4bb. They are the acceptance criterion for the
+ * @solana/kit migration: the ported code is correct iff these still pass.
+ *
+ * To regenerate (only ever when the wire format itself is intentionally
+ * changed — NEVER to make a migration diff go green): replace the expected
+ * constant with an empty string, run the suite, and paste the reported
+ * `actual` value. A migration that changes these bytes is a bug, not a
+ * vector that needs updating.
+ */
+describe('golden vectors', () => {
+  const CONTENT = 'Hello from Salmon Wallet';
+  const UNICODE_CONTENT = 'Ünïcödé ✓ 日本語';
+
+  /** The domain-separated OCMS v1 signing buffer for a single signatory. */
+  const GOLDEN_OCMS_SINGLE_SIGNER =
+    '/3NvbGFuYSBvZmZjaGFpbgEBiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1xIZWxsbyBmcm9tIFNhbG1vbiBXYWxsZXQ=';
+  /** The same buffer for three signatories, in the encoder's normalized order. */
+  const GOLDEN_OCMS_THREE_SIGNERS =
+    '/3NvbGFuYSBvZmZjaGFpbgEDgTl3Dqh9F19Wo1Rmw0x+zMuNipG07jeiXfYPW4/Js5SKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXO1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRSGVsbG8gZnJvbSBTYWxtb24gV2FsbGV0';
+  /** Non-ASCII content, pinning the UTF-8 encoding of the content section. */
+  const GOLDEN_OCMS_UNICODE_CONTENT =
+    '/3NvbGFuYSBvZmZjaGFpbgEBiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1zDnG7Dr2PDtmTDqSDinJMg5pel5pys6Kqe';
+
+  const toBase64 = (bytes: Uint8Array) => Buffer.from(bytes).toString('base64');
+
+  it('pins the OCMS v1 envelope bytes for a single signer', () => {
+    const buffer = buildOffchainMessageV1(encode(CONTENT), [testKeypair(1).publicKey]);
+
+    expect(toBase64(buffer)).toBe(GOLDEN_OCMS_SINGLE_SIGNER);
+  });
+
+  it('pins the OCMS v1 envelope bytes for non-ASCII content', () => {
+    const buffer = buildOffchainMessageV1(encode(UNICODE_CONTENT), [testKeypair(1).publicKey]);
+
+    expect(toBase64(buffer)).toBe(GOLDEN_OCMS_UNICODE_CONTENT);
+  });
+
+  // The encoder normalizes signatory order, so caller order is not observable in
+  // the signed bytes. A port that preserved caller order would produce different
+  // bytes and break the decoder, which requires sorted signatories.
+  it('produces order-independent bytes for the same signatory set', () => {
+    const signers = [1, 2, 3].map((seed) => testKeypair(seed).publicKey);
+    const sorted = [...signers].sort((a, b) => (a.toBase58() < b.toBase58() ? -1 : 1));
+
+    const asGiven = buildOffchainMessageV1(encode(CONTENT), signers);
+    const reversed = buildOffchainMessageV1(encode(CONTENT), [...signers].reverse());
+    const preSorted = buildOffchainMessageV1(encode(CONTENT), sorted);
+
+    expect(toBase64(asGiven)).toBe(GOLDEN_OCMS_THREE_SIGNERS);
+    expect(toBase64(reversed)).toBe(GOLDEN_OCMS_THREE_SIGNERS);
+    expect(toBase64(preSorted)).toBe(GOLDEN_OCMS_THREE_SIGNERS);
+  });
+
+  it('rejects a duplicated signatory', () => {
+    const signer = testKeypair(1).publicKey;
+
+    expect(() => buildOffchainMessageV1(encode(CONTENT), [signer, signer])).toThrow(
+      /no more than once/,
+    );
   });
 });
