@@ -86,6 +86,75 @@ describe('buildSiwsMessageText', () => {
   });
 });
 
+/**
+ * GOLDEN VECTORS — migration acceptance gate.
+ *
+ * These constants pin the exact bytes produced by the @solana/web3.js
+ * implementation as of commit 9e2e4bb. They are the acceptance criterion for the
+ * @solana/kit migration: the ported code is correct iff these still pass.
+ *
+ * To regenerate (only ever when the wire format itself is intentionally
+ * changed — NEVER to make a migration diff go green): replace the expected
+ * constant with an empty string, run the suite, and paste the reported
+ * `actual` value. A migration that changes these bytes is a bug, not a
+ * vector that needs updating.
+ */
+describe('buildSiwsMessageText golden vectors', () => {
+  // TEST-ONLY deterministic keypair. The seed is a constant so golden vectors are
+  // reproducible; this key holds no funds and must never be used outside tests.
+  const address = Keypair.fromSeed(new Uint8Array(32).fill(2)).publicKey.toBase58();
+  const domain = 'app.example.com';
+
+  /** Header + address only: the smallest message a backend must reconstruct. */
+  const GOLDEN_SIWS_MINIMAL =
+    'YXBwLmV4YW1wbGUuY29tIHdhbnRzIHlvdSB0byBzaWduIGluIHdpdGggeW91ciBTb2xhbmEgYWNjb3VudDoKOWhTUjZTN1dQdHhtVG9qZ282R0czazR5RFBlY2dKWTI5Mmo3eHJzVUdXQnU=';
+  /** Every optional field plus two resources: the full ABNF layout and line order. */
+  const GOLDEN_SIWS_MAXIMAL =
+    'YXBwLmV4YW1wbGUuY29tIHdhbnRzIHlvdSB0byBzaWduIGluIHdpdGggeW91ciBTb2xhbmEgYWNjb3VudDoKOWhTUjZTN1dQdHhtVG9qZ282R0czazR5RFBlY2dKWTI5Mmo3eHJzVUdXQnUKClNpZ24gaW4gdG8gRXhhbXBsZS4KClVSSTogaHR0cHM6Ly9hcHAuZXhhbXBsZS5jb20vbG9naW4KVmVyc2lvbjogMQpDaGFpbiBJRDogbWFpbm5ldApOb25jZTogUk1UTUM2ZjUKSXNzdWVkIEF0OiAyMDI2LTA3LTI5VDAwOjAwOjAwWgpFeHBpcmF0aW9uIFRpbWU6IDIwMjYtMDctMjlUMDA6MTA6MDBaCk5vdCBCZWZvcmU6IDIwMjYtMDctMjhUMDA6MDA6MDBaClJlcXVlc3QgSUQ6IHJlcS0xClJlc291cmNlczoKLSBodHRwczovL2FwcC5leGFtcGxlLmNvbS90b3MKLSBodHRwczovL2FwcC5leGFtcGxlLmNvbS9wcml2YWN5';
+  /** Non-ASCII statement, pinning the UTF-8 encoding of free-text fields. */
+  const GOLDEN_SIWS_UNICODE_STATEMENT =
+    'YXBwLmV4YW1wbGUuY29tIHdhbnRzIHlvdSB0byBzaWduIGluIHdpdGggeW91ciBTb2xhbmEgYWNjb3VudDoKOWhTUjZTN1dQdHhtVG9qZ282R0czazR5RFBlY2dKWTI5Mmo3eHJzVUdXQnUKCsOcbsOvY8O2ZMOpIOKckyDml6XmnKzoqp4=';
+
+  const toBase64 = (text: string) => Buffer.from(new TextEncoder().encode(text)).toString('base64');
+
+  it('pins the minimal message bytes', () => {
+    expect(toBase64(buildSiwsMessageText({ domain, address }))).toBe(GOLDEN_SIWS_MINIMAL);
+  });
+
+  it('pins the maximal message bytes', () => {
+    const text = buildSiwsMessageText({
+      domain,
+      address,
+      statement: 'Sign in to Example.',
+      uri: 'https://app.example.com/login',
+      version: '1',
+      chainId: 'mainnet',
+      nonce: 'RMTMC6f5',
+      issuedAt: '2026-07-29T00:00:00Z',
+      expirationTime: '2026-07-29T00:10:00Z',
+      notBefore: '2026-07-28T00:00:00Z',
+      requestId: 'req-1',
+      resources: ['https://app.example.com/tos', 'https://app.example.com/privacy'],
+    });
+
+    expect(toBase64(text)).toBe(GOLDEN_SIWS_MAXIMAL);
+  });
+
+  it('pins the message bytes for a non-ASCII statement', () => {
+    const text = buildSiwsMessageText({ domain, address, statement: 'Ünïcödé ✓ 日本語' });
+
+    expect(toBase64(text)).toBe(GOLDEN_SIWS_UNICODE_STATEMENT);
+  });
+
+  // An empty `resources` array emits no `Resources:` line at all, so the bytes are
+  // identical to the minimal message.
+  it('pins that an empty resources array adds no Resources block', () => {
+    const text = buildSiwsMessageText({ domain, address, resources: [] });
+
+    expect(toBase64(text)).toBe(GOLDEN_SIWS_MINIMAL);
+  });
+});
+
 describe('prepareSignInMessage', () => {
   const address = '9mpJyg7iEse9rPMP1tdiSdSAYbLJX6nJyGbNkbT3SAd3';
 
