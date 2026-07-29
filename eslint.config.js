@@ -4,6 +4,14 @@ import typescriptParser from '@typescript-eslint/parser';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 
+/**
+ * Directories whose @solana/web3.js migration to @solana/kit has landed.
+ * Add a directory here in the SAME commit that completes its migration — the
+ * ratchet is what stops a migrated directory from regressing. Paths are
+ * repo-root-relative.
+ */
+const MIGRATED_DIRS = [];
+
 export default [
   js.configs.recommended,
   {
@@ -149,4 +157,22 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  // The @typescript-eslint variant is required: it is the only one that also
+  // catches `import type { … } from '@solana/web3.js'`. The conditional spread
+  // keeps the entry inert while MIGRATED_DIRS is empty — a flat-config object
+  // with `files: []` is not reliably inert.
+  ...(MIGRATED_DIRS.length
+    ? [
+        {
+          files: MIGRATED_DIRS.map((dir) => `${dir}/**/*.{ts,tsx}`),
+          plugins: { '@typescript-eslint': typescript },
+          rules: {
+            '@typescript-eslint/no-restricted-imports': [
+              'error',
+              { patterns: ['@solana/web3.js'] },
+            ],
+          },
+        },
+      ]
+    : []),
 ];
