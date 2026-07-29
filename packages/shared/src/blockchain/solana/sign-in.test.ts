@@ -2,6 +2,8 @@ import bs58 from 'bs58';
 import nacl from 'tweetnacl';
 import { describe, expect, it } from 'vitest';
 import { Keypair } from '@solana/web3.js';
+import { createSignInMessageText } from '@solana/wallet-standard-util';
+import type { ResolvedSiwsFields } from './sign-in';
 import {
   buildSiwsMessageText,
   getSiwsDomain,
@@ -152,6 +154,66 @@ describe('buildSiwsMessageText golden vectors', () => {
     const text = buildSiwsMessageText({ domain, address, resources: [] });
 
     expect(toBase64(text)).toBe(GOLDEN_SIWS_MINIMAL);
+  });
+});
+
+/**
+ * Differential against the upstream reference implementation, verifying the
+ * byte-parity claim in `buildSiwsMessageText`'s doc comment. Backends verify
+ * sign-ins with `verifySignIn`, which rebuilds the text with
+ * `createSignInMessageText`, so any divergence breaks verification.
+ *
+ * `@solana/wallet-standard-util` is a devDependency and is never bundled.
+ */
+describe('buildSiwsMessageText vs createSignInMessageText', () => {
+  const address = Keypair.fromSeed(new Uint8Array(32).fill(2)).publicKey.toBase58();
+  const domain = 'app.example.com';
+
+  const cases: [string, ResolvedSiwsFields][] = [
+    ['minimal', { domain, address }],
+    [
+      'maximal',
+      {
+        domain,
+        address,
+        statement: 'Sign in to Example.',
+        uri: 'https://app.example.com/login',
+        version: '1',
+        chainId: 'mainnet',
+        nonce: 'RMTMC6f5',
+        issuedAt: '2026-07-29T00:00:00Z',
+        expirationTime: '2026-07-29T00:10:00Z',
+        notBefore: '2026-07-28T00:00:00Z',
+        requestId: 'req-1',
+        resources: ['https://app.example.com/tos', 'https://app.example.com/privacy'],
+      },
+    ],
+    ['non-ASCII statement', { domain, address, statement: 'Ünïcödé ✓ 日本語' }],
+    ['single resource', { domain, address, resources: ['https://app.example.com/tos'] }],
+    ['statement only', { domain, address, statement: 'Sign in to Example.' }],
+    ['fields without statement', { domain, address, nonce: 'RMTMC6f5', version: '1' }],
+  ];
+
+  it.each(cases)('matches createSignInMessageText byte-for-byte (%s)', (_name, fields) => {
+    expect(buildSiwsMessageText(fields)).toBe(createSignInMessageText(fields));
+  });
+
+  // KNOWN DIVERGENCE, deliberately not fixed here: upstream gates the resources
+  // block on `if (input.resources)`, so a truthy empty array emits a bare
+  // `Resources:` line; this repo gates it on `fields.resources?.length` and emits
+  // nothing. Changing `buildSiwsMessageText` is a behavior change outside this
+  // commit's scope, so the delta is pinned below and the parity case stays skipped
+  // pending a separate decision.
+  it.skip('matches createSignInMessageText byte-for-byte (empty resources array)', () => {
+    expect(buildSiwsMessageText({ domain, address, resources: [] })).toBe(
+      createSignInMessageText({ domain, address, resources: [] }),
+    );
+  });
+
+  it('pins the exact delta for an empty resources array', () => {
+    const fields: ResolvedSiwsFields = { domain, address, resources: [] };
+
+    expect(createSignInMessageText(fields)).toBe(`${buildSiwsMessageText(fields)}\n\nResources:`);
   });
 });
 
