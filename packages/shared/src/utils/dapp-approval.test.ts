@@ -24,6 +24,10 @@ vi.mock('../hooks/useAvailableNetworks', () => ({
   fetchAndMergeNetworkConfigs: vi.fn().mockResolvedValue(true),
 }));
 
+// TEST-ONLY deterministic keypairs. Seeds are constants so golden vectors are
+// reproducible; these keys hold no funds and must never be used outside tests.
+const testKeypair = (seed: number) => Keypair.fromSeed(new Uint8Array(32).fill(seed));
+
 describe('dapp approval utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -135,6 +139,107 @@ describe('dapp approval utilities', () => {
     );
 
     expect(details.recentBlockhash).toBe(recentBlockhash);
+  });
+});
+
+/**
+ * GOLDEN VECTORS — migration acceptance gate.
+ *
+ * These constants pin the exact bytes produced by the @solana/web3.js
+ * implementation as of commit 9e2e4bb. They are the acceptance criterion for the
+ * @solana/kit migration: the ported code is correct iff these still pass.
+ *
+ * To regenerate (only ever when the wire format itself is intentionally
+ * changed — NEVER to make a migration diff go green): replace the expected
+ * constant with an empty string, run the suite, and paste the reported
+ * `actual` value. A migration that changes these bytes is a bug, not a
+ * vector that needs updating.
+ */
+describe('serializeSignedTransactionFromApproval golden vectors', () => {
+  // Fee payer is seed 1, the wallet signer is seed 2, and both sign, so the wallet's
+  // signature belongs in slot 1 rather than slot 0.
+  const BLOCKHASH = '11111111111111111111111111111111';
+  const walletAddress = testKeypair(2).publicKey.toBase58();
+
+  const transferInstructions = () => [
+    SystemProgram.transfer({
+      fromPubkey: testKeypair(1).publicKey,
+      toPubkey: testKeypair(3).publicKey,
+      lamports: 1,
+    }),
+    SystemProgram.transfer({
+      fromPubkey: testKeypair(2).publicKey,
+      toPubkey: testKeypair(3).publicKey,
+      lamports: 2,
+    }),
+  ];
+
+  /** Signature-slot layout of a re-serialized v0 transaction: slot 0 stays zeroed. */
+  const GOLDEN_V0_TX =
+    'AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB2qbSfFSf2dqZn7d0dfZp2kiTMqLWtvP9NcLn2LV/g2+yBJi1bIXCkkdeprdPFgAMje5gFV1f4Myszb9FbMAsMgAIAAQSKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXIE5dw6ofRdfVqNUZsNMfszLjYqRtO43ol32D1uPybOU7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgMCAAIMAgAAAAEAAAAAAAAAAwIBAgwCAAAAAgAAAAAAAAAA';
+  /** The same layout for a legacy transaction, where addSignature places the slot. */
+  const GOLDEN_LEGACY_TX =
+    'AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACFOIKAoH8TYeMLq23PBztoOIK9NGB4bDqwqCBR9doB9wIeKzeQ1+ZXLIUyTTJokE8xseeZlFN6DjCiL7iN12MFAgABBIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cgTl3Dqh9F19Wo1Rmw0x+zMuNipG07jeiXfYPW4/Js5TtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAwIAAgwCAAAAAQAAAAAAAAADAgECDAIAAAACAAAAAAAAAA==';
+
+  it('pins the serialized bytes of a signed multi-signer v0 transaction', () => {
+    const message = new TransactionMessage({
+      payerKey: testKeypair(1).publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: transferInstructions(),
+    }).compileToV0Message();
+    const tx = new VersionedTransaction(message);
+    tx.sign([testKeypair(2)]);
+
+    const serialized = serializeSignedTransactionFromApproval(
+      bs58.encode(message.serialize()),
+      walletAddress,
+      bs58.encode(tx.signatures[1]),
+    );
+
+    expect(Buffer.from(serialized).toString('base64')).toBe(GOLDEN_V0_TX);
+    // Slot 0 (the co-signer) is left zeroed: the approval flow only ever knows the
+    // wallet's own signature. Pinned as current behavior, not endorsed as correct.
+    expect(VersionedTransaction.deserialize(serialized).signatures[0].every((b) => b === 0)).toBe(
+      true,
+    );
+  });
+
+  it('pins the serialized bytes of a signed multi-signer legacy transaction', () => {
+    const tx = new Transaction({
+      feePayer: testKeypair(1).publicKey,
+      recentBlockhash: BLOCKHASH,
+    }).add(...transferInstructions());
+    const encodedMessage = bs58.encode(tx.serializeMessage());
+    tx.partialSign(testKeypair(2));
+    const signed = tx.signatures.find((entry) =>
+      entry.publicKey.equals(testKeypair(2).publicKey),
+    );
+
+    const serialized = serializeSignedTransactionFromApproval(
+      encodedMessage,
+      walletAddress,
+      bs58.encode(signed!.signature!),
+    );
+
+    expect(Buffer.from(serialized).toString('base64')).toBe(GOLDEN_LEGACY_TX);
+  });
+
+  it('rejects a signature for a public key that is not a required signer', () => {
+    const message = new TransactionMessage({
+      payerKey: testKeypair(1).publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: transferInstructions(),
+    }).compileToV0Message();
+    const tx = new VersionedTransaction(message);
+    tx.sign([testKeypair(2)]);
+
+    expect(() =>
+      serializeSignedTransactionFromApproval(
+        bs58.encode(message.serialize()),
+        testKeypair(3).publicKey.toBase58(),
+        bs58.encode(tx.signatures[1]),
+      ),
+    ).toThrow('Signer public key not found in transaction message');
   });
 });
 
