@@ -38,6 +38,20 @@ function createMockSalmon(publicKey: Keypair['publicKey'] | null = null): Salmon
       signature: new Uint8Array(64).fill(9),
       signatureType: 'ed25519' as const,
     })),
+    signIn: vi.fn(async (input: { useOffchainMessage?: { messageVersion: 1 } }) => {
+      // Sign-in proves ownership, so it connects if not already connected.
+      salmon.publicKey = salmon.publicKey ?? publicKey ?? Keypair.generate().publicKey;
+      return {
+        address: salmon.publicKey.toBase58(),
+        publicKey: salmon.publicKey.toBytes(),
+        signedMessage: new Uint8Array(12).fill(3),
+        signature: new Uint8Array(64).fill(5),
+        signatureType: 'ed25519' as const,
+        ...(input?.useOffchainMessage
+          ? { signedMessageFormat: { kind: 'offchainMessage' as const, messageVersion: 1 as const } }
+          : {}),
+      };
+    }),
     on<E extends keyof SalmonEvent>(event: E, listener: SalmonEvent[E]) {
       (listeners[event] ??= []).push(listener as (...args: unknown[]) => unknown);
     },
@@ -128,6 +142,7 @@ describe('SalmonWallet', () => {
     expect(Object.keys(wallet.features).sort()).toEqual([
       'salmon:',
       'solana:signAndSendTransaction',
+      'solana:signIn',
       'solana:signMessage',
       'solana:signOffchainMessage',
       'solana:signTransaction',
@@ -145,6 +160,8 @@ describe('SalmonWallet', () => {
       wallet.features['solana:signOffchainMessage'].supportedMessageVersions,
     ).toEqual([1]);
     expect(wallet.features['solana:signOffchainMessage'].version).toBe('1.0.0');
+    // 1.1.0 advertises PR#93 `useOffchainMessage` support.
+    expect(wallet.features['solana:signIn'].version).toBe('1.1.0');
   });
 
   it('connects through the provider, exposes the account, and emits a change event', async () => {
@@ -234,6 +251,52 @@ describe('SalmonWallet', () => {
     expect(outputs[0].signedOffchainMessage).toEqual(new Uint8Array(10).fill(1));
     expect(outputs[0].signature).toEqual(new Uint8Array(64).fill(9));
     expect(outputs[0].signatureType).toBe('ed25519');
+  });
+
+  it('signIn connects a not-yet-connected wallet and returns the SolanaSignInOutput shape', async () => {
+    // Arrange — no prior connection
+    const salmon = createMockSalmon(null);
+    const wallet = new SalmonWallet(salmon);
+    expect(wallet.accounts).toEqual([]);
+
+    // Act — bare signIn() with no inputs is a valid request
+    const outputs = await wallet.features['solana:signIn'].signIn();
+
+    // Assert
+    expect(salmon.signIn).toHaveBeenCalledTimes(1);
+    expect(outputs).toHaveLength(1);
+    expect(wallet.accounts).toHaveLength(1);
+    expect(outputs[0].account).toBe(wallet.accounts[0]);
+    expect(outputs[0].signedMessage).toEqual(new Uint8Array(12).fill(3));
+    expect(outputs[0].signature).toEqual(new Uint8Array(64).fill(5));
+    expect(outputs[0].signatureType).toBe('ed25519');
+    expect(outputs[0].signedMessageFormat).toBeUndefined();
+  });
+
+  it('signIn forwards the input and surfaces signedMessageFormat on the OCMS path (PR#93)', async () => {
+    // Arrange
+    const salmon = createMockSalmon(Keypair.generate().publicKey);
+    const wallet = new SalmonWallet(salmon);
+
+    // Act
+    const outputs = await wallet.features['solana:signIn'].signIn({
+      statement: 'Sign in to Example.',
+      nonce: 'abcd1234',
+      useOffchainMessage: { messageVersion: 1 },
+    });
+
+    // Assert
+    expect(salmon.signIn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statement: 'Sign in to Example.',
+        nonce: 'abcd1234',
+        useOffchainMessage: { messageVersion: 1 },
+      }),
+    );
+    expect(outputs[0].signedMessageFormat).toEqual({
+      kind: 'offchainMessage',
+      messageVersion: 1,
+    });
   });
 
   it('rejects signOffchainMessage for an unsupported message version', async () => {

@@ -101,6 +101,38 @@ export interface SignOffchainMessageResult {
 }
 
 /**
+ * Input for `solana:signIn` (Sign-In-With-Solana) — JSON-safe
+ * `SolanaSignInInput`, incl. the Wallet Standard PR#93 `useOffchainMessage`
+ */
+export interface SignInInput {
+  domain?: string;
+  address?: string;
+  statement?: string;
+  uri?: string;
+  version?: string;
+  chainId?: string;
+  nonce?: string;
+  issuedAt?: string;
+  expirationTime?: string;
+  notBefore?: string;
+  requestId?: string;
+  resources?: string[];
+  useOffchainMessage?: { messageVersion: 1 };
+}
+
+/**
+ * Result from `solana:signIn`
+ */
+export interface SignInResult {
+  address: string;
+  publicKey: Uint8Array;
+  signedMessage: Uint8Array;
+  signature: Uint8Array;
+  signatureType: 'ed25519';
+  signedMessageFormat?: { kind: 'offchainMessage'; messageVersion: 1 };
+}
+
+/**
  * Network type for transaction operations
  */
 export type Network = 'solana-mainnet' | 'solana-devnet' | string;
@@ -387,6 +419,43 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
       signedOffchainMessage: new Uint8Array(bs58.decode(result.signedOffchainMessage)),
       signature: new Uint8Array(bs58.decode(result.signature)),
       signatureType: result.signatureType,
+    };
+  };
+
+  /**
+   * Native `solana:signIn` (Sign-In-With-Solana). Only the dApp's
+   * `SolanaSignInInput` travels to the extension — the wallet builds and signs
+   * the SIWS message from the REAL requesting origin, so no dApp-supplied
+   * message text is ever trusted. A successful sign-in also proves account
+   * ownership, so the provider treats it as a connect.
+   * @param input - JSON-safe SolanaSignInInput (all optional string fields)
+   * @returns The signed-in account, the exact signed bytes, and the signature
+   */
+  signIn = async (input: SignInInput = {}): Promise<SignInResult> => {
+    const response = await this.sendRequest('signIn', { input });
+    const result = response.result as {
+      address: string;
+      signedMessage: string;
+      signature: string;
+      signatureType: 'ed25519';
+      signedMessageFormat?: { kind: 'offchainMessage'; messageVersion: 1 };
+    };
+
+    const publicKey = new PublicKey(result.address);
+    if (!this.#publicKey || !this.#publicKey.equals(publicKey)) {
+      this.#publicKey = publicKey;
+      this.emit('connect', publicKey);
+    }
+
+    return {
+      address: result.address,
+      publicKey: publicKey.toBytes(),
+      signedMessage: new Uint8Array(bs58.decode(result.signedMessage)),
+      signature: new Uint8Array(bs58.decode(result.signature)),
+      signatureType: result.signatureType,
+      ...(result.signedMessageFormat
+        ? { signedMessageFormat: result.signedMessageFormat }
+        : {}),
     };
   };
 

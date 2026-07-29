@@ -136,3 +136,18 @@ export {
   parseOffchainMessageV1,
 } from './offchain-message';
 export type { SignedOffchainMessage } from './offchain-message';
+
+// Sign-In-With-Solana (`solana:signIn`)
+export {
+  buildSiwsMessageText,
+  getSiwsDomain,
+  prepareSignInMessage,
+  signSiwsMessage,
+  SiwsDomainMismatchError,
+} from './sign-in';
+export type {
+  PreparedSignInMessage,
+  ResolvedSiwsFields,
+  SignedSignInMessage,
+  SolanaSignInInputFields,
+} from './sign-in';

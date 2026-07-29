@@ -9,10 +9,16 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
-import { buildOffchainMessageV1, parseOffchainMessageV1, signOffchainMessage } from '../blockchain/solana';
-import type { SolanaAccount } from '../blockchain/solana';
+import {
+  buildOffchainMessageV1,
+  parseOffchainMessageV1,
+  signOffchainMessage,
+  signSiwsMessage,
+} from '../blockchain/solana';
+import type { SolanaAccount, SolanaSignInInputFields } from '../blockchain/solana';
 import type {
   DAppSignAllTransactionsApprovalPayload,
+  DAppSignInApprovalPayload,
   DAppSignMessageApprovalPayload,
   DAppSignOffchainMessageApprovalPayload,
   DAppSignTransactionApprovalPayload,
@@ -78,94 +84,6 @@ export function decodeDAppMessage(data: number[]): DecodedDAppMessage {
   } catch {
     return { text: toHex(bytes), isHex: true };
   }
-}
-
-export interface ParsedSiwsMessage {
-  domain: string;
-  address: string;
-  statement?: string;
-  uri?: string;
-  version?: string;
-  chainId?: string;
-  nonce?: string;
-  issuedAt?: string;
-  expirationTime?: string;
-  notBefore?: string;
-  requestId?: string;
-  resources?: string[];
-}
-
-const SIWS_HEADER = /^(.+?) wants you to sign in with your Solana account:$/;
-
-const SIWS_FIELDS: Record<string, keyof ParsedSiwsMessage> = {
-  URI: 'uri',
-  Version: 'version',
-  'Chain ID': 'chainId',
-  Nonce: 'nonce',
-  'Issued At': 'issuedAt',
-  'Expiration Time': 'expirationTime',
-  'Not Before': 'notBefore',
-  'Request ID': 'requestId',
-};
-
-/**
- * Parses a Sign-In-With-Solana message (ABNF derived from EIP-4361) into its
- * fields. Best-effort: returns null when the header line does not match, so
- * callers can fall back to showing the raw message verbatim. Never throws.
- *
- * TODO(OCMS Fase 2b): remove once native `solana:signIn` replaces the SIWS-over-
- * raw-signMessage flow. Must land atomically with the app/UI wiring so no
- * consumer is left calling this against a message that no longer arrives this way.
- */
-export function parseSiwsMessage(text: string): ParsedSiwsMessage | null {
-  if (!text) return null;
-
-  const lines = text.split('\n');
-  const headerMatch = lines[0]?.match(SIWS_HEADER);
-  if (!headerMatch) return null;
-
-  const address = lines[1]?.trim();
-  if (!address) return null;
-
-  const result: ParsedSiwsMessage = {
-    domain: headerMatch[1].trim(),
-    address,
-  };
-
-  const statementLines: string[] = [];
-  const resources: string[] = [];
-  let seenField = false;
-  let inResources = false;
-
-  for (let i = 2; i < lines.length; i += 1) {
-    const trimmed = lines[i].trim();
-
-    if (inResources) {
-      if (trimmed.startsWith('- ')) resources.push(trimmed.slice(2).trim());
-      continue;
-    }
-
-    if (trimmed === 'Resources:') {
-      seenField = true;
-      inResources = true;
-      continue;
-    }
-
-    const fieldMatch = trimmed.match(/^([A-Za-z][A-Za-z ]*?): (.+)$/);
-    const fieldKey = fieldMatch ? SIWS_FIELDS[fieldMatch[1]] : undefined;
-    if (fieldMatch && fieldKey) {
-      seenField = true;
-      (result as unknown as Record<string, string>)[fieldKey] = fieldMatch[2].trim();
-      continue;
-    }
-
-    if (!seenField && trimmed) statementLines.push(trimmed);
-  }
-
-  if (statementLines.length) result.statement = statementLines.join(' ');
-  if (resources.length) result.resources = resources;
-
-  return result;
 }
 
 export function buildTransactionFromEncodedMessage(encodedMessage: string): ParsedSolanaTransaction {
@@ -343,6 +261,34 @@ export function parseOffchainMessageForApproval(
   const signers = requiredSigners.map((address) => new PublicKey(address));
   const buffer = buildOffchainMessageV1(contentBytes, signers);
   return parseOffchainMessageV1(buffer);
+}
+
+/**
+ * Approves a `solana:signIn` (Sign-In-With-Solana) request. The wallet builds
+ * the SIWS message itself via `signSiwsMessage`, binding the `domain` line to
+ * the real requesting `origin` — dApp-claimed domains or addresses that differ
+ * are rejected there (see `SiwsDomainMismatchError`). When
+ * `input.useOffchainMessage` is set (Wallet Standard PR#93), the message is
+ * signed wrapped in an OCMS v1 envelope and `signedMessageFormat` marks it.
+ *
+ * @param account - The signing account (also the account being signed in)
+ * @param input - The dApp's `SolanaSignInInput`, as received over the bridge
+ * @param origin - The REAL requesting origin (from the connection, never the dApp)
+ */
+export function approveSolanaSignIn(
+  account: SolanaAccount,
+  input: SolanaSignInInputFields,
+  origin: string,
+): DAppSignInApprovalPayload {
+  const { signedMessage, signature, signedMessageFormat } = signSiwsMessage(account, input, origin);
+
+  return {
+    address: account.getReceiveAddress(),
+    signedMessage: bs58.encode(signedMessage),
+    signature: bs58.encode(signature),
+    signatureType: 'ed25519',
+    ...(signedMessageFormat ? { signedMessageFormat } : {}),
+  };
 }
 
 export async function approveSolanaTransactionRequest(

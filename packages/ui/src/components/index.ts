@@ -198,11 +198,13 @@ export type { BridgeChain, BridgeToken, BridgeEstimate, BridgeRecipientScreenPro
 // DAppApproval - Shared approval views for web and extension
 export {
   DAppConnectApprovalView,
+  DAppSignInApprovalView,
   DAppSignMessageApprovalView,
   DAppTransactionApprovalView,
 } from './DAppApproval';
 export type {
   DAppConnectApprovalViewProps,
+  DAppSignInApprovalViewProps,
   DAppSignMessageApprovalViewProps,
   DAppTransactionApprovalViewProps,
 } from './DAppApproval';

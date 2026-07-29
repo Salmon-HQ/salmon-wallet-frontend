@@ -60,6 +60,10 @@ export const router = createBrowserRouter([
         lazy: () => import('./pages/dapp/SignMessageApprovalPage').then((m) => ({ Component: m.SignMessageApprovalPage })),
       },
       {
+        path: '/dapp/sign-in',
+        lazy: () => import('./pages/dapp/SignInApprovalPage').then((m) => ({ Component: m.SignInApprovalPage })),
+      },
+      {
         path: '/dapp/sign-transaction',
         lazy: () => import('./pages/dapp/SignTransactionApprovalPage').then((m) => ({ Component: m.SignTransactionApprovalPage })),
       },

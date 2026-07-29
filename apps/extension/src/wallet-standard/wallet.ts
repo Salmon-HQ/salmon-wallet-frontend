@@ -2,6 +2,8 @@ import type {
     SolanaSignAndSendTransactionFeature,
     SolanaSignAndSendTransactionMethod,
     SolanaSignAndSendTransactionOutput,
+    SolanaSignInInput,
+    SolanaSignInOutput,
     SolanaSignMessageFeature,
     SolanaSignMessageMethod,
     SolanaSignMessageOutput,
@@ -66,6 +68,30 @@ export type SolanaSignOffchainMessageFeature = {
     };
 };
 
+// `solana:signIn` (SIWS) types. The installed @solana/wallet-standard-features
+// ships the 1.0.0 feature; the extensions from Wallet Standard PR#93
+// (`useOffchainMessage` input + `signedMessageFormat` output, feature version
+// 1.1.0) are defined locally until the upstream package includes them.
+
+export type SalmonSolanaSignInInput = SolanaSignInInput & {
+    readonly useOffchainMessage?: { readonly messageVersion: 1 };
+};
+
+export type SalmonSolanaSignInOutput = SolanaSignInOutput & {
+    readonly signedMessageFormat?: { kind: 'offchainMessage'; messageVersion: 1 };
+};
+
+export type SalmonSolanaSignInMethod = (
+    ...inputs: readonly SalmonSolanaSignInInput[]
+) => Promise<readonly SalmonSolanaSignInOutput[]>;
+
+export type SalmonSolanaSignInFeature = {
+    'solana:signIn': {
+        version: '1.1.0';
+        signIn: SalmonSolanaSignInMethod;
+    };
+};
+
 export class SalmonWallet implements Wallet {
     readonly #listeners: { [E in EventsNames]?: EventsListeners[E][] } = {};
     readonly #version = '1.0.0' as const;
@@ -97,6 +123,7 @@ export class SalmonWallet implements Wallet {
         SolanaSignTransactionFeature &
         SolanaSignMessageFeature &
         SolanaSignOffchainMessageFeature &
+        SalmonSolanaSignInFeature &
         SalmonFeature {
         return {
             'standard:connect': {
@@ -129,6 +156,10 @@ export class SalmonWallet implements Wallet {
                 version: '1.0.0',
                 supportedMessageVersions: [1],
                 signOffchainMessage: this.#signOffchainMessage,
+            },
+            'solana:signIn': {
+                version: '1.1.0',
+                signIn: this.#signIn,
             },
             'salmon:': {
                 salmon: this.#salmon,
@@ -306,6 +337,38 @@ export class SalmonWallet implements Wallet {
             for (const input of inputs) {
                 outputs.push(...(await this.#signMessage(input)));
             }
+        }
+
+        return outputs;
+    };
+
+    // Sign-In-With-Solana. Unlike the other features, `signIn` does not require
+    // an existing connection: a successful sign-in itself proves account
+    // ownership, so the provider connects as part of it (Phantom semantics).
+    // The wallet builds the SIWS message from the real origin; the dApp input
+    // only parameterizes it.
+    #signIn: SalmonSolanaSignInMethod = async (...inputs) => {
+        const outputs: SalmonSolanaSignInOutput[] = [];
+
+        // Per the feature contract, `signIn()` with no inputs is a valid
+        // sign-in request with all fields defaulted by the wallet.
+        for (const input of inputs.length ? inputs : [{}]) {
+            const result = await this.#salmon.signIn({ ...input, resources: input.resources?.slice() });
+
+            this.#connected();
+            const account = this.#account;
+            if (!account) throw new Error('not connected');
+            if (account.address !== result.address) throw new Error('invalid account');
+
+            outputs.push({
+                account,
+                signedMessage: result.signedMessage,
+                signature: result.signature,
+                signatureType: result.signatureType,
+                ...(result.signedMessageFormat
+                    ? { signedMessageFormat: result.signedMessageFormat }
+                    : {}),
+            });
         }
 
         return outputs;

@@ -1,18 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
-  copyToClipboard,
-  formatDateTime,
   formatOrigin,
   fontFamily,
   fontSize,
   getShortAddress,
   isTransactionLookalike,
   parseOffchainMessageForApproval,
-  parseSiwsMessage,
   spacing,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -66,9 +63,6 @@ export function DAppSignMessageApprovalView({
   const displayOrigin = formatOrigin(origin);
   const hasIdentity = !!appName || !!appIcon;
 
-  const [showRaw, setShowRaw] = useState(false);
-  const [copied, setCopied] = useState(false);
-
   const isOffchainMessage = requiredSigners !== undefined;
 
   const offchainParsed = useMemo(() => {
@@ -86,41 +80,6 @@ export function DAppSignMessageApprovalView({
     if (isOffchainMessage || !data) return false;
     return isTransactionLookalike(Uint8Array.from(data));
   }, [isOffchainMessage, data]);
-
-  const parsed = useMemo(
-    () => (isOffchainMessage ? null : parseSiwsMessage(messageText)),
-    [isOffchainMessage, messageText],
-  );
-
-  const issuedAtDisplay = useMemo(() => {
-    if (!parsed?.issuedAt) return null;
-    const ts = Date.parse(parsed.issuedAt);
-    return Number.isNaN(ts) ? parsed.issuedAt : formatDateTime(ts);
-  }, [parsed]);
-
-  const expiresDisplay = useMemo(() => {
-    if (!parsed?.expirationTime) return null;
-    const ts = Date.parse(parsed.expirationTime);
-    return Number.isNaN(ts) ? parsed.expirationTime : formatDateTime(ts);
-  }, [parsed]);
-
-  const domainMismatch = useMemo(() => {
-    if (!parsed?.domain) return false;
-    try {
-      const originHost = new URL(origin).host;
-      const messageHost = parsed.domain.replace(/^[a-z]+:\/\//i, '');
-      return !!originHost && originHost !== messageHost;
-    } catch {
-      return false;
-    }
-  }, [parsed, origin]);
-
-  const handleCopyAccount = () => {
-    if (!parsed?.address) return;
-    void copyToClipboard(parsed.address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
 
   const rawMessageBox = (
     <MessageBox
@@ -218,30 +177,6 @@ export function DAppSignMessageApprovalView({
               </Box>
             )}
 
-            {!isLookalikeTransaction && domainMismatch && (
-              <Box
-                sx={{
-                  marginBottom: `${spacing.md}px`,
-                  padding: `${spacing.md}px`,
-                  borderRadius: 2,
-                  backgroundColor: colors.status.errorBackground,
-                  border: `1px solid ${colors.status.error}`,
-                }}
-              >
-                <Typography
-                  sx={{ color: colors.status.error, fontSize: fontSize.sm, fontWeight: 600 }}
-                >
-                  {t('dapp.siws_domain_mismatch_title', 'Domain mismatch')}
-                </Typography>
-                <Typography sx={{ color: colors.text.primary, fontSize: fontSize.sm }}>
-                  {t(
-                    'dapp.siws_domain_mismatch',
-                    'The message domain does not match the requesting site.',
-                  )}
-                </Typography>
-              </Box>
-            )}
-
             {isOffchainMessage ? (
               offchainParsed ? (
                 <>
@@ -272,85 +207,6 @@ export function DAppSignMessageApprovalView({
               ) : (
                 rawMessageBox
               )
-            ) : parsed ? (
-              <>
-                {parsed.statement && (
-                  <Value
-                    sx={{
-                      fontWeight: 400,
-                      marginBottom: `${spacing.md}px`,
-                      whiteSpace: 'pre-wrap',
-                      overflowWrap: 'anywhere',
-                    }}
-                  >
-                    {parsed.statement}
-                  </Value>
-                )}
-
-                <SummaryGrid>
-                  <SummaryItem
-                    onClick={handleCopyAccount}
-                    sx={{ cursor: 'pointer' }}
-                    title={parsed.address}
-                  >
-                    <SummaryLabel>
-                      {copied ? t('dapp.siws_copied', 'Copied') : t('dapp.siws_account', 'Account')}
-                    </SummaryLabel>
-                    <SummaryValue sx={monoValueSx}>{getShortAddress(parsed.address)}</SummaryValue>
-                  </SummaryItem>
-
-                  {parsed.uri && (
-                    <SummaryItem>
-                      <SummaryLabel>{t('dapp.siws_uri', 'URI')}</SummaryLabel>
-                      <SummaryValue sx={{ wordBreak: 'break-all' }}>{parsed.uri}</SummaryValue>
-                    </SummaryItem>
-                  )}
-
-                  {parsed.nonce && (
-                    <SummaryItem>
-                      <SummaryLabel>{t('dapp.siws_nonce', 'Nonce')}</SummaryLabel>
-                      <SummaryValue sx={monoValueSx}>{parsed.nonce}</SummaryValue>
-                    </SummaryItem>
-                  )}
-
-                  {issuedAtDisplay && (
-                    <SummaryItem>
-                      <SummaryLabel>{t('dapp.siws_issued_at', 'Issued at')}</SummaryLabel>
-                      <SummaryValue>{issuedAtDisplay}</SummaryValue>
-                    </SummaryItem>
-                  )}
-
-                  {expiresDisplay && (
-                    <SummaryItem>
-                      <SummaryLabel>{t('dapp.siws_expires', 'Expires')}</SummaryLabel>
-                      <SummaryValue>{expiresDisplay}</SummaryValue>
-                    </SummaryItem>
-                  )}
-                </SummaryGrid>
-
-                <Box
-                  component="button"
-                  type="button"
-                  onClick={() => setShowRaw((value) => !value)}
-                  sx={{
-                    marginTop: `${spacing.md}px`,
-                    padding: 0,
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: colors.text.secondary,
-                    fontFamily: fontFamily.sans,
-                    fontSize: fontSize.sm,
-                    textAlign: 'left',
-                  }}
-                >
-                  {showRaw
-                    ? t('dapp.siws_hide_raw', 'Hide raw message')
-                    : t('dapp.siws_view_raw', 'View raw message')}
-                </Box>
-
-                {showRaw && <Box sx={{ marginTop: `${spacing.sm}px` }}>{rawMessageBox}</Box>}
-              </>
             ) : (
               rawMessageBox
             )}

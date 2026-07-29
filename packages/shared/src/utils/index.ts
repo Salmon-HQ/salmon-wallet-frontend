@@ -1,6 +1,7 @@
 // URL utilities
 export { normalizeIpfsUrl, DEAD_DOMAINS, getExplorerUrl, getSolscanUrl, formatOrigin } from './url';
 export {
+  approveSolanaSignIn,
   approveSolanaSignMessage,
   approveSolanaSignOffchainMessage,
   approveSolanaTransactionRequest,
@@ -11,12 +12,10 @@ export {
   isTransactionLookalike,
   loadSolanaTransactionApprovalDetails,
   parseOffchainMessageForApproval,
-  parseSiwsMessage,
   serializeSignedTransactionFromApproval,
   serializeSignedTransactionsFromApproval,
   TransactionLookalikeMessageError,
 } from './dapp-approval';
-export type { ParsedSiwsMessage } from './dapp-approval';
 
 // Account utilities
 export {

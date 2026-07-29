@@ -28,4 +28,31 @@ export interface Salmon extends SalmonEventEmitter {
         message: string;
         requiredSigners: Uint8Array[];
     }): Promise<{ signedOffchainMessage: Uint8Array; signature: Uint8Array; signatureType: 'ed25519' }>;
+    signIn(input: SalmonSignInInput): Promise<SalmonSignInResult>;
+}
+
+/** JSON-safe `SolanaSignInInput` (incl. Wallet Standard PR#93 `useOffchainMessage`). */
+export interface SalmonSignInInput {
+    domain?: string;
+    address?: string;
+    statement?: string;
+    uri?: string;
+    version?: string;
+    chainId?: string;
+    nonce?: string;
+    issuedAt?: string;
+    expirationTime?: string;
+    notBefore?: string;
+    requestId?: string;
+    resources?: string[];
+    useOffchainMessage?: { messageVersion: 1 };
+}
+
+export interface SalmonSignInResult {
+    address: string;
+    publicKey: Uint8Array;
+    signedMessage: Uint8Array;
+    signature: Uint8Array;
+    signatureType: 'ed25519';
+    signedMessageFormat?: { kind: 'offchainMessage'; messageVersion: 1 };
 }

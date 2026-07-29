@@ -42,7 +42,6 @@ vi.mock('@salmon/shared', () => ({
   getShortAddress: (address: string) => address,
   isTransactionLookalike: vi.fn(),
   parseOffchainMessageForApproval: vi.fn(),
-  parseSiwsMessage: vi.fn().mockReturnValue(null),
 }));
 
 import { isTransactionLookalike, parseOffchainMessageForApproval } from '@salmon/shared';

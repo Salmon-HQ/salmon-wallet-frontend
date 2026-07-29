@@ -2,6 +2,8 @@
  * Canonical types for dApp approval flows shared by web and extension.
  */
 
+import type { SolanaSignInInputFields } from '../blockchain/solana/sign-in';
+
 export interface DAppConnectRequest {
   id: string | number;
   method: 'connect';
@@ -31,6 +33,21 @@ export interface DAppSignOffchainMessageRequest {
   params?: {
     data?: number[];
     requiredSigners?: string[];
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Request for `solana:signIn` (Sign-In-With-Solana). Carries only the dApp's
+ * `SolanaSignInInput` — the wallet builds the actual SIWS message from the real
+ * requesting origin (see `blockchain/solana/sign-in.ts`), so no message text
+ * crosses this boundary. All input fields are JSON-safe strings.
+ */
+export interface DAppSignInRequest {
+  id: string | number;
+  method: 'signIn';
+  params?: {
+    input?: SolanaSignInInputFields;
     [key: string]: unknown;
   };
 }
@@ -75,6 +92,7 @@ export type DAppApprovalRequest =
   | DAppConnectRequest
   | DAppSignMessageRequest
   | DAppSignOffchainMessageRequest
+  | DAppSignInRequest
   | DAppTransactionRequest;
 
 export interface DAppConnectApprovalPayload {
@@ -97,6 +115,22 @@ export interface DAppSignOffchainMessageApprovalPayload {
   signedOffchainMessage: string;
   signature: string;
   signatureType: 'ed25519';
+}
+
+/**
+ * Output shape for `solana:signIn`, field-name-compatible with the Wallet
+ * Standard `SolanaSignInOutput` (incl. PR#93's `signedMessageFormat`) — but with
+ * bytes bs58-encoded and the account reduced to its base58 `address`, matching
+ * how every other payload in this file crosses the postMessage/bridge boundary
+ * as JSON. `signedMessage` is the exact signed bytes: raw UTF-8 SIWS text, or
+ * the OCMS v1 envelope when `signedMessageFormat` is present.
+ */
+export interface DAppSignInApprovalPayload {
+  address: string;
+  signedMessage: string;
+  signature: string;
+  signatureType: 'ed25519';
+  signedMessageFormat?: { kind: 'offchainMessage'; messageVersion: 1 };
 }
 
 export interface DAppSignTransactionApprovalPayload {

@@ -10,9 +10,11 @@ import {
   type DAppConnectApprovalPayload,
   type DAppSignAllTransactionsApprovalPayload,
   type DAppSignAndSendTransactionApprovalPayload,
+  type DAppSignInApprovalPayload,
   type DAppSignMessageApprovalPayload,
   type DAppSignOffchainMessageApprovalPayload,
   type DAppSignTransactionApprovalPayload,
+  type SolanaSignInInputFields,
 } from '@salmon/shared';
 import { sendRequest, waitForResponse, type BridgeRequest } from '../utils/walletBridge';
 
@@ -117,6 +119,53 @@ function createSalmonWallet() {
         signedOffchainMessage: new Uint8Array(bs58.decode(payload.signedOffchainMessage)),
         signature: new Uint8Array(bs58.decode(payload.signature)),
         signatureType: payload.signatureType,
+      };
+    },
+
+    /**
+     * Native `solana:signIn` (SIWS). Only the dApp's `SolanaSignInInput` crosses
+     * the bridge — the wallet builds the message from the real origin. Output is
+     * the Wallet Standard shape with the bridge's bs58 strings decoded back to
+     * `Uint8Array` (incl. PR#93's `signedMessageFormat` on the OCMS path).
+     */
+    async signIn(
+      origin: string,
+      input: SolanaSignInInputFields = {},
+    ): Promise<{
+      account: { address: string; publicKey: Uint8Array };
+      signedMessage: Uint8Array;
+      signature: Uint8Array;
+      signatureType: 'ed25519';
+      signedMessageFormat?: { kind: 'offchainMessage'; messageVersion: 1 };
+    } | null> {
+      const requestId = generateRequestId();
+      const request: BridgeRequest = {
+        requestId,
+        origin,
+        request: {
+          id: requestId,
+          method: 'signIn',
+          params: { input },
+        },
+      };
+
+      openApprovalPopup('/dapp/sign-in', requestId, origin, 'salmon-sign-in');
+      sendRequest(request);
+      const response = await waitForResponse(requestId);
+
+      if (!response.approved) return null;
+      const payload = response.payload as DAppSignInApprovalPayload;
+      return {
+        account: {
+          address: payload.address,
+          publicKey: new Uint8Array(bs58.decode(payload.address)),
+        },
+        signedMessage: new Uint8Array(bs58.decode(payload.signedMessage)),
+        signature: new Uint8Array(bs58.decode(payload.signature)),
+        signatureType: payload.signatureType,
+        ...(payload.signedMessageFormat
+          ? { signedMessageFormat: payload.signedMessageFormat }
+          : {}),
       };
     },
 

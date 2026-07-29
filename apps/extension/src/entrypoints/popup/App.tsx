@@ -19,6 +19,8 @@ import {
   DAppTransactionApprovalPage,
   type DAppTransactionRequest,
   DAppSignMessageApprovalPage,
+  DAppSignInApprovalPage,
+  type DAppSignInRequest,
   type DAppSignMessageRequest,
   type DAppSignOffchainMessageRequest,
 } from '../../pages/dapp';
@@ -96,10 +98,10 @@ function App() {
     request: DAppTransactionRequest;
   } | null>(null);
 
-  // dApp sign message flow (when popup is launched for message signing)
+  // dApp sign message / sign-in flow (when popup is launched for message signing)
   const [pendingDAppSignMessageRequest, setPendingDAppSignMessageRequest] = useState<{
     origin: string;
-    request: DAppSignMessageRequest | DAppSignOffchainMessageRequest;
+    request: DAppSignMessageRequest | DAppSignOffchainMessageRequest | DAppSignInRequest;
   } | null>(null);
 
   useEffect(() => {
@@ -114,7 +116,7 @@ function App() {
         if (request.method === 'connect' && request.id != null) {
           setPendingDAppRequest({ origin, request });
         } else if (
-          (request.method === 'sign' || request.method === 'signOffchain') &&
+          (request.method === 'sign' || request.method === 'signOffchain' || request.method === 'signIn') &&
           request.id != null
         ) {
           setPendingDAppSignMessageRequest({ origin, request });
@@ -139,7 +141,7 @@ function App() {
       if (request.method === 'connect' && request.id != null) {
         setPendingDAppRequest({ origin, request });
       } else if (
-        (request.method === 'sign' || request.method === 'signOffchain') &&
+        (request.method === 'sign' || request.method === 'signOffchain' || request.method === 'signIn') &&
         request.id != null
       ) {
         setPendingDAppSignMessageRequest({ origin, request });
@@ -483,6 +485,16 @@ function App() {
     accounts.length > 0 &&
     solanaApprovalAccount
   ) {
+    if (pendingDAppSignMessageRequest.request.method === 'signIn') {
+      return (
+        <DAppSignInApprovalPage
+          origin={pendingDAppSignMessageRequest.origin}
+          request={pendingDAppSignMessageRequest.request}
+          account={solanaApprovalAccount}
+          onDismiss={dismissApprovalWithRefresh}
+        />
+      );
+    }
     return (
       <DAppSignMessageApprovalPage
         origin={pendingDAppSignMessageRequest.origin}
