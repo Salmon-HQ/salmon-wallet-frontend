@@ -22,14 +22,7 @@ const STASH_KEYS = {
   LAST_ACTIVITY: 'salmon_last_activity',
 } as const;
 
-const APPROVAL_STORAGE_KEY = 'salmon_pending_approval';
 const SESSION_KEY_STORAGE_KEY = 'salmon_session_key';
-const APPROVAL_TIMEOUT_MS = 30_000;
-
-interface PendingApproval {
-  origin: string;
-  request: MessageData;
-}
 
 // Type definitions
 interface MessageData {
@@ -72,16 +65,16 @@ export default defineBackground(() => {
   // Maps to track response handlers and stashed values
   const responseHandlers = new Map<string, ResponseHandler>();
   const stashedValues = new Map<string, unknown>();
+  // requestId -> approval popup window id, so the background can close the
+  // window once the request is answered.
+  const approvalWindows = new Map<string, number>();
 
-  // Track whether the side panel is open via a persistent port
-  let sidePanelPort: chrome.runtime.Port | null = null;
-
+  // Accept the side panel's persistent port. No messages flow over it now; the
+  // open connection just keeps the service worker alive while the side panel is
+  // open (MV3 keep-alive).
   browser.runtime.onConnect.addListener((port) => {
     if (port.name === 'salmon_sidepanel') {
-      sidePanelPort = port;
-      port.onDisconnect.addListener(() => {
-        sidePanelPort = null;
-      });
+      port.onDisconnect.addListener(() => { /* no-op */ });
     }
   });
 
@@ -142,31 +135,7 @@ export default defineBackground(() => {
   };
 
   /**
-   * Append a pending approval to the session storage queue.
-   */
-  const writeApprovalToStorage = async (approval: PendingApproval): Promise<void> => {
-    const existing = await sessionArea.get(APPROVAL_STORAGE_KEY);
-    const queue = (existing[APPROVAL_STORAGE_KEY] as PendingApproval[] | undefined) ?? [];
-    queue.push(approval);
-    await sessionArea.set({ [APPROVAL_STORAGE_KEY]: queue });
-  };
-
-  /**
-   * Remove a specific request from the session storage queue.
-   */
-  const removeApprovalFromStorage = async (requestId: string): Promise<void> => {
-    const existing = await sessionArea.get(APPROVAL_STORAGE_KEY);
-    const queue = (existing[APPROVAL_STORAGE_KEY] as PendingApproval[] | undefined) ?? [];
-    const filtered = queue.filter((a) => a.request.id !== requestId);
-    if (filtered.length > 0) {
-      await sessionArea.set({ [APPROVAL_STORAGE_KEY]: filtered });
-    } else {
-      await sessionArea.remove(APPROVAL_STORAGE_KEY);
-    }
-  };
-
-  /**
-   * Launch a popup window as fallback for user interaction (approval dialogs, etc.)
+   * Launch a dedicated popup window for a dApp approval request.
    */
   const launchPopupWindow = async (
     message: Message,
@@ -193,9 +162,11 @@ export default defineBackground(() => {
 
     const popupId = popup?.id;
     if (popupId == null) return;
+    approvalWindows.set(message.data.id, popupId);
 
     const listener = (windowId: number): void => {
       if (windowId === popupId) {
+        approvalWindows.delete(message.data.id);
         const responseHandler = responseHandlers.get(message.data.id);
         if (responseHandler) {
           responseHandlers.delete(message.data.id);
@@ -224,31 +195,13 @@ export default defineBackground(() => {
     sender: chrome.runtime.MessageSender,
     sendResponse: ResponseHandler
   ): void => {
-    responseHandlers.set(message.data.id, sendResponse);
-
-    const approval: PendingApproval = {
-      origin: sender.origin || '',
-      request: message.data,
-    };
-
-    if (sidePanelPort) {
-      // Side panel is open — write to storage, it will pick it up
-      writeApprovalToStorage(approval).catch(() => { /* ignore */ });
-    } else {
-      // Side panel is not open — fall back to popup window
-      launchPopupWindow(message, sender, sendResponse);
-      return; // launchPopupWindow already registered the handler
-    }
-
-    // Auto-reject after timeout if the side panel doesn't respond
-    setTimeout(() => {
-      const handler = responseHandlers.get(message.data.id);
-      if (handler) {
-        responseHandlers.delete(message.data.id);
-        handler({ error: 'Request timeout', id: message.data.id });
-        removeApprovalFromStorage(message.data.id).catch(() => { /* ignore */ });
-      }
-    }, APPROVAL_TIMEOUT_MS);
+    // dApp approvals always open in a dedicated popup window: it is predictable
+    // (one window) and auto-closes on response. The side panel is reserved for
+    // the main wallet UI — Chrome's `sidePanel.open()` cannot be reliably
+    // triggered from a message relayed by the content script (the user gesture
+    // does not survive the hop), which previously raced this popup window and
+    // sometimes left both the panel and the window open.
+    launchPopupWindow(message, sender, sendResponse);
   };
 
   /**
@@ -366,21 +319,6 @@ export default defineBackground(() => {
       if (message.channel === 'salmon_contentscript_background_channel') {
         const msg = message as Message;
 
-        // For methods that always need approval UI (sign, signTransaction, etc.),
-        // open the side panel IMMEDIATELY — before any await — to preserve the
-        // user gesture chain from the dApp click. This is a Chrome API requirement:
-        // sidePanel.open() silently fails if called after any async operation.
-        if (
-          import.meta.env.CHROME &&
-          msg.data.method !== 'connect' &&
-          msg.data.method !== 'disconnect' &&
-          !sidePanelPort &&
-          sender.tab?.id != null &&
-          chrome.sidePanel?.open
-        ) {
-          chrome.sidePanel.open({ tabId: sender.tab.id }).catch(() => { /* ignore */ });
-        }
-
         if (msg.data.method === 'connect') {
           handleConnect(msg, sender, sendResponse);
         } else if (msg.data.method === 'disconnect') {
@@ -396,6 +334,14 @@ export default defineBackground(() => {
         responseHandlers.delete(msg.data.id);
         if (responseHandler) {
           responseHandler(msg.data, msg.data.id);
+        }
+        // Request answered — close its approval popup window. The onRemoved
+        // listener is now a no-op (the response handler is already deleted), so
+        // closing here does not emit a spurious cancellation.
+        const approvalWindowId = approvalWindows.get(msg.data.id);
+        if (approvalWindowId != null) {
+          approvalWindows.delete(msg.data.id);
+          browser.windows.remove(approvalWindowId).catch(() => { /* already closed */ });
         }
       } else if (message.channel === 'salmon_extension_stash_channel') {
         return handleStashOperation(message as StashMessage, sender, sendResponse);

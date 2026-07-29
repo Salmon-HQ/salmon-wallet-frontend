@@ -186,7 +186,12 @@ export class SalmonWallet implements Wallet {
     }
 
     #on: EventsOnMethod = (event, listener) => {
-        this.#listeners[event]?.push(listener) || (this.#listeners[event] = [listener]);
+        const existing = this.#listeners[event];
+        if (existing) {
+            existing.push(listener);
+        } else {
+            this.#listeners[event] = [listener];
+        }
         return (): void => this.#off(event, listener);
     };
 
