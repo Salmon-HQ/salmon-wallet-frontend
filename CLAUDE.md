@@ -7,3 +7,8 @@ Claude-specific wiring only:
   boundary decisions; `.claude/agents/safe-monorepo-auditor.md` for
   contract-safe cleanup, consumer checks, and verification planning.
 - `.claude/skills/` mirrors the canonical skill bodies in `.agent/skills/`.
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
