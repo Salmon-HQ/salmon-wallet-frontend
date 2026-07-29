@@ -5,10 +5,11 @@
  * Uses Vitest 4.0.18 with mocked connections.
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js';
-import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID, getMint, getOrCreateAssociatedTokenAccount } from '@solana/spl-token';
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID, getMint, getOrCreateAssociatedTokenAccount, getTransferFeeConfig } from '@solana/spl-token';
 import {
+  calculateTransferFee,
   createSolTransaction,
   createSplTransaction,
   estimateFee,
@@ -143,6 +144,7 @@ describe('createSplTransaction', () => {
       ...actual,
       getMint: vi.fn(),
       getOrCreateAssociatedTokenAccount: vi.fn(),
+      getTransferFeeConfig: vi.fn(),
     };
   });
 
@@ -403,6 +405,67 @@ describe('estimateFee', () => {
 
     expect(fee).toBeDefined();
     expect(typeof fee).toBe('number');
+  });
+});
+
+// ============================================================================
+// Test 3b: calculateTransferFee
+// ============================================================================
+
+describe('calculateTransferFee', () => {
+  const TOKEN_2022_MINT = 'BgtC1Uh8UNXYCYd1JVAyyPmYtSBpYvGdgFXFyBjbjTMB';
+
+  /** 1% now, rising to 10% at epoch 999. */
+  const feeConfig = {
+    olderTransferFee: {
+      epoch: 0n,
+      transferFeeBasisPoints: 100,
+      maximumFee: 1_000_000_000n,
+    },
+    newerTransferFee: {
+      epoch: 999n,
+      transferFeeBasisPoints: 1000,
+      maximumFee: 1_000_000_000n,
+    },
+  };
+
+  const mockConnectionForEpoch = (epoch: number) =>
+    ({
+      getAccountInfo: vi.fn().mockResolvedValue({
+        owner: TOKEN_2022_PROGRAM_ID,
+        lamports: 1000000,
+        data: Buffer.alloc(82),
+        executable: false,
+        rentEpoch: 0,
+      }),
+      getEpochInfo: vi.fn().mockResolvedValue({ epoch }),
+    }) as unknown as Connection;
+
+  beforeEach(() => {
+    (getMint as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      address: new PublicKey(TOKEN_2022_MINT),
+      decimals: 6,
+      supply: 1_000_000_000n,
+      isInitialized: true,
+      mintAuthority: null,
+      freezeAuthority: null,
+      tlvData: Buffer.alloc(0),
+    });
+    (getTransferFeeConfig as unknown as ReturnType<typeof vi.fn>).mockReturnValue(feeConfig);
+  });
+
+  it('uses the older fee schedule before the newer one activates', async () => {
+    const fee = await calculateTransferFee(mockConnectionForEpoch(10), TOKEN_2022_MINT, 100);
+
+    // 1% of 100_000_000 base units.
+    expect(fee).toBe(1_000_000n);
+  });
+
+  it('uses the newer fee schedule once its epoch is reached', async () => {
+    const fee = await calculateTransferFee(mockConnectionForEpoch(1000), TOKEN_2022_MINT, 100);
+
+    // 10% of 100_000_000 base units.
+    expect(fee).toBe(10_000_000n);
   });
 });
 

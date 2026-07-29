@@ -37,7 +37,7 @@ import {
   getMint,
   unpackAccount,
   getTransferFeeConfig,
-  calculateFee,
+  calculateEpochFee,
   getExtensionTypes,
   ExtensionType,
   getAssociatedTokenAddress,
@@ -451,7 +451,10 @@ export async function calculateTransferFee(
     const transferFeeConfig = getTransferFeeConfig(mintInfo);
 
     if (transferFeeConfig) {
-      return calculateFee(transferFeeConfig.newerTransferFee, transferAmount);
+      // Token-2022 mints can schedule a fee change for a future epoch; the older
+      // schedule stays in force until that epoch is reached.
+      const { epoch } = await connection.getEpochInfo();
+      return calculateEpochFee(transferFeeConfig, BigInt(epoch), transferAmount);
     }
   }
 
