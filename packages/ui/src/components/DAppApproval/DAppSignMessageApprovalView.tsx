@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import LanguageIcon from '@mui/icons-material/Language';
+import DrawOutlinedIcon from '@mui/icons-material/DrawOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useTranslation } from 'react-i18next';
 import {
-  colors,
   formatOrigin,
   fontFamily,
   fontSize,
@@ -24,11 +25,17 @@ import {
   Content,
   FooterNote,
   Header,
+  HintRow,
+  hintIconSx,
   Label,
   LogoWrap,
   LogoImage,
+  MessageSurface,
+  MessageText,
   MonoValue,
   ScrollArea,
+  SectionHeader,
+  sectionIconSx,
   Subtitle,
   SummaryGrid,
   SummaryItem,
@@ -36,10 +43,9 @@ import {
   SummaryValue,
   Title,
   Value,
+  WarningNotice,
 } from './common';
 import type { DAppSignMessageApprovalViewProps } from './types';
-
-const MessageBox = Box;
 
 const monoValueSx = {
   fontFamily: fontFamily.mono,
@@ -82,30 +88,9 @@ export function DAppSignMessageApprovalView({
   }, [isOffchainMessage, data]);
 
   const rawMessageBox = (
-    <MessageBox
-      sx={{
-        width: '100%',
-        maxHeight: 220,
-        overflowY: 'auto',
-        backgroundColor: 'rgba(255, 255, 255, 0.04)',
-        borderRadius: 2,
-        padding: `${spacing.lg}px`,
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-      }}
-    >
-      <Value
-        sx={{
-          fontFamily: fontFamily.mono,
-          fontSize: fontSize.sm,
-          fontWeight: 400,
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'normal',
-          overflowWrap: 'anywhere',
-        }}
-      >
-        {messageText}
-      </Value>
-    </MessageBox>
+    <MessageSurface>
+      <MessageText>{messageText}</MessageText>
+    </MessageSurface>
   );
 
   return (
@@ -126,7 +111,10 @@ export function DAppSignMessageApprovalView({
 
         <ScrollArea>
           <Card>
-            <Label>{t('dapp.requesting_site', 'Requesting site')}</Label>
+            <SectionHeader>
+              <LanguageIcon sx={sectionIconSx} />
+              <Label sx={{ margin: 0 }}>{t('dapp.requesting_site', 'Requesting site')}</Label>
+            </SectionHeader>
             {hasIdentity ? (
               <AppIdentityRow>
                 {appIcon ? <AppIdentityIcon src={appIcon} alt={appName || displayOrigin} /> : null}
@@ -138,75 +126,61 @@ export function DAppSignMessageApprovalView({
             ) : (
               <Value sx={{ fontSize: 20 }}>{displayOrigin}</Value>
             )}
-            <FooterNote sx={{ marginTop: 1.5 }}>
-              {t(
-                'dapp.sign_message_hint',
-                'Read the message carefully. Message signatures can still authorize actions off-chain.',
-              )}
-            </FooterNote>
+            <HintRow>
+              <LockOutlinedIcon sx={hintIconSx} />
+              <FooterNote>
+                {t(
+                  'dapp.sign_message_hint',
+                  'Read the message carefully. Message signatures can still authorize actions off-chain.',
+                )}
+              </FooterNote>
+            </HintRow>
           </Card>
 
           <Card>
-            <Label>
-              {isOffchainMessage
-                ? t('dapp.offchain_message_label', 'Off-chain message (OCMS)')
-                : t('dapp.message', 'Message')}
-            </Label>
+            <SectionHeader>
+              {isOffchainMessage ? (
+                <LockOutlinedIcon sx={sectionIconSx} />
+              ) : (
+                <DrawOutlinedIcon sx={sectionIconSx} />
+              )}
+              <Label sx={{ margin: 0 }}>
+                {isOffchainMessage
+                  ? t('dapp.offchain_message_label', 'Off-chain message (OCMS)')
+                  : t('dapp.message', 'Message')}
+              </Label>
+            </SectionHeader>
 
             {isLookalikeTransaction && (
-              <Box
-                sx={{
-                  marginBottom: `${spacing.md}px`,
-                  padding: `${spacing.md}px`,
-                  borderRadius: 2,
-                  backgroundColor: colors.status.errorBackground,
-                  border: `1px solid ${colors.status.error}`,
-                }}
-              >
-                <Typography
-                  sx={{ color: colors.status.error, fontSize: fontSize.sm, fontWeight: 600 }}
-                >
-                  {t('dapp.sign_message_tx_lookalike_title', 'Signing blocked')}
-                </Typography>
-                <Typography sx={{ color: colors.text.primary, fontSize: fontSize.sm }}>
+              <Box sx={{ marginBottom: `${spacing.md}px` }}>
+                <WarningNotice title={t('dapp.sign_message_tx_lookalike_title', 'Signing blocked')}>
                   {t(
                     'dapp.sign_message_tx_lookalike_warning',
                     'This app is trying to make you sign what is actually a transaction, disguised as a plain message. Salmon has refused to sign it to protect your funds.',
                   )}
-                </Typography>
+                </WarningNotice>
               </Box>
             )}
 
-            {isOffchainMessage ? (
-              offchainParsed ? (
-                <>
-                  <Value
-                    sx={{
-                      fontWeight: 400,
-                      marginBottom: `${spacing.md}px`,
-                      whiteSpace: 'pre-wrap',
-                      overflowWrap: 'anywhere',
-                    }}
-                  >
-                    {offchainParsed.content}
-                  </Value>
+            {isOffchainMessage && offchainParsed ? (
+              <>
+                <MessageSurface>
+                  <MessageText>{offchainParsed.content}</MessageText>
+                </MessageSurface>
 
-                  <SummaryGrid>
-                    {offchainParsed.requiredSignatories.map((signatory) => (
-                      <SummaryItem key={signatory.address}>
-                        <SummaryLabel>
-                          {t('dapp.offchain_required_signer', 'Required signer')}
-                        </SummaryLabel>
-                        <SummaryValue sx={monoValueSx}>
-                          {getShortAddress(signatory.address)}
-                        </SummaryValue>
-                      </SummaryItem>
-                    ))}
-                  </SummaryGrid>
-                </>
-              ) : (
-                rawMessageBox
-              )
+                <SummaryGrid sx={{ marginTop: `${spacing.md}px` }}>
+                  {offchainParsed.requiredSignatories.map((signatory) => (
+                    <SummaryItem key={signatory.address}>
+                      <SummaryLabel>
+                        {t('dapp.offchain_required_signer', 'Required signer')}
+                      </SummaryLabel>
+                      <SummaryValue sx={monoValueSx}>
+                        {getShortAddress(signatory.address)}
+                      </SummaryValue>
+                    </SummaryItem>
+                  ))}
+                </SummaryGrid>
+              </>
             ) : (
               rawMessageBox
             )}

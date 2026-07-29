@@ -1,6 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import LanguageIcon from '@mui/icons-material/Language';
+import DrawOutlinedIcon from '@mui/icons-material/DrawOutlined';
+import GppGoodOutlinedIcon from '@mui/icons-material/GppGoodOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
+import CheckIcon from '@mui/icons-material/Check';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -24,11 +31,17 @@ import {
   Content,
   FooterNote,
   Header,
+  HintRow,
+  hintIconSx,
   Label,
   LogoWrap,
   LogoImage,
+  MessageSurface,
+  MessageText,
   MonoValue,
   ScrollArea,
+  SectionHeader,
+  sectionIconSx,
   Subtitle,
   SummaryGrid,
   SummaryItem,
@@ -36,6 +49,7 @@ import {
   SummaryValue,
   Title,
   Value,
+  WarningNotice,
 } from './common';
 import type { DAppSignInApprovalViewProps } from './types';
 
@@ -48,7 +62,8 @@ const monoValueSx = {
 function formatTimestamp(value: string | undefined): string | null {
   if (!value) return null;
   const ts = Date.parse(value);
-  return Number.isNaN(ts) ? value : formatDateTime(ts);
+  // `Date.parse` yields milliseconds; `formatDateTime` expects Unix seconds.
+  return Number.isNaN(ts) ? value : formatDateTime(ts / 1000);
 }
 
 /**
@@ -109,7 +124,10 @@ export function DAppSignInApprovalView({
 
         <ScrollArea>
           <Card>
-            <Label>{t('dapp.requesting_site', 'Requesting site')}</Label>
+            <SectionHeader>
+              <LanguageIcon sx={sectionIconSx} />
+              <Label sx={{ margin: 0 }}>{t('dapp.requesting_site', 'Requesting site')}</Label>
+            </SectionHeader>
             {hasIdentity ? (
               <AppIdentityRow>
                 {appIcon ? <AppIdentityIcon src={appIcon} alt={appName || displayOrigin} /> : null}
@@ -121,39 +139,32 @@ export function DAppSignInApprovalView({
             ) : (
               <Value sx={{ fontSize: 20 }}>{displayOrigin}</Value>
             )}
-            <FooterNote sx={{ marginTop: 1.5 }}>
-              {t(
-                'dapp.sign_in_hint',
-                'Salmon built this sign-in message from the site you are actually visiting, so it cannot impersonate another site.',
-              )}
-            </FooterNote>
+            <HintRow>
+              <GppGoodOutlinedIcon sx={hintIconSx} />
+              <FooterNote>
+                {t(
+                  'dapp.sign_in_hint',
+                  'Salmon built this sign-in message from the site you are actually visiting, so it cannot impersonate another site.',
+                )}
+              </FooterNote>
+            </HintRow>
           </Card>
 
           <Card>
-            <Label>{t('dapp.sign_in_message_label', 'Sign-in message')}</Label>
+            <SectionHeader>
+              <DrawOutlinedIcon sx={sectionIconSx} />
+              <Label sx={{ margin: 0 }}>{t('dapp.sign_in_message_label', 'Sign-in message')}</Label>
+            </SectionHeader>
 
             {domainMismatch && (
-              <Box
-                sx={{
-                  marginBottom: `${spacing.md}px`,
-                  padding: `${spacing.md}px`,
-                  borderRadius: 2,
-                  backgroundColor: colors.status.errorBackground,
-                  border: `1px solid ${colors.status.error}`,
-                }}
-              >
-                <Typography
-                  sx={{ color: colors.status.error, fontSize: fontSize.sm, fontWeight: 600 }}
-                >
-                  {t('dapp.siws_domain_mismatch_title', 'Domain mismatch')}
-                </Typography>
-                <Typography sx={{ color: colors.text.primary, fontSize: fontSize.sm }}>
+              <Box sx={{ marginBottom: `${spacing.md}px` }}>
+                <WarningNotice title={t('dapp.siws_domain_mismatch_title', 'Domain mismatch')}>
                   {t('dapp.sign_in_domain_mismatch', {
                     defaultValue:
                       'This app asked to sign in for "{{requested}}" but the request came from this site. Salmon has refused to sign it.',
                     requested: requestedDomain ?? '',
                   })}
-                </Typography>
+                </WarningNotice>
               </Box>
             )}
 
@@ -180,13 +191,28 @@ export function DAppSignInApprovalView({
 
                   <SummaryItem
                     onClick={handleCopyAccount}
-                    sx={{ cursor: 'pointer' }}
                     title={siws.address}
+                    sx={{
+                      cursor: 'pointer',
+                      transition: 'background-color 150ms ease',
+                      '&:hover': { backgroundColor: colors.interactive.hoverSubtle },
+                    }}
                   >
                     <SummaryLabel>
                       {copied ? t('dapp.siws_copied', 'Copied') : t('dapp.siws_account', 'Account')}
                     </SummaryLabel>
-                    <SummaryValue sx={monoValueSx}>{getShortAddress(siws.address)}</SummaryValue>
+                    <SummaryValue
+                      sx={{ ...monoValueSx, display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      {getShortAddress(siws.address)}
+                      {copied ? (
+                        <CheckIcon sx={{ fontSize: 14, color: colors.status.success, flexShrink: 0 }} />
+                      ) : (
+                        <ContentCopyOutlinedIcon
+                          sx={{ fontSize: 14, color: colors.text.secondary, flexShrink: 0 }}
+                        />
+                      )}
+                    </SummaryValue>
                   </SummaryItem>
 
                   {siws.uri && (
@@ -219,12 +245,15 @@ export function DAppSignInApprovalView({
                 </SummaryGrid>
 
                 {isOffchainMessage && (
-                  <FooterNote sx={{ marginTop: 1.5 }}>
-                    {t(
-                      'dapp.sign_in_offchain_note',
-                      'This message will be signed as a Solana off-chain message (OCMS).',
-                    )}
-                  </FooterNote>
+                  <HintRow>
+                    <LockOutlinedIcon sx={hintIconSx} />
+                    <FooterNote>
+                      {t(
+                        'dapp.sign_in_offchain_note',
+                        'This message will be signed as a Solana off-chain message (OCMS).',
+                      )}
+                    </FooterNote>
+                  </HintRow>
                 )}
 
                 <Box
@@ -232,7 +261,10 @@ export function DAppSignInApprovalView({
                   type="button"
                   onClick={() => setShowRaw((value) => !value)}
                   sx={{
-                    marginTop: `${spacing.md}px`,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    marginTop: `${spacing.lg}px`,
                     padding: 0,
                     background: 'none',
                     border: 'none',
@@ -241,39 +273,24 @@ export function DAppSignInApprovalView({
                     fontFamily: fontFamily.sans,
                     fontSize: fontSize.sm,
                     textAlign: 'left',
+                    transition: 'color 150ms ease',
+                    '&:hover': { color: colors.text.primary },
                   }}
                 >
                   {showRaw
                     ? t('dapp.siws_hide_raw', 'Hide raw message')
                     : t('dapp.siws_view_raw', 'View raw message')}
+                  {showRaw ? (
+                    <ExpandLessIcon sx={{ fontSize: 16 }} />
+                  ) : (
+                    <ExpandMoreIcon sx={{ fontSize: 16 }} />
+                  )}
                 </Box>
 
                 {showRaw && (
-                  <Box
-                    sx={{
-                      marginTop: `${spacing.sm}px`,
-                      width: '100%',
-                      maxHeight: 220,
-                      overflowY: 'auto',
-                      backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                      borderRadius: 2,
-                      padding: `${spacing.lg}px`,
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                    }}
-                  >
-                    <Value
-                      sx={{
-                        fontFamily: fontFamily.mono,
-                        fontSize: fontSize.sm,
-                        fontWeight: 400,
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'normal',
-                        overflowWrap: 'anywhere',
-                      }}
-                    >
-                      {messageText}
-                    </Value>
-                  </Box>
+                  <MessageSurface sx={{ marginTop: `${spacing.sm}px` }}>
+                    <MessageText>{messageText}</MessageText>
+                  </MessageSurface>
                 )}
               </>
             ) : (
