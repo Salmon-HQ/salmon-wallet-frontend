@@ -77,6 +77,14 @@ export interface DAppSignAndSendTransactionRequest {
   method: 'signAndSendTransaction';
   params?: {
     message?: string;
+    /**
+     * bs58-encoded FULL serialized transaction, including any signatures the dApp
+     * already applied. Sent alongside `message` for `signAndSendTransaction` so
+     * co-signer signatures survive the hop; `message` stays the canonical input for
+     * the approval-details preview. Optional so a pending approval queued by an
+     * older build still resolves via `message`.
+     */
+    transaction?: string;
     network?: string;
     options?: Record<string, unknown>;
     [key: string]: unknown;

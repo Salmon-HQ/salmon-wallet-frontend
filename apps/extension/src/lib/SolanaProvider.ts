@@ -211,6 +211,22 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
   };
 
   /**
+   * Encodes a FULL transaction to base58, keeping any signatures a dApp already
+   * applied. Only `signAndSendTransaction` needs this: the wallet submits that
+   * transaction itself, so dropping co-signer signatures makes it invalid. The
+   * `signTransaction` paths return only the wallet's own signature and the dApp
+   * reassembles the transaction, so they keep using `#encodeTransaction`.
+   */
+  #encodeSignedTransaction = (transaction: SolanaTransaction): string => {
+    const serialized =
+      'serializeMessage' in transaction && typeof transaction.serializeMessage === 'function'
+        ? transaction.serialize({ requireAllSignatures: false, verifySignatures: false })
+        : transaction.serialize();
+
+    return bs58.encode(serialized);
+  };
+
+  /**
    * Sends a message to the content script and waits for a response
    */
   sendMessage = async (message: RequestMessage): Promise<ResponseMessage> => {
@@ -302,6 +318,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
   ): Promise<SignAndSendTransactionResult> => {
     const response = await this.sendRequest('signAndSendTransaction', {
       message: this.#encodeTransaction(transaction),
+      transaction: this.#encodeSignedTransaction(transaction),
       network,
       options,
     });

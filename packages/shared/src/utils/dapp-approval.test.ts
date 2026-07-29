@@ -142,6 +142,113 @@ describe('dapp approval utilities', () => {
   });
 });
 
+describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', () => {
+  // Fee payer and co-signer is seed 1; the wallet's own account is seed 2. Both
+  // must sign, so a transaction submitted with only the wallet's signature is
+  // invalid.
+  const BLOCKHASH = '11111111111111111111111111111111';
+  const coSigner = testKeypair(1);
+  const salmon = testKeypair(2);
+
+  const transferInstructions = () => [
+    SystemProgram.transfer({
+      fromPubkey: coSigner.publicKey,
+      toPubkey: testKeypair(3).publicKey,
+      lamports: 1,
+    }),
+    SystemProgram.transfer({
+      fromPubkey: salmon.publicKey,
+      toPubkey: testKeypair(3).publicKey,
+      lamports: 2,
+    }),
+  ];
+
+  const makeAccount = (connection: Record<string, unknown>) => ({
+    keyPair: salmon,
+    getReceiveAddress: () => salmon.publicKey.toBase58(),
+    getConnection: async () => connection,
+  });
+
+  it('preserves co-signer signatures when signing and sending a versioned transaction', async () => {
+    const message = new TransactionMessage({
+      payerKey: coSigner.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: transferInstructions(),
+    }).compileToV0Message();
+    const partiallySigned = new VersionedTransaction(message);
+    partiallySigned.sign([coSigner]);
+
+    const sendTransaction = vi.fn().mockResolvedValue('sig');
+    const account = makeAccount({ sendTransaction });
+
+    await approveSolanaTransactionRequest(account as never, {
+      id: 'req-1',
+      method: 'signAndSendTransaction',
+      params: {
+        message: bs58.encode(message.serialize()),
+        transaction: bs58.encode(partiallySigned.serialize()),
+      },
+    });
+
+    const submitted = sendTransaction.mock.calls[0][0] as VersionedTransaction;
+    expect(submitted.signatures[0].some((byte) => byte !== 0)).toBe(true);
+    expect(submitted.signatures[1].some((byte) => byte !== 0)).toBe(true);
+  });
+
+  it('preserves co-signer signatures when signing and sending a legacy transaction', async () => {
+    const partiallySigned = new Transaction({
+      feePayer: coSigner.publicKey,
+      recentBlockhash: BLOCKHASH,
+    }).add(...transferInstructions());
+    const encodedMessage = bs58.encode(partiallySigned.serializeMessage());
+    partiallySigned.partialSign(coSigner);
+
+    const sendTransaction = vi.fn().mockResolvedValue('sig');
+    const account = makeAccount({ sendTransaction });
+
+    await approveSolanaTransactionRequest(account as never, {
+      id: 'req-2',
+      method: 'signAndSendTransaction',
+      params: {
+        message: encodedMessage,
+        transaction: bs58.encode(
+          partiallySigned.serialize({ requireAllSignatures: false, verifySignatures: false }),
+        ),
+      },
+    });
+
+    const submitted = sendTransaction.mock.calls[0][0] as VersionedTransaction;
+    expect(submitted.message.version).toBe('legacy');
+    // Re-serializing must yield a legacy transaction whose signature slots are both
+    // filled, which is what Transaction.from requires to reconstruct it.
+    const roundTripped = Transaction.from(submitted.serialize());
+    expect(roundTripped.signatures).toHaveLength(2);
+    expect(roundTripped.signatures.every((entry) => entry.signature !== null)).toBe(true);
+  });
+
+  it('falls back to the message-only path when no full transaction is sent', async () => {
+    const message = new TransactionMessage({
+      payerKey: coSigner.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: transferInstructions(),
+    }).compileToV0Message();
+
+    const sendTransaction = vi.fn().mockResolvedValue('sig');
+    const account = makeAccount({ sendTransaction });
+
+    const result = await approveSolanaTransactionRequest(account as never, {
+      id: 'req-3',
+      method: 'signAndSendTransaction',
+      params: { message: bs58.encode(message.serialize()) },
+    });
+
+    expect(result).toEqual({ signature: 'sig' });
+    const submitted = sendTransaction.mock.calls[0][0] as VersionedTransaction;
+    expect(submitted.signatures[0].every((byte) => byte === 0)).toBe(true);
+    expect(submitted.signatures[1].some((byte) => byte !== 0)).toBe(true);
+  });
+});
+
 /**
  * GOLDEN VECTORS — migration acceptance gate.
  *

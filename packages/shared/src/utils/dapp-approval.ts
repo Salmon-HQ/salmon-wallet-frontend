@@ -356,10 +356,23 @@ export async function approveSolanaTransactionRequest(
   const encodedMessage = request.params?.message ?? '';
   if (!encodedMessage) throw new Error('Missing message');
 
-  const parsed = buildTransactionFromEncodedMessage(encodedMessage);
   await fetchAndMergeNetworkConfigs();
   const connection = await account.getConnection();
   const options = request.params?.options as Record<string, unknown> | undefined;
+
+  // Rebuilding from the full transaction preserves signatures the dApp already
+  // applied; rebuilding from the message alone silently drops them, producing a
+  // transaction the cluster rejects. `VersionedTransaction` handles both the
+  // versioned and legacy wire formats and re-serializes each unchanged.
+  const encodedTransaction = request.params?.transaction;
+  if (encodedTransaction) {
+    const fullTransaction = VersionedTransaction.deserialize(bs58.decode(encodedTransaction));
+    fullTransaction.sign([account.keyPair]);
+    const signature = await connection.sendTransaction(fullTransaction, options as never);
+    return { signature };
+  }
+
+  const parsed = buildTransactionFromEncodedMessage(encodedMessage);
 
   if (parsed.type === 'legacy') {
     parsed.tx.partialSign(account.keyPair);
