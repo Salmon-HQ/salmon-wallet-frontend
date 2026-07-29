@@ -76,7 +76,7 @@ The `data`/`requiredSigners` props are declared on `DAppSignMessageApprovalViewP
 The shared crypto primitive, approval-layer functions, request/payload types, and approval UI are implemented and tested in `packages/shared` and `packages/ui`, and are wired end-to-end into both running apps:
 
 - **`solana:signOffchainMessage` and `solana:signIn` are exposed through the
-injected providers and registered as Wallet Standard features.** The injected providers (`apps/web/src/providers/SalmonWalletProvider.tsx`, `apps/extension/src/lib/SolanaProvider.ts`) implement `signOffchainMessage` and `signIn` alongside `connect`, `signMessage`, and the transaction methods. On the extension, `apps/extension/src/wallet-standard/wallet.ts` registers the `solana:signOffchainMessage` (v1) and `solana:signIn` (v1.1.0, including PR#93's `useOffchainMessage` input and `signedMessageFormat` output) features, so any Wallet Standard dApp can discover and invoke them.
+injected providers and registered as Wallet Standard features.** The injected providers (`apps/web/src/providers/SalmonWalletProvider.tsx`, `apps/extension/src/lib/SolanaProvider.ts`) implement `signOffchainMessage` and `signIn` alongside `connect`, `signMessage`, and the transaction methods. On the extension, `apps/extension/src/wallet-standard/wallet.ts` registers the `solana:signOffchainMessage` (v1) and `solana:signIn` (v1.1.0, including PR #93's `useOffchainMessage` input and `signedMessageFormat` output) features, so any Wallet Standard dApp can discover and invoke them.
 - **Approval routing handles the new methods.** The message-approval page
 (`SignMessageApprovalPage.tsx` / `DAppSignMessageApprovalPage.tsx`) listens for both `'sign'` and `'signOffchain'`, switching the shared view into OCMS mode when `requiredSigners` is present. A dedicated sign-in route (`apps/web/src/pages/dapp/SignInApprovalPage.tsx`, `apps/extension/src/pages/dapp/DAppSignInApprovalPage.tsx`) handles `'signIn'`, previewing the exact SIWS message the wallet builds from the real requesting origin.
 - **The tx-lookalike warning banner renders proactively.** Both
@@ -84,14 +84,64 @@ message-approval pages pass the raw `data` prop into `DAppSignMessageApprovalVie
 
 On the web wallet specifically, the `/dapp/*` approval popups open as standalone windows whose unlock state (an in-memory, per-window stash) does not carry over from the main tab. They are therefore wrapped in `DAppApprovalGate` (`apps/web/src/components/DAppApprovalGate.tsx`), which prompts for the wallet password in the popup before the approval route renders. The extension does not need this: its stash is backed by the background service worker, which preserves the unlock across the popup lifecycle.
 
+## Testing
+
+### Unit tests
+
+The crypto primitives, the tx-lookalike guard, and both approval-view modes are covered by unit tests (Vitest). Run them per package:
+
+```
+pnpm --filter @salmon/shared test    # OCMS/SIWS primitives, approval layer, guards
+pnpm --filter @salmon/ui test        # approval-view components
+```
+
+Key files: `packages/shared/src/blockchain/solana/offchain-message.test.ts`, `sign-in.test.ts`, `packages/shared/src/utils/dapp-approval.test.ts`, and `packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.test.tsx` / `DAppSignInApprovalView.test.tsx`.
+
+### Manual end-to-end
+
+The repo ships two self-contained dApp harnesses that drive the full flow — connect, `signMessage` (plain text and a transaction-lookalike), `signOffchainMessage`, and `signIn` (including a domain-mismatch case) — against a real running wallet. Signing is local `ed25519`, so no backend is required for the signing itself; you only need an onboarded, unlocked wallet.
+
+Production dApps discover the wallet as a Wallet Standard wallet named "Salmon" (via `getWallets()`); the harnesses call the injected provider directly, which is the simplest way to exercise every method by hand. The harnesses live under each app's `.playwright/scripts/` (see that suite's `README.md` / `AGENTS.md` for conventions) and are development tools, not part of the shipped wallet.
+
+#### Web wallet — `apps/web/.playwright/scripts/test-dapp-web.js`
+
+The web wallet exposes `window.__salmonWallet` only inside its own SPA, and its `/dapp/*` approval popups talk to it over a same-origin `BroadcastChannel`. The harness therefore runs as a console snippet inside the running wallet tab, not as a standalone page.
+
+1. `pnpm --filter @salmon/web dev`, then open the printed local URL.
+2. Onboard or unlock a wallet.
+3. Open the browser devtools console, paste the entire contents of the harness file, and press Enter — a floating panel appears.
+4. Use the buttons. Each approval opens a popup window that starts locked (see [App-surface status](#app-surface-status)) and prompts for the wallet password before showing the approval.
+
+#### Extension — `apps/extension/.playwright/scripts/test-dapp.html`
+
+The extension injects `window.salmon` into pages it matches (`https://*`, `http://localhost`, `http://127.0.0.1` — **not** `file://`), so the harness is a standalone page served over `localhost`.
+
+1. `pnpm --filter @salmon/extension build`.
+2. `chrome://extensions` → enable Developer mode → **Load unpacked** → `apps/extension/dist/chrome-mv3`.
+3. Open the extension and onboard or unlock a wallet.
+4. Serve the harness over http and open it — e.g. `cd apps/extension/.playwright/scripts && python3 -m http.server 8080`, then visit `http://localhost:8080/test-dapp.html`.
+
+Each approval opens in a dedicated popup window that closes automatically after you approve or reject, and the wallet stays unlocked across popups (its stash is background-backed). With another Solana wallet (e.g. Phantom) installed, the harness targets `window.salmon` specifically, so connect always opens Salmon.
+
+#### What to expect
+
+| Action | Expected result |
+|---|---|
+| Connect | Returns the active account address |
+| `signMessage` (text) | Returns a 64-byte `ed25519` signature |
+| `signMessage` (transaction bytes) | Blocked: red "Signing blocked" banner, Sign disabled; only Reject is possible |
+| `signOffchainMessage` | Returns a signed buffer whose first 16 bytes are the OCMS domain (`ff 73 6f 6c 61 6e 61 20 6f 66 66 63 68 61 69 6e`) |
+| `signIn` (real origin) | Returns the signed SIWS message and account; with the OCMS toggle, `signedMessageFormat.kind === 'offchainMessage'` |
+| `signIn` (mismatched domain) | Refused: domain-mismatch banner, approval disabled |
+
 ## Benefits
 
 - **Users**: cannot be tricked into producing a transaction signature by
 approving what looks like an innocuous message. This applies to the OCMS path by construction (domain separation), and to the legacy `signMessage` path by the added `isTransactionLookalike` guard, which refuses to sign outright rather than warning after the fact.
 - **dApps**: gain a standardized off-chain signing primitive built on Anza's
 official codec, rather than each wallet inventing its own message format. A signature produced this way is verifiable by any party that implements the same OCMS v1 decoder.
-- **Ecosystem**: once the app-surface wiring above lands, Salmon's
-`solana:signOffchainMessage` support will be interoperable with any dApp or wallet adapter written against the Wallet Standard feature (PR #92), without wallet-specific integration code.
+- **Ecosystem**: Salmon's `solana:signOffchainMessage` support is interoperable
+with any dApp or wallet adapter written against the Wallet Standard feature (PR #92), without wallet-specific integration code.
 
 ## Backward compatibility
 
