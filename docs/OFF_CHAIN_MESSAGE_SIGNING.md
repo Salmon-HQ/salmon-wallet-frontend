@@ -1,6 +1,6 @@
 # Off-chain message signing (OCMS)
 
-This document describes Salmon Wallet's implementation of OCMS v1 (Off-Chain Message Signing) for Solana, and the defensive hardening applied to the legacy `signMessage` path. It is a ground-truth document: it states what is implemented today and marks explicitly what is not yet wired into the running apps. It does not promise coverage that does not exist.
+This document describes Salmon Wallet's implementation of OCMS v1 (Off-Chain Message Signing) for Solana, and the defensive hardening applied to the legacy `signMessage` path. It is a ground-truth document: it states what is implemented and wired into the running apps today, and does not promise coverage that does not exist.
 
 Audience: open-source contributors working on this codebase, and reviewers evaluating it as a security feature.
 
@@ -13,9 +13,10 @@ Audience: open-source contributors working on this codebase, and reviewers evalu
 | Request/payload types for `solana:signOffchainMessage` (`packages/shared`) | Implemented |
 | Approval UI for OCMS messages (`packages/ui`) | Implemented |
 | tx-lookalike guard on the legacy `signMessage` approval function (`packages/shared`) | Implemented, active on both apps |
-| tx-lookalike warning banner rendering in the running apps | Not wired — see [App-surface status](#app-surface-status) |
-| `solana:signOffchainMessage` Wallet Standard feature registration (`apps/web`, `apps/extension`) | Not implemented |
-| Native `solana:signIn` (SIWS) | Not implemented — heuristic SIWS text parsing remains in place |
+| tx-lookalike warning banner rendering in the running apps | Implemented — both approval pages pass `data` into the view |
+| Required-signatory guard on OCMS signing (`packages/shared`) | Implemented |
+| `solana:signOffchainMessage` Wallet Standard feature + injected-provider wiring (`apps/web`, `apps/extension`) | Implemented |
+| Native `solana:signIn` (SIWS), replacing the heuristic text parser | Implemented |
 
 ## What OCMS is
 
@@ -23,7 +24,7 @@ OCMS v1 is a wire format for signing arbitrary off-chain messages with a Solana 
 
 Every OCMS v1 buffer is prefixed with a fixed 16-byte signing domain: the byte `0xff` followed by the 15-byte ASCII string `"solana offchain"`. A real Solana transaction message cannot begin with those bytes — a versioned message's first byte is a version-prefix byte, and no version other than `0` is currently defined, so any high-bit-set first byte (`0xff` included) already fails to parse as a supported version; a legacy message's first byte is the literal required-signer count, which no real transaction sets to `255`. This is what makes an off-chain message signature structurally impossible to replay as a transaction signature: a signature over an OCMS-domain-prefixed buffer cannot be resubmitted as a transaction, because the bytes it was computed over do not parse as a transaction message in the first place, and vice versa.
 
-The same domain separation is exposed at the Wallet Standard level as the `solana:signOffchainMessage` feature ([anza-xyz/wallet-standard PR #92](https://github.com/anza-xyz/wallet-standard)), alongside a related feature, `solana:signIn` ([PR #93](https://github.com/anza-xyz/wallet-standard)) for Sign-In-With-Solana (SIWS), which is not part of this implementation yet (see [Backward compatibility](#backward-compatibility)).
+The same domain separation is exposed at the Wallet Standard level as the `solana:signOffchainMessage` feature ([anza-xyz/wallet-standard PR #92](https://github.com/anza-xyz/wallet-standard)), alongside a related feature, `solana:signIn` ([PR #93](https://github.com/anza-xyz/wallet-standard)) for Sign-In-With-Solana (SIWS). Salmon implements both natively; SIWS replaces the previous heuristic that parsed sign-in text out of raw `signMessage` bytes (see [Backward compatibility](#backward-compatibility)).
 
 ## The problem it solves
 
@@ -38,7 +39,7 @@ This is the "transaction-lookalike" or blind-signing attack. It exists because p
 | Export | Responsibility |
 |---|---|
 | `buildOffchainMessageV1(content, signers)` | Builds the domain-separated signing buffer for UTF-8 message `content` and the given `PublicKey[]` signers, via Anza's `compileOffchainMessageV1Envelope`. Rejects non-UTF-8 content (OCMS v1 only supports UTF-8 message content). |
-| `signOffchainMessage(account, content, signers)` | Calls `buildOffchainMessageV1`, then signs the resulting buffer with `nacl.sign.detached` over `account.keyPair.secretKey`. Returns `{ signature, buffer }`. |
+| `signOffchainMessage(account, content, signers)` | Calls `buildOffchainMessageV1`, then signs the resulting buffer with `nacl.sign.detached` over `account.keyPair.secretKey`. Returns `{ signature, buffer }`. **Refuses to sign (throws) when `account` is not among `signers`**, so the wallet never produces a signature over an OCMS message whose required-signatory list omits the actual signer — the `requiredSigners` list is dApp-supplied and therefore untrusted. |
 | `verifyOffchainMessage(buffer, signature, signer)` | Verifies an `ed25519` signature over a buffer produced by `buildOffchainMessageV1`, via `nacl.sign.detached.verify`. |
 | `parseOffchainMessageV1(buffer)` | Decodes a signing buffer back into its structured `OffchainMessageV1` (version, required signatories, content) via Anza's `getOffchainMessageV1Decoder`. Throws on a malformed buffer (wrong domain, wrong version, unsorted/duplicate signatories). |
 
@@ -66,22 +67,22 @@ Coverage for this behavior lives in `packages/shared/src/utils/dapp-approval.tes
 This is a single component handling both the legacy `sign` request and the new OCMS `signOffchain` request; the mode is inferred from whether the `requiredSigners` prop is set (`isOffchainMessage = requiredSigners !== undefined`).
 
 - **OCMS mode** (`requiredSigners` present): calls `parseOffchainMessageForApproval(data, requiredSigners)` and renders the decoded `content` plus a list of required signer addresses. The card label reads "Off-chain message (OCMS)". If parsing fails, it falls back to the raw message box.
-- **Legacy mode** (`requiredSigners` absent): calls `isTransactionLookalike(Uint8Array.from(data))` on the raw bytes. If it returns `true`, the component renders a red "Signing blocked" banner explaining that the app is trying to get a transaction signed as a plain message, and disables the Sign button (`disabled={disabled || loading || isLookalikeTransaction}`). If not lookalike, it falls through to the existing SIWS-aware rendering (`parseSiwsMessage`) with its own domain-mismatch warning.
+- **Legacy mode** (`requiredSigners` absent): calls `isTransactionLookalike(Uint8Array.from(data))` on the raw bytes. If it returns `true`, the component renders a red "Signing blocked" banner explaining that the app is trying to get a transaction signed as a plain message, and disables the Sign button (`disabled={disabled || loading || isLookalikeTransaction}`). Otherwise it renders the decoded message text for signing. SIWS is no longer recognized on this path — it is handled by the dedicated `solana:signIn` route, so the heuristic SIWS parser that used to run here has been removed.
 
 The `data`/`requiredSigners` props are declared on `DAppSignMessageApprovalViewProps` in `packages/ui/src/components/DAppApproval/types.ts`. Component behavior for both modes is covered by `packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.test.tsx`.
 
 ## App-surface status
 
-The shared crypto primitive, approval-layer functions, request/payload types, and approval UI described above are implemented and tested in `packages/shared` and `packages/ui`. As of this writing, wiring those into the running web and extension apps is incomplete:
+The shared crypto primitive, approval-layer functions, request/payload types, and approval UI are implemented and tested in `packages/shared` and `packages/ui`, and are wired end-to-end into both running apps:
 
-- **No `solana:signOffchainMessage` Wallet Standard feature is registered.**
-The injected providers (`apps/web/src/providers/SalmonWalletProvider.tsx`, `apps/extension/src/lib/SolanaProvider.ts`) implement `connect`, `signMessage` (legacy `'sign'`), `signTransaction`, `signAllTransactions`, and `signAndSendTransaction`. Neither exposes a `signOffchainMessage` method or registers the corresponding Wallet Standard feature, so a dApp cannot invoke OCMS against Salmon today.
-- **No dedicated approval route for `signOffchain` requests.** Both
-`apps/web/src/pages/dapp/SignMessageApprovalPage.tsx` and `apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.tsx` only listen for `method === 'sign'`; there is no `signOffchain`-handling equivalent page yet.
-- **The tx-lookalike warning banner is not yet visible in the running
-apps**, even though the underlying guard is active. Both approval pages call `approveSolanaSignMessage(account, data)` on approve, so `TransactionLookalikeMessageError` is thrown and the request is rejected either way — but neither page currently passes the `data` prop into `DAppSignMessageApprovalView`, so the proactive warning banner and the disabled Sign button (which read `data` to compute `isLookalikeTransaction` before the user clicks Sign) do not render yet. In practice this means: a disguised-transaction message is still refused, the user just sees it surface as a generic signing failure rather than the dedicated pre-emptive warning.
+- **`solana:signOffchainMessage` and `solana:signIn` are exposed through the
+injected providers and registered as Wallet Standard features.** The injected providers (`apps/web/src/providers/SalmonWalletProvider.tsx`, `apps/extension/src/lib/SolanaProvider.ts`) implement `signOffchainMessage` and `signIn` alongside `connect`, `signMessage`, and the transaction methods. On the extension, `apps/extension/src/wallet-standard/wallet.ts` registers the `solana:signOffchainMessage` (v1) and `solana:signIn` (v1.1.0, including PR#93's `useOffchainMessage` input and `signedMessageFormat` output) features, so any Wallet Standard dApp can discover and invoke them.
+- **Approval routing handles the new methods.** The message-approval page
+(`SignMessageApprovalPage.tsx` / `DAppSignMessageApprovalPage.tsx`) listens for both `'sign'` and `'signOffchain'`, switching the shared view into OCMS mode when `requiredSigners` is present. A dedicated sign-in route (`apps/web/src/pages/dapp/SignInApprovalPage.tsx`, `apps/extension/src/pages/dapp/DAppSignInApprovalPage.tsx`) handles `'signIn'`, previewing the exact SIWS message the wallet builds from the real requesting origin.
+- **The tx-lookalike warning banner renders proactively.** Both
+message-approval pages pass the raw `data` prop into `DAppSignMessageApprovalView`, so the red "Signing blocked" banner and the disabled Sign button appear before the user acts — in addition to the hard refusal that `approveSolanaSignMessage` already throws.
 
-In short: the security-relevant logic (domain-separated signing, the tx-lookalike detector, and the refusal to sign disguised transactions) is implemented and exercised by tests. The remaining work is app-surface wiring — exposing OCMS through the injected provider and Wallet Standard feature registration, adding a `signOffchain` approval route, and passing `data` through the legacy approval pages so the warning UI renders proactively.
+On the web wallet specifically, the `/dapp/*` approval popups open as standalone windows whose unlock state (an in-memory, per-window stash) does not carry over from the main tab. They are therefore wrapped in `DAppApprovalGate` (`apps/web/src/components/DAppApprovalGate.tsx`), which prompts for the wallet password in the popup before the approval route renders. The extension does not need this: its stash is backed by the background service worker, which preserves the unlock across the popup lifecycle.
 
 ## Benefits
 
@@ -96,28 +97,33 @@ official codec, rather than each wallet inventing its own message format. A sign
 
 - The legacy `signMessage` request (`method: 'sign'`) is not removed. The
 OCMS specification itself keeps `signMessage` as a distinct, still-valid capability — OCMS is additive, not a replacement. Salmon's change to that path is defensive hardening (refusing transaction-lookalike bytes), not a behavior removal.
-- SIWS (Sign-In-With-Solana) support today is a heuristic text parser,
-`parseSiwsMessage` in `packages/shared/src/utils/dapp-approval.ts`, applied to the plain text of a legacy `signMessage` request. The function is explicitly marked in its own docstring as a `TODO(OCMS Fase 2b)`: it is intended to be removed once native `solana:signIn` (Wallet Standard PR #93) replaces SIWS-over-raw-`signMessage`. That native `signIn` support is not implemented in this codebase yet — `parseSiwsMessage` remains a best-effort parser (returns `null` on any non-matching header rather than throwing) and should not be treated as a `solana:signIn` implementation.
+- SIWS is now handled by the native `solana:signIn` feature (Wallet Standard PR #93), implemented in `packages/shared/src/blockchain/solana/sign-in.ts`. The previous heuristic `parseSiwsMessage` — a best-effort parser applied to the plain text of a raw `signMessage` request — has been removed. The wallet no longer tries to recognize SIWS text inside `signMessage`; a dApp that wants sign-in must use `solana:signIn`, where the wallet builds the message itself and binds the `domain` line to the real requesting origin (dApp-claimed domains that differ are refused; see `SiwsDomainMismatchError`).
 
 ## Reference index
 
 | Path | What it is |
 |---|---|
-| `packages/shared/src/blockchain/solana/offchain-message.ts` | OCMS v1 build/sign/verify/parse primitive |
-| `packages/shared/src/utils/dapp-approval.ts` | Approval-layer functions for both the OCMS and legacy `signMessage` paths, plus the tx-lookalike guard |
-| `packages/shared/src/utils/dapp-approval.test.ts` | Unit tests for the guard and both approval functions |
-| `packages/shared/src/types/dapp-approval.ts` | `DAppSignOffchainMessageRequest` / `DAppSignOffchainMessageApprovalPayload` and the rest of the approval-flow type union |
-| `packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.tsx` | Dual-mode approval UI (OCMS content view, legacy SIWS/plain-text view, tx-lookalike warning) |
+| `packages/shared/src/blockchain/solana/offchain-message.ts` | OCMS v1 build/sign/verify/parse primitive, including the required-signatory guard on `signOffchainMessage` |
+| `packages/shared/src/blockchain/solana/sign-in.ts` | Native SIWS (`solana:signIn`) primitive — builds the message, binds `domain` to the real origin, refuses domain/address mismatch |
+| `packages/shared/src/utils/dapp-approval.ts` | Approval-layer functions for the OCMS, SIWS, and legacy `signMessage` paths, plus the tx-lookalike guard |
+| `packages/shared/src/utils/dapp-approval.test.ts` | Unit tests for the guard and the approval functions |
+| `packages/shared/src/types/dapp-approval.ts` | `DAppSignOffchainMessageRequest` / `DAppSignInRequest` and the rest of the approval-flow type union |
+| `packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.tsx` | Dual-mode message approval UI (OCMS content view, legacy plain-text view, tx-lookalike warning) |
+| `packages/ui/src/components/DAppApproval/DAppSignInApprovalView.tsx` | SIWS approval UI (message preview + domain-mismatch warning) |
 | `packages/ui/src/components/DAppApproval/types.ts` | `DAppSignMessageApprovalViewProps`, including the `data`/`requiredSigners` props |
-| `packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.test.tsx` | Component tests for both approval-view modes |
-| `apps/web/src/providers/SalmonWalletProvider.tsx` | Injected web provider — not yet wired for `signOffchainMessage` |
-| `apps/web/src/pages/dapp/SignMessageApprovalPage.tsx` | Web approval page — handles legacy `sign` only |
-| `apps/extension/src/lib/SolanaProvider.ts` | Injected extension provider — not yet wired for `signOffchainMessage` |
-| `apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.tsx` | Extension approval page — handles legacy `sign` only |
+| `packages/ui/src/components/DAppApproval/DAppSignMessageApprovalView.test.tsx` | Component tests for the message approval-view modes |
+| `apps/web/src/providers/SalmonWalletProvider.tsx` | Injected web provider — exposes `signOffchainMessage` and `signIn` |
+| `apps/web/src/components/DAppApprovalGate.tsx` | Web-only unlock gate for the standalone `/dapp/*` popups |
+| `apps/web/src/pages/dapp/SignMessageApprovalPage.tsx` | Web approval page — handles `sign` and `signOffchain` |
+| `apps/web/src/pages/dapp/SignInApprovalPage.tsx` | Web `solana:signIn` approval page |
+| `apps/extension/src/lib/SolanaProvider.ts` | Injected extension provider — exposes `signOffchainMessage` and `signIn` |
+| `apps/extension/src/wallet-standard/wallet.ts` | Extension Wallet Standard adapter — registers the `solana:signOffchainMessage` and `solana:signIn` features |
+| `apps/extension/src/pages/dapp/DAppSignMessageApprovalPage.tsx` | Extension approval page — handles `sign` and `signOffchain` |
+| `apps/extension/src/pages/dapp/DAppSignInApprovalPage.tsx` | Extension `solana:signIn` approval page |
 
 External references:
 
 - [SRFC 38 — Off-chain message signing](https://github.com/solana-foundation/SRFCs/discussions/3)
 - [`@solana/offchain-messages`](https://www.npmjs.com/package/@solana/offchain-messages) (Anza)
 - Wallet Standard [`solana:signOffchainMessage`](https://github.com/anza-xyz/wallet-standard) (PR #92)
-- Wallet Standard [`solana:signIn`](https://github.com/anza-xyz/wallet-standard) / SIWS (PR #93) — not implemented in Salmon yet
+- Wallet Standard [`solana:signIn`](https://github.com/anza-xyz/wallet-standard) / SIWS (PR #93)
