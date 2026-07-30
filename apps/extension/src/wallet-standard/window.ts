@@ -1,4 +1,4 @@
-import type { PublicKey, SendOptions, Transaction, TransactionSignature, VersionedTransaction } from '@solana/web3.js';
+import type { SendOptions, SignAndSendTransactionResult } from '../lib/SolanaProvider.js';
 
 export interface SalmonEvent {
     connect(...args: unknown[]): unknown;
@@ -11,17 +11,23 @@ export interface SalmonEventEmitter {
     off<E extends keyof SalmonEvent>(event: E, listener: SalmonEvent[E], context?: any): void;
 }
 
+/** The minimal shape wallet-standard reads off a connected public key. */
+export interface SalmonPublicKey {
+    toBase58(): string;
+    toBytes(): Uint8Array;
+}
+
 export interface Salmon extends SalmonEventEmitter {
-    publicKey: PublicKey | null;
-    connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: PublicKey }>;
+    publicKey: SalmonPublicKey | null;
+    connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: SalmonPublicKey }>;
     disconnect(): Promise<void>;
-    signAndSendTransaction<T extends Transaction | VersionedTransaction>(
-        transaction: T,
+    signTransactionBytes(transaction: Uint8Array, network?: string): Promise<Uint8Array>;
+    signAllTransactionsBytes(transactions: Uint8Array[], network?: string): Promise<Uint8Array[]>;
+    signAndSendTransactionBytes(
+        transaction: Uint8Array,
         network?: string,
         options?: SendOptions
-    ): Promise<{ signature: TransactionSignature }>;
-    signTransaction<T extends Transaction | VersionedTransaction>(transaction: T, network?: string): Promise<T>;
-    signAllTransactions<T extends Transaction | VersionedTransaction>(transactions: T[], network?: string): Promise<T[]>;
+    ): Promise<SignAndSendTransactionResult>;
     signMessage(message: Uint8Array): Promise<{ signature: Uint8Array }>;
     signOffchainMessage(input: {
         messageVersion: number;
