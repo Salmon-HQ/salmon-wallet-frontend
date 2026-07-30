@@ -19,7 +19,7 @@
  * and signs with everywhere else.
  */
 import nacl from 'tweetnacl';
-import { PublicKey } from '@solana/web3.js';
+import { getAddressEncoder, type Address } from '@solana/addresses';
 import {
   compileOffchainMessageV1Envelope,
   getOffchainMessageV1Decoder,
@@ -27,8 +27,6 @@ import {
   type OffchainMessageV1,
 } from '@solana/offchain-messages';
 import type { SolanaAccount } from './SolanaAccount';
-
-type SignatoryAddress = OffchainMessageSignatory['address'];
 
 export interface SignedOffchainMessage {
   /** Raw 64-byte ed25519 signature over `buffer`. */
@@ -46,16 +44,12 @@ export interface SignedOffchainMessage {
  * @param signers - Accounts required to sign this message, per the OCMS spec
  * @returns The signing-domain-prefixed buffer, ready to be signed or hashed
  */
-export function buildOffchainMessageV1(content: Uint8Array, signers: PublicKey[]): Uint8Array {
+export function buildOffchainMessageV1(content: Uint8Array, signers: Address[]): Uint8Array {
   const text = new TextDecoder('utf-8', { fatal: true }).decode(content);
 
   const message: OffchainMessageV1 = {
     version: 1,
-    requiredSignatories: signers.map(
-      (signer): OffchainMessageSignatory => ({
-        address: signer.toBase58() as SignatoryAddress,
-      }),
-    ),
+    requiredSignatories: signers.map((signer): OffchainMessageSignatory => ({ address: signer })),
     content: text,
   };
 
@@ -75,12 +69,12 @@ export function buildOffchainMessageV1(content: Uint8Array, signers: PublicKey[]
 export function signOffchainMessage(
   account: SolanaAccount,
   content: Uint8Array,
-  signers: PublicKey[],
+  signers: Address[],
 ): SignedOffchainMessage {
   // Refuse to sign a message whose required-signatory list does not include this
   // account. Otherwise a dApp could obtain the user's signature over an OCMS
   // message that structurally attributes it to a different set of signers.
-  if (!signers.some((signer) => signer.equals(account.keyPair.publicKey))) {
+  if (!signers.some((signer) => signer === account.keyPair.publicKey.toBase58())) {
     throw new Error(
       'Refusing to sign: the signing account is not listed in the required signers.',
     );
@@ -104,8 +98,8 @@ export function signOffchainMessage(
  * @param signature - The 64-byte ed25519 signature to verify
  * @param signer - The public key the signature is claimed to be from
  */
-export function verifyOffchainMessage(buffer: Uint8Array, signature: Uint8Array, signer: PublicKey): boolean {
-  return nacl.sign.detached.verify(buffer, signature, signer.toBytes());
+export function verifyOffchainMessage(buffer: Uint8Array, signature: Uint8Array, signer: Address): boolean {
+  return nacl.sign.detached.verify(buffer, signature, Uint8Array.from(getAddressEncoder().encode(signer)));
 }
 
 /**

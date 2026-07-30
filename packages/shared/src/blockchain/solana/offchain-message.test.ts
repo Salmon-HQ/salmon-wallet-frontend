@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import nacl from 'tweetnacl';
-import { Keypair } from '@solana/web3.js';
+import { Keypair, type PublicKey } from '@solana/web3.js';
+import type { Address } from '@solana/addresses';
 import {
   buildOffchainMessageV1,
   parseOffchainMessageV1,
@@ -20,6 +21,10 @@ function encode(text: string): Uint8Array {
 // reproducible; these keys hold no funds and must never be used outside tests.
 const testKeypair = (seed: number) => Keypair.fromSeed(new Uint8Array(32).fill(seed));
 
+// TEST-ONLY: these PublicKeys always come from freshly generated/seeded
+// Keypairs, so a typecast skips address()'s redundant validation.
+const addr = (publicKey: PublicKey): Address => publicKey.toBase58() as Address;
+
 describe('signOffchainMessage', () => {
   it('signs a text message and verifies successfully in a round trip', () => {
     // Arrange
@@ -28,9 +33,9 @@ describe('signOffchainMessage', () => {
 
     // Act
     const { signature, buffer } = signOffchainMessage(account as never, content, [
-      account.keyPair.publicKey,
+      addr(account.keyPair.publicKey),
     ]);
-    const isValid = verifyOffchainMessage(buffer, signature, account.keyPair.publicKey);
+    const isValid = verifyOffchainMessage(buffer, signature, addr(account.keyPair.publicKey));
 
     // Assert
     expect(isValid).toBe(true);
@@ -42,7 +47,9 @@ describe('signOffchainMessage', () => {
     const content = encode('Sign in to Salmon Wallet');
 
     // Act
-    const { buffer } = signOffchainMessage(account as never, content, [account.keyPair.publicKey]);
+    const { buffer } = signOffchainMessage(account as never, content, [
+      addr(account.keyPair.publicKey),
+    ]);
 
     // Assert
     expect(buffer.slice(0, OCMS_SIGNING_DOMAIN.length)).toEqual(OCMS_SIGNING_DOMAIN);
@@ -53,11 +60,13 @@ describe('signOffchainMessage', () => {
     const account = { keyPair: Keypair.generate() };
     const impostor = Keypair.generate();
     const content = encode('Approve this action');
-    const { buffer } = signOffchainMessage(account as never, content, [account.keyPair.publicKey]);
+    const { buffer } = signOffchainMessage(account as never, content, [
+      addr(account.keyPair.publicKey),
+    ]);
     const forgedSignature = nacl.sign.detached(buffer, impostor.secretKey);
 
     // Act
-    const isValid = verifyOffchainMessage(buffer, forgedSignature, account.keyPair.publicKey);
+    const isValid = verifyOffchainMessage(buffer, forgedSignature, addr(account.keyPair.publicKey));
 
     // Assert
     expect(isValid).toBe(false);
@@ -69,7 +78,7 @@ describe('signOffchainMessage', () => {
     const invalidUtf8 = new Uint8Array([0xff, 0xfe, 0xfd]);
 
     // Act & Assert
-    expect(() => buildOffchainMessageV1(invalidUtf8, [account.keyPair.publicKey])).toThrow();
+    expect(() => buildOffchainMessageV1(invalidUtf8, [addr(account.keyPair.publicKey)])).toThrow();
   });
 
   it('refuses to sign when the account is not among the required signers', () => {
@@ -79,7 +88,7 @@ describe('signOffchainMessage', () => {
     const content = encode('Sign as someone else');
 
     // Act & Assert
-    expect(() => signOffchainMessage(account as never, content, [other.publicKey])).toThrow(
+    expect(() => signOffchainMessage(account as never, content, [addr(other.publicKey)])).toThrow(
       /not listed in the required signers/,
     );
   });
@@ -92,7 +101,9 @@ describe('parseOffchainMessageV1', () => {
     const content = encode('Please confirm your login');
 
     // Act
-    const { buffer } = signOffchainMessage(account as never, content, [account.keyPair.publicKey]);
+    const { buffer } = signOffchainMessage(account as never, content, [
+      addr(account.keyPair.publicKey),
+    ]);
     const parsed = parseOffchainMessageV1(buffer);
 
     // Assert
@@ -141,13 +152,13 @@ describe('golden vectors', () => {
   const toBase64 = (bytes: Uint8Array) => Buffer.from(bytes).toString('base64');
 
   it('pins the OCMS v1 envelope bytes for a single signer', () => {
-    const buffer = buildOffchainMessageV1(encode(CONTENT), [testKeypair(1).publicKey]);
+    const buffer = buildOffchainMessageV1(encode(CONTENT), [addr(testKeypair(1).publicKey)]);
 
     expect(toBase64(buffer)).toBe(GOLDEN_OCMS_SINGLE_SIGNER);
   });
 
   it('pins the OCMS v1 envelope bytes for non-ASCII content', () => {
-    const buffer = buildOffchainMessageV1(encode(UNICODE_CONTENT), [testKeypair(1).publicKey]);
+    const buffer = buildOffchainMessageV1(encode(UNICODE_CONTENT), [addr(testKeypair(1).publicKey)]);
 
     expect(toBase64(buffer)).toBe(GOLDEN_OCMS_UNICODE_CONTENT);
   });
@@ -156,8 +167,8 @@ describe('golden vectors', () => {
   // the signed bytes. A port that preserved caller order would produce different
   // bytes and break the decoder, which requires sorted signatories.
   it('produces order-independent bytes for the same signatory set', () => {
-    const signers = [1, 2, 3].map((seed) => testKeypair(seed).publicKey);
-    const sorted = [...signers].sort((a, b) => (a.toBase58() < b.toBase58() ? -1 : 1));
+    const signers = [1, 2, 3].map((seed) => addr(testKeypair(seed).publicKey));
+    const sorted = [...signers].sort((a, b) => (a < b ? -1 : 1));
 
     const asGiven = buildOffchainMessageV1(encode(CONTENT), signers);
     const reversed = buildOffchainMessageV1(encode(CONTENT), [...signers].reverse());
@@ -169,7 +180,7 @@ describe('golden vectors', () => {
   });
 
   it('rejects a duplicated signatory', () => {
-    const signer = testKeypair(1).publicKey;
+    const signer = addr(testKeypair(1).publicKey);
 
     expect(() => buildOffchainMessageV1(encode(CONTENT), [signer, signer])).toThrow(
       /no more than once/,

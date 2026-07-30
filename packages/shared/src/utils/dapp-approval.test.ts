@@ -8,6 +8,7 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
+import type { Address } from '@solana/addresses';
 import { verifyOffchainMessage } from '../blockchain/solana';
 import {
   approveSolanaSignMessage,
@@ -524,7 +525,7 @@ describe('approveSolanaSignOffchainMessage', () => {
       verifyOffchainMessage(
         bs58.decode(result.signedOffchainMessage),
         bs58.decode(result.signature),
-        salmon.publicKey,
+        salmon.publicKey.toBase58() as Address,
       ),
     ).toBe(true);
   });

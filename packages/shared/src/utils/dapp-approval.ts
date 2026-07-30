@@ -8,6 +8,7 @@ import {
   VersionedMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
+import { address, type Address } from '@solana/addresses';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 import {
   buildOffchainMessageV1,
@@ -233,7 +234,8 @@ export function approveSolanaSignOffchainMessage(
   requiredSigners: PublicKey[],
 ): DAppSignOffchainMessageApprovalPayload {
   const messageBytes = Uint8Array.from(data);
-  const { signature, buffer } = signOffchainMessage(account, messageBytes, requiredSigners);
+  const signers = requiredSigners.map((signer): Address => signer.toBase58() as Address);
+  const { signature, buffer } = signOffchainMessage(account, messageBytes, signers);
 
   return {
     signedOffchainMessage: bs58.encode(buffer),
@@ -258,7 +260,7 @@ export function parseOffchainMessageForApproval(
   requiredSigners: string[],
 ): ReturnType<typeof parseOffchainMessageV1> {
   const contentBytes = Uint8Array.from(data);
-  const signers = requiredSigners.map((address) => new PublicKey(address));
+  const signers = requiredSigners.map((signer) => address(signer));
   const buffer = buildOffchainMessageV1(contentBytes, signers);
   return parseOffchainMessageV1(buffer);
 }

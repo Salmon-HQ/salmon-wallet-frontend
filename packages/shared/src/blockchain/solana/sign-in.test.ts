@@ -2,6 +2,7 @@ import bs58 from 'bs58';
 import nacl from 'tweetnacl';
 import { describe, expect, it } from 'vitest';
 import { Keypair } from '@solana/web3.js';
+import type { Address } from '@solana/addresses';
 import { createSignInMessageText } from '@solana/wallet-standard-util';
 import type { ResolvedSiwsFields } from './sign-in';
 import {
@@ -304,7 +305,7 @@ describe('signSiwsMessage', () => {
     expect(decoded.content).toBe(result.message);
     expect(decoded.requiredSignatories.map((s) => s.address)).toEqual([address]);
     expect(
-      verifyOffchainMessage(result.signedMessage, result.signature, keyPair.publicKey),
+      verifyOffchainMessage(result.signedMessage, result.signature, keyPair.publicKey.toBase58() as Address),
     ).toBe(true);
   });
 
