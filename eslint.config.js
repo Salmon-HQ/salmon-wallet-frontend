@@ -10,7 +10,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
  * ratchet is what stops a migrated directory from regressing. Paths are
  * repo-root-relative.
  */
-const MIGRATED_DIRS = [];
+const MIGRATED_DIRS = ['packages/shared/src/crypto'];
 
 export default [
   js.configs.recommended,
