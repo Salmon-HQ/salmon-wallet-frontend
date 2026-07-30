@@ -267,6 +267,58 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
     expect(submitted.signatures[1].some((byte) => byte !== 0)).toBe(true);
   });
 
+  // `params.options` is untrusted JSON from the page. Anything the wallet does
+  // not explicitly honour must be dropped rather than forwarded to the RPC node.
+  it('forwards only allowlisted send options to the rpc', async () => {
+    const message = new TransactionMessage({
+      payerKey: coSigner.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: transferInstructions(),
+    }).compileToV0Message();
+    const encodedMessage = bs58.encode(message.serialize());
+
+    const sendTransaction = rpcSendTransaction();
+    const account = await makeAccount({ sendTransaction });
+
+    await approveSolanaTransactionRequest(account as never, {
+      id: 'req-6',
+      method: 'signAndSendTransaction',
+      params: {
+        message: encodedMessage,
+        options: {
+          skipPreflight: true,
+          preflightCommitment: 'processed',
+          maxRetries: 3,
+          minContextSlot: 5,
+          evil: 'drop me',
+        },
+      },
+    } as never);
+
+    expect(sendTransaction.mock.calls[0][1]).toEqual({
+      encoding: 'base64',
+      skipPreflight: true,
+      preflightCommitment: 'processed',
+      maxRetries: 3n,
+      minContextSlot: 5n,
+    });
+
+    await approveSolanaTransactionRequest(account as never, {
+      id: 'req-7',
+      method: 'signAndSendTransaction',
+      params: {
+        message: encodedMessage,
+        options: {
+          preflightCommitment: 'whenever',
+          skipPreflight: 'yes',
+          maxRetries: 1.5,
+        },
+      },
+    } as never);
+
+    expect(sendTransaction.mock.calls[1][1]).toEqual({ encoding: 'base64' });
+  });
+
   // The approval screen previews `message` while this path signs `transaction`.
   // If the two are allowed to differ, a page can show a harmless transaction and
   // have a completely different one signed and broadcast.
