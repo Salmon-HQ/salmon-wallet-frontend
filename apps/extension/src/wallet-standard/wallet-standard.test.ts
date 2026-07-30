@@ -8,30 +8,41 @@
  * runtime needed.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { Keypair } from '@solana/web3.js';
+import bs58 from 'bs58';
 import type { Wallet } from '@wallet-standard/base';
 import { initialize } from './index';
 import { registerWallet } from './register';
 import { SalmonWallet } from './wallet';
 import { SOLANA_CHAINS } from './solana';
-import type { Salmon, SalmonEvent } from './window';
+import type { Salmon, SalmonEvent, SalmonPublicKey } from './window';
+
+/**
+ * Deterministic `{ toBase58, toBytes }` fixture — the only two members
+ * wallet-standard reads off a public key. A fixed vector keeps failures
+ * readable and needs no @solana/web3.js Keypair.
+ */
+function fixedPublicKey(seed: number): SalmonPublicKey {
+  const bytes = new Uint8Array(32).fill(seed);
+  const base58 = bs58.encode(bytes);
+  return { toBase58: () => base58, toBytes: () => bytes };
+}
 
 /** Minimal in-memory Salmon provider double implementing the injected-provider surface. */
-function createMockSalmon(publicKey: Keypair['publicKey'] | null = null): Salmon {
+function createMockSalmon(publicKey: SalmonPublicKey | null = null): Salmon {
   const listeners: Record<string, ((...args: unknown[]) => unknown)[]> = {};
   const salmon = {
     publicKey,
     connect: vi.fn(async () => {
-      salmon.publicKey = publicKey ?? Keypair.generate().publicKey;
+      salmon.publicKey = publicKey ?? fixedPublicKey(0);
       return { publicKey: salmon.publicKey };
     }),
     disconnect: vi.fn(async () => {
       salmon.publicKey = null;
       (listeners.disconnect ?? []).forEach((listener) => listener());
     }),
-    signAndSendTransaction: vi.fn(),
-    signTransaction: vi.fn(),
-    signAllTransactions: vi.fn(),
+    signAndSendTransactionBytes: vi.fn(),
+    signTransactionBytes: vi.fn(),
+    signAllTransactionsBytes: vi.fn(),
     signMessage: vi.fn(async () => ({ signature: new Uint8Array(64).fill(7) })),
     signOffchainMessage: vi.fn(async () => ({
       signedOffchainMessage: new Uint8Array(10).fill(1),
@@ -40,7 +51,7 @@ function createMockSalmon(publicKey: Keypair['publicKey'] | null = null): Salmon
     })),
     signIn: vi.fn(async (input: { useOffchainMessage?: { messageVersion: 1 } }) => {
       // Sign-in proves ownership, so it connects if not already connected.
-      salmon.publicKey = salmon.publicKey ?? publicKey ?? Keypair.generate().publicKey;
+      salmon.publicKey = salmon.publicKey ?? publicKey ?? fixedPublicKey(0);
       return {
         address: salmon.publicKey.toBase58(),
         publicKey: salmon.publicKey.toBytes(),
@@ -166,8 +177,8 @@ describe('SalmonWallet', () => {
 
   it('connects through the provider, exposes the account, and emits a change event', async () => {
     // Arrange
-    const keypair = Keypair.generate();
-    const salmon = createMockSalmon(keypair.publicKey);
+    const publicKey = fixedPublicKey(1);
+    const salmon = createMockSalmon(publicKey);
     (salmon as unknown as { publicKey: null }).publicKey = null;
     const wallet = new SalmonWallet(salmon);
     expect(wallet.accounts).toEqual([]);
@@ -180,8 +191,8 @@ describe('SalmonWallet', () => {
     // Assert
     expect(salmon.connect).toHaveBeenCalledOnce();
     expect(accounts).toHaveLength(1);
-    expect(accounts[0].address).toBe(keypair.publicKey.toBase58());
-    expect(accounts[0].publicKey).toEqual(keypair.publicKey.toBytes());
+    expect(accounts[0].address).toBe(publicKey.toBase58());
+    expect(accounts[0].publicKey).toEqual(publicKey.toBytes());
     expect(accounts[0].chains).toEqual([...SOLANA_CHAINS]);
     expect(accounts[0].features).toContain('solana:signMessage');
     expect(onChange).toHaveBeenCalledWith({ accounts: wallet.accounts });
@@ -189,7 +200,7 @@ describe('SalmonWallet', () => {
 
   it('clears accounts and emits change when the provider disconnects', async () => {
     // Arrange
-    const salmon = createMockSalmon(Keypair.generate().publicKey);
+    const salmon = createMockSalmon(fixedPublicKey(2));
     const wallet = new SalmonWallet(salmon);
     expect(wallet.accounts).toHaveLength(1);
     const onChange = vi.fn();
@@ -206,7 +217,7 @@ describe('SalmonWallet', () => {
 
   it('delegates signMessage to the provider for the connected account', async () => {
     // Arrange
-    const salmon = createMockSalmon(Keypair.generate().publicKey);
+    const salmon = createMockSalmon(fixedPublicKey(3));
     const wallet = new SalmonWallet(salmon);
     const account = wallet.accounts[0];
     const message = new TextEncoder().encode('hello salmon');
@@ -226,11 +237,11 @@ describe('SalmonWallet', () => {
 
   it('delegates signOffchainMessage to the provider and returns the PR#92 output shape', async () => {
     // Arrange
-    const keypair = Keypair.generate();
-    const salmon = createMockSalmon(keypair.publicKey);
+    const publicKey = fixedPublicKey(4);
+    const salmon = createMockSalmon(publicKey);
     const wallet = new SalmonWallet(salmon);
     const account = wallet.accounts[0];
-    const requiredSigners = [keypair.publicKey.toBytes()];
+    const requiredSigners = [publicKey.toBytes()];
 
     // Act
     const outputs = await wallet.features['solana:signOffchainMessage'].signOffchainMessage({
@@ -275,7 +286,7 @@ describe('SalmonWallet', () => {
 
   it('signIn forwards the input and surfaces signedMessageFormat on the OCMS path (PR#93)', async () => {
     // Arrange
-    const salmon = createMockSalmon(Keypair.generate().publicKey);
+    const salmon = createMockSalmon(fixedPublicKey(5));
     const wallet = new SalmonWallet(salmon);
 
     // Act
@@ -301,7 +312,7 @@ describe('SalmonWallet', () => {
 
   it('rejects signOffchainMessage for an unsupported message version', async () => {
     // Arrange
-    const salmon = createMockSalmon(Keypair.generate().publicKey);
+    const salmon = createMockSalmon(fixedPublicKey(6));
     const wallet = new SalmonWallet(salmon);
 
     // Act & Assert
@@ -318,9 +329,9 @@ describe('SalmonWallet', () => {
 
   it('rejects signOffchainMessage for an account it does not own', async () => {
     // Arrange
-    const salmon = createMockSalmon(Keypair.generate().publicKey);
+    const salmon = createMockSalmon(fixedPublicKey(7));
     const wallet = new SalmonWallet(salmon);
-    const foreignWallet = new SalmonWallet(createMockSalmon(Keypair.generate().publicKey));
+    const foreignWallet = new SalmonWallet(createMockSalmon(fixedPublicKey(8)));
 
     // Act & Assert
     await expect(
@@ -336,9 +347,9 @@ describe('SalmonWallet', () => {
 
   it('rejects signMessage for an account it does not own', async () => {
     // Arrange
-    const salmon = createMockSalmon(Keypair.generate().publicKey);
+    const salmon = createMockSalmon(fixedPublicKey(9));
     const wallet = new SalmonWallet(salmon);
-    const foreignWallet = new SalmonWallet(createMockSalmon(Keypair.generate().publicKey));
+    const foreignWallet = new SalmonWallet(createMockSalmon(fixedPublicKey(10)));
 
     // Act & Assert
     await expect(
