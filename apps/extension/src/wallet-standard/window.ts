@@ -1,4 +1,5 @@
 import type { SendOptions, SignAndSendTransactionResult } from '../lib/SolanaProvider.js';
+import type { SalmonAddress } from '../lib/SalmonAddress.js';
 
 export interface SalmonEvent {
     connect(...args: unknown[]): unknown;
@@ -11,11 +12,8 @@ export interface SalmonEventEmitter {
     off<E extends keyof SalmonEvent>(event: E, listener: SalmonEvent[E], context?: any): void;
 }
 
-/** The minimal shape wallet-standard reads off a connected public key. */
-export interface SalmonPublicKey {
-    toBase58(): string;
-    toBytes(): Uint8Array;
-}
+/** The connected public key as `window.salmon` exposes it. */
+export type SalmonPublicKey = SalmonAddress;
 
 export interface Salmon extends SalmonEventEmitter {
     publicKey: SalmonPublicKey | null;

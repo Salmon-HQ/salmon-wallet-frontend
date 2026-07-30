@@ -15,16 +15,15 @@ import { registerWallet } from './register';
 import { SalmonWallet } from './wallet';
 import { SOLANA_CHAINS } from './solana';
 import type { Salmon, SalmonEvent, SalmonPublicKey } from './window';
+import { toSalmonAddress } from '../lib/SalmonAddress';
 
 /**
- * Deterministic `{ toBase58, toBytes }` fixture — the only two members
- * wallet-standard reads off a public key. A fixed vector keeps failures
- * readable and needs no @solana/web3.js Keypair.
+ * Deterministic public key built from the real injected shim, so the adapter is
+ * exercised against the object dApps actually receive. A fixed vector keeps
+ * failures readable and needs no @solana/web3.js Keypair.
  */
 function fixedPublicKey(seed: number): SalmonPublicKey {
-  const bytes = new Uint8Array(32).fill(seed);
-  const base58 = bs58.encode(bytes);
-  return { toBase58: () => base58, toBytes: () => bytes };
+  return toSalmonAddress(bs58.encode(new Uint8Array(32).fill(seed)));
 }
 
 /** Minimal in-memory Salmon provider double implementing the injected-provider surface. */

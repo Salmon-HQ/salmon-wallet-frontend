@@ -3,6 +3,8 @@ import bs58 from 'bs58';
 import { PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { getBase58Decoder, getTransactionDecoder, getTransactionEncoder } from '@solana/kit';
 import type { Address, SignatureBytes } from '@solana/kit';
+import { toSalmonAddress } from './SalmonAddress';
+import type { SalmonAddress } from './SalmonAddress';
 
 // ============================================================================
 // Type Definitions
@@ -34,7 +36,7 @@ export interface ResponseMessage {
  * Result returned from a successful connect call
  */
 export interface ConnectResult {
-  publicKey: PublicKey;
+  publicKey: SalmonAddress;
 }
 
 /**
@@ -148,9 +150,9 @@ export type SolanaTransaction = Transaction | VersionedTransaction;
  * Events emitted by the provider
  */
 export interface SolanaProviderEvents {
-  connect: (publicKey: PublicKey) => void;
+  connect: (publicKey: SalmonAddress) => void;
   disconnect: () => void;
-  accountChanged: (publicKey: PublicKey | null) => void;
+  accountChanged: (publicKey: SalmonAddress | null) => void;
 }
 
 // ============================================================================
@@ -171,7 +173,7 @@ interface ContentScriptMessageEvent extends CustomEvent<ContentScriptMessageDeta
  * extension's content script via custom events.
  */
 export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
-  #publicKey: PublicKey | null = null;
+  #publicKey: SalmonAddress | null = null;
 
   constructor() {
     super();
@@ -181,7 +183,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
   /**
    * The public key of the connected wallet, or null if not connected
    */
-  get publicKey(): PublicKey | null {
+  get publicKey(): SalmonAddress | null {
     return this.#publicKey;
   }
 
@@ -284,7 +286,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
 
     if (response.method === 'connected' && response.params) {
       const publicKeyString = response.params.publicKey as string;
-      this.#publicKey = new PublicKey(publicKeyString);
+      this.#publicKey = toSalmonAddress(publicKeyString);
       this.emit('connect', this.#publicKey);
       return { publicKey: this.#publicKey };
     }
@@ -545,7 +547,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
       signedMessageFormat?: { kind: 'offchainMessage'; messageVersion: 1 };
     };
 
-    const publicKey = new PublicKey(result.address);
+    const publicKey = toSalmonAddress(result.address);
     if (!this.#publicKey || !this.#publicKey.equals(publicKey)) {
       this.#publicKey = publicKey;
       this.emit('connect', publicKey);
