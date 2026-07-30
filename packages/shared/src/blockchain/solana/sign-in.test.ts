@@ -117,6 +117,15 @@ describe('buildSiwsMessageText golden vectors', () => {
   /** Non-ASCII statement, pinning the UTF-8 encoding of free-text fields. */
   const GOLDEN_SIWS_UNICODE_STATEMENT =
     'YXBwLmV4YW1wbGUuY29tIHdhbnRzIHlvdSB0byBzaWduIGluIHdpdGggeW91ciBTb2xhbmEgYWNjb3VudDoKOWhTUjZTN1dQdHhtVG9qZ282R0czazR5RFBlY2dKWTI5Mmo3eHJzVUdXQnUKCsOcbsOvY8O2ZMOpIOKckyDml6XmnKzoqp4=';
+  /**
+   * INTENTIONAL byte change (Fix C): a truthy empty `resources` array now emits
+   * a bare `Resources:` header with no bullet lines, matching
+   * `createSignInMessageText`'s `if (input.resources)` gate. Previously this
+   * repo gated on `.length` and emitted nothing, diverging from upstream — see
+   * the differential suite below, which no longer pins that divergence.
+   */
+  const GOLDEN_SIWS_EMPTY_RESOURCES =
+    'YXBwLmV4YW1wbGUuY29tIHdhbnRzIHlvdSB0byBzaWduIGluIHdpdGggeW91ciBTb2xhbmEgYWNjb3VudDoKOWhTUjZTN1dQdHhtVG9qZ282R0czazR5RFBlY2dKWTI5Mmo3eHJzVUdXQnUKClJlc291cmNlczo=';
 
   const toBase64 = (text: string) => Buffer.from(new TextEncoder().encode(text)).toString('base64');
 
@@ -149,12 +158,12 @@ describe('buildSiwsMessageText golden vectors', () => {
     expect(toBase64(text)).toBe(GOLDEN_SIWS_UNICODE_STATEMENT);
   });
 
-  // An empty `resources` array emits no `Resources:` line at all, so the bytes are
-  // identical to the minimal message.
-  it('pins that an empty resources array adds no Resources block', () => {
+  // A truthy empty `resources` array still emits the `Resources:` header, with
+  // no bullet lines under it (Fix C — see GOLDEN_SIWS_EMPTY_RESOURCES above).
+  it('pins that an empty resources array emits a bare Resources header', () => {
     const text = buildSiwsMessageText({ domain, address, resources: [] });
 
-    expect(toBase64(text)).toBe(GOLDEN_SIWS_MINIMAL);
+    expect(toBase64(text)).toBe(GOLDEN_SIWS_EMPTY_RESOURCES);
   });
 });
 
@@ -193,28 +202,11 @@ describe('buildSiwsMessageText vs createSignInMessageText', () => {
     ['single resource', { domain, address, resources: ['https://app.example.com/tos'] }],
     ['statement only', { domain, address, statement: 'Sign in to Example.' }],
     ['fields without statement', { domain, address, nonce: 'RMTMC6f5', version: '1' }],
+    ['empty resources array', { domain, address, resources: [] }],
   ];
 
   it.each(cases)('matches createSignInMessageText byte-for-byte (%s)', (_name, fields) => {
     expect(buildSiwsMessageText(fields)).toBe(createSignInMessageText(fields));
-  });
-
-  // KNOWN DIVERGENCE, deliberately not fixed here: upstream gates the resources
-  // block on `if (input.resources)`, so a truthy empty array emits a bare
-  // `Resources:` line; this repo gates it on `fields.resources?.length` and emits
-  // nothing. Changing `buildSiwsMessageText` is a behavior change outside this
-  // commit's scope, so the delta is pinned below and the parity case stays skipped
-  // pending a separate decision.
-  it.skip('matches createSignInMessageText byte-for-byte (empty resources array)', () => {
-    expect(buildSiwsMessageText({ domain, address, resources: [] })).toBe(
-      createSignInMessageText({ domain, address, resources: [] }),
-    );
-  });
-
-  it('pins the exact delta for an empty resources array', () => {
-    const fields: ResolvedSiwsFields = { domain, address, resources: [] };
-
-    expect(createSignInMessageText(fields)).toBe(`${buildSiwsMessageText(fields)}\n\nResources:`);
   });
 });
 

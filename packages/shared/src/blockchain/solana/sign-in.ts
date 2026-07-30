@@ -98,7 +98,11 @@ export function buildSiwsMessageText(fields: ResolvedSiwsFields): string {
   if (fields.expirationTime) lines.push(`Expiration Time: ${fields.expirationTime}`);
   if (fields.notBefore) lines.push(`Not Before: ${fields.notBefore}`);
   if (fields.requestId) lines.push(`Request ID: ${fields.requestId}`);
-  if (fields.resources?.length) {
+  // Gated on presence, not length: @solana/wallet-standard-util's
+  // createSignInMessageText emits a bare `Resources:` line for a truthy empty
+  // array too, so an explicit `resources: []` must match that, not silently
+  // drop the header.
+  if (fields.resources) {
     lines.push('Resources:');
     for (const resource of fields.resources) lines.push(`- ${resource}`);
   }
