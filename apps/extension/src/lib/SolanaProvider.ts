@@ -1,6 +1,5 @@
 import EventEmitter from 'eventemitter3';
 import bs58 from 'bs58';
-import { PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { getBase58Decoder, getTransactionDecoder, getTransactionEncoder } from '@solana/kit';
 import type { Address, SignatureBytes } from '@solana/kit';
 import { toSalmonAddress } from './SalmonAddress';
@@ -142,9 +141,73 @@ export interface SignInResult {
 export type Network = 'solana-mainnet' | 'solana-devnet' | string;
 
 /**
+ * Structural shape of a legacy web3.js `Transaction`, limited to the members
+ * this provider touches. Structural rather than imported so the injected
+ * bundle carries no `@solana/web3.js`; dApps keep passing the real objects.
+ */
+export interface LegacyTransactionLike {
+  serializeMessage(): Uint8Array;
+  serialize(config?: { requireAllSignatures?: boolean; verifySignatures?: boolean }): Uint8Array;
+  signatures: { publicKey: { toBase58(): string }; signature: Uint8Array | null }[];
+}
+
+/** Structural shape of a web3.js `VersionedTransaction`. */
+export interface VersionedTransactionLike {
+  message: {
+    serialize(): Uint8Array;
+    header: { numRequiredSignatures: number };
+    staticAccountKeys: { toBase58(): string }[];
+  };
+  signatures: Uint8Array[];
+  serialize(): Uint8Array;
+}
+
+/**
  * Transaction type that can be either legacy or versioned
  */
-export type SolanaTransaction = Transaction | VersionedTransaction;
+export type SolanaTransaction = LegacyTransactionLike | VersionedTransactionLike;
+
+const SIGNATURE_LENGTH = 64;
+
+/**
+ * Writes `signature` into the slot that belongs to `base58`, for either wire
+ * format, and returns the transaction the dApp handed us.
+ *
+ * Replaces web3.js's `addSignature`, which the injected address object cannot
+ * feed: `VersionedTransaction.addSignature` compares `realKey.equals(ours)` and
+ * dies on the missing `_bn`, while the legacy path happens to compare the other
+ * way round and survives. One path for both, byte-identical to web3.js's own
+ * signing for each format.
+ */
+function writeSignature(
+  transaction: SolanaTransaction,
+  base58: string,
+  signature: Uint8Array
+): void {
+  if (signature.length !== SIGNATURE_LENGTH) {
+    throw new Error('Invalid signature length');
+  }
+
+  if ('serializeMessage' in transaction) {
+    // Forces the compile that populates `signatures`; idempotent.
+    transaction.serializeMessage();
+    const entry = transaction.signatures.find((s) => s.publicKey.toBase58() === base58);
+    if (!entry) {
+      throw new Error(`Transaction does not require a signature from ${base58}`);
+    }
+    entry.signature = signature;
+    return;
+  }
+
+  const { message } = transaction;
+  const index = message.staticAccountKeys
+    .slice(0, message.header.numRequiredSignatures)
+    .findIndex((key) => key.toBase58() === base58);
+  if (index === -1) {
+    throw new Error(`Transaction does not require a signature from ${base58}`);
+  }
+  transaction.signatures[index] = signature;
+}
 
 /**
  * Events emitted by the provider
@@ -346,15 +409,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
     });
 
     const result = response.result as SignTransactionResult;
-    const signature = bs58.decode(result.signature);
-    const publicKey = new PublicKey(result.publicKey);
-
-    // Add signature to the transaction
-    if ('addSignature' in transaction && typeof transaction.addSignature === 'function') {
-      transaction.addSignature(publicKey, Buffer.from(signature));
-    } else {
-      throw new Error('Transaction does not support addSignature');
-    }
+    writeSignature(transaction, result.publicKey, bs58.decode(result.signature));
 
     return transaction;
   };
@@ -375,15 +430,9 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
     });
 
     const result = response.result as SignAllTransactionsResult;
-    const signatures = result.signatures.map(s => bs58.decode(s));
-    const publicKey = new PublicKey(result.publicKey);
 
     return transactions.map((tx, idx) => {
-      if ('addSignature' in tx && typeof tx.addSignature === 'function') {
-        tx.addSignature(publicKey, Buffer.from(signatures[idx]));
-      } else {
-        throw new Error('Transaction does not support addSignature');
-      }
+      writeSignature(tx, result.publicKey, bs58.decode(result.signatures[idx]));
       return tx;
     });
   };

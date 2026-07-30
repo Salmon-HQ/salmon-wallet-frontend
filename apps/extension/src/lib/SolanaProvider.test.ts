@@ -91,6 +91,256 @@ describe('SolanaProvider.signAndSendTransaction', () => {
   });
 });
 
+describe('SolanaProvider.signTransaction — signature write-back', () => {
+  /** Signs with web3.js itself and returns the wallet's own signature bytes. */
+  const referenceV0 = (message: ReturnType<TransactionMessage['compileToV0Message']>) => {
+    const reference = new VersionedTransaction(message);
+    reference.sign([coSigner, salmon]);
+    const index = message.staticAccountKeys.findIndex((key) => key.equals(salmon.publicKey));
+    return { reference, signature: reference.signatures[index] };
+  };
+
+  const v0Message = () =>
+    new TransactionMessage({
+      payerKey: coSigner.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: transferInstructions(),
+    }).compileToV0Message();
+
+  it('writes into a versioned transaction byte-identically to web3.js signing', async () => {
+    const message = v0Message();
+    const { reference, signature } = referenceV0(message);
+
+    const subject = new VersionedTransaction(message);
+    subject.sign([coSigner]);
+
+    const { provider, sendMessage } = createProvider();
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      method: 'signed',
+      result: { signature: bs58.encode(signature), publicKey: salmon.publicKey.toBase58() },
+    });
+
+    const signed = await provider.signTransaction(subject);
+
+    // The dApp gets back the very object it passed in, mutated in place.
+    expect(signed).toBe(subject);
+    expect(signed.serialize()).toEqual(reference.serialize());
+  });
+
+  it('writes into a legacy transaction byte-identically to web3.js signing', async () => {
+    const build = () =>
+      new Transaction({ feePayer: coSigner.publicKey, recentBlockhash: BLOCKHASH }).add(
+        ...transferInstructions(),
+      );
+
+    const reference = build();
+    reference.partialSign(coSigner);
+    reference.partialSign(salmon);
+    const signature = reference.signatures.find((entry) =>
+      entry.publicKey.equals(salmon.publicKey),
+    )!.signature!;
+
+    const subject = build();
+    subject.partialSign(coSigner);
+
+    const { provider, sendMessage } = createProvider();
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      method: 'signed',
+      result: { signature: bs58.encode(signature), publicKey: salmon.publicKey.toBase58() },
+    });
+
+    const signed = await provider.signTransaction(subject);
+
+    expect(signed).toBe(subject);
+    expect(signed.serialize()).toEqual(reference.serialize());
+  });
+
+  it('rejects a signature for a key the transaction does not require', async () => {
+    const subject = new VersionedTransaction(v0Message());
+    const stranger = testKeypair(8).publicKey.toBase58();
+
+    const { provider, sendMessage } = createProvider();
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      method: 'signed',
+      result: { signature: bs58.encode(new Uint8Array(64).fill(1)), publicKey: stranger },
+    });
+
+    await expect(provider.signTransaction(subject)).rejects.toThrow(
+      /does not require a signature/,
+    );
+  });
+
+  it('rejects a malformed signature length', async () => {
+    const subject = new VersionedTransaction(v0Message());
+
+    const { provider, sendMessage } = createProvider();
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      method: 'signed',
+      result: {
+        signature: bs58.encode(new Uint8Array(32).fill(1)),
+        publicKey: salmon.publicKey.toBase58(),
+      },
+    });
+
+    await expect(provider.signTransaction(subject)).rejects.toThrow('Invalid signature length');
+  });
+
+  it('signAllTransactions writes each signature into its own transaction', async () => {
+    const messages = [v0Message(), v0Message()];
+    const references = messages.map(referenceV0);
+    const subjects = messages.map((message) => {
+      const tx = new VersionedTransaction(message);
+      tx.sign([coSigner]);
+      return tx;
+    });
+
+    const { provider, sendMessage } = createProvider();
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      method: 'signed',
+      result: {
+        signatures: references.map(({ signature }) => bs58.encode(signature)),
+        publicKey: salmon.publicKey.toBase58(),
+      },
+    });
+
+    const signed = await provider.signAllTransactions(subjects);
+
+    expect(signed[0]).toBe(subjects[0]);
+    expect(signed[1]).toBe(subjects[1]);
+    expect(signed[0].serialize()).toEqual(references[0].reference.serialize());
+    expect(signed[1].serialize()).toEqual(references[1].reference.serialize());
+  });
+});
+
+describe('SolanaProvider request payloads', () => {
+  const address = testKeypair(2).publicKey.toBase58();
+
+  it('keeps the method names and param keys the extension side parses', async () => {
+    const { provider, sendMessage } = createProvider();
+    const captured = () => {
+      const call = sendMessage.mock.calls.at(-1)![0];
+      return { method: call.method, keys: Object.keys(call.params).sort() };
+    };
+
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      method: 'connected',
+      params: { publicKey: address },
+    });
+    await provider.connect();
+    expect(captured()).toEqual({ method: 'connect', keys: ['options'] });
+
+    sendMessage.mockResolvedValue({ jsonrpc: '2.0', id: '1', method: 'disconnected' });
+    await provider.disconnect();
+    expect(captured()).toEqual({ method: 'disconnect', keys: [] });
+
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      result: { signature: bs58.encode(new Uint8Array(64).fill(1)) },
+    });
+    await provider.signMessage(new Uint8Array([1, 2, 3]));
+    expect(captured()).toEqual({ method: 'sign', keys: ['data'] });
+
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      result: {
+        signedOffchainMessage: bs58.encode(new Uint8Array(8).fill(1)),
+        signature: bs58.encode(new Uint8Array(64).fill(1)),
+        signatureType: 'ed25519',
+      },
+    });
+    await provider.signOffchainMessage({
+      messageVersion: 1,
+      message: 'hello',
+      requiredSigners: [salmon.publicKey.toBytes()],
+    });
+    expect(captured()).toEqual({ method: 'signOffchain', keys: ['data', 'requiredSigners'] });
+
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      result: {
+        address,
+        signedMessage: bs58.encode(new Uint8Array(8).fill(1)),
+        signature: bs58.encode(new Uint8Array(64).fill(1)),
+        signatureType: 'ed25519',
+      },
+    });
+    await provider.signIn();
+    expect(captured()).toEqual({ method: 'signIn', keys: ['input'] });
+
+    const message = new TransactionMessage({
+      payerKey: coSigner.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: transferInstructions(),
+    }).compileToV0Message();
+    const wire = new VersionedTransaction(message).serialize();
+
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      result: { signature: 'sig' },
+    });
+    await provider.signAndSendTransactionBytes(wire);
+    expect(captured()).toEqual({
+      method: 'signAndSendTransaction',
+      keys: ['message', 'network', 'options', 'transaction'],
+    });
+
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      result: {
+        signature: bs58.encode(new Uint8Array(64).fill(1)),
+        publicKey: salmon.publicKey.toBase58(),
+      },
+    });
+    await provider.signTransactionBytes(wire);
+    expect(captured()).toEqual({ method: 'signTransaction', keys: ['message', 'network'] });
+
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      result: {
+        signatures: [bs58.encode(new Uint8Array(64).fill(1))],
+        publicKey: salmon.publicKey.toBase58(),
+      },
+    });
+    await provider.signAllTransactionsBytes([wire]);
+    expect(captured()).toEqual({ method: 'signAllTransactions', keys: ['messages', 'network'] });
+  });
+
+  it('exposes the connected address as the injected address object', async () => {
+    const { provider, sendMessage } = createProvider();
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      method: 'connected',
+      params: { publicKey: address },
+    });
+
+    const { publicKey } = await provider.connect();
+
+    expect(publicKey.toBase58()).toBe(address);
+    expect(publicKey.toBytes()).toEqual(testKeypair(2).publicKey.toBytes());
+    expect(provider.publicKey).toBe(publicKey);
+    expect(provider.isConnected).toBe(true);
+  });
+});
+
 describe('SolanaProvider bytes-native surface', () => {
   it('signTransactionBytes fills the wallet slot and leaves the message and co-signer slot untouched', async () => {
     const message = new TransactionMessage({
