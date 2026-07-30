@@ -64,7 +64,7 @@ export function SignInApprovalPage(): React.ReactElement {
 
     setLoading(true);
     try {
-      const payload = approveSolanaSignIn(solanaAccount, request.params?.input ?? {}, origin);
+      const payload = await approveSolanaSignIn(solanaAccount, request.params?.input ?? {}, origin);
       sendResponse({
         requestId,
         approved: true,

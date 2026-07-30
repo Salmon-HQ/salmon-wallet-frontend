@@ -13,7 +13,7 @@
  * the wallet to sign the constructed SIWS text wrapped in an OCMS v1 envelope
  * (see `./offchain-message.ts`) instead of signing the raw UTF-8 bytes.
  */
-import nacl from 'tweetnacl';
+import { signBytes } from '@solana/kit';
 import { address } from '@solana/addresses';
 import { signOffchainMessage } from './offchain-message';
 import type { SolanaAccount } from './SolanaAccount';
@@ -191,11 +191,11 @@ export interface SignedSignInMessage {
  * Refuses to sign on domain or address mismatch — the flags that
  * `prepareSignInMessage` surfaces for the approval UI are hard errors here.
  */
-export function signSiwsMessage(
+export async function signSiwsMessage(
   account: SolanaAccount,
   input: SolanaSignInInputFields,
   origin: string,
-): SignedSignInMessage {
+): Promise<SignedSignInMessage> {
   const walletAddress = account.getReceiveAddress();
   const prepared = prepareSignInMessage(input, origin, walletAddress);
 
@@ -214,7 +214,7 @@ export function signSiwsMessage(
     if (input.useOffchainMessage.messageVersion !== 1) {
       throw new Error('Unsupported off-chain message version');
     }
-    const { signature, buffer } = signOffchainMessage(account, messageBytes, [
+    const { signature, buffer } = await signOffchainMessage(account, messageBytes, [
       address(walletAddress),
     ]);
     return {
@@ -225,6 +225,6 @@ export function signSiwsMessage(
     };
   }
 
-  const signature = nacl.sign.detached(messageBytes, account.keyPair.secretKey);
+  const signature = await signBytes(account.signer.keyPair.privateKey, messageBytes);
   return { message: prepared.message, signedMessage: messageBytes, signature };
 }

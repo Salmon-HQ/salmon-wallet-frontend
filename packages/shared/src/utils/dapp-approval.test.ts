@@ -8,6 +8,7 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
+import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
 import type { Address } from '@solana/addresses';
 import { verifyOffchainMessage } from '../blockchain/solana';
 import {
@@ -28,6 +29,13 @@ vi.mock('../hooks/useAvailableNetworks', () => ({
 // TEST-ONLY deterministic keypairs. Seeds are constants so golden vectors are
 // reproducible; these keys hold no funds and must never be used outside tests.
 const testKeypair = (seed: number) => Keypair.fromSeed(new Uint8Array(32).fill(seed));
+
+// TEST-ONLY: the minimal shape the arbitrary-byte signing paths read off a
+// SolanaAccount.
+async function signingAccount(seed: Uint8Array = crypto.getRandomValues(new Uint8Array(32))) {
+  const signer = await createKeyPairSignerFromPrivateKeyBytes(seed, false);
+  return { signer, getReceiveAddress: () => signer.address as string };
+}
 
 describe('dapp approval utilities', () => {
   beforeEach(() => {
@@ -535,33 +543,28 @@ describe('isTransactionLookalike', () => {
 });
 
 describe('approveSolanaSignMessage', () => {
-  it('signs a normal text message and returns a signature that verifies', () => {
+  it('signs a normal text message and returns a signature that verifies', async () => {
     // Arrange
-    const salmon = Keypair.generate();
-    const account = {
-      keyPair: salmon,
-      getReceiveAddress: () => salmon.publicKey.toBase58(),
-    };
+    const account = await signingAccount();
     const text = 'Sign in to Salmon Wallet';
     const data = Array.from(new TextEncoder().encode(text));
 
     // Act
-    const result = approveSolanaSignMessage(account as never, data);
+    const result = await approveSolanaSignMessage(account as never, data);
 
     // Assert
-    expect(result.publicKey).toBe(salmon.publicKey.toBase58());
+    expect(result.publicKey).toBe(account.getReceiveAddress());
     expect(
       nacl.sign.detached.verify(
         Uint8Array.from(data),
         bs58.decode(result.signature),
-        salmon.publicKey.toBytes(),
+        bs58.decode(account.signer.address),
       ),
     ).toBe(true);
   });
 
-  it('throws TransactionLookalikeMessageError instead of signing transaction-lookalike bytes', () => {
+  it('throws TransactionLookalikeMessageError instead of signing transaction-lookalike bytes', async () => {
     // Arrange
-    const salmon = Keypair.generate();
     const payer = Keypair.generate();
     const recentBlockhash = Keypair.generate().publicKey.toBase58();
     const instruction = SystemProgram.transfer({
@@ -574,41 +577,48 @@ describe('approveSolanaSignMessage', () => {
       recentBlockhash,
       instructions: [instruction],
     }).compileToV0Message();
-    const account = {
-      keyPair: salmon,
-      getReceiveAddress: () => salmon.publicKey.toBase58(),
-    };
+    const account = await signingAccount();
     const data = Array.from(message.serialize());
 
     // Act & Assert
-    expect(() => approveSolanaSignMessage(account as never, data)).toThrow(
+    await expect(approveSolanaSignMessage(account as never, data)).rejects.toThrow(
       TransactionLookalikeMessageError,
     );
   });
 });
 
 describe('approveSolanaSignOffchainMessage', () => {
-  it('returns signedOffchainMessage/signature/signatureType and a signature that verifies against the account', () => {
+  it('returns signedOffchainMessage/signature/signatureType and a signature that verifies against the account', async () => {
     // Arrange
-    const salmon = Keypair.generate();
-    const account = { keyPair: salmon };
+    const account = await signingAccount();
     const text = 'Please confirm your login';
     const data = Array.from(new TextEncoder().encode(text));
 
     // Act
-    const result = approveSolanaSignOffchainMessage(account as never, data, [salmon.publicKey]);
+    const result = await approveSolanaSignOffchainMessage(account as never, data, [
+      account.signer.address,
+    ]);
 
     // Assert
     expect(result.signatureType).toBe('ed25519');
     expect(typeof result.signedOffchainMessage).toBe('string');
     expect(typeof result.signature).toBe('string');
-    expect(
+    await expect(
       verifyOffchainMessage(
         bs58.decode(result.signedOffchainMessage),
         bs58.decode(result.signature),
-        salmon.publicKey.toBase58() as Address,
+        account.signer.address as Address,
       ),
-    ).toBe(true);
+    ).resolves.toBe(true);
+  });
+
+  it('throws when a required signer is not a valid base58 address', async () => {
+    const account = await signingAccount();
+    const data = Array.from(new TextEncoder().encode('hello'));
+
+    await expect(
+      approveSolanaSignOffchainMessage(account as never, data, ['not-a-valid-address']),
+    ).rejects.toThrow();
   });
 });
 

@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { PublicKey } from '@solana/web3.js';
 import {
   DAppSignMessageApprovalView,
 } from '@salmon/ui';
@@ -73,12 +72,12 @@ export function DAppSignMessageApprovalPage({
       }
 
       const result = request.method === 'signOffchain'
-        ? approveSolanaSignOffchainMessage(
+        ? await approveSolanaSignOffchainMessage(
             account,
             data,
-            (request.params?.requiredSigners ?? []).map((address) => new PublicKey(address)),
+            request.params?.requiredSigners ?? [],
           )
-        : approveSolanaSignMessage(account, data);
+        : await approveSolanaSignMessage(account, data);
       sendToBackground({ result });
       onDismiss(true);
     } catch (error) {

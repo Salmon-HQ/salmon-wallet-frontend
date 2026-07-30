@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { PublicKey } from '@solana/web3.js';
 import {
   DAppSignMessageApprovalView,
 } from '@salmon/ui';
@@ -74,12 +73,12 @@ export function SignMessageApprovalPage(): React.ReactElement {
     try {
       const payload: DAppSignMessageApprovalPayload | DAppSignOffchainMessageApprovalPayload =
         request.method === 'signOffchain'
-          ? approveSolanaSignOffchainMessage(
+          ? await approveSolanaSignOffchainMessage(
               solanaAccount,
               data,
-              (request.params?.requiredSigners ?? []).map((address) => new PublicKey(address)),
+              request.params?.requiredSigners ?? [],
             )
-          : approveSolanaSignMessage(solanaAccount, data);
+          : await approveSolanaSignMessage(solanaAccount, data);
       sendResponse({
         requestId,
         approved: true,

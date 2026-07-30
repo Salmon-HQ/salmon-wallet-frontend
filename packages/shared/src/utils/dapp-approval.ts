@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer';
 import bs58 from 'bs58';
-import nacl from 'tweetnacl';
+import { signBytes } from '@solana/kit';
 import {
   Message,
   PublicKey,
@@ -8,7 +8,7 @@ import {
   VersionedMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { address, type Address } from '@solana/addresses';
+import { address } from '@solana/addresses';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 import {
   buildOffchainMessageV1,
@@ -202,15 +202,15 @@ export async function loadSolanaTransactionApprovalDetails(
   };
 }
 
-export function approveSolanaSignMessage(
+export async function approveSolanaSignMessage(
   account: SolanaAccount,
   data: number[],
-): DAppSignMessageApprovalPayload {
+): Promise<DAppSignMessageApprovalPayload> {
   const messageBytes = Uint8Array.from(data);
   if (isTransactionLookalike(messageBytes)) {
     throw new TransactionLookalikeMessageError();
   }
-  const signature = nacl.sign.detached(messageBytes, account.keyPair.secretKey);
+  const signature = await signBytes(account.signer.keyPair.privateKey, messageBytes);
 
   return {
     signature: bs58.encode(signature),
@@ -226,16 +226,18 @@ export function approveSolanaSignMessage(
  *
  * @param account - The signing account
  * @param data - Raw UTF-8-encoded message bytes, as received from a dApp
- * @param requiredSigners - Accounts required to sign this message, per the OCMS spec
+ * @param requiredSigners - Required signer addresses, base58-encoded. Validated
+ *   here by `address()`, which rejects anything that is not a well-formed
+ *   Solana address — same contract as `parseOffchainMessageForApproval`.
  */
-export function approveSolanaSignOffchainMessage(
+export async function approveSolanaSignOffchainMessage(
   account: SolanaAccount,
   data: number[],
-  requiredSigners: PublicKey[],
-): DAppSignOffchainMessageApprovalPayload {
+  requiredSigners: string[],
+): Promise<DAppSignOffchainMessageApprovalPayload> {
   const messageBytes = Uint8Array.from(data);
-  const signers = requiredSigners.map((signer): Address => signer.toBase58() as Address);
-  const { signature, buffer } = signOffchainMessage(account, messageBytes, signers);
+  const signers = requiredSigners.map((signer) => address(signer));
+  const { signature, buffer } = await signOffchainMessage(account, messageBytes, signers);
 
   return {
     signedOffchainMessage: bs58.encode(buffer),
@@ -277,12 +279,16 @@ export function parseOffchainMessageForApproval(
  * @param input - The dApp's `SolanaSignInInput`, as received over the bridge
  * @param origin - The REAL requesting origin (from the connection, never the dApp)
  */
-export function approveSolanaSignIn(
+export async function approveSolanaSignIn(
   account: SolanaAccount,
   input: SolanaSignInInputFields,
   origin: string,
-): DAppSignInApprovalPayload {
-  const { signedMessage, signature, signedMessageFormat } = signSiwsMessage(account, input, origin);
+): Promise<DAppSignInApprovalPayload> {
+  const { signedMessage, signature, signedMessageFormat } = await signSiwsMessage(
+    account,
+    input,
+    origin,
+  );
 
   return {
     address: account.getReceiveAddress(),

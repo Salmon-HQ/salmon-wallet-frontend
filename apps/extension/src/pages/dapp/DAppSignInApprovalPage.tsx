@@ -69,7 +69,7 @@ export function DAppSignInApprovalPage({
         throw new Error('Solana account not available');
       }
 
-      const result = approveSolanaSignIn(account, request.params?.input ?? {}, origin);
+      const result = await approveSolanaSignIn(account, request.params?.input ?? {}, origin);
       sendToBackground({ result });
       onDismiss(true);
     } catch (error) {

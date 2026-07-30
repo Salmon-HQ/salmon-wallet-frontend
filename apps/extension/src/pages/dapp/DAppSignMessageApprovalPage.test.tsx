@@ -170,8 +170,7 @@ describe('DAppSignMessageApprovalPage', () => {
     const [accountArg, dataArg, signersArg] = mockApproveSolanaSignOffchainMessage.mock.calls[0];
     expect(accountArg).toBe(baseProps.account);
     expect(dataArg).toEqual(messageBytes);
-    expect(signersArg).toHaveLength(1);
-    expect(signersArg[0].toBase58()).toBe(signer);
+    expect(signersArg).toEqual([signer]);
     expect(mockApproveSolanaSignMessage).not.toHaveBeenCalled();
     expect(sendMessage).toHaveBeenCalledWith({
       channel: 'salmon_extension_background_channel',

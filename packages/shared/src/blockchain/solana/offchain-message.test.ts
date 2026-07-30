@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import nacl from 'tweetnacl';
 import { Keypair, type PublicKey } from '@solana/web3.js';
+import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
 import type { Address } from '@solana/addresses';
 import {
   buildOffchainMessageV1,
@@ -25,92 +26,95 @@ const testKeypair = (seed: number) => Keypair.fromSeed(new Uint8Array(32).fill(s
 // Keypairs, so a typecast skips address()'s redundant validation.
 const addr = (publicKey: PublicKey): Address => publicKey.toBase58() as Address;
 
+// TEST-ONLY: the minimal shape signOffchainMessage reads off a SolanaAccount.
+async function testAccount(seed: Uint8Array = crypto.getRandomValues(new Uint8Array(32))) {
+  return { signer: await createKeyPairSignerFromPrivateKeyBytes(seed, false) };
+}
+
 describe('signOffchainMessage', () => {
-  it('signs a text message and verifies successfully in a round trip', () => {
+  it('signs a text message and verifies successfully in a round trip', async () => {
     // Arrange
-    const account = { keyPair: Keypair.generate() };
+    const account = await testAccount();
     const content = encode('Hello from Salmon Wallet');
 
     // Act
-    const { signature, buffer } = signOffchainMessage(account as never, content, [
-      addr(account.keyPair.publicKey),
+    const { signature, buffer } = await signOffchainMessage(account as never, content, [
+      account.signer.address,
     ]);
-    const isValid = verifyOffchainMessage(buffer, signature, addr(account.keyPair.publicKey));
+    const isValid = await verifyOffchainMessage(buffer, signature, account.signer.address);
 
     // Assert
     expect(isValid).toBe(true);
   });
 
-  it('produces a buffer that always starts with the fixed OCMS signing domain', () => {
+  it('produces a buffer that always starts with the fixed OCMS signing domain', async () => {
     // Arrange
-    const account = { keyPair: Keypair.generate() };
+    const account = await testAccount();
     const content = encode('Sign in to Salmon Wallet');
 
     // Act
-    const { buffer } = signOffchainMessage(account as never, content, [
-      addr(account.keyPair.publicKey),
+    const { buffer } = await signOffchainMessage(account as never, content, [
+      account.signer.address,
     ]);
 
     // Assert
     expect(buffer.slice(0, OCMS_SIGNING_DOMAIN.length)).toEqual(OCMS_SIGNING_DOMAIN);
   });
 
-  it('fails verification when the signature was produced by a different keypair', () => {
+  it('fails verification when the signature was produced by a different keypair', async () => {
     // Arrange
-    const account = { keyPair: Keypair.generate() };
+    const account = await testAccount();
     const impostor = Keypair.generate();
     const content = encode('Approve this action');
-    const { buffer } = signOffchainMessage(account as never, content, [
-      addr(account.keyPair.publicKey),
+    const { buffer } = await signOffchainMessage(account as never, content, [
+      account.signer.address,
     ]);
     const forgedSignature = nacl.sign.detached(buffer, impostor.secretKey);
 
     // Act
-    const isValid = verifyOffchainMessage(buffer, forgedSignature, addr(account.keyPair.publicKey));
+    const isValid = await verifyOffchainMessage(buffer, forgedSignature, account.signer.address);
 
     // Assert
     expect(isValid).toBe(false);
   });
 
-  it('rejects content that is not valid UTF-8', () => {
+  it('rejects content that is not valid UTF-8', async () => {
     // Arrange
-    const account = { keyPair: Keypair.generate() };
+    const account = await testAccount();
     const invalidUtf8 = new Uint8Array([0xff, 0xfe, 0xfd]);
 
     // Act & Assert
-    expect(() => buildOffchainMessageV1(invalidUtf8, [addr(account.keyPair.publicKey)])).toThrow();
+    expect(() => buildOffchainMessageV1(invalidUtf8, [account.signer.address])).toThrow();
   });
 
-  it('refuses to sign when the account is not among the required signers', () => {
+  it('refuses to sign when the account is not among the required signers', async () => {
     // Arrange
-    const account = { keyPair: Keypair.generate() };
+    const account = await testAccount();
     const other = Keypair.generate();
     const content = encode('Sign as someone else');
 
     // Act & Assert
-    expect(() => signOffchainMessage(account as never, content, [addr(other.publicKey)])).toThrow(
-      /not listed in the required signers/,
-    );
+    await expect(
+      signOffchainMessage(account as never, content, [addr(other.publicKey)]),
+    ).rejects.toThrow(/not listed in the required signers/);
   });
 });
 
 describe('parseOffchainMessageV1', () => {
-  it('decodes the original content and required signatories back out of the buffer', () => {
+  it('decodes the original content and required signatories back out of the buffer', async () => {
     // Arrange
-    const account = { keyPair: Keypair.generate() };
+    const account = await testAccount();
     const content = encode('Please confirm your login');
 
     // Act
-    const { buffer } = signOffchainMessage(account as never, content, [
-      addr(account.keyPair.publicKey),
+    const { buffer } = await signOffchainMessage(account as never, content, [
+      account.signer.address,
     ]);
     const parsed = parseOffchainMessageV1(buffer);
 
     // Assert
     expect(parsed.content).toBe('Please confirm your login');
-    expect(parsed.requiredSignatories).toEqual([
-      { address: account.keyPair.publicKey.toBase58() },
-    ]);
+    expect(parsed.requiredSignatories).toEqual([{ address: account.signer.address }]);
   });
 
   it('throws when the buffer is not a well-formed OCMS v1 message', () => {
