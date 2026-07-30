@@ -136,8 +136,8 @@ describe('dapp approval utilities', () => {
 
     const details = await loadSolanaTransactionApprovalDetails(
       {
-        getConnection: async () => ({
-          getFeeForMessage: async () => ({ value: 5000 }),
+        getRpc: () => ({
+          getFeeForMessage: () => ({ send: async () => ({ value: 5000n }) }),
         }),
       } as never,
       {
