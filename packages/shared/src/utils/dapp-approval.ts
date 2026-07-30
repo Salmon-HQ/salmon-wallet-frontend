@@ -1,9 +1,18 @@
 import { Buffer } from 'buffer';
 import bs58 from 'bs58';
-import { getBase64Decoder, getCompiledTransactionMessageDecoder, signBytes } from '@solana/kit';
+import {
+  getBase64Decoder,
+  getCompiledTransactionMessageDecoder,
+  getTransactionEncoder,
+  signBytes,
+} from '@solana/kit';
 import type {
+  Address,
   CompiledTransactionMessage,
   CompiledTransactionMessageWithLifetime,
+  ReadonlyUint8Array,
+  SignatureBytes,
+  TransactionMessageBytes,
   TransactionMessageBytesBase64,
 } from '@solana/kit';
 import { PublicKey, VersionedMessage, VersionedTransaction } from '@solana/web3.js';
@@ -57,6 +66,22 @@ function toWeb3Transaction(messageBytes: Uint8Array): {
 } {
   const message = VersionedMessage.deserialize(messageBytes);
   return { message, tx: new VersionedTransaction(message) };
+}
+
+/**
+ * Builds the signature map for a compiled message, with every required signer
+ * slot empty. Insertion order is the wire order — kit serializes
+ * `Object.values(signatures)` and never looks a signer up against the message —
+ * so the map is always built from the message's own signer order.
+ */
+function emptySignatureMap(
+  message: ParsedSolanaTransaction['message'],
+): Record<Address, SignatureBytes | null> {
+  const signatures: Record<Address, SignatureBytes | null> = {};
+  for (const signer of message.staticAccounts.slice(0, message.header.numSignerAccounts)) {
+    signatures[signer] = null;
+  }
+  return signatures;
 }
 
 function getVersionedSignerIndex(
@@ -387,10 +412,20 @@ export function serializeSignedTransactionFromApproval(
   publicKey: string,
   signature: string,
 ): Uint8Array {
-  const { message, tx } = toWeb3Transaction(bs58.decode(encodedMessage));
-  const signerIndex = getVersionedSignerIndex(message, new PublicKey(publicKey));
-  tx.signatures[signerIndex] = bs58.decode(signature);
-  return tx.serialize();
+  const { messageBytes, message } = buildTransactionFromEncodedMessage(encodedMessage);
+  const signatures = emptySignatureMap(message);
+
+  if (signatures[publicKey as Address] === undefined) {
+    throw new Error('Signer public key not found in transaction message');
+  }
+  signatures[publicKey as Address] = bs58.decode(signature) as SignatureBytes;
+
+  return new Uint8Array(
+    getTransactionEncoder().encode({
+      messageBytes: messageBytes as ReadonlyUint8Array as TransactionMessageBytes,
+      signatures,
+    }),
+  );
 }
 
 export function serializeSignedTransactionsFromApproval(
