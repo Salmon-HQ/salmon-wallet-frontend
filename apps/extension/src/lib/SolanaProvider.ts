@@ -1,6 +1,8 @@
 import EventEmitter from 'eventemitter3';
 import bs58 from 'bs58';
 import { PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
+import { getBase58Decoder, getTransactionDecoder, getTransactionEncoder } from '@solana/kit';
+import type { Address, SignatureBytes } from '@solana/kit';
 
 // ============================================================================
 // Type Definitions
@@ -382,6 +384,91 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
       }
       return tx;
     });
+  };
+
+  /**
+   * Signs a wire-format transaction without sending it. Bytes-native
+   * counterpart of {@link signTransaction}, used by the wallet-standard
+   * adapter, which only ever holds raw transaction bytes. Decodes the wire
+   * with the kit codecs, writes the returned signature into the wallet's own
+   * slot (every other slot, e.g. a co-signer's, is carried over untouched),
+   * and re-encodes.
+   * @param transaction - The wire-format transaction bytes to sign
+   * @param network - The network context for the transaction
+   * @returns The signed transaction, still in wire format
+   */
+  signTransactionBytes = async (transaction: Uint8Array, network?: Network): Promise<Uint8Array> => {
+    const decoded = getTransactionDecoder().decode(transaction);
+    const response = await this.sendRequest('signTransaction', {
+      message: getBase58Decoder().decode(decoded.messageBytes),
+      network,
+    });
+
+    const result = response.result as SignTransactionResult;
+    const signerAddress = result.publicKey as Address;
+    if (!(signerAddress in decoded.signatures)) {
+      throw new Error('Signer public key not found in transaction message');
+    }
+
+    const signatures = {
+      ...decoded.signatures,
+      [signerAddress]: bs58.decode(result.signature) as SignatureBytes,
+    };
+
+    return new Uint8Array(getTransactionEncoder().encode({ ...decoded, signatures }));
+  };
+
+  /**
+   * Signs multiple wire-format transactions without sending them. Bytes-native
+   * counterpart of {@link signAllTransactions}.
+   * @param transactions - The wire-format transactions to sign
+   * @param network - The network context for the transactions
+   * @returns The signed transactions, still in wire format
+   */
+  signAllTransactionsBytes = async (transactions: Uint8Array[], network?: Network): Promise<Uint8Array[]> => {
+    const decodedList = transactions.map((wire) => getTransactionDecoder().decode(wire));
+    const response = await this.sendRequest('signAllTransactions', {
+      messages: decodedList.map((decoded) => getBase58Decoder().decode(decoded.messageBytes)),
+      network,
+    });
+
+    const result = response.result as SignAllTransactionsResult;
+    const signerAddress = result.publicKey as Address;
+    const signatureBytes = result.signatures.map((s) => bs58.decode(s) as SignatureBytes);
+
+    return decodedList.map((decoded, index) => {
+      if (!(signerAddress in decoded.signatures)) {
+        throw new Error('Signer public key not found in transaction message');
+      }
+      const signatures = { ...decoded.signatures, [signerAddress]: signatureBytes[index] };
+      return new Uint8Array(getTransactionEncoder().encode({ ...decoded, signatures }));
+    });
+  };
+
+  /**
+   * Signs and sends a wire-format transaction. Bytes-native counterpart of
+   * {@link signAndSendTransaction} — forwards the input bytes verbatim as
+   * `transaction`, so any signatures the dApp already applied (co-signers)
+   * survive, exactly like the object-based path.
+   * @param transaction - The wire-format transaction bytes to sign and send
+   * @param network - The network to send the transaction to
+   * @param options - Send options
+   * @returns The transaction signature
+   */
+  signAndSendTransactionBytes = async (
+    transaction: Uint8Array,
+    network?: Network,
+    options?: SendOptions
+  ): Promise<SignAndSendTransactionResult> => {
+    const decoded = getTransactionDecoder().decode(transaction);
+    const response = await this.sendRequest('signAndSendTransaction', {
+      message: getBase58Decoder().decode(decoded.messageBytes),
+      transaction: bs58.encode(transaction),
+      network,
+      options,
+    });
+
+    return response.result as SignAndSendTransactionResult;
   };
 
   /**
