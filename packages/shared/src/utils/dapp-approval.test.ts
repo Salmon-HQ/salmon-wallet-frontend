@@ -64,7 +64,8 @@ describe('dapp approval utilities', () => {
     const encodedMessage = bs58.encode(tx.message.serialize());
 
     const account = {
-      keyPair: salmon,
+      // Same key as `salmon`, reached through kit: the web3.js keypair's seed.
+      signer: await createKeyPairSignerFromPrivateKeyBytes(salmon.secretKey.slice(0, 32), false),
       getReceiveAddress: () => salmon.publicKey.toBase58(),
     };
 
@@ -172,11 +173,20 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
     }),
   ];
 
-  const makeAccount = (connection: Record<string, unknown>) => ({
-    keyPair: salmon,
+  // The kit signer and the web3.js keypair are the same key: both come from seed 2.
+  const makeAccount = async (rpc: Record<string, unknown>) => ({
+    signer: await createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(2), false),
     getReceiveAddress: () => salmon.publicKey.toBase58(),
-    getConnection: async () => connection,
+    getRpc: () => rpc,
   });
+
+  const rpcSendTransaction = () => vi.fn().mockReturnValue({ send: async () => 'sig' });
+
+  /** The base64 wire transaction handed to the RPC, back as a web3.js object. */
+  const submittedTransaction = (sendTransaction: ReturnType<typeof vi.fn>) =>
+    VersionedTransaction.deserialize(
+      new Uint8Array(Buffer.from(sendTransaction.mock.calls[0][0] as string, 'base64')),
+    );
 
   it('preserves co-signer signatures when signing and sending a versioned transaction', async () => {
     const message = new TransactionMessage({
@@ -187,8 +197,8 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
     const partiallySigned = new VersionedTransaction(message);
     partiallySigned.sign([coSigner]);
 
-    const sendTransaction = vi.fn().mockResolvedValue('sig');
-    const account = makeAccount({ sendTransaction });
+    const sendTransaction = rpcSendTransaction();
+    const account = await makeAccount({ sendTransaction });
 
     await approveSolanaTransactionRequest(account as never, {
       id: 'req-1',
@@ -199,7 +209,7 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
       },
     });
 
-    const submitted = sendTransaction.mock.calls[0][0] as VersionedTransaction;
+    const submitted = submittedTransaction(sendTransaction);
     expect(submitted.signatures[0].some((byte) => byte !== 0)).toBe(true);
     expect(submitted.signatures[1].some((byte) => byte !== 0)).toBe(true);
   });
@@ -212,8 +222,8 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
     const encodedMessage = bs58.encode(partiallySigned.serializeMessage());
     partiallySigned.partialSign(coSigner);
 
-    const sendTransaction = vi.fn().mockResolvedValue('sig');
-    const account = makeAccount({ sendTransaction });
+    const sendTransaction = rpcSendTransaction();
+    const account = await makeAccount({ sendTransaction });
 
     await approveSolanaTransactionRequest(account as never, {
       id: 'req-2',
@@ -226,7 +236,7 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
       },
     });
 
-    const submitted = sendTransaction.mock.calls[0][0] as VersionedTransaction;
+    const submitted = submittedTransaction(sendTransaction);
     expect(submitted.message.version).toBe('legacy');
     // Re-serializing must yield a legacy transaction whose signature slots are both
     // filled, which is what Transaction.from requires to reconstruct it.
@@ -242,8 +252,8 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
       instructions: transferInstructions(),
     }).compileToV0Message();
 
-    const sendTransaction = vi.fn().mockResolvedValue('sig');
-    const account = makeAccount({ sendTransaction });
+    const sendTransaction = rpcSendTransaction();
+    const account = await makeAccount({ sendTransaction });
 
     const result = await approveSolanaTransactionRequest(account as never, {
       id: 'req-3',
@@ -252,7 +262,7 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
     });
 
     expect(result).toEqual({ signature: 'sig' });
-    const submitted = sendTransaction.mock.calls[0][0] as VersionedTransaction;
+    const submitted = submittedTransaction(sendTransaction);
     expect(submitted.signatures[0].every((byte) => byte === 0)).toBe(true);
     expect(submitted.signatures[1].some((byte) => byte !== 0)).toBe(true);
   });
@@ -287,8 +297,8 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
     const maliciousTransaction = new VersionedTransaction(malicious);
     maliciousTransaction.sign([coSigner]);
 
-    const sendTransaction = vi.fn().mockResolvedValue('sig');
-    const account = makeAccount({ sendTransaction });
+    const sendTransaction = rpcSendTransaction();
+    const account = await makeAccount({ sendTransaction });
 
     await expect(
       approveSolanaTransactionRequest(account as never, {
@@ -319,8 +329,8 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
     }).add(...transferInstructions());
     legacyTransaction.partialSign(coSigner);
 
-    const sendTransaction = vi.fn().mockResolvedValue('sig');
-    const account = makeAccount({ sendTransaction });
+    const sendTransaction = rpcSendTransaction();
+    const account = await makeAccount({ sendTransaction });
 
     await expect(
       approveSolanaTransactionRequest(account as never, {

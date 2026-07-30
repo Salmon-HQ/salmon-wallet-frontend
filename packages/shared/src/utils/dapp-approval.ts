@@ -1,21 +1,25 @@
-import { Buffer } from 'buffer';
 import bs58 from 'bs58';
 import {
+  getBase58Decoder,
   getBase64Decoder,
+  getBase64EncodedWireTransaction,
   getCompiledTransactionMessageDecoder,
+  getTransactionDecoder,
   getTransactionEncoder,
+  partiallySignTransaction,
   signBytes,
 } from '@solana/kit';
 import type {
   Address,
+  Commitment,
   CompiledTransactionMessage,
   CompiledTransactionMessageWithLifetime,
   ReadonlyUint8Array,
   SignatureBytes,
+  Slot,
   TransactionMessageBytes,
   TransactionMessageBytesBase64,
 } from '@solana/kit';
-import { PublicKey, VersionedMessage, VersionedTransaction } from '@solana/web3.js';
 import { address } from '@solana/addresses';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 import {
@@ -55,20 +59,6 @@ export interface SolanaTransactionApprovalDetails {
 }
 
 /**
- * Rebuilds the web3.js transaction object the signing branches still consume.
- * Both wire formats travel through `VersionedTransaction`, which is exactly what
- * the live path already did. Temporary: removed once those branches sign and
- * serialize through the kit encoders.
- */
-function toWeb3Transaction(messageBytes: Uint8Array): {
-  message: VersionedMessage;
-  tx: VersionedTransaction;
-} {
-  const message = VersionedMessage.deserialize(messageBytes);
-  return { message, tx: new VersionedTransaction(message) };
-}
-
-/**
  * Builds the signature map for a compiled message, with every required signer
  * slot empty. Insertion order is the wire order — kit serializes
  * `Object.values(signatures)` and never looks a signer up against the message —
@@ -84,19 +74,35 @@ function emptySignatureMap(
   return signatures;
 }
 
-function getVersionedSignerIndex(
-  message: VersionedMessage,
-  publicKey: PublicKey,
-): number {
-  const signerIndex = message.staticAccountKeys
-    .slice(0, message.header.numRequiredSignatures)
-    .findIndex((accountKey) => accountKey.equals(publicKey));
+/** Signs an approved compiled message, leaving every other signer slot empty. */
+function signApprovedMessage(account: SolanaAccount, encodedMessage: string) {
+  const { messageBytes, message } = buildTransactionFromEncodedMessage(encodedMessage);
+  return partiallySignTransaction([account.signer.keyPair], {
+    messageBytes: messageBytes as ReadonlyUint8Array as TransactionMessageBytes,
+    signatures: emptySignatureMap(message),
+  });
+}
 
-  if (signerIndex === -1) {
-    throw new Error('Signer public key not found in transaction message');
-  }
+const SEND_COMMITMENTS: readonly Commitment[] = ['processed', 'confirmed', 'finalized'];
 
-  return signerIndex;
+/**
+ * Narrows the dApp-supplied `options` to the send parameters the wallet is
+ * willing to honour. The object is untrusted JSON off the bridge, so unknown
+ * keys are dropped instead of reaching the RPC node.
+ */
+function toSendConfig(options: Record<string, unknown> | undefined) {
+  const { skipPreflight, preflightCommitment, maxRetries, minContextSlot } = options ?? {};
+  return {
+    encoding: 'base64' as const,
+    ...(typeof skipPreflight === 'boolean' ? { skipPreflight } : {}),
+    ...(SEND_COMMITMENTS.includes(preflightCommitment as Commitment)
+      ? { preflightCommitment: preflightCommitment as Commitment }
+      : {}),
+    ...(Number.isInteger(maxRetries) ? { maxRetries: BigInt(maxRetries as number) } : {}),
+    ...(Number.isInteger(minContextSlot)
+      ? { minContextSlot: BigInt(minContextSlot as number) as Slot }
+      : {}),
+  };
 }
 
 function toHex(bytes: Uint8Array): string {
@@ -333,11 +339,9 @@ export async function approveSolanaTransactionRequest(
   if (request.method === 'signTransaction') {
     const encodedMessage = request.params?.message ?? '';
     if (!encodedMessage) throw new Error('Missing message');
-    const { message, tx } = toWeb3Transaction(bs58.decode(encodedMessage));
 
-    tx.sign([account.keyPair]);
-    const signerIndex = getVersionedSignerIndex(message, account.keyPair.publicKey);
-    const signature = tx.signatures[signerIndex];
+    const signed = await signApprovedMessage(account, encodedMessage);
+    const signature = signed.signatures[account.signer.address];
     if (!signature) throw new Error('Failed to sign transaction');
     return {
       signature: bs58.encode(signature),
@@ -349,17 +353,16 @@ export async function approveSolanaTransactionRequest(
     const encodedMessages = request.params?.messages ?? [];
     if (!encodedMessages.length) throw new Error('Missing messages');
 
-    const signatures = encodedMessages.map((encodedMessage) => {
-      const { message, tx } = toWeb3Transaction(bs58.decode(encodedMessage));
-
-      tx.sign([account.keyPair]);
-      const signerIndex = getVersionedSignerIndex(message, account.keyPair.publicKey);
-      const signature = tx.signatures[signerIndex];
-      if (!signature) {
-        throw new Error('Failed to sign one of the transactions');
-      }
-      return bs58.encode(signature);
-    });
+    const signatures = await Promise.all(
+      encodedMessages.map(async (encodedMessage) => {
+        const signed = await signApprovedMessage(account, encodedMessage);
+        const signature = signed.signatures[account.signer.address];
+        if (!signature) {
+          throw new Error('Failed to sign one of the transactions');
+        }
+        return bs58.encode(signature);
+      }),
+    );
 
     return {
       signatures,
@@ -371,39 +374,40 @@ export async function approveSolanaTransactionRequest(
   if (!encodedMessage) throw new Error('Missing message');
 
   await fetchAndMergeNetworkConfigs();
-  const connection = await account.getConnection();
-  const options = request.params?.options as Record<string, unknown> | undefined;
+  const rpc = account.getRpc();
+  const sendConfig = toSendConfig(request.params?.options as Record<string, unknown> | undefined);
 
-  // Rebuilding from the full transaction preserves signatures the dApp already
+  // Signing the transaction the dApp sent preserves signatures it already
   // applied; rebuilding from the message alone silently drops them, producing a
-  // transaction the cluster rejects. `VersionedTransaction` handles both the
-  // versioned and legacy wire formats and re-serializes each unchanged.
+  // transaction the cluster rejects. The decoder reads both wire formats and
+  // `partiallySignTransaction` only ever fills this wallet's own slot.
   const encodedTransaction = request.params?.transaction;
   if (encodedTransaction) {
-    const fullTransaction = VersionedTransaction.deserialize(bs58.decode(encodedTransaction));
+    const decoded = getTransactionDecoder().decode(bs58.decode(encodedTransaction));
 
     // WYSIWYS: the approval screen previews `message`, but this branch signs and
     // broadcasts `transaction`. Without this check a page could preview benign
     // bytes and have entirely different ones signed, so the two must agree
-    // exactly before the key is ever used.
-    const previewedMessage = Buffer.from(bs58.decode(encodedMessage));
-    const signedMessage = Buffer.from(fullTransaction.message.serialize());
-    if (!signedMessage.equals(previewedMessage)) {
+    // exactly before the key is ever used. The comparison is against the raw
+    // message slice carried by the transaction, never a re-serialization of it.
+    if (getBase58Decoder().decode(decoded.messageBytes) !== encodedMessage) {
       throw new Error(
         'Transaction does not match the approved message. The app sent transaction ' +
           'bytes that differ from the transaction shown for approval, so it was not signed.',
       );
     }
 
-    fullTransaction.sign([account.keyPair]);
-    const signature = await connection.sendTransaction(fullTransaction, options as never);
+    const signed = await partiallySignTransaction([account.signer.keyPair], decoded);
+    const signature = await rpc
+      .sendTransaction(getBase64EncodedWireTransaction(signed), sendConfig)
+      .send();
     return { signature };
   }
 
-  const { tx } = toWeb3Transaction(bs58.decode(encodedMessage));
-
-  tx.sign([account.keyPair]);
-  const signature = await connection.sendTransaction(tx, options as never);
+  const signed = await signApprovedMessage(account, encodedMessage);
+  const signature = await rpc
+    .sendTransaction(getBase64EncodedWireTransaction(signed), sendConfig)
+    .send();
   return { signature };
 }
 
