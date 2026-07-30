@@ -11,6 +11,7 @@
  * Order of operations:
  * 1. Polyfill Buffer globally
  * 2. Polyfill crypto.getRandomValues()
+ * 2.1 Polyfill crypto.subtle Ed25519 (+ digest)
  * 3. Polyfill process.env
  * 4. Initialize Storage & Stash (required for useAccounts hook)
  * 5. Load expo-router (which loads the app)
@@ -61,6 +62,32 @@ if (typeof crypto === 'undefined') {
 // Also import react-native-get-random-values as a backup
 // This is a more complete polyfill that some libraries prefer
 require('react-native-get-random-values');
+
+// =============================================================================
+// 2.1 Ed25519 Web Crypto Polyfill - Required by @solana/kit signers
+// =============================================================================
+// Hermes has no crypto.subtle at all. @solana/kit derives and signs through
+// WebCrypto Ed25519, so both pieces have to exist before any shared code runs:
+//
+//   - digest: @solana/webcrypto-ed25519-polyfill signs via @noble/ed25519,
+//     whose sha512Async calls crypto.subtle.digest('SHA-512', ...). The
+//     polyfill does not install digest, so without this shim every signature
+//     throws "s.digest is not a function". expo-crypto's native digest takes
+//     the same algorithm strings as WebCrypto.
+//   - install(): adds generateKey/sign/verify/importKey/exportKey for Ed25519.
+//     It is a no-op on runtimes with native Ed25519 (it probes once and hands
+//     back the native implementation), so it is safe to call unconditionally.
+//
+// Note this leaves crypto.subtle without deriveBits. The PBKDF2 paths in
+// @salmon/shared probe for subtle.deriveBits specifically, not for subtle.
+const expoCrypto = require('expo-crypto');
+if (!globalThis.crypto.subtle) {
+  globalThis.crypto.subtle = {
+    digest: (algorithm, data) =>
+      expoCrypto.digest(typeof algorithm === 'string' ? algorithm : algorithm.name, data),
+  };
+}
+require('@solana/webcrypto-ed25519-polyfill').install();
 
 // =============================================================================
 // 3. Process Polyfill - Some libraries expect process.env
