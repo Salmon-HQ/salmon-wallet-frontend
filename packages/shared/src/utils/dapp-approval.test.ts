@@ -248,6 +248,87 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
     expect(submitted.signatures[0].every((byte) => byte === 0)).toBe(true);
     expect(submitted.signatures[1].some((byte) => byte !== 0)).toBe(true);
   });
+
+  // The approval screen previews `message` while this path signs `transaction`.
+  // If the two are allowed to differ, a page can show a harmless transaction and
+  // have a completely different one signed and broadcast.
+  it('refuses to sign when the transaction does not match the previewed message', async () => {
+    const previewed = new TransactionMessage({
+      payerKey: coSigner.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: transferInstructions(),
+    }).compileToV0Message();
+
+    // Same shape, but drains 1_000_000 lamports instead of 2.
+    const malicious = new TransactionMessage({
+      payerKey: coSigner.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: [
+        SystemProgram.transfer({
+          fromPubkey: coSigner.publicKey,
+          toPubkey: testKeypair(3).publicKey,
+          lamports: 1,
+        }),
+        SystemProgram.transfer({
+          fromPubkey: salmon.publicKey,
+          toPubkey: testKeypair(3).publicKey,
+          lamports: 1_000_000,
+        }),
+      ],
+    }).compileToV0Message();
+    const maliciousTransaction = new VersionedTransaction(malicious);
+    maliciousTransaction.sign([coSigner]);
+
+    const sendTransaction = vi.fn().mockResolvedValue('sig');
+    const account = makeAccount({ sendTransaction });
+
+    await expect(
+      approveSolanaTransactionRequest(account as never, {
+        id: 'req-4',
+        method: 'signAndSendTransaction',
+        params: {
+          message: bs58.encode(previewed.serialize()),
+          transaction: bs58.encode(maliciousTransaction.serialize()),
+        },
+      }),
+    ).rejects.toThrow(/does not match the approved message/);
+
+    expect(sendTransaction).not.toHaveBeenCalled();
+    // The wallet's slot must still be empty: nothing was signed.
+    expect(maliciousTransaction.signatures[1].every((byte) => byte === 0)).toBe(true);
+  });
+
+  it('refuses to sign when the transaction is legacy but the previewed message is not', async () => {
+    const previewed = new TransactionMessage({
+      payerKey: coSigner.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: transferInstructions(),
+    }).compileToV0Message();
+
+    const legacyTransaction = new Transaction({
+      feePayer: coSigner.publicKey,
+      recentBlockhash: BLOCKHASH,
+    }).add(...transferInstructions());
+    legacyTransaction.partialSign(coSigner);
+
+    const sendTransaction = vi.fn().mockResolvedValue('sig');
+    const account = makeAccount({ sendTransaction });
+
+    await expect(
+      approveSolanaTransactionRequest(account as never, {
+        id: 'req-5',
+        method: 'signAndSendTransaction',
+        params: {
+          message: bs58.encode(previewed.serialize()),
+          transaction: bs58.encode(
+            legacyTransaction.serialize({ requireAllSignatures: false, verifySignatures: false }),
+          ),
+        },
+      }),
+    ).rejects.toThrow(/does not match the approved message/);
+
+    expect(sendTransaction).not.toHaveBeenCalled();
+  });
 });
 
 /**

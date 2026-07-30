@@ -369,6 +369,20 @@ export async function approveSolanaTransactionRequest(
   const encodedTransaction = request.params?.transaction;
   if (encodedTransaction) {
     const fullTransaction = VersionedTransaction.deserialize(bs58.decode(encodedTransaction));
+
+    // WYSIWYS: the approval screen previews `message`, but this branch signs and
+    // broadcasts `transaction`. Without this check a page could preview benign
+    // bytes and have entirely different ones signed, so the two must agree
+    // exactly before the key is ever used.
+    const previewedMessage = Buffer.from(bs58.decode(encodedMessage));
+    const signedMessage = Buffer.from(fullTransaction.message.serialize());
+    if (!signedMessage.equals(previewedMessage)) {
+      throw new Error(
+        'Transaction does not match the approved message. The app sent transaction ' +
+          'bytes that differ from the transaction shown for approval, so it was not signed.',
+      );
+    }
+
     fullTransaction.sign([account.keyPair]);
     const signature = await connection.sendTransaction(fullTransaction, options as never);
     return { signature };
