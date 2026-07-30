@@ -81,6 +81,9 @@ export async function fetchAndMergeNetworkConfigs(): Promise<boolean> {
         if ('nodeUrl' in cfg && cfg.nodeUrl) {
           SOLANA_NETWORKS[id].config.nodeUrl = cfg.nodeUrl as string;
         }
+        if ('wsUrl' in cfg && cfg.wsUrl) {
+          SOLANA_NETWORKS[id].config.wsUrl = cfg.wsUrl as string;
+        }
       } else if (chain === 'ethereum' && ETHEREUM_NETWORKS[id]) {
         if ('rpcUrl' in cfg && cfg.rpcUrl) {
           ETHEREUM_NETWORKS[id].config.rpcUrl = cfg.rpcUrl as string;
