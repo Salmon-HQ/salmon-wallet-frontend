@@ -1,6 +1,5 @@
 import {
   Connection,
-  Keypair,
   PublicKey,
   Commitment,
   Message,
@@ -120,16 +119,11 @@ export class SolanaAccount {
   /** Kit signer, used for off-chain message signing */
   readonly signer: KeyPairSigner;
 
-  /**
-   * Legacy web3.js keypair, derived from the same seed as `signer` and
-   * therefore the same key by construction. Its last remaining consumer is
-   * `utils/dapp-approval.ts`'s transaction branches; the transfer, swap and
-   * prepared-transaction paths all sign through `signer` now.
-   */
-  readonly keyPair: Keypair;
-
-  /** Public key derived from keypair */
+  /** Public key derived from the signer's address */
   readonly publicKey: PublicKey;
+
+  /** 32-byte ed25519 seed — the only recoverable form of the private key */
+  private readonly seed: Uint8Array;
 
   /** Cached connection instance (lazy initialized) */
   private connection: Connection | null = null;
@@ -162,8 +156,8 @@ export class SolanaAccount {
     this.index = options.index;
     this.path = options.path;
     this.signer = options.keyPair.signer;
-    this.keyPair = Keypair.fromSeed(options.keyPair.seed);
-    this.publicKey = this.keyPair.publicKey;
+    this.seed = options.keyPair.seed;
+    this.publicKey = new PublicKey(options.keyPair.signer.address);
     this.fetchBalanceFn = options.fetchBalance;
     this.fetchTransactionFn = options.fetchTransaction;
     this.fetchTransactionsFn = options.fetchTransactions;
@@ -177,7 +171,12 @@ export class SolanaAccount {
    * @returns Base58-encoded secret key
    */
   retrieveSecurePrivateKey(): string {
-    return bs58.encode(this.keyPair.secretKey);
+    // An ed25519 secret key in its 64-byte form is the seed followed by the
+    // public key — the same bytes the legacy web3.js keypair exposed.
+    const secretKey = new Uint8Array(64);
+    secretKey.set(this.seed);
+    secretKey.set(this.publicKey.toBytes(), 32);
+    return bs58.encode(secretKey);
   }
 
   /**
