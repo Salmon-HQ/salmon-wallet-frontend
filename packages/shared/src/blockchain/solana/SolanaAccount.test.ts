@@ -9,7 +9,6 @@ vi.mock('@solana/web3.js', async () => {
     nodeUrl: string;
     commitment: string;
     getBalance = vi.fn();
-    getFeeForMessage = vi.fn();
 
     constructor(nodeUrl: string, commitment: string) {
       this.nodeUrl = nodeUrl;
@@ -101,19 +100,12 @@ describe('SolanaAccount', () => {
     network.config.nodeUrl = originalNodeUrl;
   });
 
-  it('delegates getCredit and estimateTransactionsFee to the underlying connection', async () => {
+  it('delegates getCredit to the underlying connection', async () => {
     const account = await createAccount();
     const connection = await account.getConnection();
     (connection.getBalance as any).mockResolvedValue(1234);
-    (connection.getFeeForMessage as any)
-      .mockResolvedValueOnce({ value: 5000 })
-      .mockResolvedValueOnce({ value: null })
-      .mockResolvedValueOnce({ value: 2500 });
 
     await expect(account.getCredit()).resolves.toBe(1234);
-    await expect(account.estimateTransactionsFee([{} as any, {} as any, {} as any])).resolves.toBe(
-      7500
-    );
   });
 
   it('wraps domain helper methods with the account connection', async () => {

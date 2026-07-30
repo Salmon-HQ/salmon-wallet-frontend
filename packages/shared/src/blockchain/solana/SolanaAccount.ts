@@ -1,9 +1,4 @@
-import {
-  Connection,
-  PublicKey,
-  Commitment,
-  Message,
-} from '@solana/web3.js';
+import { Connection, PublicKey, Commitment } from '@solana/web3.js';
 import { address, createSolanaRpc, createSolanaRpcSubscriptions } from '@solana/kit';
 import type { KeyPairSigner } from '@solana/kit';
 import bs58 from 'bs58';
@@ -504,27 +499,6 @@ export class SolanaAccount {
    */
   async calculateTransferFee(mint: string, amount: number): Promise<bigint | null> {
     return calcTransferFee(this.getRpc(), mint, amount);
-  }
-
-  /**
-   * Estimates the total fee for an array of transaction messages.
-   *
-   * @param messages - Array of transaction messages to estimate
-   * @param commitment - Commitment level for fee estimation
-   * @returns Total estimated fee in lamports
-   */
-  async estimateTransactionsFee(
-    messages: Message[],
-    commitment: Commitment = 'confirmed'
-  ): Promise<number> {
-    const connection = await this.getConnection();
-    const feePromises = messages.map((message) =>
-      connection.getFeeForMessage(message, commitment)
-    );
-    const results = await Promise.all(feePromises);
-    return results
-      .map(({ value }) => value ?? 0)
-      .reduce((sum, fee) => sum + fee, 0);
   }
 
   // ==========================================================================
