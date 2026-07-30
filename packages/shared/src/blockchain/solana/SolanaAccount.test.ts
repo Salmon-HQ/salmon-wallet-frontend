@@ -75,6 +75,27 @@ describe('SolanaAccount', () => {
     SOLANA_NETWORKS['solana-mainnet'].config.nodeUrl = originalNodeUrl;
   });
 
+  it('caches the kit rpc client per node url and derives the subscriptions endpoint', async () => {
+    const account = await createAccount();
+    const network = SOLANA_NETWORKS['solana-mainnet'];
+    const originalNodeUrl = network.config.nodeUrl;
+
+    const rpc = account.getRpc();
+    const derived = account.getRpcSubscriptions();
+    expect(account.getRpc()).toBe(rpc);
+    expect(account.getRpcSubscriptions()).toBe(derived);
+
+    network.config.nodeUrl = 'https://new-rpc.example';
+    expect(account.getRpc()).not.toBe(rpc);
+
+    // An explicit wsUrl from the backend wins over the derivation.
+    network.config.wsUrl = 'wss://explicit.example';
+    expect(account.getRpcSubscriptions()).not.toBe(derived);
+
+    delete network.config.wsUrl;
+    network.config.nodeUrl = originalNodeUrl;
+  });
+
   it('delegates getCredit and estimateTransactionsFee to the underlying connection', async () => {
     const account = await createAccount();
     const connection = await account.getConnection();

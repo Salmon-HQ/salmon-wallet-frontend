@@ -5,9 +5,15 @@ import {
   Commitment,
   Message,
 } from '@solana/web3.js';
+import { createSolanaRpc, createSolanaRpcSubscriptions } from '@solana/kit';
 import type { KeyPairSigner } from '@solana/kit';
 import bs58 from 'bs58';
-import { SOLANA_NETWORKS } from './networks';
+import {
+  SOLANA_NETWORKS,
+  deriveSolanaWsUrl,
+  type SolanaRpc,
+  type SolanaRpcSubscriptions,
+} from './networks';
 import {
   requiresMemo as checkRequiresMemo,
   calculateTransferFee as calcTransferFee,
@@ -129,6 +135,14 @@ export class SolanaAccount {
   private connection: Connection | null = null;
   /** The nodeUrl used to create the current connection (for comparison) */
   private connectionNodeUrl: string | null = null;
+  /** Cached kit RPC client (lazy initialized) */
+  private rpc: SolanaRpc | null = null;
+  /** The nodeUrl used to create the current kit RPC client */
+  private rpcNodeUrl: string | null = null;
+  /** Cached kit RPC subscriptions client (lazy initialized) */
+  private rpcSubscriptions: SolanaRpcSubscriptions | null = null;
+  /** The wsUrl used to create the current kit subscriptions client */
+  private rpcWsUrl: string | null = null;
   /** Injected function to fetch token balances */
   private fetchBalanceFn: FetchSolanaBalanceFn;
   /** Injected function to fetch a single transaction */
@@ -184,16 +198,60 @@ export class SolanaAccount {
    */
   async getConnection(): Promise<Connection> {
     // Always get the latest network config from SOLANA_NETWORKS in case it was updated
-    const latestNetwork = SOLANA_NETWORKS[this.network.id];
-    const nodeUrl = latestNetwork?.config?.nodeUrl || this.network.config.nodeUrl;
-    const commitment = latestNetwork?.config?.commitment || this.network.config.commitment || 'confirmed';
-    
+    const { nodeUrl, commitment } = this.getLatestConfig();
+
     // Recreate connection if nodeUrl changed or if connection doesn't exist
     if (!this.connection || this.connectionNodeUrl !== nodeUrl) {
       this.connection = new Connection(nodeUrl, commitment);
       this.connectionNodeUrl = nodeUrl;
     }
     return this.connection;
+  }
+
+  /**
+   * Resolves the effective network config, preferring the global
+   * SOLANA_NETWORKS entry (which fetchAndMergeNetworkConfigs updates at
+   * runtime) over the snapshot this account was constructed with.
+   */
+  private getLatestConfig(): { nodeUrl: string; wsUrl?: string; commitment: Commitment } {
+    const latest = SOLANA_NETWORKS[this.network.id]?.config;
+    return {
+      nodeUrl: latest?.nodeUrl || this.network.config.nodeUrl,
+      wsUrl: latest?.wsUrl || this.network.config.wsUrl,
+      commitment: latest?.commitment || this.network.config.commitment || 'confirmed',
+    };
+  }
+
+  /**
+   * Gets or creates the kit RPC client for this network.
+   *
+   * Sync, unlike `getConnection()`: `createSolanaRpc` performs no I/O. The
+   * cache is keyed on nodeUrl for the same reason the connection cache is —
+   * the backend catalog can change it after the account was constructed.
+   */
+  getRpc(): SolanaRpc {
+    const { nodeUrl } = this.getLatestConfig();
+    if (!this.rpc || this.rpcNodeUrl !== nodeUrl) {
+      this.rpc = createSolanaRpc(nodeUrl);
+      this.rpcNodeUrl = nodeUrl;
+    }
+    return this.rpc;
+  }
+
+  /**
+   * Gets or creates the kit RPC subscriptions client for this network.
+   *
+   * Uses the configured `wsUrl` when the backend supplies one, otherwise the
+   * endpoint derived from the RPC URL.
+   */
+  getRpcSubscriptions(): SolanaRpcSubscriptions {
+    const { nodeUrl, wsUrl } = this.getLatestConfig();
+    const endpoint = wsUrl || deriveSolanaWsUrl(nodeUrl);
+    if (!this.rpcSubscriptions || this.rpcWsUrl !== endpoint) {
+      this.rpcSubscriptions = createSolanaRpcSubscriptions(endpoint);
+      this.rpcWsUrl = endpoint;
+    }
+    return this.rpcSubscriptions;
   }
 
   /**
