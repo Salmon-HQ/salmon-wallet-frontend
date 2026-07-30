@@ -12,6 +12,7 @@
  * 1. Polyfill Buffer globally
  * 2. Polyfill crypto.getRandomValues()
  * 2.1 Polyfill crypto.subtle Ed25519 (+ digest)
+ * 2.2 Fill the gaps in React Native's AbortSignal polyfill
  * 3. Polyfill process.env
  * 4. Initialize Storage & Stash (required for useAccounts hook)
  * 5. Load expo-router (which loads the app)
@@ -88,6 +89,24 @@ if (!globalThis.crypto.subtle) {
   };
 }
 require('@solana/webcrypto-ed25519-polyfill').install();
+
+// =============================================================================
+// 2.2 AbortSignal Gap Fill - Required by @solana/kit RPC subscriptions
+// =============================================================================
+// React Native's setUpXHR.js unconditionally replaces global.AbortSignal with
+// abort-controller@3.0.0, which predates most of the current spec. Verified on
+// RN 0.83.6: AbortSignal.timeout, AbortSignal.abort, AbortSignal.any and
+// signal.throwIfAborted are all undefined, and signals carry no `reason`.
+//
+// @solana/kit's subscription machinery uses every one of those, so signature
+// confirmation for swaps and NFT burns throws "AbortSignal.timeout is not a
+// function" on mobile without this. Each patch is feature-detected, so this is
+// a no-op the moment React Native ships a compliant polyfill.
+//
+// The gap fill itself lives in src/polyfills/abort-signal.js so it can be unit
+// tested; it is feature-detected and becomes a no-op once React Native ships a
+// compliant polyfill.
+require('./src/polyfills/abort-signal').installAbortSignalGapFill();
 
 // =============================================================================
 // 3. Process Polyfill - Some libraries expect process.env
