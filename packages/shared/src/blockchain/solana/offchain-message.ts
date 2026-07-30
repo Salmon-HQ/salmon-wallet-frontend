@@ -17,7 +17,7 @@
  * expect a full `CryptoKeyPair`. The account only carries a signer whose private
  * key is non-extractable, which is all `signBytes` needs.
  */
-import { signBytes, verifySignature, type SignatureBytes } from '@solana/kit';
+import { isSignatureBytes, signBytes, verifySignature } from '@solana/kit';
 import { getAddressEncoder, type Address } from '@solana/addresses';
 import {
   compileOffchainMessageV1Envelope,
@@ -102,6 +102,14 @@ export async function verifyOffchainMessage(
   signature: Uint8Array,
   signer: Address,
 ): Promise<boolean> {
+  // `signature` is untrusted: it arrives from a dApp or from storage. Narrow it
+  // with kit's guard rather than casting. A wrong-length signature is simply an
+  // invalid one, so this reports false instead of throwing — callers treat this
+  // function's boolean as the verdict.
+  if (!isSignatureBytes(signature)) {
+    return false;
+  }
+
   const publicKey = await crypto.subtle.importKey(
     'raw',
     Uint8Array.from(getAddressEncoder().encode(signer)),
@@ -109,7 +117,7 @@ export async function verifyOffchainMessage(
     true,
     ['verify'],
   );
-  return verifySignature(publicKey, signature as SignatureBytes, buffer);
+  return verifySignature(publicKey, signature, buffer);
 }
 
 /**

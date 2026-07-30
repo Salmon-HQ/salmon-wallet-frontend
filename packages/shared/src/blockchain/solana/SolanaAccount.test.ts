@@ -86,11 +86,16 @@ describe('SolanaAccount', () => {
     expect(account.getRpcSubscriptions()).toBe(derived);
 
     network.config.nodeUrl = 'https://new-rpc.example';
-    expect(account.getRpc()).not.toBe(rpc);
+    const rebuilt = account.getRpc();
+    expect(rebuilt).not.toBe(rpc);
 
-    // An explicit wsUrl from the backend wins over the derivation.
-    network.config.wsUrl = 'wss://explicit.example';
+    // A same-host wsUrl from the backend wins over the derivation.
+    network.config.wsUrl = 'wss://new-rpc.example/ws';
     expect(account.getRpcSubscriptions()).not.toBe(derived);
+
+    // disconnect() drops every cached client, not just the connection.
+    await account.disconnect();
+    expect(account.getRpc()).not.toBe(rebuilt);
 
     delete network.config.wsUrl;
     network.config.nodeUrl = originalNodeUrl;

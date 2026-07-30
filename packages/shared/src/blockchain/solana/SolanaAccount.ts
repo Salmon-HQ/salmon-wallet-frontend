@@ -10,7 +10,7 @@ import type { KeyPairSigner } from '@solana/kit';
 import bs58 from 'bs58';
 import {
   SOLANA_NETWORKS,
-  deriveSolanaWsUrl,
+  resolveSolanaWsUrl,
   type SolanaRpc,
   type SolanaRpcSubscriptions,
 } from './networks';
@@ -122,9 +122,9 @@ export class SolanaAccount {
 
   /**
    * Legacy web3.js keypair, derived from the same seed as `signer` and
-   * therefore the same key by construction. Still required by the transaction
-   * paths that have not migrated to kit yet (`utils/dapp-approval.ts`,
-   * `prepared-transactions.ts`, `swap.ts`, `transfer.ts`).
+   * therefore the same key by construction. Its last remaining consumer is
+   * `utils/dapp-approval.ts`'s transaction branches; the transfer, swap and
+   * prepared-transaction paths all sign through `signer` now.
    */
   readonly keyPair: Keypair;
 
@@ -241,12 +241,12 @@ export class SolanaAccount {
   /**
    * Gets or creates the kit RPC subscriptions client for this network.
    *
-   * Uses the configured `wsUrl` when the backend supplies one, otherwise the
-   * endpoint derived from the RPC URL.
+   * Uses the configured `wsUrl` when the backend supplies a same-host one,
+   * otherwise the endpoint derived from the RPC URL.
    */
   getRpcSubscriptions(): SolanaRpcSubscriptions {
     const { nodeUrl, wsUrl } = this.getLatestConfig();
-    const endpoint = wsUrl || deriveSolanaWsUrl(nodeUrl);
+    const endpoint = resolveSolanaWsUrl(nodeUrl, wsUrl);
     if (!this.rpcSubscriptions || this.rpcWsUrl !== endpoint) {
       this.rpcSubscriptions = createSolanaRpcSubscriptions(endpoint);
       this.rpcWsUrl = endpoint;
@@ -381,11 +381,16 @@ export class SolanaAccount {
   }
 
   /**
-   * Closes the connection and releases resources.
-   * Call this when the account is no longer needed.
+   * Drops the cached connection and kit clients so the next accessor rebuilds
+   * them. Call this when the account is no longer needed.
    */
   async disconnect(): Promise<void> {
     this.connection = null;
+    this.connectionNodeUrl = null;
+    this.rpc = null;
+    this.rpcNodeUrl = null;
+    this.rpcSubscriptions = null;
+    this.rpcWsUrl = null;
   }
 
   // ==========================================================================
