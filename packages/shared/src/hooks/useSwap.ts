@@ -222,14 +222,11 @@ export function useSwap({
     setError(null);
 
     try {
-      // Get connection for optional confirmation
-      const connection = await account.getConnection();
-
-      // Execute the swap (signs and submits)
+      // Execute the swap (signs and submits), confirming on-chain afterwards
       const result = await executeSwapService(
         quote,
-        account.keyPair,
-        connection,
+        account.signer,
+        { rpc: account.getRpc(), rpcSubscriptions: account.getRpcSubscriptions() },
         executeSwapApi
       );
 

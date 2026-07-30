@@ -15,10 +15,13 @@
  */
 
 import {
-  Connection,
-  Keypair,
-  VersionedTransaction,
-} from '@solana/web3.js';
+  getBase64EncodedWireTransaction,
+  getTransactionDecoder,
+  partiallySignTransaction,
+} from '@solana/kit';
+import type { KeyPairSigner, Signature } from '@solana/kit';
+import { createRecentSignatureConfirmationPromiseFactory } from '@solana/transaction-confirmation';
+import type { SolanaRpc, SolanaRpcSubscriptions } from './networks';
 import type { SolanaNetworkId, SolanaNetwork } from '../../types/blockchain';
 import type { SwapOrderResponse, SwapOrderParams, ApiSwapExecuteResponse } from '../../types/swap';
 import type { TokenMetadata } from '../../types/token';
@@ -57,6 +60,19 @@ export type ExecuteSwapApiFn = (
 export type GetTokenListFn = (
   networkId: SolanaNetworkId
 ) => Promise<TokenMetadata[]>;
+
+/**
+ * Kit clients used for the optional on-chain confirmation once the API has
+ * accepted the swap. Both are needed: kit confirms by WebSocket subscription
+ * with an RPC status lookup as the tie-breaker.
+ */
+export interface SwapRpcClients {
+  rpc: SolanaRpc;
+  rpcSubscriptions: SolanaRpcSubscriptions;
+}
+
+/** How long to wait for the swap signature to reach `confirmed`. */
+const SWAP_CONFIRMATION_TIMEOUT_MS = 30_000;
 
 // ============================================================================
 // Helper Functions
@@ -153,19 +169,19 @@ export async function getSwapQuote(
 /**
  * Executes a swap using a signed transaction
  *
- * Takes a swap quote, signs the transaction with the provided keypair,
+ * Takes a swap quote, signs the transaction with the provided signer,
  * and submits it to the API for execution. Optionally waits for transaction
  * confirmation on-chain.
  *
  * @param quote - Swap quote from getSwapQuote
- * @param keypair - Keypair to sign the transaction
- * @param connection - Optional Solana connection for additional confirmation
+ * @param signer - Signer for the transaction
+ * @param rpcClients - Optional kit clients for additional on-chain confirmation
  * @returns Swap result with transaction ID and status
  *
  * @example
  * ```typescript
  * const quote = await getSwapQuote(network, params);
- * const result = await executeSwap(quote, keypair);
+ * const result = await executeSwap(quote, signer, undefined, submitSwap);
  *
  * if (result.status === 'success') {
  *   console.log('Swap successful:', result.txId);
@@ -176,8 +192,8 @@ export async function getSwapQuote(
  */
 export async function executeSwap(
   quote: SwapQuote,
-  keypair: Keypair,
-  connection: Connection | undefined,
+  signer: KeyPairSigner,
+  rpcClients: SwapRpcClients | undefined,
   submitSwap: ExecuteSwapApiFn
 ): Promise<SwapResult> {
   try {
@@ -186,14 +202,14 @@ export async function executeSwap(
     if (!transaction64) {
       throw new Error('No transaction found in quote');
     }
-    const transactionBuffer = Buffer.from(transaction64, 'base64');
-    const transaction = VersionedTransaction.deserialize(transactionBuffer);
+    const transaction = getTransactionDecoder().decode(
+      new Uint8Array(Buffer.from(transaction64, 'base64'))
+    );
 
-    // Sign the transaction
-    transaction.sign([keypair]);
-
-    // Serialize the signed transaction back to base64
-    const signedTransactionBase64 = Buffer.from(transaction.serialize()).toString('base64');
+    // partiallySignTransaction, not signTransaction: Jupiter Ultra transactions
+    // can arrive with a partial signature set, and those signatures are preserved.
+    const signed = await partiallySignTransaction([signer.keyPair], transaction);
+    const signedTransactionBase64 = getBase64EncodedWireTransaction(signed);
 
     // Submit to the API
     const requestId = quote.custom?.requestId || '';
@@ -205,25 +221,26 @@ export async function executeSwap(
 
     // Handle API response
     if (response.status === 'Success' && response.signature) {
-      // If a connection is provided, do additional on-chain confirmation
-      if (connection) {
+      // If RPC clients are provided, do additional on-chain confirmation
+      if (rpcClients) {
         try {
-          const confirmation = await connection.confirmTransaction(
-            response.signature,
-            'confirmed'
-          );
-
-          if (confirmation?.value?.err) {
+          await createRecentSignatureConfirmationPromiseFactory(rpcClients)({
+            abortSignal: AbortSignal.timeout(SWAP_CONFIRMATION_TIMEOUT_MS),
+            commitment: 'confirmed',
+            signature: response.signature as Signature,
+          });
+        } catch (error) {
+          // The API already accepted the swap, so a confirmation timeout is not
+          // itself a failure. A transaction-level error is.
+          const name = error instanceof Error ? error.name : '';
+          if (name !== 'AbortError' && name !== 'TimeoutError') {
             return {
               txId: response.signature,
               status: 'fail',
-              error: String(confirmation.value.err),
+              error: error instanceof Error ? error.message : String(error),
               confirmationStatus: response.confirmationStatus,
             };
           }
-        } catch {
-          // Confirmation timed out but transaction may still succeed
-          // Return success since API confirmed it
         }
       }
 
@@ -259,8 +276,8 @@ export async function executeSwap(
  *
  * @param network - Solana network configuration or network ID
  * @param params - Swap quote parameters
- * @param keypair - Keypair to sign the transaction
- * @param connection - Optional Solana connection for confirmation
+ * @param signer - Signer for the transaction
+ * @param rpcClients - Optional kit clients for confirmation
  * @returns Swap result with transaction ID and status
  *
  * @example
@@ -271,24 +288,26 @@ export async function executeSwap(
  *     inputMint: SOL_ADDRESS,
  *     outputMint: 'USDC_MINT_ADDRESS',
  *     amount: 1.0,
- *     publicKey: keypair.publicKey.toBase58(),
+ *     publicKey: signer.address,
  *   },
- *   keypair,
- *   connection
+ *   signer,
+ *   { rpc, rpcSubscriptions },
+ *   fetchSwapOrder,
+ *   submitSwap,
  * );
  * ```
  */
 export async function swap(
   network: SolanaNetwork | { id: string } | SwapNetworkId,
   params: SwapQuoteParams,
-  keypair: Keypair,
-  connection: Connection | undefined,
+  signer: KeyPairSigner,
+  rpcClients: SwapRpcClients | undefined,
   fetchSwapOrder: GetSwapOrderFn,
   submitSwap: ExecuteSwapApiFn,
   fetchTokenList: GetTokenListFn = () => Promise.resolve([])
 ): Promise<SwapResult> {
   const quote = await getSwapQuote(network, params, {}, fetchSwapOrder, fetchTokenList);
-  return executeSwap(quote, keypair, connection, submitSwap);
+  return executeSwap(quote, signer, rpcClients, submitSwap);
 }
 
 /**

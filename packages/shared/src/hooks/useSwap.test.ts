@@ -55,10 +55,14 @@ const QUOTE_INFO = {
   },
 } as any;
 
+const RPC = { name: 'mock-rpc' };
+const RPC_SUBSCRIPTIONS = { name: 'mock-rpc-subscriptions' };
+
 const ACCOUNT = {
   getPublicKey: () => ({ toBase58: () => 'wallet-public-key' }),
-  getConnection: vi.fn().mockResolvedValue({ rpcEndpoint: 'mock-rpc' }),
-  keyPair: { secretKey: new Uint8Array([1, 2, 3]) },
+  getRpc: vi.fn().mockReturnValue(RPC),
+  getRpcSubscriptions: vi.fn().mockReturnValue(RPC_SUBSCRIPTIONS),
+  signer: { address: 'wallet-public-key' },
 };
 
 describe('useSwap', () => {
@@ -206,11 +210,11 @@ describe('useSwap', () => {
       executionResult = await result.current.executeSwap();
     });
 
-    expect(ACCOUNT.getConnection).toHaveBeenCalledTimes(1);
+    expect(ACCOUNT.getRpc).toHaveBeenCalledTimes(1);
     expect(mockExecuteSwapService).toHaveBeenCalledWith(
       QUOTE,
-      ACCOUNT.keyPair,
-      { rpcEndpoint: 'mock-rpc' },
+      ACCOUNT.signer,
+      { rpc: RPC, rpcSubscriptions: RPC_SUBSCRIPTIONS },
       expect.any(Function)
     );
     expect(executionResult).toEqual({

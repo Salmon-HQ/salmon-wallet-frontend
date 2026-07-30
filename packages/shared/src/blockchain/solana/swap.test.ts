@@ -8,7 +8,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createApiClient } from '../../api/client';
 import { getReachableBackendBaseUrl } from '../../api/test-backend';
-import { Keypair, VersionedTransaction, PublicKey, TransactionMessage, TransactionInstruction, SystemProgram } from '@solana/web3.js';
+import { VersionedTransaction, PublicKey, TransactionMessage, TransactionInstruction, SystemProgram } from '@solana/web3.js';
+import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
+import nacl from 'tweetnacl';
 import {
   getSwapQuote,
   executeSwap,
@@ -28,8 +30,9 @@ import type { TokenMetadata } from '../../types/token';
 // Test Data
 // ============================================================================
 
-const TEST_KEYPAIR = Keypair.generate();
-const TEST_PUBLIC_KEY = TEST_KEYPAIR.publicKey.toBase58();
+// TEST-ONLY deterministic signer; holds no funds.
+const TEST_SIGNER = await createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(7), false);
+const TEST_PUBLIC_KEY = TEST_SIGNER.address;
 // Live integration wallet — set SALMON_TEST_LIVE_WALLET to a Solana address
 // with on-chain balance/history. Tests that need it skip when unset.
 const LIVE_TEST_PUBLIC_KEY = process.env.SALMON_TEST_LIVE_WALLET ?? '';
@@ -361,9 +364,9 @@ describe('executeSwap', () => {
     };
 
     if (!quote.custom) quote.custom = {} as any;
-    quote.custom.transaction = createMockVersionedTransactionBase64(TEST_KEYPAIR.publicKey);
+    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
 
-    const result = await executeSwap(quote, TEST_KEYPAIR, undefined, mockExecuteSwapApi);
+    const result = await executeSwap(quote, TEST_SIGNER, undefined, mockExecuteSwapApi);
 
     expect(result.status).toBe('success');
     expect(result.txId).toBe('5xG8...signature');
@@ -380,9 +383,9 @@ describe('executeSwap', () => {
     };
 
     if (!quote.custom) quote.custom = {} as any;
-    quote.custom.transaction = createMockVersionedTransactionBase64(TEST_KEYPAIR.publicKey);
+    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
 
-    const result = await executeSwap(quote, TEST_KEYPAIR, undefined, mockExecuteSwapApi);
+    const result = await executeSwap(quote, TEST_SIGNER, undefined, mockExecuteSwapApi);
 
     expect(result.status).toBe('fail');
     expect(result.txId).toBeNull();
@@ -398,9 +401,9 @@ describe('executeSwap', () => {
     };
 
     if (!quote.custom) quote.custom = {} as any;
-    quote.custom.transaction = createMockVersionedTransactionBase64(TEST_KEYPAIR.publicKey);
+    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
 
-    const result = await executeSwap(quote, TEST_KEYPAIR, undefined, mockExecuteSwapApi);
+    const result = await executeSwap(quote, TEST_SIGNER, undefined, mockExecuteSwapApi);
 
     expect(result.status).toBe('fail');
     expect(result.txId).toBeNull();
@@ -414,15 +417,28 @@ describe('executeSwap', () => {
     };
 
     if (!quote.custom) quote.custom = {} as any;
-    quote.custom.transaction = createMockVersionedTransactionBase64(TEST_KEYPAIR.publicKey);
+    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
 
-    await executeSwap(quote, TEST_KEYPAIR, undefined, mockExecuteSwapApi);
+    await executeSwap(quote, TEST_SIGNER, undefined, mockExecuteSwapApi);
 
     expect(mockExecuteSwapApi).toHaveBeenCalledWith(
       'solana-mainnet',
       expect.any(String),
       'test-request-id-123'
     );
+
+    // The fixture is built by @solana/web3.js and signed by @solana/kit, so
+    // this also proves the two libraries agree on the wire format.
+    const submitted = mockExecuteSwapApi.mock.calls[0][1];
+    const decoded = VersionedTransaction.deserialize(Buffer.from(submitted, 'base64'));
+    expect(decoded.signatures[0]).not.toEqual(new Uint8Array(64));
+    expect(
+      nacl.sign.detached.verify(
+        decoded.message.serialize(),
+        decoded.signatures[0],
+        new PublicKey(TEST_SIGNER.address).toBytes()
+      )
+    ).toBe(true);
   });
 
   it('should include request ID in execution', async () => {
@@ -432,11 +448,11 @@ describe('executeSwap', () => {
       custom: {
         ...MOCK_SWAP_ORDER.custom,
         requestId: 'custom-request-id',
-        transaction: createMockVersionedTransactionBase64(TEST_KEYPAIR.publicKey),
+        transaction: createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address)),
       },
     };
 
-    await executeSwap(quote, TEST_KEYPAIR, undefined, mockExecuteSwapApi);
+    await executeSwap(quote, TEST_SIGNER, undefined, mockExecuteSwapApi);
 
     expect(mockExecuteSwapApi).toHaveBeenCalledWith(
       'solana-mainnet',
@@ -469,12 +485,12 @@ describe('swap', () => {
       ...MOCK_SWAP_ORDER,
       custom: {
         ...MOCK_SWAP_ORDER.custom,
-        transaction: createMockVersionedTransactionBase64(TEST_KEYPAIR.publicKey),
+        transaction: createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address)),
       },
     };
     mockGetSwapOrder.mockResolvedValue(mockSwapOrder);
 
-    const result = await swap('solana-mainnet', params, TEST_KEYPAIR, undefined, mockGetSwapOrder, mockExecuteSwapApi, mockGetTokenList);
+    const result = await swap('solana-mainnet', params, TEST_SIGNER, undefined, mockGetSwapOrder, mockExecuteSwapApi, mockGetTokenList);
 
     expect(result.status).toBe('success');
     expect(result.txId).toBe('5xG8...signature');
@@ -493,7 +509,7 @@ describe('swap', () => {
       publicKey: TEST_PUBLIC_KEY,
     };
 
-    await expect(swap('solana-mainnet', params, TEST_KEYPAIR, undefined, mockGetSwapOrder, mockExecuteSwapApi, mockGetTokenList)).rejects.toThrow(
+    await expect(swap('solana-mainnet', params, TEST_SIGNER, undefined, mockGetSwapOrder, mockExecuteSwapApi, mockGetTokenList)).rejects.toThrow(
       'Failed to get swap quote'
     );
   });
@@ -503,7 +519,7 @@ describe('swap', () => {
       ...MOCK_SWAP_ORDER,
       custom: {
         ...MOCK_SWAP_ORDER.custom,
-        transaction: createMockVersionedTransactionBase64(TEST_KEYPAIR.publicKey),
+        transaction: createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address)),
       },
     };
     mockGetSwapOrder.mockResolvedValue(mockSwapOrder);
@@ -516,7 +532,7 @@ describe('swap', () => {
       publicKey: TEST_PUBLIC_KEY,
     };
 
-    const result = await swap('solana-mainnet', params, TEST_KEYPAIR, undefined, mockGetSwapOrder, mockExecuteSwapApi, mockGetTokenList);
+    const result = await swap('solana-mainnet', params, TEST_SIGNER, undefined, mockGetSwapOrder, mockExecuteSwapApi, mockGetTokenList);
 
     expect(result.status).toBe('fail');
     expect(result.error).toBeDefined();
