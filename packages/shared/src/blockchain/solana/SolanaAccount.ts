@@ -5,7 +5,7 @@ import {
   Commitment,
   Message,
 } from '@solana/web3.js';
-import { createSolanaRpc, createSolanaRpcSubscriptions } from '@solana/kit';
+import { address, createSolanaRpc, createSolanaRpcSubscriptions } from '@solana/kit';
 import type { KeyPairSigner } from '@solana/kit';
 import bs58 from 'bs58';
 import {
@@ -488,8 +488,7 @@ export class SolanaAccount {
     destination: string,
     tokenAddress: string | null | undefined
   ): Promise<boolean> {
-    const connection = await this.getConnection();
-    return checkRequiresMemo(connection, new PublicKey(destination), tokenAddress);
+    return checkRequiresMemo(this.getRpc(), address(destination), tokenAddress);
   }
 
   /**
@@ -500,8 +499,7 @@ export class SolanaAccount {
    * @returns Fee amount in token's smallest unit, or null if no fee
    */
   async calculateTransferFee(mint: string, amount: number): Promise<bigint | null> {
-    const connection = await this.getConnection();
-    return calcTransferFee(connection, mint, amount);
+    return calcTransferFee(this.getRpc(), mint, amount);
   }
 
   /**
@@ -544,11 +542,10 @@ export class SolanaAccount {
     amount: number,
     opts?: SolanaTransferOptions,
   ): Promise<{ txId: string }> {
-    const connection = await this.getConnection();
     const result = await createTransfer(
-      connection,
-      this.keyPair,
-      new PublicKey(to),
+      this.getRpc(),
+      this.signer,
+      address(to),
       token,
       amount,
       opts,
@@ -571,11 +568,10 @@ export class SolanaAccount {
     amount: number,
     opts?: EstimateFeeOptions,
   ): Promise<FeeEstimateResult | null> {
-    const connection = await this.getConnection();
     const fee = await estimateSolanaFee(
-      connection,
-      this.keyPair,
-      new PublicKey(to),
+      this.getRpc(),
+      this.signer,
+      address(to),
       token,
       amount,
       opts,

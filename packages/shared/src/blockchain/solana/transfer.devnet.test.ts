@@ -20,8 +20,17 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { Connection, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import {
+  createKeyPairSignerFromBytes,
+  createSolanaRpc,
+  createSolanaRpcSubscriptions,
+  address,
+  type Signature,
+} from '@solana/kit';
+import { createRecentSignatureConfirmationPromiseFactory } from '@solana/transaction-confirmation';
 import { createTransfer, SOL_ADDRESS } from './transfer';
+import { deriveSolanaWsUrl } from './networks';
 
 const ENABLED = !!process.env.RUN_DEVNET;
 const SECRET = process.env.DEVNET_TEST_SECRET_KEY;
@@ -38,23 +47,34 @@ devnet('createTransfer (devnet integration)', () => {
       );
     }
 
-    const conn = new Connection(RPC, 'confirmed');
-    const sender = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(SECRET)));
-    const recipient = Keypair.generate().publicKey;
+    const rpc = createSolanaRpc(RPC);
+    const rpcSubscriptions = createSolanaRpcSubscriptions(deriveSolanaWsUrl(RPC));
+    const sender = await createKeyPairSignerFromBytes(
+      Uint8Array.from(JSON.parse(SECRET)),
+      false,
+    );
+    const recipient = address(Keypair.generate().publicKey.toBase58());
 
-    const before = await conn.getBalance(sender.publicKey);
+    const getBalance = async (owner: string) =>
+      Number((await rpc.getBalance(address(owner)).send()).value);
+
+    const before = await getBalance(sender.address);
     expect(before).toBeGreaterThan(0.01 * LAMPORTS_PER_SOL); // needs funding
 
     const amountSol = 0.001;
-    const { txId } = await createTransfer(conn, sender, recipient, SOL_ADDRESS, amountSol);
+    const { txId } = await createTransfer(rpc, sender, recipient, SOL_ADDRESS, amountSol);
     // Without `simulate`, txId is a real signature string (the union type also
-    // allows a SimulatedTransactionResponse when simulating).
+    // allows a simulation payload when simulating).
     expect(typeof txId).toBe('string');
     if (typeof txId !== 'string') throw new Error('expected a transaction signature');
 
-    await conn.confirmTransaction(txId, 'confirmed');
+    await createRecentSignatureConfirmationPromiseFactory({ rpc, rpcSubscriptions })({
+      abortSignal: AbortSignal.timeout(30_000),
+      commitment: 'confirmed',
+      signature: txId as Signature,
+    });
 
-    const after = await conn.getBalance(sender.publicKey);
+    const after = await getBalance(sender.address);
     const delta = before - after;
 
     // Dropped by the transfer amount plus a (small) network fee.
@@ -62,7 +82,6 @@ devnet('createTransfer (devnet integration)', () => {
     expect(delta).toBeLessThan(Math.floor(amountSol * LAMPORTS_PER_SOL) + 50_000);
 
     // Recipient received exactly the transfer amount.
-    const received = await conn.getBalance(recipient);
-    expect(received).toBe(Math.floor(amountSol * LAMPORTS_PER_SOL));
+    expect(await getBalance(recipient)).toBe(Math.floor(amountSol * LAMPORTS_PER_SOL));
   }, 60_000);
 });
