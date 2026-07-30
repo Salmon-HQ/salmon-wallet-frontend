@@ -3,6 +3,7 @@ export { SolanaAccount } from './SolanaAccount';
 export type {
   SolanaAccountOptions,
   SolanaBalance,
+  SolanaSigningKey,
 } from './SolanaAccount';
 
 // Factory functions and utilities

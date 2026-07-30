@@ -27,6 +27,12 @@ const VALID_MNEMONIC =
   'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 
 /**
+ * Solana address derived from VALID_MNEMONIC at m/44'/501'/0'/0'.
+ * Pinned so a change in the derivation or signer construction is caught here.
+ */
+const EXPECTED_SOLANA_ADDRESS_INDEX_0 = 'HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk';
+
+/**
  * Invalid mnemonic phrases for testing
  */
 const INVALID_MNEMONIC = 'invalid mnemonic phrase that should fail validation';
@@ -115,12 +121,11 @@ describe('mnemonicToSeed', () => {
 
 describe('deriveSolanaKeypair', () => {
   it('should derive a valid Solana keypair from mnemonic', async () => {
-    const { keypair, path } = await deriveSolanaKeypair(VALID_MNEMONIC);
+    const { seed, signer, path } = await deriveSolanaKeypair(VALID_MNEMONIC);
 
-    expect(keypair).toBeDefined();
-    expect(keypair.publicKey).toBeDefined();
-    expect(keypair.secretKey).toBeDefined();
-    expect(keypair.secretKey.length).toBe(64);
+    expect(seed).toBeInstanceOf(Uint8Array);
+    expect(seed.length).toBe(32);
+    expect(signer.address).toBe(EXPECTED_SOLANA_ADDRESS_INDEX_0);
     expect(path).toBe("m/44'/501'/0'/0'");
   });
 
@@ -129,10 +134,10 @@ describe('deriveSolanaKeypair', () => {
   });
 
   it('should derive different keypairs for different account indices', async () => {
-    const { keypair: keypair0 } = await deriveSolanaKeypair(VALID_MNEMONIC, 0);
-    const { keypair: keypair1 } = await deriveSolanaKeypair(VALID_MNEMONIC, 1);
+    const { signer: signer0 } = await deriveSolanaKeypair(VALID_MNEMONIC, 0);
+    const { signer: signer1 } = await deriveSolanaKeypair(VALID_MNEMONIC, 1);
 
-    expect(keypair0.publicKey.toBase58()).not.toBe(keypair1.publicKey.toBase58());
+    expect(signer0.address).not.toBe(signer1.address);
   });
 });
 

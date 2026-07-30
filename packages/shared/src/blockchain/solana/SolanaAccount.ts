@@ -5,6 +5,7 @@ import {
   Commitment,
   Message,
 } from '@solana/web3.js';
+import type { KeyPairSigner } from '@solana/kit';
 import bs58 from 'bs58';
 import { SOLANA_NETWORKS } from './networks';
 import {
@@ -45,6 +46,20 @@ import {
 } from './transactions';
 
 /**
+ * Solana signing key material, as produced by the account factories.
+ *
+ * The kit signer holds a non-extractable CryptoKey, so the seed is carried
+ * alongside it: it is the only recoverable form of the private key, and it is
+ * what lets `retrieveSecurePrivateKey()` stay synchronous.
+ */
+export interface SolanaSigningKey {
+  /** 32-byte ed25519 seed */
+  seed: Uint8Array;
+  /** Non-extractable kit signer. `signer.address` is the base58 public key. */
+  signer: KeyPairSigner;
+}
+
+/**
  * Options for creating a SolanaAccount instance
  */
 export interface SolanaAccountOptions {
@@ -54,8 +69,8 @@ export interface SolanaAccountOptions {
   index: number;
   /** BIP44 derivation path */
   path: string;
-  /** Solana keypair for signing transactions */
-  keyPair: Keypair;
+  /** Solana signing key material (seed + kit signer) */
+  keyPair: SolanaSigningKey;
   /** Function to fetch token balances (DI) */
   fetchBalance: FetchSolanaBalanceFn;
   /** Function to fetch a single transaction (DI) */
@@ -96,7 +111,15 @@ export class SolanaAccount {
   /** BIP44 derivation path used for key derivation */
   readonly path: string;
 
-  /** Solana keypair for signing */
+  /** Kit signer, used for off-chain message signing */
+  readonly signer: KeyPairSigner;
+
+  /**
+   * Legacy web3.js keypair, derived from the same seed as `signer` and
+   * therefore the same key by construction. Still required by the transaction
+   * paths that have not migrated to kit yet (`utils/dapp-approval.ts`,
+   * `prepared-transactions.ts`, `swap.ts`, `transfer.ts`).
+   */
   readonly keyPair: Keypair;
 
   /** Public key derived from keypair */
@@ -124,8 +147,9 @@ export class SolanaAccount {
     this.network = options.network;
     this.index = options.index;
     this.path = options.path;
-    this.keyPair = options.keyPair;
-    this.publicKey = options.keyPair.publicKey;
+    this.signer = options.keyPair.signer;
+    this.keyPair = Keypair.fromSeed(options.keyPair.seed);
+    this.publicKey = this.keyPair.publicKey;
     this.fetchBalanceFn = options.fetchBalance;
     this.fetchTransactionFn = options.fetchTransaction;
     this.fetchTransactionsFn = options.fetchTransactions;

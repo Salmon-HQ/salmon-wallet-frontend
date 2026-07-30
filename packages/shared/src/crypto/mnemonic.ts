@@ -15,7 +15,7 @@ import {
 import { wordlist } from '@scure/bip39/wordlists/english.js';
 import { BIP32Factory, type BIP32Interface } from 'bip32';
 import * as ecc from '@bitcoinerlab/secp256k1';
-import { Keypair } from '@solana/web3.js';
+import { createKeyPairSignerFromPrivateKeyBytes, type KeyPairSigner } from '@solana/kit';
 import { sha256 } from '@noble/hashes/sha256';
 import HDKey from 'micro-key-producer/slip10.js';
 import { pbkdf2 } from './fastCrypto';
@@ -121,11 +121,16 @@ export interface BitcoinDerivedKey {
 }
 
 /**
- * Result of a Solana key derivation containing the Keypair.
+ * Result of a Solana key derivation.
  */
 export interface SolanaDerivedKey {
-  /** The Solana Keypair */
-  keypair: Keypair;
+  /**
+   * The 32-byte ed25519 seed. Retained because `signer`'s CryptoKey is created
+   * non-extractable, so this is the only recoverable form of the private key.
+   */
+  seed: Uint8Array;
+  /** Non-extractable kit signer. `signer.address` is the base58 public key. */
+  signer: KeyPairSigner;
   /** The derivation path used */
   path: string;
 }
@@ -288,17 +293,17 @@ async function deriveSeedInternal(
  *
  * @param mnemonic - The BIP39 mnemonic phrase
  * @param accountIndex - The account index for the derivation path (default: 0)
- * @returns A Promise resolving to the derived Solana Keypair and path
+ * @returns A Promise resolving to the derived seed, kit signer and path
  * @throws Error if the mnemonic is invalid
  *
  * @example
  * ```typescript
- * const { keypair, path } = await deriveSolanaKeypair(mnemonic);
- * console.log(keypair.publicKey.toBase58());
+ * const { signer, path } = await deriveSolanaKeypair(mnemonic);
+ * console.log(signer.address);
  * console.log(path); // "m/44'/501'/0'/0'"
  *
  * // Derive second account
- * const { keypair: keypair2 } = await deriveSolanaKeypair(mnemonic, 1);
+ * const { signer: signer2 } = await deriveSolanaKeypair(mnemonic, 1);
  * ```
  */
 export async function deriveSolanaKeypair(
@@ -309,9 +314,12 @@ export async function deriveSolanaKeypair(
   const path = SOLANA_PATH(accountIndex);
   const hdkey = HDKey.fromMasterSeed(seed);
   const derived = hdkey.derive(path);
-  const keypair = Keypair.fromSeed(derived.privateKey);
 
-  return { keypair, path };
+  return {
+    seed: derived.privateKey,
+    signer: await createKeyPairSignerFromPrivateKeyBytes(derived.privateKey, false),
+    path,
+  };
 }
 
 /**

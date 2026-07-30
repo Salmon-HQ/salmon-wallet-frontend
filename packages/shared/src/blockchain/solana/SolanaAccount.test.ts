@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Keypair, PublicKey } from '@solana/web3.js';
+import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
 
 vi.mock('@solana/web3.js', async () => {
   const actual = await vi.importActual<typeof import('@solana/web3.js')>('@solana/web3.js');
@@ -40,12 +41,12 @@ const mockGetDomain = vi.mocked(getDomain);
 const mockGetDomainFromPublicKey = vi.mocked(getDomainFromPublicKey);
 const mockGetPublicKeyFromDomain = vi.mocked(getPublicKeyFromDomain);
 
-function createAccount() {
+async function createAccount(seed: Uint8Array = crypto.getRandomValues(new Uint8Array(32))) {
   return new SolanaAccount({
     network: SOLANA_NETWORKS['solana-mainnet'],
     index: 0,
     path: "m/44'/501'/0'/0'",
-    keyPair: Keypair.generate(),
+    keyPair: { seed, signer: await createKeyPairSignerFromPrivateKeyBytes(seed, false) },
     fetchBalance: vi.fn(),
     fetchTransaction: vi.fn(),
     fetchTransactions: vi.fn(),
@@ -59,7 +60,7 @@ describe('SolanaAccount', () => {
   });
 
   it('reuses the current connection until the configured node url changes', async () => {
-    const account = createAccount();
+    const account = await createAccount();
 
     const first = await account.getConnection();
     const second = await account.getConnection();
@@ -75,7 +76,7 @@ describe('SolanaAccount', () => {
   });
 
   it('delegates getCredit and estimateTransactionsFee to the underlying connection', async () => {
-    const account = createAccount();
+    const account = await createAccount();
     const connection = await account.getConnection();
     (connection.getBalance as any).mockResolvedValue(1234);
     (connection.getFeeForMessage as any)
@@ -90,7 +91,7 @@ describe('SolanaAccount', () => {
   });
 
   it('wraps domain helper methods with the account connection', async () => {
-    const account = createAccount();
+    const account = await createAccount();
     mockGetDomain.mockResolvedValueOnce('wallet.sol');
     mockGetDomainFromPublicKey.mockResolvedValueOnce('friend.sol');
     mockGetPublicKeyFromDomain.mockResolvedValueOnce('resolved-public-key');
@@ -107,8 +108,8 @@ describe('SolanaAccount', () => {
     expect(mockGetPublicKeyFromDomain).toHaveBeenCalledWith(connection, 'friend.sol');
   });
 
-  it('returns base58 secret key and validates public key helpers', () => {
-    const account = createAccount();
+  it('returns base58 secret key and validates public key helpers', async () => {
+    const account = await createAccount();
 
     expect(typeof account.retrieveSecurePrivateKey()).toBe('string');
     expect(account.retrieveSecurePrivateKey().length).toBeGreaterThan(0);
@@ -117,8 +118,21 @@ describe('SolanaAccount', () => {
     expect(SolanaAccount.toPublicKey(account.getReceiveAddress())).toBeInstanceOf(PublicKey);
   });
 
+  it('rebuilds the same key material from the seed as the legacy keypair did', async () => {
+    // seed = 0x01 * 32 — a fixed vector, so a change in how the account turns
+    // signing key material into a keypair is caught here rather than in the field.
+    const account = await createAccount(new Uint8Array(32).fill(1));
+
+    expect(account.retrieveSecurePrivateKey()).toBe(
+      '2AXDGYSE4f2sz7tvMMzyHvUfcoJmxudvdhBcmiUSo6iuCXagjUCKEQF21awZnUGxmwD4m9vGXuC3qieHXJQHAcT'
+    );
+    expect(account.signer.address).toBe('AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9');
+    expect(account.publicKey.toBase58()).toBe(account.signer.address);
+    expect(account.getReceiveAddress()).toBe(account.signer.address);
+  });
+
   it('throws exact method_not_supported errors for deprecated swap/token methods', async () => {
-    const account = createAccount();
+    const account = await createAccount();
 
     await expect(account.getAvailableTokens()).rejects.toThrow(
       'method_not_supported: Use token list service directly'
