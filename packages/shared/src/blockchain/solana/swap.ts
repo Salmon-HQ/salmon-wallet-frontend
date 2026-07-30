@@ -18,6 +18,7 @@ import {
   getBase64EncodedWireTransaction,
   getTransactionDecoder,
   partiallySignTransaction,
+  signature,
 } from '@solana/kit';
 import type { KeyPairSigner, Signature } from '@solana/kit';
 import { createRecentSignatureConfirmationPromiseFactory } from '@solana/transaction-confirmation';
@@ -73,6 +74,45 @@ export interface SwapRpcClients {
 
 /** How long to wait for the swap signature to reach `confirmed`. */
 const SWAP_CONFIRMATION_TIMEOUT_MS = 30_000;
+
+/**
+ * Waits for a submitted swap signature to confirm.
+ *
+ * Returns the on-chain transaction error when the swap landed and failed, and
+ * `null` in every other case — including when the confirmation attempt itself
+ * could not reach a verdict.
+ *
+ * That asymmetry is deliberate. The API has already accepted and broadcast the
+ * order by this point, so an unreachable RPC, a dead WebSocket or a timeout say
+ * nothing about whether the swap landed. Reporting failure there would discard
+ * a real signature and invite the user to retry, submitting the swap twice.
+ * Only a status the cluster actually reports as failed is a failed swap.
+ *
+ * kit throws the same way for a transaction error and for a transport error, so
+ * the verdict is re-read from the cluster rather than inferred from the throw.
+ */
+async function confirmSwapSignature(
+  rpcClients: SwapRpcClients,
+  txSignature: Signature
+): Promise<string | null> {
+  try {
+    await createRecentSignatureConfirmationPromiseFactory(rpcClients)({
+      abortSignal: AbortSignal.timeout(SWAP_CONFIRMATION_TIMEOUT_MS),
+      commitment: 'confirmed',
+      signature: txSignature,
+    });
+    return null;
+  } catch {
+    try {
+      const { value } = await rpcClients.rpc.getSignatureStatuses([txSignature]).send();
+      const err = value[0]?.err;
+      return err ? JSON.stringify(err) : null;
+    } catch {
+      // Inconclusive: leave the order in flight rather than inviting a retry.
+      return null;
+    }
+  }
+}
 
 // ============================================================================
 // Helper Functions
@@ -221,31 +261,26 @@ export async function executeSwap(
 
     // Handle API response
     if (response.status === 'Success' && response.signature) {
+      // Untrusted API data: assert-coerce through kit's constructor rather than
+      // casting, the same way addresses are validated elsewhere.
+      const txSignature = signature(response.signature);
+
       // If RPC clients are provided, do additional on-chain confirmation
       if (rpcClients) {
-        try {
-          await createRecentSignatureConfirmationPromiseFactory(rpcClients)({
-            abortSignal: AbortSignal.timeout(SWAP_CONFIRMATION_TIMEOUT_MS),
-            commitment: 'confirmed',
-            signature: response.signature as Signature,
-          });
-        } catch (error) {
-          // The API already accepted the swap, so a confirmation timeout is not
-          // itself a failure. A transaction-level error is.
-          const name = error instanceof Error ? error.name : '';
-          if (name !== 'AbortError' && name !== 'TimeoutError') {
-            return {
-              txId: response.signature,
-              status: 'fail',
-              error: error instanceof Error ? error.message : String(error),
-              confirmationStatus: response.confirmationStatus,
-            };
-          }
+        const transactionError = await confirmSwapSignature(rpcClients, txSignature);
+
+        if (transactionError) {
+          return {
+            txId: txSignature,
+            status: 'fail',
+            error: transactionError,
+            confirmationStatus: response.confirmationStatus,
+          };
         }
       }
 
       return {
-        txId: response.signature,
+        txId: txSignature,
         status: 'success',
         confirmationStatus: response.confirmationStatus,
       };

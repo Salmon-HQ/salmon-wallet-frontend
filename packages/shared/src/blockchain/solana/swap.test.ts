@@ -119,8 +119,12 @@ const MOCK_TOKEN_LIST: TokenMetadata[] = [
   },
 ];
 
+/** A real base58 ed25519 signature — `signature()` validates what the API returns. */
+const MOCK_SIGNATURE =
+  '5b4xdmSrB8gh4rHn5NFFTDEKSekL2CyRN8PrwpGYgp2buABGRULKu4vMUR1XLE1fx12C4FH1imq88aRV7ivZtZq';
+
 const MOCK_SWAP_SUCCESS = {
-  signature: '5xG8...signature',
+  signature: MOCK_SIGNATURE,
   status: 'Success',
   confirmationStatus: 'confirmed' as const,
 };
@@ -369,7 +373,7 @@ describe('executeSwap', () => {
     const result = await executeSwap(quote, TEST_SIGNER, undefined, mockExecuteSwapApi);
 
     expect(result.status).toBe('success');
-    expect(result.txId).toBe('5xG8...signature');
+    expect(result.txId).toBe(MOCK_SIGNATURE);
     expect(result.confirmationStatus).toBe('confirmed');
     expect(result.error).toBeUndefined();
   });
@@ -441,6 +445,78 @@ describe('executeSwap', () => {
     ).toBe(true);
   });
 
+  it('rejects a malformed signature from the API instead of passing it through', async () => {
+    mockExecuteSwapApi.mockResolvedValue({ ...MOCK_SWAP_SUCCESS, signature: 'not-base58-!!' });
+
+    const quote: SwapQuote = { ...MOCK_SWAP_ORDER, networkId: 'solana-mainnet' };
+    if (!quote.custom) quote.custom = {} as any;
+    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
+
+    const result = await executeSwap(quote, TEST_SIGNER, undefined, mockExecuteSwapApi);
+
+    expect(result.status).toBe('fail');
+    expect(result.txId).toBeNull();
+  });
+
+  it('reports success and keeps the signature when confirmation is inconclusive', async () => {
+    // The API already accepted and broadcast the order. A dead WebSocket says
+    // nothing about whether the swap landed, and reporting failure here while
+    // dropping the signature is what invites a duplicate swap on retry.
+    const rpcClients = {
+      rpc: {
+        getSignatureStatuses: () => ({
+          send: async () => {
+            throw new Error('rpc unreachable');
+          },
+        }),
+      },
+      rpcSubscriptions: {
+        signatureNotifications: () => ({
+          subscribe: async () => {
+            throw new Error('websocket connect failed');
+          },
+        }),
+      },
+    };
+
+    const quote: SwapQuote = { ...MOCK_SWAP_ORDER, networkId: 'solana-mainnet' };
+    if (!quote.custom) quote.custom = {} as any;
+    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
+
+    const result = await executeSwap(quote, TEST_SIGNER, rpcClients as never, mockExecuteSwapApi);
+
+    expect(result.status).toBe('success');
+    expect(result.txId).toBe(MOCK_SIGNATURE);
+  });
+
+  it('reports failure when the cluster confirms the transaction failed', async () => {
+    const rpcClients = {
+      rpc: {
+        getSignatureStatuses: () => ({
+          send: async () => ({ value: [{ err: { InstructionError: [0, 'SlippageToleranceExceeded'] } }] }),
+        }),
+      },
+      rpcSubscriptions: {
+        signatureNotifications: () => ({
+          subscribe: async () =>
+            (async function* () {
+              yield { value: { err: { InstructionError: [0, 'SlippageToleranceExceeded'] } } };
+            })(),
+        }),
+      },
+    };
+
+    const quote: SwapQuote = { ...MOCK_SWAP_ORDER, networkId: 'solana-mainnet' };
+    if (!quote.custom) quote.custom = {} as any;
+    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
+
+    const result = await executeSwap(quote, TEST_SIGNER, rpcClients as never, mockExecuteSwapApi);
+
+    expect(result.status).toBe('fail');
+    expect(result.txId).toBe(MOCK_SIGNATURE);
+    expect(result.error).toContain('SlippageToleranceExceeded');
+  });
+
   it('should include request ID in execution', async () => {
     const quote: SwapQuote = {
       ...MOCK_SWAP_ORDER,
@@ -493,7 +569,7 @@ describe('swap', () => {
     const result = await swap('solana-mainnet', params, TEST_SIGNER, undefined, mockGetSwapOrder, mockExecuteSwapApi, mockGetTokenList);
 
     expect(result.status).toBe('success');
-    expect(result.txId).toBe('5xG8...signature');
+    expect(result.txId).toBe(MOCK_SIGNATURE);
 
     expect(mockGetSwapOrder).toHaveBeenCalled();
     expect(mockExecuteSwapApi).toHaveBeenCalled();
