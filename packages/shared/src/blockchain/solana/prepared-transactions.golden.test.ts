@@ -11,17 +11,19 @@
  * `actual` value. A migration that changes these bytes is a bug, not a
  * vector that needs updating.
  *
- * This lives in its own file because `prepared-transactions.test.ts` replaces the
- * whole @solana/web3.js module with a mock, and Vitest module mocks are
- * file-scoped, so real byte assertions are impossible there.
+ * The signed bytes are also fed back through @solana/web3.js: an assertion that
+ * the *old* library still accepts what the *new* one produced is worth more
+ * than a self-consistent kit-only round trip.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { Keypair, VersionedTransaction } from '@solana/web3.js';
+import { VersionedTransaction } from '@solana/web3.js';
+import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
 import { signAndSendPreparedSolanaTransactions } from './prepared-transactions';
 
-// TEST-ONLY deterministic keypairs. Seeds are constants so golden vectors are
-// reproducible; these keys hold no funds and must never be used outside tests.
-const testKeypair = (seed: number) => Keypair.fromSeed(new Uint8Array(32).fill(seed));
+// TEST-ONLY deterministic signer. The seed is a constant so golden vectors are
+// reproducible; this key holds no funds and must never be used outside tests.
+const testSigner = (seed: number) =>
+  createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(seed), false);
 
 /**
  * Unsigned v0 transaction carrying one address-table lookup: fee payer seed 1,
@@ -44,27 +46,39 @@ const GOLDEN_SIGNED_TX_B64 =
 
 describe('signAndSendPreparedSolanaTransactions golden vectors', () => {
   it('pins the bytes of a blockhash-swapped v0 transaction with lookup tables', async () => {
-    // Only the connection is stubbed; the transaction codec is the real one. The
-    // stub omits `onSignature`, so confirmation falls back to `confirmTransaction`.
-    const connection = {
-      getLatestBlockhash: vi
-        .fn()
-        .mockResolvedValue({ blockhash: FRESH_BLOCKHASH, lastValidBlockHeight: 1 }),
-      sendRawTransaction: vi.fn().mockResolvedValue('sig'),
-      confirmTransaction: vi.fn().mockResolvedValue(undefined),
+    // Only the RPC is stubbed; the transaction codec and the signer are real.
+    const sendTransaction = vi.fn().mockReturnValue({ send: async () => 'sig' });
+    const rpc = {
+      getLatestBlockhash: () => ({
+        send: async () => ({ value: { blockhash: FRESH_BLOCKHASH, lastValidBlockHeight: 1n } }),
+      }),
+      sendTransaction,
+      getSignatureStatuses: () => ({
+        send: async () => ({ value: [{ confirmationStatus: 'confirmed', err: null }] }),
+      }),
     };
-    const account = { keyPair: testKeypair(1), getConnection: async () => connection };
+    const rpcSubscriptions = {
+      signatureNotifications: () => ({
+        // eslint-disable-next-line require-yield
+        subscribe: async () => (async function* () { return; })(),
+      }),
+    };
+    const account = {
+      signer: await testSigner(1),
+      getRpc: () => rpc,
+      getRpcSubscriptions: () => rpcSubscriptions,
+    };
 
     await signAndSendPreparedSolanaTransactions(account as never, {
       transaction: FIXTURE_V0_WITH_LUT_B64,
     });
 
-    const sent = connection.sendRawTransaction.mock.calls[0][0] as Uint8Array;
-    expect(Buffer.from(sent).toString('base64')).toBe(GOLDEN_SIGNED_TX_B64);
+    const sent = sendTransaction.mock.calls[0][0] as string;
+    expect(sent).toBe(GOLDEN_SIGNED_TX_B64);
 
-    const decoded = VersionedTransaction.deserialize(sent);
+    const decoded = VersionedTransaction.deserialize(Buffer.from(sent, 'base64'));
     expect(decoded.message.recentBlockhash).toBe(FRESH_BLOCKHASH);
-    // Lookup tables must survive the deserialize/mutate/serialize round trip.
+    // Lookup tables must survive the decode/patch/re-encode round trip.
     expect(decoded.message.addressTableLookups).toHaveLength(1);
   });
 });
