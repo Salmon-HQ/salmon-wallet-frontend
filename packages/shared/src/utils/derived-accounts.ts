@@ -13,7 +13,7 @@ import type { BlockchainAccount } from '../types/blockchain';
 import { SolanaAccount } from '../blockchain/solana';
 import { BitcoinAccount } from '../blockchain/bitcoin';
 import { EthereumAccount } from '../blockchain/ethereum';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL } from './balance';
 import { SATOSHIS_PER_BTC, WEI_PER_ETH_BIGINT } from './decimals';
 import { getEnabledNetworkIds } from '../api/services/network';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
