@@ -256,8 +256,12 @@ async function deriveSeedInternal(
   }
 
   // 2. Try Web Crypto API (browsers, extensions, some RN environments)
+  //    The Ed25519 polyfill mobile installs creates a `crypto.subtle` object
+  //    carrying only key/sign methods, so a truthy `subtle` does not mean
+  //    PBKDF2 is available. Probe for the method this path actually calls;
+  //    every real WebCrypto implementation has deriveBits.
   const subtle = globalThis.crypto?.subtle;
-  if (subtle) {
+  if (subtle && typeof subtle.deriveBits === 'function') {
     try {
       const passwordBytes = new TextEncoder().encode(mnemonic.normalize('NFKD'));
       const saltBytes = new TextEncoder().encode(

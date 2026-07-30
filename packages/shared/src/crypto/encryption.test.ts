@@ -122,6 +122,34 @@ describe('Encryption Module', () => {
         Buffer.from(key2).toString('hex')
       );
     });
+
+    it('skips Web Crypto when crypto.subtle has no deriveBits (Ed25519 polyfill)', async () => {
+      // The Ed25519 polyfill mobile installs replaces crypto.subtle with an
+      // object that has key/sign methods but no PBKDF2 support. Probing the
+      // object instead of deriveBits made every derivation call importKey,
+      // throw, and fall through — once per unlock.
+      const importKey = vi.fn(() => {
+        throw new TypeError('No native `importKey` function exists to handle this call');
+      });
+      const realSubtle = globalThis.crypto.subtle;
+      Object.defineProperty(globalThis.crypto, 'subtle', {
+        value: { importKey, sign: vi.fn(), verify: vi.fn() },
+        configurable: true,
+      });
+
+      try {
+        const salt = randomBytes(16);
+        const key = await deriveEncryptionKey(TEST_PASSWORD, salt, 1000, 'sha256');
+
+        expect(key.length).toBe(32);
+        expect(importKey).not.toHaveBeenCalled();
+      } finally {
+        Object.defineProperty(globalThis.crypto, 'subtle', {
+          value: realSubtle,
+          configurable: true,
+        });
+      }
+    });
   });
 
   // ==========================================================================

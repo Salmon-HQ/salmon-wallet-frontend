@@ -2,8 +2,9 @@
  * Tests for Mnemonic and HD wallet derivation utilities
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
+  clearSeedCache,
   generateMnemonic,
   validateMnemonic,
   mnemonicToSeed,
@@ -112,6 +113,38 @@ describe('mnemonicToSeed', () => {
     const seed2 = await mnemonicToSeed(VALID_MNEMONIC, 'password');
 
     expect(seed1.toString('hex')).not.toBe(seed2.toString('hex'));
+  });
+
+  it('skips Web Crypto when crypto.subtle has no deriveBits (Ed25519 polyfill)', async () => {
+    // The Ed25519 polyfill mobile installs replaces crypto.subtle with an
+    // object that has key/sign methods but no PBKDF2 support. Probing the
+    // object instead of deriveBits made every derivation call importKey,
+    // throw, and fall through — once per mnemonic derivation.
+    clearSeedCache();
+    const expected = (await mnemonicToSeed(VALID_MNEMONIC)).toString('hex');
+
+    const importKey = vi.fn(() => {
+      throw new TypeError('No native `importKey` function exists to handle this call');
+    });
+    const realSubtle = globalThis.crypto.subtle;
+    Object.defineProperty(globalThis.crypto, 'subtle', {
+      value: { importKey, sign: vi.fn(), verify: vi.fn() },
+      configurable: true,
+    });
+
+    try {
+      clearSeedCache();
+      const seed = await mnemonicToSeed(VALID_MNEMONIC);
+
+      expect(seed.toString('hex')).toBe(expected);
+      expect(importKey).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(globalThis.crypto, 'subtle', {
+        value: realSubtle,
+        configurable: true,
+      });
+      clearSeedCache();
+    }
   });
 });
 

@@ -191,8 +191,14 @@ async function deriveWithWebCrypto(
   iterations: number,
   digest: DigestAlgorithm
 ): Promise<Uint8Array> {
+  // The Ed25519 polyfill mobile installs creates a `crypto.subtle` object
+  // carrying only key/sign methods, so a truthy `subtle` does not mean PBKDF2
+  // is available. Probe for the method this path actually calls; every real
+  // WebCrypto implementation has deriveBits.
   const subtle = globalThis.crypto?.subtle;
-  if (!subtle) throw new Error('Web Crypto API not available');
+  if (!subtle || typeof subtle.deriveBits !== 'function') {
+    throw new Error('Web Crypto API not available');
+  }
 
   const algo = digest === 'sha512' ? 'SHA-512' : 'SHA-256';
   const passwordBytes = new TextEncoder().encode(password);
