@@ -10,7 +10,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
  * ratchet is what stops a migrated directory from regressing. Paths are
  * repo-root-relative.
  */
-const MIGRATED_DIRS = ['packages/shared/src/crypto'];
+const MIGRATED_DIRS = ['packages/shared/src/crypto', 'packages/shared/src/utils'];
 
 export default [
   js.configs.recommended,
@@ -161,10 +161,16 @@ export default [
   // catches `import type { … } from '@solana/web3.js'`. The conditional spread
   // keeps the entry inert while MIGRATED_DIRS is empty — a flat-config object
   // with `files: []` is not reliably inert.
+  //
+  // Tests are exempt on purpose: migrated code is verified against web3.js
+  // fixtures (the dApp-approval golden vectors are built by web3.js and
+  // reproduced by kit), and a cross-library oracle is stronger evidence than a
+  // self-consistent one.
   ...(MIGRATED_DIRS.length
     ? [
         {
           files: MIGRATED_DIRS.map((dir) => `${dir}/**/*.{ts,tsx}`),
+          ignores: ['**/*.test.{ts,tsx}'],
           plugins: { '@typescript-eslint': typescript },
           rules: {
             '@typescript-eslint/no-restricted-imports': [
