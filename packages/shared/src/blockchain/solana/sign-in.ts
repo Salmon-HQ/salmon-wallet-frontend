@@ -14,8 +14,7 @@
  * (see `./offchain-message.ts`) instead of signing the raw UTF-8 bytes.
  */
 import nacl from 'tweetnacl';
-import { PublicKey } from '@solana/web3.js';
-import type { Address } from '@solana/addresses';
+import { address } from '@solana/addresses';
 import { signOffchainMessage } from './offchain-message';
 import type { SolanaAccount } from './SolanaAccount';
 
@@ -212,7 +211,7 @@ export function signSiwsMessage(
       throw new Error('Unsupported off-chain message version');
     }
     const { signature, buffer } = signOffchainMessage(account, messageBytes, [
-      new PublicKey(walletAddress).toBase58() as Address,
+      address(walletAddress),
     ]);
     return {
       message: prepared.message,
