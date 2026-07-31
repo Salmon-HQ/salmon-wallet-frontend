@@ -39,8 +39,18 @@ appId: io.salmonwallet.app
     visible:
       id: "token-row-Bonk"
     timeout: 20000
+# Results stream in from a remote search, so the row that satisfied the wait can
+# still be re-ordered underneath the tap. Let the list settle first, otherwise
+# the tap reports success against coordinates nothing occupies any more and the
+# sheet just stays open.
+- waitForAnimationToEnd:
+    timeout: 8000
 - tapOn:
     id: "token-row-Bonk"
+- extendedWaitUntil:
+    notVisible:
+      id: "token-search-input"
+    timeout: 15000
 - extendedWaitUntil:
     visible:
       id: "swap-from-amount"
