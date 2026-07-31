@@ -8,7 +8,7 @@
  * This file is kept for backwards compatibility with test files and
  * other parts of the codebase that may still import it.
  *
- * Required for: @solana/web3.js, bitcoinjs-lib, and other crypto libraries
+ * Required for: bitcoinjs-lib and other crypto libraries
  */
 
 // Polyfill for crypto.getRandomValues()

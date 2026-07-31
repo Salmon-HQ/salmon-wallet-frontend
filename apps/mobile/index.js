@@ -40,7 +40,7 @@ if (!(Buffer.alloc(1).subarray(0, 1) instanceof Buffer)) {
 }
 
 // =============================================================================
-// 2. Crypto Polyfill - Required for @solana/web3.js and other crypto libraries
+// 2. Crypto Polyfill - Required for crypto libraries that expect WebCrypto
 // =============================================================================
 // Use expo-crypto for getRandomValues (official Expo SDK, works in Expo Go)
 const { getRandomValues: expoCryptoGetRandomValues } = require('expo-crypto');
