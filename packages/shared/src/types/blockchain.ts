@@ -102,7 +102,7 @@ export interface SolanaNetworkConfig {
   /** WebSocket endpoint URL (optional) */
   wsUrl?: string;
   /** Network commitment level */
-  commitment?: import('@solana/web3.js').Commitment;
+  commitment?: import('@solana/kit').Commitment;
 }
 
 /**
