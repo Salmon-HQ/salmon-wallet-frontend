@@ -55,8 +55,8 @@ installed.
    Required variables:
    - `SALMON_TEST_PASSWORD` — wallet password
    - `SALMON_TEST_SEED_A` — Wallet A seed (12 words, holds SOL)
-   - `SALMON_TEST_SEED_B` — Wallet B seed (12 words, holds the
-     Salmon Logo NFT)
+   - `SALMON_TEST_SEED_B` — Wallet B seed (12 words, receives the NFT on
+     the first leg of the transfer round trip)
    - `SALMON_TEST_WALLET_A_ADDR` — Wallet A Solana address
    - `SALMON_TEST_WALLET_B_ADDR` — Wallet B Solana address
 
@@ -75,7 +75,7 @@ Per-flow prerequisites:
 | `auth/*`, `home/*`, `settings/*` (smoke), connect/sign | nothing — no funds required |
 | `actions/send/sol-transfer.yaml` | Wallet A: SOL for fee + 0.001 SOL |
 | `actions/swap/*` | Wallet A: balance of the input token |
-| `actions/nft/*` | Wallet B: the Salmon Logo NFT |
+| `actions/nft/*` | Wallet A: the "Mindfolk Founder #5154" NFT (mint `CNM8…`) |
 
 Repo policy: a flow that finds its prerequisite missing skips with a clear
 message, never a cryptic failure. If the backend is reachable but behaves
@@ -91,18 +91,35 @@ wrong, the flow fails — it does not skip.
 > `.gitignore` blocks the obvious mis-locations defensively, but the
 > right thing is to `cd` first.
 
+> **Every variable has to be passed with `-e`.** Maestro (verified on 2.4.0)
+> does not inherit the shell environment into flows. Sourcing `.env.test` and
+> then running `maestro test` without `-e` does not fail — the flows interpolate
+> `${SALMON_TEST_SEED_A}` to the literal string `undefined`, type it into the
+> seed field, and die several steps later on an unrelated selector. Sourcing the
+> file is still needed so the values are in the shell to forward.
+
 ```bash
 cd apps/mobile/.maestro
 set -a && . ./.env.test && set +a
 export MAESTRO_DRIVER_STARTUP_TIMEOUT=180000
 
+# Forward every secret the flows reference. Suites need all five, since
+# runFlow children inherit what the CLI passes in.
+MAESTRO_ENV=(
+  -e SALMON_TEST_SEED_A="$SALMON_TEST_SEED_A"
+  -e SALMON_TEST_SEED_B="$SALMON_TEST_SEED_B"
+  -e SALMON_TEST_PASSWORD="$SALMON_TEST_PASSWORD"
+  -e SALMON_TEST_WALLET_A_ADDR="$SALMON_TEST_WALLET_A_ADDR"
+  -e SALMON_TEST_WALLET_B_ADDR="$SALMON_TEST_WALLET_B_ADDR"
+)
+
 # Read-only smoke
-maestro test suites/smoke.yaml
+maestro test "${MAESTRO_ENV[@]}" suites/smoke.yaml
 
 # State-modifying actions (authorized per run)
-maestro test suites/actions.yaml
+maestro test "${MAESTRO_ENV[@]}" suites/actions.yaml
 
-# Single flow
+# Single flow — only the variables that flow actually references
 maestro test flows/actions/send/sol-transfer.yaml \
   -e SALMON_TEST_SEED_A="$SALMON_TEST_SEED_A" \
   -e SALMON_TEST_PASSWORD="$SALMON_TEST_PASSWORD" \

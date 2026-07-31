@@ -44,8 +44,10 @@ home for mobile integration tests.
 
 Before authorizing `actions/*` flows, check the test wallets' actual
 state — balance/NFT via a quick RPC query or the app itself — rather than
-assuming the last run left them funded. Wallet A funds Send/Swap; Wallet B
-holds the NFT the transfer flow moves.
+assuming the last run left them funded. Wallet A funds Send/Swap and is where
+the NFT transfer flow expects its fixture to start; the flow is a round trip
+(A → B → A), so a run that died between the legs leaves the NFT parked in
+Wallet B and the next run has to move it home first.
 
 Missing prerequisite → the flow should skip with a clear message, not fail
 cryptically mid-flow. Backend reachable but behaving wrong → fail, never
