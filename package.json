@@ -52,7 +52,10 @@
     "peerDependencyRules": {
       "allowedVersions": {
         "@solana-program/token-2022>@solana/kit": "7",
-        "@solana-program/token-2022>@solana/sysvars": "7"
+        "@solana-program/token-2022>@solana/sysvars": "7",
+        "@solana-name-service/sns-sdk-kit>@solana/kit": "7",
+        "@solana-name-service/sns-sdk-kit>@solana-program/token": "0",
+        "@solana-program/token>@solana/kit": "7"
       }
     },
     "overrides": {
