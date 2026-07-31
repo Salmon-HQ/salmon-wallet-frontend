@@ -27,6 +27,14 @@ appId: io.salmonwallet.app
     timeout: 6000
 - tapOn:
     id: "swap-to-token"
+# Search rather than reach into the list. The sheet is ordered by balance/value,
+# so positions move between runs, and the receive side is not restricted to what
+# the wallet holds — Wallet A has no BONK, so the row is not in the initial list
+# at all. Filtering first makes the row unambiguous. Tap it by testID, never by
+# its text node: bare "SOL"/"Solana" also matches "Marinade staked SOL".
+- tapOn:
+    id: "token-search-input"
+- inputText: "Bonk"
 - extendedWaitUntil:
     visible:
       id: "token-row-Bonk"

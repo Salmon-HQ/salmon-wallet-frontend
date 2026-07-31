@@ -205,6 +205,7 @@ export function TokenSelectorModal({
 
               <BlurContainer style={styles.searchContainer} backgroundColor={colors.background.tokenItem}>
                 <TextInput
+                  testID="token-search-input"
                   style={styles.searchInput}
                   placeholder={t('actions.search_placeholder', 'Search tokens...')}
                   placeholderTextColor={colors.text.tertiary}
