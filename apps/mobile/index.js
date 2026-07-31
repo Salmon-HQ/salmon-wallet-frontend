@@ -13,6 +13,7 @@
  * 2. Polyfill crypto.getRandomValues()
  * 2.1 Polyfill crypto.subtle Ed25519 (+ digest)
  * 2.2 Fill the gaps in React Native's AbortSignal polyfill
+ * 2.3 Provide the EventTarget/CustomEvent globals React Native omits
  * 3. Polyfill process.env
  * 4. Initialize Storage & Stash (required for useAccounts hook)
  * 5. Load expo-router (which loads the app)
@@ -128,6 +129,22 @@ require('@solana/webcrypto-ed25519-polyfill').install();
 // tested; it is feature-detected and becomes a no-op once React Native ships a
 // compliant polyfill.
 require('./src/polyfills/abort-signal').installAbortSignalGapFill();
+
+// =============================================================================
+// 2.3 EventTarget / CustomEvent - Required by @solana/kit RPC subscriptions
+// =============================================================================
+// React Native defines neither global (verified on RN 0.83.6). The @solana
+// subscription packages capture `globalThis.EventTarget` at module scope and
+// construct it when a subscription opens, so signature confirmation threw
+// "Cannot read property 'prototype' of undefined" *after* the transaction had
+// already landed on chain.
+//
+// The polyfill lives in src/polyfills/event-target.js so it can be unit
+// tested. It dispatches events by reference on purpose: @solana/subscribable
+// gates on `ev instanceof CustomEvent` before reading `ev.detail`, so the
+// wrapping implementation React Native already bundles (event-target-shim)
+// would deliver every subscription message as undefined instead.
+require('./src/polyfills/event-target').installEventTargetPolyfill();
 
 // =============================================================================
 // 3. Process Polyfill - Some libraries expect process.env
