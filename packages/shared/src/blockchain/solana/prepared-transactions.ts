@@ -208,7 +208,11 @@ export async function signAndSendPreparedSolanaTransactions(
     } catch (error) {
       const step = preparedTransaction.step ?? 'transaction';
       const message = error instanceof Error ? error.message : 'Unknown Solana transaction error';
-      throw new Error(`Failed during ${step}: ${message}`);
+      // The original error carries the stack that says which call failed;
+      // dropping it leaves only the step name to debug from. Attached with
+      // Object.assign because this package targets the ES2020 lib, which
+      // predates the ErrorOptions constructor overload.
+      throw Object.assign(new Error(`Failed during ${step}: ${message}`), { cause: error });
     }
   }
 

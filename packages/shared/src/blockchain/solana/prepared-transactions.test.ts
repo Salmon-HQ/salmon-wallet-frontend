@@ -257,4 +257,22 @@ describe('prepared-transactions', () => {
       })
     ).rejects.toThrow('Failed during burn: rpc boom');
   });
+
+  it('keeps the original error as the cause', async () => {
+    const cause = new Error('rpc boom');
+    const rpc = createRpc({
+      sendTransaction: () => ({
+        send: async () => {
+          throw cause;
+        },
+      }),
+    });
+    const account = await createAccount({ rpc });
+
+    await expect(
+      signAndSendPreparedSolanaTransactions(account as never, {
+        transactions: [{ transaction: FIXTURE_B64, step: 'burn' }],
+      })
+    ).rejects.toMatchObject({ cause });
+  });
 });
