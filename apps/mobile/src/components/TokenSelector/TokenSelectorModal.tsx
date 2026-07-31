@@ -253,6 +253,10 @@ export function TokenSelectorModal({
                   ListEmptyComponent={renderEmpty}
                   contentContainerStyle={styles.listContent}
                   showsVerticalScrollIndicator={false}
+                  // Without this, a tap on a result while the search input still
+                  // holds focus is spent dismissing the keyboard instead of
+                  // selecting the token, so searching always costs two taps.
+                  keyboardShouldPersistTaps="handled"
                   style={styles.list}
                 />
               )}
