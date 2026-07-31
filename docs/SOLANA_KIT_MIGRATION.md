@@ -159,14 +159,15 @@ abstraction with no second implementation — and shared may not import from an 
 
 ## Mobile polyfills
 
-Hermes is not a browser, and kit assumes browser cryptography. Three polyfills bridge the gap, all
+Hermes is not a browser, and kit assumes browser cryptography. Four polyfills bridge the gap, all
 installed in `apps/mobile/index.js` before anything else loads:
 
 | Polyfill | Why |
 |---|---|
 | Ed25519 WebCrypto (`@solana/webcrypto-ed25519-polyfill`) | Hermes has no `crypto.subtle`. Kit derives and signs through WebCrypto Ed25519. |
-| SHA-512 digest | The Ed25519 polyfill signs via `@noble/ed25519`, which requires a `digest` implementation to be available. |
+| SHA-512 digest (pure JS, `@noble/hashes`) | The Ed25519 polyfill signs via `@noble/ed25519`, whose `sha512Async` calls `crypto.subtle.digest`. Native (expo-crypto) digest fails crossing the JSI bridge on Hermes/Android, so this runs in pure JS instead. |
 | `AbortSignal` gap-fill (`apps/mobile/src/polyfills/abort-signal.js`) | Kit's RPC subscription machinery uses `AbortSignal.timeout` / `any` / `throwIfAborted`, which React Native does not implement completely (`257b863`). |
+| `EventTarget` / `CustomEvent` (`apps/mobile/src/polyfills/event-target.js`) | React Native defines neither global. Kit's subscription packages capture `globalThis.EventTarget` at module scope and construct it when a subscription opens, so signature confirmation threw after the transaction had already landed on chain (`5dc27c7`). |
 
 These are only genuinely exercised on Hermes, so a real device or simulator run remains part of the
 release check for mobile.
