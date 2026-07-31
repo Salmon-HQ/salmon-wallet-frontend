@@ -40,6 +40,19 @@ home for mobile integration tests.
 - **Destructive reset**: `actions/reset/remove-all-wallets.yaml` wipes
   the device. Always last in `suites/actions.yaml`.
 
+## Pre-flight
+
+Before authorizing `actions/*` flows, check the test wallets' actual
+state — balance/NFT via a quick RPC query or the app itself — rather than
+assuming the last run left them funded. Wallet A funds Send/Swap; Wallet B
+holds the NFT the transfer flow moves.
+
+Missing prerequisite → the flow should skip with a clear message, not fail
+cryptically mid-flow. Backend reachable but behaving wrong → fail, never
+skip. (Mobile has no automatic backend-down gate today, unlike the web and
+extension suites' `isBackendUp()` — apply this rule manually until one
+exists.)
+
 ## When extending the suite
 
 1. Decide smoke vs action by whether the flow modifies persistent or

@@ -60,6 +60,27 @@ installed.
    - `SALMON_TEST_WALLET_A_ADDR` — Wallet A Solana address
    - `SALMON_TEST_WALLET_B_ADDR` — Wallet B Solana address
 
+## Pre-flight
+
+Before running `suites/actions.yaml` or any single action flow, check what
+Wallet A / Wallet B actually hold — a quick RPC query against
+`SALMON_TEST_WALLET_A_ADDR` / `SALMON_TEST_WALLET_B_ADDR`
+(`solana balance <addr>`, `getTokenAccountsByOwner`) or opening the app
+and checking Home/Collectibles. These are real mainnet wallets.
+
+Per-flow prerequisites:
+
+| Flow | Needs |
+|---|---|
+| `auth/*`, `home/*`, `settings/*` (smoke), connect/sign | nothing — no funds required |
+| `actions/send/sol-transfer.yaml` | Wallet A: SOL for fee + 0.001 SOL |
+| `actions/swap/*` | Wallet A: balance of the input token |
+| `actions/nft/*` | Wallet B: the Salmon Logo NFT |
+
+Repo policy: a flow that finds its prerequisite missing skips with a clear
+message, never a cryptic failure. If the backend is reachable but behaves
+wrong, the flow fails — it does not skip.
+
 ## Running
 
 > **Working directory matters.** `takeScreenshot` paths in the flow YAML

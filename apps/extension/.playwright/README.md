@@ -81,6 +81,28 @@ these scripts.
    ```
    `lib.mjs` throws on startup if any are missing.
 
+## Pre-flight
+
+Before running anything beyond `lock.spec.ts` or read-only Phase 1
+scripts, check what Wallet A / Wallet B actually hold — `state-check.mjs`,
+a quick RPC query (`solana balance <addr>`, `getTokenAccountsByOwner`), or
+opening the popup and looking at Home/Collectibles. This is real mainnet
+money — know the balance before a script spends it.
+
+Per-flow prerequisites:
+
+| Flow | Needs |
+|---|---|
+| `lock.spec.ts`, `dapp-providers.mjs`, connect/sign flows | nothing — no funds required |
+| `state-modifying.mjs` (Send, Address Book) | Wallet A: SOL for fee + the 0.001 SOL amount |
+| `nft-transfer.mjs` | Wallet A: an NFT to send |
+| `burn-cnft.mjs` | Wallet B: the target scam cNFT |
+
+Repo policy: a spec/script that finds its prerequisite missing skips (or
+stops, for legacy `.mjs` scripts) with a clear message, never a cryptic
+failure. One where the backend is reachable but behaves wrong still
+fails — it does not skip. Same rule as the `isBackendUp()` gate below.
+
 ## Running specs (`@playwright/test`)
 
 From the repo root:

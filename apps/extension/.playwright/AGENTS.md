@@ -64,6 +64,24 @@ The extension uses MUI components throughout. Common gotchas:
 | Settings sub-panel screenshot shows the wrong panel | Drawer animation is in flight when you capture. Either sleep ≥ 1500 ms after click or use `settings-panels.mjs` which opens a fresh popup per panel. |
 | `popup.goto(popupUrl)` does not reset the SPA route | The popup retains state via `localStorage`. To start clean, open a new page or `rm -rf` the profile. |
 
+## Pre-flight
+
+Confirm the test wallet's state before running a flow that depends on
+it — `state-check.mjs`, a quick RPC query, or the popup itself. Do not
+assume Wallet A still has SOL or Wallet B still holds the target NFT; both
+drain across runs (Send moves real SOL, burn/transfer moves real NFTs).
+
+| Flow | Needs |
+|---|---|
+| Lock/unlock, connect, sign, dApp provider inspection | nothing |
+| Send / Address Book save | Wallet A: SOL for fee + amount |
+| NFT transfer | Wallet A: an NFT to send |
+| Burn cNFT | Wallet B: the target scam cNFT |
+
+Missing prerequisite → skip with a clear message (same policy as the
+backend-down case in the README). Backend up but behaving wrong → fail,
+never skip.
+
 ## Sensitive workflows — guardrails
 
 Before any irreversible action (send, swap, burn, remove wallet) the
