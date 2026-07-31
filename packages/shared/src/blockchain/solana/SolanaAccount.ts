@@ -415,8 +415,8 @@ export class SolanaAccount {
    * @returns Domain name or null if not found
    */
   async getDomain(): Promise<string | null> {
-    const connection = await this.getConnection();
-    return getDomainFromService(connection, this.publicKey);
+    const rpc = this.getRpc();
+    return getDomainFromService(rpc, address(this.publicKey.toBase58()));
   }
 
   /**
@@ -427,9 +427,9 @@ export class SolanaAccount {
    * @returns Domain name or null if not found
    */
   async getDomainFromPublicKey(publicKey: PublicKey | string): Promise<string | null> {
-    const connection = await this.getConnection();
-    const pk = typeof publicKey === 'string' ? new PublicKey(publicKey) : publicKey;
-    return getDomainFromPublicKeyService(connection, pk);
+    const rpc = this.getRpc();
+    const pk = typeof publicKey === 'string' ? publicKey : publicKey.toBase58();
+    return getDomainFromPublicKeyService(rpc, address(pk));
   }
 
   /**
@@ -439,8 +439,8 @@ export class SolanaAccount {
    * @returns Base58-encoded public key or null if not found
    */
   async getPublicKeyFromDomain(domain: string): Promise<string | null> {
-    const connection = await this.getConnection();
-    return getPublicKeyFromDomainService(connection, domain);
+    const rpc = this.getRpc();
+    return getPublicKeyFromDomainService(rpc, domain);
   }
 
   // ==========================================================================

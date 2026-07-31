@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Keypair, PublicKey } from '@solana/web3.js';
-import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
+import { address, createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
 
 vi.mock('@solana/web3.js', async () => {
   const actual = await vi.importActual<typeof import('@solana/web3.js')>('@solana/web3.js');
@@ -108,22 +108,36 @@ describe('SolanaAccount', () => {
     await expect(account.getCredit()).resolves.toBe(1234);
   });
 
-  it('wraps domain helper methods with the account connection', async () => {
+  it('wraps domain helper methods with the account rpc', async () => {
     const account = await createAccount();
     mockGetDomain.mockResolvedValueOnce('wallet.sol');
     mockGetDomainFromPublicKey.mockResolvedValueOnce('friend.sol');
     mockGetPublicKeyFromDomain.mockResolvedValueOnce('resolved-public-key');
 
-    const connection = await account.getConnection();
+    const rpc = account.getRpc();
     const otherPublicKey = Keypair.generate().publicKey;
 
     await expect(account.getDomain()).resolves.toBe('wallet.sol');
     await expect(account.getDomainFromPublicKey(otherPublicKey)).resolves.toBe('friend.sol');
     await expect(account.getPublicKeyFromDomain('friend.sol')).resolves.toBe('resolved-public-key');
 
-    expect(mockGetDomain).toHaveBeenCalledWith(connection, account.publicKey);
-    expect(mockGetDomainFromPublicKey).toHaveBeenCalledWith(connection, otherPublicKey);
-    expect(mockGetPublicKeyFromDomain).toHaveBeenCalledWith(connection, 'friend.sol');
+    // `rpc` is a kit Proxy client with no own enumerable properties, so
+    // vitest's deep-equal in `toHaveBeenCalledWith` can't compare it
+    // structurally. Assert it by reference and the rest of the args by value.
+    expect(mockGetDomain).toHaveBeenCalledWith(
+      expect.anything(),
+      address(account.publicKey.toBase58())
+    );
+    expect(mockGetDomain.mock.calls[0][0]).toBe(rpc);
+
+    expect(mockGetDomainFromPublicKey).toHaveBeenCalledWith(
+      expect.anything(),
+      address(otherPublicKey.toBase58())
+    );
+    expect(mockGetDomainFromPublicKey.mock.calls[0][0]).toBe(rpc);
+
+    expect(mockGetPublicKeyFromDomain).toHaveBeenCalledWith(expect.anything(), 'friend.sol');
+    expect(mockGetPublicKeyFromDomain.mock.calls[0][0]).toBe(rpc);
   });
 
   it('returns base58 secret key and validates public key helpers', async () => {
