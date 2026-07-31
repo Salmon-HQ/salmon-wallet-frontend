@@ -59,7 +59,7 @@ const RPC = { name: 'mock-rpc' };
 const RPC_SUBSCRIPTIONS = { name: 'mock-rpc-subscriptions' };
 
 const ACCOUNT = {
-  getPublicKey: () => ({ toBase58: () => 'wallet-public-key' }),
+  getPublicKey: () => 'wallet-public-key',
   getRpc: vi.fn().mockReturnValue(RPC),
   getRpcSubscriptions: vi.fn().mockReturnValue(RPC_SUBSCRIPTIONS),
   signer: { address: 'wallet-public-key' },

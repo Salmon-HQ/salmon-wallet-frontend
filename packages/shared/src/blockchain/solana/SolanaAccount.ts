@@ -1,6 +1,11 @@
-import { Connection, PublicKey, Commitment } from '@solana/web3.js';
-import { address, createSolanaRpc, createSolanaRpcSubscriptions } from '@solana/kit';
-import type { KeyPairSigner } from '@solana/kit';
+import {
+  address,
+  createSolanaRpc,
+  createSolanaRpcSubscriptions,
+  getAddressEncoder,
+  isAddress,
+} from '@solana/kit';
+import type { Address, Commitment, KeyPairSigner } from '@solana/kit';
 import bs58 from 'bs58';
 import {
   SOLANA_NETWORKS,
@@ -96,7 +101,7 @@ export type { ValidationResult };
  * It manages a keypair and provides methods for querying balances and account information.
  *
  * Features:
- * - Lazy connection initialization for efficient resource usage
+ * - Lazy RPC client initialization for efficient resource usage
  * - Balance queries in both lamports and SOL
  * - Public key and address retrieval
  * - Secure private key access
@@ -114,16 +119,12 @@ export class SolanaAccount {
   /** Kit signer, used for off-chain message signing */
   readonly signer: KeyPairSigner;
 
-  /** Public key derived from the signer's address */
-  readonly publicKey: PublicKey;
+  /** Base58 address derived from the signer. */
+  readonly publicKey: Address;
 
   /** 32-byte ed25519 seed — the only recoverable form of the private key */
   private readonly seed: Uint8Array;
 
-  /** Cached connection instance (lazy initialized) */
-  private connection: Connection | null = null;
-  /** The nodeUrl used to create the current connection (for comparison) */
-  private connectionNodeUrl: string | null = null;
   /** Cached kit RPC client (lazy initialized) */
   private rpc: SolanaRpc | null = null;
   /** The nodeUrl used to create the current kit RPC client */
@@ -152,7 +153,7 @@ export class SolanaAccount {
     this.path = options.path;
     this.signer = options.keyPair.signer;
     this.seed = options.keyPair.seed;
-    this.publicKey = new PublicKey(options.keyPair.signer.address);
+    this.publicKey = options.keyPair.signer.address;
     this.fetchBalanceFn = options.fetchBalance;
     this.fetchTransactionFn = options.fetchTransaction;
     this.fetchTransactionsFn = options.fetchTransactions;
@@ -170,7 +171,7 @@ export class SolanaAccount {
     // public key — the same bytes the legacy web3.js keypair exposed.
     const secretKey = new Uint8Array(64);
     secretKey.set(this.seed);
-    secretKey.set(this.publicKey.toBytes(), 32);
+    secretKey.set(getAddressEncoder().encode(this.publicKey), 32);
     return bs58.encode(secretKey);
   }
 
@@ -180,26 +181,6 @@ export class SolanaAccount {
    */
   getNetworkId(): SolanaNetwork['networkId'] {
     return this.network.networkId;
-  }
-
-  /**
-   * Gets or creates a connection to the Solana network.
-   * Uses lazy initialization to avoid creating connections until needed.
-   * Always uses the latest network configuration from SOLANA_NETWORKS to ensure
-   * the RPC URL is up-to-date (may have been updated by fetchAndMergeNetworkConfigs).
-   *
-   * @returns Promise resolving to Connection instance
-   */
-  async getConnection(): Promise<Connection> {
-    // Always get the latest network config from SOLANA_NETWORKS in case it was updated
-    const { nodeUrl, commitment } = this.getLatestConfig();
-
-    // Recreate connection if nodeUrl changed or if connection doesn't exist
-    if (!this.connection || this.connectionNodeUrl !== nodeUrl) {
-      this.connection = new Connection(nodeUrl, commitment);
-      this.connectionNodeUrl = nodeUrl;
-    }
-    return this.connection;
   }
 
   /**
@@ -219,9 +200,9 @@ export class SolanaAccount {
   /**
    * Gets or creates the kit RPC client for this network.
    *
-   * Sync, unlike `getConnection()`: `createSolanaRpc` performs no I/O. The
-   * cache is keyed on nodeUrl for the same reason the connection cache is —
-   * the backend catalog can change it after the account was constructed.
+   * Sync: `createSolanaRpc` performs no I/O. The cache is keyed on nodeUrl
+   * because the backend catalog can change it after the account was
+   * constructed.
    */
   getRpc(): SolanaRpc {
     const { nodeUrl } = this.getLatestConfig();
@@ -254,8 +235,12 @@ export class SolanaAccount {
    * @returns Promise resolving to balance in lamports
    */
   async getCredit(): Promise<number> {
-    const connection = await this.getConnection();
-    return connection.getBalance(this.publicKey);
+    // The commitment is load-bearing, not cosmetic: the legacy Connection
+    // carried it, while the RPC server defaults to 'finalized'. Dropping it
+    // would silently start reading older balances.
+    const { commitment } = this.getLatestConfig();
+    const { value } = await this.getRpc().getBalance(this.publicKey, { commitment }).send();
+    return Number(value);
   }
 
   // ==========================================================================
@@ -271,7 +256,7 @@ export class SolanaAccount {
   private async fetchSolanaBalance(
     opts?: { includeSpam?: boolean },
   ): Promise<SolanaBalanceItem[]> {
-    return this.fetchBalanceFn(this.network.id, this.publicKey.toBase58(), opts);
+    return this.fetchBalanceFn(this.network.id, this.publicKey, opts);
   }
 
   /**
@@ -335,7 +320,7 @@ export class SolanaAccount {
    *
    * @returns The account's public key
    */
-  getPublicKey(): PublicKey {
+  getPublicKey(): Address {
     return this.publicKey;
   }
 
@@ -345,7 +330,7 @@ export class SolanaAccount {
    * @returns Base58-encoded public key string suitable for receiving funds
    */
   getReceiveAddress(): string {
-    return this.publicKey.toBase58();
+    return this.publicKey;
   }
 
   /**
@@ -355,32 +340,14 @@ export class SolanaAccount {
    * @returns True if the address is valid, false otherwise
    */
   static isValidAddress(address: string): boolean {
-    try {
-      new PublicKey(address);
-      return true;
-    } catch {
-      return false;
-    }
+    return isAddress(address);
   }
 
   /**
-   * Creates a PublicKey instance from an address string.
-   *
-   * @param address - Base58-encoded address string
-   * @returns PublicKey instance
-   * @throws Error if the address is invalid
-   */
-  static toPublicKey(address: string): PublicKey {
-    return new PublicKey(address);
-  }
-
-  /**
-   * Drops the cached connection and kit clients so the next accessor rebuilds
-   * them. Call this when the account is no longer needed.
+   * Drops the cached kit clients so the next accessor rebuilds them.
+   * Call this when the account is no longer needed.
    */
   async disconnect(): Promise<void> {
-    this.connection = null;
-    this.connectionNodeUrl = null;
     this.rpc = null;
     this.rpcNodeUrl = null;
     this.rpcSubscriptions = null;
@@ -416,7 +383,7 @@ export class SolanaAccount {
    */
   async getDomain(): Promise<string | null> {
     const rpc = this.getRpc();
-    return getDomainFromService(rpc, address(this.publicKey.toBase58()));
+    return getDomainFromService(rpc, this.publicKey);
   }
 
   /**
@@ -426,10 +393,9 @@ export class SolanaAccount {
    * @param publicKey - Public key to look up
    * @returns Domain name or null if not found
    */
-  async getDomainFromPublicKey(publicKey: PublicKey | string): Promise<string | null> {
+  async getDomainFromPublicKey(publicKey: string): Promise<string | null> {
     const rpc = this.getRpc();
-    const pk = typeof publicKey === 'string' ? publicKey : publicKey.toBase58();
-    return getDomainFromPublicKeyService(rpc, address(pk));
+    return getDomainFromPublicKeyService(rpc, address(publicKey));
   }
 
   /**
@@ -454,7 +420,7 @@ export class SolanaAccount {
    * @returns Transaction data or null if not found
    */
   async getTransaction(txId: string): Promise<SolanaTransaction | null> {
-    const address = this.publicKey.toBase58();
+    const address = this.publicKey;
     return this.fetchTransactionFn(this.network.id, address, txId);
   }
 
@@ -467,7 +433,7 @@ export class SolanaAccount {
   async getRecentTransactions(
     paging?: SolanaTransactionPaging
   ): Promise<SolanaTransactionListResponse> {
-    const address = this.publicKey.toBase58();
+    const address = this.publicKey;
     return getRecentTransactionsService(this.network.id, address, paging, this.fetchTransactionsFn);
   }
 
@@ -610,7 +576,7 @@ export class SolanaAccount {
   async getAllNfts(): Promise<Nft[]> {
     return getAllNftsFromService(
       this.network,
-      this.publicKey.toBase58(),
+      this.publicKey,
       false,
       this.fetchNftsFn,
     );

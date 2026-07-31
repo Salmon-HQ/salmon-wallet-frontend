@@ -150,7 +150,7 @@ export function useSwap({
       lastQuoteParamsRef.current = params;
 
       try {
-        const publicKey = account.getPublicKey().toBase58();
+        const publicKey = account.getPublicKey();
 
         const quoteParams: SwapQuoteParams = {
           inputMint: params.inputMint,

@@ -1,26 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Keypair, PublicKey } from '@solana/web3.js';
-import { address, createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
-
-vi.mock('@solana/web3.js', async () => {
-  const actual = await vi.importActual<typeof import('@solana/web3.js')>('@solana/web3.js');
-
-  class MockConnection {
-    nodeUrl: string;
-    commitment: string;
-    getBalance = vi.fn();
-
-    constructor(nodeUrl: string, commitment: string) {
-      this.nodeUrl = nodeUrl;
-      this.commitment = commitment;
-    }
-  }
-
-  return {
-    ...actual,
-    Connection: MockConnection,
-  };
-});
+import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
 
 vi.mock('./domains', () => ({
   getDomain: vi.fn(),
@@ -40,6 +19,9 @@ const mockGetDomain = vi.mocked(getDomain);
 const mockGetDomainFromPublicKey = vi.mocked(getDomainFromPublicKey);
 const mockGetPublicKeyFromDomain = vi.mocked(getPublicKeyFromDomain);
 
+/** A fixed address that is not the one under test. */
+const OTHER_ADDRESS = 'AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9';
+
 async function createAccount(seed: Uint8Array = crypto.getRandomValues(new Uint8Array(32))) {
   return new SolanaAccount({
     network: SOLANA_NETWORKS['solana-mainnet'],
@@ -56,22 +38,6 @@ async function createAccount(seed: Uint8Array = crypto.getRandomValues(new Uint8
 describe('SolanaAccount', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it('reuses the current connection until the configured node url changes', async () => {
-    const account = await createAccount();
-
-    const first = await account.getConnection();
-    const second = await account.getConnection();
-    expect(first).toBe(second);
-
-    const originalNodeUrl = SOLANA_NETWORKS['solana-mainnet'].config.nodeUrl;
-    SOLANA_NETWORKS['solana-mainnet'].config.nodeUrl = 'https://new-rpc.example';
-
-    const third = await account.getConnection();
-    expect(third).not.toBe(first);
-
-    SOLANA_NETWORKS['solana-mainnet'].config.nodeUrl = originalNodeUrl;
   });
 
   it('caches the kit rpc client per node url and derives the subscriptions endpoint', async () => {
@@ -100,12 +66,15 @@ describe('SolanaAccount', () => {
     network.config.nodeUrl = originalNodeUrl;
   });
 
-  it('delegates getCredit to the underlying connection', async () => {
+  it('reads the balance through the kit rpc at the configured commitment', async () => {
     const account = await createAccount();
-    const connection = await account.getConnection();
-    (connection.getBalance as any).mockResolvedValue(1234);
+    const getBalance = vi.fn().mockReturnValue({ send: async () => ({ value: 1234n }) });
+    vi.spyOn(account, 'getRpc').mockReturnValue({ getBalance } as never);
 
     await expect(account.getCredit()).resolves.toBe(1234);
+    // Without the explicit commitment the RPC server would default to
+    // 'finalized' and return a staler balance than the legacy Connection did.
+    expect(getBalance).toHaveBeenCalledWith(account.publicKey, { commitment: 'confirmed' });
   });
 
   it('wraps domain helper methods with the account rpc', async () => {
@@ -115,25 +84,18 @@ describe('SolanaAccount', () => {
     mockGetPublicKeyFromDomain.mockResolvedValueOnce('resolved-public-key');
 
     const rpc = account.getRpc();
-    const otherPublicKey = Keypair.generate().publicKey;
 
     await expect(account.getDomain()).resolves.toBe('wallet.sol');
-    await expect(account.getDomainFromPublicKey(otherPublicKey)).resolves.toBe('friend.sol');
+    await expect(account.getDomainFromPublicKey(OTHER_ADDRESS)).resolves.toBe('friend.sol');
     await expect(account.getPublicKeyFromDomain('friend.sol')).resolves.toBe('resolved-public-key');
 
     // `rpc` is a kit Proxy client with no own enumerable properties, so
     // vitest's deep-equal in `toHaveBeenCalledWith` can't compare it
     // structurally. Assert it by reference and the rest of the args by value.
-    expect(mockGetDomain).toHaveBeenCalledWith(
-      expect.anything(),
-      address(account.publicKey.toBase58())
-    );
+    expect(mockGetDomain).toHaveBeenCalledWith(expect.anything(), account.publicKey);
     expect(mockGetDomain.mock.calls[0][0]).toBe(rpc);
 
-    expect(mockGetDomainFromPublicKey).toHaveBeenCalledWith(
-      expect.anything(),
-      address(otherPublicKey.toBase58())
-    );
+    expect(mockGetDomainFromPublicKey).toHaveBeenCalledWith(expect.anything(), OTHER_ADDRESS);
     expect(mockGetDomainFromPublicKey.mock.calls[0][0]).toBe(rpc);
 
     expect(mockGetPublicKeyFromDomain).toHaveBeenCalledWith(expect.anything(), 'friend.sol');
@@ -147,7 +109,6 @@ describe('SolanaAccount', () => {
     expect(account.retrieveSecurePrivateKey().length).toBeGreaterThan(0);
     expect(SolanaAccount.isValidAddress(account.getReceiveAddress())).toBe(true);
     expect(SolanaAccount.isValidAddress('not-a-solana-address')).toBe(false);
-    expect(SolanaAccount.toPublicKey(account.getReceiveAddress())).toBeInstanceOf(PublicKey);
   });
 
   it('rebuilds the same key material from the seed as the legacy keypair did', async () => {
@@ -159,7 +120,7 @@ describe('SolanaAccount', () => {
       '2AXDGYSE4f2sz7tvMMzyHvUfcoJmxudvdhBcmiUSo6iuCXagjUCKEQF21awZnUGxmwD4m9vGXuC3qieHXJQHAcT'
     );
     expect(account.signer.address).toBe('AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9');
-    expect(account.publicKey.toBase58()).toBe(account.signer.address);
+    expect(account.publicKey).toBe(account.signer.address);
     expect(account.getReceiveAddress()).toBe(account.signer.address);
   });
 
