@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createKeyPairSignerFromPrivateKeyBytes,
+  getBase64Decoder,
   getCompiledTransactionMessageDecoder,
   getTransactionDecoder,
 } from '@solana/kit';
+import {
+  ADDRESS_LOOKUP_TABLE_PROGRAM_ADDRESS,
+  getAddressLookupTableEncoder,
+} from '@solana-program/address-lookup-table';
 import {
   getPreparedSolanaTransactions,
   signAndSendPreparedSolanaTransactions,
@@ -21,6 +26,34 @@ const FIXTURE_B64 =
 const FRESH_BLOCKHASH = 'GHtXQBsoZHVnNFa9YevAzFr17DJjgHXk3ycTKD5xD3Zi';
 const BURN_BLOCKHASH = 'DzfXchZJoLMG3cNftcf2sw7qatkkuwQf4xH15N5wkKAB';
 const LOOKUP_TABLE_ADDRESS = 'GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse';
+const LOOKUP_TABLE_ENTRY = 'AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9';
+
+/**
+ * A base64 lookup-table account as the RPC would return it, built with the
+ * program's own encoder so the real decoder is exercised end to end.
+ */
+function encodeLookupTableAccount(addressCount: number, lastExtendedSlot: bigint) {
+  const data = getAddressLookupTableEncoder().encode({
+    // u64::MAX — the sentinel for "not deactivated".
+    deactivationSlot: 2n ** 64n - 1n,
+    lastExtendedSlot,
+    lastExtendedSlotStartIndex: 0,
+    authority: null,
+    addresses: new Array(addressCount).fill(LOOKUP_TABLE_ENTRY),
+  });
+
+  return {
+    context: { slot: 1n },
+    value: {
+      data: [getBase64Decoder().decode(data), 'base64'],
+      executable: false,
+      lamports: 0n,
+      owner: ADDRESS_LOOKUP_TABLE_PROGRAM_ADDRESS,
+      rentEpoch: 0n,
+      space: BigInt(data.length),
+    },
+  };
+}
 
 type SignatureNotifications = () => AsyncGenerator<{ value: { err: unknown } }>;
 
@@ -58,13 +91,11 @@ function createRpcSubscriptions(notifications: SignatureNotifications = noNotifi
 async function createAccount(options: {
   rpc?: ReturnType<typeof createRpc>;
   rpcSubscriptions?: ReturnType<typeof createRpcSubscriptions>;
-  connection?: unknown;
 } = {}) {
   return {
     signer: await createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(1), false),
     getRpc: () => options.rpc ?? createRpc(),
     getRpcSubscriptions: () => options.rpcSubscriptions ?? createRpcSubscriptions(),
-    getConnection: vi.fn().mockResolvedValue(options.connection),
   };
 }
 
@@ -152,17 +183,19 @@ describe('prepared-transactions', () => {
   });
 
   it('waits for lookup table addresses to warm up before moving to the burn step', async () => {
-    const lookupTable = {
-      state: {
-        addresses: new Array(20).fill('address'),
-        lastExtendedSlot: 80,
-      },
-    };
-    const connection = {
-      getAddressLookupTable: vi.fn().mockResolvedValue({ value: lookupTable }),
-      getSlot: vi.fn().mockResolvedValueOnce(80).mockResolvedValueOnce(81),
-    };
+    const lookupTableAccount = encodeLookupTableAccount(20, 80n);
+    const getAccountInfo = vi.fn().mockReturnValue({
+      send: async () => lookupTableAccount,
+    });
+    // The table is still warming up on the first read: current slot == the slot
+    // it was last extended in. It becomes usable one slot later.
+    const getSlot = vi
+      .fn()
+      .mockReturnValueOnce({ send: async () => 80n })
+      .mockReturnValueOnce({ send: async () => 81n });
     const rpc = createRpc({
+      getAccountInfo,
+      getSlot,
       getLatestBlockhash: vi
         .fn()
         .mockReturnValueOnce({
@@ -176,7 +209,7 @@ describe('prepared-transactions', () => {
         .mockReturnValueOnce({ send: async () => 'signature-extend' })
         .mockReturnValueOnce({ send: async () => 'signature-burn' }),
     });
-    const account = await createAccount({ rpc, connection });
+    const account = await createAccount({ rpc });
 
     const response: PreparedNftTransactionResponse = {
       transactions: [
@@ -195,74 +228,17 @@ describe('prepared-transactions', () => {
     });
 
     expect(signatures).toEqual(['signature-extend', 'signature-burn']);
-    // The subscription path is unavailable on this stub, so polling takes over.
-    expect(connection.getAddressLookupTable).toHaveBeenCalledTimes(2);
-    expect(connection.getSlot).toHaveBeenCalledTimes(2);
+    // Two polls: the first sees the warm-up slot, the second clears it.
+    expect(getAccountInfo).toHaveBeenCalledTimes(2);
+    expect(getAccountInfo).toHaveBeenCalledWith(LOOKUP_TABLE_ADDRESS, {
+      commitment: 'confirmed',
+      encoding: 'base64',
+    });
+    expect(getSlot).toHaveBeenCalledTimes(2);
+    expect(getSlot).toHaveBeenCalledWith({ commitment: 'confirmed' });
     expect(decodeSent(rpc.sendTransaction.mock.calls[1][0] as string).message.lifetimeToken).toBe(
       BURN_BLOCKHASH
     );
-  });
-
-  it('prefers websocket subscriptions for LUT warmup when the connection supports them', async () => {
-    const originalClearTimeout = global.clearTimeout;
-    global.setTimeout = vi.fn(() => 0 as unknown as ReturnType<typeof setTimeout>) as unknown as typeof setTimeout;
-    global.clearTimeout = vi.fn() as typeof clearTimeout;
-
-    const lookupTable = {
-      state: {
-        addresses: new Array(20).fill('address'),
-        lastExtendedSlot: 80,
-      },
-    };
-    const connection = {
-      getAddressLookupTable: vi.fn().mockResolvedValue({ value: lookupTable }),
-      getSlot: vi.fn().mockResolvedValue(80),
-      onAccountChange: vi.fn().mockReturnValue(1),
-      removeAccountChangeListener: vi.fn().mockResolvedValue(undefined),
-      onSlotChange: vi.fn().mockImplementation((callback) => {
-        queueMicrotask(() => {
-          callback({ slot: 81 });
-        });
-        return 2;
-      }),
-      removeSlotChangeListener: vi.fn().mockResolvedValue(undefined),
-    };
-    const rpc = createRpc({
-      sendTransaction: vi
-        .fn()
-        .mockReturnValueOnce({ send: async () => 'signature-extend' })
-        .mockReturnValueOnce({ send: async () => 'signature-burn' }),
-    });
-    const account = await createAccount({ rpc, connection });
-
-    const response: PreparedNftTransactionResponse = {
-      transactions: [
-        {
-          transaction: FIXTURE_B64,
-          step: 'lookup_table_extend',
-          lookupTableAddress: LOOKUP_TABLE_ADDRESS,
-          expectedLookupTableAddressCount: 20,
-        },
-        { transaction: FIXTURE_B64, step: 'burn' },
-      ],
-    };
-
-    const signatures = await signAndSendPreparedSolanaTransactions(account as never, response, {
-      commitment: 'confirmed',
-    });
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(signatures).toEqual(['signature-extend', 'signature-burn']);
-    expect(connection.onAccountChange).toHaveBeenCalledTimes(1);
-    expect(connection.onSlotChange).toHaveBeenCalledTimes(1);
-    expect(connection.getAddressLookupTable).toHaveBeenCalledTimes(1);
-    expect(connection.getSlot).toHaveBeenCalledTimes(1);
-    expect(connection.removeAccountChangeListener).toHaveBeenCalledWith(1);
-    expect(connection.removeSlotChangeListener).toHaveBeenCalledWith(2);
-
-    global.setTimeout = originalSetTimeout;
-    global.clearTimeout = originalClearTimeout;
   });
 
   it('surfaces the failing step in the thrown error message', async () => {

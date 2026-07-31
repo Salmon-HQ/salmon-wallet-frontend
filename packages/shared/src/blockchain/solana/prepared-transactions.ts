@@ -1,17 +1,20 @@
 import {
+  address,
   getBase64EncodedWireTransaction,
   getCompiledTransactionMessageDecoder,
   getCompiledTransactionMessageEncoder,
   getTransactionDecoder,
   partiallySignTransaction,
 } from '@solana/kit';
-import type { Commitment, TransactionMessageBytes } from '@solana/kit';
+import type { Address, Commitment, TransactionMessageBytes } from '@solana/kit';
+import { fetchMaybeAddressLookupTable } from '@solana-program/address-lookup-table';
 import { createRecentSignatureConfirmationPromiseFactory } from '@solana/transaction-confirmation';
 import type {
   PreparedNftTransaction,
   PreparedNftTransactionResponse,
 } from '../../types/nft';
-import { SolanaAccount } from './SolanaAccount';
+import type { SolanaAccount } from './SolanaAccount';
+import type { SolanaRpc } from './networks';
 
 export interface SignAndSendPreparedSolanaTransactionsOptions {
   commitment?: Commitment;
@@ -21,16 +24,6 @@ const LOOKUP_TABLE_POLL_INTERVAL_MS = 400;
 const LOOKUP_TABLE_TIMEOUT_MS = 20_000;
 const SIGNATURE_CONFIRMATION_TIMEOUT_MS = 30_000;
 
-/**
- * ponytail: the lookup-table warm-up path stays on the legacy web3.js
- * Connection. @solana/kit has no address-lookup-table decoder — that lives in
- * @solana-program/address-lookup-table — and this path only reads state, never
- * signs. Upgrade path: add that package and swap getAddressLookupTable for
- * fetchAddressLookupTable plus rpcSubscriptions.accountNotifications.
- */
-type Connection = Awaited<ReturnType<SolanaAccount['getConnection']>>;
-type PublicKey = ReturnType<typeof SolanaAccount.toPublicKey>;
-
 interface LookupTableReadiness {
   ready: boolean;
   waitingForWarmup: boolean;
@@ -38,18 +31,17 @@ interface LookupTableReadiness {
 }
 
 async function getLookupTableReadiness(
-  connection: Connection,
-  tablePublicKey: PublicKey,
+  rpc: SolanaRpc,
+  tableAddress: Address,
   expectedAddressCount: number | undefined,
   commitment: Commitment,
   currentSlotOverride?: number
 ): Promise<LookupTableReadiness> {
-  const response = await connection.getAddressLookupTable(tablePublicKey, {
-    commitment,
-  });
-  const lookupTable = response.value;
+  // fetchMaybe, not fetch: the non-Maybe variant throws when the table does not
+  // exist yet, and "not created yet" has to stay a poll-again result.
+  const table = await fetchMaybeAddressLookupTable(rpc, tableAddress, { commitment });
 
-  if (!lookupTable) {
+  if (!table.exists) {
     return {
       ready: false,
       waitingForWarmup: false,
@@ -57,12 +49,14 @@ async function getLookupTableReadiness(
     };
   }
 
-  const currentAddressCount = lookupTable.state.addresses.length;
+  const currentAddressCount = table.data.addresses.length;
+  const lastExtendedSlot = Number(table.data.lastExtendedSlot);
+
   if (expectedAddressCount !== undefined && currentAddressCount < expectedAddressCount) {
     return {
       ready: false,
       waitingForWarmup: false,
-      lastExtendedSlot: Number(lookupTable.state.lastExtendedSlot),
+      lastExtendedSlot,
     };
   }
 
@@ -70,12 +64,11 @@ async function getLookupTableReadiness(
     return {
       ready: true,
       waitingForWarmup: false,
-      lastExtendedSlot: Number(lookupTable.state.lastExtendedSlot),
+      lastExtendedSlot,
     };
   }
 
-  const currentSlot = currentSlotOverride ?? await connection.getSlot(commitment);
-  const lastExtendedSlot = Number(lookupTable.state.lastExtendedSlot);
+  const currentSlot = currentSlotOverride ?? Number(await rpc.getSlot({ commitment }).send());
   const waitingForWarmup = currentSlot <= lastExtendedSlot;
 
   return {
@@ -86,8 +79,8 @@ async function getLookupTableReadiness(
 }
 
 async function waitForLookupTableStateByPolling(
-  connection: Connection,
-  tablePublicKey: PublicKey,
+  rpc: SolanaRpc,
+  tableAddress: Address,
   expectedAddressCount: number | undefined,
   commitment: Commitment
 ): Promise<void> {
@@ -95,8 +88,8 @@ async function waitForLookupTableStateByPolling(
 
   while (Date.now() - startedAt < LOOKUP_TABLE_TIMEOUT_MS) {
     const readiness = await getLookupTableReadiness(
-      connection,
-      tablePublicKey,
+      rpc,
+      tableAddress,
       expectedAddressCount,
       commitment
     );
@@ -109,119 +102,8 @@ async function waitForLookupTableStateByPolling(
   }
 
   throw new Error(
-    `Lookup table ${tablePublicKey.toBase58()} was not ready with ${expectedAddressCount ?? 0} addresses in time`
+    `Lookup table ${tableAddress} was not ready with ${expectedAddressCount ?? 0} addresses in time`
   );
-}
-
-async function waitForLookupTableStateBySubscription(
-  connection: Connection,
-  tablePublicKey: PublicKey,
-  expectedAddressCount: number | undefined,
-  commitment: Commitment
-): Promise<void> {
-  if (
-    typeof connection.onAccountChange !== 'function' ||
-    typeof connection.onSlotChange !== 'function' ||
-    typeof connection.removeAccountChangeListener !== 'function' ||
-    typeof connection.removeSlotChangeListener !== 'function'
-  ) {
-    throw new Error('Lookup table subscriptions are not available on this connection');
-  }
-
-  let accountSubscriptionId: number | null = null;
-  let slotSubscriptionId: number | null = null;
-  let timedOut = false;
-  let settled = false;
-  let warmupTargetSlot: number | null = null;
-
-  const cleanup = async () => {
-    const removals: Promise<unknown>[] = [];
-    if (accountSubscriptionId !== null) {
-      removals.push(connection.removeAccountChangeListener(accountSubscriptionId));
-    }
-    if (slotSubscriptionId !== null) {
-      removals.push(connection.removeSlotChangeListener(slotSubscriptionId));
-    }
-    await Promise.allSettled(removals);
-  };
-
-  const initialReadiness = await getLookupTableReadiness(
-    connection,
-    tablePublicKey,
-    expectedAddressCount,
-    commitment
-  );
-  if (initialReadiness.ready) {
-    return;
-  }
-  warmupTargetSlot = initialReadiness.waitingForWarmup ? initialReadiness.lastExtendedSlot : null;
-
-  await new Promise<void>((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      timedOut = true;
-      void cleanup().finally(() => {
-        reject(
-          new Error(
-            `Lookup table ${tablePublicKey.toBase58()} was not ready with ${expectedAddressCount ?? 0} addresses in time`
-          )
-        );
-      });
-    }, LOOKUP_TABLE_TIMEOUT_MS);
-
-    const finish = (callback: () => void) => {
-      if (settled || timedOut) return;
-      settled = true;
-      clearTimeout(timeoutId);
-      void cleanup().finally(callback);
-    };
-
-    const refreshReadiness = async () => {
-      if (settled || timedOut) return;
-      try {
-        const readiness = await getLookupTableReadiness(
-          connection,
-          tablePublicKey,
-          expectedAddressCount,
-          commitment
-        );
-        warmupTargetSlot = readiness.waitingForWarmup ? readiness.lastExtendedSlot : null;
-        if (readiness.ready) {
-          finish(resolve);
-        }
-      } catch (error) {
-        finish(() => {
-          reject(error instanceof Error ? error : new Error('Unknown lookup table subscription error'));
-        });
-      }
-    };
-
-    try {
-      accountSubscriptionId = connection.onAccountChange(
-        tablePublicKey,
-        () => {
-          void refreshReadiness();
-        },
-        commitment
-      );
-    } catch (error) {
-      finish(() => {
-        reject(error instanceof Error ? error : new Error('Failed to subscribe to lookup table account'));
-      });
-    }
-
-    try {
-      slotSubscriptionId = connection.onSlotChange((slotInfo: { slot: number }) => {
-        if (settled || timedOut) return;
-        if (warmupTargetSlot !== null && slotInfo.slot > warmupTargetSlot) {
-          finish(resolve);
-        }
-      });
-    } catch (error) {
-      finish(() => {
-        reject(error instanceof Error ? error : new Error('Failed to subscribe to slot updates'));
-      });
-    }
-  });
 }
 
 async function waitForLookupTableState(
@@ -230,25 +112,12 @@ async function waitForLookupTableState(
   expectedAddressCount: number | undefined,
   commitment: Commitment
 ): Promise<void> {
-  const connection = await account.getConnection();
-  const tablePublicKey = SolanaAccount.toPublicKey(lookupTableAddress);
-  try {
-    await waitForLookupTableStateBySubscription(
-      connection,
-      tablePublicKey,
-      expectedAddressCount,
-      commitment
-    );
-    return;
-  } catch {
-    await waitForLookupTableStateByPolling(
-      connection,
-      tablePublicKey,
-      expectedAddressCount,
-      commitment
-    );
-    return;
-  }
+  await waitForLookupTableStateByPolling(
+    account.getRpc(),
+    address(lookupTableAddress),
+    expectedAddressCount,
+    commitment
+  );
 }
 
 export function getPreparedSolanaTransactions(
