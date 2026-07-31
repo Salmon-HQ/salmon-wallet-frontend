@@ -68,6 +68,26 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     // Fall through to default resolution if not found
   }
 
+  // Fix for @solana/kit/program-client-core: the subpath exists only in the
+  // package's "exports" map, never on disk, so it is unresolvable while
+  // unstable_enablePackageExports is disabled above. Every @solana-program/*
+  // client (memo, system, token-2022, address-lookup-table, record) imports it.
+  // Resolve to the build the package itself designates for the "react-native"
+  // export condition.
+  if (moduleName === '@solana/kit/program-client-core') {
+    const kitProgramClientCorePath = findPackage(
+      '@solana/kit',
+      'dist/program-client-core.native.mjs'
+    );
+    if (kitProgramClientCorePath && fs.existsSync(kitProgramClientCorePath)) {
+      return {
+        filePath: kitProgramClientCorePath,
+        type: 'sourceFile',
+      };
+    }
+    // Fall through to default resolution if not found
+  }
+
   // Fix for @bonfida/spl-name-service: package.json specifies main as "dist/cjs/index.cjs"
   // but the actual file is "dist/cjs/index.js". This is a bug in the package.
   // Use the CJS build which exists at the correct path.
