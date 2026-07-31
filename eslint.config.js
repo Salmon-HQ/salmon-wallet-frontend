@@ -4,14 +4,6 @@ import typescriptParser from '@typescript-eslint/parser';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 
-/**
- * Directories whose @solana/web3.js migration to @solana/kit has landed.
- * Add a directory here in the SAME commit that completes its migration — the
- * ratchet is what stops a migrated directory from regressing. Paths are
- * repo-root-relative.
- */
-const MIGRATED_DIRS = ['packages/shared/src/crypto', 'packages/shared/src/utils'];
-
 export default [
   js.configs.recommended,
   {
@@ -157,28 +149,36 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
-  // The @typescript-eslint variant is required: it is the only one that also
-  // catches `import type { … } from '@solana/web3.js'`. The conditional spread
-  // keeps the entry inert while MIGRATED_DIRS is empty — a flat-config object
-  // with `files: []` is not reliably inert.
+  // Endgame ratchet: @solana/web3.js is gone from every production path in this
+  // repo. Any import outside a test file is a regression.
   //
-  // Tests are exempt on purpose: migrated code is verified against web3.js
-  // fixtures (the dApp-approval golden vectors are built by web3.js and
-  // reproduced by kit), and a cross-library oracle is stronger evidence than a
-  // self-consistent one.
-  ...(MIGRATED_DIRS.length
-    ? [
+  // Tests are exempt on purpose: the kit code is verified against web3.js
+  // fixtures (the OCMS/SIWS/dApp-approval golden vectors are produced by web3.js
+  // and reproduced by kit), and a cross-library oracle is stronger evidence than
+  // a self-consistent one. web3.js is a devDependency for exactly that reason.
+  //
+  // Two rules, not one: no-restricted-imports does not visit TSImportType, so it
+  // misses `import('@solana/web3.js').Commitment`. The selector covers that form.
+  {
+    files: ['**/*.{ts,tsx}'],
+    ignores: [
+      '**/*.test.{ts,tsx}',
+      '**/*.spec.{ts,tsx}',
+      '**/__tests__/**/*.{ts,tsx}',
+    ],
+    plugins: { '@typescript-eslint': typescript },
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        { patterns: ['@solana/web3.js'] },
+      ],
+      'no-restricted-syntax': [
+        'error',
         {
-          files: MIGRATED_DIRS.map((dir) => `${dir}/**/*.{ts,tsx}`),
-          ignores: ['**/*.test.{ts,tsx}'],
-          plugins: { '@typescript-eslint': typescript },
-          rules: {
-            '@typescript-eslint/no-restricted-imports': [
-              'error',
-              { patterns: ['@solana/web3.js'] },
-            ],
-          },
+          selector: 'TSImportType[source.value="@solana/web3.js"]',
+          message: "'@solana/web3.js' import is restricted from being used by a pattern.",
         },
-      ]
-    : []),
+      ],
+    },
+  },
 ];
