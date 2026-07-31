@@ -73,19 +73,40 @@ require('react-native-get-random-values');
 //   - digest: @solana/webcrypto-ed25519-polyfill signs via @noble/ed25519,
 //     whose sha512Async calls crypto.subtle.digest('SHA-512', ...). The
 //     polyfill does not install digest, so without this shim every signature
-//     throws "s.digest is not a function". expo-crypto's native digest takes
-//     the same algorithm strings as WebCrypto.
+//     throws "s.digest is not a function".
 //   - install(): adds generateKey/sign/verify/importKey/exportKey for Ed25519.
 //     It is a no-op on runtimes with native Ed25519 (it probes once and hands
 //     back the native implementation), so it is safe to call unconditionally.
 //
+// Why pure JS and not expo-crypto's native digest: passing a buffer across the
+// JSI bridge to the Kotlin implementation fails on Hermes/Android, so every
+// account creation died on the seed-derivation hash with
+//   [Error: [digest] Cannot convert '[object ArrayBuffer]' to a Kotlin type.
+//    no ArrayBuffer attached]
+// @noble/hashes runs entirely in JS, which removes the bridge from the path and
+// keeps the result byte-identical across devices.
+//
 // Note this leaves crypto.subtle without deriveBits. The PBKDF2 paths in
 // @salmon/shared probe for subtle.deriveBits specifically, not for subtle.
-const expoCrypto = require('expo-crypto');
+const { sha256, sha384, sha512 } = require('@noble/hashes/sha2');
+const DIGEST_ALGORITHMS = { 'SHA-256': sha256, 'SHA-384': sha384, 'SHA-512': sha512 };
 if (!globalThis.crypto.subtle) {
   globalThis.crypto.subtle = {
-    digest: (algorithm, data) =>
-      expoCrypto.digest(typeof algorithm === 'string' ? algorithm : algorithm.name, data),
+    digest: async (algorithm, data) => {
+      const name = (typeof algorithm === 'string' ? algorithm : algorithm.name).toUpperCase();
+      const hash = DIGEST_ALGORITHMS[name];
+      if (!hash) {
+        throw new Error(`Unsupported digest algorithm: ${name}`);
+      }
+      // WebCrypto takes any BufferSource. Views need their offset and length
+      // honoured; a bare ArrayBuffer wraps directly.
+      const bytes = ArrayBuffer.isView(data)
+        ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+        : new Uint8Array(data);
+      // noble allocates a fresh array per call, so its buffer is never aliased
+      // to the caller's input.
+      return hash(bytes).buffer;
+    },
   };
 }
 require('@solana/webcrypto-ed25519-polyfill').install();
