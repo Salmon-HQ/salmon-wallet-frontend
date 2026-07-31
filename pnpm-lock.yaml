@@ -460,6 +460,9 @@ importers:
       '@solana-name-service/sns-sdk-kit':
         specifier: ^0.10.1
         version: 0.10.1(@solana-program/token@0.9.0(@solana/kit@7.0.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6)))(@solana/kit@7.0.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6))
+      '@solana-program/address-lookup-table':
+        specifier: ^0.13.0
+        version: 0.13.0(@solana/kit@7.0.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6))
       '@solana-program/memo':
         specifier: ^0.12.0
         version: 0.12.0(@solana/kit@7.0.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6))
@@ -2615,6 +2618,12 @@ packages:
     peerDependencies:
       '@solana-program/token': ^0.13.0
       '@solana/kit': ^6.9.0
+
+  '@solana-program/address-lookup-table@0.13.0':
+    resolution: {integrity: sha512-UCxrapY8AA3wFzGpfYcXvs41alPTVFWdM7MGoz8IL6F+EL3BJ+4XVcUIj3UT3K9Sp14hPVPAIMFqnE4iOX7VMw==}
+    engines: {node: '>=24.0.0'}
+    peerDependencies:
+      '@solana/kit': ^7.0.0
 
   '@solana-program/memo@0.12.0':
     resolution: {integrity: sha512-sOY182HLdngvlfjg1n1e8mXIz5nP4kNZRWBT33mk6SJsMXwUahL5w/XwaeQ8cj8PYPf2FiH0IpZ2tbZW6f0SBQ==}
@@ -11802,6 +11811,10 @@ snapshots:
       borsh: 2.0.0
       ipaddr.js: 2.3.0
       punycode: 2.3.1
+
+  '@solana-program/address-lookup-table@0.13.0(@solana/kit@7.0.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6))':
+    dependencies:
+      '@solana/kit': 7.0.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6)
 
   '@solana-program/memo@0.12.0(@solana/kit@7.0.0(bufferutil@4.1.0)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.3)(utf-8-validate@6.0.6))':
     dependencies:
