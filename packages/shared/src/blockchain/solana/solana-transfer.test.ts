@@ -396,6 +396,22 @@ describe('requiresMemo', () => {
 // Test 5: SolanaAccount.validateDestinationAccount
 // ============================================================================
 
+/**
+ * Stubs `account.getRpc()` so `validateDestinationAccount` (which now reads
+ * account info off the kit rpc, not the web3.js connection) resolves the
+ * given account info instead of hitting devnet for real.
+ */
+function stubRpcAccountInfo(
+  account: Awaited<ReturnType<typeof createSolanaAccount>>,
+  value: { lamports: bigint } | null
+) {
+  vi.spyOn(account, 'getRpc').mockReturnValue({
+    getAccountInfo: vi.fn().mockReturnValue({
+      send: vi.fn().mockResolvedValue({ value }),
+    }),
+  } as unknown as ReturnType<typeof account.getRpc>);
+}
+
 describe('SolanaAccount.validateDestinationAccount', () => {
   const network = SOLANA_NETWORKS['solana-devnet'];
 
@@ -407,18 +423,7 @@ describe('SolanaAccount.validateDestinationAccount', () => {
       apiFunctions: mockSolanaApiFunctions,
     });
 
-    // Mock connection
-    const mockGetAccountInfo = vi.fn().mockResolvedValue({
-      lamports: 1000000, // Has funds
-      owner: new PublicKey('11111111111111111111111111111111'),
-      data: Buffer.alloc(0),
-      executable: false,
-      rentEpoch: 0
-    });
-
-    // Replace connection's getAccountInfo
-    const connection = await account.getConnection();
-    vi.spyOn(connection, 'getAccountInfo').mockImplementation(mockGetAccountInfo);
+    stubRpcAccountInfo(account, { lamports: 1_000_000n }); // Has funds
 
     const validAddress = 'HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk';
     const result = await account.validateDestinationAccount(validAddress);
@@ -442,10 +447,7 @@ describe('SolanaAccount.validateDestinationAccount', () => {
       new PublicKey('11111111111111111111111111111111')
     );
 
-    // Mock connection to return no account info
-    const mockGetAccountInfo = vi.fn().mockResolvedValue(null);
-    const connection = await account.getConnection();
-    vi.spyOn(connection, 'getAccountInfo').mockImplementation(mockGetAccountInfo);
+    stubRpcAccountInfo(account, null); // No account info
 
     const result = await account.validateDestinationAccount(pdaAddress.toBase58());
 
@@ -467,16 +469,7 @@ describe('SolanaAccount.validateDestinationAccount', () => {
       new PublicKey('11111111111111111111111111111111')
     );
 
-    const mockGetAccountInfo = vi.fn().mockResolvedValue({
-      lamports: 5000000, // Has funds
-      owner: new PublicKey('11111111111111111111111111111111'),
-      data: Buffer.alloc(0),
-      executable: false,
-      rentEpoch: 0
-    });
-
-    const connection = await account.getConnection();
-    vi.spyOn(connection, 'getAccountInfo').mockImplementation(mockGetAccountInfo);
+    stubRpcAccountInfo(account, { lamports: 5_000_000n }); // Has funds
 
     const result = await account.validateDestinationAccount(pdaAddress.toBase58());
 
@@ -507,9 +500,7 @@ describe('SolanaAccount.validateDestinationAccount', () => {
       apiFunctions: mockSolanaApiFunctions,
     });
 
-    const mockGetAccountInfo = vi.fn().mockResolvedValue(null);
-    const connection = await account.getConnection();
-    vi.spyOn(connection, 'getAccountInfo').mockImplementation(mockGetAccountInfo);
+    stubRpcAccountInfo(account, null); // No account info
 
     const validAddress = 'HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk';
     const result = await account.validateDestinationAccount(validAddress);

@@ -400,8 +400,8 @@ export class SolanaAccount {
    * @returns Validation result with type, code, and address type
    */
   async validateDestinationAccount(address: string): Promise<ValidationResult> {
-    const connection = await this.getConnection();
-    return validateDestination(connection, address);
+    const rpc = this.getRpc();
+    return validateDestination(rpc, address);
   }
 
   // ==========================================================================

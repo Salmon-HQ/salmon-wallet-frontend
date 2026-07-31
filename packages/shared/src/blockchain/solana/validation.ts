@@ -4,8 +4,8 @@
  *
  * Provides validation for Solana addresses and domain names.
  * Supports both standard public keys and domain resolution via:
- * - Bonfida SNS (.sol domains)
- * - AllDomains TLD Parser (other TLDs)
+ * - SNS SDK Kit (.sol domains)
+ * - AllDomains TLD Parser Kit (other TLDs)
  *
  * Features:
  * - Public key validation (format and on-curve check)
@@ -14,8 +14,9 @@
  * - Comprehensive validation result codes
  */
 
-import { Connection, PublicKey } from '@solana/web3.js';
+import { isAddress, isOffCurveAddress } from '@solana/addresses';
 import { getPublicKeyFromDomain } from './domains';
+import type { SolanaRpc } from './networks';
 import type {
   ValidationResult,
   ValidationResultType,
@@ -57,18 +58,13 @@ const OFF_CURVE_HAS_FUNDS: ValidationResult = {
 // ============================================================================
 
 /**
- * Checks if a string is a valid Solana public key
+ * Checks if a string is a valid Solana address
  *
  * @param address - String to check
- * @returns True if the string is a valid public key
+ * @returns True if the string is a valid address
  */
 function isPublicKey(address: string): boolean {
-  try {
-    new PublicKey(address);
-    return true;
-  } catch {
-    return false;
-  }
+  return isAddress(address);
 }
 
 /**
@@ -78,40 +74,37 @@ function isPublicKey(address: string): boolean {
  * @returns True if the address appears to be a domain
  */
 function isDomainLike(address: string): boolean {
-  // Domain names typically contain a dot and are not valid public keys
+  // Domain names typically contain a dot and are not valid addresses
   return address.includes('.') && !isPublicKey(address);
 }
 
 /**
- * Validates a Solana public key address
+ * Validates a Solana address
  *
  * Performs the following checks:
- * 1. Valid public key format
+ * 1. Valid address format
  * 2. On-curve check (distinguishes regular addresses from PDAs)
  * 3. Account existence and balance check
  *
- * @param connection - Solana connection
- * @param address - Public key string to validate
+ * @param rpc - Kit RPC client
+ * @param address - Address string to validate
  * @returns Validation result
  */
 async function validatePublicKey(
-  connection: Connection,
+  rpc: SolanaRpc,
   address: string
 ): Promise<ValidationResult> {
-  let publicKey: PublicKey;
-
-  try {
-    publicKey = new PublicKey(address);
-  } catch {
+  if (!isAddress(address)) {
     return INVALID_ADDRESS;
   }
 
-  const isOnCurve = PublicKey.isOnCurve(publicKey);
+  const isOnCurve = !isOffCurveAddress(address);
 
   // Get account info to check existence and balance
   let accountInfo;
   try {
-    accountInfo = await connection.getAccountInfo(publicKey);
+    const response = await rpc.getAccountInfo(address, { encoding: 'base64' }).send();
+    accountInfo = response.value;
   } catch {
     return NETWORK_ERROR;
   }
@@ -121,13 +114,13 @@ async function validatePublicKey(
     if (accountInfo === null) {
       return NO_INFO;
     }
-    if (accountInfo.lamports === 0) {
+    if (accountInfo.lamports === 0n) {
       return NO_INFO;
     }
     return VALID_ACCOUNT;
   } else {
     // Off-curve address (PDA)
-    if (accountInfo === null || accountInfo.lamports === 0) {
+    if (accountInfo === null || accountInfo.lamports === 0n) {
       return OFF_CURVE_NO_FUNDS;
     }
     return OFF_CURVE_HAS_FUNDS;
@@ -138,20 +131,20 @@ async function validatePublicKey(
  * Validates and resolves a domain name
  *
  * Uses the domain resolution functions from ./domains module which support:
- * - Bonfida SNS for .sol domains
- * - AllDomains TLD Parser for other TLDs
+ * - SNS SDK Kit for .sol domains
+ * - AllDomains TLD Parser Kit for other TLDs
  *
- * @param connection - Solana connection
+ * @param rpc - Kit RPC client
  * @param domain - Domain name to validate and resolve
  * @returns Validation result with resolved address if successful
  */
 async function validateDomain(
-  connection: Connection,
+  rpc: SolanaRpc,
   domain: string
 ): Promise<ValidationResult> {
   let resolvedAddress;
   try {
-    resolvedAddress = await getPublicKeyFromDomain(connection, domain);
+    resolvedAddress = await getPublicKeyFromDomain(rpc, domain);
   } catch {
     return NETWORK_ERROR;
   }
@@ -176,27 +169,27 @@ async function validateDomain(
  * This is the main validation function that handles both public keys and domain names.
  * It automatically detects the input type and routes to the appropriate validation.
  *
- * @param connection - Solana connection for on-chain lookups
+ * @param rpc - Kit RPC client for on-chain lookups
  * @param address - Address string to validate (public key or domain)
  * @returns Validation result with type, code, and optional address info
  *
  * @example
  * ```typescript
  * // Validate a public key
- * const result = await validateDestinationAccount(connection, 'ABC123...');
+ * const result = await validateDestinationAccount(rpc, 'ABC123...');
  * if (result.type === 'SUCCESS') {
  *   console.log('Valid address:', result.addressType);
  * }
  *
  * // Validate a domain
- * const result = await validateDestinationAccount(connection, 'example.sol');
+ * const result = await validateDestinationAccount(rpc, 'example.sol');
  * if (result.type === 'SUCCESS' && result.resolvedAddress) {
  *   console.log('Resolved to:', result.resolvedAddress);
  * }
  * ```
  */
 export async function validateDestinationAccount(
-  connection: Connection,
+  rpc: SolanaRpc,
   address: string
 ): Promise<ValidationResult> {
   if (!address || address.trim() === '') {
@@ -207,11 +200,11 @@ export async function validateDestinationAccount(
 
   // Determine if input is a public key or domain
   if (isPublicKey(trimmedAddress)) {
-    return validatePublicKey(connection, trimmedAddress);
+    return validatePublicKey(rpc, trimmedAddress);
   }
 
   if (isDomainLike(trimmedAddress)) {
-    return validateDomain(connection, trimmedAddress);
+    return validateDomain(rpc, trimmedAddress);
   }
 
   // Neither a valid public key nor a domain-like string
