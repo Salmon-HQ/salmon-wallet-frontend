@@ -11,8 +11,6 @@
     "jsx": "react-jsx",
     "noEmit": true,
     "isolatedModules": true,
-    "ignoreDeprecations": "5.0",
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@salmon/shared": ["../../packages/shared/src"],
