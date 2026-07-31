@@ -170,6 +170,20 @@ export type SolanaTransaction = LegacyTransactionLike | VersionedTransactionLike
 const SIGNATURE_LENGTH = 64;
 
 /**
+ * Decodes a base58 signature coming back from the extension, refusing a
+ * wrong-length one. Kit's fixed-size encoder pads or truncates silently, so
+ * without this a malformed response would be re-encoded into a plausible-looking
+ * transaction instead of failing.
+ */
+function toSignatureBytes(signature: string): SignatureBytes {
+  const bytes = bs58.decode(signature);
+  if (bytes.length !== SIGNATURE_LENGTH) {
+    throw new Error('Invalid signature length');
+  }
+  return bytes as SignatureBytes;
+}
+
+/**
  * Writes `signature` into the slot that belongs to `base58`, for either wire
  * format, and returns the transaction the dApp handed us.
  *
@@ -463,7 +477,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
 
     const signatures = {
       ...decoded.signatures,
-      [signerAddress]: bs58.decode(result.signature) as SignatureBytes,
+      [signerAddress]: toSignatureBytes(result.signature),
     };
 
     return new Uint8Array(getTransactionEncoder().encode({ ...decoded, signatures }));
@@ -485,7 +499,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
 
     const result = response.result as SignAllTransactionsResult;
     const signerAddress = result.publicKey as Address;
-    const signatureBytes = result.signatures.map((s) => bs58.decode(s) as SignatureBytes);
+    const signatureBytes = result.signatures.map(toSignatureBytes);
 
     return decodedList.map((decoded, index) => {
       if (!(signerAddress in decoded.signatures)) {

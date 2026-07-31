@@ -25,11 +25,14 @@ export interface SalmonAddress extends Uint8Array {
   toJSON(): string;
 }
 
+const addressBytes = (base58: Address): Uint8Array =>
+  new Uint8Array(getAddressEncoder().encode(base58));
+
 class SalmonAddressImpl extends Uint8Array {
   readonly #base58: Address;
 
   constructor(base58: Address) {
-    super(getAddressEncoder().encode(base58));
+    super(addressBytes(base58));
     this.#base58 = base58;
   }
 
@@ -46,13 +49,20 @@ class SalmonAddressImpl extends Uint8Array {
     return this.#base58;
   }
 
+  /**
+   * Re-derived from the immutable address rather than copied out of `this`.
+   * The instance is handed to page scope and a typed array's elements cannot
+   * be made read-only — `Object.freeze` throws on an array-buffer view with
+   * elements — so a page can overwrite the raw bytes. Deriving here keeps
+   * every accessor agreeing with `#base58` even after such a write.
+   */
   toBytes(): Uint8Array {
-    return new Uint8Array(this);
+    return addressBytes(this.#base58);
   }
 
   /** `Uint8Array`, not `Buffer` — the injected bundle has no Buffer polyfill. */
   toBuffer(): Uint8Array {
-    return new Uint8Array(this);
+    return addressBytes(this.#base58);
   }
 
   toJSON(): string {

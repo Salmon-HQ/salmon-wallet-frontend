@@ -426,6 +426,53 @@ describe('SolanaProvider bytes-native surface', () => {
     expect(decodedSecond.signatures[secondSalmonIndex]).toEqual(salmonSignatures[1]);
   });
 
+  it('signTransactionBytes rejects a wrong-length signature', async () => {
+    const message = new TransactionMessage({
+      payerKey: coSigner.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: transferInstructions(),
+    }).compileToV0Message();
+    const wire = new VersionedTransaction(message).serialize();
+
+    const { provider, sendMessage } = createProvider();
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      method: 'signed',
+      result: {
+        signature: bs58.encode(new Uint8Array(32).fill(9)),
+        publicKey: salmon.publicKey.toBase58(),
+      },
+    });
+
+    // Kit's fixed-size encoder would pad this into a plausible transaction.
+    await expect(provider.signTransactionBytes(wire)).rejects.toThrow('Invalid signature length');
+  });
+
+  it('signAllTransactionsBytes rejects a wrong-length signature', async () => {
+    const message = new TransactionMessage({
+      payerKey: coSigner.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: transferInstructions(),
+    }).compileToV0Message();
+    const wire = new VersionedTransaction(message).serialize();
+
+    const { provider, sendMessage } = createProvider();
+    sendMessage.mockResolvedValue({
+      jsonrpc: '2.0',
+      id: '1',
+      method: 'signed',
+      result: {
+        signatures: [bs58.encode(new Uint8Array(65).fill(9))],
+        publicKey: salmon.publicKey.toBase58(),
+      },
+    });
+
+    await expect(provider.signAllTransactionsBytes([wire])).rejects.toThrow(
+      'Invalid signature length',
+    );
+  });
+
   it('signAndSendTransactionBytes forwards the input wire bytes verbatim', async () => {
     const message = new TransactionMessage({
       payerKey: coSigner.publicKey,

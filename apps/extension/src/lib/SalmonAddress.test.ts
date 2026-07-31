@@ -144,6 +144,24 @@ describe('SalmonAddress — known-irreducible failures (no bn.js in page scope)'
   });
 });
 
+describe('SalmonAddress — page tampering', () => {
+  it('cannot be frozen, and every accessor survives an indexed write anyway', () => {
+    // A typed array with elements rejects Object.freeze outright, so the
+    // instance handed to page scope is writable by construction.
+    expect(() => Object.freeze(toSalmonAddress(walletBase58))).toThrow(TypeError);
+
+    const tampered = toSalmonAddress(walletBase58);
+    tampered[0] = (tampered[0] + 1) % 256;
+
+    expect(tampered.toBase58()).toBe(walletBase58);
+    expect(tampered.toString()).toBe(walletBase58);
+    expect(tampered.toJSON()).toBe(walletBase58);
+    expect(tampered.toBytes()).toEqual(walletKeypair.publicKey.toBytes());
+    expect(tampered.toBuffer()).toEqual(walletKeypair.publicKey.toBytes());
+    expect(tampered.equals(walletKeypair.publicKey)).toBe(true);
+  });
+});
+
 describe('SalmonAddress — wallet-standard read path', () => {
   it('exposes the address and bytes the adapter builds accounts from', () => {
     expect(shim.toBase58()).toBe(walletBase58);
