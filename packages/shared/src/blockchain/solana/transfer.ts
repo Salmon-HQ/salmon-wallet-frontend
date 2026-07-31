@@ -11,8 +11,6 @@
  * - Transfer fee handling for Token-2022
  * - Memo support for Token-2022 transfers
  * - Fee estimation
- * - Transaction confirmation
- * - Devnet airdrop support
  *
  * Instructions are built with @solana-program/token-2022 for BOTH token
  * programs: @solana-program/token does not load against @solana/kit@7, and
@@ -21,14 +19,6 @@
  * byte-identical instructions.
  */
 
-import {
-  Connection,
-  PublicKey,
-  LAMPORTS_PER_SOL,
-  TransactionSignature,
-  RpcResponseAndContext,
-  SignatureResult,
-} from '@solana/web3.js';
 import {
   address,
   appendTransactionMessageInstructions,
@@ -68,7 +58,7 @@ import {
 import {
   isNativeSol,
 } from '../../utils/tokens';
-import { SOL_CONSTANTS } from '../../utils/balance';
+import { LAMPORTS_PER_SOL, SOL_CONSTANTS } from '../../utils/balance';
 import type { SolanaRpc } from './networks';
 
 // ============================================================================
@@ -519,53 +509,4 @@ export async function requiresMemo(
   );
 
   return memoDetails?.requireIncomingTransferMemos ?? false;
-}
-
-// ============================================================================
-// Transaction Confirmation
-// ============================================================================
-
-/**
- * Confirms a transaction on the network
- *
- * @param connection - Solana connection
- * @param txId - Transaction signature to confirm
- * @returns Confirmation result
- */
-export async function confirmTransaction(
-  connection: Connection,
-  txId: TransactionSignature
-): Promise<RpcResponseAndContext<SignatureResult>> {
-  return connection.confirmTransaction(txId);
-}
-
-// ============================================================================
-// Airdrop (Devnet/Testnet only)
-// ============================================================================
-
-/**
- * Requests an airdrop of SOL (devnet/testnet only)
- *
- * @param connection - Solana connection
- * @param publicKey - Public key to receive the airdrop
- * @param amount - Amount in SOL
- * @returns Confirmation result
- *
- * @example
- * ```typescript
- * // Request 1 SOL on devnet
- * const devnetConnection = new Connection('https://api.devnet.solana.com');
- * await airdrop(devnetConnection, myPublicKey, 1);
- * ```
- */
-export async function airdrop(
-  connection: Connection,
-  publicKey: PublicKey,
-  amount: number
-): Promise<RpcResponseAndContext<SignatureResult>> {
-  const airdropSignature = await connection.requestAirdrop(
-    publicKey,
-    Math.floor(amount * LAMPORTS_PER_SOL)
-  );
-  return connection.confirmTransaction(airdropSignature);
 }

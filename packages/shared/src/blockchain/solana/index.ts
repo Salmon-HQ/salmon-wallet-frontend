@@ -30,8 +30,6 @@ export {
   estimateFee,
   calculateTransferFee,
   requiresMemo,
-  confirmTransaction,
-  airdrop,
   SOL_ADDRESS,
 } from './transfer';
 // Note: applyDecimals, removeDecimals, isNativeSol are now canonical in utils/
