@@ -112,6 +112,20 @@ else
     Start it, or point SALMON_API_URL somewhere that is up."
 fi
 
+# ------------------------------------------------------------------ metro ----
+# The dev build loads its JS from Metro. When Metro is down the dev launcher has
+# no server entry to tap, so every flow dies inside dev-launcher-pass.yaml on a
+# selector — which reads as a broken suite rather than a missing bundler.
+METRO_URL="${SALMON_METRO_URL:-http://localhost:8081/status}"
+if curl -s -m 5 "$METRO_URL" 2>/dev/null | grep -q "packager-status:running"; then
+  ok "Metro bundler running"
+else
+  die "Metro is not running at ${METRO_URL%/status}.
+    The dev build loads its JS from it; without it the dev launcher has nothing
+    to open and every flow fails on a selector. Start it with:
+      pnpm --filter @salmon/mobile start"
+fi
+
 # ------------------------------------------------------------------- run -----
 CMD=(maestro)
 [[ -n "$DEVICE" ]] && CMD+=(--device "$DEVICE")
