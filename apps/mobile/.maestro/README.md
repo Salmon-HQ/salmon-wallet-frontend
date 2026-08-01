@@ -106,48 +106,41 @@ docker logs --since 3m salmon-api-backend | grep -cE "GET|POST"
 
 ## Running
 
-> **Working directory matters.** `takeScreenshot` paths in the flow YAML
-> are resolved relative to the directory you invoke Maestro from. The
-> flows here use `screenshots/<smoke|actions>/...`, so you MUST run
-> Maestro from `apps/mobile/.maestro/`. Running from anywhere else
-> creates a stray `screenshots/` folder at that cwd — the repo-root
-> `.gitignore` blocks the obvious mis-locations defensively, but the
-> right thing is to `cd` first.
-
-> **Every variable has to be passed with `-e`.** Maestro (verified on 2.4.0)
-> does not inherit the shell environment into flows. Sourcing `.env.test` and
-> then running `maestro test` without `-e` does not fail — the flows interpolate
-> `${SALMON_TEST_SEED_A}` to the literal string `undefined`, type it into the
-> seed field, and die several steps later on an unrelated selector. Sourcing the
-> file is still needed so the values are in the shell to forward.
+Use `./run.sh`. It is to this suite what `playwright.config.ts` + `env.ts` are
+to the web and extension ones: it loads the secrets, refuses to start against a
+half-ready environment, and hands Maestro a fully specified command.
 
 ```bash
-cd apps/mobile/.maestro
-set -a && . ./.env.test && set +a
-export MAESTRO_DRIVER_STARTUP_TIMEOUT=180000
-
-# Forward every secret the flows reference. Suites need all five, since
-# runFlow children inherit what the CLI passes in.
-MAESTRO_ENV=(
-  -e SALMON_TEST_SEED_A="$SALMON_TEST_SEED_A"
-  -e SALMON_TEST_SEED_B="$SALMON_TEST_SEED_B"
-  -e SALMON_TEST_PASSWORD="$SALMON_TEST_PASSWORD"
-  -e SALMON_TEST_WALLET_A_ADDR="$SALMON_TEST_WALLET_A_ADDR"
-  -e SALMON_TEST_WALLET_B_ADDR="$SALMON_TEST_WALLET_B_ADDR"
-)
-
-# Read-only smoke
-maestro test "${MAESTRO_ENV[@]}" suites/smoke.yaml
-
-# State-modifying actions (authorized per run)
-maestro test "${MAESTRO_ENV[@]}" suites/actions.yaml
-
-# Single flow — only the variables that flow actually references
-maestro test flows/actions/send/sol-transfer.yaml \
-  -e SALMON_TEST_SEED_A="$SALMON_TEST_SEED_A" \
-  -e SALMON_TEST_PASSWORD="$SALMON_TEST_PASSWORD" \
-  -e SALMON_TEST_WALLET_B_ADDR="$SALMON_TEST_WALLET_B_ADDR"
+apps/mobile/.maestro/run.sh suites/smoke.yaml            # read-only smoke
+apps/mobile/.maestro/run.sh suites/actions.yaml          # authorized per run
+apps/mobile/.maestro/run.sh flows/smoke/settings/about.yaml
+apps/mobile/.maestro/run.sh --device emulator-5554 suites/smoke.yaml
 ```
+
+Anything it does not recognise is forwarded to `maestro test`, so Maestro's own
+flags still work — including sharding, which splits the flows across several
+booted devices and is the one supported way to cut the suite's wall-clock:
+
+```bash
+apps/mobile/.maestro/run.sh --shard-split=2 suites/smoke.yaml
+```
+
+The runner exists because four things here fail quietly rather than loudly:
+
+- **Working directory.** `takeScreenshot` paths are cwd-relative, so the suite
+  only behaves when Maestro runs from `apps/mobile/.maestro/`. Anywhere else
+  scatters a stray `screenshots/` folder. The runner anchors to its own
+  directory, so it works from anywhere.
+- **`-e` forwarding.** Maestro (verified on 2.4.0) does not inherit the shell
+  environment. Sourcing `.env.test` and running `maestro test` without `-e`
+  does not fail — flows interpolate `${SALMON_TEST_SEED_A}` to the literal
+  string `undefined`, type it into the seed field, and die many steps later on
+  an unrelated selector. The runner forwards all five and names any that are
+  missing before the first tap.
+- **Android port mapping.** See "Backend reachability" above; the runner
+  re-applies `adb reverse` on every run because an emulator reboot drops it.
+- **Backend down.** The runner checks and refuses to start, rather than letting
+  every flow fail on a screen that blames the seed phrase.
 
 ## Conventions
 
