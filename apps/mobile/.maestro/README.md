@@ -72,7 +72,7 @@ Per-flow prerequisites:
 
 | Flow | Needs |
 |---|---|
-| `auth/*`, `home/*`, `settings/*` (smoke), connect/sign | nothing — no funds required |
+| `auth/*`, `home/*`, `settings/*` (smoke), connect/sign | no funds, but the backend must be reachable — see below |
 | `actions/send/sol-transfer.yaml` | Wallet A: SOL for fee + 0.001 SOL |
 | `actions/swap/*` | Wallet A: balance of the input token |
 | `actions/nft/*` | Wallet A: the "Mindfolk Founder #5154" NFT (mint `CNM8…`) |
@@ -80,6 +80,29 @@ Per-flow prerequisites:
 Repo policy: a flow that finds its prerequisite missing skips with a clear
 message, never a cryptic failure. If the backend is reachable but behaves
 wrong, the flow fails — it does not skip.
+
+### Backend reachability
+
+Account creation and recovery call the API, so **every** flow needs the
+backend up — including the ones that need no funds. When it is unreachable
+the app spends the axios timeout on the "Recovering Account" screen and
+then fails with "Failed to recover account. Please check your seed phrase
+and try again", which points at the seed instead of the network.
+
+`apps/mobile/.env` points at `127.0.0.1`, which the iOS Simulator resolves
+to the host. The Android emulator does not — map the port into it, and
+redo this after every emulator boot because the mapping does not survive
+one:
+
+```bash
+adb reverse tcp:3001 tcp:3001
+```
+
+Confirm the app is actually reaching the backend rather than timing out:
+
+```bash
+docker logs --since 3m salmon-api-backend | grep -cE "GET|POST"
+```
 
 ## Running
 

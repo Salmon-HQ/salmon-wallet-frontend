@@ -16,10 +16,12 @@ appId: io.salmonwallet.app
 # First-run analytics consent is the final onboarding step. Decline to reach
 # the success screen, the same way subflows/onboard-walletA.yaml does. (The
 # screen itself is covered by flows/smoke/settings/analytics-prompt.yaml.)
+# Key derivation (PBKDF2, 210k iterations) runs between the password screen and
+# this one. It takes over 30s on a cold emulator, so the wait has to outlast it.
 - extendedWaitUntil:
     visible:
       id: "analytics-consent-screen"
-    timeout: 30000
+    timeout: 90000
 - tapOn:
     id: "analytics-consent-decline"
 - extendedWaitUntil:
