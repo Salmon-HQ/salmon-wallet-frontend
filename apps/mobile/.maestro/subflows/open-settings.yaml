@@ -1,6 +1,13 @@
 appId: io.salmonwallet.app
 ---
 # Assumes Home (account switcher chip visible). Opens the Settings sheet.
+# The Expo dev-client overlay sits over the header on iOS and swallows the tap
+# below, leaving its own menu on screen. Dismiss it before touching the header.
+- runFlow:
+    when:
+      visible: "Fast refresh"
+    commands:
+      - tapOn: "Close"
 - assertVisible:
     id: "wallet-header-account-switcher"
 - tapOn:

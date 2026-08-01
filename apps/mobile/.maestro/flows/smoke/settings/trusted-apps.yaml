@@ -3,6 +3,11 @@ appId: io.salmonwallet.app
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-settings.yaml
 - assertVisible: "Settings"
+- scrollUntilVisible:
+    element:
+      id: "settings-item-trusted-apps"
+    direction: DOWN
+    centerElement: true
 - tapOn:
     id: "settings-item-trusted-apps"
 - waitForAnimationToEnd:
