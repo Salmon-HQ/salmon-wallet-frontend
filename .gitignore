@@ -81,6 +81,11 @@ apps/*/.maestro/screenshots/
 apps/*/.maestro/snapshots/
 apps/*/.maestro/reports/
 
+# Maestro debug logs record every inputText character, so a run transcript
+# contains the test seed phrase in the clear. Never let one get committed.
+maestro.log
+**/maestro.log
+
 # Defensive: stray top-level .maestro/ directories created when Maestro
 # is invoked from the wrong cwd (takeScreenshot paths are cwd-relative).
 /.maestro/

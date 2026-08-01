@@ -454,6 +454,7 @@
       "skip": "Skip",
       "invalidSeed": "Invalid seed phrase",
       "recovery_error": "Failed to recover account. Please check your seed phrase and try again.",
+      "recovery_network_error": "Could not reach the server. Check your connection and try again. Your seed phrase is fine.",
       "biometric_setup_title": "Secure Your Wallet",
       "biometric_setup_subtitle": "Enable biometric authentication for quick and secure access to your wallet",
       "biometric_setup_enable": "Enable Biometrics",
