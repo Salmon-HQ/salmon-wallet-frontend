@@ -112,8 +112,13 @@ Reference commits:
 
 ## The ratchet
 
-`eslint.config.js` carries a lint rule that fails the build on any `@solana/web3.js` import outside a
-test file. It exists so this migration cannot quietly regress.
+`eslint.config.js` warns on any `@solana/web3.js` import outside a test file. It exists so this
+migration cannot quietly regress.
+
+It warns rather than fails on purpose. Kit is younger than web3.js and does not cover everything it
+does; reaching back for a v1 API is a legitimate answer to a gap, and whoever hits that gap knows
+more about their case than a lint rule does. What the warning buys is that the decision happens on
+purpose and is visible in review, instead of the dependency drifting back one import at a time.
 
 Test files are exempt by design — that is where the oracle lives, as described above.
 
@@ -204,7 +209,7 @@ grep -rl "Invalid public key input\|failed to get info about account" \
   apps/extension/dist/chrome-mv3/
 
 # 7. The ratchet is armed. Add an import of @solana/web3.js to any non-test
-#    .ts file and confirm this fails, then revert.
+#    .ts file and confirm this warns, then revert.
 pnpm lint
 ```
 
