@@ -18,7 +18,9 @@ result yourself.
 | `apps/extension` | via `@salmon/shared` | No — devDependency, tests only |
 | `apps/mobile` | via `@salmon/shared` | No — not a dependency |
 
-Completed on the `feat/solana-kit-migration` branch, 2026-07-29 to 2026-07-30, 60 commits.
+Completed on the `feat/solana-kit-migration` branch, 2026-07-29 to 2026-08-01, 79 commits. The
+migration itself is the first 60; the rest is on-device validation, the app fixes it surfaced, and
+the test-harness work that made those runs reproducible.
 
 The measurable effect on shipped code, from clean production builds before and after the final commit:
 
