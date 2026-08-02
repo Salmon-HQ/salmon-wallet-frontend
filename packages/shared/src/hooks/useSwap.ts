@@ -150,7 +150,7 @@ export function useSwap({
       lastQuoteParamsRef.current = params;
 
       try {
-        const publicKey = account.getPublicKey().toBase58();
+        const publicKey = account.getPublicKey();
 
         const quoteParams: SwapQuoteParams = {
           inputMint: params.inputMint,
@@ -222,14 +222,11 @@ export function useSwap({
     setError(null);
 
     try {
-      // Get connection for optional confirmation
-      const connection = await account.getConnection();
-
-      // Execute the swap (signs and submits)
+      // Execute the swap (signs and submits), confirming on-chain afterwards
       const result = await executeSwapService(
         quote,
-        account.keyPair,
-        connection,
+        account.signer,
+        { rpc: account.getRpc(), rpcSubscriptions: account.getRpcSubscriptions() },
         executeSwapApi
       );
 

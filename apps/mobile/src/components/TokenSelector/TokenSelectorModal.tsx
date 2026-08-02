@@ -79,6 +79,8 @@ export function TokenSelectorModal({
         >
           <TouchableOpacity
             testID={`token-row-${token.symbol}`}
+            accessibilityRole="button"
+            accessibilityLabel={`${tokenName}${token.network ? ` ${token.network}` : ''}`}
             style={styles.tokenItem}
             onPress={() => handleSelect(token)}
             activeOpacity={0.7}
@@ -205,6 +207,7 @@ export function TokenSelectorModal({
 
               <BlurContainer style={styles.searchContainer} backgroundColor={colors.background.tokenItem}>
                 <TextInput
+                  testID="token-search-input"
                   style={styles.searchInput}
                   placeholder={t('actions.search_placeholder', 'Search tokens...')}
                   placeholderTextColor={colors.text.tertiary}
@@ -250,6 +253,10 @@ export function TokenSelectorModal({
                   ListEmptyComponent={renderEmpty}
                   contentContainerStyle={styles.listContent}
                   showsVerticalScrollIndicator={false}
+                  // Without this, a tap on a result while the search input still
+                  // holds focus is spent dismissing the keyboard instead of
+                  // selecting the token, so searching always costs two taps.
+                  keyboardShouldPersistTaps="handled"
                   style={styles.list}
                 />
               )}

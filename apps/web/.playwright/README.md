@@ -28,6 +28,27 @@ shared `data-testid` contract (`Testable` in `packages/shared`, see the
    (`pnpm --filter @salmon/web dev`, `http://localhost:5173`); an already
    running server is reused.
 
+## Pre-flight
+
+Before running anything beyond the boot-level smoke, check what the test
+wallet actually holds — a quick RPC query (`solana balance <addr>`, or a
+JSON-RPC `getBalance` / `getTokenAccountsByOwner` call) or just unlocking
+the app and looking at Home/Collectibles. That tells you which
+environment / `.env.test` to point at and which flows are safe to run.
+
+Per-flow prerequisites:
+
+| Flow | Needs |
+|---|---|
+| Send | SOL for fee + amount |
+| Swap | balance of the input token |
+| NFT / burn | an NFT owned by the test wallet |
+| Sign / connect / SIWS | nothing — no funds required |
+
+Repo policy: a spec that finds its prerequisite missing skips with a clear
+message (`test.skip(..., reason)`), never a cryptic failure. A spec where
+the backend is reachable but behaves wrong still fails — it does not skip.
+
 ## Running
 
 ```sh

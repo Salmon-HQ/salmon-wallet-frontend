@@ -1,6 +1,9 @@
-import { Keypair } from '@solana/web3.js';
+import {
+  createKeyPairSignerFromBytes,
+  createKeyPairSignerFromPrivateKeyBytes,
+} from '@solana/kit';
 import HDKey from 'micro-key-producer/slip10.js';
-import { SolanaAccount } from './SolanaAccount';
+import { SolanaAccount, type SolanaSigningKey } from './SolanaAccount';
 import type { SolanaNetwork } from '../../types/blockchain';
 
 // Re-export for backward compatibility — canonical definition is in ./networks
@@ -72,17 +75,20 @@ export function getSolanaDerivationPath(index: number): string {
  *
  * @param mnemonic - BIP39 mnemonic phrase
  * @param path - BIP44 derivation path
- * @returns Promise resolving to Solana Keypair
+ * @returns Promise resolving to the 32-byte seed and its kit signer
  */
 export async function generateKeyPair(
   mnemonic: string,
   path: string
-): Promise<Keypair> {
+): Promise<SolanaSigningKey> {
   const seed = await mnemonicToSeed(mnemonic);
   const hdkey = HDKey.fromMasterSeed(seed);
   const derived = hdkey.derive(path);
 
-  return Keypair.fromSeed(derived.privateKey);
+  return {
+    seed: derived.privateKey,
+    signer: await createKeyPairSignerFromPrivateKeyBytes(derived.privateKey, false),
+  };
 }
 
 /**
@@ -165,19 +171,19 @@ export async function deriveSolanaAccounts(
 }
 
 /**
- * Creates a SolanaAccount from an existing keypair.
+ * Creates a SolanaAccount from existing signing key material.
  *
- * Use this when you already have a keypair (e.g., imported from a file
- * or generated elsewhere) and want to wrap it in a SolanaAccount.
+ * Use this when you already have a seed and its signer (e.g., imported from a
+ * file or generated elsewhere) and want to wrap it in a SolanaAccount.
  *
  * @param network - Network configuration
- * @param keyPair - Existing Solana Keypair
+ * @param keyPair - Existing Solana signing key material
  * @param index - Optional account index (defaults to 0)
  * @returns SolanaAccount instance
  */
 export function createSolanaAccountFromKeyPair(
   network: SolanaNetwork,
-  keyPair: Keypair,
+  keyPair: SolanaSigningKey,
   index: number = 0,
   apiFunctions: SolanaAccountApiFunctions
 ): SolanaAccount {
@@ -191,21 +197,29 @@ export function createSolanaAccountFromKeyPair(
 }
 
 /**
- * Creates a SolanaAccount from a base58-encoded secret key.
+ * Creates a SolanaAccount from a 64-byte ed25519 secret key.
  *
  * @param network - Network configuration
- * @param secretKey - Base58-encoded secret key string
+ * @param secretKey - 64-byte secret key (seed followed by public key)
  * @param index - Optional account index (defaults to 0)
  * @param apiFunctions - Optional API functions for dependency injection
- * @returns SolanaAccount instance
+ * @returns Promise resolving to a SolanaAccount instance
  */
-export function createSolanaAccountFromSecretKey(
+export async function createSolanaAccountFromSecretKey(
   network: SolanaNetwork,
   secretKey: Uint8Array,
   index: number = 0,
   apiFunctions: SolanaAccountApiFunctions
-): SolanaAccount {
-  const keyPair = Keypair.fromSecretKey(secretKey);
-  return createSolanaAccountFromKeyPair(network, keyPair, index, apiFunctions);
+): Promise<SolanaAccount> {
+  return createSolanaAccountFromKeyPair(
+    network,
+    {
+      // A 64-byte ed25519 secret key is `seed ‖ publicKey`.
+      seed: secretKey.slice(0, 32),
+      signer: await createKeyPairSignerFromBytes(secretKey, false),
+    },
+    index,
+    apiFunctions
+  );
 }
 

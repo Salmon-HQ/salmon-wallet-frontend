@@ -44,16 +44,9 @@ export function getChainDisplayName(chain?: BlockchainType | string): string {
  * @returns The blockchain type ('solana', 'bitcoin', or 'ethereum')
  */
 export function getAccountBlockchainType(account: BlockchainAccount): BlockchainType {
-  // Check for SolanaAccount - has getConnection and getPublicKey returns PublicKey (object with toBase58)
-  if ('getConnection' in account && 'getPublicKey' in account) {
-    const publicKey = account.getPublicKey();
-    if (typeof publicKey === 'object' && publicKey !== null && 'toBase58' in publicKey) {
-      return 'solana';
-    }
-    // EthereumAccount has getConnection but getPublicKey returns string
-    if (typeof publicKey === 'string') {
-      return 'ethereum';
-    }
+  // Check for SolanaAccount - only it exposes the kit RPC accessor
+  if ('getRpc' in account) {
+    return 'solana';
   }
 
   // Check for BitcoinAccount - has keyPair property

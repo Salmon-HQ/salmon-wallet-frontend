@@ -55,38 +55,92 @@ installed.
    Required variables:
    - `SALMON_TEST_PASSWORD` — wallet password
    - `SALMON_TEST_SEED_A` — Wallet A seed (12 words, holds SOL)
-   - `SALMON_TEST_SEED_B` — Wallet B seed (12 words, holds the
-     Salmon Logo NFT)
+   - `SALMON_TEST_SEED_B` — Wallet B seed (12 words, receives the NFT on
+     the first leg of the transfer round trip)
    - `SALMON_TEST_WALLET_A_ADDR` — Wallet A Solana address
    - `SALMON_TEST_WALLET_B_ADDR` — Wallet B Solana address
 
-## Running
+## Pre-flight
 
-> **Working directory matters.** `takeScreenshot` paths in the flow YAML
-> are resolved relative to the directory you invoke Maestro from. The
-> flows here use `screenshots/<smoke|actions>/...`, so you MUST run
-> Maestro from `apps/mobile/.maestro/`. Running from anywhere else
-> creates a stray `screenshots/` folder at that cwd — the repo-root
-> `.gitignore` blocks the obvious mis-locations defensively, but the
-> right thing is to `cd` first.
+Before running `suites/actions.yaml` or any single action flow, check what
+Wallet A / Wallet B actually hold — a quick RPC query against
+`SALMON_TEST_WALLET_A_ADDR` / `SALMON_TEST_WALLET_B_ADDR`
+(`solana balance <addr>`, `getTokenAccountsByOwner`) or opening the app
+and checking Home/Collectibles. These are real mainnet wallets.
+
+Per-flow prerequisites:
+
+| Flow | Needs |
+|---|---|
+| `auth/*`, `home/*`, `settings/*` (smoke), connect/sign | no funds, but the backend must be reachable — see below |
+| `actions/send/sol-transfer.yaml` | Wallet A: SOL for fee + 0.001 SOL |
+| `actions/swap/*` | Wallet A: balance of the input token |
+| `actions/nft/*` | Wallet A: the "Mindfolk Founder #5154" NFT (mint `CNM8…`) |
+
+Repo policy: a flow that finds its prerequisite missing skips with a clear
+message, never a cryptic failure. If the backend is reachable but behaves
+wrong, the flow fails — it does not skip.
+
+### Backend reachability
+
+Account creation and recovery call the API, so **every** flow needs the
+backend up — including the ones that need no funds. When it is unreachable
+the app spends the axios timeout on the "Recovering Account" screen and
+then fails with "Failed to recover account. Please check your seed phrase
+and try again", which points at the seed instead of the network.
+
+`apps/mobile/.env` points at `127.0.0.1`, which the iOS Simulator resolves
+to the host. The Android emulator does not — map the port into it, and
+redo this after every emulator boot because the mapping does not survive
+one:
 
 ```bash
-cd apps/mobile/.maestro
-set -a && . ./.env.test && set +a
-export MAESTRO_DRIVER_STARTUP_TIMEOUT=180000
-
-# Read-only smoke
-maestro test suites/smoke.yaml
-
-# State-modifying actions (authorized per run)
-maestro test suites/actions.yaml
-
-# Single flow
-maestro test flows/actions/send/sol-transfer.yaml \
-  -e SALMON_TEST_SEED_A="$SALMON_TEST_SEED_A" \
-  -e SALMON_TEST_PASSWORD="$SALMON_TEST_PASSWORD" \
-  -e SALMON_TEST_WALLET_B_ADDR="$SALMON_TEST_WALLET_B_ADDR"
+adb reverse tcp:3001 tcp:3001
 ```
+
+Confirm the app is actually reaching the backend rather than timing out:
+
+```bash
+docker logs --since 3m salmon-api-backend | grep -cE "GET|POST"
+```
+
+## Running
+
+Use `./run.sh`. It is to this suite what `playwright.config.ts` + `env.ts` are
+to the web and extension ones: it loads the secrets, refuses to start against a
+half-ready environment, and hands Maestro a fully specified command.
+
+```bash
+apps/mobile/.maestro/run.sh suites/smoke.yaml            # read-only smoke
+apps/mobile/.maestro/run.sh suites/actions.yaml          # authorized per run
+apps/mobile/.maestro/run.sh flows/smoke/settings/about.yaml
+apps/mobile/.maestro/run.sh --device emulator-5554 suites/smoke.yaml
+```
+
+Anything it does not recognise is forwarded to `maestro test`, so Maestro's own
+flags still work — including sharding, which splits the flows across several
+booted devices and is the one supported way to cut the suite's wall-clock:
+
+```bash
+apps/mobile/.maestro/run.sh --shard-split=2 suites/smoke.yaml
+```
+
+The runner exists because four things here fail quietly rather than loudly:
+
+- **Working directory.** `takeScreenshot` paths are cwd-relative, so the suite
+  only behaves when Maestro runs from `apps/mobile/.maestro/`. Anywhere else
+  scatters a stray `screenshots/` folder. The runner anchors to its own
+  directory, so it works from anywhere.
+- **`-e` forwarding.** Maestro (verified on 2.4.0) does not inherit the shell
+  environment. Sourcing `.env.test` and running `maestro test` without `-e`
+  does not fail — flows interpolate `${SALMON_TEST_SEED_A}` to the literal
+  string `undefined`, type it into the seed field, and die many steps later on
+  an unrelated selector. The runner forwards all five and names any that are
+  missing before the first tap.
+- **Android port mapping.** See "Backend reachability" above; the runner
+  re-applies `adb reverse` on every run because an emulator reboot drops it.
+- **Backend down.** The runner checks and refuses to start, rather than letting
+  every flow fail on a screen that blames the seed phrase.
 
 ## Conventions
 

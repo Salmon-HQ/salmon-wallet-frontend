@@ -1,12 +1,18 @@
 import {
-  Connection,
-  Keypair,
-  PublicKey,
-  Commitment,
-  Message,
-} from '@solana/web3.js';
+  address,
+  createSolanaRpc,
+  createSolanaRpcSubscriptions,
+  getAddressEncoder,
+  isAddress,
+} from '@solana/kit';
+import type { Address, Commitment, KeyPairSigner } from '@solana/kit';
 import bs58 from 'bs58';
-import { SOLANA_NETWORKS } from './networks';
+import {
+  SOLANA_NETWORKS,
+  resolveSolanaWsUrl,
+  type SolanaRpc,
+  type SolanaRpcSubscriptions,
+} from './networks';
 import {
   requiresMemo as checkRequiresMemo,
   calculateTransferFee as calcTransferFee,
@@ -45,6 +51,20 @@ import {
 } from './transactions';
 
 /**
+ * Solana signing key material, as produced by the account factories.
+ *
+ * The kit signer holds a non-extractable CryptoKey, so the seed is carried
+ * alongside it: it is the only recoverable form of the private key, and it is
+ * what lets `retrieveSecurePrivateKey()` stay synchronous.
+ */
+export interface SolanaSigningKey {
+  /** 32-byte ed25519 seed */
+  seed: Uint8Array;
+  /** Non-extractable kit signer. `signer.address` is the base58 public key. */
+  signer: KeyPairSigner;
+}
+
+/**
  * Options for creating a SolanaAccount instance
  */
 export interface SolanaAccountOptions {
@@ -54,8 +74,8 @@ export interface SolanaAccountOptions {
   index: number;
   /** BIP44 derivation path */
   path: string;
-  /** Solana keypair for signing transactions */
-  keyPair: Keypair;
+  /** Solana signing key material (seed + kit signer) */
+  keyPair: SolanaSigningKey;
   /** Function to fetch token balances (DI) */
   fetchBalance: FetchSolanaBalanceFn;
   /** Function to fetch a single transaction (DI) */
@@ -81,7 +101,7 @@ export type { ValidationResult };
  * It manages a keypair and provides methods for querying balances and account information.
  *
  * Features:
- * - Lazy connection initialization for efficient resource usage
+ * - Lazy RPC client initialization for efficient resource usage
  * - Balance queries in both lamports and SOL
  * - Public key and address retrieval
  * - Secure private key access
@@ -96,16 +116,23 @@ export class SolanaAccount {
   /** BIP44 derivation path used for key derivation */
   readonly path: string;
 
-  /** Solana keypair for signing */
-  readonly keyPair: Keypair;
+  /** Kit signer, used for off-chain message signing */
+  readonly signer: KeyPairSigner;
 
-  /** Public key derived from keypair */
-  readonly publicKey: PublicKey;
+  /** Base58 address derived from the signer. */
+  readonly publicKey: Address;
 
-  /** Cached connection instance (lazy initialized) */
-  private connection: Connection | null = null;
-  /** The nodeUrl used to create the current connection (for comparison) */
-  private connectionNodeUrl: string | null = null;
+  /** 32-byte ed25519 seed — the only recoverable form of the private key */
+  private readonly seed: Uint8Array;
+
+  /** Cached kit RPC client (lazy initialized) */
+  private rpc: SolanaRpc | null = null;
+  /** The nodeUrl used to create the current kit RPC client */
+  private rpcNodeUrl: string | null = null;
+  /** Cached kit RPC subscriptions client (lazy initialized) */
+  private rpcSubscriptions: SolanaRpcSubscriptions | null = null;
+  /** The wsUrl used to create the current kit subscriptions client */
+  private rpcWsUrl: string | null = null;
   /** Injected function to fetch token balances */
   private fetchBalanceFn: FetchSolanaBalanceFn;
   /** Injected function to fetch a single transaction */
@@ -124,8 +151,9 @@ export class SolanaAccount {
     this.network = options.network;
     this.index = options.index;
     this.path = options.path;
-    this.keyPair = options.keyPair;
-    this.publicKey = options.keyPair.publicKey;
+    this.signer = options.keyPair.signer;
+    this.seed = options.keyPair.seed;
+    this.publicKey = options.keyPair.signer.address;
     this.fetchBalanceFn = options.fetchBalance;
     this.fetchTransactionFn = options.fetchTransaction;
     this.fetchTransactionsFn = options.fetchTransactions;
@@ -139,7 +167,12 @@ export class SolanaAccount {
    * @returns Base58-encoded secret key
    */
   retrieveSecurePrivateKey(): string {
-    return bs58.encode(this.keyPair.secretKey);
+    // An ed25519 secret key in its 64-byte form is the seed followed by the
+    // public key — the same bytes the legacy web3.js keypair exposed.
+    const secretKey = new Uint8Array(64);
+    secretKey.set(this.seed);
+    secretKey.set(getAddressEncoder().encode(this.publicKey), 32);
+    return bs58.encode(secretKey);
   }
 
   /**
@@ -151,25 +184,49 @@ export class SolanaAccount {
   }
 
   /**
-   * Gets or creates a connection to the Solana network.
-   * Uses lazy initialization to avoid creating connections until needed.
-   * Always uses the latest network configuration from SOLANA_NETWORKS to ensure
-   * the RPC URL is up-to-date (may have been updated by fetchAndMergeNetworkConfigs).
-   *
-   * @returns Promise resolving to Connection instance
+   * Resolves the effective network config, preferring the global
+   * SOLANA_NETWORKS entry (which fetchAndMergeNetworkConfigs updates at
+   * runtime) over the snapshot this account was constructed with.
    */
-  async getConnection(): Promise<Connection> {
-    // Always get the latest network config from SOLANA_NETWORKS in case it was updated
-    const latestNetwork = SOLANA_NETWORKS[this.network.id];
-    const nodeUrl = latestNetwork?.config?.nodeUrl || this.network.config.nodeUrl;
-    const commitment = latestNetwork?.config?.commitment || this.network.config.commitment || 'confirmed';
-    
-    // Recreate connection if nodeUrl changed or if connection doesn't exist
-    if (!this.connection || this.connectionNodeUrl !== nodeUrl) {
-      this.connection = new Connection(nodeUrl, commitment);
-      this.connectionNodeUrl = nodeUrl;
+  private getLatestConfig(): { nodeUrl: string; wsUrl?: string; commitment: Commitment } {
+    const latest = SOLANA_NETWORKS[this.network.id]?.config;
+    return {
+      nodeUrl: latest?.nodeUrl || this.network.config.nodeUrl,
+      wsUrl: latest?.wsUrl || this.network.config.wsUrl,
+      commitment: latest?.commitment || this.network.config.commitment || 'confirmed',
+    };
+  }
+
+  /**
+   * Gets or creates the kit RPC client for this network.
+   *
+   * Sync: `createSolanaRpc` performs no I/O. The cache is keyed on nodeUrl
+   * because the backend catalog can change it after the account was
+   * constructed.
+   */
+  getRpc(): SolanaRpc {
+    const { nodeUrl } = this.getLatestConfig();
+    if (!this.rpc || this.rpcNodeUrl !== nodeUrl) {
+      this.rpc = createSolanaRpc(nodeUrl);
+      this.rpcNodeUrl = nodeUrl;
     }
-    return this.connection;
+    return this.rpc;
+  }
+
+  /**
+   * Gets or creates the kit RPC subscriptions client for this network.
+   *
+   * Uses the configured `wsUrl` when the backend supplies a same-host one,
+   * otherwise the endpoint derived from the RPC URL.
+   */
+  getRpcSubscriptions(): SolanaRpcSubscriptions {
+    const { nodeUrl, wsUrl } = this.getLatestConfig();
+    const endpoint = resolveSolanaWsUrl(nodeUrl, wsUrl);
+    if (!this.rpcSubscriptions || this.rpcWsUrl !== endpoint) {
+      this.rpcSubscriptions = createSolanaRpcSubscriptions(endpoint);
+      this.rpcWsUrl = endpoint;
+    }
+    return this.rpcSubscriptions;
   }
 
   /**
@@ -178,8 +235,12 @@ export class SolanaAccount {
    * @returns Promise resolving to balance in lamports
    */
   async getCredit(): Promise<number> {
-    const connection = await this.getConnection();
-    return connection.getBalance(this.publicKey);
+    // The commitment is load-bearing, not cosmetic: the legacy Connection
+    // carried it, while the RPC server defaults to 'finalized'. Dropping it
+    // would silently start reading older balances.
+    const { commitment } = this.getLatestConfig();
+    const { value } = await this.getRpc().getBalance(this.publicKey, { commitment }).send();
+    return Number(value);
   }
 
   // ==========================================================================
@@ -195,7 +256,7 @@ export class SolanaAccount {
   private async fetchSolanaBalance(
     opts?: { includeSpam?: boolean },
   ): Promise<SolanaBalanceItem[]> {
-    return this.fetchBalanceFn(this.network.id, this.publicKey.toBase58(), opts);
+    return this.fetchBalanceFn(this.network.id, this.publicKey, opts);
   }
 
   /**
@@ -259,7 +320,7 @@ export class SolanaAccount {
    *
    * @returns The account's public key
    */
-  getPublicKey(): PublicKey {
+  getPublicKey(): Address {
     return this.publicKey;
   }
 
@@ -269,7 +330,7 @@ export class SolanaAccount {
    * @returns Base58-encoded public key string suitable for receiving funds
    */
   getReceiveAddress(): string {
-    return this.publicKey.toBase58();
+    return this.publicKey;
   }
 
   /**
@@ -279,31 +340,18 @@ export class SolanaAccount {
    * @returns True if the address is valid, false otherwise
    */
   static isValidAddress(address: string): boolean {
-    try {
-      new PublicKey(address);
-      return true;
-    } catch {
-      return false;
-    }
+    return isAddress(address);
   }
 
   /**
-   * Creates a PublicKey instance from an address string.
-   *
-   * @param address - Base58-encoded address string
-   * @returns PublicKey instance
-   * @throws Error if the address is invalid
-   */
-  static toPublicKey(address: string): PublicKey {
-    return new PublicKey(address);
-  }
-
-  /**
-   * Closes the connection and releases resources.
+   * Drops the cached kit clients so the next accessor rebuilds them.
    * Call this when the account is no longer needed.
    */
   async disconnect(): Promise<void> {
-    this.connection = null;
+    this.rpc = null;
+    this.rpcNodeUrl = null;
+    this.rpcSubscriptions = null;
+    this.rpcWsUrl = null;
   }
 
   // ==========================================================================
@@ -319,8 +367,8 @@ export class SolanaAccount {
    * @returns Validation result with type, code, and address type
    */
   async validateDestinationAccount(address: string): Promise<ValidationResult> {
-    const connection = await this.getConnection();
-    return validateDestination(connection, address);
+    const rpc = this.getRpc();
+    return validateDestination(rpc, address);
   }
 
   // ==========================================================================
@@ -334,8 +382,8 @@ export class SolanaAccount {
    * @returns Domain name or null if not found
    */
   async getDomain(): Promise<string | null> {
-    const connection = await this.getConnection();
-    return getDomainFromService(connection, this.publicKey);
+    const rpc = this.getRpc();
+    return getDomainFromService(rpc, this.publicKey);
   }
 
   /**
@@ -345,10 +393,9 @@ export class SolanaAccount {
    * @param publicKey - Public key to look up
    * @returns Domain name or null if not found
    */
-  async getDomainFromPublicKey(publicKey: PublicKey | string): Promise<string | null> {
-    const connection = await this.getConnection();
-    const pk = typeof publicKey === 'string' ? new PublicKey(publicKey) : publicKey;
-    return getDomainFromPublicKeyService(connection, pk);
+  async getDomainFromPublicKey(publicKey: string): Promise<string | null> {
+    const rpc = this.getRpc();
+    return getDomainFromPublicKeyService(rpc, address(publicKey));
   }
 
   /**
@@ -358,8 +405,8 @@ export class SolanaAccount {
    * @returns Base58-encoded public key or null if not found
    */
   async getPublicKeyFromDomain(domain: string): Promise<string | null> {
-    const connection = await this.getConnection();
-    return getPublicKeyFromDomainService(connection, domain);
+    const rpc = this.getRpc();
+    return getPublicKeyFromDomainService(rpc, domain);
   }
 
   // ==========================================================================
@@ -373,7 +420,7 @@ export class SolanaAccount {
    * @returns Transaction data or null if not found
    */
   async getTransaction(txId: string): Promise<SolanaTransaction | null> {
-    const address = this.publicKey.toBase58();
+    const address = this.publicKey;
     return this.fetchTransactionFn(this.network.id, address, txId);
   }
 
@@ -386,7 +433,7 @@ export class SolanaAccount {
   async getRecentTransactions(
     paging?: SolanaTransactionPaging
   ): Promise<SolanaTransactionListResponse> {
-    const address = this.publicKey.toBase58();
+    const address = this.publicKey;
     return getRecentTransactionsService(this.network.id, address, paging, this.fetchTransactionsFn);
   }
 
@@ -406,8 +453,7 @@ export class SolanaAccount {
     destination: string,
     tokenAddress: string | null | undefined
   ): Promise<boolean> {
-    const connection = await this.getConnection();
-    return checkRequiresMemo(connection, new PublicKey(destination), tokenAddress);
+    return checkRequiresMemo(this.getRpc(), address(destination), tokenAddress);
   }
 
   /**
@@ -418,29 +464,7 @@ export class SolanaAccount {
    * @returns Fee amount in token's smallest unit, or null if no fee
    */
   async calculateTransferFee(mint: string, amount: number): Promise<bigint | null> {
-    const connection = await this.getConnection();
-    return calcTransferFee(connection, mint, amount);
-  }
-
-  /**
-   * Estimates the total fee for an array of transaction messages.
-   *
-   * @param messages - Array of transaction messages to estimate
-   * @param commitment - Commitment level for fee estimation
-   * @returns Total estimated fee in lamports
-   */
-  async estimateTransactionsFee(
-    messages: Message[],
-    commitment: Commitment = 'confirmed'
-  ): Promise<number> {
-    const connection = await this.getConnection();
-    const feePromises = messages.map((message) =>
-      connection.getFeeForMessage(message, commitment)
-    );
-    const results = await Promise.all(feePromises);
-    return results
-      .map(({ value }) => value ?? 0)
-      .reduce((sum, fee) => sum + fee, 0);
+    return calcTransferFee(this.getRpc(), mint, amount);
   }
 
   // ==========================================================================
@@ -462,11 +486,10 @@ export class SolanaAccount {
     amount: number,
     opts?: SolanaTransferOptions,
   ): Promise<{ txId: string }> {
-    const connection = await this.getConnection();
     const result = await createTransfer(
-      connection,
-      this.keyPair,
-      new PublicKey(to),
+      this.getRpc(),
+      this.signer,
+      address(to),
       token,
       amount,
       opts,
@@ -489,11 +512,10 @@ export class SolanaAccount {
     amount: number,
     opts?: EstimateFeeOptions,
   ): Promise<FeeEstimateResult | null> {
-    const connection = await this.getConnection();
     const fee = await estimateSolanaFee(
-      connection,
-      this.keyPair,
-      new PublicKey(to),
+      this.getRpc(),
+      this.signer,
+      address(to),
       token,
       amount,
       opts,
@@ -554,7 +576,7 @@ export class SolanaAccount {
   async getAllNfts(): Promise<Nft[]> {
     return getAllNftsFromService(
       this.network,
-      this.publicKey.toBase58(),
+      this.publicKey,
       false,
       this.fetchNftsFn,
     );

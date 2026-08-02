@@ -21,13 +21,16 @@ home for mobile integration tests.
 
 ## Conventions
 
-- **Working directory**: always invoke Maestro from this folder
-  (`apps/mobile/.maestro/`). `takeScreenshot` paths in the flow YAML are
-  resolved relative to the cwd, so any other invocation creates a stray
-  `screenshots/` directory at that location. The repo-root `.gitignore`
-  blocks the obvious mis-locations defensively (`/.maestro/`,
-  `**/.maestro/screenshots/`), but the rule is: `cd
-  apps/mobile/.maestro` first.
+- **Run through `./run.sh`**, never `maestro test` directly. It anchors the
+  cwd, forwards every secret with `-e`, re-applies the Android port mapping,
+  and refuses to start when the backend is down. Each of those fails silently
+  or misleadingly when done by hand; `README.md` explains how. Reach for bare
+  `maestro` only to debug the runner itself.
+- **Working directory**: `takeScreenshot` paths in the flow YAML are resolved
+  relative to the cwd, so anything invoked from elsewhere creates a stray
+  `screenshots/` directory. The repo-root `.gitignore` blocks the obvious
+  mis-locations defensively (`/.maestro/`, `**/.maestro/screenshots/`), and
+  `run.sh` cds to this folder for you.
 - **Selectors**: `id:` (testID) > `text:` > `point:` coords. Add a
   testID upstream when an element keeps requiring point taps.
 - **Secrets**: live in `.env.test` (gitignored). Document any new
@@ -39,6 +42,22 @@ home for mobile integration tests.
   for isolation; the suite orchestrator does not de-dup recoveries.
 - **Destructive reset**: `actions/reset/remove-all-wallets.yaml` wipes
   the device. Always last in `suites/actions.yaml`.
+
+## Pre-flight
+
+Before authorizing `actions/*` flows, check the test wallets' actual
+state — balance/NFT via a quick RPC query or the app itself — rather than
+assuming the last run left them funded. Wallet A funds Send/Swap and is where
+the NFT transfer flow expects its fixture to start; the flow is a round trip
+(A → B → A), so a run that died between the legs leaves the NFT parked in
+Wallet B and the next run has to move it home first.
+
+Missing prerequisite → the flow should skip with a clear message, not fail
+cryptically mid-flow. Backend reachable but behaving wrong → fail, never
+skip. The backend-down half of that rule is enforced by `run.sh`, which is
+this suite's answer to the web and extension suites' `isBackendUp()`: Maestro
+has no per-flow skip, so the gate lives in the runner and stops the whole run
+instead. Fund prerequisites are still checked by hand.
 
 ## When extending the suite
 

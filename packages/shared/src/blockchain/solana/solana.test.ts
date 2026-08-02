@@ -970,8 +970,10 @@ describe('createSolanaAccount - Deterministic Derivation', () => {
     });
 
     const publicKey = account.getPublicKey();
-    expect(publicKey).toBeInstanceOf(PublicKey);
-    expect(publicKey.toBase58()).toBe(EXPECTED_ADDRESSES[0]);
+    // web3.js parity: the same base58 the legacy `PublicKey` produced, now as
+    // the kit `Address` string it always was underneath.
+    expect(new PublicKey(publicKey).toBase58()).toBe(EXPECTED_ADDRESSES[0]);
+    expect(publicKey).toBe(EXPECTED_ADDRESSES[0]);
   });
 
   it('should set correct account properties', async () => {

@@ -11,15 +11,14 @@
  * start with those bytes, which is what makes an off-chain message signature
  * structurally impossible to replay as a transaction signature.
  *
- * Signing and verification use the same `nacl.sign.detached` + legacy `Keypair`
- * pattern as `approveSolanaSignMessage` in `utils/dapp-approval.ts` rather than the
- * library's own `signOffchainMessageEnvelope`/`verifyOffchainMessageEnvelope`
- * helpers, because those operate on WebCrypto `CryptoKeyPair`/`CryptoKey` objects
- * (via `@solana/keys`), not the `Keypair` type this wallet already derives, stores,
- * and signs with everywhere else.
+ * Signing and verification go through `@solana/kit`'s WebCrypto-backed `signBytes`
+ * and `verifySignature` rather than the library's own
+ * `signOffchainMessageEnvelope`/`verifyOffchainMessageEnvelope` helpers, which
+ * expect a full `CryptoKeyPair`. The account only carries a signer whose private
+ * key is non-extractable, which is all `signBytes` needs.
  */
-import nacl from 'tweetnacl';
-import { PublicKey } from '@solana/web3.js';
+import { isSignatureBytes, signBytes, verifySignature } from '@solana/kit';
+import { getAddressEncoder, type Address } from '@solana/addresses';
 import {
   compileOffchainMessageV1Envelope,
   getOffchainMessageV1Decoder,
@@ -27,8 +26,6 @@ import {
   type OffchainMessageV1,
 } from '@solana/offchain-messages';
 import type { SolanaAccount } from './SolanaAccount';
-
-type SignatoryAddress = OffchainMessageSignatory['address'];
 
 export interface SignedOffchainMessage {
   /** Raw 64-byte ed25519 signature over `buffer`. */
@@ -46,16 +43,12 @@ export interface SignedOffchainMessage {
  * @param signers - Accounts required to sign this message, per the OCMS spec
  * @returns The signing-domain-prefixed buffer, ready to be signed or hashed
  */
-export function buildOffchainMessageV1(content: Uint8Array, signers: PublicKey[]): Uint8Array {
+export function buildOffchainMessageV1(content: Uint8Array, signers: Address[]): Uint8Array {
   const text = new TextDecoder('utf-8', { fatal: true }).decode(content);
 
   const message: OffchainMessageV1 = {
     version: 1,
-    requiredSignatories: signers.map(
-      (signer): OffchainMessageSignatory => ({
-        address: signer.toBase58() as SignatoryAddress,
-      }),
-    ),
+    requiredSignatories: signers.map((signer): OffchainMessageSignatory => ({ address: signer })),
     content: text,
   };
 
@@ -63,31 +56,31 @@ export function buildOffchainMessageV1(content: Uint8Array, signers: PublicKey[]
 }
 
 /**
- * Signs an OCMS v1 message with the account's ed25519 keypair.
+ * Signs an OCMS v1 message with the account's ed25519 signer.
  *
- * @param account - The signing account (uses `account.keyPair.secretKey`)
+ * @param account - The signing account (uses `account.signer`)
  * @param content - Raw UTF-8-encoded message bytes (as received from a dApp)
  * @param signers - Accounts required to sign this message, per the OCMS spec
  * @returns The signature and the exact buffer it was computed over
  * @throws If `account` is not among `signers` (the wallet never signs an OCMS
  *   message that omits the signing account from its required-signatory list)
  */
-export function signOffchainMessage(
+export async function signOffchainMessage(
   account: SolanaAccount,
   content: Uint8Array,
-  signers: PublicKey[],
-): SignedOffchainMessage {
+  signers: Address[],
+): Promise<SignedOffchainMessage> {
   // Refuse to sign a message whose required-signatory list does not include this
   // account. Otherwise a dApp could obtain the user's signature over an OCMS
   // message that structurally attributes it to a different set of signers.
-  if (!signers.some((signer) => signer.equals(account.keyPair.publicKey))) {
+  if (!signers.some((signer) => signer === account.signer.address)) {
     throw new Error(
       'Refusing to sign: the signing account is not listed in the required signers.',
     );
   }
 
   const buffer = buildOffchainMessageV1(content, signers);
-  const signature = nacl.sign.detached(buffer, account.keyPair.secretKey);
+  const signature = await signBytes(account.signer.keyPair.privateKey, buffer);
   return { signature, buffer };
 }
 
@@ -95,17 +88,36 @@ export function signOffchainMessage(
  * Verifies an OCMS v1 signature over `buffer`.
  *
  * @remarks The published `@solana/offchain-messages` verifier
- * (`verifyOffchainMessageEnvelope`) is built around WebCrypto `CryptoKey` objects
- * (via `@solana/keys`), which this wallet does not use for signing. Verification is
- * done directly with tweetnacl instead, over the same domain-separated buffer
- * `buildOffchainMessageV1` produces.
+ * (`verifyOffchainMessageEnvelope`) works on envelope objects. This verifies the
+ * raw domain-separated buffer `buildOffchainMessageV1` produces, so the caller
+ * can check exactly the bytes that were signed. `verifySignature` needs a
+ * `CryptoKey`, so the signer's address bytes are imported as an Ed25519 public key.
  *
  * @param buffer - The signed buffer, as produced by `buildOffchainMessageV1`
  * @param signature - The 64-byte ed25519 signature to verify
  * @param signer - The public key the signature is claimed to be from
  */
-export function verifyOffchainMessage(buffer: Uint8Array, signature: Uint8Array, signer: PublicKey): boolean {
-  return nacl.sign.detached.verify(buffer, signature, signer.toBytes());
+export async function verifyOffchainMessage(
+  buffer: Uint8Array,
+  signature: Uint8Array,
+  signer: Address,
+): Promise<boolean> {
+  // `signature` is untrusted: it arrives from a dApp or from storage. Narrow it
+  // with kit's guard rather than casting. A wrong-length signature is simply an
+  // invalid one, so this reports false instead of throwing — callers treat this
+  // function's boolean as the verdict.
+  if (!isSignatureBytes(signature)) {
+    return false;
+  }
+
+  const publicKey = await crypto.subtle.importKey(
+    'raw',
+    Uint8Array.from(getAddressEncoder().encode(signer)),
+    'Ed25519',
+    true,
+    ['verify'],
+  );
+  return verifySignature(publicKey, signature, buffer);
 }
 
 /**

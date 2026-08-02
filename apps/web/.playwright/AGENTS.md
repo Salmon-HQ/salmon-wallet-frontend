@@ -30,6 +30,15 @@ component level rather than writing fragile selectors.
 - Keep the suite serial (config enforces `workers: 1`).
 - Secrets only in `.env.test` (gitignored), loaded by `env.ts`.
 
+## Pre-flight
+
+New specs that spend the test wallet's SOL or tokens must check the
+prerequisite before touching the UI — balance/NFT state via a quick RPC
+query, not an assumption. Missing prerequisite → `test.skip(..., reason)`
+with a message that says what was missing. Backend reachable but wrong
+behavior → the spec must fail, never skip (same rule that already gates on
+`isBackendUp()`).
+
 ## Auth / wallet state (the open item)
 
 A fresh browser context has no wallet, so the app lands on onboarding, not the

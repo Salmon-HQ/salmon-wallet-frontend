@@ -13,8 +13,8 @@
  * the wallet to sign the constructed SIWS text wrapped in an OCMS v1 envelope
  * (see `./offchain-message.ts`) instead of signing the raw UTF-8 bytes.
  */
-import nacl from 'tweetnacl';
-import { PublicKey } from '@solana/web3.js';
+import { signBytes } from '@solana/kit';
+import { address } from '@solana/addresses';
 import { signOffchainMessage } from './offchain-message';
 import type { SolanaAccount } from './SolanaAccount';
 
@@ -98,7 +98,11 @@ export function buildSiwsMessageText(fields: ResolvedSiwsFields): string {
   if (fields.expirationTime) lines.push(`Expiration Time: ${fields.expirationTime}`);
   if (fields.notBefore) lines.push(`Not Before: ${fields.notBefore}`);
   if (fields.requestId) lines.push(`Request ID: ${fields.requestId}`);
-  if (fields.resources?.length) {
+  // Gated on presence, not length: @solana/wallet-standard-util's
+  // createSignInMessageText emits a bare `Resources:` line for a truthy empty
+  // array too, so an explicit `resources: []` must match that, not silently
+  // drop the header.
+  if (fields.resources) {
     lines.push('Resources:');
     for (const resource of fields.resources) lines.push(`- ${resource}`);
   }
@@ -187,11 +191,11 @@ export interface SignedSignInMessage {
  * Refuses to sign on domain or address mismatch — the flags that
  * `prepareSignInMessage` surfaces for the approval UI are hard errors here.
  */
-export function signSiwsMessage(
+export async function signSiwsMessage(
   account: SolanaAccount,
   input: SolanaSignInInputFields,
   origin: string,
-): SignedSignInMessage {
+): Promise<SignedSignInMessage> {
   const walletAddress = account.getReceiveAddress();
   const prepared = prepareSignInMessage(input, origin, walletAddress);
 
@@ -210,8 +214,8 @@ export function signSiwsMessage(
     if (input.useOffchainMessage.messageVersion !== 1) {
       throw new Error('Unsupported off-chain message version');
     }
-    const { signature, buffer } = signOffchainMessage(account, messageBytes, [
-      new PublicKey(walletAddress),
+    const { signature, buffer } = await signOffchainMessage(account, messageBytes, [
+      address(walletAddress),
     ]);
     return {
       message: prepared.message,
@@ -221,6 +225,6 @@ export function signSiwsMessage(
     };
   }
 
-  const signature = nacl.sign.detached(messageBytes, account.keyPair.secretKey);
+  const signature = await signBytes(account.signer.keyPair.privateKey, messageBytes);
   return { message: prepared.message, signedMessage: messageBytes, signature };
 }

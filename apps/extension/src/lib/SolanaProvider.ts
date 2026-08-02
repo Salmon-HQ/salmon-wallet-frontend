@@ -1,6 +1,9 @@
 import EventEmitter from 'eventemitter3';
 import bs58 from 'bs58';
-import { PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
+import { getBase58Decoder, getTransactionDecoder, getTransactionEncoder } from '@solana/kit';
+import type { Address, SignatureBytes } from '@solana/kit';
+import { toSalmonAddress } from './SalmonAddress';
+import type { SalmonAddress } from './SalmonAddress';
 
 // ============================================================================
 // Type Definitions
@@ -32,7 +35,7 @@ export interface ResponseMessage {
  * Result returned from a successful connect call
  */
 export interface ConnectResult {
-  publicKey: PublicKey;
+  publicKey: SalmonAddress;
 }
 
 /**
@@ -138,17 +141,95 @@ export interface SignInResult {
 export type Network = 'solana-mainnet' | 'solana-devnet' | string;
 
 /**
+ * Structural shape of a legacy web3.js `Transaction`, limited to the members
+ * this provider touches. Structural rather than imported so the injected
+ * bundle carries no `@solana/web3.js`; dApps keep passing the real objects.
+ */
+export interface LegacyTransactionLike {
+  serializeMessage(): Uint8Array;
+  serialize(config?: { requireAllSignatures?: boolean; verifySignatures?: boolean }): Uint8Array;
+  signatures: { publicKey: { toBase58(): string }; signature: Uint8Array | null }[];
+}
+
+/** Structural shape of a web3.js `VersionedTransaction`. */
+export interface VersionedTransactionLike {
+  message: {
+    serialize(): Uint8Array;
+    header: { numRequiredSignatures: number };
+    staticAccountKeys: { toBase58(): string }[];
+  };
+  signatures: Uint8Array[];
+  serialize(): Uint8Array;
+}
+
+/**
  * Transaction type that can be either legacy or versioned
  */
-export type SolanaTransaction = Transaction | VersionedTransaction;
+export type SolanaTransaction = LegacyTransactionLike | VersionedTransactionLike;
+
+const SIGNATURE_LENGTH = 64;
+
+/**
+ * Decodes a base58 signature coming back from the extension, refusing a
+ * wrong-length one. Kit's fixed-size encoder pads or truncates silently, so
+ * without this a malformed response would be re-encoded into a plausible-looking
+ * transaction instead of failing.
+ */
+function toSignatureBytes(signature: string): SignatureBytes {
+  const bytes = bs58.decode(signature);
+  if (bytes.length !== SIGNATURE_LENGTH) {
+    throw new Error('Invalid signature length');
+  }
+  return bytes as SignatureBytes;
+}
+
+/**
+ * Writes `signature` into the slot that belongs to `base58`, for either wire
+ * format, and returns the transaction the dApp handed us.
+ *
+ * Replaces web3.js's `addSignature`, which the injected address object cannot
+ * feed: `VersionedTransaction.addSignature` compares `realKey.equals(ours)` and
+ * dies on the missing `_bn`, while the legacy path happens to compare the other
+ * way round and survives. One path for both, byte-identical to web3.js's own
+ * signing for each format.
+ */
+function writeSignature(
+  transaction: SolanaTransaction,
+  base58: string,
+  signature: Uint8Array
+): void {
+  if (signature.length !== SIGNATURE_LENGTH) {
+    throw new Error('Invalid signature length');
+  }
+
+  if ('serializeMessage' in transaction) {
+    // Forces the compile that populates `signatures`; idempotent.
+    transaction.serializeMessage();
+    const entry = transaction.signatures.find((s) => s.publicKey.toBase58() === base58);
+    if (!entry) {
+      throw new Error(`Transaction does not require a signature from ${base58}`);
+    }
+    entry.signature = signature;
+    return;
+  }
+
+  const { message } = transaction;
+  const index = message.staticAccountKeys
+    .slice(0, message.header.numRequiredSignatures)
+    .findIndex((key) => key.toBase58() === base58);
+  if (index === -1) {
+    throw new Error(`Transaction does not require a signature from ${base58}`);
+  }
+  transaction.signatures[index] = signature;
+}
 
 /**
  * Events emitted by the provider
  */
 export interface SolanaProviderEvents {
-  connect: (publicKey: PublicKey) => void;
+  connect: (publicKey: SalmonAddress) => void;
   disconnect: () => void;
-  accountChanged: (publicKey: PublicKey | null) => void;
+  accountChanged: (publicKey: SalmonAddress | null) => void;
 }
 
 // ============================================================================
@@ -169,7 +250,7 @@ interface ContentScriptMessageEvent extends CustomEvent<ContentScriptMessageDeta
  * extension's content script via custom events.
  */
 export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
-  #publicKey: PublicKey | null = null;
+  #publicKey: SalmonAddress | null = null;
 
   constructor() {
     super();
@@ -179,7 +260,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
   /**
    * The public key of the connected wallet, or null if not connected
    */
-  get publicKey(): PublicKey | null {
+  get publicKey(): SalmonAddress | null {
     return this.#publicKey;
   }
 
@@ -206,6 +287,22 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
     } else {
       throw new Error('Unable to serialize transaction');
     }
+
+    return bs58.encode(serialized);
+  };
+
+  /**
+   * Encodes a FULL transaction to base58, keeping any signatures a dApp already
+   * applied. Only `signAndSendTransaction` needs this: the wallet submits that
+   * transaction itself, so dropping co-signer signatures makes it invalid. The
+   * `signTransaction` paths return only the wallet's own signature and the dApp
+   * reassembles the transaction, so they keep using `#encodeTransaction`.
+   */
+  #encodeSignedTransaction = (transaction: SolanaTransaction): string => {
+    const serialized =
+      'serializeMessage' in transaction && typeof transaction.serializeMessage === 'function'
+        ? transaction.serialize({ requireAllSignatures: false, verifySignatures: false })
+        : transaction.serialize();
 
     return bs58.encode(serialized);
   };
@@ -266,7 +363,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
 
     if (response.method === 'connected' && response.params) {
       const publicKeyString = response.params.publicKey as string;
-      this.#publicKey = new PublicKey(publicKeyString);
+      this.#publicKey = toSalmonAddress(publicKeyString);
       this.emit('connect', this.#publicKey);
       return { publicKey: this.#publicKey };
     }
@@ -302,6 +399,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
   ): Promise<SignAndSendTransactionResult> => {
     const response = await this.sendRequest('signAndSendTransaction', {
       message: this.#encodeTransaction(transaction),
+      transaction: this.#encodeSignedTransaction(transaction),
       network,
       options,
     });
@@ -325,15 +423,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
     });
 
     const result = response.result as SignTransactionResult;
-    const signature = bs58.decode(result.signature);
-    const publicKey = new PublicKey(result.publicKey);
-
-    // Add signature to the transaction
-    if ('addSignature' in transaction && typeof transaction.addSignature === 'function') {
-      transaction.addSignature(publicKey, Buffer.from(signature));
-    } else {
-      throw new Error('Transaction does not support addSignature');
-    }
+    writeSignature(transaction, result.publicKey, bs58.decode(result.signature));
 
     return transaction;
   };
@@ -354,17 +444,96 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
     });
 
     const result = response.result as SignAllTransactionsResult;
-    const signatures = result.signatures.map(s => bs58.decode(s));
-    const publicKey = new PublicKey(result.publicKey);
 
     return transactions.map((tx, idx) => {
-      if ('addSignature' in tx && typeof tx.addSignature === 'function') {
-        tx.addSignature(publicKey, Buffer.from(signatures[idx]));
-      } else {
-        throw new Error('Transaction does not support addSignature');
-      }
+      writeSignature(tx, result.publicKey, bs58.decode(result.signatures[idx]));
       return tx;
     });
+  };
+
+  /**
+   * Signs a wire-format transaction without sending it. Bytes-native
+   * counterpart of {@link signTransaction}, used by the wallet-standard
+   * adapter, which only ever holds raw transaction bytes. Decodes the wire
+   * with the kit codecs, writes the returned signature into the wallet's own
+   * slot (every other slot, e.g. a co-signer's, is carried over untouched),
+   * and re-encodes.
+   * @param transaction - The wire-format transaction bytes to sign
+   * @param network - The network context for the transaction
+   * @returns The signed transaction, still in wire format
+   */
+  signTransactionBytes = async (transaction: Uint8Array, network?: Network): Promise<Uint8Array> => {
+    const decoded = getTransactionDecoder().decode(transaction);
+    const response = await this.sendRequest('signTransaction', {
+      message: getBase58Decoder().decode(decoded.messageBytes),
+      network,
+    });
+
+    const result = response.result as SignTransactionResult;
+    const signerAddress = result.publicKey as Address;
+    if (!(signerAddress in decoded.signatures)) {
+      throw new Error('Signer public key not found in transaction message');
+    }
+
+    const signatures = {
+      ...decoded.signatures,
+      [signerAddress]: toSignatureBytes(result.signature),
+    };
+
+    return new Uint8Array(getTransactionEncoder().encode({ ...decoded, signatures }));
+  };
+
+  /**
+   * Signs multiple wire-format transactions without sending them. Bytes-native
+   * counterpart of {@link signAllTransactions}.
+   * @param transactions - The wire-format transactions to sign
+   * @param network - The network context for the transactions
+   * @returns The signed transactions, still in wire format
+   */
+  signAllTransactionsBytes = async (transactions: Uint8Array[], network?: Network): Promise<Uint8Array[]> => {
+    const decodedList = transactions.map((wire) => getTransactionDecoder().decode(wire));
+    const response = await this.sendRequest('signAllTransactions', {
+      messages: decodedList.map((decoded) => getBase58Decoder().decode(decoded.messageBytes)),
+      network,
+    });
+
+    const result = response.result as SignAllTransactionsResult;
+    const signerAddress = result.publicKey as Address;
+    const signatureBytes = result.signatures.map(toSignatureBytes);
+
+    return decodedList.map((decoded, index) => {
+      if (!(signerAddress in decoded.signatures)) {
+        throw new Error('Signer public key not found in transaction message');
+      }
+      const signatures = { ...decoded.signatures, [signerAddress]: signatureBytes[index] };
+      return new Uint8Array(getTransactionEncoder().encode({ ...decoded, signatures }));
+    });
+  };
+
+  /**
+   * Signs and sends a wire-format transaction. Bytes-native counterpart of
+   * {@link signAndSendTransaction} — forwards the input bytes verbatim as
+   * `transaction`, so any signatures the dApp already applied (co-signers)
+   * survive, exactly like the object-based path.
+   * @param transaction - The wire-format transaction bytes to sign and send
+   * @param network - The network to send the transaction to
+   * @param options - Send options
+   * @returns The transaction signature
+   */
+  signAndSendTransactionBytes = async (
+    transaction: Uint8Array,
+    network?: Network,
+    options?: SendOptions
+  ): Promise<SignAndSendTransactionResult> => {
+    const decoded = getTransactionDecoder().decode(transaction);
+    const response = await this.sendRequest('signAndSendTransaction', {
+      message: getBase58Decoder().decode(decoded.messageBytes),
+      transaction: bs58.encode(transaction),
+      network,
+      options,
+    });
+
+    return response.result as SignAndSendTransactionResult;
   };
 
   /**
@@ -441,7 +610,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
       signedMessageFormat?: { kind: 'offchainMessage'; messageVersion: 1 };
     };
 
-    const publicKey = new PublicKey(result.address);
+    const publicKey = toSalmonAddress(result.address);
     if (!this.#publicKey || !this.#publicKey.equals(publicKey)) {
       this.#publicKey = publicKey;
       this.emit('connect', publicKey);

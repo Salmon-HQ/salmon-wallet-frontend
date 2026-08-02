@@ -3,12 +3,11 @@ appId: io.salmonwallet.app
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-settings.yaml
 - assertVisible: "Settings"
-- swipe:
-    direction: UP
-    from:
-      text: "Developer Networks"
-- waitForAnimationToEnd:
-    timeout: 2000
+- scrollUntilVisible:
+    element:
+      id: "settings-developer-networks-toggle"
+    direction: DOWN
+    centerElement: true
 - takeScreenshot: screenshots/smoke/settings/developer-networks-off
 # Toggle ON
 - tapOn:

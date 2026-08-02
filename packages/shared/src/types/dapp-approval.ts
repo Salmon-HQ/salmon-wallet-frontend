@@ -77,6 +77,19 @@ export interface DAppSignAndSendTransactionRequest {
   method: 'signAndSendTransaction';
   params?: {
     message?: string;
+    /**
+     * bs58-encoded FULL serialized transaction, including any signatures the dApp
+     * already applied. Sent alongside `message` for `signAndSendTransaction` so
+     * co-signer signatures survive the hop. Optional so a pending approval queued
+     * by an older build still resolves via `message`.
+     *
+     * Enforced invariant: this transaction's embedded message MUST be byte-identical
+     * to `message`, which is what the approval screen previews. The check runs in
+     * `approveSolanaTransactionRequest` before the key is used, and a mismatch is
+     * rejected without signing — otherwise a page could preview one transaction and
+     * have a different one signed.
+     */
+    transaction?: string;
     network?: string;
     options?: Record<string, unknown>;
     [key: string]: unknown;

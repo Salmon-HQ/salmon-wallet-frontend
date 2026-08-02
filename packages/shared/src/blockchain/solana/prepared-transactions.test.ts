@@ -1,34 +1,115 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-vi.mock('@solana/web3.js', async () => {
-  const actual = await vi.importActual<typeof import('@solana/web3.js')>('@solana/web3.js');
-
-  class MockPublicKey {
-    constructor(readonly value: string) {}
-
-    toBase58() {
-      return this.value;
-    }
-  }
-
-  return {
-    ...actual,
-    PublicKey: MockPublicKey,
-    VersionedTransaction: {
-      deserialize: vi.fn(),
-    },
-  };
-});
-
-import { VersionedTransaction } from '@solana/web3.js';
+import {
+  createKeyPairSignerFromPrivateKeyBytes,
+  getBase64Decoder,
+  getCompiledTransactionMessageDecoder,
+  getTransactionDecoder,
+} from '@solana/kit';
+import {
+  ADDRESS_LOOKUP_TABLE_PROGRAM_ADDRESS,
+  getAddressLookupTableEncoder,
+} from '@solana-program/address-lookup-table';
 import {
   getPreparedSolanaTransactions,
   signAndSendPreparedSolanaTransactions,
 } from './prepared-transactions';
 import type { PreparedNftTransactionResponse } from '../../types/nft';
 
+// ============================================================================
+// Test Constants
+// ============================================================================
+
+/** Unsigned v0 transaction carrying one address-table lookup. */
+const FIXTURE_B64 =
+  'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABAoqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAgACDAIAAAABAAAAAAAAAAHtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QEAAA==';
+
+const FRESH_BLOCKHASH = 'GHtXQBsoZHVnNFa9YevAzFr17DJjgHXk3ycTKD5xD3Zi';
+const BURN_BLOCKHASH = 'DzfXchZJoLMG3cNftcf2sw7qatkkuwQf4xH15N5wkKAB';
+const LOOKUP_TABLE_ADDRESS = 'GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse';
+const LOOKUP_TABLE_ENTRY = 'AKnL4NNf3DGWZJS6cPknBuEGnVsV4A4m5tgebLHaRSZ9';
+
+/**
+ * A base64 lookup-table account as the RPC would return it, built with the
+ * program's own encoder so the real decoder is exercised end to end.
+ */
+function encodeLookupTableAccount(addressCount: number, lastExtendedSlot: bigint) {
+  const data = getAddressLookupTableEncoder().encode({
+    // u64::MAX — the sentinel for "not deactivated".
+    deactivationSlot: 2n ** 64n - 1n,
+    lastExtendedSlot,
+    lastExtendedSlotStartIndex: 0,
+    authority: null,
+    addresses: new Array(addressCount).fill(LOOKUP_TABLE_ENTRY),
+  });
+
+  return {
+    context: { slot: 1n },
+    value: {
+      data: [getBase64Decoder().decode(data), 'base64'],
+      executable: false,
+      lamports: 0n,
+      owner: ADDRESS_LOOKUP_TABLE_PROGRAM_ADDRESS,
+      rentEpoch: 0n,
+      space: BigInt(data.length),
+    },
+  };
+}
+
+type SignatureNotifications = () => AsyncGenerator<{ value: { err: unknown } }>;
+
+/** Async iterable that completes without yielding — the confirmation resolves. */
+// eslint-disable-next-line require-yield
+const noNotifications: SignatureNotifications = async function* () {
+  return;
+};
+
+const failedNotification: SignatureNotifications = async function* () {
+  yield { value: { err: { InstructionError: [0, 'InvalidAccountData'] } } };
+};
+
+function createRpc(overrides: Record<string, unknown> = {}) {
+  return {
+    getLatestBlockhash: vi.fn().mockReturnValue({
+      send: async () => ({ value: { blockhash: FRESH_BLOCKHASH, lastValidBlockHeight: 1n } }),
+    }),
+    sendTransaction: vi.fn().mockReturnValue({ send: async () => 'signature-1' }),
+    getSignatureStatuses: vi.fn().mockReturnValue({
+      send: async () => ({ value: [{ confirmationStatus: 'confirmed', err: null }] }),
+    }),
+    ...overrides,
+  };
+}
+
+function createRpcSubscriptions(notifications: SignatureNotifications = noNotifications) {
+  return {
+    signatureNotifications: vi.fn().mockReturnValue({
+      subscribe: async () => notifications(),
+    }),
+  };
+}
+
+async function createAccount(options: {
+  rpc?: ReturnType<typeof createRpc>;
+  rpcSubscriptions?: ReturnType<typeof createRpcSubscriptions>;
+} = {}) {
+  return {
+    signer: await createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(1), false),
+    getRpc: () => options.rpc ?? createRpc(),
+    getRpcSubscriptions: () => options.rpcSubscriptions ?? createRpcSubscriptions(),
+  };
+}
+
+/** Decodes what the flow handed to `rpc.sendTransaction`. */
+function decodeSent(wire: string) {
+  const transaction = getTransactionDecoder().decode(new Uint8Array(Buffer.from(wire, 'base64')));
+  const message = getCompiledTransactionMessageDecoder().decode(transaction.messageBytes);
+  if (message.version !== 0) {
+    throw new Error(`expected a v0 message, got ${message.version}`);
+  }
+  return { transaction, message };
+}
+
 describe('prepared-transactions', () => {
-  const deserializeMock = vi.mocked(VersionedTransaction.deserialize);
   const originalSetTimeout = global.setTimeout;
 
   beforeEach(() => {
@@ -64,164 +145,81 @@ describe('prepared-transactions', () => {
     ]);
   });
 
-  it('refreshes the blockhash before signing and confirming a transaction', async () => {
-    const mockTransaction = {
-      message: { recentBlockhash: 'stale-blockhash' },
-      sign: vi.fn(),
-      serialize: vi.fn(() => Buffer.from('signed-tx')),
-    };
-    deserializeMock.mockReturnValue(mockTransaction as never);
+  it('refreshes the blockhash and signs before submitting a transaction', async () => {
+    const rpc = createRpc();
+    const account = await createAccount({ rpc });
 
-    const connection = {
-      getLatestBlockhash: vi.fn().mockResolvedValue({
-        blockhash: 'fresh-blockhash',
-        lastValidBlockHeight: 321,
-      }),
-      sendRawTransaction: vi.fn().mockResolvedValue('signature-1'),
-      confirmTransaction: vi.fn().mockResolvedValue(undefined),
-      getAddressLookupTable: vi.fn(),
-      getSlot: vi.fn(),
-    };
-    const account = {
-      keyPair: { publicKey: 'owner-key' },
-      getConnection: vi.fn().mockResolvedValue(connection),
-    };
-
-    const signatures = await signAndSendPreparedSolanaTransactions(
-      account as never,
-      { transaction: Buffer.from('tx-1').toString('base64') }
-    );
+    const signatures = await signAndSendPreparedSolanaTransactions(account as never, {
+      transaction: FIXTURE_B64,
+    });
 
     expect(signatures).toEqual(['signature-1']);
-    expect(mockTransaction.message.recentBlockhash).toBe('fresh-blockhash');
-    expect(mockTransaction.sign).toHaveBeenCalledWith([account.keyPair]);
-    expect(connection.sendRawTransaction).toHaveBeenCalledWith(Buffer.from('signed-tx'), {
+    expect(rpc.getLatestBlockhash).toHaveBeenCalledWith({ commitment: 'confirmed' });
+    expect(rpc.sendTransaction).toHaveBeenCalledWith(expect.any(String), {
+      encoding: 'base64',
       preflightCommitment: 'confirmed',
     });
-    expect(connection.confirmTransaction).toHaveBeenCalledWith(
-      {
-        signature: 'signature-1',
-        blockhash: 'fresh-blockhash',
-        lastValidBlockHeight: 321,
-      },
-      'confirmed'
-    );
+
+    const { transaction, message } = decodeSent(rpc.sendTransaction.mock.calls[0][0] as string);
+    expect(message.lifetimeToken).toBe(FRESH_BLOCKHASH);
+    // Lookup tables survive the decode/patch/re-encode round trip.
+    expect(message.addressTableLookups).toHaveLength(1);
+    // The wallet's signature slot is filled in.
+    expect(transaction.signatures[account.signer.address]).not.toBeNull();
   });
 
-  it('prefers signature subscriptions over confirmTransaction when available', async () => {
-    const originalSetTimeout = global.setTimeout;
-    const originalClearTimeout = global.clearTimeout;
-
-    global.setTimeout = vi.fn(() => 0 as unknown as ReturnType<typeof setTimeout>) as unknown as typeof setTimeout;
-    global.clearTimeout = vi.fn() as typeof clearTimeout;
-
-    const mockTransaction = {
-      message: { recentBlockhash: 'stale-blockhash' },
-      sign: vi.fn(),
-      serialize: vi.fn(() => Buffer.from('signed-tx')),
-    };
-    deserializeMock.mockReturnValue(mockTransaction as never);
-
-    const connection = {
-      getLatestBlockhash: vi.fn().mockResolvedValue({
-        blockhash: 'fresh-blockhash',
-        lastValidBlockHeight: 321,
+  it('propagates a confirmation failure instead of falling back to polling', async () => {
+    const account = await createAccount({
+      rpcSubscriptions: createRpcSubscriptions(failedNotification),
+      rpc: createRpc({
+        // No status yet, so the subscription is the only source of truth.
+        getSignatureStatuses: vi.fn().mockReturnValue({ send: async () => ({ value: [null] }) }),
       }),
-      sendRawTransaction: vi.fn().mockResolvedValue('signature-1'),
-      confirmTransaction: vi.fn().mockResolvedValue(undefined),
-      getAddressLookupTable: vi.fn(),
-      getSlot: vi.fn(),
-      onSignature: vi.fn().mockImplementation((_signature, callback) => {
-        queueMicrotask(() => {
-          callback({ err: null });
-        });
-        return 91;
-      }),
-      removeSignatureListener: vi.fn().mockResolvedValue(undefined),
-    };
-    const account = {
-      keyPair: { publicKey: 'owner-key' },
-      getConnection: vi.fn().mockResolvedValue(connection),
-    };
+    });
 
-    const signatures = await signAndSendPreparedSolanaTransactions(
-      account as never,
-      { transaction: Buffer.from('tx-1').toString('base64') }
-    );
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(signatures).toEqual(['signature-1']);
-    expect(connection.onSignature).toHaveBeenCalledWith(
-      'signature-1',
-      expect.any(Function),
-      'confirmed'
-    );
-    expect(connection.removeSignatureListener).toHaveBeenCalledWith(91);
-    expect(connection.confirmTransaction).not.toHaveBeenCalled();
-
-    global.setTimeout = originalSetTimeout;
-    global.clearTimeout = originalClearTimeout;
+    await expect(
+      signAndSendPreparedSolanaTransactions(account as never, { transaction: FIXTURE_B64 })
+    ).rejects.toThrow(/Failed during transaction:/);
   });
 
   it('waits for lookup table addresses to warm up before moving to the burn step', async () => {
-    const extendTransaction = {
-      message: { recentBlockhash: 'stale-extend' },
-      sign: vi.fn(),
-      serialize: vi.fn(() => Buffer.from('extend-signed')),
-    };
-    const burnTransaction = {
-      message: { recentBlockhash: 'stale-burn' },
-      sign: vi.fn(),
-      serialize: vi.fn(() => Buffer.from('burn-signed')),
-    };
-    deserializeMock
-      .mockReturnValueOnce(extendTransaction as never)
-      .mockReturnValueOnce(burnTransaction as never);
-
-    const lookupTable = {
-      state: {
-        addresses: new Array(20).fill('address'),
-        lastExtendedSlot: 80,
-      },
-    };
-
-    const connection = {
+    const lookupTableAccount = encodeLookupTableAccount(20, 80n);
+    const getAccountInfo = vi.fn().mockReturnValue({
+      send: async () => lookupTableAccount,
+    });
+    // The table is still warming up on the first read: current slot == the slot
+    // it was last extended in. It becomes usable one slot later.
+    const getSlot = vi
+      .fn()
+      .mockReturnValueOnce({ send: async () => 80n })
+      .mockReturnValueOnce({ send: async () => 81n });
+    const rpc = createRpc({
+      getAccountInfo,
+      getSlot,
       getLatestBlockhash: vi
         .fn()
-        .mockResolvedValueOnce({ blockhash: 'extend-blockhash', lastValidBlockHeight: 100 })
-        .mockResolvedValueOnce({ blockhash: 'burn-blockhash', lastValidBlockHeight: 101 }),
-      sendRawTransaction: vi
+        .mockReturnValueOnce({
+          send: async () => ({ value: { blockhash: FRESH_BLOCKHASH, lastValidBlockHeight: 1n } }),
+        })
+        .mockReturnValueOnce({
+          send: async () => ({ value: { blockhash: BURN_BLOCKHASH, lastValidBlockHeight: 2n } }),
+        }),
+      sendTransaction: vi
         .fn()
-        .mockResolvedValueOnce('signature-extend')
-        .mockResolvedValueOnce('signature-burn'),
-      confirmTransaction: vi.fn().mockResolvedValue(undefined),
-      getAddressLookupTable: vi
-        .fn()
-        .mockResolvedValueOnce({ value: lookupTable })
-        .mockResolvedValueOnce({ value: lookupTable }),
-      getSlot: vi
-        .fn()
-        .mockResolvedValueOnce(80)
-        .mockResolvedValueOnce(81),
-    };
-    const account = {
-      keyPair: { publicKey: 'owner-key' },
-      getConnection: vi.fn().mockResolvedValue(connection),
-    };
+        .mockReturnValueOnce({ send: async () => 'signature-extend' })
+        .mockReturnValueOnce({ send: async () => 'signature-burn' }),
+    });
+    const account = await createAccount({ rpc });
 
     const response: PreparedNftTransactionResponse = {
       transactions: [
         {
-          transaction: Buffer.from('lookup-extend').toString('base64'),
+          transaction: FIXTURE_B64,
           step: 'lookup_table_extend',
-          lookupTableAddress: 'lookup-table-address',
+          lookupTableAddress: LOOKUP_TABLE_ADDRESS,
           expectedLookupTableAddressCount: 20,
         },
-        {
-          transaction: Buffer.from('burn-tx').toString('base64'),
-          step: 'burn',
-        },
+        { transaction: FIXTURE_B64, step: 'burn' },
       ],
     };
 
@@ -230,133 +228,51 @@ describe('prepared-transactions', () => {
     });
 
     expect(signatures).toEqual(['signature-extend', 'signature-burn']);
-    expect(connection.getAddressLookupTable).toHaveBeenCalledTimes(2);
-    expect(connection.getSlot).toHaveBeenCalledTimes(2);
-    expect(connection.sendRawTransaction).toHaveBeenNthCalledWith(2, Buffer.from('burn-signed'), {
-      preflightCommitment: 'confirmed',
-    });
-  });
-
-  it('prefers websocket subscriptions for LUT warmup when the connection supports them', async () => {
-    const originalSetTimeout = global.setTimeout;
-    const originalClearTimeout = global.clearTimeout;
-
-    global.setTimeout = vi.fn(() => 0 as unknown as ReturnType<typeof setTimeout>) as unknown as typeof setTimeout;
-    global.clearTimeout = vi.fn() as typeof clearTimeout;
-
-    const extendTransaction = {
-      message: { recentBlockhash: 'stale-extend' },
-      sign: vi.fn(),
-      serialize: vi.fn(() => Buffer.from('extend-signed')),
-    };
-    const burnTransaction = {
-      message: { recentBlockhash: 'stale-burn' },
-      sign: vi.fn(),
-      serialize: vi.fn(() => Buffer.from('burn-signed')),
-    };
-    deserializeMock
-      .mockReturnValueOnce(extendTransaction as never)
-      .mockReturnValueOnce(burnTransaction as never);
-
-    const lookupTable = {
-      state: {
-        addresses: new Array(20).fill('address'),
-        lastExtendedSlot: 80,
-      },
-    };
-
-    const connection = {
-      getLatestBlockhash: vi
-        .fn()
-        .mockResolvedValueOnce({ blockhash: 'extend-blockhash', lastValidBlockHeight: 100 })
-        .mockResolvedValueOnce({ blockhash: 'burn-blockhash', lastValidBlockHeight: 101 }),
-      sendRawTransaction: vi
-        .fn()
-        .mockResolvedValueOnce('signature-extend')
-        .mockResolvedValueOnce('signature-burn'),
-      confirmTransaction: vi.fn().mockResolvedValue(undefined),
-      getAddressLookupTable: vi.fn().mockResolvedValue({ value: lookupTable }),
-      getSlot: vi.fn().mockResolvedValue(80),
-      onAccountChange: vi.fn().mockReturnValue(1),
-      removeAccountChangeListener: vi.fn().mockResolvedValue(undefined),
-      onSlotChange: vi.fn().mockImplementation((callback) => {
-        queueMicrotask(() => {
-          callback({ slot: 81 });
-        });
-        return 2;
-      }),
-      removeSlotChangeListener: vi.fn().mockResolvedValue(undefined),
-    };
-    const account = {
-      keyPair: { publicKey: 'owner-key' },
-      getConnection: vi.fn().mockResolvedValue(connection),
-    };
-
-    const response: PreparedNftTransactionResponse = {
-      transactions: [
-        {
-          transaction: Buffer.from('lookup-extend').toString('base64'),
-          step: 'lookup_table_extend',
-          lookupTableAddress: 'lookup-table-address',
-          expectedLookupTableAddressCount: 20,
-        },
-        {
-          transaction: Buffer.from('burn-tx').toString('base64'),
-          step: 'burn',
-        },
-      ],
-    };
-
-    const signatures = await signAndSendPreparedSolanaTransactions(account as never, response, {
+    // Two polls: the first sees the warm-up slot, the second clears it.
+    expect(getAccountInfo).toHaveBeenCalledTimes(2);
+    expect(getAccountInfo).toHaveBeenCalledWith(LOOKUP_TABLE_ADDRESS, {
       commitment: 'confirmed',
+      encoding: 'base64',
     });
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(signatures).toEqual(['signature-extend', 'signature-burn']);
-    expect(connection.onAccountChange).toHaveBeenCalledTimes(1);
-    expect(connection.onSlotChange).toHaveBeenCalledTimes(1);
-    expect(connection.getAddressLookupTable).toHaveBeenCalledTimes(1);
-    expect(connection.getSlot).toHaveBeenCalledTimes(1);
-    expect(connection.removeAccountChangeListener).toHaveBeenCalledWith(1);
-    expect(connection.removeSlotChangeListener).toHaveBeenCalledWith(2);
-
-    global.setTimeout = originalSetTimeout;
-    global.clearTimeout = originalClearTimeout;
+    expect(getSlot).toHaveBeenCalledTimes(2);
+    expect(getSlot).toHaveBeenCalledWith({ commitment: 'confirmed' });
+    expect(decodeSent(rpc.sendTransaction.mock.calls[1][0] as string).message.lifetimeToken).toBe(
+      BURN_BLOCKHASH
+    );
   });
 
   it('surfaces the failing step in the thrown error message', async () => {
-    const mockTransaction = {
-      message: { recentBlockhash: 'stale-blockhash' },
-      sign: vi.fn(),
-      serialize: vi.fn(() => Buffer.from('signed-tx')),
-    };
-    deserializeMock.mockReturnValue(mockTransaction as never);
-
-    const connection = {
-      getLatestBlockhash: vi.fn().mockResolvedValue({
-        blockhash: 'fresh-blockhash',
-        lastValidBlockHeight: 321,
+    const rpc = createRpc({
+      sendTransaction: vi.fn().mockReturnValue({
+        send: async () => {
+          throw new Error('rpc boom');
+        },
       }),
-      sendRawTransaction: vi.fn().mockRejectedValue(new Error('rpc boom')),
-      confirmTransaction: vi.fn(),
-      getAddressLookupTable: vi.fn(),
-      getSlot: vi.fn(),
-    };
-    const account = {
-      keyPair: { publicKey: 'owner-key' },
-      getConnection: vi.fn().mockResolvedValue(connection),
-    };
+    });
+    const account = await createAccount({ rpc });
 
     await expect(
       signAndSendPreparedSolanaTransactions(account as never, {
-        transactions: [
-          {
-            transaction: Buffer.from('burn-step').toString('base64'),
-            step: 'burn',
-          },
-        ],
+        transactions: [{ transaction: FIXTURE_B64, step: 'burn' }],
       })
     ).rejects.toThrow('Failed during burn: rpc boom');
+  });
+
+  it('keeps the original error as the cause', async () => {
+    const cause = new Error('rpc boom');
+    const rpc = createRpc({
+      sendTransaction: () => ({
+        send: async () => {
+          throw cause;
+        },
+      }),
+    });
+    const account = await createAccount({ rpc });
+
+    await expect(
+      signAndSendPreparedSolanaTransactions(account as never, {
+        transactions: [{ transaction: FIXTURE_B64, step: 'burn' }],
+      })
+    ).rejects.toMatchObject({ cause });
   });
 });

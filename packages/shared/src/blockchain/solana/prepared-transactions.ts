@@ -1,10 +1,20 @@
-import { PublicKey, VersionedTransaction } from '@solana/web3.js';
-import type { Commitment } from '@solana/web3.js';
+import {
+  address,
+  getBase64EncodedWireTransaction,
+  getCompiledTransactionMessageDecoder,
+  getCompiledTransactionMessageEncoder,
+  getTransactionDecoder,
+  partiallySignTransaction,
+} from '@solana/kit';
+import type { Address, Commitment, TransactionMessageBytes } from '@solana/kit';
+import { fetchMaybeAddressLookupTable } from '@solana-program/address-lookup-table';
+import { createRecentSignatureConfirmationPromiseFactory } from '@solana/transaction-confirmation';
 import type {
   PreparedNftTransaction,
   PreparedNftTransactionResponse,
 } from '../../types/nft';
 import type { SolanaAccount } from './SolanaAccount';
+import type { SolanaRpc } from './networks';
 
 export interface SignAndSendPreparedSolanaTransactionsOptions {
   commitment?: Commitment;
@@ -21,18 +31,17 @@ interface LookupTableReadiness {
 }
 
 async function getLookupTableReadiness(
-  connection: Awaited<ReturnType<SolanaAccount['getConnection']>>,
-  tablePublicKey: PublicKey,
+  rpc: SolanaRpc,
+  tableAddress: Address,
   expectedAddressCount: number | undefined,
   commitment: Commitment,
   currentSlotOverride?: number
 ): Promise<LookupTableReadiness> {
-  const response = await connection.getAddressLookupTable(tablePublicKey, {
-    commitment,
-  });
-  const lookupTable = response.value;
+  // fetchMaybe, not fetch: the non-Maybe variant throws when the table does not
+  // exist yet, and "not created yet" has to stay a poll-again result.
+  const table = await fetchMaybeAddressLookupTable(rpc, tableAddress, { commitment });
 
-  if (!lookupTable) {
+  if (!table.exists) {
     return {
       ready: false,
       waitingForWarmup: false,
@@ -40,12 +49,14 @@ async function getLookupTableReadiness(
     };
   }
 
-  const currentAddressCount = lookupTable.state.addresses.length;
+  const currentAddressCount = table.data.addresses.length;
+  const lastExtendedSlot = Number(table.data.lastExtendedSlot);
+
   if (expectedAddressCount !== undefined && currentAddressCount < expectedAddressCount) {
     return {
       ready: false,
       waitingForWarmup: false,
-      lastExtendedSlot: Number(lookupTable.state.lastExtendedSlot),
+      lastExtendedSlot,
     };
   }
 
@@ -53,12 +64,11 @@ async function getLookupTableReadiness(
     return {
       ready: true,
       waitingForWarmup: false,
-      lastExtendedSlot: Number(lookupTable.state.lastExtendedSlot),
+      lastExtendedSlot,
     };
   }
 
-  const currentSlot = currentSlotOverride ?? await connection.getSlot(commitment);
-  const lastExtendedSlot = Number(lookupTable.state.lastExtendedSlot);
+  const currentSlot = currentSlotOverride ?? Number(await rpc.getSlot({ commitment }).send());
   const waitingForWarmup = currentSlot <= lastExtendedSlot;
 
   return {
@@ -69,8 +79,8 @@ async function getLookupTableReadiness(
 }
 
 async function waitForLookupTableStateByPolling(
-  connection: Awaited<ReturnType<SolanaAccount['getConnection']>>,
-  tablePublicKey: PublicKey,
+  rpc: SolanaRpc,
+  tableAddress: Address,
   expectedAddressCount: number | undefined,
   commitment: Commitment
 ): Promise<void> {
@@ -78,8 +88,8 @@ async function waitForLookupTableStateByPolling(
 
   while (Date.now() - startedAt < LOOKUP_TABLE_TIMEOUT_MS) {
     const readiness = await getLookupTableReadiness(
-      connection,
-      tablePublicKey,
+      rpc,
+      tableAddress,
       expectedAddressCount,
       commitment
     );
@@ -92,119 +102,8 @@ async function waitForLookupTableStateByPolling(
   }
 
   throw new Error(
-    `Lookup table ${tablePublicKey.toBase58()} was not ready with ${expectedAddressCount ?? 0} addresses in time`
+    `Lookup table ${tableAddress} was not ready with ${expectedAddressCount ?? 0} addresses in time`
   );
-}
-
-async function waitForLookupTableStateBySubscription(
-  connection: Awaited<ReturnType<SolanaAccount['getConnection']>>,
-  tablePublicKey: PublicKey,
-  expectedAddressCount: number | undefined,
-  commitment: Commitment
-): Promise<void> {
-  if (
-    typeof connection.onAccountChange !== 'function' ||
-    typeof connection.onSlotChange !== 'function' ||
-    typeof connection.removeAccountChangeListener !== 'function' ||
-    typeof connection.removeSlotChangeListener !== 'function'
-  ) {
-    throw new Error('Lookup table subscriptions are not available on this connection');
-  }
-
-  let accountSubscriptionId: number | null = null;
-  let slotSubscriptionId: number | null = null;
-  let timedOut = false;
-  let settled = false;
-  let warmupTargetSlot: number | null = null;
-
-  const cleanup = async () => {
-    const removals: Promise<unknown>[] = [];
-    if (accountSubscriptionId !== null) {
-      removals.push(connection.removeAccountChangeListener(accountSubscriptionId));
-    }
-    if (slotSubscriptionId !== null) {
-      removals.push(connection.removeSlotChangeListener(slotSubscriptionId));
-    }
-    await Promise.allSettled(removals);
-  };
-
-  const initialReadiness = await getLookupTableReadiness(
-    connection,
-    tablePublicKey,
-    expectedAddressCount,
-    commitment
-  );
-  if (initialReadiness.ready) {
-    return;
-  }
-  warmupTargetSlot = initialReadiness.waitingForWarmup ? initialReadiness.lastExtendedSlot : null;
-
-  await new Promise<void>((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      timedOut = true;
-      void cleanup().finally(() => {
-        reject(
-          new Error(
-            `Lookup table ${tablePublicKey.toBase58()} was not ready with ${expectedAddressCount ?? 0} addresses in time`
-          )
-        );
-      });
-    }, LOOKUP_TABLE_TIMEOUT_MS);
-
-    const finish = (callback: () => void) => {
-      if (settled || timedOut) return;
-      settled = true;
-      clearTimeout(timeoutId);
-      void cleanup().finally(callback);
-    };
-
-    const refreshReadiness = async () => {
-      if (settled || timedOut) return;
-      try {
-        const readiness = await getLookupTableReadiness(
-          connection,
-          tablePublicKey,
-          expectedAddressCount,
-          commitment
-        );
-        warmupTargetSlot = readiness.waitingForWarmup ? readiness.lastExtendedSlot : null;
-        if (readiness.ready) {
-          finish(resolve);
-        }
-      } catch (error) {
-        finish(() => {
-          reject(error instanceof Error ? error : new Error('Unknown lookup table subscription error'));
-        });
-      }
-    };
-
-    try {
-      accountSubscriptionId = connection.onAccountChange(
-        tablePublicKey,
-        () => {
-          void refreshReadiness();
-        },
-        commitment
-      );
-    } catch (error) {
-      finish(() => {
-        reject(error instanceof Error ? error : new Error('Failed to subscribe to lookup table account'));
-      });
-    }
-
-    try {
-      slotSubscriptionId = connection.onSlotChange((slotInfo: { slot: number }) => {
-        if (settled || timedOut) return;
-        if (warmupTargetSlot !== null && slotInfo.slot > warmupTargetSlot) {
-          finish(resolve);
-        }
-      });
-    } catch (error) {
-      finish(() => {
-        reject(error instanceof Error ? error : new Error('Failed to subscribe to slot updates'));
-      });
-    }
-  });
 }
 
 async function waitForLookupTableState(
@@ -213,84 +112,12 @@ async function waitForLookupTableState(
   expectedAddressCount: number | undefined,
   commitment: Commitment
 ): Promise<void> {
-  const connection = await account.getConnection();
-  const tablePublicKey = new PublicKey(lookupTableAddress);
-  try {
-    await waitForLookupTableStateBySubscription(
-      connection,
-      tablePublicKey,
-      expectedAddressCount,
-      commitment
-    );
-    return;
-  } catch {
-    await waitForLookupTableStateByPolling(
-      connection,
-      tablePublicKey,
-      expectedAddressCount,
-      commitment
-    );
-    return;
-  }
-}
-
-async function confirmSignatureBySubscription(
-  connection: Awaited<ReturnType<SolanaAccount['getConnection']>>,
-  signature: string,
-  commitment: Commitment
-): Promise<void> {
-  if (
-    typeof connection.onSignature !== 'function' ||
-    typeof connection.removeSignatureListener !== 'function'
-  ) {
-    throw new Error('Signature subscriptions are not available on this connection');
-  }
-
-  let settled = false;
-  let timedOut = false;
-  let subscriptionId: number | null = null;
-
-  const cleanup = async () => {
-    if (subscriptionId !== null) {
-      await connection.removeSignatureListener(subscriptionId);
-    }
-  };
-
-  await new Promise<void>((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      timedOut = true;
-      void cleanup().finally(() => {
-        reject(new Error(`Timed out waiting for signature ${signature} confirmation`));
-      });
-    }, SIGNATURE_CONFIRMATION_TIMEOUT_MS);
-
-    const finish = (callback: () => void) => {
-      if (settled || timedOut) return;
-      settled = true;
-      clearTimeout(timeoutId);
-      void cleanup().finally(callback);
-    };
-
-    try {
-      subscriptionId = connection.onSignature(
-        signature,
-        (result: { err: unknown }) => {
-          if (result.err) {
-            finish(() => {
-              reject(new Error(`Signature ${signature} failed: ${JSON.stringify(result.err)}`));
-            });
-            return;
-          }
-
-          finish(resolve);
-        },
-        commitment
-      );
-    } catch (error) {
-      clearTimeout(timeoutId);
-      reject(error instanceof Error ? error : new Error('Failed to subscribe to signature confirmation'));
-    }
-  });
+  await waitForLookupTableStateByPolling(
+    account.getRpc(),
+    address(lookupTableAddress),
+    expectedAddressCount,
+    commitment
+  );
 }
 
 export function getPreparedSolanaTransactions(
@@ -318,33 +145,53 @@ export async function signAndSendPreparedSolanaTransactions(
     throw new Error('Transaction flow was not returned by the API');
   }
 
-  const connection = await account.getConnection();
+  const rpc = account.getRpc();
   const commitment = options.commitment ?? 'confirmed';
+  const confirmRecentSignature = createRecentSignatureConfirmationPromiseFactory({
+    rpc,
+    rpcSubscriptions: account.getRpcSubscriptions(),
+  });
   const signatures: string[] = [];
 
   for (const preparedTransaction of preparedTransactions) {
     try {
-      const txBuffer = Buffer.from(preparedTransaction.transaction, 'base64');
-      const transaction = VersionedTransaction.deserialize(txBuffer);
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash(commitment);
-      transaction.message.recentBlockhash = blockhash;
-      transaction.sign([account.keyPair]);
-      const signature = await connection.sendRawTransaction(transaction.serialize(), {
-        preflightCommitment: commitment,
+      const decoded = getTransactionDecoder().decode(
+        new Uint8Array(Buffer.from(preparedTransaction.transaction, 'base64'))
+      );
+      const { value } = await rpc.getLatestBlockhash({ commitment }).send();
+
+      // The compiled message is patched and re-encoded rather than decompiled
+      // and rebuilt: decompiling re-derives account ordering and lookup-table
+      // indices, which does not reproduce the input bytes. Swapping the one
+      // field is the only transformation that round-trips exactly.
+      const compiled = getCompiledTransactionMessageDecoder().decode(decoded.messageBytes);
+      const messageBytes = getCompiledTransactionMessageEncoder().encode({
+        ...compiled,
+        lifetimeToken: value.blockhash,
+      }) as TransactionMessageBytes;
+
+      // partiallySignTransaction preserves signatures already in the map, so a
+      // co-signer's signature on a prepared transaction survives.
+      const signed = await partiallySignTransaction([account.signer.keyPair], {
+        messageBytes,
+        signatures: decoded.signatures,
       });
+
+      const signature = await rpc
+        .sendTransaction(getBase64EncodedWireTransaction(signed), {
+          encoding: 'base64',
+          preflightCommitment: commitment,
+        })
+        .send();
       signatures.push(signature);
-      try {
-        await confirmSignatureBySubscription(connection, signature, commitment);
-      } catch {
-        await connection.confirmTransaction(
-          {
-            signature,
-            blockhash,
-            lastValidBlockHeight,
-          },
-          commitment
-        );
-      }
+
+      // No polling fallback: a broken WebSocket endpoint should fail loudly
+      // rather than degrade into a silent slow path.
+      await confirmRecentSignature({
+        abortSignal: AbortSignal.timeout(SIGNATURE_CONFIRMATION_TIMEOUT_MS),
+        commitment,
+        signature,
+      });
 
       if (
         preparedTransaction.lookupTableAddress &&
@@ -361,7 +208,11 @@ export async function signAndSendPreparedSolanaTransactions(
     } catch (error) {
       const step = preparedTransaction.step ?? 'transaction';
       const message = error instanceof Error ? error.message : 'Unknown Solana transaction error';
-      throw new Error(`Failed during ${step}: ${message}`);
+      // The original error carries the stack that says which call failed;
+      // dropping it leaves only the step name to debug from. Attached with
+      // Object.assign because this package targets the ES2020 lib, which
+      // predates the ErrorOptions constructor overload.
+      throw Object.assign(new Error(`Failed during ${step}: ${message}`), { cause: error });
     }
   }
 

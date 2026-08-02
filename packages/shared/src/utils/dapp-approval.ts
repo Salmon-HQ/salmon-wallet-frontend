@@ -1,13 +1,26 @@
-import { Buffer } from 'buffer';
 import bs58 from 'bs58';
-import nacl from 'tweetnacl';
 import {
-  Message,
-  PublicKey,
-  Transaction,
-  VersionedMessage,
-  VersionedTransaction,
-} from '@solana/web3.js';
+  getBase58Decoder,
+  getBase64Decoder,
+  getBase64EncodedWireTransaction,
+  getCompiledTransactionMessageDecoder,
+  getTransactionDecoder,
+  getTransactionEncoder,
+  partiallySignTransaction,
+  signBytes,
+} from '@solana/kit';
+import type {
+  Address,
+  Commitment,
+  CompiledTransactionMessage,
+  CompiledTransactionMessageWithLifetime,
+  ReadonlyUint8Array,
+  SignatureBytes,
+  Slot,
+  TransactionMessageBytes,
+  TransactionMessageBytesBase64,
+} from '@solana/kit';
+import { address } from '@solana/addresses';
 import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 import {
   buildOffchainMessageV1,
@@ -31,9 +44,12 @@ export interface DecodedDAppMessage {
   isHex: boolean;
 }
 
-export type ParsedSolanaTransaction =
-  | { type: 'legacy'; message: Message; tx: Transaction }
-  | { type: 'versioned'; message: VersionedMessage; tx: VersionedTransaction };
+export interface ParsedSolanaTransaction {
+  /** Raw compiled-message bytes, exactly as received. Never re-serialized. */
+  messageBytes: Uint8Array;
+  /** Decoded compiled message. `message.version` is `'legacy'` or `0`. */
+  message: CompiledTransactionMessage & CompiledTransactionMessageWithLifetime;
+}
 
 export interface SolanaTransactionApprovalDetails {
   feeLamports: number | null;
@@ -42,19 +58,51 @@ export interface SolanaTransactionApprovalDetails {
   recentBlockhash: string | null;
 }
 
-function getVersionedSignerIndex(
-  message: VersionedMessage,
-  publicKey: PublicKey,
-): number {
-  const signerIndex = message.staticAccountKeys
-    .slice(0, message.header.numRequiredSignatures)
-    .findIndex((accountKey) => accountKey.equals(publicKey));
-
-  if (signerIndex === -1) {
-    throw new Error('Signer public key not found in transaction message');
+/**
+ * Builds the signature map for a compiled message, with every required signer
+ * slot empty. Insertion order is the wire order — kit serializes
+ * `Object.values(signatures)` and never looks a signer up against the message —
+ * so the map is always built from the message's own signer order.
+ */
+function emptySignatureMap(
+  message: ParsedSolanaTransaction['message'],
+): Record<Address, SignatureBytes | null> {
+  const signatures: Record<Address, SignatureBytes | null> = {};
+  for (const signer of message.staticAccounts.slice(0, message.header.numSignerAccounts)) {
+    signatures[signer] = null;
   }
+  return signatures;
+}
 
-  return signerIndex;
+/** Signs an approved compiled message, leaving every other signer slot empty. */
+function signApprovedMessage(account: SolanaAccount, encodedMessage: string) {
+  const { messageBytes, message } = buildTransactionFromEncodedMessage(encodedMessage);
+  return partiallySignTransaction([account.signer.keyPair], {
+    messageBytes: messageBytes as ReadonlyUint8Array as TransactionMessageBytes,
+    signatures: emptySignatureMap(message),
+  });
+}
+
+const SEND_COMMITMENTS: readonly Commitment[] = ['processed', 'confirmed', 'finalized'];
+
+/**
+ * Narrows the dApp-supplied `options` to the send parameters the wallet is
+ * willing to honour. The object is untrusted JSON off the bridge, so unknown
+ * keys are dropped instead of reaching the RPC node.
+ */
+function toSendConfig(options: Record<string, unknown> | undefined) {
+  const { skipPreflight, preflightCommitment, maxRetries, minContextSlot } = options ?? {};
+  return {
+    encoding: 'base64' as const,
+    ...(typeof skipPreflight === 'boolean' ? { skipPreflight } : {}),
+    ...(SEND_COMMITMENTS.includes(preflightCommitment as Commitment)
+      ? { preflightCommitment: preflightCommitment as Commitment }
+      : {}),
+    ...(Number.isInteger(maxRetries) ? { maxRetries: BigInt(maxRetries as number) } : {}),
+    ...(Number.isInteger(minContextSlot)
+      ? { minContextSlot: BigInt(minContextSlot as number) as Slot }
+      : {}),
+  };
 }
 
 function toHex(bytes: Uint8Array): string {
@@ -86,24 +134,17 @@ export function decodeDAppMessage(data: number[]): DecodedDAppMessage {
   }
 }
 
+/**
+ * Decodes a base58-encoded compiled transaction message. Legacy and v0 messages
+ * both decode through the same codec — `message.version` tells them apart — and
+ * the raw bytes are carried alongside so callers never have to re-serialize.
+ */
 export function buildTransactionFromEncodedMessage(encodedMessage: string): ParsedSolanaTransaction {
-  const bytes = bs58.decode(encodedMessage);
-
-  try {
-    const versionedMessage = VersionedMessage.deserialize(bytes);
-    return {
-      type: 'versioned',
-      message: versionedMessage,
-      tx: new VersionedTransaction(versionedMessage),
-    };
-  } catch {
-    const message = Message.from(bytes);
-    return {
-      type: 'legacy',
-      message,
-      tx: Transaction.populate(message),
-    };
-  }
+  const messageBytes = bs58.decode(encodedMessage);
+  return {
+    messageBytes,
+    message: getCompiledTransactionMessageDecoder().decode(messageBytes),
+  };
 }
 
 /**
@@ -140,14 +181,7 @@ export class TransactionLookalikeMessageError extends Error {
  */
 export function isTransactionLookalike(bytes: Uint8Array): boolean {
   try {
-    VersionedMessage.deserialize(bytes);
-    return true;
-  } catch {
-    // Not a versioned message — fall through to the legacy check.
-  }
-
-  try {
-    Message.from(bytes);
+    getCompiledTransactionMessageDecoder().decode(bytes);
     return true;
   } catch {
     return false;
@@ -177,39 +211,33 @@ export async function loadSolanaTransactionApprovalDetails(
   }
 
   const parsed = buildTransactionFromEncodedMessage(encodedMessage);
-  const connection = await account.getConnection();
-
-  if (parsed.type === 'legacy') {
-    const fee = await connection.getFeeForMessage(parsed.message);
-    return {
-      feeLamports: fee.value ?? null,
-      instructionCount: parsed.message.instructions.length,
-      feePayer: parsed.message.accountKeys?.[0]?.toBase58?.() ?? null,
-      recentBlockhash: parsed.message.recentBlockhash ?? null,
-    };
-  }
-
-  const fee = await connection.getFeeForMessage(parsed.message);
-  const staticAccountKeys = parsed.message.staticAccountKeys;
-  const blockhash = parsed.message.recentBlockhash;
+  const { value } = await account
+    .getRpc()
+    .getFeeForMessage(
+      getBase64Decoder().decode(parsed.messageBytes) as TransactionMessageBytesBase64,
+    )
+    .send();
 
   return {
-    feeLamports: fee.value ?? null,
-    instructionCount: parsed.message.compiledInstructions.length,
-    feePayer: staticAccountKeys?.[0]?.toBase58?.() ?? null,
-    recentBlockhash: blockhash ?? null,
+    feeLamports: value != null ? Number(value) : null,
+    instructionCount:
+      'instructions' in parsed.message
+        ? parsed.message.instructions.length
+        : parsed.message.numInstructions,
+    feePayer: parsed.message.staticAccounts[0] ?? null,
+    recentBlockhash: parsed.message.lifetimeToken ?? null,
   };
 }
 
-export function approveSolanaSignMessage(
+export async function approveSolanaSignMessage(
   account: SolanaAccount,
   data: number[],
-): DAppSignMessageApprovalPayload {
+): Promise<DAppSignMessageApprovalPayload> {
   const messageBytes = Uint8Array.from(data);
   if (isTransactionLookalike(messageBytes)) {
     throw new TransactionLookalikeMessageError();
   }
-  const signature = nacl.sign.detached(messageBytes, account.keyPair.secretKey);
+  const signature = await signBytes(account.signer.keyPair.privateKey, messageBytes);
 
   return {
     signature: bs58.encode(signature),
@@ -225,15 +253,18 @@ export function approveSolanaSignMessage(
  *
  * @param account - The signing account
  * @param data - Raw UTF-8-encoded message bytes, as received from a dApp
- * @param requiredSigners - Accounts required to sign this message, per the OCMS spec
+ * @param requiredSigners - Required signer addresses, base58-encoded. Validated
+ *   here by `address()`, which rejects anything that is not a well-formed
+ *   Solana address — same contract as `parseOffchainMessageForApproval`.
  */
-export function approveSolanaSignOffchainMessage(
+export async function approveSolanaSignOffchainMessage(
   account: SolanaAccount,
   data: number[],
-  requiredSigners: PublicKey[],
-): DAppSignOffchainMessageApprovalPayload {
+  requiredSigners: string[],
+): Promise<DAppSignOffchainMessageApprovalPayload> {
   const messageBytes = Uint8Array.from(data);
-  const { signature, buffer } = signOffchainMessage(account, messageBytes, requiredSigners);
+  const signers = requiredSigners.map((signer) => address(signer));
+  const { signature, buffer } = await signOffchainMessage(account, messageBytes, signers);
 
   return {
     signedOffchainMessage: bs58.encode(buffer),
@@ -258,7 +289,7 @@ export function parseOffchainMessageForApproval(
   requiredSigners: string[],
 ): ReturnType<typeof parseOffchainMessageV1> {
   const contentBytes = Uint8Array.from(data);
-  const signers = requiredSigners.map((address) => new PublicKey(address));
+  const signers = requiredSigners.map((signer) => address(signer));
   const buffer = buildOffchainMessageV1(contentBytes, signers);
   return parseOffchainMessageV1(buffer);
 }
@@ -275,12 +306,16 @@ export function parseOffchainMessageForApproval(
  * @param input - The dApp's `SolanaSignInInput`, as received over the bridge
  * @param origin - The REAL requesting origin (from the connection, never the dApp)
  */
-export function approveSolanaSignIn(
+export async function approveSolanaSignIn(
   account: SolanaAccount,
   input: SolanaSignInInputFields,
   origin: string,
-): DAppSignInApprovalPayload {
-  const { signedMessage, signature, signedMessageFormat } = signSiwsMessage(account, input, origin);
+): Promise<DAppSignInApprovalPayload> {
+  const { signedMessage, signature, signedMessageFormat } = await signSiwsMessage(
+    account,
+    input,
+    origin,
+  );
 
   return {
     address: account.getReceiveAddress(),
@@ -304,20 +339,9 @@ export async function approveSolanaTransactionRequest(
   if (request.method === 'signTransaction') {
     const encodedMessage = request.params?.message ?? '';
     if (!encodedMessage) throw new Error('Missing message');
-    const parsed = buildTransactionFromEncodedMessage(encodedMessage);
 
-    if (parsed.type === 'legacy') {
-      parsed.tx.partialSign(account.keyPair);
-      if (!parsed.tx.signature) throw new Error('Failed to sign transaction');
-      return {
-        signature: bs58.encode(parsed.tx.signature),
-        publicKey,
-      };
-    }
-
-    parsed.tx.sign([account.keyPair]);
-    const signerIndex = getVersionedSignerIndex(parsed.message, account.keyPair.publicKey);
-    const signature = parsed.tx.signatures[signerIndex];
+    const signed = await signApprovedMessage(account, encodedMessage);
+    const signature = signed.signatures[account.signer.address];
     if (!signature) throw new Error('Failed to sign transaction');
     return {
       signature: bs58.encode(signature),
@@ -329,23 +353,16 @@ export async function approveSolanaTransactionRequest(
     const encodedMessages = request.params?.messages ?? [];
     if (!encodedMessages.length) throw new Error('Missing messages');
 
-    const signatures = encodedMessages.map((encodedMessage) => {
-      const parsed = buildTransactionFromEncodedMessage(encodedMessage);
-
-      if (parsed.type === 'legacy') {
-        parsed.tx.partialSign(account.keyPair);
-        if (!parsed.tx.signature) throw new Error('Failed to sign one of the transactions');
-        return bs58.encode(parsed.tx.signature);
-      }
-
-      parsed.tx.sign([account.keyPair]);
-      const signerIndex = getVersionedSignerIndex(parsed.message, account.keyPair.publicKey);
-      const signature = parsed.tx.signatures[signerIndex];
-      if (!signature) {
-        throw new Error('Failed to sign one of the transactions');
-      }
-      return bs58.encode(signature);
-    });
+    const signatures = await Promise.all(
+      encodedMessages.map(async (encodedMessage) => {
+        const signed = await signApprovedMessage(account, encodedMessage);
+        const signature = signed.signatures[account.signer.address];
+        if (!signature) {
+          throw new Error('Failed to sign one of the transactions');
+        }
+        return bs58.encode(signature);
+      }),
+    );
 
     return {
       signatures,
@@ -356,22 +373,41 @@ export async function approveSolanaTransactionRequest(
   const encodedMessage = request.params?.message ?? '';
   if (!encodedMessage) throw new Error('Missing message');
 
-  const parsed = buildTransactionFromEncodedMessage(encodedMessage);
   await fetchAndMergeNetworkConfigs();
-  const connection = await account.getConnection();
-  const options = request.params?.options as Record<string, unknown> | undefined;
+  const rpc = account.getRpc();
+  const sendConfig = toSendConfig(request.params?.options as Record<string, unknown> | undefined);
 
-  if (parsed.type === 'legacy') {
-    parsed.tx.partialSign(account.keyPair);
-    const signature = await connection.sendRawTransaction(
-      parsed.tx.serialize(),
-      options as never,
-    );
+  // Signing the transaction the dApp sent preserves signatures it already
+  // applied; rebuilding from the message alone silently drops them, producing a
+  // transaction the cluster rejects. The decoder reads both wire formats and
+  // `partiallySignTransaction` only ever fills this wallet's own slot.
+  const encodedTransaction = request.params?.transaction;
+  if (encodedTransaction) {
+    const decoded = getTransactionDecoder().decode(bs58.decode(encodedTransaction));
+
+    // WYSIWYS: the approval screen previews `message`, but this branch signs and
+    // broadcasts `transaction`. Without this check a page could preview benign
+    // bytes and have entirely different ones signed, so the two must agree
+    // exactly before the key is ever used. The comparison is against the raw
+    // message slice carried by the transaction, never a re-serialization of it.
+    if (getBase58Decoder().decode(decoded.messageBytes) !== encodedMessage) {
+      throw new Error(
+        'Transaction does not match the approved message. The app sent transaction ' +
+          'bytes that differ from the transaction shown for approval, so it was not signed.',
+      );
+    }
+
+    const signed = await partiallySignTransaction([account.signer.keyPair], decoded);
+    const signature = await rpc
+      .sendTransaction(getBase64EncodedWireTransaction(signed), sendConfig)
+      .send();
     return { signature };
   }
 
-  parsed.tx.sign([account.keyPair]);
-  const signature = await connection.sendTransaction(parsed.tx, options as never);
+  const signed = await signApprovedMessage(account, encodedMessage);
+  const signature = await rpc
+    .sendTransaction(getBase64EncodedWireTransaction(signed), sendConfig)
+    .send();
   return { signature };
 }
 
@@ -380,21 +416,20 @@ export function serializeSignedTransactionFromApproval(
   publicKey: string,
   signature: string,
 ): Uint8Array {
-  const parsed = buildTransactionFromEncodedMessage(encodedMessage);
-  const signerPublicKey = new PublicKey(publicKey);
-  const signatureBytes = bs58.decode(signature);
+  const { messageBytes, message } = buildTransactionFromEncodedMessage(encodedMessage);
+  const signatures = emptySignatureMap(message);
 
-  if (parsed.type === 'legacy') {
-    parsed.tx.addSignature(signerPublicKey, Buffer.from(signatureBytes));
-    return parsed.tx.serialize({
-      requireAllSignatures: false,
-      verifySignatures: false,
-    });
+  if (signatures[publicKey as Address] === undefined) {
+    throw new Error('Signer public key not found in transaction message');
   }
+  signatures[publicKey as Address] = bs58.decode(signature) as SignatureBytes;
 
-  const signerIndex = getVersionedSignerIndex(parsed.message, signerPublicKey);
-  parsed.tx.signatures[signerIndex] = signatureBytes;
-  return parsed.tx.serialize();
+  return new Uint8Array(
+    getTransactionEncoder().encode({
+      messageBytes: messageBytes as ReadonlyUint8Array as TransactionMessageBytes,
+      signatures,
+    }),
+  );
 }
 
 export function serializeSignedTransactionsFromApproval(

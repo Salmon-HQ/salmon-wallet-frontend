@@ -201,6 +201,14 @@ the reference files it points to); if several skills apply, state which and
 in what order; if a skill cannot be applied cleanly, say so and continue
 with the closest fallback.
 
+For Solana Kit / Wallet Standard work, agents can install the official
+Solana Foundation dev skill: `npx skills add solana-foundation/solana-dev-skill`.
+
+Optional MCP servers for Solana work — acceleration, not requirements: the
+Foundation's hosted docs server (https://mcp.solana.com — live
+Solana/Anchor/Kit documentation lookup) and Helius's MCP
+(`claude mcp add helius npx helius-mcp@latest` — DAS/asset queries).
+
 ## Folder guidance
 
 - Nested `AGENTS.md` files exist only in folders with real ownership

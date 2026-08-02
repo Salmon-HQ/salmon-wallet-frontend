@@ -33,6 +33,7 @@
 
 import { Logo } from '@salmon/assets';
 import {
+  ApiError,
   colors,
   componentSizes,
   contentPadding,
@@ -254,9 +255,15 @@ export default function PasswordScreen() {
       router.replace('/(auth)/biometric-setup');
     } catch (err) {
       console.error('Failed to create account:', err);
+      // Account setup calls the backend, so an unreachable server lands here
+      // too. Blaming the seed phrase for that sends users hunting for a lost
+      // wallet when all they need is a connection.
       setError(
-        t('wallet.create.recovery_error') ||
-        'Failed to recover account. Please check your seed phrase and try again.'
+        err instanceof ApiError && err.isNetworkError()
+          ? t('wallet.create.recovery_network_error') ||
+            'Could not reach the server. Check your connection and try again. Your seed phrase is fine.'
+          : t('wallet.create.recovery_error') ||
+            'Failed to recover account. Please check your seed phrase and try again.'
       );
     } finally {
       setIsLoading(false);

@@ -3,6 +3,7 @@ export { SolanaAccount } from './SolanaAccount';
 export type {
   SolanaAccountOptions,
   SolanaBalance,
+  SolanaSigningKey,
 } from './SolanaAccount';
 
 // Factory functions and utilities
@@ -29,8 +30,6 @@ export {
   estimateFee,
   calculateTransferFee,
   requiresMemo,
-  confirmTransaction,
-  airdrop,
   SOL_ADDRESS,
 } from './transfer';
 // Note: applyDecimals, removeDecimals, isNativeSol are now canonical in utils/

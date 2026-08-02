@@ -149,4 +149,42 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  // @solana/web3.js is gone from every production path in this repo. This warns
+  // when one comes back, rather than failing the build.
+  //
+  // Deliberately a warning: kit is younger than web3.js and does not cover
+  // everything it does. Reaching back for a v1 API is a legitimate answer to a
+  // gap, and the person doing it knows more about their case than this rule
+  // does. What the warning buys is that it happens on purpose and shows up in
+  // review, instead of drifting back in one import at a time.
+  //
+  // Tests are exempt entirely: the kit code is verified against web3.js
+  // fixtures (the OCMS/SIWS/dApp-approval golden vectors are produced by web3.js
+  // and reproduced by kit), and a cross-library oracle is stronger evidence than
+  // a self-consistent one. web3.js is a devDependency for exactly that reason.
+  //
+  // Two rules, not one: no-restricted-imports does not visit TSImportType, so it
+  // misses `import('@solana/web3.js').Commitment`. The selector covers that form.
+  {
+    files: ['**/*.{ts,tsx}'],
+    ignores: [
+      '**/*.test.{ts,tsx}',
+      '**/*.spec.{ts,tsx}',
+      '**/__tests__/**/*.{ts,tsx}',
+    ],
+    plugins: { '@typescript-eslint': typescript },
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'warn',
+        { patterns: ['@solana/web3.js'] },
+      ],
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector: 'TSImportType[source.value="@solana/web3.js"]',
+          message: "'@solana/web3.js' import is restricted from being used by a pattern.",
+        },
+      ],
+    },
+  },
 ];

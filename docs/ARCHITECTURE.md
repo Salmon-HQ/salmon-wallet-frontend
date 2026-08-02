@@ -165,6 +165,11 @@ Hoy las carpetas activas visibles son:
 
 La intención es mantener la lógica por chain aislada, sin mezclar concerns entre dominios.
 
+Stack Solana: la lógica de Solana usa `@solana/kit` v7 y los clientes de programa de
+`@solana-program/*`. `@solana/web3.js` v1 no está en ninguna dependencia de producción; sobrevive
+sólo como devDependency, usado como oráculo independiente en los tests. Ver
+`docs/SOLANA_KIT_MIGRATION.md`.
+
 ### `hooks`
 
 - orquestan estado y comportamiento reutilizable

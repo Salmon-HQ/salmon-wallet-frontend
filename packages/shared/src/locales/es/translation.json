@@ -451,6 +451,7 @@
       "skip": "Omitir",
       "invalidSeed": "Seed phrase inválida",
       "recovery_error": "Error al recuperar la cuenta. Por favor, verifica tu seed phrase e inténtalo de nuevo.",
+      "recovery_network_error": "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo. Tu seed phrase está bien.",
       "biometric_setup_title": "Asegurá Tu Billetera",
       "biometric_setup_subtitle": "Habilitá la autenticación biométrica para un acceso rápido y seguro a tu billetera",
       "biometric_setup_enable": "Habilitar Biometría",
