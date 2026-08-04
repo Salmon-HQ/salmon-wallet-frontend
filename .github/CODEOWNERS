@@ -1,0 +1,16 @@
+# Review requirements for security-sensitive paths.
+# These areas can lose user funds if broken — changes require owner approval.
+
+# Key material, seed encryption, persistence
+/packages/shared/src/crypto/   @Luquish
+/packages/shared/src/storage/  @Luquish
+
+# Transaction building and signing
+/packages/shared/src/blockchain/  @Luquish
+
+# Wallet Standard surface and dApp approval flows
+/apps/extension/src/wallet-standard/  @Luquish
+/apps/extension/src/entrypoints/      @Luquish
+
+# CI/CD and deploy configuration
+/.github/  @Luquish
