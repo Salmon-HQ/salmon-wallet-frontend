@@ -117,7 +117,7 @@ export function AddressBookPanel({
         </View>
       </View>
     ),
-    [onEditContact, handleRemove],
+    [onEditContact, handleRemove, t],
   );
 
   return (
