@@ -2,7 +2,8 @@
   "expo": {
     "name": "Salmon Wallet",
     "slug": "salmon-wallet",
-    "version": "1.0.1",
+    "owner": "salmon-wallet",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/ios-icon.png",
     "scheme": "salmonwallet",
