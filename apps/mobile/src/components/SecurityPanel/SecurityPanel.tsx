@@ -19,6 +19,8 @@ import {
   fontFamilyNative,
   useAccountsContext,
   validatePassword,
+  getPasswordIssue,
+  PASSWORD_CONSTRAINTS,
 letterSpacing, } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
@@ -56,7 +58,15 @@ export function SecurityPanel({
       return;
     }
 
-    if (!passwordValidation.isValid) {
+    const passwordIssue = getPasswordIssue(passwordValidation);
+    if (passwordIssue) {
+      setError(
+        passwordIssue === 'too_short'
+          ? t('wallet.create.password_too_short', { min: PASSWORD_CONSTRAINTS.MIN_LENGTH })
+          : passwordIssue === 'too_long'
+            ? t('wallet.create.password_too_long', { max: PASSWORD_CONSTRAINTS.MAX_LENGTH })
+            : t('wallet.create.password_too_weak'),
+      );
       return;
     }
 
@@ -80,7 +90,7 @@ export function SecurityPanel({
     } finally {
       setLoading(false);
     }
-  }, [currentPassword, newPassword, confirmPassword, passwordValidation.isValid, accountActions, onPasswordChanged, t]);
+  }, [currentPassword, newPassword, confirmPassword, passwordValidation, accountActions, onPasswordChanged, t]);
 
   return (
     <SettingsScreenLayout title={t('settings.security.title')} onBack={onBack}>
