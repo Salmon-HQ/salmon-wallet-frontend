@@ -6,6 +6,7 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const bufferPath = path.dirname(require.resolve('buffer/package.json'));
 const processPath = path.dirname(require.resolve('process/package.json'));
+const { version: appVersion } = require('./package.json');
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, 'VITE_');
@@ -24,6 +25,7 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       'global': 'globalThis',
+      '__APP_VERSION__': JSON.stringify(appVersion),
       'process': JSON.stringify({ env: {} }),
       'process.env': JSON.stringify({
         VITE_SALMON_ENV: env.VITE_SALMON_ENV ?? 'local',

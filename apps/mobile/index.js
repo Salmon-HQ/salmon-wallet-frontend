@@ -171,7 +171,10 @@ initStorage({ platform: 'mobile', adapter });
 initStash('mobile');
 
 // Anonymous, opt-in usage analytics (no events until the user opts in).
-initAnalytics({ platform: 'mobile', appVersion: process.env.EXPO_PUBLIC_APP_VERSION || '3.0.0' });
+// app.json is what Expo reads for the version the user sees in Settings, so
+// reading it here keeps the reported and displayed versions the same value.
+const { version: appVersion } = require('./app.json').expo;
+initAnalytics({ platform: 'mobile', appVersion });
 
 // =============================================================================
 // 5. Load Expo Router - This starts the app

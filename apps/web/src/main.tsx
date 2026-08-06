@@ -13,7 +13,7 @@ import i18n from './i18n/config';
 import { I18nextProvider } from 'react-i18next';
 
 // Storage and stash
-import { initStorage, initStash, initAnalytics, AccountsProvider, CurrencyProvider } from '@salmon/shared';
+import { APP_VERSION, initStorage, initStash, initAnalytics, AccountsProvider, CurrencyProvider } from '@salmon/shared';
 
 // App
 import { App } from './App';
@@ -25,7 +25,7 @@ initStash('web');
 // via Settings; this only wires the client and loads persisted consent.
 initAnalytics({
   platform: 'web',
-  appVersion: import.meta.env?.VITE_APP_VERSION ?? '3.0.0',
+  appVersion: APP_VERSION,
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

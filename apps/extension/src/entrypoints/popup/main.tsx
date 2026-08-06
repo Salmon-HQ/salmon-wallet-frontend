@@ -10,7 +10,7 @@ import i18n from '../../i18n/config';
 import { I18nextProvider } from 'react-i18next';
 
 // Initialize storage and stash for extension platform
-import { initStorage, initStash, initAnalytics, AccountsProvider, CurrencyProvider, createQueryClient, QueryClientProvider, BridgeSettlementProvider } from '@salmon/shared';
+import { APP_VERSION, initStorage, initStash, initAnalytics, AccountsProvider, CurrencyProvider, createQueryClient, QueryClientProvider, BridgeSettlementProvider } from '@salmon/shared';
 
 // Initialize storage with Chrome extension adapter
 initStorage({ platform: 'extension' });
@@ -19,7 +19,7 @@ initStorage({ platform: 'extension' });
 initStash('extension');
 
 // Anonymous, opt-in usage analytics (no events until the user opts in).
-initAnalytics({ platform: 'extension', appVersion: import.meta.env?.VITE_APP_VERSION ?? '3.0.0' });
+initAnalytics({ platform: 'extension', appVersion: APP_VERSION });
 
 function Root() {
   const [queryClient] = React.useState(() => createQueryClient());

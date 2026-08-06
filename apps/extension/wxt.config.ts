@@ -1,5 +1,6 @@
 import { defineConfig } from 'wxt';
 import { loadEnv } from 'vite';
+import { version as appVersion } from './package.json';
 import path from 'path';
 import { createRequire } from 'module';
 
@@ -16,6 +17,7 @@ export default defineConfig({
     return {
       define: {
         'global': 'globalThis',
+        '__APP_VERSION__': JSON.stringify(appVersion),
         // Define process as a minimal object so typeof process !== 'undefined' guards pass
         // (process global doesn't exist in extension runtime — the npm polyfill is only
         // injected during dev pre-bundling, not in production Rollup/esbuild builds)
@@ -70,7 +72,7 @@ export default defineConfig({
     // Set default locale for i18n
     default_locale: 'en',
     // version is intentionally omitted: WXT derives it from package.json so the
-    // manifest version stays a single source of truth (currently 0.9.5).
+    // manifest version stays a single source of truth (currently 0.10.0).
     icons: {
       16: 'icon-16.png',
       48: 'icon-48.png',
