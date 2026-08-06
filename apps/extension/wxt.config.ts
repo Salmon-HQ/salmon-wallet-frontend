@@ -70,7 +70,7 @@ export default defineConfig({
     // Set default locale for i18n
     default_locale: 'en',
     // version is intentionally omitted: WXT derives it from package.json so the
-    // manifest version stays a single source of truth (currently 0.9.5).
+    // manifest version stays a single source of truth (currently 0.10.0).
     icons: {
       16: 'icon-16.png',
       48: 'icon-48.png',
