@@ -50,7 +50,7 @@ vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual('../../../../shared/src/theme')),
   ...(await vi.importActual('../../../../shared/src/utils/scaling')),
   ...(await vi.importActual('../../../../shared/src/types/ui')),
-  PASSWORD_CONSTRAINTS: { MIN_LENGTH: 8 },
+  PASSWORD_CONSTRAINTS: { MIN_LENGTH: 12, MAX_LENGTH: 128 },
   ApiError: MockApiError,
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
   getScanNetworks: async () => ['solana'],
