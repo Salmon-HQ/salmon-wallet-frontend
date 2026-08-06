@@ -1,5 +1,6 @@
 import { defineConfig } from 'wxt';
 import { loadEnv } from 'vite';
+import { version as appVersion } from './package.json';
 import path from 'path';
 import { createRequire } from 'module';
 
@@ -16,6 +17,7 @@ export default defineConfig({
     return {
       define: {
         'global': 'globalThis',
+        '__APP_VERSION__': JSON.stringify(appVersion),
         // Define process as a minimal object so typeof process !== 'undefined' guards pass
         // (process global doesn't exist in extension runtime — the npm polyfill is only
         // injected during dev pre-bundling, not in production Rollup/esbuild builds)

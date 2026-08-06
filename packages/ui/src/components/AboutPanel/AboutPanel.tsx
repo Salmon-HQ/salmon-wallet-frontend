@@ -26,7 +26,7 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, borderRadius, fontSize, fontWeight, letterSpacing, opacity, componentSizes } from '@salmon/shared';
+import { APP_VERSION, colors, spacing, borderRadius, fontSize, fontWeight, letterSpacing, opacity, componentSizes } from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import type { AboutPanelProps } from './types';
 
@@ -40,11 +40,6 @@ interface LinkItem {
 // ============================================================================
 // Constants
 // ============================================================================
-
-/**
- * App version - would typically come from package.json
- */
-const APP_VERSION = '3.0.0';
 
 /**
  * External links configuration
@@ -224,7 +219,7 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
           </LogoContainer>
           <AppName>Salmon Wallet</AppName>
           <VersionText>
-            {t('settings.version', 'Version')} {APP_VERSION}
+            {t('settings.app_version', { version: APP_VERSION })}
           </VersionText>
         </LogoSection>
 
