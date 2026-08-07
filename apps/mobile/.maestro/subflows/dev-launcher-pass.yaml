@@ -17,6 +17,12 @@ appId: io.salmonwallet.app
       - waitForAnimationToEnd:
           timeout: 60000
 
+# The dev-menu sheet is presented after the bundle finishes evaluating, which on
+# iOS lands *after* the app's first screen. Without this settle the `when:` guards
+# below evaluate too early, skip every branch, and leave the sheet covering the app.
+- waitForAnimationToEnd:
+    timeout: 10000
+
 # A sheet now covers the app. "Continue" does NOT dismiss it — it expands the
 # one-time intro into the full dev menu. Expand it on purpose: the floating
 # dev-menu button is toggled from in there, and that button renders exactly on
@@ -30,11 +36,32 @@ appId: io.salmonwallet.app
       - tapOn: "Continue"
       - waitForAnimationToEnd:
           timeout: 3000
+# Android only: there the floating dev-menu button defaults to ON and lands on
+# top of the wallet's settings gear. On iOS it defaults to OFF, so tapping this
+# turns it ON and leaves a dev-menu gear floating over every screen.
 - runFlow:
     when:
+      platform: Android
       visible: "Toggle Dev Menu"
     commands:
       - tapOn: "Toggle Dev Menu"
+      - waitForAnimationToEnd:
+          timeout: 2000
+# iOS labels the same switch "Tools button", and it defaults to ON — leaving a
+# dev-menu gear floating over the wallet's own header on every screen. Guarded to
+# iOS: on Android both labels resolve to this one switch, so running both flips
+# it off and straight back on.
+- runFlow:
+    when:
+      platform: iOS
+      visible: "Tools button"
+    commands:
+      # Tapping the "Tools button" label is inert on iOS — the row is a plain
+      # label next to a switch, and only the switch itself responds. It is the
+      # last row of the menu, hence the point. Re-measure if expo-dev-client
+      # adds rows below it.
+      - tapOn:
+          point: "85%,96%"
       - waitForAnimationToEnd:
           timeout: 2000
 # Close the sheet with the X in its header (accessibility label "Close").
