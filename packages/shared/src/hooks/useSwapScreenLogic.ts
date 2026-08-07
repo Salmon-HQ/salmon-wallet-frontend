@@ -34,6 +34,29 @@ import { useSettleAfterTx, useSettleUntilChanged } from '../query/invalidation';
 
 const MIN_SWAP_USD = 1;
 const QUOTE_DEBOUNCE_MS = 500;
+
+/**
+ * Converts a quote's raw output amount to a display amount.
+ *
+ * The quote must carry its own decimals. Falling back to the token list's
+ * decimals looks harmless but is not: the backend fills `output.decimals` from
+ * a server-side token lookup (`decimals: token?.decimals`), so a lookup miss
+ * sends `undefined`, and the fallback silently formats the amount with the
+ * WRONG token's scale — observed rendering 14.262397 SOL for a quote that was
+ * really 0.014262181 SOL, a 1000x overstatement on the screen where the user
+ * decides to sign. Returning null makes the caller surface a quote error
+ * instead of inventing a number.
+ */
+export function formatQuoteOutAmount(quote: SwapQuote): string | null {
+  const decimals = quote.output?.decimals;
+  // Amounts arrive as strings from the quote provider, so coerce; decimals must
+  // be a real number — that is the value we refuse to guess.
+  const amount = Number(quote.output?.amount);
+  if (typeof decimals !== 'number' || !Number.isFinite(decimals)) return null;
+  if (!Number.isFinite(amount)) return null;
+  return (amount / 10 ** decimals).toString();
+}
+
 // Jupiter quotes are valid for ~30s on mainnet but Stealthex bridges drift
 // faster, so 15s gives the user a full read of the review screen without
 // firing a stale-quote refresh in the middle of confirming.
@@ -462,9 +485,15 @@ export function useSwapScreenLogic<StyleType = unknown>({
       quoteTimerRef.current = setTimeout(async () => {
         try {
           const fetchedQuote = await onGetQuoteRef.current(inToken, outToken, inAmount);
+          const displayAmount = formatQuoteOutAmount(fetchedQuote);
+          if (displayAmount === null) {
+            setQuote(null);
+            setOutAmount('');
+            setQuoteError('Failed to fetch quote');
+            return;
+          }
           setQuote(fetchedQuote);
-          const outDecimals = fetchedQuote.output?.decimals ?? outToken.decimals;
-          setOutAmount((Number(fetchedQuote.output.amount) / (10 ** outDecimals)).toString());
+          setOutAmount(displayAmount);
           setQuoteError(null);
         } catch (error) {
           console.error('Failed to fetch quote:', error);
@@ -684,9 +713,15 @@ export function useSwapScreenLogic<StyleType = unknown>({
       setIsLoadingQuote(true);
       try {
         const fetchedQuote = await onGetQuoteRef.current(inToken, outToken, inAmount);
+        const displayAmount = formatQuoteOutAmount(fetchedQuote);
+        if (displayAmount === null) {
+          setQuote(null);
+          setOutAmount('');
+          setQuoteError('Failed to refresh quote');
+          return;
+        }
         setQuote(fetchedQuote);
-        const outDecimals = fetchedQuote.output?.decimals ?? outToken.decimals;
-        setOutAmount((Number(fetchedQuote.output.amount) / (10 ** outDecimals)).toString());
+        setOutAmount(displayAmount);
         setQuoteError(null);
       } catch (error) {
         console.error('Failed to refresh quote:', error);
