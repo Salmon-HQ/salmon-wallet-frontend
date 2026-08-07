@@ -1,0 +1,25 @@
+SHORT DESCRIPTION (72 chars):
+Open-source crypto wallet for Solana and Bitcoin. Your keys, your coins.
+
+FULL DESCRIPTION:
+Salmon Wallet is a community-owned, open-source crypto wallet built for real decentralization. If you can't verify it, you don't own it.
+
+KEY FEATURES
+• Multi-chain support: Solana and Bitcoin
+• Swap & Bridge: Exchange and transfer tokens across networks seamlessly
+• Wallet Cleanup: Remove unwanted tokens and reduce clutter
+• dApp Integration: Connect directly to decentralized applications
+• Scalable Design: Starts simple, grows more powerful as your needs increase
+
+SECURITY FIRST
+• Private keys are encrypted locally on your device
+• Password-protected, never transmitted or accessible to anyone
+• No tracking or data collection by default
+• Transparent security model with fully public source code
+• All contributions undergo rigorous inspection before integration
+
+SUPPORTED NETWORKS
+• Solana (Mainnet & Devnet)
+• Bitcoin (Mainnet & Testnet)
+
+Open code. Open ownership. Salmon Wallet — built for people who believe transparency is not optional.
