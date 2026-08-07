@@ -39,11 +39,12 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
   const { t } = useTranslation();
   const openLink = useOpenLink();
 
-  const appVersion = Constants.expoConfig?.version || '1.0.0';
+  // Empty fallbacks on purpose: a missing version beats a wrong literal one.
+  const appVersion = Constants.expoConfig?.version || '';
   const buildNumber =
     Constants.expoConfig?.ios?.buildNumber ||
     Constants.expoConfig?.android?.versionCode?.toString() ||
-    '1';
+    '';
 
   const renderLinkItem = useCallback(
     (icon: IoniconsName, label: string, url: string, id: string) => (
