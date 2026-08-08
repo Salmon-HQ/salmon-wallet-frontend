@@ -15,11 +15,17 @@ asset specs, Apple screenshot specs 2025+, AMO listing guide).
 
 ## Tablets: deliberately deferred (2026-08-07)
 
-**Decision:** the tablet slots stay empty until the app has an adaptive layout. Reason
-below — screenshots alone do not earn the large-screen ranking benefit, because that
-benefit is tied to the app meeting the large-screen quality guidelines, and this app is
-`android:screenOrientation="portrait"` with zero breakpoints. Capturing now would produce a
-stretched phone UI and buy nothing. Revisit after the adaptive-layout work, not before.
+**Decision:** no tablet *captures* until the app has an adaptive layout. The 7-inch and
+10-inch slots on Play are filled with the phone frames from `play/phone/` as a stopgap —
+they are 1080x1920, which satisfies the tablet spec (1,080–7,680px, 9:16), and tablet
+traffic for this app is close to zero, so a slot showing how the app looks on a phone beats
+an empty one.
+
+What that stopgap does *not* buy: the large-screen ranking benefit, which Play ties to the
+app meeting the large-screen quality guidelines, not to the listing carrying images. This
+app is `android:screenOrientation="portrait"` with zero breakpoints, so capturing on a
+tablet today would only show a stretched phone layout. Revisit after the adaptive-layout
+work, not before.
 
 
 Play exposes **7-inch and 10-inch tablet screenshot slots separately from phone**, and this
