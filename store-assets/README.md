@@ -10,9 +10,39 @@ asset specs, Apple screenshot specs 2025+, AMO listing guide).
 | `app-store/iphone-6.9/` | 1290×2796 or 1320×2868 portrait screenshots (the required tier since 2025) | yes, before first submission | **complete** — 9 frames at 1320×2868, captured via Maestro on an iPhone 16 Pro Max simulator |
 | `chrome-web-store/` | `screenshots/` 1280×800 (min 1, up to 5), `store-icon-128.png` (96×96 art in 128 canvas ✓), `promo-small-440x280.png` (required — listings without it rank below listings that have one) | yes | **complete** — 5 screenshots captured with the Playwright harness at a 1280×800 viewport |
 | `amo/screenshots/` | 1280×800 recommended (1.6:1) | recommended | empty — can reuse the CWS captures, but prefer un-captioned crops: AMO advises against text on the image |
+| `play/tablet-7/` · `play/tablet-10/` | 4–8 screenshots each, 1,080–7,680px, 9:16 or 16:9 | no, but see below | **missing** — never captured |
 | `source/` | raw, unframed captures (Maestro / Playwright output) before any framing | — | `android-staged/`, `ios-staged/`, `web-staged/` |
 
-Two icons, two behaviors, easy to mix up:
+## Tablets are missing, on purpose-by-omission
+
+Play exposes **7-inch and 10-inch tablet screenshot slots separately from phone**, and this
+listing has never filled them. Nothing blocks publishing — which is exactly why it went
+unnoticed. The cost is on the ranking side:
+
+> "Apps and games that adhere to our large screen app quality guidelines will now be ranked
+> higher in search and Apps and Games Home."
+> — <https://android-developers.googleblog.com/2023/07/introducing-new-play-store-for-large-screens.html>
+
+Play also shows large-screen users a warning on the listing of an app that is not optimized
+for their device.
+
+Spec, from <https://support.google.com/googleplay/android-developer/answer/9866151>:
+minimum 4 screenshots per tablet type, up to 8, between **1,080 and 7,680px**, **9:16**
+portrait or **16:9** landscape.
+
+Two things to settle before capturing (the deck cannot just be re-rendered at a tablet
+canvas — that would be the phone UI blown up):
+
+1. **Does the app actually have a distinct tablet layout?** If it only scales the phone
+   layout, tablet screenshots add little beyond filling the slot, and that is a finding to
+   report rather than paper over.
+2. **The staged portfolio has to match the phone deck.** The mock server that staged it is
+   not in this repo (see `apps/mobile/.maestro/` and the commit that added the capture
+   flows). Captured against the live API, walletA shows whatever it holds that day — and a
+   listing whose phone screenshots read $4,307.89 while its tablet screenshots read $0.00
+   looks broken.
+
+## Two icons, two behaviors, easy to mix up
 
 - `play/icon-512.png` is full-bleed with square edges — Play rounds it itself when
   it renders the listing.
