@@ -31,9 +31,11 @@ DECK = [
     ("03-transactions", None, "Your assets and activity,\none view.",                      "coral", None),
     ("04-collectibles", None, "Your NFTs,\nfront and center",                              "navy",  None),
     ("05-nft-detail",   None, "Every collectible,\nin detail",                             "coral", None),
-    # Play admite 8; token-info entra solo en App Store, que admite 10.
-    ("06-token-info",   None, "Live prices\nfor every token",                              "navy",  ("app-store",)),
-    ("09-about",        None, "If you can\u2019t verify it,\nyou don\u2019t own it.",     "coral", None),
+    ("06-token-info",   None, "Live prices\nfor every token",                              "navy",  None),
+    # Play admite 8; about entra solo en App Store, que admite 10. Es el frame
+    # mas prescindible del deck: la pantalla About muestra version y links, no
+    # el producto en uso, que es lo que Play pide demostrar en las capturas.
+    ("09-about",        None, "If you can\u2019t verify it,\nyou don\u2019t own it.",     "coral", ("app-store",)),
 ]
 
 CWS_DECK = [
