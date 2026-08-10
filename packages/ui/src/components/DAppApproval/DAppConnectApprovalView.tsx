@@ -54,11 +54,11 @@ export function DAppConnectApprovalView({
       <Content>
         <Header>
           <LogoWrap>
-            <LogoImage src="/images/Logo.png" alt="Salmon" />
+            <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
           </LogoWrap>
           <Title>{t('dapp.connect_title', 'Connect to dApp')}</Title>
           <Subtitle>
-            {t('dapp.connect_subtitle', 'This site wants to connect to your Salmon wallet')}
+            {t('dapp.connect_subtitle', 'This site wants to connect to your Salmon Wallet')}
           </Subtitle>
         </Header>
 
