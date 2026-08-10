@@ -103,6 +103,32 @@ describe('SettingsSheet', () => {
     expect(onDeveloperNetworksToggle).toHaveBeenCalledWith(true);
   });
 
+  it('reflects granted analytics consent and withdraws it from the switch row', () => {
+    const onAnalyticsToggle = jest.fn();
+
+    const view = render(
+      <SettingsSheet
+        visible
+        onClose={jest.fn()}
+        onAnalyticsToggle={onAnalyticsToggle}
+        analyticsEnabled
+      />
+    );
+
+    const switchControl = view.getByTestId('settings-analytics-toggle');
+    expect(switchControl.props.value).toBe(true);
+
+    fireEvent(switchControl, 'valueChange', false);
+
+    expect(onAnalyticsToggle).toHaveBeenCalledWith(false);
+  });
+
+  it('shows analytics off when consent was declined or never given', () => {
+    const view = render(<SettingsSheet visible onClose={jest.fn()} />);
+
+    expect(view.getByTestId('settings-analytics-toggle').props.value).toBe(false);
+  });
+
   it('runs remove-all action and closes the sheet', () => {
     const onRemoveAllWallets = jest.fn();
     const onClose = jest.fn();
