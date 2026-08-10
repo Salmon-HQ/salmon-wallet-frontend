@@ -1,21 +1,15 @@
-/**
- * QRScanner Component Types
- *
- * This component provides QR code scanning functionality.
- * Note: Full implementation requires native camera configuration
- * (expo-camera or react-native-camera).
- */
+import type { BlockchainType } from '@salmon/shared';
 
 /**
- * Data returned when a QR code is successfully scanned
+ * Data returned when a QR code is scanned and validated for the active chain
  */
 export interface QRScanResult {
-  /** The decoded data from the QR code */
+  /** The raw decoded payload from the QR code */
   data: string;
-  /** The type of barcode/QR code scanned */
-  type?: string;
-  /** Raw bytes of the scanned data (if available) */
-  rawData?: string;
+  /** The validated destination address extracted from the payload */
+  address: string;
+  /** Amount carried by a payment URI, when present */
+  amount?: string;
 }
 
 /**
@@ -24,7 +18,9 @@ export interface QRScanResult {
 export interface QRScannerProps {
   /** Controls visibility of the scanner modal */
   visible: boolean;
-  /** Callback fired when a QR code is successfully scanned */
+  /** Active chain the scanned payload is validated against */
+  blockchain: BlockchainType;
+  /** Callback fired when a QR code is scanned and validated */
   onScan: (result: QRScanResult) => void;
   /** Callback fired when the scanner is closed */
   onClose: () => void;

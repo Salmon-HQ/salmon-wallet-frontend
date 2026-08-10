@@ -744,6 +744,15 @@
     "viewOnExplorer": "Ver en Explorer",
     "continue": "Continuar"
   },
+  "qrScanner": {
+    "title": "Escanear código QR",
+    "scanButton": "Escanear código QR",
+    "permissionTitle": "Se necesita acceso a la cámara",
+    "permissionMessage": "Para escanear códigos QR se necesita acceso a la cámara. Igual podés escribir o pegar la dirección manualmente.",
+    "openSettings": "Abrir Ajustes",
+    "notAddress": "Este código no es una dirección válida",
+    "wrongNetwork": "Esta dirección pertenece a otra red"
+  },
   "accessibility": {
     "copy_address": "Copiar dirección de billetera {{address}}",
     "open_settings": "Abrir configuración",

@@ -747,6 +747,15 @@
     "viewOnExplorer": "View on Explorer",
     "continue": "Continue"
   },
+  "qrScanner": {
+    "title": "Scan QR Code",
+    "scanButton": "Scan QR code",
+    "permissionTitle": "Camera access needed",
+    "permissionMessage": "Scanning QR codes requires camera access. You can still type or paste the address manually.",
+    "openSettings": "Open Settings",
+    "notAddress": "This code is not a valid address",
+    "wrongNetwork": "This address belongs to a different network"
+  },
   "accessibility": {
     "copy_address": "Copy wallet address {{address}}",
     "open_settings": "Open settings",

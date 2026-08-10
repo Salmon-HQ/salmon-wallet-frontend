@@ -1,33 +1,87 @@
-/**
- * QRScanner - Native Version (Placeholder)
- *
- * This is a placeholder component for QR code scanning on React Native.
- * Full implementation requires native camera configuration:
- * - For Expo: expo-camera or expo-barcode-scanner
- * - For bare React Native: react-native-camera or react-native-qrcode-scanner
- *
- * TODO: Implement actual QR scanning once native dependencies are configured.
- */
-
-import React from 'react';
-import { Modal, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { colors, spacing, borderRadius, fontFamilyNative, fontSize, fontWeight, } from '@salmon/shared';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  AppState,
+  Linking,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useTranslation } from 'react-i18next';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  fontFamilyNative,
+  fontSize,
+  fontWeight,
+} from '@salmon/shared';
+import { classifyScanPayload } from './scan-payload';
 import type { QRScannerProps } from './types';
 
-/**
- * QRScanner component for React Native platforms.
- * Currently a placeholder - requires native camera configuration.
- */
 export const QRScanner: React.FC<QRScannerProps> = ({
   visible,
+  blockchain,
+  onScan,
   onClose,
-  title = 'Scan QR Code',
+  title,
   containerStyle,
 }) => {
+  const { t } = useTranslation();
+  const [permission, requestPermission] = useCameraPermissions();
+  const [appActive, setAppActive] = useState(
+    AppState.currentState !== 'background' && AppState.currentState !== 'inactive'
+  );
+  const [rejection, setRejection] = useState<'notAddress' | 'wrongChain' | null>(
+    null
+  );
+  const scannedRef = useRef(false);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    scannedRef.current = false;
+    setRejection(null);
+    if (permission && !permission.granted && permission.canAskAgain) {
+      requestPermission();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    const subscription = AppState.addEventListener('change', (state) => {
+      setAppActive(state === 'active');
+    });
+    return () => subscription.remove();
+  }, [visible]);
+
+  const handleBarcodeScanned = useCallback(
+    ({ data }: { data: string }) => {
+      if (scannedRef.current) {
+        return;
+      }
+      const result = classifyScanPayload(data, blockchain);
+      if (result.kind === 'valid') {
+        scannedRef.current = true;
+        onScan({ data, address: result.address, amount: result.amount });
+      } else {
+        setRejection(result.kind);
+      }
+    },
+    [blockchain, onScan]
+  );
+
   if (!visible) {
     return null;
   }
+
+  const permissionDenied = permission != null && !permission.granted;
 
   return (
     <Modal
@@ -36,45 +90,77 @@ export const QRScanner: React.FC<QRScannerProps> = ({
       visible={visible}
       transparent={false}
     >
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={[styles.container, containerStyle]}>
+      <View style={[styles.container, containerStyle]}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.backButton}>
-            <Text style={styles.backButtonText}>{'<'} Back</Text>
+          <Text style={styles.title}>
+            {title ?? t('qrScanner.title', 'Scan QR Code')}
+          </Text>
+          <TouchableOpacity
+            testID="qr-scanner-close-button"
+            accessibilityRole="button"
+            accessibilityLabel={t('actions.close', 'Close')}
+            onPress={onClose}
+            style={styles.closeButton}
+          >
+            <Text style={styles.closeButtonText}>
+              {t('actions.close', 'Close')}
+            </Text>
           </TouchableOpacity>
-          <Text style={styles.title}>{title}</Text>
-          <View style={styles.headerSpacer} />
         </View>
 
         <View style={styles.content}>
-          <View style={styles.scannerPlaceholder}>
-            <View style={styles.markerContainer}>
-              <View style={[styles.corner, styles.cornerTopLeft]} />
-              <View style={[styles.corner, styles.cornerTopRight]} />
-              <View style={[styles.corner, styles.cornerBottomLeft]} />
-              <View style={[styles.corner, styles.cornerBottomRight]} />
+          {permission?.granted && appActive && (
+            <CameraView
+              testID="qr-scanner-camera"
+              style={styles.camera}
+              facing="back"
+              barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+              onBarcodeScanned={handleBarcodeScanned}
+            />
+          )}
+
+          {permissionDenied && (
+            <View
+              testID="qr-scanner-permission-denied"
+              style={styles.messageContainer}
+            >
+              <Text style={styles.messageTitle}>
+                {t('qrScanner.permissionTitle', 'Camera access needed')}
+              </Text>
+              <Text style={styles.messageText}>
+                {t(
+                  'qrScanner.permissionMessage',
+                  'Scanning QR codes requires camera access. You can still type or paste the address manually.'
+                )}
+              </Text>
+              <TouchableOpacity
+                testID="qr-scanner-settings-button"
+                accessibilityRole="button"
+                accessibilityLabel={t('qrScanner.openSettings', 'Open Settings')}
+                onPress={() => Linking.openSettings()}
+                style={styles.settingsButton}
+              >
+                <Text style={styles.settingsButtonText}>
+                  {t('qrScanner.openSettings', 'Open Settings')}
+                </Text>
+              </TouchableOpacity>
             </View>
-          </View>
+          )}
 
-          <View style={styles.messageContainer}>
-            <Text style={styles.messageTitle}>Camera Setup Required</Text>
-            <Text style={styles.messageText}>
-              QR Scanner requires native camera configuration.
-            </Text>
-            <Text style={styles.messageSubtext}>
-              Please configure expo-camera or react-native-camera to enable QR
-              code scanning.
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.footer}>
-          <TouchableOpacity onPress={onClose} style={styles.button}>
-            <Text style={styles.buttonText}>Close</Text>
-          </TouchableOpacity>
+          {rejection && (
+            <View style={styles.rejectionContainer}>
+              <Text testID="qr-scanner-error" style={styles.rejectionText}>
+                {rejection === 'wrongChain'
+                  ? t(
+                      'qrScanner.wrongNetwork',
+                      'This address belongs to a different network'
+                    )
+                  : t('qrScanner.notAddress', 'This code is not a valid address')}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
-      </GestureHandlerRootView>
     </Modal>
   );
 };
@@ -90,14 +176,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
-    paddingTop: spacing['5xl'], // Account for status bar on mobile
-  },
-  backButton: {
-    padding: spacing.sm,
-  },
-  backButtonText: {
-    color: colors.scanner.text,
-    fontSize: fontSize.md,
+    paddingTop: spacing['5xl'],
   },
   title: {
     fontSize: fontSize.lg,
@@ -105,65 +184,24 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.scanner.text,
   },
-  headerSpacer: {
-    width: 60,
+  closeButton: {
+    padding: spacing.sm,
+  },
+  closeButtonText: {
+    color: colors.scanner.textSecondary,
+    fontSize: fontSize.md,
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing['3xl'],
   },
-  scannerPlaceholder: {
-    width: 250,
-    height: 250,
-    backgroundColor: colors.scanner.surface,
-    borderRadius: borderRadius.iconLg,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing['3xl'],
-  },
-  markerContainer: {
-    width: 200,
-    height: 200,
-    position: 'relative',
-  },
-  corner: {
-    position: 'absolute',
-    width: 30,
-    height: 30,
-    borderColor: colors.scanner.text,
-  },
-  cornerTopLeft: {
-    top: 0,
-    left: 0,
-    borderTopWidth: 3,
-    borderLeftWidth: 3,
-    borderTopLeftRadius: 10,
-  },
-  cornerTopRight: {
-    top: 0,
-    right: 0,
-    borderTopWidth: 3,
-    borderRightWidth: 3,
-    borderTopRightRadius: 10,
-  },
-  cornerBottomLeft: {
-    bottom: 0,
-    left: 0,
-    borderBottomWidth: 3,
-    borderLeftWidth: 3,
-    borderBottomLeftRadius: 10,
-  },
-  cornerBottomRight: {
-    bottom: 0,
-    right: 0,
-    borderBottomWidth: 3,
-    borderRightWidth: 3,
-    borderBottomRightRadius: 10,
+  camera: {
+    ...StyleSheet.absoluteFillObject,
   },
   messageContainer: {
     alignItems: 'center',
+    paddingHorizontal: spacing['3xl'],
   },
   messageTitle: {
     fontSize: fontSize.xl,
@@ -177,31 +215,34 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.scanner.textSecondary,
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing['2xl'],
   },
-  messageSubtext: {
-    fontSize: fontSize.base,
-    color: colors.scanner.textTertiary,
-    textAlign: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  footer: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing['2xl'],
-    paddingBottom: spacing['5xl'], // Account for home indicator on mobile
-  },
-  button: {
+  settingsButton: {
     backgroundColor: colors.scanner.button,
     paddingVertical: 14,
     paddingHorizontal: spacing['2xl'],
     borderRadius: borderRadius.lg,
     alignItems: 'center',
   },
-  buttonText: {
+  settingsButtonText: {
     color: colors.scanner.text,
     fontSize: fontSize.md,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
+  },
+  rejectionContainer: {
+    position: 'absolute',
+    bottom: spacing['5xl'],
+    left: spacing.lg,
+    right: spacing.lg,
+    backgroundColor: colors.scanner.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+  },
+  rejectionText: {
+    color: colors.scanner.text,
+    fontSize: fontSize.md,
+    textAlign: 'center',
   },
 });
 
