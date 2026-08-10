@@ -129,6 +129,7 @@
     "no_trusted_apps": "No hay apps conectadas",
     "no_trusted_apps_hint": "Las apps que conectes aparecerán aquí",
     "help_support": "Ayuda & Soporte",
+    "security_notice": "El equipo de Salmon Wallet nunca te va a pedir tu frase de recuperación ni tus claves privadas. No compartas esta información con nadie.",
     "currency": "Moneda de visualización",
     "backup": "Respaldar Seed Phrase",
     "private_key": "Clave Privada",

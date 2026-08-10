@@ -130,6 +130,7 @@
     "no_trusted_apps": "No connected apps",
     "no_trusted_apps_hint": "Apps you connect to will appear here",
     "help_support": "Help & Support",
+    "security_notice": "Salmon Wallet team will never ask for your seed phrase or private keys. Never share this information with anyone.",
     "currency": "Display Currency",
     "backup": "Backup Seed Phrase",
     "private_key": "Private Key",

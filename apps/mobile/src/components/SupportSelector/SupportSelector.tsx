@@ -88,8 +88,10 @@ export function SupportSelector({
           color={colors.status.warning}
         />
         <Text style={styles.securityText}>
-          Salmon Wallet team will never ask for your seed phrase or private
-          keys. Never share this information with anyone.
+          {t(
+            'settings.security_notice',
+            'Salmon Wallet team will never ask for your seed phrase or private keys. Never share this information with anyone.'
+          )}
         </Text>
       </View>
     </SettingsScreenLayout>
