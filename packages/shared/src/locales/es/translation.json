@@ -84,6 +84,7 @@
   "dapp": {
     "connect_title": "Conectar con dApp",
     "connect_subtitle": "Este sitio quiere conectar con tu Salmon Wallet",
+    "unlock_subtitle": "Ingresá tu contraseña para aprobar esta solicitud",
     "no_wallet_title": "No se encontró ninguna billetera",
     "no_wallet_subtitle": "Abrí Salmon Wallet y configurá una cuenta, después volvé a intentarlo.",
     "requesting_site": "Sitio que solicita",
@@ -440,7 +441,7 @@
       "choose_a_password_body": "La necesitarás para desbloquear tu Wallet",
       "passwordNew": "Nueva contraseña",
       "passwordRepeat": "Repetir contraseña",
-      "i_accept_terms_conditions": "Haciendo click en el botón de Crear Cuenta \nI aceptás los Términos & Condiciones",
+      "i_accept_terms_conditions": "Haciendo click en el botón de Crear Cuenta\naceptás los Términos & Condiciones",
       "passwordChecking": "Chequeando...",
       "success_message": "¡Felicitaciones!",
       "success_message_body": "Tu Cuenta ya está lista.",
@@ -467,7 +468,7 @@
       "messageTitle": "Recuperar Cuenta existente",
       "messageBody": "Recuperar tu Cuenta usando tu seed-phrase de 12 o 24 palabras",
       "pasteSeed": "Pegar seed-phrase",
-      "i_accept_terms_conditions": "Haciendo click en el botón de Recuperar Cuenta \nI aceptás los Términos & Condiciones"
+      "i_accept_terms_conditions": "Haciendo click en el botón de Recuperar Cuenta\naceptás los Términos & Condiciones"
     },
     "onboarding": {
       "titleOnboarded": "Nueva Cuenta",
