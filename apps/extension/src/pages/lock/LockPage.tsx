@@ -213,7 +213,7 @@ export function LockPage({ onUnlock, onUnlockWithCachedKey: _onUnlockWithCachedK
     <>
       <Container>
         <Content>
-          <LogoImage src="/images/Logo.png" alt="Salmon" />
+          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
 
           <Title>{t('lock.title', 'Welcome Back')}</Title>
 

@@ -297,7 +297,7 @@ export function DerivedAccountsPage({
     <Container $contained={contained}>
       <ScreenHeader />
       <Content>
-        <LogoImage src="/images/Logo.png" alt="Salmon" />
+        <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
         <Title>Derived Accounts</Title>
         <Subtitle>
           Search for additional accounts derived from your seed phrase.

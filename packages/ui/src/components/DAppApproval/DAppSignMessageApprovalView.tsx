@@ -98,7 +98,7 @@ export function DAppSignMessageApprovalView({
       <Content>
         <Header>
           <LogoWrap>
-            <LogoImage src="/images/Logo.png" alt="Salmon" />
+            <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
           </LogoWrap>
           <Title>{t('dapp.sign_message_title', 'Sign Message')}</Title>
           <Subtitle>

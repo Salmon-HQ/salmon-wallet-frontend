@@ -246,7 +246,7 @@ export const LoadingScreen = memo(function LoadingScreen({
         <LogoSpinnerContainer $size={spinnerSize}>
           <Spinner $size={spinnerSize} />
           <LogoContainer>
-            <Logo src="/images/Logo.png" alt="Salmon" $size={logoSize} />
+            <Logo src="/images/Logo.png" alt="Salmon Wallet" $size={logoSize} />
           </LogoContainer>
         </LogoSpinnerContainer>
       </Content>
