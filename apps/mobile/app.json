@@ -18,13 +18,16 @@
       "backgroundColor": "#10131c"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "io.salmonwallet.app",
       "backgroundColor": "#10131c",
       "icon": {
         "light": "./assets/images/ios-icon.png",
         "dark": "./assets/images/ios-icon-dark.png",
         "tinted": "./assets/images/ios-icon-tinted.png"
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
