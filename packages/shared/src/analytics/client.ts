@@ -161,8 +161,12 @@ class AnalyticsClient {
     try {
       await this.transport.send(batch);
     } catch {
-      // Best-effort delivery: put the events back (bounded) to retry next tick.
-      this.queue = [...events, ...this.queue].slice(-MAX_QUEUE_LENGTH);
+      // Best-effort delivery: put the events back (bounded) to retry next tick —
+      // unless consent was withdrawn while this batch was in flight, in which
+      // case the withdrawal's queue wipe wins and the events are dropped.
+      if (this.consent) {
+        this.queue = [...events, ...this.queue].slice(-MAX_QUEUE_LENGTH);
+      }
     } finally {
       this.flushing = false;
     }

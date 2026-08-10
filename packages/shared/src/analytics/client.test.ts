@@ -21,11 +21,13 @@ vi.mock('../storage', () => ({
   STORAGE_KEYS: {
     ANALYTICS_CONSENT: 'salmon_analytics_consent',
     ANALYTICS_INSTALL_ID: 'salmon_analytics_install_id',
+    ANALYTICS_CONSENT_PROMPTED: 'salmon_analytics_consent_prompted',
   },
 }));
 
 import { initAnalytics, resetAnalytics } from './client';
 import { createMemoryTransport } from './transport';
+import type { AnalyticsBatch } from './types';
 
 /** Lets any `void flush()` microtasks/promises settle. */
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -153,5 +155,77 @@ describe('AnalyticsClient withdrawing consent', () => {
     client.track('nft_viewed');
     await client.flush();
     expect(transport.batches).toHaveLength(0);
+  });
+
+  it('drops a batch that was in flight when consent was withdrawn', async () => {
+    const attempts: AnalyticsBatch[] = [];
+    let failInFlight: () => void = () => {};
+    const transport = {
+      send: (batch: AnalyticsBatch): Promise<void> => {
+        attempts.push(batch);
+        return new Promise<void>((_resolve, reject) => {
+          failInFlight = () => reject(new Error('network down'));
+        });
+      },
+    };
+
+    const client = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport });
+    await client.whenReady();
+    await client.setConsent(true);
+    client.track('nft_viewed');
+
+    void client.flush();
+    await settle();
+    expect(attempts).toHaveLength(1);
+
+    // Withdrawn mid-send: the failed batch must not be re-queued for a retry.
+    await client.setConsent(false);
+    failInFlight();
+    await settle();
+
+    await client.setConsent(true);
+    await client.flush();
+
+    expect(attempts).toHaveLength(1);
+  });
+});
+
+describe('AnalyticsClient consent persistence across restarts', () => {
+  it('keeps a declined choice, and does not re-prompt', async () => {
+    const first = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport: createMemoryTransport() });
+    await first.whenReady();
+    await first.setConsent(false);
+    await first.markPrompted();
+
+    resetAnalytics();
+
+    const transport = createMemoryTransport();
+    const restarted = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport });
+    await restarted.whenReady();
+
+    expect(restarted.getConsent()).toBe(false);
+    expect(restarted.getPrompted()).toBe(true);
+
+    restarted.track('nft_viewed');
+    await restarted.flush();
+    expect(transport.batches).toHaveLength(0);
+  });
+
+  it('keeps a granted choice', async () => {
+    const first = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport: createMemoryTransport() });
+    await first.whenReady();
+    await first.setConsent(true);
+
+    resetAnalytics();
+
+    const transport = createMemoryTransport();
+    const restarted = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport });
+    await restarted.whenReady();
+
+    expect(restarted.getConsent()).toBe(true);
+
+    restarted.track('nft_viewed');
+    await restarted.flush();
+    expect(transport.batches).toHaveLength(1);
   });
 });
