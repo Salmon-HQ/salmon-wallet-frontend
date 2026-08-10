@@ -8,6 +8,7 @@ const mockDeleteItemAsync = jest.fn();
 const mockHasHardwareAsync = jest.fn();
 const mockIsEnrolledAsync = jest.fn();
 const mockSupportedAuthenticationTypesAsync = jest.fn();
+const mockAuthenticateAsync = jest.fn();
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: (...args: unknown[]) => mockGetItemAsync(...args),
@@ -24,6 +25,7 @@ jest.mock('expo-local-authentication', () => ({
   hasHardwareAsync: (...args: unknown[]) => mockHasHardwareAsync(...args),
   isEnrolledAsync: (...args: unknown[]) => mockIsEnrolledAsync(...args),
   supportedAuthenticationTypesAsync: (...args: unknown[]) => mockSupportedAuthenticationTypesAsync(...args),
+  authenticateAsync: (...args: unknown[]) => mockAuthenticateAsync(...args),
 }));
 
 describe('useBiometricAuth', () => {
@@ -39,6 +41,75 @@ describe('useBiometricAuth', () => {
     });
     mockSetItemAsync.mockResolvedValue(undefined);
     mockDeleteItemAsync.mockResolvedValue(undefined);
+    mockAuthenticateAsync.mockResolvedValue({ success: true });
+  });
+
+  describe('storeKeyForBiometric', () => {
+    const renderReadyHook = async () => {
+      const { result } = renderHook(() => useBiometricAuth());
+      await waitFor(() => {
+        expect(result.current.state.isReady).toBe(true);
+      });
+      return result;
+    };
+
+    it('prompts for biometrics before writing the key', async () => {
+      const result = await renderReadyHook();
+
+      await act(async () => {
+        await result.current.storeKeyForBiometric('{"key":"value"}');
+      });
+
+      expect(mockAuthenticateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ disableDeviceFallback: true }),
+      );
+      expect(mockSetItemAsync).toHaveBeenCalledWith(
+        'salmon_biometric_key',
+        '{"key":"value"}',
+        expect.objectContaining({ requireAuthentication: true }),
+      );
+    });
+
+    it('reports "stored" and flags the key as present on success', async () => {
+      const result = await renderReadyHook();
+
+      let outcome: string | undefined;
+      await act(async () => {
+        outcome = await result.current.storeKeyForBiometric('{"key":"value"}');
+      });
+
+      expect(outcome).toBe('stored');
+      expect(mockSetItemAsync).toHaveBeenCalledWith('salmon_biometric_key_exists', 'true');
+      expect(result.current.state.hasStoredKey).toBe(true);
+    });
+
+    it('writes nothing and reports "cancelled" when the user dismisses the prompt', async () => {
+      mockAuthenticateAsync.mockResolvedValueOnce({ success: false, error: 'user_cancel' });
+      const result = await renderReadyHook();
+      mockSetItemAsync.mockClear();
+
+      let outcome: string | undefined;
+      await act(async () => {
+        outcome = await result.current.storeKeyForBiometric('{"key":"value"}');
+      });
+
+      expect(outcome).toBe('cancelled');
+      expect(mockSetItemAsync).not.toHaveBeenCalled();
+    });
+
+    it('reports "failed" when authentication errors out', async () => {
+      mockAuthenticateAsync.mockResolvedValueOnce({ success: false, error: 'lockout' });
+      const result = await renderReadyHook();
+      mockSetItemAsync.mockClear();
+
+      let outcome: string | undefined;
+      await act(async () => {
+        outcome = await result.current.storeKeyForBiometric('{"key":"value"}');
+      });
+
+      expect(outcome).toBe('failed');
+      expect(mockSetItemAsync).not.toHaveBeenCalled();
+    });
   });
 
   it('clears biometric preference and all stored biometric artifacts when disabled', async () => {

@@ -81,12 +81,12 @@ export default function BiometricScreen() {
       }
 
       // Store the key with biometric protection (this triggers the OS biometric prompt)
-      const stored = await storeKeyForBiometric(JSON.stringify(keyCache));
+      const result = await storeKeyForBiometric(JSON.stringify(keyCache));
 
-      if (stored) {
+      if (result === 'stored') {
         await setEnableBiometric(true);
         router.replace('/(auth)/success');
-      } else {
+      } else if (result === 'failed') {
         setError(t('wallet.create.biometric_error'));
       }
     } catch (err) {

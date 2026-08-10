@@ -85,12 +85,12 @@ export default function BiometricSetupScreen() {
       }
 
       const keyJson = JSON.stringify(keyCache);
-      const stored = await storeKeyForBiometric(keyJson);
+      const result = await storeKeyForBiometric(keyJson);
 
-      if (stored) {
+      if (result === 'stored') {
         await setEnableBiometric(true);
         router.replace('/(auth)/analytics-consent');
-      } else {
+      } else if (result === 'failed') {
         setError(t('wallet.create.biometric_setup_error'));
       }
     } catch (err) {

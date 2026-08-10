@@ -14,6 +14,12 @@ export interface BiometricAuthState {
 }
 
 /**
+ * Outcome of a biometric enrollment attempt.
+ * Mirrors the hook's own result type (e.g., useBiometricAuth).
+ */
+export type BiometricEnrollResult = 'stored' | 'cancelled' | 'failed';
+
+/**
  * Biometric authentication configuration consumed by LockContent.
  * Optional — if not provided, no biometric UI is shown. This keeps
  * the component platform-agnostic while the consumer provides the
@@ -25,7 +31,7 @@ export interface BiometricConfig {
   /** Authenticate with biometrics and retrieve the stored key */
   authenticateWithBiometric: () => Promise<string | null>;
   /** Store a derived key for future biometric unlock */
-  storeKeyForBiometric: (derivedKeyJson: string) => Promise<boolean>;
+  storeKeyForBiometric: (derivedKeyJson: string) => Promise<BiometricEnrollResult>;
   /** Whether biometric unlock is enabled by the user */
   enableBiometric: boolean;
   /** Refresh the biometric state (useful after app resume) */

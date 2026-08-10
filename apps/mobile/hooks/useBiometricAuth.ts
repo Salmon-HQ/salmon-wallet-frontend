@@ -44,6 +44,11 @@ const BIOMETRIC_KEY_EXISTS_FLAG = 'salmon_biometric_key_exists';
  */
 const BIOMETRIC_PROMPT_MESSAGE = 'Authenticate to unlock your wallet';
 
+/**
+ * Prompt message shown when enrolling into biometric unlock.
+ */
+const BIOMETRIC_ENROLL_PROMPT_MESSAGE = 'Confirm to enable biometric unlock';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -65,6 +70,14 @@ export interface BiometricAuthState {
 }
 
 /**
+ * Outcome of a biometric enrollment attempt.
+ *
+ * `cancelled` is a user choice, not a failure — callers should stay put
+ * rather than surface an error.
+ */
+export type BiometricEnrollResult = 'stored' | 'cancelled' | 'failed';
+
+/**
  * Return type for the useBiometricAuth hook.
  */
 export interface UseBiometricAuthReturn {
@@ -73,7 +86,7 @@ export interface UseBiometricAuthReturn {
   /** Authenticate with biometrics and retrieve the stored key */
   authenticateWithBiometric: () => Promise<string | null>;
   /** Store a derived key for future biometric unlock */
-  storeKeyForBiometric: (derivedKeyJson: string) => Promise<boolean>;
+  storeKeyForBiometric: (derivedKeyJson: string) => Promise<BiometricEnrollResult>;
   /** Clear the stored biometric key (for logout/reset) */
   clearBiometricKey: () => Promise<void>;
   /** Whether biometric unlock is enabled by the user */
@@ -260,12 +273,28 @@ export function useBiometricAuth(): UseBiometricAuthReturn {
    * The key is stored in SecureStore with biometric protection enabled,
    * meaning the user must authenticate with biometrics to retrieve it.
    *
+   * The prompt is raised explicitly because iOS evaluates a keychain access
+   * control only on read or update: writing a new protected item succeeds
+   * without any authentication, so enrollment would otherwise never prompt.
+   *
    * @param derivedKeyJson - JSON-serialized DerivedKeyCache object
    * @returns true if storage succeeded, false otherwise
    */
   const storeKeyForBiometric = useCallback(
-    async (derivedKeyJson: string): Promise<boolean> => {
+    async (derivedKeyJson: string): Promise<BiometricEnrollResult> => {
       try {
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: BIOMETRIC_ENROLL_PROMPT_MESSAGE,
+          disableDeviceFallback: true,
+        });
+
+        if (!result.success) {
+          console.log('[biometric] Enrollment not confirmed:', result.error);
+          return result.error === 'user_cancel' || result.error === 'system_cancel'
+            ? 'cancelled'
+            : 'failed';
+        }
+
         await SecureStore.setItemAsync(BIOMETRIC_KEY_STORAGE, derivedKeyJson, {
           // Require biometric authentication to access
           requireAuthentication: true,
@@ -280,16 +309,15 @@ export function useBiometricAuth(): UseBiometricAuthReturn {
         // Update state to reflect stored key
         setState((prev) => ({ ...prev, hasStoredKey: true }));
 
-        return true;
+        return 'stored';
       } catch (error: unknown) {
-        // User cancellation is expected, not an error
         const msg = error instanceof Error ? error.message : '';
         if (msg.includes('canceled') || msg.includes('cancelled')) {
           console.log('[biometric] User cancelled biometric enrollment');
-        } else {
-          console.error('Failed to store key for biometric:', error);
+          return 'cancelled';
         }
-        return false;
+        console.error('Failed to store key for biometric:', error);
+        return 'failed';
       }
     },
     []
