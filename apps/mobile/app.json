@@ -51,13 +51,25 @@
       [
         "expo-camera",
         {
+          "cameraPermission": "Salmon Wallet uses the camera to scan QR codes for wallet addresses and payment requests.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
       ],
       "expo-dev-client",
       "expo-router",
-      "expo-secure-store",
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Salmon Wallet uses Face ID to unlock your wallet and authorize transactions."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Salmon Wallet uses Face ID to unlock your wallet and authorize transactions."
+        }
+      ],
       "expo-font",
       "expo-localization",
       "expo-web-browser",
