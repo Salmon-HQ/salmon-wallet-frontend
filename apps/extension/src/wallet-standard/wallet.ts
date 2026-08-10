@@ -94,6 +94,10 @@ export type SalmonSolanaSignInFeature = {
 export class SalmonWallet implements Wallet {
     readonly #listeners: { [E in EventsNames]?: EventsListeners[E][] } = {};
     readonly #version = '1.0.0' as const;
+    // Public integration contract: dApps match on this exact string via the Wallet
+    // Standard `name` property. Do NOT rename to "Salmon Wallet" or anything else —
+    // it would silently break every dApp that already recognizes "Salmon". See
+    // spec 004-brand-naming-consistency FR-006 / SC-004.
     readonly #name = 'Salmon' as const;
     readonly #icon = icon;
     #account: SalmonWalletAccount | null = null;

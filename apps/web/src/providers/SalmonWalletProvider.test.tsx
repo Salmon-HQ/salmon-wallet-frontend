@@ -23,6 +23,7 @@ vi.mock('@salmon/shared', () => ({
 import { SalmonWalletRegistrar } from './SalmonWalletProvider';
 
 interface SalmonWebWallet {
+  name: string;
   supportedOffchainMessageVersions: readonly number[];
   signOffchainMessage(
     origin: string,
@@ -43,6 +44,12 @@ describe('SalmonWalletProvider signOffchainMessage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(window, 'open').mockReturnValue(null);
+  });
+
+  it('advertises the Wallet Standard name "Salmon" as a public integration contract (spec 004 FR-006/SC-004)', () => {
+    const wallet = getWallet();
+
+    expect(wallet.name).toBe('Salmon');
   });
 
   it('exposes the OCMS method and v1-only supported versions', () => {
