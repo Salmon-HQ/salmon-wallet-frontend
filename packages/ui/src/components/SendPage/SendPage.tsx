@@ -206,6 +206,7 @@ export function SendPage({
         {step === 'success' && successTxId && selectedToken && (
           <TransactionSuccessScreen
             title={t('transaction.sendComplete')}
+            pendingTitle={t('transaction.pendingSend')}
             summary={`${amount} ${selectedToken.symbol} to ${getShortAddress(recipientAddress) ?? recipientAddress}`}
             explorerUrl={getTransactionUrl(
               blockchain.toUpperCase() as Blockchain,

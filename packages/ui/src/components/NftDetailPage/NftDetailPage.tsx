@@ -372,6 +372,7 @@ export function NftDetailPage({
         {isBurnSuccessStep ? (
           <TransactionSuccessScreen
             title={t('nft.burn.successTitle', 'NFT burned')}
+            pendingTitle={t('nft.burn.submitting', 'Burning NFT...')}
             summary={t('nft.burn.successSummary', {
               name: nft.name,
               defaultValue: `"${nft.name}" has been burned.`,

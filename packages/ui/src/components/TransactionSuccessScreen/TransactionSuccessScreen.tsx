@@ -2,12 +2,12 @@ import React from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
 import Link from '@mui/material/Link';
 import { keyframes } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import { colors, gradients, spacing, borderRadius, fontFamily, fontSize, fontWeight, lineHeight, componentSizes, borderWidth, duration, easing } from '@salmon/shared';
+import { LoadingScreen } from '../LoadingScreen';
 import type { TransactionSuccessScreenProps } from './types';
 
 // ============================================================================
@@ -143,6 +143,7 @@ export function TransactionSuccessScreen({
   explorerUrl,
   onContinue,
   settling = false,
+  pendingTitle,
   bridgeDepositAddress,
   bridgeAmountIn,
   bridgeAmountOut,
@@ -159,6 +160,14 @@ export function TransactionSuccessScreen({
       window.open(explorerUrl, '_blank', 'noopener,noreferrer');
     }
   };
+
+  if (settling) {
+    return (
+      <Container>
+        <LoadingScreen visible title={pendingTitle ?? title} subtitle={summary} />
+      </Container>
+    );
+  }
 
   return (
     <Container>
@@ -222,17 +231,8 @@ export function TransactionSuccessScreen({
           {t('transaction.viewOnExplorer')}
         </ExplorerLink>
       ) : null}
-      <ContinueButton
-        onClick={onContinue}
-        disabled={settling}
-        data-testid="tx-success-continue-button"
-        startIcon={
-          settling ? (
-            <CircularProgress size={16} thickness={5} sx={{ color: colors.text.primary }} />
-          ) : undefined
-        }
-      >
-        {settling ? t('transaction.settling', 'Processing…') : t('transaction.continue')}
+      <ContinueButton onClick={onContinue} data-testid="tx-success-continue-button">
+        {t('transaction.continue')}
       </ContinueButton>
     </Container>
   );

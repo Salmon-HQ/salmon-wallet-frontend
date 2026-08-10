@@ -742,9 +742,10 @@
   "transaction": {
     "sendComplete": "Send Complete",
     "swapComplete": "Swap Complete",
+    "pendingSend": "Sending funds",
+    "pendingSwap": "Processing swap",
     "viewOnExplorer": "View on Explorer",
-    "continue": "Continue",
-    "settling": "Processing…"
+    "continue": "Continue"
   },
   "accessibility": {
     "copy_address": "Copy wallet address {{address}}",

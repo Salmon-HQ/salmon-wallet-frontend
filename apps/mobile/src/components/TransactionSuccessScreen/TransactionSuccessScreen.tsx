@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { colors, spacing, borderRadius, fontSize, fontWeight, gradients, shadows, componentSizes, ms, vs, s, fontFamilyNative, borderWidth } from '@salmon/shared';
 import type { TransactionSuccessScreenProps } from '@salmon/shared';
 import { PrimaryButton } from '../Button';
+import { LoadingScreen } from '../LoadingScreen';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 
 // ============================================================================
@@ -26,6 +27,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   explorerUrl,
   onContinue,
   settling = false,
+  pendingTitle,
   bridgeDepositAddress,
   bridgeAmountIn,
   bridgeAmountOut,
@@ -43,6 +45,8 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   const buttonOpacity = useSharedValue(0);
 
   useEffect(() => {
+    if (settling) return;
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     circleScale.value = withSpring(1, { damping: 12, stiffness: 180, mass: 0.8 });
@@ -50,7 +54,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
     textOpacity.value = withDelay(400, withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) }));
     linkOpacity.value = withDelay(500, withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) }));
     buttonOpacity.value = withDelay(600, withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) }));
-  }, [circleScale, checkOpacity, textOpacity, linkOpacity, buttonOpacity]);
+  }, [settling, circleScale, checkOpacity, textOpacity, linkOpacity, buttonOpacity]);
 
   const circleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: circleScale.value }],
@@ -77,6 +81,14 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
       Linking.openURL(explorerUrl);
     }
   };
+
+  if (settling) {
+    return (
+      <View style={styles.container}>
+        <LoadingScreen visible title={pendingTitle ?? title} subtitle={summary} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingBottom: floatingBottomOffset }]}>
@@ -131,12 +143,6 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
       ) : null}
 
       <Animated.View style={[styles.buttonContainer, buttonStyle]}>
-        {settling ? (
-          <View style={styles.settlingRow}>
-            <ActivityIndicator size="small" color={colors.text.secondary} />
-            <Text style={styles.settlingText}>{t('transaction.settling', 'Processing…')}</Text>
-          </View>
-        ) : null}
         <LinearGradient
           colors={gradients.primaryButton.colors}
           start={gradients.primaryButton.start}
@@ -227,17 +233,6 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     alignItems: 'center',
-  },
-  settlingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-    marginBottom: vs(spacing.md),
-  },
-  settlingText: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
   },
   buttonGradient: {
     borderRadius: borderRadius.lg,

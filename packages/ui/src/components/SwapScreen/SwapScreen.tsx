@@ -109,6 +109,7 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
       {logic.step === 'success' && (
         <TransactionSuccessScreen
           title={logic.successExchange ? t('bridge.initiated', 'Bridge Initiated') : t('transaction.swapComplete')}
+          pendingTitle={t('transaction.pendingSwap')}
           summary={`${logic.inAmount} ${logic.inToken?.symbol ?? ''} → ${logic.outAmount} ${logic.outToken?.symbol ?? ''}`}
           explorerUrl={logic.successTxId && logic.inToken?.chain
             ? getTransactionUrl(

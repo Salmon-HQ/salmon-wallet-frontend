@@ -14,12 +14,18 @@ export interface TransactionSuccessScreenProps {
   onContinue: () => void;
   /**
    * True while the same-chain settlement is still waiting for the indexer to
-   * reflect the new balance. When set, the success screen disables "Continue"
-   * and shows an "Updating balance…" indicator so the user returns home to a
-   * fresh balance instead of a stale one. Always false for the bridge, whose
-   * destination settles in the background.
+   * reflect the new balance. When set, the success screen is replaced by the
+   * full-screen loader so the user cannot return home to a stale balance.
+   * Always false for the bridge, whose destination settles in the background.
    */
   settling?: boolean;
+  /**
+   * Title shown by the loader while `settling` is true (e.g., "Processing
+   * swap"). Falls back to `title` when omitted. Keep the wording distinct
+   * from the success title — e2e flows wait on the success text to know the
+   * transaction has settled.
+   */
+  pendingTitle?: string;
   /** Bridge deposit address (where user must send funds) */
   bridgeDepositAddress?: string;
   /** Bridge input amount with symbol (e.g., "33 USDC") */

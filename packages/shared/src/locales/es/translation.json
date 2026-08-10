@@ -739,9 +739,10 @@
   "transaction": {
     "sendComplete": "Envio Completado",
     "swapComplete": "Swap Completado",
+    "pendingSend": "Enviando fondos",
+    "pendingSwap": "Procesando swap",
     "viewOnExplorer": "Ver en Explorer",
-    "continue": "Continuar",
-    "settling": "Procesando…"
+    "continue": "Continuar"
   },
   "accessibility": {
     "copy_address": "Copiar dirección de billetera {{address}}",

@@ -824,6 +824,9 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           title={successKind === 'burn'
             ? t('nft.burn.successTitle', 'NFT burned')
             : t('nft.send.successTitle', 'NFT sent')}
+          pendingTitle={successKind === 'burn'
+            ? t('nft.burn.submitting', 'Burning NFT...')
+            : t('nft.send.sending', 'Sending NFT...')}
           summary={successKind === 'burn'
             ? t('nft.burn.successSummary', {
               name: nft.name,
