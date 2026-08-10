@@ -757,7 +757,8 @@
     "permissionMessage": "Scanning QR codes requires camera access. You can still type or paste the address manually.",
     "openSettings": "Open Settings",
     "notAddress": "This code is not a valid address",
-    "wrongNetwork": "This address belongs to a different network"
+    "wrongNetwork": "This address belongs to a different network",
+    "mobileAppOnly": "Please use the Salmon Wallet mobile app to scan QR codes."
   },
   "accessibility": {
     "copy_address": "Copy wallet address {{address}}",
