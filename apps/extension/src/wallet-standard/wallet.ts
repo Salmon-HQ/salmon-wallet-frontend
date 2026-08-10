@@ -195,7 +195,6 @@ export class SalmonWallet implements Wallet {
     };
 
     #emit<E extends EventsNames>(event: E, ...args: Parameters<EventsListeners[E]>): void {
-        // eslint-disable-next-line prefer-spread
         this.#listeners[event]?.forEach((listener) => listener.apply(null, args));
     }
 
@@ -206,7 +205,6 @@ export class SalmonWallet implements Wallet {
     #connected = () => {
         const address = this.#salmon.publicKey?.toBase58();
         if (address) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const publicKey = this.#salmon.publicKey!.toBytes();
 
             const account = this.#account;
@@ -254,7 +252,6 @@ export class SalmonWallet implements Wallet {
         const outputs: SolanaSignAndSendTransactionOutput[] = [];
 
         if (inputs.length === 1) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const { transaction, account, chain, options } = inputs[0]!;
             const { minContextSlot, preflightCommitment, skipPreflight, maxRetries } = options || {};
             if (account !== this.#account) throw new Error('invalid account');
@@ -288,7 +285,6 @@ export class SalmonWallet implements Wallet {
         const outputs: SolanaSignTransactionOutput[] = [];
 
         if (inputs.length === 1) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const { transaction, account, chain } = inputs[0]!;
             if (account !== this.#account) throw new Error('invalid account');
             if (chain && !isSolanaChain(chain)) throw new Error('invalid chain');
@@ -328,7 +324,6 @@ export class SalmonWallet implements Wallet {
         const outputs: SolanaSignMessageOutput[] = [];
 
         if (inputs.length === 1) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const { message, account } = inputs[0]!;
             if (account !== this.#account) throw new Error('invalid account');
 

@@ -4,7 +4,7 @@
  * Wrapper around SwapScreen from extension components.
  * Wires useSwap, useBridge, useMultiChainTokens hooks.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';

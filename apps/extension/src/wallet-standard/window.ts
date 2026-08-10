@@ -8,8 +8,8 @@ export interface SalmonEvent {
 }
 
 export interface SalmonEventEmitter {
-    on<E extends keyof SalmonEvent>(event: E, listener: SalmonEvent[E], context?: any): void;
-    off<E extends keyof SalmonEvent>(event: E, listener: SalmonEvent[E], context?: any): void;
+    on<E extends keyof SalmonEvent>(event: E, listener: SalmonEvent[E], context?: unknown): void;
+    off<E extends keyof SalmonEvent>(event: E, listener: SalmonEvent[E], context?: unknown): void;
 }
 
 /** The connected public key as `window.salmon` exposes it. */

@@ -218,7 +218,7 @@ export function PasswordPage({
     } finally {
       setIsLoading(false);
     }
-  }, [actions, isFormValid, mnemonic, onCreating, onSuccess, password, showSingleInput, state.counter, t]);
+  }, [actions, flowType, isFormValid, mnemonic, onCreating, onSuccess, password, showSingleInput, state.counter, t]);
 
   const passwordIssue =
     !showSingleInput && password.length > 0 ? getPasswordIssue(passwordValidation) : null;

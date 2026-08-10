@@ -268,12 +268,11 @@ export default function PasswordScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [isFormValid, mnemonic, password, actions, showSingleInput, t, state.counter]);
+  }, [isFormValid, mnemonic, password, actions, showSingleInput, t, state.counter, flowType]);
 
   // Error states for inputs
   const passwordIssue =
     !showSingleInput && password.length > 0 ? getPasswordIssue(passwordValidation) : null;
-  const showPasswordError = passwordIssue !== null;
   const showConfirmError =
     !showSingleInput &&
     confirmPassword.length > 0 &&
