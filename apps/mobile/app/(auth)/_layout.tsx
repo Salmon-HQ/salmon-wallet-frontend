@@ -88,7 +88,13 @@ export default function AuthLayout() {
       />
 
       {/* Derived accounts selection */}
-      <Stack.Screen name="derived-accounts" />
+      <Stack.Screen
+        name="derived-accounts"
+        options={{
+          // Can't go back from derived accounts
+          gestureEnabled: false,
+        }}
+      />
     </Stack>
     </View>
   );

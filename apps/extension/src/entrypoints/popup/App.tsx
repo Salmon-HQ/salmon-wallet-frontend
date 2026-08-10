@@ -356,10 +356,6 @@ function App() {
     setAuthData(null);
   }, []);
 
-  const handleDerivedBack = useCallback(() => {
-    setAuthStep('success');
-  }, []);
-
   // "Add Account" from HomePage's WalletSwitcherSheet
   const handleAddAccountFromHome = useCallback(() => {
     setIsAddingAccount(true);
@@ -460,10 +456,7 @@ function App() {
         );
       case 'derived':
         return (
-          <DerivedAccountsPage
-            onComplete={handleDerivedComplete}
-            onBack={handleDerivedBack}
-          />
+          <DerivedAccountsPage onComplete={handleDerivedComplete} />
         );
       default:
         return (

@@ -12,14 +12,5 @@ export function DerivedAccountsPage(): React.ReactElement {
     navigate('/home', { replace: true });
   }, [navigate, reset]);
 
-  const handleBack = useCallback(() => {
-    navigate('/auth/success');
-  }, [navigate]);
-
-  return (
-    <AuthDerivedAccountsPage
-      onComplete={handleComplete}
-      onBack={handleBack}
-    />
-  );
+  return <AuthDerivedAccountsPage onComplete={handleComplete} />;
 }

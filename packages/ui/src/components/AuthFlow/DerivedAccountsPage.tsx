@@ -135,7 +135,6 @@ const ButtonContainer = styled(Box)({
 
 export function DerivedAccountsPage({
   onComplete,
-  onBack,
   contained = false,
 }: DerivedAccountsPageProps): React.ReactElement {
   const [{ activeAccount }, actions] = useAccountsContext();
@@ -296,7 +295,7 @@ export function DerivedAccountsPage({
 
   return (
     <Container $contained={contained}>
-      <ScreenHeader onBack={onBack} backDisabled={loading || importing} />
+      <ScreenHeader />
       <Content>
         <LogoImage src="/images/Logo.png" alt="Salmon" />
         <Title>Derived Accounts</Title>

@@ -125,13 +125,6 @@ export default function DerivedAccountsScreen() {
   }, []);
 
   /**
-   * Handle back navigation
-   */
-  const handleBack = useCallback(() => {
-    router.back();
-  }, []);
-
-  /**
    * Handle skip - go directly to main app
    */
   const handleSkip = useCallback(() => {
@@ -256,10 +249,7 @@ export default function DerivedAccountsScreen() {
       <StatusBar style="light" />
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         {/* Header */}
-        <ScreenHeader
-          onBack={handleBack}
-          backDisabled={loading || importing}
-        />
+        <ScreenHeader />
 
         {/* Content */}
         <View style={styles.content}>
