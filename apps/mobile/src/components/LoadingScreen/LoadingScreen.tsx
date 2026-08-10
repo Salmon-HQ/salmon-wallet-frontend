@@ -49,6 +49,7 @@ export function LoadingScreen({
   showTips = true,
   logoSize = 100,
   spinnerSize = 140,
+  bottomOffset = 0,
 }: LoadingScreenProps) {
   const { t } = useTranslation();
 
@@ -164,7 +165,7 @@ export function LoadingScreen({
     <Animated.View style={[styles.overlay, overlayStyle]}>
       <LinearGradient
         colors={[colors.background.primary, colors.background.secondary]}
-        style={styles.container}
+        style={[styles.container, { paddingBottom: bottomOffset }]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
       >

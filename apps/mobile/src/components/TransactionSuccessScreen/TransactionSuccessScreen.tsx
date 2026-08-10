@@ -85,7 +85,12 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   if (settling) {
     return (
       <View style={styles.container}>
-        <LoadingScreen visible title={pendingTitle ?? title} subtitle={summary} />
+        <LoadingScreen
+          visible
+          title={pendingTitle ?? title}
+          subtitle={summary}
+          bottomOffset={floatingBottomOffset}
+        />
       </View>
     );
   }

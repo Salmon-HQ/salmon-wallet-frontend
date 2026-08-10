@@ -8,8 +8,10 @@ const mockPrimaryButton = ({ children, testID }: { children?: React.ReactNode; t
   <Text testID={testID}>{children}</Text>
 );
 
-const mockLoadingScreen = ({ title }: { title?: string }) => (
-  <Text testID="loading-screen">{title}</Text>
+const mockLoadingScreen = ({ title, bottomOffset }: { title?: string; bottomOffset?: number }) => (
+  <Text testID="loading-screen" accessibilityLabel={String(bottomOffset)}>
+    {title}
+  </Text>
 );
 
 jest.mock('react-native-reanimated', () => {
@@ -64,7 +66,7 @@ jest.mock('@salmon/shared', () => ({
 }));
 
 jest.mock('../../../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ floatingBottomOffset: 0 }),
+  useTabChrome: () => ({ floatingBottomOffset: 96 }),
 }));
 
 jest.mock('../Button', () => ({
@@ -103,6 +105,12 @@ describe('TransactionSuccessScreen', () => {
       render(<TransactionSuccessScreen {...baseProps} settling />);
 
       expect(screen.getByTestId('loading-screen')).toHaveTextContent('Swap Complete');
+    });
+
+    it('reserves the floating tab bar space so the loader is not centred behind it', () => {
+      render(<TransactionSuccessScreen {...baseProps} settling />);
+
+      expect(screen.getByTestId('loading-screen').props.accessibilityLabel).toBe('96');
     });
 
     it('hides the controls that would navigate away from an unsettled balance', () => {
