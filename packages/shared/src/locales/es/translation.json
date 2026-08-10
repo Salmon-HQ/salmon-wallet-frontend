@@ -145,6 +145,8 @@
     "about_documentation": "Documentación",
     "about_terms": "Términos de Servicio",
     "about_privacy": "Política de Privacidad",
+    "about_build": "Compilación {{build}}",
+    "about_copyright": "© {{year}} Salmon Wallet.\nTodos los derechos reservados.",
     "developer_networks": "Redes de Desarrollo",
     "developer_networks_description": "Mostrar redes testnet y devnet",
     "developer_networks_desc": "Mostrar redes testnet y devnet",
