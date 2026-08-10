@@ -1,9 +1,21 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 import { TouchableOpacity } from 'react-native';
 
 const mockUseAddressValidation = jest.fn();
 const mockUseSendContacts = jest.fn();
+var mockScannerProps: any;
+
+jest.mock('../QRScanner', () => ({
+  QRScanner: (props: any) => {
+    mockScannerProps = props;
+    return null;
+  },
+}));
+
+jest.mock('@expo/vector-icons', () => ({
+  Ionicons: () => null,
+}));
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -177,5 +189,42 @@ describe('StepAddressAmount', () => {
     expect(screen.getByText('Invalid recipient')).toBeTruthy();
     const touchables = view.UNSAFE_getAllByType(TouchableOpacity);
     expect(touchables.at(-1)?.props.disabled).toBe(true);
+  });
+
+  it('preserves a typed address when the scanner is dismissed, fills address and amount on scan', () => {
+    render(
+      <StepAddressAmount
+        token={token}
+        blockchain="solana"
+        account={account}
+        onBack={jest.fn()}
+        onReview={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+
+    expect(mockScannerProps.visible).toBe(false);
+    expect(mockScannerProps.blockchain).toBe('solana');
+
+    fireEvent.changeText(screen.getByPlaceholderText('Solana Address'), 'typed-address');
+    fireEvent.press(screen.getByTestId('send-scan-button'));
+    expect(mockScannerProps.visible).toBe(true);
+
+    act(() => mockScannerProps.onClose());
+    expect(mockScannerProps.visible).toBe(false);
+    expect(screen.getByDisplayValue('typed-address')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('send-scan-button'));
+    act(() =>
+      mockScannerProps.onScan({
+        data: 'solana:Scanned11111111111111111111111111111?amount=2',
+        address: 'Scanned11111111111111111111111111111',
+        amount: '2',
+      })
+    );
+
+    expect(screen.getByDisplayValue('Scanned11111111111111111111111111111')).toBeTruthy();
+    expect(screen.getByDisplayValue('2')).toBeTruthy();
+    expect(mockScannerProps.visible).toBe(false);
   });
 });

@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -35,6 +36,8 @@ import {
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BlurContainer } from '../BlurContainer';
 import { TokenLogo } from '../TokenLogo';
+import { QRScanner } from '../QRScanner';
+import type { QRScanResult } from '../QRScanner';
 import type { StepAddressAmountProps } from './types';
 
 // ============================================================================
@@ -65,6 +68,15 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
   const { actionRowBottomPadding, compactContentBottomPadding } = useBottomSheetChrome();
   const [address, setAddress] = useState('');
   const [amount, setAmount] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
+
+  const handleScan = useCallback((result: QRScanResult) => {
+    setAddress(result.address);
+    if (result.amount) {
+      setAmount(result.amount);
+    }
+    setShowScanner(false);
+  }, []);
 
   // Address book contacts and own wallets
   const senderAddress = account.getReceiveAddress();
@@ -204,6 +216,20 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
               autoComplete="off"
               spellCheck={false}
             />
+            <TouchableOpacity
+              testID="send-scan-button"
+              accessibilityRole="button"
+              accessibilityLabel={t('qrScanner.scanButton', 'Scan QR code')}
+              onPress={() => setShowScanner(true)}
+              style={styles.scanButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="qr-code-outline"
+                size={ms(20)}
+                color={colors.text.secondary}
+              />
+            </TouchableOpacity>
             {/* Validation indicator */}
             {address.length > 0 && isValidating && (
               <ActivityIndicator
@@ -339,6 +365,13 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
           </LinearGradient>
         </TouchableOpacity>
       </View>
+
+      <QRScanner
+        visible={showScanner}
+        blockchain={blockchain}
+        onScan={handleScan}
+        onClose={() => setShowScanner(false)}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -417,6 +450,10 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.regular,
     color: colors.text.primary,
     paddingVertical: 0,
+  },
+  scanButton: {
+    padding: s(spacing.xs),
+    marginLeft: s(spacing.sm),
   },
   validationIndicator: {
     marginLeft: s(spacing.sm),

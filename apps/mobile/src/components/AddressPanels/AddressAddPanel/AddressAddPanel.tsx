@@ -2,7 +2,7 @@
  * AddressAddPanel - Add new contact to address book (mobile)
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 import {
   colors,
@@ -19,9 +20,12 @@ import {
   fontFamilyNative,
   useAddressBookForm,
   type AddressBookAddBaseProps,
+  type BlockchainType,
 fontSize, opacity, } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { InputAddress } from '../../InputAddress';
+import { QRScanner } from '../../QRScanner';
+import type { QRScanResult } from '../../QRScanner';
 
 // ============================================================================
 // Component
@@ -36,6 +40,15 @@ export function AddressAddPanel({
 }: AddressBookAddBaseProps) {
   const { t } = useTranslation();
   const form = useAddressBookForm({ networkId: activeNetworkId });
+  const [showScanner, setShowScanner] = useState(false);
+
+  const handleScan = useCallback(
+    (result: QRScanResult) => {
+      form.setAddress(result.address);
+      setShowScanner(false);
+    },
+    [form]
+  );
 
   const handleSave = useCallback(async () => {
     if (!form.canSave) return;
@@ -75,6 +88,23 @@ export function AddressAddPanel({
           })}
           testID="address-book-address"
         />
+        <TouchableOpacity
+          testID="address-book-scan-button"
+          accessibilityRole="button"
+          accessibilityLabel={t('qrScanner.scanButton', 'Scan QR code')}
+          style={styles.scanButton}
+          onPress={() => setShowScanner(true)}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="qr-code-outline"
+            size={18}
+            color={colors.accent.primary}
+          />
+          <Text style={styles.scanButtonText}>
+            {t('qrScanner.scanButton', 'Scan QR code')}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Network (read-only) */}
@@ -96,6 +126,13 @@ export function AddressAddPanel({
           {t('settings.addressbook.save', 'Save Address')}
         </Text>
       </TouchableOpacity>
+
+      <QRScanner
+        visible={showScanner}
+        blockchain={activeBlockchain as BlockchainType}
+        onScan={handleScan}
+        onClose={() => setShowScanner(false)}
+      />
     </SettingsScreenLayout>
   );
 }
@@ -124,6 +161,19 @@ const styles = StyleSheet.create({
   },
   addressSection: {
     marginTop: spacing.lg,
+  },
+  scanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    alignSelf: 'flex-start',
+    padding: spacing.xs,
+  },
+  scanButtonText: {
+    color: colors.accent.primary,
+    fontFamily: fontFamilyNative.medium,
+    fontSize: fontSize.base,
   },
   networkDisplay: {
     backgroundColor: colors.background.card,
