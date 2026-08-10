@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { Modal, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, borderRadius, fontFamilyNative, fontSize, fontWeight, } from '@salmon/shared';
 import type { QRScannerProps } from './types';
 
@@ -20,6 +21,8 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   title = 'Scan QR Code',
   containerStyle,
 }) => {
+  const { t } = useTranslation();
+
   if (!visible) {
     return null;
   }
@@ -48,7 +51,10 @@ export const QRScanner: React.FC<QRScannerProps> = ({
             QR code scanning is only available on the mobile app.
           </Text>
           <Text style={styles.messageSubtext}>
-            Please use the Salmon Wallet mobile app to scan QR codes.
+            {t(
+              'qrScanner.mobileAppOnly',
+              'Please use the Salmon Wallet mobile app to scan QR codes.'
+            )}
           </Text>
         </View>
 

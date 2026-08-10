@@ -76,7 +76,7 @@ export function SuccessPage({
       <TopSpacer />
 
       <CenterContent>
-        <LogoImage src="/images/Logo.png" alt="Salmon" />
+        <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
         <Title>{t('wallet.create.success_message')}</Title>
         <Subtitle>{t('wallet.create.success_message_body')}</Subtitle>
       </CenterContent>

@@ -144,7 +144,7 @@ export function RecoverWalletPage({
       />
       <Content>
         <FormArea>
-          <LogoImage src="/images/Logo.png" alt="Salmon" />
+          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
           <Title>{t('wallet.recover.messageTitle')}</Title>
           <Subtitle>{t('wallet.recover.messageBody')}</Subtitle>
 

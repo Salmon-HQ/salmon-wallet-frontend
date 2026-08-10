@@ -111,7 +111,7 @@ export function DAppSignInApprovalView({
       <Content>
         <Header>
           <LogoWrap>
-            <LogoImage src="/images/Logo.png" alt="Salmon" />
+            <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
           </LogoWrap>
           <Title>{t('dapp.sign_in_title', 'Sign In')}</Title>
           <Subtitle>

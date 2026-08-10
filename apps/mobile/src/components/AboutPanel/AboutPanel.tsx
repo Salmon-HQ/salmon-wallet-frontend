@@ -74,7 +74,7 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
         <Image source={Logo} style={styles.logo} resizeMode="contain" />
         <Text style={styles.appName}>Salmon Wallet</Text>
         <Text style={styles.versionText}>{t('settings.app_version', { version: appVersion })}</Text>
-        <Text style={styles.buildText}>Build {buildNumber}</Text>
+        <Text style={styles.buildText}>{t('settings.about_build', { build: buildNumber })}</Text>
       </View>
 
       <View style={styles.socialSection}>
@@ -87,14 +87,13 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
       </View>
 
       <View style={styles.linksSection}>
-        {renderLinkItem('globe-outline', 'Website', LINKS.website, 'website')}
-        {renderLinkItem('document-text-outline', 'Privacy Policy', LINKS.privacy, 'privacy')}
-        {renderLinkItem('document-outline', 'Terms of Service', LINKS.terms, 'terms')}
+        {renderLinkItem('globe-outline', t('settings.about_website', 'Website'), LINKS.website, 'website')}
+        {renderLinkItem('document-text-outline', t('settings.about_privacy', 'Privacy Policy'), LINKS.privacy, 'privacy')}
+        {renderLinkItem('document-outline', t('settings.about_terms', 'Terms of Service'), LINKS.terms, 'terms')}
       </View>
 
       <Text style={styles.copyright}>
-        {'\u00A9'} {new Date().getFullYear()} Salmon Wallet.{'\n'}
-        All rights reserved.
+        {t('settings.about_copyright', { year: new Date().getFullYear() })}
       </Text>
     </SettingsScreenLayout>
   );

@@ -140,6 +140,14 @@ describe('initialize', () => {
 });
 
 describe('SalmonWallet', () => {
+  it('advertises the Wallet Standard name "Salmon" as a public integration contract (spec 004 FR-006/SC-004)', () => {
+    // Arrange & Act
+    const wallet = new SalmonWallet(createMockSalmon());
+
+    // Assert
+    expect(wallet.name).toBe('Salmon');
+  });
+
   it('exposes the expected wallet-standard identity, chains, and features', () => {
     // Arrange & Act
     const wallet = new SalmonWallet(createMockSalmon());

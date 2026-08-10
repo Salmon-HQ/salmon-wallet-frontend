@@ -83,7 +83,9 @@
   },
   "dapp": {
     "connect_title": "Conectar con dApp",
-    "connect_subtitle": "Este sitio quiere conectar con tu billetera Salmon",
+    "connect_subtitle": "Este sitio quiere conectar con tu Salmon Wallet",
+    "no_wallet_title": "No se encontró ninguna billetera",
+    "no_wallet_subtitle": "Abre Salmon Wallet y configura una cuenta, después vuelve a intentarlo.",
     "requesting_site": "Sitio que solicita",
     "wallet_address": "Billetera",
     "approve": "Aprobar",
@@ -127,6 +129,7 @@
     "no_trusted_apps": "No hay apps conectadas",
     "no_trusted_apps_hint": "Las apps que conectes aparecerán aquí",
     "help_support": "Ayuda & Soporte",
+    "security_notice": "El equipo de Salmon Wallet nunca te va a pedir tu frase de recuperación ni tus claves privadas. No compartas esta información con nadie.",
     "currency": "Moneda de visualización",
     "backup": "Respaldar Seed Phrase",
     "private_key": "Clave Privada",
@@ -142,6 +145,8 @@
     "about_documentation": "Documentación",
     "about_terms": "Términos de Servicio",
     "about_privacy": "Política de Privacidad",
+    "about_build": "Compilación {{build}}",
+    "about_copyright": "© {{year}} Salmon Wallet.\nTodos los derechos reservados.",
     "developer_networks": "Redes de Desarrollo",
     "developer_networks_description": "Mostrar redes testnet y devnet",
     "developer_networks_desc": "Mostrar redes testnet y devnet",
@@ -751,7 +756,8 @@
     "permissionMessage": "Para escanear códigos QR se necesita acceso a la cámara. Igual podés escribir o pegar la dirección manualmente.",
     "openSettings": "Abrir Ajustes",
     "notAddress": "Este código no es una dirección válida",
-    "wrongNetwork": "Esta dirección pertenece a otra red"
+    "wrongNetwork": "Esta dirección pertenece a otra red",
+    "mobileAppOnly": "Usá la app móvil de Salmon Wallet para escanear códigos QR."
   },
   "accessibility": {
     "copy_address": "Copiar dirección de billetera {{address}}",

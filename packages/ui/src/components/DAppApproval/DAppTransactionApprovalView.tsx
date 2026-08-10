@@ -58,7 +58,7 @@ export function DAppTransactionApprovalView({
       <Content>
         <Header>
           <LogoWrap>
-            <LogoImage src="/images/Logo.png" alt="Salmon" />
+            <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
           </LogoWrap>
           <Title>{t('dapp.transaction_title', 'Approve Transaction')}</Title>
           <Subtitle>

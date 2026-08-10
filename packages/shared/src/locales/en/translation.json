@@ -83,7 +83,7 @@
   },
   "dapp": {
     "connect_title": "Connect to dApp",
-    "connect_subtitle": "This site wants to connect to your Salmon wallet",
+    "connect_subtitle": "This site wants to connect to your Salmon Wallet",
     "unlock_subtitle": "Enter your password to approve this request",
     "no_wallet_title": "No wallet found",
     "no_wallet_subtitle": "Open Salmon Wallet and set up an account, then try again.",
@@ -130,6 +130,7 @@
     "no_trusted_apps": "No connected apps",
     "no_trusted_apps_hint": "Apps you connect to will appear here",
     "help_support": "Help & Support",
+    "security_notice": "Salmon Wallet team will never ask for your seed phrase or private keys. Never share this information with anyone.",
     "currency": "Display Currency",
     "backup": "Backup Seed Phrase",
     "private_key": "Private Key",
@@ -145,6 +146,8 @@
     "about_documentation": "Documentation",
     "about_terms": "Terms of Service",
     "about_privacy": "Privacy Policy",
+    "about_build": "Build {{build}}",
+    "about_copyright": "© {{year}} Salmon Wallet.\nAll rights reserved.",
     "developer_networks": "Developer Networks",
     "developer_networks_description": "Show testnet and devnet networks",
     "developer_networks_desc": "Show testnet and devnet networks",
@@ -754,7 +757,8 @@
     "permissionMessage": "Scanning QR codes requires camera access. You can still type or paste the address manually.",
     "openSettings": "Open Settings",
     "notAddress": "This code is not a valid address",
-    "wrongNetwork": "This address belongs to a different network"
+    "wrongNetwork": "This address belongs to a different network",
+    "mobileAppOnly": "Please use the Salmon Wallet mobile app to scan QR codes."
   },
   "accessibility": {
     "copy_address": "Copy wallet address {{address}}",

@@ -95,7 +95,7 @@ export function SelectOptionsPage({
               ? t('wallet.onboarding.titleOnboarded', 'Add Account')
               : t('wallet.onboarding.titleWelcome', 'Welcome')}
           </WelcomeText>
-          <LogoImage src="/images/Logo.png" alt="Salmon" />
+          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
           <BrandName>Salmon</BrandName>
         </CenterContent>
 

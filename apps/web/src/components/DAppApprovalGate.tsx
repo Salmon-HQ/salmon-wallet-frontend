@@ -131,7 +131,7 @@ export function DAppApprovalGate(): React.ReactElement {
     return (
       <Container>
         <Content>
-          <LogoImage src="/images/Logo.png" alt="Salmon" />
+          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
           <Title>{t('dapp.no_wallet_title', 'No wallet found')}</Title>
           <Subtitle>
             {t('dapp.no_wallet_subtitle', 'Open Salmon Wallet and set up an account, then try again.')}
@@ -145,7 +145,7 @@ export function DAppApprovalGate(): React.ReactElement {
     return (
       <Container>
         <Content>
-          <LogoImage src="/images/Logo.png" alt="Salmon" />
+          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
           <Title>{t('lock.title', 'Welcome Back')}</Title>
           <Subtitle>
             {t('dapp.unlock_subtitle', 'Enter your password to approve this request')}

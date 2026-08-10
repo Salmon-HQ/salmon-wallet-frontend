@@ -163,7 +163,7 @@ function MessageStep({
       <ScreenHeader onBack={onBack} />
       <Content>
         <FormArea>
-          <LogoImage src="/images/Logo.png" alt="Salmon" />
+          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
           <Title>{t('wallet.create.messageTitle')}</Title>
           <BodyText>{t('wallet.create.messageBody')}</BodyText>
         </FormArea>
@@ -210,7 +210,7 @@ function SeedPhraseStep({
         stepIndicator={{ totalSteps: 3, currentStep: 1 }}
       />
       <ScrollContent>
-        <LogoImage src="/images/Logo.png" alt="Salmon" />
+        <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
         <Title>{t('wallet.create.your_seed_phrase')}</Title>
         <Subtitle>{t('wallet.create.your_seed_phrase_body')}</Subtitle>
         <SeedGridContainer>
@@ -301,7 +301,7 @@ function ValidateStep({
       />
       <Content>
         <FormArea>
-          <LogoImage src="/images/Logo.png" alt="Salmon" />
+          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
           <Title>{t('wallet.create.confirm_seed_phrase')}</Title>
           <Subtitle>{t('wallet.create.confirm_seed_phrase_body')}</Subtitle>
           <ValidationInputs>

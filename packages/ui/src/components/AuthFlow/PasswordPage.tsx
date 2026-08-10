@@ -257,7 +257,7 @@ export function PasswordPage({
         />
         <Content>
           <FormArea>
-            <LogoImage src="/images/Logo.png" alt="Salmon" />
+            <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
 
             <Title>
               {showSingleInput
