@@ -216,6 +216,8 @@ export const STORAGE_KEYS = {
   ANALYTICS_FIRST_SEND: 'salmon_analytics_first_send',
   /** One-shot flag: the first successful swap has been reported (activation) */
   ANALYTICS_FIRST_SWAP: 'salmon_analytics_first_swap',
+  /** Device-only onboarding event ('wallet_created' | 'wallet_recovered') parked until the consent prompt is answered */
+  ANALYTICS_PENDING_ONBOARDING_EVENT: 'salmon_analytics_pending_onboarding_event',
 
   // -- Cross-chain settlement --
   /** Pending StealthEX bridge exchanges awaiting completion (BridgeSettlement) */

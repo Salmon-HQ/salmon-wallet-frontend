@@ -47,7 +47,7 @@ import {
   removeStashItem,
   spacing,
   STASH_KEYS,
-  trackEvent,
+  trackOnboardingEvent,
   useAccountsContext,
   validatePassword,
   getPasswordIssue,
@@ -245,11 +245,11 @@ export default function PasswordScreen() {
       await actions.unlockAccounts(password);
       console.log(`[perf] recovery: TOTAL ${Date.now() - t0}ms`);
 
-      // Anonymous funnel event: a wallet was created or recovered. No seed,
-      // address or key material — just which flow completed. No-op unless the
-      // user has opted in; consent is requested a couple of steps later, so a
-      // user's very first onboard is not counted (only later ones, once on).
-      trackEvent(flowType === 'create' ? 'wallet_created' : 'wallet_recovered');
+      // Pseudonymous funnel event: a wallet was created or recovered. No seed,
+      // address or key material — just which flow completed. The consent prompt
+      // comes a couple of steps later, so this defers on-device until it is
+      // answered (fires on accept, discarded on decline).
+      void trackOnboardingEvent(flowType === 'create' ? 'wallet_created' : 'wallet_recovered');
 
       // Navigate to biometric setup (auto-skips to success if unavailable)
       router.replace('/(auth)/biometric-setup');

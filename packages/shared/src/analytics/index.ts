@@ -63,6 +63,12 @@ export {
 
 export { trackFirstTime } from './first-time';
 
+export {
+  trackOnboardingEvent,
+  flushDeferredOnboardingEvent,
+  type DeferredOnboardingEvent,
+} from './deferred';
+
 export type {
   AnalyticsPlatform,
   AnalyticsPropValue,

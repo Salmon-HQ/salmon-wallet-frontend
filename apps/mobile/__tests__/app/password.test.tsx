@@ -53,7 +53,7 @@ jest.mock('@salmon/shared', () => ({
   removeStashItem: (...args: unknown[]) => mockRemoveStashItem(...args),
   spacing: { xs: 4, sm: 8, lg: 16, '2xl': 24, '3xl': 32 },
   STASH_KEYS: { PENDING_MNEMONIC: 'pending-mnemonic' },
-  trackEvent: jest.fn(),
+  trackOnboardingEvent: jest.fn(async () => undefined),
   useAccountsContext: () => mockUseAccountsContext(),
   validatePassword: (value: string) => ({
     isValid: value.length >= 12,

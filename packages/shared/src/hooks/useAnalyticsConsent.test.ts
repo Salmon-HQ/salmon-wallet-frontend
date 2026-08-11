@@ -20,6 +20,7 @@ let clientHolder: typeof fakeClient | null = fakeClient;
 
 vi.mock('../analytics', () => ({
   getAnalytics: () => clientHolder,
+  flushDeferredOnboardingEvent: vi.fn(async () => {}),
 }));
 
 import { useAnalyticsConsent } from './useAnalyticsConsent';

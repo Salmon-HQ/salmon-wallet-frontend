@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { getAnalytics } from '../analytics';
+import { getAnalytics, flushDeferredOnboardingEvent } from '../analytics';
 
 export interface UseAnalyticsConsentResult {
   /** Whether the user has opted in to anonymous usage analytics. */
@@ -75,6 +75,8 @@ export function useAnalyticsConsent(): UseAnalyticsConsentResult {
     if (!client) return;
     await client.setConsent(enabled);
     await client.markPrompted();
+    // Onboarding events deferred until this answer: fire on accept, discard on decline.
+    await flushDeferredOnboardingEvent(enabled);
     setConsentState(client.getConsent());
   }, []);
 

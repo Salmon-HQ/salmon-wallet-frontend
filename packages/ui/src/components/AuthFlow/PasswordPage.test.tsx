@@ -55,7 +55,7 @@ vi.mock('@salmon/shared', async () => ({
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
   getScanNetworks: async () => ['solana'],
   getMirrorNetworks: async () => ({}),
-  trackEvent: () => undefined,
+  trackOnboardingEvent: async () => undefined,
   useAccountsContext: () => [
     { requiredLock: true, counter: 0 },
     { checkPassword: mockCheckPassword, addAccount: mockAddAccount },
