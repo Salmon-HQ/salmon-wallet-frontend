@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-// i18n check: fails on en/es parity breaks and on literal t('key') calls
-// referencing keys that do not exist. Orphans are reported but never fail
-// (cleanup tracked separately).
+// i18n check: fails on en/es parity breaks, on literal t('key') calls
+// referencing keys that do not exist, and on definite orphans (defined keys
+// with no literal, indirect, or dynamic-prefix reference in source).
+// "Possibly dynamic" keys (quoted anywhere, or matching a dynamic prefix)
+// never fail. Run with --prune to delete definite orphans from both locales.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -98,7 +100,7 @@ for (const [key, locs] of [...literalUses.entries()].sort()) {
   missing.push({ key, locs });
 }
 
-// ---- orphans (report only, never fail) ----
+// ---- orphans (definite orphans FAIL; possibly-dynamic keys do not) ----
 function isUsed(defKey) {
   const base = baseKey(defKey);
   if (literalUses.has(defKey) || literalUses.has(base)) return true;
@@ -109,12 +111,41 @@ function isUsed(defKey) {
 }
 let blob = '';
 for (const f of files) blob += fs.readFileSync(f, 'utf8');
-let orphanCount = 0;
+const orphans = [];
 for (const k of enKeys) {
   if (!esKeys.has(k) || isUsed(k)) continue;
   const base = baseKey(k);
   const indirect = [`'${base}'`, `"${base}"`, '`' + base + '`', `'${k}'`, `"${k}"`].some((s) => blob.includes(s));
-  if (!indirect) orphanCount++;
+  if (!indirect) orphans.push(k);
+}
+orphans.sort();
+
+// ---- --prune: delete definite orphans from both locale files ----
+if (process.argv.includes('--prune')) {
+  const deleteKey = (obj, dotted) => {
+    const parts = dotted.split('.');
+    const stack = [];
+    let cur = obj;
+    for (const p of parts.slice(0, -1)) {
+      stack.push([cur, p]);
+      cur = cur[p];
+      if (!cur || typeof cur !== 'object') return;
+    }
+    delete cur[parts[parts.length - 1]];
+    // remove empty parents left behind
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const [parent, key] = stack[i];
+      if (Object.keys(parent[key]).length === 0) delete parent[key];
+      else break;
+    }
+  };
+  for (const rel of ['packages/shared/src/locales/en/translation.json', 'packages/shared/src/locales/es/translation.json']) {
+    const data = readJson(rel);
+    for (const k of orphans) deleteKey(data, k);
+    fs.writeFileSync(path.join(REPO, rel), JSON.stringify(data, null, 2) + '\n');
+  }
+  console.log(`pruned ${orphans.length} orphan keys from en and es translation.json`);
+  process.exit(0);
 }
 
 // ---- report ----
@@ -136,10 +167,17 @@ if (missing.length > 0) {
   for (const { key, locs } of missing) console.error(`  ${key}\n    ${locs.join('\n    ')}`);
 }
 
+if (orphans.length > 0) {
+  failed = true;
+  console.error(`FAIL orphan translation keys with no reference in source (${orphans.length}):`);
+  for (const k of orphans) console.error(`  ${k}`);
+  console.error('  (delete them, or run: node scripts/check-i18n.mjs --prune)');
+}
+
 console.log(
   `i18n check: ${enKeys.size} en keys, ${esKeys.size} es keys, ` +
     `${literalUses.size} literal uses, ${dynamicPrefixes.size} dynamic prefixes, ` +
-    `${orphanCount} orphans (not failing)`
+    `${orphans.length} orphans`
 );
 if (failed) process.exit(1);
 console.log('i18n check passed');
