@@ -706,6 +706,11 @@
     }
   },
   "bridge": {
+    "errors": {
+      "belowMinimum": "The amount is below the minimum for this pair. Increase it and try again.",
+      "unavailable": "The exchange service is temporarily unavailable. Try again in a few minutes.",
+      "generic": "The exchange could not be created. Please try again."
+    },
     "preview": "Bridge Preview",
     "less_than_minimal": "Minimum amount: {{min}} {{symbol}}",
     "bridge": "Bridge",
@@ -749,8 +754,10 @@
     "pendingSwap": "Processing swap",
     "errors": {
       "insufficientFeeSol": "You need a small amount of SOL to pay the network fee. Add SOL to this account and try again.",
-      "insufficientFunds": "Insufficient balance to complete this transaction.",
+      "insufficientFunds": "Insufficient balance for this transaction.",
       "expired": "The network took too long to confirm. Try again.",
+      "slippage": "The price moved beyond your slippage tolerance. Try again or adjust the amount.",
+      "noRoute": "No swap route is available for this pair right now. Try a different amount or token.",
       "generic": "The transaction failed. Please try again."
     },
     "viewOnExplorer": "View on Explorer",

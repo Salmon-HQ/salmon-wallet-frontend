@@ -49,6 +49,7 @@ export {
 // Address utilities
 export { getShortAddress, truncateHash } from './address';
 export { classifyTransactionError } from './transaction-errors';
+export { classifyBridgeError } from './bridge-errors';
 export { sanitizeDecimalInput } from './decimal-input';
 
 // Clipboard utilities (web only - use expo-clipboard for native)

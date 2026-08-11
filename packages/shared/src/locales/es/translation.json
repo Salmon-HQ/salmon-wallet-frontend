@@ -706,6 +706,11 @@
     }
   },
   "bridge": {
+    "errors": {
+      "belowMinimum": "El monto es menor al mínimo para este par. Aumentalo y volvé a intentarlo.",
+      "unavailable": "El servicio de intercambio no está disponible por el momento. Volvé a intentarlo en unos minutos.",
+      "generic": "No se pudo crear el intercambio. Volvé a intentarlo."
+    },
     "bridge": "Bridge",
     "preview": "Confirmar Bridge",
     "less_than_minimal": "Monto mínimo: {{min}} {{symbol}}",
@@ -749,8 +754,10 @@
     "pendingSwap": "Procesando swap",
     "errors": {
       "insufficientFeeSol": "Necesitás una pequeña cantidad de SOL para pagar la fee de red. Agregá SOL a esta cuenta y volvé a intentarlo.",
-      "insufficientFunds": "Saldo insuficiente para completar esta transacción.",
+      "insufficientFunds": "Saldo insuficiente para esta transacción.",
       "expired": "La red tardó demasiado en confirmar. Volvé a intentarlo.",
+      "slippage": "El precio se movió más allá de tu tolerancia de slippage. Volvé a intentarlo o ajustá el monto.",
+      "noRoute": "No hay ninguna ruta disponible para este par en este momento. Probá con otro monto u otro token.",
       "generic": "La transacción falló. Volvé a intentarlo."
     },
     "viewOnExplorer": "Ver en Explorer",

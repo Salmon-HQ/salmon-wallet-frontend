@@ -35,6 +35,32 @@ describe('classifyTransactionError', () => {
     );
   });
 
+  it('maps a Jupiter slippage failure to the slippage message', () => {
+    expect(classifyTransactionError(new Error('Swap failed: Slippage tolerance exceeded'))).toBe(
+      'transaction.errors.slippage',
+    );
+    expect(classifyTransactionError(new Error('{"InstructionError":[0,{"Custom":6001}]}'))).toBe(
+      'transaction.errors.slippage',
+    );
+    expect(classifyTransactionError(new Error('custom program error: 0x1771'))).toBe(
+      'transaction.errors.slippage',
+    );
+  });
+
+  it('does not blame the fee for a preflight slippage failure', () => {
+    const err = Object.assign(new Error('Solana error #-32002: SlippageToleranceExceeded'), {
+      context: { __code: -32002, logs: [] },
+    });
+    expect(classifyTransactionError(err)).toBe('transaction.errors.slippage');
+  });
+
+  it('maps a missing route to the no-route message', () => {
+    expect(classifyTransactionError(new Error('Failed to get swap quote: No route found'))).toBe(
+      'transaction.errors.noRoute',
+    );
+    expect(classifyTransactionError(new Error('ROUTE_NOT_FOUND'))).toBe('transaction.errors.noRoute');
+  });
+
   it('falls back to the generic message for anything else', () => {
     expect(classifyTransactionError(new Error('something unexpected'))).toBe('transaction.errors.generic');
     expect(classifyTransactionError('raw string failure')).toBe('transaction.errors.generic');

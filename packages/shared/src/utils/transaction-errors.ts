@@ -16,6 +16,22 @@ const INSUFFICIENT_FUNDS_PATTERNS = [
   'insufficient balance',
 ];
 
+const SLIPPAGE_PATTERNS = [
+  'slippage tolerance exceeded',
+  'slippagetoleranceexceeded',
+  // Jupiter's swap program reports slippage as custom error 6001 (0x1771),
+  // which reaches us as a stringified InstructionError or as a hex code.
+  '"custom":6001',
+  '0x1771',
+];
+
+const NO_ROUTE_PATTERNS = [
+  'no route found',
+  'no routes found',
+  'route not found',
+  'route_not_found',
+];
+
 const EXPIRED_PATTERNS = [
   'block height exceeded',
   'blockhash not found',
@@ -35,6 +51,14 @@ export function classifyTransactionError(err: unknown): string {
 
   if (FEE_PAYER_PATTERNS.some((pattern) => haystack.includes(pattern))) {
     return 'transaction.errors.insufficientFeeSol';
+  }
+
+  if (SLIPPAGE_PATTERNS.some((pattern) => haystack.includes(pattern))) {
+    return 'transaction.errors.slippage';
+  }
+
+  if (NO_ROUTE_PATTERNS.some((pattern) => haystack.includes(pattern))) {
+    return 'transaction.errors.noRoute';
   }
 
   // A preflight failure (-32002) that produced no logs means the transaction
