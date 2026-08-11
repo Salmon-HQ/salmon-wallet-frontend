@@ -157,7 +157,10 @@ export function DAppTransactionApprovalView({
                       wordBreak: 'break-word',
                     }}
                   >
-                    {parsingError}
+                    {t(
+                      'dapp.decode_error',
+                      'This transaction could not be decoded. Do not approve unless you trust this site.',
+                    )}
                   </Typography>
                 </SummaryItem>
               )}

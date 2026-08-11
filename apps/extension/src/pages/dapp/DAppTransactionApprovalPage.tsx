@@ -55,11 +55,9 @@ export function DAppTransactionApprovalPage({
         setInstructionCount(details.instructionCount);
         setFeePayer(details.feePayer);
         setRecentBlockhash(details.recentBlockhash);
-      } catch (error) {
+      } catch {
         if (cancelled) return;
-        setParsingError(
-          error instanceof Error ? error.message : 'Failed to decode transaction',
-        );
+        setParsingError('Failed to decode transaction');
       }
     }
 
@@ -88,18 +86,19 @@ export function DAppTransactionApprovalPage({
   }, [onDismiss, sendToBackground]);
 
   const handleApprove = useCallback(async () => {
+    if (!account || !isSolanaAccount(account)) {
+      sendToBackground({ error: 'Solana account not available' });
+      onDismiss(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!account || !isSolanaAccount(account)) {
-        throw new Error('Solana account not available');
-      }
-
       const result = await approveSolanaTransactionRequest(account, request);
       sendToBackground({ result });
       onDismiss(true);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Transaction approval failed';
-      sendToBackground({ error: message });
+    } catch {
+      sendToBackground({ error: 'Transaction approval failed' });
       onDismiss(false);
     } finally {
       setLoading(false);

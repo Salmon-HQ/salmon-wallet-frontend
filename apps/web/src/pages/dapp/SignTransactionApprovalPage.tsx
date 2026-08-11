@@ -74,11 +74,9 @@ export function SignTransactionApprovalPage(): React.ReactElement {
         setInstructionCount(details.instructionCount);
         setFeePayer(details.feePayer);
         setRecentBlockhash(details.recentBlockhash);
-      } catch (error) {
+      } catch {
         if (cancelled) return;
-        setParsingError(
-          error instanceof Error ? error.message : 'Failed to decode transaction',
-        );
+        setParsingError('Failed to decode transaction');
       }
     }
 
@@ -109,11 +107,11 @@ export function SignTransactionApprovalPage(): React.ReactElement {
         payload,
       });
       window.close();
-    } catch (error) {
+    } catch {
       sendResponse({
         requestId,
         approved: false,
-        error: error instanceof Error ? error.message : 'Transaction approval failed',
+        error: 'Transaction approval failed',
       });
       window.close();
     } finally {

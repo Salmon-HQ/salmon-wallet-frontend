@@ -82,6 +82,7 @@
     "activity": "Actividad"
   },
   "dapp": {
+    "decode_error": "No se pudo decodificar esta transacción. No la apruebes salvo que confíes en este sitio.",
     "connect_title": "Conectar con dApp",
     "connect_subtitle": "Este sitio quiere conectar con tu Salmon Wallet",
     "unlock_subtitle": "Ingresá tu contraseña para aprobar esta solicitud",

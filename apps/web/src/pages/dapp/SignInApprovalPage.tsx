@@ -71,11 +71,11 @@ export function SignInApprovalPage(): React.ReactElement {
         payload,
       });
       window.close();
-    } catch (error) {
+    } catch {
       sendResponse({
         requestId,
         approved: false,
-        error: error instanceof Error ? error.message : 'Sign-in failed',
+        error: 'Sign-in failed',
       });
       window.close();
     } finally {

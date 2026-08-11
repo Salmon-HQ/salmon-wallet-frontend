@@ -63,18 +63,19 @@ export function DAppSignInApprovalPage({
   }, [onDismiss, sendToBackground]);
 
   const handleApprove = useCallback(async () => {
+    if (!account || !isSolanaAccount(account)) {
+      sendToBackground({ error: 'Solana account not available' });
+      onDismiss(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!account || !isSolanaAccount(account)) {
-        throw new Error('Solana account not available');
-      }
-
       const result = await approveSolanaSignIn(account, request.params?.input ?? {}, origin);
       sendToBackground({ result });
       onDismiss(true);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Sign-in failed';
-      sendToBackground({ error: message });
+    } catch {
+      sendToBackground({ error: 'Sign-in failed' });
       onDismiss(false);
     } finally {
       setLoading(false);
