@@ -36,8 +36,6 @@ interface BackendToken {
   id?: string;
 }
 
-/** Batch chunk size for metadata requests. */
-const BATCH_CHUNK_SIZE = 100;
 
 // ============================================================================
 // In-memory cache
@@ -130,47 +128,6 @@ export async function getTokenList(
 }
 
 /**
- * Fetch token metadata for a specific set of mint addresses.
- *
- * Endpoint: GET /v1/{networkId}/ft/batch?mints={mints}
- *
- * @param mintAddresses - Mint addresses to fetch metadata for
- * @param networkId    - Network identifier
- */
-export async function getTokenMetadataByMints(
-  mintAddresses: string[],
-  networkId: SolanaNetworkId = 'solana-mainnet'
-): Promise<TokenMetadata[]> {
-  if (!mintAddresses || mintAddresses.length === 0) {
-    return [];
-  }
-
-  const uniqueMints = [...new Set(mintAddresses)];
-
-  const chunks: string[][] = [];
-  for (let i = 0; i < uniqueMints.length; i += BATCH_CHUNK_SIZE) {
-    chunks.push(uniqueMints.slice(i, i + BATCH_CHUNK_SIZE));
-  }
-
-  const results = await Promise.all(
-    chunks.map(async (chunk) => {
-      try {
-        const { data } = await apiClient.get<BackendToken[]>(
-          `/v1/${networkId}/ft/batch`,
-          { params: { mints: chunk.join(',') } }
-        );
-        return normalizeBackendTokens(data);
-      } catch (error) {
-        console.warn('[TokenService] Batch metadata chunk failed:', error);
-        return [];
-      }
-    })
-  );
-
-  return results.flat();
-}
-
-/**
  * Get the verified-token list directly without dedup.
  *
  * Endpoint: GET /v1/{networkId}/ft/verified
@@ -210,17 +167,6 @@ export async function searchTokens(
     console.warn('[TokenService] Search endpoint unavailable:', error);
     return [];
   }
-}
-
-/**
- * Get token by address.
- */
-export async function getTokenByAddress(
-  address: string,
-  networkId: SolanaNetworkId = 'solana-mainnet'
-): Promise<TokenMetadata | null> {
-  const result = await getTokenMetadataByMints([address], networkId);
-  return result.length > 0 ? result[0] : null;
 }
 
 /**

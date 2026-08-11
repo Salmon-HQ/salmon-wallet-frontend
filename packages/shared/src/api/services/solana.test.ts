@@ -16,10 +16,6 @@ vi.mock('../client', async () => {
   };
 });
 
-vi.mock('./tokens', () => ({
-  getTokenMetadataByMints: vi.fn(),
-}));
-
 vi.mock('./solana-nft', () => ({
   getSolanaNfts: vi.fn(),
 }));
@@ -32,18 +28,15 @@ import {
   fetchSolanaAccountBalance,
   getAllSolanaTransactions,
   getRecentSolanaTransactions,
-  getSolanaTransaction,
   getSolanaTransactions,
   getSwapOrder,
   getTransactionsByType,
   solanaApiFunctions,
 } from './solana';
-import { getTokenMetadataByMints } from './tokens';
 
 const mockApiClientGet = vi.mocked(apiClient.get);
 const mockApiClientPost = vi.mocked(apiClient.post);
 const mockGet = vi.mocked(get);
-const mockGetTokenMetadataByMints = vi.mocked(getTokenMetadataByMints);
 const mockGetSolanaNfts = vi.mocked(getSolanaNfts);
 const backendBaseUrl = await getReachableBackendBaseUrl();
 
@@ -194,25 +187,6 @@ describe('solana service', () => {
       oldestSignature: null,
       hasMore: false,
     });
-  });
-
-  it('fetches a single solana transaction', async () => {
-    mockApiClientGet.mockResolvedValueOnce({ data: MOCK_SOLANA_TRANSACTION });
-
-    const result = await getSolanaTransaction('solana-mainnet', 'wallet-1', 'sig-1');
-
-    expect(mockApiClientGet).toHaveBeenCalledWith(
-      '/v1/solana-mainnet/account/wallet-1/transactions/sig-1',
-    );
-    expect(result).toEqual(MOCK_SOLANA_TRANSACTION);
-  });
-
-  it('returns null for a missing solana transaction', async () => {
-    mockApiClientGet.mockRejectedValueOnce(new ApiError('Not found', 404, 'not_found'));
-
-    const result = await getSolanaTransaction('solana-mainnet', 'wallet-1', 'missing-sig');
-
-    expect(result).toBeNull();
   });
 
   it('forwards all supported swap quote params', async () => {
@@ -380,7 +354,6 @@ describe('solana service', () => {
       '/v1/solana-mainnet/account/wallet-1/balance',
       { params: { include: 'logo' } },
     );
-    expect(mockGetTokenMetadataByMints).not.toHaveBeenCalled();
     expect(result).toEqual([
       expect.objectContaining({
         symbol: 'SOL',
@@ -456,10 +429,6 @@ describe('solana service integration', () => {
         return await response.json() as SolanaBalanceItem[];
       });
 
-      // Metadata enrichment is covered by dedicated tokens tests; keep the
-      // balance integration focused on the live balance shape.
-      mockGetTokenMetadataByMints.mockResolvedValue([]);
-
       const result = await fetchSolanaAccountBalance('solana-mainnet', walletAddress);
 
       expect(Array.isArray(result)).toBe(true);
@@ -525,49 +494,6 @@ describe('solana service integration', () => {
         expect.objectContaining({
           id: expect.any(String),
           signature: expect.any(String),
-          timestamp: expect.any(Number),
-          status: expect.any(String),
-          inputs: expect.any(Array),
-          outputs: expect.any(Array),
-        }),
-      );
-    },
-    20000,
-  );
-
-  it(
-    'reads a live solana transaction detail from salmon-api',
-    async () => {
-      if (!walletAddress) {
-        console.log('Skipping live solana transaction detail integration: SALMON_TEST_LIVE_WALLET not set');
-        return;
-      }
-      const liveBackendBaseUrl = backendBaseUrl ?? await getReachableBackendBaseUrl();
-      if (!liveBackendBaseUrl) {
-        console.log('Skipping live solana transaction detail assertions: backend not reachable');
-        return;
-      }
-
-      const signature =
-        '3z56JsXvaPB7rauJYoNDui4SjwZNGAZw9DDZML29qmm6u8WVMGTkiAc7dfYe7SdHFXNa7H9Hnas6uvnsyA9a7UJc';
-
-      mockApiClientGet.mockImplementation(async (path) => {
-        const response = await fetchWithRetry(`${liveBackendBaseUrl}${path as string}`);
-
-        if (!response.ok) {
-          throw new ApiError(`HTTP ${response.status}`, response.status);
-        }
-
-        return {
-          data: await response.json(),
-        } as { data: SolanaTransaction };
-      });
-
-      const result = await getSolanaTransaction('solana-mainnet', walletAddress, signature);
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          id: signature,
           timestamp: expect.any(Number),
           status: expect.any(String),
           inputs: expect.any(Array),

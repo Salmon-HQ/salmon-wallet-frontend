@@ -233,7 +233,7 @@ export function useAddressValidation(
     if (!validationResult || validationResult.type === 'SUCCESS') {
       return null;
     }
-    return VALIDATION_MESSAGES[validationResult.code] || 'Unknown validation error';
+    return VALIDATION_MESSAGES[validationResult.code] || 'send.validation.unknown';
   }, [validationResult]);
 
   const messageType = useMemo(

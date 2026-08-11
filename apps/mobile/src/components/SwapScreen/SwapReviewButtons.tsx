@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius, gradients, shadows, vs, s, borderWidth, componentSizes, } from '@salmon/shared';
@@ -20,9 +21,10 @@ export const SwapReviewButtons: React.FC<SwapReviewButtonsProps> = ({
   onBack,
   onConfirm,
   isConfirming = false,
-  confirmLabel = 'Confirm',
+  confirmLabel,
   style,
 }) => {
+  const { t } = useTranslation();
   return (
     <View style={[styles.buttonsContainer, style]}>
       <SecondaryButton
@@ -31,7 +33,7 @@ export const SwapReviewButtons: React.FC<SwapReviewButtonsProps> = ({
         style={styles.backButton}
         testID="swap-back-button"
       >
-        Back
+        {t('general.back')}
       </SecondaryButton>
       <LinearGradient
         colors={gradients.primaryButton.colors}
@@ -46,7 +48,7 @@ export const SwapReviewButtons: React.FC<SwapReviewButtonsProps> = ({
           style={styles.confirmButton}
           testID="swap-confirm-button"
         >
-          {confirmLabel}
+          {confirmLabel ?? t('general.confirm')}
         </PrimaryButton>
       </LinearGradient>
     </View>

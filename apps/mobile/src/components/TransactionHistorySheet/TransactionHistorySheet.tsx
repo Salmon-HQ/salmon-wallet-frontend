@@ -10,6 +10,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { ContentLoader, Rect } from '@salmon/shared';
 import {
   colors,
@@ -84,11 +85,12 @@ const TransactionListSkeleton: React.FC<{ count?: number }> = ({ count = 5 }) =>
  * Empty state when no transactions
  */
 const EmptyState: React.FC = () => {
+  const { t } = useTranslation();
   return (
     <View style={styles.emptyContainer} testID="activity-empty">
-      <Text style={styles.emptyTitle}>No Transactions</Text>
+      <Text style={styles.emptyTitle}>{t('transactions.noTransactions')}</Text>
       <Text style={styles.emptySubtitle}>
-        Your transaction history will appear here
+        {t('transactions.emptySubtitle')}
       </Text>
     </View>
   );
@@ -97,18 +99,15 @@ const EmptyState: React.FC = () => {
 /**
  * Error state with retry option
  */
-const ErrorState: React.FC<{ message: string; onRetry?: () => void }> = ({
-  message,
-  onRetry,
-}) => {
+const ErrorState: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => {
+  const { t } = useTranslation();
   return (
     <View style={styles.errorContainer}>
-      <Text style={styles.errorTitle}>Failed to load transactions</Text>
-      <Text style={styles.errorMessage}>{message}</Text>
+      <Text style={styles.errorTitle}>{t('transactions.loadError')}</Text>
       {onRetry && (
         <TouchableWithoutFeedback onPress={onRetry}>
           <View style={styles.retryButton} testID="activity-retry-button">
-            <Text style={styles.retryText}>Tap to retry</Text>
+            <Text style={styles.retryText}>{t('transactions.tapToRetry')}</Text>
           </View>
         </TouchableWithoutFeedback>
       )}
@@ -156,6 +155,7 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
   onRetry,
   style,
 }) => {
+  const { t } = useTranslation();
   // Top fade gradient opacity (driven by scroll offset)
   const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
   const { bottomInset, standardContentBottomPadding } = useBottomSheetChrome();
@@ -205,7 +205,7 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
   }, [loadingMore]);
 
   const title = (
-    <Text style={styles.title}>Transaction History</Text>
+    <Text style={styles.title}>{t('transactions.historyTitle')}</Text>
   );
 
   return (
@@ -222,7 +222,7 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
       <View style={styles.content}>
         {/* Error State */}
         {error && !loading && (
-          <ErrorState message={error} onRetry={onRetry} />
+          <ErrorState onRetry={onRetry} />
         )}
 
         {/* Loading State */}
@@ -321,13 +321,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.medium,
     color: colors.text.primary,
     marginBottom: vs(spacing.base),
-  },
-  errorMessage: {
-    fontSize: ms(fontSize.md),
-    fontFamily: fontFamilyNative.regular,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginBottom: vs(spacing.headerPadding),
   },
   retryButton: {
     paddingVertical: vs(spacing.md),

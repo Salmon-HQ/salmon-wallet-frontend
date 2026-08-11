@@ -94,13 +94,6 @@ const ErrorTitle = styled(Typography)({
   marginBottom: spacing.base,
 });
 
-const ErrorMessage = styled(Typography)({
-  fontSize: fontSize.base,
-  color: colors.text.secondary,
-  textAlign: 'center',
-  marginBottom: spacing.headerPadding,
-});
-
 const RetryButton = styled(Button)({
   backgroundColor: colors.accent.primary,
   color: colors.text.primary,
@@ -206,15 +199,11 @@ const EmptyState: React.FC = () => {
   );
 };
 
-const ErrorState: React.FC<{ message: string; onRetry?: () => void }> = ({
-  message,
-  onRetry,
-}) => {
+const ErrorState: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => {
   const { t } = useTranslation();
   return (
     <ErrorContainer>
       <ErrorTitle>{t('transactions.loadError')}</ErrorTitle>
-      <ErrorMessage>{message}</ErrorMessage>
       {onRetry && (
         <RetryButton
           onClick={onRetry}
@@ -300,7 +289,7 @@ export function TransactionHistoryPage({
     >
       {/* Error State */}
       {error && !loading && (
-        <ErrorState message={error} onRetry={onRetry} />
+        <ErrorState onRetry={onRetry} />
       )}
 
       {/* Loading State */}

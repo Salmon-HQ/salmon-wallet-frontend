@@ -5,6 +5,7 @@
  * Wires useSwap, useBridge, useMultiChainTokens hooks.
  */
 import { useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -69,6 +70,7 @@ interface SwapPageProps {
 }
 
 export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
+  const { t } = useTranslation();
   const currentSharedQuoteRef = useRef<SharedSwapQuote | null>(null);
 
   const [accountState] = useAccountsContext();
@@ -130,10 +132,10 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
     outToken: SwapToken,
     amount: string,
   ): Promise<SwapQuote> => {
-    if (!activeBlockchainAccount) throw new Error('No active account');
+    if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
 
     const inputAmount = parseFloat(amount);
-    if (isNaN(inputAmount) || inputAmount <= 0) throw new Error('Invalid amount');
+    if (isNaN(inputAmount) || inputAmount <= 0) throw new Error('swap.errors.invalidAmount');
 
     const quote = await getSwapQuote({
       inputMint: inToken.address,
@@ -143,23 +145,23 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
       slippageBps: 50,
     });
 
-    if (!quote) throw new Error(swapError || 'Failed to get swap quote.');
+    if (!quote) throw new Error(swapError || 'swap.errors.quoteFailed');
 
     currentSharedQuoteRef.current = quote;
     return quote as unknown as SwapQuote;
   }, [activeBlockchainAccount, getSwapQuote, swapError]);
 
   const handleSwap = useCallback(async (_quote: SwapQuote): Promise<{ txId: string }> => {
-    if (!activeBlockchainAccount) throw new Error('No active account');
-    if (!currentSharedQuoteRef.current) throw new Error('No quote available.');
+    if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
+    if (!currentSharedQuoteRef.current) throw new Error('swap.errors.noQuote');
 
     // Verify hook's internal quote matches the displayed quote to prevent race conditions
     if (!swapQuote || swapQuote.custom?.requestId !== currentSharedQuoteRef.current.custom?.requestId) {
-      throw new Error('Quote expired: the quote has changed');
+      throw new Error('transaction.errors.quoteExpired');
     }
 
     const result = await executeSwapHook();
-    if (result.status === 'fail') throw new Error(result.error || 'Swap failed');
+    if (result.status === 'fail') throw new Error(result.error || 'transaction.errors.generic');
 
     currentSharedQuoteRef.current = null;
     return { txId: result.txId || '' };
@@ -279,7 +281,7 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
     tokenAddress: string,
     amount: number,
   ): Promise<{ txId: string }> => {
-    if (!activeBlockchainAccount) throw new Error('No active account');
+    if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
     return activeBlockchainAccount.transfer(depositAddress, tokenAddress, amount);
   }, [activeBlockchainAccount]);
 
@@ -295,7 +297,7 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
   if (!ready || !activeAccount || !activeBlockchainAccount) {
     return (
       <LoadingContainer>
-        <LoadingText>No account found</LoadingText>
+        <LoadingText>{t('swap.errors.noAccount')}</LoadingText>
       </LoadingContainer>
     );
   }

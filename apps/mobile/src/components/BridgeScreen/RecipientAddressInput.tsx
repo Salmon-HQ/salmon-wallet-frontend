@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -32,12 +33,13 @@ export const RecipientAddressInput: React.FC<RecipientAddressInputProps> = ({
   value,
   onChangeValue,
   targetChain,
-  label = 'Recipient Address',
-  placeholder = 'Enter destination address',
+  label,
+  placeholder,
   style,
   error,
   onValidation,
 }) => {
+  const { t } = useTranslation();
   const [state] = useAccountsContext();
   const { activeBlockchainAccount } = state;
 
@@ -80,10 +82,10 @@ export const RecipientAddressInput: React.FC<RecipientAddressInputProps> = ({
     <View style={[styles.container, style]}>
       {/* Label with chain hint */}
       <View style={styles.labelRow}>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.label}>{label ?? t('bridge.recipient.title')}</Text>
         {targetChain && (
           <Text style={styles.chainHint}>
-            ({targetChain.name} address)
+            {t('bridge.recipient.chainAddressHint', { chain: targetChain.name })}
           </Text>
         )}
       </View>
@@ -94,7 +96,7 @@ export const RecipientAddressInput: React.FC<RecipientAddressInputProps> = ({
           style={styles.input}
           value={value}
           onChangeText={handleChangeText}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('bridge.recipient.enterDestinationAddress')}
           placeholderTextColor={colors.text.tertiary}
           autoCapitalize="none"
           autoCorrect={false}
@@ -126,14 +128,14 @@ export const RecipientAddressInput: React.FC<RecipientAddressInputProps> = ({
           hasError && styles.errorText,
           hasWarning && styles.warningText,
         ]}>
-          {displayMessage}
+          {t(displayMessage)}
         </Text>
       )}
 
       {/* Helper Text (only when no errors/warnings) */}
       {!displayMessage && targetChain && (
         <Text style={styles.helperText}>
-          Enter the {targetChain.name} address where you want to receive your {targetChain.symbol}
+          {t('bridge.recipient.helper', { chain: targetChain.name, symbol: targetChain.symbol })}
         </Text>
       )}
     </View>

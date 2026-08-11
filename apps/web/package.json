@@ -10,6 +10,8 @@
     "build:prod": "tsc --noEmit && vite build --mode production",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "node --no-warnings ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
     "lh": "lhci autorun",
     "e2e": "playwright test -c .playwright/playwright.config.ts",
     "e2e:ui": "playwright test -c .playwright/playwright.config.ts --ui"

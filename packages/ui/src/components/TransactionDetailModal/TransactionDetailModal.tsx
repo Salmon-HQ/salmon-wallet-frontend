@@ -833,7 +833,7 @@ const NftMetadataSection: React.FC<{
       {/* NFT Media Preview */}
       {token.nftMedia && (
         <NftMediaContainer>
-          <NftMediaPreview src={token.nftMedia} alt="NFT media" />
+          <NftMediaPreview src={token.nftMedia} alt={t('transactions.detail.nftMediaAlt', 'NFT media')} />
         </NftMediaContainer>
       )}
 

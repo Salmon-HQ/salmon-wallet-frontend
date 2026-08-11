@@ -136,7 +136,7 @@ export function AddressAddPanel({
         </Box>
 
         {/* Network */}
-        <FieldLabel>Network</FieldLabel>
+        <FieldLabel>{t('settings.addressbook.network')}</FieldLabel>
         <NetworkBox>
           <NetworkText>{activeBlockchain.charAt(0).toUpperCase() + activeBlockchain.slice(1)}</NetworkText>
         </NetworkBox>

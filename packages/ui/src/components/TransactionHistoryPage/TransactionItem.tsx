@@ -531,7 +531,7 @@ export function TransactionItem({
         <ItemButton
           onClick={handleClick}
           onDoubleClick={handleDoubleClick}
-          aria-label={`${t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label)} transaction, ${descriptionText}`}
+          aria-label={t('accessibility.transaction_row', '{{type}} transaction, {{description}}', { type: t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label), description: descriptionText })}
           data-testid="activity-tx-row"
         >
           {/* Left: Logo/Icon */}

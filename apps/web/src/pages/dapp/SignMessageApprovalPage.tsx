@@ -85,11 +85,11 @@ export function SignMessageApprovalPage(): React.ReactElement {
         payload,
       });
       window.close();
-    } catch (error) {
+    } catch {
       sendResponse({
         requestId,
         approved: false,
-        error: error instanceof Error ? error.message : 'Message signing failed',
+        error: 'Message signing failed',
       });
       window.close();
     } finally {

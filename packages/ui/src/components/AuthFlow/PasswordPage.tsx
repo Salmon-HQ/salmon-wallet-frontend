@@ -311,13 +311,13 @@ export function PasswordPage({
 
             <TermsText>
               {flowType === 'recover'
-                ? 'By recovering, you accept the '
-                : 'By creating, you accept the '}
+                ? t('wallet.recover.terms_prefix')
+                : t('wallet.create.terms_prefix')}
               <TermsLink
                 data-testid="password-terms-link"
                 onClick={() => window.open('https://salmonwallet.io/terms', '_blank')}
               >
-                Terms & Conditions
+                {t('general.terms_and_conditions')}
               </TermsLink>
             </TermsText>
           </FormArea>
@@ -337,8 +337,12 @@ export function PasswordPage({
 
       <LoadingScreen
         visible={isLoading}
-        title={flowType === 'recover' ? 'Recovering Account' : 'Creating Account'}
-        subtitle="Please wait while we secure your wallet"
+        title={
+          flowType === 'recover'
+            ? t('wallet.recover.recovering_account')
+            : t('wallet.create.creating_account')
+        }
+        subtitle={t('wallet.create.securing_wallet')}
         showTips
         tipInterval={4000}
       />

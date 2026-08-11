@@ -13,6 +13,7 @@ import type {
   SwapChainType,
   BridgeEstimateSimple,
   SwapErrorMessage,
+  SwapSuccessSummary,
   BridgeExchangeSimple,
   BridgeTransactionSimple,
 } from '../types/swap';
@@ -226,6 +227,14 @@ export interface UseSwapScreenLogicResult {
   tokensLoading: boolean;
   successTxId: string | null;
   successExchange: BridgeExchangeSimple | null;
+  /**
+   * Snapshot of the confirmed pair, captured right before entering the
+   * success step (both Jupiter and StealthEX paths). Success screens must
+   * render from this instead of live inToken/outToken/amount state, which
+   * the post-swap balance refresh can mutate underneath the mounted screen.
+   * Null until a confirm succeeds; cleared on continue.
+   */
+  successSummary: SwapSuccessSummary | null;
   depositTxId: string | null;
   bridgeTransaction: BridgeTransactionSimple | null;
   /**
@@ -240,7 +249,7 @@ export interface UseSwapScreenLogicResult {
   swapMode: 'jupiter' | 'stealthex' | null;
   inUsdValue: number;
   canReview: boolean;
-  reviewWarning: string | null;
+  reviewWarning: SwapErrorMessage | null;
   priceImpact: number | null;
   outputTokens: SwapToken[];
   addressValidation: { valid: boolean; error: string | null };
@@ -324,7 +333,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
   const [outAmount, setOutAmount] = useState('');
   const [quote, setQuote] = useState<SwapQuote | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
-  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [quoteError, setQuoteError] = useState<SwapErrorMessage | null>(null);
   const [bridgeEstimate, setBridgeEstimate] = useState<BridgeEstimateSimple | null>(null);
   const [isLoadingEstimate, setIsLoadingEstimate] = useState(false);
   const [recipientAddress, setRecipientAddress] = useState(defaultRecipientAddress || '');
@@ -332,6 +341,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
   const [isConfirming, setIsConfirming] = useState(false);
   const [successTxId, setSuccessTxId] = useState<string | null>(null);
   const [successExchange, setSuccessExchange] = useState<BridgeExchangeSimple | null>(null);
+  const [successSummary, setSuccessSummary] = useState<SwapSuccessSummary | null>(null);
   const [depositTxId, setDepositTxId] = useState<string | null>(null);
   const [bridgeTransaction, setBridgeTransaction] = useState<BridgeTransactionSimple | null>(null);
   const [showInTokenModal, setShowInTokenModal] = useState(false);
@@ -407,13 +417,14 @@ export function useSwapScreenLogic<StyleType = unknown>({
 
   const canReview = canReviewJupiter || canContinueToBridge;
 
-  const reviewWarning: string | null = (() => {
+  const reviewWarning: SwapErrorMessage | null = (() => {
     if (!inToken || !inAmount || parseFloat(inAmount) <= 0) return null;
-    if (parseFloat(inAmount) > (inTokenLive?.balance || 0)) return 'Insufficient balance';
-    if (inUsdValue > 0 && inUsdValue < MIN_SWAP_USD) return `Minimum swap amount is $${MIN_SWAP_USD.toFixed(2)} USD`;
+    if (parseFloat(inAmount) > (inTokenLive?.balance || 0)) return 'swap.errors.insufficientBalance';
+    if (inUsdValue > 0 && inUsdValue < MIN_SWAP_USD)
+      return { key: 'swap.errors.minimumAmount', params: { amount: MIN_SWAP_USD.toFixed(2) } };
     if (quoteError) return quoteError;
     if (quote?.custom?.priceImpact != null && quote.custom.priceImpact > 3)
-      return 'High price impact! You may receive significantly less than expected.';
+      return 'swap.errors.highPriceImpact';
     return null;
   })();
 
@@ -499,7 +510,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
           if (displayAmount === null) {
             setQuote(null);
             setOutAmount('');
-            setQuoteError('Failed to fetch quote');
+            setQuoteError('swap.errors.quoteFailed');
             return;
           }
           setQuote(fetchedQuote);
@@ -507,7 +518,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
           setQuoteError(null);
         } catch (error) {
           console.error('Failed to fetch quote:', error);
-          setQuoteError('Failed to fetch quote');
+          setQuoteError('swap.errors.quoteFailed');
           setOutAmount('');
         } finally {
           setIsLoadingQuote(false);
@@ -528,12 +539,13 @@ export function useSwapScreenLogic<StyleType = unknown>({
             setBridgeEstimate(estimate);
             setOutAmount(estimate.estimatedAmount.toString());
           } else {
-            setQuoteError('Failed to get swap estimate');
+            setQuoteError('swap.errors.estimateFailed');
           }
         } catch (error) {
           console.warn('Failed to fetch estimate:', error);
-          const message = error instanceof Error ? error.message : 'Failed to get swap estimate';
-          setQuoteError(message);
+          // Bridge estimates come from a third-party HTTP API — classify into
+          // a translation key instead of surfacing the raw provider text.
+          setQuoteError(classifyBridgeError(error, undefined));
           setOutAmount('');
         } finally {
           setIsLoadingEstimate(false);
@@ -604,7 +616,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
       setAddressError(null);
       setStep('review');
     } else {
-      setAddressError(addressValidation.error || 'Invalid address');
+      setAddressError(addressValidation.error || 'swap.errors.invalidAddress');
     }
   }, [addressValidation]);
 
@@ -620,6 +632,21 @@ export function useSwapScreenLogic<StyleType = unknown>({
     }
   }, [swapMode]);
 
+  // Freeze the confirmed pair for the success screen. Live form state keeps
+  // reacting to token-list refreshes after the swap (a fully-spent input token
+  // drops out and the reselection effect falls back to tokens[0]), so success
+  // rendering must never read it.
+  const captureSuccessSummary = useCallback(() => {
+    setSuccessSummary({
+      inAmount,
+      inSymbol: inToken?.symbol ?? '',
+      outAmount,
+      outSymbol: outToken?.symbol ?? '',
+      chain: inToken?.chain,
+      networkId: inToken?.networkId,
+    });
+  }, [inAmount, outAmount, inToken, outToken]);
+
   const handleConfirmSwap = useCallback(async () => {
     if (!quote) return;
 
@@ -628,6 +655,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     try {
       const result = await onSwap(quote);
       setSuccessTxId(result.txId);
+      captureSuccessSummary();
       setStep('success');
       // Jupiter is same-chain: settle until the indexer reflects both token
       // balances so the success screen can dwell and return the user to fresh
@@ -652,7 +680,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     } finally {
       setIsConfirming(false);
     }
-  }, [onError, onSuccess, onSwap, quote, settleUntilChanged]);
+  }, [onError, onSuccess, onSwap, quote, settleUntilChanged, captureSuccessSummary]);
 
   const handleConfirmBridge = useCallback(async () => {
     if (!inToken || !outToken || !inAmount || !recipientAddress || !onCreateBridgeExchange) return;
@@ -686,6 +714,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
           setBridgeTransaction({ status: exchange.status });
         }
         setSuccessExchange(exchange);
+        captureSuccessSummary();
         setStep('success');
         // Source-side settle only: the deposit has left the wallet, so the
         // source balance will drop within the indexer's lag. The DESTINATION
@@ -720,7 +749,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     } finally {
       setIsConfirming(false);
     }
-  }, [inToken, outToken, inAmount, recipientAddress, onCreateBridgeExchange, onSendDeposit, onGetBridgeTransactionStatus, onBridgeSuccess, onBridgeExchangeCreated, onBridgeError, settleAfterTx, bridgeEstimate]);
+  }, [inToken, outToken, inAmount, recipientAddress, onCreateBridgeExchange, onSendDeposit, onGetBridgeTransactionStatus, onBridgeSuccess, onBridgeExchangeCreated, onBridgeError, settleAfterTx, bridgeEstimate, captureSuccessSummary]);
 
   const handleRefreshQuote = useCallback(async () => {
     if (isLoadingQuote || isLoadingEstimate) return;
@@ -735,7 +764,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
         if (displayAmount === null) {
           setQuote(null);
           setOutAmount('');
-          setQuoteError('Failed to refresh quote');
+          setQuoteError('swap.errors.quoteFailed');
           return;
         }
         setQuote(fetchedQuote);
@@ -743,7 +772,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
         setQuoteError(null);
       } catch (error) {
         console.error('Failed to refresh quote:', error);
-        setQuoteError('Failed to refresh quote');
+        setQuoteError('swap.errors.quoteFailed');
       } finally {
         setIsLoadingQuote(false);
       }
@@ -792,6 +821,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     setBridgeEstimate(null);
     setSuccessTxId(null);
     setSuccessExchange(null);
+    setSuccessSummary(null);
     setDepositTxId(null);
     setBridgeTransaction(null);
     settleAfterTx({ kinds: ['balance', 'transactions'], settlementDelaysMs: [] }).catch(() => undefined);
@@ -976,6 +1006,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     tokensLoading: loading,
     successTxId,
     successExchange,
+    successSummary,
     depositTxId,
     bridgeTransaction,
     settling,

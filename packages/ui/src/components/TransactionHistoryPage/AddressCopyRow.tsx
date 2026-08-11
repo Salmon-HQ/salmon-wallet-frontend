@@ -12,6 +12,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -92,6 +93,7 @@ export function AddressCopyRow({
   truncate = 'medium',
   className,
 }: AddressCopyRowProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const displayAddress =
@@ -118,7 +120,7 @@ export function AddressCopyRow({
           <CopyButton
             onClick={handleCopy}
             size="small"
-            aria-label={`Copy ${label} address`}
+            aria-label={t('transactions.detail.copyAddressLabel', 'Copy {{label}} address', { label })}
             data-testid={`tx-detail-copy-address-${label}`}
             sx={copied ? { backgroundColor: `${colors.status.success}20` } : undefined}
           >

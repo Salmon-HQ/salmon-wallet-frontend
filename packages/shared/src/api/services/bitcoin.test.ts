@@ -30,10 +30,8 @@ import {
   broadcastTransaction,
   fetchBitcoinAccountBalance,
   fetchBitcoinAccountRecentTransactions,
-  fetchBitcoinAccountTransaction,
   fetchUtxos,
   getBitcoinBalance,
-  getBitcoinTransaction,
   getBitcoinTransactions,
   getBitcoinUtxos,
 } from './bitcoin';
@@ -79,20 +77,6 @@ const MOCK_BITCOIN_TRANSACTIONS: BitcoinTransactionsResponse = {
   ],
   nextPageToken: 'next-page',
   total: 1,
-};
-
-const MOCK_SINGLE_TRANSACTION: BitcoinTransaction = {
-  txid: 'tx-1',
-  hash: 'hash-1',
-  version: 2,
-  size: 225,
-  vsize: 144,
-  weight: 576,
-  locktime: 0,
-  vin: [],
-  vout: [],
-  confirmations: 7,
-  blocktime: 1710000000,
 };
 
 const MOCK_ACCOUNT_BALANCE_ITEMS: BitcoinBalanceItem[] = [
@@ -213,25 +197,6 @@ describe('bitcoin service', () => {
     expect(result).toEqual({ transactions: [], nextPageToken: null });
   });
 
-  it('fetches a single bitcoin transaction', async () => {
-    mockApiClientGet.mockResolvedValueOnce({ data: MOCK_SINGLE_TRANSACTION });
-
-    const result = await getBitcoinTransaction('bitcoin-mainnet', 'bc1-address', 'tx-1');
-
-    expect(mockApiClientGet).toHaveBeenCalledWith(
-      '/v1/bitcoin-mainnet/account/bc1-address/transactions/tx-1',
-    );
-    expect(result).toEqual(MOCK_SINGLE_TRANSACTION);
-  });
-
-  it('returns null for a missing bitcoin transaction', async () => {
-    mockApiClientGet.mockRejectedValueOnce(new ApiError('Not found', 404, 'not_found'));
-
-    const result = await getBitcoinTransaction('bitcoin-mainnet', 'bc1-address', 'missing-tx');
-
-    expect(result).toBeNull();
-  });
-
   it('returns backend broadcast response on success', async () => {
     mockApiClientPost.mockResolvedValueOnce({
       data: { txid: 'broadcasted-tx', success: true },
@@ -302,17 +267,6 @@ describe('bitcoin service', () => {
         uiAmount: 3.64735619,
       }),
     ]);
-  });
-
-  it('fetches a bitcoin account transaction through the generic get helper', async () => {
-    mockGet.mockResolvedValueOnce(MOCK_ACCOUNT_TRANSACTION);
-
-    const result = await fetchBitcoinAccountTransaction('bitcoin-mainnet', 'bc1-address', 'tx-2');
-
-    expect(mockGet).toHaveBeenCalledWith(
-      '/v1/bitcoin-mainnet/account/bc1-address/transactions/tx-2',
-    );
-    expect(result).toEqual(MOCK_ACCOUNT_TRANSACTION);
   });
 
   it('fetches recent bitcoin account transactions through the generic get helper', async () => {
@@ -438,41 +392,4 @@ describe.skipIf(!backendBaseUrl)('bitcoin service integration', () => {
     20000,
   );
 
-  it(
-    'reads a live bitcoin transaction detail from salmon-api',
-    async () => {
-      mockApiClientGet.mockImplementation(async (path) => {
-        const response = await fetch(`${backendBaseUrl!}${path as string}`, {
-          method: 'GET',
-          signal: AbortSignal.timeout(15000),
-        });
-
-        if (!response.ok) {
-          throw new ApiError(`HTTP ${response.status}`, response.status);
-        }
-
-        return {
-          data: await response.json(),
-        } as { data: BitcoinTransaction };
-      });
-
-      const result = await getBitcoinTransaction(
-        'bitcoin-mainnet',
-        '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-        '536f523ce08ccc1f23a1e8bb004aec3089bbad3d4235ef6a5b3bd9929907c5b5',
-      );
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          id: '536f523ce08ccc1f23a1e8bb004aec3089bbad3d4235ef6a5b3bd9929907c5b5',
-          timestamp: expect.any(Number),
-          status: expect.any(String),
-          type: expect.any(String),
-          inputs: expect.any(Array),
-          outputs: expect.any(Array),
-        }),
-      );
-    },
-    20000,
-  );
 });

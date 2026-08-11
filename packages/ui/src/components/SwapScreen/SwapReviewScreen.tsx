@@ -6,6 +6,7 @@
  * Uses CSS overflow instead of RN ScrollView.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -139,6 +140,7 @@ export function SwapReviewScreen({
   confirmLabel,
   style,
 }: SwapReviewScreenProps): React.ReactElement {
+  const { t } = useTranslation();
   const [, { formatValue }] = useCurrencyContext();
   const formatUsd = (value: number | undefined): string | undefined =>
     value != null ? `~${formatValue(value)}` : undefined;
@@ -165,7 +167,7 @@ export function SwapReviewScreen({
       <BackgroundPattern />
 
       {/* Title */}
-      <Title>Swap Review</Title>
+      <Title>{t('swap.review.title')}</Title>
 
       {/* Scrollable Content */}
       <ScrollContainer>
@@ -173,12 +175,12 @@ export function SwapReviewScreen({
           {/* Send/Receive Cards */}
           <CardsContainer>
             <SwapReviewCard
-              label="You Send"
+              label={t('swap.you_send')}
               amount={formatAmountWithSymbol(displayInAmount, inSymbol)}
               usdValue={formatUsd(details?.inUsdValue)}
             />
             <SwapReviewCard
-              label="You Receive"
+              label={t('swap.you_receive')}
               amount={formatAmountWithSymbol(displayOutAmount, outSymbol)}
               usdValue={formatUsd(details?.outUsdValue)}
             />
@@ -188,55 +190,55 @@ export function SwapReviewScreen({
           <DetailsContainer>
             {fee && (
               <SwapDetailRow
-                label="Salmon fee"
+                label={t('swap.review.salmonFee')}
                 value={formatPercent(fee.percent)}
               />
             )}
             {details?.router && (
               <SwapDetailRow
-                label="Router"
+                label={t('swap.router')}
                 value={details.router}
               />
             )}
             {routeNames && routeNames.length > 0 && (
               <SwapDetailRow
-                label="Route"
+                label={t('swap.review.route')}
                 value={routeNames.join(' → ')}
               />
             )}
             {details?.gasless && (
               <SwapDetailRow
-                label="Gasless"
-                value="Yes"
+                label={t('swap.gasless')}
+                value={t('swap.yes')}
               />
             )}
             {details?.prioritizationFeeLamports != null && (
               <SwapDetailRow
-                label="Priority Fee"
+                label={t('swap.priority_fee')}
                 value={formatSolFee(details.prioritizationFeeLamports)}
               />
             )}
             {details?.rentFeeLamports != null && (
               <SwapDetailRow
-                label="Rent Fee"
+                label={t('swap.rent_fee')}
                 value={formatSolFee(details.rentFeeLamports)}
               />
             )}
             {details?.slippageBps != null && (
               <SwapDetailRow
-                label="Slippage Tolerance"
+                label={t('swap.slippage_tolerance')}
                 value={formatPercent(details.slippageBps / 100)}
               />
             )}
             {details?.otherAmountThreshold != null && (
               <SwapDetailRow
-                label="Minimum Received"
+                label={t('swap.minimum_received')}
                 value={formatAmountWithSymbol(Number(details.otherAmountThreshold) / (10 ** outDecimals), outSymbol)}
               />
             )}
             {details?.swapMode && (
               <SwapDetailRow
-                label="Swap Mode"
+                label={t('swap.swap_mode')}
                 value={details.swapMode}
               />
             )}
@@ -246,7 +248,7 @@ export function SwapReviewScreen({
           {details?.priceImpact != null && (
             <PriceImpactContainer>
               <SwapDetailRow
-                label="Total Price Impact"
+                label={t('swap.review.totalPriceImpact')}
                 value={formatPercent(details.priceImpact)}
               />
             </PriceImpactContainer>
@@ -259,9 +261,9 @@ export function SwapReviewScreen({
             style={{ borderRadius: borderRadius.md, marginBottom: spacing.lg }}
           >
             <WarningContent>
-              <WarningTitle>Please Note</WarningTitle>
+              <WarningTitle>{t('swap.review.pleaseNote')}</WarningTitle>
               <WarningBodyText>
-                Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed.
+                {t('swap.review.pleaseNoteText')}
               </WarningBodyText>
             </WarningContent>
           </BlurContainer>
@@ -273,7 +275,7 @@ export function SwapReviewScreen({
         onBack={onBack}
         onConfirm={onConfirm}
         isConfirming={isConfirming}
-        confirmLabel={confirmLabel ?? 'Confirm'}
+        confirmLabel={confirmLabel}
       />
     </Container>
   );

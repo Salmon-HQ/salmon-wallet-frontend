@@ -79,7 +79,7 @@ export function AddressEditPanel({
       </View>
 
       {/* Network (read-only) */}
-      <Text style={styles.fieldLabel}>Network</Text>
+      <Text style={styles.fieldLabel}>{t('settings.addressbook.network')}</Text>
       <View style={styles.networkDisplay}>
         <Text style={styles.networkText}>{contact.networkId.split('-')[0].charAt(0).toUpperCase() + contact.networkId.split('-')[0].slice(1)}</Text>
       </View>

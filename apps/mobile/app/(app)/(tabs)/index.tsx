@@ -18,6 +18,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Animated,
@@ -148,6 +149,7 @@ function mapBalanceToToken(
 }
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const { scrollBottomPadding } = useTabChrome();
   const [{ currency }] = useCurrencyContext();
 
@@ -570,10 +572,14 @@ export default function HomeScreen() {
   }, [refresh]);
 
   const handleReceiveSheetCopy = useCallback(async () => {
-    if (activeBlockchainAccount) {
-      const addr = activeBlockchainAccount.getReceiveAddress();
-      await Clipboard.setStringAsync(addr);
-      // TODO: Show toast notification
+    if (!activeBlockchainAccount) return false;
+    try {
+      await Clipboard.setStringAsync(activeBlockchainAccount.getReceiveAddress());
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      return true;
+    } catch (error) {
+      console.warn('Failed to copy address:', error);
+      return false;
     }
   }, [activeBlockchainAccount]);
 
@@ -633,13 +639,6 @@ export default function HomeScreen() {
     handleDetailModalClose();
   }, [networkId, handleDetailModalClose]);
 
-  // Handler to copy transaction hash (from detail modal)
-  const handleCopyHash = useCallback(async (hash: string) => {
-    await Clipboard.setStringAsync(hash);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    // TODO: Show toast notification
-  }, []);
-
   // Handler to share transaction (from detail modal)
   const handleShareTransaction = useCallback(async (transaction: Transaction) => {
     const explorerUrl = networkId === 'solana-devnet'
@@ -647,13 +646,13 @@ export default function HomeScreen() {
       : `https://solscan.io/tx/${transaction.id}`;
     try {
       await Share.share({
-        message: `Check out this transaction: ${explorerUrl}`,
+        message: t('transactions.share_message', 'Check out this transaction: {{url}}', { url: explorerUrl }),
         url: explorerUrl,
       });
     } catch (error) {
       console.error('Failed to share transaction:', error);
     }
-  }, [networkId]);
+  }, [networkId, t]);
 
   const handleSelectedTokenChartPeriodChange = useCallback((period: PriceChartPeriod) => {
     setSelectedTokenChartPeriod(period);
@@ -717,13 +716,13 @@ export default function HomeScreen() {
   const ListEmptyComponent = useMemo(() => (
     <View style={styles.emptyState}>
       <Text style={styles.emptyStateText}>
-        {loading ? 'Loading tokens...' : 'No tokens found'}
+        {loading ? t('wallet.loading_tokens', 'Loading tokens...') : t('wallet.no_tokens_found', 'No tokens found')}
       </Text>
       <Text style={styles.emptyStateSubtext}>
-        Your tokens will appear here once you receive some
+        {t('wallet.tokens_empty_subtitle', 'Your tokens will appear here once you receive some')}
       </Text>
     </View>
-  ), [loading]);
+  ), [loading, t]);
 
   // Loading state - wait for hook to be ready
   // Note: If we're on this screen, the GateContainer lock state has been
@@ -732,7 +731,7 @@ export default function HomeScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.accent.primary} />
-        <Text style={styles.loadingText}>Loading wallet...</Text>
+        <Text style={styles.loadingText}>{t('wallet.loading_wallet', 'Loading wallet...')}</Text>
       </View>
     );
   }
@@ -741,7 +740,7 @@ export default function HomeScreen() {
   if (!activeAccount || !activeBlockchainAccount) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>No account found</Text>
+        <Text style={styles.loadingText}>{t('wallet.no_account_found', 'No account found')}</Text>
       </View>
     );
   }
@@ -894,7 +893,6 @@ export default function HomeScreen() {
         onClose={handleDetailModalClose}
         transaction={selectedTransaction}
         onViewExplorer={handleViewExplorer}
-        onCopyHash={handleCopyHash}
         onShare={handleShareTransaction}
         developerMode={developerNetworks}
       />

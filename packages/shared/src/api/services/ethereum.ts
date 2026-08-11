@@ -232,7 +232,6 @@ async function getEthplorerTokenBalances(
 import type {
   EthereumBalanceItem,
   EthereumAccountApiFunctions,
-  AccountTransaction,
   AccountTransactionListResponse,
 } from '../../types/transfer';
 
@@ -249,20 +248,6 @@ export const fetchEthereumAccountBalance: EthereumAccountApiFunctions['fetchBala
     ...token,
     uiAmount: removeDecimals(token.amount, token.decimals),
   }));
-};
-
-export const fetchEthereumAccountTransaction: EthereumAccountApiFunctions['fetchTransaction'] = async (
-  networkId,
-  address,
-  txHash
-) => {
-  try {
-    return await get<AccountTransaction>(
-      `/v1/${networkId}/account/${address}/transactions/${txHash}`,
-    );
-  } catch {
-    return null;
-  }
 };
 
 export const fetchEthereumAccountRecentTransactions: EthereumAccountApiFunctions['fetchRecentTransactions'] = async (
@@ -283,7 +268,6 @@ export const fetchEthereumAccountRecentTransactions: EthereumAccountApiFunctions
 
 export const ethereumApiFunctions: EthereumAccountApiFunctions = {
   fetchBalance: fetchEthereumAccountBalance,
-  fetchTransaction: fetchEthereumAccountTransaction,
   fetchRecentTransactions: fetchEthereumAccountRecentTransactions,
 };
 

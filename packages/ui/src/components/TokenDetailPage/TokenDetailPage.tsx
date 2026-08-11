@@ -9,6 +9,7 @@
  */
 
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
@@ -101,13 +102,14 @@ export function TokenDetailPage({
   style,
   className,
 }: TokenDetailPageProps): React.ReactElement {
+  const { t } = useTranslation();
   const handleTokenPress = useCallback(() => {
     // No action needed - token is already selected
   }, []);
 
   return (
     <PageShell
-      title="Token Information"
+      title={t('token.detail.title', 'Token Information')}
       onBack={onBack}
       showScalesBackground
       style={style}
@@ -141,7 +143,7 @@ export function TokenDetailPage({
         <TokenMarketData
           data={marketData}
           symbol={token.symbol}
-          title="Info"
+          title={t('token.marketData.title', 'Info')}
           loading={loading}
         />
 

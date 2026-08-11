@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography';
 import type { PriceChartPeriod, PriceDataPoint } from '@salmon/shared';
 import { borderRadius, borderWidth, colors, componentSizes, fontFamily, fontWeight, formatFiatIntl, isPositivePerformance, PRICE_CHART_PERIODS, spacing, useCurrencyContext, fontSize, shadowsCSS, durationMs } from '@salmon/shared';
 import { useCallback, useId, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Area,
   AreaChart,
@@ -34,9 +35,9 @@ const CHART_COLORS = {
 /**
  * Format timestamp for tooltip display
  */
-const formatTimestamp = (timestamp: number): string => {
+const formatTimestamp = (timestamp: number, locale?: string): string => {
   const date = new Date(timestamp);
-  return date.toLocaleString('en-US', {
+  return date.toLocaleString(locale, {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
@@ -137,6 +138,7 @@ interface CustomTooltipProps {
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
   const [{ currency }] = useCurrencyContext();
+  const { i18n } = useTranslation();
 
   if (!active || !payload || payload.length === 0) {
     return null;
@@ -147,7 +149,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return (
     <TooltipContainer>
       <TooltipPrice>{formatFiatIntl(data.price, currency)}</TooltipPrice>
-      <TooltipDate>{formatTimestamp(data.timestamp)}</TooltipDate>
+      <TooltipDate>{formatTimestamp(data.timestamp, i18n.language)}</TooltipDate>
     </TooltipContainer>
   );
 }
@@ -224,6 +226,7 @@ export function PriceChart({
   style,
   className,
 }: PriceChartProps) {
+  const { t } = useTranslation();
   // Determine chart color based on performance
   const chartColor = useMemo(() => {
     if (color) return color;
@@ -281,7 +284,7 @@ export function PriceChart({
           </ResponsiveContainer>
         ) : (
           <EmptyState $height={height}>
-            <EmptyStateText>No data available</EmptyStateText>
+            <EmptyStateText>{t('token.chart.noData', 'No data available')}</EmptyStateText>
           </EmptyState>
         )}
       </ChartContainer>
@@ -298,7 +301,7 @@ export function PriceChart({
                 key={period}
                 $selected={isSelected}
                 onClick={() => handlePeriodPress(period)}
-                aria-label={`Select ${period} time period`}
+                aria-label={t('accessibility.select_period', 'Select {{period}} time period', { period })}
                 aria-pressed={isSelected}
               >
                 {period}

@@ -14,6 +14,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -92,6 +93,7 @@ export function HandleHeader({
   showBackButton = false,
   onBack,
 }: HandleHeaderProps): React.ReactElement {
+  const { t } = useTranslation();
   return (
     <HeaderArea>
       {/* Drag handle */}
@@ -102,7 +104,7 @@ export function HandleHeader({
       {/* Title row with optional back button */}
       <TitleRow>
         {showBackButton && onBack && (
-          <BackButton onClick={onBack} aria-label="Back">
+          <BackButton onClick={onBack} aria-label={t('general.back', 'Back')}>
             <ArrowBackIcon />
           </BackButton>
         )}

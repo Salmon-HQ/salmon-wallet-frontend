@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { ContentLoader, Rect } from '@salmon/shared';
@@ -179,6 +180,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({
   height = 200,
   style,
 }) => {
+  const { t } = useTranslation();
   // Full screen width for edge-to-edge chart
   const chartWidth = SCREEN_WIDTH;
   const chartHeight = height;
@@ -241,7 +243,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({
           </Svg>
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No data available</Text>
+            <Text style={styles.emptyStateText}>{t('token.chart.noData', 'No data available')}</Text>
           </View>
         )}
       </View>
@@ -263,7 +265,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({
                 onPress={() => handlePeriodPress(period)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={`Select ${period} time period`}
+                accessibilityLabel={t('accessibility.select_period', 'Select {{period}} time period', { period })}
                 accessibilityState={{ selected: isSelected }}
               >
                 <Text

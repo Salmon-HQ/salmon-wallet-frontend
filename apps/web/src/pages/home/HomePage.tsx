@@ -629,7 +629,7 @@ export function HomePage(): React.ReactElement {
       return (
         <AddressAddPanel
           activeNetworkId={activeNet?.id || 'solana-mainnet'}
-          activeNetworkName={activeNet?.name || 'Solana Mainnet'}
+          activeNetworkName={activeNet?.name || t('general.network_solana_mainnet', 'Solana Mainnet')}
           activeBlockchain={blockchain}
           onSave={async (input: AddressInput) => { await addContact(input); }}
           onBack={onBack}
@@ -708,7 +708,7 @@ export function HomePage(): React.ReactElement {
     explorers, explorer, changeExplorer, explorerLoading, addressBookItems,
     networkId, allNetworks, addContact, editAddressBookContact, removeContact,
     editingContact, activeTrustedApps, actions, editingAccountId, accountId,
-    activeAccount,
+    activeAccount, t,
   ]);
 
   // Reset initialPanels after settings closes

@@ -85,7 +85,7 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
         activeOpacity={0.8}
         disabled={sendDisabled}
         accessibilityRole="button"
-        accessibilityLabel="Send tokens"
+        accessibilityLabel={t('accessibility.send_tokens', 'Send tokens')}
       >
         <LinearGradient
           colors={sendDisabled ? gradients.disabled.colors : gradients.primaryButton.colors}
@@ -112,7 +112,7 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
             activeOpacity={0.8}
             disabled={receiveDisabled}
             accessibilityRole="button"
-            accessibilityLabel="Receive tokens"
+            accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
           >
             <QrCodeScannerSvgIcon
               size={ms(ACTION_BUTTON_ICON_SIZE)}
@@ -139,7 +139,7 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
             activeOpacity={0.8}
             disabled={activityDisabled}
             accessibilityRole="button"
-            accessibilityLabel="View activity"
+            accessibilityLabel={t('accessibility.view_activity', 'View activity')}
           >
             <ReceiptLongSvgIcon
               size={ms(ACTION_BUTTON_ICON_SIZE)}

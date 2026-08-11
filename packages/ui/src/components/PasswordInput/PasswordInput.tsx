@@ -5,6 +5,7 @@
  * Provides a password field with show/hide toggle and optional error message.
  */
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
@@ -96,7 +97,7 @@ const ErrorText = styled(Typography)({
 export function PasswordInput({
   value,
   onChangeText,
-  placeholder = 'Enter password',
+  placeholder,
   error,
   editable = true,
   autoFocus,
@@ -105,6 +106,7 @@ export function PasswordInput({
   style,
   testID,
 }: PasswordInputProps) {
+  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -134,7 +136,7 @@ export function PasswordInput({
           type={showPassword ? 'text' : 'password'}
           value={value}
           onChange={(e) => onChangeText(e.target.value)}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('lock.password_placeholder')}
           disabled={!editable}
           autoFocus={autoFocus}
           onFocus={() => setIsFocused(true)}
@@ -146,7 +148,7 @@ export function PasswordInput({
         />
         <ToggleButton
           onClick={handleToggle}
-          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          aria-label={showPassword ? t('general.hide_password') : t('general.show_password')}
           data-testid={testID ? `${testID}-toggle` : undefined}
           tabIndex={-1}
         >

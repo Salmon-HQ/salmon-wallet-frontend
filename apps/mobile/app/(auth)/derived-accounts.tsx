@@ -45,6 +45,7 @@ import {
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Image,
@@ -74,6 +75,7 @@ function LoadingSkeleton() {
 // ============================================================================
 
 export default function DerivedAccountsScreen() {
+  const { t } = useTranslation();
   const [{ activeAccount }, actions] = useAccountsContext();
 
   // State
@@ -194,7 +196,7 @@ export default function DerivedAccountsScreen() {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent.primary} />
-          <Text style={styles.loadingText}>Searching for accounts...</Text>
+          <Text style={styles.loadingText}>{t('wallet.derived.searching')}</Text>
           <LoadingSkeleton />
         </View>
       );
@@ -204,10 +206,8 @@ export default function DerivedAccountsScreen() {
       return (
         <View style={styles.emptyContainer}>
           <Ionicons name="wallet-outline" size={64} color={colors.text.tertiary} />
-          <Text style={styles.emptyTitle}>No Derived Accounts Found</Text>
-          <Text style={styles.emptySubtitle}>
-            Could not derive additional accounts from your seed phrase.
-          </Text>
+          <Text style={styles.emptyTitle}>{t('wallet.derived.empty_title')}</Text>
+          <Text style={styles.emptySubtitle}>{t('wallet.derived.empty_subtitle')}</Text>
         </View>
       );
     }
@@ -215,7 +215,7 @@ export default function DerivedAccountsScreen() {
     return (
       <View style={styles.accountsContainer}>
         <Text style={styles.foundText}>
-          Found {accounts.length} derived account{accounts.length !== 1 ? 's' : ''}
+          {t('wallet.derived.found', { count: accounts.length })}
         </Text>
         <ScrollView
           style={styles.accountsList}
@@ -259,12 +259,10 @@ export default function DerivedAccountsScreen() {
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Derived Accounts</Text>
+          <Text style={styles.title}>{t('wallet.derived.title')}</Text>
 
           {/* Subtitle */}
-          <Text style={styles.subtitle}>
-            Search for additional accounts derived from your seed phrase.
-          </Text>
+          <Text style={styles.subtitle}>{t('wallet.derived.subtitle')}</Text>
 
           {/* Dynamic Content */}
           {renderContent()}
@@ -278,7 +276,7 @@ export default function DerivedAccountsScreen() {
                 loading={importing}
                 testID="derived-import-button"
               >
-                {`IMPORT SELECTED (${selectedCount})`}
+                {t('wallet.derived.import_selected', { count: selectedCount })}
               </PrimaryButton>
             )}
 
@@ -287,7 +285,7 @@ export default function DerivedAccountsScreen() {
               disabled={importing}
               testID="derived-skip-button"
             >
-              {accounts.length === 0 ? 'CONTINUE' : 'SKIP'}
+              {accounts.length === 0 ? t('wallet.derived.continue') : t('wallet.derived.skip')}
             </SecondaryButton>
           </View>
         </View>

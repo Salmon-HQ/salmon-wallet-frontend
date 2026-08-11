@@ -60,17 +60,21 @@ export function DAppSignMessageApprovalPage({
   }, [onDismiss, sendToBackground]);
 
   const handleApprove = useCallback(async () => {
+    if (!account || !isSolanaAccount(account)) {
+      sendToBackground({ error: 'Solana account not available' });
+      onDismiss(false);
+      return;
+    }
+
+    const data = request.params?.data;
+    if (!data || !Array.isArray(data)) {
+      sendToBackground({ error: 'Missing message data' });
+      onDismiss(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!account || !isSolanaAccount(account)) {
-        throw new Error('Solana account not available');
-      }
-
-      const data = request.params?.data;
-      if (!data || !Array.isArray(data)) {
-        throw new Error('Missing message data');
-      }
-
       const result = request.method === 'signOffchain'
         ? await approveSolanaSignOffchainMessage(
             account,
@@ -80,9 +84,8 @@ export function DAppSignMessageApprovalPage({
         : await approveSolanaSignMessage(account, data);
       sendToBackground({ result });
       onDismiss(true);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Message signing failed';
-      sendToBackground({ error: message });
+    } catch {
+      sendToBackground({ error: 'Message signing failed' });
       onDismiss(false);
     } finally {
       setLoading(false);

@@ -112,7 +112,7 @@ describe('SwapPage', () => {
 
     const { getByText, queryByTestId } = render(<SwapPage />);
 
-    expect(getByText('No account found')).toBeTruthy();
+    expect(getByText('swap.errors.noAccount')).toBeTruthy();
     expect(queryByTestId('swap-screen')).toBeNull();
   });
 

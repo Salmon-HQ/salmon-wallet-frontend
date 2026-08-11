@@ -53,7 +53,6 @@ const BLOCKHASH = 'GHtXQBsoZHVnNFa9YevAzFr17DJjgHXk3ycTKD5xD3Zi';
 
 const mockSolanaApiFunctions = {
   fetchBalance: vi.fn().mockResolvedValue([]),
-  fetchTransaction: vi.fn().mockResolvedValue(null),
   fetchTransactions: vi.fn().mockResolvedValue({ transactions: [], oldestSignature: null, hasMore: false }),
   fetchNfts: vi.fn().mockResolvedValue([]),
 };

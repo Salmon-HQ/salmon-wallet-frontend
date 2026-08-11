@@ -15,6 +15,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, fontSize, fontWeight, letterSpacing } from '@salmon/shared';
 import { useBaseSheetDialog } from './BaseSheetDialog';
 import type { StandardHeaderProps } from './types';
@@ -56,13 +57,14 @@ const CloseButton = styled(IconButton)({
  * StandardHeader - Title bar with close button
  */
 export function StandardHeader({ title, onClose }: StandardHeaderProps): React.ReactElement {
+  const { t } = useTranslation();
   const context = useBaseSheetDialog();
   const handleClose = onClose || context.onClose;
 
   return (
     <StyledDialogTitle>
       <TitleText>{title}</TitleText>
-      <CloseButton onClick={handleClose} aria-label="Close" data-testid="sheet-close-button">
+      <CloseButton onClick={handleClose} aria-label={t('general.close', 'Close')} data-testid="sheet-close-button">
         <CloseIcon />
       </CloseButton>
     </StyledDialogTitle>

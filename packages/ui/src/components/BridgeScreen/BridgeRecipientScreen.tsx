@@ -5,6 +5,7 @@
  * Allows user to enter the recipient address for the destination chain.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -161,17 +162,19 @@ export function BridgeRecipientScreen({
   addressError,
   style,
 }: BridgeRecipientScreenProps) {
+  const { t } = useTranslation();
   const canContinue = isValidAddress && recipientAddress.length > 0;
 
   return (
     <Container style={style}>
       {/* Title */}
-      <Title>Recipient Address</Title>
+      <Title>{t('bridge.recipient.title')}</Title>
 
       {/* Description */}
       <Description>
-        Enter the address where you want to receive your swapped tokens
-        {targetChain ? ` on ${targetChain.name}` : ''}.
+        {targetChain
+          ? t('bridge.recipient.descriptionWithChain', { chain: targetChain.name })
+          : t('bridge.recipient.description')}
       </Description>
 
       {/* Address Input */}
@@ -179,18 +182,15 @@ export function BridgeRecipientScreen({
         <AddressInput
           value={recipientAddress}
           onChange={(e) => onAddressChange(e.target.value)}
-          placeholder="Enter recipient address"
+          placeholder={t('bridge.recipient.enterRecipientAddress')}
         />
-        {addressError && <ErrorText>{addressError}</ErrorText>}
+        {addressError && <ErrorText>{t(addressError)}</ErrorText>}
       </InputContainer>
 
       {/* Info Box */}
       <InfoBox>
-        <InfoTitle>Important</InfoTitle>
-        <InfoText>
-          Make sure the address is correct. Cross-chain transactions cannot be
-          reversed once initiated.
-        </InfoText>
+        <InfoTitle>{t('bridge.recipient.important')}</InfoTitle>
+        <InfoText>{t('bridge.recipient.importantText')}</InfoText>
       </InfoBox>
 
       {/* Buttons */}
@@ -205,7 +205,7 @@ export function BridgeRecipientScreen({
               backgroundColor: colors.button.cancelBackground,
             }}
           >
-            Back
+            {t('general.back')}
           </SecondaryButton>
         </BackButtonWrapper>
         <ContinueButtonGradient>
@@ -217,7 +217,7 @@ export function BridgeRecipientScreen({
               background: 'transparent',
             }}
           >
-            Review
+            {t('bridge.recipient.review')}
           </PrimaryButton>
         </ContinueButtonGradient>
       </ButtonsContainer>

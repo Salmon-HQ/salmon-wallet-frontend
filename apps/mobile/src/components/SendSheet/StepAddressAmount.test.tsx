@@ -140,7 +140,7 @@ describe('StepAddressAmount', () => {
     );
 
     fireEvent.press(screen.getByText('Vault'));
-    fireEvent.press(screen.getByText('MAX'));
+    fireEvent.press(screen.getByText('general.max'));
     fireEvent.press(screen.getByText('Review & Send'));
 
     expect(screen.getByDisplayValue('4')).toBeTruthy();
@@ -167,7 +167,7 @@ describe('StepAddressAmount', () => {
       />
     );
 
-    fireEvent.press(screen.getByText('MAX'));
+    fireEvent.press(screen.getByText('general.max'));
 
     expect(screen.getByDisplayValue('10')).toBeTruthy();
   });

@@ -18,6 +18,7 @@
  */
 
 import React, { useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -63,6 +64,7 @@ function transformQuoteForUI(
 }
 
 export default function SwapScreenPage() {
+  const { t } = useTranslation();
   const { headerChromeHeight } = useTabChrome();
   const router = useRouter();
 
@@ -141,12 +143,12 @@ export default function SwapScreenPage() {
     amount: string
   ): Promise<SwapQuote> => {
     if (!activeBlockchainAccount) {
-      throw new Error('No active account');
+      throw new Error('swap.errors.noActiveAccount');
     }
 
     const inputAmount = parseFloat(amount);
     if (isNaN(inputAmount) || inputAmount <= 0) {
-      throw new Error('Invalid amount');
+      throw new Error('swap.errors.invalidAmount');
     }
 
     // Get quote using the real swap hook
@@ -159,7 +161,7 @@ export default function SwapScreenPage() {
     });
 
     if (!quote) {
-      throw new Error(swapError || 'Failed to get swap quote. No route found.');
+      throw new Error(swapError || 'transaction.errors.noRoute');
     }
 
     // Store the shared quote for later execution
@@ -171,24 +173,24 @@ export default function SwapScreenPage() {
 
   const handleSwap = useCallback(async (_quote: SwapQuote): Promise<{ txId: string }> => {
     if (!activeBlockchainAccount) {
-      throw new Error('No active account');
+      throw new Error('swap.errors.noActiveAccount');
     }
 
     if (!currentSharedQuoteRef.current) {
-      throw new Error('No quote available. Please get a quote first.');
+      throw new Error('swap.errors.noQuote');
     }
 
     // Verify hook's internal quote matches the displayed quote to prevent race conditions
     // The hook's executeSwap() uses its own internal state, which could diverge from the ref
     if (!swapQuote || swapQuote.custom?.requestId !== currentSharedQuoteRef.current.custom?.requestId) {
-      throw new Error('Quote expired: the quote has changed');
+      throw new Error('transaction.errors.quoteExpired');
     }
 
     // Execute the swap using the real hook
     const result = await executeSwapHook();
 
     if (result.status === 'fail') {
-      throw new Error(result.error || 'Swap execution failed');
+      throw new Error(result.error || 'transaction.errors.generic');
     }
 
     // Clear the stored quote after successful execution
@@ -286,23 +288,20 @@ export default function SwapScreenPage() {
     networkIn?: string,
     networkOut?: string
   ): Promise<BridgeExchangeSimple | null> => {
-    try {
-      const exchange = await createBridgeExchange(symbolIn, symbolOut, amount, addressTo, networkIn, networkOut);
-      if (!exchange) return null;
-      return {
-        id: exchange.id,
-        depositAddress: exchange.payinAddress,
-        amountIn: exchange.amountExpectedFrom,
-        amountOut: exchange.amountExpectedTo,
-        symbolIn: exchange.currencyFrom,
-        symbolOut: exchange.currencyTo,
-        addressTo: exchange.payoutAddress,
-        status: exchange.status,
-      };
-    } catch (error) {
-      console.error('Failed to create bridge exchange:', error);
-      return null;
-    }
+    // No try/catch: failures must propagate to useSwapScreenLogic's
+    // classifyBridgeError so users see the classified message (e.g. minimum).
+    const exchange = await createBridgeExchange(symbolIn, symbolOut, amount, addressTo, networkIn, networkOut);
+    if (!exchange) return null;
+    return {
+      id: exchange.id,
+      depositAddress: exchange.payinAddress,
+      amountIn: exchange.amountExpectedFrom,
+      amountOut: exchange.amountExpectedTo,
+      symbolIn: exchange.currencyFrom,
+      symbolOut: exchange.currencyTo,
+      addressTo: exchange.payoutAddress,
+      status: exchange.status,
+    };
   }, [createBridgeExchange]);
 
   const handleGetBridgeTransactionStatus = useCallback(async (id: string) => {
@@ -324,7 +323,7 @@ export default function SwapScreenPage() {
     tokenAddress: string,
     amount: number,
   ): Promise<{ txId: string }> => {
-    if (!activeBlockchainAccount) throw new Error('No active account');
+    if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
     return activeBlockchainAccount.transfer(depositAddress, tokenAddress, amount);
   }, [activeBlockchainAccount]);
 
@@ -341,7 +340,7 @@ export default function SwapScreenPage() {
   if (!ready || !activeAccount || !activeBlockchainAccount) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>No account found</Text>
+        <Text style={styles.loadingText}>{t('swap.errors.noAccount')}</Text>
       </View>
     );
   }

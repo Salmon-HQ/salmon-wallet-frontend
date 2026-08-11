@@ -60,11 +60,11 @@ export function ConnectApprovalPage(): React.ReactElement {
         payload,
       });
       window.close();
-    } catch (error) {
+    } catch {
       sendResponse({
         requestId,
         approved: false,
-        error: error instanceof Error ? error.message : 'Failed to approve connection',
+        error: 'Failed to approve connection',
       });
       window.close();
     } finally {

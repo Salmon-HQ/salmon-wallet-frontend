@@ -59,7 +59,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           </Text>
         ) : null}
 
-        {reviewWarning ? <Text style={styles.warningText}>{reviewWarning}</Text> : null}
+        {reviewWarning ? <Text style={styles.warningText}>{typeof reviewWarning === 'string' ? t(reviewWarning) : t(reviewWarning.key, reviewWarning.params)}</Text> : null}
 
         {/* You Receive */}
         <SwapAmountInput

@@ -43,6 +43,7 @@ import {
   useNftTransfer,
   getTransactionUrl,
   getDefaultExplorer,
+  classifyTransactionError,
   type Blockchain,
   type NetworkEnvironment,
   type ValidationCallbackResult,
@@ -261,8 +262,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       setSuccessTxId(result.txId);
       setStep('success');
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'NFT transfer failed';
-      setSendError(errorMessage);
+      setSendError(classifyTransactionError(err));
     } finally {
       setSending(false);
     }
@@ -292,7 +292,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           {nft.compressed !== undefined && (
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>{t('nft.detail.compressed', 'Compressed')}</Text>
-              <Text style={styles.detailValue}>{nft.compressed ? 'Yes' : 'No'}</Text>
+              <Text style={styles.detailValue}>{nft.compressed ? t('general.yes', 'Yes') : t('general.no', 'No')}</Text>
             </View>
           )}
           {nft.collectionVerified !== undefined && (
@@ -505,7 +505,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           onPress={handleOpenSendStep}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel="Send NFT"
+          accessibilityLabel={t('nft.send.title', 'Send NFT')}
         >
           <LinearGradient
             colors={[...gradients.primaryButton.colors]}
@@ -531,7 +531,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             onPress={handleOpenBurnStep}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="Burn NFT"
+            accessibilityLabel={t('nft.burn.reviewTitle', 'Burn NFT')}
           >
             <MaterialIcons name="local-fire-department" size={ms(18)} color={colors.text.balance} />
             <Text style={styles.buttonText}>{t('nft.burn_nft', 'Burn')}</Text>
@@ -610,7 +610,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
               onPress={handleBackToDetail}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Back to NFT details"
+              accessibilityLabel={t('nft.detail.backToDetails', 'Back to NFT details')}
             >
               <Text style={styles.buttonText}>{t('actions.back', 'Back')}</Text>
             </TouchableOpacity>
@@ -624,7 +624,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
               disabled={!canConfirmSend}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Send NFT"
+              accessibilityLabel={t('nft.send.title', 'Send NFT')}
             >
               <LinearGradient
                 colors={[...gradients.primaryButton.colors]}
@@ -732,7 +732,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             onPress={handleBackFromBurn}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="Back to NFT details"
+            accessibilityLabel={t('nft.detail.backToDetails', 'Back to NFT details')}
           >
             <Text style={styles.buttonText}>{t('actions.back', 'Back')}</Text>
           </TouchableOpacity>
@@ -745,7 +745,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           disabled={!canConfirmBurn}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel="Confirm burn"
+          accessibilityLabel={t('nft.burn.confirm', 'Confirm burn')}
         >
           <LinearGradient
             colors={[...gradients.primaryButton.colors]}
@@ -833,7 +833,9 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
               defaultValue: `"${nft.name}" has been burned.`,
             })
             : t('nft.send.successSummary', {
-              defaultValue: `${nft.name} sent to ${getShortAddress(address) ?? address}`,
+              name: nft.name,
+              address: getShortAddress(address) ?? address,
+              defaultValue: '{{name}} sent to {{address}}',
             })}
           explorerUrl={explorerUrl ?? null}
           onContinue={handleSuccessContinue}

@@ -17,6 +17,7 @@ import {
   vs,
 } from '@salmon/shared';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BlurContainer } from '../BlurContainer';
 import { TokenLogo } from '../TokenLogo';
@@ -72,6 +73,7 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   blockchain = 'solana',
   style,
 }) => {
+  const { t } = useTranslation();
   const [, { formatValue, formatChange }] = useCurrencyContext();
   const { name, symbol, logo, price, uiAmount, usdBalance, last24HoursChange, tags } = token;
 
@@ -111,7 +113,7 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
       onPress: handlePress,
       activeOpacity: 0.7,
       accessibilityRole: 'button' as const,
-      accessibilityLabel: `${name} token, price ${price}, balance ${uiAmount} ${symbol}`,
+      accessibilityLabel: t('accessibility.token_price_balance', '{{name}} token, price {{price}}, balance {{amount}} {{symbol}}', { name, price, amount: uiAmount, symbol }),
     } : {};
     return (
       <BlurContainer style={[styles.glassWrapper, style]} borderWidth={borderWidth.tokenListItem}>
@@ -168,7 +170,7 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
         onPress={handlePress}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel={`${name} token, balance ${uiAmount} ${symbol}`}
+        accessibilityLabel={t('accessibility.token_balance', '{{name}} token, balance {{amount}} {{symbol}}', { name, amount: uiAmount, symbol })}
       >
         {/* Token Logo */}
         <TokenLogo

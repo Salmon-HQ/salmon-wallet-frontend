@@ -36,6 +36,7 @@ import {
   type BlockchainType,
   isSolanaNft,
   createBurnTransaction,
+  classifyTransactionError,
   useCurrencyContext,
   LANGUAGE_NAMES,
   type LanguageCode,
@@ -747,12 +748,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         if (txResponse.lookupTable) {
           const balance = await solAccount.getCredit();
           if (balance < txResponse.lookupTable.estimatedRentLamports) {
-            setBurnError('Insufficient SOL balance to cover burn transaction fees.');
+            setBurnError('nft.burn.insufficientFeeSol');
           }
         }
       })
       .catch((error) => {
-        setBurnError(error instanceof Error ? error.message : 'Burn failed');
+        setBurnError(classifyTransactionError(error));
       })
       .finally(() => {
         setBurnLoading(false);
@@ -776,7 +777,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       setBurnStep('success');
     } catch (error) {
       console.error('[HomePage] NFT burn failed:', error);
-      setBurnError(error instanceof Error ? error.message : 'Burn failed');
+      setBurnError(classifyTransactionError(error));
     } finally {
       setBurnLoading(false);
     }
@@ -1143,7 +1144,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             />
           );
         }
-        return <PlaceholderPage title="Token Detail" onBack={handleBack} />;
+        return <PlaceholderPage title={t('token.detail.title', 'Token Information')} onBack={handleBack} />;
       case 'nftDetail':
         if (selectedNft) {
           return (
@@ -1186,7 +1187,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             </>
           );
         }
-        return <PlaceholderPage title="NFT Detail" onBack={handleBack} />;
+        return <PlaceholderPage title={t('nft.detail.title', 'NFT Detail')} onBack={handleBack} />;
       case 'nftSeeAll':
         if (seeAllData) {
           return (
@@ -1199,10 +1200,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             />
           );
         }
-        return <PlaceholderPage title="NFTs" onBack={handleBack} />;
+        return <PlaceholderPage title={t('wallet.my_nfts', 'My Collectibles')} onBack={handleBack} />;
       case 'send':
         if (!activeBlockchainAccount) {
-          return <PlaceholderPage title="Send" onBack={handleSendBack} />;
+          return <PlaceholderPage title={t('token.action.send', 'Send')} onBack={handleSendBack} />;
         }
         return (
           <SendPage
@@ -1238,7 +1239,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           </>
         );
       default:
-        return <PlaceholderPage title="Page" onBack={handleBack} />;
+        return <PlaceholderPage title={t('general.page', 'Page')} onBack={handleBack} />;
     }
   }
 

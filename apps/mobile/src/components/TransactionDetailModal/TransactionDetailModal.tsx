@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
+  Animated,
   View,
   Text,
   TouchableOpacity,
@@ -14,6 +15,7 @@ import * as Haptics from '../../utils/haptics';
 import { borderWidth, colors, ms, vs, s, spacing, fontSize, borderRadius, letterSpacing, fontFamilyNative, formatBlockNumber, formatDateTime, formatRawAmount, truncateHash, getShortAddress } from '@salmon/shared';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { BlurContainer } from '../BlurContainer';
 import { TokenLogo } from '../TokenLogo';
@@ -313,20 +315,19 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const insets = useSafeAreaInsets();
 
   // Inline hash copy state
-  const [hashCopied, setHashCopied] = useState(false);
+  const { copied: hashCopied, scale: tickScale, trigger: showHashCopied } = useCopyFeedback();
 
   const handleCopyInlineHash = useCallback(async () => {
     if (!transaction) return;
     try {
       await Clipboard.setStringAsync(transaction.id);
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       if (onCopyHash) onCopyHash(transaction.id);
-      setHashCopied(true);
-      setTimeout(() => setHashCopied(false), 1500);
+      showHashCopied();
     } catch (error) {
       console.warn('Failed to copy hash:', error);
     }
-  }, [transaction, onCopyHash]);
+  }, [transaction, onCopyHash, showHashCopied]);
 
   const handleShare = useCallback(() => {
     if (transaction && onShare) {
@@ -532,7 +533,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                       token.source ? (
                         <React.Fragment key={`from-${index}`}>
                           <AddressCopyRow
-                            label="From"
+                            label={t('transactions.from', 'From')}
                             address={token.source}
                             truncate="medium"
                             style={styles.addressRow}
@@ -545,7 +546,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                       token.destination ? (
                         <React.Fragment key={`to-${index}`}>
                           <AddressCopyRow
-                            label="To"
+                            label={t('transactions.to', 'To')}
                             address={token.destination}
                             truncate="medium"
                             style={styles.addressRow}
@@ -590,13 +591,19 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                       style={[styles.copyIconButton, hashCopied && styles.copyIconButtonCopied]}
                       activeOpacity={0.6}
                       accessibilityRole="button"
-                      accessibilityLabel="Copy transaction hash"
+                      accessibilityLabel={
+                        hashCopied
+                          ? t('actions.copied', 'Copied!')
+                          : t('transactions.detail.copyTransactionHash', 'Copy transaction hash')
+                      }
                     >
-                      <Ionicons
-                        name={hashCopied ? 'checkmark' : 'copy-outline'}
-                        size={14}
-                        color={hashCopied ? colors.status.success : colors.text.secondary}
-                      />
+                      {hashCopied ? (
+                        <Animated.View style={{ transform: [{ scale: tickScale }] }}>
+                          <Ionicons name="checkmark" size={14} color={colors.accent.primary} />
+                        </Animated.View>
+                      ) : (
+                        <Ionicons name="copy-outline" size={14} color={colors.text.secondary} />
+                      )}
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -636,7 +643,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                           </Text>
                           {ix.innerInstructionsCount > 0 && (
                             <Text style={styles.devSecondaryText}>
-                              {ix.innerInstructionsCount} inner
+                              {t('transactions.detail.innerCount', { count: ix.innerInstructionsCount, defaultValue: '{{count}} inner' })}
                             </Text>
                           )}
                         </View>
@@ -707,7 +714,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 <View style={styles.actionsRow}>
                   <ActionButton
                     icon="share-outline"
-                    label="Share"
+                    label={t('transactions.detail.share', 'Share')}
                     onPress={handleShare}
                     testID="tx-detail-share-button"
                   />
@@ -835,7 +842,7 @@ const styles = StyleSheet.create({
     backgroundColor: `${colors.background.card}80`,
   },
   copyIconButtonCopied: {
-    backgroundColor: `${colors.status.success}20`,
+    backgroundColor: colors.accent.tint,
   },
   // Token row styles
   tokenRow: {

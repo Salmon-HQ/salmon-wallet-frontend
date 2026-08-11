@@ -10,6 +10,7 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -287,6 +288,7 @@ export function StepTokenSelect({
   showUnverifiedTokens,
   loading,
 }: StepTokenSelectProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [scrolled, setScrolled] = useState(false);
 
@@ -368,7 +370,7 @@ export function StepTokenSelect({
       <SearchWrapper>
         <BlurContainer style={{ borderRadius: borderRadius.md }}>
           <SearchInputStyled
-            placeholder="Search..."
+            placeholder={t('actions.search_placeholder')}
             value={searchQuery}
             onChange={handleSearchChange}
             startAdornment={<SearchIconStyled />}
@@ -384,14 +386,14 @@ export function StepTokenSelect({
       </SearchWrapper>
 
       {/* Section Header */}
-      <SectionHeader>Select Token</SectionHeader>
+      <SectionHeader>{t('wallet.select_token')}</SectionHeader>
 
       {/* Token List */}
       <ListWrapper>
         <TopFadeGradient sx={{ opacity: scrolled ? 1 : 0 }} />
         <ListContent onScroll={handleScroll}>
           {filteredTokens.length === 0 ? (
-            <EmptyMessage>No tokens found</EmptyMessage>
+            <EmptyMessage>{t('wallet.no_tokens_found')}</EmptyMessage>
           ) : (
             filteredTokens.map((token) => (
               <TokenRow

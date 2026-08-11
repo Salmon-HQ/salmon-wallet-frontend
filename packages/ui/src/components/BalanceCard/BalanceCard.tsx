@@ -11,6 +11,7 @@
  * Uses responsive scaling (s, vs, ms) from shared to match mobile proportions.
  */
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { keyframes } from '@mui/material/styles';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
@@ -267,6 +268,7 @@ export function BalanceCard({
   style,
   className,
 }: BalanceCardProps) {
+  const { t } = useTranslation();
   const [, { formatValue, formatChange }] = useCurrencyContext();
 
   const handleToggleVisibility = useCallback(() => {
@@ -283,14 +285,14 @@ export function BalanceCard({
   const gradientCSS = getGradientCSSForBlockchain(blockchain);
   const scalesColor = getScalesColorForBlockchain(blockchain);
   // In developer mode, always show network label (including "Mainnet")
-  const networkLabel = showNetworkLabel ? (getNetworkLabel(blockchain) ?? 'Mainnet') : null;
+  const networkLabel = showNetworkLabel ? (getNetworkLabel(blockchain) ?? t('general.network_mainnet', 'Mainnet')) : null;
 
   const renderBalance = () => {
     if (hiddenBalance) {
       return (
         <BalanceRow>
           <BalanceDollars>{hiddenValue}</BalanceDollars>
-          <EyeButton onClick={handleToggleVisibility} aria-label="Show balance" data-testid="balance-eye-toggle">
+          <EyeButton onClick={handleToggleVisibility} aria-label={t('accessibility.show_balance', 'Show balance')} data-testid="balance-eye-toggle">
             <EyeOffIcon sx={{ fontSize: ms(componentSizes.eyeIcon) }} />
           </EyeButton>
         </BalanceRow>
@@ -306,7 +308,7 @@ export function BalanceCard({
           <BalanceDollars>{parts[0]}</BalanceDollars>
           {parts[1] && <BalanceDecimals>.{parts[1]}</BalanceDecimals>}
         </Box>
-        <EyeButton onClick={handleToggleVisibility} aria-label="Hide balance" data-testid="balance-eye-toggle">
+        <EyeButton onClick={handleToggleVisibility} aria-label={t('accessibility.hide_balance', 'Hide balance')} data-testid="balance-eye-toggle">
           <EyeIcon sx={{ fontSize: ms(componentSizes.eyeIcon) }} />
         </EyeButton>
       </BalanceRow>

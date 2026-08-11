@@ -20,8 +20,9 @@ vi.mock('react-i18next', () => ({
 vi.mock('@salmon/ui', () => ({
   styled: (_component: unknown) => () => {
     const React = require('react');
-    return ({ children, ...props }: { children?: React.ReactNode }) =>
+    const StyledMock = ({ children, ...props }: { children?: React.ReactNode }) =>
       React.createElement('div', props, children);
+    return StyledMock;
   },
   NftCarouselSection: ({ title, nfts }: { title: string; nfts: Array<{ name: string }> }) => (
     <div>

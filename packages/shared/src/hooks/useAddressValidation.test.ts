@@ -98,7 +98,7 @@ describe('useAddressValidation', () => {
 
     expect(result.current.validationState).toBe('warning');
     expect(result.current.isValid).toBe(true);
-    expect(result.current.message).toBe('This account does not exist on-chain yet. The recipient will need to fund it.');
+    expect(result.current.message).toBe('send.validation.no_info');
     expect(result.current.messageType).toBe('warning');
   });
 
@@ -122,7 +122,7 @@ describe('useAddressValidation', () => {
 
     expect(result.current.validationState).toBe('invalid');
     expect(result.current.isValid).toBe(false);
-    expect(result.current.message).toBe('Cannot send to your own address');
+    expect(result.current.message).toBe('send.validation.same_address');
     expect(result.current.messageType).toBe('error');
   });
 
@@ -146,7 +146,7 @@ describe('useAddressValidation', () => {
       type: 'ERROR',
       code: 'network_error',
     });
-    expect(result.current.message).toBe('Could not verify address. Check your connection.');
+    expect(result.current.message).toBe('send.validation.network_error');
     expect(onValidation).toHaveBeenLastCalledWith({
       isValid: false,
       state: 'invalid',

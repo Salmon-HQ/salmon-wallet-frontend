@@ -33,9 +33,7 @@ vi.mock('../client', () => {
 import {
   normalizeBackendTokens,
   getTokenList,
-  getTokenMetadataByMints,
   searchTokens,
-  getTokenByAddress,
   clearTokenListCache,
 } from './tokens';
 import { normalizeIpfsUrl } from '../../utils/url';
@@ -373,82 +371,6 @@ describe('Token Service - Pure Functions', () => {
     });
 
     // ========================================================================
-    // getTokenMetadataByMints() Tests
-    // ========================================================================
-    describe('getTokenMetadataByMints', () => {
-      it('should return empty array for empty input', async () => {
-        const result = await getTokenMetadataByMints([]);
-        expect(result).toEqual([]);
-      });
-
-      it('should fetch metadata for known mints (SOL, USDC)', async () => {
-        const mints = [KNOWN_ADDRESSES.SOL, KNOWN_ADDRESSES.USDC];
-        const responseTokens = [mockBackendTokens[0], mockBackendTokens[1]];
-        mockApiClientGet.mockResolvedValueOnce({ data: responseTokens });
-
-        const result = await getTokenMetadataByMints(mints, 'solana-mainnet');
-
-        expect(Array.isArray(result)).toBe(true);
-        expect(result.length).toBe(2);
-      });
-
-      it('should verify returned token structure', async () => {
-        const mints = [KNOWN_ADDRESSES.SOL];
-        const responseTokens = [mockBackendTokens[0]];
-        mockApiClientGet.mockResolvedValueOnce({ data: responseTokens });
-
-        const result = await getTokenMetadataByMints(mints, 'solana-mainnet');
-
-        expect(result.length).toBeGreaterThan(0);
-        const token = result[0];
-        expect(token).toHaveProperty('symbol');
-        expect(token).toHaveProperty('name');
-        expect(token).toHaveProperty('decimals');
-        expect(token).toHaveProperty('address');
-        expect(token).toHaveProperty('logo');
-      });
-
-      it('should handle chunking for arrays > 100 mints', async () => {
-        const mints = Array.from({ length: 150 }, (_, i) => `mint${i}`);
-
-        // Mock two batch calls for chunks
-        mockApiClientGet
-          .mockResolvedValueOnce({ data: mockBackendTokens.slice(0, 2) })
-          .mockResolvedValueOnce({ data: mockBackendTokens.slice(2, 4) });
-
-        const result = await getTokenMetadataByMints(mints, 'solana-mainnet');
-
-        expect(Array.isArray(result)).toBe(true);
-        expect(mockApiClientGet).toHaveBeenCalledTimes(2);
-      });
-
-      it('should remove duplicate mints before fetching', async () => {
-        const mints = [KNOWN_ADDRESSES.SOL, KNOWN_ADDRESSES.SOL, KNOWN_ADDRESSES.USDC];
-        const responseTokens = [mockBackendTokens[0], mockBackendTokens[1]];
-
-        mockApiClientGet.mockImplementation((_url: unknown, config?: any) => {
-          const urlMints = String(config?.params?.mints ?? '').split(',').filter(Boolean);
-          expect(new Set(urlMints).size).toBe(urlMints.length);
-          return Promise.resolve({ data: responseTokens });
-        });
-
-        const result = await getTokenMetadataByMints(mints, 'solana-mainnet');
-
-        expect(Array.isArray(result)).toBe(true);
-      });
-
-      it('returns an empty array for the chunk when the backend rejects it', async () => {
-        const mints = [KNOWN_ADDRESSES.SOL];
-
-        mockApiClientGet.mockRejectedValueOnce(new Error('Backend error'));
-
-        const result = await getTokenMetadataByMints(mints, 'solana-mainnet');
-
-        expect(result).toEqual([]);
-      });
-    });
-
-    // ========================================================================
     // searchTokens() Tests
     // ========================================================================
     describe('searchTokens', () => {
@@ -512,46 +434,6 @@ describe('Token Service - Pure Functions', () => {
         const result = await searchTokens('SOL', 'solana-mainnet');
 
         expect(result).toEqual([]);
-      });
-    });
-
-    // ========================================================================
-    // getTokenByAddress() Tests
-    // ========================================================================
-    describe('getTokenByAddress', () => {
-      it('should fetch token by mint address (SOL)', async () => {
-        const address = KNOWN_ADDRESSES.SOL;
-        const responseTokens = [mockBackendTokens[0]];
-        mockApiClientGet.mockResolvedValueOnce({ data: responseTokens });
-
-        const result = await getTokenByAddress(address, 'solana-mainnet');
-
-        expect(result).not.toBeNull();
-        expect(result?.address).toBe(address);
-      });
-
-      it('should return null for non-existent address', async () => {
-        const address = 'NonExistentAddress123456789';
-        mockApiClientGet.mockResolvedValueOnce({ data: [] });
-
-        const result = await getTokenByAddress(address, 'solana-mainnet');
-
-        expect(result).toBeNull();
-      });
-
-      it('should verify returned token structure', async () => {
-        const address = KNOWN_ADDRESSES.USDC;
-        const responseTokens = [mockBackendTokens[1]];
-        mockApiClientGet.mockResolvedValueOnce({ data: responseTokens });
-
-        const result = await getTokenByAddress(address, 'solana-mainnet');
-
-        expect(result).not.toBeNull();
-        expect(result).toHaveProperty('symbol');
-        expect(result).toHaveProperty('name');
-        expect(result).toHaveProperty('decimals');
-        expect(result).toHaveProperty('address');
-        expect(result).toHaveProperty('logo');
       });
     });
 

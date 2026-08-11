@@ -197,12 +197,6 @@ export type FetchBitcoinBalanceFn = (
   address: string
 ) => Promise<BitcoinBalanceItem[]>;
 
-export type FetchBitcoinTransactionFn = (
-  networkId: string,
-  address: string,
-  txId: string
-) => Promise<AccountTransaction>;
-
 export type FetchBitcoinRecentTransactionsFn = (
   networkId: string,
   address: string,
@@ -214,7 +208,6 @@ export type FetchBitcoinRecentTransactionsFn = (
  */
 export interface BitcoinAccountApiFunctions {
   fetchBalance: FetchBitcoinBalanceFn;
-  fetchTransaction: FetchBitcoinTransactionFn;
   fetchRecentTransactions: FetchBitcoinRecentTransactionsFn;
   fetchUtxos: FetchUtxosFn;
   broadcastTransaction: BroadcastTransactionFn;
@@ -395,12 +388,6 @@ export type FetchEthereumBalanceFn = (
   address: string
 ) => Promise<EthereumBalanceItem[]>;
 
-export type FetchEthereumTransactionFn = (
-  networkId: import('./blockchain').EthereumNetworkId,
-  address: string,
-  txHash: string
-) => Promise<AccountTransaction | null>;
-
 export type FetchEthereumRecentTransactionsFn = (
   networkId: import('./blockchain').EthereumNetworkId,
   address: string,
@@ -412,7 +399,6 @@ export type FetchEthereumRecentTransactionsFn = (
  */
 export interface EthereumAccountApiFunctions {
   fetchBalance: FetchEthereumBalanceFn;
-  fetchTransaction: FetchEthereumTransactionFn;
   fetchRecentTransactions: FetchEthereumRecentTransactionsFn;
 }
 
@@ -446,12 +432,6 @@ export type FetchSolanaBalanceFn = (
   opts?: FetchSolanaBalanceOpts
 ) => Promise<SolanaBalanceItem[]>;
 
-export type FetchSolanaTransactionFn = (
-  networkId: import('./blockchain').SolanaNetworkId,
-  address: string,
-  signature: string
-) => Promise<import('./transaction').SolanaTransaction | null>;
-
 export type FetchSolanaTransactionsFn = (
   networkId: import('./blockchain').SolanaNetworkId,
   address: string,
@@ -463,7 +443,6 @@ export type FetchSolanaTransactionsFn = (
  */
 export interface SolanaAccountApiFunctions {
   fetchBalance: FetchSolanaBalanceFn;
-  fetchTransaction: FetchSolanaTransactionFn;
   fetchTransactions: FetchSolanaTransactionsFn;
   fetchNfts: import('./nft').FetchNftsFromBackendFn;
 }

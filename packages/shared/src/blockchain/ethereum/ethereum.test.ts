@@ -63,7 +63,6 @@ import { Wallet } from 'ethers';
 const mockEthereumApiFunctions = {
   fetchBalance: vi.fn().mockResolvedValue([]),
   fetchPrices: vi.fn().mockResolvedValue(null),
-  fetchTransaction: vi.fn().mockResolvedValue(null),
   fetchRecentTransactions: vi.fn().mockResolvedValue({ items: [] }),
 };
 

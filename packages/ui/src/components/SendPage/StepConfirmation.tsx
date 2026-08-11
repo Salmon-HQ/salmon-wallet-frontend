@@ -345,7 +345,7 @@ export function StepConfirmation({
         {/* Recipient Address */}
         <AddressButton
           onClick={handleCopy}
-          aria-label="Copy recipient address"
+          aria-label={t('token.send.copyRecipientAddress')}
           data-testid="send-confirm-copy-address"
         >
           <BlurContainer style={{ borderRadius: borderRadius.md }}>
@@ -368,7 +368,7 @@ export function StepConfirmation({
 
         {/* Fee Display */}
         {estimatedFee && (
-          <FeeText>Network Fee: ~{estimatedFee}</FeeText>
+          <FeeText>{t('token.send.networkFeeAmount', { fee: estimatedFee })}</FeeText>
         )}
 
         {/* Error Message */}
@@ -384,7 +384,7 @@ export function StepConfirmation({
           disabled={isSending}
           data-testid="send-confirm-cancel-button"
         >
-          <CancelButtonText>CANCEL</CancelButtonText>
+          <CancelButtonText>{t('actions.cancel').toUpperCase()}</CancelButtonText>
         </CancelButton>
 
         <ConfirmButton
@@ -396,11 +396,11 @@ export function StepConfirmation({
             {isSending ? (
               <SendingRow>
                 <CircularProgress size={16} sx={{ color: colors.text.primary }} />
-                <ConfirmButtonText>Sending...</ConfirmButtonText>
+                <ConfirmButtonText>{t('general.sending')}</ConfirmButtonText>
               </SendingRow>
             ) : (
               <ConfirmButtonText>
-                {isFailed ? 'RETRY' : 'CONFIRM'}
+                {(isFailed ? t('actions.retry') : t('actions.confirm')).toUpperCase()}
               </ConfirmButtonText>
             )}
           </ConfirmButtonGradient>

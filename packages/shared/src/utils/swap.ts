@@ -142,18 +142,18 @@ export function validateAddress(
 
   if (chain === 'solana') {
     const isValid = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
-    return { valid: isValid, error: isValid ? null : 'Invalid Solana address' };
+    return { valid: isValid, error: isValid ? null : 'swap.errors.invalidSolanaAddress' };
   }
 
   if (chain === 'ethereum') {
     const isValid = /^0x[a-fA-F0-9]{40}$/.test(address);
-    return { valid: isValid, error: isValid ? null : 'Invalid Ethereum address' };
+    return { valid: isValid, error: isValid ? null : 'swap.errors.invalidEthereumAddress' };
   }
 
   if (chain === 'bitcoin') {
     const isValid = /^(1|3|bc1)[a-zA-HJ-NP-Z0-9]{25,62}$/.test(address);
-    return { valid: isValid, error: isValid ? null : 'Invalid Bitcoin address' };
+    return { valid: isValid, error: isValid ? null : 'swap.errors.invalidBitcoinAddress' };
   }
 
-  return { valid: address.length > 10, error: address.length <= 10 ? 'Address too short' : null };
+  return { valid: address.length > 10, error: address.length <= 10 ? 'swap.errors.addressTooShort' : null };
 }

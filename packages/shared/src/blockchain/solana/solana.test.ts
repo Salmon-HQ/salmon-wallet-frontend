@@ -62,7 +62,6 @@ const EXPECTED_ADDRESSES = {
 const mockSolanaApiFunctions = {
   fetchBalance: vi.fn().mockResolvedValue([]),
   fetchPrices: vi.fn().mockResolvedValue(null),
-  fetchTransaction: vi.fn().mockResolvedValue(null),
   fetchTransactions: vi.fn().mockResolvedValue({ transactions: [], oldestSignature: null, hasMore: false }),
   fetchNfts: vi.fn().mockResolvedValue([]),
 };

@@ -41,6 +41,11 @@ vi.mock('@salmon/ui', () => ({
         data-testid="approve-button"
         onClick={props.onApprove as () => void}
       />
+      <button
+        type="button"
+        data-testid="reject-button"
+        onClick={props.onReject as () => void}
+      />
     </div>
   ),
 }));
@@ -199,6 +204,96 @@ describe('DAppSignMessageApprovalPage', () => {
       channel: 'salmon_extension_background_channel',
       data: { result: payload, id: 'req-msg-1' },
     });
+    vi.unstubAllGlobals();
+  });
+
+  it('sends a user-rejection error to the background and dismisses on reject', () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+    const sendMessage = vi.fn();
+    vi.stubGlobal('chrome', { runtime: { sendMessage } });
+    const onDismiss = vi.fn();
+
+    const { getByTestId } = render(
+      <DAppSignMessageApprovalPage {...baseProps} onDismiss={onDismiss} />,
+    );
+    getByTestId('reject-button').click();
+
+    expect(sendMessage).toHaveBeenCalledWith({
+      channel: 'salmon_extension_background_channel',
+      data: { error: 'User rejected the request', id: 'req-msg-1' },
+    });
+    expect(onDismiss).toHaveBeenCalledWith(false);
+    expect(mockApproveSolanaSignMessage).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('sends the fixed unavailable-account error when approving without a Solana account', () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+    const sendMessage = vi.fn();
+    vi.stubGlobal('chrome', { runtime: { sendMessage } });
+    const onDismiss = vi.fn();
+
+    const { getByTestId } = render(
+      <DAppSignMessageApprovalPage {...baseProps} account={undefined} onDismiss={onDismiss} />,
+    );
+    getByTestId('approve-button').click();
+
+    expect(sendMessage).toHaveBeenCalledWith({
+      channel: 'salmon_extension_background_channel',
+      data: { error: 'Solana account not available', id: 'req-msg-1' },
+    });
+    expect(onDismiss).toHaveBeenCalledWith(false);
+    expect(mockApproveSolanaSignMessage).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('sends the fixed missing-data error when approving a request without message data', () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+    const sendMessage = vi.fn();
+    vi.stubGlobal('chrome', { runtime: { sendMessage } });
+    const onDismiss = vi.fn();
+    const requestWithoutData = {
+      ...baseRequest,
+      params: {},
+    } as unknown as DAppSignMessageRequest;
+
+    const { getByTestId } = render(
+      <DAppSignMessageApprovalPage
+        {...baseProps}
+        request={requestWithoutData}
+        onDismiss={onDismiss}
+      />,
+    );
+    getByTestId('approve-button').click();
+
+    expect(sendMessage).toHaveBeenCalledWith({
+      channel: 'salmon_extension_background_channel',
+      data: { error: 'Missing message data', id: 'req-msg-1' },
+    });
+    expect(onDismiss).toHaveBeenCalledWith(false);
+    expect(mockApproveSolanaSignMessage).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('sends only the fixed protocol string when signing fails, never the raw error', async () => {
+    mockUseDAppMetadata.mockReturnValue({ metadata: null });
+    const sendMessage = vi.fn();
+    vi.stubGlobal('chrome', { runtime: { sendMessage } });
+    const onDismiss = vi.fn();
+    mockApproveSolanaSignMessage.mockRejectedValue(new Error('some internal RPC detail'));
+
+    const { getByTestId } = render(
+      <DAppSignMessageApprovalPage {...baseProps} onDismiss={onDismiss} />,
+    );
+    getByTestId('approve-button').click();
+    await vi.waitFor(() => expect(onDismiss).toHaveBeenCalledWith(false));
+
+    expect(sendMessage).toHaveBeenCalledWith({
+      channel: 'salmon_extension_background_channel',
+      data: { error: 'Message signing failed', id: 'req-msg-1' },
+    });
+    // The internal error detail must never leak to the dApp origin.
+    expect(JSON.stringify(sendMessage.mock.calls)).not.toContain('some internal RPC detail');
     vi.unstubAllGlobals();
   });
 });

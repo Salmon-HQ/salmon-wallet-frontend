@@ -46,6 +46,21 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
     },
   });
 
+  // Success renders from the confirm-time snapshot: post-swap balance
+  // refreshes can drop the spent input token from the list and mutate the
+  // live form state while the success screen is still mounted. Fall back to
+  // live state only if the snapshot is missing (defensive).
+  const summary = logic.successSummary;
+  const successInLabel = summary
+    ? `${summary.inAmount} ${summary.inSymbol}`
+    : `${logic.inAmount} ${logic.inToken?.symbol ?? ''}`;
+  const successOutLabel = summary
+    ? `${summary.outAmount} ${summary.outSymbol}`
+    : `${logic.outAmount} ${logic.outToken?.symbol ?? ''}`;
+  const successOutSymbol = summary ? summary.outSymbol : logic.outToken?.symbol ?? '';
+  const successChain = summary ? summary.chain : logic.inToken?.chain;
+  const successNetworkId = summary ? summary.networkId : logic.inToken?.networkId;
+
   return (
     <Container style={style}>
       {logic.step === 'input' && (
@@ -111,12 +126,12 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
         <TransactionSuccessScreen
           title={logic.successExchange ? t('bridge.initiated', 'Bridge Initiated') : t('transaction.swapComplete')}
           pendingTitle={t('transaction.pendingSwap')}
-          summary={`${logic.inAmount} ${logic.inToken?.symbol ?? ''} → ${logic.outAmount} ${logic.outToken?.symbol ?? ''}`}
-          explorerUrl={logic.successTxId && logic.inToken?.chain
+          summary={`${successInLabel} → ${successOutLabel}`}
+          explorerUrl={logic.successTxId && successChain
             ? getTransactionUrl(
-                logic.inToken.chain.toUpperCase() as Blockchain,
-                (logic.inToken.networkId ?? 'mainnet') as NetworkEnvironment,
-                getDefaultExplorer(logic.inToken.chain.toUpperCase() as Blockchain),
+                successChain.toUpperCase() as Blockchain,
+                (successNetworkId ?? 'mainnet') as NetworkEnvironment,
+                getDefaultExplorer(successChain.toUpperCase() as Blockchain),
                 logic.successTxId
               )
             : null
@@ -124,8 +139,8 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
           onContinue={logic.handleSuccessContinue}
           settling={logic.settling}
           bridgeDepositAddress={logic.successExchange?.depositAddress}
-          bridgeAmountIn={logic.successExchange ? `${logic.inAmount} ${logic.inToken?.symbol ?? ''}` : undefined}
-          bridgeAmountOut={logic.successExchange ? `${logic.successExchange.amountOut} ${logic.outToken?.symbol ?? ''}` : undefined}
+          bridgeAmountIn={logic.successExchange ? successInLabel : undefined}
+          bridgeAmountOut={logic.successExchange ? `${logic.successExchange.amountOut} ${successOutSymbol}` : undefined}
           bridgeExchangeId={logic.successExchange?.id}
           bridgeDepositTxId={logic.depositTxId ?? undefined}
           bridgeStatus={logic.bridgeTransaction?.status ?? logic.successExchange?.status}

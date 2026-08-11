@@ -105,7 +105,8 @@ describe('DAppTransactionApprovalPage', () => {
     expect(view.dataset.appIcon).toBe('');
 
     await waitFor(() => {
-      expect(view.dataset.parsingError).toBe('decode failed');
+      // Raw decode error messages must never surface; only the fixed string.
+      expect(view.dataset.parsingError).toBe('Failed to decode transaction');
     });
   });
 

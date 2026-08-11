@@ -11,7 +11,14 @@ const mockUseSendContacts = vi.fn();
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: string) => fallback ?? key,
+    t: (key: string, fallback?: string | Record<string, unknown>) => {
+      if (typeof fallback === 'string') return fallback;
+      if (fallback && typeof fallback === 'object') {
+        const template = (fallback.defaultValue as string | undefined) ?? key;
+        return template.replace(/\{\{(\w+)\}\}/g, (_m, name) => String(fallback[name] ?? ''));
+      }
+      return key;
+    },
   }),
 }));
 
@@ -118,7 +125,7 @@ describe('StepAddressAmount', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'MAX' }));
+    fireEvent.click(screen.getByRole('button', { name: 'general.max' }));
 
     expect(screen.getByDisplayValue('4')).toBeTruthy();
     expect(screen.getByText('8.00 USD')).toBeTruthy();
@@ -139,13 +146,13 @@ describe('StepAddressAmount', () => {
     );
 
     fireEvent.click(screen.getAllByRole('button', { name: /Alice/i })[0]);
-    fireEvent.change(screen.getByPlaceholderText('Solana Address'), {
+    fireEvent.change(screen.getByPlaceholderText('token.send.blockchainAddress'), {
       target: { value: 'Alice11111111111111111111111111111 ' },
     });
     fireEvent.change(screen.getByPlaceholderText('0'), {
       target: { value: '1.5' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Review & Send' }));
+    fireEvent.click(screen.getByRole('button', { name: 'token.send.reviewAndSend' }));
 
     expect(onReview).toHaveBeenCalledWith(
       'Alice11111111111111111111111111111',
@@ -169,7 +176,7 @@ describe('StepAddressAmount', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'MAX' }));
+    fireEvent.click(screen.getByRole('button', { name: 'general.max' }));
 
     expect(screen.getByDisplayValue('10')).toBeTruthy();
   });
@@ -186,7 +193,7 @@ describe('StepAddressAmount', () => {
       />
     );
 
-    fireEvent.change(screen.getByPlaceholderText('Solana Address'), {
+    fireEvent.change(screen.getByPlaceholderText('token.send.blockchainAddress'), {
       target: { value: 'bad-address' },
     });
     fireEvent.change(screen.getByPlaceholderText('0'), {
@@ -194,6 +201,6 @@ describe('StepAddressAmount', () => {
     });
 
     expect(screen.getByText('Invalid recipient')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Review & Send' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'token.send.reviewAndSend' })).toHaveProperty('disabled', true);
   });
 });

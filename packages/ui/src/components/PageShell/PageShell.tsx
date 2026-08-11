@@ -18,6 +18,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useTranslation } from 'react-i18next';
 
 import { colors, spacing, fontFamily, fontWeight, fontSize } from '@salmon/shared';
 import { ScalesBackground } from '../ScalesBackground';
@@ -96,6 +97,7 @@ export function PageShell({
   className,
   style,
 }: PageShellProps): React.ReactElement {
+  const { t } = useTranslation();
   const resolvedBg =
     backgroundColor === 'primary'
       ? colors.background.primary
@@ -114,7 +116,7 @@ export function PageShell({
       )}
 
       <Header>
-        <BackButton onClick={onBack} aria-label="Back" data-testid="screen-header-back-button">
+        <BackButton onClick={onBack} aria-label={t('general.back', 'Back')} data-testid="screen-header-back-button">
           <ArrowBackIcon />
         </BackButton>
         <HeaderTitle>{title}</HeaderTitle>

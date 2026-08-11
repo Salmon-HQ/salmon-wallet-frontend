@@ -40,6 +40,19 @@ export function classifyBridgeError(
   minimum?: { amount?: number | null; symbol?: string | null }
 ): SwapErrorMessage {
   const message = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
+
+  // Errors thrown with an i18n key as message (e.g. from useBridge's own
+  // parser) are already user-ready — pass them through unchanged.
+  if (['bridge.errors.', 'transaction.errors.', 'swap.errors.'].some((prefix) => message.startsWith(prefix))) {
+    return message;
+  }
+
+  // "Minimum bridge amount is 0.1 SOL" carries the number inline — keep it.
+  const inlineMin = message.match(/minimum (?:bridge )?amount is ([\d.]+\s?[A-Za-z0-9]+)/i);
+  if (inlineMin) {
+    return { key: 'bridge.errors.belowMinimumWithAmount', params: { min: inlineMin[1] } };
+  }
+
   const haystack = message.toLowerCase();
 
   if (BELOW_MINIMUM_PATTERNS.some((pattern) => haystack.includes(pattern))) {

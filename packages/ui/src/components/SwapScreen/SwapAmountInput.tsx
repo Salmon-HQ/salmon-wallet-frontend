@@ -27,6 +27,7 @@ import {
   sanitizeDecimalInput,
 } from '@salmon/shared';
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import { BlurContainer } from '../BlurContainer';
 import type { SwapAmountInputProps } from './types';
@@ -211,11 +212,12 @@ export function SwapAmountInput({
   usdValue,
   availableBalance,
   editable = true,
-  placeholder = 'Enter an amount',
+  placeholder,
   style,
   isLoading = false,
   testID,
 }: SwapAmountInputProps): React.ReactElement {
+  const { t } = useTranslation();
   const [{ currency }, { formatPrecise }] = useCurrencyContext();
   const showQuickFill = editable && availableBalance !== undefined && !!token;
 
@@ -257,7 +259,7 @@ export function SwapAmountInput({
           <StyledInput
             value={value}
             onChange={handleChangeText}
-            placeholder={placeholder}
+            placeholder={placeholder ?? t('swap.enter_amount')}
             disabled={!editable}
             inputProps={{
               inputMode: 'decimal',
@@ -268,7 +270,7 @@ export function SwapAmountInput({
         )}
 
         {/* Token Dropdown */}
-        <TokenDropdown onClick={onTokenPress} aria-label={`Select token: ${token?.symbol || 'Select'}`} data-testid={testID ? `${testID}-token` : undefined}>
+        <TokenDropdown onClick={onTokenPress} aria-label={t('accessibility.select_token', 'Select {{name}}', { name: token?.symbol || t('wallet.select_token', 'Select') })} data-testid={testID ? `${testID}-token` : undefined}>
           {token?.logo ? (
             <TokenIcon
               src={token.logo}
@@ -280,7 +282,7 @@ export function SwapAmountInput({
           ) : (
             <TokenIconPlaceholder />
           )}
-          <TokenSymbol>{token?.symbol || 'Select'}</TokenSymbol>
+          <TokenSymbol>{token?.symbol || t('wallet.select_token', 'Select')}</TokenSymbol>
         </TokenDropdown>
       </InputContainer>
       </BlurContainer>
@@ -298,19 +300,25 @@ export function SwapAmountInput({
                     onClick={() => handleQuickFill(option.value)}
                     data-testid={testID ? `${testID}-quickfill-${option.label}` : undefined}
                   >
-                    <QuickFillText>{option.label}</QuickFillText>
+                    <QuickFillText>{option.value === 1 ? t('general.max') : option.label}</QuickFillText>
                   </QuickFillButton>
                 ))}
               </QuickFillButtons>
             ) : availableBalance !== undefined && token ? (
               <AvailableBalance>
-                Available: {formatTokenBalance(availableBalance)} {token.symbol}
+                {t('swap.available_balance', {
+                  balance: formatTokenBalance(availableBalance),
+                  symbol: token.symbol,
+                })}
               </AvailableBalance>
             ) : null}
           </InfoRow>
           {showQuickFill && availableBalance !== undefined && token && (
             <AvailableBalanceAligned>
-              Available: {formatTokenBalance(availableBalance)} {token.symbol}
+              {t('swap.available_balance', {
+                balance: formatTokenBalance(availableBalance),
+                symbol: token.symbol,
+              })}
             </AvailableBalanceAligned>
           )}
         </InfoSection>

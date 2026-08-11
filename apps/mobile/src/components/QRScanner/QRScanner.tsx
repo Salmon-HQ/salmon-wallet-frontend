@@ -18,10 +18,11 @@ import type { QRScannerProps } from './types';
 export const QRScanner: React.FC<QRScannerProps> = ({
   visible,
   onClose,
-  title = 'Scan QR Code',
+  title,
   containerStyle,
 }) => {
   const { t } = useTranslation();
+  const resolvedTitle = title ?? t('qrScanner.title', 'Scan QR Code');
 
   if (!visible) {
     return null;
@@ -36,9 +37,9 @@ export const QRScanner: React.FC<QRScannerProps> = ({
     >
       <View style={[styles.container, containerStyle]}>
         <View style={styles.header}>
-          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.title}>{resolvedTitle}</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>Close</Text>
+            <Text style={styles.closeButtonText}>{t('general.close', 'Close')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -46,9 +47,9 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           <View style={styles.iconContainer}>
             <Text style={styles.icon}>{'📱'}</Text>
           </View>
-          <Text style={styles.messageTitle}>QR Scanner Unavailable</Text>
+          <Text style={styles.messageTitle}>{t('qrScanner.unavailableTitle', 'QR Scanner Unavailable')}</Text>
           <Text style={styles.messageText}>
-            QR code scanning is only available on the mobile app.
+            {t('qrScanner.unavailableMessage', 'QR code scanning is only available on the mobile app.')}
           </Text>
           <Text style={styles.messageSubtext}>
             {t(
@@ -60,7 +61,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 
         <View style={styles.footer}>
           <TouchableOpacity onPress={onClose} style={styles.button}>
-            <Text style={styles.buttonText}>Close</Text>
+            <Text style={styles.buttonText}>{t('general.close', 'Close')}</Text>
           </TouchableOpacity>
         </View>
       </View>

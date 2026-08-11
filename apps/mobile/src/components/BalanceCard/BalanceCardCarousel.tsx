@@ -22,6 +22,7 @@ import {
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
@@ -90,6 +91,7 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
   style,
   testID,
 }) => {
+  const { t } = useTranslation();
   const [, { formatValue, formatChange }] = useCurrencyContext();
   const { heroCardTopInset, topInset } = useTabChrome();
   const [internalIndex, setInternalIndex] = React.useState(0);
@@ -224,7 +226,7 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
   };
 
   // Get network label — in developer mode, always show (including "Mainnet")
-  const networkLabel = showNetworkLabel ? (getNetworkLabel(currentBlockchainId) ?? 'Mainnet') : null;
+  const networkLabel = showNetworkLabel ? (getNetworkLabel(currentBlockchainId) ?? t('general.network_mainnet', 'Mainnet')) : null;
 
   // Render balance with decimal opacity
   const renderBalance = () => {

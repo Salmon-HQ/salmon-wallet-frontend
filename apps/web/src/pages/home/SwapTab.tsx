@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { styled } from '@salmon/ui';
 import Box from '@mui/material/Box';
 import {
@@ -142,7 +142,7 @@ export function SwapTab({ onNavigateHome }: SwapTabProps): React.ReactElement {
 
   const handleSwap = useCallback(async (_quote: SwapQuote): Promise<{ txId: string }> => {
     if (!swapQuote || !currentSharedQuoteRef.current) {
-      throw new Error('Quote expired: the quote has changed');
+      throw new Error('transaction.errors.quoteExpired');
     }
     const result = await executeSwapHook();
     return { txId: result.txId || '' };

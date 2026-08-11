@@ -12,6 +12,7 @@
  */
 
 import React, { type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Text,
   StyleSheet,
@@ -70,6 +71,7 @@ export function SettingsScreenLayout({
   contentContainerStyle,
   showHeader = false,
 }: SettingsScreenLayoutProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -78,7 +80,7 @@ export function SettingsScreenLayout({
             <TouchableOpacity
               onPress={onBack}
               style={styles.backButton}
-              accessibilityLabel="Go back"
+              accessibilityLabel={t('accessibility.go_back', 'Go back')}
               accessibilityRole="button"
             >
               <Ionicons

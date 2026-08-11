@@ -226,7 +226,7 @@ export function TokenSelector({
       <SelectorButton
         onClick={handleOpenModal}
         disabled={disabled}
-        aria-label={`Select token: ${tokenName}`}
+        aria-label={t('accessibility.select_token', 'Select {{name}}', { name: tokenName })}
       >
         {tokenLogo ? (
           <TokenIconImage

@@ -4,6 +4,7 @@
  * Web version using MUI and @emotion/styled for browser extension
  */
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -119,6 +120,7 @@ const NameText = styled(Typography)({
  * ```
  */
 export function NftCard({ nft, onPress, style, className, testID }: NftCardProps) {
+  const { t } = useTranslation();
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
@@ -132,7 +134,7 @@ export function NftCard({ nft, onPress, style, className, testID }: NftCardProps
   }, []);
 
   const showFallback = !nft.image || imageError;
-  const displayName = nft.name || 'Unnamed NFT';
+  const displayName = nft.name || t('nft.unnamed', 'Unnamed NFT');
 
   return (
     <Container
@@ -141,7 +143,7 @@ export function NftCard({ nft, onPress, style, className, testID }: NftCardProps
       style={style}
       className={className}
       role="button"
-      aria-label={`NFT: ${nft.name}`}
+      aria-label={t('nft.detail.cardLabel', 'NFT: {{name}}', { name: displayName })}
       data-testid={testID ?? `nft-card-${nft.mint ?? nft.name}`}
     >
       {/* Background: image or gradient fallback */}
@@ -151,7 +153,7 @@ export function NftCard({ nft, onPress, style, className, testID }: NftCardProps
         <>
           <NftImage
             src={nft.image}
-            alt={`NFT image for ${nft.name}`}
+            alt={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: displayName })}
             onLoad={handleImageLoad}
             onError={handleImageError}
           />

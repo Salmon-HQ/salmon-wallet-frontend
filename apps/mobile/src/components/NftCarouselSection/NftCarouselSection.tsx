@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -64,6 +65,7 @@ interface MiniNftCardProps {
 }
 
 const MiniNftCard: React.FC<MiniNftCardProps> = ({ nft, onPress }) => {
+  const { t } = useTranslation();
   const [imageLoading, setImageLoading] = React.useState(true);
   const [imageError, setImageError] = React.useState(false);
 
@@ -76,7 +78,7 @@ const MiniNftCard: React.FC<MiniNftCardProps> = ({ nft, onPress }) => {
       activeOpacity={0.8}
       disabled={!onPress}
       accessibilityRole="button"
-      accessibilityLabel={`NFT: ${nft.name}`}
+      accessibilityLabel={t('nft.detail.cardLabel', 'NFT: {{name}}', { name: nft.name })}
     >
       {/* Background */}
       {showFallback ? (
@@ -125,7 +127,7 @@ const MiniNftCard: React.FC<MiniNftCardProps> = ({ nft, onPress }) => {
           borderWidth={borderWidth.actionButton}
         >
           <Text style={styles.nameText} numberOfLines={1} ellipsizeMode="tail">
-            {nft.name || 'Unnamed NFT'}
+            {nft.name || t('nft.unnamed', 'Unnamed NFT')}
           </Text>
         </BlurContainer>
       </View>

@@ -54,6 +54,7 @@ function AccountListItem({
   onDelete: () => void;
   canDelete: boolean;
 }) {
+  const { t } = useTranslation();
   const avatarColor = useMemo(() => getAvatarColor(account.id), [account.id]);
   const initials = useMemo(() => getInitials(account.name), [account.name]);
   const address = useMemo(() => getAccountAddress(account), [account]);
@@ -66,7 +67,7 @@ function AccountListItem({
       style={[styles.accountItem, isActive && styles.accountItemActive]}
       onPress={onPress}
       activeOpacity={0.7}
-      accessibilityLabel={`${account.name}${isActive ? ', active' : ''}`}
+      accessibilityLabel={isActive ? t('accessibility.active_account', '{{name}}, active', { name: account.name }) : account.name}
       accessibilityRole="button"
       accessibilityState={{ selected: isActive }}
     >
@@ -103,7 +104,7 @@ function AccountListItem({
           style={styles.actionButton}
           onPress={onEdit}
           activeOpacity={0.7}
-          accessibilityLabel="Edit account"
+          accessibilityLabel={t('accessibility.edit_account', 'Edit account')}
           accessibilityRole="button"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
@@ -116,7 +117,7 @@ function AccountListItem({
             style={styles.actionButton}
             onPress={onDelete}
             activeOpacity={0.7}
-            accessibilityLabel="Delete account"
+            accessibilityLabel={t('accessibility.delete_account', 'Delete account')}
             accessibilityRole="button"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >

@@ -95,7 +95,7 @@ describe('useSwap', () => {
 
     expect(quote).toBeNull();
     expect(result.current.status).toBe('idle');
-    expect(result.current.error).toBe('No account available');
+    expect(result.current.error).toBe('swap.errors.noActiveAccount');
     expect(result.current.isError).toBe(true);
   });
 
@@ -163,7 +163,8 @@ describe('useSwap', () => {
     });
 
     expect(result.current.status).toBe('failed');
-    expect(result.current.error).toBe('quote backend down');
+    // Raw provider text is classified into an i18n key for the public state.
+    expect(result.current.error).toBe('transaction.errors.generic');
     expect(result.current.quote).toBeNull();
   });
 
@@ -183,10 +184,10 @@ describe('useSwap', () => {
     expect(executionResult).toEqual({
       txId: null,
       status: 'fail',
-      error: 'No quote available. Get a quote first.',
+      error: 'swap.errors.noQuote',
     });
     expect(result.current.status).toBe('failed');
-    expect(result.current.error).toBe('No quote available. Get a quote first.');
+    expect(result.current.error).toBe('swap.errors.noQuote');
   });
 
   it('executes a fetched quote and stores the tx id on success', async () => {
@@ -257,7 +258,8 @@ describe('useSwap', () => {
     });
 
     expect(result.current.status).toBe('failed');
-    expect(result.current.error).toBe('simulation failed');
+    // Raw text stays on the SwapResult; the public state carries the key.
+    expect(result.current.error).toBe('transaction.errors.generic');
 
     act(() => {
       result.current.clearQuote();

@@ -220,7 +220,7 @@ export function LockPage(): React.ReactElement {
         />
       </Container>
 
-      <LoadingScreen visible={showLoadingScreen} title="Unlocking Wallet" showTips tipInterval={3000} />
+      <LoadingScreen visible={showLoadingScreen} title={t('lock.unlocking')} showTips tipInterval={3000} />
     </>
   );
 }

@@ -43,7 +43,7 @@ export default function BiometricScreen() {
       case 'fingerprint':
         return 'Touch ID';
       case 'iris':
-        return 'Iris';
+        return t('lock.iris');
       default:
         return t('lock_screen.use_biometric');
     }

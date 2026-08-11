@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -19,6 +20,7 @@ interface NftSeeAllState {
 }
 
 export function NftSeeAllRoute(): React.ReactElement {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as NftSeeAllState | null;
@@ -48,7 +50,7 @@ export function NftSeeAllRoute(): React.ReactElement {
           textAlign: 'center',
           marginBottom: spacing.md,
         }}>
-          No collection data available. Please navigate from your collection.
+          {t('nft.noCollectionData', 'No collection data available. Please navigate from your collection.')}
         </Typography>
         <Typography
           component="a"
@@ -61,7 +63,7 @@ export function NftSeeAllRoute(): React.ReactElement {
             textDecoration: 'underline',
           }}
         >
-          Go to Home
+          {t('general.go_home', 'Go to Home')}
         </Typography>
       </Box>
     );

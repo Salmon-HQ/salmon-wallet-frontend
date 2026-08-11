@@ -11,8 +11,9 @@ import {
   vs,
   lineHeight,
 } from '@salmon/shared';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
+  Animated,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -23,6 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { ContentCopySvgIcon } from '../Icon/SvgIcons';
 import QRCode from '../QRCode';
@@ -30,7 +32,6 @@ import type { ReceiveSheetProps } from './types';
 
 // Layout constants
 const CONTENT_PADDING_HORIZONTAL = 24;
-const COPY_FEEDBACK_DURATION = 2000;
 
 /**
  * ReceiveSheet - Bottom sheet modal for receiving tokens
@@ -62,7 +63,7 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
   style,
 }) => {
   const { width: screenWidth } = useWindowDimensions();
-  const [copied, setCopied] = useState(false);
+  const { copied, scale: tickScale, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
   const { t } = useTranslation();
   const { spaciousContentBottomPadding } = useBottomSheetChrome();
 
@@ -72,15 +73,20 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
   // Reset copied state when sheet closes
   useEffect(() => {
     if (!visible) {
-      setCopied(false);
+      resetCopied();
     }
-  }, [visible]);
+  }, [visible, resetCopied]);
 
-  const handleCopyPress = useCallback(() => {
-    onCopy?.();
-    setCopied(true);
-    setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION);
-  }, [onCopy]);
+  const handleCopyPress = useCallback(async () => {
+    try {
+      const succeeded = await onCopy?.();
+      if (succeeded) {
+        showCopied();
+      }
+    } catch {
+      // Copy failed — keep showing the copy icon so the feedback stays honest
+    }
+  }, [onCopy, showCopied]);
 
   const title = (
     <Text style={styles.title}>{t('token.receive.title')}</Text>
@@ -118,10 +124,12 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
           onPress={handleCopyPress}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel={t('token.receive.copyAddress')}
+          accessibilityLabel={copied ? t('actions.copied') : t('token.receive.copyAddress')}
         >
           {copied ? (
-            <Ionicons name="checkmark" size={ms(23)} color={colors.button.primaryText} />
+            <Animated.View style={{ transform: [{ scale: tickScale }] }}>
+              <Ionicons name="checkmark" size={ms(23)} color={colors.accent.primary} />
+            </Animated.View>
           ) : (
             <ContentCopySvgIcon size={ms(23)} color={colors.button.primaryText} />
           )}

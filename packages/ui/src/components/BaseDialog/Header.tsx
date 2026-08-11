@@ -3,6 +3,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import CloseIcon from '@mui/icons-material/Close';
 import {
   StyledDialogTitle,
@@ -19,6 +20,7 @@ export function Header({
   showWarning = false,
   onClose,
 }: HeaderProps): React.ReactElement {
+  const { t } = useTranslation();
   const context = useBaseDialog();
   const handleClose = onClose || context.onClose;
 
@@ -28,7 +30,7 @@ export function Header({
         {showWarning && <WarningIcon />}
         <TitleText>{title}</TitleText>
       </TitleContainer>
-      <CloseButton onClick={handleClose} aria-label="Close">
+      <CloseButton onClick={handleClose} aria-label={t('general.close', 'Close')}>
         <CloseIcon />
       </CloseButton>
     </StyledDialogTitle>

@@ -108,17 +108,6 @@ export async function getSolanaNfts(
   return normalized.filter((nft) => nft.media);
 }
 
-export async function getSolanaNftByAddress(
-  networkId: string,
-  mintAddress: string
-): Promise<Nft | null> {
-  const { data } = await apiClient.get<BackendNft>(
-    `/v1/${networkId}/nft/${mintAddress}`
-  );
-  if (!data) return null;
-  return normalizeBackendNft(data, '');
-}
-
 /**
  * Paginated NFT list. The backend supports `limit` + `offset` query params and
  * returns `{ data: BackendNft[], pagination: NftPagination }`. We normalize the

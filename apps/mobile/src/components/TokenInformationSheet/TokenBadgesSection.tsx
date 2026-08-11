@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fontFamilyNative, fontSize, componentSizes, ms, s, spacing, vs, borderRadius } from '@salmon/shared';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { ContentLoader, Rect } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
@@ -18,6 +19,8 @@ interface BadgeConfig {
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
   label: string;
+  /** i18n key; proper-noun badges (LST, Token-2022, Pump.fun, ...) stay literal */
+  labelKey?: string;
 }
 
 /**
@@ -29,21 +32,25 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: 'checkmark-circle',
     color: colors.palette.green,
     label: 'Verified',
+    labelKey: 'token.badges.verified',
   },
   strict: {
     icon: 'shield',
     color: colors.palette.amber,
     label: 'Strict',
+    labelKey: 'token.badges.strict',
   },
   major: {
     icon: 'trophy',
     color: colors.palette.amber,
     label: 'Major',
+    labelKey: 'token.badges.major',
   },
   'moonshot-verified': {
     icon: 'shield-checkmark',
     color: colors.palette.cyan,
     label: 'Moonshot',
+    labelKey: 'token.badges.moonshot',
   },
 
   // Community tags
@@ -51,11 +58,13 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: 'people',
     color: colors.palette.blue,
     label: 'Community',
+    labelKey: 'token.badges.community',
   },
   'community-assist': {
     icon: 'hand-right',
     color: colors.palette.blue,
     label: 'Community Assist',
+    labelKey: 'token.badges.communityAssist',
   },
 
   // Token types
@@ -68,11 +77,13 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: 'medal',
     color: colors.palette.cyan,
     label: 'Original LST',
+    labelKey: 'token.badges.originalLst',
   },
   stable: {
     icon: 'logo-usd',
     color: colors.palette.green,
     label: 'Stablecoin',
+    labelKey: 'token.badges.stablecoin',
   },
   'token-2022': {
     icon: 'cube',
@@ -83,6 +94,7 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: 'analytics',
     color: colors.palette.indigo,
     label: 'Yield Bearing',
+    labelKey: 'token.badges.yieldBearing',
   },
 
   // Launchpad & trading
@@ -90,16 +102,19 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: 'rocket',
     color: colors.palette.pink,
     label: 'Launchpad',
+    labelKey: 'token.badges.launchpad',
   },
   moonshot: {
     icon: 'moon',
     color: colors.palette.purple,
     label: 'Moonshot',
+    labelKey: 'token.badges.moonshot',
   },
   'birdeye-trending': {
     icon: 'trending-up',
     color: colors.palette.orange,
     label: 'Trending',
+    labelKey: 'token.badges.trending',
   },
   'pumpfun-graduates': {
     icon: 'school',
@@ -117,11 +132,13 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: 'bar-chart',
     color: colors.palette.blue,
     label: 'Pre-stocks',
+    labelKey: 'token.badges.preStocks',
   },
   xstocks: {
     icon: 'pie-chart',
     color: colors.palette.indigo,
     label: 'X-stocks',
+    labelKey: 'token.badges.xStocks',
   },
 
   // Registry & metadata
@@ -129,6 +146,7 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: 'document-text',
     color: colors.text.secondary,
     label: 'Legacy Registry',
+    labelKey: 'token.badges.legacyRegistry',
   },
   'solana-fm': {
     icon: 'search',
@@ -144,21 +162,25 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: 'git-branch',
     color: colors.text.tertiary,
     label: 'Deduplicated',
+    labelKey: 'token.badges.deduplicated',
   },
   duplicate: {
     icon: 'copy',
     color: colors.text.tertiary,
     label: 'Duplicate',
+    labelKey: 'token.badges.duplicate',
   },
   deprecated: {
     icon: 'warning',
     color: colors.status.error,
     label: 'Deprecated',
+    labelKey: 'token.badges.deprecated',
   },
   internal: {
     icon: 'lock-closed',
     color: colors.text.secondary,
     label: 'Internal',
+    labelKey: 'token.badges.internal',
   },
 };
 
@@ -166,6 +188,7 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
  * Individual badge item with icon and label
  */
 const BadgeItem: React.FC<{ tag: string }> = ({ tag }) => {
+  const { t } = useTranslation();
   const config = BADGE_CONFIG[tag];
 
   if (!config) {
@@ -178,7 +201,7 @@ const BadgeItem: React.FC<{ tag: string }> = ({ tag }) => {
         <Ionicons name={config.icon} size={ms(18)} color={config.color} />
       </View>
       <Text style={[styles.badgeLabel, { color: config.color }]} numberOfLines={1}>
-        {config.label}
+        {config.labelKey ? t(config.labelKey, config.label) : config.label}
       </Text>
     </View>
   );
@@ -194,6 +217,8 @@ export const TokenBadgesSection: React.FC<TokenBadgesSectionProps> = ({
   loading = false,
   style,
 }) => {
+  const { t } = useTranslation();
+
   if (loading) {
     // Match loaded layout: title + row of vertical badges (circle 40x40 + label below)
     const circleSize = s(40);
@@ -246,7 +271,7 @@ export const TokenBadgesSection: React.FC<TokenBadgesSectionProps> = ({
   return (
     <BlurContainer style={[styles.glassWrapper, style]}>
       <View style={styles.container}>
-        <Text style={styles.title}>Badges</Text>
+        <Text style={styles.title}>{t('token.badges.title', 'Badges')}</Text>
         <View style={styles.badgesContainer}>
           {validTags.map((tag) => (
             <BadgeItem key={tag} tag={tag} />

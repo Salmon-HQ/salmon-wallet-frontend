@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
@@ -137,6 +138,7 @@ export function DerivedAccountsPage({
   onComplete,
   contained = false,
 }: DerivedAccountsPageProps): React.ReactElement {
+  const { t } = useTranslation();
   const [{ activeAccount }, actions] = useAccountsContext();
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
@@ -246,7 +248,7 @@ export function DerivedAccountsPage({
       return (
         <LoadingContainer>
           <CircularProgress sx={{ color: colors.accent.primary }} />
-          <LoadingText>Searching for accounts...</LoadingText>
+          <LoadingText>{t('wallet.derived.searching')}</LoadingText>
           <Box sx={{ width: '100%' }}>
             <DerivedAccountCardSkeleton />
             <DerivedAccountCardSkeleton />
@@ -259,19 +261,15 @@ export function DerivedAccountsPage({
     if (accounts.length === 0) {
       return (
         <EmptyContainer>
-          <EmptyTitle>No Derived Accounts Found</EmptyTitle>
-          <EmptySubtitle>
-            Could not derive additional accounts from your seed phrase.
-          </EmptySubtitle>
+          <EmptyTitle>{t('wallet.derived.empty_title')}</EmptyTitle>
+          <EmptySubtitle>{t('wallet.derived.empty_subtitle')}</EmptySubtitle>
         </EmptyContainer>
       );
     }
 
     return (
       <AccountsContainer>
-        <FoundText>
-          Found {accounts.length} derived account{accounts.length !== 1 ? 's' : ''}
-        </FoundText>
+        <FoundText>{t('wallet.derived.found', { count: accounts.length })}</FoundText>
         {accounts.map((account) => {
           const key = `${account.networkId}-${account.index}`;
           return (
@@ -298,10 +296,8 @@ export function DerivedAccountsPage({
       <ScreenHeader />
       <Content>
         <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
-        <Title>Derived Accounts</Title>
-        <Subtitle>
-          Search for additional accounts derived from your seed phrase.
-        </Subtitle>
+        <Title>{t('wallet.derived.title')}</Title>
+        <Subtitle>{t('wallet.derived.subtitle')}</Subtitle>
 
         {renderContent()}
 
@@ -313,11 +309,11 @@ export function DerivedAccountsPage({
               loading={importing}
               testID="derived-import-button"
             >
-              {`IMPORT SELECTED (${selectedCount})`}
+              {t('wallet.derived.import_selected', { count: selectedCount })}
             </PrimaryButton>
           )}
           <SecondaryButton onClick={handleSkip} disabled={importing} testID="derived-skip-button">
-            {accounts.length === 0 ? 'CONTINUE' : 'SKIP'}
+            {accounts.length === 0 ? t('wallet.derived.continue') : t('wallet.derived.skip')}
           </SecondaryButton>
         </ButtonContainer>
       </Content>

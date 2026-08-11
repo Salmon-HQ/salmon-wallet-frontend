@@ -11,18 +11,22 @@ import type { ValidationResult, ValidationState } from '../types/validation';
 /**
  * Validation result code to message mapping.
  */
+/**
+ * Validation result code to translation-key mapping. Render sites resolve
+ * these through t() so every platform shows localized copy.
+ */
 export const VALIDATION_MESSAGES: Record<string, string> = {
   // Shared
-  network_error: 'Could not verify address. Check your connection.',
+  network_error: 'send.validation.network_error',
   // Solana
-  invalid: 'Invalid address format',
-  invalid_domain: 'Could not resolve domain name',
-  same_address: 'Cannot send to your own address',
-  no_info: 'This account does not exist on-chain yet. The recipient will need to fund it.',
-  off_curve_no_funds: 'This is a program-derived address without funds',
-  off_curve_has_funds: 'This is a program-derived address',
+  invalid: 'send.validation.invalid',
+  invalid_domain: 'send.validation.invalid_domain',
+  same_address: 'send.validation.same_address',
+  no_info: 'send.validation.no_info',
+  off_curve_no_funds: 'send.validation.off_curve_no_funds',
+  off_curve_has_funds: 'send.validation.off_curve_has_funds',
   // Ethereum
-  no_funds: 'This address has no ETH balance',
+  no_funds: 'send.validation.no_funds',
 };
 
 /**

@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
@@ -228,7 +229,7 @@ export function InputAddress({
   address,
   onChange,
   onValidation,
-  placeholder = 'Enter address or domain',
+  placeholder,
   label,
   disabled = false,
   errorMessage,
@@ -236,6 +237,7 @@ export function InputAddress({
   className,
   style,
 }: InputAddressProps) {
+  const { t } = useTranslation();
   const [isFocused, setIsFocused] = useState(false);
   const [state] = useAccountsContext();
   const { activeBlockchainAccount } = state;
@@ -303,7 +305,7 @@ export function InputAddress({
         <StyledInput
           value={address}
           onChange={handleChange}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('send.enter_address_or_domain')}
           disabled={disabled || isValidating}
           $inputDisabled={disabled}
           autoComplete="off"
@@ -329,7 +331,7 @@ export function InputAddress({
       {displayMessage && (
         <MessageContainer data-testid={`${testID}-message`}>
           <MessageText $messageType={displayMessageType}>
-            {displayMessage}
+            {t(displayMessage)}
           </MessageText>
         </MessageContainer>
       )}
@@ -337,7 +339,7 @@ export function InputAddress({
       {/* Domain Resolution Info */}
       {isDomain && resolvedAddress && (
         <DomainInfo data-testid={`${testID}-domain-info`}>
-          <DomainLabel>Resolved Address:</DomainLabel>
+          <DomainLabel>{t('send.resolved_address')}</DomainLabel>
           <DomainValue title={resolvedAddress}>
             {resolvedAddress}
           </DomainValue>

@@ -6,6 +6,7 @@
  * Reuses SwapDetailRow and SwapReviewCard components from SwapScreen.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -126,10 +127,11 @@ export function BridgeReviewScreen({
   confirmLabel,
   style,
 }: BridgeReviewScreenProps) {
+  const { t } = useTranslation();
   return (
     <Container style={style}>
       {/* Title */}
-      <Title>Swap Review</Title>
+      <Title>{t('bridge.review.title')}</Title>
 
       {/* Scrollable Content */}
       <ScrollContainer>
@@ -137,11 +139,11 @@ export function BridgeReviewScreen({
           {/* Send/Receive Cards */}
           <CardsContainer>
             <SwapReviewCard
-              label="You Send"
+              label={t('swap.you_send')}
               amount={formatAmountWithSymbol(inAmount, inToken.symbol)}
             />
             <SwapReviewCard
-              label="You Receive (estimated)"
+              label={t('bridge.review.youReceiveEstimated')}
               amount={formatAmountWithSymbol(outAmount, outToken.symbol)}
             />
           </CardsContainer>
@@ -149,28 +151,28 @@ export function BridgeReviewScreen({
           {/* Details Section */}
           <DetailsContainer>
             <SwapDetailRow
-              label="Recipient"
+              label={t('bridge.review.recipient')}
               value={getShortAddress(recipientAddress, 8) ?? ''}
             />
             <SwapDetailRow
-              label="From Network"
+              label={t('bridge.review.fromNetwork')}
               value={inToken.network || 'Solana'}
             />
             <SwapDetailRow
-              label="To Network"
-              value={outToken.network || 'Unknown'}
+              label={t('bridge.review.toNetwork')}
+              value={outToken.network || t('transactions.unknown')}
             />
             {estimate && (
               <>
                 <SwapDetailRow
-                  label="Minimum Amount"
+                  label={t('bridge.review.minimumAmount')}
                   value={formatAmountWithSymbol(
                     estimate.minAmount,
                     inToken.symbol
                   )}
                 />
                 <SwapDetailRow
-                  label="Estimated Output"
+                  label={t('bridge.review.estimatedOutput')}
                   value={formatAmountWithSymbol(
                     estimate.estimatedAmount,
                     outToken.symbol
@@ -178,16 +180,13 @@ export function BridgeReviewScreen({
                 />
               </>
             )}
-            <SwapDetailRow label="Provider" value="StealthEX" />
+            <SwapDetailRow label={t('bridge.review.provider')} value="StealthEX" />
           </DetailsContainer>
 
           {/* Warning Box */}
           <WarningBox>
-            <WarningTitle>Please Note</WarningTitle>
-            <WarningText>
-              Cross-chain swaps typically take 10-30 minutes to complete. You
-              will receive a deposit address after confirmation.
-            </WarningText>
+            <WarningTitle>{t('bridge.review.pleaseNote')}</WarningTitle>
+            <WarningText>{t('bridge.review.pleaseNoteText')}</WarningText>
           </WarningBox>
         </ScrollContent>
       </ScrollContainer>
@@ -197,7 +196,7 @@ export function BridgeReviewScreen({
         onBack={onBack}
         onConfirm={onConfirm}
         isConfirming={isConfirming}
-        confirmLabel={confirmLabel ?? 'Confirm Swap'}
+        confirmLabel={confirmLabel ?? t('bridge.review.confirmSwap')}
       />
     </Container>
   );

@@ -1,6 +1,7 @@
 import { colors, fontFamilyNative, fontSize, fontWeight, borderRadius, borderWidth, gradients, shadows, componentSizes, ms, s, vs, spacing } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -52,6 +53,7 @@ export const NftCard: React.FC<NftCardProps> = ({
   style,
   testID,
 }) => {
+  const { t } = useTranslation();
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
@@ -94,7 +96,7 @@ export const NftCard: React.FC<NftCardProps> = ({
           onLoadStart={handleImageLoadStart}
           onLoadEnd={handleImageLoadEnd}
           onError={handleImageError}
-          accessibilityLabel={`NFT image for ${nft.name}`}
+          accessibilityLabel={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: nft.name })}
           recyclingKey={nft.mint}
           autoplay={true}
         />
@@ -121,7 +123,7 @@ export const NftCard: React.FC<NftCardProps> = ({
    * Render the name badge at the bottom of the card
    */
   const renderNameBadge = () => {
-    const displayName = nft.name || 'Unnamed NFT';
+    const displayName = nft.name || t('nft.unnamed', 'Unnamed NFT');
 
     return (
       <View style={styles.nameBadgeContainer}>
@@ -151,8 +153,8 @@ export const NftCard: React.FC<NftCardProps> = ({
       activeOpacity={0.8}
       disabled={!onPress}
       accessibilityRole="button"
-      accessibilityLabel={`NFT: ${nft.name}`}
-      accessibilityHint={onPress ? 'Double tap to view NFT details' : undefined}
+      accessibilityLabel={t('nft.detail.cardLabel', 'NFT: {{name}}', { name: nft.name })}
+      accessibilityHint={onPress ? t('accessibility.nft_view_hint', 'Double tap to view NFT details') : undefined}
       testID={testID ?? `nft-card-${nft.mint ?? nft.name}`}
     >
       {renderBackground()}

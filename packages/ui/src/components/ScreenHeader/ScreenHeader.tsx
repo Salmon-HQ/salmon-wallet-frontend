@@ -11,6 +11,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { colors, componentSizes, contentPadding, opacity } from '@salmon/shared';
 import { StepIndicator } from '../StepIndicator';
 import type { ScreenHeaderProps } from './types';
+import { useTranslation } from 'react-i18next';
 
 const Container = styled(Box)({
   display: 'flex',
@@ -82,13 +83,14 @@ export function ScreenHeader({
   style,
   testID,
 }: ScreenHeaderProps) {
+  const { t } = useTranslation();
   return (
     <Container style={style} className={className}>
       {/* Back button */}
       <BackButton
         onClick={onBack}
         disabled={!onBack || backDisabled}
-        aria-label="Go back"
+        aria-label={t('accessibility.go_back', 'Go back')}
         data-testid={testID ?? 'screen-header-back-button'}
       >
         {onBack && (

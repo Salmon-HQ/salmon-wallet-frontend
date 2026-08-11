@@ -181,7 +181,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
           testID="send-selected-token"
           onPress={onBack}
           activeOpacity={0.7}
-          accessibilityLabel={`Selected token: ${token.name}`}
+          accessibilityLabel={t('accessibility.selected_token', { name: token.name })}
         >
           <BlurContainer style={styles.tokenCard}>
           <View style={styles.tokenCardLeft}>
@@ -256,7 +256,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
               addressMessageType === 'error' && styles.validationMessageError,
               addressMessageType === 'warning' && styles.validationMessageWarning,
             ]}>
-              {addressMessage}
+              {t(addressMessage)}
             </Text>
           )}
         </View>
@@ -327,7 +327,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
                   onPress={() => handleQuickFill(option.value)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.quickFillText}>{option.label}</Text>
+                  <Text style={styles.quickFillText}>{option.value === 1 ? t('general.max') : option.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>

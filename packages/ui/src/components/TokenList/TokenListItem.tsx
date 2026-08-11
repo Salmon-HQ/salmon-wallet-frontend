@@ -5,6 +5,7 @@
  * Uses responsive scaling (s, vs, ms) from shared to match mobile proportions.
  */
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -218,6 +219,7 @@ export function TokenListItem({
   style,
   className,
 }: TokenListItemProps) {
+  const { t } = useTranslation();
   const [, { formatValue, formatChange }] = useCurrencyContext();
   const { name, symbol, logo, price, uiAmount, usdBalance, last24HoursChange, tags } = token;
 
@@ -260,7 +262,7 @@ export function TokenListItem({
       <BitcoinContainer
         style={style}
         className={className}
-        aria-label={`${name} token, balance ${uiAmount} ${symbol}`}
+        aria-label={t('accessibility.token_balance', '{{name}} token, balance {{amount}} {{symbol}}', { name, amount: uiAmount, symbol })}
         data-testid={`token-row-${symbol}`}
       >
         {logo ? (
@@ -303,7 +305,7 @@ export function TokenListItem({
       style={style}
       className={className}
       role="button"
-      aria-label={`${name} token, balance ${uiAmount} ${symbol}`}
+      aria-label={t('accessibility.token_balance', '{{name}} token, balance {{amount}} {{symbol}}', { name, amount: uiAmount, symbol })}
       data-testid={`token-row-${symbol}`}
     >
       {logo ? (

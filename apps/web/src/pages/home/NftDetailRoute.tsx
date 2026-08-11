@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -12,12 +13,14 @@ import {
   useSettleAfterTx,
   isSolanaNft,
   createBurnTransaction,
+  classifyTransactionError,
   type NftData,
 } from '@salmon/shared';
 import { isSolanaAccount } from '@salmon/shared/utils/account';
 import { NftDetailPage, NftSendDialog } from '@salmon/ui';
 
 export function NftDetailRoute(): React.ReactElement {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const nft = location.state as NftData | null;
@@ -85,13 +88,12 @@ export function NftDetailRoute(): React.ReactElement {
         if (txResponse.lookupTable) {
           const balance = await solAccount.getCredit();
           if (balance < txResponse.lookupTable.estimatedRentLamports) {
-            setBurnError('Insufficient SOL balance to cover burn transaction fees.');
+            setBurnError('nft.burn.insufficientFeeSol');
           }
         }
       })
       .catch((err) => {
-        const message = err instanceof Error ? err.message : 'Burn failed';
-        setBurnError(message);
+        setBurnError(classifyTransactionError(err));
       })
       .finally(() => {
         setBurnPreparing(false);
@@ -115,7 +117,7 @@ export function NftDetailRoute(): React.ReactElement {
       setBurnStep('success');
     } catch (err) {
       console.error('Failed to burn NFT:', err);
-      setBurnError(err instanceof Error ? err.message : 'Burn failed');
+      setBurnError(classifyTransactionError(err));
     } finally {
       setBurnPreparing(false);
     }
@@ -158,7 +160,7 @@ export function NftDetailRoute(): React.ReactElement {
           textAlign: 'center',
           marginBottom: spacing.md,
         }}>
-          NFT not found. Please navigate from your collection.
+          {t('nft.notFound', 'NFT not found. Please navigate from your collection.')}
         </Typography>
         <Typography
           component="a"
@@ -171,7 +173,7 @@ export function NftDetailRoute(): React.ReactElement {
             textDecoration: 'underline',
           }}
         >
-          Go to Home
+          {t('general.go_home', 'Go to Home')}
         </Typography>
       </Box>
     );

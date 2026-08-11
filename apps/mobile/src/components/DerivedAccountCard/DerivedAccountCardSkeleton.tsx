@@ -1,5 +1,6 @@
 import React from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { ContentLoader, Rect } from '@salmon/shared';
 import {
   borderRadius,
@@ -21,6 +22,7 @@ const DerivedAccountCardSkeletonComponent: React.FC<DerivedAccountCardSkeletonPr
   testID,
   animated = true,
 }) => {
+  const { t } = useTranslation();
   const checkboxSize = componentSizes.checkboxSize;
   const checkboxMarginRight = spacing.lg;
 
@@ -48,7 +50,7 @@ const DerivedAccountCardSkeletonComponent: React.FC<DerivedAccountCardSkeletonPr
         viewBox={`0 0 ${cardInnerWidth} ${totalHeight}`}
         backgroundColor={colors.skeleton.base}
         foregroundColor={colors.skeleton.highlight}
-        accessibilityLabel="Loading account information"
+        accessibilityLabel={t('accessibility.loading_account_info', 'Loading account information')}
       >
         {/* Checkbox */}
         <Rect

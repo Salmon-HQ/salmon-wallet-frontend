@@ -93,7 +93,9 @@ const SKELETON_COUNT = 5;
 const SKELETON_ROW_HEIGHT = vs(12) * 2 + ms(32); // paddingVertical * 2 + logo height
 const SKELETON_ROW_WIDTH = 280; // approximate inner width
 
-const TokenSelectSkeleton: React.FC = () => (
+const TokenSelectSkeleton: React.FC = () => {
+  const { t } = useTranslation();
+  return (
   <View style={styles.container}>
     {/* Search bar skeleton */}
     <BlurContainer style={styles.searchContainer}>
@@ -104,7 +106,7 @@ const TokenSelectSkeleton: React.FC = () => (
         viewBox={`0 0 ${SKELETON_ROW_WIDTH} ${vs(20)}`}
         backgroundColor={colors.skeleton.base}
         foregroundColor={colors.skeleton.highlight}
-        accessibilityLabel="Loading token list"
+        accessibilityLabel={t('accessibility.loading_token_list')}
       >
         <Circle cx={ms(9)} cy={vs(10)} r={ms(9)} />
         <Rect x={ms(24)} y={vs(4)} rx="4" ry="4" width="120" height={vs(12)} />
@@ -145,7 +147,8 @@ const TokenSelectSkeleton: React.FC = () => (
       ))}
     </View>
   </View>
-);
+  );
+};
 
 export const StepTokenSelect: React.FC<StepTokenSelectProps> = ({
   tokens,

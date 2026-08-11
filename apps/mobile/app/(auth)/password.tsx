@@ -308,7 +308,10 @@ export default function PasswordScreen() {
     : undefined;
 
   // Loading screen title based on flow
-  const loadingTitle = flowType === 'recover' ? 'Recovering Account' : 'Creating Account';
+  const loadingTitle =
+    flowType === 'recover'
+      ? t('wallet.recover.recovering_account')
+      : t('wallet.create.creating_account');
 
   return (
     <>
@@ -408,15 +411,15 @@ export default function PasswordScreen() {
               {/* Terms Text */}
               <Text style={styles.termsText}>
                 {flowType === 'recover'
-                  ? t('wallet.recover.i_accept_terms_conditions').replace('Terms & Conditions', '')
-                  : t('wallet.create.i_accept_terms_conditions').replace('Terms & Conditions', '')}
+                  ? t('wallet.recover.terms_prefix')
+                  : t('wallet.create.terms_prefix')}
                 <Text
                   style={styles.termsHighlight}
                   onPress={handleTermsPress}
                   testID="password-terms-link"
                   accessibilityRole="link"
                 >
-                  Terms & Conditions
+                  {t('general.terms_and_conditions')}
                 </Text>
               </Text>
 
@@ -440,7 +443,7 @@ export default function PasswordScreen() {
       <LoadingScreen
         visible={isLoading}
         title={loadingTitle}
-        subtitle="Please wait while we secure your wallet"
+        subtitle={t('wallet.create.securing_wallet')}
         showTips={true}
         tipInterval={4000}
       />

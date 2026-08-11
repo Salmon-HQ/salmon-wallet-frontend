@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -88,6 +89,7 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
   truncate = 'medium',
   style,
 }) => {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const displayAddress = getTruncatedAddress(address, truncate);
@@ -130,8 +132,8 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
           style={[styles.copyButton, copied && styles.copyButtonCopied]}
           activeOpacity={0.6}
           accessibilityRole="button"
-          accessibilityLabel={`Copy ${label} address`}
-          accessibilityHint="Copies the address to clipboard"
+          accessibilityLabel={t('transactions.detail.copyAddressLabel', { label })}
+          accessibilityHint={t('transactions.detail.copyAddressHint')}
         >
           <Ionicons
             name={copied ? 'checkmark' : 'copy-outline'}
