@@ -473,6 +473,9 @@ export function useSwapScreenLogic<StyleType = unknown>({
       } catch (error) {
         console.error('Failed to load bridge tokens:', error);
         setAvailableOutTokens([]);
+        // Surface the failure on the form (reviewWarning) instead of silently
+        // rendering an output list with no cross-chain options.
+        setQuoteError(classifyBridgeError(error, undefined));
       } finally {
         setIsLoadingBridgeTokens(false);
       }

@@ -15,7 +15,7 @@ import {
   type NftSectionKey,
   type NftSection,
 } from '@salmon/shared';
-import { NftCarouselSection } from '@salmon/ui';
+import { NftCarouselSection, WarningNotice } from '@salmon/ui';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -110,6 +110,8 @@ export function CollectiblesTab({
 
   const isLoading = visibleKeys.some((key) => nftsBySections[key].loading);
   const isEmpty = !isLoading && visibleKeys.every((key) => nftsBySections[key].nfts.length === 0);
+  const loadError =
+    mainnetQuery.error !== null || (developerNetworks && devnetQuery.error !== null);
 
   const handleNftPress = useCallback((nft: NftData) => {
     onNftDetailPress?.(nft);
@@ -121,6 +123,15 @@ export function CollectiblesTab({
 
   return (
     <ScrollContainer>
+      {loadError && (
+        <Box sx={{ marginBottom: `${spacing.md}px` }} data-testid="collectibles-load-error">
+          <WarningNotice
+            tone="warning"
+            title={t('collectibles.load_error', "Your collectibles couldn't be loaded right now.")}
+          />
+        </Box>
+      )}
+
       {isEmpty && (
         <EmptyState data-testid="collectibles-empty">
           <EmptyStateText>{t('collectibles.no_nfts', 'No collectibles found')}</EmptyStateText>

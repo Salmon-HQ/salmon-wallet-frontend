@@ -31,6 +31,7 @@ import {
   NftCard,
   NftCardSkeleton,
   SolanaSvgIcon,
+  WarningNotice,
 } from '@/components';
 
 // ============================================================================
@@ -192,6 +193,9 @@ export function CollectiblesPage({
 
   const isEmpty = !isLoading && visibleKeys.every((key) => nftsBySections[key].nfts.length === 0);
 
+  const loadError =
+    mainnetQuery.error !== null || (developerNetworks && devnetQuery.error !== null);
+
   // Handlers
   const handleNftPress = useCallback((nft: NftData) => {
     onNftDetailPress?.(nft);
@@ -206,6 +210,18 @@ export function CollectiblesPage({
   return (
     <Container>
       <SectionTitle>{t('collectibles.title', 'Collectibles')}</SectionTitle>
+
+      {loadError && (
+        <Box
+          sx={{ paddingLeft: `${spacing.lg}px`, paddingRight: `${spacing.lg}px` }}
+          data-testid="collectibles-load-error"
+        >
+          <WarningNotice
+            tone="warning"
+            title={t('collectibles.load_error', "Your collectibles couldn't be loaded right now.")}
+          />
+        </Box>
+      )}
 
       {/* Empty state */}
       {isEmpty && (

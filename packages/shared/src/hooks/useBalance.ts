@@ -118,8 +118,10 @@ async function fetchSolanaBalance(
       last24HoursChangePercent,
     };
   } catch (error) {
+    // Rethrow so react-query records the failure and `error`/`hasErrors`
+    // surface in the UI instead of rendering an empty wallet.
     console.warn('[useBalance] Failed to fetch Solana balance:', error);
-    return { items: [], usdTotal: 0, last24HoursChange: 0, last24HoursChangePercent: 0 };
+    throw error;
   }
 }
 
@@ -165,7 +167,7 @@ async function fetchBitcoinBalance(bitcoinAccount: BitcoinAccount): Promise<Wall
     };
   } catch (error) {
     console.warn('[useBalance] Failed to fetch Bitcoin balance:', error);
-    return { items: [], usdTotal: 0, last24HoursChange: 0, last24HoursChangePercent: 0 };
+    throw error;
   }
 }
 
@@ -211,7 +213,7 @@ async function fetchEthereumBalance(ethereumAccount: EthereumAccount): Promise<W
     };
   } catch (error) {
     console.warn('[useBalance] Failed to fetch Ethereum balance:', error);
-    return { items: [], usdTotal: 0, last24HoursChange: 0, last24HoursChangePercent: 0 };
+    throw error;
   }
 }
 

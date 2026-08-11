@@ -51,6 +51,16 @@ jest.mock('@salmon/assets/src/fonts/DMSans-Bold.ttf', () => 'DMSansBold', { virt
 jest.mock('@salmon/assets/src/fonts/DMSans-ExtraBold.ttf', () => 'DMSansExtraBold', { virtual: true });
 jest.mock('@salmon/assets/src/fonts/DMSans-Black.ttf', () => 'DMSansBlack', { virtual: true });
 
+jest.mock('../src/components/WalletInitErrorScreen', () => {
+  const React = require('react');
+  const { Pressable } = require('react-native');
+  return {
+    WalletInitErrorScreen: ({ onRetry }: { onRetry: () => void }) => (
+      <Pressable testID="wallet-init-error" onPress={onRetry} />
+    ),
+  };
+});
+
 jest.mock('@salmon/shared', () => ({
   colors: {
     background: { primary: '#000' },
@@ -173,6 +183,43 @@ describe('RootLayout mobile lock lifecycle', () => {
     await Promise.resolve();
 
     expect(mockLockAccounts).not.toHaveBeenCalled();
+  });
+
+  it('blocks with the init-error screen when init failed and no accounts loaded', async () => {
+    const { router } = jest.requireMock('expo-router');
+    mockUseAccountsContext.mockReturnValue([
+      {
+        ready: true,
+        locked: false,
+        requiredLock: false,
+        error: 'init failed',
+        accounts: [],
+      },
+      { lockAccounts: mockLockAccounts, retryInit: jest.fn() },
+    ]);
+
+    const { getByTestId } = render(<RootLayout />);
+
+    expect(getByTestId('wallet-init-error')).toBeTruthy();
+    // While gated, never redirect into onboarding.
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it('does not block when accounts loaded despite a secondary error', async () => {
+    mockUseAccountsContext.mockReturnValue([
+      {
+        ready: true,
+        locked: false,
+        requiredLock: false,
+        error: 'secondary failure',
+        accounts: [{ id: 'account-1' }],
+      },
+      { lockAccounts: mockLockAccounts, retryInit: jest.fn() },
+    ]);
+
+    const { queryByTestId } = render(<RootLayout />);
+
+    expect(queryByTestId('wallet-init-error')).toBeNull();
   });
 
   it('locks when iOS eventually reaches background after becoming inactive', async () => {

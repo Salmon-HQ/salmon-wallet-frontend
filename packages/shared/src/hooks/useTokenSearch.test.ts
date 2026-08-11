@@ -123,4 +123,58 @@ describe('useTokenSearch', () => {
     expect(result.current.isError).toBe(false);
     expect(result.current.displayTokens).toHaveLength(3);
   });
+
+  it('retry re-runs the current query after a failure', async () => {
+    const onSearch = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('search backend down'))
+      .mockResolvedValueOnce([{ address: 'ray', symbol: 'RAY', name: 'Raydium' }]);
+    const { result } = renderHook(() => useTokenSearch(TOKENS, onSearch));
+
+    act(() => {
+      result.current.setSearchQuery('ray');
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+
+    expect(result.current.isError).toBe(true);
+
+    act(() => {
+      result.current.retry();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+
+    expect(onSearch).toHaveBeenCalledTimes(2);
+    expect(onSearch).toHaveBeenLastCalledWith('ray');
+    expect(result.current.isError).toBe(false);
+    expect(result.current.displayTokens).toEqual([
+      { address: 'ray', symbol: 'RAY', name: 'Raydium' },
+    ]);
+  });
+
+  it('clears a stale error when the query drops below the search threshold', async () => {
+    const onSearch = vi.fn().mockRejectedValue(new Error('search backend down'));
+    const { result } = renderHook(() => useTokenSearch(TOKENS, onSearch));
+
+    act(() => {
+      result.current.setSearchQuery('ray');
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+
+    expect(result.current.isError).toBe(true);
+
+    act(() => {
+      result.current.setSearchQuery('');
+    });
+
+    // The local token list must render again — an old search error must not
+    // keep blocking it.
+    expect(result.current.isError).toBe(false);
+    expect(result.current.displayTokens).toHaveLength(3);
+  });
 });

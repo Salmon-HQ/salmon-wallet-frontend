@@ -22,6 +22,7 @@ export function useTokenSearch(
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [retryToken, setRetryToken] = useState(0);
 
   // Ref to track the latest search query for async operations
   const latestQueryRef = useRef(searchQuery);
@@ -43,6 +44,7 @@ export function useTokenSearch(
     if (!onSearch || searchQuery.length < MIN_SEARCH_LENGTH) {
       setSearchResults([]);
       setIsSearching(false);
+      setError(null);
       return;
     }
 
@@ -73,7 +75,12 @@ export function useTokenSearch(
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [searchQuery, onSearch]);
+  }, [searchQuery, onSearch, retryToken]);
+
+  // Re-run the current query after a failed search (retry UI hook)
+  const retry = useCallback(() => {
+    setRetryToken((token) => token + 1);
+  }, []);
 
   // Determine which tokens to display
   const displayTokens = useMemo(() => {
@@ -123,6 +130,7 @@ export function useTokenSearch(
     hasMore,
     loadMore,
     reset,
+    retry,
     error,
     isError: error !== null,
   };

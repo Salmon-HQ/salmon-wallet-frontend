@@ -237,7 +237,7 @@ describe('useBalance (react-query)', () => {
     expect(mockSetStorageItem).toHaveBeenCalledWith('hidden_balance', false);
   });
 
-  it('returns a safe empty balance when Solana balance fetch fails inside the hook fetcher', async () => {
+  it('surfaces an error (instead of a fake empty balance) when the Solana balance fetch fails', async () => {
     const account = {
       getReceiveAddress: vi.fn().mockReturnValue('wallet-1'),
       getBalance: vi.fn().mockRejectedValue(new Error('rpc down')),
@@ -251,15 +251,11 @@ describe('useBalance (react-query)', () => {
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
-      expect(result.current.tokens).toEqual([]);
+      expect(result.current.isError).toBe(true);
     });
 
-    expect(result.current.usdTotal).toBe(0);
-    expect(result.current.changeAmount).toBe(0);
-    expect(result.current.changePercent).toBe(0);
-    // The chain-specific fetcher swallows errors and returns an empty balance,
-    // so the query resolves successfully — error remains null.
-    expect(result.current.error).toBeNull();
+    expect(result.current.tokens).toEqual([]);
+    expect(result.current.error).toBe('rpc down');
   });
 
   it('loads and transforms Bitcoin balances when the account is detected as bitcoin', async () => {

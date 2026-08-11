@@ -21,6 +21,7 @@ import {
 import { styled } from '../../utils/styled';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { DerivedAccountCard, DerivedAccountCardSkeleton } from '../DerivedAccountCard';
+import { WarningNotice } from '../WarningNotice';
 import { ScreenHeader } from '../ScreenHeader';
 import { getAuthContainerStyles } from './common';
 import type { DerivedAccountsPageProps } from './types';
@@ -143,6 +144,10 @@ export function DerivedAccountsPage({
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [accounts, setAccounts] = useState<DerivedAccountInfo[]>([]);
+  // Networks whose scan threw (RPC outage etc.), so an outage is
+  // distinguishable from "no accounts".
+  const [failedNetworks, setFailedNetworks] = useState<string[]>([]);
+  const [scanToken, setScanToken] = useState(0);
 
   const mnemonic = activeAccount?.mnemonic;
 
@@ -166,7 +171,7 @@ export function DerivedAccountsPage({
         scanNetworks.includes(id),
       );
 
-      const results = await scanDerivedAccounts(
+      const { accounts: results, failedNetworks } = await scanDerivedAccounts(
         mnemonic,
         networkIds,
         undefined,
@@ -175,6 +180,7 @@ export function DerivedAccountsPage({
 
       if (!cancelled) {
         setAccounts(results);
+        setFailedNetworks(failedNetworks);
         setLoading(false);
       }
     };
@@ -183,7 +189,13 @@ export function DerivedAccountsPage({
     return () => {
       cancelled = true;
     };
-  }, [activeAccount, mnemonic]);
+  }, [activeAccount, mnemonic, scanToken]);
+
+  /** Re-runs the scan after a total failure. */
+  const handleRetryScan = useCallback(() => {
+    setFailedNetworks([]);
+    setScanToken((token) => token + 1);
+  }, []);
 
   const handleToggleAccount = useCallback((key: string) => {
     setAccounts((prev) =>
@@ -259,6 +271,18 @@ export function DerivedAccountsPage({
     }
 
     if (accounts.length === 0) {
+      // A scan that could not look must not present as an empty wallet.
+      if (failedNetworks.length > 0) {
+        return (
+          <EmptyContainer data-testid="derived-scan-error">
+            <EmptyTitle>{t('wallet.derived.scan_failed_title')}</EmptyTitle>
+            <EmptySubtitle>{t('wallet.derived.scan_failed_body')}</EmptySubtitle>
+            <SecondaryButton onClick={handleRetryScan} testID="derived-scan-retry-button">
+              {t('transactions.tapToRetry')}
+            </SecondaryButton>
+          </EmptyContainer>
+        );
+      }
       return (
         <EmptyContainer>
           <EmptyTitle>{t('wallet.derived.empty_title')}</EmptyTitle>
@@ -269,6 +293,11 @@ export function DerivedAccountsPage({
 
     return (
       <AccountsContainer>
+        {failedNetworks.length > 0 && (
+          <Box sx={{ marginBottom: `${spacing.md}px` }}>
+            <WarningNotice tone="warning" title={t('wallet.derived.scan_partial')} />
+          </Box>
+        )}
         <FoundText>{t('wallet.derived.found', { count: accounts.length })}</FoundText>
         {accounts.map((account) => {
           const key = `${account.networkId}-${account.index}`;

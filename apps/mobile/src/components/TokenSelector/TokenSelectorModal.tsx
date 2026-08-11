@@ -50,6 +50,8 @@ export function TokenSelectorModal({
     hasMore,
     loadMore,
     reset,
+    retry,
+    isError,
   } = useTokenSearch(tokens, onSearch);
 
   const handleClose = useCallback(() => {
@@ -173,12 +175,28 @@ export function TokenSelectorModal({
   const renderEmpty = useCallback(() => {
     if (isSearching) return null;
 
+    if (isError) {
+      return (
+        <View style={styles.emptyContainer} testID="token-search-error">
+          <Text style={styles.emptyText}>{t('wallet.token_search_failed')}</Text>
+          <TouchableOpacity
+            onPress={retry}
+            activeOpacity={0.7}
+            testID="token-search-retry-button"
+            accessibilityRole="button"
+          >
+            <Text style={styles.retryText}>{t('transactions.tapToRetry')}</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>{t('wallet.no_tokens_found', 'No tokens found')}</Text>
       </View>
     );
-  }, [isSearching, t]);
+  }, [isSearching, isError, retry, t]);
 
   return (
     <Modal
@@ -426,6 +444,14 @@ const styles = StyleSheet.create({
   emptyText: {
     color: colors.text.secondary,
     fontSize: fontSize.md,
+  },
+  retryText: {
+    color: colors.accent.primary,
+    fontSize: fontSize.md,
+    fontFamily: fontFamilyNative.medium,
+    fontWeight: fontWeight.medium,
+    marginTop: spacing.md,
+    padding: spacing.sm,
   },
   footer: {
     paddingVertical: spacing.md,

@@ -95,6 +95,14 @@ export type { GradientBackgroundProps } from './GradientBackground';
 export { BlurContainer } from './BlurContainer';
 export type { BlurContainerProps, BlurTint } from './BlurContainer';
 
+// WarningNotice - Icon-led alert banner for security/failure states
+export { WarningNotice } from './WarningNotice';
+export type { WarningNoticeProps, WarningNoticeTone } from './WarningNotice';
+
+// WalletInitErrorScreen - blocking gate for failed wallet initialization
+export { WalletInitErrorScreen } from './WalletInitErrorScreen';
+export type { WalletInitErrorScreenProps } from './WalletInitErrorScreen';
+
 // ScalesBackground - Repeating fish scales pattern background
 export { ScalesBackground } from './ScalesBackground';
 export type { ScalesBackgroundProps } from './ScalesBackground';

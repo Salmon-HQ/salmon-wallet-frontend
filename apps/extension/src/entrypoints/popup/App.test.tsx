@@ -43,6 +43,10 @@ vi.mock('@salmon/shared/utils/account', () => ({
   getActiveSolanaApprovalAccount: () => null,
 }));
 
+vi.mock('@salmon/ui', () => ({
+  WalletInitErrorScreen: () => null,
+}));
+
 vi.mock('../../utils/sessionKeyCache', () => ({
   clearSessionKey: () => mockClearSessionKey(),
 }));

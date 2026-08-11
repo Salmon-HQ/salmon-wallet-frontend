@@ -60,6 +60,13 @@ interface BridgeSettlementContextValue {
   trackBridgeExchange: (exchange: PendingBridgeExchange) => void;
   /** Exchanges currently being polled. */
   pendingExchanges: PendingBridgeExchange[];
+  /**
+   * True after several consecutive status-poll failures — the settlement
+   * watcher is blind, not the exchange failed. Reset on any successful poll.
+   */
+  isStalled: boolean;
+  /** Forces an immediate poll (retry UI hook); cadence is unchanged. */
+  retryNow: () => void;
 }
 
 const BridgeSettlementContext = createContext<BridgeSettlementContextValue | null>(null);
@@ -95,6 +102,9 @@ function bridgeSwapProps(ex: PendingBridgeExchange, success: boolean) {
 // status endpoint from being hammered.
 const DEFAULT_BRIDGE_POLL_INTERVAL_MS = 20_000;
 
+/** Consecutive failed status polls before the provider reports `isStalled`. */
+const STALLED_AFTER_CONSECUTIVE_POLL_FAILURES = 3;
+
 export interface BridgeSettlementProviderProps {
   children: React.ReactNode;
   /** Injectable for tests; defaults to the salmon-api bridge status endpoint. */
@@ -109,8 +119,12 @@ export function BridgeSettlementProvider({
   pollIntervalMs = DEFAULT_BRIDGE_POLL_INTERVAL_MS,
 }: BridgeSettlementProviderProps): React.ReactElement {
   const [pendingExchanges, setPendingExchanges] = useState<PendingBridgeExchange[]>([]);
+  const [isStalled, setIsStalled] = useState(false);
   const settleAfterTx = useSettleAfterTx();
   const pendingRef = useRef<PendingBridgeExchange[]>([]);
+  const consecutiveFailuresRef = useRef(0);
+  // Latest poll function, so retryNow() can fire it from outside the effect.
+  const pollRef = useRef<(() => Promise<void>) | null>(null);
   // Persistence must not run until the initial hydrate from storage completes,
   // otherwise the empty initial state would clobber a stored list.
   const hydratedRef = useRef(false);
@@ -172,8 +186,14 @@ export function BridgeSettlementProvider({
         let tx: BridgeTransaction | null = null;
         try {
           tx = await getStatus(ex.id);
+          consecutiveFailuresRef.current = 0;
+          setIsStalled(false);
         } catch (err) {
           console.warn('[BridgeSettlement] status poll failed:', err);
+          consecutiveFailuresRef.current += 1;
+          if (consecutiveFailuresRef.current >= STALLED_AFTER_CONSECUTIVE_POLL_FAILURES) {
+            setIsStalled(true);
+          }
           continue;
         }
         if (cancelled || !tx) continue;
@@ -223,17 +243,23 @@ export function BridgeSettlementProvider({
     // Poll once immediately so a resumed (rehydrated) exchange that already
     // finished while the app was closed settles right away instead of waiting a
     // full interval.
+    pollRef.current = poll;
     void poll();
     const interval = setInterval(poll, pollIntervalMs);
     return () => {
       cancelled = true;
+      pollRef.current = null;
       clearInterval(interval);
     };
   }, [pendingExchanges.length, pollIntervalMs, getStatus, settleAfterTx, remove]);
 
+  const retryNow = useCallback(() => {
+    void pollRef.current?.();
+  }, []);
+
   const value = useMemo(
-    () => ({ trackBridgeExchange, pendingExchanges }),
-    [trackBridgeExchange, pendingExchanges],
+    () => ({ trackBridgeExchange, pendingExchanges, isStalled, retryNow }),
+    [trackBridgeExchange, pendingExchanges, isStalled, retryNow],
   );
 
   return (

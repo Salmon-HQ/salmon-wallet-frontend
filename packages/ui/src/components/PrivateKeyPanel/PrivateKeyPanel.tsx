@@ -206,6 +206,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
   const [revealedIndexes, setRevealedIndexes] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
 
   // Build network list from the active account
   const networks = useMemo(
@@ -226,6 +227,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
     setSelectedNetworkId(networkId);
     setRevealedIndexes(new Set());
     setCopiedIndex(null);
+    setCopyFailedIndex(null);
   }, []);
 
   const handleReveal = useCallback((index: number) => {
@@ -248,9 +250,15 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
     async (privateKey: string, index: number) => {
       if (!revealedIndexes.has(index)) return;
 
-      await navigator.clipboard.writeText(privateKey);
-      setCopiedIndex(index);
-      setTimeout(() => setCopiedIndex(null), durationMs.feedbackLong);
+      try {
+        await navigator.clipboard.writeText(privateKey);
+        setCopyFailedIndex(null);
+        setCopiedIndex(index);
+        setTimeout(() => setCopiedIndex(null), durationMs.feedbackLong);
+      } catch {
+        // Surface the failure — a silent no-op looks like a successful copy.
+        setCopyFailedIndex(index);
+      }
     },
     [revealedIndexes],
   );
@@ -259,6 +267,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
     setSelectedNetworkId(null);
     setRevealedIndexes(new Set());
     setCopiedIndex(null);
+    setCopyFailedIndex(null);
   }, []);
 
   // ========================================================================
@@ -393,6 +402,19 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                       : t('actions.reveal', 'Reveal')}
                   </ActionButton>
                 </ActionRow>
+                {copyFailedIndex === index && (
+                  <Typography
+                    data-testid={`private-key-copy-error-${index}`}
+                    sx={{
+                      color: colors.status.error,
+                      fontSize: fontSize.sm,
+                      fontWeight: fontWeight.medium,
+                      marginTop: `${spacing.sm}px`,
+                    }}
+                  >
+                    {t('settings.copy_failed')}
+                  </Typography>
+                )}
               </Box>
             );
           })

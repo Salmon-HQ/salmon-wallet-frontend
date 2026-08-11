@@ -176,6 +176,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({
   selectedPeriod,
   onPeriodChange,
   loading = false,
+  error = false,
   color,
   height = 200,
   style,
@@ -242,8 +243,12 @@ export const PriceChart: React.FC<PriceChartProps> = ({
             />
           </Svg>
         ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>{t('token.chart.noData', 'No data available')}</Text>
+          <View style={styles.emptyState} testID={error ? 'price-chart-error' : undefined}>
+            <Text style={styles.emptyStateText}>
+              {error
+                ? t('token.chart.loadError', "Couldn't load chart data")
+                : t('token.chart.noData', 'No data available')}
+            </Text>
           </View>
         )}
       </View>

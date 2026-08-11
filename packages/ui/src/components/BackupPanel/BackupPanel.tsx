@@ -26,6 +26,7 @@ import KeyIcon from '@mui/icons-material/Key';
 import { useTranslation } from 'react-i18next';
 import { colors, spacing, borderRadius, borderWidth, useAccountsContext, fontFamily, fontSize, fontWeight, letterSpacing, opacity, componentSizes, duration, durationMs } from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
+import { WarningNotice } from '../WarningNotice';
 import type { BackupPanelProps } from './types';
 
 // ============================================================================
@@ -157,6 +158,7 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
 
   const [seedPhraseVisible, setSeedPhraseVisible] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
 
   // Get the mnemonic from the active account
   const mnemonic = useMemo(() => {
@@ -176,10 +178,15 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
   }, []);
 
   const handleCopy = useCallback(async () => {
-    if (mnemonic) {
+    if (!mnemonic) return;
+    try {
       await navigator.clipboard.writeText(mnemonic);
+      setCopyFailed(false);
       setCopied(true);
       setTimeout(() => setCopied(false), durationMs.feedbackLong);
+    } catch {
+      // A silent copy failure here means the user thinks the seed is saved.
+      setCopyFailed(true);
     }
   }, [mnemonic]);
 
@@ -286,6 +293,11 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
                     : t('actions.reveal', 'Reveal')}
                 </ActionButton>
               </ActionRow>
+              {copyFailed && (
+                <Box sx={{ marginTop: `${spacing.md}px` }} data-testid="backup-seed-copy-error">
+                  <WarningNotice tone="error" title={t('settings.copy_failed')} />
+                </Box>
+              )}
             </Box>
           </>
         )}

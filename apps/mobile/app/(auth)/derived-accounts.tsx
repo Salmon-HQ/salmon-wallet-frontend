@@ -41,6 +41,7 @@ import {
   PrimaryButton,
   ScreenHeader,
   SecondaryButton,
+  WarningNotice,
 } from '../../src/components';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -82,6 +83,9 @@ export default function DerivedAccountsScreen() {
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [accounts, setAccounts] = useState<DerivedAccountInfo[]>([]);
+  // Networks whose scan threw — distinguishes an outage from "no accounts".
+  const [failedNetworks, setFailedNetworks] = useState<string[]>([]);
+  const [scanToken, setScanToken] = useState(0);
 
   // Mnemonic comes from the unlocked active account in memory; never from
   // route params, which can be serialized by Expo Router into navigation
@@ -106,14 +110,26 @@ export default function DerivedAccountsScreen() {
       const networkIds = Object.keys(activeAccount.networksAccounts)
         .filter((id) => scanNetworks.includes(id));
 
-      const results = await scanDerivedAccounts(mnemonic, networkIds);
+      const { accounts: results, failedNetworks } = await scanDerivedAccounts(
+        mnemonic,
+        networkIds,
+      );
 
       setAccounts(results);
+      setFailedNetworks(failedNetworks);
       setLoading(false);
     };
 
     searchDerivedAccounts();
-  }, [mnemonic, activeAccount]);
+  }, [mnemonic, activeAccount, scanToken]);
+
+  /**
+   * Re-run the scan after a total failure
+   */
+  const handleRetryScan = useCallback(() => {
+    setFailedNetworks([]);
+    setScanToken((token) => token + 1);
+  }, []);
 
   /**
    * Toggle account selection by composite key (networkId-index)
@@ -203,6 +219,21 @@ export default function DerivedAccountsScreen() {
     }
 
     if (accounts.length === 0) {
+      // A scan that could not look must not present as an empty wallet.
+      if (failedNetworks.length > 0) {
+        return (
+          <View style={styles.emptyContainer} testID="derived-scan-error">
+            <Ionicons name="cloud-offline-outline" size={64} color={colors.text.tertiary} />
+            <Text style={styles.emptyTitle}>{t('wallet.derived.scan_failed_title')}</Text>
+            <Text style={styles.emptySubtitle}>{t('wallet.derived.scan_failed_body')}</Text>
+            <View style={styles.retryButtonContainer}>
+              <SecondaryButton onPress={handleRetryScan} testID="derived-scan-retry-button">
+                {t('transactions.tapToRetry')}
+              </SecondaryButton>
+            </View>
+          </View>
+        );
+      }
       return (
         <View style={styles.emptyContainer}>
           <Ionicons name="wallet-outline" size={64} color={colors.text.tertiary} />
@@ -214,6 +245,13 @@ export default function DerivedAccountsScreen() {
 
     return (
       <View style={styles.accountsContainer}>
+        {failedNetworks.length > 0 && (
+          <WarningNotice
+            tone="warning"
+            title={t('wallet.derived.scan_partial')}
+            style={styles.partialWarning}
+          />
+        )}
         <Text style={styles.foundText}>
           {t('wallet.derived.found', { count: accounts.length })}
         </Text>
@@ -367,6 +405,14 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     textAlign: 'center',
     paddingHorizontal: spacing['2xl'],
+  },
+
+  retryButtonContainer: {
+    marginTop: spacing.lg,
+    width: '100%',
+  },
+  partialWarning: {
+    marginBottom: spacing.lg,
   },
 
   // Accounts list

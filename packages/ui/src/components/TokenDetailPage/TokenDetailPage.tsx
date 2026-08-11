@@ -98,6 +98,7 @@ export function TokenDetailPage({
   coinInfo,
   marketData,
   loading = false,
+  chartError = false,
   onBack,
   style,
   className,
@@ -117,12 +118,13 @@ export function TokenDetailPage({
     >
       <ContentContainer>
         {/* PriceChart - full width */}
-        {(loading || chartData.length > 0) && (
+        {(loading || chartData.length > 0 || chartError) && (
           <PriceChart
             data={chartData}
             selectedPeriod={chartPeriod}
             onPeriodChange={onChartPeriodChange}
             loading={loading}
+            error={chartError}
             style={{ margin: `0 -${spacing.xl}px` }}
           />
         )}

@@ -25,6 +25,8 @@ export interface TokenInformationSheetPropsBase<TStyle> {
   marketData: MarketData | null;
   /** Whether data is loading */
   loading?: boolean;
+  /** Whether loading the chart data failed */
+  chartError?: boolean;
   /** Optional custom styles for the container */
   style?: TStyle;
 }

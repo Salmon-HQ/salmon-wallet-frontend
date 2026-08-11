@@ -66,6 +66,7 @@ export function PrivateKeyPanel({
   // Track which account indexes have been revealed (by index)
   const [revealedIndexes, setRevealedIndexes] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
 
   // Get accounts for the selected network
   const accountKeys: AccountKeyInfo[] = useMemo(
@@ -80,6 +81,7 @@ export function PrivateKeyPanel({
     setSelectedNetworkId(networkId);
     setRevealedIndexes(new Set());
     setCopiedIndex(null);
+    setCopyFailedIndex(null);
   }, []);
 
   /**
@@ -110,10 +112,13 @@ export function PrivateKeyPanel({
 
       try {
         await Clipboard.setStringAsync(privateKey);
+        setCopyFailedIndex(null);
         setCopiedIndex(index);
         setTimeout(() => setCopiedIndex(null), 2000);
       } catch (error) {
+        // Surface the failure — a silent no-op looks like a successful copy.
         console.error('Failed to copy private key:', error);
+        setCopyFailedIndex(index);
       }
     },
     [revealedIndexes],
@@ -126,6 +131,7 @@ export function PrivateKeyPanel({
     setSelectedNetworkId(null);
     setRevealedIndexes(new Set());
     setCopiedIndex(null);
+    setCopyFailedIndex(null);
   }, []);
   const currentTitle = selectedNetworkId
     ? t('settings.private_key')
@@ -267,6 +273,11 @@ export function PrivateKeyPanel({
               >
                 {isCopied ? t('wallet.copied') : t('actions.copy').toUpperCase()}
               </SecondaryButton>
+              {copyFailedIndex === index && (
+                <Text style={styles.copyFailedText} testID={`private-key-copy-error-${index}`}>
+                  {t('settings.copy_failed')}
+                </Text>
+              )}
             </View>
           );
         })
@@ -406,6 +417,13 @@ const styles = StyleSheet.create({
   },
   doneContainer: {
     marginTop: spacing.md,
+  },
+  copyFailedText: {
+    color: colors.status.error,
+    fontFamily: fontFamilyNative.medium,
+    fontSize: fontSize.sm,
+    marginTop: spacing.sm,
+    textAlign: 'center',
   },
 });
 

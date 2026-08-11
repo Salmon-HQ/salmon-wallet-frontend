@@ -11,6 +11,7 @@ import {
   useAnalyticsConsent,
   useTransactions,
   useAddressbook,
+  AddressbookError,
   useCoinMarketData,
   colors,
   spacing,
@@ -59,6 +60,7 @@ import { isSolanaAccount } from '@salmon/shared/utils/account';
 import { sessionArea } from '../../utils/storageCompat';
 import {
   WalletHeader,
+  WarningNotice,
   BalanceCardCarousel,
   ActionButtonRow,
   TokenList,
@@ -433,7 +435,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       availableNetworks.map((n) => ({ id: n.id, name: n.name, blockchain: n.id.split('-')[0] as BlockchainType })),
   }), [availableNetworks]);
 
-  const [{ contacts: addressBookContacts }, { addContact, editContact: editAddressBookContact, removeContact }] = useAddressbook({ networkAdapter: addressBookNetworkAdapter });
+  const [{ contacts: addressBookContacts, error: addressBookError }, { addContact, editContact: editAddressBookContact, removeContact, reload: reloadAddressBook }] = useAddressbook({ networkAdapter: addressBookNetworkAdapter });
+  // Inline error for address-book writes (translation key, rendered by the open panel)
+  const [addressBookWriteErrorKey, setAddressBookWriteErrorKey] = useState<string | null>(null);
 
   const addressBookItems: AddressBookItem[] = useMemo(
     () => addressBookContacts.map((c) => ({
@@ -526,6 +530,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     loading,
     refreshing,
     refresh,
+    error: balanceError,
     hiddenBalance,
     toggleHidden,
   } = useBalance({
@@ -889,6 +894,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     coinInfo: bitcoinCoinInfo,
     chartData: bitcoinChartDataRaw,
     loading: bitcoinDataLoading,
+    error: bitcoinDataError,
   } = useCoinMarketData({
     coinId: bitcoinCoinId,
     currency,
@@ -932,6 +938,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     coinInfo: selectedTokenCoinInfo,
     chartData: selectedTokenChartDataRaw,
     loading: selectedTokenLoading,
+    error: selectedTokenError,
   } = useCoinMarketData({
     coinId: selectedTokenCoinId,
     currency,
@@ -1017,8 +1024,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       <AddressBookPanel
         contacts={addressBookItems}
         activeNetworkId={networkId || 'solana-mainnet'}
-        onAddContact={() => onNavigate('address-book-add')}
+        onAddContact={() => {
+          setAddressBookWriteErrorKey(null);
+          onNavigate('address-book-add');
+        }}
         onEditContact={(contact) => {
+          setAddressBookWriteErrorKey(null);
           setEditingContact(contact);
           onNavigate('address-book-edit');
         }}
@@ -1026,6 +1037,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           await removeContact(address);
         }}
         onBack={onBack}
+        error={addressBookError}
+        onRetry={reloadAddressBook}
       />
     ),
     'address-book-add': ({ onBack }) => {
@@ -1037,9 +1050,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           activeNetworkName={activeNet?.name || 'Solana Mainnet'}
           activeBlockchain={blockchain}
           onSave={async (input: AddressInput) => {
-            await addContact(input);
+            setAddressBookWriteErrorKey(null);
+            try {
+              await addContact(input);
+            } catch (err) {
+              setAddressBookWriteErrorKey(
+                err instanceof AddressbookError && err.kind === 'resolve'
+                  ? 'settings.addressbook.resolve_failed'
+                  : 'settings.addressbook.save_failed',
+              );
+            }
           }}
           onBack={onBack}
+          errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
         />
       );
     },
@@ -1051,10 +1074,20 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           contact={editingContact}
           activeBlockchain={blockchain}
           onSave={async (originalAddress: string, input: AddressInput) => {
-            await editAddressBookContact(originalAddress, input);
-            setEditingContact(null);
+            setAddressBookWriteErrorKey(null);
+            try {
+              await editAddressBookContact(originalAddress, input);
+              setEditingContact(null);
+            } catch (err) {
+              setAddressBookWriteErrorKey(
+                err instanceof AddressbookError && err.kind === 'resolve'
+                  ? 'settings.addressbook.resolve_failed'
+                  : 'settings.addressbook.save_failed',
+              );
+            }
           }}
           onBack={onBack}
+          errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
         />
       );
     },
@@ -1116,6 +1149,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     currency, changeCurrency, supportedLanguages, currentLanguage, setLanguage,
     explorers, explorer, changeExplorer, explorerLoading, addressBookItems,
     networkId, allNetworks, addContact, editAddressBookContact, removeContact,
+    addressBookError, reloadAddressBook, addressBookWriteErrorKey, t,
     editingContact, activeTrustedApps, actions, editingAccountId, accountId,
   ]);
 
@@ -1140,6 +1174,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               coinInfo={selectedTokenCoinInfo}
               marketData={selectedTokenMarketData}
               loading={selectedTokenLoading && selectedTokenChartData.length === 0}
+              chartError={!!selectedTokenError && selectedTokenChartData.length === 0}
               onBack={handleTokenDetailBack}
             />
           );
@@ -1297,6 +1332,17 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                 style={{ marginTop: spacing['2xl'], marginBottom: spacing['2xl'] }}
               />
 
+              {/* Partial-load failure: keep whatever data loaded visible;
+                  retry is the header refresh button. */}
+              {balanceError && !switchingNetwork && (
+                <Box sx={{ padding: `0 ${spacing.lg}px`, marginBottom: `${spacing.md}px` }} data-testid="balance-load-error">
+                  <WarningNotice
+                    tone="warning"
+                    title={t('wallet.partial_load_error', "Some balances couldn't be loaded. Shown data may be incomplete.")}
+                  />
+                </Box>
+              )}
+
               {/* Token List Section — only this area scrolls */}
               <TokenSectionWrapper>
                 <TopListFade ref={topFadeRef} />
@@ -1307,6 +1353,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       selectedPeriod={bitcoinChartPeriod}
                       onPeriodChange={handleChartPeriodChange}
                       loading={bitcoinDataLoading && bitcoinChartData.length === 0}
+                      error={!!bitcoinDataError && bitcoinChartData.length === 0}
                       height={180}
                       style={{ marginLeft: -spacing.lg, marginRight: -spacing.lg }}
                     />

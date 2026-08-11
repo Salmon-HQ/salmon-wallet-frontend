@@ -96,6 +96,7 @@ export const TokenInformationSheet: React.FC<TokenInformationSheetProps> = ({
   coinInfo,
   marketData,
   loading = false,
+  chartError = false,
   style,
 }) => {
   const { t } = useTranslation();
@@ -142,12 +143,13 @@ export const TokenInformationSheet: React.FC<TokenInformationSheetProps> = ({
         scrollEventThrottle={16}
       >
         {/* PriceChart - full width, edge to edge */}
-        {(loading || chartData.length > 0) && (
+        {(loading || chartData.length > 0 || chartError) && (
           <PriceChart
             data={chartData}
             selectedPeriod={chartPeriod}
             onPeriodChange={onChartPeriodChange}
             loading={loading}
+            error={chartError}
             style={{ marginHorizontal: -s(spacing.headerPadding) }}
           />
         )}

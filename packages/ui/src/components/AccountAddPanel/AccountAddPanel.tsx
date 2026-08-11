@@ -43,6 +43,7 @@ import {
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { DerivedAccountCard } from '../DerivedAccountCard';
 import { LoadingScreen } from '../LoadingScreen';
+import { WarningNotice } from '../WarningNotice';
 import type { AccountAddPanelProps } from './types';
 
 // ============================================================================
@@ -125,6 +126,8 @@ export function AccountAddPanel({
 
   const [step, setStep] = useState<AccountAddStep>('select-method');
   const [derivedAccounts, setDerivedAccounts] = useState<DerivedAccountInfo[]>([]);
+  // Networks whose scan threw — distinguishes an outage from "no accounts".
+  const [failedNetworks, setFailedNetworks] = useState<string[]>([]);
   const [selectedDerived, setSelectedDerived] = useState<DerivedAccountInfo | null>(null);
   const [scanning, setScanning] = useState(false);
   const [seedPhrase, setSeedPhrase] = useState('');
@@ -142,15 +145,20 @@ export function AccountAddPanel({
     if (!activeAccount?.mnemonic) return;
     setStep('derive-scan');
     setScanning(true);
+    setFailedNetworks([]);
     try {
       const scanNetworks = await getScanNetworks();
-      const results = await scanDerivedAccounts(
+      const { accounts, failedNetworks: failed } = await scanDerivedAccounts(
         activeAccount.mnemonic,
         scanNetworks,
       );
-      setDerivedAccounts(results);
+      setDerivedAccounts(accounts);
+      setFailedNetworks(failed);
     } catch {
+      // Total failure (network catalog unreachable) — mark the scan as failed
+      // so the UI shows the error state instead of an empty list.
       setDerivedAccounts([]);
+      setFailedNetworks(['all']);
     } finally {
       setScanning(false);
     }
@@ -284,8 +292,32 @@ export function AccountAddPanel({
                   {t('settings.account_add.scanning')}
                 </Typography>
               </Box>
+            ) : derivedAccounts.length === 0 && failedNetworks.length > 0 ? (
+              <Box
+                sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: `${spacing['3xl']}px 0`, gap: spacing.md }}
+                data-testid="derived-scan-error"
+              >
+                <Typography sx={{ color: colors.text.primary, fontSize: fontSize.base }}>
+                  {t('wallet.derived.scan_failed_title')}
+                </Typography>
+                <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.sm, textAlign: 'center' }}>
+                  {t('wallet.derived.scan_failed_body')}
+                </Typography>
+                <ConfirmButton
+                  variant="contained"
+                  onClick={handleSelectDerive}
+                  data-testid="derived-scan-retry-button"
+                >
+                  {t('transactions.tapToRetry')}
+                </ConfirmButton>
+              </Box>
             ) : (
               <>
+                {failedNetworks.length > 0 && (
+                  <Box sx={{ marginBottom: `${spacing.md}px` }}>
+                    <WarningNotice tone="warning" title={t('wallet.derived.scan_partial')} />
+                  </Box>
+                )}
                 {derivedAccounts.map((item) => (
                   <DerivedAccountCard
                     key={`${item.networkId}-${item.address}`}

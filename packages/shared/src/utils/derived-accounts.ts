@@ -203,6 +203,19 @@ export async function getMirrorNetworkId(networkId: string): Promise<string | un
 // ============================================================================
 
 /**
+ * Result of a {@link scanDerivedAccounts} run.
+ *
+ * `failedNetworks` distinguishes "no accounts found" from "the scan could not
+ * look" — a total RPC outage must not silently present as an empty wallet.
+ */
+export interface ScanDerivedAccountsResult {
+  /** Discovered accounts, sorted by network then index. */
+  accounts: DerivedAccountInfo[];
+  /** Network IDs where at least one derivation/balance lookup threw. */
+  failedNetworks: string[];
+}
+
+/**
  * BIP-44 gap scanning across a list of networks.
  *
  * For each network the scan:
@@ -225,14 +238,16 @@ export async function getMirrorNetworkId(networkId: string): Promise<string | un
  *                           Defaults to `getAccountBalance`.
  * @param isCancelled      - Optional callback checked before each index derivation.
  *                           Return true to abort early (e.g. on component unmount).
- * @returns Flat list of DerivedAccountInfo objects sorted by network then index.
+ * @returns Accounts sorted by network then index, plus the networks whose scan
+ *          threw (see {@link ScanDerivedAccountsResult}).
  */
 export async function scanDerivedAccounts(
   mnemonic: string,
   networkIds: string[],
   getBalance: (account: BlockchainAccount, networkId: string) => Promise<number> = getAccountBalance,
   isCancelled?: () => boolean,
-): Promise<DerivedAccountInfo[]> {
+): Promise<ScanDerivedAccountsResult> {
+  const failedNetworkSet = new Set<string>();
   const allResults = await Promise.all(
     networkIds.map(async (networkId) => {
       const networkAccounts: DerivedAccountInfo[] = [];
@@ -281,6 +296,7 @@ export async function scanDerivedAccounts(
           }
         } catch (error) {
           console.warn(`Error deriving ${networkId} index ${index}:`, error);
+          failedNetworkSet.add(networkId);
           consecutiveEmpty++;
         }
 
@@ -291,5 +307,5 @@ export async function scanDerivedAccounts(
     }),
   );
 
-  return allResults.flat();
+  return { accounts: allResults.flat(), failedNetworks: [...failedNetworkSet] };
 }

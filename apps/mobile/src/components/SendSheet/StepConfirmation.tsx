@@ -163,12 +163,20 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
           </BlurContainer>
         </TouchableOpacity>
 
-        {/* Fee Display */}
-        {estimatedFee && (
+        {/* Fee Display — on estimation failure keep the row visible as a
+            warning instead of hiding it; confirming stays enabled. */}
+        {estimatedFee ? (
           <Text style={styles.feeText}>
             {t('token.send.networkFee', 'Network Fee')}: ~{estimatedFee}
           </Text>
-        )}
+        ) : sendHook.feeEstimateFailed ? (
+          <Text
+            style={[styles.feeText, styles.errorText]}
+            testID="send-fee-estimate-failed"
+          >
+            {t('send.fee_estimate_failed', 'Fee could not be estimated')}
+          </Text>
+        ) : null}
 
         {/* Error Message */}
         {isFailed && sendHook.error && (

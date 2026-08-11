@@ -179,6 +179,9 @@ export function useAccountsSecurity({
         setLoaded(true);
       }
 
+      // Init succeeded — clear any error left by a previous failed attempt so
+      // a retry from the init-failed gate dismisses it only on success.
+      setError(null);
       setReady(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Account initialization failed';

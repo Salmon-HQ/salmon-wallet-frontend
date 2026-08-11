@@ -18,6 +18,7 @@ import {
 fontSize, } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PrimaryButton, SecondaryButton } from '../Button';
+import { WarningNotice } from '../WarningNotice';
 
 interface BackupPanelProps {
   onBack: () => void;
@@ -32,6 +33,7 @@ export function BackupPanel({ onBack, biometricAvailable, authenticateWithBiomet
 
   const [showSeedPhrase, setShowSeedPhrase] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
 
   const mnemonic = useMemo(() => activeAccount?.mnemonic || '', [activeAccount]);
   const words = useMemo(() => mnemonic.split(' ').filter(Boolean), [mnemonic]);
@@ -48,10 +50,13 @@ export function BackupPanel({ onBack, biometricAvailable, authenticateWithBiomet
     if (!showSeedPhrase || !mnemonic) return;
     try {
       await Clipboard.setStringAsync(mnemonic);
+      setCopyFailed(false);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
+      // A silent copy failure here means the user thinks the seed is saved.
       console.error('Failed to copy seed phrase:', error);
+      setCopyFailed(true);
     }
   }, [showSeedPhrase, mnemonic]);
 
@@ -84,6 +89,14 @@ export function BackupPanel({ onBack, biometricAvailable, authenticateWithBiomet
           ))}
         </View>
       </View>
+
+      {copyFailed && (
+        <WarningNotice
+          tone="error"
+          title={t('settings.copy_failed')}
+          style={styles.copyFailedNotice}
+        />
+      )}
 
       <View style={styles.buttonContainer}>
         <SecondaryButton onPress={handleCopy} disabled={!showSeedPhrase} testID="backup-seed-copy-button">
@@ -168,6 +181,9 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     gap: spacing.md,
+  },
+  copyFailedNotice: {
+    marginBottom: spacing.lg,
   },
 });
 

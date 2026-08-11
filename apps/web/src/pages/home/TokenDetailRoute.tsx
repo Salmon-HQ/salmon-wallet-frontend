@@ -61,12 +61,14 @@ export function TokenDetailRoute(): React.ReactElement {
   const [coinInfo, setCoinInfo] = useState<CoinInfo | null>(null);
   const [marketData, setMarketData] = useState<MarketData | undefined>(undefined);
   const [chartLoading, setChartLoading] = useState(false);
+  const [chartError, setChartError] = useState(false);
 
   // Fetch chart data
   useEffect(() => {
     if (!token?.coingeckoId) return;
     let cancelled = false;
     setChartLoading(true);
+    setChartError(false);
 
     const days = PERIOD_TO_DAYS[chartPeriod];
     getMarketChart(token.coingeckoId, days, currency)
@@ -76,7 +78,10 @@ export function TokenDetailRoute(): React.ReactElement {
           setChartData(res.prices.map(([ts, price]: [number, number]) => ({ timestamp: ts, price })));
         }
       })
-      .catch((e) => console.error('Failed to load chart data:', e))
+      .catch((e) => {
+        console.error('Failed to load chart data:', e);
+        if (!cancelled) setChartError(true);
+      })
       .finally(() => { if (!cancelled) setChartLoading(false); });
 
     return () => { cancelled = true; };
@@ -131,6 +136,7 @@ export function TokenDetailRoute(): React.ReactElement {
       coinInfo={coinInfo}
       marketData={marketData}
       loading={chartLoading && chartData.length === 0}
+      chartError={chartError && chartData.length === 0}
       onBack={handleBack}
     />
   );

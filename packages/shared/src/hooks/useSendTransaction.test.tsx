@@ -206,6 +206,72 @@ describe('useSendTransaction', () => {
     );
   });
 
+  it('flags feeEstimateFailed when estimation throws and clears it on the next success', async () => {
+    mockAccount.estimateTransferFee.mockRejectedValueOnce(new Error('rpc down'));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const { result } = renderHook(() =>
+      useSendTransaction({
+        account: mockAccount as any,
+        blockchain: 'solana',
+      }),
+      { wrapper: makeWrapper() }
+    );
+
+    expect(result.current.feeEstimateFailed).toBe(false);
+
+    const params = {
+      token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+      recipientAddress: RAW_RECIPIENT,
+      amount: AMOUNT,
+    };
+
+    let feeResult = null;
+    await act(async () => {
+      feeResult = await result.current.estimateFee(params);
+    });
+
+    // Non-blocking: still returns null, status back to idle — but the failure
+    // is surfaced.
+    expect(feeResult).toBeNull();
+    expect(result.current.status).toBe('idle');
+    expect(result.current.feeEstimateFailed).toBe(true);
+
+    // Retry succeeds -> flag clears.
+    await act(async () => {
+      feeResult = await result.current.estimateFee(params);
+    });
+    expect(feeResult).toEqual(FEE_RESULT);
+    expect(result.current.feeEstimateFailed).toBe(false);
+  });
+
+  it('clears feeEstimateFailed on reset', async () => {
+    mockAccount.estimateTransferFee.mockRejectedValueOnce(new Error('rpc down'));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const { result } = renderHook(() =>
+      useSendTransaction({
+        account: mockAccount as any,
+        blockchain: 'solana',
+      }),
+      { wrapper: makeWrapper() }
+    );
+
+    await act(async () => {
+      await result.current.estimateFee({
+        token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+        recipientAddress: RAW_RECIPIENT,
+        amount: AMOUNT,
+      });
+    });
+    expect(result.current.feeEstimateFailed).toBe(true);
+
+    act(() => {
+      result.current.reset();
+    });
+    expect(result.current.feeEstimateFailed).toBe(false);
+  });
+
   it('returns null for fee estimation when account is missing', async () => {
     const { result } = renderHook(() =>
       useSendTransaction({

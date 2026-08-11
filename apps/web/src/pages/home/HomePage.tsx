@@ -13,6 +13,7 @@ import {
   useCurrencyContext,
   useLanguage,
   useAddressbook,
+  AddressbookError,
   colors,
   spacing,
   fontSize,
@@ -47,6 +48,7 @@ import {
 } from '@salmon/shared';
 import {
   WalletHeader,
+  WarningNotice,
   BalanceCardCarousel,
   ActionButtonRow,
   TokenList,
@@ -306,7 +308,9 @@ export function HomePage(): React.ReactElement {
     getNetworks: async () =>
       (availableNetworks || []).map((n) => ({ id: n.id, name: n.name, blockchain: n.id.split('-')[0] as BlockchainType })),
   }), [availableNetworks]);
-  const [{ contacts }, { addContact, editContact: editAddressBookContact, removeContact }] = useAddressbook({ networkAdapter });
+  const [{ contacts, error: addressBookError }, { addContact, editContact: editAddressBookContact, removeContact, reload: reloadAddressBook }] = useAddressbook({ networkAdapter });
+  // Inline error for address-book writes (translation key, rendered by the open panel)
+  const [addressBookWriteErrorKey, setAddressBookWriteErrorKey] = useState<string | null>(null);
 
   // Tab & UI state. activeTab mirrors `location.hash` so browser back/forward
   // restores the user's tab when returning from /nft/:mint or /token/:address.
@@ -379,6 +383,7 @@ export function HomePage(): React.ReactElement {
     loading,
     refreshing,
     refresh,
+    error: balanceError,
     hiddenBalance,
     toggleHidden,
   } = useBalance({
@@ -463,6 +468,7 @@ export function HomePage(): React.ReactElement {
     coinInfo: bitcoinCoinInfo,
     chartData: bitcoinChartDataRaw,
     loading: bitcoinDataLoading,
+    error: bitcoinDataError,
   } = useCoinMarketData({
     coinId: bitcoinCoinId,
     currency,
@@ -614,13 +620,19 @@ export function HomePage(): React.ReactElement {
       <AddressBookPanel
         contacts={addressBookItems}
         activeNetworkId={networkId || 'solana-mainnet'}
-        onAddContact={() => onNavigate('address-book-add')}
+        onAddContact={() => {
+          setAddressBookWriteErrorKey(null);
+          onNavigate('address-book-add');
+        }}
         onEditContact={(contact) => {
+          setAddressBookWriteErrorKey(null);
           setEditingContact(contact);
           onNavigate('address-book-edit');
         }}
         onRemoveContact={async (address) => { await removeContact(address); }}
         onBack={onBack}
+        error={addressBookError}
+        onRetry={reloadAddressBook}
       />
     ),
     'address-book-add': ({ onBack }) => {
@@ -631,8 +643,20 @@ export function HomePage(): React.ReactElement {
           activeNetworkId={activeNet?.id || 'solana-mainnet'}
           activeNetworkName={activeNet?.name || t('general.network_solana_mainnet', 'Solana Mainnet')}
           activeBlockchain={blockchain}
-          onSave={async (input: AddressInput) => { await addContact(input); }}
+          onSave={async (input: AddressInput) => {
+            setAddressBookWriteErrorKey(null);
+            try {
+              await addContact(input);
+            } catch (err) {
+              setAddressBookWriteErrorKey(
+                err instanceof AddressbookError && err.kind === 'resolve'
+                  ? 'settings.addressbook.resolve_failed'
+                  : 'settings.addressbook.save_failed',
+              );
+            }
+          }}
           onBack={onBack}
+          errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
         />
       );
     },
@@ -644,10 +668,20 @@ export function HomePage(): React.ReactElement {
           contact={editingContact}
           activeBlockchain={blockchain}
           onSave={async (originalAddress: string, input: AddressInput) => {
-            await editAddressBookContact(originalAddress, input);
-            setEditingContact(null);
+            setAddressBookWriteErrorKey(null);
+            try {
+              await editAddressBookContact(originalAddress, input);
+              setEditingContact(null);
+            } catch (err) {
+              setAddressBookWriteErrorKey(
+                err instanceof AddressbookError && err.kind === 'resolve'
+                  ? 'settings.addressbook.resolve_failed'
+                  : 'settings.addressbook.save_failed',
+              );
+            }
           }}
           onBack={onBack}
+          errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
         />
       );
     },
@@ -707,6 +741,7 @@ export function HomePage(): React.ReactElement {
     currency, changeCurrency, availableLanguages, currentLanguage, languageNames, changeLanguage,
     explorers, explorer, changeExplorer, explorerLoading, addressBookItems,
     networkId, allNetworks, addContact, editAddressBookContact, removeContact,
+    addressBookError, reloadAddressBook, addressBookWriteErrorKey,
     editingContact, activeTrustedApps, actions, editingAccountId, accountId,
     activeAccount, t,
   ]);
@@ -803,6 +838,17 @@ export function HomePage(): React.ReactElement {
                 style={{ marginTop: spacing['2xl'], marginBottom: spacing['2xl'] }}
               />
 
+              {/* Partial-load failure: keep whatever data loaded visible;
+                  retry is the header refresh button. */}
+              {balanceError && !switchingNetwork && (
+                <Box sx={{ padding: `0 ${spacing.lg}px`, marginBottom: `${spacing.md}px` }} data-testid="balance-load-error">
+                  <WarningNotice
+                    tone="warning"
+                    title={t('wallet.partial_load_error', "Some balances couldn't be loaded. Shown data may be incomplete.")}
+                  />
+                </Box>
+              )}
+
               <TokenSectionWrapper>
                 <TopListFade ref={topFadeRef} />
                 {currentBlockchain === 'bitcoin' ? (
@@ -812,6 +858,7 @@ export function HomePage(): React.ReactElement {
                       selectedPeriod={bitcoinChartPeriod}
                       onPeriodChange={setBitcoinChartPeriod}
                       loading={bitcoinDataLoading && bitcoinChartData.length === 0}
+                      error={!!bitcoinDataError && bitcoinChartData.length === 0}
                       height={180}
                       style={{ marginLeft: -spacing.lg, marginRight: -spacing.lg }}
                     />

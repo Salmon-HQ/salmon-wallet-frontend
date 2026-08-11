@@ -26,6 +26,8 @@ export interface TokenDetailPageProps {
   marketData: MarketData | undefined;
   /** Whether data is loading */
   loading?: boolean;
+  /** Whether loading the chart data failed */
+  chartError?: boolean;
   /** Callback to navigate back */
   onBack: () => void;
   /** Optional inline styles */

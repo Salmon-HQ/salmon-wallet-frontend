@@ -221,6 +221,7 @@ export function PriceChart({
   selectedPeriod,
   onPeriodChange,
   loading = false,
+  error = false,
   color,
   height = componentSizes.chartHeight,
   style,
@@ -284,7 +285,11 @@ export function PriceChart({
           </ResponsiveContainer>
         ) : (
           <EmptyState $height={height}>
-            <EmptyStateText>{t('token.chart.noData', 'No data available')}</EmptyStateText>
+            <EmptyStateText data-testid={error ? 'price-chart-error' : undefined}>
+              {error
+                ? t('token.chart.loadError', "Couldn't load chart data")
+                : t('token.chart.noData', 'No data available')}
+            </EmptyStateText>
           </EmptyState>
         )}
       </ChartContainer>

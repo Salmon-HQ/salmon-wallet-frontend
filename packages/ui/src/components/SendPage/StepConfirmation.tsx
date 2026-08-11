@@ -366,10 +366,15 @@ export function StepConfirmation({
           </BlurContainer>
         </AddressButton>
 
-        {/* Fee Display */}
-        {estimatedFee && (
+        {/* Fee Display — on estimation failure keep the row visible as a
+            warning instead of hiding it; confirming stays enabled. */}
+        {estimatedFee ? (
           <FeeText>{t('token.send.networkFeeAmount', { fee: estimatedFee })}</FeeText>
-        )}
+        ) : sendHook.feeEstimateFailed ? (
+          <FeeText sx={{ color: colors.status.error }} data-testid="send-fee-estimate-failed">
+            {t('send.fee_estimate_failed', 'Fee could not be estimated')}
+          </FeeText>
+        ) : null}
 
         {/* Error Message */}
         {isFailed && sendHook.error && (

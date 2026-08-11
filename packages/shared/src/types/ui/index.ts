@@ -41,6 +41,9 @@ export type {
   UseSendContactsResult,
 } from './send-sheet';
 
+// Warning Notice
+export type { WarningNoticeTone, WarningNoticePropsBase } from './warning-notice';
+
 // Transaction History
 export type {
   TransactionItemPropsBase,

@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { useSwapScreenLogic, getTransactionUrl, getDefaultExplorer, useBridgeSettlement } from '@salmon/shared';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { useSwapScreenLogic, getTransactionUrl, getDefaultExplorer, useBridgeSettlement, colors, fontFamilyNative, fontSize, spacing } from '@salmon/shared';
 import type { Blockchain, NetworkEnvironment, NetworkId } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 import { SwapInputScreen } from './SwapInputScreen';
@@ -9,6 +9,7 @@ import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
 import { TokenSelectorModal } from '../TokenSelector';
 import { BridgeRecipientScreen } from '../BridgeScreen/BridgeRecipientScreen';
 import { BridgeReviewScreen } from '../BridgeScreen/BridgeReviewScreen';
+import { WarningNotice } from '../WarningNotice';
 import type { SwapScreenProps } from './types';
 
 /**
@@ -22,7 +23,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   const { style } = props;
   const { t } = useTranslation();
 
-  const { trackBridgeExchange } = useBridgeSettlement();
+  const { trackBridgeExchange, isStalled, retryNow } = useBridgeSettlement();
 
   const logic = useSwapScreenLogic({
     ...props,
@@ -55,6 +56,23 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
 
   return (
     <View style={[styles.container, style]}>
+      {isStalled && (
+        <View style={styles.stalledBanner} testID="bridge-stalled-banner">
+          <WarningNotice
+            tone="warning"
+            title={t('bridge.settlement_stalled_title', "Can't check your bridge status")}
+            action={
+              <TouchableOpacity onPress={retryNow} testID="bridge-stalled-retry">
+                <Text style={styles.stalledRetryText}>
+                  {t('bridge.settlement_retry', 'Check now')}
+                </Text>
+              </TouchableOpacity>
+            }
+          >
+            {t('bridge.settlement_stalled_body', "Your funds are on the way, but we can't reach the status service. We'll keep trying.")}
+          </WarningNotice>
+        </View>
+      )}
       {logic.step === 'input' && (
         <SwapInputScreen
           inToken={logic.inToken}
@@ -166,6 +184,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
+  },
+  stalledBanner: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  stalledRetryText: {
+    color: colors.status.warning,
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.sm,
+    textDecorationLine: 'underline',
   },
 });
 

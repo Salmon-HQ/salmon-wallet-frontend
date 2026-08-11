@@ -62,6 +62,9 @@ export type { SubAccount, SubAccountSelectorProps } from './SubAccountSelector';
 export { ConfirmSheet } from './ConfirmSheet';
 export type { ConfirmSheetProps } from './ConfirmSheet';
 
+export { WarningNotice } from './WarningNotice';
+export type { WarningNoticeProps, WarningNoticeTone } from './WarningNotice';
+
 // ---------------------------------------------------------------------------
 // Layout & Background
 // ---------------------------------------------------------------------------

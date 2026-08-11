@@ -14,6 +14,7 @@ import {
   useAvailableNetworks,
   useCurrencyContext,
   useAddressbook,
+  AddressbookError,
   useOpenLink,
   buildNetworkListFromAccount,
   SUPPORTED_CURRENCIES,
@@ -153,7 +154,15 @@ export default function TabLayout() {
     getNetworks: async () =>
       allNetworks.map((n) => ({ id: n.id, name: n.name, blockchain: n.id.split('-')[0] as BlockchainType })),
   }), [allNetworks]);
-  const [{ contacts, isLoading: addressBookLoading }, { addContact, editContact: editAddressBookContact, removeContact }] = useAddressbook({ networkAdapter });
+  const [{ contacts, isLoading: addressBookLoading, error: addressBookError }, { addContact, editContact: editAddressBookContact, removeContact, reload: reloadAddressBook }] = useAddressbook({ networkAdapter });
+
+  /** Surfaces a classified address-book write failure per house alert style. */
+  const showAddressBookWriteError = useCallback((err: unknown, fallbackKey = 'settings.addressbook.save_failed') => {
+    const key = err instanceof AddressbookError && err.kind === 'resolve'
+      ? 'settings.addressbook.resolve_failed'
+      : fallbackKey;
+    Alert.alert(t('general.error'), t(key));
+  }, [t]);
 
   // Biometric auth (for security and private key screens)
   const {
@@ -386,9 +395,17 @@ export default function TabLayout() {
           setEditingContact(contact);
           onNavigate('address-book-edit');
         }}
-        onRemoveContact={async (addr: string) => { await removeContact(addr); }}
+        onRemoveContact={async (addr: string) => {
+          try {
+            await removeContact(addr);
+          } catch (err) {
+            showAddressBookWriteError(err, 'settings.addressbook.remove_failed');
+          }
+        }}
         onBack={onBack}
         loading={addressBookLoading}
+        error={addressBookError}
+        onRetry={reloadAddressBook}
       />
     ),
     'address-book-add': ({ onBack }) => {
@@ -400,8 +417,15 @@ export default function TabLayout() {
           activeNetworkName={activeNet?.name || t('general.network_solana_mainnet', 'Solana Mainnet')}
           activeBlockchain={blockchain}
           onSave={async (input: AddressInput) => {
-            await addContact(input);
-            onBack();
+            try {
+              await addContact(input);
+              onBack();
+            } catch (err) {
+              showAddressBookWriteError(err);
+              // 'resolve' means the write persisted — leave the panel only on
+              // a persist failure so the user can retry.
+              if (err instanceof AddressbookError && err.kind === 'resolve') onBack();
+            }
           }}
           onBack={onBack}
         />
@@ -415,9 +439,17 @@ export default function TabLayout() {
           contact={editingContact}
           activeBlockchain={blockchain}
           onSave={async (originalAddress: string, input: AddressInput) => {
-            await editAddressBookContact(originalAddress, input);
-            setEditingContact(null);
-            onBack();
+            try {
+              await editAddressBookContact(originalAddress, input);
+              setEditingContact(null);
+              onBack();
+            } catch (err) {
+              showAddressBookWriteError(err);
+              if (err instanceof AddressbookError && err.kind === 'resolve') {
+                setEditingContact(null);
+                onBack();
+              }
+            }
           }}
           onBack={onBack}
         />
@@ -512,7 +544,8 @@ export default function TabLayout() {
     currentLanguage, availableLanguages, changeLanguage,
     currency, changeCurrency,
     explorers, explorer, changeExplorer, explorerLoading,
-    addressBookItems, addressBookLoading, addContact, editAddressBookContact, removeContact,
+    addressBookItems, addressBookLoading, addressBookError, reloadAddressBook,
+    addContact, editAddressBookContact, removeContact, showAddressBookWriteError,
     editingContact, editingAccountId, activeTrustedApps, openLink, t,
   ]);
 

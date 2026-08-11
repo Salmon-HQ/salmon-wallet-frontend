@@ -10,6 +10,7 @@ import {
   type TrustedApp,
 } from '@salmon/shared';
 import { getActiveSolanaApprovalAccount } from '@salmon/shared/utils/account';
+import { WalletInitErrorScreen } from '@salmon/ui';
 import { LockPage } from '../../pages/lock/LockPage';
 import { HomePage } from '../../pages/home/HomePage';
 import {
@@ -73,7 +74,7 @@ function LoadingSpinner() {
  */
 function App() {
   const [state, actions] = useAccountsContext();
-  const { ready, locked, accounts, activeAccount, activeBlockchainAccount, networkId, pathIndex } = state;
+  const { ready, locked, accounts, error: initError, activeAccount, activeBlockchainAccount, networkId, pathIndex } = state;
   const settleAfterTx = useSettleAfterTx();
   const solanaApprovalAccount = useMemo(
     () => getActiveSolanaApprovalAccount(
@@ -403,6 +404,14 @@ function App() {
         onRemoveAllAccounts={handleRemoveAllAccounts}
       />
     );
+  }
+
+  // Wallet initialization failed and nothing loaded — block instead of showing
+  // onboarding: sending a user with broken storage into "create wallet" risks
+  // overwriting an existing vault. Checked AFTER `locked` (lock wins) and only
+  // when no accounts loaded (a secondary failure with accounts must not block).
+  if (initError && accounts.length === 0 && !justCreated && !isAddingAccount) {
+    return <WalletInitErrorScreen onRetry={actions.retryInit} />;
   }
 
   // Show auth flow when no accounts exist, just created one, or adding a new account
