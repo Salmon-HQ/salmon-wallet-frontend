@@ -2,11 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AccountTransaction,
   AccountTransactionListResponse,
-  BitcoinBalance,
   BitcoinBalanceItem,
-  BitcoinTransaction,
-  BitcoinTransactionsResponse,
-  BitcoinUtxo,
   UTXO,
 } from '../../types/transfer';
 
@@ -26,58 +22,16 @@ vi.mock('../client', async () => {
 import { ApiError, apiClient, get } from '../client';
 import { getReachableBackendBaseUrl } from '../test-backend';
 import {
-  broadcastBitcoinTransaction,
   broadcastTransaction,
   fetchBitcoinAccountBalance,
   fetchBitcoinAccountRecentTransactions,
   fetchUtxos,
-  getBitcoinBalance,
-  getBitcoinTransactions,
-  getBitcoinUtxos,
 } from './bitcoin';
 
 const mockApiClientGet = vi.mocked(apiClient.get);
 const mockApiClientPost = vi.mocked(apiClient.post);
 const mockGet = vi.mocked(get);
 const backendBaseUrl = await getReachableBackendBaseUrl();
-
-const MOCK_BALANCE: BitcoinBalance = {
-  confirmed: 364735619,
-  unconfirmed: 0,
-  total: 364735619,
-  logo: 'https://assets-cdn.trustwallet.com/blockchains/bitcoin/info/logo.png',
-};
-
-const MOCK_UTXOS: BitcoinUtxo[] = [
-  {
-    txid: 'tx-1',
-    vout: 0,
-    value: 1000,
-    scriptPubKey: '0014deadbeef',
-    height: 123456,
-    confirmations: 12,
-  },
-];
-
-const MOCK_BITCOIN_TRANSACTIONS: BitcoinTransactionsResponse = {
-  transactions: [
-    {
-      txid: 'tx-1',
-      hash: 'hash-1',
-      version: 2,
-      size: 225,
-      vsize: 144,
-      weight: 576,
-      locktime: 0,
-      vin: [],
-      vout: [],
-      confirmations: 7,
-      blocktime: 1710000000,
-    },
-  ],
-  nextPageToken: 'next-page',
-  total: 1,
-};
 
 const MOCK_ACCOUNT_BALANCE_ITEMS: BitcoinBalanceItem[] = [
   {
@@ -114,115 +68,6 @@ const MOCK_UTXO_ITEMS: UTXO[] = [
 describe('bitcoin service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it('fetches bitcoin balance with include=logo', async () => {
-    mockApiClientGet.mockResolvedValueOnce({ data: MOCK_BALANCE });
-
-    const result = await getBitcoinBalance('bitcoin-mainnet', 'bc1-address');
-
-    expect(mockApiClientGet).toHaveBeenCalledWith(
-      '/v1/bitcoin-mainnet/account/bc1-address/balance',
-      {
-        params: { include: 'logo' },
-      },
-    );
-    expect(result).toEqual(MOCK_BALANCE);
-  });
-
-  it('returns null for missing bitcoin balance', async () => {
-    mockApiClientGet.mockRejectedValueOnce(new ApiError('Not found', 404, 'not_found'));
-
-    const result = await getBitcoinBalance('bitcoin-mainnet', 'missing-address');
-
-    expect(result).toBeNull();
-  });
-
-  it('fetches bitcoin utxos', async () => {
-    mockApiClientGet.mockResolvedValueOnce({ data: MOCK_UTXOS });
-
-    const result = await getBitcoinUtxos('bitcoin-mainnet', 'bc1-address');
-
-    expect(mockApiClientGet).toHaveBeenCalledWith('/v1/bitcoin-mainnet/account/bc1-address/utxo');
-    expect(result).toEqual(MOCK_UTXOS);
-  });
-
-  it('returns an empty array for missing bitcoin utxos', async () => {
-    mockApiClientGet.mockRejectedValueOnce(new ApiError('Not found', 404, 'not_found'));
-
-    const result = await getBitcoinUtxos('bitcoin-mainnet', 'missing-address');
-
-    expect(result).toEqual([]);
-  });
-
-  it('forwards bitcoin transaction pagination params', async () => {
-    mockApiClientGet.mockResolvedValueOnce({ data: MOCK_BITCOIN_TRANSACTIONS });
-
-    const result = await getBitcoinTransactions('bitcoin-mainnet', 'bc1-address', {
-      pageToken: 'cursor-1',
-      pageSize: 10,
-    });
-
-    expect(mockApiClientGet).toHaveBeenCalledWith(
-      '/v1/bitcoin-mainnet/account/bc1-address/transactions',
-      {
-        params: {
-          pageToken: 'cursor-1',
-          pageSize: 10,
-        },
-      },
-    );
-    expect(result).toEqual(MOCK_BITCOIN_TRANSACTIONS);
-  });
-
-  it('normalizes missing bitcoin transaction arrays to empty arrays', async () => {
-    mockApiClientGet.mockResolvedValueOnce({
-      data: { nextPageToken: 'cursor-2', total: 0 },
-    });
-
-    const result = await getBitcoinTransactions('bitcoin-mainnet', 'bc1-address');
-
-    expect(result).toEqual({
-      transactions: [],
-      nextPageToken: 'cursor-2',
-      total: 0,
-    });
-  });
-
-  it('returns empty transactions on 404', async () => {
-    mockApiClientGet.mockRejectedValueOnce(new ApiError('Not found', 404, 'not_found'));
-
-    const result = await getBitcoinTransactions('bitcoin-mainnet', 'missing-address');
-
-    expect(result).toEqual({ transactions: [], nextPageToken: null });
-  });
-
-  it('returns backend broadcast response on success', async () => {
-    mockApiClientPost.mockResolvedValueOnce({
-      data: { txid: 'broadcasted-tx', success: true },
-    });
-
-    const result = await broadcastBitcoinTransaction('bitcoin-mainnet', 'bc1-address', 'signed-hex');
-
-    expect(mockApiClientPost).toHaveBeenCalledWith(
-      '/v1/bitcoin-mainnet/account/bc1-address/transactions',
-      { tx: 'signed-hex' },
-    );
-    expect(result).toEqual({ txid: 'broadcasted-tx', success: true });
-  });
-
-  it('returns a failed broadcast response for api errors', async () => {
-    mockApiClientPost.mockRejectedValueOnce(
-      new ApiError('invalid transaction', 400, 'invalid_tx'),
-    );
-
-    const result = await broadcastBitcoinTransaction('bitcoin-mainnet', 'bc1-address', 'signed-hex');
-
-    expect(result).toEqual({
-      txid: '',
-      success: false,
-      error: 'invalid transaction',
-    });
   });
 
   it('fetches utxos for DI adapters with pageSize=100', async () => {
@@ -294,42 +139,44 @@ describe('bitcoin service', () => {
 });
 
 describe.skipIf(!backendBaseUrl)('bitcoin service integration', () => {
+  const liveGet = async <T>(path: string, config?: { params?: Record<string, string | number> }): Promise<T> => {
+    const url = new URL(`${backendBaseUrl!}${path}`);
+    if (config?.params) {
+      for (const [key, value] of Object.entries(config.params)) {
+        url.searchParams.set(key, String(value));
+      }
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) {
+      throw new ApiError(`HTTP ${response.status}`, response.status);
+    }
+
+    return (await response.json()) as T;
+  };
+
   it(
     'reads live bitcoin balance data from salmon-api',
     async () => {
-      mockApiClientGet.mockImplementation(async (path, config) => {
-        const url = new URL(`${backendBaseUrl!}${path as string}`);
-        const params = config?.params as Record<string, string | number> | undefined;
-        if (params) {
-          for (const [key, value] of Object.entries(params)) {
-            url.searchParams.set(key, String(value));
-          }
-        }
+      mockGet.mockImplementation(liveGet as typeof get);
 
-        const response = await fetch(url.toString(), {
-          method: 'GET',
-          signal: AbortSignal.timeout(15000),
-        });
-
-        if (!response.ok) {
-          throw new ApiError(`HTTP ${response.status}`, response.status);
-        }
-
-        return {
-          data: await response.json(),
-        } as { data: BitcoinBalance | BitcoinBalanceItem[] };
-      });
-
-      const result = await getBitcoinBalance(
+      const result = await fetchBitcoinAccountBalance(
         'bitcoin-mainnet',
         'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
       );
 
-      expect(result).toEqual(
+      expect(result.length).toBeGreaterThan(0);
+      expect(result[0]).toEqual(
         expect.objectContaining({
-          confirmed: expect.any(Number),
-          unconfirmed: 0,
-          total: expect.any(Number),
+          // The live balance resource serializes `amount` as a string.
+          amount: expect.any(String),
+          decimals: 8,
+          coingeckoId: 'bitcoin',
+          uiAmount: expect.any(Number),
         }),
       );
     },
@@ -339,46 +186,17 @@ describe.skipIf(!backendBaseUrl)('bitcoin service integration', () => {
   it(
     'reads live bitcoin transaction history from salmon-api',
     async () => {
-      mockApiClientGet.mockImplementation(async (path, config) => {
-        const url = new URL(`${backendBaseUrl!}${path as string}`);
-        const params = config?.params as Record<string, string | number> | undefined;
-        if (params) {
-          for (const [key, value] of Object.entries(params)) {
-            url.searchParams.set(key, String(value));
-          }
-        }
+      mockGet.mockImplementation(liveGet as typeof get);
 
-        const response = await fetch(url.toString(), {
-          method: 'GET',
-          signal: AbortSignal.timeout(15000),
-        });
-
-        if (!response.ok) {
-          throw new ApiError(`HTTP ${response.status}`, response.status);
-        }
-
-        const raw = await response.json() as {
-          data?: BitcoinTransaction[];
-          meta?: { nextPageToken?: string };
-        };
-
-        return {
-          data: {
-            transactions: raw.data,
-            nextPageToken: raw.meta?.nextPageToken,
-          },
-        } as { data: BitcoinTransactionsResponse };
-      });
-
-      const result = await getBitcoinTransactions(
+      const result = await fetchBitcoinAccountRecentTransactions(
         'bitcoin-mainnet',
         '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
         { pageSize: 1 },
       );
 
-      expect(Array.isArray(result.transactions)).toBe(true);
-      expect(result.transactions.length).toBeGreaterThan(0);
-      expect(result.transactions[0]).toEqual(
+      expect(Array.isArray(result.items)).toBe(true);
+      expect(result.items.length).toBeGreaterThan(0);
+      expect(result.items[0]).toEqual(
         expect.objectContaining({
           id: expect.any(String),
           timestamp: expect.any(Number),

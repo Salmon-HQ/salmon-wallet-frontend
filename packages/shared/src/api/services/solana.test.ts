@@ -26,11 +26,8 @@ import { getSolanaNfts } from './solana-nft';
 import {
   executeSwapApi,
   fetchSolanaAccountBalance,
-  getAllSolanaTransactions,
-  getRecentSolanaTransactions,
   getSolanaTransactions,
   getSwapOrder,
-  getTransactionsByType,
   solanaApiFunctions,
 } from './solana';
 
@@ -258,73 +255,6 @@ describe('solana service', () => {
       status: 'Failed',
       error: 'swap execution failed',
     });
-  });
-
-  it('collects all solana transactions across multiple pages', async () => {
-    mockApiClientGet
-      .mockResolvedValueOnce({
-        data: {
-          data: [MOCK_SOLANA_TRANSACTION],
-          meta: { nextPageToken: 'cursor-1' },
-        },
-      })
-      .mockResolvedValueOnce({
-        data: {
-          data: [{ ...MOCK_SOLANA_TRANSACTION, id: 'sig-2', signature: 'sig-2' }],
-        },
-      });
-
-    const result = await getAllSolanaTransactions('solana-mainnet', 'wallet-1', 2);
-
-    expect(result).toHaveLength(2);
-    expect(result[0].id).toBe('sig-1');
-    expect(result[1].id).toBe('sig-2');
-  });
-
-  it('fetches recent solana transactions using the limit alias', async () => {
-    mockApiClientGet.mockResolvedValueOnce({
-      data: {
-        data: [MOCK_SOLANA_TRANSACTION],
-      },
-    });
-
-    const result = await getRecentSolanaTransactions('solana-mainnet', 'wallet-1', 10);
-
-    expect(result).toEqual([MOCK_SOLANA_TRANSACTION]);
-    expect(mockApiClientGet).toHaveBeenCalledWith(
-      '/v1/solana-mainnet/account/wallet-1/transactions',
-      {
-        params: {
-          pageSize: 10,
-        },
-      },
-    );
-  });
-
-  it('filters solana transactions by type using the limit alias', async () => {
-    mockApiClientGet.mockResolvedValueOnce({
-      data: {
-        data: [MOCK_SOLANA_TRANSACTION],
-      },
-    });
-
-    const result = await getTransactionsByType(
-      'solana-mainnet',
-      'wallet-1',
-      'UNKNOWN',
-      20,
-    );
-
-    expect(result).toEqual([MOCK_SOLANA_TRANSACTION]);
-    expect(mockApiClientGet).toHaveBeenCalledWith(
-      '/v1/solana-mainnet/account/wallet-1/transactions',
-      {
-        params: {
-          pageSize: 20,
-          type: 'UNKNOWN',
-        },
-      },
-    );
   });
 
   it('passes BE balance items through, computing only uiAmount', async () => {

@@ -1,26 +1,15 @@
 /**
- * Balance Tests
- * Tests for pure balance and formatting utilities
+ * Balance formatting tests
+ * Tests for pure formatting utilities
  */
 
 import { describe, it, expect } from 'vitest';
 
 import {
-  createSolBalance,
-  LAMPORTS_PER_SOL,
-  SOL_CONSTANTS,
-} from '../../utils/balance';
-import {
   formatBalance,
   formatUsdValue,
   formatPercentChange,
 } from '../../utils/formatting';
-
-// ============================================================================
-// Test Data
-// ============================================================================
-
-const MOCK_OWNER = '7XaXJK8z9Y5J1x6W4Xz7R3Q5L9T3N6D4M8F2K1H5G9P2';
 
 // ============================================================================
 // formatBalance Tests
@@ -170,98 +159,3 @@ describe('formatPercentChange', () => {
     expect(formatPercentChange(-999.99)).toBe('-999.99%');
   });
 });
-
-// ============================================================================
-// createSolBalance Tests
-// ============================================================================
-
-describe('createSolBalance', () => {
-  it('should create SOL balance from lamports', () => {
-    const lamports = 2000000000; // 2 SOL
-    const owner = MOCK_OWNER;
-
-    const result = createSolBalance(lamports, owner);
-
-    expect(result).toEqual({
-      mint: SOL_CONSTANTS.ADDRESS,
-      owner,
-      amount: lamports,
-      decimals: SOL_CONSTANTS.DECIMALS,
-      uiAmount: 2,
-      symbol: SOL_CONSTANTS.SYMBOL,
-      name: SOL_CONSTANTS.NAME,
-      logo: SOL_CONSTANTS.LOGO,
-      address: SOL_CONSTANTS.ADDRESS,
-      coingeckoId: SOL_CONSTANTS.COINGECKO_ID,
-      tags: ['community', 'moonshot-verified', 'strict', 'verified', 'major'],
-    });
-  });
-
-  it('should handle zero lamports', () => {
-    const result = createSolBalance(0, MOCK_OWNER);
-
-    expect(result.amount).toBe(0);
-    expect(result.uiAmount).toBe(0);
-  });
-
-  it('should calculate correct uiAmount for various lamport values', () => {
-    expect(createSolBalance(LAMPORTS_PER_SOL, MOCK_OWNER).uiAmount).toBe(1);
-    expect(createSolBalance(LAMPORTS_PER_SOL * 10, MOCK_OWNER).uiAmount).toBe(10);
-    expect(createSolBalance(500000000, MOCK_OWNER).uiAmount).toBe(0.5);
-    expect(createSolBalance(123456789, MOCK_OWNER).uiAmount).toBeCloseTo(0.123456789, 9);
-  });
-
-  it('should handle very small lamport amounts', () => {
-    const result = createSolBalance(1, MOCK_OWNER);
-
-    expect(result.uiAmount).toBe(1 / LAMPORTS_PER_SOL);
-    expect(result.uiAmount).toBeCloseTo(0.000000001, 9);
-  });
-
-  it('should handle very large lamport amounts', () => {
-    const lamports = LAMPORTS_PER_SOL * 1000000; // 1 million SOL
-    const result = createSolBalance(lamports, MOCK_OWNER);
-
-    expect(result.uiAmount).toBe(1000000);
-  });
-
-  it('should preserve owner address', () => {
-    const owner1 = 'Owner1111111111111111111111111111111111111111';
-    const owner2 = 'Owner2222222222222222222222222222222222222222';
-
-    expect(createSolBalance(1000000000, owner1).owner).toBe(owner1);
-    expect(createSolBalance(1000000000, owner2).owner).toBe(owner2);
-  });
-
-  it('should always use SOL constants', () => {
-    const result = createSolBalance(1000000000, MOCK_OWNER);
-
-    expect(result.symbol).toBe('SOL');
-    expect(result.name).toBe('Solana');
-    expect(result.decimals).toBe(9);
-    expect(result.address).toBe(SOL_CONSTANTS.ADDRESS);
-    expect(result.mint).toBe(SOL_CONSTANTS.ADDRESS);
-    expect(result.coingeckoId).toBe('solana');
-    expect(result.logo).toContain('trustwallet');
-  });
-
-  it('should handle fractional SOL amounts correctly', () => {
-    const testCases = [
-      { lamports: 100000000, expected: 0.1 },
-      { lamports: 10000000, expected: 0.01 },
-      { lamports: 1000000, expected: 0.001 },
-      { lamports: 100000, expected: 0.0001 },
-      { lamports: 10000, expected: 0.00001 },
-      { lamports: 1000, expected: 0.000001 },
-      { lamports: 100, expected: 0.0000001 },
-      { lamports: 10, expected: 0.00000001 },
-      { lamports: 1, expected: 0.000000001 },
-    ];
-
-    testCases.forEach(({ lamports, expected }) => {
-      const result = createSolBalance(lamports, MOCK_OWNER);
-      expect(result.uiAmount).toBeCloseTo(expected, 9);
-    });
-  });
-});
-

@@ -9,7 +9,7 @@
  */
 
 import { apiClient } from '../client';
-import type { Nft, NftPaginatedResponse, NftPagination, GetNftsOptions } from '../../types/nft';
+import type { Nft } from '../../types/nft';
 
 // ============================================================================
 // Backend response normalization
@@ -106,49 +106,4 @@ export async function getSolanaNfts(
   const raw = Array.isArray(data) ? data : data.data;
   const normalized = raw.map((nft) => normalizeBackendNft(nft, publicKey));
   return normalized.filter((nft) => nft.media);
-}
-
-/**
- * Paginated NFT list. The backend supports `limit` + `offset` query params and
- * returns `{ data: BackendNft[], pagination: NftPagination }`. We normalize the
- * NFT shape and pass pagination through unchanged.
- */
-export async function getSolanaNftsPaginated(
-  networkId: string,
-  publicKey: string,
-  options: GetNftsOptions & { includeSpam?: boolean } = {}
-): Promise<NftPaginatedResponse> {
-  const limit = Math.min(Math.max(1, options.limit ?? 50), 100);
-  const offset = Math.max(0, options.offset ?? 0);
-  const noCache = options.noCache ?? false;
-
-  const params: Record<string, string | number | boolean> = {
-    publicKey, noCache, limit, offset,
-  };
-  if (options.includeSpam) {
-    params.includeSpam = 'true';
-  }
-
-  const { data } = await apiClient.get<{
-    data: BackendNft[];
-    pagination?: NftPagination;
-  }>(`/v1/${networkId}/nft`, {
-    params,
-    timeout: 15000,
-  });
-
-  const raw = Array.isArray(data) ? data : data.data;
-  const normalized = raw
-    .map((nft) => normalizeBackendNft(nft, publicKey))
-    .filter((nft) => nft.media);
-
-  const pagination: NftPagination = data.pagination ?? {
-    total: normalized.length,
-    limit,
-    offset,
-    hasMore: false,
-    nextOffset: null,
-  };
-
-  return { data: normalized, pagination };
 }
