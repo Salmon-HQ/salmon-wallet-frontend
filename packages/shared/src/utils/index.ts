@@ -191,17 +191,12 @@ export {
 // Balance decoration & calculation utilities
 export {
   // Types
-  type RawTokenBalance,
   type TokenBalance,
   type TokenBalanceWithPrice,
   type WalletBalance,
-  type JupiterPriceData,
   // Constants
   SOL_CONSTANTS,
-  USDC_ADDRESS,
   LAMPORTS_PER_SOL,
-  // Functions
-  createSolBalance,
   // Bigint helpers
   isZeroBalance,
   compareBalances,

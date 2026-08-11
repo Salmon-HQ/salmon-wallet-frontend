@@ -555,22 +555,3 @@ export interface TransactionItem {
   category?: string;
 }
 
-/**
- * Pagination parameters for multi-chain transaction queries
- */
-export interface TransactionPagingParams {
-  /** Number of items per page (max 100) */
-  pageSize?: number;
-  /** Page token for cursor-based pagination */
-  pageToken?: string;
-}
-
-/**
- * Paginated multi-chain transaction response from the API
- */
-export interface TransactionsResponse {
-  /** Array of transactions */
-  data: TransactionItem[];
-  /** Token for fetching the next page */
-  pageToken?: string;
-}

@@ -88,14 +88,14 @@ const MOCK_MARKET_CHART: MarketChartData = {
     [1704326400000, 103.5],
     [1704412800000, 105.2],
   ],
-  market_caps: [
+  marketCaps: [
     [1704067200000, 45000000000],
     [1704153600000, 45800000000],
     [1704240000000, 45600000000],
     [1704326400000, 46300000000],
     [1704412800000, 47100000000],
   ],
-  total_volumes: [
+  totalVolumes: [
     [1704067200000, 2500000000],
     [1704153600000, 2600000000],
     [1704240000000, 2550000000],
@@ -132,12 +132,9 @@ const MOCK_COIN_INFO: CoinInfo = {
     atlDate: '2020-05-11T19:35:23.449Z',
   },
   links: {
-    homepage: ['https://solana.com'],
-    blockchainSite: ['https://solscan.io', 'https://explorer.solana.com'],
-    twitterScreenName: 'solana',
+    homepage: 'https://solana.com',
+    twitter: 'solana',
   },
-  categories: ['Smart Contract Platform', 'Layer 1'],
-  genesisDate: '2020-03-16',
 };
 
 // ============================================================================
@@ -250,11 +247,11 @@ describe('Price Service', () => {
 
       expect(result).not.toBeNull();
       expect(result).toHaveProperty('prices');
-      expect(result).toHaveProperty('market_caps');
-      expect(result).toHaveProperty('total_volumes');
+      expect(result).toHaveProperty('marketCaps');
+      expect(result).toHaveProperty('totalVolumes');
       expect(Array.isArray(result!.prices)).toBe(true);
-      expect(Array.isArray(result!.market_caps)).toBe(true);
-      expect(Array.isArray(result!.total_volumes)).toBe(true);
+      expect(Array.isArray(result!.marketCaps)).toBe(true);
+      expect(Array.isArray(result!.totalVolumes)).toBe(true);
     });
 
     it('should verify data point structure', async () => {

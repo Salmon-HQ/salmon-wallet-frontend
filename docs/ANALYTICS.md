@@ -1,12 +1,12 @@
-# Anonymous analytics — event catalog and metrics
+# Pseudonymous analytics — event catalog and metrics
 
 This document is the reference for **what we measure, with what data, and what metrics can be computed from it**. It is a *ground-truth* document: it marks what is actually emitted today and, explicitly, what **cannot** be measured with the current design. It does not promise coverage that does not exist.
 
 ## Privacy posture
 
-Analytics are **anonymous and opt-in**. The user starts with no consent and the client is a **total no-op** until it is granted: it does not validate, does not enqueue, does not persist, and does not send anything.
+Analytics are **pseudonymous and opt-in** — the persistent `install_id` singles out a device across events (that is what makes funnels work), so the data is pseudonymous rather than anonymous in the GDPR sense, and consent is required. The user starts with no consent and the client is a **total no-op** until it is granted: it does not validate, does not enqueue, does not persist, and does not send anything.
 
-Anonymity is guaranteed by an **allow-list, not a deny-list**:
+Payload safety is guaranteed by an **allow-list, not a deny-list**:
 
 - Only the 11 catalog events may be emitted.
 - An event may only carry props from `ALLOWED_PROP_KEYS`.
@@ -22,7 +22,7 @@ Withdrawing consent **clears the queue and the install id**.
 | Piece | Location |
 |---|---|
 | Catalog (source of truth) | `packages/shared/src/analytics/events.ts` |
-| Anonymity guardrail | `packages/shared/src/analytics/schema.ts` |
+| Payload guardrail | `packages/shared/src/analytics/schema.ts` |
 | Client (consent, batching, retry) | `packages/shared/src/analytics/client.ts` |
 | HTTP transport | `packages/shared/src/analytics/transport.ts` |
 | "First-time" events | `packages/shared/src/analytics/first-time.ts` |
@@ -239,8 +239,8 @@ cat ../salmon-api/.analytics-local/events.ndjson | jq -r .event | sort | uniq -c
 
 Once emitted (with consent), a batch is POSTed to an **isolated ingest Lambda** (`salmon-api/src/analytics/handler.js`), separate from the wallet API so a traffic spike cannot compete with it. The backend re-validates the batch against the allow-list and forwards it to **Google Analytics 4** via the Measurement Protocol.
 
-Anonymity holds end-to-end. The handler never reads the client IP, and because GA4 attributes an event to whoever calls it — the backend — **the user's IP never reaches Google; only the server's does.** No Google or Firebase SDK runs in the app, so no device ever talks to Google directly. Each event carries `client_id = install_id`: a random, PII-free per-install token, the only persistent identifier involved.
+The privacy posture holds end-to-end. The handler never reads the client IP, and because GA4 attributes an event to whoever calls it — the backend — **the user's IP never reaches Google; only the server's does.** No Google or Firebase SDK runs in the app, so no device ever talks to Google directly. Each event carries `client_id = install_id`: a random, PII-free per-install token, the only persistent identifier involved.
 
-Delivery is best-effort: the Measurement Protocol answers `2xx` for a well-formed request without validating event contents, so a data point can be lost server-side without an error. It can also be lost **before it leaves the device** — if the app is closed before the batch flushes, that in-memory queue is dropped (it is not persisted). Both are the inherent trade-off of lightweight anonymous analytics. See `salmon-api/docs/ANALYTICS.md` for the sink and the one-time GA4 console setup.
+Delivery is best-effort: the Measurement Protocol answers `2xx` for a well-formed request without validating event contents, so a data point can be lost server-side without an error. It can also be lost **before it leaves the device** — if the app is closed before the batch flushes, that in-memory queue is dropped (it is not persisted). Both are the inherent trade-off of lightweight pseudonymous analytics. See `salmon-api/docs/ANALYTICS.md` for the sink and the one-time GA4 console setup.
 
 The infrastructure that stores and serves this data is documented separately for operators (it is not needed to understand what the wallet collects).

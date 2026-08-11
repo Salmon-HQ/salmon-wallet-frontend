@@ -1,28 +1,6 @@
-import type { JupiterApiPriceData } from '../types/price';
-
 // ============================================================================
 // Types
 // ============================================================================
-
-/**
- * Raw token balance from on-chain data
- */
-export interface RawTokenBalance {
-  /** Token mint address */
-  mint: string;
-  /** Owner wallet address */
-  owner: string;
-  /** Raw balance amount (in smallest unit) */
-  amount: string | number;
-  /** Token decimals */
-  decimals: number;
-  /** Human-readable balance */
-  uiAmount: number;
-  /** Token program ('spl-token' or 'spl-token-2022') */
-  program?: string;
-  /** Token-2022 extensions */
-  extensions?: unknown[];
-}
 
 /**
  * Token balance with metadata
@@ -82,12 +60,6 @@ export interface WalletBalance {
   items: TokenBalanceWithPrice[];
 }
 
-/**
- * @deprecated Use JupiterApiPriceData from types/price instead.
- * Kept as alias for backward compatibility.
- */
-export type JupiterPriceData = JupiterApiPriceData;
-
 // ============================================================================
 // Constants
 // ============================================================================
@@ -103,15 +75,8 @@ export const SOL_CONSTANTS = {
   TAGS: ['community', 'moonshot-verified', 'strict', 'verified', 'major'] as string[],
 } as const;
 
-/** USDC token address */
-export const USDC_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-
 /** Lamports per SOL */
 export const LAMPORTS_PER_SOL = 1_000_000_000;
-
-// ============================================================================
-// Balance Decoration Functions
-// ============================================================================
 
 // ============================================================================
 // Bigint Balance Helpers
@@ -138,33 +103,4 @@ export function compareBalances(a: bigint, b: bigint): number {
   if (a < b) return -1;
   if (a > b) return 1;
   return 0;
-}
-
-// ============================================================================
-// SOL Balance Factory
-// ============================================================================
-
-/**
- * Create SOL native balance object
- *
- * @param lamports - Balance in lamports
- * @param owner - Wallet address
- * @returns SOL balance object
- */
-export function createSolBalance(lamports: number, owner: string): TokenBalance {
-  const uiAmount = lamports / LAMPORTS_PER_SOL;
-
-  return {
-    mint: SOL_CONSTANTS.ADDRESS,
-    owner,
-    amount: lamports,
-    decimals: SOL_CONSTANTS.DECIMALS,
-    uiAmount,
-    symbol: SOL_CONSTANTS.SYMBOL,
-    name: SOL_CONSTANTS.NAME,
-    logo: SOL_CONSTANTS.LOGO,
-    address: SOL_CONSTANTS.ADDRESS,
-    coingeckoId: SOL_CONSTANTS.COINGECKO_ID,
-    tags: [...SOL_CONSTANTS.TAGS],
-  };
 }

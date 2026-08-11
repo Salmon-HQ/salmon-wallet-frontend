@@ -42,8 +42,8 @@ describe('useCoinMarketData', () => {
     } as any);
     mockGetMarketChart.mockResolvedValue({
       prices: [[1, 100] as [number, number], [2, 110] as [number, number]],
-      market_caps: [],
-      total_volumes: [],
+      marketCaps: [],
+      totalVolumes: [],
     });
 
     const { result } = renderWithClient(
@@ -76,7 +76,7 @@ describe('useCoinMarketData', () => {
 
   it('exposes error message when a fetch fails', async () => {
     mockGetCoinInfo.mockRejectedValue(new Error('boom'));
-    mockGetMarketChart.mockResolvedValue({ prices: [], market_caps: [], total_volumes: [] });
+    mockGetMarketChart.mockResolvedValue({ prices: [], marketCaps: [], totalVolumes: [] });
 
     const { result } = renderWithClient(
       () => useCoinMarketData({ coinId: 'bitcoin', currency: 'usd', days: 7 }),

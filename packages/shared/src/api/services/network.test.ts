@@ -43,7 +43,6 @@ import {
   getNetworks,
   getNetwork,
   getEnabledNetworkIds,
-  getEnabledBlockchains,
   isBackendNetworkEnabled,
   clearNetworksCache,
 } from './network';
@@ -206,18 +205,6 @@ describe('Network Service', () => {
       apiClient.get = vi.fn().mockResolvedValue({ data: mockNetworks });
 
       await expect(getEnabledNetworkIds()).resolves.toEqual(['solana-mainnet']);
-    });
-
-    it('returns enabled blockchain families from the catalog', async () => {
-      const mockNetworks: NetworkCatalogEntry[] = [
-        { id: 'solana-mainnet', name: 'Solana Mainnet', blockchain: 'solana', environment: 'mainnet', config: { nodeUrl: 'https://rpc.solana.example' }, enabled: true, sections: {} as never },
-        { id: 'bitcoin-mainnet', name: 'Bitcoin Mainnet', blockchain: 'bitcoin', environment: 'mainnet', config: {}, enabled: true, sections: {} as never },
-        { id: 'ethereum-mainnet', name: 'Ethereum Mainnet', blockchain: 'ethereum', environment: 'mainnet', config: { rpcUrl: 'https://eth.example', chainId: 1 }, enabled: false, sections: {} as never },
-      ];
-
-      apiClient.get = vi.fn().mockResolvedValue({ data: mockNetworks });
-
-      await expect(getEnabledBlockchains()).resolves.toEqual(['solana', 'bitcoin']);
     });
 
     it('checks whether a specific backend network is enabled', async () => {

@@ -128,23 +128,6 @@ export async function getTokenList(
 }
 
 /**
- * Get the verified-token list directly without dedup.
- *
- * Endpoint: GET /v1/{networkId}/ft/verified
- */
-export async function getVerifiedTokens(
-  networkId: SolanaNetworkId = 'solana-mainnet'
-): Promise<TokenMetadata[]> {
-  try {
-    const { data } = await apiClient.get<BackendToken[]>(`/v1/${networkId}/ft/verified`);
-    return normalizeBackendTokens(data);
-  } catch (error) {
-    console.warn('[TokenService] Verified tokens endpoint unavailable:', error);
-    return [];
-  }
-}
-
-/**
  * Search tokens by query string. Backend handles search semantics.
  *
  * Endpoint: GET /v1/{networkId}/ft/search?query={query}

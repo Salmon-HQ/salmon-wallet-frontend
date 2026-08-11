@@ -10,7 +10,7 @@
  */
 
 import { apiClient } from '../client';
-import type { BlockchainType, NetworkCatalogEntry } from '../../types/blockchain';
+import type { NetworkCatalogEntry } from '../../types/blockchain';
 
 // ============================================================================
 // Cache
@@ -69,14 +69,6 @@ export async function getEnabledNetworkIds(): Promise<string[]> {
   return networks
     .filter((network) => network.enabled)
     .map((network) => network.id);
-}
-
-export async function getEnabledBlockchains(
-): Promise<BlockchainType[]> {
-  const enabledIds = await getEnabledNetworkIds();
-  return [...new Set(
-    enabledIds.map((networkId) => networkId.split('-')[0] as BlockchainType)
-  )];
 }
 
 export async function isBackendNetworkEnabled(

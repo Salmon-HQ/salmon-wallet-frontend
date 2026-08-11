@@ -13,7 +13,6 @@
  * - DApp Service (./dapp)
  * - Bridge Service (./bridge)
  * - Ethereum Service (./ethereum)
- * - Multi-chain Transaction Service (./transactions)
  * - Solana NFT Service (./solana-nft)
  * - Network Service (./network)
  */
@@ -44,7 +43,6 @@ export {
 export {
   // Functions
   getTokenList,
-  getVerifiedTokens,
   searchTokens,
   clearTokenListCache,
 } from './tokens';
@@ -68,21 +66,6 @@ export {
 // ============================================================================
 
 export {
-  // Types
-  type BitcoinBalance,
-  type BitcoinUtxo,
-  type BitcoinTransactionInput,
-  type BitcoinTransactionOutput,
-  type BitcoinTransaction,
-  type BitcoinPagingParams,
-  type BitcoinTransactionsResponse,
-  type BroadcastTransactionRequest,
-  type BroadcastTransactionResponse,
-  // Functions
-  getBitcoinBalance,
-  getBitcoinUtxos,
-  getBitcoinTransactions,
-  broadcastBitcoinTransaction,
   // DI adapters (transfer)
   fetchUtxos,
   broadcastTransaction,
@@ -115,9 +98,6 @@ export {
   // are in types/swap.ts - import from @salmon/shared
   // Functions - Transactions
   getSolanaTransactions,
-  getAllSolanaTransactions,
-  getRecentSolanaTransactions,
-  getTransactionsByType,
   // Functions - Swap
   getSwapOrder,
   executeSwapApi,
@@ -164,19 +144,6 @@ export {
 } from './ethereum';
 
 // ============================================================================
-// Multi-chain Transaction Service
-// ============================================================================
-
-export {
-  // Types
-  type TransactionItem,
-  type TransactionPagingParams,
-  type TransactionsResponse,
-  // Functions - aliased to avoid conflicts with chain-specific services
-  getTransactions as getMultichainTransactions,
-} from './transactions';
-
-// ============================================================================
 // Solana NFT Service
 // ============================================================================
 
@@ -194,7 +161,6 @@ export {
   getNetworks,
   getNetwork,
   getEnabledNetworkIds,
-  getEnabledBlockchains,
   isBackendNetworkEnabled,
   clearNetworksCache,
 } from './network';
