@@ -12,6 +12,7 @@ import {
   useSettleAfterTx,
   isSolanaNft,
   createBurnTransaction,
+  classifyTransactionError,
   type NftData,
 } from '@salmon/shared';
 import { isSolanaAccount } from '@salmon/shared/utils/account';
@@ -85,13 +86,12 @@ export function NftDetailRoute(): React.ReactElement {
         if (txResponse.lookupTable) {
           const balance = await solAccount.getCredit();
           if (balance < txResponse.lookupTable.estimatedRentLamports) {
-            setBurnError('Insufficient SOL balance to cover burn transaction fees.');
+            setBurnError('nft.burn.insufficientFeeSol');
           }
         }
       })
       .catch((err) => {
-        const message = err instanceof Error ? err.message : 'Burn failed';
-        setBurnError(message);
+        setBurnError(classifyTransactionError(err));
       })
       .finally(() => {
         setBurnPreparing(false);
@@ -115,7 +115,7 @@ export function NftDetailRoute(): React.ReactElement {
       setBurnStep('success');
     } catch (err) {
       console.error('Failed to burn NFT:', err);
-      setBurnError(err instanceof Error ? err.message : 'Burn failed');
+      setBurnError(classifyTransactionError(err));
     } finally {
       setBurnPreparing(false);
     }

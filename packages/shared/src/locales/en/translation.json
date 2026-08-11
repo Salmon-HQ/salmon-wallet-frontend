@@ -663,7 +663,8 @@
       "lutRent": "Approximate rent lock",
       "lutAddressCount": "Addresses stored",
       "lutSteps": "Additional setup transactions",
-      "lutFootnote": "The rent stays locked in the lookup table account until it is later deactivated and closed."
+      "lutFootnote": "The rent stays locked in the lookup table account until it is later deactivated and closed.",
+      "insufficientFeeSol": "Insufficient SOL balance to cover burn transaction fees."
     }
   },
   "swap": {

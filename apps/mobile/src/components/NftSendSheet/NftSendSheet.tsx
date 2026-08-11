@@ -28,6 +28,7 @@ import {
   vs,
   s,
   useNftTransfer,
+  classifyTransactionError,
   type NftData,
   type BlockchainAccount,
   fontFamilyNative,
@@ -118,7 +119,7 @@ export function NftSendSheet({
       onSuccess?.(result.txId);
       handleClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Transfer failed');
+      setError(classifyTransactionError(err));
       setLoading(false);
     }
   }, [nft, address, addressValid, loading, sendNft, onSuccess, handleClose]);
@@ -207,7 +208,7 @@ export function NftSendSheet({
                     label={t('token.send.recipient', 'Recipient')}
                   />
 
-                  {error && <Text style={styles.errorText}>{error}</Text>}
+                  {error && <Text style={styles.errorText}>{t(error)}</Text>}
                 </>
               )}
             </View>

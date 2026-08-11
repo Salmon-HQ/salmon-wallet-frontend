@@ -43,6 +43,7 @@ import {
   useNftTransfer,
   getTransactionUrl,
   getDefaultExplorer,
+  classifyTransactionError,
   type Blockchain,
   type NetworkEnvironment,
   type ValidationCallbackResult,
@@ -261,8 +262,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       setSuccessTxId(result.txId);
       setStep('success');
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'NFT transfer failed';
-      setSendError(errorMessage);
+      setSendError(classifyTransactionError(err));
     } finally {
       setSending(false);
     }

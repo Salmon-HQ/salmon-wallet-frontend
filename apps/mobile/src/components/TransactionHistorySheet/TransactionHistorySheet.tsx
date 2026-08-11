@@ -10,6 +10,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { ContentLoader, Rect } from '@salmon/shared';
 import {
   colors,
@@ -97,18 +98,15 @@ const EmptyState: React.FC = () => {
 /**
  * Error state with retry option
  */
-const ErrorState: React.FC<{ message: string; onRetry?: () => void }> = ({
-  message,
-  onRetry,
-}) => {
+const ErrorState: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => {
+  const { t } = useTranslation();
   return (
     <View style={styles.errorContainer}>
-      <Text style={styles.errorTitle}>Failed to load transactions</Text>
-      <Text style={styles.errorMessage}>{message}</Text>
+      <Text style={styles.errorTitle}>{t('transactions.loadError')}</Text>
       {onRetry && (
         <TouchableWithoutFeedback onPress={onRetry}>
           <View style={styles.retryButton} testID="activity-retry-button">
-            <Text style={styles.retryText}>Tap to retry</Text>
+            <Text style={styles.retryText}>{t('transactions.tapToRetry')}</Text>
           </View>
         </TouchableWithoutFeedback>
       )}
@@ -222,7 +220,7 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
       <View style={styles.content}>
         {/* Error State */}
         {error && !loading && (
-          <ErrorState message={error} onRetry={onRetry} />
+          <ErrorState onRetry={onRetry} />
         )}
 
         {/* Loading State */}
@@ -321,13 +319,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.medium,
     color: colors.text.primary,
     marginBottom: vs(spacing.base),
-  },
-  errorMessage: {
-    fontSize: ms(fontSize.md),
-    fontFamily: fontFamilyNative.regular,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginBottom: vs(spacing.headerPadding),
   },
   retryButton: {
     paddingVertical: vs(spacing.md),

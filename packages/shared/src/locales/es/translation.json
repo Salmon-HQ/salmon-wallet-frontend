@@ -663,7 +663,8 @@
       "lutRent": "Renta aproximada bloqueada",
       "lutAddressCount": "Direcciones almacenadas",
       "lutSteps": "Transacciones adicionales de preparación",
-      "lutFootnote": "La renta queda bloqueada en la lookup table hasta que luego sea desactivada y cerrada."
+      "lutFootnote": "La renta queda bloqueada en la lookup table hasta que luego sea desactivada y cerrada.",
+      "insufficientFeeSol": "No tenés suficiente SOL para cubrir las comisiones de la transacción de quemado."
     }
   },
   "swap": {

@@ -36,6 +36,7 @@ import {
   type BlockchainType,
   isSolanaNft,
   createBurnTransaction,
+  classifyTransactionError,
   useCurrencyContext,
   LANGUAGE_NAMES,
   type LanguageCode,
@@ -747,12 +748,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         if (txResponse.lookupTable) {
           const balance = await solAccount.getCredit();
           if (balance < txResponse.lookupTable.estimatedRentLamports) {
-            setBurnError('Insufficient SOL balance to cover burn transaction fees.');
+            setBurnError('nft.burn.insufficientFeeSol');
           }
         }
       })
       .catch((error) => {
-        setBurnError(error instanceof Error ? error.message : 'Burn failed');
+        setBurnError(classifyTransactionError(error));
       })
       .finally(() => {
         setBurnLoading(false);
@@ -776,7 +777,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       setBurnStep('success');
     } catch (error) {
       console.error('[HomePage] NFT burn failed:', error);
-      setBurnError(error instanceof Error ? error.message : 'Burn failed');
+      setBurnError(classifyTransactionError(error));
     } finally {
       setBurnLoading(false);
     }

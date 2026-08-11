@@ -286,23 +286,20 @@ export default function SwapScreenPage() {
     networkIn?: string,
     networkOut?: string
   ): Promise<BridgeExchangeSimple | null> => {
-    try {
-      const exchange = await createBridgeExchange(symbolIn, symbolOut, amount, addressTo, networkIn, networkOut);
-      if (!exchange) return null;
-      return {
-        id: exchange.id,
-        depositAddress: exchange.payinAddress,
-        amountIn: exchange.amountExpectedFrom,
-        amountOut: exchange.amountExpectedTo,
-        symbolIn: exchange.currencyFrom,
-        symbolOut: exchange.currencyTo,
-        addressTo: exchange.payoutAddress,
-        status: exchange.status,
-      };
-    } catch (error) {
-      console.error('Failed to create bridge exchange:', error);
-      return null;
-    }
+    // No try/catch: failures must propagate to useSwapScreenLogic's
+    // classifyBridgeError so users see the classified message (e.g. minimum).
+    const exchange = await createBridgeExchange(symbolIn, symbolOut, amount, addressTo, networkIn, networkOut);
+    if (!exchange) return null;
+    return {
+      id: exchange.id,
+      depositAddress: exchange.payinAddress,
+      amountIn: exchange.amountExpectedFrom,
+      amountOut: exchange.amountExpectedTo,
+      symbolIn: exchange.currencyFrom,
+      symbolOut: exchange.currencyTo,
+      addressTo: exchange.payoutAddress,
+      status: exchange.status,
+    };
   }, [createBridgeExchange]);
 
   const handleGetBridgeTransactionStatus = useCallback(async (id: string) => {

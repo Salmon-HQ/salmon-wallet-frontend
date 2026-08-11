@@ -21,6 +21,7 @@ import {
   borderRadius,
   colors,
   createBurnTransaction,
+  classifyTransactionError,
   fontFamilyNative,
   fontSize,
   letterSpacing,
@@ -359,12 +360,11 @@ export default function CollectiblesScreen() {
         const solAccount = nftAccount as SolanaAccount;
         const balance = await solAccount.getCredit();
         if (balance < txResponse.lookupTable.estimatedRentLamports) {
-          setBurnError('Insufficient SOL balance to cover burn transaction fees.');
+          setBurnError('nft.burn.insufficientFeeSol');
         }
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Burn failed';
-      setBurnError(msg);
+      setBurnError(classifyTransactionError(err));
     } finally {
       setBurnPreparing(false);
     }
@@ -381,8 +381,7 @@ export default function CollectiblesScreen() {
       const signatures = await nftBurn.burnNft(burnPreview, nft.mint ?? undefined);
       setBurnSuccessTxId(signatures[signatures.length - 1] ?? '');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Burn failed';
-      setBurnError(msg);
+      setBurnError(classifyTransactionError(err));
     } finally {
       setBurnExecuting(false);
     }

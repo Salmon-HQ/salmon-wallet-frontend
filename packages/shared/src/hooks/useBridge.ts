@@ -133,10 +133,7 @@ function parseBridgeErrorMessage(raw: string): string {
     return 'Network error: Unable to reach the server';
   }
 
-  if (stripped.length > 0 && stripped.length < 120) {
-    return stripped;
-  }
-
+  // Anything else is raw provider (StealthEX) text — never show it verbatim.
   return 'Failed to get bridge estimate';
 }
 
