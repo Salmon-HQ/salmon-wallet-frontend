@@ -119,8 +119,10 @@ export interface ApiClientConfig {
   baseUrl?: string;
   /** Environment to use for URL resolution */
   environment?: Environment;
-  /** Request timeout in milliseconds (default: 30000) */
+  /** Request timeout in milliseconds (default: 10000) */
   timeout?: number;
+  /** Retries for idempotent requests that failed without a response or with a 5xx (default: 2) */
+  retries?: number;
   /** Custom headers to include in all requests */
   headers?: Record<string, string>;
   /** Enable request/response logging (default: false) */
@@ -146,7 +148,8 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
   const {
     baseUrl,
     environment,
-    timeout = 30000,
+    timeout = 10000,
+    retries = 2,
     headers = {},
     debug = false,
     onError,
@@ -198,6 +201,27 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
       return Promise.reject(error);
     }
   );
+
+  // Bounded retry for idempotent requests that failed without a response
+  // (status 0: DNS, TLS, dropped connection, timeout) or with a 5xx. Backoff
+  // with jitter so a backend hiccup does not turn every client into a
+  // synchronized retry storm.
+  client.interceptors.response.use(undefined, async (error: AxiosError<ApiErrorResponse>) => {
+    const config = error.config as (InternalAxiosRequestConfig & { _retryCount?: number }) | undefined;
+    const method = config?.method?.toLowerCase();
+    const status = error.response?.status ?? 0;
+    const retryable = method === 'get' && (status === 0 || status >= 500);
+    const attempt = config?._retryCount ?? 0;
+
+    if (!config || !retryable || attempt >= retries) {
+      return Promise.reject(error);
+    }
+
+    config._retryCount = attempt + 1;
+    const backoff = 500 * 2 ** attempt + Math.random() * 250;
+    await new Promise((resolve) => setTimeout(resolve, backoff));
+    return client.request(config);
+  });
 
   // Response interceptor
   client.interceptors.response.use(

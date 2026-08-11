@@ -682,7 +682,7 @@ describe('API Client Module', () => {
 
       expect(mockedAxios.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          timeout: 30000,
+          timeout: 10000,
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
             Accept: 'application/json',
@@ -730,7 +730,7 @@ describe('API Client Module', () => {
       );
     });
 
-    it('should set timeout to 30000ms by default', () => {
+    it('should set timeout to 10000ms by default', () => {
       const mockInstance = {
         interceptors: {
           request: { use: vi.fn() },
@@ -744,7 +744,7 @@ describe('API Client Module', () => {
 
       expect(mockedAxios.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          timeout: 30000,
+          timeout: 10000,
         })
       );
     });
@@ -928,7 +928,7 @@ describe('API Client Module', () => {
       createApiClient({ onResponse });
 
       // Get the response interceptor function
-      const interceptorFn = mockResponseInterceptor.mock.calls[0]?.[0];
+      const interceptorFn = mockResponseInterceptor.mock.calls[1]?.[0];
       const mockResponse = { data: {}, status: 200 } as AxiosResponse;
 
       interceptorFn(mockResponse);
@@ -951,7 +951,7 @@ describe('API Client Module', () => {
       createApiClient({ onError });
 
       // Get the error interceptor function
-      const errorInterceptorFn = mockResponseInterceptor.mock.calls[0]?.[1];
+      const errorInterceptorFn = mockResponseInterceptor.mock.calls[1]?.[1];
       const mockError = {
         response: {
           status: 404,
@@ -1014,7 +1014,7 @@ describe('API Client Module', () => {
       createApiClient();
 
       // Get the error interceptor function
-      const errorInterceptorFn = mockResponseInterceptor.mock.calls[0]?.[1];
+      const errorInterceptorFn = mockResponseInterceptor.mock.calls[1]?.[1];
       const axiosError = {
         response: {
           status: 500,
@@ -1046,7 +1046,7 @@ describe('API Client Module', () => {
 
       createApiClient();
 
-      const errorInterceptorFn = mockResponseInterceptor.mock.calls[0]?.[1];
+      const errorInterceptorFn = mockResponseInterceptor.mock.calls[1]?.[1];
       const networkError = {
         request: {},
         message: 'Network Error',
@@ -1075,7 +1075,7 @@ describe('API Client Module', () => {
 
       createApiClient();
 
-      const errorInterceptorFn = mockResponseInterceptor.mock.calls[0]?.[1];
+      const errorInterceptorFn = mockResponseInterceptor.mock.calls[1]?.[1];
       const configError = {
         message: 'Invalid URL',
       } as AxiosError;
@@ -1254,7 +1254,7 @@ describe('API Client Module', () => {
       createApiClient();
 
       // Get the error interceptor function
-      const errorInterceptorFn = mockResponseInterceptor.mock.calls[0]?.[1];
+      const errorInterceptorFn = mockResponseInterceptor.mock.calls[1]?.[1];
       const axiosError = {
         response: {
           status: 400,
@@ -1292,7 +1292,7 @@ describe('API Client Module', () => {
 
       createApiClient();
 
-      const errorInterceptorFn = mockResponseInterceptor.mock.calls[0]?.[1];
+      const errorInterceptorFn = mockResponseInterceptor.mock.calls[1]?.[1];
       const axiosError = {
         request: {},
         message: 'Network Error',
@@ -1321,7 +1321,7 @@ describe('API Client Module', () => {
 
       createApiClient();
 
-      const errorInterceptorFn = mockResponseInterceptor.mock.calls[0]?.[1];
+      const errorInterceptorFn = mockResponseInterceptor.mock.calls[1]?.[1];
       const axiosError = {
         message: 'Invalid URL',
       } as AxiosError;
@@ -1348,7 +1348,7 @@ describe('API Client Module', () => {
 
       createApiClient();
 
-      const errorInterceptorFn = mockResponseInterceptor.mock.calls[0]?.[1];
+      const errorInterceptorFn = mockResponseInterceptor.mock.calls[1]?.[1];
       const axiosError = {
         response: {
           status: 500,
@@ -1378,7 +1378,7 @@ describe('API Client Module', () => {
 
       createApiClient();
 
-      const errorInterceptorFn = mockResponseInterceptor.mock.calls[0]?.[1];
+      const errorInterceptorFn = mockResponseInterceptor.mock.calls[1]?.[1];
       const axiosError = {
         response: {
           status: 500,
@@ -1408,7 +1408,7 @@ describe('API Client Module', () => {
 
       createApiClient();
 
-      const errorInterceptorFn = mockResponseInterceptor.mock.calls[0]?.[1];
+      const errorInterceptorFn = mockResponseInterceptor.mock.calls[1]?.[1];
       const axiosError = {
         response: {
           status: 404,
