@@ -6,37 +6,22 @@
     "daysAgo": "{{count}}d ago"
   },
   "tabs": {
-    "wallet": "Wallet",
     "swap": "Swap",
     "collectibles": "Collectibles",
     "settings": "Settings",
     "home": "Home"
   },
   "general": {
-    "usd": "USD",
-    "name": "Name",
     "address": "Address",
-    "to": "To",
     "name_or_address": "Name or \"{{token}}\" Address",
-    "recipient_s_address": "Recipient´s \"{{token}}\" Address",
     "seed_phrase": "Seed Phrase",
-    "private_key": "Private Key",
-    "balance": "Balance",
     "sending": "Sending...",
     "loading": "Loading...",
-    "sent": "Sent!",
     "close": "Close",
     "max": "Max",
     "back": "Back",
     "confirm": "Confirm",
     "error": "Unexpected error",
-    "address_validation": {
-      "ERROR": "Unexpected Error",
-      "INVALID_ADDRESS": "Address is not valid",
-      "EMPTY_ACCOUNT": "This address has no funds. Please check if this address is correct.",
-      "NO_FUNDS": "Address has no funds"
-    },
-    "open_explorer": "Open in explorer",
     "tip": "Tip",
     "tips": {
       "0": "Never share your seed phrase with anyone",
@@ -70,31 +55,22 @@
     }
   },
   "actions": {
-    "approve": "Approve",
-    "skip": "Skip",
     "next": "Next",
     "start": "Start",
-    "connect": "Connect",
-    "deny": "Deny",
     "copy": "Copy",
     "close": "Close",
     "save": "Save",
     "remove": "Yes, remove",
     "remove_all": "Yes, remove all",
     "confirm": "Confirm",
-    "confirm_anyway": "Confirm anyway",
-    "accept": "Accept",
     "cancel": "Cancel",
     "done": "Done",
     "send": "Send",
     "receive": "Receive",
-    "view_all": "View all",
     "search_placeholder": "Search...",
-    "logout": "Logout",
     "view_more": "View more",
     "continue": "Continue",
     "follow_us": "Follow us",
-    "bridge": "Bridge",
     "retry": "Retry",
     "searching": "Searching...",
     "activity": "Activity",
@@ -119,7 +95,6 @@
     "deny": "Deny",
     "sign_message_title": "Sign Message",
     "sign_message_subtitle": "This site wants you to sign a message",
-    "hex_message_label": "Message (hex)",
     "siws_account": "Account",
     "siws_uri": "URI",
     "siws_nonce": "Nonce",
@@ -171,7 +146,6 @@
     "change_network": "Change Network",
     "select_explorer": "Select Explorer",
     "explorer": "Block Explorer",
-    "notifications": "Notifications",
     "trusted_apps": "Trusted Apps",
     "no_trusted_apps": "No connected apps",
     "no_trusted_apps_hint": "Apps you connect to will appear here",
@@ -180,7 +154,6 @@
     "currency": "Display Currency",
     "backup": "Backup Seed Phrase",
     "private_key": "Private Key",
-    "private_key_description": "View private keys for your accounts",
     "select_network": "Select Network",
     "select_network_description": "Choose a network to view its private keys",
     "derivation_path": "Derivation Path",
@@ -189,7 +162,6 @@
     "no_accounts_for_network": "No accounts found for this network",
     "about": "About",
     "about_website": "Website",
-    "about_documentation": "Documentation",
     "about_terms": "Terms of Service",
     "about_privacy": "Privacy Policy",
     "about_build": "Build {{build}}",
@@ -209,10 +181,6 @@
     "app_version": "Version v{{version}}",
     "remove_wallet": "Remove Wallet",
     "remove_all_wallets": "Remove All Wallets",
-    "section_account": "Account",
-    "section_preferences": "Preferences",
-    "section_advanced": "Advanced",
-    "section_danger": "Danger Zone",
     "sections": {
       "account": "Account",
       "preferences": "Preferences",
@@ -223,40 +191,21 @@
     "remove_wallet_title": "Remove Wallet?",
     "remove_all_title": "Remove All Wallets?",
     "confirm_remove": "Yes, Remove",
-    "cancel": "Cancel",
     "remove_wallet_error": "Failed to remove wallet. Please try again.",
     "remove_wallets_error": "Failed to remove wallets. Please try again.",
     "wallets": {
       "your_wallets": "Your Wallets",
-      "my_wallets": "My Blockchain Accounts",
       "add_new_wallet": "Add New Account",
-      "select_wallet": "Select Wallet",
-      "add_account": "Add New Account",
-      "edit_account": "Edit Account",
       "delete_account": "Delete Account",
       "delete_confirm_title": "Delete Account?",
       "delete_confirm_message": "Are you sure you want to delete this account? This action cannot be undone.",
       "cannot_delete_last": "Cannot delete the last account",
-      "no_accounts": "No accounts found",
       "remove_wallet": "Remove Account",
       "remove_all_wallets": "Remove All Accounts",
       "remove_all_wallets_description": "You're about to disconnect all your accounts. Keep in mind that you will need your seed phrases or private keys to connect them again.",
       "remove_wallet_description": "You're about to remove this account. Keep in mind that, to use it again, you will need to use your seed phrase.",
-      "edit_wallet": "Edit Account",
-      "edit_name": "Edit Name",
       "edit_name_disclaimer": "Keep in mind that this name works locally for you to easily identify your account. None of this data is reflected on the blockchain.",
-      "show_seed_phrase_description": "",
-      "show_private_key_description": "",
-      "select_network": "Select Network",
       "tap_to_reveal": "Tap to Reveal",
-      "set_profile_picture": "Set Profile Picture",
-      "select_nft": "Select Collectible",
-      "select_avatar": "Select Avatar",
-      "no_avatars_found": "No Avatars found",
-      "upload_photo": "Upload Photo",
-      "select_nft_to_profile": "Select Collectible to Profile",
-      "select_avatar_to_profile": "Select Avatar as Profile Picture",
-      "full_nft_description": "Full Collectible Description",
       "edit_name_empty": "Account name cannot be empty"
     },
     "profile_picture": "Profile Picture",
@@ -279,8 +228,7 @@
       "es": "Spanish"
     },
     "accounts": {
-      "title": "Accounts",
-      "switch_success": "Switched to {{name}}"
+      "title": "Accounts"
     },
     "account_edit": {
       "title": "Edit Account",
@@ -299,7 +247,6 @@
       "set_name_placeholder": "Enter account name",
       "default_name": "Account {{number}}",
       "scanning": "Scanning for accounts...",
-      "scan_complete": "Scan complete",
       "confirm_create": "Create Account",
       "confirm_import": "Import Account",
       "confirm": "Confirm",
@@ -334,59 +281,23 @@
     "trusted_apps_revoke": "Revoke"
   },
   "token": {
-    "nonTransferable": "Non transferable",
     "action": {
-      "addToken": "Add Custom Token",
-      "add": "Add",
-      "send": "Send",
-      "sendTo": "Send",
-      "receive": "Receive",
-      "select": "Select"
+      "send": "Send"
     },
     "receive": {
       "title": "Receive",
       "copyAddress": "Copy address",
-      "copied": "Copied!",
-      "warning": "This address is for tokens on the {{blockchain}} blockchain. Please, do not send any other tokens as it may result in funds loss."
+      "copied": "Copied!"
     },
     "send": {
       "myWallets": "My Wallets",
       "addressBook": "Address Book",
-      "address": {
-        "INVALID_ADDRESS": "Destination address is not valid",
-        "EMPTY_ACCOUNT": "Destination address is empty",
-        "NO_FUNDS": "Destination address has no funds"
-      },
-      "amount": {
-        "invalid": "The amount must be greater than 0",
-        "insufficient": "Insufficient funds"
-      },
-      "next": "Next",
-      "validate": "Validate",
-      "from": "From: {{name}}",
-      "transaction_creating": "Creating Transaction...",
-      "transaction_bridging": "Swapping...",
-      "transaction_sending": "Sending...",
-      "transaction_listing": "Listing...",
-      "transaction_unlisting": "Unlisting...",
-      "transaction_creating-offer": "Creating Offer...",
-      "transaction_canceling-offer": "Canceling Offer...",
-      "transaction_buying": "Buying...",
-      "transaction_success": "Transaction Completed",
-      "transaction_bridge_success": "Transaction pending, this could take a few minutes.\nHead to your Wallet Overview section to keep track of the status.",
-      "transaction_swapping": "Swapping",
-      "transaction_warning": "Warning",
-      "transaction_fail": "Transaction failed.\nPlease try again later.",
-      "goto_explorer": "Go to Explorer",
-      "view_transaction": "View Transaction",
-      "empty_account_fee": "It is not possible to estimate the fee because the destination account is empty",
       "recipient": "Recipient",
       "amountLabel": "Amount",
       "reviewAndSend": "Review & Send",
       "blockchainAddress": "{{blockchain}} Address",
       "networkFee": "Network Fee",
       "sending": "Sending...",
-      "retry": "Retry",
       "copyRecipientAddress": "Copy recipient address",
       "networkFeeAmount": "Network Fee: ~{{fee}}"
     },
@@ -423,9 +334,6 @@
       "readMore": "Read more",
       "readLess": "Read less"
     },
-    "balance": {
-      "percentage_info": "Variation of your position in the last 24 hours."
-    },
     "detail": {
       "title": "Token Information"
     },
@@ -456,13 +364,6 @@
   },
   "lock": {
     "title": "Enter your password",
-    "forgot": "I've forgot my password",
-    "forgotten": "Forgotten password",
-    "clear": "Clear data",
-    "clear_confirm": "I UNDERSTAND, DISCONNECT ALL",
-    "forgot_content": "Salmon does not store any information of your account. That includes your password. If you forgot it, you will need to disconnect all your accounts. Keep in mind that to re-import them you will need your seedphrase or private key.\n\nAre you sure you want to proceed?",
-    "buttonChecking": "Checking...",
-    "buttonUnlock": "Unlock",
     "forgot_password": "I forgot my password",
     "reset_wallet_title": "Reset Wallet",
     "reset_wallet_message": "If you forgot your password, you will need to reset your wallet. This will permanently delete all accounts and data from this device.\n\nYou can restore your wallet using your seed phrase after resetting.",
@@ -510,24 +411,12 @@
   },
   "wallet": {
     "name_template": "Account #{{number}}",
-    "transactions_in_progress": "Transactions In Progress",
-    "swaps_in_progress": "Swaps In Progress",
-    "my_tokens": "My Tokens",
-    "non_listed_tokens": "Non-Listed Tokens",
     "my_nfts": "My Collectibles",
     "copied": "Copied to clipboard!",
     "create_wallet": "Create Account",
     "recover_wallet": "Recover Account",
     "access_existing_account": "Access Existing Account",
     "select_token": "Select Token",
-    "new_token": "Add custom token",
-    "is_coming_soon": "is coming soon",
-    "select_derivable_account": "Select derivable account",
-    "prices_issue": "We are having issues to get prices",
-    "load_error": "We are having issues to load data",
-    "not_available_title": "Not available",
-    "not_available_msg": "This feature is not available",
-    "import_tokens": "Import tokens",
     "create": {
       "messageTitle": "Keep your seed phrase safe!",
       "messageBody": "You will need these words to restore your account if your browser's storage is cleared or your device is damaged or lost. \n\n Never share your seed phrase (or your private keys) with anyone or enter it into any form, as it provides full control of your account. \n\n Salmon Team will never ask for your recovery phrase or private keys.",
@@ -539,7 +428,6 @@
       "confirm_seed_phrase_body": "Please re-enter the following words of the seed phrase to confirm that you have saved it.",
       "enter_word_number": "Enter word #{{position}}",
       "word_number": "Word #{{position}}",
-      "buttonPreparing": "Preparing...",
       "enter_your_password": "Enter your password",
       "passwords_dont_match": "Passwords don't match",
       "invalid_password": "Invalid Password",
@@ -550,21 +438,15 @@
       "choose_a_password_body": "You will need it to unlock your wallet",
       "passwordNew": "New password",
       "passwordRepeat": "Repeat password",
-      "i_accept_terms_conditions": "By tapping the Create Account button \nI accept the Terms & Conditions",
       "terms_prefix": "By creating, you accept the ",
       "passwordChecking": "Checking...",
       "success_message": "Congratulations!",
       "success_message_body": "Your account is now ready",
       "go_to_my_wallet": "Go to my Account!",
       "check_derivables": "Check Derivables",
-      "derivable_accounts": "Derivable Accounts",
-      "no_derivable_accounts": "No derivable accounts with balance found",
       "derivable_info_icon": "ⓘ  What is a derivable?",
       "derivable_info": "What is a derivable?",
       "derivable_description": "Derivables are \"sub accounts\" that are born from the same seed phrase. Using cryptography, the seed phrase it combined with a derivation path to create these different accounts. It allows the generation of as many accounts as you wish to have under the same seed phrase.",
-      "info_icon": "ⓘ",
-      "recover": "Recover",
-      "skip": "Skip",
       "invalidSeed": "Invalid seed phrase",
       "recovery_error": "Failed to recover account. Please check your seed phrase and try again.",
       "recovery_network_error": "Could not reach the server. Check your connection and try again. Your seed phrase is fine.",
@@ -585,7 +467,6 @@
       "messageTitle": "Recover Existing Account",
       "messageBody": "Recover your account using your 12/24 words seed phrase.",
       "pasteSeed": "Paste your seed phrase",
-      "i_accept_terms_conditions": "By tapping the Recover Account button \nI accept the Terms & Conditions",
       "terms_prefix": "By recovering, you accept the ",
       "placeholder": "Enter your seed phrase...",
       "recovering_account": "Recovering Account"
@@ -604,19 +485,7 @@
     },
     "onboarding": {
       "titleOnboarded": "Add New Account",
-      "titleWelcome": "Welcome",
-      "title1": "Welcome to Salmon!",
-      "content1": "Your all-in-one & open-source wallet\nfor the crypto space",
-      "title2": "Keep the control\nof your tokens",
-      "content2": "All your assets, in your hands.\nWe don’t have access to them at all.",
-      "title3": "Stay tuned",
-      "content3": "Follow us at ",
-      "content3b": "@salmonwallet"
-    },
-    "pending_txs": {
-      "inProgress": "In Progress",
-      "fail": "Failed",
-      "success": "Succeded"
+      "titleWelcome": "Welcome"
     },
     "access_existing": "ACCESS EXISTING ACCOUNT",
     "no_tokens_found": "No tokens found",
@@ -626,64 +495,10 @@
     "no_account_found": "No account found",
     "unnamed_account": "Account"
   },
-  "adapter": {
-    "select": {
-      "title": "Welcome"
-    },
-    "detail": {
-      "connection": {
-        "title": "Allow this site to connect?",
-        "advice": "Only connect with sites you trust.",
-        "advice2": "Nevertheless, your approval will be requested to complete any transaction.",
-        "verification": {
-          "succeeded": "Verified",
-          "failed": "Verification failed",
-          "notVerifiable": "Not verifiable"
-        }
-      },
-      "banner": {
-        "message": "Please, keep this window open in the background"
-      },
-      "message": {
-        "title": "Sign message"
-      },
-      "transaction": {
-        "title": "Transaction Review",
-        "detail": "Detail",
-        "fee": "Network Fee"
-      }
-    }
-  },
   "transactions": {
-    "your_transactions": "Your Transactions",
-    "recent_activity": "Recent Activity",
-    "transaction_detail": "Transaction Detail",
-    "view_transaction": "View Transaction",
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "empty": "No transactions found",
-    "detail_back": "Back to Wallet",
-    "send": "Sent",
-    "receive": "Received",
-    "swap": "Swap",
-    "mint": "Mint",
-    "burn": "Burn",
-    "stake": "Stake",
-    "loan": "Loan",
-    "interaction": "Interaction",
     "unknown": "Unknown",
-    "fromAddress": "From: {{address}}",
-    "toAddress": "To: {{address}}",
-    "date": "Date",
-    "type": "Type",
-    "id": "Transaction ID",
-    "status": "Status",
-    "completed": "Completed",
-    "failed": "Failed",
     "from": "From",
     "to": "To",
-    "fee": "Fee",
-    "memo": "Memo",
     "historyTitle": "Transaction History",
     "noTransactions": "No Transactions",
     "emptySubtitle": "Your transaction history will appear here",
@@ -758,19 +573,8 @@
     "share_message": "Check out this transaction: {{url}}"
   },
   "nft": {
-    "description": "Description",
-    "properties": "Properties",
     "send_nft": "Send",
     "burn_nft": "Burn",
-    "burning": "Burning",
-    "send_to": "Send to:",
-    "details": "Details",
-    "owned_by": "Owned by",
-    "creator_royalty": "Creator Royalty",
-    "mint_address": "Mint Address",
-    "update_authority": "Update Authority",
-    "update": "UPDATE",
-    "status_pending": "Waiting confirmation",
     "detail": {
       "description": "Description",
       "attributes": "Attributes",
@@ -779,10 +583,6 @@
       "compressed": "Compressed",
       "collectionVerified": "Collection Verified",
       "royalties": "Royalties",
-      "tokenType": "Token Type",
-      "contract": "Contract",
-      "tokenId": "Token ID",
-      "balance": "Balance",
       "inscriptionNumber": "Inscription #",
       "rarity": "Rarity",
       "contentType": "Content Type",
@@ -827,16 +627,9 @@
   },
   "swap": {
     "swap": "Swap",
-    "swap_tokens": "Swap Tokens",
-    "swap_preview": "Swap Preview",
     "you_send": "You Send",
     "enter_amount": "Enter an amount",
     "you_receive": "You Receive",
-    "best_route": "Best Route",
-    "quote": "Order",
-    "refresh_quote": "Refresh Order",
-    "total_fee": "Total fee",
-    "price_impact": "Price Impact",
     "router": "Router",
     "gasless": "Gasless",
     "yes": "Yes",
@@ -846,13 +639,6 @@
     "minimum_received": "Minimum Received",
     "swap_mode": "Swap Mode",
     "platform_fee_disclaimer": "Includes 0.5% platform fee",
-    "go_to_explorer": "Go to Explorer",
-    "choose_type": "Choose an option",
-    "same_blockchain": "To a token on this blockchain",
-    "other_blockchain": "To a token on other blockchain",
-    "minimum_amount": "The amount must be greater than $1 USD",
-    "not_available_on_network": "Swap is not available on this network",
-    "select_solana_network": "Select a Solana network to continue",
     "showing_verified_tokens": "Showing verified tokens. Search to find other tokens.",
     "review": {
       "title": "Swap Review",
@@ -893,15 +679,7 @@
       "networkError": "Network error: Unable to reach the server",
       "estimateFailed": "Failed to get bridge estimate"
     },
-    "preview": "Bridge Preview",
-    "less_than_minimal": "Minimum amount: {{min}} {{symbol}}",
     "bridge": "Bridge",
-    "no_wallet_found": "No wallet found for {{chain}} blockchain",
-    "provider_error": "Bridge provider not available.\nPlease try again later.",
-    "recipient_type": "Recipient wallet:",
-    "you_pay": "You Pay",
-    "own_wallet_alert": "Keep in mind that to see the tokens you will receive, you will have to switch from this {{from}} Wallet to the {{to}} one from the menu.",
-    "other_wallet_alert": "Keep in mind that the tokens you will receive are being sent to a {{to}} Wallet that it’s not configured in Salmon. You will not see the tokens unless you open that wallet.",
     "recipient": {
       "title": "Recipient Address",
       "description": "Enter the address where you want to receive your swapped tokens",
@@ -936,10 +714,6 @@
     "exchangeId": "Exchange ID",
     "initiated": "Bridge Initiated",
     "payoutTxId": "Payout Transaction"
-  },
-  "header": {
-    "connected": "Connected to {{hostname}}",
-    "disconnected": "Not connected to {{hostname}}"
   },
   "transaction": {
     "sendComplete": "Send Complete",
