@@ -115,17 +115,20 @@ import { AccountAddPanel } from './AccountAddPanel';
 describe('AccountAddPanel', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockScanDerivedAccounts.mockResolvedValue([
-      {
-        networkId: 'solana-mainnet',
-        networkName: 'Solana',
-        address: 'Derived11111111111111111111111111111',
-        path: "m/44'/501'/0'/0'",
-        balanceFormatted: '0 SOL',
-        balance: 0,
-        index: 4,
-      },
-    ]);
+    mockScanDerivedAccounts.mockResolvedValue({
+      accounts: [
+        {
+          networkId: 'solana-mainnet',
+          networkName: 'Solana',
+          address: 'Derived11111111111111111111111111111',
+          path: "m/44'/501'/0'/0'",
+          balanceFormatted: '0 SOL',
+          balance: 0,
+          index: 4,
+        },
+      ],
+      failedNetworks: [],
+    });
     mockCreateAccount.mockResolvedValue({ account: { id: 'account-1' } });
     mockAddAccount.mockResolvedValue(undefined);
   });

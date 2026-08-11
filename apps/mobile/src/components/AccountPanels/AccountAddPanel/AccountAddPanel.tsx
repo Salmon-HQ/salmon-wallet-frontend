@@ -64,6 +64,8 @@ export function AccountAddPanel({
 
   // Derive flow state
   const [derivedAccounts, setDerivedAccounts] = useState<DerivedAccountInfo[]>([]);
+  // Networks whose scan threw — kept for the follow-up error UI.
+  const [, setFailedNetworks] = useState<string[]>([]);
   const [selectedDerived, setSelectedDerived] = useState<DerivedAccountInfo | null>(null);
   const [scanning, setScanning] = useState(false);
 
@@ -91,11 +93,12 @@ export function AccountAddPanel({
     setScanning(true);
     try {
       const networkIds = await getScanNetworks();
-      const results = await scanDerivedAccounts(
+      const { accounts: scanned, failedNetworks } = await scanDerivedAccounts(
         activeAccount.mnemonic,
         networkIds,
       );
-      setDerivedAccounts(results);
+      setDerivedAccounts(scanned);
+      setFailedNetworks(failedNetworks);
     } catch {
       setDerivedAccounts([]);
     } finally {

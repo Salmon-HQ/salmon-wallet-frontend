@@ -36,9 +36,37 @@ export interface UseAddressbookActions {
   addContact: (input: AddressInput) => Promise<void>;
   editContact: (originalAddress: string, input: AddressInput) => Promise<void>;
   removeContact: (address: string) => Promise<void>;
+  /** Re-runs the initial load from storage (retry UI hook). */
+  reload: () => void;
 }
 
 export type UseAddressbookResult = [UseAddressbookState, UseAddressbookActions];
+
+/** Which stage of an address-book write failed. */
+export type AddressbookErrorKind = 'persist' | 'resolve';
+
+/**
+ * Classified failure thrown by address-book writes.
+ *
+ * - `persist`: storage write failed — nothing was saved, state is unchanged.
+ * - `resolve`: the contacts were saved, but resolving them for display failed —
+ *   the persisted list is intact and will render after a reload.
+ */
+export class AddressbookError extends Error {
+  readonly kind: AddressbookErrorKind;
+  readonly cause: unknown;
+
+  constructor(kind: AddressbookErrorKind, cause: unknown) {
+    super(
+      kind === 'persist'
+        ? 'Failed to save address book'
+        : 'Failed to resolve address book contacts',
+    );
+    this.name = 'AddressbookError';
+    this.kind = kind;
+    this.cause = cause;
+  }
+}
 
 // ============================================================================
 // Helpers
@@ -78,8 +106,9 @@ export function useAddressbook({
   const [contacts, setContacts] = useState<Address[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadToken, setLoadToken] = useState(0);
 
-  // Load contacts from storage on mount
+  // Load contacts from storage on mount (and on reload())
   useEffect(() => {
     let cancelled = false;
 
@@ -107,18 +136,40 @@ export function useAddressbook({
 
     load();
     return () => { cancelled = true; };
-  }, [networkAdapter]);
+  }, [networkAdapter, loadToken]);
+
+  /** Re-runs the load effect so a failed load can be retried from the UI. */
+  const reload = useCallback(() => {
+    setError(null);
+    setLoadToken((token) => token + 1);
+  }, []);
 
   /**
    * Persists a new stored list and resolves it to Address[].
+   *
+   * Throws an {@link AddressbookError} classifying which stage failed. State is
+   * updated to reflect the persisted contacts as soon as the storage write
+   * succeeds, so a later resolve failure never leaves state behind storage.
    */
   const persistAndResolve = useCallback(
     async (newStored: StoredAddress[]) => {
       const storage = getStorage();
-      await storage.setItem(STORAGE_KEYS.CONTACTS, newStored);
+      try {
+        await storage.setItem(STORAGE_KEYS.CONTACTS, newStored);
+      } catch (err) {
+        console.error('Failed to persist address book:', err);
+        throw new AddressbookError('persist', err);
+      }
+      // Storage write succeeded — state must reflect the persisted list even
+      // if resolution below fails.
       setStoredContacts(newStored);
-      const resolved = await resolveContacts(newStored, networkAdapter);
-      setContacts(resolved);
+      try {
+        const resolved = await resolveContacts(newStored, networkAdapter);
+        setContacts(resolved);
+      } catch (err) {
+        console.error('Failed to resolve address book contacts:', err);
+        throw new AddressbookError('resolve', err);
+      }
     },
     [networkAdapter],
   );
@@ -167,7 +218,7 @@ export function useAddressbook({
 
   return [
     { contacts, isLoading, error, isError: error !== null },
-    { addContact, editContact, removeContact },
+    { addContact, editContact, removeContact, reload },
   ];
 }
 

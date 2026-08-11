@@ -1,7 +1,5 @@
-import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import {
   borderRadius,
   colors,
@@ -303,66 +301,6 @@ export const MessageText = styled(Typography)({
   overflowWrap: 'anywhere',
 });
 
-const WarningBannerRoot = styled(Box)({
-  display: 'flex',
-  gap: spacing.sm,
-  alignItems: 'flex-start',
-  boxSizing: 'border-box',
-  width: '100%',
-  padding: spacing.md,
-  borderRadius: borderRadius.lg,
-  border: '1px solid',
-});
-
-interface WarningNoticeProps {
-  /** `error` blocks an action (red); `warning` is advisory (amber). */
-  tone?: 'error' | 'warning';
-  title: string;
-  children?: ReactNode;
-}
-
-/**
- * Consistent, icon-led alert banner shared by every approval screen — the
- * tx-lookalike "Signing blocked", the SIWS domain-mismatch block, and the
- * insecure-origin advisory. The triangle icon and tone color make security
- * state impossible to miss while staying within the dark palette.
- */
-export function WarningNotice({
-  tone = 'error',
-  title,
-  children,
-}: WarningNoticeProps): ReactNode {
-  const accent = tone === 'warning' ? colors.status.warning : colors.status.error;
-  const background =
-    tone === 'warning' ? colors.status.warningBackground : colors.status.errorBackground;
-
-  return (
-    <WarningBannerRoot sx={{ backgroundColor: background, borderColor: accent }}>
-      <WarningAmberRoundedIcon sx={{ fontSize: 20, color: accent, flexShrink: 0, marginTop: '1px' }} />
-      <Box sx={{ minWidth: 0 }}>
-        <Typography
-          sx={{
-            color: accent,
-            fontSize: fontSize.sm,
-            fontWeight: fontWeight.semibold,
-            marginBottom: '2px',
-          }}
-        >
-          {title}
-        </Typography>
-        {children != null && (
-          <Typography
-            sx={{
-              color: colors.text.primary,
-              fontSize: fontSize.sm,
-              lineHeight: 1.45,
-              overflowWrap: 'anywhere',
-            }}
-          >
-            {children}
-          </Typography>
-        )}
-      </Box>
-    </WarningBannerRoot>
-  );
-}
+// WarningNotice was promoted to its own shared component; re-exported here so
+// the approval views (and any external consumer of this module) keep working.
+export { WarningNotice } from '../WarningNotice';

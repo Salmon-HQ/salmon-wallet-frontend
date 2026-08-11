@@ -186,6 +186,74 @@ describe('BridgeSettlementProvider', () => {
     expect(isInvalidated(client, destKey)).toBe(false);
   });
 
+  it('flags isStalled after three consecutive poll failures and resets on success', async () => {
+    const getStatus = vi
+      .fn<(id: string) => Promise<BridgeTransaction | null>>()
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockResolvedValue({ status: 'inProgress' } as BridgeTransaction);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const { result } = setup(getStatus);
+
+    vi.useFakeTimers();
+
+    act(() => {
+      result.current.trackBridgeExchange({ id: 'ex-stall', destNetworkId: DEST_NET });
+    });
+
+    // Failures 1 and 2 (immediate poll + first interval): not stalled yet.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(getStatus).toHaveBeenCalledTimes(2);
+    expect(result.current.isStalled).toBe(false);
+
+    // Failure 3: stalled.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(getStatus).toHaveBeenCalledTimes(3);
+    expect(result.current.isStalled).toBe(true);
+
+    // Any success resets the flag.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(result.current.isStalled).toBe(false);
+    expect(result.current.pendingExchanges).toHaveLength(1);
+  });
+
+  it('retryNow forces an immediate poll without waiting for the interval', async () => {
+    const getStatus = vi
+      .fn<(id: string) => Promise<BridgeTransaction | null>>()
+      .mockResolvedValue({ status: 'inProgress' } as BridgeTransaction);
+
+    const { result } = setup(getStatus);
+
+    vi.useFakeTimers();
+
+    act(() => {
+      result.current.trackBridgeExchange({ id: 'ex-retry', destNetworkId: DEST_NET });
+    });
+
+    // Immediate poll on track.
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(getStatus).toHaveBeenCalledTimes(1);
+
+    // No timer advance — retryNow alone triggers the next poll.
+    await act(async () => {
+      result.current.retryNow();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(getStatus).toHaveBeenCalledTimes(2);
+  });
+
   it('hydrates persisted exchanges on mount and settles one that finished while away', async () => {
     // A bridge persisted in a previous session (e.g. before the extension popup
     // closed) must resume and settle on next open.

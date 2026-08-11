@@ -82,6 +82,8 @@ export default function DerivedAccountsScreen() {
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [accounts, setAccounts] = useState<DerivedAccountInfo[]>([]);
+  // Networks whose scan threw — kept for the follow-up error UI.
+  const [, setFailedNetworks] = useState<string[]>([]);
 
   // Mnemonic comes from the unlocked active account in memory; never from
   // route params, which can be serialized by Expo Router into navigation
@@ -106,9 +108,13 @@ export default function DerivedAccountsScreen() {
       const networkIds = Object.keys(activeAccount.networksAccounts)
         .filter((id) => scanNetworks.includes(id));
 
-      const results = await scanDerivedAccounts(mnemonic, networkIds);
+      const { accounts: results, failedNetworks } = await scanDerivedAccounts(
+        mnemonic,
+        networkIds,
+      );
 
       setAccounts(results);
+      setFailedNetworks(failedNetworks);
       setLoading(false);
     };
 

@@ -71,7 +71,7 @@ import DerivedAccountsScreen from '../../app/(auth)/derived-accounts';
 describe('DerivedAccountsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockScanDerivedAccounts.mockResolvedValue([]);
+    mockScanDerivedAccounts.mockResolvedValue({ accounts: [], failedNetworks: [] });
   });
 
   it('renders the header without a back control', async () => {

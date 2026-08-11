@@ -143,6 +143,9 @@ export function DerivedAccountsPage({
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [accounts, setAccounts] = useState<DerivedAccountInfo[]>([]);
+  // Networks whose scan threw (RPC outage etc.). Stored so the follow-up
+  // error UI can distinguish "no accounts" from "could not look".
+  const [, setFailedNetworks] = useState<string[]>([]);
 
   const mnemonic = activeAccount?.mnemonic;
 
@@ -166,7 +169,7 @@ export function DerivedAccountsPage({
         scanNetworks.includes(id),
       );
 
-      const results = await scanDerivedAccounts(
+      const { accounts: results, failedNetworks } = await scanDerivedAccounts(
         mnemonic,
         networkIds,
         undefined,
@@ -175,6 +178,7 @@ export function DerivedAccountsPage({
 
       if (!cancelled) {
         setAccounts(results);
+        setFailedNetworks(failedNetworks);
         setLoading(false);
       }
     };

@@ -66,6 +66,12 @@ export interface UseSendTransactionResult {
    * so the user returns to a fresh balance instead of a stale one.
    */
   settling: boolean;
+  /**
+   * True when the last fee estimation attempt failed. Non-blocking — the send
+   * flow continues — but lets the UI warn that the shown fee is unknown.
+   * Cleared on the next successful estimate and by reset().
+   */
+  feeEstimateFailed: boolean;
   /** Error message if failed */
   error: string | null;
   /** Whether the hook is in an error state */
@@ -85,12 +91,14 @@ export function useSendTransaction({
   const [status, setStatus] = useState<SendTransactionStatus>('idle');
   const [settling, setSettling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [feeEstimateFailed, setFeeEstimateFailed] = useState(false);
   const settleUntilChanged = useSettleUntilChanged();
 
   const reset = useCallback(() => {
     setStatus('idle');
     setSettling(false);
     setError(null);
+    setFeeEstimateFailed(false);
   }, []);
 
   // ---- Fee Estimation ----
@@ -113,11 +121,14 @@ export function useSendTransaction({
         );
 
         setStatus('idle');
+        setFeeEstimateFailed(false);
         return result;
       } catch (err) {
         console.error('[useSendTransaction] Fee estimation failed:', err);
         setStatus('idle');
-        // Don't treat fee estimation failure as a blocking error
+        // Don't treat fee estimation failure as a blocking error, but surface
+        // it so the UI can warn that the shown fee is unknown.
+        setFeeEstimateFailed(true);
         return null;
       }
     },
@@ -200,6 +211,7 @@ export function useSendTransaction({
     sendTransaction,
     status,
     settling,
+    feeEstimateFailed,
     error,
     isError: error !== null,
     reset,

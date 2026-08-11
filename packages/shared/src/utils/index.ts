@@ -282,6 +282,7 @@ export {
   // Types
   type NetworkDisplayInfo,
   type DerivedAccountInfo,
+  type ScanDerivedAccountsResult,
   // Functions
   getAccountBalance,
   getScanNetworks,

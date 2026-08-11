@@ -150,12 +150,13 @@ export type {
 export { useSendContacts } from './useSendContacts';
 
 // Address book hook
-export { useAddressbook } from './useAddressbook';
+export { useAddressbook, AddressbookError } from './useAddressbook';
 export type {
   UseAddressbookParams,
   UseAddressbookState,
   UseAddressbookActions,
   UseAddressbookResult,
+  AddressbookErrorKind,
 } from './useAddressbook';
 
 // Address book form hook (shared form logic for Add/Edit screens)
