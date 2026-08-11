@@ -363,7 +363,7 @@ export function TokenInfo({
           <ContractRow
             onClick={handleCopyAddress}
             role="button"
-            aria-label="Copy contract address"
+            aria-label={t('accessibility.copy_contract_address', 'Copy contract address')}
           >
             <ContractAddress>{getShortAddress(contractAddress, 6)}</ContractAddress>
             <CopyButton>
@@ -382,7 +382,7 @@ export function TokenInfo({
         <WebsiteRow
           onClick={handleOpenWebsite}
           role="link"
-          aria-label={`Open website: ${website}`}
+          aria-label={t('accessibility.open_website', 'Open website: {{url}}', { url: website })}
         >
           <GlobeIcon />
           <WebsiteText>{t('token.info.visitWebsite', 'Visit Website')}</WebsiteText>

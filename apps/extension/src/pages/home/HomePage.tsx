@@ -1144,7 +1144,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             />
           );
         }
-        return <PlaceholderPage title="Token Detail" onBack={handleBack} />;
+        return <PlaceholderPage title={t('token.detail.title', 'Token Information')} onBack={handleBack} />;
       case 'nftDetail':
         if (selectedNft) {
           return (
@@ -1187,7 +1187,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             </>
           );
         }
-        return <PlaceholderPage title="NFT Detail" onBack={handleBack} />;
+        return <PlaceholderPage title={t('nft.detail.title', 'NFT Detail')} onBack={handleBack} />;
       case 'nftSeeAll':
         if (seeAllData) {
           return (
@@ -1200,10 +1200,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             />
           );
         }
-        return <PlaceholderPage title="NFTs" onBack={handleBack} />;
+        return <PlaceholderPage title={t('wallet.my_nfts', 'My Collectibles')} onBack={handleBack} />;
       case 'send':
         if (!activeBlockchainAccount) {
-          return <PlaceholderPage title="Send" onBack={handleSendBack} />;
+          return <PlaceholderPage title={t('token.action.send', 'Send')} onBack={handleSendBack} />;
         }
         return (
           <SendPage
@@ -1239,7 +1239,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           </>
         );
       default:
-        return <PlaceholderPage title="Page" onBack={handleBack} />;
+        return <PlaceholderPage title={t('general.page', 'Page')} onBack={handleBack} />;
     }
   }
 

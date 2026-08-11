@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import { colors, DEFAULT_WALLET_TIPS, fontFamily } from '@salmon/shared';
 // Note: For web, you'll need to import the logo as a URL
 // import logoUrl from '@salmon/assets/images/Logo.png';
@@ -84,6 +85,7 @@ export function LoadingScreenWeb({
   logoSize = 100,
   spinnerSize = 140,
 }: LoadingScreenProps) {
+  const { t } = useTranslation();
   // State
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [tipFading, setTipFading] = useState(false);
@@ -266,7 +268,7 @@ export function LoadingScreenWeb({
 
       {showTips && tips.length > 0 && (
         <div style={tipsContainerStyle}>
-          <div style={tipLabelStyle}>Tip</div>
+          <div style={tipLabelStyle}>{t('general.tip', 'Tip')}</div>
           <div style={tipTextStyle}>{tips[currentTipIndex]}</div>
         </div>
       )}

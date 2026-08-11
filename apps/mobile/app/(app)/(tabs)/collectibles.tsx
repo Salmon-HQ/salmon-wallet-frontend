@@ -40,6 +40,7 @@ import {
   type SolanaNetworkId,
 } from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -104,7 +105,7 @@ const INITIAL_SECTION_INDEXES: Record<NftSectionKey, number> = {
 
 const SECTION_META: Record<NftSectionKey, { blockchain: NftBlockchain; isTestnet: boolean; networkLabel?: string }> = {
   solana: { blockchain: 'solana', isTestnet: false },
-  'solana-devnet': { blockchain: 'solana', isTestnet: true, networkLabel: 'Devnet' },
+  'solana-devnet': { blockchain: 'solana', isTestnet: true },
 };
 
 // Grid layout constants (matching NftSeeAllSheet pattern)
@@ -116,6 +117,7 @@ const GRID_HORIZONTAL_PADDING = s(18);
 // ============================================================================
 
 export default function CollectiblesScreen() {
+  const { t } = useTranslation();
   const { headerContentOffset, scrollBottomPadding } = useTabChrome();
 
   // UI state
@@ -226,10 +228,10 @@ export default function CollectiblesScreen() {
         loading: developerNetworks ? devnetQuery.loading : false,
         blockchain: SECTION_META['solana-devnet'].blockchain,
         isTestnet: SECTION_META['solana-devnet'].isTestnet,
-        networkLabel: SECTION_META['solana-devnet'].networkLabel,
+        networkLabel: t('general.network_devnet', 'Devnet'),
       },
     };
-  }, [mainnetQuery.nfts, mainnetQuery.loading, devnetQuery.nfts, devnetQuery.loading, developerNetworks]);
+  }, [mainnetQuery.nfts, mainnetQuery.loading, devnetQuery.nfts, devnetQuery.loading, developerNetworks, t]);
 
   // Pull-to-refresh — refetches both queries. Local boolean drives the
   // RefreshControl spinner since the hook only exposes initial-load state.
@@ -302,7 +304,11 @@ export default function CollectiblesScreen() {
   });
 
   const handleSendSuccess = useCallback((txId: string) => {
-    Alert.alert('NFT Sent', `Transaction submitted successfully.\n\nTx: ${txId.slice(0, 20)}...`, [{ text: 'OK' }]);
+    Alert.alert(
+      t('nft.send.successTitle', 'NFT Sent'),
+      t('nft.send.successSummary', 'Transaction submitted successfully.\n\nTx: {{tx}}', { tx: `${txId.slice(0, 20)}...` }),
+      [{ text: t('general.ok', 'OK') }]
+    );
     if (nftAccount) {
       settleAfterTx({
         accountId: nftAccount.getReceiveAddress(),
@@ -316,7 +322,7 @@ export default function CollectiblesScreen() {
     } else {
       void handleRefresh();
     }
-  }, [activeAccount?.id, detailSheet.nft, handleRefresh, nftAccount, settleAfterTx]);
+  }, [activeAccount?.id, detailSheet.nft, handleRefresh, nftAccount, settleAfterTx, t]);
 
   const resetBurnPreview = useCallback(() => {
     setBurnPreview(null);
@@ -332,7 +338,10 @@ export default function CollectiblesScreen() {
     const blockchain = nft.blockchain;
 
     if (blockchain !== 'solana') {
-      Alert.alert('Not Supported', `Burning ${blockchain} NFTs is not yet supported.`);
+      Alert.alert(
+        t('general.not_supported', 'Not Supported'),
+        t('nft.burn.notSupported', 'Burning {{blockchain}} NFTs is not yet supported.', { blockchain })
+      );
       return;
     }
 
@@ -368,7 +377,7 @@ export default function CollectiblesScreen() {
     } finally {
       setBurnPreparing(false);
     }
-  }, [detailSheet.nft, detailSheet.sectionKey, nftAccount]);
+  }, [detailSheet.nft, detailSheet.sectionKey, nftAccount, t]);
 
   const handleConfirmBurn = useCallback(async () => {
     const nft = detailSheet.nft;
@@ -433,7 +442,7 @@ export default function CollectiblesScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.accent.primary} />
-        <Text style={styles.loadingText}>Loading wallet...</Text>
+        <Text style={styles.loadingText}>{t('wallet.loading_wallet', 'Loading wallet...')}</Text>
       </View>
     );
   }
@@ -458,7 +467,7 @@ export default function CollectiblesScreen() {
         }
       >
         {/* Page Title */}
-        <Text style={styles.pageTitle}>My Collectibles</Text>
+        <Text style={styles.pageTitle}>{t('wallet.my_nfts', 'My Collectibles')}</Text>
 
         {/* Developer Mode Banner */}
         {developerNetworks && (
@@ -472,9 +481,9 @@ export default function CollectiblesScreen() {
         {/* Empty State */}
         {isEmpty && (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No Collectibles</Text>
+            <Text style={styles.emptyText}>{t('nft.emptyTitle', 'No Collectibles')}</Text>
             <Text style={styles.emptySubtext}>
-              Your NFTs and Ordinals will appear here once you receive some
+              {t('nft.emptySubtitle', 'Your NFTs and Ordinals will appear here once you receive some')}
             </Text>
           </View>
         )}

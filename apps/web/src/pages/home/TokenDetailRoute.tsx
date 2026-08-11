@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   useAccountsContext,
@@ -19,6 +20,7 @@ import {
 import { TokenDetailPage } from '@salmon/ui';
 
 export function TokenDetailRoute(): React.ReactElement {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id: tokenAddress } = useParams<{ id: string }>();
 
@@ -108,7 +110,7 @@ export function TokenDetailRoute(): React.ReactElement {
   if (!token) {
     // Token not found yet — could be loading or deep link
     return <TokenDetailPage
-      token={{ address: tokenAddress || '', name: 'Loading...', symbol: '...', uiAmount: 0 }}
+      token={{ address: tokenAddress || '', name: t('general.loading', 'Loading...'), symbol: '...', uiAmount: 0 }}
       chartData={[]}
       chartPeriod={chartPeriod}
       onChartPeriodChange={handleChartPeriodChange}

@@ -14,6 +14,7 @@ import {
 } from '@salmon/shared';
 import * as Clipboard from 'expo-clipboard';
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Linking,
   StyleSheet,
@@ -58,6 +59,7 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
   loading = false,
   style,
 }) => {
+  const { t } = useTranslation();
   const [, { formatLarge }] = useCurrencyContext();
   const [copied, setCopied] = useState(false);
 
@@ -143,7 +145,7 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
       {/* About section */}
       {description && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
+          <Text style={styles.sectionTitle}>{t('token.info.about', 'About')}</Text>
           <Text style={styles.description}>{description}</Text>
         </View>
       )}
@@ -151,23 +153,23 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
       {/* Stats grid */}
       {hasStats && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Market Stats</Text>
+          <Text style={styles.sectionTitle}>{t('token.info.marketStats', 'Market Stats')}</Text>
           <View style={styles.statsGrid}>
             {marketCap !== undefined && (
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Market Cap</Text>
+                <Text style={styles.statLabel}>{t('token.info.marketCap', 'Market Cap')}</Text>
                 <Text style={styles.statValue}>{formatLarge(marketCap)}</Text>
               </View>
             )}
             {volume24h !== undefined && (
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>24h Volume</Text>
+                <Text style={styles.statLabel}>{t('token.info.volume24h', '24h Volume')}</Text>
                 <Text style={styles.statValue}>{formatLarge(volume24h)}</Text>
               </View>
             )}
             {circulatingSupply !== undefined && (
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Circulating</Text>
+                <Text style={styles.statLabel}>{t('token.info.circulating', 'Circulating')}</Text>
                 <Text style={styles.statValue}>
                   {formatLargeNumber(circulatingSupply)}
                 </Text>
@@ -175,7 +177,7 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
             )}
             {totalSupply !== undefined && (
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Total Supply</Text>
+                <Text style={styles.statLabel}>{t('token.info.totalSupply', 'Total Supply')}</Text>
                 <Text style={styles.statValue}>
                   {formatLargeNumber(totalSupply)}
                 </Text>
@@ -183,7 +185,7 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
             )}
             {maxSupply !== undefined && (
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Max Supply</Text>
+                <Text style={styles.statLabel}>{t('token.info.maxSupply', 'Max Supply')}</Text>
                 <Text style={styles.statValue}>
                   {formatLargeNumber(maxSupply)}
                 </Text>
@@ -196,13 +198,13 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
       {/* Contract address */}
       {contractAddress && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contract Address</Text>
+          <Text style={styles.sectionTitle}>{t('token.info.contractAddress', 'Contract Address')}</Text>
           <TouchableOpacity
             style={styles.contractRow}
             onPress={handleCopyAddress}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="Copy contract address"
+            accessibilityLabel={t('accessibility.copy_contract_address', 'Copy contract address')}
           >
             <Text style={styles.contractAddress}>
               {getShortAddress(contractAddress, 6) ?? ''}
@@ -225,14 +227,14 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
           onPress={handleOpenWebsite}
           activeOpacity={0.7}
           accessibilityRole="link"
-          accessibilityLabel={`Open website: ${website}`}
+          accessibilityLabel={t('accessibility.open_website', 'Open website: {{url}}', { url: website })}
         >
           <Ionicons
             name="globe-outline"
             size={20}
             color={colors.accent.primary}
           />
-          <Text style={styles.websiteText}>Visit Website</Text>
+          <Text style={styles.websiteText}>{t('token.info.visitWebsite', 'Visit Website')}</Text>
           <Ionicons
             name="open-outline"
             size={16}

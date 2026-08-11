@@ -2,6 +2,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors, componentSizes, fontFamilyNative, fontScaleCap, ms, s, spacing, vs, borderWidth, gradients } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   StyleSheet,
   Text,
@@ -19,18 +20,21 @@ const TAB_CONFIG: Record<string, TabConfig> = {
     name: 'index',
     icon: HomeSvgIcon,
     label: 'Home',
+    labelKey: 'tabs.home',
     iconSize: s(26),
   },
   collectibles: {
     name: 'collectibles',
     icon: GridViewSvgIcon,
     label: 'Collectibles',
+    labelKey: 'tabs.collectibles',
     iconSize: s(26),
   },
   swap: {
     name: 'swap',
     icon: SwapSvgIcon,
     label: 'Swap',
+    labelKey: 'tabs.swap',
     iconSize: s(26),
   },
 };
@@ -46,6 +50,7 @@ interface TabItemProps {
 }
 
 function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
+  const { t } = useTranslation();
   const config = TAB_CONFIG[routeName];
 
   if (!config) {
@@ -61,7 +66,7 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
       testID={`tab-${routeName === 'index' ? 'home' : routeName}`}
       accessibilityRole="button"
       accessibilityState={isFocused ? { selected: true } : {}}
-      accessibilityLabel={config.label}
+      accessibilityLabel={t(config.labelKey, config.label)}
       onPress={onPress}
       onLongPress={onLongPress}
       style={[styles.tabItem, isFocused ? styles.tabItemFocused : undefined]}
@@ -75,7 +80,7 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
         ellipsizeMode="tail"
         maxFontSizeMultiplier={fontScaleCap.chrome}
       >
-        {config.label}
+        {t(config.labelKey, config.label)}
       </Text>
     </TouchableOpacity>
   );

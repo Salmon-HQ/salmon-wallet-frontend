@@ -18,6 +18,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Animated,
@@ -148,6 +149,7 @@ function mapBalanceToToken(
 }
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const { scrollBottomPadding } = useTabChrome();
   const [{ currency }] = useCurrencyContext();
 
@@ -714,13 +716,13 @@ export default function HomeScreen() {
   const ListEmptyComponent = useMemo(() => (
     <View style={styles.emptyState}>
       <Text style={styles.emptyStateText}>
-        {loading ? 'Loading tokens...' : 'No tokens found'}
+        {loading ? t('wallet.loading_tokens', 'Loading tokens...') : t('wallet.no_tokens_found', 'No tokens found')}
       </Text>
       <Text style={styles.emptyStateSubtext}>
-        Your tokens will appear here once you receive some
+        {t('wallet.tokens_empty_subtitle', 'Your tokens will appear here once you receive some')}
       </Text>
     </View>
-  ), [loading]);
+  ), [loading, t]);
 
   // Loading state - wait for hook to be ready
   // Note: If we're on this screen, the GateContainer lock state has been
@@ -729,7 +731,7 @@ export default function HomeScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.accent.primary} />
-        <Text style={styles.loadingText}>Loading wallet...</Text>
+        <Text style={styles.loadingText}>{t('wallet.loading_wallet', 'Loading wallet...')}</Text>
       </View>
     );
   }
@@ -738,7 +740,7 @@ export default function HomeScreen() {
   if (!activeAccount || !activeBlockchainAccount) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>No account found</Text>
+        <Text style={styles.loadingText}>{t('wallet.no_account_found', 'No account found')}</Text>
       </View>
     );
   }

@@ -4,6 +4,7 @@
  * Includes back button, optional step indicator, and spacer for alignment.
  */
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, componentSizes, contentPadding } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
@@ -22,13 +23,14 @@ export interface ScreenHeaderProps extends Testable {
 }
 
 export function ScreenHeader({ onBack, stepIndicator, backDisabled, testID }: ScreenHeaderProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       {/* Back button */}
       <TouchableOpacity
         testID={testID ?? 'screen-header-back-button'}
         accessibilityRole="button"
-        accessibilityLabel="Go back"
+        accessibilityLabel={t('accessibility.go_back', 'Go back')}
         onPress={onBack}
         disabled={!onBack || backDisabled}
         style={styles.backButton}

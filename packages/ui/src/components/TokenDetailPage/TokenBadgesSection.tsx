@@ -9,6 +9,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -56,6 +57,8 @@ interface BadgeConfig {
   icon: React.ElementType;
   color: string;
   label: string;
+  /** i18n key; proper-noun badges (LST, Token-2022, Pump.fun, ...) stay literal */
+  labelKey?: string;
 }
 
 /**
@@ -67,21 +70,25 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: CheckCircleIcon,
     color: colors.palette.green,
     label: 'Verified',
+    labelKey: 'token.badges.verified',
   },
   strict: {
     icon: ShieldIcon,
     color: colors.palette.amber,
     label: 'Strict',
+    labelKey: 'token.badges.strict',
   },
   major: {
     icon: EmojiEventsIcon,
     color: colors.palette.amber,
     label: 'Major',
+    labelKey: 'token.badges.major',
   },
   'moonshot-verified': {
     icon: VerifiedUserIcon,
     color: colors.palette.cyan,
     label: 'Moonshot',
+    labelKey: 'token.badges.moonshot',
   },
 
   // Community tags
@@ -89,11 +96,13 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: GroupIcon,
     color: colors.palette.blue,
     label: 'Community',
+    labelKey: 'token.badges.community',
   },
   'community-assist': {
     icon: PanToolIcon,
     color: colors.palette.blue,
     label: 'Community Assist',
+    labelKey: 'token.badges.communityAssist',
   },
 
   // Token types
@@ -106,11 +115,13 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: MilitaryTechIcon,
     color: colors.palette.cyan,
     label: 'Original LST',
+    labelKey: 'token.badges.originalLst',
   },
   stable: {
     icon: AttachMoneyIcon,
     color: colors.palette.green,
     label: 'Stablecoin',
+    labelKey: 'token.badges.stablecoin',
   },
   'token-2022': {
     icon: ViewInArIcon,
@@ -121,6 +132,7 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: AnalyticsIcon,
     color: colors.palette.indigo,
     label: 'Yield Bearing',
+    labelKey: 'token.badges.yieldBearing',
   },
 
   // Launchpad & trading
@@ -128,16 +140,19 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: RocketLaunchIcon,
     color: colors.palette.pink,
     label: 'Launchpad',
+    labelKey: 'token.badges.launchpad',
   },
   moonshot: {
     icon: DarkModeIcon,
     color: colors.palette.purple,
     label: 'Moonshot',
+    labelKey: 'token.badges.moonshot',
   },
   'birdeye-trending': {
     icon: TrendingUpIcon,
     color: colors.palette.orange,
     label: 'Trending',
+    labelKey: 'token.badges.trending',
   },
   'pumpfun-graduates': {
     icon: SchoolIcon,
@@ -155,11 +170,13 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: BarChartIcon,
     color: colors.palette.blue,
     label: 'Pre-stocks',
+    labelKey: 'token.badges.preStocks',
   },
   xstocks: {
     icon: PieChartIcon,
     color: colors.palette.indigo,
     label: 'X-stocks',
+    labelKey: 'token.badges.xStocks',
   },
 
   // Registry & metadata
@@ -167,6 +184,7 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: DescriptionIcon,
     color: colors.text.secondary,
     label: 'Legacy Registry',
+    labelKey: 'token.badges.legacyRegistry',
   },
   'solana-fm': {
     icon: SearchIcon,
@@ -182,21 +200,25 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     icon: AccountTreeIcon,
     color: colors.text.tertiary,
     label: 'Deduplicated',
+    labelKey: 'token.badges.deduplicated',
   },
   duplicate: {
     icon: ContentCopyIcon,
     color: colors.text.tertiary,
     label: 'Duplicate',
+    labelKey: 'token.badges.duplicate',
   },
   deprecated: {
     icon: WarningIcon,
     color: colors.status.error,
     label: 'Deprecated',
+    labelKey: 'token.badges.deprecated',
   },
   internal: {
     icon: LockIcon,
     color: colors.text.secondary,
     label: 'Internal',
+    labelKey: 'token.badges.internal',
   },
 };
 
@@ -268,6 +290,7 @@ const SkeletonBadgesRow = styled(Box)({
  * Individual badge item with icon and label
  */
 const BadgeItem: React.FC<{ tag: string }> = ({ tag }) => {
+  const { t } = useTranslation();
   const config = BADGE_CONFIG[tag];
 
   if (!config) {
@@ -282,7 +305,7 @@ const BadgeItem: React.FC<{ tag: string }> = ({ tag }) => {
         <IconComponent sx={{ fontSize: fontSize.lg, color: config.color }} />
       </BadgeIconWrapper>
       <BadgeLabel $badgeColor={config.color} noWrap>
-        {config.label}
+        {config.labelKey ? t(config.labelKey, config.label) : config.label}
       </BadgeLabel>
     </BadgeItemContainer>
   );
@@ -303,6 +326,8 @@ export function TokenBadgesSection({
   style,
   className,
 }: TokenBadgesSectionProps) {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <BlurContainer
@@ -355,7 +380,7 @@ export function TokenBadgesSection({
       className={className}
     >
       <Container>
-        <Title>Badges</Title>
+        <Title>{t('token.badges.title', 'Badges')}</Title>
         <BadgesGrid>
           {validTags.map((tag) => (
             <BadgeItem key={tag} tag={tag} />

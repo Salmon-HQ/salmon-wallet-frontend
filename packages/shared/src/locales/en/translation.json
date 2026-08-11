@@ -53,7 +53,21 @@
     "password": "Password",
     "show_password": "Show password",
     "hide_password": "Hide password",
-    "terms_and_conditions": "Terms & Conditions"
+    "terms_and_conditions": "Terms & Conditions",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "page": "Page",
+    "go_home": "Go to Home",
+    "not_supported": "Not Supported",
+    "network_mainnet": "Mainnet",
+    "network_devnet": "Devnet",
+    "network_solana_mainnet": "Solana Mainnet",
+    "not_found": {
+      "title": "Oops!",
+      "message": "This screen doesn't exist.",
+      "go_home": "Go to home screen!"
+    }
   },
   "actions": {
     "approve": "Approve",
@@ -390,7 +404,8 @@
       "athDate": "ATH Date",
       "allTimeLow": "All-Time Low",
       "fromATL": "From ATL",
-      "atlDate": "ATL Date"
+      "atlDate": "ATL Date",
+      "title": "Info"
     },
     "info": {
       "about": "About",
@@ -410,6 +425,33 @@
     },
     "balance": {
       "percentage_info": "Variation of your position in the last 24 hours."
+    },
+    "detail": {
+      "title": "Token Information"
+    },
+    "chart": {
+      "noData": "No data available"
+    },
+    "badges": {
+      "title": "Badges",
+      "verified": "Verified",
+      "strict": "Strict",
+      "major": "Major",
+      "moonshot": "Moonshot",
+      "community": "Community",
+      "communityAssist": "Community Assist",
+      "originalLst": "Original LST",
+      "stablecoin": "Stablecoin",
+      "yieldBearing": "Yield Bearing",
+      "launchpad": "Launchpad",
+      "trending": "Trending",
+      "preStocks": "Pre-stocks",
+      "xStocks": "X-stocks",
+      "legacyRegistry": "Legacy Registry",
+      "deduplicated": "Deduplicated",
+      "duplicate": "Duplicate",
+      "deprecated": "Deprecated",
+      "internal": "Internal"
     }
   },
   "lock": {
@@ -577,7 +619,12 @@
       "success": "Succeded"
     },
     "access_existing": "ACCESS EXISTING ACCOUNT",
-    "no_tokens_found": "No tokens found"
+    "no_tokens_found": "No tokens found",
+    "loading_wallet": "Loading wallet...",
+    "loading_tokens": "Loading tokens...",
+    "tokens_empty_subtitle": "Your tokens will appear here once you receive some",
+    "no_account_found": "No account found",
+    "unnamed_account": "Account"
   },
   "adapter": {
     "select": {
@@ -704,7 +751,8 @@
       "copyTransactionHash": "Copy transaction hash",
       "chooseExplorer": "Choose Explorer",
       "explorerHint": "Opens transaction in blockchain explorer",
-      "copyAddressHint": "Copies the address to clipboard"
+      "copyAddressHint": "Copies the address to clipboard",
+      "nftMediaAlt": "NFT media"
     },
     "tapToViewDetails": "Tap to view transaction details"
   },
@@ -737,7 +785,11 @@
       "inscriptionNumber": "Inscription #",
       "rarity": "Rarity",
       "contentType": "Content Type",
-      "genesisBlock": "Genesis Block"
+      "genesisBlock": "Genesis Block",
+      "title": "NFT Detail",
+      "backToDetails": "Back to NFT details",
+      "imageAlt": "NFT image for {{name}}",
+      "cardLabel": "NFT: {{name}}"
     },
     "send": {
       "title": "Send NFT",
@@ -760,10 +812,17 @@
       "lutAddressCount": "Addresses stored",
       "lutSteps": "Additional setup transactions",
       "lutFootnote": "The rent stays locked in the lookup table account until it is later deactivated and closed.",
-      "insufficientFeeSol": "Insufficient SOL balance to cover burn transaction fees."
+      "insufficientFeeSol": "Insufficient SOL balance to cover burn transaction fees.",
+      "confirm": "Confirm burn",
+      "notSupported": "Burning {{blockchain}} NFTs is not yet supported."
     },
     "ordinal_send_unsupported": "Ordinal transfers are not yet supported.",
-    "sending": "Sending NFT..."
+    "sending": "Sending NFT...",
+    "unnamed": "Unnamed NFT",
+    "emptyTitle": "No Collectibles",
+    "emptySubtitle": "Your NFTs and Ordinals will appear here once you receive some",
+    "notFound": "NFT not found. Please navigate from your collection.",
+    "noCollectionData": "No collection data available. Please navigate from your collection."
   },
   "swap": {
     "swap": "Swap",
@@ -906,7 +965,9 @@
     "openSettings": "Open Settings",
     "notAddress": "This code is not a valid address",
     "wrongNetwork": "This address belongs to a different network",
-    "mobileAppOnly": "Please use the Salmon Wallet mobile app to scan QR codes."
+    "mobileAppOnly": "Please use the Salmon Wallet mobile app to scan QR codes.",
+    "unavailableTitle": "QR Scanner Unavailable",
+    "unavailableMessage": "QR code scanning is only available on the mobile app."
   },
   "accessibility": {
     "copy_address": "Copy wallet address {{address}}",
@@ -916,7 +977,22 @@
     "delete_account": "Delete account",
     "refresh_balance": "Refresh balance",
     "selected_token": "Selected token: {{name}}",
-    "loading_token_list": "Loading token list"
+    "loading_token_list": "Loading token list",
+    "go_back": "Go back",
+    "send_tokens": "Send tokens",
+    "receive_tokens": "Receive tokens",
+    "view_activity": "View activity",
+    "show_balance": "Show balance",
+    "hide_balance": "Hide balance",
+    "previous_blockchain": "Previous blockchain",
+    "next_blockchain": "Next blockchain",
+    "loading_token_info": "Loading token information",
+    "token_balance": "{{name}} token, balance {{amount}} {{symbol}}",
+    "token_price_balance": "{{name}} token, price {{price}}, balance {{amount}} {{symbol}}",
+    "select_token": "Select {{name}}",
+    "copy_contract_address": "Copy contract address",
+    "open_website": "Open website: {{url}}",
+    "select_period": "Select {{period}} time period"
   },
   "collectibles": {
     "title": "Collectibles",

@@ -17,6 +17,7 @@ export interface TabConfig {
   name: string;
   icon: React.FC<{ size?: number; color?: string }>;
   label: string;
+  labelKey: string;
   iconSize: number;
 }
 

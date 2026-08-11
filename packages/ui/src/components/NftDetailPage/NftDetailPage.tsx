@@ -282,25 +282,25 @@ export function NftDetailPage({
         <>
           {nft.tokenStandard && (
             <DetailRow>
-              <DetailLabel>Token Standard</DetailLabel>
+              <DetailLabel>{t('nft.detail.tokenStandard', 'Token Standard')}</DetailLabel>
               <DetailValue>{nft.tokenStandard}</DetailValue>
             </DetailRow>
           )}
           {nft.compressed !== undefined && (
             <DetailRow>
-              <DetailLabel>Compressed</DetailLabel>
-              <DetailValue>{nft.compressed ? 'Yes' : 'No'}</DetailValue>
+              <DetailLabel>{t('nft.detail.compressed', 'Compressed')}</DetailLabel>
+              <DetailValue>{nft.compressed ? t('general.yes', 'Yes') : t('general.no', 'No')}</DetailValue>
             </DetailRow>
           )}
           {nft.collectionVerified !== undefined && (
             <DetailRow>
-              <DetailLabel>Collection Verified</DetailLabel>
+              <DetailLabel>{t('nft.detail.collectionVerified', 'Collection Verified')}</DetailLabel>
               <DetailValue>{nft.collectionVerified ? '\u2713' : '\u2717'}</DetailValue>
             </DetailRow>
           )}
           {nft.royaltyBps !== undefined && (
             <DetailRow>
-              <DetailLabel>Royalties</DetailLabel>
+              <DetailLabel>{t('nft.detail.royalties', 'Royalties')}</DetailLabel>
               <DetailValue>{(nft.royaltyBps / 100).toFixed(2)}%</DetailValue>
             </DetailRow>
           )}
@@ -312,24 +312,24 @@ export function NftDetailPage({
       return (
         <>
           <DetailRow>
-            <DetailLabel>Inscription #</DetailLabel>
+            <DetailLabel>{t('nft.detail.inscriptionNumber', 'Inscription #')}</DetailLabel>
             <DetailValue>{nft.inscriptionNumber}</DetailValue>
           </DetailRow>
           {nft.satRarity && (
             <DetailRow>
-              <DetailLabel>Rarity</DetailLabel>
+              <DetailLabel>{t('nft.detail.rarity', 'Rarity')}</DetailLabel>
               <RarityBadge sx={{ backgroundColor: getSatRarityColor(nft.satRarity) }}>
                 <RarityText>{nft.satRarity}</RarityText>
               </RarityBadge>
             </DetailRow>
           )}
           <DetailRow>
-            <DetailLabel>Content Type</DetailLabel>
+            <DetailLabel>{t('nft.detail.contentType', 'Content Type')}</DetailLabel>
             <DetailValue>{nft.contentType}</DetailValue>
           </DetailRow>
           {nft.genesisHeight && (
             <DetailRow>
-              <DetailLabel>Genesis Block</DetailLabel>
+              <DetailLabel>{t('nft.detail.genesisBlock', 'Genesis Block')}</DetailLabel>
               <DetailValue>{nft.genesisHeight}</DetailValue>
             </DetailRow>
           )}
@@ -338,7 +338,7 @@ export function NftDetailPage({
     }
 
     return null;
-  }, [nft]);
+  }, [nft, t]);
 
   const renderAttribute = useCallback((attribute: NftAttribute, index: number) => {
     return (
@@ -385,7 +385,7 @@ export function NftDetailPage({
           <>
             {nft.image && (
               <ImageContainer>
-                <NftImage src={nft.image} alt={`NFT image for ${nft.name}`} />
+                <NftImage src={nft.image} alt={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: nft.name })} />
               </ImageContainer>
             )}
 
@@ -399,7 +399,7 @@ export function NftDetailPage({
                 style={blurStyle}
               >
                 <SectionContent>
-                  <SectionTitle>Description</SectionTitle>
+                  <SectionTitle>{t('nft.detail.description', 'Description')}</SectionTitle>
                   <DescriptionText>{nft.description}</DescriptionText>
                 </SectionContent>
               </BlurContainer>
@@ -415,7 +415,7 @@ export function NftDetailPage({
                 style={blurStyle}
               >
                 <SectionContent>
-                  <SectionTitle>Attributes</SectionTitle>
+                  <SectionTitle>{t('nft.detail.attributes', 'Attributes')}</SectionTitle>
                   <AttributesGrid>
                     {nft.attributes.map(renderAttribute)}
                   </AttributesGrid>
@@ -433,7 +433,7 @@ export function NftDetailPage({
                 style={blurStyle}
               >
                 <SectionContent>
-                  <SectionTitle>Details</SectionTitle>
+                  <SectionTitle>{t('nft.detail.details', 'Details')}</SectionTitle>
                   {renderBlockchainDetails()}
                 </SectionContent>
               </BlurContainer>
@@ -515,14 +515,14 @@ export function NftDetailPage({
                     borderWidth={borderWidth.actionButton}
                     style={{ borderRadius: borderRadius.button, overflow: 'hidden', flex: 1, maxWidth: componentSizes.buttonMinWidthLg }}
                   >
-                    <SecondaryButtonInner onClick={handleBurnBack} aria-label="Back to NFT details" data-testid="nft-burn-back-button">
+                    <SecondaryButtonInner onClick={handleBurnBack} aria-label={t('nft.detail.backToDetails', 'Back to NFT details')} data-testid="nft-burn-back-button">
                       <ButtonText>{t('actions.back', 'Back')}</ButtonText>
                     </SecondaryButtonInner>
                   </BlurContainer>
 
                   <PrimaryButtonBase
                     onClick={handleBurnConfirm}
-                    aria-label="Confirm burn"
+                    aria-label={t('nft.burn.confirm', 'Confirm burn')}
                     data-testid="nft-burn-confirm-button"
                     disabled={burnPreparing || !burnPreview || !!burnError}
                     sx={{ opacity: burnPreparing || !burnPreview || !!burnError ? opacity.medium : 1 }}
@@ -534,7 +534,7 @@ export function NftDetailPage({
               </>
             ) : (
               <ActionButtonsContainer>
-                <PrimaryButtonBase onClick={handleSendPress} aria-label="Send NFT" data-testid="nft-detail-send-button">
+                <PrimaryButtonBase onClick={handleSendPress} aria-label={t('nft.send.title', 'Send NFT')} data-testid="nft-detail-send-button">
                   <CallMadeIcon sx={{ fontSize: fontSize.md, color: colors.text.balance }} />
                   <ButtonText>{t('actions.send', 'Send')}</ButtonText>
                 </PrimaryButtonBase>
@@ -546,7 +546,7 @@ export function NftDetailPage({
                   borderWidth={borderWidth.actionButton}
                   style={{ borderRadius: borderRadius.button, overflow: 'hidden', flex: 1, maxWidth: componentSizes.buttonMinWidthLg }}
                 >
-                  <SecondaryButtonInner onClick={handleBurnPress} aria-label="Burn NFT" data-testid="nft-detail-burn-button">
+                  <SecondaryButtonInner onClick={handleBurnPress} aria-label={t('nft.burn.reviewTitle', 'Burn NFT')} data-testid="nft-detail-burn-button">
                     <LocalFireDepartmentIcon sx={{ fontSize: fontSize.md, color: colors.text.balance }} />
                     <ButtonText>{t('nft.burn_nft', 'Burn')}</ButtonText>
                   </SecondaryButtonInner>

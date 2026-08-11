@@ -142,7 +142,7 @@ export function ActionButtonRow({
         <PrimaryButton
           onClick={handleSendPress}
           disabled={sendDisabled}
-          aria-label="Send tokens"
+          aria-label={t('accessibility.send_tokens', 'Send tokens')}
           data-testid="home-send-button"
         >
           <SendIcon sx={{ fontSize: iconSize, color: colors.text.balance }} />
@@ -160,7 +160,7 @@ export function ActionButtonRow({
           <SecondaryButton
             onClick={handleReceivePress}
             disabled={receiveDisabled}
-            aria-label="Receive tokens"
+            aria-label={t('accessibility.receive_tokens', 'Receive tokens')}
             data-testid="home-receive-button"
           >
             <ReceiveIcon sx={{ fontSize: iconSize, color: receiveDisabled ? colors.button.disabledText : colors.text.balance }} />
@@ -179,7 +179,7 @@ export function ActionButtonRow({
           <SecondaryButton
             onClick={handleActivityPress}
             disabled={activityDisabled}
-            aria-label="View activity"
+            aria-label={t('accessibility.view_activity', 'View activity')}
             data-testid="home-activity-button"
           >
             <ActivityIcon sx={{ fontSize: iconSize, color: activityDisabled ? colors.button.disabledText : colors.text.balance }} />

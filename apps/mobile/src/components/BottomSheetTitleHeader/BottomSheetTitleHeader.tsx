@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -17,11 +18,13 @@ import type { BottomSheetTitleHeaderProps } from './types';
 export function BottomSheetTitleHeader({
   title,
   onBack,
-  backAccessibilityLabel = 'Back',
+  backAccessibilityLabel,
   titleNumberOfLines = 1,
   style,
   titleStyle,
 }: BottomSheetTitleHeaderProps) {
+  const { t } = useTranslation();
+  const resolvedBackLabel = backAccessibilityLabel ?? t('general.back', 'Back');
   return (
     <View style={[styles.container, style]}>
       {onBack && (
@@ -31,7 +34,7 @@ export function BottomSheetTitleHeader({
           onPress={onBack}
           activeOpacity={0.7}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityLabel={backAccessibilityLabel}
+          accessibilityLabel={resolvedBackLabel}
           accessibilityRole="button"
         >
           <Ionicons

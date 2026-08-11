@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -97,6 +98,7 @@ export const TokenInformationSheet: React.FC<TokenInformationSheetProps> = ({
   loading = false,
   style,
 }) => {
+  const { t } = useTranslation();
   // Top fade gradient opacity (driven by scroll offset)
   const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
   const { bottomInset, standardContentBottomPadding } = useBottomSheetChrome();
@@ -114,7 +116,7 @@ export const TokenInformationSheet: React.FC<TokenInformationSheetProps> = ({
   }, [topFadeOpacity]);
 
   const title = (
-    <Text style={styles.title}>Token Information</Text>
+    <Text style={styles.title}>{t('token.detail.title', 'Token Information')}</Text>
   );
 
   return (
@@ -167,7 +169,7 @@ export const TokenInformationSheet: React.FC<TokenInformationSheetProps> = ({
         <TokenMarketData
           data={marketData}
           symbol={token.symbol}
-          title="Info"
+          title={t('token.marketData.title', 'Info')}
           loading={loading}
           style={{ marginHorizontal: 0 }}
         />

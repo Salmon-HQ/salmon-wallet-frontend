@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { ContentLoader, Rect, Circle } from '@salmon/shared';
 import {
@@ -19,6 +20,7 @@ import type { TokenListSkeletonProps } from './types';
  * Dimensions match TokenListItem exactly for seamless transition
  */
 const SkeletonItem: React.FC = () => {
+  const { t } = useTranslation();
   // Calculate exact dimensions from TokenListItem
   const tokenIconSize = s(componentSizes.tokenIcon);
   const tokenIconRadius = tokenIconSize / 2;
@@ -36,7 +38,7 @@ const SkeletonItem: React.FC = () => {
           viewBox={`0 0 ${itemWidth} ${itemHeight}`}
           backgroundColor={colors.skeleton.base}
           foregroundColor={colors.skeleton.highlight}
-          accessibilityLabel="Loading token information"
+          accessibilityLabel={t('accessibility.loading_token_info', 'Loading token information')}
         >
           {/* Token logo circle */}
           <Circle cx={tokenIconRadius} cy={itemHeight / 2} r={tokenIconRadius} />

@@ -409,7 +409,7 @@ export function TokenSelectorModal({
         <TitleText>
           {t('wallet.select_token', 'Select Token')}
         </TitleText>
-        <CloseButton onClick={handleClose} aria-label="Close">
+        <CloseButton onClick={handleClose} aria-label={t('general.close', 'Close')}>
           <CloseIcon />
         </CloseButton>
       </StyledDialogTitle>
@@ -458,7 +458,7 @@ export function TokenSelectorModal({
                 key={getTokenKey(token)}
                 onClick={() => handleSelect(token)}
                 role="button"
-                aria-label={`Select ${token.symbol || token.name}`}
+                aria-label={t('accessibility.select_token', 'Select {{name}}', { name: token.symbol || token.name })}
                 data-testid={`token-select-featured-${token.symbol || token.name}`}
               >
                 {token.logo ? (
@@ -516,7 +516,7 @@ export function TokenSelectorModal({
                   key={getTokenKey(token)}
                   onClick={() => handleSelect(token)}
                   role="button"
-                  aria-label={`Select ${tokenName}`}
+                  aria-label={t('accessibility.select_token', 'Select {{name}}', { name: tokenName })}
                   data-testid={`token-select-${token.symbol || tokenName}`}
                 >
                   {/* Token Icon */}

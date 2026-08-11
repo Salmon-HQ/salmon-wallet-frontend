@@ -23,6 +23,7 @@ import {
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Platform,
   StyleSheet,
@@ -115,6 +116,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   showNetworkLabel = false,
   style,
 }) => {
+  const { t } = useTranslation();
   const [, { formatValue, formatChange }] = useCurrencyContext();
 
   const handleToggleVisibility = useCallback(() => {
@@ -135,7 +137,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   const scalesColor = getScalesColorForBlockchain(blockchain);
 
   // Get network label — in developer mode, always show (including "Mainnet")
-  const networkLabel = showNetworkLabel ? (getNetworkLabel(blockchain) ?? 'Mainnet') : null;
+  const networkLabel = showNetworkLabel ? (getNetworkLabel(blockchain) ?? t('general.network_mainnet', 'Mainnet')) : null;
 
   // Determine if change is positive
   const isPositive = changePercent >= 0;
@@ -155,7 +157,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
             style={styles.eyeButton}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="Show balance"
+            accessibilityLabel={t('accessibility.show_balance', 'Show balance')}
           >
             <Ionicons
               name="eye-off"
@@ -186,7 +188,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
           style={styles.eyeButton}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Hide balance"
+          accessibilityLabel={t('accessibility.hide_balance', 'Hide balance')}
         >
           <Ionicons name="eye" size={ms(componentSizes.eyeIcon)} color={colors.text.muted} />
         </TouchableOpacity>

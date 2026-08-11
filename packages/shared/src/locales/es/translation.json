@@ -53,7 +53,21 @@
     "password": "Contraseña",
     "show_password": "Mostrar contraseña",
     "hide_password": "Ocultar contraseña",
-    "terms_and_conditions": "Términos y Condiciones"
+    "terms_and_conditions": "Términos y Condiciones",
+    "yes": "Sí",
+    "no": "No",
+    "ok": "OK",
+    "page": "Página",
+    "go_home": "Ir al Inicio",
+    "not_supported": "No soportado",
+    "network_mainnet": "Mainnet",
+    "network_devnet": "Devnet",
+    "network_solana_mainnet": "Solana Mainnet",
+    "not_found": {
+      "title": "¡Ups!",
+      "message": "Esta pantalla no existe.",
+      "go_home": "¡Ir a la pantalla de inicio!"
+    }
   },
   "actions": {
     "approve": "Aprobar",
@@ -390,7 +404,8 @@
       "athDate": "Fecha ATH",
       "allTimeLow": "Mínimo Histórico",
       "fromATL": "Desde ATL",
-      "atlDate": "Fecha ATL"
+      "atlDate": "Fecha ATL",
+      "title": "Info"
     },
     "info": {
       "about": "Acerca de",
@@ -410,6 +425,33 @@
     },
     "balance": {
       "percentage_info": "Variación de tu posición en las últimas 24 horas."
+    },
+    "detail": {
+      "title": "Información del Token"
+    },
+    "chart": {
+      "noData": "No hay datos disponibles"
+    },
+    "badges": {
+      "title": "Insignias",
+      "verified": "Verificado",
+      "strict": "Estricto",
+      "major": "Principal",
+      "moonshot": "Moonshot",
+      "community": "Comunidad",
+      "communityAssist": "Apoyo Comunitario",
+      "originalLst": "LST Original",
+      "stablecoin": "Stablecoin",
+      "yieldBearing": "Con Rendimiento",
+      "launchpad": "Launchpad",
+      "trending": "En Tendencia",
+      "preStocks": "Pre-stocks",
+      "xStocks": "X-stocks",
+      "legacyRegistry": "Registro Antiguo",
+      "deduplicated": "Deduplicado",
+      "duplicate": "Duplicado",
+      "deprecated": "Obsoleto",
+      "internal": "Interno"
     }
   },
   "lock": {
@@ -577,7 +619,12 @@
       "success": "Exitosa"
     },
     "access_existing": "ACCEDER A CUENTA EXISTENTE",
-    "no_tokens_found": "No se encontraron tokens"
+    "no_tokens_found": "No se encontraron tokens",
+    "loading_wallet": "Cargando billetera...",
+    "loading_tokens": "Cargando tokens...",
+    "tokens_empty_subtitle": "Tus tokens van a aparecer acá cuando recibas alguno",
+    "no_account_found": "No se encontró ninguna cuenta",
+    "unnamed_account": "Cuenta"
   },
   "adapter": {
     "select": {
@@ -704,7 +751,8 @@
       "copyTransactionHash": "Copiar hash de transacción",
       "chooseExplorer": "Elegí un explorador",
       "explorerHint": "Abre la transacción en el explorador de blockchain",
-      "copyAddressHint": "Copia la dirección al portapapeles"
+      "copyAddressHint": "Copia la dirección al portapapeles",
+      "nftMediaAlt": "Contenido del NFT"
     },
     "tapToViewDetails": "Tocá para ver los detalles de la transacción"
   },
@@ -737,7 +785,11 @@
       "inscriptionNumber": "Inscripción #",
       "rarity": "Rareza",
       "contentType": "Tipo de Contenido",
-      "genesisBlock": "Bloque Génesis"
+      "genesisBlock": "Bloque Génesis",
+      "title": "Detalle del NFT",
+      "backToDetails": "Volver al detalle del NFT",
+      "imageAlt": "Imagen del NFT {{name}}",
+      "cardLabel": "NFT: {{name}}"
     },
     "send": {
       "title": "Enviar NFT",
@@ -760,10 +812,17 @@
       "lutAddressCount": "Direcciones almacenadas",
       "lutSteps": "Transacciones adicionales de preparación",
       "lutFootnote": "La renta queda bloqueada en la lookup table hasta que luego sea desactivada y cerrada.",
-      "insufficientFeeSol": "No tenés suficiente SOL para cubrir las comisiones de la transacción de quemado."
+      "insufficientFeeSol": "No tenés suficiente SOL para cubrir las comisiones de la transacción de quemado.",
+      "confirm": "Confirmar quema",
+      "notSupported": "La quema de NFTs de {{blockchain}} todavía no está soportada."
     },
     "ordinal_send_unsupported": "Las transferencias de Ordinals aún no están soportadas.",
-    "sending": "Enviando NFT..."
+    "sending": "Enviando NFT...",
+    "unnamed": "NFT sin nombre",
+    "emptyTitle": "Sin Coleccionables",
+    "emptySubtitle": "Tus NFTs y Ordinals van a aparecer acá cuando recibas alguno",
+    "notFound": "NFT no encontrado. Volvé a entrar desde tu colección.",
+    "noCollectionData": "No hay datos de la colección. Volvé a entrar desde tu colección."
   },
   "swap": {
     "swap": "Swap",
@@ -906,7 +965,9 @@
     "openSettings": "Abrir Ajustes",
     "notAddress": "Este código no es una dirección válida",
     "wrongNetwork": "Esta dirección pertenece a otra red",
-    "mobileAppOnly": "Usá la app móvil de Salmon Wallet para escanear códigos QR."
+    "mobileAppOnly": "Usá la app móvil de Salmon Wallet para escanear códigos QR.",
+    "unavailableTitle": "Escáner QR no disponible",
+    "unavailableMessage": "El escaneo de códigos QR solo está disponible en la app móvil."
   },
   "accessibility": {
     "copy_address": "Copiar dirección de billetera {{address}}",
@@ -916,7 +977,22 @@
     "delete_account": "Eliminar cuenta",
     "refresh_balance": "Actualizar balance",
     "selected_token": "Token seleccionado: {{name}}",
-    "loading_token_list": "Cargando lista de tokens"
+    "loading_token_list": "Cargando lista de tokens",
+    "go_back": "Volver",
+    "send_tokens": "Enviar tokens",
+    "receive_tokens": "Recibir tokens",
+    "view_activity": "Ver actividad",
+    "show_balance": "Mostrar balance",
+    "hide_balance": "Ocultar balance",
+    "previous_blockchain": "Blockchain anterior",
+    "next_blockchain": "Blockchain siguiente",
+    "loading_token_info": "Cargando información del token",
+    "token_balance": "Token {{name}}, balance {{amount}} {{symbol}}",
+    "token_price_balance": "Token {{name}}, precio {{price}}, balance {{amount}} {{symbol}}",
+    "select_token": "Seleccionar {{name}}",
+    "copy_contract_address": "Copiar dirección del contrato",
+    "open_website": "Abrir sitio web: {{url}}",
+    "select_period": "Seleccionar período {{period}}"
   },
   "collectibles": {
     "title": "Coleccionables",

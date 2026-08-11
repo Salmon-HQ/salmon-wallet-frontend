@@ -177,10 +177,10 @@ export function CollectiblesPage({
         loading: developerNetworks ? devnetQuery.loading : false,
         blockchain: 'solana',
         isTestnet: true,
-        networkLabel: 'Devnet',
+        networkLabel: t('general.network_devnet', 'Devnet'),
       } as NftSection,
     };
-  }, [mainnetQuery.nfts, mainnetQuery.loading, devnetQuery.nfts, devnetQuery.loading, developerNetworks]);
+  }, [mainnetQuery.nfts, mainnetQuery.loading, devnetQuery.nfts, devnetQuery.loading, developerNetworks, t]);
 
   // Derived state (Solana only)
   const visibleKeys = useMemo<NftSectionKey[]>(

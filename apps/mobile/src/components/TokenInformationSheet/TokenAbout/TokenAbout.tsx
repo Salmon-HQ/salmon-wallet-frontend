@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet, TextLayoutEventData, NativeSyntheticEvent } from 'react-native';
 import { ContentLoader, Rect } from '@salmon/shared';
 import { colors, fontFamilyNative, fontSize, lineHeight, ms, vs, s, borderRadius, spacing, } from '@salmon/shared';
@@ -24,11 +25,13 @@ import type { TokenAboutProps } from './types';
  */
 export const TokenAbout: React.FC<TokenAboutProps> = ({
   description,
-  title = 'About',
+  title,
   loading = false,
   maxLines = 0, // 0 = no limit, container adapts to content
   style,
 }) => {
+  const { t } = useTranslation();
+  const resolvedTitle = title ?? t('token.info.about', 'About');
   const [expanded, setExpanded] = useState(false);
   const [shouldShowReadMore, setShouldShowReadMore] = useState(false);
 
@@ -74,7 +77,7 @@ export const TokenAbout: React.FC<TokenAboutProps> = ({
   return (
     <BlurContainer style={[styles.glassWrapper, style]}>
       <View style={styles.container}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title}>{resolvedTitle}</Text>
         <Text
           style={styles.description}
           numberOfLines={expanded || maxLines === 0 ? undefined : maxLines}
@@ -87,10 +90,10 @@ export const TokenAbout: React.FC<TokenAboutProps> = ({
             onPress={toggleExpanded}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel={expanded ? 'Read less' : 'Read more'}
+            accessibilityLabel={expanded ? t('token.about.readLess', 'Read less') : t('token.about.readMore', 'Read more')}
           >
             <Text style={styles.readMore}>
-              {expanded ? 'Read less' : 'Read more'}
+              {expanded ? t('token.about.readLess', 'Read less') : t('token.about.readMore', 'Read more')}
             </Text>
           </TouchableOpacity>
         )}

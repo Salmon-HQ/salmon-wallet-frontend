@@ -175,7 +175,7 @@ export function TokenAbout({
         {shouldShowReadMore && (
           <ReadMoreButton
             onClick={toggleExpanded}
-            aria-label={expanded ? 'Read less' : 'Read more'}
+            aria-label={expanded ? t('token.about.readLess', 'Read less') : t('token.about.readMore', 'Read more')}
           >
             {expanded ? t('token.about.readLess', 'Read less') : t('token.about.readMore', 'Read more')}
           </ReadMoreButton>

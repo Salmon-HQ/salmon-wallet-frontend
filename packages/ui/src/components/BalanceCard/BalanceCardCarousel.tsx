@@ -5,6 +5,7 @@
  * Content slides out in one direction and the new card slides in from the opposite side.
  */
 import { useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import { colors, spacing, borderRadius, fontSize, fontWeight, lineHeight, componentSizes, durationMs, duration, easing } from '@salmon/shared';
@@ -78,6 +79,7 @@ export function BalanceCardCarousel({
   style,
   className,
 }: BalanceCardCarouselProps) {
+  const { t } = useTranslation();
   const [internalIndex, setInternalIndex] = useState(0);
   const currentIndex = controlledIndex ?? internalIndex;
   const hasMultiple = blockchains.length > 1;
@@ -145,7 +147,7 @@ export function BalanceCardCarousel({
         <LeftArrow
           $visible={currentIndex > 0}
           onClick={goLeft}
-          aria-label="Previous blockchain"
+          aria-label={t('accessibility.previous_blockchain', 'Previous blockchain')}
           data-testid="balance-carousel-prev"
         >
           ‹
@@ -181,7 +183,7 @@ export function BalanceCardCarousel({
         <RightArrow
           $visible={currentIndex < blockchains.length - 1}
           onClick={goRight}
-          aria-label="Next blockchain"
+          aria-label={t('accessibility.next_blockchain', 'Next blockchain')}
           data-testid="balance-carousel-next"
         >
           ›

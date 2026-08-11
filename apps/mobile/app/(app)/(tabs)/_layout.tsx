@@ -92,7 +92,7 @@ export default function TabLayout() {
   const [editingContact, setEditingContact] = useState<AddressBookItem | null>(null);
 
   // Gate expanded header state (reported by SettingsSheet)
-  const [settingsHeaderTitle, setSettingsHeaderTitle] = useState('Settings');
+  const [settingsHeaderTitle, setSettingsHeaderTitle] = useState(() => t('settings.title', 'Settings'));
   const [settingsHeaderBack, setSettingsHeaderBack] = useState<(() => void) | undefined>(undefined);
 
   // Account context
@@ -247,7 +247,7 @@ export default function TabLayout() {
   }, [gateState, settingsHeaderTitle, settingsHeaderBack, t]);
 
   // Derived values
-  const accountName = activeAccount?.name || 'Account';
+  const accountName = activeAccount?.name || t('wallet.unnamed_account', 'Account');
   const address = activeBlockchainAccount?.getReceiveAddress() || '';
 
   // Address book items
@@ -397,7 +397,7 @@ export default function TabLayout() {
       return (
         <AddressAddPanel
           activeNetworkId={activeNet?.id || 'solana-mainnet'}
-          activeNetworkName={activeNet?.name || 'Solana Mainnet'}
+          activeNetworkName={activeNet?.name || t('general.network_solana_mainnet', 'Solana Mainnet')}
           activeBlockchain={blockchain}
           onSave={async (input: AddressInput) => {
             await addContact(input);
@@ -513,7 +513,7 @@ export default function TabLayout() {
     currency, changeCurrency,
     explorers, explorer, changeExplorer, explorerLoading,
     addressBookItems, addressBookLoading, addContact, editAddressBookContact, removeContact,
-    editingContact, editingAccountId, activeTrustedApps, openLink,
+    editingContact, editingAccountId, activeTrustedApps, openLink, t,
   ]);
 
   // -- Header handlers --
@@ -647,12 +647,12 @@ export default function TabLayout() {
           tabBarStyle: { display: 'none' },
         }}
       >
-        <Tabs.Screen name="index" options={{ title: 'Home' }} />
-        <Tabs.Screen name="collectibles" options={{ title: 'Collectibles' }} />
-        <Tabs.Screen name="swap" options={{ title: 'Swap' }} />
+        <Tabs.Screen name="index" options={{ title: t('tabs.home', 'Home') }} />
+        <Tabs.Screen name="collectibles" options={{ title: t('tabs.collectibles', 'Collectibles') }} />
+        <Tabs.Screen name="swap" options={{ title: t('tabs.swap', 'Swap') }} />
         <Tabs.Screen
           name="settings"
-          options={{ href: null, title: 'Settings' }}
+          options={{ href: null, title: t('tabs.settings', 'Settings') }}
         />
       </Tabs>
       </BlurTargetProvider>
