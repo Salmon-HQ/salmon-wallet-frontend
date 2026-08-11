@@ -42,13 +42,13 @@
       "0": "Nunca compartas tu frase de recuperación con nadie",
       "1": "Siempre verificá los detalles de la transacción antes de firmar",
       "2": "Guardá tu frase de recuperación en un lugar seguro y sin conexión",
-      "3": "Habilita la autenticación biométrica para mayor seguridad",
-      "4": "Verifica las direcciones de billetera antes de enviar",
-      "5": "Tus llaves, tu cripto - mantén el control",
+      "3": "Habilitá la autenticación biométrica para mayor seguridad",
+      "4": "Verificá las direcciones de billetera antes de enviar",
+      "5": "Tus llaves, tu cripto - mantené el control",
       "6": "Guardá en favoritos los sitios oficiales para evitar phishing",
       "7": "Comenzá con transacciones de prueba pequeñas",
       "8": "Mantené tu app actualizada para parches de seguridad",
-      "9": "Usa una billetera de hardware para grandes cantidades"
+      "9": "Usá una billetera de hardware para grandes cantidades"
     }
   },
   "actions": {
@@ -65,7 +65,7 @@
     "remove_all": "Eliminar todas",
     "confirm": "Confirmar",
     "confirm_anyway": "Confirmar de todos modos",
-    "accept": "Acepter",
+    "accept": "Aceptar",
     "cancel": "Cancelar",
     "done": "Listo",
     "send": "Enviar",
@@ -74,8 +74,8 @@
     "search_placeholder": "Buscar...",
     "logout": "Cerrar sesión",
     "view_more": "Ver más",
-    "continue": "Cotinuar",
-    "follow_us": "¡Síguenos!",
+    "continue": "Continuar",
+    "follow_us": "¡Seguinos!",
     "bridge": "Bridge",
     "retry": "Reintentar",
     "searching": "Buscando...",
@@ -210,7 +210,7 @@
       "select_nft": "Seleccionar Coleccionable",
       "select_avatar": "Seleccionar Avatar",
       "no_avatars_found": "No se encontraron Avatars",
-      "upload_photo": "Selccionar foto",
+      "upload_photo": "Seleccionar foto",
       "select_nft_to_profile": "Seleccionar NFT como imagen de perfil",
       "select_avatar_to_profile": "Seleccionar Avatar como imagen de perfil",
       "full_nft_description": "Descripción completa",
@@ -226,7 +226,7 @@
       "edit": "Editar dirección",
       "save": "Guardar dirección",
       "label": "Etiqueta",
-      "empty": "Parece vacío aquí.\nAgrega tu primer contacto haciendo clic en el botón.",
+      "empty": "Parece vacío aquí.\nAgregá tu primer contacto haciendo clic en el botón.",
       "remove_confirmation": "¿Estás seguro que querés eliminar a {{name}} de tu libreta de contactos?"
     },
     "languages": {
@@ -290,7 +290,7 @@
       "title": "Recibir",
       "copyAddress": "Copiar dirección",
       "copied": "¡Copiado!",
-      "warning": "Esta dirección es para tokens en la block chain {{blockchain}}. Por favor, no envíe ningún otro token, ya que puede provocar la pérdida de fondos."
+      "warning": "Esta dirección es para tokens en la block chain {{blockchain}}. Por favor, no envíes ningún otro token, ya que puede provocar la pérdida de fondos."
     },
     "send": {
       "myWallets": "Mis Billeteras",
@@ -316,7 +316,7 @@
       "transaction_canceling-offer": "Cancelando Oferta...",
       "transaction_buying": "Comprando...",
       "transaction_success": "Transacción Exitosa",
-      "transaction_bridge_success": "Transacción pendiente, ésto puede demorarse unos minutos. Dirígete a la sección Wallet Overview para seguir su status",
+      "transaction_bridge_success": "Transacción pendiente, ésto puede demorarse unos minutos. Dirigite a la sección Wallet Overview para seguir su status",
       "transaction_swapping": "Swapping",
       "transaction_warning": "Warning",
       "transaction_fail": "Error",
@@ -368,9 +368,9 @@
     }
   },
   "lock": {
-    "title": "Ingrese su contraseña",
-    "placeholder": "Ingrese su contraseña",
-    "error": "La constraseña es incorrecta",
+    "title": "Ingresá tu contraseña",
+    "placeholder": "Ingresá tu contraseña",
+    "error": "La contraseña es incorrecta",
     "forgot": "Olvidé mi contraseña",
     "forgotten": "Contraseña olvidada",
     "clear": "Limpiar wallets",
@@ -423,13 +423,13 @@
     "import_tokens": "Importar tokens",
     "create": {
       "messageTitle": "¡Guardá tu seed-phrase!",
-      "messageBody": "Necesitarás estas palabras para restaurar tu Cuenta si cambias o borras los datos de tu navegador, o si su dispositivo se daña o se pierde. \n\n Nunca compartas tu seed-phrase (o tus claves privadas) con nadie, ni la ingreses en ningún formulario, ya que proporcionan control total de tu Cuenta. \n\n El equipo de Salmon nunca te pedirá tu seed-phrase o claves privadas.",
+      "messageBody": "Necesitarás estas palabras para restaurar tu Cuenta si cambiás o borrás los datos de tu navegador, o si tu dispositivo se daña o se pierde. \n\n Nunca compartas tu seed-phrase (o tus claves privadas) con nadie, ni la ingreses en ningún formulario, ya que proporcionan control total de tu Cuenta. \n\n El equipo de Salmon nunca te pedirá tu seed-phrase o claves privadas.",
       "your_seed_phrase": "Tu seed-phrase",
       "your_seed_phrase_body": "Asegurate de guardar estas palabras en un lugar seguro. Tené en cuenta que el orden en el que aparecen es importante.",
       "copy_key": "Copiar seed-phrase",
       "ive_backed_up_seed_phrase": "He backupeado la seed-phrase",
       "confirm_seed_phrase": "Confirmar seed-phrase",
-      "confirm_seed_phrase_body": "Por favor, re-ingresá las siguientes palabras para confirmar que las has guardado.",
+      "confirm_seed_phrase_body": "Por favor, re-ingresá las siguientes palabras para confirmar que las guardaste.",
       "enter_word_number": "Palabra #",
       "buttonPreparing": "Preparando...",
       "enter_your_password": "Ingresá tu contraseña",
@@ -438,7 +438,7 @@
       "password_too_short": "La contraseña debe tener al menos {{min}} caracteres",
       "password_too_long": "La contraseña debe tener como máximo {{max}} caracteres",
       "password_too_weak": "Elegí una contraseña más segura",
-      "choose_a_password": "Elije una contraseña",
+      "choose_a_password": "Elegí una contraseña",
       "choose_a_password_body": "La necesitarás para desbloquear tu Wallet",
       "passwordNew": "Nueva contraseña",
       "passwordRepeat": "Repetir contraseña",
@@ -478,8 +478,8 @@
       "content1": "Tu billetera todo-en-uno y de código abierto\npara el mundo cripto",
       "title2": "Mantené el control\nde tus tokens",
       "content2": "Todos tus activos, en tus manos.\nNo tenemos acceso a ellos en absoluto.",
-      "title3": "Mantente al día",
-      "content3": "Síguenos en ",
+      "title3": "Mantenete al día",
+      "content3": "Seguinos en ",
       "content3b": "@salmonwallet"
     },
     "pending_txs": {
@@ -495,8 +495,8 @@
     "detail": {
       "connection": {
         "title": "¿Permitir que este sitio acceda a tu cuenta?",
-        "advice": "Conéctate sólo con sitios de confianza",
-        "advice2": "Sin embargo, se solicitará su aprobación para completar cualquier transacción.",
+        "advice": "Conectate solo con sitios de confianza",
+        "advice2": "Sin embargo, se solicitará tu aprobación para completar cualquier transacción.",
         "verification": {
           "succeeded": "Verificado",
           "failed": "Falló la verificación",
@@ -671,9 +671,9 @@
     "swap": "Swap",
     "swap_tokens": "Swap Tokens",
     "swap_preview": "Confirmar Swap",
-    "you_send": "Envías",
+    "you_send": "Enviás",
     "enter_amount": "Ingresá un monto",
-    "you_receive": "Recibes",
+    "you_receive": "Recibís",
     "best_route": "Mejor Ruta",
     "quote": "Ordenar",
     "refresh_quote": "Refrescar orden",
@@ -720,7 +720,7 @@
     "no_wallet_found": "No se encontró billetera para la blockchain {{chain}}",
     "provider_error": "Actualmente el proveedor de Bridge no está respondiendo.\nPor favor volvé a intentar más tarde.",
     "recipient_type": "Wallet de destino:",
-    "you_pay": "Pagas",
+    "you_pay": "Pagás",
     "own_wallet_alert": "Tené en cuenta que para ver los tokens que recibirás, deberás cambiar de esta Billetera {{from}} a la de {{to}} desde el menú.",
     "other_wallet_alert": "Tené en cuenta que los tokens que recibirás se envían a una Billetera {{to}} que no está configurada en Salmon. No verás los tokens a menos que abras esa billetera.",
     "recipient": {
@@ -734,7 +734,7 @@
     },
     "review": {
       "title": "Revisión de Swap",
-      "youReceiveEstimated": "Recibes (estimado)",
+      "youReceiveEstimated": "Recibís (estimado)",
       "recipient": "Destinatario",
       "fromNetwork": "Red de Origen",
       "toNetwork": "Red de Destino",
