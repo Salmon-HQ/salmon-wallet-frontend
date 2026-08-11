@@ -18,7 +18,6 @@
  */
 
 import React, { useCallback, useMemo, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -64,7 +63,6 @@ function transformQuoteForUI(
 }
 
 export default function SwapScreenPage() {
-  const { t } = useTranslation();
   const { headerChromeHeight } = useTabChrome();
   const router = useRouter();
 
@@ -209,15 +207,10 @@ export default function SwapScreenPage() {
   }, [router]);
 
   const handleSwapError = useCallback((error: Error) => {
-    // Reset swap state
+    // Reset swap state; the form renders the classified message.
     resetSwap();
-
-    Alert.alert(
-      t('swap.error_title', 'Swap Failed'),
-      error.message || t('swap.error_message', 'Something went wrong'),
-      [{ text: 'OK' }]
-    );
-  }, [t, resetSwap]);
+    console.error('Swap Failed:', error.message);
+  }, [resetSwap]);
 
   const handleSearchTokens = useCallback(async (query: string): Promise<SwapToken[]> => {
     const network = networkId === 'solana-devnet' ? 'solana-devnet' : 'solana-mainnet';
@@ -342,12 +335,8 @@ export default function SwapScreenPage() {
 
   const handleBridgeError = useCallback((error: Error) => {
     resetBridge();
-    Alert.alert(
-      t('bridge.error_title', 'Bridge Failed'),
-      error.message || t('bridge.error_message', 'Something went wrong'),
-      [{ text: 'OK' }]
-    );
-  }, [t, resetBridge]);
+    console.error('Bridge Failed:', error.message);
+  }, [resetBridge]);
 
   // No account state
   if (!ready || !activeAccount || !activeBlockchainAccount) {

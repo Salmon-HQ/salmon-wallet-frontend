@@ -5,6 +5,7 @@
  * Uses CSS gradients instead of expo-linear-gradient.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -62,6 +63,15 @@ const WarningText = styled(Typography)({
   marginBottom: spacing.sm,
 });
 
+const ErrorText = styled(Typography)({
+  fontSize: fontSize.sm,
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.medium,
+  color: colors.status.error,
+  textAlign: 'center',
+  marginBottom: spacing.sm,
+});
+
 const DisclaimerText = styled(Typography)({
   fontSize: fontSize.xs,
   color: colors.text.tertiary,
@@ -103,9 +113,12 @@ export function SwapInputScreen({
   isLoadingQuote = false,
   canReview,
   reviewWarning,
+  swapError,
   onReview,
   style,
 }: SwapInputScreenProps): React.ReactElement {
+  const { t } = useTranslation();
+
   return (
     <Container style={style}>
       {/* Input Fields */}
@@ -123,6 +136,8 @@ export function SwapInputScreen({
           editable={true}
           placeholder="Enter an amount"
         />
+
+        {swapError && <ErrorText data-testid="swap-error-text">{t(swapError)}</ErrorText>}
 
         {reviewWarning && <WarningText>{reviewWarning}</WarningText>}
 

@@ -191,7 +191,8 @@ describe('SwapScreenPage', () => {
 
     fireEvent.press(screen.getByText('Bridge error'));
     expect(mockResetBridge).toHaveBeenCalledTimes(1);
-    expect(mockAlert).toHaveBeenCalledWith('Bridge Failed', 'bridge broke', [{ text: 'OK' }]);
+    // The swap form renders the classified message; no second surface.
+    expect(mockAlert).not.toHaveBeenCalled();
 
     fireEvent.press(screen.getByText('Navigate home'));
     expect(mockReplace).toHaveBeenCalledWith('/');

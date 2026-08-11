@@ -53,6 +53,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
           isLoadingQuote={logic.isLoadingQuote || logic.isLoadingEstimate}
           canReview={logic.canReview}
           reviewWarning={logic.reviewWarning}
+          swapError={logic.swapError}
           onReview={logic.handleReview}
         />
       )}

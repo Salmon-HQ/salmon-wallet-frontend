@@ -75,7 +75,7 @@ export interface UseBridgeResult {
   getEstimate: (symbolIn: string, symbolOut: string, amount: number, networkIn?: string, networkOut?: string) => Promise<BridgeEstimate | null>;
 
   // Exchange operations
-  /** Create a bridge exchange */
+  /** Create a bridge exchange. Rejects with the provider error on failure. */
   createExchange: (
     symbolIn: string,
     symbolOut: string,
@@ -282,7 +282,9 @@ export function useBridge(_params?: UseBridgeParams): UseBridgeResult {
         const errorMessage = err instanceof Error ? err.message : 'Failed to create bridge exchange';
         setError(errorMessage);
         setStatus('failed');
-        return null;
+        // Rethrown so the caller can classify the provider message; swallowing
+        // it here left the swap screen with a generic failure.
+        throw err;
       }
     },
     []

@@ -308,6 +308,86 @@ describe('useSwapScreenLogic', () => {
     expect(result.current.successTxId).toBe('swap-tx-1');
   });
 
+  it('returns to the form with a classified error when a swap fails', async () => {
+    vi.useFakeTimers();
+
+    const error = new Error('Transaction simulation failed: Slippage tolerance exceeded');
+    const props = createProps({
+      initialInToken: SOL,
+      initialOutToken: USDC,
+      onSwap: vi.fn().mockRejectedValue(error),
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    act(() => {
+      result.current.setInAmount('1');
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+
+    act(() => {
+      result.current.handleReview();
+    });
+
+    await act(async () => {
+      await result.current.handleConfirmSwap();
+    });
+
+    expect(result.current.step).toBe('input');
+    expect(result.current.swapError).toBe('transaction.errors.slippage');
+    expect(result.current.inAmount).toBe('1');
+    expect(props.onError).toHaveBeenCalledWith(error);
+
+    act(() => {
+      result.current.setInAmount('2');
+    });
+
+    expect(result.current.swapError).toBeNull();
+  });
+
+  it('classifies a swap failure with no SOL for the fee like the send path', async () => {
+    vi.useFakeTimers();
+
+    const props = createProps({
+      initialInToken: SOL,
+      initialOutToken: USDC,
+      onSwap: vi
+        .fn()
+        .mockRejectedValue(
+          new Error('Attempt to debit an account but found no record of a prior credit.'),
+        ),
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    act(() => {
+      result.current.setInAmount('1');
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+
+    act(() => {
+      result.current.handleReview();
+    });
+
+    await act(async () => {
+      await result.current.handleConfirmSwap();
+    });
+
+    expect(result.current.swapError).toBe('transaction.errors.insufficientFeeSol');
+  });
+
   it('settles after a Jupiter swap by polling until the indexer reflects the new balance', async () => {
     // Event-driven settlement (useSettleUntilChanged): keep `settling` true and
     // keep refetching until the on-chain balance signature actually changes.
@@ -610,14 +690,9 @@ describe('useSwapScreenLogic', () => {
       await result.current.handleConfirmBridge();
     });
 
-    expect(result.current.step).toBe('error');
-    expect(props.onBridgeError).toHaveBeenCalledWith(error);
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-    });
-
     expect(result.current.step).toBe('input');
+    expect(result.current.swapError).toBe('bridge.errors.unavailable');
+    expect(props.onBridgeError).toHaveBeenCalledWith(error);
   });
 
   describe('bridge token filtering by enabled chain', () => {

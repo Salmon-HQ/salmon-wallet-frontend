@@ -61,6 +61,7 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
           isLoadingQuote={logic.isLoadingQuote || logic.isLoadingEstimate}
           canReview={logic.canReview}
           reviewWarning={logic.reviewWarning}
+          swapError={logic.swapError}
           onReview={logic.handleReview}
         />
       )}

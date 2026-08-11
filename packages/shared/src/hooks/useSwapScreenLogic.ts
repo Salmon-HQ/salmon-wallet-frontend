@@ -23,6 +23,8 @@ import type {
 } from '../types/ui/bridge-screen';
 import type { NetworkId } from '../types/blockchain';
 import { getSwapMode, validateAddress, getChainFromNetwork, toStealthExNetwork } from '../utils/swap';
+import { classifyTransactionError } from '../utils/transaction-errors';
+import { classifyBridgeError } from '../utils/bridge-errors';
 import { getChainDisplayName } from '../utils/account';
 import { KNOWN_DECIMALS, NATIVE_TOKEN_LOGOS } from '../utils/tokens';
 import { getEnabledNetworkIds } from '../api/services/network';
@@ -200,6 +202,11 @@ export interface UseSwapScreenLogicParams<StyleType = unknown> extends SwapScree
 export interface UseSwapScreenLogicResult {
   // State
   step: SwapScreenStep;
+  /**
+   * Translation key for the last swap or bridge failure, cleared when the user
+   * edits the amount or confirms again. The form renders it inline.
+   */
+  swapError: string | null;
   inToken: SwapToken | null;
   outToken: SwapToken | null;
   inAmount: string;
@@ -306,6 +313,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
   // ── State ──────────────────────────────────────────────────────────────
 
   const [step, setStep] = useState<SwapScreenStep>('input');
+  const [swapError, setSwapError] = useState<string | null>(null);
   const [settling, setSettling] = useState(false);
   const [inToken, setInToken] = useState<SwapToken | null>(initialInToken || tokens[0] || null);
   const [outToken, setOutToken] = useState<SwapToken | null>(initialOutToken || null);
@@ -576,6 +584,11 @@ export function useSwapScreenLogic<StyleType = unknown>({
     });
   }, [tokens, handleInTokenSelect]);
 
+  const handleInAmountChange = useCallback((value: string) => {
+    setSwapError(null);
+    setInAmount(value);
+  }, []);
+
   const handleReview = useCallback(() => {
     if (swapMode === 'jupiter' && quote) {
       setStep('review');
@@ -609,6 +622,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     if (!quote) return;
 
     setIsConfirming(true);
+    setSwapError(null);
     try {
       const result = await onSwap(quote);
       setSuccessTxId(result.txId);
@@ -630,12 +644,9 @@ export function useSwapScreenLogic<StyleType = unknown>({
       onSuccess?.(result.txId);
     } catch (error) {
       console.error('Swap failed:', error);
-      setStep('error');
+      setSwapError(classifyTransactionError(error));
+      setStep('input');
       onError?.(error as Error);
-
-      setTimeout(() => {
-        setStep('input');
-      }, 2000);
     } finally {
       setIsConfirming(false);
     }
@@ -645,6 +656,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     if (!inToken || !outToken || !inAmount || !recipientAddress || !onCreateBridgeExchange) return;
 
     setIsConfirming(true);
+    setSwapError(null);
     try {
       const exchange = await onCreateBridgeExchange(
         inToken.symbol,
@@ -693,12 +705,9 @@ export function useSwapScreenLogic<StyleType = unknown>({
       }
     } catch (error) {
       console.error('Bridge failed:', error);
-      setStep('error');
+      setSwapError(classifyBridgeError(error));
+      setStep('input');
       onBridgeError?.(error as Error);
-
-      setTimeout(() => {
-        setStep('input');
-      }, 2000);
     } finally {
       setIsConfirming(false);
     }
@@ -940,6 +949,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
 
   return {
     step,
+    swapError,
     inToken,
     outToken,
     inAmount,
@@ -978,7 +988,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     bridgeOutToken,
     bridgeEstimateForReview,
 
-    setInAmount,
+    setInAmount: handleInAmountChange,
     setRecipientAddress,
     setShowInTokenModal,
     setShowOutTokenModal,

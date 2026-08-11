@@ -172,7 +172,7 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
 
   const handleSwapError = useCallback((error: Error) => {
     resetSwap();
-    window.alert('Swap Failed: ' + error.message);
+    console.error('Swap Failed:', error.message);
   }, [resetSwap]);
 
   const handleSearchTokens = useCallback(async (query: string): Promise<SwapToken[]> => {
@@ -248,22 +248,18 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
     networkIn?: string,
     networkOut?: string,
   ): Promise<BridgeExchangeSimple | null> => {
-    try {
-      const exchange = await createBridgeExchange(symbolIn, symbolOut, amount, addressTo, networkIn, networkOut);
-      if (!exchange) return null;
-      return {
-        id: exchange.id,
-        depositAddress: exchange.payinAddress,
-        amountIn: exchange.amountExpectedFrom,
-        amountOut: exchange.amountExpectedTo,
-        symbolIn: exchange.currencyFrom,
-        symbolOut: exchange.currencyTo,
-        addressTo: exchange.payoutAddress,
-        status: exchange.status,
-      };
-    } catch {
-      return null;
-    }
+    const exchange = await createBridgeExchange(symbolIn, symbolOut, amount, addressTo, networkIn, networkOut);
+    if (!exchange) return null;
+    return {
+      id: exchange.id,
+      depositAddress: exchange.payinAddress,
+      amountIn: exchange.amountExpectedFrom,
+      amountOut: exchange.amountExpectedTo,
+      symbolIn: exchange.currencyFrom,
+      symbolOut: exchange.currencyTo,
+      addressTo: exchange.payoutAddress,
+      status: exchange.status,
+    };
   }, [createBridgeExchange]);
 
   const handleGetBridgeTransactionStatus = useCallback(async (id: string) => {
@@ -294,7 +290,7 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
 
   const handleBridgeError = useCallback((error: Error) => {
     resetBridge();
-    window.alert('Bridge Failed: ' + error.message);
+    console.error('Bridge Failed:', error.message);
   }, [resetBridge]);
 
   if (!ready || !activeAccount || !activeBlockchainAccount) {

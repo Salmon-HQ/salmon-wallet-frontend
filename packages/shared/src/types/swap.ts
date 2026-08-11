@@ -536,6 +536,8 @@ export interface SwapInputScreenProps<StyleType> {
   canReview: boolean;
   /** Warning message when review is not possible */
   reviewWarning?: string | null;
+  /** Translation key for the last swap or bridge failure */
+  swapError?: string | null;
   /** Callback for Review button */
   onReview: () => void;
   /** Custom style */

@@ -24,6 +24,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
   isLoadingQuote = false,
   canReview,
   reviewWarning,
+  swapError,
   onReview,
   style,
 }) => {
@@ -51,6 +52,12 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           editable={true}
           placeholder={t('swap.enter_amount', 'Enter an amount')}
         />
+
+        {swapError ? (
+          <Text testID="swap-error-text" style={styles.errorText}>
+            {t(swapError)}
+          </Text>
+        ) : null}
 
         {reviewWarning ? <Text style={styles.warningText}>{reviewWarning}</Text> : null}
 
@@ -119,6 +126,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
+  },
+  errorText: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamilyNative.medium,
+    color: colors.status.error,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
   },
   warningText: {
     fontSize: fontSize.sm,
