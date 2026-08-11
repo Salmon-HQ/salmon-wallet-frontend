@@ -12,6 +12,7 @@
  */
 
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   TextInput,
@@ -98,13 +99,14 @@ export function InputAddress({
   address,
   onChange,
   onValidation,
-  placeholder = 'Enter address or domain',
+  placeholder,
   label,
   disabled = false,
   errorMessage,
   testID = 'input-address',
   ...textInputProps
 }: InputAddressProps) {
+  const { t } = useTranslation();
   const [state] = useAccountsContext();
   const { activeBlockchainAccount } = state;
 
@@ -176,7 +178,7 @@ export function InputAddress({
           style={[styles.input, disabled && styles.inputDisabled]}
           value={address}
           onChangeText={handleChangeText}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('send.enter_address_or_domain')}
           placeholderTextColor={colors.text.tertiary}
           editable={!disabled && !isValidating}
           autoCapitalize="none"
@@ -203,7 +205,7 @@ export function InputAddress({
               displayMessageType === 'warning' && styles.messageWarning,
             ]}
           >
-            {displayMessage}
+            {t(displayMessage)}
           </Text>
         </View>
       )}
@@ -211,7 +213,7 @@ export function InputAddress({
       {/* Domain Resolution Info */}
       {isDomain && resolvedAddress && (
         <View style={styles.domainInfo} testID={`${testID}-domain-info`}>
-          <Text style={styles.domainLabel}>Resolved Address:</Text>
+          <Text style={styles.domainLabel}>{t('send.resolved_address')}</Text>
           <Text style={styles.domainValue} numberOfLines={1} ellipsizeMode="middle">
             {resolvedAddress}
           </Text>

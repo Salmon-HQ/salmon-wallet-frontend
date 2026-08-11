@@ -126,7 +126,7 @@ export function SwapInputScreen({
         {/* You Send */}
         <SwapAmountInput
           testID="swap-from"
-          label="You Send"
+          label={t('swap.you_send')}
           value={inAmount}
           onChangeValue={onInAmountChange}
           token={inToken}
@@ -134,17 +134,17 @@ export function SwapInputScreen({
           usdValue={inUsdValue}
           availableBalance={inToken?.balance}
           editable={true}
-          placeholder="Enter an amount"
+          placeholder={t('swap.enter_amount')}
         />
 
         {swapError && <ErrorText data-testid="swap-error-text">{typeof swapError === 'string' ? t(swapError) : t(swapError.key, swapError.params)}</ErrorText>}
 
-        {reviewWarning && <WarningText>{reviewWarning}</WarningText>}
+        {reviewWarning && <WarningText>{typeof reviewWarning === 'string' ? t(reviewWarning) : t(reviewWarning.key, reviewWarning.params)}</WarningText>}
 
         {/* You Receive */}
         <SwapAmountInput
           testID="swap-to"
-          label="You Receive"
+          label={t('swap.you_receive')}
           value={outAmount}
           onChangeValue={() => {}}
           token={outToken}
@@ -154,7 +154,7 @@ export function SwapInputScreen({
           isLoading={isLoadingQuote}
         />
 
-        <DisclaimerText>Includes 0.5% platform fee</DisclaimerText>
+        <DisclaimerText>{t('swap.platform_fee_disclaimer')}</DisclaimerText>
       </InputsContainer>
 
       {/* Review Button */}
@@ -171,7 +171,7 @@ export function SwapInputScreen({
               color: canReview ? colors.button.primaryText : undefined,
             }}
           >
-            Review & Swap
+            {t('swap.review.reviewAndSwap')}
           </PrimaryButton>
         </ReviewButtonWrapper>
       </ButtonContainer>

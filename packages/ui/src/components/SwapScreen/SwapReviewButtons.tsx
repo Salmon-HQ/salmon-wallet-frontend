@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import { colors, spacing, borderRadius, gradients, shadowsCSS, componentSizes, borderWidth } from '@salmon/shared';
@@ -40,9 +41,10 @@ export function SwapReviewButtons({
   onBack,
   onConfirm,
   isConfirming = false,
-  confirmLabel = 'Confirm',
+  confirmLabel,
   style,
 }: SwapReviewButtonsProps) {
+  const { t } = useTranslation();
   return (
     <ButtonsContainer style={style}>
       <BackButtonWrapper>
@@ -57,7 +59,7 @@ export function SwapReviewButtons({
             backgroundColor: colors.button.cancelBackground,
           }}
         >
-          Back
+          {t('general.back')}
         </SecondaryButton>
       </BackButtonWrapper>
       <ConfirmButtonGradient>
@@ -72,7 +74,7 @@ export function SwapReviewButtons({
             whiteSpace: 'nowrap',
           }}
         >
-          {confirmLabel}
+          {confirmLabel ?? t('general.confirm')}
         </PrimaryButton>
       </ConfirmButtonGradient>
     </ButtonsContainer>

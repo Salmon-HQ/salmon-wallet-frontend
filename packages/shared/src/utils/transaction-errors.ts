@@ -50,8 +50,18 @@ interface SolanaErrorLike {
   };
 }
 
+/** Message prefixes that are already translation keys — pass them through. */
+const KEY_PREFIXES = ['transaction.errors.', 'swap.errors.', 'bridge.errors.'];
+
 export function classifyTransactionError(err: unknown): string {
   const message = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
+
+  // Errors thrown with an i18n key as message (or rethrown after an earlier
+  // classification) are already user-ready — do not degrade them to generic.
+  if (KEY_PREFIXES.some((prefix) => message.startsWith(prefix))) {
+    return message;
+  }
+
   const haystack = message.toLowerCase();
 
   if (FEE_PAYER_PATTERNS.some((pattern) => haystack.includes(pattern))) {

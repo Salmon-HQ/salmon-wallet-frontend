@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, fontSize, letterSpacing, lineHeight, spacing, ms, s, fontFamilyNative } from '@salmon/shared';
 import type { SwapTabSelectorProps, SwapTab } from './types';
@@ -11,6 +12,7 @@ export const SwapTabSelector: React.FC<SwapTabSelectorProps> = ({
   onTabChange,
   style,
 }) => {
+  const { t } = useTranslation();
   const handleTabPress = (tab: SwapTab) => {
     if (tab !== activeTab) {
       onTabChange(tab);
@@ -31,7 +33,7 @@ export const SwapTabSelector: React.FC<SwapTabSelectorProps> = ({
             activeTab === 'swap' ? styles.tabTextActive : styles.tabTextInactive,
           ]}
         >
-          Swap
+          {t('swap.swap')}
         </Text>
         <View
           style={[
@@ -53,7 +55,7 @@ export const SwapTabSelector: React.FC<SwapTabSelectorProps> = ({
             activeTab === 'bridge' ? styles.tabTextActive : styles.tabTextInactive,
           ]}
         >
-          Bridge
+          {t('bridge.bridge')}
         </Text>
         <View
           style={[

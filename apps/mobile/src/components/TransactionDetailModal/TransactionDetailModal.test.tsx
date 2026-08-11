@@ -7,7 +7,14 @@ const mockExplorerPress = jest.fn();
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (_key: string, fallback?: string) => fallback ?? _key,
+    t: (_key: string, fallback?: string | Record<string, unknown>) => {
+      if (typeof fallback === 'string') return fallback;
+      if (fallback && typeof fallback === 'object') {
+        const template = (fallback.defaultValue as string | undefined) ?? _key;
+        return template.replace(/\{\{(\w+)\}\}/g, (_m, name) => String(fallback[name] ?? ''));
+      }
+      return _key;
+    },
   }),
 }));
 

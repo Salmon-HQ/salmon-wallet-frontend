@@ -149,7 +149,7 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
           style={styles.addressButton}
           onPress={handleCopy}
           activeOpacity={0.7}
-          accessibilityLabel="Copy recipient address"
+          accessibilityLabel={t('token.send.copyRecipientAddress')}
         >
           <BlurContainer style={styles.addressContainer}>
             <Text style={styles.addressText} numberOfLines={1} ellipsizeMode="middle">

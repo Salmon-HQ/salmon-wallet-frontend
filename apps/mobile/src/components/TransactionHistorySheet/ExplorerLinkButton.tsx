@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Text,
   StyleSheet,
@@ -93,6 +94,7 @@ export function ExplorerLinkButton({
   onPress,
   style,
 }: ExplorerLinkButtonProps) {
+  const { t } = useTranslation();
   const [menuVisible, setMenuVisible] = useState(false);
 
   // Get available explorers for this blockchain/network
@@ -149,8 +151,8 @@ export function ExplorerLinkButton({
   // Button text
   const buttonText =
     showMenu && availableExplorers.length > 1
-      ? 'View on Explorer'
-      : `View on ${selectedExplorer.name}`;
+      ? t('transactions.detail.viewOnExplorer')
+      : t('transactions.detail.viewOn', { name: selectedExplorer.name });
 
   return (
     <>
@@ -165,7 +167,7 @@ export function ExplorerLinkButton({
           activeOpacity={0.7}
           accessibilityRole="link"
           accessibilityLabel={buttonText}
-          accessibilityHint="Opens transaction in blockchain explorer"
+          accessibilityHint={t('transactions.detail.explorerHint')}
         >
           <Ionicons
             name="open-outline"
@@ -196,7 +198,7 @@ export function ExplorerLinkButton({
           <Pressable style={styles.modalOverlay} onPress={handleCloseMenu}>
             <Pressable style={styles.menuContainer} onPress={(e) => e.stopPropagation()}>
               <BlurContainer style={styles.menu}>
-                <Text style={styles.menuTitle}>Choose Explorer</Text>
+                <Text style={styles.menuTitle}>{t('transactions.detail.chooseExplorer')}</Text>
                 {availableExplorers.map((explorer) => (
                   <TouchableOpacity
                     key={explorer.key}

@@ -149,22 +149,22 @@ describe('swap utils', () => {
     it('returns chain-specific validation errors for malformed addresses', () => {
       expect(validateAddress('not-solana', 'solana')).toEqual({
         valid: false,
-        error: 'Invalid Solana address',
+        error: 'swap.errors.invalidSolanaAddress',
       });
       expect(validateAddress('0x1234', 'ethereum')).toEqual({
         valid: false,
-        error: 'Invalid Ethereum address',
+        error: 'swap.errors.invalidEthereumAddress',
       });
       expect(validateAddress('tb1qinvalid', 'bitcoin')).toEqual({
         valid: false,
-        error: 'Invalid Bitcoin address',
+        error: 'swap.errors.invalidBitcoinAddress',
       });
     });
 
     it('falls back to a generic length check for unknown chains', () => {
       expect(validateAddress('short', null)).toEqual({
         valid: false,
-        error: 'Address too short',
+        error: 'swap.errors.addressTooShort',
       });
       expect(validateAddress('long-enough-address', null)).toEqual({
         valid: true,

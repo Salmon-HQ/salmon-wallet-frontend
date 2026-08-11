@@ -337,7 +337,7 @@ export default function CollectiblesScreen() {
     }
 
     if (!nftAccount) {
-      setBurnError('No account available for this network.');
+      setBurnError('collectibles.no_account_for_network');
       return;
     }
 

@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, TouchableOpacity, LayoutChangeEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -43,6 +44,7 @@ const HashCopyRow: React.FC<{
   value: string;
   displayValue?: string;
 }> = ({ label, value, displayValue }) => {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -64,7 +66,7 @@ const HashCopyRow: React.FC<{
         style={styles.hashCopyContainer}
         activeOpacity={0.6}
         accessibilityRole="button"
-        accessibilityLabel={`Copy ${label}`}
+        accessibilityLabel={t('transactions.detail.copyTransactionHash')}
       >
         <Text style={styles.summaryValue} numberOfLines={1}>
           {displayValue ?? value}
@@ -122,6 +124,7 @@ const RouteHop: React.FC<{ hop: SwapRouteHop; isLast: boolean }> = ({ hop, isLas
  * Fallback route visualization when no detailed route data
  */
 const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }) => {
+  const { t } = useTranslation();
   const { inputs, outputs, source, fee, slot, id, timestamp, swapRoute } = transaction;
 
   // Calculate conversion rate if not provided but we have input/output data
@@ -149,7 +152,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
       <View style={styles.routeHeader}>
         <Ionicons name="git-branch-outline" size={16} color={colors.text.secondary} />
         <Text style={styles.routeHeaderText}>
-          Route {source ? `via ${source}` : ''}
+          {t('transactions.detail.route')}{source ? ` ${t('transactions.detail.viaSource', { source })}` : ''}
         </Text>
       </View>
 
@@ -157,7 +160,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
       <View style={styles.simpleRoute}>
         {/* Outputs (sent) */}
         <View style={styles.routeColumn}>
-          <Text style={styles.routeLabel}>Sent</Text>
+          <Text style={styles.routeLabel}>{t('transactions.detail.sentLabel')}</Text>
           {outputs.slice(0, 3).map((output, i) => (
             <View key={`out-${i}`} style={styles.routeTokenRow}>
               <TokenLogo uri={output.logo || undefined} symbol={output.symbol} size={18} />
@@ -167,7 +170,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
             </View>
           ))}
           {outputs.length > 3 && (
-            <Text style={styles.moreText}>+{outputs.length - 3} more</Text>
+            <Text style={styles.moreText}>{t('transactions.detail.nMore', { count: outputs.length - 3 })}</Text>
           )}
         </View>
 
@@ -178,7 +181,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
 
         {/* Inputs (received) */}
         <View style={styles.routeColumn}>
-          <Text style={styles.routeLabel}>Received</Text>
+          <Text style={styles.routeLabel}>{t('transactions.detail.receivedLabel')}</Text>
           {inputs.slice(0, 3).map((input, i) => (
             <View key={`in-${i}`} style={styles.routeTokenRow}>
               <TokenLogo uri={input.logo || undefined} symbol={input.symbol} size={18} />
@@ -188,7 +191,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
             </View>
           ))}
           {inputs.length > 3 && (
-            <Text style={styles.moreText}>+{inputs.length - 3} more</Text>
+            <Text style={styles.moreText}>{t('transactions.detail.nMore', { count: inputs.length - 3 })}</Text>
           )}
         </View>
       </View>
@@ -198,7 +201,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         {/* Price Impact */}
         {swapRoute?.priceImpact && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Price Impact</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.priceImpact')}</Text>
             <PriceImpactBadge value={swapRoute.priceImpact} size="small" showIcon />
           </View>
         )}
@@ -206,7 +209,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         {/* Conversion Rate */}
         {conversionRate && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Rate</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.rate')}</Text>
             <ConversionRateDisplay
               fromSymbol={conversionRate.fromSymbol}
               toSymbol={conversionRate.toSymbol}
@@ -219,7 +222,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         {/* Fee info */}
         {fee && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Network Fee</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.networkFee')}</Text>
             <Text style={styles.summaryValue}>
               {(fee.amount / Math.pow(10, fee.decimals)).toFixed(6)} {fee.symbol}
             </Text>
@@ -229,7 +232,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         {/* Block info */}
         {slot && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Block</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.block')}</Text>
             <Text style={styles.summaryValue}>#{formatBlockNumber(slot)}</Text>
           </View>
         )}
@@ -237,7 +240,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         {/* Timestamp */}
         {timestamp && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Time</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.time')}</Text>
             <Text style={styles.summaryValue}>{formatDateTime(timestamp)}</Text>
           </View>
         )}
@@ -245,7 +248,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         {/* Transaction Hash */}
         {id && (
           <HashCopyRow
-            label="Tx Hash"
+            label={t('transactions.detail.txHash')}
             value={id}
             displayValue={truncateHash(id)}
           />
@@ -254,7 +257,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         {/* Fee Payer */}
         {transaction.feePayer && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Fee Payer</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.feePayer')}</Text>
             <Text style={styles.summaryValue}>{getShortAddress(transaction.feePayer, 4)}</Text>
           </View>
         )}
@@ -262,7 +265,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         {/* Accounts Involved */}
         {transaction.accountsInvolved && transaction.accountsInvolved > 0 && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Accounts</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.accounts')}</Text>
             <Text style={styles.summaryValue}>{transaction.accountsInvolved}</Text>
           </View>
         )}
@@ -270,7 +273,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         {/* Programs Used */}
         {transaction.instructions && transaction.instructions.length > 0 && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Programs</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.programs')}</Text>
             <Text style={styles.summaryValue}>{transaction.instructions.length}</Text>
           </View>
         )}
@@ -278,16 +281,16 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         {/* Swap Fees (Native) */}
         {transaction.swapFees?.nativeFees && transaction.swapFees.nativeFees.length > 0 && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Swap Fees (Native)</Text>
-            <Text style={styles.summaryValue}>{transaction.swapFees.nativeFees.length} fee(s)</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.swapFeesNative')}</Text>
+            <Text style={styles.summaryValue}>{t('transactions.detail.feeCount', { count: transaction.swapFees.nativeFees.length })}</Text>
           </View>
         )}
 
         {/* Inner Swaps / Multi-hop */}
         {transaction.innerSwaps && transaction.innerSwaps.length > 0 && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Route Hops</Text>
-            <Text style={styles.summaryValue}>{transaction.innerSwaps.length} hop(s)</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.routeHops')}</Text>
+            <Text style={styles.summaryValue}>{t('transactions.detail.hopCount', { count: transaction.innerSwaps.length })}</Text>
           </View>
         )}
       </View>
@@ -299,6 +302,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
  * Detailed route visualization with hops
  */
 const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }) => {
+  const { t } = useTranslation();
   const { swapRoute, source, slot, fee, id, timestamp } = transaction;
 
   if (!swapRoute || swapRoute.hops.length === 0) {
@@ -311,7 +315,8 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
       <View style={styles.routeHeader}>
         <Ionicons name="git-branch-outline" size={16} color={colors.text.secondary} />
         <Text style={styles.routeHeaderText}>
-          Route {source ? `via ${source}` : ''} ({swapRoute.hops.length} {swapRoute.hops.length === 1 ? 'hop' : 'hops'})
+          {t('transactions.detail.route')}{source ? ` ${t('transactions.detail.viaSource', { source })}` : ''}{' '}
+          ({t('transactions.detail.hopCount', { count: swapRoute.hops.length })})
         </Text>
       </View>
 
@@ -330,13 +335,13 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
       <View style={styles.routeSummary}>
         {swapRoute.priceImpact && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Price Impact</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.priceImpact')}</Text>
             <PriceImpactBadge value={swapRoute.priceImpact} size="small" showIcon />
           </View>
         )}
         {swapRoute.conversionRate && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Rate</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.rate')}</Text>
             <ConversionRateDisplay
               fromSymbol={swapRoute.conversionRate.fromSymbol}
               toSymbol={swapRoute.conversionRate.toSymbol}
@@ -347,7 +352,7 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
         )}
         {swapRoute.totalFee && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Fees</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.totalFees')}</Text>
             <Text style={styles.summaryValue}>
               {swapRoute.totalFee.amount} {swapRoute.totalFee.symbol}
             </Text>
@@ -355,7 +360,7 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
         )}
         {!swapRoute.totalFee && fee && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Network Fee</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.networkFee')}</Text>
             <Text style={styles.summaryValue}>
               {(fee.amount / Math.pow(10, fee.decimals)).toFixed(6)} {fee.symbol}
             </Text>
@@ -363,21 +368,21 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
         )}
         {slot && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Block</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.block')}</Text>
             <Text style={styles.summaryValue}>#{formatBlockNumber(slot)}</Text>
           </View>
         )}
         {/* Timestamp */}
         {timestamp && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Time</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.time')}</Text>
             <Text style={styles.summaryValue}>{formatDateTime(timestamp)}</Text>
           </View>
         )}
         {/* Transaction Hash */}
         {id && (
           <HashCopyRow
-            label="Tx Hash"
+            label={t('transactions.detail.txHash')}
             value={id}
             displayValue={truncateHash(id)}
           />
@@ -386,7 +391,7 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
         {/* Fee Payer */}
         {transaction.feePayer && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Fee Payer</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.feePayer')}</Text>
             <Text style={styles.summaryValue}>{getShortAddress(transaction.feePayer, 4)}</Text>
           </View>
         )}
@@ -394,7 +399,7 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
         {/* Accounts Involved */}
         {transaction.accountsInvolved && transaction.accountsInvolved > 0 && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Accounts</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.accounts')}</Text>
             <Text style={styles.summaryValue}>{transaction.accountsInvolved}</Text>
           </View>
         )}
@@ -402,7 +407,7 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
         {/* Programs Used */}
         {transaction.instructions && transaction.instructions.length > 0 && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Programs</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.programs')}</Text>
             <Text style={styles.summaryValue}>{transaction.instructions.length}</Text>
           </View>
         )}
@@ -410,16 +415,16 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
         {/* Swap Fees (Native) */}
         {transaction.swapFees?.nativeFees && transaction.swapFees.nativeFees.length > 0 && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Swap Fees (Native)</Text>
-            <Text style={styles.summaryValue}>{transaction.swapFees.nativeFees.length} fee(s)</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.swapFeesNative')}</Text>
+            <Text style={styles.summaryValue}>{t('transactions.detail.feeCount', { count: transaction.swapFees.nativeFees.length })}</Text>
           </View>
         )}
 
         {/* Inner Swaps / Multi-hop */}
         {transaction.innerSwaps && transaction.innerSwaps.length > 0 && (
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Route Hops</Text>
-            <Text style={styles.summaryValue}>{transaction.innerSwaps.length} hop(s)</Text>
+            <Text style={styles.summaryLabel}>{t('transactions.detail.routeHops')}</Text>
+            <Text style={styles.summaryValue}>{t('transactions.detail.hopCount', { count: transaction.innerSwaps.length })}</Text>
           </View>
         )}
       </View>

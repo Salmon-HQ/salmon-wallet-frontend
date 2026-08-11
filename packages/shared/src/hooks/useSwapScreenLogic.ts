@@ -240,7 +240,7 @@ export interface UseSwapScreenLogicResult {
   swapMode: 'jupiter' | 'stealthex' | null;
   inUsdValue: number;
   canReview: boolean;
-  reviewWarning: string | null;
+  reviewWarning: SwapErrorMessage | null;
   priceImpact: number | null;
   outputTokens: SwapToken[];
   addressValidation: { valid: boolean; error: string | null };
@@ -324,7 +324,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
   const [outAmount, setOutAmount] = useState('');
   const [quote, setQuote] = useState<SwapQuote | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
-  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [quoteError, setQuoteError] = useState<SwapErrorMessage | null>(null);
   const [bridgeEstimate, setBridgeEstimate] = useState<BridgeEstimateSimple | null>(null);
   const [isLoadingEstimate, setIsLoadingEstimate] = useState(false);
   const [recipientAddress, setRecipientAddress] = useState(defaultRecipientAddress || '');
@@ -407,13 +407,14 @@ export function useSwapScreenLogic<StyleType = unknown>({
 
   const canReview = canReviewJupiter || canContinueToBridge;
 
-  const reviewWarning: string | null = (() => {
+  const reviewWarning: SwapErrorMessage | null = (() => {
     if (!inToken || !inAmount || parseFloat(inAmount) <= 0) return null;
-    if (parseFloat(inAmount) > (inTokenLive?.balance || 0)) return 'Insufficient balance';
-    if (inUsdValue > 0 && inUsdValue < MIN_SWAP_USD) return `Minimum swap amount is $${MIN_SWAP_USD.toFixed(2)} USD`;
+    if (parseFloat(inAmount) > (inTokenLive?.balance || 0)) return 'swap.errors.insufficientBalance';
+    if (inUsdValue > 0 && inUsdValue < MIN_SWAP_USD)
+      return { key: 'swap.errors.minimumAmount', params: { amount: MIN_SWAP_USD.toFixed(2) } };
     if (quoteError) return quoteError;
     if (quote?.custom?.priceImpact != null && quote.custom.priceImpact > 3)
-      return 'High price impact! You may receive significantly less than expected.';
+      return 'swap.errors.highPriceImpact';
     return null;
   })();
 
@@ -499,7 +500,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
           if (displayAmount === null) {
             setQuote(null);
             setOutAmount('');
-            setQuoteError('Failed to fetch quote');
+            setQuoteError('swap.errors.quoteFailed');
             return;
           }
           setQuote(fetchedQuote);
@@ -507,7 +508,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
           setQuoteError(null);
         } catch (error) {
           console.error('Failed to fetch quote:', error);
-          setQuoteError('Failed to fetch quote');
+          setQuoteError('swap.errors.quoteFailed');
           setOutAmount('');
         } finally {
           setIsLoadingQuote(false);
@@ -528,12 +529,13 @@ export function useSwapScreenLogic<StyleType = unknown>({
             setBridgeEstimate(estimate);
             setOutAmount(estimate.estimatedAmount.toString());
           } else {
-            setQuoteError('Failed to get swap estimate');
+            setQuoteError('swap.errors.estimateFailed');
           }
         } catch (error) {
           console.warn('Failed to fetch estimate:', error);
-          const message = error instanceof Error ? error.message : 'Failed to get swap estimate';
-          setQuoteError(message);
+          // Bridge estimates come from a third-party HTTP API — classify into
+          // a translation key instead of surfacing the raw provider text.
+          setQuoteError(classifyBridgeError(error, undefined));
           setOutAmount('');
         } finally {
           setIsLoadingEstimate(false);
@@ -604,7 +606,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
       setAddressError(null);
       setStep('review');
     } else {
-      setAddressError(addressValidation.error || 'Invalid address');
+      setAddressError(addressValidation.error || 'swap.errors.invalidAddress');
     }
   }, [addressValidation]);
 

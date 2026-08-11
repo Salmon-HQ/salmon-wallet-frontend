@@ -204,7 +204,7 @@ describe('useSwapScreenLogic', () => {
     });
 
     expect(result.current.canReview).toBe(false);
-    expect(result.current.reviewWarning).toBe('Minimum swap amount is $1.00 USD');
+    expect(result.current.reviewWarning).toEqual({ key: 'swap.errors.minimumAmount', params: { amount: '1.00' } });
   });
 
   it('refreshes in-token balance when tokens prop changes', async () => {
@@ -254,7 +254,7 @@ describe('useSwapScreenLogic', () => {
       await vi.advanceTimersByTimeAsync(500);
     });
 
-    expect(result.current.reviewWarning).toBe('Insufficient balance');
+    expect(result.current.reviewWarning).toBe('swap.errors.insufficientBalance');
     expect(result.current.canReview).toBe(false);
 
     // Inbound transfer: tokens prop updates to balance = 5 while user is on the
@@ -566,7 +566,7 @@ describe('useSwapScreenLogic', () => {
     });
 
     expect(result.current.step).toBe('recipient');
-    expect(result.current.addressError).toBe('Invalid Bitcoin address');
+    expect(result.current.addressError).toBe('swap.errors.invalidBitcoinAddress');
   });
 
   it('confirms a bridge end-to-end: estimate → review → deposit → success + status tracking', async () => {

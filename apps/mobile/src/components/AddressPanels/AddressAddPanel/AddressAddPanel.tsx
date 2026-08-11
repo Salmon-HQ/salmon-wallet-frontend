@@ -108,7 +108,7 @@ export function AddressAddPanel({
       </View>
 
       {/* Network (read-only) */}
-      <Text style={styles.fieldLabel}>Network</Text>
+      <Text style={styles.fieldLabel}>{t('settings.addressbook.network')}</Text>
       <View style={styles.networkDisplay}>
         <Text style={styles.networkText}>{activeBlockchain.charAt(0).toUpperCase() + activeBlockchain.slice(1)}</Text>
       </View>

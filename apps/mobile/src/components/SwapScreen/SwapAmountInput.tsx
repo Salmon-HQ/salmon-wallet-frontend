@@ -31,7 +31,7 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
   usdValue,
   availableBalance,
   editable = true,
-  placeholder = 'Enter an amount',
+  placeholder,
   style,
   isLoading = false,
   testID,
@@ -79,7 +79,7 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
             style={styles.input}
             value={value}
             onChangeText={handleChangeText}
-            placeholder={placeholder}
+            placeholder={placeholder ?? t('swap.enter_amount')}
             placeholderTextColor={colors.text.tertiary}
             keyboardType="decimal-pad"
             editable={editable}
@@ -112,19 +112,25 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
                     onPress={() => handleQuickFill(option.value)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.quickFillText}>{option.label}</Text>
+                    <Text style={styles.quickFillText}>{option.value === 1 ? t('general.max') : option.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             ) : availableBalance !== undefined && token ? (
               <Text style={styles.availableBalance}>
-                Available: {formatTokenBalance(availableBalance)} {token.symbol}
+                {t('swap.available_balance', {
+                  balance: formatTokenBalance(availableBalance),
+                  symbol: token.symbol,
+                })}
               </Text>
             ) : null}
           </View>
           {showQuickFill && availableBalance !== undefined && token && (
             <Text style={styles.availableBalanceAligned}>
-              Available: {formatTokenBalance(availableBalance)} {token.symbol}
+              {t('swap.available_balance', {
+                balance: formatTokenBalance(availableBalance),
+                symbol: token.symbol,
+              })}
             </Text>
           )}
         </View>

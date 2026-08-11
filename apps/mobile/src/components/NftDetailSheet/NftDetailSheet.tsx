@@ -833,7 +833,9 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
               defaultValue: `"${nft.name}" has been burned.`,
             })
             : t('nft.send.successSummary', {
-              defaultValue: `${nft.name} sent to ${getShortAddress(address) ?? address}`,
+              name: nft.name,
+              address: getShortAddress(address) ?? address,
+              defaultValue: '{{name}} sent to {{address}}',
             })}
           explorerUrl={explorerUrl ?? null}
           onContinue={handleSuccessContinue}

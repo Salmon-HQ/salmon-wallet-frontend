@@ -43,6 +43,7 @@ import { getSwapOrder, executeSwapApi } from '../api/services/solana';
 import { getTokenList } from '../api/services/tokens';
 import { trackEvent, trackFirstTime } from '../analytics';
 import { STORAGE_KEYS } from '../storage';
+import { classifyTransactionError } from '../utils/transaction-errors';
 import type {
   SwapQuote,
   SwapQuoteParams,
@@ -139,7 +140,7 @@ export function useSwap({
   const getQuote = useCallback(
     async (params: GetQuoteParams): Promise<SwapQuote | null> => {
       if (!account) {
-        setError('No account available');
+        setError('swap.errors.noActiveAccount');
         return null;
       }
 
@@ -183,8 +184,9 @@ export function useSwap({
         return fetchedQuote;
       } catch (err) {
         console.error('[useSwap] Failed to get quote:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to get swap quote';
-        setError(errorMessage);
+        // Public error state is always an i18n key; the raw error stays in
+        // the console log above.
+        setError(classifyTransactionError(err));
         setStatus('failed');
         return null;
       }
@@ -200,7 +202,7 @@ export function useSwap({
       const result: SwapResult = {
         txId: null,
         status: 'fail',
-        error: 'No account available',
+        error: 'swap.errors.noActiveAccount',
       };
       setError(result.error!);
       setStatus('failed');
@@ -211,7 +213,7 @@ export function useSwap({
       const result: SwapResult = {
         txId: null,
         status: 'fail',
-        error: 'No quote available. Get a quote first.',
+        error: 'swap.errors.noQuote',
       };
       setError(result.error!);
       setStatus('failed');
@@ -239,7 +241,10 @@ export function useSwap({
         // First successful swap is an activation milestone — reported once per install.
         void trackFirstTime('first_swap_completed', STORAGE_KEYS.ANALYTICS_FIRST_SWAP);
       } else {
-        setError(result.error || 'Swap execution failed');
+        // Classify into an i18n key for the public error state; `result.error`
+        // keeps the raw provider text so callers that rethrow it still hit the
+        // specific downstream classification.
+        setError(classifyTransactionError(result.error || 'Swap execution failed'));
         setStatus('failed');
         // Anonymous funnel event: the swap failed. This makes `success` a real
         // completion-vs-failure rate. Jupiter swaps are Solana↔Solana.
@@ -251,13 +256,15 @@ export function useSwap({
       console.error('[useSwap] Swap execution failed:', err);
       // Same failed-swap event for a thrown error (vs a returned fail above).
       trackEvent('swap_completed', { from_chain: 'solana', to_chain: 'solana', success: false });
+      // Raw message stays on the returned result (callers rethrow it into
+      // their own classification); the public error state gets the i18n key.
       const errorMessage = err instanceof Error ? err.message : 'Swap execution failed';
       const result: SwapResult = {
         txId: null,
         status: 'fail',
         error: errorMessage,
       };
-      setError(errorMessage);
+      setError(classifyTransactionError(err));
       setStatus('failed');
       return result;
     }

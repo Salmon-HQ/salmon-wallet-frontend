@@ -541,7 +541,7 @@ export interface SwapInputScreenProps<StyleType> {
   /** Whether Review button is enabled */
   canReview: boolean;
   /** Warning message when review is not possible */
-  reviewWarning?: string | null;
+  reviewWarning?: SwapErrorMessage | null;
   /** Translation key for the last swap or bridge failure */
   swapError?: SwapErrorMessage | null;
   /** Callback for Review button */

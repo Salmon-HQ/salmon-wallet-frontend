@@ -80,6 +80,19 @@ const TRANSACTION_TYPE_CONFIG: Record<
   },
 };
 
+/** Translation key map — resolved via t() inside the component (mirrors packages/ui twin) */
+const TYPE_LABEL_KEYS: Record<TransactionType, string> = {
+  send: 'transactions.detail.sent',
+  receive: 'transactions.detail.received',
+  swap: 'transactions.detail.swapped',
+  mint: 'transactions.detail.minted',
+  burn: 'transactions.detail.burned',
+  stake: 'transactions.detail.staked',
+  loan: 'transactions.detail.loan',
+  interaction: 'transactions.detail.interaction',
+  unknown: 'transactions.detail.unknown',
+};
+
 // ============================================================================
 // Sub-components
 // ============================================================================
@@ -269,7 +282,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
       return (
         <View style={styles.failedBadge}>
           <Ionicons name="close-circle" size={16} color={colors.status.error} />
-          <Text style={styles.failedText}>Failed</Text>
+          <Text style={styles.failedText}>{t('transactions.detail.failed', 'Failed')}</Text>
         </View>
       );
     }
@@ -278,7 +291,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
       return (
         <View style={styles.pendingBadge}>
           <Ionicons name="time-outline" size={14} color={colors.status.warning} />
-          <Text style={styles.pendingText}>Pending</Text>
+          <Text style={styles.pendingText}>{t('transactions.detail.pending', 'Pending')}</Text>
         </View>
       );
     }
@@ -303,7 +316,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Text style={styles.expandText}>
-              {expanded ? 'Show less' : `+${hiddenCount} more`}
+              {expanded ? t('transactions.showLess', 'show less') : t('transactions.detail.nMore', { count: hiddenCount, defaultValue: '+{{count}} more' })}
             </Text>
             <Ionicons
               name={expanded ? 'chevron-up' : 'chevron-down'}
@@ -335,8 +348,8 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
         onPress={handlePress}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel={`${config.label} transaction, ${descriptionText}`}
-        accessibilityHint="Tap to view transaction details"
+        accessibilityLabel={`${t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label)} transaction, ${descriptionText}`}
+        accessibilityHint={t('transactions.tapToViewDetails', 'Tap to view transaction details')}
       >
         {/* Left: Logo/Icon */}
         <View style={styles.logoSection}>
@@ -347,7 +360,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
         <View style={styles.infoSection}>
           <View style={styles.typeRow}>
             <Text style={styles.typeText} numberOfLines={1}>
-              {config.label}
+              {t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label)}
             </Text>
             {source && <SourceBadge source={source} />}
           </View>

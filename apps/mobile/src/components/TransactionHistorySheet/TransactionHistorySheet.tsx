@@ -85,11 +85,12 @@ const TransactionListSkeleton: React.FC<{ count?: number }> = ({ count = 5 }) =>
  * Empty state when no transactions
  */
 const EmptyState: React.FC = () => {
+  const { t } = useTranslation();
   return (
     <View style={styles.emptyContainer} testID="activity-empty">
-      <Text style={styles.emptyTitle}>No Transactions</Text>
+      <Text style={styles.emptyTitle}>{t('transactions.noTransactions')}</Text>
       <Text style={styles.emptySubtitle}>
-        Your transaction history will appear here
+        {t('transactions.emptySubtitle')}
       </Text>
     </View>
   );
@@ -154,6 +155,7 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
   onRetry,
   style,
 }) => {
+  const { t } = useTranslation();
   // Top fade gradient opacity (driven by scroll offset)
   const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
   const { bottomInset, standardContentBottomPadding } = useBottomSheetChrome();
@@ -203,7 +205,7 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
   }, [loadingMore]);
 
   const title = (
-    <Text style={styles.title}>Transaction History</Text>
+    <Text style={styles.title}>{t('transactions.historyTitle')}</Text>
   );
 
   return (

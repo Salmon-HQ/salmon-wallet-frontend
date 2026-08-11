@@ -117,24 +117,28 @@ export interface UseBridgeResult {
  * Strips the "Bridge fetch ... failed: " prefix added by bridge.ts service,
  * and converts common API error patterns into readable text.
  */
+/**
+ * Maps raw provider text to a translation key. Render sites (and downstream
+ * classifiers) resolve the key through t().
+ */
 function parseBridgeErrorMessage(raw: string): string {
   const stripped = raw.replace(/^Bridge fetch \w[\w\s]* failed:\s*/i, '').trim();
 
   if (/pair is disabled|pair is unavailable/i.test(stripped)) {
-    return 'This trading pair is currently unavailable';
+    return 'bridge.errors.pairUnavailable';
   }
   if (/amount.*too small|less than minimal/i.test(stripped)) {
-    return 'Amount is below the minimum for this pair';
+    return 'bridge.errors.belowMinimum';
   }
   if (/amount.*too large/i.test(stripped)) {
-    return 'Amount exceeds the maximum for this pair';
+    return 'bridge.errors.aboveMaximum';
   }
   if (/network error/i.test(stripped)) {
-    return 'Network error: Unable to reach the server';
+    return 'bridge.errors.networkError';
   }
 
   // Anything else is raw provider (StealthEX) text — never show it verbatim.
-  return 'Failed to get bridge estimate';
+  return 'bridge.errors.estimateFailed';
 }
 
 // ============================================================================

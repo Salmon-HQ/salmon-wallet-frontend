@@ -502,15 +502,15 @@ export function StepAddressAmount({
   const addressPlaceholder = useMemo(() => {
     switch (blockchain) {
       case 'solana':
-        return 'Solana Address';
+        return t('token.send.blockchainAddress', { blockchain: 'Solana' });
       case 'ethereum':
-        return 'Ethereum Address';
+        return t('token.send.blockchainAddress', { blockchain: 'Ethereum' });
       case 'bitcoin':
-        return 'Bitcoin Address';
+        return t('token.send.blockchainAddress', { blockchain: 'Bitcoin' });
       default:
-        return 'Recipient Address';
+        return t('bridge.recipient.title');
     }
-  }, [blockchain]);
+  }, [blockchain, t]);
 
   return (
     <Container>
@@ -518,7 +518,7 @@ export function StepAddressAmount({
         {/* Selected Token Card */}
         <TokenCardButton
           onClick={onBack}
-          aria-label={`Selected token: ${token.name}`}
+          aria-label={t('accessibility.selected_token', { name: token.name })}
           data-testid="send-selected-token"
         >
           <BlurContainer style={{ borderRadius: borderRadius.button }}>
@@ -548,7 +548,7 @@ export function StepAddressAmount({
 
         {/* Recipient */}
         <FieldGroup>
-          <FieldLabel>Recipient</FieldLabel>
+          <FieldLabel>{t('token.send.recipient')}</FieldLabel>
           <BlurContainer style={{
             borderRadius: borderRadius.lg,
             border: validationState === 'invalid'
@@ -602,7 +602,7 @@ export function StepAddressAmount({
           {/* Validation message */}
           {addressMessage && (
             <ValidationMessage $messageType={addressMessageType}>
-              {addressMessage}
+              {t(addressMessage)}
             </ValidationMessage>
           )}
         </FieldGroup>
@@ -650,7 +650,7 @@ export function StepAddressAmount({
 
         {/* Amount */}
         <FieldGroup>
-          <FieldLabel>Amount</FieldLabel>
+          <FieldLabel>{t('token.send.amountLabel')}</FieldLabel>
           <BlurContainer style={{ borderRadius: borderRadius.lg }}>
             <AmountInputRow>
               <StyledInput
@@ -672,7 +672,7 @@ export function StepAddressAmount({
                     onClick={() => handleQuickFill(option.value)}
                     data-testid={`send-quickfill-${option.label.replace('%', '')}`}
                   >
-                    <QuickFillText>{option.label}</QuickFillText>
+                    <QuickFillText>{option.value === 1 ? t('general.max') : option.label}</QuickFillText>
                   </QuickFillButton>
                 ))}
               </QuickFillButtons>
@@ -687,7 +687,7 @@ export function StepAddressAmount({
       {/* Bottom Buttons */}
       <BottomButtons>
         <CancelButton onClick={onCancel} data-testid="send-cancel-button">
-          <CancelButtonText>Cancel</CancelButtonText>
+          <CancelButtonText>{t('actions.cancel')}</CancelButtonText>
         </CancelButton>
 
         <ReviewButton
@@ -696,7 +696,7 @@ export function StepAddressAmount({
           data-testid="send-review-button"
         >
           <ReviewButtonGradient $isDisabled={!isValid}>
-            <ReviewButtonText>Review & Send</ReviewButtonText>
+            <ReviewButtonText>{t('token.send.reviewAndSend')}</ReviewButtonText>
           </ReviewButtonGradient>
         </ReviewButton>
       </BottomButtons>

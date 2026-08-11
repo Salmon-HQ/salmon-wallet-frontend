@@ -141,7 +141,7 @@ export function AddressEditPanel({
         </Box>
 
         {/* Network */}
-        <FieldLabel>Network</FieldLabel>
+        <FieldLabel>{t('settings.addressbook.network')}</FieldLabel>
         <NetworkBox>
           <NetworkText>{contact.networkId.split('-')[0].charAt(0).toUpperCase() + contact.networkId.split('-')[0].slice(1)}</NetworkText>
         </NetworkBox>

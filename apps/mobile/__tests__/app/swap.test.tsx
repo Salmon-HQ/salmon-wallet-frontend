@@ -143,7 +143,7 @@ describe('SwapScreenPage', () => {
     render(<SwapScreenPage />);
     await act(async () => {});
 
-    expect(screen.getByText('No account found')).toBeTruthy();
+    expect(screen.getByText('swap.errors.noAccount')).toBeTruthy();
   });
 
   it('wires swap handlers and navigation into SwapScreen', async () => {

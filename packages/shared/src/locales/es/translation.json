@@ -256,7 +256,8 @@
       "save": "Guardar dirección",
       "label": "Etiqueta",
       "empty": "Parece vacío aquí.\nAgregá tu primer contacto haciendo clic en el botón.",
-      "remove_confirmation": "¿Estás seguro que querés eliminar a {{name}} de tu libreta de contactos?"
+      "remove_confirmation": "¿Estás seguro que querés eliminar a {{name}} de tu libreta de contactos?",
+      "network": "Red"
     },
     "languages": {
       "title": "Idioma",
@@ -371,7 +372,9 @@
       "blockchainAddress": "Dirección {{blockchain}}",
       "networkFee": "Comisión de Red",
       "sending": "Enviando...",
-      "retry": "Reintentar"
+      "retry": "Reintentar",
+      "copyRecipientAddress": "Copiar la dirección del destinatario",
+      "networkFeeAmount": "Comisión de Red: ~{{fee}}"
     },
     "marketData": {
       "marketCap": "Capitalización",
@@ -698,8 +701,12 @@
       "viewOn": "Ver en {{name}}",
       "copyAddressLabel": "Copiar dirección de {{label}}",
       "innerCount": "{{count}} internas",
-      "copyTransactionHash": "Copiar hash de transacción"
-    }
+      "copyTransactionHash": "Copiar hash de transacción",
+      "chooseExplorer": "Elegí un explorador",
+      "explorerHint": "Abre la transacción en el explorador de blockchain",
+      "copyAddressHint": "Copia la dirección al portapapeles"
+    },
+    "tapToViewDetails": "Tocá para ver los detalles de la transacción"
   },
   "nft": {
     "description": "Descripción",
@@ -796,6 +803,23 @@
       "pleaseNoteText": "Las tasas de swap son estimadas. El monto real que recibirás puede variar debido al deslizamiento y las condiciones del mercado. Las transacciones son irreversibles una vez confirmadas.",
       "confirmSwap": "Confirmar",
       "reviewAndSwap": "Revisar y Swap"
+    },
+    "available_balance": "Disponible: {{balance}} {{symbol}}",
+    "errors": {
+      "insufficientBalance": "Saldo insuficiente",
+      "minimumAmount": "El monto mínimo para swap es ${{amount}} USD",
+      "highPriceImpact": "¡Impacto de precio alto! Podés recibir bastante menos de lo esperado.",
+      "quoteFailed": "No se pudo obtener la cotización",
+      "estimateFailed": "No se pudo obtener la estimación del swap",
+      "invalidAddress": "Dirección inválida",
+      "invalidSolanaAddress": "Dirección de Solana inválida",
+      "invalidEthereumAddress": "Dirección de Ethereum inválida",
+      "invalidBitcoinAddress": "Dirección de Bitcoin inválida",
+      "addressTooShort": "La dirección es demasiado corta",
+      "noActiveAccount": "No hay una cuenta activa",
+      "invalidAmount": "Monto inválido",
+      "noQuote": "No hay cotización disponible. Obtené una cotización primero.",
+      "noAccount": "No se encontró una cuenta"
     }
   },
   "bridge": {
@@ -803,7 +827,11 @@
       "belowMinimum": "El monto es menor al mínimo para este par. Aumentalo y volvé a intentarlo.",
       "belowMinimumWithAmount": "El mínimo para este par es {{min}}. Aumentá el monto y volvé a intentarlo.",
       "unavailable": "El servicio de intercambio no está disponible por el momento. Volvé a intentarlo en unos minutos.",
-      "generic": "No se pudo crear el intercambio. Volvé a intentarlo."
+      "generic": "No se pudo crear el intercambio. Volvé a intentarlo.",
+      "pairUnavailable": "Este par de intercambio no está disponible por el momento",
+      "aboveMaximum": "El monto supera el máximo para este par",
+      "networkError": "Error de red: no se pudo conectar con el servidor",
+      "estimateFailed": "No se pudo obtener la estimación del bridge"
     },
     "bridge": "Bridge",
     "preview": "Confirmar Bridge",
@@ -821,7 +849,11 @@
       "enterRecipientAddress": "Ingresá la dirección del destinatario",
       "important": "Importante",
       "importantText": "Asegurate de que la dirección sea correcta. Las transacciones entre cadenas no se pueden revertir una vez iniciadas.",
-      "review": "Revisar"
+      "review": "Revisar",
+      "descriptionWithChain": "Ingresá la dirección donde querés recibir tus tokens intercambiados en {{chain}}.",
+      "enterDestinationAddress": "Ingresá la dirección de destino",
+      "chainAddressHint": "(dirección de {{chain}})",
+      "helper": "Ingresá la dirección de {{chain}} donde querés recibir tus {{symbol}}"
     },
     "review": {
       "title": "Revisión de Swap",
@@ -882,13 +914,16 @@
     "switch_wallet": "Cambiar cuenta de billetera",
     "edit_account": "Editar cuenta",
     "delete_account": "Eliminar cuenta",
-    "refresh_balance": "Actualizar balance"
+    "refresh_balance": "Actualizar balance",
+    "selected_token": "Token seleccionado: {{name}}",
+    "loading_token_list": "Cargando lista de tokens"
   },
   "collectibles": {
     "title": "Coleccionables",
     "empty": "No se encontraron coleccionables",
     "empty_hint": "Tus NFTs y coleccionables van a aparecer acá",
-    "no_nfts": "No se encontraron coleccionables"
+    "no_nfts": "No se encontraron coleccionables",
+    "no_account_for_network": "No hay una cuenta disponible para esta red."
   },
   "common": {
     "cancel": "Cancelar",
@@ -911,7 +946,20 @@
   },
   "send": {
     "enter_address": "Ingresá la dirección del destinatario",
-    "recipient": "Destinatario"
+    "recipient": "Destinatario",
+    "enter_address_or_domain": "Ingresá una dirección o dominio",
+    "resolved_address": "Dirección resuelta:",
+    "validation": {
+      "network_error": "No se pudo verificar la dirección. Revisá tu conexión.",
+      "invalid": "Formato de dirección inválido",
+      "invalid_domain": "No se pudo resolver el nombre de dominio",
+      "same_address": "No podés enviarte a tu propia dirección",
+      "no_info": "Esta cuenta todavía no existe on-chain. El destinatario va a tener que fondearla.",
+      "off_curve_no_funds": "Esta es una dirección derivada de programa sin fondos",
+      "off_curve_has_funds": "Esta es una dirección derivada de programa",
+      "no_funds": "Esta dirección no tiene saldo de ETH",
+      "unknown": "Error de validación desconocido"
+    }
   },
   "walletSwitcher": {
     "title": "Tus Billeteras",

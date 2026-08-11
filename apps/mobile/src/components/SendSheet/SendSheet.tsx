@@ -184,7 +184,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
 
   const headerContent = (
     <BottomSheetTitleHeader
-      title="Send"
+      title={t('token.action.send')}
       onBack={showBackButton ? handleBackPress : undefined}
       backAccessibilityLabel={t('general.back', 'Back')}
     />

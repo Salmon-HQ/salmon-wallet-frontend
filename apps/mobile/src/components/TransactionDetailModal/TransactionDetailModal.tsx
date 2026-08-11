@@ -532,7 +532,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                       token.source ? (
                         <React.Fragment key={`from-${index}`}>
                           <AddressCopyRow
-                            label="From"
+                            label={t('transactions.from', 'From')}
                             address={token.source}
                             truncate="medium"
                             style={styles.addressRow}
@@ -545,7 +545,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                       token.destination ? (
                         <React.Fragment key={`to-${index}`}>
                           <AddressCopyRow
-                            label="To"
+                            label={t('transactions.to', 'To')}
                             address={token.destination}
                             truncate="medium"
                             style={styles.addressRow}
@@ -590,7 +590,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                       style={[styles.copyIconButton, hashCopied && styles.copyIconButtonCopied]}
                       activeOpacity={0.6}
                       accessibilityRole="button"
-                      accessibilityLabel="Copy transaction hash"
+                      accessibilityLabel={t('transactions.detail.copyTransactionHash', 'Copy transaction hash')}
                     >
                       <Ionicons
                         name={hashCopied ? 'checkmark' : 'copy-outline'}
@@ -636,7 +636,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                           </Text>
                           {ix.innerInstructionsCount > 0 && (
                             <Text style={styles.devSecondaryText}>
-                              {ix.innerInstructionsCount} inner
+                              {t('transactions.detail.innerCount', { count: ix.innerInstructionsCount, defaultValue: '{{count}} inner' })}
                             </Text>
                           )}
                         </View>
@@ -707,7 +707,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 <View style={styles.actionsRow}>
                   <ActionButton
                     icon="share-outline"
-                    label="Share"
+                    label={t('transactions.detail.share', 'Share')}
                     onPress={handleShare}
                     testID="tx-detail-share-button"
                   />

@@ -4,9 +4,9 @@ import type { ValidationResult } from '../types/validation';
 
 describe('validation utils', () => {
   it('exposes expected message mappings', () => {
-    expect(VALIDATION_MESSAGES.network_error).toBe('Could not verify address. Check your connection.');
-    expect(VALIDATION_MESSAGES.same_address).toBe('Cannot send to your own address');
-    expect(VALIDATION_MESSAGES.no_funds).toBe('This address has no ETH balance');
+    expect(VALIDATION_MESSAGES.network_error).toBe('send.validation.network_error');
+    expect(VALIDATION_MESSAGES.same_address).toBe('send.validation.same_address');
+    expect(VALIDATION_MESSAGES.no_funds).toBe('send.validation.no_funds');
   });
 
   it('maps null validation results to idle unless validating', () => {

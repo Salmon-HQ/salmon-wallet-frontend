@@ -256,7 +256,8 @@
       "save": "Save Address",
       "label": "Label",
       "empty": "Looks empty in here.\nAdd your first contact clicking the button.",
-      "remove_confirmation": "Are you sure you want to remove {{name}} from your address book?"
+      "remove_confirmation": "Are you sure you want to remove {{name}} from your address book?",
+      "network": "Network"
     },
     "languages": {
       "title": "Language",
@@ -371,7 +372,9 @@
       "blockchainAddress": "{{blockchain}} Address",
       "networkFee": "Network Fee",
       "sending": "Sending...",
-      "retry": "Retry"
+      "retry": "Retry",
+      "copyRecipientAddress": "Copy recipient address",
+      "networkFeeAmount": "Network Fee: ~{{fee}}"
     },
     "marketData": {
       "marketCap": "Market Cap",
@@ -698,8 +701,12 @@
       "viewOn": "View on {{name}}",
       "copyAddressLabel": "Copy {{label}} address",
       "innerCount": "{{count}} inner",
-      "copyTransactionHash": "Copy transaction hash"
-    }
+      "copyTransactionHash": "Copy transaction hash",
+      "chooseExplorer": "Choose Explorer",
+      "explorerHint": "Opens transaction in blockchain explorer",
+      "copyAddressHint": "Copies the address to clipboard"
+    },
+    "tapToViewDetails": "Tap to view transaction details"
   },
   "nft": {
     "description": "Description",
@@ -796,6 +803,23 @@
       "pleaseNoteText": "Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed.",
       "confirmSwap": "Confirm",
       "reviewAndSwap": "Review & Swap"
+    },
+    "available_balance": "Available: {{balance}} {{symbol}}",
+    "errors": {
+      "insufficientBalance": "Insufficient balance",
+      "minimumAmount": "Minimum swap amount is ${{amount}} USD",
+      "highPriceImpact": "High price impact! You may receive significantly less than expected.",
+      "quoteFailed": "Failed to fetch quote",
+      "estimateFailed": "Failed to get swap estimate",
+      "invalidAddress": "Invalid address",
+      "invalidSolanaAddress": "Invalid Solana address",
+      "invalidEthereumAddress": "Invalid Ethereum address",
+      "invalidBitcoinAddress": "Invalid Bitcoin address",
+      "addressTooShort": "Address too short",
+      "noActiveAccount": "No active account",
+      "invalidAmount": "Invalid amount",
+      "noQuote": "No quote available. Please get a quote first.",
+      "noAccount": "No account found"
     }
   },
   "bridge": {
@@ -803,7 +827,11 @@
       "belowMinimum": "The amount is below the minimum for this pair. Increase it and try again.",
       "belowMinimumWithAmount": "The minimum for this pair is {{min}}. Increase the amount and try again.",
       "unavailable": "The exchange service is temporarily unavailable. Try again in a few minutes.",
-      "generic": "The exchange could not be created. Please try again."
+      "generic": "The exchange could not be created. Please try again.",
+      "pairUnavailable": "This trading pair is currently unavailable",
+      "aboveMaximum": "Amount exceeds the maximum for this pair",
+      "networkError": "Network error: Unable to reach the server",
+      "estimateFailed": "Failed to get bridge estimate"
     },
     "preview": "Bridge Preview",
     "less_than_minimal": "Minimum amount: {{min}} {{symbol}}",
@@ -821,7 +849,11 @@
       "enterRecipientAddress": "Enter recipient address",
       "important": "Important",
       "importantText": "Make sure the address is correct. Cross-chain transactions cannot be reversed once initiated.",
-      "review": "Review"
+      "review": "Review",
+      "descriptionWithChain": "Enter the address where you want to receive your swapped tokens on {{chain}}.",
+      "enterDestinationAddress": "Enter destination address",
+      "chainAddressHint": "({{chain}} address)",
+      "helper": "Enter the {{chain}} address where you want to receive your {{symbol}}"
     },
     "review": {
       "title": "Swap Review",
@@ -882,13 +914,16 @@
     "switch_wallet": "Switch wallet account",
     "edit_account": "Edit account",
     "delete_account": "Delete account",
-    "refresh_balance": "Refresh balance"
+    "refresh_balance": "Refresh balance",
+    "selected_token": "Selected token: {{name}}",
+    "loading_token_list": "Loading token list"
   },
   "collectibles": {
     "title": "Collectibles",
     "empty": "No collectibles found",
     "empty_hint": "Your NFTs and collectibles will appear here",
-    "no_nfts": "No collectibles found"
+    "no_nfts": "No collectibles found",
+    "no_account_for_network": "No account available for this network."
   },
   "common": {
     "cancel": "Cancel",
@@ -911,7 +946,20 @@
   },
   "send": {
     "enter_address": "Enter recipient address",
-    "recipient": "Recipient"
+    "recipient": "Recipient",
+    "enter_address_or_domain": "Enter address or domain",
+    "resolved_address": "Resolved Address:",
+    "validation": {
+      "network_error": "Could not verify address. Check your connection.",
+      "invalid": "Invalid address format",
+      "invalid_domain": "Could not resolve domain name",
+      "same_address": "Cannot send to your own address",
+      "no_info": "This account does not exist on-chain yet. The recipient will need to fund it.",
+      "off_curve_no_funds": "This is a program-derived address without funds",
+      "off_curve_has_funds": "This is a program-derived address",
+      "no_funds": "This address has no ETH balance",
+      "unknown": "Unknown validation error"
+    }
   },
   "walletSwitcher": {
     "title": "Your Wallets",

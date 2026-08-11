@@ -64,7 +64,7 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
           />
           <SwapDetailRow
             label={t('bridge.review.toNetwork', 'To Network')}
-            value={outToken.network || 'Unknown'}
+            value={outToken.network || t('transactions.unknown')}
           />
           {estimate && (
             <>

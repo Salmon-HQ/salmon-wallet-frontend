@@ -4,6 +4,7 @@
  * Web version using MUI and @emotion/styled for browser extension
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
@@ -79,6 +80,7 @@ export function SwapTabSelector({
   onTabChange,
   style,
 }: SwapTabSelectorProps): React.ReactElement {
+  const { t } = useTranslation();
   const handleTabPress = (tab: SwapTab) => {
     if (tab !== activeTab) {
       onTabChange(tab);
@@ -88,12 +90,12 @@ export function SwapTabSelector({
   return (
     <Container style={style}>
       <Tab onClick={() => handleTabPress('swap')} aria-label="Swap tab" data-testid="swap-tab">
-        <TabText $active={activeTab === 'swap'}>Swap</TabText>
+        <TabText $active={activeTab === 'swap'}>{t('swap.swap')}</TabText>
         <TabIndicator $active={activeTab === 'swap'} />
       </Tab>
 
       <Tab onClick={() => handleTabPress('bridge')} aria-label="Bridge tab" data-testid="bridge-tab">
-        <TabText $active={activeTab === 'bridge'}>Bridge</TabText>
+        <TabText $active={activeTab === 'bridge'}>{t('bridge.bridge')}</TabText>
         <TabIndicator $active={activeTab === 'bridge'} />
       </Tab>
     </Container>
