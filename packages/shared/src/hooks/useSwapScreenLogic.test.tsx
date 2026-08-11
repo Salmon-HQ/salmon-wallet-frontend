@@ -308,6 +308,77 @@ describe('useSwapScreenLogic', () => {
     expect(result.current.successTxId).toBe('swap-tx-1');
   });
 
+  it('keeps the confirmed pair in successSummary when the spent token drops out of the list', async () => {
+    vi.useFakeTimers();
+
+    const props = createProps({
+      initialInToken: SOL,
+      initialOutToken: USDC,
+    });
+
+    const { result, rerender } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    act(() => {
+      result.current.setInAmount('1');
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+
+    act(() => {
+      result.current.handleReview();
+    });
+
+    await act(async () => {
+      await result.current.handleConfirmSwap();
+    });
+
+    expect(result.current.step).toBe('success');
+    expect(result.current.successSummary).toEqual({
+      inAmount: '1',
+      inSymbol: 'SOL',
+      outAmount: '2.5',
+      outSymbol: 'USDC',
+      chain: 'solana',
+      networkId: 'solana-mainnet',
+    });
+
+    // Post-swap settling refreshes balances: the fully-spent input token drops
+    // out of the tokens list, so the reselection effect falls back to another
+    // token and clears the amounts. The mounted success screen must keep
+    // showing the pair the user actually swapped.
+    await act(async () => {
+      rerender({
+        ...props,
+        tokens: [USDC, BTC],
+        featuredTokens: [USDC, BTC],
+        jupiterTokens: [USDC, BTC],
+      });
+    });
+
+    expect(result.current.inToken?.symbol).not.toBe('SOL');
+    expect(result.current.inAmount).toBe('');
+    expect(result.current.step).toBe('success');
+    expect(result.current.successSummary).toEqual({
+      inAmount: '1',
+      inSymbol: 'SOL',
+      outAmount: '2.5',
+      outSymbol: 'USDC',
+      chain: 'solana',
+      networkId: 'solana-mainnet',
+    });
+
+    act(() => {
+      result.current.handleSuccessContinue();
+    });
+
+    expect(result.current.successSummary).toBeNull();
+  });
+
   it('returns to the form with a classified error when a swap fails', async () => {
     vi.useFakeTimers();
 
@@ -633,6 +704,14 @@ describe('useSwapScreenLogic', () => {
     expect(result.current.successExchange).toBe(BRIDGE_EXCHANGE);
     expect(result.current.depositTxId).toBe('deposit-tx-1');
     expect(result.current.step).toBe('success');
+    expect(result.current.successSummary).toEqual({
+      inAmount: '1',
+      inSymbol: 'SOL',
+      outAmount: '0.000021',
+      outSymbol: 'BTC',
+      chain: 'solana',
+      networkId: 'solana-mainnet',
+    });
   });
 
   it('surfaces the pair minimum from the estimate when the bridge rejects the amount', async () => {

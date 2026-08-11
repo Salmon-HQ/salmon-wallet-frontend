@@ -375,6 +375,28 @@ export interface BridgeTokenSimple {
 export type SwapErrorMessage = string | { key: string; params: Record<string, string> };
 
 /**
+ * Immutable snapshot of the pair the user actually confirmed, captured at
+ * confirm time. The success screen renders from this instead of live form
+ * state: post-swap balance refreshes can drop a fully-spent input token from
+ * the token list, which makes the form's token-reselection effect fall back
+ * to an unrelated token and clear the amounts while success is still mounted.
+ */
+export interface SwapSuccessSummary {
+  /** Input amount as entered (display units) */
+  inAmount: string;
+  /** Input token symbol */
+  inSymbol: string;
+  /** Output amount shown at confirm time (display units) */
+  outAmount: string;
+  /** Output token symbol */
+  outSymbol: string;
+  /** Input token chain — drives the explorer URL */
+  chain?: SwapChainType;
+  /** Input token network id — drives the explorer URL environment */
+  networkId?: string;
+}
+
+/**
  * Bridge estimate type (simplified)
  */
 export interface BridgeEstimateSimple {

@@ -13,6 +13,7 @@ import type {
   SwapChainType,
   BridgeEstimateSimple,
   SwapErrorMessage,
+  SwapSuccessSummary,
   BridgeExchangeSimple,
   BridgeTransactionSimple,
 } from '../types/swap';
@@ -226,6 +227,14 @@ export interface UseSwapScreenLogicResult {
   tokensLoading: boolean;
   successTxId: string | null;
   successExchange: BridgeExchangeSimple | null;
+  /**
+   * Snapshot of the confirmed pair, captured right before entering the
+   * success step (both Jupiter and StealthEX paths). Success screens must
+   * render from this instead of live inToken/outToken/amount state, which
+   * the post-swap balance refresh can mutate underneath the mounted screen.
+   * Null until a confirm succeeds; cleared on continue.
+   */
+  successSummary: SwapSuccessSummary | null;
   depositTxId: string | null;
   bridgeTransaction: BridgeTransactionSimple | null;
   /**
@@ -332,6 +341,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
   const [isConfirming, setIsConfirming] = useState(false);
   const [successTxId, setSuccessTxId] = useState<string | null>(null);
   const [successExchange, setSuccessExchange] = useState<BridgeExchangeSimple | null>(null);
+  const [successSummary, setSuccessSummary] = useState<SwapSuccessSummary | null>(null);
   const [depositTxId, setDepositTxId] = useState<string | null>(null);
   const [bridgeTransaction, setBridgeTransaction] = useState<BridgeTransactionSimple | null>(null);
   const [showInTokenModal, setShowInTokenModal] = useState(false);
@@ -622,6 +632,21 @@ export function useSwapScreenLogic<StyleType = unknown>({
     }
   }, [swapMode]);
 
+  // Freeze the confirmed pair for the success screen. Live form state keeps
+  // reacting to token-list refreshes after the swap (a fully-spent input token
+  // drops out and the reselection effect falls back to tokens[0]), so success
+  // rendering must never read it.
+  const captureSuccessSummary = useCallback(() => {
+    setSuccessSummary({
+      inAmount,
+      inSymbol: inToken?.symbol ?? '',
+      outAmount,
+      outSymbol: outToken?.symbol ?? '',
+      chain: inToken?.chain,
+      networkId: inToken?.networkId,
+    });
+  }, [inAmount, outAmount, inToken, outToken]);
+
   const handleConfirmSwap = useCallback(async () => {
     if (!quote) return;
 
@@ -630,6 +655,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     try {
       const result = await onSwap(quote);
       setSuccessTxId(result.txId);
+      captureSuccessSummary();
       setStep('success');
       // Jupiter is same-chain: settle until the indexer reflects both token
       // balances so the success screen can dwell and return the user to fresh
@@ -654,7 +680,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     } finally {
       setIsConfirming(false);
     }
-  }, [onError, onSuccess, onSwap, quote, settleUntilChanged]);
+  }, [onError, onSuccess, onSwap, quote, settleUntilChanged, captureSuccessSummary]);
 
   const handleConfirmBridge = useCallback(async () => {
     if (!inToken || !outToken || !inAmount || !recipientAddress || !onCreateBridgeExchange) return;
@@ -688,6 +714,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
           setBridgeTransaction({ status: exchange.status });
         }
         setSuccessExchange(exchange);
+        captureSuccessSummary();
         setStep('success');
         // Source-side settle only: the deposit has left the wallet, so the
         // source balance will drop within the indexer's lag. The DESTINATION
@@ -722,7 +749,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     } finally {
       setIsConfirming(false);
     }
-  }, [inToken, outToken, inAmount, recipientAddress, onCreateBridgeExchange, onSendDeposit, onGetBridgeTransactionStatus, onBridgeSuccess, onBridgeExchangeCreated, onBridgeError, settleAfterTx, bridgeEstimate]);
+  }, [inToken, outToken, inAmount, recipientAddress, onCreateBridgeExchange, onSendDeposit, onGetBridgeTransactionStatus, onBridgeSuccess, onBridgeExchangeCreated, onBridgeError, settleAfterTx, bridgeEstimate, captureSuccessSummary]);
 
   const handleRefreshQuote = useCallback(async () => {
     if (isLoadingQuote || isLoadingEstimate) return;
@@ -794,6 +821,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     setBridgeEstimate(null);
     setSuccessTxId(null);
     setSuccessExchange(null);
+    setSuccessSummary(null);
     setDepositTxId(null);
     setBridgeTransaction(null);
     settleAfterTx({ kinds: ['balance', 'transactions'], settlementDelaysMs: [] }).catch(() => undefined);
@@ -978,6 +1006,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     tokensLoading: loading,
     successTxId,
     successExchange,
+    successSummary,
     depositTxId,
     bridgeTransaction,
     settling,
