@@ -32,6 +32,11 @@ const NO_ROUTE_PATTERNS = [
   'route_not_found',
 ];
 
+const QUOTE_EXPIRED_PATTERNS = [
+  'quote expired',
+  'quote has changed',
+];
+
 const EXPIRED_PATTERNS = [
   'block height exceeded',
   'blockhash not found',
@@ -59,6 +64,10 @@ export function classifyTransactionError(err: unknown): string {
 
   if (NO_ROUTE_PATTERNS.some((pattern) => haystack.includes(pattern))) {
     return 'transaction.errors.noRoute';
+  }
+
+  if (QUOTE_EXPIRED_PATTERNS.some((pattern) => haystack.includes(pattern))) {
+    return 'transaction.errors.quoteExpired';
   }
 
   // A preflight failure (-32002) that produced no logs means the transaction

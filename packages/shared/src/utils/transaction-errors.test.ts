@@ -61,6 +61,12 @@ describe('classifyTransactionError', () => {
     expect(classifyTransactionError(new Error('ROUTE_NOT_FOUND'))).toBe('transaction.errors.noRoute');
   });
 
+  it('maps an expired quote to the re-review message', () => {
+    expect(classifyTransactionError(new Error('Quote expired: the quote has changed'))).toBe(
+      'transaction.errors.quoteExpired',
+    );
+  });
+
   it('falls back to the generic message for anything else', () => {
     expect(classifyTransactionError(new Error('something unexpected'))).toBe('transaction.errors.generic');
     expect(classifyTransactionError('raw string failure')).toBe('transaction.errors.generic');

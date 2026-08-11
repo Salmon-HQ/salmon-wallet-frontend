@@ -756,6 +756,7 @@
       "insufficientFeeSol": "Necesitás una pequeña cantidad de SOL para pagar la fee de red. Agregá SOL a esta cuenta y volvé a intentarlo.",
       "insufficientFunds": "Saldo insuficiente para esta transacción.",
       "expired": "La red tardó demasiado en confirmar. Volvé a intentarlo.",
+      "quoteExpired": "La cotización cambió antes de ejecutarse. Revisá y confirmá de nuevo.",
       "slippage": "El precio se movió más allá de tu tolerancia de slippage. Volvé a intentarlo o ajustá el monto.",
       "noRoute": "No hay ninguna ruta disponible para este par en este momento. Probá con otro monto u otro token.",
       "generic": "La transacción falló. Volvé a intentarlo."

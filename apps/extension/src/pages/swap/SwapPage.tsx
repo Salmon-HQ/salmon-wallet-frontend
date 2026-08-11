@@ -155,8 +155,7 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
 
     // Verify hook's internal quote matches the displayed quote to prevent race conditions
     if (!swapQuote || swapQuote.custom?.requestId !== currentSharedQuoteRef.current.custom?.requestId) {
-      window.alert('Quote Expired. The quote has changed. Please try again.');
-      return { txId: '' };
+      throw new Error('Quote expired: the quote has changed');
     }
 
     const result = await executeSwapHook();

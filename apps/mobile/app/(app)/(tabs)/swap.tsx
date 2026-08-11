@@ -18,7 +18,7 @@
  */
 
 import React, { useCallback, useMemo, useRef } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import {
@@ -181,8 +181,7 @@ export default function SwapScreenPage() {
     // Verify hook's internal quote matches the displayed quote to prevent race conditions
     // The hook's executeSwap() uses its own internal state, which could diverge from the ref
     if (!swapQuote || swapQuote.custom?.requestId !== currentSharedQuoteRef.current.custom?.requestId) {
-      Alert.alert('Quote Expired', 'The quote has changed. Please try again.');
-      return { txId: '' };
+      throw new Error('Quote expired: the quote has changed');
     }
 
     // Execute the swap using the real hook

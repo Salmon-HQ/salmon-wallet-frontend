@@ -142,8 +142,7 @@ export function SwapTab({ onNavigateHome }: SwapTabProps): React.ReactElement {
 
   const handleSwap = useCallback(async (_quote: SwapQuote): Promise<{ txId: string }> => {
     if (!swapQuote || !currentSharedQuoteRef.current) {
-      console.error('Quote expired. Please get a new quote.');
-      return { txId: '' };
+      throw new Error('Quote expired: the quote has changed');
     }
     const result = await executeSwapHook();
     return { txId: result.txId || '' };
