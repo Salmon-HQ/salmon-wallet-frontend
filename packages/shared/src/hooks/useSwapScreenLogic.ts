@@ -764,7 +764,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
         if (displayAmount === null) {
           setQuote(null);
           setOutAmount('');
-          setQuoteError('Failed to refresh quote');
+          setQuoteError('swap.errors.quoteFailed');
           return;
         }
         setQuote(fetchedQuote);
@@ -772,7 +772,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
         setQuoteError(null);
       } catch (error) {
         console.error('Failed to refresh quote:', error);
-        setQuoteError('Failed to refresh quote');
+        setQuoteError('swap.errors.quoteFailed');
       } finally {
         setIsLoadingQuote(false);
       }

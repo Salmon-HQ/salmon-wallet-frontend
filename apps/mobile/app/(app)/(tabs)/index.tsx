@@ -646,7 +646,7 @@ export default function HomeScreen() {
       : `https://solscan.io/tx/${transaction.id}`;
     try {
       await Share.share({
-        message: `Check out this transaction: ${explorerUrl}`,
+        message: t('transactions.share_message', 'Check out this transaction: {{url}}', { url: explorerUrl }),
         url: explorerUrl,
       });
     } catch (error) {

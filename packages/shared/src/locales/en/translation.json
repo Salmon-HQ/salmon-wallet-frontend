@@ -754,7 +754,8 @@
       "copyAddressHint": "Copies the address to clipboard",
       "nftMediaAlt": "NFT media"
     },
-    "tapToViewDetails": "Tap to view transaction details"
+    "tapToViewDetails": "Tap to view transaction details",
+    "share_message": "Check out this transaction: {{url}}"
   },
   "nft": {
     "description": "Description",
@@ -992,14 +993,21 @@
     "select_token": "Select {{name}}",
     "copy_contract_address": "Copy contract address",
     "open_website": "Open website: {{url}}",
-    "select_period": "Select {{period}} time period"
+    "select_period": "Select {{period}} time period",
+    "active_account": "{{name}}, active",
+    "transaction_row": "{{type}} transaction, {{description}}",
+    "nft_view_hint": "Double tap to view NFT details",
+    "loading_account_info": "Loading account information",
+    "swap_tab": "Swap tab",
+    "bridge_tab": "Bridge tab"
   },
   "collectibles": {
     "title": "Collectibles",
     "empty": "No collectibles found",
     "empty_hint": "Your NFTs and collectibles will appear here",
     "no_nfts": "No collectibles found",
-    "no_account_for_network": "No account available for this network."
+    "no_account_for_network": "No account available for this network.",
+    "developer_banner": "Developer Mode - Showing testnet NFTs"
   },
   "common": {
     "cancel": "Cancel",

@@ -154,7 +154,7 @@ export const NftCard: React.FC<NftCardProps> = ({
       disabled={!onPress}
       accessibilityRole="button"
       accessibilityLabel={t('nft.detail.cardLabel', 'NFT: {{name}}', { name: nft.name })}
-      accessibilityHint={onPress ? 'Double tap to view NFT details' : undefined}
+      accessibilityHint={onPress ? t('accessibility.nft_view_hint', 'Double tap to view NFT details') : undefined}
       testID={testID ?? `nft-card-${nft.mint ?? nft.name}`}
     >
       {renderBackground()}

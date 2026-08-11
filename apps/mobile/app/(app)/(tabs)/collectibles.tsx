@@ -473,7 +473,7 @@ export default function CollectiblesScreen() {
         {developerNetworks && (
           <View style={styles.devModeBanner}>
             <Text style={styles.devModeBannerText}>
-              Developer Mode - Showing testnet NFTs
+              {t('collectibles.developer_banner', 'Developer Mode - Showing testnet NFTs')}
             </Text>
           </View>
         )}

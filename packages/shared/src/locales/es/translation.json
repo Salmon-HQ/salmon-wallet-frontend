@@ -754,7 +754,8 @@
       "copyAddressHint": "Copia la dirección al portapapeles",
       "nftMediaAlt": "Contenido del NFT"
     },
-    "tapToViewDetails": "Tocá para ver los detalles de la transacción"
+    "tapToViewDetails": "Tocá para ver los detalles de la transacción",
+    "share_message": "Mirá esta transacción: {{url}}"
   },
   "nft": {
     "description": "Descripción",
@@ -992,14 +993,21 @@
     "select_token": "Seleccionar {{name}}",
     "copy_contract_address": "Copiar dirección del contrato",
     "open_website": "Abrir sitio web: {{url}}",
-    "select_period": "Seleccionar período {{period}}"
+    "select_period": "Seleccionar período {{period}}",
+    "active_account": "{{name}}, activa",
+    "transaction_row": "Transacción: {{type}}, {{description}}",
+    "nft_view_hint": "Tocá dos veces para ver los detalles del NFT",
+    "loading_account_info": "Cargando información de la cuenta",
+    "swap_tab": "Pestaña de Swap",
+    "bridge_tab": "Pestaña de Bridge"
   },
   "collectibles": {
     "title": "Coleccionables",
     "empty": "No se encontraron coleccionables",
     "empty_hint": "Tus NFTs y coleccionables van a aparecer acá",
     "no_nfts": "No se encontraron coleccionables",
-    "no_account_for_network": "No hay una cuenta disponible para esta red."
+    "no_account_for_network": "No hay una cuenta disponible para esta red.",
+    "developer_banner": "Modo Desarrollador - Mostrando NFTs de testnet"
   },
   "common": {
     "cancel": "Cancelar",

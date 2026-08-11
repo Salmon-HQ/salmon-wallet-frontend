@@ -292,7 +292,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           {nft.compressed !== undefined && (
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>{t('nft.detail.compressed', 'Compressed')}</Text>
-              <Text style={styles.detailValue}>{nft.compressed ? 'Yes' : 'No'}</Text>
+              <Text style={styles.detailValue}>{nft.compressed ? t('general.yes', 'Yes') : t('general.no', 'No')}</Text>
             </View>
           )}
           {nft.collectionVerified !== undefined && (

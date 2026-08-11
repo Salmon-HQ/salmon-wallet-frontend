@@ -89,12 +89,12 @@ export function SwapTabSelector({
 
   return (
     <Container style={style}>
-      <Tab onClick={() => handleTabPress('swap')} aria-label="Swap tab" data-testid="swap-tab">
+      <Tab onClick={() => handleTabPress('swap')} aria-label={t('accessibility.swap_tab', 'Swap tab')} data-testid="swap-tab">
         <TabText $active={activeTab === 'swap'}>{t('swap.swap')}</TabText>
         <TabIndicator $active={activeTab === 'swap'} />
       </Tab>
 
-      <Tab onClick={() => handleTabPress('bridge')} aria-label="Bridge tab" data-testid="bridge-tab">
+      <Tab onClick={() => handleTabPress('bridge')} aria-label={t('accessibility.bridge_tab', 'Bridge tab')} data-testid="bridge-tab">
         <TabText $active={activeTab === 'bridge'}>{t('bridge.bridge')}</TabText>
         <TabIndicator $active={activeTab === 'bridge'} />
       </Tab>

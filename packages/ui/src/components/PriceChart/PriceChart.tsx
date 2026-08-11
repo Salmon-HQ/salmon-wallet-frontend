@@ -138,6 +138,7 @@ interface CustomTooltipProps {
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
   const [{ currency }] = useCurrencyContext();
+  const { i18n } = useTranslation();
 
   if (!active || !payload || payload.length === 0) {
     return null;
@@ -148,7 +149,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return (
     <TooltipContainer>
       <TooltipPrice>{formatFiatIntl(data.price, currency)}</TooltipPrice>
-      <TooltipDate>{formatTimestamp(data.timestamp)}</TooltipDate>
+      <TooltipDate>{formatTimestamp(data.timestamp, i18n.language)}</TooltipDate>
     </TooltipContainer>
   );
 }

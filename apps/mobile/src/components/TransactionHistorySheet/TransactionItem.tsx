@@ -348,7 +348,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
         onPress={handlePress}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel={`${t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label)} transaction, ${descriptionText}`}
+        accessibilityLabel={t('accessibility.transaction_row', '{{type}} transaction, {{description}}', { type: t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label), description: descriptionText })}
         accessibilityHint={t('transactions.tapToViewDetails', 'Tap to view transaction details')}
       >
         {/* Left: Logo/Icon */}

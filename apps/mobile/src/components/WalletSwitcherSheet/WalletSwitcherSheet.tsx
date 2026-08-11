@@ -79,7 +79,7 @@ function AccountListItem({
       ]}
       onPress={onPress}
       activeOpacity={0.7}
-      accessibilityLabel={`${account.name}${isActive ? ', active' : ''}`}
+      accessibilityLabel={isActive ? t('accessibility.active_account', '{{name}}, active', { name: account.name }) : account.name}
       accessibilityRole="button"
       accessibilityState={{ selected: isActive }}
     >

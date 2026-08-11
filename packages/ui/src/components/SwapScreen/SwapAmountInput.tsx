@@ -270,7 +270,7 @@ export function SwapAmountInput({
         )}
 
         {/* Token Dropdown */}
-        <TokenDropdown onClick={onTokenPress} aria-label={`Select token: ${token?.symbol || 'Select'}`} data-testid={testID ? `${testID}-token` : undefined}>
+        <TokenDropdown onClick={onTokenPress} aria-label={t('accessibility.select_token', 'Select {{name}}', { name: token?.symbol || t('wallet.select_token', 'Select') })} data-testid={testID ? `${testID}-token` : undefined}>
           {token?.logo ? (
             <TokenIcon
               src={token.logo}
@@ -282,7 +282,7 @@ export function SwapAmountInput({
           ) : (
             <TokenIconPlaceholder />
           )}
-          <TokenSymbol>{token?.symbol || 'Select'}</TokenSymbol>
+          <TokenSymbol>{token?.symbol || t('wallet.select_token', 'Select')}</TokenSymbol>
         </TokenDropdown>
       </InputContainer>
       </BlurContainer>

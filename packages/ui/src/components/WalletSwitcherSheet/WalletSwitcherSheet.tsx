@@ -245,7 +245,7 @@ function AccountListItem({
       onClick={onSelect}
       data-testid={`wallet-switcher-account-${account.id}`}
       role="button"
-      aria-label={`${account.name}${isActive ? ', active' : ''}`}
+      aria-label={isActive ? t('accessibility.active_account', '{{name}}, active', { name: account.name }) : account.name}
     >
       <ListItemAvatar>
         {account.avatar && !imgError ? (
