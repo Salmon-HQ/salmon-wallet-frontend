@@ -9,11 +9,9 @@ import type {
   BitcoinBalanceItem,
   UTXO,
   TransactionPaging,
-  AccountTransaction,
   AccountTransactionListResponse,
   SigningKeyPair,
   FetchBitcoinBalanceFn,
-  FetchBitcoinTransactionFn,
   FetchBitcoinRecentTransactionsFn,
   FetchUtxosFn,
   BroadcastTransactionFn,
@@ -60,8 +58,6 @@ export interface BitcoinAccountOptions {
   node?: BIP32Interface;
   /** Function to fetch balance from the API */
   fetchBalance: FetchBitcoinBalanceFn;
-  /** Function to fetch a single transaction */
-  fetchTransaction: FetchBitcoinTransactionFn;
   /** Function to fetch recent transactions */
   fetchRecentTransactions: FetchBitcoinRecentTransactionsFn;
   /** Function to fetch UTXOs for transaction building */
@@ -111,7 +107,6 @@ export class BitcoinAccount {
   private readonly node?: BIP32Interface;
 
   private readonly fetchBalanceFn: FetchBitcoinBalanceFn;
-  private readonly fetchTransactionFn: FetchBitcoinTransactionFn;
   private readonly fetchRecentTransactionsFn: FetchBitcoinRecentTransactionsFn;
   private readonly fetchUtxosFn: FetchUtxosFn;
   private readonly broadcastTransactionFn: BroadcastTransactionFn;
@@ -129,7 +124,6 @@ export class BitcoinAccount {
     this.address = options.keyPair.address;
     this.node = options.node;
     this.fetchBalanceFn = options.fetchBalance;
-    this.fetchTransactionFn = options.fetchTransaction;
     this.fetchRecentTransactionsFn = options.fetchRecentTransactions;
     this.fetchUtxosFn = options.fetchUtxos;
     this.broadcastTransactionFn = options.broadcastTransaction;
@@ -378,16 +372,6 @@ export class BitcoinAccount {
   // ============================================================================
   // Transaction Methods
   // ============================================================================
-
-  /**
-   * Gets a single transaction by ID.
-   *
-   * @param id - Transaction ID (txid)
-   * @returns Promise resolving to transaction details
-   */
-  async getTransaction(id: string): Promise<AccountTransaction> {
-    return this.fetchTransactionFn(this.network.id, this.address, id);
-  }
 
   /**
    * Gets recent transactions with pagination support.

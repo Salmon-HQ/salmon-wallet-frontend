@@ -29,7 +29,6 @@ async function createAccount(seed: Uint8Array = crypto.getRandomValues(new Uint8
     path: "m/44'/501'/0'/0'",
     keyPair: { seed, signer: await createKeyPairSignerFromPrivateKeyBytes(seed, false) },
     fetchBalance: vi.fn(),
-    fetchTransaction: vi.fn(),
     fetchTransactions: vi.fn(),
     fetchNfts: vi.fn(),
   });

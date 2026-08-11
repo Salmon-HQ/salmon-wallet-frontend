@@ -18,7 +18,6 @@ import type {
   BitcoinBalance,
   BitcoinBalanceItem,
   BitcoinPagingParams,
-  BitcoinTransaction,
   BitcoinTransactionsResponse,
   BitcoinUtxo,
   BroadcastTransactionFn,
@@ -26,7 +25,6 @@ import type {
   BroadcastTransactionResponse,
   FetchBitcoinBalanceFn,
   FetchBitcoinRecentTransactionsFn,
-  FetchBitcoinTransactionFn,
   FetchUtxosFn,
   TransactionPaging,
   UTXO,
@@ -253,14 +251,6 @@ export const fetchBitcoinAccountBalance: FetchBitcoinBalanceFn = async (
   }));
 };
 
-export const fetchBitcoinAccountTransaction: FetchBitcoinTransactionFn = async (
-  networkId: string,
-  address: string,
-  txId: string
-): Promise<AccountTransaction> => {
-  return get<AccountTransaction>(`/v1/${networkId}/account/${address}/transactions/${txId}`);
-};
-
 export const fetchBitcoinAccountRecentTransactions: FetchBitcoinRecentTransactionsFn = async (
   networkId: string,
   address: string,
@@ -293,7 +283,6 @@ export const fetchBitcoinAccountRecentTransactions: FetchBitcoinRecentTransactio
  */
 export const bitcoinApiFunctions: BitcoinAccountApiFunctions = {
   fetchBalance: fetchBitcoinAccountBalance,
-  fetchTransaction: fetchBitcoinAccountTransaction,
   fetchRecentTransactions: fetchBitcoinAccountRecentTransactions,
   fetchUtxos,
   broadcastTransaction,

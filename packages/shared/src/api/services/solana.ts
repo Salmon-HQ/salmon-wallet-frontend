@@ -105,39 +105,6 @@ export async function getSolanaTransactions(
   }
 }
 
-/**
- * Get a single transaction by signature
- *
- * Endpoint: GET /v1/{networkId}/account/{address}/transactions/{txId}
- *
- * Backend note:
- * - Paginated transaction history items usually include both `id` and `signature`
- * - The live transaction detail endpoint is keyed by `id` and does not always include `signature`
- *
- * @param networkId - Solana network identifier
- * @param address - Solana wallet address
- * @param signature - Transaction signature
- * @returns Transaction data, or null if not found
- */
-export async function getSolanaTransaction(
-  networkId: SolanaNetworkId,
-  address: string,
-  signature: string
-): Promise<SolanaTransaction | null> {
-  try {
-    const { data } = await apiClient.get<SolanaTransaction>(
-      `/v1/${networkId}/account/${address}/transactions/${signature}`
-    );
-    return data;
-  } catch (error) {
-    if (error instanceof ApiError && error.isNotFound()) {
-      return null;
-    }
-    console.error('[SolanaService] Failed to get transaction:', error);
-    throw error;
-  }
-}
-
 // ============================================================================
 // API Functions - Swap
 // ============================================================================
@@ -372,7 +339,6 @@ export const fetchSolanaAccountBalance: SolanaAccountApiFunctions['fetchBalance'
  */
 export const solanaApiFunctions: SolanaAccountApiFunctions = {
   fetchBalance: fetchSolanaAccountBalance,
-  fetchTransaction: getSolanaTransaction,
   fetchTransactions: getSolanaTransactions,
   fetchNfts: getSolanaNfts,
 };

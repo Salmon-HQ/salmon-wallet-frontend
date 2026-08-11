@@ -652,7 +652,7 @@ export default function HomeScreen() {
     } catch (error) {
       console.error('Failed to share transaction:', error);
     }
-  }, [networkId]);
+  }, [networkId, t]);
 
   const handleSelectedTokenChartPeriodChange = useCallback((period: PriceChartPeriod) => {
     setSelectedTokenChartPeriod(period);

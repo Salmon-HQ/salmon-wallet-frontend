@@ -22,13 +22,6 @@ export type {
   UseUserConfigResult,
 } from './useUserConfig';
 
-// Token hook
-export { useToken } from './useToken';
-export type {
-  TokenData,
-  UseTokenParams,
-  UseTokenResult,
-} from './useToken';
 
 // Runtime detection hook
 export { useRuntime } from './useRuntime';
@@ -107,13 +100,6 @@ export type {
   UseJupiterTokenListParams,
   UseJupiterTokenListResult,
 } from './useJupiterTokenList';
-
-// Solana NFT detail hook
-export { useSolanaNftDetail } from './useSolanaNftDetail';
-export type {
-  UseSolanaNftDetailParams,
-  UseSolanaNftDetailResult,
-} from './useSolanaNftDetail';
 
 // Multi-chain tokens hook (for unified swap/bridge)
 export {

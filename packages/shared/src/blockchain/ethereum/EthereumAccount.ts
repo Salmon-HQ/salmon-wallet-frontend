@@ -21,9 +21,7 @@ import type { EthereumBalanceItem } from '../../types/transfer';
 import type { EthereumNetwork } from '../../types/blockchain';
 import type {
   FetchEthereumBalanceFn,
-  FetchEthereumTransactionFn,
   FetchEthereumRecentTransactionsFn,
-  AccountTransaction,
   AccountTransactionListResponse,
   TransactionPaging,
 } from '../../types/transfer';
@@ -54,8 +52,6 @@ export interface EthereumAccountOptions {
   wallet: Wallet;
   /** Function to fetch token balances (DI) */
   fetchBalance: FetchEthereumBalanceFn;
-  /** Function to fetch a single transaction (DI) */
-  fetchTransaction: FetchEthereumTransactionFn;
   /** Function to fetch recent transactions (DI) */
   fetchRecentTransactions: FetchEthereumRecentTransactionsFn;
 }
@@ -105,8 +101,6 @@ export class EthereumAccount {
 
   /** Injected function to fetch token balances */
   private fetchBalanceFn: FetchEthereumBalanceFn;
-  /** Injected function to fetch a single transaction */
-  private fetchTransactionFn: FetchEthereumTransactionFn;
   /** Injected function to fetch recent transactions */
   private fetchRecentTransactionsFn: FetchEthereumRecentTransactionsFn;
 
@@ -122,7 +116,6 @@ export class EthereumAccount {
     this.wallet = options.wallet;
     this.publicKey = options.wallet.signingKey.publicKey;
     this.fetchBalanceFn = options.fetchBalance;
-    this.fetchTransactionFn = options.fetchTransaction;
     this.fetchRecentTransactionsFn = options.fetchRecentTransactions;
   }
 
@@ -367,16 +360,6 @@ export class EthereumAccount {
   // ============================================================================
   // Transaction History
   // ============================================================================
-
-  /**
-   * Gets a single transaction by hash.
-   *
-   * @param txHash - Transaction hash
-   * @returns Transaction data or null if not found
-   */
-  async getTransaction(txHash: string): Promise<AccountTransaction | null> {
-    return this.fetchTransactionFn(this.network.id, this.wallet.address, txHash);
-  }
 
   /**
    * Gets recent transactions for this account.

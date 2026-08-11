@@ -38,14 +38,12 @@ import type { SolanaWalletBalance } from '../../types/balance';
 import type { SolanaBalanceItem } from '../../types/transfer';
 import type {
   FetchSolanaBalanceFn,
-  FetchSolanaTransactionFn,
   FetchSolanaTransactionsFn,
 } from '../../types/transfer';
 import type { FetchNftsFromBackendFn, Nft } from '../../types/nft';
 import { getAll as getAllNftsFromService } from './nft';
 import {
   getRecentTransactions as getRecentTransactionsService,
-  type SolanaTransaction,
   type SolanaTransactionPaging,
   type SolanaTransactionListResponse,
 } from './transactions';
@@ -78,8 +76,6 @@ export interface SolanaAccountOptions {
   keyPair: SolanaSigningKey;
   /** Function to fetch token balances (DI) */
   fetchBalance: FetchSolanaBalanceFn;
-  /** Function to fetch a single transaction (DI) */
-  fetchTransaction: FetchSolanaTransactionFn;
   /** Function to fetch transactions list (DI) */
   fetchTransactions: FetchSolanaTransactionsFn;
   /** Function to fetch NFTs from backend (DI) */
@@ -135,8 +131,6 @@ export class SolanaAccount {
   private rpcWsUrl: string | null = null;
   /** Injected function to fetch token balances */
   private fetchBalanceFn: FetchSolanaBalanceFn;
-  /** Injected function to fetch a single transaction */
-  private fetchTransactionFn: FetchSolanaTransactionFn;
   /** Injected function to fetch transactions list */
   private fetchTransactionsFn: FetchSolanaTransactionsFn;
   /** Injected function to fetch NFTs from backend */
@@ -155,7 +149,6 @@ export class SolanaAccount {
     this.seed = options.keyPair.seed;
     this.publicKey = options.keyPair.signer.address;
     this.fetchBalanceFn = options.fetchBalance;
-    this.fetchTransactionFn = options.fetchTransaction;
     this.fetchTransactionsFn = options.fetchTransactions;
     this.fetchNftsFn = options.fetchNfts;
   }
@@ -412,17 +405,6 @@ export class SolanaAccount {
   // ==========================================================================
   // Transaction History
   // ==========================================================================
-
-  /**
-   * Gets a single transaction by ID.
-   *
-   * @param txId - Transaction ID (signature)
-   * @returns Transaction data or null if not found
-   */
-  async getTransaction(txId: string): Promise<SolanaTransaction | null> {
-    const address = this.publicKey;
-    return this.fetchTransactionFn(this.network.id, address, txId);
-  }
 
   /**
    * Gets recent transactions for this account.

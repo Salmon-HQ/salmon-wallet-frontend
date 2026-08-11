@@ -30,7 +30,6 @@ import {
   broadcastTransaction,
   fetchBitcoinAccountBalance,
   fetchBitcoinAccountRecentTransactions,
-  fetchBitcoinAccountTransaction,
   fetchUtxos,
   getBitcoinBalance,
   getBitcoinTransactions,
@@ -78,20 +77,6 @@ const MOCK_BITCOIN_TRANSACTIONS: BitcoinTransactionsResponse = {
   ],
   nextPageToken: 'next-page',
   total: 1,
-};
-
-const MOCK_SINGLE_TRANSACTION: BitcoinTransaction = {
-  txid: 'tx-1',
-  hash: 'hash-1',
-  version: 2,
-  size: 225,
-  vsize: 144,
-  weight: 576,
-  locktime: 0,
-  vin: [],
-  vout: [],
-  confirmations: 7,
-  blocktime: 1710000000,
 };
 
 const MOCK_ACCOUNT_BALANCE_ITEMS: BitcoinBalanceItem[] = [
@@ -282,17 +267,6 @@ describe('bitcoin service', () => {
         uiAmount: 3.64735619,
       }),
     ]);
-  });
-
-  it('fetches a bitcoin account transaction through the generic get helper', async () => {
-    mockGet.mockResolvedValueOnce(MOCK_ACCOUNT_TRANSACTION);
-
-    const result = await fetchBitcoinAccountTransaction('bitcoin-mainnet', 'bc1-address', 'tx-2');
-
-    expect(mockGet).toHaveBeenCalledWith(
-      '/v1/bitcoin-mainnet/account/bc1-address/transactions/tx-2',
-    );
-    expect(result).toEqual(MOCK_ACCOUNT_TRANSACTION);
   });
 
   it('fetches recent bitcoin account transactions through the generic get helper', async () => {

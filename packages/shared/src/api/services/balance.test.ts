@@ -1,49 +1,20 @@
 /**
- * Balance Service Tests
- * Tests for pure functions in the balance service
+ * Balance Tests
+ * Tests for pure balance and formatting utilities
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-vi.mock('../client', () => ({
-  apiClient: { get: vi.fn() },
-  staticApiClient: { get: vi.fn() },
-}));
+import { describe, it, expect } from 'vitest';
 
 import {
   createSolBalance,
   LAMPORTS_PER_SOL,
   SOL_CONSTANTS,
 } from '../../utils/balance';
-import { getJupiterPrices } from './balance';
 import {
   formatBalance,
   formatUsdValue,
   formatPercentChange,
 } from '../../utils/formatting';
-import { apiClient } from '../client';
-
-const mockApiGet = vi.mocked(apiClient.get);
-
-type BatchQuote = { usdPrice: number; priceChange24h: number | null };
-
-const stubBatchPrices = (quotes: Record<string, BatchQuote>) => {
-  mockApiGet.mockImplementation(async (url: unknown, config?: any) => {
-    if (typeof url === 'string' && url.includes('/ft/price/batch')) {
-      const csv = String(config?.params?.mints ?? '');
-      const requested = csv.split(',').map((m) => m.trim()).filter(Boolean);
-      const data: Record<string, BatchQuote> = {};
-      requested.forEach((mint) => {
-        const quote = quotes[mint.toLowerCase()];
-        if (quote) {
-          data[mint] = quote;
-        }
-      });
-      return { data };
-    }
-    return { data: undefined };
-  });
-};
 
 // ============================================================================
 // Test Data
@@ -197,87 +168,6 @@ describe('formatPercentChange', () => {
   it('should format large percentages', () => {
     expect(formatPercentChange(1234.56)).toBe('+1234.56%');
     expect(formatPercentChange(-999.99)).toBe('-999.99%');
-  });
-});
-
-// ============================================================================
-// getJupiterPrices Tests
-// ============================================================================
-
-describe('getJupiterPrices', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('returns an empty map without hitting the API for an empty input', async () => {
-    const result = await getJupiterPrices([], 'solana-mainnet');
-    expect(result.size).toBe(0);
-    expect(mockApiGet).not.toHaveBeenCalled();
-  });
-
-  it('issues a single batch call to /ft/price/batch and lowercases keys', async () => {
-    const usdcMint = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-    stubBatchPrices({
-      [SOL_CONSTANTS.ADDRESS.toLowerCase()]: { usdPrice: 100.5, priceChange24h: 5.2 },
-      [usdcMint.toLowerCase()]: { usdPrice: 1, priceChange24h: 0.01 },
-    });
-
-    const result = await getJupiterPrices(
-      [SOL_CONSTANTS.ADDRESS, usdcMint],
-      'solana-mainnet'
-    );
-
-    expect(mockApiGet).toHaveBeenCalledTimes(1);
-    const [url, config] = mockApiGet.mock.calls[0];
-    expect(url).toBe('/v1/solana-mainnet/ft/price/batch');
-    expect(config).toEqual({ params: { mints: `${SOL_CONSTANTS.ADDRESS},${usdcMint}` } });
-
-    expect(result.get(SOL_CONSTANTS.ADDRESS.toLowerCase())).toEqual({
-      usdPrice: 100.5,
-      priceChange24h: 5.2,
-    });
-    expect(result.get(usdcMint.toLowerCase())).toEqual({
-      usdPrice: 1,
-      priceChange24h: 0.01,
-    });
-  });
-
-  it('omits mints absent from the backend response', async () => {
-    const known = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-    const unknown = 'UnknownMint11111111111111111111111111111111111';
-    stubBatchPrices({
-      [known.toLowerCase()]: { usdPrice: 1, priceChange24h: 0.01 },
-    });
-
-    const result = await getJupiterPrices([known, unknown], 'solana-mainnet');
-
-    expect(result.has(known.toLowerCase())).toBe(true);
-    expect(result.has(unknown.toLowerCase())).toBe(false);
-  });
-
-  it('deduplicates mints before issuing the batch call', async () => {
-    stubBatchPrices({
-      [SOL_CONSTANTS.ADDRESS.toLowerCase()]: { usdPrice: 1, priceChange24h: 0 },
-    });
-
-    await getJupiterPrices(
-      [SOL_CONSTANTS.ADDRESS, SOL_CONSTANTS.ADDRESS, SOL_CONSTANTS.ADDRESS],
-      'solana-mainnet'
-    );
-
-    const config = mockApiGet.mock.calls[0][1] as { params: { mints: string } };
-    expect(config.params.mints).toBe(SOL_CONSTANTS.ADDRESS);
-  });
-
-  it('returns an empty map when the batch call throws', async () => {
-    mockApiGet.mockRejectedValue(new Error('network'));
-
-    const result = await getJupiterPrices(
-      [SOL_CONSTANTS.ADDRESS],
-      'solana-mainnet'
-    );
-
-    expect(result.size).toBe(0);
   });
 });
 

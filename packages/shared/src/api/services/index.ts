@@ -7,7 +7,6 @@
  * - Price Service (./price)
  * - Exchange Rates Service (./exchangeRates)
  * - Token Service (./tokens)
- * - Balance Service (./balance)
  * - NFT Burn Service (./nft-burn)
  * - Bitcoin Service (./bitcoin)
  * - Solana Service (./solana)
@@ -25,12 +24,8 @@
 
 export {
   // Functions
-  getPricesByPlatform,
-  getPricesByIds,
   getMarketChart,
   getCoinInfo,
-  clearPriceCache,
-  getPriceCacheStatus,
 } from './price';
 
 // ============================================================================
@@ -49,10 +44,8 @@ export {
 export {
   // Functions
   getTokenList,
-  getTokenMetadataByMints,
   getVerifiedTokens,
   searchTokens,
-  getTokenByAddress,
   clearTokenListCache,
 } from './tokens';
 
@@ -95,7 +88,6 @@ export {
   broadcastTransaction,
   // DI adapters (account)
   fetchBitcoinAccountBalance,
-  fetchBitcoinAccountTransaction,
   fetchBitcoinAccountRecentTransactions,
   bitcoinApiFunctions,
 } from './bitcoin';
@@ -123,7 +115,6 @@ export {
   // are in types/swap.ts - import from @salmon/shared
   // Functions - Transactions
   getSolanaTransactions,
-  getSolanaTransaction,
   getAllSolanaTransactions,
   getRecentSolanaTransactions,
   getTransactionsByType,
@@ -192,7 +183,6 @@ export {
 export {
   // Functions
   getSolanaNfts,
-  getSolanaNftByAddress,
 } from './solana-nft';
 
 // ============================================================================
