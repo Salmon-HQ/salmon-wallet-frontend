@@ -3,6 +3,7 @@
   "version": "0.9.1",
   "type": "module",
   "private": true,
+  "license": "Apache-2.0",
   "scripts": {
     "preinstall": "node scripts/check-build-env.cjs",
     "dev": "turbo run dev",

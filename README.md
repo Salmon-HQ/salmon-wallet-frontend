@@ -5,7 +5,7 @@
 ![React Native 0.83.6](https://img.shields.io/badge/React%20Native-0.83.6-61dafb?logo=react&logoColor=white)
 ![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)
 ![Solana Web3.js 1.98](https://img.shields.io/badge/@solana%2Fweb3.js-1.98-9945FF?logo=solana&logoColor=white)
-![GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
+![Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 
 <img width="160" alt="logo-salmon" src="https://github.com/salmonw/salmon-wallet-v2/assets/35810074/ac99529f-aff7-47c6-b443-4a58b41a998d">
 
@@ -334,4 +334,4 @@ Open ecosystems deserve open wallet infrastructure. 🚀
 
 ## License
 
-Salmon Wallet is released under the [GNU GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.html).
+Salmon Wallet is released under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). See [LICENSE](LICENSE).
