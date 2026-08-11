@@ -2,7 +2,7 @@ import React from 'react';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
 const mockSetStringAsync = jest.fn().mockResolvedValue(undefined);
-const mockImpactAsync = jest.fn().mockResolvedValue(undefined);
+const mockNotificationAsync = jest.fn().mockResolvedValue(undefined);
 const mockExplorerPress = jest.fn();
 
 jest.mock('react-i18next', () => ({
@@ -35,8 +35,8 @@ jest.mock('expo-clipboard', () => ({
 }));
 
 jest.mock('../../utils/haptics', () => ({
-  impactAsync: (...args: unknown[]) => mockImpactAsync(...args),
-  ImpactFeedbackStyle: { Light: 'light' },
+  notificationAsync: (...args: unknown[]) => mockNotificationAsync(...args),
+  NotificationFeedbackType: { Success: 'success' },
 }));
 
 jest.mock('@salmon/shared', () => ({
@@ -54,6 +54,7 @@ jest.mock('@salmon/shared', () => ({
     },
     text: { primary: '#fff', secondary: '#999', tertiary: '#666' },
     status: { success: '#0f0', error: '#f00', warning: '#fc0' },
+    accent: { primary: '#f54', tint: 'rgba(255, 92, 69, 0.1)' },
     background: { card: '#111' },
     border: { subtle: '#222' },
   },
@@ -252,9 +253,42 @@ describe('TransactionDetailModal', () => {
       expect(mockSetStringAsync).toHaveBeenCalledWith('tx-1234567890abcdef');
     });
 
-    expect(mockImpactAsync).toHaveBeenCalled();
+    expect(mockNotificationAsync).toHaveBeenCalled();
     expect(onCopyHash).toHaveBeenCalledWith('tx-1234567890abcdef');
     expect(onShare).toHaveBeenCalledWith(BASE_TRANSACTION);
+
+    // Success feedback: the copy button flips to the copied tick state
+    await waitFor(() => {
+      expect(screen.getByLabelText('Copied!')).toBeTruthy();
+    });
+  });
+
+  it('does not show copied feedback when the clipboard write fails', async () => {
+    mockSetStringAsync.mockRejectedValueOnce(new Error('clipboard unavailable'));
+    const onCopyHash = jest.fn();
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    render(
+      <TransactionDetailModal
+        visible
+        onClose={jest.fn()}
+        transaction={BASE_TRANSACTION}
+        onCopyHash={onCopyHash}
+      />
+    );
+
+    fireEvent.press(screen.getByLabelText('Copy transaction hash'));
+
+    await waitFor(() => {
+      expect(mockSetStringAsync).toHaveBeenCalledWith('tx-1234567890abcdef');
+    });
+
+    expect(onCopyHash).not.toHaveBeenCalled();
+    expect(mockNotificationAsync).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('Copied!')).toBeNull();
+    expect(screen.getByLabelText('Copy transaction hash')).toBeTruthy();
+
+    warnSpy.mockRestore();
   });
 
   it('shows developer details and forwards explorer action', () => {

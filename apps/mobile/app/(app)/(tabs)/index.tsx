@@ -570,10 +570,14 @@ export default function HomeScreen() {
   }, [refresh]);
 
   const handleReceiveSheetCopy = useCallback(async () => {
-    if (activeBlockchainAccount) {
-      const addr = activeBlockchainAccount.getReceiveAddress();
-      await Clipboard.setStringAsync(addr);
-      // TODO: Show toast notification
+    if (!activeBlockchainAccount) return false;
+    try {
+      await Clipboard.setStringAsync(activeBlockchainAccount.getReceiveAddress());
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      return true;
+    } catch (error) {
+      console.warn('Failed to copy address:', error);
+      return false;
     }
   }, [activeBlockchainAccount]);
 
@@ -632,13 +636,6 @@ export default function HomeScreen() {
     Linking.openURL(explorerUrl);
     handleDetailModalClose();
   }, [networkId, handleDetailModalClose]);
-
-  // Handler to copy transaction hash (from detail modal)
-  const handleCopyHash = useCallback(async (hash: string) => {
-    await Clipboard.setStringAsync(hash);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    // TODO: Show toast notification
-  }, []);
 
   // Handler to share transaction (from detail modal)
   const handleShareTransaction = useCallback(async (transaction: Transaction) => {
@@ -894,7 +891,6 @@ export default function HomeScreen() {
         onClose={handleDetailModalClose}
         transaction={selectedTransaction}
         onViewExplorer={handleViewExplorer}
-        onCopyHash={handleCopyHash}
         onShare={handleShareTransaction}
         developerMode={developerNetworks}
       />
