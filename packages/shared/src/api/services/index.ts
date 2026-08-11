@@ -89,7 +89,6 @@ export {
   getBitcoinBalance,
   getBitcoinUtxos,
   getBitcoinTransactions,
-  getBitcoinTransaction,
   broadcastBitcoinTransaction,
   // DI adapters (transfer)
   fetchUtxos,

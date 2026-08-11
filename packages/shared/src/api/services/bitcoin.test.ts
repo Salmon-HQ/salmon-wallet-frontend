@@ -33,7 +33,6 @@ import {
   fetchBitcoinAccountTransaction,
   fetchUtxos,
   getBitcoinBalance,
-  getBitcoinTransaction,
   getBitcoinTransactions,
   getBitcoinUtxos,
 } from './bitcoin';
@@ -211,25 +210,6 @@ describe('bitcoin service', () => {
     const result = await getBitcoinTransactions('bitcoin-mainnet', 'missing-address');
 
     expect(result).toEqual({ transactions: [], nextPageToken: null });
-  });
-
-  it('fetches a single bitcoin transaction', async () => {
-    mockApiClientGet.mockResolvedValueOnce({ data: MOCK_SINGLE_TRANSACTION });
-
-    const result = await getBitcoinTransaction('bitcoin-mainnet', 'bc1-address', 'tx-1');
-
-    expect(mockApiClientGet).toHaveBeenCalledWith(
-      '/v1/bitcoin-mainnet/account/bc1-address/transactions/tx-1',
-    );
-    expect(result).toEqual(MOCK_SINGLE_TRANSACTION);
-  });
-
-  it('returns null for a missing bitcoin transaction', async () => {
-    mockApiClientGet.mockRejectedValueOnce(new ApiError('Not found', 404, 'not_found'));
-
-    const result = await getBitcoinTransaction('bitcoin-mainnet', 'bc1-address', 'missing-tx');
-
-    expect(result).toBeNull();
   });
 
   it('returns backend broadcast response on success', async () => {
@@ -438,41 +418,4 @@ describe.skipIf(!backendBaseUrl)('bitcoin service integration', () => {
     20000,
   );
 
-  it(
-    'reads a live bitcoin transaction detail from salmon-api',
-    async () => {
-      mockApiClientGet.mockImplementation(async (path) => {
-        const response = await fetch(`${backendBaseUrl!}${path as string}`, {
-          method: 'GET',
-          signal: AbortSignal.timeout(15000),
-        });
-
-        if (!response.ok) {
-          throw new ApiError(`HTTP ${response.status}`, response.status);
-        }
-
-        return {
-          data: await response.json(),
-        } as { data: BitcoinTransaction };
-      });
-
-      const result = await getBitcoinTransaction(
-        'bitcoin-mainnet',
-        '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-        '536f523ce08ccc1f23a1e8bb004aec3089bbad3d4235ef6a5b3bd9929907c5b5',
-      );
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          id: '536f523ce08ccc1f23a1e8bb004aec3089bbad3d4235ef6a5b3bd9929907c5b5',
-          timestamp: expect.any(Number),
-          status: expect.any(String),
-          type: expect.any(String),
-          inputs: expect.any(Array),
-          outputs: expect.any(Array),
-        }),
-      );
-    },
-    20000,
-  );
 });

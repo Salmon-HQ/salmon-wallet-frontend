@@ -174,39 +174,6 @@ export async function getBitcoinTransactions(
 }
 
 /**
- * Get a single transaction by ID
- *
- * Endpoint: GET /v1/{networkId}/account/{address}/transactions/{txId}
- *
- * Backend note:
- * - The live transaction detail endpoint returns a transaction object keyed by `id`
- * - Unlike paginated transaction history items, it does not guarantee a `signature` field
- *
- * @param networkId - Bitcoin network identifier
- * @param address - Bitcoin address
- * @param txId - Transaction ID
- * @returns Transaction data, or null if not found
- */
-export async function getBitcoinTransaction(
-  networkId: BitcoinNetworkId,
-  address: string,
-  txId: string
-): Promise<BitcoinTransaction | null> {
-  try {
-    const { data } = await apiClient.get<BitcoinTransaction>(
-      `/v1/${networkId}/account/${address}/transactions/${txId}`
-    );
-    return data;
-  } catch (error) {
-    if (error instanceof ApiError && error.isNotFound()) {
-      return null;
-    }
-    console.error('[BitcoinService] Failed to get transaction:', error);
-    throw error;
-  }
-}
-
-/**
  * Broadcast a signed Bitcoin transaction
  *
  * Endpoint: POST /v1/{networkId}/account/{address}/transactions
