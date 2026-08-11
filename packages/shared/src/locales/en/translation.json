@@ -50,7 +50,10 @@
       "8": "Keep your app updated for security patches",
       "9": "Use a hardware wallet for large holdings"
     },
-    "password": "Password"
+    "password": "Password",
+    "show_password": "Show password",
+    "hide_password": "Hide password",
+    "terms_and_conditions": "Terms & Conditions"
   },
   "actions": {
     "approve": "Approve",
@@ -436,6 +439,9 @@
     "use_touch_id": "Use Touch ID",
     "use_iris": "Use Iris",
     "biometric_unlock_failed": "Biometric unlock failed",
+    "biometric_prompt": "Authenticate to unlock your wallet",
+    "biometric_enroll_prompt": "Confirm to enable biometric unlock",
+    "iris": "Iris",
     "subtitle": "Enter your password to unlock your wallet",
     "password_placeholder": "Password",
     "error": {
@@ -486,7 +492,8 @@
       "ive_backed_up_seed_phrase": "I´ve backed up my phrase",
       "confirm_seed_phrase": "Confirm Seed Phrase",
       "confirm_seed_phrase_body": "Please re-enter the following words of the seed phrase to confirm that you have saved it.",
-      "enter_word_number": "Enter Word #",
+      "enter_word_number": "Enter word #{{position}}",
+      "word_number": "Word #{{position}}",
       "buttonPreparing": "Preparing...",
       "enter_your_password": "Enter your password",
       "passwords_dont_match": "Passwords don't match",
@@ -499,6 +506,7 @@
       "passwordNew": "New password",
       "passwordRepeat": "Repeat password",
       "i_accept_terms_conditions": "By tapping the Create Account button \nI accept the Terms & Conditions",
+      "terms_prefix": "By creating, you accept the ",
       "passwordChecking": "Checking...",
       "success_message": "Congratulations!",
       "success_message_body": "Your account is now ready",
@@ -524,14 +532,30 @@
       "biometric_subtitle": "Unlock your wallet quickly and securely without typing your password",
       "biometric_enable": "Enable {{type}}",
       "biometric_skip": "Maybe Later",
-      "biometric_error": "Failed to enable biometric unlock. Please try again."
+      "biometric_error": "Failed to enable biometric unlock. Please try again.",
+      "creating_account": "Creating Account",
+      "securing_wallet": "Please wait while we secure your wallet"
     },
     "recover": {
       "messageTitle": "Recover Existing Account",
       "messageBody": "Recover your account using your 12/24 words seed phrase.",
       "pasteSeed": "Paste your seed phrase",
       "i_accept_terms_conditions": "By tapping the Recover Account button \nI accept the Terms & Conditions",
-      "placeholder": "Enter your seed phrase..."
+      "terms_prefix": "By recovering, you accept the ",
+      "placeholder": "Enter your seed phrase...",
+      "recovering_account": "Recovering Account"
+    },
+    "derived": {
+      "title": "Derived Accounts",
+      "subtitle": "Search for additional accounts derived from your seed phrase.",
+      "searching": "Searching for accounts...",
+      "empty_title": "No Derived Accounts Found",
+      "empty_subtitle": "Could not derive additional accounts from your seed phrase.",
+      "found_one": "Found {{count}} derived account",
+      "found_other": "Found {{count}} derived accounts",
+      "import_selected": "IMPORT SELECTED ({{count}})",
+      "continue": "CONTINUE",
+      "skip": "SKIP"
     },
     "onboarding": {
       "titleOnboarded": "Add New Account",

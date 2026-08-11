@@ -4,6 +4,7 @@
  * Web version using MUI and @emotion/styled for browser extension.
  */
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
@@ -61,6 +62,7 @@ export function SeedWordInput({
   onSubmitEditing,
   testID,
 }: SeedWordInputProps) {
+  const { t } = useTranslation();
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' && onSubmitEditing) {
@@ -72,12 +74,12 @@ export function SeedWordInput({
 
   return (
     <Container>
-      <Label>Word #{position}</Label>
+      <Label>{t('wallet.create.word_number', { position })}</Label>
       <StyledInput
         $borderColor={getBorderColor(validationState)}
         value={value}
         onChange={(e) => onChangeText(e.target.value)}
-        placeholder={`Enter word #${position}`}
+        placeholder={t('wallet.create.enter_word_number', { position })}
         autoFocus={autoFocus}
         onKeyDown={handleKeyDown}
         autoComplete="off"

@@ -2,6 +2,7 @@
  * PasswordInput - Secure text input with visibility toggle
  */
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, componentSizes, spacing, borderWidth, fontSize, fontFamilyNative, } from '@salmon/shared';
@@ -20,13 +21,14 @@ interface PasswordInputProps {
 export function PasswordInput({
   value,
   onChangeText,
-  placeholder = 'Enter password',
+  placeholder,
   error,
   editable = true,
   autoFocus,
   onSubmitEditing,
   testID,
 }: PasswordInputProps) {
+  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -44,7 +46,7 @@ export function PasswordInput({
           style={styles.input}
           value={value}
           onChangeText={onChangeText}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('lock.password_placeholder')}
           placeholderTextColor={colors.text.tertiary}
           secureTextEntry={!showPassword}
           autoCapitalize="none"
@@ -59,7 +61,7 @@ export function PasswordInput({
         <TouchableOpacity
           testID={testID ? `${testID}-toggle` : undefined}
           accessibilityRole="button"
-          accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+          accessibilityLabel={showPassword ? t('general.hide_password') : t('general.show_password')}
           onPress={() => setShowPassword(!showPassword)}
           style={styles.toggleButton}
         >

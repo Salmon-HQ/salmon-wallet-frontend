@@ -50,7 +50,10 @@
       "8": "Mantené tu app actualizada para parches de seguridad",
       "9": "Usá una billetera de hardware para grandes cantidades"
     },
-    "password": "Contraseña"
+    "password": "Contraseña",
+    "show_password": "Mostrar contraseña",
+    "hide_password": "Ocultar contraseña",
+    "terms_and_conditions": "Términos y Condiciones"
   },
   "actions": {
     "approve": "Aprobar",
@@ -436,6 +439,9 @@
     "use_touch_id": "Usar Touch ID",
     "use_iris": "Usar Iris",
     "biometric_unlock_failed": "Error al desbloquear con biometría",
+    "biometric_prompt": "Autenticate para desbloquear tu wallet",
+    "biometric_enroll_prompt": "Confirmá para activar el desbloqueo biométrico",
+    "iris": "Iris",
     "subtitle": "Ingresá tu contraseña para desbloquear tu billetera",
     "password_placeholder": "Contraseña",
     "error": {
@@ -486,7 +492,8 @@
       "ive_backed_up_seed_phrase": "He backupeado la seed-phrase",
       "confirm_seed_phrase": "Confirmar seed-phrase",
       "confirm_seed_phrase_body": "Por favor, re-ingresá las siguientes palabras para confirmar que las guardaste.",
-      "enter_word_number": "Palabra #",
+      "enter_word_number": "Ingresá la palabra #{{position}}",
+      "word_number": "Palabra #{{position}}",
       "buttonPreparing": "Preparando...",
       "enter_your_password": "Ingresá tu contraseña",
       "passwords_dont_match": "Las contraseñas no coinciden",
@@ -499,6 +506,7 @@
       "passwordNew": "Nueva contraseña",
       "passwordRepeat": "Repetir contraseña",
       "i_accept_terms_conditions": "Haciendo click en el botón de Crear Cuenta\naceptás los Términos & Condiciones",
+      "terms_prefix": "Al crear, aceptás los ",
       "passwordChecking": "Chequeando...",
       "success_message": "¡Felicitaciones!",
       "success_message_body": "Tu Cuenta ya está lista.",
@@ -524,14 +532,30 @@
       "biometric_subtitle": "Desbloqueá tu billetera rápido y de forma segura sin escribir tu contraseña",
       "biometric_enable": "Activar {{type}}",
       "biometric_skip": "Quizás Después",
-      "biometric_error": "Error al activar el desbloqueo biométrico. Intentá de nuevo."
+      "biometric_error": "Error al activar el desbloqueo biométrico. Intentá de nuevo.",
+      "creating_account": "Creando Cuenta",
+      "securing_wallet": "Esperá mientras aseguramos tu wallet"
     },
     "recover": {
       "messageTitle": "Recuperar Cuenta existente",
       "messageBody": "Recuperar tu Cuenta usando tu seed-phrase de 12 o 24 palabras",
       "pasteSeed": "Pegar seed-phrase",
       "i_accept_terms_conditions": "Haciendo click en el botón de Recuperar Cuenta\naceptás los Términos & Condiciones",
-      "placeholder": "Ingresá tu seed phrase..."
+      "terms_prefix": "Al recuperar, aceptás los ",
+      "placeholder": "Ingresá tu seed phrase...",
+      "recovering_account": "Recuperando Cuenta"
+    },
+    "derived": {
+      "title": "Cuentas Derivadas",
+      "subtitle": "Buscá cuentas adicionales derivadas de tu seed phrase.",
+      "searching": "Buscando cuentas...",
+      "empty_title": "No se encontraron cuentas derivadas",
+      "empty_subtitle": "No se pudieron derivar cuentas adicionales de tu seed phrase.",
+      "found_one": "Se encontró {{count}} cuenta derivada",
+      "found_other": "Se encontraron {{count}} cuentas derivadas",
+      "import_selected": "IMPORTAR SELECCIONADAS ({{count}})",
+      "continue": "CONTINUAR",
+      "skip": "OMITIR"
     },
     "onboarding": {
       "titleOnboarded": "Nueva Cuenta",

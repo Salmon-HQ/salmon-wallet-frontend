@@ -156,7 +156,7 @@ export default function RecoverWalletScreen() {
                   styles.textarea,
                   { borderColor: getInputBorderColor() },
                 ]}
-                placeholder="Enter your seed phrase..."
+                placeholder={t('wallet.recover.placeholder')}
                 placeholderTextColor={colors.text.tertiary}
                 value={seedPhrase}
                 onChangeText={setSeedPhrase}

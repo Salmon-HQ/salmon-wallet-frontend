@@ -1,6 +1,7 @@
 /**
  * SeedWordInput - Input for validating a specific mnemonic word
  */
+import { useTranslation } from 'react-i18next';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { colors, spacing, componentSizes, fontSize, borderWidth, fontFamilyNative, } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
@@ -31,6 +32,7 @@ export function SeedWordInput({
   onSubmitEditing,
   testID,
 }: SeedWordInputProps) {
+  const { t } = useTranslation();
   const getBorderColor = () => {
     switch (validationState) {
       case 'correct': return colors.status.success;
@@ -41,14 +43,14 @@ export function SeedWordInput({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Word #{position}</Text>
+      <Text style={styles.label}>{t('wallet.create.word_number', { position })}</Text>
       <TextInput
         testID={testID}
-        accessibilityLabel={`Word #${position}`}
+        accessibilityLabel={t('wallet.create.word_number', { position })}
         style={[styles.input, { borderColor: getBorderColor() }]}
         value={value}
         onChangeText={onChangeText}
-        placeholder={`Enter word #${position}`}
+        placeholder={t('wallet.create.enter_word_number', { position })}
         placeholderTextColor={colors.text.tertiary}
         autoCapitalize="none"
         autoCorrect={false}

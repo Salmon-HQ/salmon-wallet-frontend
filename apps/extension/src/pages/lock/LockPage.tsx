@@ -288,7 +288,7 @@ export function LockPage({ onUnlock, onUnlockWithCachedKey: _onUnlockWithCachedK
 
       <LoadingScreen
         visible={showLoadingScreen}
-        title="Unlocking Wallet"
+        title={t('lock.unlocking')}
         showTips={true}
         tipInterval={3000}
       />

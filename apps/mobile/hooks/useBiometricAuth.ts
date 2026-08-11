@@ -14,6 +14,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import i18n from 'i18next';
 import * as LocalAuthentication from '../utils/localAuthentication';
 import * as SecureStore from '../utils/secureStore';
 
@@ -39,15 +40,8 @@ const BIOMETRIC_ENABLED_KEY = 'salmon_biometric_enabled';
  */
 const BIOMETRIC_KEY_EXISTS_FLAG = 'salmon_biometric_key_exists';
 
-/**
- * Prompt message shown during biometric authentication.
- */
-const BIOMETRIC_PROMPT_MESSAGE = 'Authenticate to unlock your wallet';
-
-/**
- * Prompt message shown when enrolling into biometric unlock.
- */
-const BIOMETRIC_ENROLL_PROMPT_MESSAGE = 'Confirm to enable biometric unlock';
+// OS prompt messages are resolved at call time via i18n.t so they follow the
+// active language (this is a hook, not a component, so no useTranslation).
 
 // ============================================================================
 // Types
@@ -284,7 +278,7 @@ export function useBiometricAuth(): UseBiometricAuthReturn {
     async (derivedKeyJson: string): Promise<BiometricEnrollResult> => {
       try {
         const result = await LocalAuthentication.authenticateAsync({
-          promptMessage: BIOMETRIC_ENROLL_PROMPT_MESSAGE,
+          promptMessage: i18n.t('lock.biometric_enroll_prompt'),
           disableDeviceFallback: true,
         });
 
@@ -299,7 +293,7 @@ export function useBiometricAuth(): UseBiometricAuthReturn {
           // Require biometric authentication to access
           requireAuthentication: true,
           // Authentication prompt message
-          authenticationPrompt: BIOMETRIC_PROMPT_MESSAGE,
+          authenticationPrompt: i18n.t('lock.biometric_prompt'),
         });
         await SecureStore.setItemAsync(BIOMETRIC_KEY_MARKER, 'true');
 
