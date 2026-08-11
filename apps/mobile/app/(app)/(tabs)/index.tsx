@@ -168,6 +168,7 @@ export default function HomeScreen() {
   const [bitcoinCoinInfo, setBitcoinCoinInfo] = useState<CoinInfo | null>(null);
   const [bitcoinChartPeriod, setBitcoinChartPeriod] = useState<PriceChartPeriod>('1M');
   const [bitcoinDataLoading, setBitcoinDataLoading] = useState(false);
+  const [bitcoinChartError, setBitcoinChartError] = useState(false);
 
   // TokenInformationSheet states
   const [tokenSheetVisible, setTokenSheetVisible] = useState(false);
@@ -177,6 +178,7 @@ export default function HomeScreen() {
   const [selectedTokenChartPeriod, setSelectedTokenChartPeriod] = useState<PriceChartPeriod>('1M');
   const [selectedTokenMarketData, setSelectedTokenMarketData] = useState<MarketData | undefined>(undefined);
   const [selectedTokenLoading, setSelectedTokenLoading] = useState(false);
+  const [selectedTokenChartError, setSelectedTokenChartError] = useState(false);
 
   // ReceiveSheet visibility
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
@@ -422,6 +424,7 @@ export default function HomeScreen() {
       if (currentBlockchain !== 'bitcoin') return;
 
       setBitcoinDataLoading(true);
+      setBitcoinChartError(false);
       try {
         const coinId = BLOCKCHAIN_TO_COINGECKO[currentBlockchain];
         const days = PERIOD_TO_DAYS[bitcoinChartPeriod];
@@ -438,6 +441,7 @@ export default function HomeScreen() {
         }
       } catch (error) {
         console.error('Failed to load Bitcoin chart data:', error);
+        setBitcoinChartError(true);
       } finally {
         setBitcoinDataLoading(false);
       }
@@ -475,6 +479,7 @@ export default function HomeScreen() {
       if (!coinId) return;
 
       setSelectedTokenLoading(true);
+      setSelectedTokenChartError(false);
       try {
         const days = PERIOD_TO_DAYS[selectedTokenChartPeriod];
         const chartResponse = await getMarketChart(coinId, days, currency);
@@ -488,6 +493,7 @@ export default function HomeScreen() {
         }
       } catch (error) {
         console.error('Failed to load token chart data:', error);
+        setSelectedTokenChartError(true);
       } finally {
         setSelectedTokenLoading(false);
       }
@@ -777,6 +783,7 @@ export default function HomeScreen() {
                 selectedPeriod={bitcoinChartPeriod}
                 onPeriodChange={handleChartPeriodChange}
                 loading={bitcoinDataLoading && bitcoinChartData.length === 0}
+                error={bitcoinChartError && bitcoinChartData.length === 0}
                 height={180}
               />
             </View>
@@ -850,6 +857,7 @@ export default function HomeScreen() {
           coinInfo={selectedTokenCoinInfo}
           marketData={selectedTokenMarketData}
           loading={selectedTokenLoading && selectedTokenChartData.length === 0}
+          chartError={selectedTokenChartError && selectedTokenChartData.length === 0}
         />
       )}
 

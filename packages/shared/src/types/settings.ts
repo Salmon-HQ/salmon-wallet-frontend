@@ -439,6 +439,10 @@ export interface AddressBookSelectorBaseProps {
   onRemoveContact: (address: string) => Promise<void>;
   onBack: () => void;
   loading?: boolean;
+  /** Load-failure message key/state from useAddressbook — renders an error state instead of the empty state */
+  error?: string | null;
+  /** Re-runs the address book load after a failure */
+  onRetry?: () => void;
 }
 
 /**

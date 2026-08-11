@@ -23,6 +23,7 @@ import {
   colors,
   spacing,
   getShortAddress,
+  AddressbookError,
   type AddressBookItem,
   fontSize,
   fontWeight,
@@ -77,6 +78,14 @@ const AddButton = styled(Button)({
   marginTop: spacing.sm,
 });
 
+const WriteErrorText = styled(Typography)({
+  color: colors.status.error,
+  fontSize: fontSize.sm,
+  fontWeight: fontWeight.medium,
+  textAlign: 'center',
+  padding: `${spacing.sm}px ${spacing.lg}px`,
+});
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -87,13 +96,27 @@ export function AddressBookPanel({
   onEditContact,
   onRemoveContact,
   onBack,
+  error = null,
+  onRetry,
 }: AddressBookPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const [deleteTarget, setDeleteTarget] = useState<AddressBookItem | null>(null);
+  const [removeErrorKey, setRemoveErrorKey] = useState<string | null>(null);
 
   const handleConfirmDelete = useCallback(async () => {
-    if (deleteTarget) {
+    if (!deleteTarget) return;
+    try {
       await onRemoveContact(deleteTarget.address);
+      setRemoveErrorKey(null);
+    } catch (err) {
+      // 'resolve' means the write persisted but redisplay failed; anything
+      // else means the removal was not saved.
+      setRemoveErrorKey(
+        err instanceof AddressbookError && err.kind === 'resolve'
+          ? 'settings.addressbook.resolve_failed'
+          : 'settings.addressbook.remove_failed',
+      );
+    } finally {
       setDeleteTarget(null);
     }
   }, [deleteTarget, onRemoveContact]);
@@ -103,7 +126,18 @@ export function AddressBookPanel({
       title={t('settings.address_book', 'Address Book')}
       onBack={onBack}
     >
-      {contacts.length > 0 ? (
+      {error ? (
+        <EmptyContainer data-testid="address-book-error">
+          <EmptyText>
+            {t('settings.addressbook.load_error', "Couldn't load your contacts")}
+          </EmptyText>
+          {onRetry && (
+            <AddButton onClick={onRetry} data-testid="address-book-retry-button">
+              {t('transactions.tapToRetry', 'Tap to retry')}
+            </AddButton>
+          )}
+        </EmptyContainer>
+      ) : contacts.length > 0 ? (
         <>
           <StyledList>
             {contacts.map((contact: AddressBookItem) => (
@@ -193,6 +227,12 @@ export function AddressBookPanel({
             {t('settings.addressbook.addnew', 'Add New Address')}
           </AddButton>
         </EmptyContainer>
+      )}
+
+      {removeErrorKey && (
+        <WriteErrorText data-testid="address-book-remove-error">
+          {t(removeErrorKey)}
+        </WriteErrorText>
       )}
 
       {/* Delete Confirmation Dialog */}

@@ -38,6 +38,8 @@ export interface UseTokenSearchResult {
   loadMore: () => void;
   /** Reset search state */
   reset: () => void;
+  /** Re-run the current query after a failed search */
+  retry: () => void;
   /** Error message if search failed */
   error: string | null;
   /** Whether an error occurred */

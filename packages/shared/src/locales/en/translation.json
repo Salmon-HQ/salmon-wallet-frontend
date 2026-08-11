@@ -220,7 +220,11 @@
       "label": "Label",
       "empty": "Looks empty in here.\nAdd your first contact clicking the button.",
       "remove_confirmation": "Are you sure you want to remove {{name}} from your address book?",
-      "network": "Network"
+      "network": "Network",
+      "load_error": "Couldn't load your contacts",
+      "save_failed": "Couldn't save the contact. Try again.",
+      "remove_failed": "Couldn't remove the contact. Try again.",
+      "resolve_failed": "Contact saved, but the address couldn't be verified."
     },
     "languages": {
       "title": "Language",
@@ -278,7 +282,8 @@
     "remove_all_wallets_description": "This will remove ALL wallets from this device. This action cannot be undone. Make sure you have backed up all recovery phrases.",
     "remove_wallet_description": "Are you sure you want to remove this wallet? Make sure you have backed up your recovery phrase before removing.",
     "tap_to_reveal": "Tap to reveal",
-    "trusted_apps_revoke": "Revoke"
+    "trusted_apps_revoke": "Revoke",
+    "copy_failed": "Copy failed — nothing was copied to the clipboard"
   },
   "token": {
     "action": {
@@ -338,7 +343,8 @@
       "title": "Token Information"
     },
     "chart": {
-      "noData": "No data available"
+      "noData": "No data available",
+      "loadError": "Couldn't load chart data"
     },
     "badges": {
       "title": "Badges",
@@ -481,7 +487,10 @@
       "found_other": "Found {{count}} derived accounts",
       "import_selected": "IMPORT SELECTED ({{count}})",
       "continue": "CONTINUE",
-      "skip": "SKIP"
+      "skip": "SKIP",
+      "scan_failed_title": "Couldn't scan for accounts",
+      "scan_failed_body": "We couldn't reach the network. Your accounts are safe — try again.",
+      "scan_partial": "Some networks couldn't be scanned. Results may be incomplete."
     },
     "onboarding": {
       "titleOnboarded": "Add New Account",
@@ -493,7 +502,8 @@
     "loading_tokens": "Loading tokens...",
     "tokens_empty_subtitle": "Your tokens will appear here once you receive some",
     "no_account_found": "No account found",
-    "unnamed_account": "Account"
+    "unnamed_account": "Account",
+    "token_search_failed": "Search isn't available right now. Try again."
   },
   "transactions": {
     "unknown": "Unknown",

@@ -375,6 +375,8 @@ export function TokenSelectorModal({
     hasMore,
     loadMore,
     reset,
+    retry,
+    isError,
   } = useTokenSearch(tokens, onSearch);
 
   const handleClose = useCallback(() => {
@@ -498,6 +500,15 @@ export function TokenSelectorModal({
                 </ContentLoader>
               </TokenItemContainer>
             ))
+          ) : isError && !isSearching ? (
+            <EmptyContainer data-testid="token-search-error">
+              <EmptyText>
+                {t('wallet.token_search_failed')}
+              </EmptyText>
+              <LoadMoreButton onClick={retry} data-testid="token-search-retry-button">
+                {t('transactions.tapToRetry')}
+              </LoadMoreButton>
+            </EmptyContainer>
           ) : paginatedTokens.length === 0 && !isSearching ? (
             <EmptyContainer>
               <EmptyText>

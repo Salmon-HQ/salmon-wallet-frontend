@@ -37,6 +37,8 @@ export function AddressBookPanel({
   onEditContact,
   onRemoveContact,
   onBack,
+  error = null,
+  onRetry,
 }: AddressBookSelectorBaseProps) {
   const { t } = useTranslation();
 
@@ -125,7 +127,24 @@ export function AddressBookPanel({
       title={t('settings.address_book', 'Address Book')}
       onBack={onBack}
     >
-      {contacts.length > 0 ? (
+      {error ? (
+        <View style={styles.emptyContainer} testID="address-book-error">
+          <Text style={styles.emptyText}>
+            {t('settings.addressbook.load_error', "Couldn't load your contacts")}
+          </Text>
+          {onRetry && (
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={onRetry}
+              activeOpacity={0.7}
+              testID="address-book-retry-button"
+              accessibilityRole="button"
+            >
+              <Text style={styles.addButtonText}>{t('transactions.tapToRetry')}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ) : contacts.length > 0 ? (
         <>
           {contacts.map(renderContactItem)}
           <TouchableOpacity

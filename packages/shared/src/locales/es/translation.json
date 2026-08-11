@@ -220,7 +220,11 @@
       "label": "Etiqueta",
       "empty": "Parece vacío aquí.\nAgregá tu primer contacto haciendo clic en el botón.",
       "remove_confirmation": "¿Estás seguro que querés eliminar a {{name}} de tu libreta de contactos?",
-      "network": "Red"
+      "network": "Red",
+      "load_error": "No se pudieron cargar tus contactos",
+      "save_failed": "No se pudo guardar el contacto. Intentá de nuevo.",
+      "remove_failed": "No se pudo eliminar el contacto. Intentá de nuevo.",
+      "resolve_failed": "El contacto se guardó, pero no se pudo verificar la dirección."
     },
     "languages": {
       "title": "Idioma",
@@ -278,7 +282,8 @@
     "remove_all_wallets_description": "Esto eliminará TODAS las billeteras de este dispositivo. Esta acción no se puede deshacer. Asegurate de haber respaldado todas las frases de recuperación.",
     "remove_wallet_description": "¿Estás seguro de que querés eliminar esta billetera? Asegurate de haber respaldado tu frase de recuperación antes de eliminarla.",
     "tap_to_reveal": "Tocá para revelar",
-    "trusted_apps_revoke": "Revocar"
+    "trusted_apps_revoke": "Revocar",
+    "copy_failed": "Falló el copiado — no se copió nada al portapapeles"
   },
   "token": {
     "action": {
@@ -338,7 +343,8 @@
       "title": "Información del Token"
     },
     "chart": {
-      "noData": "No hay datos disponibles"
+      "noData": "No hay datos disponibles",
+      "loadError": "No se pudieron cargar los datos del gráfico"
     },
     "badges": {
       "title": "Insignias",
@@ -481,7 +487,10 @@
       "found_other": "Se encontraron {{count}} cuentas derivadas",
       "import_selected": "IMPORTAR SELECCIONADAS ({{count}})",
       "continue": "CONTINUAR",
-      "skip": "OMITIR"
+      "skip": "OMITIR",
+      "scan_failed_title": "No se pudieron buscar las cuentas",
+      "scan_failed_body": "No se pudo conectar con la red. Tus cuentas están a salvo — intentá de nuevo.",
+      "scan_partial": "Algunas redes no se pudieron escanear. Los resultados pueden estar incompletos."
     },
     "onboarding": {
       "titleOnboarded": "Nueva Cuenta",
@@ -493,7 +502,8 @@
     "loading_tokens": "Cargando tokens...",
     "tokens_empty_subtitle": "Tus tokens van a aparecer acá cuando recibas alguno",
     "no_account_found": "No se encontró ninguna cuenta",
-    "unnamed_account": "Cuenta"
+    "unnamed_account": "Cuenta",
+    "token_search_failed": "La búsqueda no está disponible en este momento. Intentá de nuevo."
   },
   "transactions": {
     "unknown": "Desconocido",

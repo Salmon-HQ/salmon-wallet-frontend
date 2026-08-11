@@ -45,6 +45,7 @@ import { useSettingsHeaderOverride } from '../../SettingsHeaderContext';
 import { PrimaryButton } from '../../Button';
 import { DerivedAccountCard } from '../../DerivedAccountCard';
 import { LoadingScreen } from '../../LoadingScreen';
+import { WarningNotice } from '../../WarningNotice';
 import type { AccountAddPanelProps } from './types';
 
 // ============================================================================
@@ -64,8 +65,8 @@ export function AccountAddPanel({
 
   // Derive flow state
   const [derivedAccounts, setDerivedAccounts] = useState<DerivedAccountInfo[]>([]);
-  // Networks whose scan threw — kept for the follow-up error UI.
-  const [, setFailedNetworks] = useState<string[]>([]);
+  // Networks whose scan threw — distinguishes an outage from "no accounts".
+  const [failedNetworks, setFailedNetworks] = useState<string[]>([]);
   const [selectedDerived, setSelectedDerived] = useState<DerivedAccountInfo | null>(null);
   const [scanning, setScanning] = useState(false);
 
@@ -91,16 +92,20 @@ export function AccountAddPanel({
     if (!activeAccount?.mnemonic) return;
     setStep('derive-scan');
     setScanning(true);
+    setFailedNetworks([]);
     try {
       const networkIds = await getScanNetworks();
-      const { accounts: scanned, failedNetworks } = await scanDerivedAccounts(
+      const { accounts: scanned, failedNetworks: failed } = await scanDerivedAccounts(
         activeAccount.mnemonic,
         networkIds,
       );
       setDerivedAccounts(scanned);
-      setFailedNetworks(failedNetworks);
+      setFailedNetworks(failed);
     } catch {
+      // Total failure (network catalog unreachable) — mark the scan as failed
+      // so the UI shows the error state instead of an empty list.
       setDerivedAccounts([]);
+      setFailedNetworks(['all']);
     } finally {
       setScanning(false);
     }
@@ -225,8 +230,25 @@ export function AccountAddPanel({
           <ActivityIndicator size="large" color={colors.accent.primary} />
           <Text style={styles.loadingText}>{t('settings.account_add.scanning')}</Text>
         </View>
+      ) : derivedAccounts.length === 0 && failedNetworks.length > 0 ? (
+        <View style={styles.scanErrorContainer} testID="derived-scan-error">
+          <Text style={styles.scanErrorTitle}>{t('wallet.derived.scan_failed_title')}</Text>
+          <Text style={styles.scanErrorBody}>{t('wallet.derived.scan_failed_body')}</Text>
+          <View style={styles.buttonContainer}>
+            <PrimaryButton onPress={handleSelectDerive} testID="derived-scan-retry-button">
+              {t('transactions.tapToRetry')}
+            </PrimaryButton>
+          </View>
+        </View>
       ) : (
         <>
+          {failedNetworks.length > 0 && (
+            <WarningNotice
+              tone="warning"
+              title={t('wallet.derived.scan_partial')}
+              style={styles.partialWarning}
+            />
+          )}
           {derivedAccounts.map((item: DerivedAccountInfo) => (
             <DerivedAccountCard
               key={`${item.networkId}-${item.address}`}
@@ -394,6 +416,26 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: spacing.xl,
+  },
+  scanErrorContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing['2xl'],
+  },
+  scanErrorTitle: {
+    color: colors.text.primary,
+    fontFamily: fontFamilyNative.medium,
+    fontSize: fontSize.md,
+    textAlign: 'center',
+  },
+  scanErrorBody: {
+    color: colors.text.secondary,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: fontSize.sm,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+  },
+  partialWarning: {
+    marginBottom: spacing.md,
   },
   errorText: {
     color: colors.status.error,

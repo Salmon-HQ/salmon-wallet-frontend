@@ -12,6 +12,8 @@ export interface PriceChartPropsBase<TStyle> {
   onPeriodChange: (period: PriceChartPeriod) => void;
   /** Whether the chart is in loading state */
   loading?: boolean;
+  /** Whether loading the chart data failed (shows an error message in the empty slot) */
+  error?: boolean;
   /** Custom line color (defaults to green for positive, red for negative) */
   color?: string;
   /** Chart height in pixels (default: 200) */

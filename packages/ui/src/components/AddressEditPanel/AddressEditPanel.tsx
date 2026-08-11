@@ -89,6 +89,14 @@ const SaveButton = styled(Button)({
   },
 });
 
+const ErrorText = styled(Typography)({
+  fontSize: fontSize.sm,
+  fontWeight: fontWeight.medium,
+  fontFamily: fontFamily.sans,
+  color: colors.status.error,
+  marginTop: spacing.sm,
+});
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -98,6 +106,7 @@ export function AddressEditPanel({
   activeBlockchain: _activeBlockchain,
   onSave,
   onBack,
+  errorText,
 }: AddressEditPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const form = useAddressBookForm({
@@ -150,6 +159,7 @@ export function AddressEditPanel({
         <SaveButton onClick={handleSave} disabled={!form.canSave} data-testid="address-book-save-button">
           {t('settings.addressbook.save', 'Save Address')}
         </SaveButton>
+        {errorText && <ErrorText data-testid="address-book-save-error">{errorText}</ErrorText>}
       </Box>
     </SettingsPanelContent>
   );
