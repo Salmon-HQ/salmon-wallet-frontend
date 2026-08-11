@@ -9,10 +9,10 @@
     "wallet": "Wallet",
     "swap": "Swap",
     "collectibles": "Collectibles",
-    "settings": "Settings"
+    "settings": "Settings",
+    "home": "Home"
   },
   "general": {
-    "home": "Home",
     "usd": "USD",
     "name": "Name",
     "address": "Address",
@@ -49,7 +49,8 @@
       "7": "Start with small test transactions",
       "8": "Keep your app updated for security patches",
       "9": "Use a hardware wallet for large holdings"
-    }
+    },
+    "password": "Password"
   },
   "actions": {
     "approve": "Approve",
@@ -79,7 +80,14 @@
     "bridge": "Bridge",
     "retry": "Retry",
     "searching": "Searching...",
-    "activity": "Activity"
+    "activity": "Activity",
+    "back": "Back",
+    "copied": "Copied!",
+    "edit": "Edit",
+    "hide": "Hide",
+    "reveal": "Reveal",
+    "select": "Select",
+    "sending": "Sending..."
   },
   "dapp": {
     "decode_error": "This transaction could not be decoded. Do not approve unless you trust this site.",
@@ -94,7 +102,6 @@
     "deny": "Deny",
     "sign_message_title": "Sign Message",
     "sign_message_subtitle": "This site wants you to sign a message",
-    "message_label": "Message",
     "hex_message_label": "Message (hex)",
     "siws_account": "Account",
     "siws_uri": "URI",
@@ -117,7 +124,28 @@
     "offchain_message_label": "Off-chain message (OCMS)",
     "offchain_required_signer": "Required signer",
     "sign_message_tx_lookalike_title": "Signing blocked",
-    "sign_message_tx_lookalike_warning": "This app is trying to make you sign what is actually a transaction, disguised as a plain message. Salmon has refused to sign it to protect your funds."
+    "sign_message_tx_lookalike_warning": "This app is trying to make you sign what is actually a transaction, disguised as a plain message. Salmon has refused to sign it to protect your funds.",
+    "approve_and_sign": "Approve & Sign",
+    "blockhash": "Recent blockhash",
+    "connect_permissions_hint": "The site will be able to view your public address and request signatures.",
+    "current_wallet": "Current wallet",
+    "error": "Error",
+    "fee_payer": "Fee payer",
+    "insecure_origin_warning": "This origin does not use HTTPS.",
+    "instructions": "Instructions",
+    "message": "Message",
+    "method": "Method",
+    "reject": "Reject",
+    "sign": "Sign",
+    "sign_message_hint": "Read the message carefully. Message signatures can still authorize actions off-chain.",
+    "transaction_fee": "Estimated fee",
+    "transaction_overview": "Transaction overview",
+    "transaction_ready": "Ready to sign",
+    "transaction_risk_hint": "Only approve if you trust the app and recognize the action being requested.",
+    "transaction_status": "Approval",
+    "transaction_subtitle": "Review the transaction details before approving this request.",
+    "transaction_title": "Approve Transaction",
+    "transaction_unavailable": "Review unavailable"
   },
   "settings": {
     "title": "Settings",
@@ -176,9 +204,7 @@
       "danger_zone": "Danger Zone"
     },
     "remove_wallet_title": "Remove Wallet?",
-    "remove_wallet_message": "Are you sure you want to remove this wallet? Make sure you have backed up your seed phrase.",
     "remove_all_title": "Remove All Wallets?",
-    "remove_all_message": "This will remove all wallets and reset the app. Make sure you have backed up all seed phrases.",
     "confirm_remove": "Yes, Remove",
     "cancel": "Cancel",
     "remove_wallet_error": "Failed to remove wallet. Please try again.",
@@ -260,7 +286,8 @@
       "confirm_import": "Import Account",
       "confirm": "Confirm",
       "creation_error": "Failed to create account. Please try again.",
-      "session_expired": "Your session expired. Unlock the wallet again to add an account."
+      "session_expired": "Your session expired. Unlock the wallet again to add an account.",
+      "seed_placeholder": "Enter your seed phrase..."
     },
     "security": {
       "title": "Security",
@@ -274,7 +301,19 @@
       "biometric_unlock": "Biometrics",
       "biometric_description": "Use biometrics to unlock your wallet",
       "change_password_button": "Update Password"
-    }
+    },
+    "about_general": "General",
+    "about_legal": "Legal",
+    "about_made_with_love": "Made with love by the Salmon team",
+    "about_social": "Follow Us",
+    "backup_warning_title": "Never share your recovery phrase",
+    "backup_warning_description": "Anyone with your recovery phrase can access your funds. Keep it stored securely and never enter it on websites.",
+    "no_seed_phrase": "This account was imported using a private key and does not have a recovery phrase.",
+    "recovery_phrase": "Recovery Phrase",
+    "remove_all_wallets_description": "This will remove ALL wallets from this device. This action cannot be undone. Make sure you have backed up all recovery phrases.",
+    "remove_wallet_description": "Are you sure you want to remove this wallet? Make sure you have backed up your recovery phrase before removing.",
+    "tap_to_reveal": "Tap to reveal",
+    "trusted_apps_revoke": "Revoke"
   },
   "token": {
     "nonTransferable": "Non transferable",
@@ -369,8 +408,6 @@
   },
   "lock": {
     "title": "Enter your password",
-    "placeholder": "Enter your password",
-    "error": "Invalid Password",
     "forgot": "I've forgot my password",
     "forgotten": "Forgotten password",
     "clear": "Clear data",
@@ -398,7 +435,27 @@
     "use_face_id": "Use Face ID",
     "use_touch_id": "Use Touch ID",
     "use_iris": "Use Iris",
-    "biometric_unlock_failed": "Biometric unlock failed"
+    "biometric_unlock_failed": "Biometric unlock failed",
+    "subtitle": "Enter your password to unlock your wallet",
+    "password_placeholder": "Password",
+    "error": {
+      "empty_password": "Please enter your password",
+      "invalid_password": "Invalid password",
+      "unlock_failed": "Failed to unlock wallet",
+      "reset_failed": "Failed to reset wallet. Please try again."
+    },
+    "confirm_reset": {
+      "title": "Are you sure?",
+      "message": "This action cannot be undone. All wallet data will be permanently deleted.",
+      "confirm": "Delete All Data",
+      "cancel": "Cancel"
+    },
+    "reset_wallet": {
+      "title": "Reset Wallet",
+      "message": "If you forgot your password, you will need to reset your wallet. This will permanently delete all accounts and data. You can restore your wallet using your seed phrase after resetting.",
+      "reset": "Reset Wallet",
+      "cancel": "Cancel"
+    }
   },
   "wallet": {
     "name_template": "Account #{{number}}",
@@ -407,7 +464,6 @@
     "my_tokens": "My Tokens",
     "non_listed_tokens": "Non-Listed Tokens",
     "my_nfts": "My Collectibles",
-    "nfts": "Collectibles",
     "copied": "Copied to clipboard!",
     "create_wallet": "Create Account",
     "recover_wallet": "Recover Account",
@@ -463,13 +519,19 @@
       "biometric_setup_subtitle": "Enable biometric authentication for quick and secure access to your wallet",
       "biometric_setup_enable": "Enable Biometrics",
       "biometric_setup_skip": "Maybe Later",
-      "biometric_setup_error": "Failed to enable biometrics. You can set it up later in Settings."
+      "biometric_setup_error": "Failed to enable biometrics. You can set it up later in Settings.",
+      "biometric_title": "Enable {{type}}",
+      "biometric_subtitle": "Unlock your wallet quickly and securely without typing your password",
+      "biometric_enable": "Enable {{type}}",
+      "biometric_skip": "Maybe Later",
+      "biometric_error": "Failed to enable biometric unlock. Please try again."
     },
     "recover": {
       "messageTitle": "Recover Existing Account",
       "messageBody": "Recover your account using your 12/24 words seed phrase.",
       "pasteSeed": "Paste your seed phrase",
-      "i_accept_terms_conditions": "By tapping the Recover Account button \nI accept the Terms & Conditions"
+      "i_accept_terms_conditions": "By tapping the Recover Account button \nI accept the Terms & Conditions",
+      "placeholder": "Enter your seed phrase..."
     },
     "onboarding": {
       "titleOnboarded": "Add New Account",
@@ -486,7 +548,9 @@
       "inProgress": "In Progress",
       "fail": "Failed",
       "success": "Succeded"
-    }
+    },
+    "access_existing": "ACCESS EXISTING ACCOUNT",
+    "no_tokens_found": "No tokens found"
   },
   "adapter": {
     "select": {
@@ -620,7 +684,6 @@
     "burn_nft": "Burn",
     "burning": "Burning",
     "send_to": "Send to:",
-    "no_nft_found": "No NFTs found",
     "details": "Details",
     "owned_by": "Owned by",
     "creator_royalty": "Creator Royalty",
@@ -649,7 +712,9 @@
       "title": "Send NFT",
       "sending": "Sending NFT...",
       "enterRecipientAddress": "Enter recipient address",
-      "ordinalsNotSupported": "Ordinal transfers are not yet supported."
+      "ordinalsNotSupported": "Ordinal transfers are not yet supported.",
+      "successTitle": "NFT sent",
+      "successSummary": "{{name}} sent to {{address}}"
     },
     "burn": {
       "reviewTitle": "Burn NFT",
@@ -665,7 +730,9 @@
       "lutSteps": "Additional setup transactions",
       "lutFootnote": "The rent stays locked in the lookup table account until it is later deactivated and closed.",
       "insufficientFeeSol": "Insufficient SOL balance to cover burn transaction fees."
-    }
+    },
+    "ordinal_send_unsupported": "Ordinal transfers are not yet supported.",
+    "sending": "Sending NFT..."
   },
   "swap": {
     "swap": "Swap",
@@ -744,7 +811,15 @@
       "pleaseNote": "Please Note",
       "pleaseNoteText": "Cross-chain swaps typically take 10-30 minutes to complete. You will receive a deposit address after confirmation.",
       "confirmSwap": "Confirm Swap"
-    }
+    },
+    "amountToSend": "Amount to send",
+    "currentStatus": "Current status",
+    "depositAddress": "Send funds to",
+    "depositTxId": "Deposit Transaction",
+    "estimatedReceive": "You will receive approximately",
+    "exchangeId": "Exchange ID",
+    "initiated": "Bridge Initiated",
+    "payoutTxId": "Payout Transaction"
   },
   "header": {
     "connected": "Connected to {{hostname}}",
@@ -784,5 +859,40 @@
     "edit_account": "Edit account",
     "delete_account": "Delete account",
     "refresh_balance": "Refresh balance"
+  },
+  "collectibles": {
+    "title": "Collectibles",
+    "empty": "No collectibles found",
+    "empty_hint": "Your NFTs and collectibles will appear here",
+    "no_nfts": "No collectibles found"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "coming_soon": "Coming soon...",
+    "delete": "Delete",
+    "no_explorers": "No explorers available for this network"
+  },
+  "errors": {
+    "invalid_password": "Invalid password",
+    "password_check_failed": "Failed to verify password",
+    "password_required": "Password is required"
+  },
+  "home": {
+    "no_tokens": "No tokens found",
+    "no_tokens_hint": "Your tokens will appear here once you receive some",
+    "unnamed_account": "Account"
+  },
+  "lock_screen": {
+    "use_biometric": "Biometrics"
+  },
+  "send": {
+    "enter_address": "Enter recipient address",
+    "recipient": "Recipient"
+  },
+  "walletSwitcher": {
+    "title": "Your Wallets",
+    "addAccount": "Add New Account",
+    "deleteConfirmTitle": "Delete Account?",
+    "deleteConfirmMessage": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
   }
 }

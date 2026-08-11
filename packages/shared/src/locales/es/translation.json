@@ -9,10 +9,10 @@
     "wallet": "Billetera",
     "swap": "Intercambiar",
     "collectibles": "Coleccionables",
-    "settings": "Configuracion"
+    "settings": "Configuracion",
+    "home": "Inicio"
   },
   "general": {
-    "home": "Inicio",
     "usd": "USD",
     "name": "Nombre",
     "address": "Dirección",
@@ -49,7 +49,8 @@
       "7": "Comenzá con transacciones de prueba pequeñas",
       "8": "Mantené tu app actualizada para parches de seguridad",
       "9": "Usá una billetera de hardware para grandes cantidades"
-    }
+    },
+    "password": "Contraseña"
   },
   "actions": {
     "approve": "Aprobar",
@@ -79,7 +80,14 @@
     "bridge": "Bridge",
     "retry": "Reintentar",
     "searching": "Buscando...",
-    "activity": "Actividad"
+    "activity": "Actividad",
+    "back": "Volver",
+    "copied": "¡Copiado!",
+    "edit": "Editar",
+    "hide": "Ocultar",
+    "reveal": "Revelar",
+    "select": "Seleccionar",
+    "sending": "Enviando..."
   },
   "dapp": {
     "decode_error": "No se pudo decodificar esta transacción. No la apruebes salvo que confíes en este sitio.",
@@ -94,7 +102,6 @@
     "deny": "Rechazar",
     "sign_message_title": "Firmar Mensaje",
     "sign_message_subtitle": "Este sitio quiere que firmes un mensaje",
-    "message_label": "Mensaje",
     "hex_message_label": "Mensaje (hex)",
     "siws_account": "Cuenta",
     "siws_uri": "URI",
@@ -117,7 +124,28 @@
     "offchain_message_label": "Mensaje off-chain (OCMS)",
     "offchain_required_signer": "Firmante requerido",
     "sign_message_tx_lookalike_title": "Firma bloqueada",
-    "sign_message_tx_lookalike_warning": "Esta app está intentando que firmes lo que en realidad es una transacción, disfrazada de mensaje simple. Salmon se negó a firmarla para proteger tus fondos."
+    "sign_message_tx_lookalike_warning": "Esta app está intentando que firmes lo que en realidad es una transacción, disfrazada de mensaje simple. Salmon se negó a firmarla para proteger tus fondos.",
+    "approve_and_sign": "Aprobar y firmar",
+    "blockhash": "Blockhash reciente",
+    "connect_permissions_hint": "El sitio va a poder ver tu dirección pública y solicitar firmas.",
+    "current_wallet": "Billetera actual",
+    "error": "Error",
+    "fee_payer": "Pagador de la comisión",
+    "insecure_origin_warning": "Este origen no usa HTTPS.",
+    "instructions": "Instrucciones",
+    "message": "Mensaje",
+    "method": "Método",
+    "reject": "Rechazar",
+    "sign": "Firmar",
+    "sign_message_hint": "Leé el mensaje con atención. Las firmas de mensajes igual pueden autorizar acciones fuera de la cadena.",
+    "transaction_fee": "Comisión estimada",
+    "transaction_overview": "Resumen de la transacción",
+    "transaction_ready": "Listo para firmar",
+    "transaction_risk_hint": "Aprobá solo si confiás en la aplicación y reconocés la acción solicitada.",
+    "transaction_status": "Aprobación",
+    "transaction_subtitle": "Revisá los detalles de la transacción antes de aprobar esta solicitud.",
+    "transaction_title": "Aprobar transacción",
+    "transaction_unavailable": "Vista previa no disponible"
   },
   "settings": {
     "title": "Configuración",
@@ -176,9 +204,7 @@
       "danger_zone": "Zona de Peligro"
     },
     "remove_wallet_title": "¿Eliminar Billetera?",
-    "remove_wallet_message": "¿Estás seguro de que querés eliminar esta billetera? Asegurate de haber respaldado tu frase de recuperación.",
     "remove_all_title": "¿Eliminar Todas las Billeteras?",
-    "remove_all_message": "Esto eliminará todas las billeteras y restablecerá la aplicación. Asegurate de haber respaldado todas las frases de recuperación.",
     "confirm_remove": "Sí, Eliminar",
     "cancel": "Cancelar",
     "remove_wallet_error": "Error al eliminar la billetera. Por favor, intentalo de nuevo.",
@@ -260,7 +286,8 @@
       "confirm_import": "Importar Cuenta",
       "confirm": "Confirmar",
       "creation_error": "Error al crear la cuenta. Por favor, intentalo de nuevo.",
-      "session_expired": "Tu sesión expiró. Volvé a desbloquear la billetera para agregar una cuenta."
+      "session_expired": "Tu sesión expiró. Volvé a desbloquear la billetera para agregar una cuenta.",
+      "seed_placeholder": "Ingresá tu seed phrase..."
     },
     "security": {
       "title": "Seguridad",
@@ -274,7 +301,19 @@
       "biometric_unlock": "Biometría",
       "biometric_description": "Usar biometría para desbloquear tu billetera",
       "change_password_button": "Actualizar Contraseña"
-    }
+    },
+    "about_general": "General",
+    "about_legal": "Legal",
+    "about_made_with_love": "Hecho con amor por el equipo de Salmon",
+    "about_social": "Seguinos",
+    "backup_warning_title": "Nunca compartas tu frase de recuperación",
+    "backup_warning_description": "Cualquiera con tu frase de recuperación puede acceder a tus fondos. Guardala de forma segura y nunca la ingreses en sitios web.",
+    "no_seed_phrase": "Esta cuenta fue importada con una private key y no tiene frase de recuperación.",
+    "recovery_phrase": "Frase de Recuperación",
+    "remove_all_wallets_description": "Esto eliminará TODAS las billeteras de este dispositivo. Esta acción no se puede deshacer. Asegurate de haber respaldado todas las frases de recuperación.",
+    "remove_wallet_description": "¿Estás seguro de que querés eliminar esta billetera? Asegurate de haber respaldado tu frase de recuperación antes de eliminarla.",
+    "tap_to_reveal": "Tocá para revelar",
+    "trusted_apps_revoke": "Revocar"
   },
   "token": {
     "nonTransferable": "No transferible",
@@ -369,8 +408,6 @@
   },
   "lock": {
     "title": "Ingresá tu contraseña",
-    "placeholder": "Ingresá tu contraseña",
-    "error": "La contraseña es incorrecta",
     "forgot": "Olvidé mi contraseña",
     "forgotten": "Contraseña olvidada",
     "clear": "Limpiar wallets",
@@ -398,7 +435,27 @@
     "use_face_id": "Usar Face ID",
     "use_touch_id": "Usar Touch ID",
     "use_iris": "Usar Iris",
-    "biometric_unlock_failed": "Error al desbloquear con biometría"
+    "biometric_unlock_failed": "Error al desbloquear con biometría",
+    "subtitle": "Ingresá tu contraseña para desbloquear tu billetera",
+    "password_placeholder": "Contraseña",
+    "error": {
+      "empty_password": "Por favor ingresá tu contraseña",
+      "invalid_password": "La contraseña es incorrecta",
+      "unlock_failed": "Error al desbloquear la billetera",
+      "reset_failed": "Error al restablecer la billetera. Por favor, intentalo de nuevo."
+    },
+    "confirm_reset": {
+      "title": "¿Estás seguro?",
+      "message": "Esta acción no se puede deshacer. Todos los datos de la billetera se eliminarán permanentemente.",
+      "confirm": "Eliminar Todos los Datos",
+      "cancel": "Cancelar"
+    },
+    "reset_wallet": {
+      "title": "Restablecer Billetera",
+      "message": "Si olvidaste tu contraseña, necesitarás restablecer tu billetera. Esto eliminará permanentemente todas las cuentas y datos. Podrás restaurar tu billetera usando tu frase de recuperación después de restablecerla.",
+      "reset": "Restablecer Billetera",
+      "cancel": "Cancelar"
+    }
   },
   "wallet": {
     "name_template": "Cuenta Nro {{number}}",
@@ -407,7 +464,6 @@
     "my_tokens": "Mis Tokens",
     "non_listed_tokens": "Tokens no-listados",
     "my_nfts": "Mis Coleccionables",
-    "nfts": "Coleccionables",
     "copied": "Copiado al portapapeles!",
     "create_wallet": "Crear Cuenta",
     "recover_wallet": "Recuperar Cuenta",
@@ -463,13 +519,19 @@
       "biometric_setup_subtitle": "Habilitá la autenticación biométrica para un acceso rápido y seguro a tu billetera",
       "biometric_setup_enable": "Habilitar Biometría",
       "biometric_setup_skip": "Quizás Después",
-      "biometric_setup_error": "Error al habilitar biometría. Podés configurarlo después en Ajustes."
+      "biometric_setup_error": "Error al habilitar biometría. Podés configurarlo después en Ajustes.",
+      "biometric_title": "Activá {{type}}",
+      "biometric_subtitle": "Desbloqueá tu billetera rápido y de forma segura sin escribir tu contraseña",
+      "biometric_enable": "Activar {{type}}",
+      "biometric_skip": "Quizás Después",
+      "biometric_error": "Error al activar el desbloqueo biométrico. Intentá de nuevo."
     },
     "recover": {
       "messageTitle": "Recuperar Cuenta existente",
       "messageBody": "Recuperar tu Cuenta usando tu seed-phrase de 12 o 24 palabras",
       "pasteSeed": "Pegar seed-phrase",
-      "i_accept_terms_conditions": "Haciendo click en el botón de Recuperar Cuenta\naceptás los Términos & Condiciones"
+      "i_accept_terms_conditions": "Haciendo click en el botón de Recuperar Cuenta\naceptás los Términos & Condiciones",
+      "placeholder": "Ingresá tu seed phrase..."
     },
     "onboarding": {
       "titleOnboarded": "Nueva Cuenta",
@@ -486,7 +548,9 @@
       "inProgress": "En Curso",
       "fail": "Falló",
       "success": "Exitosa"
-    }
+    },
+    "access_existing": "ACCEDER A CUENTA EXISTENTE",
+    "no_tokens_found": "No se encontraron tokens"
   },
   "adapter": {
     "select": {
@@ -618,7 +682,6 @@
     "properties": "Propiedades",
     "send_nft": "Enviar",
     "send_to": "Enviar a:",
-    "no_nft_found": "No se encontraron NFTs",
     "details": "Details",
     "owned_by": "Dueño",
     "creator_royalty": "Royalty Creador",
@@ -649,7 +712,9 @@
       "title": "Enviar NFT",
       "sending": "Enviando NFT...",
       "enterRecipientAddress": "Ingresá la dirección del destinatario",
-      "ordinalsNotSupported": "Las transferencias de Ordinals aún no están soportadas."
+      "ordinalsNotSupported": "Las transferencias de Ordinals aún no están soportadas.",
+      "successTitle": "NFT enviado",
+      "successSummary": "{{name}} enviado a {{address}}"
     },
     "burn": {
       "reviewTitle": "Quemar NFT",
@@ -665,7 +730,9 @@
       "lutSteps": "Transacciones adicionales de preparación",
       "lutFootnote": "La renta queda bloqueada en la lookup table hasta que luego sea desactivada y cerrada.",
       "insufficientFeeSol": "No tenés suficiente SOL para cubrir las comisiones de la transacción de quemado."
-    }
+    },
+    "ordinal_send_unsupported": "Las transferencias de Ordinals aún no están soportadas.",
+    "sending": "Enviando NFT..."
   },
   "swap": {
     "swap": "Swap",
@@ -744,7 +811,15 @@
       "pleaseNote": "Nota Importante",
       "pleaseNoteText": "Los swaps entre cadenas típicamente tardan de 10 a 30 minutos en completarse. Recibirás una dirección de depósito después de la confirmación.",
       "confirmSwap": "Confirmar Swap"
-    }
+    },
+    "amountToSend": "Monto a enviar",
+    "currentStatus": "Estado actual",
+    "depositAddress": "Enviá los fondos a",
+    "depositTxId": "Transacción de depósito",
+    "estimatedReceive": "Vas a recibir aproximadamente",
+    "exchangeId": "ID de intercambio",
+    "initiated": "Bridge iniciado",
+    "payoutTxId": "Transacción de pago"
   },
   "header": {
     "connected": "Conectado a {{hostname}}",
@@ -784,5 +859,40 @@
     "edit_account": "Editar cuenta",
     "delete_account": "Eliminar cuenta",
     "refresh_balance": "Actualizar balance"
+  },
+  "collectibles": {
+    "title": "Coleccionables",
+    "empty": "No se encontraron coleccionables",
+    "empty_hint": "Tus NFTs y coleccionables van a aparecer acá",
+    "no_nfts": "No se encontraron coleccionables"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "coming_soon": "Próximamente...",
+    "delete": "Eliminar",
+    "no_explorers": "No hay explorers disponibles para esta red"
+  },
+  "errors": {
+    "invalid_password": "Contraseña incorrecta",
+    "password_check_failed": "No se pudo verificar la contraseña",
+    "password_required": "La contraseña es obligatoria"
+  },
+  "home": {
+    "no_tokens": "No se encontraron tokens",
+    "no_tokens_hint": "Tus tokens van a aparecer acá cuando recibas alguno",
+    "unnamed_account": "Cuenta"
+  },
+  "lock_screen": {
+    "use_biometric": "Biometría"
+  },
+  "send": {
+    "enter_address": "Ingresá la dirección del destinatario",
+    "recipient": "Destinatario"
+  },
+  "walletSwitcher": {
+    "title": "Tus Billeteras",
+    "addAccount": "Agregar Nueva Cuenta",
+    "deleteConfirmTitle": "¿Eliminar Cuenta?",
+    "deleteConfirmMessage": "¿Estás seguro de que querés eliminar \"{{name}}\"? Esta acción no se puede deshacer."
   }
 }
