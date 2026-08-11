@@ -31,6 +31,7 @@ jest.mock('expo-linear-gradient', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  sanitizeDecimalInput: (text: string) => text.replace(/,/g, '.'),
   borderRadius: { lg: 16, sm: 8, button: 16, badge: 12 },
   borderWidth: { thin: 1 },
   accent: { border: '#0f0' },

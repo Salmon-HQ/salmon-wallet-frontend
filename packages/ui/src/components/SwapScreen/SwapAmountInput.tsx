@@ -24,6 +24,7 @@ import {
   opacity,
   duration,
   easing,
+  sanitizeDecimalInput,
 } from '@salmon/shared';
 import React, { useCallback } from 'react';
 import { styled } from '../../utils/styled';
@@ -220,13 +221,7 @@ export function SwapAmountInput({
 
   const handleChangeText = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      const text = event.target.value;
-      // Allow only valid numeric input with decimal
-      const sanitized = text.replace(/[^0-9.]/g, '');
-      // Prevent multiple decimal points
-      const parts = sanitized.split('.');
-      const formatted = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : sanitized;
-      onChangeValue(formatted);
+      onChangeValue(sanitizeDecimalInput(event.target.value));
     },
     [onChangeValue]
   );

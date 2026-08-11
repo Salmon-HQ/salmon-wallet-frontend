@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, borderRadius, fontSize, letterSpacing, lineHeight, shadows, ms, vs, s, formatTokenBalance, useCurrencyContext, fontFamilyNative, opacity, componentSizes } from '@salmon/shared';
+import { colors, spacing, borderRadius, fontSize, letterSpacing, lineHeight, shadows, ms, vs, s, formatTokenBalance, sanitizeDecimalInput, useCurrencyContext, fontFamilyNative, opacity, componentSizes } from '@salmon/shared';
 import { TokenLogo } from '../TokenLogo';
 import { BlurContainer } from '../BlurContainer';
 import type { SwapAmountInputProps } from './types';
@@ -40,12 +40,7 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
   const [{ currency }, { formatPrecise }] = useCurrencyContext();
   const handleChangeText = useCallback(
     (text: string) => {
-      // Allow only valid numeric input with decimal
-      const sanitized = text.replace(/[^0-9.]/g, '');
-      // Prevent multiple decimal points
-      const parts = sanitized.split('.');
-      const formatted = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : sanitized;
-      onChangeValue(formatted);
+      onChangeValue(sanitizeDecimalInput(text));
     },
     [onChangeValue]
   );

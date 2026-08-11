@@ -38,6 +38,7 @@ import {
   duration,
   durationMs,
   easing,
+  sanitizeDecimalInput,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { StepAddressAmountProps } from './types';
@@ -492,7 +493,7 @@ export function StepAddressAmount({
 
   const handleAmountChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setAmount(e.target.value);
+      setAmount(sanitizeDecimalInput(e.target.value));
     },
     []
   );

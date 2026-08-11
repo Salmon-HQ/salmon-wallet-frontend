@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius, gradients, shadows, componentSizes, fontFamilyNative, vs, s, fontSize, borderWidth, } from '@salmon/shared';
@@ -31,7 +31,11 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
   const { floatingBottomOffset, stickyCtaScrollPadding } = useTabChrome();
 
   return (
-    <View style={[styles.container, { paddingBottom: stickyCtaScrollPadding }, style]}>
+    <Pressable
+      style={[styles.container, { paddingBottom: stickyCtaScrollPadding }, style]}
+      onPress={Keyboard.dismiss}
+      accessible={false}
+    >
       {/* Input Fields */}
       <View style={styles.inputsContainer}>
         {/* You Send */}
@@ -97,7 +101,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           </View>
         )}
       </View>
-    </View>
+    </Pressable>
   );
 };
 

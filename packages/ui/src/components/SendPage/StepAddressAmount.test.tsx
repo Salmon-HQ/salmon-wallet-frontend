@@ -16,6 +16,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
+  sanitizeDecimalInput: (text: string) => text.replace(/,/g, '.'),
   borderRadius: { lg: 16, md: 12, sm: 8, button: 16, iconContainer: 18, scrollbar: 8 },
   borderWidth: { thin: 1 },
   colors: {

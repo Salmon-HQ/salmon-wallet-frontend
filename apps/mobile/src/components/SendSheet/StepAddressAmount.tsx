@@ -32,6 +32,7 @@ import {
   spacing,
   opacity,
   componentSizes,
+  sanitizeDecimalInput,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BlurContainer } from '../BlurContainer';
@@ -313,7 +314,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
               placeholder="0"
               placeholderTextColor={colors.text.secondary}
               value={amount}
-              onChangeText={setAmount}
+              onChangeText={(text) => setAmount(sanitizeDecimalInput(text))}
               keyboardType="decimal-pad"
               autoCorrect={false}
             />
