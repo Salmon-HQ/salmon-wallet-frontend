@@ -248,19 +248,16 @@ export default function SwapScreenPage() {
   }, [topTokens]);
 
   const handleGetAvailableTokens = useCallback(async (sourceSymbol: string): Promise<BridgeTokenSimple[]> => {
-    try {
-      const tokens = await getBridgeAvailableTokens(sourceSymbol);
-      if (!tokens) return [];
-      return tokens.map((t) => ({
-        symbol: t.symbol,
-        name: t.name,
-        logo: t.logo,
-        network: t.network,
-      }));
-    } catch (error) {
-      console.error('Failed to get available bridge tokens:', error);
-      return [];
-    }
+    // No try/catch: failures must propagate to useSwapScreenLogic, which
+    // classifies them into the form's reviewWarning slot.
+    const tokens = await getBridgeAvailableTokens(sourceSymbol);
+    if (!tokens) return [];
+    return tokens.map((t) => ({
+      symbol: t.symbol,
+      name: t.name,
+      logo: t.logo,
+      network: t.network,
+    }));
   }, [getBridgeAvailableTokens]);
 
   const handleGetBridgeEstimate = useCallback(async (

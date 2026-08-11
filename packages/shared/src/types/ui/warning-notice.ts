@@ -16,4 +16,9 @@ export interface WarningNoticePropsBase {
   title: string;
   /** Optional body content rendered under the title. */
   children?: ReactNode;
+  /**
+   * Optional action (e.g. a small retry button) rendered under the body.
+   * Each platform provides its own pressable element.
+   */
+  action?: ReactNode;
 }

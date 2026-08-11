@@ -27,6 +27,7 @@ export function WarningNotice({
   tone = 'error',
   title,
   children,
+  action,
 }: WarningNoticeProps): ReactNode {
   const accent = tone === 'warning' ? colors.status.warning : colors.status.error;
   const background =
@@ -58,6 +59,7 @@ export function WarningNotice({
             {children}
           </Typography>
         )}
+        {action != null && <Box sx={{ marginTop: '6px' }}>{action}</Box>}
       </Box>
     </WarningBannerRoot>
   );

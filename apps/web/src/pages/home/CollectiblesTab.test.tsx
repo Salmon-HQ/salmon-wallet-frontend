@@ -32,6 +32,9 @@ vi.mock('@salmon/ui', () => ({
       ))}
     </div>
   ),
+  WarningNotice: ({ title }: { title: string }) => (
+    <div data-testid="warning-notice">{title}</div>
+  ),
 }));
 
 vi.mock('@salmon/shared', () => ({

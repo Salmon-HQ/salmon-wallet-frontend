@@ -12,6 +12,7 @@ import { View, StyleSheet, AppState, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
 
 import { I18nProvider } from '../src/i18n';
+import { WalletInitErrorScreen } from '../src/components/WalletInitErrorScreen';
 import { AccountsProvider, CurrencyProvider, useAccountsContext, useInactivityTimeout, createQueryClient, QueryClientProvider, BridgeSettlementProvider } from '@salmon/shared';
 
 export {
@@ -97,9 +98,20 @@ function RootLayoutNav() {
   // Track if we've done the initial navigation
   const [hasNavigated, setHasNavigated] = useState(false);
 
+  // Wallet initialization failed and nothing loaded — block instead of routing
+  // into onboarding (which risks overwriting an existing vault). The lock
+  // screen takes precedence (`!locked`), and a secondary failure with accounts
+  // loaded must not block.
+  const initFailed = state.ready && !state.locked && !!state.error && state.accounts.length === 0;
+
   useEffect(() => {
     // Don't navigate until the navigation state is ready and useAccounts is ready
     if (!navigationState?.key || !state.ready) {
+      return;
+    }
+
+    // While the init-failed gate is up, don't redirect into the auth flow.
+    if (initFailed) {
       return;
     }
 
@@ -133,7 +145,7 @@ function RootLayoutNav() {
         setHasNavigated(true);
       }
     }
-  }, [state.ready, state.locked, state.accounts.length, segments, navigationState?.key, hasNavigated]);
+  }, [state.ready, state.locked, state.accounts.length, segments, navigationState?.key, hasNavigated, initFailed]);
 
   // Determine if lock screen should be shown
   // Don't show lock screen during onboarding (auth flow) — the user just created
@@ -184,6 +196,18 @@ function RootLayoutNav() {
       changeSubscription.remove();
     };
   }, [actions, state.accounts.length, state.locked, state.ready, state.requiredLock]);
+
+  if (initFailed) {
+    return (
+      <I18nProvider>
+        <ThemeProvider value={CustomDarkTheme}>
+          <View style={styles.container}>
+            <WalletInitErrorScreen onRetry={actions.retryInit} />
+          </View>
+        </ThemeProvider>
+      </I18nProvider>
+    );
+  }
 
   return (
     <I18nProvider>

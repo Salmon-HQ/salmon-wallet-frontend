@@ -59,6 +59,7 @@ import {
   NftDetailSheet,
   SolanaSvgIcon,
   SubAccountSelector,
+  WarningNotice,
   type NftBlockchain,
   type NftData,
   type NftDetailData,
@@ -411,6 +412,10 @@ export default function CollectiblesScreen() {
   // Check if Solana section is loading
   const isLoading = nftsBySections.solana.loading;
 
+  // Load failure on any visible section — keep partial data visible.
+  const loadError =
+    mainnetQuery.error !== null || (developerNetworks && devnetQuery.error !== null);
+
   // Check if all visible sections are empty (after loading)
   const isEmpty = useMemo(() => {
     if (isLoading) return false;
@@ -475,6 +480,16 @@ export default function CollectiblesScreen() {
             <Text style={styles.devModeBannerText}>
               {t('collectibles.developer_banner', 'Developer Mode - Showing testnet NFTs')}
             </Text>
+          </View>
+        )}
+
+        {/* Load failure banner — retry is pull-to-refresh */}
+        {loadError && (
+          <View style={styles.loadErrorBanner} testID="collectibles-load-error">
+            <WarningNotice
+              tone="warning"
+              title={t('collectibles.load_error', "Your collectibles couldn't be loaded right now.")}
+            />
           </View>
         )}
 
@@ -702,6 +717,10 @@ const styles = StyleSheet.create({
   },
   sectionSelector: {
     marginBottom: vs(8),
+  },
+  loadErrorBanner: {
+    marginHorizontal: s(spacing.headerPadding),
+    marginBottom: vs(spacing.lg),
   },
   // Grid layout styles (matching NftSeeAllSheet pattern)
   sectionContainer: {

@@ -416,6 +416,9 @@
     }
   },
   "wallet": {
+    "partial_load_error": "Algunos balances no se pudieron cargar. Los datos mostrados pueden estar incompletos.",
+    "init_failed_title": "No se pudo cargar tu billetera",
+    "init_failed_body": "Tus cuentas y fondos están a salvo. Intentá de nuevo.",
     "name_template": "Cuenta Nro {{number}}",
     "my_nfts": "Mis Coleccionables",
     "copied": "Copiado al portapapeles!",
@@ -723,7 +726,10 @@
     "estimatedReceive": "Vas a recibir aproximadamente",
     "exchangeId": "ID de intercambio",
     "initiated": "Bridge iniciado",
-    "payoutTxId": "Transacción de pago"
+    "payoutTxId": "Transacción de pago",
+    "settlement_stalled_title": "No se puede verificar el estado de tu bridge",
+    "settlement_stalled_body": "Tus fondos están en camino, pero no se puede consultar el servicio de estado. Vamos a seguir intentando.",
+    "settlement_retry": "Verificar ahora"
   },
   "transaction": {
     "sendComplete": "Envio Completado",
@@ -791,7 +797,8 @@
     "empty_hint": "Tus NFTs y coleccionables van a aparecer acá",
     "no_nfts": "No se encontraron coleccionables",
     "no_account_for_network": "No hay una cuenta disponible para esta red.",
-    "developer_banner": "Modo Desarrollador - Mostrando NFTs de testnet"
+    "developer_banner": "Modo Desarrollador - Mostrando NFTs de testnet",
+    "load_error": "Tus coleccionables no se pudieron cargar en este momento."
   },
   "common": {
     "cancel": "Cancelar",
@@ -813,6 +820,7 @@
     "use_biometric": "Biometría"
   },
   "send": {
+    "fee_estimate_failed": "No se pudo estimar la comisión",
     "enter_address": "Ingresá la dirección del destinatario",
     "recipient": "Destinatario",
     "enter_address_or_domain": "Ingresá una dirección o dominio",

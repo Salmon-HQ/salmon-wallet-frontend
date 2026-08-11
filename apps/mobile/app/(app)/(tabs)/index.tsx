@@ -73,6 +73,7 @@ import {
   TokenMarketData,
   TransactionDetailModal,
   TransactionHistorySheet,
+  WarningNotice,
   type BlockchainBalance,
   type BlockchainId,
   type MarketData,
@@ -267,6 +268,7 @@ export default function HomeScreen() {
     loading,
     refreshing,
     refresh,
+    error: balanceError,
     hiddenBalance,
     toggleHidden,
   } = useBalance({
@@ -767,6 +769,17 @@ export default function HomeScreen() {
         style={styles.subAccountSelector}
       />
 
+      {/* Partial-load failure: keep whatever data loaded visible;
+          retry is pull-to-refresh on the token list. */}
+      {balanceError && !switchingNetwork && (
+        <View style={styles.balanceErrorBanner} testID="balance-load-error">
+          <WarningNotice
+            tone="warning"
+            title={t('wallet.partial_load_error', "Some balances couldn't be loaded. Shown data may be incomplete.")}
+          />
+        </View>
+      )}
+
       {/* Scrollable Token List or Bitcoin View */}
       <View style={styles.listContainer}>
         {currentBlockchain === 'bitcoin' ? (
@@ -932,6 +945,10 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flex: 1,
+  },
+  balanceErrorBanner: {
+    marginHorizontal: spacing.lg,
+    marginBottom: vs(spacing.md),
   },
   listContent: {
     paddingTop: 0,

@@ -191,7 +191,9 @@ export function useBridge(_params?: UseBridgeParams): UseBridgeResult {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load available tokens';
         setError(errorMessage);
         setStatus('failed');
-        return null;
+        // Rethrow so callers (useSwapScreenLogic) can classify and surface the
+        // failure instead of treating it as an empty token list.
+        throw err;
       }
     },
     []

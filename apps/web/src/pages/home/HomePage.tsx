@@ -48,6 +48,7 @@ import {
 } from '@salmon/shared';
 import {
   WalletHeader,
+  WarningNotice,
   BalanceCardCarousel,
   ActionButtonRow,
   TokenList,
@@ -382,6 +383,7 @@ export function HomePage(): React.ReactElement {
     loading,
     refreshing,
     refresh,
+    error: balanceError,
     hiddenBalance,
     toggleHidden,
   } = useBalance({
@@ -835,6 +837,17 @@ export function HomePage(): React.ReactElement {
                 onActivityPress={handleActivityPress}
                 style={{ marginTop: spacing['2xl'], marginBottom: spacing['2xl'] }}
               />
+
+              {/* Partial-load failure: keep whatever data loaded visible;
+                  retry is the header refresh button. */}
+              {balanceError && !switchingNetwork && (
+                <Box sx={{ padding: `0 ${spacing.lg}px`, marginBottom: `${spacing.md}px` }} data-testid="balance-load-error">
+                  <WarningNotice
+                    tone="warning"
+                    title={t('wallet.partial_load_error', "Some balances couldn't be loaded. Shown data may be incomplete.")}
+                  />
+                </Box>
+              )}
 
               <TokenSectionWrapper>
                 <TopListFade ref={topFadeRef} />

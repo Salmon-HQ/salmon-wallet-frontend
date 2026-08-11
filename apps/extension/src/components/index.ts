@@ -42,6 +42,7 @@ export {
   SolanaSvgIcon,
   WalletHeader,
   WalletSwitcherSheet,
+  WarningNotice,
   SettingsPanelStack,
 } from '@salmon/ui';
 

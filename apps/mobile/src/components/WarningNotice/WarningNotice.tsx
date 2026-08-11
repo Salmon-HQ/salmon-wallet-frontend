@@ -16,6 +16,7 @@ export function WarningNotice({
   tone = 'error',
   title,
   children,
+  action,
   style,
 }: WarningNoticeProps): React.ReactElement {
   const accent = tone === 'warning' ? colors.status.warning : colors.status.error;
@@ -31,6 +32,7 @@ export function WarningNotice({
       <View style={styles.textColumn}>
         <Text style={[styles.title, { color: accent }]}>{title}</Text>
         {children != null && <Text style={styles.body}>{children}</Text>}
+        {action != null && <View style={styles.action}>{action}</View>}
       </View>
     </View>
   );
@@ -58,6 +60,10 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.semiBold,
     fontSize: fontSize.sm,
     marginBottom: 2,
+  },
+  action: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
   },
   body: {
     color: colors.text.primary,

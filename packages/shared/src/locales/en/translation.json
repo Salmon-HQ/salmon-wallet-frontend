@@ -416,6 +416,9 @@
     }
   },
   "wallet": {
+    "partial_load_error": "Some balances couldn't be loaded. Shown data may be incomplete.",
+    "init_failed_title": "Couldn't load your wallet",
+    "init_failed_body": "Your accounts and funds are safe. Please try again.",
     "name_template": "Account #{{number}}",
     "my_nfts": "My Collectibles",
     "copied": "Copied to clipboard!",
@@ -723,7 +726,10 @@
     "estimatedReceive": "You will receive approximately",
     "exchangeId": "Exchange ID",
     "initiated": "Bridge Initiated",
-    "payoutTxId": "Payout Transaction"
+    "payoutTxId": "Payout Transaction",
+    "settlement_stalled_title": "Can't check your bridge status",
+    "settlement_stalled_body": "Your funds are on the way, but we can't reach the status service. We'll keep trying.",
+    "settlement_retry": "Check now"
   },
   "transaction": {
     "sendComplete": "Send Complete",
@@ -791,7 +797,8 @@
     "empty_hint": "Your NFTs and collectibles will appear here",
     "no_nfts": "No collectibles found",
     "no_account_for_network": "No account available for this network.",
-    "developer_banner": "Developer Mode - Showing testnet NFTs"
+    "developer_banner": "Developer Mode - Showing testnet NFTs",
+    "load_error": "Your collectibles couldn't be loaded right now."
   },
   "common": {
     "cancel": "Cancel",
@@ -813,6 +820,7 @@
     "use_biometric": "Biometrics"
   },
   "send": {
+    "fee_estimate_failed": "Fee could not be estimated",
     "enter_address": "Enter recipient address",
     "recipient": "Recipient",
     "enter_address_or_domain": "Enter address or domain",

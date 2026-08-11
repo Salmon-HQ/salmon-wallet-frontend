@@ -7,7 +7,8 @@
 import React from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
-import { useSwapScreenLogic, getTransactionUrl, getDefaultExplorer, useBridgeSettlement } from '@salmon/shared';
+import ButtonBase from '@mui/material/ButtonBase';
+import { useSwapScreenLogic, getTransactionUrl, getDefaultExplorer, useBridgeSettlement, colors, fontSize, fontWeight, spacing } from '@salmon/shared';
 import type { Blockchain, NetworkEnvironment, NetworkId } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 import { SwapInputScreen } from './SwapInputScreen';
@@ -16,6 +17,7 @@ import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
 import { BridgeRecipientScreen } from '../BridgeScreen/BridgeRecipientScreen';
 import { BridgeReviewScreen } from '../BridgeScreen/BridgeReviewScreen';
 import { TokenSelectorModal } from '../TokenSelector';
+import { WarningNotice } from '../WarningNotice';
 import type { SwapScreenProps } from './types';
 
 const Container = styled(Box)({
@@ -30,7 +32,7 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
   const { style } = props;
   const { t } = useTranslation();
 
-  const { trackBridgeExchange } = useBridgeSettlement();
+  const { trackBridgeExchange, isStalled, retryNow } = useBridgeSettlement();
 
   const logic = useSwapScreenLogic({
     ...props,
@@ -63,6 +65,30 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
 
   return (
     <Container style={style}>
+      {isStalled && (
+        <Box sx={{ padding: `${spacing.md}px ${spacing.lg}px 0` }} data-testid="bridge-stalled-banner">
+          <WarningNotice
+            tone="warning"
+            title={t('bridge.settlement_stalled_title', "Can't check your bridge status")}
+            action={
+              <ButtonBase
+                onClick={retryNow}
+                data-testid="bridge-stalled-retry"
+                sx={{
+                  color: colors.status.warning,
+                  fontSize: fontSize.sm,
+                  fontWeight: fontWeight.semibold,
+                  textDecoration: 'underline',
+                }}
+              >
+                {t('bridge.settlement_retry', 'Check now')}
+              </ButtonBase>
+            }
+          >
+            {t('bridge.settlement_stalled_body', "Your funds are on the way, but we can't reach the status service. We'll keep trying.")}
+          </WarningNotice>
+        </Box>
+      )}
       {logic.step === 'input' && (
         <SwapInputScreen
           inToken={logic.inToken}

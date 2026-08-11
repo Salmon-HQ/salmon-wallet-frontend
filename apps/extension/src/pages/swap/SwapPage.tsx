@@ -210,18 +210,16 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
   }, [topTokens]);
 
   const handleGetAvailableTokens = useCallback(async (sourceSymbol: string): Promise<BridgeTokenSimple[]> => {
-    try {
-      const tokens = await getBridgeAvailableTokens(sourceSymbol);
-      if (!tokens) return [];
-      return tokens.map((t) => ({
-        symbol: t.symbol,
-        name: t.name,
-        logo: t.logo,
-        network: t.network,
-      }));
-    } catch {
-      return [];
-    }
+    // No try/catch: failures must propagate to useSwapScreenLogic, which
+    // classifies them into the form's reviewWarning slot.
+    const tokens = await getBridgeAvailableTokens(sourceSymbol);
+    if (!tokens) return [];
+    return tokens.map((t) => ({
+      symbol: t.symbol,
+      name: t.name,
+      logo: t.logo,
+      network: t.network,
+    }));
   }, [getBridgeAvailableTokens]);
 
   const handleGetBridgeEstimate = useCallback(async (

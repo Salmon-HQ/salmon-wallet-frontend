@@ -125,6 +125,11 @@ export interface UseAccountsActions {
   importTokens: (targetNetworkId: string, tokenList?: TokenToImport[]) => Promise<void>;
   /** Clear the current error */
   resetError: () => void;
+  /**
+   * Re-run wallet initialization after a failed startup. The init error is
+   * only cleared when the retry succeeds, so gates stay up while retrying.
+   */
+  retryInit: () => Promise<void>;
 }
 
 // ============================================================================
@@ -454,6 +459,7 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     removeTrustedApp,
     importTokens,
     resetError,
+    retryInit: initAccounts,
   };
 
   return [state, actions];
