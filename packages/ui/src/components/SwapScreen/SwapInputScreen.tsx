@@ -137,7 +137,7 @@ export function SwapInputScreen({
           placeholder="Enter an amount"
         />
 
-        {swapError && <ErrorText data-testid="swap-error-text">{t(swapError)}</ErrorText>}
+        {swapError && <ErrorText data-testid="swap-error-text">{typeof swapError === 'string' ? t(swapError) : t(swapError.key, swapError.params)}</ErrorText>}
 
         {reviewWarning && <WarningText>{reviewWarning}</WarningText>}
 

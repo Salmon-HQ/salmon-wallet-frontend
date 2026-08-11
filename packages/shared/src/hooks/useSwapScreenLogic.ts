@@ -12,6 +12,7 @@ import type {
   SwapScreenStep,
   SwapChainType,
   BridgeEstimateSimple,
+  SwapErrorMessage,
   BridgeExchangeSimple,
   BridgeTransactionSimple,
 } from '../types/swap';
@@ -203,10 +204,11 @@ export interface UseSwapScreenLogicResult {
   // State
   step: SwapScreenStep;
   /**
-   * Translation key for the last swap or bridge failure, cleared when the user
-   * edits the amount or confirms again. The form renders it inline.
+   * The last swap or bridge failure — a translation key, or a key plus its
+   * interpolation params. Cleared when the user edits the amount or confirms
+   * again. The form renders it inline.
    */
-  swapError: string | null;
+  swapError: SwapErrorMessage | null;
   inToken: SwapToken | null;
   outToken: SwapToken | null;
   inAmount: string;
@@ -313,7 +315,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
   // ── State ──────────────────────────────────────────────────────────────
 
   const [step, setStep] = useState<SwapScreenStep>('input');
-  const [swapError, setSwapError] = useState<string | null>(null);
+  const [swapError, setSwapError] = useState<SwapErrorMessage | null>(null);
   const [settling, setSettling] = useState(false);
   const [inToken, setInToken] = useState<SwapToken | null>(initialInToken || tokens[0] || null);
   const [outToken, setOutToken] = useState<SwapToken | null>(initialOutToken || null);
@@ -705,13 +707,20 @@ export function useSwapScreenLogic<StyleType = unknown>({
       }
     } catch (error) {
       console.error('Bridge failed:', error);
-      setSwapError(classifyBridgeError(error));
+      setSwapError(
+        classifyBridgeError(
+          error,
+          bridgeEstimate
+            ? { amount: bridgeEstimate.minAmount, symbol: bridgeEstimate.symbolIn }
+            : undefined
+        )
+      );
       setStep('input');
       onBridgeError?.(error as Error);
     } finally {
       setIsConfirming(false);
     }
-  }, [inToken, outToken, inAmount, recipientAddress, onCreateBridgeExchange, onSendDeposit, onGetBridgeTransactionStatus, onBridgeSuccess, onBridgeExchangeCreated, onBridgeError, settleAfterTx]);
+  }, [inToken, outToken, inAmount, recipientAddress, onCreateBridgeExchange, onSendDeposit, onGetBridgeTransactionStatus, onBridgeSuccess, onBridgeExchangeCreated, onBridgeError, settleAfterTx, bridgeEstimate]);
 
   const handleRefreshQuote = useCallback(async () => {
     if (isLoadingQuote || isLoadingEstimate) return;

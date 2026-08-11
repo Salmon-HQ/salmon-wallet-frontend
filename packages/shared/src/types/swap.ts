@@ -369,6 +369,12 @@ export interface BridgeTokenSimple {
 }
 
 /**
+ * A swap/bridge failure to render: a bare translation key, or a key plus the
+ * interpolation params it needs (e.g. the pair minimum).
+ */
+export type SwapErrorMessage = string | { key: string; params: Record<string, string> };
+
+/**
  * Bridge estimate type (simplified)
  */
 export interface BridgeEstimateSimple {
@@ -537,7 +543,7 @@ export interface SwapInputScreenProps<StyleType> {
   /** Warning message when review is not possible */
   reviewWarning?: string | null;
   /** Translation key for the last swap or bridge failure */
-  swapError?: string | null;
+  swapError?: SwapErrorMessage | null;
   /** Callback for Review button */
   onReview: () => void;
   /** Custom style */

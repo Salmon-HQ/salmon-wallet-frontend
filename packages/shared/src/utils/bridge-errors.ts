@@ -5,6 +5,8 @@
  * the fee case.
  */
 
+import type { SwapErrorMessage } from '../types/swap';
+
 const BELOW_MINIMUM_PATTERNS = [
   'below the minimum',
   'below minimal',
@@ -28,11 +30,23 @@ const UNAVAILABLE_PATTERNS = [
   'temporarily disabled',
 ];
 
-export function classifyBridgeError(err: unknown): string {
+/**
+ * @param minimum - the pair minimum from the provider's estimate, when one was
+ *   fetched. The create-exchange failure itself only carries free text, so the
+ *   estimate is the only structured source of the number and its symbol.
+ */
+export function classifyBridgeError(
+  err: unknown,
+  minimum?: { amount?: number | null; symbol?: string | null }
+): SwapErrorMessage {
   const message = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
   const haystack = message.toLowerCase();
 
   if (BELOW_MINIMUM_PATTERNS.some((pattern) => haystack.includes(pattern))) {
+    if (minimum?.amount) {
+      const min = minimum.symbol ? `${minimum.amount} ${minimum.symbol}` : `${minimum.amount}`;
+      return { key: 'bridge.errors.belowMinimumWithAmount', params: { min } };
+    }
     return 'bridge.errors.belowMinimum';
   }
 

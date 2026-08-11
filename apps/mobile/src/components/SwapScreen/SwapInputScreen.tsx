@@ -55,7 +55,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
 
         {swapError ? (
           <Text testID="swap-error-text" style={styles.errorText}>
-            {t(swapError)}
+            {typeof swapError === 'string' ? t(swapError) : t(swapError.key, swapError.params)}
           </Text>
         ) : null}
 

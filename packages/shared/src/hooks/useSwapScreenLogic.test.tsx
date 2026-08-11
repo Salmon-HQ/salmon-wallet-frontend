@@ -635,6 +635,64 @@ describe('useSwapScreenLogic', () => {
     expect(result.current.step).toBe('success');
   });
 
+  it('surfaces the pair minimum from the estimate when the bridge rejects the amount', async () => {
+    vi.useFakeTimers();
+
+    const error = new Error('Bridge create exchange failed: amount is less than minimal');
+    const props = createProps({
+      initialInToken: SOL,
+      tokens: [SOL],
+      featuredTokens: [SOL],
+      jupiterTokens: [SOL, USDC],
+      onGetAvailableTokens: vi.fn().mockResolvedValue(BRIDGE_AVAILABLE_TOKENS),
+      onCreateBridgeExchange: vi.fn().mockRejectedValue(error),
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.handleOutTokenSelect(BTC);
+    });
+
+    act(() => {
+      result.current.setInAmount('1');
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.handleReview();
+    });
+
+    act(() => {
+      result.current.setRecipientAddress('bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh');
+    });
+
+    act(() => {
+      result.current.handleContinueToReview();
+    });
+
+    await act(async () => {
+      await result.current.handleConfirmBridge();
+    });
+
+    expect(result.current.swapError).toEqual({
+      key: 'bridge.errors.belowMinimumWithAmount',
+      params: { min: '0.00001 SOL' },
+    });
+  });
+
   it('returns to input after a bridge failure and reports the error callback', async () => {
     vi.useFakeTimers();
 

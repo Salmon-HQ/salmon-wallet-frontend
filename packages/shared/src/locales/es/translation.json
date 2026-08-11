@@ -708,6 +708,7 @@
   "bridge": {
     "errors": {
       "belowMinimum": "El monto es menor al mínimo para este par. Aumentalo y volvé a intentarlo.",
+      "belowMinimumWithAmount": "El mínimo para este par es {{min}}. Aumentá el monto y volvé a intentarlo.",
       "unavailable": "El servicio de intercambio no está disponible por el momento. Volvé a intentarlo en unos minutos.",
       "generic": "No se pudo crear el intercambio. Volvé a intentarlo."
     },
