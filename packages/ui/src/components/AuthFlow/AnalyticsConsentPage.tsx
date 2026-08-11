@@ -1,28 +1,44 @@
 import React from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 import InsightsIcon from '@mui/icons-material/Insights';
 import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, spacing } from '@salmon/shared';
 import { styled } from '../../utils/styled';
-import { PrimaryButton, SecondaryButton } from '../Button';
+import { PrimaryButton } from '../Button';
 import { getAuthContainerStyles } from './common';
 import type { AnalyticsConsentPageProps } from './types';
 
 /**
- * First-run, opt-in anonymous-analytics consent — the final onboarding step
+ * First-run, opt-in pseudonymous-analytics consent — the final onboarding step
  * before the wallet home (web + extension). Presentational only: the caller
  * wires accept/decline to `useAnalyticsConsent().resolveConsentPrompt` and then
  * advances the flow. Onboarding layout (themed icon + centered heading, like
  * SuccessPage); the include/exclude points read as a left-aligned bullet list.
+ * Declining is the standard close affordance: an X in the top-right (same
+ * idiom as BaseSheetDialog's StandardHeader).
  */
 const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
   display: 'flex',
   flexDirection: 'column',
+  position: 'relative',
   backgroundColor: colors.background.primary,
   padding: `0 ${spacing['2xl']}px`,
   ...getAuthContainerStyles($contained),
 }));
+
+const CloseButton = styled(IconButton)({
+  position: 'absolute',
+  top: spacing.lg,
+  right: spacing.lg,
+  color: colors.text.secondary,
+  padding: spacing.xs,
+  '&:hover': {
+    backgroundColor: colors.background.card,
+  },
+});
 
 const TopSpacer = styled(Box)({ flex: 1 });
 
@@ -104,6 +120,13 @@ export function AnalyticsConsentPage({
 
   return (
     <Container $contained={contained} data-testid="analytics-consent-screen">
+      <CloseButton
+        onClick={onDecline}
+        aria-label={t('general.close', 'Close')}
+        data-testid="analytics-consent-decline"
+      >
+        <CloseIcon />
+      </CloseButton>
       <TopSpacer />
 
       <CenterContent>
@@ -128,9 +151,6 @@ export function AnalyticsConsentPage({
         <PrimaryButton onClick={onAccept} testID="analytics-consent-accept">
           {t('settings.analytics_prompt_accept')}
         </PrimaryButton>
-        <SecondaryButton onClick={onDecline} testID="analytics-consent-decline">
-          {t('settings.analytics_prompt_decline')}
-        </SecondaryButton>
       </ButtonsContainer>
     </Container>
   );
