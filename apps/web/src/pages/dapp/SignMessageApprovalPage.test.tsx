@@ -144,7 +144,7 @@ describe('SignMessageApprovalPage', () => {
     expect(accountArg).toBe(fakeAccount);
     expect(dataArg).toEqual(messageBytes);
     expect(signersArg).toHaveLength(1);
-    expect(signersArg[0].toBase58()).toBe(signer);
+    expect(signersArg[0]).toBe(signer);
     expect(mockApproveSolanaSignMessage).not.toHaveBeenCalled();
   });
 

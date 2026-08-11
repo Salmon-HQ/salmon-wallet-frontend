@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { styled } from '@salmon/ui';
 import Box from '@mui/material/Box';
 import {
