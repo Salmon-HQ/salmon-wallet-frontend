@@ -30,6 +30,7 @@
     "extension:build:firefox:staging": "pnpm --filter @salmon/extension build:firefox:staging",
     "extension:build:firefox:prod": "pnpm --filter @salmon/extension build:firefox:prod",
     "extension:zip:firefox": "pnpm --filter @salmon/extension zip:firefox",
+    "check:i18n": "node scripts/check-i18n.mjs",
     "pack:sources": "git archive --format=zip -o salmon-wallet-source.zip HEAD",
     "check:duplicates": "npx jscpd packages/ apps/ --min-lines 5 --min-tokens 50 --format typescript,javascript,tsx,jsx --ignore \"**/node_modules/**,**/coverage/**,**/dist/**,**/*.test.ts,**/*.spec.ts,**/.expo/**\" --reporters console",
     "check:duplicates:report": "npx jscpd packages/ apps/ --min-lines 5 --min-tokens 50 --format typescript,javascript,tsx,jsx --ignore \"**/node_modules/**,**/coverage/**,**/dist/**,**/*.test.ts,**/*.spec.ts,**/.expo/**\" --reporters html,console --output ./duplication-report"
