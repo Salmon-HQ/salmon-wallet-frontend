@@ -15,6 +15,7 @@ import { useCallback, useState } from 'react';
 import type { SolanaAccount } from '../blockchain/solana/SolanaAccount';
 import { signAndSendPreparedSolanaTransactions } from '../blockchain/solana/prepared-transactions';
 import { useSettleUntilChanged } from '../query/invalidation';
+import { classifyTransactionError } from '../utils/transaction-errors';
 
 type PreparedBurn = Parameters<typeof signAndSendPreparedSolanaTransactions>[1];
 
@@ -86,7 +87,7 @@ export function useNftBurn({
         return signatures;
       } catch (err) {
         console.error('[useNftBurn] Burn failed:', err);
-        setError(err instanceof Error ? err.message : 'Burn failed');
+        setError(classifyTransactionError(err));
         setStatus('failed');
         throw err;
       }

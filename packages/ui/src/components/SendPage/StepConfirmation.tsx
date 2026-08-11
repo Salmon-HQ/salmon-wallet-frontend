@@ -19,6 +19,7 @@ import ButtonBase from '@mui/material/ButtonBase';
 import CircularProgress from '@mui/material/CircularProgress';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
+import { useTranslation } from 'react-i18next';
 import {
   colors,
   spacing,
@@ -247,6 +248,7 @@ export function StepConfirmation({
   onCancel,
   onSuccess,
 }: StepConfirmationProps) {
+  const { t } = useTranslation();
   const [estimatedFee, setEstimatedFee] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -371,7 +373,7 @@ export function StepConfirmation({
 
         {/* Error Message */}
         {isFailed && sendHook.error && (
-          <ErrorText>{sendHook.error}</ErrorText>
+          <ErrorText>{t(sendHook.error)}</ErrorText>
         )}
       </CenterContent>
 

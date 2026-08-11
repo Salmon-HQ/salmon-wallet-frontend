@@ -172,7 +172,7 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
 
         {/* Error Message */}
         {isFailed && sendHook.error && (
-          <Text style={styles.errorText}>{sendHook.error}</Text>
+          <Text style={styles.errorText}>{t(sendHook.error)}</Text>
         )}
       </View>
 

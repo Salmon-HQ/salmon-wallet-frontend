@@ -584,7 +584,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
                   label={t('token.send.recipient', 'Recipient')}
                 />
 
-                {sendError && <Text style={styles.errorText}>{sendError}</Text>}
+                {sendError && <Text style={styles.errorText}>{t(sendError)}</Text>}
               </>
             )}
           </View>
@@ -717,7 +717,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
         </View>
       )}
 
-      {burnError && <Text style={styles.errorText}>{burnError}</Text>}
+      {burnError && <Text style={styles.errorText}>{t(burnError)}</Text>}
 
       <View style={styles.actionButtonsContainer}>
         <BlurContainer

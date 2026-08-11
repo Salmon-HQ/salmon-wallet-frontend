@@ -281,7 +281,7 @@ describe('useSendTransaction', () => {
     });
 
     expect(result.current.status).toBe('failed');
-    expect(result.current.error).toBe('insufficient funds');
+    expect(result.current.error).toBe('transaction.errors.insufficientFunds');
     expect(result.current.isError).toBe(true);
   });
 

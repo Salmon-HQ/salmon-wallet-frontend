@@ -34,6 +34,7 @@ import type {
 import { useSettleUntilChanged } from '../query/invalidation';
 import { trackEvent, trackFirstTime } from '../analytics';
 import { STORAGE_KEYS } from '../storage';
+import { classifyTransactionError } from '../utils/transaction-errors';
 
 // ============================================================================
 // Types
@@ -186,8 +187,7 @@ export function useSendTransaction({
           chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
           success: false,
         });
-        const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
-        setError(errorMessage);
+        setError(classifyTransactionError(err));
         setStatus('failed');
         throw err;
       }

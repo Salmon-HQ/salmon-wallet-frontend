@@ -48,6 +48,7 @@ export {
 
 // Address utilities
 export { getShortAddress, truncateHash } from './address';
+export { classifyTransactionError } from './transaction-errors';
 
 // Clipboard utilities (web only - use expo-clipboard for native)
 export { copyToClipboard, pasteFromClipboard } from './clipboard';

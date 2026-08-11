@@ -24,6 +24,7 @@ import {
   fontWeight,
   borderRadius,
   useNftTransfer,
+  classifyTransactionError,
   type BlockchainType,
   fontSize,
   componentSizes,
@@ -127,10 +128,10 @@ export function NftSendDialog({
       onSuccess?.(result.txId);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Transfer failed');
+      setError(t(classifyTransactionError(err)));
       setLoading(false);
     }
-  }, [nft, address, addressValid, loading, sendNft, onSuccess, onClose]);
+  }, [nft, address, addressValid, loading, sendNft, onSuccess, onClose, t]);
 
   const canConfirm = addressValid && !loading && !isBitcoin;
 

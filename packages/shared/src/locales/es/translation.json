@@ -747,6 +747,12 @@
     "swapComplete": "Swap Completado",
     "pendingSend": "Enviando fondos",
     "pendingSwap": "Procesando swap",
+    "errors": {
+      "insufficientFeeSol": "Necesitás una pequeña cantidad de SOL para pagar la fee de red. Agregá SOL a esta cuenta y volvé a intentarlo.",
+      "insufficientFunds": "Saldo insuficiente para completar esta transacción.",
+      "expired": "La red tardó demasiado en confirmar. Volvé a intentarlo.",
+      "generic": "La transacción falló. Volvé a intentarlo."
+    },
     "viewOnExplorer": "Ver en Explorer",
     "continue": "Continuar"
   },

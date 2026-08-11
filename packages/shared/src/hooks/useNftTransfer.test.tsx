@@ -137,7 +137,7 @@ describe('useNftTransfer', () => {
     });
 
     expect(result.current.status).toBe('failed');
-    expect(result.current.error).toBe('simulation failed');
+    expect(result.current.error).toBe('transaction.errors.generic');
     expect(result.current.isError).toBe(true);
 
     act(() => {

@@ -22,6 +22,7 @@ import { createNftTransferTransaction } from '../api/services/nft-transfer';
 import { signAndSendPreparedSolanaTransactions } from '../blockchain/solana/prepared-transactions';
 import type { SolanaAccount } from '../blockchain/solana';
 import type { SolanaNetworkId } from '../types/blockchain';
+import { classifyTransactionError } from '../utils/transaction-errors';
 
 export type NftTransferStatus = 'idle' | 'sending' | 'success' | 'failed';
 
@@ -143,7 +144,7 @@ export function useNftTransfer({ account, onTransferSuccess }: UseNftTransferPar
           chain: account.getNetworkId().split('-')[0] as 'solana' | 'bitcoin' | 'ethereum',
           success: false,
         });
-        const errorMessage = err instanceof Error ? err.message : 'NFT transfer failed';
+        const errorMessage = classifyTransactionError(err);
         setError(errorMessage);
         setStatus('failed');
         throw err;

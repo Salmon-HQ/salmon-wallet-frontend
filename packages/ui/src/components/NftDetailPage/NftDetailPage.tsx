@@ -503,7 +503,7 @@ export function NftDetailPage({
 
                 {burnError && (
                   <DescriptionText sx={{ color: colors.status.error }}>
-                    {burnError}
+                    {t(burnError)}
                   </DescriptionText>
                 )}
 

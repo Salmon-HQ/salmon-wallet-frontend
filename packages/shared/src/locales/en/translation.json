@@ -747,6 +747,12 @@
     "swapComplete": "Swap Complete",
     "pendingSend": "Sending funds",
     "pendingSwap": "Processing swap",
+    "errors": {
+      "insufficientFeeSol": "You need a small amount of SOL to pay the network fee. Add SOL to this account and try again.",
+      "insufficientFunds": "Insufficient balance to complete this transaction.",
+      "expired": "The network took too long to confirm. Try again.",
+      "generic": "The transaction failed. Please try again."
+    },
     "viewOnExplorer": "View on Explorer",
     "continue": "Continue"
   },
