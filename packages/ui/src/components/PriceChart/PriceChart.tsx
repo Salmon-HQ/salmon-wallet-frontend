@@ -35,9 +35,9 @@ const CHART_COLORS = {
 /**
  * Format timestamp for tooltip display
  */
-const formatTimestamp = (timestamp: number): string => {
+const formatTimestamp = (timestamp: number, locale?: string): string => {
   const date = new Date(timestamp);
-  return date.toLocaleString('en-US', {
+  return date.toLocaleString(locale, {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
