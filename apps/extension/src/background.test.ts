@@ -240,6 +240,35 @@ describe('malformed and untrusted input', () => {
     expect(sendResponse).not.toHaveBeenCalled();
   });
 
+  it('survives a malformed contentscript message (missing data) without crashing or responding', async () => {
+    const { route, windowsCreate } = startBackground();
+    const sendResponse = vi.fn();
+
+    expect(() => route({ channel: CONTENT_CHANNEL }, ownSender(), sendResponse)).not.toThrow();
+    expect(() => route(null, ownSender(), sendResponse)).not.toThrow();
+    expect(() =>
+      route({ channel: EXTENSION_CHANNEL, data: undefined }, ownSender(), sendResponse)
+    ).not.toThrow();
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(windowsCreate).not.toHaveBeenCalled();
+    expect(sendResponse).not.toHaveBeenCalled();
+  });
+
+  it('answers an unknown method with the fixed protocol error and never opens an approval popup', async () => {
+    const { route, windowsCreate } = startBackground();
+    const sendResponse = vi.fn();
+
+    route(dappRequest('stealAllFunds', 'req-unknown'), ownSender(), sendResponse);
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      error: 'Unsupported method',
+      id: 'req-unknown',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(windowsCreate).not.toHaveBeenCalled();
+  });
+
   it('drops an approval-channel answer with an unknown request id without responding to anyone', () => {
     const { route, windowsRemove } = startBackground();
     const sendResponse = vi.fn();
