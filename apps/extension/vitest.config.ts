@@ -1,5 +1,5 @@
 import { configDefaults, defineConfig } from 'vitest/config'
-import { WxtVitest } from 'wxt/testing'
+import { WxtVitest } from 'wxt/testing/vitest-plugin'
 import path from 'path'
 
 export default defineConfig({

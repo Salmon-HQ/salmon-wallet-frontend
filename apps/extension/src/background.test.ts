@@ -17,7 +17,7 @@
  * build entrypoint (`wxt prepare` rejects duplicate names).
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fakeBrowser } from 'wxt/testing';
+import { fakeBrowser } from 'wxt/testing/fake-browser';
 import background from './entrypoints/background';
 
 const DAPP_ORIGIN = 'https://dapp.example';
@@ -308,6 +308,7 @@ describe('stash channel session hygiene', () => {
     fakeBrowser.alarms.onAlarm.trigger({
       name: 'salmon_lock_alarm',
       scheduledTime: Date.now(),
+      persistAcrossSessions: false,
     });
 
     expect(
