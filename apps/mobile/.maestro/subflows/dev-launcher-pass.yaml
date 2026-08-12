@@ -56,14 +56,37 @@ appId: io.salmonwallet.app
       platform: iOS
       visible: "Tools button"
     commands:
-      # Tapping the "Tools button" label is inert on iOS — the row is a plain
-      # label next to a switch, and only the switch itself responds. It is the
-      # last row of the menu, hence the point. Re-measure if expo-dev-client
-      # adds rows below it.
-      - tapOn:
-          point: "85%,96%"
+      # TRAP, learned the hard way: "Tools button" sits below the sheet's fold
+      # on smaller/denser screens, but the `when:` guard above still passes —
+      # the row exists in the hierarchy, clipped at the very edge (observed on
+      # iPhone 17: bounds ended 12pt past the screen). Any tap against a
+      # clipped row lands on nothing, the switch stays ON, and the floating
+      # gear later swallows the wallet's own header taps. Scroll the row into
+      # view FIRST, then tap the switch anchored to the label (never a
+      # hardcoded point — that was the previous, device-specific bug).
+      # scrollUntilVisible swipes at screen center by default, which lands on
+      # the dimmed backdrop ABOVE this bottom sheet — the sheet never moves
+      # (observed live). Swipe explicitly inside the sheet instead.
+      - swipe:
+          start: "50%, 85%"
+          end: "50%, 45%"
       - waitForAnimationToEnd:
           timeout: 2000
+      # The switch is NOT an accessible element by name — but iOS exposes a
+      # UISwitch's value as text "1"/"0". Anchoring by text to the right of
+      # the label hits the actual switch (a bare rightOf matched the sheet's
+      # Close button instead — observed live). The follow-up assert proves
+      # the toggle actually flipped; if this fails, the selector broke again.
+      - tapOn:
+          text: "1"
+          rightOf: "Tools button"
+          below: "Fast refresh"
+      - waitForAnimationToEnd:
+          timeout: 2000
+      - assertVisible:
+          text: "0"
+          rightOf: "Tools button"
+          below: "Fast refresh"
 # Close the sheet with the X in its header (accessibility label "Close").
 - runFlow:
     when:
