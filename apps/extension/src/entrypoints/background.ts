@@ -304,6 +304,19 @@ export default defineBackground(() => {
     return true;
   };
 
+  // Every dApp method that may open an approval UI. Anything else on the
+  // contentscript channel is answered with a protocol error instead of
+  // reaching routeApproval — rejection of unknown methods must not depend
+  // on the approval page.
+  const APPROVAL_METHODS = new Set([
+    'sign',
+    'signOffchain',
+    'signIn',
+    'signTransaction',
+    'signAllTransactions',
+    'signAndSendTransaction',
+  ]);
+
   // Main message listener
   browser.runtime.onMessage.addListener(
     (
@@ -315,21 +328,37 @@ export default defineBackground(() => {
       if (sender.id !== browser.runtime.id) {
         return;
       }
+      // A malformed message must never throw inside the listener: an
+      // exception here kills the response channel and the dApp hangs.
+      if (message == null || typeof message.channel !== 'string') {
+        return;
+      }
 
       if (message.channel === 'salmon_contentscript_background_channel') {
         const msg = message as Message;
+        if (typeof msg.data?.method !== 'string' || msg.data.id == null) {
+          return;
+        }
 
         if (msg.data.method === 'connect') {
           handleConnect(msg, sender, sendResponse);
         } else if (msg.data.method === 'disconnect') {
           handleDisconnect(msg, sender, sendResponse);
-        } else {
+        } else if (APPROVAL_METHODS.has(msg.data.method)) {
           routeApproval(msg, sender, sendResponse);
+        } else {
+          // Fixed protocol string only — never echo the method back to the
+          // page (same rule as the approval pages' error responses).
+          sendResponse({ error: 'Unsupported method', id: msg.data.id });
+          return;
         }
         // Keep response channel open for async response
         return true;
       } else if (message.channel === 'salmon_extension_background_channel') {
         const msg = message as Message;
+        if (msg.data?.id == null) {
+          return;
+        }
         const responseHandler = responseHandlers.get(msg.data.id);
         responseHandlers.delete(msg.data.id);
         if (responseHandler) {
