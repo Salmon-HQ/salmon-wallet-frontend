@@ -58,10 +58,11 @@ function encodeLookupTableAccount(addressCount: number, lastExtendedSlot: bigint
 type SignatureNotifications = () => AsyncGenerator<{ value: { err: unknown } }>;
 
 /** Async iterable that completes without yielding — the confirmation resolves. */
-// eslint-disable-next-line require-yield
+/* eslint-disable require-yield -- generator that completes without yielding; block form survives reformatting */
 const noNotifications: SignatureNotifications = async function* () {
   return;
 };
+/* eslint-enable require-yield */
 
 const failedNotification: SignatureNotifications = async function* () {
   yield { value: { err: { InstructionError: [0, 'InvalidAccountData'] } } };
