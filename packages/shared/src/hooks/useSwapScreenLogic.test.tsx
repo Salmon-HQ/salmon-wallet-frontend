@@ -1035,17 +1035,15 @@ describe('useSwapScreenLogic', () => {
         tokens: [SOL],
         featuredTokens: [SOL],
         jupiterTokens: [SOL],
-        onGetAvailableTokens: vi
-          .fn()
-          .mockResolvedValue([
-            {
-              symbol: 'USDC',
-              name: 'USD Coin (Base)',
-              network: 'base',
-              chain: 'ethereum',
-              logo: 'usdc.png',
-            },
-          ]),
+        onGetAvailableTokens: vi.fn().mockResolvedValue([
+          {
+            symbol: 'USDC',
+            name: 'USD Coin (Base)',
+            network: 'base',
+            chain: 'ethereum',
+            logo: 'usdc.png',
+          },
+        ]),
       });
 
       const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
