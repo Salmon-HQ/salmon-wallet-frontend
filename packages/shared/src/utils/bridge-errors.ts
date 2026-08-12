@@ -18,6 +18,18 @@ const BELOW_MINIMUM_PATTERNS = [
   'too small',
 ];
 
+const ABOVE_MAXIMUM_PATTERNS = [
+  'above the maximum',
+  'above maximum',
+  'greater than max',
+  'exceeds the maximum',
+  'maximum amount',
+  'maximal amount',
+  'max_amount',
+  'amount is too large',
+  'too large',
+];
+
 const UNAVAILABLE_PATTERNS = [
   'network error',
   'unable to reach the server',
@@ -34,10 +46,13 @@ const UNAVAILABLE_PATTERNS = [
  * @param minimum - the pair minimum from the provider's estimate, when one was
  *   fetched. The create-exchange failure itself only carries free text, so the
  *   estimate is the only structured source of the number and its symbol.
+ * @param maximum - the pair maximum from the provider's estimate, when the
+ *   pair has an upstream cap. Same rationale as `minimum`.
  */
 export function classifyBridgeError(
   err: unknown,
-  minimum?: { amount?: number | null; symbol?: string | null }
+  minimum?: { amount?: number | null; symbol?: string | null },
+  maximum?: { amount?: number | null; symbol?: string | null }
 ): SwapErrorMessage {
   const message = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
 
@@ -61,6 +76,14 @@ export function classifyBridgeError(
       return { key: 'bridge.errors.belowMinimumWithAmount', params: { min } };
     }
     return 'bridge.errors.belowMinimum';
+  }
+
+  if (ABOVE_MAXIMUM_PATTERNS.some((pattern) => haystack.includes(pattern))) {
+    if (maximum?.amount) {
+      const max = maximum.symbol ? `${maximum.amount} ${maximum.symbol}` : `${maximum.amount}`;
+      return { key: 'bridge.errors.aboveMaximumWithAmount', params: { max } };
+    }
+    return 'bridge.errors.aboveMaximum';
   }
 
   if (UNAVAILABLE_PATTERNS.some((pattern) => haystack.includes(pattern))) {

@@ -640,6 +640,78 @@ describe('useSwapScreenLogic', () => {
     expect(result.current.addressError).toBe('swap.errors.invalidBitcoinAddress');
   });
 
+  describe('bridge maximum amount validation', () => {
+    async function renderBridgeWithEstimate(estimate: unknown, inAmount: string) {
+      const props = createProps({
+        initialInToken: SOL,
+        tokens: [SOL],
+        featuredTokens: [SOL],
+        jupiterTokens: [SOL, USDC],
+        onGetAvailableTokens: vi.fn().mockResolvedValue(BRIDGE_AVAILABLE_TOKENS),
+        onGetBridgeEstimate: vi.fn().mockResolvedValue(estimate),
+      });
+
+      const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+        initialProps: props,
+        wrapper: makeWrapper(),
+      });
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      act(() => {
+        result.current.handleOutTokenSelect(BTC);
+      });
+
+      act(() => {
+        result.current.setInAmount(inAmount);
+      });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(500);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      return result;
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    it('blocks review and warns when the amount exceeds the pair maximum', async () => {
+      const result = await renderBridgeWithEstimate(
+        { ...BRIDGE_ESTIMATE, maxAmount: 0.5 },
+        '1',
+      );
+
+      expect(result.current.canReview).toBe(false);
+      expect(result.current.reviewWarning).toEqual({
+        key: 'bridge.errors.aboveMaximumWithAmount',
+        params: { max: '0.5 SOL' },
+      });
+    });
+
+    it('allows review when the amount is within the pair maximum', async () => {
+      const result = await renderBridgeWithEstimate(
+        { ...BRIDGE_ESTIMATE, maxAmount: 1.5 },
+        '1',
+      );
+
+      expect(result.current.canReview).toBe(true);
+      expect(result.current.reviewWarning).toBeNull();
+    });
+
+    it('does not block when the pair has no maximum', async () => {
+      const result = await renderBridgeWithEstimate({ ...BRIDGE_ESTIMATE, maxAmount: null }, '1');
+
+      expect(result.current.canReview).toBe(true);
+      expect(result.current.reviewWarning).toBeNull();
+    });
+  });
+
   it('confirms a bridge end-to-end: estimate → review → deposit → success + status tracking', async () => {
     vi.useFakeTimers();
 

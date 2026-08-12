@@ -234,6 +234,7 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
     return {
       estimatedAmount: estimate.estimatedAmount,
       minAmount: estimate.minAmount,
+      maxAmount: estimate.maxAmount ?? null,
       symbolIn: estimate.symbolIn,
       symbolOut: estimate.symbolOut,
     };

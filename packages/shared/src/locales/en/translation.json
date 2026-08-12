@@ -688,6 +688,7 @@
       "generic": "The exchange could not be created. Please try again.",
       "pairUnavailable": "This trading pair is currently unavailable",
       "aboveMaximum": "Amount exceeds the maximum for this pair",
+      "aboveMaximumWithAmount": "Maximum for this pair is {{max}}",
       "networkError": "Network error: Unable to reach the server",
       "estimateFailed": "Failed to get bridge estimate"
     },

@@ -184,6 +184,7 @@ export function SwapTab({ onNavigateHome }: SwapTabProps): React.ReactElement {
     return {
       estimatedAmount: result.estimatedAmount,
       minAmount: result.minAmount,
+      maxAmount: result.maxAmount ?? null,
       symbolIn,
       symbolOut,
     };

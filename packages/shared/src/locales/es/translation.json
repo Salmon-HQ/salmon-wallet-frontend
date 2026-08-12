@@ -688,6 +688,7 @@
       "generic": "No se pudo crear el intercambio. Volvé a intentarlo.",
       "pairUnavailable": "Este par de intercambio no está disponible por el momento",
       "aboveMaximum": "El monto supera el máximo para este par",
+      "aboveMaximumWithAmount": "El máximo para este par es {{max}}",
       "networkError": "Error de red: no se pudo conectar con el servidor",
       "estimateFailed": "No se pudo obtener la estimación del bridge"
     },

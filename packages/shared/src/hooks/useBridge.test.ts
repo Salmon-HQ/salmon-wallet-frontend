@@ -35,7 +35,7 @@ describe('useBridge', () => {
     mockGetBridgeEstimatedAmount.mockRejectedValueOnce(
       new Error('Bridge fetch estimated amount failed: amount less than minimal')
     );
-    mockGetBridgeMinimalAmount.mockResolvedValueOnce(0.75 as any);
+    mockGetBridgeMinimalAmount.mockResolvedValueOnce({ min: 0.75, max: null });
 
     const { result } = renderHook(() => useBridge());
 
@@ -71,11 +71,58 @@ describe('useBridge', () => {
     expect(estimate).toEqual({
       estimatedAmount: 1.23,
       minAmount: 0,
+      maxAmount: null,
       symbolIn: 'sol',
       symbolOut: 'eth',
     });
     expect(result.current.estimate).toEqual(estimate);
     expect(result.current.status).toBe('idle');
+  });
+
+  it('propagates the pair maximum through the estimate', async () => {
+    mockGetBridgeEstimatedAmount.mockResolvedValueOnce(1.23 as any);
+    mockGetBridgeMinimalAmount.mockResolvedValueOnce({ min: 0.1, max: 250 });
+
+    const { result } = renderHook(() => useBridge());
+
+    let estimate;
+    await act(async () => {
+      estimate = await result.current.getEstimate('sol', 'eth', 1);
+    });
+
+    expect(estimate).toEqual({
+      estimatedAmount: 1.23,
+      minAmount: 0.1,
+      maxAmount: 250,
+      symbolIn: 'sol',
+      symbolOut: 'eth',
+    });
+  });
+
+  it('maps estimate failures above the pair maximum to the aboveMaximum key', async () => {
+    mockGetBridgeEstimatedAmount.mockRejectedValueOnce(
+      new Error('Bridge fetch estimated amount failed: amount is too large')
+    );
+    mockGetBridgeMinimalAmount.mockResolvedValueOnce({ min: 0.1, max: 250 });
+
+    const { result } = renderHook(() => useBridge());
+
+    let caughtError: unknown = null;
+    await act(async () => {
+      try {
+        await result.current.getEstimate('sol', 'eth', 500);
+      } catch (error) {
+        caughtError = error;
+      }
+    });
+
+    expect(caughtError).toBeInstanceOf(Error);
+    expect((caughtError as Error).message).toBe('bridge.errors.aboveMaximum');
+
+    await waitFor(() => {
+      expect(result.current.status).toBe('failed');
+      expect(result.current.error).toBe('bridge.errors.aboveMaximum');
+    });
   });
 
   it('creates exchanges and exposes exchange-created state', async () => {
