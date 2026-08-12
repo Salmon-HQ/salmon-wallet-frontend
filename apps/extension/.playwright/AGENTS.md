@@ -64,6 +64,21 @@ The extension uses MUI components throughout. Common gotchas:
 | Settings sub-panel screenshot shows the wrong panel | Drawer animation is in flight when you capture. Either sleep ≥ 1500 ms after click or use `settings-panels.mjs` which opens a fresh popup per panel. |
 | `popup.goto(popupUrl)` does not reset the SPA route | The popup retains state via `localStorage`. To start clean, open a new page or `rm -rf` the profile. |
 
+## Headless mode (CI)
+
+The fixture launches Playwright's bundled `chromium` channel, which supports
+MV3 extensions in the new headless mode; CI opts in with
+`SALMON_E2E_HEADLESS=1` (see `.github/workflows/e2e.yml`). Local runs stay
+headed by default.
+
+Known instability (2026-08-12, reproduced twice): the seed-gated
+`analytics-coverage.spec.ts` catalog test times out headless on an
+"element is not stable / detached" click against
+`account-add-method-import` (MUI list animation). It does not affect CI —
+that spec skips there (no backend, no seed) — but a headless *local*
+full-depth run may hit it; prefer headed for the pre-release full-depth
+pass until the click is stabilized.
+
 ## Pre-flight
 
 Confirm the test wallet's state before running a flow that depends on

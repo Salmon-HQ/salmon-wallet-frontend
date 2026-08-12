@@ -1,0 +1,121 @@
+# E2E suites, deliberately OFF the PR critical path (spec: specs/011-e2e-ci-and-prerelease).
+# Runs nightly on main, on demand, and on PRs that opt in with the `e2e` label.
+# Same security posture as ci.yml: pull_request only (no secrets for forks),
+# empty top-level permissions, SHA-pinned actions.
+#
+# No backend in CI (decision D3): backend-dependent specs skip by contract.
+# Maestro (mobile) is a local pre-release gate (decision D4) — see
+# docs/QA-RUNBOOK.md.
+name: E2E
+
+on:
+  schedule:
+    - cron: '17 6 * * *' # nightly, 06:17 UTC (off the top of the hour — GH load spikes)
+  workflow_dispatch:
+  pull_request:
+    types: [labeled, opened, synchronize, reopened]
+
+permissions: {}
+
+concurrency:
+  group: e2e-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  web:
+    name: web (playwright, chromium)
+    # PRs run only when carrying the `e2e` label; schedule/dispatch always run.
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright chromium
+        run: pnpm --filter @salmon/web exec playwright install chromium --with-deps
+
+      # Minimal env, NOT a copy of .env.test.example: the example ships
+      # CHANGE_ME placeholders, and a *set* SALMON_TEST_SEED_A (even garbage)
+      # defeats the specs' skip guards. Leaving seed keys unset makes
+      # seed-gated specs skip cleanly; smoke/a11y/responsive still run.
+      # Optional depth: define SALMON_TEST_SEED_A/B etc. as repo secrets —
+      # fork PRs never receive secrets, so the guards stay safe there.
+      - name: Write minimal test env
+        working-directory: apps/web/.playwright
+        run: printf 'SALMON_TEST_PASSWORD=CiSmoke-Pass1!\n' > .env.test
+
+      - name: Run web E2E (chromium project)
+        run: pnpm --filter @salmon/web e2e --project=chromium
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: web-playwright-report
+          path: apps/web/.playwright/playwright-report
+          retention-days: 7
+
+  extension:
+    name: extension (playwright, chromium headless)
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright chromium
+        run: pnpm --filter @salmon/extension exec playwright install chromium --with-deps
+
+      - name: Build extension (chrome-mv3)
+        run: pnpm --filter @salmon/extension build
+
+      # Minimal env, NOT a copy of .env.test.example: the example ships
+      # CHANGE_ME placeholders, and a *set* SALMON_TEST_SEED_A (even garbage)
+      # defeats the specs' skip guards. Leaving seed keys unset makes
+      # seed-gated specs skip cleanly; smoke/a11y/responsive still run.
+      # Optional depth: define SALMON_TEST_SEED_A/B etc. as repo secrets —
+      # fork PRs never receive secrets, so the guards stay safe there.
+      - name: Write minimal test env
+        working-directory: apps/extension/.playwright
+        run: printf 'SALMON_TEST_PASSWORD=CiSmoke-Pass1!\n' > .env.test
+
+      - name: Run extension E2E headless
+        env:
+          SALMON_E2E_HEADLESS: '1'
+        run: pnpm --filter @salmon/extension e2e
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: extension-playwright-report
+          path: apps/extension/.playwright/playwright-report
+          retention-days: 7
