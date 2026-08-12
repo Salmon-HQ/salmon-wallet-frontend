@@ -64,6 +64,8 @@ import {
   getContractMarketChart,
   getTokenMarketChart,
   getCoinInfo,
+  getContractCoinInfo,
+  getTokenCoinInfo,
 } from './price';
 import type {
   MarketChartData,
@@ -441,6 +443,102 @@ describe('Price Service', () => {
   });
 
   // ==========================================================================
+  // getContractCoinInfo Tests
+  // ==========================================================================
+
+  describe('getContractCoinInfo', () => {
+    const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+    it('should fetch contract coin info', async () => {
+      mockApiClientGet.mockResolvedValueOnce({ data: MOCK_COIN_INFO });
+
+      const result = await getContractCoinInfo('solana', USDC_MINT);
+
+      expect(mockApiClientGet).toHaveBeenCalledWith(
+        `/v1/coin/solana/contract/${USDC_MINT}`,
+        { params: { currency: 'usd' } }
+      );
+      expect(result).toEqual(MOCK_COIN_INFO);
+      expect(result).toHaveProperty('id');
+      expect(result).toHaveProperty('marketData');
+    });
+
+    it('should return null on 404 (unlisted contract is an expected outcome)', async () => {
+      mockApiClientGet.mockRejectedValueOnce(
+        new ApiError('No CoinGecko info for contract', 404, 'info_not_found')
+      );
+
+      const result = await getContractCoinInfo('solana', USDC_MINT);
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null on a route-level 404 with non-JSON body (backend predates the endpoint)', async () => {
+      // The apiClient interceptor maps error responses to ApiError even when
+      // the body is not JSON ("Cannot GET ..." HTML/text): data fields are
+      // undefined, so message falls back to the generic axios message and
+      // code is undefined — but the 404 status survives.
+      mockApiClientGet.mockRejectedValueOnce(
+        new ApiError('Request failed with status code 404', 404)
+      );
+
+      const result = await getContractCoinInfo('solana', USDC_MINT);
+
+      expect(result).toBeNull();
+    });
+
+    it('should throw on server errors (5xx)', async () => {
+      mockApiClientGet.mockRejectedValueOnce(new ApiError('Internal error', 500));
+
+      await expect(getContractCoinInfo('solana', USDC_MINT)).rejects.toThrow('Internal error');
+    });
+
+    it('should throw on network errors', async () => {
+      mockApiClientGet.mockRejectedValueOnce(new Error('Network Error'));
+
+      await expect(getContractCoinInfo('solana', USDC_MINT)).rejects.toThrow('Network Error');
+    });
+  });
+
+  // ==========================================================================
+  // getTokenCoinInfo Tests (dispatch)
+  // ==========================================================================
+
+  describe('getTokenCoinInfo', () => {
+    const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+    it('should use the classic endpoint when coingeckoId is present', async () => {
+      mockApiClientGet.mockResolvedValueOnce({ data: MOCK_COIN_INFO });
+
+      const result = await getTokenCoinInfo({ coingeckoId: 'solana', address: USDC_MINT });
+
+      expect(mockApiClientGet).toHaveBeenCalledWith('/v1/coin/solana', {
+        params: { currency: 'usd' },
+      });
+      expect(result).toEqual(MOCK_COIN_INFO);
+    });
+
+    it('should fall back to the contract endpoint when coingeckoId is missing', async () => {
+      mockApiClientGet.mockResolvedValueOnce({ data: MOCK_COIN_INFO });
+
+      const result = await getTokenCoinInfo({ address: USDC_MINT }, 'eur');
+
+      expect(mockApiClientGet).toHaveBeenCalledWith(
+        `/v1/coin/solana/contract/${USDC_MINT}`,
+        { params: { currency: 'eur' } }
+      );
+      expect(result).toEqual(MOCK_COIN_INFO);
+    });
+
+    it('should return null without calling the API when neither identifier exists', async () => {
+      const result = await getTokenCoinInfo({});
+
+      expect(result).toBeNull();
+      expect(mockApiClientGet).not.toHaveBeenCalled();
+    });
+  });
+
+  // ==========================================================================
   // Cache Management Tests
   // ==========================================================================
 
@@ -507,6 +605,11 @@ describe('Price Service', () => {
       },
       10000
     );
+
+    // TODO: add a live integration test for getContractCoinInfo (USDC mint)
+    // once the backend ships GET /v1/coin/{platform}/contract/{address} —
+    // against the current backend the route 404s by design (deploy-order
+    // safety), so a live test would only ever assert null.
   });
 
   // ==========================================================================

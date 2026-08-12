@@ -41,6 +41,7 @@ import {
   getCoinInfo,
   getMarketChart,
   getTokenMarketChart,
+  getTokenCoinInfo,
   getShortAddress,
   spacing,
   useAccountsContext,
@@ -515,11 +516,13 @@ export default function HomeScreen() {
     const loadSelectedTokenCoinInfo = async () => {
       if (!selectedToken || !tokenSheetVisible) return;
 
-      const coinId = selectedToken.coingeckoId;
-      if (!coinId) return;
+      if (!selectedToken.coingeckoId && !selectedToken.address) return;
 
       try {
-        const infoResponse = await getCoinInfo(coinId, currency);
+        const infoResponse = await getTokenCoinInfo(
+          { coingeckoId: selectedToken.coingeckoId ?? undefined, address: selectedToken.address },
+          currency
+        );
         if (infoResponse) {
           setSelectedTokenCoinInfo(infoResponse);
 

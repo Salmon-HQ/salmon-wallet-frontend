@@ -8,14 +8,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTestQueryClient, QueryWrapper } from '../test-utils/query-wrapper';
 
 vi.mock('../api/services', () => ({
-  getCoinInfo: vi.fn(),
+  getTokenCoinInfo: vi.fn(),
   getTokenMarketChart: vi.fn(),
 }));
 
-import { getCoinInfo, getTokenMarketChart } from '../api/services';
+import { getTokenCoinInfo, getTokenMarketChart } from '../api/services';
 import { useCoinMarketData } from './useCoinMarketData';
 
-const mockGetCoinInfo = vi.mocked(getCoinInfo);
+const mockGetTokenCoinInfo = vi.mocked(getTokenCoinInfo);
 const mockGetTokenMarketChart = vi.mocked(getTokenMarketChart);
 
 function renderWithClient<TProps, TResult>(
@@ -35,7 +35,7 @@ describe('useCoinMarketData', () => {
   });
 
   it('fetches coin info and chart data in parallel', async () => {
-    mockGetCoinInfo.mockResolvedValue({
+    mockGetTokenCoinInfo.mockResolvedValue({
       id: 'bitcoin',
       symbol: 'btc',
       name: 'Bitcoin',
@@ -55,7 +55,10 @@ describe('useCoinMarketData', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(mockGetCoinInfo).toHaveBeenCalledWith('bitcoin', 'usd');
+    expect(mockGetTokenCoinInfo).toHaveBeenCalledWith(
+      { coingeckoId: 'bitcoin', address: undefined },
+      'usd',
+    );
     expect(mockGetTokenMarketChart).toHaveBeenCalledWith(
       { coingeckoId: 'bitcoin', address: undefined },
       7,
@@ -73,13 +76,18 @@ describe('useCoinMarketData', () => {
       () => useCoinMarketData({ coinId: undefined, currency: 'usd', days: 7 }),
       undefined as void,
     );
-    expect(mockGetCoinInfo).not.toHaveBeenCalled();
+    expect(mockGetTokenCoinInfo).not.toHaveBeenCalled();
     expect(mockGetTokenMarketChart).not.toHaveBeenCalled();
     expect(result.current.loading).toBe(false);
   });
 
-  it('falls back to the contract chart when coinId is missing but contractAddress exists', async () => {
+  it('falls back to contract chart and coin info when coinId is missing but contractAddress exists', async () => {
     const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+    mockGetTokenCoinInfo.mockResolvedValue({
+      id: 'usd-coin',
+      symbol: 'usdc',
+      name: 'USDC',
+    } as any);
     mockGetTokenMarketChart.mockResolvedValue({
       prices: [[1, 1] as [number, number]],
       marketCaps: [],
@@ -100,17 +108,22 @@ describe('useCoinMarketData', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(mockGetCoinInfo).not.toHaveBeenCalled();
+    expect(mockGetTokenCoinInfo).toHaveBeenCalledWith(
+      { coingeckoId: undefined, address: USDC_MINT },
+      'usd',
+    );
     expect(mockGetTokenMarketChart).toHaveBeenCalledWith(
       { coingeckoId: undefined, address: USDC_MINT },
       7,
       'usd',
     );
+    expect(result.current.coinInfo?.id).toBe('usd-coin');
     expect(result.current.chartData).toEqual([{ timestamp: 1, price: 1 }]);
     expect(result.current.error).toBeNull();
   });
 
-  it('hides the chart without error when the contract chart is null (404)', async () => {
+  it('hides chart and info without error when the contract endpoints return null (404)', async () => {
+    mockGetTokenCoinInfo.mockResolvedValue(null);
     mockGetTokenMarketChart.mockResolvedValue(null);
 
     const { result } = renderWithClient(
@@ -133,7 +146,7 @@ describe('useCoinMarketData', () => {
   });
 
   it('exposes error message when a fetch fails', async () => {
-    mockGetCoinInfo.mockRejectedValue(new Error('boom'));
+    mockGetTokenCoinInfo.mockRejectedValue(new Error('boom'));
     mockGetTokenMarketChart.mockResolvedValue({ prices: [], marketCaps: [], totalVolumes: [] });
 
     const { result } = renderWithClient(
@@ -147,6 +160,7 @@ describe('useCoinMarketData', () => {
   });
 
   it('exposes error message when the contract chart fails with a real error', async () => {
+    mockGetTokenCoinInfo.mockResolvedValue(null);
     mockGetTokenMarketChart.mockRejectedValue(new Error('Internal error'));
 
     const { result } = renderWithClient(

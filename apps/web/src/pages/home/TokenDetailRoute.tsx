@@ -6,7 +6,7 @@ import {
   useBalance,
   useCurrencyContext,
   getTokenMarketChart,
-  getCoinInfo,
+  getTokenCoinInfo,
   coinInfoToMarketData,
   getBlockchainFromNetworkId,
   PERIOD_TO_DAYS,
@@ -90,12 +90,13 @@ export function TokenDetailRoute(): React.ReactElement {
     return () => { cancelled = true; };
   }, [tokenCoingeckoId, tokenContractAddress, chartPeriod, currency]);
 
-  // Fetch coin info (once per token)
+  // Fetch coin info (once per token; contract-address fallback for tokens
+  // without a coingeckoId — null means "no info" and keeps sections hidden)
   useEffect(() => {
-    if (!token?.coingeckoId) return;
+    if (!tokenCoingeckoId && !tokenContractAddress) return;
     let cancelled = false;
 
-    getCoinInfo(token.coingeckoId, currency)
+    getTokenCoinInfo({ coingeckoId: tokenCoingeckoId, address: tokenContractAddress }, currency)
       .then((info) => {
         if (cancelled || !info) return;
         setCoinInfo(info);
@@ -104,7 +105,7 @@ export function TokenDetailRoute(): React.ReactElement {
       .catch((e) => console.error('Failed to load coin info:', e));
 
     return () => { cancelled = true; };
-  }, [token?.coingeckoId, currency]);
+  }, [tokenCoingeckoId, tokenContractAddress, currency]);
 
   const handleBack = useCallback(() => navigate('/home'), [navigate]);
   const handleChartPeriodChange = useCallback((period: PriceChartPeriod) => setChartPeriod(period), []);

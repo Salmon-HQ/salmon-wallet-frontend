@@ -27,6 +27,8 @@ export {
   getContractMarketChart,
   getTokenMarketChart,
   getCoinInfo,
+  getContractCoinInfo,
+  getTokenCoinInfo,
 } from './price';
 
 // ============================================================================

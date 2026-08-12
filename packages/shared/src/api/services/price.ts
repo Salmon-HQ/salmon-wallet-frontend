@@ -7,6 +7,7 @@
  * - GET /v1/chart/{coinId} - Market chart data (price history)
  * - GET /v1/chart/{platform}/contract/{address} - Market chart by contract address (mint)
  * - GET /v1/coin/{coinId}  - Detailed coin info
+ * - GET /v1/coin/{platform}/contract/{address} - Coin info by contract address (mint)
  */
 
 import { apiClient, ApiError } from '../client';
@@ -107,6 +108,72 @@ export async function getTokenMarketChart(
     // ponytail: platform hardcoded to 'solana' — only SPL tokens lack a
     // coingeckoId today; parametrize when another chain needs the fallback.
     return getContractMarketChart('solana', token.address, days, currency);
+  }
+  return null;
+}
+
+/**
+ * Get coin info for a token by contract address (mint)
+ *
+ * Endpoint: GET /v1/coin/{platform}/contract/{address}
+ *
+ * Fallback for SPL tokens whose metadata has no CoinGecko coin ID. Same
+ * semantics as getContractMarketChart: 404 resolves to null (unlisted
+ * long-tail token — hide the info sections, not an error), real failures
+ * (5xx, network) are logged and rethrown.
+ *
+ * Deploy-order safety: against a backend that predates this endpoint the
+ * route itself 404s ("Cannot GET ..."). The apiClient interceptor maps any
+ * error response — JSON or not — to an ApiError carrying the HTTP status
+ * (non-JSON bodies just fall back to the generic axios message), so that
+ * case also lands in the isNotFound() branch and resolves to null cleanly.
+ *
+ * @param platform - CoinGecko asset platform (e.g., 'solana')
+ * @param address - Token contract address (mint)
+ * @param currency - Currency for prices (default: 'usd')
+ * @returns Coin info (with the resolved CoinGecko id), or null on 404
+ */
+export async function getContractCoinInfo(
+  platform: string,
+  address: string,
+  currency: string = 'usd'
+): Promise<CoinInfo | null> {
+  try {
+    const { data } = await apiClient.get<CoinInfo>(
+      `/v1/coin/${platform}/contract/${address}`,
+      { params: { currency } }
+    );
+    return data;
+  } catch (error) {
+    if (error instanceof ApiError && error.isNotFound()) {
+      return null;
+    }
+    console.error(`[PriceService] Failed to fetch contract coin info for ${platform}:${address}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get coin info for a token, resolving the best endpoint.
+ *
+ * Mirror of getTokenMarketChart: tokens with a CoinGecko coin ID use the
+ * classic endpoint (natives unchanged); tokens without one fall back to the
+ * contract-address endpoint using their mint; neither resolves to null.
+ *
+ * Error semantics follow the underlying call: the classic path resolves to
+ * null on any failure (unchanged behavior); the contract path resolves to
+ * null only on 404 and throws on real failures.
+ */
+export async function getTokenCoinInfo(
+  token: { coingeckoId?: string; address?: string },
+  currency: string = 'usd'
+): Promise<CoinInfo | null> {
+  if (token.coingeckoId) {
+    return getCoinInfo(token.coingeckoId, currency);
+  }
+  if (token.address) {
+    // ponytail: platform hardcoded to 'solana', same ceiling as getTokenMarketChart.
+    return getContractCoinInfo('solana', token.address, currency);
   }
   return null;
 }
