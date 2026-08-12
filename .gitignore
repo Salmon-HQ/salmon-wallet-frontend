@@ -91,6 +91,9 @@ maestro.log
 /.maestro/
 **/.maestro/screenshots/
 
+# Agent worktrees — live checkouts must never be captured as gitlinks
+.claude/worktrees/
+
 # Private agent memory — never commit
 AGENTS.local.md
 CLAUDE.local.md
