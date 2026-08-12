@@ -47,9 +47,7 @@ const TokenRow: React.FC<TokenRowProps> = React.memo(({ token, onPress }) => {
   }, [token, onPress]);
 
   const balanceDisplay = useMemo(() => {
-    const amount = typeof token.uiAmount === 'string'
-      ? parseFloat(token.uiAmount)
-      : token.uiAmount;
+    const amount = typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount;
     if (amount === 0) return `0 ${token.symbol}`;
     if (amount < 0.0001) return `<0.0001 ${token.symbol}`;
     return `${Number(amount.toFixed(4))} ${token.symbol}`;
@@ -96,57 +94,71 @@ const SKELETON_ROW_WIDTH = 280; // approximate inner width
 const TokenSelectSkeleton: React.FC = () => {
   const { t } = useTranslation();
   return (
-  <View style={styles.container}>
-    {/* Search bar skeleton */}
-    <BlurContainer style={styles.searchContainer}>
-      <ContentLoader
-        speed={1.5}
-        width={SKELETON_ROW_WIDTH}
-        height={vs(20)}
-        viewBox={`0 0 ${SKELETON_ROW_WIDTH} ${vs(20)}`}
-        backgroundColor={colors.skeleton.base}
-        foregroundColor={colors.skeleton.highlight}
-        accessibilityLabel={t('accessibility.loading_token_list')}
-      >
-        <Circle cx={ms(9)} cy={vs(10)} r={ms(9)} />
-        <Rect x={ms(24)} y={vs(4)} rx="4" ry="4" width="120" height={vs(12)} />
-      </ContentLoader>
-    </BlurContainer>
+    <View style={styles.container}>
+      {/* Search bar skeleton */}
+      <BlurContainer style={styles.searchContainer}>
+        <ContentLoader
+          speed={1.5}
+          width={SKELETON_ROW_WIDTH}
+          height={vs(20)}
+          viewBox={`0 0 ${SKELETON_ROW_WIDTH} ${vs(20)}`}
+          backgroundColor={colors.skeleton.base}
+          foregroundColor={colors.skeleton.highlight}
+          accessibilityLabel={t('accessibility.loading_token_list')}
+        >
+          <Circle cx={ms(9)} cy={vs(10)} r={ms(9)} />
+          <Rect x={ms(24)} y={vs(4)} rx="4" ry="4" width="120" height={vs(12)} />
+        </ContentLoader>
+      </BlurContainer>
 
-    {/* Section header skeleton */}
-    <View style={styles.skeletonHeaderPlaceholder}>
-      <ContentLoader
-        speed={1.5}
-        width={120}
-        height={ms(18)}
-        viewBox={`0 0 120 ${ms(18)}`}
-        backgroundColor={colors.skeleton.base}
-        foregroundColor={colors.skeleton.highlight}
-      >
-        <Rect x="0" y="0" rx="4" ry="4" width="120" height={ms(18)} />
-      </ContentLoader>
-    </View>
+      {/* Section header skeleton */}
+      <View style={styles.skeletonHeaderPlaceholder}>
+        <ContentLoader
+          speed={1.5}
+          width={120}
+          height={ms(18)}
+          viewBox={`0 0 120 ${ms(18)}`}
+          backgroundColor={colors.skeleton.base}
+          foregroundColor={colors.skeleton.highlight}
+        >
+          <Rect x="0" y="0" rx="4" ry="4" width="120" height={ms(18)} />
+        </ContentLoader>
+      </View>
 
-    {/* Token row skeletons */}
-    <View style={styles.skeletonList}>
-      {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-        <BlurContainer key={i} style={styles.tokenRow}>
-          <ContentLoader
-            speed={1.5}
-            width={SKELETON_ROW_WIDTH}
-            height={SKELETON_ROW_HEIGHT}
-            viewBox={`0 0 ${SKELETON_ROW_WIDTH} ${SKELETON_ROW_HEIGHT}`}
-            backgroundColor={colors.skeleton.base}
-            foregroundColor={colors.skeleton.highlight}
-          >
-            <Circle cx={ms(16)} cy={SKELETON_ROW_HEIGHT / 2} r={ms(16)} />
-            <Rect x={ms(40)} y={SKELETON_ROW_HEIGHT / 2 - ms(8)} rx="4" ry="4" width="100" height={ms(16)} />
-            <Rect x={SKELETON_ROW_WIDTH - 80} y={SKELETON_ROW_HEIGHT / 2 - ms(8)} rx="4" ry="4" width="70" height={ms(16)} />
-          </ContentLoader>
-        </BlurContainer>
-      ))}
+      {/* Token row skeletons */}
+      <View style={styles.skeletonList}>
+        {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+          <BlurContainer key={i} style={styles.tokenRow}>
+            <ContentLoader
+              speed={1.5}
+              width={SKELETON_ROW_WIDTH}
+              height={SKELETON_ROW_HEIGHT}
+              viewBox={`0 0 ${SKELETON_ROW_WIDTH} ${SKELETON_ROW_HEIGHT}`}
+              backgroundColor={colors.skeleton.base}
+              foregroundColor={colors.skeleton.highlight}
+            >
+              <Circle cx={ms(16)} cy={SKELETON_ROW_HEIGHT / 2} r={ms(16)} />
+              <Rect
+                x={ms(40)}
+                y={SKELETON_ROW_HEIGHT / 2 - ms(8)}
+                rx="4"
+                ry="4"
+                width="100"
+                height={ms(16)}
+              />
+              <Rect
+                x={SKELETON_ROW_WIDTH - 80}
+                y={SKELETON_ROW_HEIGHT / 2 - ms(8)}
+                rx="4"
+                ry="4"
+                width="70"
+                height={ms(16)}
+              />
+            </ContentLoader>
+          </BlurContainer>
+        ))}
+      </View>
     </View>
-  </View>
   );
 };
 
@@ -165,9 +177,7 @@ export const StepTokenSelect: React.FC<StepTokenSelectProps> = ({
   const verifiedTokens = useMemo(() => {
     return tokens.filter((token) => {
       const hasMeaningfulTags =
-        token.tags &&
-        token.tags.length > 0 &&
-        token.tags.some((tag) => tag !== 'unknown');
+        token.tags && token.tags.length > 0 && token.tags.some((tag) => tag !== 'unknown');
       if (hasMeaningfulTags) return true;
       return !!showUnverifiedTokens;
     });
@@ -194,9 +204,7 @@ export const StepTokenSelect: React.FC<StepTokenSelectProps> = ({
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: SendToken }) => (
-      <TokenRow token={item} onPress={onSelectToken} />
-    ),
+    ({ item }: { item: SendToken }) => <TokenRow token={item} onPress={onSelectToken} />,
     [onSelectToken]
   );
 

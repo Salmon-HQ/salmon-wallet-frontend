@@ -10,13 +10,13 @@ result yourself.
 
 ## Status
 
-| Surface | Solana stack | `@solana/web3.js` in production |
-|---|---|---|
-| `packages/shared` | `@solana/kit` v7 + `@solana-program/*` | No — devDependency, tests only |
-| `packages/ui` | none (presentation only) | No — not a dependency |
-| `apps/web` | via `@salmon/shared` | No — dependency removed entirely |
-| `apps/extension` | via `@salmon/shared` | No — devDependency, tests only |
-| `apps/mobile` | via `@salmon/shared` | No — not a dependency |
+| Surface           | Solana stack                           | `@solana/web3.js` in production  |
+| ----------------- | -------------------------------------- | -------------------------------- |
+| `packages/shared` | `@solana/kit` v7 + `@solana-program/*` | No — devDependency, tests only   |
+| `packages/ui`     | none (presentation only)               | No — not a dependency            |
+| `apps/web`        | via `@salmon/shared`                   | No — dependency removed entirely |
+| `apps/extension`  | via `@salmon/shared`                   | No — devDependency, tests only   |
+| `apps/mobile`     | via `@salmon/shared`                   | No — not a dependency            |
 
 Completed on the `feat/solana-kit-migration` branch, 2026-07-29 to 2026-08-01, 79 commits. The
 migration itself is the first 60; the rest is on-device validation, the app fixes it surfaced, and
@@ -24,11 +24,11 @@ the test-harness work that made those runs reproducible.
 
 The measurable effect on shipped code, from clean production builds before and after the final commit:
 
-| Bundle | Before | After |
-|---|---|---|
-| `apps/web` `dist/assets/index-*.js` | 4,867,073 B raw / 1,763,965 B gzip | 4,638,283 B raw / 1,694,579 B gzip |
-| `apps/extension` vendor chunk `dist/chrome-mv3/chunks/fonts-*.js` | 2,028,998 B | 1,799,113 B |
-| `apps/extension` `dist/` total (chrome-mv3 and firefox-mv2 alike) | 5,928 KB | 5,708 KB |
+| Bundle                                                            | Before                             | After                              |
+| ----------------------------------------------------------------- | ---------------------------------- | ---------------------------------- |
+| `apps/web` `dist/assets/index-*.js`                               | 4,867,073 B raw / 1,763,965 B gzip | 4,638,283 B raw / 1,694,579 B gzip |
+| `apps/extension` vendor chunk `dist/chrome-mv3/chunks/fonts-*.js` | 2,028,998 B                        | 1,799,113 B                        |
+| `apps/extension` `dist/` total (chrome-mv3 and firefox-mv2 alike) | 5,928 KB                           | 5,708 KB                           |
 
 The extension had already moved `@solana/web3.js` to `devDependencies` earlier in the branch
 (`87a3f23`), but kept bundling it transitively through `@salmon/shared`. Removing the last shared
@@ -101,14 +101,14 @@ work rather than getting absorbed into it.
 
 Reference commits:
 
-| Commit | What it pinned |
-|---|---|
-| `0df0254` | OCMS envelope bytes |
-| `ac8385b` | SIWS message text bytes |
-| `127ec19` | SIWS byte parity against `@solana/wallet-standard-util` |
-| `551739f` | Signed-transaction serialization bytes |
+| Commit    | What it pinned                                                   |
+| --------- | ---------------------------------------------------------------- |
+| `0df0254` | OCMS envelope bytes                                              |
+| `ac8385b` | SIWS message text bytes                                          |
+| `127ec19` | SIWS byte parity against `@solana/wallet-standard-util`          |
+| `551739f` | Signed-transaction serialization bytes                           |
 | `4c1f56d` | Blockhash-swap bytes for a v0 transaction carrying lookup tables |
-| `33541e5` | `isTransactionLookalike` classification corpus |
+| `33541e5` | `isTransactionLookalike` classification corpus                   |
 
 ## The ratchet
 
@@ -139,8 +139,8 @@ Removing web3.js from the wallet does not remove it from the dApps that talk to 
 them still do:
 
 ```js
-new PublicKey(wallet.publicKey)
-wallet.publicKey.toBytes()
+new PublicKey(wallet.publicKey);
+wallet.publicKey.toBytes();
 ```
 
 `apps/extension/src/lib/SalmonAddress.ts` keeps those patterns working. The object injected at
@@ -169,11 +169,11 @@ abstraction with no second implementation — and shared may not import from an 
 Hermes is not a browser, and kit assumes browser cryptography. Four polyfills bridge the gap, all
 installed in `apps/mobile/index.js` before anything else loads:
 
-| Polyfill | Why |
-|---|---|
-| Ed25519 WebCrypto (`@solana/webcrypto-ed25519-polyfill`) | Hermes has no `crypto.subtle`. Kit derives and signs through WebCrypto Ed25519. |
-| SHA-512 digest (pure JS, `@noble/hashes`) | The Ed25519 polyfill signs via `@noble/ed25519`, whose `sha512Async` calls `crypto.subtle.digest`. Native (expo-crypto) digest fails crossing the JSI bridge on Hermes/Android, so this runs in pure JS instead. |
-| `AbortSignal` gap-fill (`apps/mobile/src/polyfills/abort-signal.js`) | Kit's RPC subscription machinery uses `AbortSignal.timeout` / `any` / `throwIfAborted`, which React Native does not implement completely (`257b863`). |
+| Polyfill                                                                    | Why                                                                                                                                                                                                                                                          |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ed25519 WebCrypto (`@solana/webcrypto-ed25519-polyfill`)                    | Hermes has no `crypto.subtle`. Kit derives and signs through WebCrypto Ed25519.                                                                                                                                                                              |
+| SHA-512 digest (pure JS, `@noble/hashes`)                                   | The Ed25519 polyfill signs via `@noble/ed25519`, whose `sha512Async` calls `crypto.subtle.digest`. Native (expo-crypto) digest fails crossing the JSI bridge on Hermes/Android, so this runs in pure JS instead.                                             |
+| `AbortSignal` gap-fill (`apps/mobile/src/polyfills/abort-signal.js`)        | Kit's RPC subscription machinery uses `AbortSignal.timeout` / `any` / `throwIfAborted`, which React Native does not implement completely (`257b863`).                                                                                                        |
 | `EventTarget` / `CustomEvent` (`apps/mobile/src/polyfills/event-target.js`) | React Native defines neither global. Kit's subscription packages capture `globalThis.EventTarget` at module scope and construct it when a subscription opens, so signature confirmation threw after the transaction had already landed on chain (`5dc27c7`). |
 
 These are only genuinely exercised on Hermes, so a real device or simulator run remains part of the

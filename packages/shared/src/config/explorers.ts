@@ -20,11 +20,7 @@ export type Blockchain = 'SOLANA' | 'BITCOIN' | 'ETHEREUM';
  * Supported network environments.
  */
 export type NetworkEnvironment =
-  | 'mainnet'
-  | 'solana-mainnet'
-  | 'testnet'
-  | 'solana-devnet'
-  | 'sepolia';
+  'mainnet' | 'solana-mainnet' | 'testnet' | 'solana-devnet' | 'sepolia';
 
 /**
  * Explorer configuration with name and URL template.

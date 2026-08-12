@@ -1,8 +1,4 @@
-import type {
-  ComponentPropsWithoutRef,
-  CSSProperties,
-  ReactNode,
-} from 'react';
+import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from 'react';
 import type { ScalesBackgroundProps } from '../ScalesBackground';
 
 type ScrollContentProps = Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'style'>;

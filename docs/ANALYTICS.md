@@ -1,6 +1,6 @@
 # Pseudonymous analytics — event catalog and metrics
 
-This document is the reference for **what we measure, with what data, and what metrics can be computed from it**. It is a *ground-truth* document: it marks what is actually emitted today and, explicitly, what **cannot** be measured with the current design. It does not promise coverage that does not exist.
+This document is the reference for **what we measure, with what data, and what metrics can be computed from it**. It is a _ground-truth_ document: it marks what is actually emitted today and, explicitly, what **cannot** be measured with the current design. It does not promise coverage that does not exist.
 
 ## Privacy posture
 
@@ -19,16 +19,16 @@ Withdrawing consent **clears the queue and the install id**.
 
 ## Where each thing lives
 
-| Piece | Location |
-|---|---|
-| Catalog (source of truth) | `packages/shared/src/analytics/events.ts` |
-| Payload guardrail | `packages/shared/src/analytics/schema.ts` |
-| Client (consent, batching, retry) | `packages/shared/src/analytics/client.ts` |
-| HTTP transport | `packages/shared/src/analytics/transport.ts` |
-| "First-time" events | `packages/shared/src/analytics/first-time.ts` |
-| Consent hook | `packages/shared/src/hooks/useAnalyticsConsent.ts` |
-| Backend mirror | `salmon-api/src/analytics/event-schema.js` |
-| Backend ingest | `salmon-api/src/analytics/handler.js` (`POST /v1/events`) |
+| Piece                             | Location                                                  |
+| --------------------------------- | --------------------------------------------------------- |
+| Catalog (source of truth)         | `packages/shared/src/analytics/events.ts`                 |
+| Payload guardrail                 | `packages/shared/src/analytics/schema.ts`                 |
+| Client (consent, batching, retry) | `packages/shared/src/analytics/client.ts`                 |
+| HTTP transport                    | `packages/shared/src/analytics/transport.ts`              |
+| "First-time" events               | `packages/shared/src/analytics/first-time.ts`             |
+| Consent hook                      | `packages/shared/src/hooks/useAnalyticsConsent.ts`        |
+| Backend mirror                    | `salmon-api/src/analytics/event-schema.js`                |
+| Backend ingest                    | `salmon-api/src/analytics/handler.js` (`POST /v1/events`) |
 
 > The wallet catalog and the `salmon-api` mirror **must be kept in sync**. A change in one forces the other.
 
@@ -36,26 +36,26 @@ Withdrawing consent **clears the queue and the install id**.
 
 Not sent by each event: the batch envelope and the handler add it.
 
-| Field | What it is |
-|---|---|
-| `install_id` | Random per install. **Not** derived from the wallet or the seed. |
-| `session_id` | Ephemeral, rotates per session. |
-| `platform` | `mobile` \| `web` \| `extension` |
-| `app_version` | App version. |
-| `ts` | Client epoch ms (when it happened). |
-| `received_at` | Server epoch ms (when it was ingested). |
-| `dt` | `YYYY-MM-DD` — partition key. |
+| Field         | What it is                                                       |
+| ------------- | ---------------------------------------------------------------- |
+| `install_id`  | Random per install. **Not** derived from the wallet or the seed. |
+| `session_id`  | Ephemeral, rotates per session.                                  |
+| `platform`    | `mobile` \| `web` \| `extension`                                 |
+| `app_version` | App version.                                                     |
+| `ts`          | Client epoch ms (when it happened).                              |
+| `received_at` | Server epoch ms (when it was ingested).                          |
+| `dt`          | `YYYY-MM-DD` — partition key.                                    |
 
 ## Allowed props
 
 Only these five keys. Anything else is rejected.
 
-| Prop | Values |
-|---|---|
-| `chain` | `solana` \| `bitcoin` \| `ethereum` |
-| `from_chain` | same |
-| `to_chain` | same |
-| `success` | `true` \| `false` |
+| Prop            | Values                                               |
+| --------------- | ---------------------------------------------------- |
+| `chain`         | `solana` \| `bitcoin` \| `ethereum`                  |
+| `from_chain`    | same                                                 |
+| `to_chain`      | same                                                 |
+| `success`       | `true` \| `false`                                    |
 | `amount_bucket` | `0-10` \| `10-100` \| `100-1k` \| `1k-10k` \| `10k+` |
 
 ## Catalog: the 11 events
@@ -64,36 +64,36 @@ Events are wired **in the shared hook when one exists**, so a single call covers
 
 ### Onboarding
 
-| Event | Props | Fires on | Wired in |
-|---|---|---|---|
-| `wallet_created` | — | Password success, `create` flow | `apps/mobile/app/(auth)/password.tsx` + `packages/ui/.../AuthFlow/PasswordPage.tsx` |
-| `wallet_recovered` | — | Password success, `recover` flow | same |
+| Event              | Props | Fires on                         | Wired in                                                                            |
+| ------------------ | ----- | -------------------------------- | ----------------------------------------------------------------------------------- |
+| `wallet_created`   | —     | Password success, `create` flow  | `apps/mobile/app/(auth)/password.tsx` + `packages/ui/.../AuthFlow/PasswordPage.tsx` |
+| `wallet_recovered` | —     | Password success, `recover` flow | same                                                                                |
 
 ### Activation (once per install)
 
-These use `trackFirstTime()`: they emit the event **once**, guarded by a persisted flag per event. The flag is **only consumed once the event actually emitted** (i.e. with consent granted), so a user who does their first swap *before* opting in is still counted on their first swap *after* opting in.
+These use `trackFirstTime()`: they emit the event **once**, guarded by a persisted flag per event. The flag is **only consumed once the event actually emitted** (i.e. with consent granted), so a user who does their first swap _before_ opting in is still counted on their first swap _after_ opting in.
 
-| Event | Props | Fires on | Wired in |
-|---|---|---|---|
-| `first_send_completed` | — | 1st successful send | `packages/shared/src/hooks/useSendTransaction.ts` |
-| `first_swap_completed` | — | 1st successful swap (Jupiter or bridge) | `useSwap.ts` + `contexts/BridgeSettlementContext.tsx` |
+| Event                  | Props | Fires on                                | Wired in                                              |
+| ---------------------- | ----- | --------------------------------------- | ----------------------------------------------------- |
+| `first_send_completed` | —     | 1st successful send                     | `packages/shared/src/hooks/useSendTransaction.ts`     |
+| `first_swap_completed` | —     | 1st successful swap (Jupiter or bridge) | `useSwap.ts` + `contexts/BridgeSettlementContext.tsx` |
 
 ### Recurring use
 
-| Event | Props | Fires on | Wired in |
-|---|---|---|---|
-| `send_completed` | `chain`, `success` | Transfer outcome (success **or** failure) | `packages/shared/src/hooks/useSendTransaction.ts` |
-| `swap_completed` | `from_chain`, `to_chain`, `success` | Swap outcome. Jupiter (Solana↔Solana) fires immediately in `useSwap`; a cross-chain **bridge** fires on its real settlement, with the real chains, from the background poller | `useSwap.ts` + `contexts/BridgeSettlementContext.tsx` |
-| `nft_viewed` | `chain` | Open NFT detail | `apps/mobile/.../NftDetailSheet.tsx` + `packages/ui/.../NftDetailPage.tsx` |
-| `nft_sent` | `chain` | Successful NFT transfer | `packages/shared/src/hooks/useNftTransfer.ts` |
+| Event            | Props                               | Fires on                                                                                                                                                                      | Wired in                                                                   |
+| ---------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `send_completed` | `chain`, `success`                  | Transfer outcome (success **or** failure)                                                                                                                                     | `packages/shared/src/hooks/useSendTransaction.ts`                          |
+| `swap_completed` | `from_chain`, `to_chain`, `success` | Swap outcome. Jupiter (Solana↔Solana) fires immediately in `useSwap`; a cross-chain **bridge** fires on its real settlement, with the real chains, from the background poller | `useSwap.ts` + `contexts/BridgeSettlementContext.tsx`                      |
+| `nft_viewed`     | `chain`                             | Open NFT detail                                                                                                                                                               | `apps/mobile/.../NftDetailSheet.tsx` + `packages/ui/.../NftDetailPage.tsx` |
+| `nft_sent`       | `chain`                             | Successful NFT transfer                                                                                                                                                       | `packages/shared/src/hooks/useNftTransfer.ts`                              |
 
 ### Feature adoption
 
-| Event | Props | Fires on | Wired in |
-|---|---|---|---|
-| `network_switched` | `chain` (destination network) | `changeNetwork` | `packages/shared/src/hooks/useAccountsSelection.ts` |
-| `wallet_switched` | — | `changeAccount` | `packages/shared/src/hooks/useAccountsSelection.ts` |
-| `address_book_used` | — | `addContact` | `packages/shared/src/hooks/useAddressbook.ts` |
+| Event               | Props                         | Fires on        | Wired in                                            |
+| ------------------- | ----------------------------- | --------------- | --------------------------------------------------- |
+| `network_switched`  | `chain` (destination network) | `changeNetwork` | `packages/shared/src/hooks/useAccountsSelection.ts` |
+| `wallet_switched`   | —                             | `changeAccount` | `packages/shared/src/hooks/useAccountsSelection.ts` |
+| `address_book_used` | —                             | `addContact`    | `packages/shared/src/hooks/useAddressbook.ts`       |
 
 ## Metrics per event
 
@@ -101,41 +101,41 @@ What we will compute with each one.
 
 ### Activation and time-to-value
 
-| Metric | How it is computed |
-|---|---|
-| Send activation rate | `installs with first_send_completed / consented installs` |
-| Swap activation rate | `installs with first_swap_completed / consented installs` |
-| Time-to-first-send / swap | `ts` of the `first_*` − `ts` of that `install_id`'s first event |
-| Activation order | Which `first_*` happens first per `install_id` (do they swap before sending?) |
+| Metric                    | How it is computed                                                            |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| Send activation rate      | `installs with first_send_completed / consented installs`                     |
+| Swap activation rate      | `installs with first_swap_completed / consented installs`                     |
+| Time-to-first-send / swap | `ts` of the `first_*` − `ts` of that `install_id`'s first event               |
+| Activation order          | Which `first_*` happens first per `install_id` (do they swap before sending?) |
 
 ### Recurring use and engagement
 
-| Metric | How it is computed |
-|---|---|
-| Send / swap volume | `count(send_completed)`, `count(swap_completed)` by `dt` |
-| Chain mix | `count(send_completed) group by chain` — which chains actually get used |
-| Sends per active user | `count(send_completed) / count(distinct install_id)` |
-| Send vs swap ratio | Which operation type dominates |
-| NFT usage | `nft_viewed` → `nft_sent` (NFT view-to-send), by `chain` |
+| Metric                | How it is computed                                                      |
+| --------------------- | ----------------------------------------------------------------------- |
+| Send / swap volume    | `count(send_completed)`, `count(swap_completed)` by `dt`                |
+| Chain mix             | `count(send_completed) group by chain` — which chains actually get used |
+| Sends per active user | `count(send_completed) / count(distinct install_id)`                    |
+| Send vs swap ratio    | Which operation type dominates                                          |
+| NFT usage             | `nft_viewed` → `nft_sent` (NFT view-to-send), by `chain`                |
 
 ### Retention
 
-| Metric | How it is computed |
-|---|---|
-| DAU / WAU / MAU | `count(distinct install_id) by dt` (or window) |
-| D1 / D7 / D30 retention | Cohorts by each `install_id`'s first seen `dt` |
-| Stickiness | `DAU / MAU` |
-| Session depth | `count(events) group by session_id` |
-| Sessions per install | `count(distinct session_id) group by install_id` |
+| Metric                  | How it is computed                               |
+| ----------------------- | ------------------------------------------------ |
+| DAU / WAU / MAU         | `count(distinct install_id) by dt` (or window)   |
+| D1 / D7 / D30 retention | Cohorts by each `install_id`'s first seen `dt`   |
+| Stickiness              | `DAU / MAU`                                      |
+| Session depth           | `count(events) group by session_id`              |
+| Sessions per install    | `count(distinct session_id) group by install_id` |
 
 ### Feature adoption
 
-| Metric | How it is computed |
-|---|---|
-| % multi-chain | `installs with network_switched / total`, and which `chain` they switch to |
-| % multi-wallet | `installs with wallet_switched / total` |
-| % using address book | `installs with address_book_used / total` |
-| Feature discovery | Which features an install touches in its first N days |
+| Metric               | How it is computed                                                         |
+| -------------------- | -------------------------------------------------------------------------- |
+| % multi-chain        | `installs with network_switched / total`, and which `chain` they switch to |
+| % multi-wallet       | `installs with wallet_switched / total`                                    |
+| % using address book | `installs with address_book_used / total`                                  |
+| Feature discovery    | Which features an install touches in its first N days                      |
 
 ### Cross-cuts
 
@@ -153,7 +153,7 @@ welcome → create/recover → password → biometric → CONSENT → app
 
 Since the client is a no-op without consent, on the **first** onboarding the events `wallet_created` and `wallet_recovered` are **not emitted**. They only appear when an **already-consented** user goes through that flow again (e.g. adds a second account).
 
-Consequence: those 2 events measure *"a consented user redoing the flow"*, **not acquisition or onboarding conversion**. Do not use them as a top-of-funnel.
+Consequence: those 2 events measure _"a consented user redoing the flow"_, **not acquisition or onboarding conversion**. Do not use them as a top-of-funnel.
 
 This is correct by design (real opt-in: you cannot measure someone who has not yet consented). To measure the acquisition funnel you would have to move the consent prompt **earlier** in the flow — a product/legal decision, not a technical one.
 
@@ -161,7 +161,7 @@ This is correct by design (real opt-in: you cannot measure someone who has not y
 
 `send_completed` and `swap_completed` now fire on **both** paths — `success: true` on completion and `success: false` on failure (send/swap error path; bridge `fail`/`refunded` settlement). So a completion-vs-failure rate **is** computable.
 
-What is still missing is an *attempt* event: a user who abandons before submitting the operation is never counted. So `success` gives you the outcome rate among **submitted** operations, not a full funnel conversion rate. Add attempt events to the catalog if you need the latter.
+What is still missing is an _attempt_ event: a user who abandons before submitting the operation is never counted. So `success` gives you the outcome rate among **submitted** operations, not a full funnel conversion rate. Add attempt events to the catalog if you need the latter.
 
 ### 3. `amount_bucket` is defined but not emitted
 
@@ -197,7 +197,7 @@ Platforms:
 
 > The web on-chain spec does **one** swap leg, not a round-trip: `swap_completed` and `first_swap_completed` both fire on the first leg, and the return leg only added fragility (the form balance does not refresh within the session after a swap, and the just-bought token takes time to index). It is a **manual** spec: before running it, look at the holdings and size the leg to the $1 minimum (the same criterion the extension spec already documents).
 
-Events fire from the committed flows in `apps/mobile/.maestro/`. Since consent is *declined* by default in `subflows/onboard-walletA.yaml`, for the suite to emit events you must opt in: use `subflows/enable-analytics.yaml` (Settings toggle) or, for a verification run, temporarily change that `tapOn` to `analytics-consent-accept`.
+Events fire from the committed flows in `apps/mobile/.maestro/`. Since consent is _declined_ by default in `subflows/onboard-walletA.yaml`, for the suite to emit events you must opt in: use `subflows/enable-analytics.yaml` (Settings toggle) or, for a verification run, temporarily change that `tapOn` to `analytics-consent-accept`.
 
 > **Watch out for the flush**: the client batches (20 events or 30s). If you chain flows, the next one's `clearState` kills the in-memory queue and events are lost. Run one flow at a time and wait ~35s before the next.
 

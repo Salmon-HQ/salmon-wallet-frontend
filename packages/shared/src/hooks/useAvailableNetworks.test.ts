@@ -217,7 +217,7 @@ describe('useAvailableNetworks Hook', () => {
       );
 
       return waitFor(() => {
-        const networkIds = result.current.networks.solana.map(n => n.id);
+        const networkIds = result.current.networks.solana.map((n) => n.id);
         expect(networkIds).not.toContain('solana-devnet');
         expect(networkIds).not.toContain('testnet');
       });
@@ -240,7 +240,7 @@ describe('useAvailableNetworks Hook', () => {
       );
 
       return waitFor(() => {
-        const environments = result.current.networks.bitcoin.map(n => n.environment);
+        const environments = result.current.networks.bitcoin.map((n) => n.environment);
         expect(environments).not.toContain('regtest');
       });
     });
@@ -262,7 +262,7 @@ describe('useAvailableNetworks Hook', () => {
       );
 
       return waitFor(() => {
-        const environments = result.current.networks.ethereum.map(n => n.environment);
+        const environments = result.current.networks.ethereum.map((n) => n.environment);
         expect(environments).not.toContain('sepolia');
       });
     });
@@ -295,7 +295,7 @@ describe('useAvailableNetworks Hook', () => {
 
       return waitFor(() => {
         expect(result.current.networks.solana).toHaveLength(2);
-        const networkIds = result.current.networks.solana.map(n => n.id);
+        const networkIds = result.current.networks.solana.map((n) => n.id);
         expect(networkIds).toContain('solana-mainnet');
         expect(networkIds).toContain('solana-devnet');
       });
@@ -308,7 +308,7 @@ describe('useAvailableNetworks Hook', () => {
 
       return waitFor(() => {
         expect(result.current.networks.bitcoin).toHaveLength(2);
-        const environments = result.current.networks.bitcoin.map(n => n.environment);
+        const environments = result.current.networks.bitcoin.map((n) => n.environment);
         expect(environments).toContain('mainnet');
         expect(environments).toContain('testnet');
       });
@@ -321,7 +321,7 @@ describe('useAvailableNetworks Hook', () => {
 
       return waitFor(() => {
         expect(result.current.networks.ethereum).toHaveLength(2);
-        const environments = result.current.networks.ethereum.map(n => n.environment);
+        const environments = result.current.networks.ethereum.map((n) => n.environment);
         expect(environments).toContain('mainnet');
         expect(environments).toContain('sepolia');
       });

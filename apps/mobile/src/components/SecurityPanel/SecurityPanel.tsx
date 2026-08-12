@@ -21,7 +21,8 @@ import {
   validatePassword,
   getPasswordIssue,
   PASSWORD_CONSTRAINTS,
-letterSpacing, } from '@salmon/shared';
+  letterSpacing,
+} from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
 import { PrimaryButton } from '../Button';
@@ -65,7 +66,7 @@ export function SecurityPanel({
           ? t('wallet.create.password_too_short', { min: PASSWORD_CONSTRAINTS.MIN_LENGTH })
           : passwordIssue === 'too_long'
             ? t('wallet.create.password_too_long', { max: PASSWORD_CONSTRAINTS.MAX_LENGTH })
-            : t('wallet.create.password_too_weak'),
+            : t('wallet.create.password_too_weak')
       );
       return;
     }
@@ -75,10 +76,7 @@ export function SecurityPanel({
       const success = await accountActions.changePassword(currentPassword, newPassword);
       if (success) {
         await onPasswordChanged?.();
-        Alert.alert(
-          t('settings.security.title'),
-          t('settings.security.password_changed'),
-        );
+        Alert.alert(t('settings.security.title'), t('settings.security.password_changed'));
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
@@ -90,15 +88,21 @@ export function SecurityPanel({
     } finally {
       setLoading(false);
     }
-  }, [currentPassword, newPassword, confirmPassword, passwordValidation, accountActions, onPasswordChanged, t]);
+  }, [
+    currentPassword,
+    newPassword,
+    confirmPassword,
+    passwordValidation,
+    accountActions,
+    onPasswordChanged,
+    t,
+  ]);
 
   return (
     <SettingsScreenLayout title={t('settings.security.title')} onBack={onBack}>
       {/* Change Password Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          {t('settings.security.change_password')}
-        </Text>
+        <Text style={styles.sectionTitle}>{t('settings.security.change_password')}</Text>
 
         <View style={styles.inputGroup}>
           <PasswordInput
@@ -119,9 +123,7 @@ export function SecurityPanel({
             placeholder={t('settings.security.new_password')}
             testID="security-new-password-input"
           />
-          {newPassword.length > 0 && (
-            <PasswordStrengthBar strength={passwordValidation.strength} />
-          )}
+          {newPassword.length > 0 && <PasswordStrengthBar strength={passwordValidation.strength} />}
         </View>
 
         <View style={styles.inputGroup}>
@@ -154,9 +156,7 @@ export function SecurityPanel({
         <View style={styles.section}>
           <View style={styles.biometricRow}>
             <View style={styles.biometricInfo}>
-              <Text style={styles.biometricTitle}>
-                {t('settings.security.biometric_unlock')}
-              </Text>
+              <Text style={styles.biometricTitle}>{t('settings.security.biometric_unlock')}</Text>
               <Text style={styles.biometricDescription}>
                 {t('settings.security.biometric_description')}
               </Text>

@@ -1,14 +1,20 @@
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { colors, componentSizes, fontFamilyNative, fontScaleCap, ms, s, spacing, vs, borderWidth, gradients } from '@salmon/shared';
+import {
+  colors,
+  componentSizes,
+  fontFamilyNative,
+  fontScaleCap,
+  ms,
+  s,
+  spacing,
+  vs,
+  borderWidth,
+  gradients,
+} from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { BlurContainer } from '../BlurContainer';
 import { GridViewSvgIcon, HomeSvgIcon, SwapSvgIcon } from '../Icon';
@@ -74,7 +80,11 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
         <IconComponent size={config.iconSize} color={iconColor} />
       </View>
       <Text
-        style={[styles.tabLabel, isFocused ? styles.tabLabelActive : styles.tabLabelInactive, { color: labelColor }]}
+        style={[
+          styles.tabLabel,
+          isFocused ? styles.tabLabelActive : styles.tabLabelInactive,
+          { color: labelColor },
+        ]}
         numberOfLines={1}
         ellipsizeMode="tail"
         maxFontSizeMultiplier={fontScaleCap.chrome}
@@ -85,17 +95,13 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
   );
 }
 
-export function GlassTabBar({
-  state,
-  descriptors: _descriptors,
-  navigation,
-}: BottomTabBarProps) {
+export function GlassTabBar({ state, descriptors: _descriptors, navigation }: BottomTabBarProps) {
   const { tabBarBottomPadding } = useTabChrome();
 
   // Filter and order routes to only show Home, Collectibles, and Swap
-  const visibleRoutes = TAB_ORDER
-    .map(tabName => state.routes.find(route => route.name === tabName))
-    .filter((route): route is typeof state.routes[0] => route !== undefined);
+  const visibleRoutes = TAB_ORDER.map((tabName) =>
+    state.routes.find((route) => route.name === tabName)
+  ).filter((route): route is (typeof state.routes)[0] => route !== undefined);
 
   return (
     <LinearGradient

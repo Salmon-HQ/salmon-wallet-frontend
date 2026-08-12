@@ -1,22 +1,11 @@
-import {
-  getStorageItem,
-  setStorageItem,
-  removeStorageItem,
-  STORAGE_KEYS,
-} from '../storage';
-import {
-  lock,
-  unlock,
-  type LockedVault,
-} from '../crypto/encryption';
+import { getStorageItem, setStorageItem, removeStorageItem, STORAGE_KEYS } from '../storage';
+import { lock, unlock, type LockedVault } from '../crypto/encryption';
 import { SOLANA_NETWORKS } from '../blockchain/solana';
 import { BITCOIN_NETWORKS } from '../blockchain/bitcoin';
 import { ETHEREUM_NETWORKS } from '../blockchain/ethereum';
 import type { SolanaNetwork, BitcoinNetwork, EthereumNetwork } from '../types/blockchain';
 import { getPathIndex } from './account';
-import type {
-  AnyNetwork,
-} from '../types/blockchain';
+import type { AnyNetwork } from '../types/blockchain';
 import type {
   NetworkPathIndexes,
   StoredAccount,
@@ -93,12 +82,15 @@ interface LegacyWallets {
   }>;
   mnemonics?: StoredMnemonics;
   lastNumber?: number;
-  config?: Record<string, {
-    name?: string;
-    avatar?: string;
-    trustedApps?: Record<string, TrustedApp>;
-    tokens?: Record<string, TokenInfo>;
-  }>;
+  config?: Record<
+    string,
+    {
+      name?: string;
+      avatar?: string;
+      trustedApps?: Record<string, TrustedApp>;
+      tokens?: Record<string, TokenInfo>;
+    }
+  >;
 }
 
 /** Dependencies injected by the caller so the migration stays decoupled. */
@@ -138,7 +130,7 @@ export type MigrationResult =
  */
 export async function migrateLegacyWallets(
   deps: MigrationDeps,
-  password?: string,
+  password?: string
 ): Promise<MigrationResult> {
   const storedWallets = await getStorageItem<LegacyWallets>(STORAGE_KEYS.WALLETS);
   if (!storedWallets) return { status: 'no-migration' };
@@ -220,7 +212,8 @@ export async function migrateLegacyWallets(
 
       const { path, chain } = wallet;
       const network = networks.find(
-        (n) => (n as unknown as { blockchain: string }).blockchain?.toUpperCase() === chain.toUpperCase()
+        (n) =>
+          (n as unknown as { blockchain: string }).blockchain?.toUpperCase() === chain.toUpperCase()
       );
 
       if (!network) continue;
@@ -272,7 +265,10 @@ export async function migrateLegacyWallets(
         return (
           path === activeWallet?.path &&
           address === activeWallet?.address &&
-          network.id === storedEndpoints?.[(network as unknown as { blockchain: string }).blockchain?.toUpperCase()]
+          network.id ===
+            storedEndpoints?.[
+              (network as unknown as { blockchain: string }).blockchain?.toUpperCase()
+            ]
         );
       });
 
@@ -292,9 +288,9 @@ export async function migrateLegacyWallets(
       newNetworkId = availableNetworks.includes('solana-mainnet')
         ? 'solana-mainnet'
         : availableNetworks[0];
-      newPathIndex = firstAccount.pathIndexes[newNetworkId]?.find(
-        (n): n is number => typeof n === 'number'
-      ) ?? 0;
+      newPathIndex =
+        firstAccount.pathIndexes[newNetworkId]?.find((n): n is number => typeof n === 'number') ??
+        0;
     }
   }
 

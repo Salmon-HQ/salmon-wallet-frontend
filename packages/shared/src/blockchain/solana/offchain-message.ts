@@ -68,15 +68,13 @@ export function buildOffchainMessageV1(content: Uint8Array, signers: Address[]):
 export async function signOffchainMessage(
   account: SolanaAccount,
   content: Uint8Array,
-  signers: Address[],
+  signers: Address[]
 ): Promise<SignedOffchainMessage> {
   // Refuse to sign a message whose required-signatory list does not include this
   // account. Otherwise a dApp could obtain the user's signature over an OCMS
   // message that structurally attributes it to a different set of signers.
   if (!signers.some((signer) => signer === account.signer.address)) {
-    throw new Error(
-      'Refusing to sign: the signing account is not listed in the required signers.',
-    );
+    throw new Error('Refusing to sign: the signing account is not listed in the required signers.');
   }
 
   const buffer = buildOffchainMessageV1(content, signers);
@@ -100,7 +98,7 @@ export async function signOffchainMessage(
 export async function verifyOffchainMessage(
   buffer: Uint8Array,
   signature: Uint8Array,
-  signer: Address,
+  signer: Address
 ): Promise<boolean> {
   // `signature` is untrusted: it arrives from a dApp or from storage. Narrow it
   // with kit's guard rather than casting. A wrong-length signature is simply an
@@ -115,7 +113,7 @@ export async function verifyOffchainMessage(
     Uint8Array.from(getAddressEncoder().encode(signer)),
     'Ed25519',
     true,
-    ['verify'],
+    ['verify']
   );
   return verifySignature(publicKey, signature, buffer);
 }

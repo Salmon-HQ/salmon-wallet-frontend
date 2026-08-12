@@ -14,19 +14,22 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     resolve: {
       alias: {
-        'react-native-fast-crypto': path.resolve(__dirname, 'src/stubs/react-native-fast-crypto.ts'),
+        'react-native-fast-crypto': path.resolve(
+          __dirname,
+          'src/stubs/react-native-fast-crypto.ts'
+        ),
         'react-native': path.resolve(__dirname, 'src/stubs/react-native.ts'),
         '@': path.resolve(__dirname, 'src'),
         '@salmon/shared': path.resolve(__dirname, '../../packages/shared/src'),
         '@salmon/ui': path.resolve(__dirname, '../../packages/ui/src'),
-        'buffer': bufferPath,
-        'process': processPath,
+        buffer: bufferPath,
+        process: processPath,
       },
     },
     define: {
-      'global': 'globalThis',
-      '__APP_VERSION__': JSON.stringify(appVersion),
-      'process': JSON.stringify({ env: {} }),
+      global: 'globalThis',
+      __APP_VERSION__: JSON.stringify(appVersion),
+      process: JSON.stringify({ env: {} }),
       'process.env': JSON.stringify({
         VITE_SALMON_ENV: env.VITE_SALMON_ENV ?? 'local',
         VITE_API_HOST: env.VITE_API_HOST ?? '',

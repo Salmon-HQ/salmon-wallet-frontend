@@ -87,16 +87,30 @@ export function TokenListSkeleton({ count = 5 }: TokenListSkeletonProps) {
           <BlurContainer
             key={index}
             borderWidth={borderWidth.tokenListItem}
-            style={{ borderRadius: ms(borderRadius.lg), marginBottom: vs(spacing.sm), overflow: 'hidden' }}
+            style={{
+              borderRadius: ms(borderRadius.lg),
+              marginBottom: vs(spacing.sm),
+              overflow: 'hidden',
+            }}
           >
             <SkeletonContainer>
               <SkeletonLogo variant="circular" width={tokenIconSize} height={tokenIconSize} />
               <SkeletonTextContainer>
-                <SkeletonText variant="text" width="60%" height={ms(fontSize.md)} sx={{ mb: `${spacing.xs}px` }} />
+                <SkeletonText
+                  variant="text"
+                  width="60%"
+                  height={ms(fontSize.md)}
+                  sx={{ mb: `${spacing.xs}px` }}
+                />
                 <SkeletonText variant="text" width="40%" height={ms(fontSize.base)} />
               </SkeletonTextContainer>
               <SkeletonValueContainer>
-                <SkeletonText variant="text" width={s(spacing['5.5xl'])} height={ms(fontSize.md)} sx={{ mb: `${spacing.xs}px` }} />
+                <SkeletonText
+                  variant="text"
+                  width={s(spacing['5.5xl'])}
+                  height={ms(fontSize.md)}
+                  sx={{ mb: `${spacing.xs}px` }}
+                />
                 <SkeletonText variant="text" width={s(spacing['4xl'])} height={ms(fontSize.base)} />
               </SkeletonValueContainer>
             </SkeletonContainer>

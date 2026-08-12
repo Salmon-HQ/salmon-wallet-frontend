@@ -1,12 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  View,
-  Text,
-  TextInput,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, ActivityIndicator, StyleSheet } from 'react-native';
 import {
   colors,
   fontSize,
@@ -123,11 +117,13 @@ export const RecipientAddressInput: React.FC<RecipientAddressInputProps> = ({
 
       {/* Validation / Error Message */}
       {displayMessage && (
-        <Text style={[
-          styles.messageText,
-          hasError && styles.errorText,
-          hasWarning && styles.warningText,
-        ]}>
+        <Text
+          style={[
+            styles.messageText,
+            hasError && styles.errorText,
+            hasWarning && styles.warningText,
+          ]}
+        >
           {t(displayMessage)}
         </Text>
       )}

@@ -49,9 +49,7 @@ import {
   type ValidationCallbackResult,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
-import {
-  CallMadeSvgIcon,
-} from '../Icon/SvgIcons';
+import { CallMadeSvgIcon } from '../Icon/SvgIcons';
 import { BlurContainer } from '../BlurContainer';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
@@ -146,11 +144,14 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     resetFlowState();
   }, [nft?.mint, resetFlowState]);
 
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    const opacity = Math.min(offsetY / componentSizes.sheetFadeGradientHeight, 1);
-    topFadeOpacity.setValue(opacity);
-  }, [topFadeOpacity]);
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = event.nativeEvent.contentOffset.y;
+      const opacity = Math.min(offsetY / componentSizes.sheetFadeGradientHeight, 1);
+      topFadeOpacity.setValue(opacity);
+    },
+    [topFadeOpacity]
+  );
 
   const handleClose = useCallback(() => {
     resetFlowState();
@@ -170,27 +171,30 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     }
   }, [handleClose, onBurnSuccess, onSendSuccess, successKind, successTxId]);
 
-  const startStepTransition = useCallback((nextStep: 'detail' | 'send' | 'burn', direction: 1 | -1) => {
-    if (step === nextStep) return;
+  const startStepTransition = useCallback(
+    (nextStep: 'detail' | 'send' | 'burn', direction: 1 | -1) => {
+      if (step === nextStep) return;
 
-    setTransitionFromStep(step);
-    setTransitionToStep(nextStep);
-    setTransitionDirection(direction);
-    stepTransitionProgress.setValue(0);
+      setTransitionFromStep(step);
+      setTransitionToStep(nextStep);
+      setTransitionDirection(direction);
+      stepTransitionProgress.setValue(0);
 
-    Animated.timing(stepTransitionProgress, {
-      toValue: 1,
-      duration: 260,
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (!finished) return;
-      setStep(nextStep);
-      setTransitionFromStep(null);
-      setTransitionToStep(null);
-      setTransitionDirection(1);
-      stepTransitionProgress.setValue(1);
-    });
-  }, [step, stepTransitionProgress]);
+      Animated.timing(stepTransitionProgress, {
+        toValue: 1,
+        duration: 260,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (!finished) return;
+        setStep(nextStep);
+        setTransitionFromStep(null);
+        setTransitionToStep(null);
+        setTransitionDirection(1);
+        stepTransitionProgress.setValue(1);
+      });
+    },
+    [step, stepTransitionProgress]
+  );
 
   useEffect(() => {
     if (Platform.OS !== 'android' || !visible) return undefined;
@@ -285,19 +289,25 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
         <>
           {nft.tokenStandard && (
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>{t('nft.detail.tokenStandard', 'Token Standard')}</Text>
+              <Text style={styles.detailLabel}>
+                {t('nft.detail.tokenStandard', 'Token Standard')}
+              </Text>
               <Text style={styles.detailValue}>{nft.tokenStandard}</Text>
             </View>
           )}
           {nft.compressed !== undefined && (
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>{t('nft.detail.compressed', 'Compressed')}</Text>
-              <Text style={styles.detailValue}>{nft.compressed ? t('general.yes', 'Yes') : t('general.no', 'No')}</Text>
+              <Text style={styles.detailValue}>
+                {nft.compressed ? t('general.yes', 'Yes') : t('general.no', 'No')}
+              </Text>
             </View>
           )}
           {nft.collectionVerified !== undefined && (
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>{t('nft.detail.collectionVerified', 'Collection Verified')}</Text>
+              <Text style={styles.detailLabel}>
+                {t('nft.detail.collectionVerified', 'Collection Verified')}
+              </Text>
               <Text style={styles.detailValue}>{nft.collectionVerified ? '✓' : '✗'}</Text>
             </View>
           )}
@@ -315,13 +325,17 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       return (
         <>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>{t('nft.detail.inscriptionNumber', 'Inscription #')}</Text>
+            <Text style={styles.detailLabel}>
+              {t('nft.detail.inscriptionNumber', 'Inscription #')}
+            </Text>
             <Text style={styles.detailValue}>{nft.inscriptionNumber}</Text>
           </View>
           {nft.satRarity && (
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>{t('nft.detail.rarity', 'Rarity')}</Text>
-              <View style={[styles.rarityBadge, { backgroundColor: getSatRarityColor(nft.satRarity) }]}>
+              <View
+                style={[styles.rarityBadge, { backgroundColor: getSatRarityColor(nft.satRarity) }]}
+              >
                 <Text style={styles.rarityText}>{nft.satRarity}</Text>
               </View>
             </View>
@@ -332,7 +346,9 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           </View>
           {nft.genesisHeight && (
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>{t('nft.detail.genesisBlock', 'Genesis Block')}</Text>
+              <Text style={styles.detailLabel}>
+                {t('nft.detail.genesisBlock', 'Genesis Block')}
+              </Text>
               <Text style={styles.detailValue}>{nft.genesisHeight}</Text>
             </View>
           )}
@@ -437,7 +453,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       blockchain,
       networkId as NetworkEnvironment,
       getDefaultExplorer(blockchain),
-      successTxId,
+      successTxId
     );
   }, [account, nft, successTxId]);
 
@@ -460,11 +476,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       {renderNftImage()}
 
       {nft.description && (
-        <BlurContainer
-          blurIntensity={10}
-          blurTint="dark"
-          style={styles.sectionContainer}
-        >
+        <BlurContainer blurIntensity={10} blurTint="dark" style={styles.sectionContainer}>
           <View style={styles.sectionContent}>
             <Text style={styles.sectionTitle}>{t('nft.detail.description', 'Description')}</Text>
             <Text style={styles.descriptionText}>{nft.description}</Text>
@@ -473,25 +485,15 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       )}
 
       {nft.attributes && nft.attributes.length > 0 && (
-        <BlurContainer
-          blurIntensity={10}
-          blurTint="dark"
-          style={styles.sectionContainer}
-        >
+        <BlurContainer blurIntensity={10} blurTint="dark" style={styles.sectionContainer}>
           <View style={styles.sectionContent}>
             <Text style={styles.sectionTitle}>{t('nft.detail.attributes', 'Attributes')}</Text>
-            <View style={styles.attributesGrid}>
-              {nft.attributes.map(renderAttribute)}
-            </View>
+            <View style={styles.attributesGrid}>{nft.attributes.map(renderAttribute)}</View>
           </View>
         </BlurContainer>
       )}
 
-      <BlurContainer
-        blurIntensity={10}
-        blurTint="dark"
-        style={styles.sectionContainer}
-      >
+      <BlurContainer blurIntensity={10} blurTint="dark" style={styles.sectionContainer}>
         <View style={styles.sectionContent}>
           <Text style={styles.sectionTitle}>{t('nft.detail.details', 'Details')}</Text>
           {renderBlockchainDetails()}
@@ -558,11 +560,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       >
         {renderNftImage()}
 
-        <BlurContainer
-          blurIntensity={10}
-          blurTint="dark"
-          style={styles.sectionContainer}
-        >
+        <BlurContainer blurIntensity={10} blurTint="dark" style={styles.sectionContainer}>
           <View style={styles.sectionContent}>
             {nft.collectionName && (
               <Text style={styles.collectionName} numberOfLines={1}>
@@ -654,11 +652,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     >
       {renderNftImage()}
 
-      <BlurContainer
-        blurIntensity={32}
-        blurTint="dark"
-        style={styles.sectionContainer}
-      >
+      <BlurContainer blurIntensity={32} blurTint="dark" style={styles.sectionContainer}>
         <View style={styles.sectionContent}>
           <Text style={styles.sectionTitle}>{t('nft.burn.reviewTitle', 'Burn NFT')}</Text>
           <Text style={styles.descriptionText}>
@@ -671,13 +665,11 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       </BlurContainer>
 
       {lutInfo && (
-        <BlurContainer
-          blurIntensity={32}
-          blurTint="dark"
-          style={styles.sectionContainer}
-        >
+        <BlurContainer blurIntensity={32} blurTint="dark" style={styles.sectionContainer}>
           <View style={styles.sectionContent}>
-            <Text style={styles.sectionTitle}>{t('nft.burn.lutTitle', 'Temporary lookup table required')}</Text>
+            <Text style={styles.sectionTitle}>
+              {t('nft.burn.lutTitle', 'Temporary lookup table required')}
+            </Text>
             <Text style={styles.descriptionText}>
               {t(
                 'nft.burn.lutBody',
@@ -687,15 +679,23 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
 
             <View style={styles.warningDetailList}>
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>{t('nft.burn.lutRent', 'Approximate rent lock')}</Text>
-                <Text style={styles.detailValue}>{formatRawAmount(lutInfo.estimatedRentLamports, 9)} SOL</Text>
+                <Text style={styles.detailLabel}>
+                  {t('nft.burn.lutRent', 'Approximate rent lock')}
+                </Text>
+                <Text style={styles.detailValue}>
+                  {formatRawAmount(lutInfo.estimatedRentLamports, 9)} SOL
+                </Text>
               </View>
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>{t('nft.burn.lutAddressCount', 'Addresses stored')}</Text>
+                <Text style={styles.detailLabel}>
+                  {t('nft.burn.lutAddressCount', 'Addresses stored')}
+                </Text>
                 <Text style={styles.detailValue}>{lutInfo.addressCount}</Text>
               </View>
               <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>{t('nft.burn.lutSteps', 'Additional setup transactions')}</Text>
+                <Text style={styles.detailLabel}>
+                  {t('nft.burn.lutSteps', 'Additional setup transactions')}
+                </Text>
                 <Text style={styles.detailValue}>{lutInfo.extendTransactionCount + 1}</Text>
               </View>
             </View>
@@ -769,21 +769,25 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     }
 
     const outgoingStyle = {
-      transform: [{
-        translateX: stepTransitionProgress.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, transitionDirection === 1 ? -sheetSlideDistance : sheetSlideDistance],
-        }),
-      }],
+      transform: [
+        {
+          translateX: stepTransitionProgress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, transitionDirection === 1 ? -sheetSlideDistance : sheetSlideDistance],
+          }),
+        },
+      ],
     };
 
     const incomingStyle = {
-      transform: [{
-        translateX: stepTransitionProgress.interpolate({
-          inputRange: [0, 1],
-          outputRange: [transitionDirection === 1 ? sheetSlideDistance : -sheetSlideDistance, 0],
-        }),
-      }],
+      transform: [
+        {
+          translateX: stepTransitionProgress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [transitionDirection === 1 ? sheetSlideDistance : -sheetSlideDistance, 0],
+          }),
+        },
+      ],
     };
 
     return (
@@ -817,29 +821,42 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       showTextureOverlay
       style={[styles.sheetContainer, style]}
     >
-      {(step === 'detail' || step === 'send' || step === 'burn' || transitionFromStep || transitionToStep) && renderSlidingSteps()}
+      {(step === 'detail' ||
+        step === 'send' ||
+        step === 'burn' ||
+        transitionFromStep ||
+        transitionToStep) &&
+        renderSlidingSteps()}
 
       {step === 'success' && (
         <TransactionSuccessScreen
-          title={successKind === 'burn'
-            ? t('nft.burn.successTitle', 'NFT burned')
-            : t('nft.send.successTitle', 'NFT sent')}
-          pendingTitle={successKind === 'burn'
-            ? t('nft.burn.submitting', 'Burning NFT...')
-            : t('nft.send.sending', 'Sending NFT...')}
-          summary={successKind === 'burn'
-            ? t('nft.burn.successSummary', {
-              name: nft.name,
-              defaultValue: `"${nft.name}" has been burned.`,
-            })
-            : t('nft.send.successSummary', {
-              name: nft.name,
-              address: getShortAddress(address) ?? address,
-              defaultValue: '{{name}} sent to {{address}}',
-            })}
+          title={
+            successKind === 'burn'
+              ? t('nft.burn.successTitle', 'NFT burned')
+              : t('nft.send.successTitle', 'NFT sent')
+          }
+          pendingTitle={
+            successKind === 'burn'
+              ? t('nft.burn.submitting', 'Burning NFT...')
+              : t('nft.send.sending', 'Sending NFT...')
+          }
+          summary={
+            successKind === 'burn'
+              ? t('nft.burn.successSummary', {
+                  name: nft.name,
+                  defaultValue: `"${nft.name}" has been burned.`,
+                })
+              : t('nft.send.successSummary', {
+                  name: nft.name,
+                  address: getShortAddress(address) ?? address,
+                  defaultValue: '{{name}} sent to {{address}}',
+                })
+          }
           explorerUrl={explorerUrl ?? null}
           onContinue={handleSuccessContinue}
-          settling={successKind === 'send' ? nftSettling : successKind === 'burn' ? burnSettling : false}
+          settling={
+            successKind === 'send' ? nftSettling : successKind === 'burn' ? burnSettling : false
+          }
         />
       )}
     </BottomSheetContainer>

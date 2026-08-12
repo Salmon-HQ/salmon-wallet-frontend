@@ -42,7 +42,15 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import WarningIcon from '@mui/icons-material/Warning';
 import LockIcon from '@mui/icons-material/Lock';
 
-import { colors, spacing, borderRadius, fontSize, fontWeight, letterSpacing, componentSizes } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  componentSizes,
+} from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { TokenBadgesSectionProps } from './types';
 
@@ -344,7 +352,15 @@ export function TokenBadgesSection({
             />
             <SkeletonBadgesRow>
               {[1, 2, 3].map((i) => (
-                <Box key={i} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: `${spacing.xs}px` }}>
+                <Box
+                  key={i}
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: `${spacing.xs}px`,
+                  }}
+                >
                   <Skeleton
                     variant="circular"
                     width={40}

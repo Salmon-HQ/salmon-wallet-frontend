@@ -5,25 +5,25 @@ appId: io.salmonwallet.app
 # off by default.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-settings.yaml
-- assertVisible: "Settings"
+- assertVisible: 'Settings'
 # The analytics toggle sits below Developer Networks in the Advanced section.
 - scrollUntilVisible:
     element:
-      id: "settings-analytics-toggle"
+      id: 'settings-analytics-toggle'
     direction: DOWN
     timeout: 20000
 - assertVisible:
-    id: "settings-analytics-toggle"
+    id: 'settings-analytics-toggle'
 - takeScreenshot: screenshots/smoke/settings/analytics-off
 # Opt in
 - tapOn:
-    id: "settings-analytics-toggle"
+    id: 'settings-analytics-toggle'
 - waitForAnimationToEnd:
     timeout: 2000
 - takeScreenshot: screenshots/smoke/settings/analytics-on
 # Opt back out
 - tapOn:
-    id: "settings-analytics-toggle"
+    id: 'settings-analytics-toggle'
 - waitForAnimationToEnd:
     timeout: 2000
 - takeScreenshot: screenshots/smoke/settings/analytics-off-again

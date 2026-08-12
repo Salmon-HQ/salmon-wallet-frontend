@@ -10,12 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { trackEvent } from '../analytics';
 import { getStorage, STORAGE_KEYS } from '../storage';
-import type {
-  StoredAddress,
-  Address,
-  AddressInput,
-  NetworkAdapter,
-} from '../types/address';
+import type { StoredAddress, Address, AddressInput, NetworkAdapter } from '../types/address';
 
 // ============================================================================
 // Types
@@ -58,9 +53,7 @@ export class AddressbookError extends Error {
 
   constructor(kind: AddressbookErrorKind, cause: unknown) {
     super(
-      kind === 'persist'
-        ? 'Failed to save address book'
-        : 'Failed to resolve address book contacts',
+      kind === 'persist' ? 'Failed to save address book' : 'Failed to resolve address book contacts'
     );
     this.name = 'AddressbookError';
     this.kind = kind;
@@ -78,7 +71,7 @@ export class AddressbookError extends Error {
  */
 async function resolveContacts(
   stored: StoredAddress[],
-  networkAdapter: NetworkAdapter,
+  networkAdapter: NetworkAdapter
 ): Promise<Address[]> {
   const resolved: Address[] = [];
   for (const entry of stored) {
@@ -99,9 +92,7 @@ async function resolveContacts(
 // Hook Implementation
 // ============================================================================
 
-export function useAddressbook({
-  networkAdapter,
-}: UseAddressbookParams): UseAddressbookResult {
+export function useAddressbook({ networkAdapter }: UseAddressbookParams): UseAddressbookResult {
   const [storedContacts, setStoredContacts] = useState<StoredAddress[]>([]);
   const [contacts, setContacts] = useState<Address[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -128,14 +119,17 @@ export function useAddressbook({
         }
       } catch (err) {
         console.error('Failed to load address book:', err);
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load address book');
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : 'Failed to load address book');
       } finally {
         if (!cancelled) setIsLoading(false);
       }
     };
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [networkAdapter, loadToken]);
 
   /** Re-runs the load effect so a failed load can be retried from the UI. */
@@ -171,7 +165,7 @@ export function useAddressbook({
         throw new AddressbookError('resolve', err);
       }
     },
-    [networkAdapter],
+    [networkAdapter]
   );
 
   const addContact = useCallback(
@@ -188,7 +182,7 @@ export function useAddressbook({
       // or network — just that the address book was used.
       trackEvent('address_book_used');
     },
-    [storedContacts, persistAndResolve],
+    [storedContacts, persistAndResolve]
   );
 
   const editContact = useCallback(
@@ -199,13 +193,10 @@ export function useAddressbook({
         networkId: input.networkId,
         domain: input.domain,
       };
-      const newStored = [
-        ...storedContacts.filter((c) => c.address !== originalAddress),
-        entry,
-      ];
+      const newStored = [...storedContacts.filter((c) => c.address !== originalAddress), entry];
       await persistAndResolve(newStored);
     },
-    [storedContacts, persistAndResolve],
+    [storedContacts, persistAndResolve]
   );
 
   const removeContact = useCallback(
@@ -213,7 +204,7 @@ export function useAddressbook({
       const newStored = storedContacts.filter((c) => c.address !== address);
       await persistAndResolve(newStored);
     },
-    [storedContacts, persistAndResolve],
+    [storedContacts, persistAndResolve]
   );
 
   return [
@@ -221,4 +212,3 @@ export function useAddressbook({
     { addContact, editContact, removeContact, reload },
   ];
 }
-

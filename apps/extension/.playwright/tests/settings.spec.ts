@@ -16,7 +16,9 @@ test.beforeAll(async () => {
   backendUp = await isBackendUp();
 });
 
-test('opens settings, visits read-only panels, and closes via the data-testid contract', async ({ popup }) => {
+test('opens settings, visits read-only panels, and closes via the data-testid contract', async ({
+  popup,
+}) => {
   test.skip(!backendUp, 'salmon-api (127.0.0.1:3001) not reachable');
 
   await unlockOrRecover(popup);
@@ -28,10 +30,14 @@ test('opens settings, visits read-only panels, and closes via the data-testid co
 
   // Security panel (read-only: change-password form, no secrets revealed).
   await popup.getByTestId('settings-item-security').click();
-  await expect(popup.getByTestId('security-change-password-button')).toBeVisible({ timeout: 10_000 });
+  await expect(popup.getByTestId('security-change-password-button')).toBeVisible({
+    timeout: 10_000,
+  });
   await popup.getByTestId('screen-header-back-button').click();
   // The panel-only control disappears once we pop back to the menu.
-  await expect(popup.getByTestId('security-change-password-button')).toHaveCount(0, { timeout: 10_000 });
+  await expect(popup.getByTestId('security-change-password-button')).toHaveCount(0, {
+    timeout: 10_000,
+  });
 
   // About panel (static links only).
   await popup.getByTestId('settings-item-about').click();

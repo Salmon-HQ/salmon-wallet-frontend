@@ -17,23 +17,11 @@ import {
   fontFamilyNative,
   spacing,
 } from '@salmon/shared';
-import {
-  PrimaryButton,
-  SecondaryButton,
-  TextButton,
-} from '../../src/components';
+import { PrimaryButton, SecondaryButton, TextButton } from '../../src/components';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // ============================================================================
@@ -76,22 +64,14 @@ export default function SuccessScreen() {
         <View style={styles.centerContent}>
           {/* Logo */}
           <View style={styles.logoContainer}>
-            <Image
-              source={Logo}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            <Image source={Logo} style={styles.logo} resizeMode="contain" />
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>
-            {t('wallet.create.success_message')}
-          </Text>
+          <Text style={styles.title}>{t('wallet.create.success_message')}</Text>
 
           {/* Subtitle */}
-          <Text style={styles.subtitle}>
-            {t('wallet.create.success_message_body')}
-          </Text>
+          <Text style={styles.subtitle}>{t('wallet.create.success_message_body')}</Text>
         </View>
 
         {/* Bottom buttons */}
@@ -126,23 +106,14 @@ export default function SuccessScreen() {
       </ScrollView>
 
       {/* Derivable Info Dialog */}
-      <Modal
-        visible={showDialog}
-        transparent
-        animationType="fade"
-        onRequestClose={toggleDialog}
-      >
+      <Modal visible={showDialog} transparent animationType="fade" onRequestClose={toggleDialog}>
         <Pressable style={styles.dialogOverlay} onPress={toggleDialog}>
-          <Pressable style={styles.dialogContent} onPress={() => { }}>
+          <Pressable style={styles.dialogContent} onPress={() => {}}>
             {/* Dialog Title */}
-            <Text style={styles.dialogTitle}>
-              {t('wallet.create.derivable_info')}
-            </Text>
+            <Text style={styles.dialogTitle}>{t('wallet.create.derivable_info')}</Text>
 
             {/* Dialog Description */}
-            <Text style={styles.dialogBody}>
-              {t('wallet.create.derivable_description')}
-            </Text>
+            <Text style={styles.dialogBody}>{t('wallet.create.derivable_description')}</Text>
 
             {/* Close Button */}
             <PrimaryButton onPress={toggleDialog} testID="success-dialog-continue-button">

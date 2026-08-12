@@ -29,7 +29,9 @@ const BASE58_OR_HEX = /\b([1-9A-HJ-NP-Za-km-z]{32,44}|0x[0-9a-fA-F]{40})\b/;
 const LIVE = process.env.SALMON_ANALYTICS_LIVE === '1';
 
 let backendUp = false;
-const haveWalletFixture = Boolean(process.env.SALMON_TEST_SEED_A || process.env.SALMON_TEST_PASSWORD);
+const haveWalletFixture = Boolean(
+  process.env.SALMON_TEST_SEED_A || process.env.SALMON_TEST_PASSWORD
+);
 
 test.beforeAll(async () => {
   backendUp = await isBackendUp();
@@ -38,7 +40,10 @@ test.beforeAll(async () => {
 test('opt-in gates analytics and keeps the payload anonymous', async ({ page }) => {
   test.setTimeout(120_000); // recover flow (client-side derivation + API) is slow
   test.skip(!backendUp, 'salmon-api not reachable');
-  test.skip(!haveWalletFixture, 'no seeded-wallet fixture (SALMON_TEST_SEED_A / SALMON_TEST_PASSWORD)');
+  test.skip(
+    !haveWalletFixture,
+    'no seeded-wallet fixture (SALMON_TEST_SEED_A / SALMON_TEST_PASSWORD)'
+  );
 
   // Capture every analytics POST. Stubbed by default so the test never depends
   // on a running ingest endpoint; in live mode it goes through to the backend

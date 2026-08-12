@@ -141,7 +141,7 @@ async function dismissSuccess(page: Page): Promise<void> {
 /** Run the swap end to end, and land back on the swap form. */
 async function doSwap(
   page: Page,
-  { from, to, quickfill }: { from: string; to: string; quickfill: string },
+  { from, to, quickfill }: { from: string; to: string; quickfill: string }
 ): Promise<void> {
   await page.getByTestId('tab-swap').click();
 
@@ -154,7 +154,7 @@ async function doSwap(
   await expect(page.getByTestId('swap-from-token')).toHaveAttribute(
     'aria-label',
     new RegExp(`:\\s*${from}$`, 'i'),
-    { timeout: 15_000 },
+    { timeout: 15_000 }
   );
 
   await page.getByTestId('swap-to-token').click();
@@ -162,7 +162,7 @@ async function doSwap(
   await expect(page.getByTestId('swap-to-token')).toHaveAttribute(
     'aria-label',
     new RegExp(`:\\s*${to}$`, 'i'),
-    { timeout: 15_000 },
+    { timeout: 15_000 }
   );
 
   await expect(page.getByTestId('swap-from-amount')).toBeVisible({ timeout: 20_000 });
@@ -188,7 +188,9 @@ async function sendNft(page: Page, destination: string): Promise<void> {
   await page.getByTestId('tab-collectibles').click();
   // Generous: right after a transfer the DAS index needs a moment to report the
   // new owner, so the card can take a while to show up under the new wallet.
-  await expect(page.getByTestId(`nft-card-${NFT_MINT}`)).toBeVisible({ timeout: CONFIRM_TIMEOUT_MS });
+  await expect(page.getByTestId(`nft-card-${NFT_MINT}`)).toBeVisible({
+    timeout: CONFIRM_TIMEOUT_MS,
+  });
   await page.getByTestId(`nft-card-${NFT_MINT}`).click();
 
   await page.getByTestId('nft-detail-send-button').click();
@@ -275,7 +277,10 @@ test('every on-chain event in the catalog actually fires', async ({ page, browse
   // outside the modal, the close button sits behind the panels, and walking back
   // panel by panel hangs on the pop animation. The drawer is anchored right, so
   // the top-left corner is always backdrop, never the paper.
-  await page.locator('.MuiBackdrop-root').last().click({ position: { x: 8, y: 8 } });
+  await page
+    .locator('.MuiBackdrop-root')
+    .last()
+    .click({ position: { x: 8, y: 8 } });
   await expect(page.getByTestId('settings-close-button')).toHaveCount(0, { timeout: 15_000 });
   await expect(page.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
@@ -308,7 +313,7 @@ test('every on-chain event in the catalog actually fires', async ({ page, browse
     const body = request.postData() ?? '';
     expect(JSON.parse(body).context.platform).toBe('web');
     expect(body, 'payload must not contain an address or mint').not.toMatch(
-      /\b([1-9A-HJ-NP-Za-km-z]{32,44}|0x[0-9a-fA-F]{40})\b/,
+      /\b([1-9A-HJ-NP-Za-km-z]{32,44}|0x[0-9a-fA-F]{40})\b/
     );
   }
 });

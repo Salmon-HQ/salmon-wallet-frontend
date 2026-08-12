@@ -23,37 +23,35 @@ import {
 } from '@salmon/shared';
 import type { TextButtonProps } from './types';
 
-const StyledButton = styled(Button)<{ $customColor?: string }>(
-  ({ $customColor }) => ({
-    minWidth: 'auto',
-    height: componentSizes.buttonHeightSmall,
-    paddingLeft: spacing.lg,
-    paddingRight: spacing.lg,
+const StyledButton = styled(Button)<{ $customColor?: string }>(({ $customColor }) => ({
+  minWidth: 'auto',
+  height: componentSizes.buttonHeightSmall,
+  paddingLeft: spacing.lg,
+  paddingRight: spacing.lg,
+  background: 'transparent',
+  borderRadius: borderRadius.none,
+  fontFamily: fontFamily.sans,
+  fontSize: fontSize.sm,
+  fontWeight: fontWeight.medium,
+  letterSpacing: letterSpacing.wide,
+  color: $customColor || colors.text.primary,
+  textTransform: 'none',
+  boxShadow: shadowsCSS.none,
+  transition: `opacity ${duration.normal} ${easing.ease}`,
+  '&:hover': {
     background: 'transparent',
-    borderRadius: borderRadius.none,
-    fontFamily: fontFamily.sans,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    letterSpacing: letterSpacing.wide,
-    color: $customColor || colors.text.primary,
-    textTransform: 'none',
+    opacity: opacity.low,
     boxShadow: shadowsCSS.none,
-    transition: `opacity ${duration.normal} ${easing.ease}`,
-    '&:hover': {
-      background: 'transparent',
-      opacity: opacity.low,
-      boxShadow: shadowsCSS.none,
-    },
-    '&:active': {
-      background: 'transparent',
-    },
-    '&.Mui-disabled': {
-      background: 'transparent',
-      opacity: colors.button.disabledOpacity,
-      color: $customColor || colors.text.primary,
-    },
-  })
-);
+  },
+  '&:active': {
+    background: 'transparent',
+  },
+  '&.Mui-disabled': {
+    background: 'transparent',
+    opacity: colors.button.disabledOpacity,
+    color: $customColor || colors.text.primary,
+  },
+}));
 
 const LoaderWrapper = styled('span')({
   display: 'flex',
@@ -87,10 +85,7 @@ export function TextButton({
     >
       {loading ? (
         <LoaderWrapper>
-          <CircularProgress
-            size={20}
-            sx={{ color: color || colors.text.primary }}
-          />
+          <CircularProgress size={20} sx={{ color: color || colors.text.primary }} />
         </LoaderWrapper>
       ) : (
         children
@@ -98,4 +93,3 @@ export function TextButton({
     </StyledButton>
   );
 }
-

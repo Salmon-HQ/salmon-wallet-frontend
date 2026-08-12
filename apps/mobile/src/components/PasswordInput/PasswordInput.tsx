@@ -5,7 +5,14 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, componentSizes, spacing, borderWidth, fontSize, fontFamilyNative, } from '@salmon/shared';
+import {
+  colors,
+  componentSizes,
+  spacing,
+  borderWidth,
+  fontSize,
+  fontFamilyNative,
+} from '@salmon/shared';
 
 interface PasswordInputProps {
   value: string;
@@ -61,7 +68,9 @@ export function PasswordInput({
         <TouchableOpacity
           testID={testID ? `${testID}-toggle` : undefined}
           accessibilityRole="button"
-          accessibilityLabel={showPassword ? t('general.hide_password') : t('general.show_password')}
+          accessibilityLabel={
+            showPassword ? t('general.hide_password') : t('general.show_password')
+          }
           onPress={() => setShowPassword(!showPassword)}
           style={styles.toggleButton}
         >

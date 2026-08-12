@@ -118,10 +118,7 @@ export function AddressAddPanel({
   }, [form, onSave]);
 
   return (
-    <SettingsPanelContent
-      title={t('settings.addressbook.add', 'Add Address')}
-      onBack={onBack}
-    >
+    <SettingsPanelContent title={t('settings.addressbook.add', 'Add Address')} onBack={onBack}>
       <Box sx={{ px: `${spacing.lg}px` }}>
         {/* Label */}
         <FieldLabel>{t('settings.addressbook.label', 'Label')}</FieldLabel>
@@ -147,11 +144,17 @@ export function AddressAddPanel({
         {/* Network */}
         <FieldLabel>{t('settings.addressbook.network')}</FieldLabel>
         <NetworkBox>
-          <NetworkText>{activeBlockchain.charAt(0).toUpperCase() + activeBlockchain.slice(1)}</NetworkText>
+          <NetworkText>
+            {activeBlockchain.charAt(0).toUpperCase() + activeBlockchain.slice(1)}
+          </NetworkText>
         </NetworkBox>
 
         {/* Save */}
-        <SaveButton onClick={handleSave} disabled={!form.canSave} data-testid="address-book-save-button">
+        <SaveButton
+          onClick={handleSave}
+          disabled={!form.canSave}
+          data-testid="address-book-save-button"
+        >
           {t('settings.addressbook.save', 'Save Address')}
         </SaveButton>
         {errorText && <ErrorText data-testid="address-book-save-error">{errorText}</ErrorText>}

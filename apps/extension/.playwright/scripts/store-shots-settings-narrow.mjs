@@ -24,11 +24,14 @@ const ctx = await browser.newContext({
   locale: 'en-US',
 });
 await ctx.route(/\/v1\/solana-mainnet\/account\/[^/]+\/balance/, (route) =>
-  route.fulfill({ status: 200, contentType: 'application/json', body: balanceBody }));
+  route.fulfill({ status: 200, contentType: 'application/json', body: balanceBody })
+);
 await ctx.route(/\/v1\/solana-mainnet\/account\/[^/]+\/transactions(\?|$)/, (route) =>
-  route.fulfill({ status: 200, contentType: 'application/json', body: txBody }));
+  route.fulfill({ status: 200, contentType: 'application/json', body: txBody })
+);
 await ctx.route(/\/v1\/solana-mainnet\/nft\?/, (route) =>
-  route.fulfill({ status: 200, contentType: 'application/json', body: nftBody }));
+  route.fulfill({ status: 200, contentType: 'application/json', body: nftBody })
+);
 
 const page = await ctx.newPage();
 const shot = async (name) => {
@@ -50,51 +53,85 @@ if (await recoverBtn.count()) {
   await page.getByTestId('password-input').fill(SECRETS.SALMON_TEST_PASSWORD);
   await page.getByTestId('password-confirm-input').fill(SECRETS.SALMON_TEST_PASSWORD);
   await page.getByTestId('password-submit-button').click();
-  await page.getByTestId('analytics-consent-decline').click({ timeout: 60000 }).catch(() => {});
-  await page.getByTestId('success-go-to-wallet-button').click({ timeout: 60000 }).catch(() => {});
+  await page
+    .getByTestId('analytics-consent-decline')
+    .click({ timeout: 60000 })
+    .catch(() => {});
+  await page
+    .getByTestId('success-go-to-wallet-button')
+    .click({ timeout: 60000 })
+    .catch(() => {});
 }
 await page.getByTestId('home-screen').waitFor({ state: 'visible', timeout: 30000 });
 await sleep(10000);
 
 // --- layout probe of the other four screens at this width ---
 await shot('probe-01-home.png');
-await page.getByTestId('tab-swap').click({ timeout: 10000 }).catch(() => {});
+await page
+  .getByTestId('tab-swap')
+  .click({ timeout: 10000 })
+  .catch(() => {});
 await sleep(4000);
 await shot('probe-02-swap.png');
-await page.getByTestId('tab-collectibles').click({ timeout: 10000 }).catch(() => {});
+await page
+  .getByTestId('tab-collectibles')
+  .click({ timeout: 10000 })
+  .catch(() => {});
 await sleep(8000);
 await shot('probe-03-collectibles.png');
-await page.getByTestId('tab-home').click({ timeout: 10000 }).catch(() => {});
+await page
+  .getByTestId('tab-home')
+  .click({ timeout: 10000 })
+  .catch(() => {});
 await sleep(2500);
-await page.getByTestId('home-activity-button').click({ timeout: 10000 }).catch(() => {});
+await page
+  .getByTestId('home-activity-button')
+  .click({ timeout: 10000 })
+  .catch(() => {});
 await sleep(6000);
 await shot('probe-04-transactions.png');
 
 // back to home, open settings
 const back = page.getByRole('button', { name: /^(back|go back)$/i }).first();
-if (await back.count()) { await back.click().catch(() => {}); await sleep(1500); }
-await page.getByTestId('tab-home').click({ timeout: 10000 }).catch(() => {});
+if (await back.count()) {
+  await back.click().catch(() => {});
+  await sleep(1500);
+}
+await page
+  .getByTestId('tab-home')
+  .click({ timeout: 10000 })
+  .catch(() => {});
 await sleep(2500);
 await page.getByTestId('wallet-header-settings-button').click({ timeout: 10000 });
 await sleep(2500);
 
 // --- geometry probe: where does the drawer stop overlapping the wallet column? ---
-const geom = async () => page.evaluate(() => {
-  const paper = document.querySelector('.MuiDrawer-paper');
-  const home = document.querySelector('[data-testid="home-screen"]');
-  const r = (el) => (el ? { l: Math.round(el.getBoundingClientRect().left), r: Math.round(el.getBoundingClientRect().right) } : null);
-  return { w: window.innerWidth, drawer: r(paper), content: r(home) };
-});
+const geom = async () =>
+  page.evaluate(() => {
+    const paper = document.querySelector('.MuiDrawer-paper');
+    const home = document.querySelector('[data-testid="home-screen"]');
+    const r = (el) =>
+      el
+        ? {
+            l: Math.round(el.getBoundingClientRect().left),
+            r: Math.round(el.getBoundingClientRect().right),
+          }
+        : null;
+    return { w: window.innerWidth, drawer: r(paper), content: r(home) };
+  });
 const rows = [];
 for (const width of [320, 375, 430, 600, 800, 1000, 1070, 1100, 1280]) {
   await page.setViewportSize({ width, height: 800 });
   await sleep(700);
   const g = await geom();
-  const covered = g.drawer && g.content
-    ? Math.max(0, Math.min(g.drawer.r, g.content.r) - Math.max(g.drawer.l, g.content.l))
-    : 0;
+  const covered =
+    g.drawer && g.content
+      ? Math.max(0, Math.min(g.drawer.r, g.content.r) - Math.max(g.drawer.l, g.content.l))
+      : 0;
   const contentW = g.content ? g.content.r - g.content.l : 0;
-  rows.push(`${width}\tdrawer=${JSON.stringify(g.drawer)}\tcontent=${JSON.stringify(g.content)}\toverlap=${covered}/${contentW}px`);
+  rows.push(
+    `${width}\tdrawer=${JSON.stringify(g.drawer)}\tcontent=${JSON.stringify(g.content)}\toverlap=${covered}/${contentW}px`
+  );
 }
 console.log('--- GEOMETRY ---\n' + rows.join('\n'));
 
@@ -106,20 +143,25 @@ await sleep(1500);
 // use (pixel-identical between those two, staged there as avatar/08.png).
 // Self-healing: re-applied after a pause in case of a background re-render.
 const AVATAR = 'https://static.salmonwallet.io/avatar/08.png';
-const stageAvatar = () => page.evaluate((avatar) => {
-  let img = 0, bg = 0;
-  document.querySelectorAll('img').forEach((el) => {
-    if (/\/avatar\/\d\d\.png/.test(el.src) && el.src !== avatar) { el.src = avatar; img++; }
-  });
-  document.querySelectorAll('div').forEach((el) => {
-    const b = el.style.backgroundImage || '';
-    if (/\/avatar\/\d\d\.png/.test(b) && !b.includes(avatar)) {
-      el.style.backgroundImage = `url("${avatar}")`;
-      bg++;
-    }
-  });
-  return { img, bg };
-}, AVATAR);
+const stageAvatar = () =>
+  page.evaluate((avatar) => {
+    let img = 0,
+      bg = 0;
+    document.querySelectorAll('img').forEach((el) => {
+      if (/\/avatar\/\d\d\.png/.test(el.src) && el.src !== avatar) {
+        el.src = avatar;
+        img++;
+      }
+    });
+    document.querySelectorAll('div').forEach((el) => {
+      const b = el.style.backgroundImage || '';
+      if (/\/avatar\/\d\d\.png/.test(b) && !b.includes(avatar)) {
+        el.style.backgroundImage = `url("${avatar}")`;
+        bg++;
+      }
+    });
+    return { img, bg };
+  }, AVATAR);
 console.log('avatar pass 1:', JSON.stringify(await stageAvatar()));
 await sleep(2500); // avatar image load
 console.log('avatar pass 2:', JSON.stringify(await stageAvatar()));

@@ -10,7 +10,22 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
-import { colors, ms, vs, s, fontSize, borderRadius, spacing, formatBlockNumber, formatDateTime, getShortAddress, formatRawAmount, truncateHash, fontFamilyNative, letterSpacing, } from '@salmon/shared';
+import {
+  colors,
+  ms,
+  vs,
+  s,
+  fontSize,
+  borderRadius,
+  spacing,
+  formatBlockNumber,
+  formatDateTime,
+  getShortAddress,
+  formatRawAmount,
+  truncateHash,
+  fontFamilyNative,
+  letterSpacing,
+} from '@salmon/shared';
 import type { Transaction, SwapRouteHop } from './types';
 import { TokenLogo } from '../TokenLogo';
 import { PriceImpactBadge } from './PriceImpactBadge';
@@ -90,9 +105,14 @@ const RouteHop: React.FC<{ hop: SwapRouteHop; isLast: boolean }> = ({ hop, isLas
     <View style={styles.hopContainer}>
       {/* Input token */}
       <View style={styles.hopToken}>
-        <TokenLogo uri={hop.inputToken.logo || undefined} symbol={hop.inputToken.symbol} size={20} />
+        <TokenLogo
+          uri={hop.inputToken.logo || undefined}
+          symbol={hop.inputToken.symbol}
+          size={20}
+        />
         <Text style={styles.hopAmount} numberOfLines={1}>
-          {formatRawAmount(hop.inputToken.amount, hop.inputToken.decimals, 0.0001)} {hop.inputToken.symbol}
+          {formatRawAmount(hop.inputToken.amount, hop.inputToken.decimals, 0.0001)}{' '}
+          {hop.inputToken.symbol}
         </Text>
       </View>
 
@@ -100,9 +120,7 @@ const RouteHop: React.FC<{ hop: SwapRouteHop; isLast: boolean }> = ({ hop, isLas
       <View style={styles.hopArrow}>
         <View style={styles.dexBadge}>
           <Text style={styles.dexText}>{hop.dex}</Text>
-          {hop.percent < 100 && (
-            <Text style={styles.percentText}>{hop.percent}%</Text>
-          )}
+          {hop.percent < 100 && <Text style={styles.percentText}>{hop.percent}%</Text>}
         </View>
         <Ionicons name="arrow-forward" size={14} color={colors.text.secondary} />
       </View>
@@ -110,9 +128,14 @@ const RouteHop: React.FC<{ hop: SwapRouteHop; isLast: boolean }> = ({ hop, isLas
       {/* Output token (only show on last hop or if different from next input) */}
       {isLast && (
         <View style={styles.hopToken}>
-          <TokenLogo uri={hop.outputToken.logo || undefined} symbol={hop.outputToken.symbol} size={20} />
+          <TokenLogo
+            uri={hop.outputToken.logo || undefined}
+            symbol={hop.outputToken.symbol}
+            size={20}
+          />
           <Text style={styles.hopAmount} numberOfLines={1}>
-            {formatRawAmount(hop.outputToken.amount, hop.outputToken.decimals, 0.0001)} {hop.outputToken.symbol}
+            {formatRawAmount(hop.outputToken.amount, hop.outputToken.decimals, 0.0001)}{' '}
+            {hop.outputToken.symbol}
           </Text>
         </View>
       )}
@@ -152,7 +175,8 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
       <View style={styles.routeHeader}>
         <Ionicons name="git-branch-outline" size={16} color={colors.text.secondary} />
         <Text style={styles.routeHeaderText}>
-          {t('transactions.detail.route')}{source ? ` ${t('transactions.detail.viaSource', { source })}` : ''}
+          {t('transactions.detail.route')}
+          {source ? ` ${t('transactions.detail.viaSource', { source })}` : ''}
         </Text>
       </View>
 
@@ -170,7 +194,9 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
             </View>
           ))}
           {outputs.length > 3 && (
-            <Text style={styles.moreText}>{t('transactions.detail.nMore', { count: outputs.length - 3 })}</Text>
+            <Text style={styles.moreText}>
+              {t('transactions.detail.nMore', { count: outputs.length - 3 })}
+            </Text>
           )}
         </View>
 
@@ -191,7 +217,9 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
             </View>
           ))}
           {inputs.length > 3 && (
-            <Text style={styles.moreText}>{t('transactions.detail.nMore', { count: inputs.length - 3 })}</Text>
+            <Text style={styles.moreText}>
+              {t('transactions.detail.nMore', { count: inputs.length - 3 })}
+            </Text>
           )}
         </View>
       </View>
@@ -282,7 +310,9 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         {transaction.swapFees?.nativeFees && transaction.swapFees.nativeFees.length > 0 && (
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>{t('transactions.detail.swapFeesNative')}</Text>
-            <Text style={styles.summaryValue}>{t('transactions.detail.feeCount', { count: transaction.swapFees.nativeFees.length })}</Text>
+            <Text style={styles.summaryValue}>
+              {t('transactions.detail.feeCount', { count: transaction.swapFees.nativeFees.length })}
+            </Text>
           </View>
         )}
 
@@ -290,7 +320,9 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         {transaction.innerSwaps && transaction.innerSwaps.length > 0 && (
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>{t('transactions.detail.routeHops')}</Text>
-            <Text style={styles.summaryValue}>{t('transactions.detail.hopCount', { count: transaction.innerSwaps.length })}</Text>
+            <Text style={styles.summaryValue}>
+              {t('transactions.detail.hopCount', { count: transaction.innerSwaps.length })}
+            </Text>
           </View>
         )}
       </View>
@@ -315,19 +347,16 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
       <View style={styles.routeHeader}>
         <Ionicons name="git-branch-outline" size={16} color={colors.text.secondary} />
         <Text style={styles.routeHeaderText}>
-          {t('transactions.detail.route')}{source ? ` ${t('transactions.detail.viaSource', { source })}` : ''}{' '}
-          ({t('transactions.detail.hopCount', { count: swapRoute.hops.length })})
+          {t('transactions.detail.route')}
+          {source ? ` ${t('transactions.detail.viaSource', { source })}` : ''} (
+          {t('transactions.detail.hopCount', { count: swapRoute.hops.length })})
         </Text>
       </View>
 
       {/* Hops */}
       <View style={styles.hopsContainer}>
         {swapRoute.hops.map((hop, index) => (
-          <RouteHop
-            key={`hop-${index}`}
-            hop={hop}
-            isLast={index === swapRoute.hops.length - 1}
-          />
+          <RouteHop key={`hop-${index}`} hop={hop} isLast={index === swapRoute.hops.length - 1} />
         ))}
       </View>
 
@@ -416,7 +445,9 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
         {transaction.swapFees?.nativeFees && transaction.swapFees.nativeFees.length > 0 && (
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>{t('transactions.detail.swapFeesNative')}</Text>
-            <Text style={styles.summaryValue}>{t('transactions.detail.feeCount', { count: transaction.swapFees.nativeFees.length })}</Text>
+            <Text style={styles.summaryValue}>
+              {t('transactions.detail.feeCount', { count: transaction.swapFees.nativeFees.length })}
+            </Text>
           </View>
         )}
 
@@ -424,7 +455,9 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
         {transaction.innerSwaps && transaction.innerSwaps.length > 0 && (
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>{t('transactions.detail.routeHops')}</Text>
-            <Text style={styles.summaryValue}>{t('transactions.detail.hopCount', { count: transaction.innerSwaps.length })}</Text>
+            <Text style={styles.summaryValue}>
+              {t('transactions.detail.hopCount', { count: transaction.innerSwaps.length })}
+            </Text>
           </View>
         )}
       </View>
@@ -455,12 +488,7 @@ export const SwapRouteVisualization: React.FC<SwapRouteVisualizationProps> = ({
     return null;
   }
 
-  return (
-    <SwapRouteVisualizationContent
-      transaction={transaction}
-      expanded={expanded}
-    />
-  );
+  return <SwapRouteVisualizationContent transaction={transaction} expanded={expanded} />;
 };
 
 /**
@@ -491,7 +519,7 @@ const SwapRouteVisualizationContent: React.FC<SwapRouteVisualizationProps> = ({
     const opacity = withTiming(expanded ? 1 : 0, ANIMATION_CONFIG);
 
     return {
-      height: measured ? height : (expanded ? undefined : 0),
+      height: measured ? height : expanded ? undefined : 0,
       opacity,
       overflow: 'hidden',
     };

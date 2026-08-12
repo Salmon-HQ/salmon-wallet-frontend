@@ -76,7 +76,7 @@ function renderPage() {
       flowType="recover"
       onSuccess={vi.fn()}
       onBack={vi.fn()}
-    />,
+    />
   );
 }
 
@@ -103,7 +103,7 @@ describe('PasswordPage account setup errors', () => {
 
   it('blames the connection, not the seed phrase, when the server is unreachable', async () => {
     mockCreateAccount.mockRejectedValue(
-      new MockApiError('Network error: Unable to reach the server', 0),
+      new MockApiError('Network error: Unable to reach the server', 0)
     );
 
     renderPage();

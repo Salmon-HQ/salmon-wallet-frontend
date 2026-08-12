@@ -47,14 +47,7 @@ const BalanceCardSkeletonComponent: React.FC<BalanceCardSkeletonProps> = ({
         {...(!animated && { speed: 0 })}
       >
         {/* Balance placeholder - matches balance text dimensions */}
-        <Rect
-          x="0"
-          y="0"
-          rx={ms(8)}
-          ry={ms(8)}
-          width={balanceWidth}
-          height={balanceHeight}
-        />
+        <Rect x="0" y="0" rx={ms(8)} ry={ms(8)} width={balanceWidth} height={balanceHeight} />
         {/* 24h change placeholder - centered and smaller */}
         <Rect
           x={(balanceWidth - changeWidth) / 2}

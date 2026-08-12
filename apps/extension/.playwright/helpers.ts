@@ -23,7 +23,7 @@ export type Consent = 'accept' | 'decline';
  */
 export async function unlockOrRecover(
   page: Page,
-  { consent = 'decline', seed = seedA() }: { consent?: Consent; seed?: string } = {},
+  { consent = 'decline', seed = seedA() }: { consent?: Consent; seed?: string } = {}
 ): Promise<EntryState> {
   const passwordInput = page.getByTestId('lock-password-input');
   if (await passwordInput.count()) {

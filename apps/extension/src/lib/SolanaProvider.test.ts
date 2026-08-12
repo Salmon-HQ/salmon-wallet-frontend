@@ -84,7 +84,7 @@ describe('SolanaProvider.signAndSendTransaction', () => {
     const params = sendMessage.mock.calls[0][0].params as Record<string, string>;
     const forwarded = Transaction.from(bs58.decode(params.transaction));
     const coSignerEntry = forwarded.signatures.find((entry) =>
-      entry.publicKey.equals(coSigner.publicKey),
+      entry.publicKey.equals(coSigner.publicKey)
     );
     expect(coSignerEntry?.signature).not.toBeNull();
     expect(params.message).toBe(encodedMessage);
@@ -132,14 +132,14 @@ describe('SolanaProvider.signTransaction — signature write-back', () => {
   it('writes into a legacy transaction byte-identically to web3.js signing', async () => {
     const build = () =>
       new Transaction({ feePayer: coSigner.publicKey, recentBlockhash: BLOCKHASH }).add(
-        ...transferInstructions(),
+        ...transferInstructions()
       );
 
     const reference = build();
     reference.partialSign(coSigner);
     reference.partialSign(salmon);
     const signature = reference.signatures.find((entry) =>
-      entry.publicKey.equals(salmon.publicKey),
+      entry.publicKey.equals(salmon.publicKey)
     )!.signature!;
 
     const subject = build();
@@ -171,9 +171,7 @@ describe('SolanaProvider.signTransaction — signature write-back', () => {
       result: { signature: bs58.encode(new Uint8Array(64).fill(1)), publicKey: stranger },
     });
 
-    await expect(provider.signTransaction(subject)).rejects.toThrow(
-      /does not require a signature/,
-    );
+    await expect(provider.signTransaction(subject)).rejects.toThrow(/does not require a signature/);
   });
 
   it('rejects a malformed signature length', async () => {
@@ -369,9 +367,13 @@ describe('SolanaProvider bytes-native surface', () => {
 
     const decoded = VersionedTransaction.deserialize(signedWire);
     expect(decoded.message.serialize()).toEqual(message.serialize());
-    const salmonIndex = decoded.message.staticAccountKeys.findIndex((key) => key.equals(salmon.publicKey));
+    const salmonIndex = decoded.message.staticAccountKeys.findIndex((key) =>
+      key.equals(salmon.publicKey)
+    );
     expect(decoded.signatures[salmonIndex]).toEqual(salmonSignature);
-    const coSignerIndex = decoded.message.staticAccountKeys.findIndex((key) => key.equals(coSigner.publicKey));
+    const coSignerIndex = decoded.message.staticAccountKeys.findIndex((key) =>
+      key.equals(coSigner.publicKey)
+    );
     expect(decoded.signatures[coSignerIndex].some((byte) => byte !== 0)).toBe(true);
   });
 
@@ -381,8 +383,16 @@ describe('SolanaProvider bytes-native surface', () => {
         payerKey: coSigner.publicKey,
         recentBlockhash: BLOCKHASH,
         instructions: [
-          SystemProgram.transfer({ fromPubkey: coSigner.publicKey, toPubkey: testKeypair(3).publicKey, lamports }),
-          SystemProgram.transfer({ fromPubkey: salmon.publicKey, toPubkey: testKeypair(3).publicKey, lamports }),
+          SystemProgram.transfer({
+            fromPubkey: coSigner.publicKey,
+            toPubkey: testKeypair(3).publicKey,
+            lamports,
+          }),
+          SystemProgram.transfer({
+            fromPubkey: salmon.publicKey,
+            toPubkey: testKeypair(3).publicKey,
+            lamports,
+          }),
         ],
       }).compileToV0Message();
       const tx = new VersionedTransaction(message);
@@ -406,7 +416,7 @@ describe('SolanaProvider bytes-native surface', () => {
 
     const [signedFirst, signedSecond] = await provider.signAllTransactionsBytes(
       [first.wire, second.wire],
-      'solana-mainnet',
+      'solana-mainnet'
     );
 
     const params = sendMessage.mock.calls[0][0].params as Record<string, unknown>;
@@ -417,12 +427,16 @@ describe('SolanaProvider bytes-native surface', () => {
 
     const decodedFirst = VersionedTransaction.deserialize(signedFirst);
     expect(decodedFirst.message.serialize()).toEqual(first.message.serialize());
-    const firstSalmonIndex = decodedFirst.message.staticAccountKeys.findIndex((key) => key.equals(salmon.publicKey));
+    const firstSalmonIndex = decodedFirst.message.staticAccountKeys.findIndex((key) =>
+      key.equals(salmon.publicKey)
+    );
     expect(decodedFirst.signatures[firstSalmonIndex]).toEqual(salmonSignatures[0]);
 
     const decodedSecond = VersionedTransaction.deserialize(signedSecond);
     expect(decodedSecond.message.serialize()).toEqual(second.message.serialize());
-    const secondSalmonIndex = decodedSecond.message.staticAccountKeys.findIndex((key) => key.equals(salmon.publicKey));
+    const secondSalmonIndex = decodedSecond.message.staticAccountKeys.findIndex((key) =>
+      key.equals(salmon.publicKey)
+    );
     expect(decodedSecond.signatures[secondSalmonIndex]).toEqual(salmonSignatures[1]);
   });
 
@@ -469,7 +483,7 @@ describe('SolanaProvider bytes-native surface', () => {
     });
 
     await expect(provider.signAllTransactionsBytes([wire])).rejects.toThrow(
-      'Invalid signature length',
+      'Invalid signature length'
     );
   });
 

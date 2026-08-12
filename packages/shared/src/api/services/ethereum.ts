@@ -19,7 +19,11 @@ import { removeDecimals } from '../../utils/decimals';
 import type { AlchemyTokenMetadata, DetectedERC20Token } from '../../types/token';
 
 // Re-export types for backwards compatibility
-export type { AlchemyTokenBalance, AlchemyTokenMetadata, DetectedERC20Token } from '../../types/token';
+export type {
+  AlchemyTokenBalance,
+  AlchemyTokenMetadata,
+  DetectedERC20Token,
+} from '../../types/token';
 
 /**
  * Response from Ethplorer API (free public API)
@@ -141,26 +145,27 @@ async function getSalmonApiTokenBalances(
   try {
     // Forward-compat: BE endpoint not yet served. 404 is the expected path
     // today and is swallowed by the catch below to trigger Ethplorer.
-    const response = await get<SalmonTokenBalance[]>(
-      `/v1/${networkId}/account/${address}/tokens`,
-      { params: { include: 'logo' } }
-    );
+    const response = await get<SalmonTokenBalance[]>(`/v1/${networkId}/account/${address}/tokens`, {
+      params: { include: 'logo' },
+    });
 
-    return response.map((token) => {
-      const rawBalance = BigInt(token.amount);
-      const uiAmount = removeDecimals(rawBalance, token.decimals);
+    return response
+      .map((token) => {
+        const rawBalance = BigInt(token.amount);
+        const uiAmount = removeDecimals(rawBalance, token.decimals);
 
-      return {
-        address: token.address,
-        name: token.name,
-        symbol: token.symbol,
-        decimals: token.decimals,
-        balance: token.amount,
-        uiAmount,
-        logoUri: token.logoURI || token.logo,
-        coingeckoId: token.coingeckoId || lookupCoingeckoId(token.address),
-      };
-    }).filter((token) => token.uiAmount > 0);
+        return {
+          address: token.address,
+          name: token.name,
+          symbol: token.symbol,
+          decimals: token.decimals,
+          balance: token.amount,
+          uiAmount,
+          logoUri: token.logoURI || token.logo,
+          coingeckoId: token.coingeckoId || lookupCoingeckoId(token.address),
+        };
+      })
+      .filter((token) => token.uiAmount > 0);
   } catch (error) {
     // API endpoint may not exist yet, return empty to trigger fallback
     console.debug('[ethereum-api] Salmon API token endpoint not available:', error);
@@ -177,9 +182,7 @@ async function getSalmonApiTokenBalances(
  * @param address - Wallet address
  * @returns Array of detected tokens
  */
-async function getEthplorerTokenBalances(
-  address: string
-): Promise<DetectedERC20Token[]> {
+async function getEthplorerTokenBalances(address: string): Promise<DetectedERC20Token[]> {
   try {
     const url = `${ETHPLORER_API_URL}/getAddressInfo/${address}?apiKey=${ETHPLORER_API_KEY}`;
 
@@ -201,9 +204,8 @@ async function getEthplorerTokenBalances(
         return balance > 0n;
       })
       .map((token) => {
-        const decimals = typeof token.decimals === 'string'
-          ? parseInt(token.decimals, 10)
-          : token.decimals;
+        const decimals =
+          typeof token.decimals === 'string' ? parseInt(token.decimals, 10) : token.decimals;
         const rawBalance = token.rawBalance || '0';
         const uiAmount = removeDecimals(BigInt(rawBalance), decimals);
 
@@ -239,10 +241,9 @@ export const fetchEthereumAccountBalance: EthereumAccountApiFunctions['fetchBala
   networkId,
   address
 ) => {
-  const data = await get<EthereumBalanceItem[]>(
-    `/v1/${networkId}/account/${address}/balance`,
-    { params: { include: 'logo' } },
-  );
+  const data = await get<EthereumBalanceItem[]>(`/v1/${networkId}/account/${address}/balance`, {
+    params: { include: 'logo' },
+  });
 
   return data.map((token) => ({
     ...token,
@@ -250,21 +251,17 @@ export const fetchEthereumAccountBalance: EthereumAccountApiFunctions['fetchBala
   }));
 };
 
-export const fetchEthereumAccountRecentTransactions: EthereumAccountApiFunctions['fetchRecentTransactions'] = async (
-  networkId,
-  address,
-  paging?
-) => {
-  const { nextPageToken, pageSize } = paging || {};
-  const params: Record<string, string | number> = {};
-  if (nextPageToken) params.pageToken = nextPageToken;
-  if (pageSize) params.pageSize = pageSize;
+export const fetchEthereumAccountRecentTransactions: EthereumAccountApiFunctions['fetchRecentTransactions'] =
+  async (networkId, address, paging?) => {
+    const { nextPageToken, pageSize } = paging || {};
+    const params: Record<string, string | number> = {};
+    if (nextPageToken) params.pageToken = nextPageToken;
+    if (pageSize) params.pageSize = pageSize;
 
-  return get<AccountTransactionListResponse>(
-    `/v1/${networkId}/account/${address}/transactions`,
-    { params },
-  );
-};
+    return get<AccountTransactionListResponse>(`/v1/${networkId}/account/${address}/transactions`, {
+      params,
+    });
+  };
 
 export const ethereumApiFunctions: EthereumAccountApiFunctions = {
   fetchBalance: fetchEthereumAccountBalance,
@@ -319,4 +316,3 @@ export async function getTokenMetadataBatch(
 
   return metadataMap;
 }
-

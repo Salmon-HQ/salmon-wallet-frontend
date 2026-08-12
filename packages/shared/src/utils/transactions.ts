@@ -32,14 +32,38 @@ const BTC_CONSTANTS = {
   LOGO: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
 } as const;
 
-const NATIVE_CONSTANTS: Record<BlockchainType, {
-  DECIMALS: number; SYMBOL: string; NAME: string; ADDRESS: string; LOGO: string;
-}> = {
-  solana: { DECIMALS: SOL_CONSTANTS.DECIMALS, SYMBOL: SOL_CONSTANTS.SYMBOL, NAME: SOL_CONSTANTS.NAME, ADDRESS: SOL_CONSTANTS.ADDRESS, LOGO: SOL_CONSTANTS.LOGO },
-  bitcoin: { DECIMALS: BTC_CONSTANTS.DECIMALS, SYMBOL: BTC_CONSTANTS.SYMBOL, NAME: BTC_CONSTANTS.NAME, ADDRESS: BTC_CONSTANTS.ADDRESS, LOGO: BTC_CONSTANTS.LOGO },
-  ethereum: { DECIMALS: ETH_CONSTANTS.DECIMALS, SYMBOL: ETH_CONSTANTS.SYMBOL, NAME: ETH_CONSTANTS.NAME, ADDRESS: ETH_ADDRESS, LOGO: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png' },
+const NATIVE_CONSTANTS: Record<
+  BlockchainType,
+  {
+    DECIMALS: number;
+    SYMBOL: string;
+    NAME: string;
+    ADDRESS: string;
+    LOGO: string;
+  }
+> = {
+  solana: {
+    DECIMALS: SOL_CONSTANTS.DECIMALS,
+    SYMBOL: SOL_CONSTANTS.SYMBOL,
+    NAME: SOL_CONSTANTS.NAME,
+    ADDRESS: SOL_CONSTANTS.ADDRESS,
+    LOGO: SOL_CONSTANTS.LOGO,
+  },
+  bitcoin: {
+    DECIMALS: BTC_CONSTANTS.DECIMALS,
+    SYMBOL: BTC_CONSTANTS.SYMBOL,
+    NAME: BTC_CONSTANTS.NAME,
+    ADDRESS: BTC_CONSTANTS.ADDRESS,
+    LOGO: BTC_CONSTANTS.LOGO,
+  },
+  ethereum: {
+    DECIMALS: ETH_CONSTANTS.DECIMALS,
+    SYMBOL: ETH_CONSTANTS.SYMBOL,
+    NAME: ETH_CONSTANTS.NAME,
+    ADDRESS: ETH_ADDRESS,
+    LOGO: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
+  },
 };
-
 
 /**
  * Check if a token looks like the native token for its chain.
@@ -74,7 +98,7 @@ function isLikelyNativeToken(token: TransactionTokenAmount, blockchain: Blockcha
  */
 function normalizeTokenAmount(
   token: TransactionTokenAmount,
-  blockchain: BlockchainType,
+  blockchain: BlockchainType
 ): TransactionTokenAmount {
   const native = NATIVE_CONSTANTS[blockchain];
   const nativeToken = isLikelyNativeToken(token, blockchain);
@@ -83,7 +107,7 @@ function normalizeTokenAmount(
     ...token,
     amount: String(token.amount ?? '0'),
     decimals: token.decimals ?? (nativeToken ? native.DECIMALS : 0),
-    symbol: token.symbol || (nativeToken ? native.SYMBOL : getShortAddress(token.contract) ?? ''),
+    symbol: token.symbol || (nativeToken ? native.SYMBOL : (getShortAddress(token.contract) ?? '')),
     name: token.name || (nativeToken ? native.NAME : undefined),
     logo: token.logo ?? (nativeToken ? native.LOGO : undefined),
     contract: token.contract || (nativeToken ? native.ADDRESS : ''),
@@ -95,15 +119,15 @@ function normalizeTokenAmount(
  */
 function inferTransactionType(
   inputs: TransactionTokenAmount[],
-  outputs: TransactionTokenAmount[],
+  outputs: TransactionTokenAmount[]
 ): TransactionType {
   if (inputs.length > 0 && outputs.length === 0) return 'receive';
   if (outputs.length > 0 && inputs.length === 0) return 'send';
 
   if (inputs.length > 0 && outputs.length > 0) {
-    const inputContracts = new Set(inputs.map(t => t.contract));
-    const outputContracts = new Set(outputs.map(t => t.contract));
-    const hasDistinctContracts = [...outputContracts].some(c => !inputContracts.has(c));
+    const inputContracts = new Set(inputs.map((t) => t.contract));
+    const outputContracts = new Set(outputs.map((t) => t.contract));
+    const hasDistinctContracts = [...outputContracts].some((c) => !inputContracts.has(c));
     if (hasDistinctContracts) return 'swap';
   }
 
@@ -122,7 +146,7 @@ export function getTransactionDescription(
   inputs: TransactionTokenAmount[],
   outputs: TransactionTokenAmount[],
   _source?: string,
-  description?: string,
+  description?: string
 ): string {
   if (type === 'swap') {
     const outputSymbols = [...new Set(outputs.map((o) => o.symbol))];
@@ -173,11 +197,10 @@ export function getTransactionDescription(
  * Normalizes token amounts and infers type when missing.
  */
 export function transformSolanaTransaction(tx: SolanaTransaction): Transaction {
-  const inputs = tx.inputs.map(t => normalizeTokenAmount(t, 'solana'));
-  const outputs = tx.outputs.map(t => normalizeTokenAmount(t, 'solana'));
-  const type: TransactionType = tx.type === 'unknown'
-    ? inferTransactionType(inputs, outputs)
-    : tx.type as TransactionType;
+  const inputs = tx.inputs.map((t) => normalizeTokenAmount(t, 'solana'));
+  const outputs = tx.outputs.map((t) => normalizeTokenAmount(t, 'solana'));
+  const type: TransactionType =
+    tx.type === 'unknown' ? inferTransactionType(inputs, outputs) : (tx.type as TransactionType);
 
   return {
     id: tx.id,
@@ -200,13 +223,12 @@ export function transformSolanaTransaction(tx: SolanaTransaction): Transaction {
  */
 export function transformMultichainTransaction(
   tx: TransactionItem,
-  blockchain: BlockchainType = 'bitcoin',
+  blockchain: BlockchainType = 'bitcoin'
 ): Transaction {
-  const inputs = tx.inputs.map(t => normalizeTokenAmount(t, blockchain));
-  const outputs = tx.outputs.map(t => normalizeTokenAmount(t, blockchain));
-  const type: TransactionType = tx.type === 'unknown'
-    ? inferTransactionType(inputs, outputs)
-    : tx.type as TransactionType;
+  const inputs = tx.inputs.map((t) => normalizeTokenAmount(t, blockchain));
+  const outputs = tx.outputs.map((t) => normalizeTokenAmount(t, blockchain));
+  const type: TransactionType =
+    tx.type === 'unknown' ? inferTransactionType(inputs, outputs) : (tx.type as TransactionType);
 
   return {
     id: tx.id,

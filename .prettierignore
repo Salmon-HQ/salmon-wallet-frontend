@@ -1,0 +1,27 @@
+# Generated / vendored
+node_modules
+dist
+build
+coverage
+.expo
+.wxt
+android
+ios
+pnpm-lock.yaml
+patches/
+duplication-report/
+
+# Suite-local outputs
+playwright-report
+test-results
+profiles
+screenshots
+snapshots
+
+# Agent tooling mirrors (kept byte-identical across .agent/.claude/.codex)
+.agent/
+.claude/
+.codex/
+
+# Store assets and binary-adjacent
+store-assets/

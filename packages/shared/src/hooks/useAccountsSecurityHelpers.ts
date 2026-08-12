@@ -26,9 +26,7 @@ interface EncryptedMnemonics extends LockedVault {
 
 export type StoredMnemonics = Record<string, string> | EncryptedMnemonics;
 
-export function isEncryptedMnemonics(
-  mnemonics: StoredMnemonics
-): mnemonics is EncryptedMnemonics {
+export function isEncryptedMnemonics(mnemonics: StoredMnemonics): mnemonics is EncryptedMnemonics {
   return (
     typeof mnemonics === 'object' &&
     mnemonics !== null &&
@@ -48,15 +46,13 @@ export async function getStoredMnemonics(): Promise<StoredMnemonics | null> {
 export async function getEncryptedStoredMnemonics(): Promise<EncryptedMnemonics | null> {
   const storedMnemonics = await getStoredMnemonics();
 
-  return storedMnemonics && isEncryptedMnemonics(storedMnemonics)
-    ? storedMnemonics
-    : null;
+  return storedMnemonics && isEncryptedMnemonics(storedMnemonics) ? storedMnemonics : null;
 }
 
 export async function resolveMnemonicsWithPassword(
   storedMnemonics: StoredMnemonics,
   password: string,
-  options: { upgradeOutdatedVault?: boolean } = {},
+  options: { upgradeOutdatedVault?: boolean } = {}
 ): Promise<Record<string, string>> {
   if (!isEncryptedMnemonics(storedMnemonics)) {
     return storedMnemonics;
@@ -64,7 +60,7 @@ export async function resolveMnemonicsWithPassword(
 
   const { data, keyCache } = await unlockAndGetKey<Record<string, string>>(
     storedMnemonics,
-    password,
+    password
   );
   await setStashItem(STASH_KEYS.DERIVED_KEY, keyCache);
 
@@ -79,7 +75,7 @@ export async function resolveMnemonicsWithPassword(
 
 export async function resolveMnemonicsWithCachedKey(
   storedMnemonics: StoredMnemonics,
-  keyCache: DerivedKeyCache,
+  keyCache: DerivedKeyCache
 ): Promise<Record<string, string>> {
   if (!isEncryptedMnemonics(storedMnemonics)) {
     return storedMnemonics;
@@ -94,11 +90,11 @@ export async function resolveMnemonicsWithCachedKey(
 export async function changeStoredPassword(
   storedMnemonics: EncryptedMnemonics,
   oldPassword: string,
-  newPassword: string,
+  newPassword: string
 ): Promise<void> {
   const { data: mnemonics } = await unlockAndGetKey<Record<string, string>>(
     storedMnemonics,
-    oldPassword,
+    oldPassword
   );
   const newVault = await lock(mnemonics, newPassword);
 
@@ -109,7 +105,7 @@ export async function changeStoredPassword(
 export async function finalizeUnlockedAccounts(
   mnemonics: Record<string, string>,
   loadAccounts: (mnemonics: Record<string, string>) => Promise<void>,
-  setLocked: (locked: boolean) => void,
+  setLocked: (locked: boolean) => void
 ): Promise<void> {
   await loadAccounts(mnemonics);
   setLocked(false);

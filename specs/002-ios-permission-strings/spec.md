@@ -14,7 +14,7 @@ NSFaceIDUsageDescription      "Allow SalmonWallet to use Face ID"
 NSMicrophoneUsageDescription  "Allow SalmonWallet to access your microphone"
 ```
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Understand why the wallet wants my face (Priority: P1)
 
@@ -64,12 +64,12 @@ A user is never shown a microphone prompt, and the app does not declare that it 
 
 ### Edge Cases
 
-- Apple's upload validator scans the linked binary for protected-API symbols and demands a purpose string even for APIs the app never calls: *"While your app might not use these APIs, a purpose string is still required."* Removing the microphone key may therefore be rejected at upload rather than at review. This is empirically determined per build and MUST be tested before submission, not during review.
+- Apple's upload validator scans the linked binary for protected-API symbols and demands a purpose string even for APIs the app never calls: _"While your app might not use these APIs, a purpose string is still required."_ Removing the microphone key may therefore be rejected at upload rather than at review. This is empirically determined per build and MUST be tested before submission, not during review.
 - Two installed plugins declare a default for `NSFaceIDUsageDescription` (`expo-local-authentication` and `expo-secure-store`). Only one value survives, and precedence is first-writer-wins across plugin ordering. An override must be applied such that the intended string wins regardless of which plugin runs first.
 - A value placed in `ios.infoPlist` can change a permission string but can never delete the key; only the plugin option can remove it.
 - The keychain read raises a second user-visible string, `authenticationPrompt`, which lives in application code rather than config and is not covered by changing `Info.plist`.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -83,7 +83,7 @@ A user is never shown a microphone prompt, and the app does not declare that it 
 - **FR-008**: Native directories MUST NOT be edited; `app.json` is the source of truth.
 - **FR-009**: The user-visible `authenticationPrompt` used for the keychain read MUST be reviewed against the same standard as the purpose strings.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

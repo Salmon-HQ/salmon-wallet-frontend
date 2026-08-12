@@ -13,10 +13,7 @@ export function StepIndicator({ totalSteps, currentStep }: StepIndicatorProps) {
       {Array.from({ length: totalSteps }, (_, index) => (
         <View
           key={index}
-          style={[
-            styles.dot,
-            index + 1 === currentStep ? styles.dotActive : styles.dotInactive,
-          ]}
+          style={[styles.dot, index + 1 === currentStep ? styles.dotActive : styles.dotInactive]}
         />
       ))}
     </View>

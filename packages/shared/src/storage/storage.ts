@@ -17,7 +17,10 @@ import type { StorageAdapter, TypedStorage, Platform, StorageConfig } from './ty
  * Error thrown when storage operations fail.
  */
 export class StorageError extends Error {
-  constructor(message: string, public readonly cause?: unknown) {
+  constructor(
+    message: string,
+    public readonly cause?: unknown
+  ) {
     super(message);
     this.name = 'StorageError';
     Object.setPrototypeOf(this, StorageError.prototype);

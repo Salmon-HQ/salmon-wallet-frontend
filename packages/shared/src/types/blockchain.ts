@@ -231,9 +231,7 @@ export interface EthereumNetworkCatalogEntry extends NetworkCatalogBase {
 }
 
 export type NetworkCatalogEntry =
-  | SolanaNetworkCatalogEntry
-  | BitcoinNetworkCatalogEntry
-  | EthereumNetworkCatalogEntry;
+  SolanaNetworkCatalogEntry | BitcoinNetworkCatalogEntry | EthereumNetworkCatalogEntry;
 
 /**
  * @deprecated Use `NetworkCatalogEntry` instead.

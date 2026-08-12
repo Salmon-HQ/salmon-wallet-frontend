@@ -2,7 +2,14 @@
  * SeedWordGrid - Displays mnemonic words in a numbered grid
  */
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, borderRadius, fontSize, borderWidth, fontFamilyNative, } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  fontSize,
+  borderWidth,
+  fontFamilyNative,
+} from '@salmon/shared';
 
 interface SeedWordGridProps {
   /** Array of mnemonic words */

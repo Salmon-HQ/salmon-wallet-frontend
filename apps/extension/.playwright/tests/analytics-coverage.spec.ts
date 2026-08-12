@@ -74,7 +74,10 @@ const openSettings = (popup: Page) => popup.getByTestId('wallet-header-settings-
  * top-left corner is always backdrop, never the paper.
  */
 async function closeSettings(popup: Page): Promise<void> {
-  await popup.locator('.MuiBackdrop-root').last().click({ position: { x: 8, y: 8 } });
+  await popup
+    .locator('.MuiBackdrop-root')
+    .last()
+    .click({ position: { x: 8, y: 8 } });
   // The drawer unmounts its root close button when it is actually gone — a more
   // honest signal than home-screen visibility, since home sits behind the drawer
   // and reads as "visible" the whole time it is open.
@@ -144,7 +147,9 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   await popup.getByTestId('settings-item-address-book').click();
   await popup.getByTestId('address-book-add-button').click();
   await popup.getByTestId('address-book-label-input').fill('E2E Coverage Contact');
-  await popup.getByTestId('address-book-address-input').fill(process.env.SALMON_TEST_WALLET_B_ADDR ?? '');
+  await popup
+    .getByTestId('address-book-address-input')
+    .fill(process.env.SALMON_TEST_WALLET_B_ADDR ?? '');
   const saveContact = popup.getByTestId('address-book-save-button');
   await expect(saveContact).toBeEnabled({ timeout: 20_000 }); // address validation is async
   await saveContact.click();
@@ -220,7 +225,7 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
     const body = request.postData() ?? '';
     expect(JSON.parse(body).context.platform).toBe('extension');
     expect(body, 'payload must not contain an address or mint').not.toMatch(
-      /\b([1-9A-HJ-NP-Za-km-z]{32,44}|0x[0-9a-fA-F]{40})\b/,
+      /\b([1-9A-HJ-NP-Za-km-z]{32,44}|0x[0-9a-fA-F]{40})\b/
     );
   }
 

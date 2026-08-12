@@ -5,11 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import {
-  formatBalance,
-  formatUsdValue,
-  formatPercentChange,
-} from '../../utils/formatting';
+import { formatBalance, formatUsdValue, formatPercentChange } from '../../utils/formatting';
 
 // ============================================================================
 // formatBalance Tests

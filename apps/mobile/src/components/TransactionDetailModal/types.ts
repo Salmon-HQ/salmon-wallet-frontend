@@ -7,5 +7,4 @@ export type { Transaction } from '@salmon/shared';
 /**
  * Props for the TransactionDetailModal component (React Native)
  */
-export interface TransactionDetailModalProps
-  extends TransactionDetailModalPropsBase<ViewStyle> {}
+export interface TransactionDetailModalProps extends TransactionDetailModalPropsBase<ViewStyle> {}

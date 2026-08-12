@@ -103,31 +103,39 @@ export function GateContainer({
       case 'collapsed':
         if (prevState === 'locked') {
           // Unlock: slide up to header position, then fade in header
-          translateY.value = withTiming(collapsedY, {
-            duration: SLIDE_DURATION,
-            easing: Easing.out(Easing.cubic),
-          }, (finished) => {
-            if (finished) {
-              headerContentOpacity.value = withTiming(1, { duration: HEADER_FADE_DURATION });
-              if (onUnlockAnimationComplete) {
-                runOnJS(onUnlockAnimationComplete)();
+          translateY.value = withTiming(
+            collapsedY,
+            {
+              duration: SLIDE_DURATION,
+              easing: Easing.out(Easing.cubic),
+            },
+            (finished) => {
+              if (finished) {
+                headerContentOpacity.value = withTiming(1, { duration: HEADER_FADE_DURATION });
+                if (onUnlockAnimationComplete) {
+                  runOnJS(onUnlockAnimationComplete)();
+                }
               }
             }
-          });
+          );
           backdropOpacity.value = 0;
         } else {
           // Close settings/wallets: slide up (content stays as snapshot),
           // then fade in header, then clear expanded content
-          translateY.value = withTiming(collapsedY, {
-            duration: SLIDE_DURATION,
-            easing: Easing.in(Easing.cubic),
-          }, (finished) => {
-            if (finished) {
-              headerContentOpacity.value = withTiming(1, { duration: HEADER_FADE_DURATION });
-              // Clear snapshot after slide + fade complete
-              runOnJS(setLastExpandedContent)(null);
+          translateY.value = withTiming(
+            collapsedY,
+            {
+              duration: SLIDE_DURATION,
+              easing: Easing.in(Easing.cubic),
+            },
+            (finished) => {
+              if (finished) {
+                headerContentOpacity.value = withTiming(1, { duration: HEADER_FADE_DURATION });
+                // Clear snapshot after slide + fade complete
+                runOnJS(setLastExpandedContent)(null);
+              }
             }
-          });
+          );
           backdropOpacity.value = withTiming(0, { duration: SLIDE_DURATION });
         }
         break;
@@ -182,9 +190,12 @@ export function GateContainer({
   const isExpanded = state === 'settings' || state === 'wallets';
   // Use current expanded content, or the snapshot (lastExpandedContent) during close animation
   const activeExpandedType = isExpanded ? state : lastExpandedContent;
-  const expandedContent = activeExpandedType === 'settings' ? settingsContent
-    : activeExpandedType === 'wallets' ? walletsContent
-    : null;
+  const expandedContent =
+    activeExpandedType === 'settings'
+      ? settingsContent
+      : activeExpandedType === 'wallets'
+        ? walletsContent
+        : null;
   const showExpanded = isExpanded || lastExpandedContent !== null;
   const showBackdrop = isExpanded || lastExpandedContent !== null;
   // Use current header if expanded, or snapshot header during close animation
@@ -210,11 +221,7 @@ export function GateContainer({
         {/* Shared visual surface — solid color, no scales */}
         <View style={styles.surface}>
           {/* Lock content — full screen */}
-          {state === 'locked' && (
-            <View style={styles.lockContentContainer}>
-              {lockContent}
-            </View>
-          )}
+          {state === 'locked' && <View style={styles.lockContentContainer}>{lockContent}</View>}
 
           {/* Expanded content — settings or wallets (kept mounted for snapshot during close) */}
           {showExpanded && (
@@ -251,9 +258,7 @@ export function GateContainer({
                 </View>
               )}
               {/* Expanded body */}
-              <View style={styles.expandedBody}>
-                {expandedContent}
-              </View>
+              <View style={styles.expandedBody}>{expandedContent}</View>
             </View>
           )}
 

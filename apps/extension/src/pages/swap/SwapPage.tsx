@@ -119,7 +119,8 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
   // Resolve user's BTC address for bridge recipient pre-fill
   const defaultRecipientAddress = useMemo(() => {
     const btcAccounts = activeAccount?.networksAccounts?.['bitcoin-mainnet'];
-    const btcAccount = btcAccounts?.find((a: unknown) => a !== null) as { getReceiveAddress(): string } | undefined;
+    const btcAccount = btcAccounts?.find((a: unknown) => a !== null) as
+      { getReceiveAddress(): string } | undefined;
     return btcAccount?.getReceiveAddress() ?? '';
   }, [activeAccount]);
 
@@ -127,64 +128,75 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
   const { tokens: jupiterTokens } = useJupiterTokenList({ networkId: swapNetworkId });
 
   // Swap handlers
-  const handleGetQuote = useCallback(async (
-    inToken: SwapToken,
-    outToken: SwapToken,
-    amount: string,
-  ): Promise<SwapQuote> => {
-    if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
+  const handleGetQuote = useCallback(
+    async (inToken: SwapToken, outToken: SwapToken, amount: string): Promise<SwapQuote> => {
+      if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
 
-    const inputAmount = parseFloat(amount);
-    if (isNaN(inputAmount) || inputAmount <= 0) throw new Error('swap.errors.invalidAmount');
+      const inputAmount = parseFloat(amount);
+      if (isNaN(inputAmount) || inputAmount <= 0) throw new Error('swap.errors.invalidAmount');
 
-    const quote = await getSwapQuote({
-      inputMint: inToken.address,
-      outputMint: outToken.address,
-      amount: inputAmount,
-      inputDecimals: inToken.decimals,
-      slippageBps: 50,
-    });
+      const quote = await getSwapQuote({
+        inputMint: inToken.address,
+        outputMint: outToken.address,
+        amount: inputAmount,
+        inputDecimals: inToken.decimals,
+        slippageBps: 50,
+      });
 
-    if (!quote) throw new Error(swapError || 'swap.errors.quoteFailed');
+      if (!quote) throw new Error(swapError || 'swap.errors.quoteFailed');
 
-    currentSharedQuoteRef.current = quote;
-    return quote as unknown as SwapQuote;
-  }, [activeBlockchainAccount, getSwapQuote, swapError]);
+      currentSharedQuoteRef.current = quote;
+      return quote as unknown as SwapQuote;
+    },
+    [activeBlockchainAccount, getSwapQuote, swapError]
+  );
 
-  const handleSwap = useCallback(async (_quote: SwapQuote): Promise<{ txId: string }> => {
-    if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
-    if (!currentSharedQuoteRef.current) throw new Error('swap.errors.noQuote');
+  const handleSwap = useCallback(
+    async (_quote: SwapQuote): Promise<{ txId: string }> => {
+      if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
+      if (!currentSharedQuoteRef.current) throw new Error('swap.errors.noQuote');
 
-    // Verify hook's internal quote matches the displayed quote to prevent race conditions
-    if (!swapQuote || swapQuote.custom?.requestId !== currentSharedQuoteRef.current.custom?.requestId) {
-      throw new Error('transaction.errors.quoteExpired');
-    }
+      // Verify hook's internal quote matches the displayed quote to prevent race conditions
+      if (
+        !swapQuote ||
+        swapQuote.custom?.requestId !== currentSharedQuoteRef.current.custom?.requestId
+      ) {
+        throw new Error('transaction.errors.quoteExpired');
+      }
 
-    const result = await executeSwapHook();
-    if (result.status === 'fail') throw new Error(result.error || 'transaction.errors.generic');
+      const result = await executeSwapHook();
+      if (result.status === 'fail') throw new Error(result.error || 'transaction.errors.generic');
 
-    currentSharedQuoteRef.current = null;
-    return { txId: result.txId || '' };
-  }, [activeBlockchainAccount, executeSwapHook, swapQuote]);
+      currentSharedQuoteRef.current = null;
+      return { txId: result.txId || '' };
+    },
+    [activeBlockchainAccount, executeSwapHook, swapQuote]
+  );
 
   const handleSwapSuccess = useCallback(() => {
     resetSwap();
   }, [resetSwap]);
 
-  const handleSwapError = useCallback((error: Error) => {
-    resetSwap();
-    console.error('Swap Failed:', error.message);
-  }, [resetSwap]);
+  const handleSwapError = useCallback(
+    (error: Error) => {
+      resetSwap();
+      console.error('Swap Failed:', error.message);
+    },
+    [resetSwap]
+  );
 
-  const handleSearchTokens = useCallback(async (query: string): Promise<SwapToken[]> => {
-    const network = networkId === 'solana-devnet' ? 'solana-devnet' : 'solana-mainnet';
-    try {
-      const results = await searchTokens(query, network);
-      return results.map((token) => mapToSwapToken(token));
-    } catch {
-      return [];
-    }
-  }, [networkId]);
+  const handleSearchTokens = useCallback(
+    async (query: string): Promise<SwapToken[]> => {
+      const network = networkId === 'solana-devnet' ? 'solana-devnet' : 'solana-mainnet';
+      try {
+        const results = await searchTokens(query, network);
+        return results.map((token) => mapToSwapToken(token));
+      } catch {
+        return [];
+      }
+    },
+    [networkId]
+  );
 
   // Bridge handlers
   const bridgeTokens: BridgeTokenSimple[] = useMemo(() => {
@@ -209,89 +221,117 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
     }));
   }, [topTokens]);
 
-  const handleGetAvailableTokens = useCallback(async (sourceSymbol: string): Promise<BridgeTokenSimple[]> => {
-    // No try/catch: failures must propagate to useSwapScreenLogic, which
-    // classifies them into the form's reviewWarning slot.
-    const tokens = await getBridgeAvailableTokens(sourceSymbol);
-    if (!tokens) return [];
-    return tokens.map((t) => ({
-      symbol: t.symbol,
-      name: t.name,
-      logo: t.logo,
-      network: t.network,
-    }));
-  }, [getBridgeAvailableTokens]);
+  const handleGetAvailableTokens = useCallback(
+    async (sourceSymbol: string): Promise<BridgeTokenSimple[]> => {
+      // No try/catch: failures must propagate to useSwapScreenLogic, which
+      // classifies them into the form's reviewWarning slot.
+      const tokens = await getBridgeAvailableTokens(sourceSymbol);
+      if (!tokens) return [];
+      return tokens.map((t) => ({
+        symbol: t.symbol,
+        name: t.name,
+        logo: t.logo,
+        network: t.network,
+      }));
+    },
+    [getBridgeAvailableTokens]
+  );
 
-  const handleGetBridgeEstimate = useCallback(async (
-    symbolIn: string,
-    symbolOut: string,
-    amount: number,
-    networkIn?: string,
-    networkOut?: string,
-  ): Promise<BridgeEstimateSimple | null> => {
-    const estimate = await getBridgeEstimate(symbolIn, symbolOut, amount, networkIn, networkOut);
-    if (!estimate) return null;
-    return {
-      estimatedAmount: estimate.estimatedAmount,
-      minAmount: estimate.minAmount,
-      maxAmount: estimate.maxAmount ?? null,
-      symbolIn: estimate.symbolIn,
-      symbolOut: estimate.symbolOut,
-    };
-  }, [getBridgeEstimate]);
-
-  const handleCreateBridgeExchange = useCallback(async (
-    symbolIn: string,
-    symbolOut: string,
-    amount: number,
-    addressTo: string,
-    networkIn?: string,
-    networkOut?: string,
-  ): Promise<BridgeExchangeSimple | null> => {
-    const exchange = await createBridgeExchange(symbolIn, symbolOut, amount, addressTo, networkIn, networkOut);
-    if (!exchange) return null;
-    return {
-      id: exchange.id,
-      depositAddress: exchange.payinAddress,
-      amountIn: exchange.amountExpectedFrom,
-      amountOut: exchange.amountExpectedTo,
-      symbolIn: exchange.currencyFrom,
-      symbolOut: exchange.currencyTo,
-      addressTo: exchange.payoutAddress,
-      status: exchange.status,
-    };
-  }, [createBridgeExchange]);
-
-  const handleGetBridgeTransactionStatus = useCallback(async (id: string) => {
-    try {
-      const transaction = await getBridgeTransactionStatus(id);
-      if (!transaction) return null;
+  const handleGetBridgeEstimate = useCallback(
+    async (
+      symbolIn: string,
+      symbolOut: string,
+      amount: number,
+      networkIn?: string,
+      networkOut?: string
+    ): Promise<BridgeEstimateSimple | null> => {
+      const estimate = await getBridgeEstimate(symbolIn, symbolOut, amount, networkIn, networkOut);
+      if (!estimate) return null;
       return {
-        status: transaction.status,
-        payoutTxId: transaction.payoutHash,
+        estimatedAmount: estimate.estimatedAmount,
+        minAmount: estimate.minAmount,
+        maxAmount: estimate.maxAmount ?? null,
+        symbolIn: estimate.symbolIn,
+        symbolOut: estimate.symbolOut,
       };
-    } catch {
-      return null;
-    }
-  }, [getBridgeTransactionStatus]);
+    },
+    [getBridgeEstimate]
+  );
 
-  const handleSendDeposit = useCallback(async (
-    depositAddress: string,
-    tokenAddress: string,
-    amount: number,
-  ): Promise<{ txId: string }> => {
-    if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
-    return activeBlockchainAccount.transfer(depositAddress, tokenAddress, amount);
-  }, [activeBlockchainAccount]);
+  const handleCreateBridgeExchange = useCallback(
+    async (
+      symbolIn: string,
+      symbolOut: string,
+      amount: number,
+      addressTo: string,
+      networkIn?: string,
+      networkOut?: string
+    ): Promise<BridgeExchangeSimple | null> => {
+      const exchange = await createBridgeExchange(
+        symbolIn,
+        symbolOut,
+        amount,
+        addressTo,
+        networkIn,
+        networkOut
+      );
+      if (!exchange) return null;
+      return {
+        id: exchange.id,
+        depositAddress: exchange.payinAddress,
+        amountIn: exchange.amountExpectedFrom,
+        amountOut: exchange.amountExpectedTo,
+        symbolIn: exchange.currencyFrom,
+        symbolOut: exchange.currencyTo,
+        addressTo: exchange.payoutAddress,
+        status: exchange.status,
+      };
+    },
+    [createBridgeExchange]
+  );
 
-  const handleBridgeSuccess = useCallback((_exchange: BridgeExchangeSimple) => {
-    resetBridge();
-  }, [resetBridge]);
+  const handleGetBridgeTransactionStatus = useCallback(
+    async (id: string) => {
+      try {
+        const transaction = await getBridgeTransactionStatus(id);
+        if (!transaction) return null;
+        return {
+          status: transaction.status,
+          payoutTxId: transaction.payoutHash,
+        };
+      } catch {
+        return null;
+      }
+    },
+    [getBridgeTransactionStatus]
+  );
 
-  const handleBridgeError = useCallback((error: Error) => {
-    resetBridge();
-    console.error('Bridge Failed:', error.message);
-  }, [resetBridge]);
+  const handleSendDeposit = useCallback(
+    async (
+      depositAddress: string,
+      tokenAddress: string,
+      amount: number
+    ): Promise<{ txId: string }> => {
+      if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
+      return activeBlockchainAccount.transfer(depositAddress, tokenAddress, amount);
+    },
+    [activeBlockchainAccount]
+  );
+
+  const handleBridgeSuccess = useCallback(
+    (_exchange: BridgeExchangeSimple) => {
+      resetBridge();
+    },
+    [resetBridge]
+  );
+
+  const handleBridgeError = useCallback(
+    (error: Error) => {
+      resetBridge();
+      console.error('Bridge Failed:', error.message);
+    },
+    [resetBridge]
+  );
 
   if (!ready || !activeAccount || !activeBlockchainAccount) {
     return (

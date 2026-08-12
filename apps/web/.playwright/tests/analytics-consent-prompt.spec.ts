@@ -21,7 +21,9 @@ const seedA = (): string => process.env.SALMON_TEST_SEED_A ?? '';
 const password = (): string => process.env.SALMON_TEST_PASSWORD ?? '';
 
 let backendUp = false;
-const haveWalletFixture = Boolean(process.env.SALMON_TEST_SEED_A && process.env.SALMON_TEST_PASSWORD);
+const haveWalletFixture = Boolean(
+  process.env.SALMON_TEST_SEED_A && process.env.SALMON_TEST_PASSWORD
+);
 
 test.beforeAll(async () => {
   backendUp = await isBackendUp();
@@ -35,22 +37,26 @@ async function recoverToConsent(page: Page): Promise<void> {
   await page.getByTestId('password-input').fill(password());
   await page.getByTestId('password-confirm-input').fill(password());
   await page.getByTestId('password-submit-button').click();
-  await page
-    .getByTestId('analytics-consent-screen')
-    .waitFor({ state: 'visible', timeout: 60_000 });
+  await page.getByTestId('analytics-consent-screen').waitFor({ state: 'visible', timeout: 60_000 });
 }
 
 async function stubEvents(page: Page): Promise<void> {
   // Accepting consent starts the flush timer, which would otherwise POST here.
   await page.route('**/v1/events', (route) =>
-    route.fulfill({ status: 202, contentType: 'application/json', body: '{"accepted":1}' }),
+    route.fulfill({ status: 202, contentType: 'application/json', body: '{"accepted":1}' })
   );
 }
 
 test.beforeEach(({ browserName }) => {
-  test.skip(browserName !== 'chromium', 'engine-independent screen; run once on chromium to avoid 3× the slow recover');
+  test.skip(
+    browserName !== 'chromium',
+    'engine-independent screen; run once on chromium to avoid 3× the slow recover'
+  );
   test.skip(!backendUp, 'salmon-api not reachable');
-  test.skip(!haveWalletFixture, 'no seeded-wallet fixture (SALMON_TEST_SEED_A / SALMON_TEST_PASSWORD)');
+  test.skip(
+    !haveWalletFixture,
+    'no seeded-wallet fixture (SALMON_TEST_SEED_A / SALMON_TEST_PASSWORD)'
+  );
 });
 
 test('accept: consent screen appears once, opts in, and never reappears', async ({ page }) => {

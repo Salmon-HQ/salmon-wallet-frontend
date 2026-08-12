@@ -54,31 +54,33 @@ const BadgeSkeleton = styled(Skeleton)({
  *
  * Dimensions match NftCard: ~194x193px with 18px border radius
  */
-export const NftCardSkeleton = memo<NftCardSkeletonProps>(
-  function NftCardSkeleton({ style, className, testID, animated = true }) {
-    const animation = animated ? 'wave' : false;
+export const NftCardSkeleton = memo<NftCardSkeletonProps>(function NftCardSkeleton({
+  style,
+  className,
+  testID,
+  animated = true,
+}) {
+  const animation = animated ? 'wave' : false;
 
-    return (
-      <Container style={style} className={className} data-testid={testID}>
-        {/* Main card background */}
-        <CardSkeleton
-          variant="rounded"
-          width="100%"
-          height="100%"
-          animation={animation}
-          sx={{ borderRadius: `${CARD_BORDER_RADIUS}px` }}
-        />
+  return (
+    <Container style={style} className={className} data-testid={testID}>
+      {/* Main card background */}
+      <CardSkeleton
+        variant="rounded"
+        width="100%"
+        height="100%"
+        animation={animation}
+        sx={{ borderRadius: `${CARD_BORDER_RADIUS}px` }}
+      />
 
-        {/* Name badge at bottom */}
-        <BadgeSkeleton
-          variant="rounded"
-          width={`calc(100% - ${BADGE_HORIZONTAL * 2}px)`}
-          height={BADGE_HEIGHT}
-          animation={animation}
-          sx={{ borderRadius: `${BADGE_BORDER_RADIUS}px` }}
-        />
-      </Container>
-    );
-  }
-);
-
+      {/* Name badge at bottom */}
+      <BadgeSkeleton
+        variant="rounded"
+        width={`calc(100% - ${BADGE_HORIZONTAL * 2}px)`}
+        height={BADGE_HEIGHT}
+        animation={animation}
+        sx={{ borderRadius: `${BADGE_BORDER_RADIUS}px` }}
+      />
+    </Container>
+  );
+});

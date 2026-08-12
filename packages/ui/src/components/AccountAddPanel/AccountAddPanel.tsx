@@ -116,10 +116,7 @@ const StyledTextField = styled(TextField)({
 // Component
 // ============================================================================
 
-export function AccountAddPanel({
-  onComplete,
-  onBack,
-}: AccountAddPanelProps): React.ReactElement {
+export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const [accountState, accountActions] = useAccountsContext();
   const { activeAccount, counter } = accountState;
@@ -137,7 +134,7 @@ export function AccountAddPanel({
 
   const defaultName = useMemo(
     () => t('settings.account_add.default_name', { number: counter + 1 }),
-    [counter, t],
+    [counter, t]
   );
   const [accountName, setAccountName] = useState('');
 
@@ -150,7 +147,7 @@ export function AccountAddPanel({
       const scanNetworks = await getScanNetworks();
       const { accounts, failedNetworks: failed } = await scanDerivedAccounts(
         activeAccount.mnemonic,
-        scanNetworks,
+        scanNetworks
       );
       setDerivedAccounts(accounts);
       setFailedNetworks(failed);
@@ -169,7 +166,7 @@ export function AccountAddPanel({
   }, []);
 
   const handleDerivedSelect = useCallback((account: DerivedAccountInfo) => {
-    setSelectedDerived(prev => prev?.address === account.address ? null : account);
+    setSelectedDerived((prev) => (prev?.address === account.address ? null : account));
   }, []);
 
   const handleDerivedContinue = useCallback(() => {
@@ -195,7 +192,7 @@ export function AccountAddPanel({
     setConfirmError('');
     setLoading(true);
     try {
-      const mnemonic = selectedDerived ? (activeAccount?.mnemonic || '') : seedPhrase;
+      const mnemonic = selectedDerived ? activeAccount?.mnemonic || '' : seedPhrase;
       const startIndex = selectedDerived ? selectedDerived.index : 0;
       const scanNetworks = await getScanNetworks();
       const { account } = await createAccount({
@@ -218,7 +215,16 @@ export function AccountAddPanel({
       }
       setConfirmError(t('settings.account_add.creation_error'));
     }
-  }, [accountName, defaultName, selectedDerived, activeAccount, seedPhrase, accountActions, onComplete, t]);
+  }, [
+    accountName,
+    defaultName,
+    selectedDerived,
+    activeAccount,
+    seedPhrase,
+    accountActions,
+    onComplete,
+    t,
+  ]);
 
   const handleStepBack = useCallback(() => {
     if (step === 'set-name') {
@@ -235,183 +241,230 @@ export function AccountAddPanel({
     'derive-scan': t('settings.account_add.create_new'),
     'import-seed': t('settings.account_add.import_seed'),
     'set-name': t('settings.account_add.set_name'),
-    'complete': t('settings.account_add.title'),
+    complete: t('settings.account_add.title'),
   };
 
   return (
     <>
-    <LoadingScreen
-      visible={loading}
-      title={selectedDerived
-        ? t('settings.account_add.confirm_create')
-        : t('settings.account_add.confirm_import')}
-      subtitle={t('general.loading')}
-    />
-    <SettingsPanelContent title={stepTitles[step]} onBack={handleStepBack}>
-      <Box sx={{ padding: `0 ${spacing.lg}px` }}>
-        {step === 'select-method' && (
-          <>
-            <MethodCard onClick={handleSelectDerive} data-testid="account-add-method-derive">
-              <MethodIcon>
-                <AccountTreeIcon sx={{ color: colors.accent.primary, fontSize: fontSize.iconMd }} />
-              </MethodIcon>
-              <MethodInfo>
-                <Typography sx={{ color: colors.text.primary, fontWeight: fontWeight.semibold, fontSize: fontSize.base, marginBottom: spacing.xxs }}>
-                  {t('settings.account_add.create_new')}
-                </Typography>
-                <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.sm }}>
-                  {t('settings.account_add.create_new_description')}
-                </Typography>
-              </MethodInfo>
-              <ChevronRightIcon sx={{ color: colors.text.secondary }} />
-            </MethodCard>
-
-            <MethodCard onClick={handleSelectImport} data-testid="account-add-method-import">
-              <MethodIcon>
-                <DescriptionIcon sx={{ color: colors.accent.primary, fontSize: fontSize.iconMd }} />
-              </MethodIcon>
-              <MethodInfo>
-                <Typography sx={{ color: colors.text.primary, fontWeight: fontWeight.semibold, fontSize: fontSize.base, marginBottom: spacing.xxs }}>
-                  {t('settings.account_add.import_seed')}
-                </Typography>
-                <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.sm }}>
-                  {t('settings.account_add.import_seed_description')}
-                </Typography>
-              </MethodInfo>
-              <ChevronRightIcon sx={{ color: colors.text.secondary }} />
-            </MethodCard>
-          </>
-        )}
-
-        {step === 'derive-scan' && (
-          <>
-            {scanning ? (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: `${spacing['3xl']}px 0`, gap: spacing.md }}>
-                <CircularProgress sx={{ color: colors.accent.primary }} />
-                <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.base }}>
-                  {t('settings.account_add.scanning')}
-                </Typography>
-              </Box>
-            ) : derivedAccounts.length === 0 && failedNetworks.length > 0 ? (
-              <Box
-                sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: `${spacing['3xl']}px 0`, gap: spacing.md }}
-                data-testid="derived-scan-error"
-              >
-                <Typography sx={{ color: colors.text.primary, fontSize: fontSize.base }}>
-                  {t('wallet.derived.scan_failed_title')}
-                </Typography>
-                <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.sm, textAlign: 'center' }}>
-                  {t('wallet.derived.scan_failed_body')}
-                </Typography>
-                <ConfirmButton
-                  variant="contained"
-                  onClick={handleSelectDerive}
-                  data-testid="derived-scan-retry-button"
-                >
-                  {t('transactions.tapToRetry')}
-                </ConfirmButton>
-              </Box>
-            ) : (
-              <>
-                {failedNetworks.length > 0 && (
-                  <Box sx={{ marginBottom: `${spacing.md}px` }}>
-                    <WarningNotice tone="warning" title={t('wallet.derived.scan_partial')} />
-                  </Box>
-                )}
-                {derivedAccounts.map((item) => (
-                  <DerivedAccountCard
-                    key={`${item.networkId}-${item.address}`}
-                    testID={`account-add-derived-${item.address}`}
-                    address={item.address}
-                    networkName={item.networkName}
-                    path={item.path}
-                    balanceFormatted={item.balanceFormatted}
-                    selected={selectedDerived?.address === item.address}
-                    dimmed={item.balance === 0}
-                    onToggle={() => handleDerivedSelect(item)}
-                    blockchain={NETWORK_DISPLAY[item.networkId]?.blockchain}
+      <LoadingScreen
+        visible={loading}
+        title={
+          selectedDerived
+            ? t('settings.account_add.confirm_create')
+            : t('settings.account_add.confirm_import')
+        }
+        subtitle={t('general.loading')}
+      />
+      <SettingsPanelContent title={stepTitles[step]} onBack={handleStepBack}>
+        <Box sx={{ padding: `0 ${spacing.lg}px` }}>
+          {step === 'select-method' && (
+            <>
+              <MethodCard onClick={handleSelectDerive} data-testid="account-add-method-derive">
+                <MethodIcon>
+                  <AccountTreeIcon
+                    sx={{ color: colors.accent.primary, fontSize: fontSize.iconMd }}
                   />
-                ))}
-                <ConfirmButton
-                  fullWidth
-                  variant="contained"
-                  onClick={handleDerivedContinue}
-                  disabled={!selectedDerived}
-                  data-testid="account-add-derive-continue-button"
+                </MethodIcon>
+                <MethodInfo>
+                  <Typography
+                    sx={{
+                      color: colors.text.primary,
+                      fontWeight: fontWeight.semibold,
+                      fontSize: fontSize.base,
+                      marginBottom: spacing.xxs,
+                    }}
+                  >
+                    {t('settings.account_add.create_new')}
+                  </Typography>
+                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.sm }}>
+                    {t('settings.account_add.create_new_description')}
+                  </Typography>
+                </MethodInfo>
+                <ChevronRightIcon sx={{ color: colors.text.secondary }} />
+              </MethodCard>
+
+              <MethodCard onClick={handleSelectImport} data-testid="account-add-method-import">
+                <MethodIcon>
+                  <DescriptionIcon
+                    sx={{ color: colors.accent.primary, fontSize: fontSize.iconMd }}
+                  />
+                </MethodIcon>
+                <MethodInfo>
+                  <Typography
+                    sx={{
+                      color: colors.text.primary,
+                      fontWeight: fontWeight.semibold,
+                      fontSize: fontSize.base,
+                      marginBottom: spacing.xxs,
+                    }}
+                  >
+                    {t('settings.account_add.import_seed')}
+                  </Typography>
+                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.sm }}>
+                    {t('settings.account_add.import_seed_description')}
+                  </Typography>
+                </MethodInfo>
+                <ChevronRightIcon sx={{ color: colors.text.secondary }} />
+              </MethodCard>
+            </>
+          )}
+
+          {step === 'derive-scan' && (
+            <>
+              {scanning ? (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: `${spacing['3xl']}px 0`,
+                    gap: spacing.md,
+                  }}
                 >
-                  {t('actions.continue')}
-                </ConfirmButton>
-              </>
-            )}
-          </>
-        )}
+                  <CircularProgress sx={{ color: colors.accent.primary }} />
+                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.base }}>
+                    {t('settings.account_add.scanning')}
+                  </Typography>
+                </Box>
+              ) : derivedAccounts.length === 0 && failedNetworks.length > 0 ? (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: `${spacing['3xl']}px 0`,
+                    gap: spacing.md,
+                  }}
+                  data-testid="derived-scan-error"
+                >
+                  <Typography sx={{ color: colors.text.primary, fontSize: fontSize.base }}>
+                    {t('wallet.derived.scan_failed_title')}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: colors.text.secondary,
+                      fontSize: fontSize.sm,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {t('wallet.derived.scan_failed_body')}
+                  </Typography>
+                  <ConfirmButton
+                    variant="contained"
+                    onClick={handleSelectDerive}
+                    data-testid="derived-scan-retry-button"
+                  >
+                    {t('transactions.tapToRetry')}
+                  </ConfirmButton>
+                </Box>
+              ) : (
+                <>
+                  {failedNetworks.length > 0 && (
+                    <Box sx={{ marginBottom: `${spacing.md}px` }}>
+                      <WarningNotice tone="warning" title={t('wallet.derived.scan_partial')} />
+                    </Box>
+                  )}
+                  {derivedAccounts.map((item) => (
+                    <DerivedAccountCard
+                      key={`${item.networkId}-${item.address}`}
+                      testID={`account-add-derived-${item.address}`}
+                      address={item.address}
+                      networkName={item.networkName}
+                      path={item.path}
+                      balanceFormatted={item.balanceFormatted}
+                      selected={selectedDerived?.address === item.address}
+                      dimmed={item.balance === 0}
+                      onToggle={() => handleDerivedSelect(item)}
+                      blockchain={NETWORK_DISPLAY[item.networkId]?.blockchain}
+                    />
+                  ))}
+                  <ConfirmButton
+                    fullWidth
+                    variant="contained"
+                    onClick={handleDerivedContinue}
+                    disabled={!selectedDerived}
+                    data-testid="account-add-derive-continue-button"
+                  >
+                    {t('actions.continue')}
+                  </ConfirmButton>
+                </>
+              )}
+            </>
+          )}
 
-        {step === 'import-seed' && (
-          <>
-            <StyledTextField
-              fullWidth
-              multiline
-              minRows={4}
-              value={seedPhrase}
-              onChange={(e) => {
-                setSeedPhrase(e.target.value);
-                if (seedError) setSeedError('');
-              }}
-              placeholder={t('settings.account_add.seed_placeholder', 'Enter your seed phrase...')}
-              autoFocus
-              inputProps={{ 'data-testid': 'account-add-seed-input' }}
-            />
-            {seedError && (
-              <Typography sx={{ color: colors.status.error, fontSize: fontSize.sm, marginTop: spacing.xs }}>
-                {seedError}
-              </Typography>
-            )}
-            <ConfirmButton
-              fullWidth
-              variant="contained"
-              onClick={handleSeedSubmit}
-              data-testid="account-add-seed-continue-button"
-            >
-              {t('actions.continue')}
-            </ConfirmButton>
-          </>
-        )}
+          {step === 'import-seed' && (
+            <>
+              <StyledTextField
+                fullWidth
+                multiline
+                minRows={4}
+                value={seedPhrase}
+                onChange={(e) => {
+                  setSeedPhrase(e.target.value);
+                  if (seedError) setSeedError('');
+                }}
+                placeholder={t(
+                  'settings.account_add.seed_placeholder',
+                  'Enter your seed phrase...'
+                )}
+                autoFocus
+                inputProps={{ 'data-testid': 'account-add-seed-input' }}
+              />
+              {seedError && (
+                <Typography
+                  sx={{ color: colors.status.error, fontSize: fontSize.sm, marginTop: spacing.xs }}
+                >
+                  {seedError}
+                </Typography>
+              )}
+              <ConfirmButton
+                fullWidth
+                variant="contained"
+                onClick={handleSeedSubmit}
+                data-testid="account-add-seed-continue-button"
+              >
+                {t('actions.continue')}
+              </ConfirmButton>
+            </>
+          )}
 
-        {step === 'set-name' && (
-          <>
-            <StyledTextField
-              fullWidth
-              value={accountName}
-              onChange={(e) => {
-                setAccountName(e.target.value);
-                if (confirmError) setConfirmError('');
-              }}
-              placeholder={t('settings.account_add.set_name_placeholder')}
-              autoFocus
-              inputProps={{ maxLength: 32, 'data-testid': 'account-add-name-input' }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleConfirm();
-              }}
-            />
-            {confirmError && (
-              <Typography sx={{ color: colors.status.error, fontSize: fontSize.sm, marginTop: spacing.xs }}>
-                {confirmError}
-              </Typography>
-            )}
-            <ConfirmButton
-              fullWidth
-              variant="contained"
-              onClick={handleConfirm}
-              data-testid="account-add-confirm-button"
-            >
-              {selectedDerived
-                ? t('settings.account_add.confirm_create')
-                : t('settings.account_add.confirm_import')}
-            </ConfirmButton>
-          </>
-        )}
-      </Box>
-    </SettingsPanelContent>
+          {step === 'set-name' && (
+            <>
+              <StyledTextField
+                fullWidth
+                value={accountName}
+                onChange={(e) => {
+                  setAccountName(e.target.value);
+                  if (confirmError) setConfirmError('');
+                }}
+                placeholder={t('settings.account_add.set_name_placeholder')}
+                autoFocus
+                inputProps={{ maxLength: 32, 'data-testid': 'account-add-name-input' }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleConfirm();
+                }}
+              />
+              {confirmError && (
+                <Typography
+                  sx={{ color: colors.status.error, fontSize: fontSize.sm, marginTop: spacing.xs }}
+                >
+                  {confirmError}
+                </Typography>
+              )}
+              <ConfirmButton
+                fullWidth
+                variant="contained"
+                onClick={handleConfirm}
+                data-testid="account-add-confirm-button"
+              >
+                {selectedDerived
+                  ? t('settings.account_add.confirm_create')
+                  : t('settings.account_add.confirm_import')}
+              </ConfirmButton>
+            </>
+          )}
+        </Box>
+      </SettingsPanelContent>
     </>
   );
 }

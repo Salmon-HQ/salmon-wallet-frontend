@@ -65,12 +65,7 @@ function GradientBorderOverlay({
           gradientUnits="objectBoundingBox"
         >
           {GLASSY_BORDER_STOPS.map((stop, i) => (
-            <stop
-              key={i}
-              offset={stop.offset}
-              stopColor={color}
-              stopOpacity={stop.opacity}
-            />
+            <stop key={i} offset={stop.offset} stopColor={color} stopOpacity={stop.opacity} />
           ))}
         </radialGradient>
       </defs>
@@ -130,18 +125,14 @@ export function BlurContainer({
       const width = el.offsetWidth;
       const height = el.offsetHeight;
       setLayout((prev) =>
-        prev.width === width && prev.height === height
-          ? prev
-          : { width, height },
+        prev.width === width && prev.height === height ? prev : { width, height }
       );
     });
     observer.observe(el);
     return () => observer.disconnect();
   }, [useGradientBorder]);
 
-  const borderRadius = typeof style?.borderRadius === 'number'
-    ? style.borderRadius
-    : 0;
+  const borderRadius = typeof style?.borderRadius === 'number' ? style.borderRadius : 0;
 
   return (
     <BlurBox
@@ -167,4 +158,3 @@ export function BlurContainer({
     </BlurBox>
   );
 }
-

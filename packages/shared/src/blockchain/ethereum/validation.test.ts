@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  isEnsDomain,
-  isEthereumAddress,
-  validateDestinationAccount,
-} from './validation';
+import { isEnsDomain, isEthereumAddress, validateDestinationAccount } from './validation';
 
 const VALID_ETH_ADDRESS = '0x742D35cc6634c0532925a3B844bc9e7595f35b32';
 

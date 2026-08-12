@@ -2,7 +2,17 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, borderRadius, gradients, shadows, vs, s, borderWidth, componentSizes, } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  gradients,
+  shadows,
+  vs,
+  s,
+  borderWidth,
+  componentSizes,
+} from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 
 export interface SwapReviewButtonsProps {

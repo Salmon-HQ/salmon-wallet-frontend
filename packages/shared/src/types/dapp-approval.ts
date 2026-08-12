@@ -97,9 +97,7 @@ export interface DAppSignAndSendTransactionRequest {
 }
 
 export type DAppTransactionRequest =
-  | DAppSignTransactionRequest
-  | DAppSignAllTransactionsRequest
-  | DAppSignAndSendTransactionRequest;
+  DAppSignTransactionRequest | DAppSignAllTransactionsRequest | DAppSignAndSendTransactionRequest;
 
 export type DAppApprovalRequest =
   | DAppConnectRequest

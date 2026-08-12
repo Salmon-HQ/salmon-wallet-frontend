@@ -64,7 +64,11 @@ export function StandardHeader({ title, onClose }: StandardHeaderProps): React.R
   return (
     <StyledDialogTitle>
       <TitleText>{title}</TitleText>
-      <CloseButton onClick={handleClose} aria-label={t('general.close', 'Close')} data-testid="sheet-close-button">
+      <CloseButton
+        onClick={handleClose}
+        aria-label={t('general.close', 'Close')}
+        data-testid="sheet-close-button"
+      >
         <CloseIcon />
       </CloseButton>
     </StyledDialogTitle>

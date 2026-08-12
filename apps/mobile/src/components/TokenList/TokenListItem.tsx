@@ -89,11 +89,7 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   const isPositiveChange = percentageChange >= 0;
 
   // Format display values
-  const displayPrice = hiddenBalance
-    ? hiddenValue
-    : price != null
-      ? formatValue(price)
-      : null;
+  const displayPrice = hiddenBalance ? hiddenValue : price != null ? formatValue(price) : null;
 
   const displayPercentage = last24HoursChange ? showPercentage(percentageChange) : null;
   const displayAbsChange = absoluteChange != null ? formatChange(absoluteChange) : null;
@@ -109,31 +105,32 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   // Bitcoin has a different layout showing price, change, and BTC amount
   if (blockchain === 'bitcoin') {
     const Wrapper = onPress ? TouchableOpacity : View;
-    const wrapperProps = onPress ? {
-      onPress: handlePress,
-      activeOpacity: 0.7,
-      accessibilityRole: 'button' as const,
-      accessibilityLabel: t('accessibility.token_price_balance', '{{name}} token, price {{price}}, balance {{amount}} {{symbol}}', { name, price, amount: uiAmount, symbol }),
-    } : {};
+    const wrapperProps = onPress
+      ? {
+          onPress: handlePress,
+          activeOpacity: 0.7,
+          accessibilityRole: 'button' as const,
+          accessibilityLabel: t(
+            'accessibility.token_price_balance',
+            '{{name}} token, price {{price}}, balance {{amount}} {{symbol}}',
+            { name, price, amount: uiAmount, symbol }
+          ),
+        }
+      : {};
     return (
       <BlurContainer style={[styles.glassWrapper, style]} borderWidth={borderWidth.tokenListItem}>
-        <Wrapper
-          testID={`token-row-${symbol}`}
-          style={styles.bitcoinContainer}
-          {...wrapperProps}
-        >
+        <Wrapper testID={`token-row-${symbol}`} style={styles.bitcoinContainer} {...wrapperProps}>
           {/* Token Logo */}
-          <TokenLogo
-            uri={logo}
-            symbol={symbol}
-            size={s(33)}
-            borderRadius={16.5}
-          />
+          <TokenLogo uri={logo} symbol={symbol} size={s(33)} borderRadius={16.5} />
 
           {/* Bitcoin Info - Price and percentage change */}
           <View style={styles.bitcoinInfoContainer}>
             {displayPrice && (
-              <Text style={styles.bitcoinPrice} numberOfLines={1} maxFontSizeMultiplier={fontScaleCap.dense}>
+              <Text
+                style={styles.bitcoinPrice}
+                numberOfLines={1}
+                maxFontSizeMultiplier={fontScaleCap.dense}
+              >
                 {displayPrice}
               </Text>
             )}
@@ -141,7 +138,12 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
               {displayPercentage && (
                 <>
                   <ChangeArrow isPositive={isPositiveChange} />
-                  <Text style={[styles.bitcoinChangeText, { color: changeColor }]} numberOfLines={1} ellipsizeMode="tail" maxFontSizeMultiplier={fontScaleCap.dense}>
+                  <Text
+                    style={[styles.bitcoinChangeText, { color: changeColor }]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    maxFontSizeMultiplier={fontScaleCap.dense}
+                  >
                     {displayPercentage}
                     {displayAbsChange && ` (${displayAbsChange})`}
                   </Text>
@@ -152,7 +154,11 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
 
           {/* Bitcoin Amount - Right Side */}
           <View style={styles.bitcoinAmountContainer}>
-            <Text style={styles.bitcoinAmount} numberOfLines={1} maxFontSizeMultiplier={fontScaleCap.dense}>
+            <Text
+              style={styles.bitcoinAmount}
+              numberOfLines={1}
+              maxFontSizeMultiplier={fontScaleCap.dense}
+            >
               {displayTokenAmount}
             </Text>
           </View>
@@ -170,7 +176,11 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
         onPress={handlePress}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel={t('accessibility.token_balance', '{{name}} token, balance {{amount}} {{symbol}}', { name, amount: uiAmount, symbol })}
+        accessibilityLabel={t(
+          'accessibility.token_balance',
+          '{{name}} token, balance {{amount}} {{symbol}}',
+          { name, amount: uiAmount, symbol }
+        )}
       >
         {/* Token Logo */}
         <TokenLogo
@@ -183,21 +193,35 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
         {/* Token Info - Left Side */}
         <View style={styles.infoContainer}>
           <View style={styles.nameRow}>
-            <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail" maxFontSizeMultiplier={fontScaleCap.dense}>
+            <Text
+              style={styles.name}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              maxFontSizeMultiplier={fontScaleCap.dense}
+            >
               {name}
             </Text>
             <TokenBadges tags={tags} />
           </View>
           <View style={styles.priceRow}>
             {displayPrice && (
-              <Text style={styles.price} numberOfLines={1} maxFontSizeMultiplier={fontScaleCap.dense}>
+              <Text
+                style={styles.price}
+                numberOfLines={1}
+                maxFontSizeMultiplier={fontScaleCap.dense}
+              >
                 {displayPrice}
               </Text>
             )}
             {displayPercentage && (
               <>
                 <ChangeArrow isPositive={isPositiveChange} />
-                <Text style={[styles.changeText, { color: changeColor }]} numberOfLines={1} ellipsizeMode="tail" maxFontSizeMultiplier={fontScaleCap.dense}>
+                <Text
+                  style={[styles.changeText, { color: changeColor }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  maxFontSizeMultiplier={fontScaleCap.dense}
+                >
                   {displayPercentage}
                   {displayAbsChange && ` (${displayAbsChange})`}
                 </Text>
@@ -209,11 +233,19 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
         {/* Value Info - Right Side */}
         <View style={styles.valueContainer}>
           {displayUsdValue && (
-            <Text style={styles.usdValue} numberOfLines={1} maxFontSizeMultiplier={fontScaleCap.dense}>
+            <Text
+              style={styles.usdValue}
+              numberOfLines={1}
+              maxFontSizeMultiplier={fontScaleCap.dense}
+            >
               {displayUsdValue}
             </Text>
           )}
-          <Text style={styles.tokenAmount} numberOfLines={1} maxFontSizeMultiplier={fontScaleCap.dense}>
+          <Text
+            style={styles.tokenAmount}
+            numberOfLines={1}
+            maxFontSizeMultiplier={fontScaleCap.dense}
+          >
             {displayTokenAmount}
           </Text>
         </View>

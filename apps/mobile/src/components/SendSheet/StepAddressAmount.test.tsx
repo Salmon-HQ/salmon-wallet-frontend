@@ -19,10 +19,13 @@ jest.mock('@expo/vector-icons', () => ({
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (_key: string, fallbackOrOptions?: string | { blockchain?: string; defaultValue?: string }) =>
+    t: (
+      _key: string,
+      fallbackOrOptions?: string | { blockchain?: string; defaultValue?: string }
+    ) =>
       typeof fallbackOrOptions === 'string'
         ? fallbackOrOptions
-        : fallbackOrOptions?.defaultValue ?? _key,
+        : (fallbackOrOptions?.defaultValue ?? _key),
   }),
 }));
 
@@ -59,7 +62,10 @@ jest.mock('@salmon/shared', () => ({
   shadows: { button: {} },
   spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, base: 10, headerPadding: 20, '2xl': 24 },
   useAddressValidation: (...args: unknown[]) => mockUseAddressValidation(...args),
-  useCurrencyContext: () => [{ currency: 'usd' }, { formatPrecise: (value: number) => value.toFixed(2) }],
+  useCurrencyContext: () => [
+    { currency: 'usd' },
+    { formatPrecise: (value: number) => value.toFixed(2) },
+  ],
   useSendContacts: (...args: unknown[]) => mockUseSendContacts(...args),
 }));
 
@@ -97,7 +103,9 @@ describe('StepAddressAmount', () => {
     jest.clearAllMocks();
 
     mockUseSendContacts.mockReturnValue({
-      contacts: [{ name: 'Alice', address: 'Alice11111111111111111111111111111', blockchain: 'solana' }],
+      contacts: [
+        { name: 'Alice', address: 'Alice11111111111111111111111111111', blockchain: 'solana' },
+      ],
       ownWallets: [{ accountName: 'Vault', address: 'Vault11111111111111111111111111111' }],
       isLoading: false,
     });

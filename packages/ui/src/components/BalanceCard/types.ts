@@ -1,4 +1,8 @@
-import type { BalanceCardCarouselPropsBase, BalanceCardPropsBase, BlockchainId } from '@salmon/shared';
+import type {
+  BalanceCardCarouselPropsBase,
+  BalanceCardPropsBase,
+  BlockchainId,
+} from '@salmon/shared';
 import type { CSSProperties } from 'react';
 
 /**

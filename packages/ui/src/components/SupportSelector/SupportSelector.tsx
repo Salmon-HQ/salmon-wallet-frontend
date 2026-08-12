@@ -110,9 +110,7 @@ export function SupportSelector({
     (option: SupportOptionItem) => (
       <ListItem key={option.id} disablePadding>
         <StyledListItemButton onClick={() => onOpenLink(option.url)}>
-          <StyledListItemIcon>
-            {ICON_MAP[option.id] || <HelpOutlineIcon />}
-          </StyledListItemIcon>
+          <StyledListItemIcon>{ICON_MAP[option.id] || <HelpOutlineIcon />}</StyledListItemIcon>
           <ListItemText
             primary={option.title}
             secondary={option.description}
@@ -138,10 +136,7 @@ export function SupportSelector({
   );
 
   return (
-    <SettingsPanelContent
-      title={t('settings.help_support', 'Help & Support')}
-      onBack={onBack}
-    >
+    <SettingsPanelContent title={t('settings.help_support', 'Help & Support')} onBack={onBack}>
       <StyledList>{options.map(renderOption)}</StyledList>
 
       <SecurityNotice>

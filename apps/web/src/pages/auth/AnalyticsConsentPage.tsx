@@ -16,7 +16,7 @@ export function AnalyticsConsentPage(): React.ReactElement {
       void resolveConsentPrompt(enabled);
       navigate('/auth/success', { replace: true });
     },
-    [navigate, resolveConsentPrompt],
+    [navigate, resolveConsentPrompt]
   );
 
   return (

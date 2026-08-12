@@ -41,7 +41,10 @@ export interface SolanaSignInInputFields {
 }
 
 /** SIWS fields as resolved by the wallet — `domain` and `address` are always present. */
-export interface ResolvedSiwsFields extends Omit<SolanaSignInInputFields, 'domain' | 'address' | 'useOffchainMessage'> {
+export interface ResolvedSiwsFields extends Omit<
+  SolanaSignInInputFields,
+  'domain' | 'address' | 'useOffchainMessage'
+> {
   domain: string;
   address: string;
 }
@@ -64,7 +67,7 @@ export class SiwsDomainMismatchError extends Error {
   constructor(requestedDomain: string, realDomain: string) {
     super(
       `This app asked to sign in for "${requestedDomain}" but the request came from ` +
-        `"${realDomain}". Signing was refused to prevent domain spoofing.`,
+        `"${realDomain}". Signing was refused to prevent domain spoofing.`
     );
     this.name = 'SiwsDomainMismatchError';
     Object.setPrototypeOf(this, SiwsDomainMismatchError.prototype);
@@ -124,7 +127,7 @@ export function buildSiwsMessageText(fields: ResolvedSiwsFields): string {
 export function prepareSignInMessage(
   input: SolanaSignInInputFields,
   origin: string,
-  walletAddress: string,
+  walletAddress: string
 ): PreparedSignInMessage {
   const domain = getSiwsDomain(origin);
 
@@ -138,9 +141,10 @@ export function prepareSignInMessage(
     ['expirationTime', input.expirationTime],
     ['notBefore', input.notBefore],
     ['requestId', input.requestId],
-    ...(input.resources ?? []).map(
-      (resource, index): [string, string] => [`resources[${index}]`, resource],
-    ),
+    ...(input.resources ?? []).map((resource, index): [string, string] => [
+      `resources[${index}]`,
+      resource,
+    ]),
   ];
   for (const [name, value] of singleLineFields) {
     if (value !== undefined && /[\r\n]/.test(value)) {
@@ -194,7 +198,7 @@ export interface SignedSignInMessage {
 export async function signSiwsMessage(
   account: SolanaAccount,
   input: SolanaSignInInputFields,
-  origin: string,
+  origin: string
 ): Promise<SignedSignInMessage> {
   const walletAddress = account.getReceiveAddress();
   const prepared = prepareSignInMessage(input, origin, walletAddress);
@@ -204,7 +208,7 @@ export async function signSiwsMessage(
   }
   if (prepared.addressMismatch) {
     throw new Error(
-      `This app asked to sign in with address "${input.address}", which is not the active account.`,
+      `This app asked to sign in with address "${input.address}", which is not the active account.`
     );
   }
 

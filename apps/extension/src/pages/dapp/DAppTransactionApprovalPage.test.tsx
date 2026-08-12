@@ -14,10 +14,8 @@ vi.mock('@salmon/shared', () => ({
   useDAppMetadata: (origin: string) => mockUseDAppMetadata(origin),
   approveSolanaTransactionRequest: vi.fn(),
   getDAppTransactionRequestSummary: (method: string) => mockGetSummary(method),
-  loadSolanaTransactionApprovalDetails: (
-    account: unknown,
-    request: unknown,
-  ) => mockLoadDetails(account, request),
+  loadSolanaTransactionApprovalDetails: (account: unknown, request: unknown) =>
+    mockLoadDetails(account, request),
 }));
 
 vi.mock('@salmon/shared/utils/account', () => ({
@@ -50,7 +48,9 @@ const baseRequest: DAppTransactionRequest = {
   params: { transaction: 'base64-tx' },
 } as unknown as DAppTransactionRequest;
 
-const fakeAccount = { kind: 'solana' } as unknown as Parameters<typeof DAppTransactionApprovalPage>[0]['account'];
+const fakeAccount = { kind: 'solana' } as unknown as Parameters<
+  typeof DAppTransactionApprovalPage
+>[0]['account'];
 
 const baseProps = {
   origin: 'https://dapp.example',
@@ -113,9 +113,7 @@ describe('DAppTransactionApprovalPage', () => {
   it('disables the view when networkId is missing', () => {
     mockUseDAppMetadata.mockReturnValue({ metadata: null });
 
-    const { getByTestId } = render(
-      <DAppTransactionApprovalPage {...baseProps} networkId={null} />,
-    );
+    const { getByTestId } = render(<DAppTransactionApprovalPage {...baseProps} networkId={null} />);
 
     expect(getByTestId('tx-approval-view').dataset.disabled).toBe('true');
   });

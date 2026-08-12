@@ -49,7 +49,7 @@ describe('buildSiwsMessageText', () => {
 
   it('builds the minimal message (header + address only)', () => {
     expect(buildSiwsMessageText({ domain: 'app.example.com', address })).toBe(
-      `app.example.com wants you to sign in with your Solana account:\n${address}`,
+      `app.example.com wants you to sign in with your Solana account:\n${address}`
     );
   });
 
@@ -87,7 +87,7 @@ describe('buildSiwsMessageText', () => {
         'Resources:',
         '- https://app.example.com/tos',
         '- https://app.example.com/privacy',
-      ].join('\n'),
+      ].join('\n')
     );
   });
 });
@@ -227,7 +227,7 @@ describe('prepareSignInMessage', () => {
   it('reports no mismatch when the dApp claim matches or is absent', () => {
     expect(prepareSignInMessage({}, ORIGIN, address).domainMismatch).toBe(false);
     expect(
-      prepareSignInMessage({ domain: 'app.example.com' }, ORIGIN, address).domainMismatch,
+      prepareSignInMessage({ domain: 'app.example.com' }, ORIGIN, address).domainMismatch
     ).toBe(false);
   });
 
@@ -239,13 +239,13 @@ describe('prepareSignInMessage', () => {
 
   it('rejects line breaks in any input field (message-line forgery)', () => {
     expect(() =>
-      prepareSignInMessage({ statement: 'hi\nURI: https://evil.example' }, ORIGIN, address),
+      prepareSignInMessage({ statement: 'hi\nURI: https://evil.example' }, ORIGIN, address)
     ).toThrow(/line breaks/);
+    expect(() => prepareSignInMessage({ nonce: 'abc\r\nNonce: forged' }, ORIGIN, address)).toThrow(
+      /line breaks/
+    );
     expect(() =>
-      prepareSignInMessage({ nonce: 'abc\r\nNonce: forged' }, ORIGIN, address),
-    ).toThrow(/line breaks/);
-    expect(() =>
-      prepareSignInMessage({ resources: ['https://ok.example', 'x\ny'] }, ORIGIN, address),
+      prepareSignInMessage({ resources: ['https://ok.example', 'x\ny'] }, ORIGIN, address)
     ).toThrow(/line breaks/);
   });
 
@@ -264,15 +264,15 @@ describe('signSiwsMessage', () => {
     expect(new TextDecoder().decode(result.signedMessage)).toBe(result.message);
     expect(result.message).toContain(`app.example.com wants you to sign in`);
     expect(result.message).toContain(address);
-    expect(
-      nacl.sign.detached.verify(result.signedMessage, result.signature, publicKeyBytes),
-    ).toBe(true);
+    expect(nacl.sign.detached.verify(result.signedMessage, result.signature, publicKeyBytes)).toBe(
+      true
+    );
   });
 
   it('refuses to sign when the dApp claims a different domain (spoof rejection)', async () => {
     const { account } = await makeAccount();
     await expect(
-      signSiwsMessage(account as never, { domain: 'evil.example' }, ORIGIN),
+      signSiwsMessage(account as never, { domain: 'evil.example' }, ORIGIN)
     ).rejects.toThrow(SiwsDomainMismatchError);
   });
 
@@ -280,7 +280,7 @@ describe('signSiwsMessage', () => {
     const { account } = await makeAccount();
     const other = Keypair.generate().publicKey.toBase58();
     await expect(signSiwsMessage(account as never, { address: other }, ORIGIN)).rejects.toThrow(
-      /not the active account/,
+      /not the active account/
     );
   });
 
@@ -290,7 +290,7 @@ describe('signSiwsMessage', () => {
     const result = await signSiwsMessage(
       account as never,
       { statement: 'Hello', useOffchainMessage: { messageVersion: 1 } },
-      ORIGIN,
+      ORIGIN
     );
 
     expect(result.signedMessageFormat).toEqual({ kind: 'offchainMessage', messageVersion: 1 });
@@ -300,7 +300,7 @@ describe('signSiwsMessage', () => {
     expect(decoded.content).toBe(result.message);
     expect(decoded.requiredSignatories.map((s) => s.address)).toEqual([address]);
     await expect(
-      verifyOffchainMessage(result.signedMessage, result.signature, address as Address),
+      verifyOffchainMessage(result.signedMessage, result.signature, address as Address)
     ).resolves.toBe(true);
   });
 
@@ -310,8 +310,8 @@ describe('signSiwsMessage', () => {
       signSiwsMessage(
         account as never,
         { useOffchainMessage: { messageVersion: 2 as never } },
-        ORIGIN,
-      ),
+        ORIGIN
+      )
     ).rejects.toThrow(/Unsupported off-chain message version/);
   });
 });
@@ -328,7 +328,7 @@ describe('approveSolanaSignIn', () => {
     const signedMessage = bs58.decode(payload.signedMessage);
     expect(new TextDecoder().decode(signedMessage)).toContain('Nonce: abcd1234');
     expect(
-      nacl.sign.detached.verify(signedMessage, bs58.decode(payload.signature), publicKeyBytes),
+      nacl.sign.detached.verify(signedMessage, bs58.decode(payload.signature), publicKeyBytes)
     ).toBe(true);
   });
 
@@ -338,7 +338,7 @@ describe('approveSolanaSignIn', () => {
     const payload = await approveSolanaSignIn(
       account as never,
       { useOffchainMessage: { messageVersion: 1 } },
-      ORIGIN,
+      ORIGIN
     );
 
     expect(payload.signedMessageFormat).toEqual({ kind: 'offchainMessage', messageVersion: 1 });

@@ -25,7 +25,8 @@ export const PRESET_AVATAR_COUNT = 25;
  */
 export const PRESET_AVATAR_URLS: string[] = Array.from(
   { length: PRESET_AVATAR_COUNT },
-  (_, i) => `${AVATAR_BASE_URL}/${i.toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false })}.png`,
+  (_, i) =>
+    `${AVATAR_BASE_URL}/${i.toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false })}.png`
 );
 
 // ============================================================================

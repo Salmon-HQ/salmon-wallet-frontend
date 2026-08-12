@@ -82,18 +82,19 @@ jest.mock('../../src/components', () => {
       onSubmitEditing?: () => void;
       error?: string;
       editable?: boolean;
-    }) => React.createElement(
-      React.Fragment,
-      null,
-      React.createElement(TextInput, {
-        value,
-        onChangeText,
-        placeholder,
-        editable,
-        onSubmitEditing,
-      }),
-      error ? React.createElement(Text, null, error) : null
-    ),
+    }) =>
+      React.createElement(
+        React.Fragment,
+        null,
+        React.createElement(TextInput, {
+          value,
+          onChangeText,
+          placeholder,
+          editable,
+          onSubmitEditing,
+        }),
+        error ? React.createElement(Text, null, error) : null
+      ),
     PasswordStrengthBar: ({ strength }: { strength: string }) =>
       React.createElement(Text, null, `strength:${strength}`),
     PrimaryButton: ({
@@ -104,20 +105,18 @@ jest.mock('../../src/components', () => {
       children?: React.ReactNode;
       onPress?: () => void;
       disabled?: boolean;
-    }) => React.createElement(
-      TouchableOpacity,
-      { onPress, disabled, accessibilityRole: 'button' },
-      React.createElement(Text, null, children)
-    ),
-    ScreenHeader: ({
-      onBack,
-    }: {
-      onBack?: () => void;
-    }) => React.createElement(
-      TouchableOpacity,
-      { onPress: onBack, accessibilityRole: 'button' },
-      React.createElement(Text, null, 'Back')
-    ),
+    }) =>
+      React.createElement(
+        TouchableOpacity,
+        { onPress, disabled, accessibilityRole: 'button' },
+        React.createElement(Text, null, children)
+      ),
+    ScreenHeader: ({ onBack }: { onBack?: () => void }) =>
+      React.createElement(
+        TouchableOpacity,
+        { onPress: onBack, accessibilityRole: 'button' },
+        React.createElement(Text, null, 'Back')
+      ),
   };
 });
 
@@ -168,8 +167,14 @@ describe('PasswordScreen', () => {
       expect(mockGetStashItem).toHaveBeenCalled();
     });
 
-    fireEvent.changeText(screen.getByPlaceholderText('wallet.create.passwordNew'), 'pw-fixture-valid');
-    fireEvent.changeText(screen.getByPlaceholderText('wallet.create.passwordRepeat'), 'pw-fixture-valid');
+    fireEvent.changeText(
+      screen.getByPlaceholderText('wallet.create.passwordNew'),
+      'pw-fixture-valid'
+    );
+    fireEvent.changeText(
+      screen.getByPlaceholderText('wallet.create.passwordRepeat'),
+      'pw-fixture-valid'
+    );
 
     fireEvent.press(screen.getByText('wallet.recover_wallet'));
 
@@ -210,7 +215,10 @@ describe('PasswordScreen', () => {
       expect(mockGetStashItem).toHaveBeenCalled();
     });
 
-    fireEvent.changeText(screen.getByPlaceholderText('wallet.create.enter_your_password'), 'pw-fixture-invalid');
+    fireEvent.changeText(
+      screen.getByPlaceholderText('wallet.create.enter_your_password'),
+      'pw-fixture-invalid'
+    );
     fireEvent.press(screen.getByText('wallet.create_wallet'));
 
     await waitFor(() => {

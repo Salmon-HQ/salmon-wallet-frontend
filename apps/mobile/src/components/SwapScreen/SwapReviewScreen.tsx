@@ -1,4 +1,21 @@
-import { borderRadius, colors, componentSizes, fontSize, fontFamilyNative, formatAmountWithSymbol, formatSolFee, formatPercent, letterSpacing, lineHeight, ms, opacity, s, spacing, useCurrencyContext, vs } from '@salmon/shared';
+import {
+  borderRadius,
+  colors,
+  componentSizes,
+  fontSize,
+  fontFamilyNative,
+  formatAmountWithSymbol,
+  formatSolFee,
+  formatPercent,
+  letterSpacing,
+  lineHeight,
+  ms,
+  opacity,
+  s,
+  spacing,
+  useCurrencyContext,
+  vs,
+} from '@salmon/shared';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -40,12 +57,14 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
   const inSymbol = input?.symbol ?? inToken.symbol;
   const outSymbol = output?.symbol ?? outToken.symbol;
 
-  const displayInAmount = input?.amount != null
-    ? Number(input.amount) / (10 ** inDecimals)
-    : parseFloat(inAmount || '0') || 0;
-  const displayOutAmount = output?.amount != null
-    ? Number(output.amount) / (10 ** outDecimals)
-    : parseFloat(outAmount || '0') || 0;
+  const displayInAmount =
+    input?.amount != null
+      ? Number(input.amount) / 10 ** inDecimals
+      : parseFloat(inAmount || '0') || 0;
+  const displayOutAmount =
+    output?.amount != null
+      ? Number(output.amount) / 10 ** outDecimals
+      : parseFloat(outAmount || '0') || 0;
 
   return (
     <View style={[styles.container, { paddingBottom: floatingBottomOffset }, style]}>
@@ -86,22 +105,13 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
             />
           )}
           {details?.router && (
-            <SwapDetailRow
-              label={t('swap.router', 'Router')}
-              value={details.router}
-            />
+            <SwapDetailRow label={t('swap.router', 'Router')} value={details.router} />
           )}
           {routeNames && routeNames.length > 0 && (
-            <SwapDetailRow
-              label={t('swap.review.route', 'Route')}
-              value={routeNames.join(' → ')}
-            />
+            <SwapDetailRow label={t('swap.review.route', 'Route')} value={routeNames.join(' → ')} />
           )}
           {details?.gasless && (
-            <SwapDetailRow
-              label={t('swap.gasless', 'Gasless')}
-              value={t('swap.yes', 'Yes')}
-            />
+            <SwapDetailRow label={t('swap.gasless', 'Gasless')} value={t('swap.yes', 'Yes')} />
           )}
           {details?.prioritizationFeeLamports != null && (
             <SwapDetailRow
@@ -124,14 +134,14 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
           {details?.otherAmountThreshold != null && (
             <SwapDetailRow
               label={t('swap.minimum_received', 'Minimum Received')}
-              value={formatAmountWithSymbol(Number(details.otherAmountThreshold) / (10 ** outDecimals), outSymbol)}
+              value={formatAmountWithSymbol(
+                Number(details.otherAmountThreshold) / 10 ** outDecimals,
+                outSymbol
+              )}
             />
           )}
           {details?.swapMode && (
-            <SwapDetailRow
-              label={t('swap.swap_mode', 'Swap Mode')}
-              value={details.swapMode}
-            />
+            <SwapDetailRow label={t('swap.swap_mode', 'Swap Mode')} value={details.swapMode} />
           )}
           {details?.priceImpact != null && (
             <SwapDetailRow
@@ -149,7 +159,10 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
         >
           <Text style={styles.warningTitle}>{t('swap.review.pleaseNote', 'Please Note')}</Text>
           <Text style={styles.warningText}>
-            {t('swap.review.pleaseNoteText', 'Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed.')}
+            {t(
+              'swap.review.pleaseNoteText',
+              'Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed.'
+            )}
           </Text>
         </BlurContainer>
       </ScrollView>

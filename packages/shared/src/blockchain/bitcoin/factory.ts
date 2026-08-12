@@ -1,19 +1,12 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import {
-  BitcoinAccount,
-  BitcoinKeyPair,
-} from './BitcoinAccount';
+import { BitcoinAccount, BitcoinKeyPair } from './BitcoinAccount';
 import type { BitcoinNetwork } from '../../types/blockchain';
 
 // Re-export for backward compatibility — canonical definition is in ./networks
 export { BITCOIN_NETWORKS } from './networks';
 import type { BitcoinAccountApiFunctions } from '../../types/transfer';
 import type { BitcoinNetworkId } from '../../types/blockchain';
-import {
-  deriveBitcoinKeypair,
-  COIN_TYPES,
-  BITCOIN_PATH,
-} from '../../crypto/mnemonic';
+import { deriveBitcoinKeypair, COIN_TYPES, BITCOIN_PATH } from '../../crypto/mnemonic';
 
 /**
  * SLIP-0044 coin type for Bitcoin
@@ -63,9 +56,7 @@ export interface DeriveBitcoinAccountsOptions {
  * @param networkId - Bitcoin network identifier
  * @returns bitcoinjs-lib Network configuration
  */
-export function mapNetworkIdToLibNetwork(
-  networkId: BitcoinNetworkId
-): bitcoin.Network {
+export function mapNetworkIdToLibNetwork(networkId: BitcoinNetworkId): bitcoin.Network {
   switch (networkId) {
     case 'bitcoin-testnet':
       return bitcoin.networks.testnet;
@@ -78,9 +69,7 @@ export function mapNetworkIdToLibNetwork(
 /**
  * @deprecated Use `mapNetworkIdToLibNetwork` instead.
  */
-export function mapEnvironmentToNetwork(
-  environment: 'mainnet' | 'testnet'
-): bitcoin.Network {
+export function mapEnvironmentToNetwork(environment: 'mainnet' | 'testnet'): bitcoin.Network {
   switch (environment) {
     case 'testnet':
       return bitcoin.networks.testnet;
@@ -296,4 +285,3 @@ export function createBitcoinAccountFromWIF(
 
   return createBitcoinAccountFromKeyPair(network, keyPair, index, apiFunctions);
 }
-

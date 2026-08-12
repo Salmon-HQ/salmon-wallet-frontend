@@ -20,11 +20,13 @@ vi.mock('@salmon/shared', () => ({
   approveSolanaSignMessage: (...args: unknown[]) => mockApproveSolanaSignMessage(...args),
   approveSolanaSignOffchainMessage: (...args: unknown[]) =>
     mockApproveSolanaSignOffchainMessage(...args),
-  useAccountsContext: () => [{
-    activeAccount: null,
-    activeBlockchainAccount: null,
-    pathIndex: 0,
-  }],
+  useAccountsContext: () => [
+    {
+      activeAccount: null,
+      activeBlockchainAccount: null,
+      pathIndex: 0,
+    },
+  ],
 }));
 
 const fakeAccount = { kind: 'solana' };
@@ -36,7 +38,9 @@ vi.mock('@salmon/shared/utils/account', () => ({
 vi.mock('../../utils/walletBridge', () => ({
   onRequest: (callback: (incoming: unknown) => void) => {
     onRequestCallback = callback;
-    return () => { onRequestCallback = null; };
+    return () => {
+      onRequestCallback = null;
+    };
   },
   sendResponse: (...args: unknown[]) => mockSendResponse(...args),
 }));
@@ -52,11 +56,7 @@ vi.mock('@salmon/ui', () => ({
         props.requiredSigners === undefined ? 'undefined' : JSON.stringify(props.requiredSigners)
       }
     >
-      <button
-        type="button"
-        data-testid="approve-button"
-        onClick={props.onApprove as () => void}
-      />
+      <button type="button" data-testid="approve-button" onClick={props.onApprove as () => void} />
     </div>
   ),
 }));
@@ -72,7 +72,7 @@ function renderPage() {
       initialEntries={['/dapp/sign-message?requestId=r1&origin=https%3A%2F%2Fdapp.example']}
     >
       <SignMessageApprovalPage />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 
@@ -136,11 +136,10 @@ describe('SignMessageApprovalPage', () => {
         requestId: 'r1',
         approved: true,
         payload,
-      }),
+      })
     );
 
-    const [accountArg, dataArg, signersArg] =
-      mockApproveSolanaSignOffchainMessage.mock.calls[0];
+    const [accountArg, dataArg, signersArg] = mockApproveSolanaSignOffchainMessage.mock.calls[0];
     expect(accountArg).toBe(fakeAccount);
     expect(dataArg).toEqual(messageBytes);
     expect(signersArg).toHaveLength(1);
@@ -166,7 +165,7 @@ describe('SignMessageApprovalPage', () => {
 
     getByTestId('approve-button').click();
     await vi.waitFor(() =>
-      expect(mockApproveSolanaSignMessage).toHaveBeenCalledWith(fakeAccount, messageBytes),
+      expect(mockApproveSolanaSignMessage).toHaveBeenCalledWith(fakeAccount, messageBytes)
     );
     expect(mockApproveSolanaSignOffchainMessage).not.toHaveBeenCalled();
   });

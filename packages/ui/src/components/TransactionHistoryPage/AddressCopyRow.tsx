@@ -19,7 +19,18 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
-import { colors, borderRadius, componentSizes, fontFamily, getShortAddress, copyToClipboard, spacing, fontSize, fontWeight, durationMs } from '@salmon/shared';
+import {
+  colors,
+  borderRadius,
+  componentSizes,
+  fontFamily,
+  getShortAddress,
+  copyToClipboard,
+  spacing,
+  fontSize,
+  fontWeight,
+  durationMs,
+} from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { AddressCopyRowProps } from './types';
 
@@ -97,9 +108,7 @@ export function AddressCopyRow({
   const [copied, setCopied] = useState(false);
 
   const displayAddress =
-    truncate === false
-      ? address
-      : getShortAddress(address, TRUNCATE_CHARS[truncate]) ?? address;
+    truncate === false ? address : (getShortAddress(address, TRUNCATE_CHARS[truncate]) ?? address);
 
   const handleCopy = useCallback(async () => {
     try {
@@ -112,7 +121,9 @@ export function AddressCopyRow({
   }, [address]);
 
   return (
-    <BlurContainer style={{ borderRadius: borderRadius.md, padding: `${spacing.sm}px ${spacing.md}px` }}>
+    <BlurContainer
+      style={{ borderRadius: borderRadius.md, padding: `${spacing.sm}px ${spacing.md}px` }}
+    >
       <Container className={className}>
         <Label>{label}</Label>
         <RightSection>
@@ -120,7 +131,9 @@ export function AddressCopyRow({
           <CopyButton
             onClick={handleCopy}
             size="small"
-            aria-label={t('transactions.detail.copyAddressLabel', 'Copy {{label}} address', { label })}
+            aria-label={t('transactions.detail.copyAddressLabel', 'Copy {{label}} address', {
+              label,
+            })}
             data-testid={`tx-detail-copy-address-${label}`}
             sx={copied ? { backgroundColor: `${colors.status.success}20` } : undefined}
           >
@@ -135,4 +148,3 @@ export function AddressCopyRow({
     </BlurContainer>
   );
 }
-

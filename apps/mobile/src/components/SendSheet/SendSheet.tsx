@@ -1,10 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Platform,
-  BackHandler,
-} from 'react-native';
+import { View, StyleSheet, Platform, BackHandler } from 'react-native';
 import {
   useSendTransaction,
   getTransactionUrl,
@@ -52,7 +47,9 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     skipTokenSelect && tokens.length > 0 ? tokens[0] : null
   );
   const [recipientAddress, setRecipientAddress] = useState('');
-  const [resolvedRecipientAddress, setResolvedRecipientAddress] = useState<string | undefined>(undefined);
+  const [resolvedRecipientAddress, setResolvedRecipientAddress] = useState<string | undefined>(
+    undefined
+  );
   const [amount, setAmount] = useState('');
   const [successTxId, setSuccessTxId] = useState<string | null>(null);
   const previousVisibleRef = useRef(visible);
@@ -120,21 +117,18 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   useEffect(() => {
     if (Platform.OS !== 'android' || !visible) return;
 
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      () => {
-        if (step === 'success') {
-          handleSuccessContinue();
-        } else if (step === 'confirmation') {
-          setStep('address-amount');
-        } else if (step === 'address-amount' && !skipTokenSelect) {
-          setStep('token-select');
-        } else {
-          handleClose();
-        }
-        return true;
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (step === 'success') {
+        handleSuccessContinue();
+      } else if (step === 'confirmation') {
+        setStep('address-amount');
+      } else if (step === 'address-amount' && !skipTokenSelect) {
+        setStep('token-select');
+      } else {
+        handleClose();
       }
-    );
+      return true;
+    });
 
     return () => backHandler.remove();
   }, [visible, step, skipTokenSelect, handleClose, handleSuccessContinue]);

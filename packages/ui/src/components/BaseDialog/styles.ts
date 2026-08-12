@@ -21,7 +21,15 @@ import Typography from '@mui/material/Typography';
 import type { TypographyProps } from '@mui/material/Typography';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
-import { colors, spacing, borderRadius, fontSize, fontWeight, lineHeight, componentSizes } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  fontSize,
+  fontWeight,
+  lineHeight,
+  componentSizes,
+} from '@salmon/shared';
 
 // ============================================================================
 // Dialog Root
@@ -49,7 +57,9 @@ export const StyledDialogTitle: React.ComponentType<DialogTitleProps> = styled(D
   borderBottom: `1px solid ${colors.border.default}`,
 });
 
-export const TitleContainer: React.ComponentType<React.HTMLAttributes<HTMLDivElement>> = styled('div')({
+export const TitleContainer: React.ComponentType<React.HTMLAttributes<HTMLDivElement>> = styled(
+  'div'
+)({
   display: 'flex',
   alignItems: 'center',
   gap: spacing.sm,
@@ -150,8 +160,8 @@ export const StyledCancelButton: React.ComponentType<ButtonProps> = styled(Butto
   },
 });
 
-export const StyledActionButton: React.ComponentType<ButtonProps & { $isDanger?: boolean }> = styled(Button)<{ $isDanger?: boolean }>(
-  ({ $isDanger }) => ({
+export const StyledActionButton: React.ComponentType<ButtonProps & { $isDanger?: boolean }> =
+  styled(Button)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
     flex: 1,
     backgroundColor: $isDanger ? colors.status.error : colors.accent.primary,
     color: colors.text.primary,
@@ -163,10 +173,7 @@ export const StyledActionButton: React.ComponentType<ButtonProps & { $isDanger?:
       backgroundColor: $isDanger ? colors.button.destructiveHover : colors.button.dangerHover,
     },
     '&:disabled': {
-      backgroundColor: $isDanger
-        ? 'rgba(239, 68, 68, 0.3)'
-        : 'rgba(255, 92, 69, 0.3)',
+      backgroundColor: $isDanger ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 92, 69, 0.3)',
       color: 'rgba(255, 255, 255, 0.5)',
     },
-  })
-);
+  }));

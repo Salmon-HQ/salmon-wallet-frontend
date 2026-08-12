@@ -5,7 +5,22 @@
  * No positioning or animation — GateContainer handles that.
  */
 
-import { colors, fontFamilyNative, fontScaleCap, fontSize, fontWeight, letterSpacing, componentSizes, ms, s, spacing, vs, getShortAddress, getAvatarColor, getInitials } from '@salmon/shared';
+import {
+  colors,
+  fontFamilyNative,
+  fontScaleCap,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  componentSizes,
+  ms,
+  s,
+  spacing,
+  vs,
+  getShortAddress,
+  getAvatarColor,
+  getInitials,
+} from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -61,7 +76,7 @@ export function HeaderContent({
 
   const avatarColor = useMemo(
     () => (accountId ? getAvatarColor(accountId) : colors.text.muted),
-    [accountId],
+    [accountId]
   );
   const initials = useMemo(() => getInitials(accountName), [accountName]);
 
@@ -94,7 +109,12 @@ export function HeaderContent({
         </TouchableOpacity>
 
         <View style={styles.accountInfo}>
-          <Text style={styles.accountText} numberOfLines={1} ellipsizeMode="tail" maxFontSizeMultiplier={fontScaleCap.chrome}>
+          <Text
+            style={styles.accountText}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            maxFontSizeMultiplier={fontScaleCap.chrome}
+          >
             {displayText}
           </Text>
           <TouchableOpacity

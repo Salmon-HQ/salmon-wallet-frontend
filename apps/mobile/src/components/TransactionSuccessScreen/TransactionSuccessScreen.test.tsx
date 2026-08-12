@@ -4,9 +4,13 @@ import { render, screen } from '@testing-library/react-native';
 
 const mockNotificationAsync = jest.fn();
 
-const mockPrimaryButton = ({ children, testID }: { children?: React.ReactNode; testID?: string }) => (
-  <Text testID={testID}>{children}</Text>
-);
+const mockPrimaryButton = ({
+  children,
+  testID,
+}: {
+  children?: React.ReactNode;
+  testID?: string;
+}) => <Text testID={testID}>{children}</Text>;
 
 const mockLoadingScreen = ({ title, bottomOffset }: { title?: string; bottomOffset?: number }) => (
   <Text testID="loading-screen" accessibilityLabel={String(bottomOffset)}>
@@ -70,7 +74,8 @@ jest.mock('../../../hooks/useTabChrome', () => ({
 }));
 
 jest.mock('../Button', () => ({
-  PrimaryButton: (props: { children?: React.ReactNode; testID?: string }) => mockPrimaryButton(props),
+  PrimaryButton: (props: { children?: React.ReactNode; testID?: string }) =>
+    mockPrimaryButton(props),
 }));
 
 jest.mock('../LoadingScreen', () => ({
@@ -93,9 +98,7 @@ describe('TransactionSuccessScreen', () => {
 
   describe('while settling', () => {
     it('shows the loader with the pending title instead of the success content', () => {
-      render(
-        <TransactionSuccessScreen {...baseProps} settling pendingTitle="Processing swap" />,
-      );
+      render(<TransactionSuccessScreen {...baseProps} settling pendingTitle="Processing swap" />);
 
       expect(screen.getByTestId('loading-screen')).toHaveTextContent('Processing swap');
       expect(screen.queryByText('Swap Complete')).toBeNull();
@@ -122,7 +125,7 @@ describe('TransactionSuccessScreen', () => {
 
     it('holds the success haptic until the transaction settles', () => {
       const { rerender } = render(
-        <TransactionSuccessScreen {...baseProps} settling pendingTitle="Processing swap" />,
+        <TransactionSuccessScreen {...baseProps} settling pendingTitle="Processing swap" />
       );
 
       expect(mockNotificationAsync).not.toHaveBeenCalled();
@@ -158,7 +161,7 @@ describe('TransactionSuccessScreen', () => {
           title="Bridge Initiated"
           bridgeDepositAddress="bc1qdeposit"
           bridgeAmountIn="33 USDC"
-        />,
+        />
       );
 
       expect(screen.getByText('bc1qdeposit')).toBeTruthy();

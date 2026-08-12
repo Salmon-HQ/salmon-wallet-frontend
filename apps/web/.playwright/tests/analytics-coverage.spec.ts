@@ -75,7 +75,10 @@ const openSettings = (page: Page) => page.getByTestId('wallet-header-settings-bu
  * top-left corner is always backdrop, never the paper.
  */
 async function closeSettings(page: Page): Promise<void> {
-  await page.locator('.MuiBackdrop-root').last().click({ position: { x: 8, y: 8 } });
+  await page
+    .locator('.MuiBackdrop-root')
+    .last()
+    .click({ position: { x: 8, y: 8 } });
   // The drawer unmounts its root close button when it is actually gone — a more
   // honest signal than home-screen visibility, since home sits behind the drawer
   // and reads as "visible" the whole time it is open.
@@ -91,8 +94,7 @@ async function closeSettings(page: Page): Promise<void> {
 }
 
 /** Leave the NFT detail page. The page underneath keeps its own header mounted. */
-const leaveNftDetail = (page: Page) =>
-  page.getByTestId('screen-header-back-button').last().click();
+const leaveNftDetail = (page: Page) => page.getByTestId('screen-header-back-button').last().click();
 
 test('every non-on-chain event in the catalog actually fires', async ({ page, browserName }) => {
   // Onboarding, two account derivations (each scans every supported network),
@@ -151,7 +153,9 @@ test('every non-on-chain event in the catalog actually fires', async ({ page, br
   await page.getByTestId('settings-item-address-book').click();
   await page.getByTestId('address-book-add-button').click();
   await page.getByTestId('address-book-label-input').fill('E2E Coverage Contact');
-  await page.getByTestId('address-book-address-input').fill(process.env.SALMON_TEST_WALLET_B_ADDR ?? '');
+  await page
+    .getByTestId('address-book-address-input')
+    .fill(process.env.SALMON_TEST_WALLET_B_ADDR ?? '');
   const saveContact = page.getByTestId('address-book-save-button');
   await expect(saveContact).toBeEnabled({ timeout: 20_000 }); // address validation is async
   await saveContact.click();
@@ -226,7 +230,7 @@ test('every non-on-chain event in the catalog actually fires', async ({ page, br
     const body = request.postData() ?? '';
     expect(JSON.parse(body).context.platform).toBe('web');
     expect(body, 'payload must not contain an address or mint').not.toMatch(
-      /\b([1-9A-HJ-NP-Za-km-z]{32,44}|0x[0-9a-fA-F]{40})\b/,
+      /\b([1-9A-HJ-NP-Za-km-z]{32,44}|0x[0-9a-fA-F]{40})\b/
     );
   }
 

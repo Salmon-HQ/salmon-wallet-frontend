@@ -1,1 +1,1 @@
-import '@testing-library/react-native/pure'
+import '@testing-library/react-native/pure';

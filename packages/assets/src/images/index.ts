@@ -78,7 +78,7 @@ export {
   RedAppIcon,
   ToggleOff,
   ToggleOn,
-  WhitelistBackground
+  WhitelistBackground,
 };
 
 export const Images = {

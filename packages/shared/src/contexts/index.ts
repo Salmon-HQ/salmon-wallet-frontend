@@ -5,23 +5,12 @@
  */
 
 // Accounts context
-export {
-  AccountsContext,
-  AccountsProvider,
-  useAccountsContext,
-} from './AccountsContext';
+export { AccountsContext, AccountsProvider, useAccountsContext } from './AccountsContext';
 
-export type {
-  AccountsContextValue,
-  AccountsProviderProps,
-} from './AccountsContext';
+export type { AccountsContextValue, AccountsProviderProps } from './AccountsContext';
 
 // Currency context
-export {
-  CurrencyContext,
-  CurrencyProvider,
-  useCurrencyContext,
-} from './CurrencyContext';
+export { CurrencyContext, CurrencyProvider, useCurrencyContext } from './CurrencyContext';
 
 export type {
   CurrencyState,
@@ -31,10 +20,7 @@ export type {
 } from './CurrencyContext';
 
 // Bridge settlement context (background cross-chain settlement)
-export {
-  BridgeSettlementProvider,
-  useBridgeSettlement,
-} from './BridgeSettlementContext';
+export { BridgeSettlementProvider, useBridgeSettlement } from './BridgeSettlementContext';
 
 export type {
   PendingBridgeExchange,

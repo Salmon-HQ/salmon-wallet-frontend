@@ -203,7 +203,8 @@ export function TokenSelector({
     [onChangeValue]
   );
 
-  const tokenName = selectedToken?.name || selectedToken?.symbol || t('wallet.select_token', 'Select');
+  const tokenName =
+    selectedToken?.name || selectedToken?.symbol || t('wallet.select_token', 'Select');
   const tokenSymbol = selectedToken?.symbol;
   const tokenLogo = selectedToken?.logo;
   const tokenAddress = selectedToken?.mint || selectedToken?.address;
@@ -264,4 +265,3 @@ export function TokenSelector({
     </Container>
   );
 }
-

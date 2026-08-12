@@ -2,7 +2,20 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet } from 'react-native';
 import { ContentLoader, Rect } from '@salmon/shared';
-import { colors, fontFamilyNative, fontSize, ms, vs, s, formatLargeNumber, formatPercentageCompact, formatDateString, useCurrencyContext, borderRadius, spacing, } from '@salmon/shared';
+import {
+  colors,
+  fontFamilyNative,
+  fontSize,
+  ms,
+  vs,
+  s,
+  formatLargeNumber,
+  formatPercentageCompact,
+  formatDateString,
+  useCurrencyContext,
+  borderRadius,
+  spacing,
+} from '@salmon/shared';
 import { BlurContainer } from '../../BlurContainer';
 import type { TokenMarketDataProps } from './types';
 
@@ -16,9 +29,7 @@ const MarketDataRow: React.FC<{
 }> = ({ label, value, valueColor }) => (
   <View style={styles.row}>
     <Text style={styles.rowLabel}>{label}</Text>
-    <Text style={[styles.rowValue, valueColor ? { color: valueColor } : null]}>
-      {value}
-    </Text>
+    <Text style={[styles.rowValue, valueColor ? { color: valueColor } : null]}>{value}</Text>
   </View>
 );
 
@@ -139,7 +150,10 @@ export const TokenMarketData: React.FC<TokenMarketDataProps> = ({
 
           {/* Market Cap Rank */}
           {data.marketCapRank !== undefined && data.marketCapRank !== null && (
-            <MarketDataRow label={t('token.marketData.rank', 'Rank')} value={`#${data.marketCapRank}`} />
+            <MarketDataRow
+              label={t('token.marketData.rank', 'Rank')}
+              value={`#${data.marketCapRank}`}
+            />
           )}
 
           {/* 24h Volume */}
@@ -152,12 +166,18 @@ export const TokenMarketData: React.FC<TokenMarketDataProps> = ({
 
           {/* 24h High */}
           {data.high24h !== undefined && (
-            <MarketDataRow label={t('token.marketData.high24h', '24h High')} value={formatLarge(data.high24h)} />
+            <MarketDataRow
+              label={t('token.marketData.high24h', '24h High')}
+              value={formatLarge(data.high24h)}
+            />
           )}
 
           {/* 24h Low */}
           {data.low24h !== undefined && (
-            <MarketDataRow label={t('token.marketData.low24h', '24h Low')} value={formatLarge(data.low24h)} />
+            <MarketDataRow
+              label={t('token.marketData.low24h', '24h Low')}
+              value={formatLarge(data.low24h)}
+            />
           )}
 
           {/* Circulating Supply */}
@@ -186,7 +206,10 @@ export const TokenMarketData: React.FC<TokenMarketDataProps> = ({
 
           {/* All-Time High */}
           {data.ath !== undefined && (
-            <MarketDataRow label={t('token.marketData.allTimeHigh', 'All-Time High')} value={formatLarge(data.ath)} />
+            <MarketDataRow
+              label={t('token.marketData.allTimeHigh', 'All-Time High')}
+              value={formatLarge(data.ath)}
+            />
           )}
 
           {/* ATH Change */}
@@ -200,12 +223,18 @@ export const TokenMarketData: React.FC<TokenMarketDataProps> = ({
 
           {/* ATH Date */}
           {data.athDate !== undefined && (
-            <MarketDataRow label={t('token.marketData.athDate', 'ATH Date')} value={formatDateString(data.athDate)} />
+            <MarketDataRow
+              label={t('token.marketData.athDate', 'ATH Date')}
+              value={formatDateString(data.athDate)}
+            />
           )}
 
           {/* All-Time Low */}
           {data.atl !== undefined && (
-            <MarketDataRow label={t('token.marketData.allTimeLow', 'All-Time Low')} value={formatLarge(data.atl)} />
+            <MarketDataRow
+              label={t('token.marketData.allTimeLow', 'All-Time Low')}
+              value={formatLarge(data.atl)}
+            />
           )}
 
           {/* ATL Change */}
@@ -219,7 +248,10 @@ export const TokenMarketData: React.FC<TokenMarketDataProps> = ({
 
           {/* ATL Date */}
           {data.atlDate !== undefined && (
-            <MarketDataRow label={t('token.marketData.atlDate', 'ATL Date')} value={formatDateString(data.atlDate)} />
+            <MarketDataRow
+              label={t('token.marketData.atlDate', 'ATL Date')}
+              value={formatDateString(data.atlDate)}
+            />
           )}
         </View>
       </View>

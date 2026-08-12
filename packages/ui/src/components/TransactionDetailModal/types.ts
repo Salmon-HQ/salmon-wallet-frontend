@@ -7,8 +7,7 @@ export type { Transaction } from '@salmon/shared';
 /**
  * Props for the TransactionDetailModal component (Web/Extension)
  */
-export interface TransactionDetailModalProps
-  extends TransactionDetailModalPropsBase<CSSProperties> {
+export interface TransactionDetailModalProps extends TransactionDetailModalPropsBase<CSSProperties> {
   /** Additional CSS class for the dialog */
   className?: string;
 }

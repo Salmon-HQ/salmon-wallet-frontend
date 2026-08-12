@@ -70,22 +70,17 @@ describe('SalmonAddress — patterns that work', () => {
   });
 
   it('supports PublicKey.findProgramAddressSync([wallet.publicKey.toBuffer()], …)', () => {
-    const [derived] = PublicKey.findProgramAddressSync(
-      [shim.toBuffer()],
-      SystemProgram.programId,
-    );
+    const [derived] = PublicKey.findProgramAddressSync([shim.toBuffer()], SystemProgram.programId);
     const [expected] = PublicKey.findProgramAddressSync(
       [walletKeypair.publicKey.toBuffer()],
-      SystemProgram.programId,
+      SystemProgram.programId
     );
     expect(derived.toBase58()).toBe(expected.toBase58());
   });
 
   it('stringifies and serializes to base58', () => {
     expect(`${shim}`).toBe(walletBase58);
-    expect(JSON.stringify({ publicKey: shim })).toBe(
-      JSON.stringify({ publicKey: walletBase58 }),
-    );
+    expect(JSON.stringify({ publicKey: shim })).toBe(JSON.stringify({ publicKey: walletBase58 }));
   });
 
   it('supports wallet.publicKey.equals(other)', () => {
@@ -122,7 +117,7 @@ describe('SalmonAddress — known-irreducible failures (no bn.js in page scope)'
         fromPubkey: other.publicKey,
         toPubkey: Keypair.fromSeed(new Uint8Array(32).fill(4)).publicKey,
         lamports: 1,
-      }),
+      })
     );
 
     expect(() => transaction.serializeMessage()).toThrow(/negative/);
@@ -137,7 +132,7 @@ describe('SalmonAddress — known-irreducible failures (no bn.js in page scope)'
         fromPubkey: shim as unknown as PublicKey,
         toPubkey: Keypair.fromSeed(new Uint8Array(32).fill(3)).publicKey,
         lamports: 1,
-      }),
+      })
     );
 
     expect(transaction.serializeMessage().length).toBeGreaterThan(0);

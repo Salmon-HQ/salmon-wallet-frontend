@@ -9,7 +9,17 @@ import i18n from '../../i18n/config';
 import { I18nextProvider } from 'react-i18next';
 
 // Initialize storage and stash for extension platform
-import { APP_VERSION, initStorage, initStash, initAnalytics, AccountsProvider, CurrencyProvider, createQueryClient, QueryClientProvider, BridgeSettlementProvider } from '@salmon/shared';
+import {
+  APP_VERSION,
+  initStorage,
+  initStash,
+  initAnalytics,
+  AccountsProvider,
+  CurrencyProvider,
+  createQueryClient,
+  QueryClientProvider,
+  BridgeSettlementProvider,
+} from '@salmon/shared';
 
 initStorage({ platform: 'extension' });
 initStash('extension');
@@ -79,9 +89,7 @@ const waitForLayout = (): Promise<void> =>
 
     if (msg.type === 'CONNECT_REQUEST') {
       // acá podés disparar la UI de aprobación
-      window.dispatchEvent(
-        new CustomEvent('salmon_connect_request', { detail: msg.data })
-      );
+      window.dispatchEvent(new CustomEvent('salmon_connect_request', { detail: msg.data }));
     }
   });
 

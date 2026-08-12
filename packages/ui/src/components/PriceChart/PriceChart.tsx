@@ -8,17 +8,25 @@ import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 import type { PriceChartPeriod, PriceDataPoint } from '@salmon/shared';
-import { borderRadius, borderWidth, colors, componentSizes, fontFamily, fontWeight, formatFiatIntl, isPositivePerformance, PRICE_CHART_PERIODS, spacing, useCurrencyContext, fontSize, shadowsCSS, durationMs } from '@salmon/shared';
+import {
+  borderRadius,
+  borderWidth,
+  colors,
+  componentSizes,
+  fontFamily,
+  fontWeight,
+  formatFiatIntl,
+  isPositivePerformance,
+  PRICE_CHART_PERIODS,
+  spacing,
+  useCurrencyContext,
+  fontSize,
+  shadowsCSS,
+  durationMs,
+} from '@salmon/shared';
 import { useCallback, useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { styled } from '../../utils/styled';
 import type { PriceChartProps } from './types';
 
@@ -76,9 +84,7 @@ const PeriodButton = styled(Button)<{ $selected?: boolean }>(({ $selected }) => 
   fontFamily: fontFamily.sans,
   textTransform: 'none',
   '&:hover': {
-    backgroundColor: $selected
-      ? colors.text.primary
-      : colors.card.border,
+    backgroundColor: $selected ? colors.text.primary : colors.card.border,
   },
 }));
 
@@ -253,10 +259,7 @@ export function PriceChart({
           <ChartSkeleton height={height} />
         ) : data.length > 0 ? (
           <ResponsiveContainer width="100%" height={height}>
-            <AreaChart
-              data={data}
-              margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-            >
+            <AreaChart data={data} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={chartColor} stopOpacity={0.3} />
@@ -306,7 +309,9 @@ export function PriceChart({
                 key={period}
                 $selected={isSelected}
                 onClick={() => handlePeriodPress(period)}
-                aria-label={t('accessibility.select_period', 'Select {{period}} time period', { period })}
+                aria-label={t('accessibility.select_period', 'Select {{period}} time period', {
+                  period,
+                })}
                 aria-pressed={isSelected}
               >
                 {period}
@@ -318,4 +323,3 @@ export function PriceChart({
     </Container>
   );
 }
-

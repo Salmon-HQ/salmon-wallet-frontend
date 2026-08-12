@@ -47,14 +47,7 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // ============================================================================
@@ -107,13 +100,11 @@ export default function DerivedAccountsScreen() {
 
       // Only scan networks that produce unique keypairs
       const scanNetworks = await getScanNetworks();
-      const networkIds = Object.keys(activeAccount.networksAccounts)
-        .filter((id) => scanNetworks.includes(id));
-
-      const { accounts: results, failedNetworks } = await scanDerivedAccounts(
-        mnemonic,
-        networkIds,
+      const networkIds = Object.keys(activeAccount.networksAccounts).filter((id) =>
+        scanNetworks.includes(id)
       );
+
+      const { accounts: results, failedNetworks } = await scanDerivedAccounts(mnemonic, networkIds);
 
       setAccounts(results);
       setFailedNetworks(failedNetworks);
@@ -137,8 +128,8 @@ export default function DerivedAccountsScreen() {
   const handleToggleAccount = useCallback((key: string) => {
     setAccounts((prev) =>
       prev.map((acc) =>
-        `${acc.networkId}-${acc.index}` === key ? { ...acc, selected: !acc.selected } : acc,
-      ),
+        `${acc.networkId}-${acc.index}` === key ? { ...acc, selected: !acc.selected } : acc
+      )
     );
   }, []);
 
@@ -177,7 +168,7 @@ export default function DerivedAccountsScreen() {
             const mirrorAccount = await deriveBlockchainAccount(
               mnemonic,
               mirrorNetworkId,
-              acc.index,
+              acc.index
             );
             newDerivedAccounts.push(mirrorAccount);
           } catch {
@@ -271,7 +262,9 @@ export default function DerivedAccountsScreen() {
                 balanceFormatted={acc.balanceFormatted}
                 selected={acc.selected}
                 dimmed={acc.balance === 0}
-                blockchain={NETWORK_DISPLAY[acc.networkId]?.blockchain as 'solana' | 'bitcoin' | 'ethereum'}
+                blockchain={
+                  NETWORK_DISPLAY[acc.networkId]?.blockchain as 'solana' | 'bitcoin' | 'ethereum'
+                }
                 onToggle={() => handleToggleAccount(key)}
                 testID={`derived-account-${key}`}
               />
@@ -318,11 +311,7 @@ export default function DerivedAccountsScreen() {
               </PrimaryButton>
             )}
 
-            <SecondaryButton
-              onPress={handleSkip}
-              disabled={importing}
-              testID="derived-skip-button"
-            >
+            <SecondaryButton onPress={handleSkip} disabled={importing} testID="derived-skip-button">
               {accounts.length === 0 ? t('wallet.derived.continue') : t('wallet.derived.skip')}
             </SecondaryButton>
           </View>

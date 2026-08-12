@@ -201,7 +201,9 @@ describe('deriveBitcoinKeypair', () => {
     const { node: node0 } = await deriveBitcoinKeypair(VALID_MNEMONIC, 0);
     const { node: node1 } = await deriveBitcoinKeypair(VALID_MNEMONIC, 1);
 
-    expect(Buffer.from(node0.publicKey).toString('hex')).not.toBe(Buffer.from(node1.publicKey).toString('hex'));
+    expect(Buffer.from(node0.publicKey).toString('hex')).not.toBe(
+      Buffer.from(node1.publicKey).toString('hex')
+    );
   });
 });
 
@@ -318,11 +320,11 @@ describe('normalizeMnemonic', () => {
 
 describe('validateMnemonicWords', () => {
   it('returns isValid true when all entered words match', () => {
-    const result = validateMnemonicWords(VALID_MNEMONIC, [1, 6, 12], [
-      'abandon',
-      'abandon',
-      'about',
-    ]);
+    const result = validateMnemonicWords(
+      VALID_MNEMONIC,
+      [1, 6, 12],
+      ['abandon', 'abandon', 'about']
+    );
 
     expect(result.isValid).toBe(true);
     expect(result.results).toHaveLength(3);
@@ -330,11 +332,15 @@ describe('validateMnemonicWords', () => {
   });
 
   it('identifies exactly which position holds the wrong word', () => {
-    const result = validateMnemonicWords(VALID_MNEMONIC, [1, 6, 12], [
-      'abandon',
-      'banana', // wrong
-      'about',
-    ]);
+    const result = validateMnemonicWords(
+      VALID_MNEMONIC,
+      [1, 6, 12],
+      [
+        'abandon',
+        'banana', // wrong
+        'about',
+      ]
+    );
 
     expect(result.isValid).toBe(false);
     const wrong = result.results.filter((r) => !r.isCorrect);

@@ -34,7 +34,7 @@ import {
   createSplTransaction,
   estimateFee,
   requiresMemo,
-  SOL_ADDRESS
+  SOL_ADDRESS,
 } from './transfer';
 import { createSolanaAccount } from './factory';
 import { SOLANA_NETWORKS } from './factory';
@@ -44,7 +44,8 @@ import type { SolanaRpc } from './networks';
 // Test Constants
 // ============================================================================
 
-const TEST_MNEMONIC = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+const TEST_MNEMONIC =
+  'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const TOKEN_PROGRAM_ADDRESS = address('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 const SYSTEM_PROGRAM_ADDRESS = address('11111111111111111111111111111111');
@@ -53,7 +54,9 @@ const BLOCKHASH = 'GHtXQBsoZHVnNFa9YevAzFr17DJjgHXk3ycTKD5xD3Zi';
 
 const mockSolanaApiFunctions = {
   fetchBalance: vi.fn().mockResolvedValue([]),
-  fetchTransactions: vi.fn().mockResolvedValue({ transactions: [], oldestSignature: null, hasMore: false }),
+  fetchTransactions: vi
+    .fn()
+    .mockResolvedValue({ transactions: [], oldestSignature: null, hasMore: false }),
   fetchNfts: vi.fn().mockResolvedValue([]),
 };
 

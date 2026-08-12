@@ -153,24 +153,9 @@ const TransactionItemSkeleton: React.FC = () => (
         />
       </SkeletonInfoSection>
       <SkeletonRightSection>
-        <Skeleton
-          variant="rounded"
-          width={80}
-          height={14}
-          sx={{ bgcolor: colors.skeleton.base }}
-        />
-        <Skeleton
-          variant="rounded"
-          width={60}
-          height={12}
-          sx={{ bgcolor: colors.skeleton.base }}
-        />
-        <Skeleton
-          variant="rounded"
-          width={40}
-          height={10}
-          sx={{ bgcolor: colors.skeleton.base }}
-        />
+        <Skeleton variant="rounded" width={80} height={14} sx={{ bgcolor: colors.skeleton.base }} />
+        <Skeleton variant="rounded" width={60} height={12} sx={{ bgcolor: colors.skeleton.base }} />
+        <Skeleton variant="rounded" width={40} height={10} sx={{ bgcolor: colors.skeleton.base }} />
       </SkeletonRightSection>
     </SkeletonItem>
   </BlurContainer>
@@ -245,8 +230,7 @@ export function TransactionHistoryPage({
       if (!hasMore || loadingMore || !onLoadMore) return;
 
       const target = event.currentTarget;
-      const scrollBottom =
-        target.scrollHeight - target.scrollTop - target.clientHeight;
+      const scrollBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
 
       // Trigger load more when within 100px of the bottom
       if (scrollBottom < 100) {
@@ -288,19 +272,13 @@ export function TransactionHistoryPage({
       className={className}
     >
       {/* Error State */}
-      {error && !loading && (
-        <ErrorState onRetry={onRetry} />
-      )}
+      {error && !loading && <ErrorState onRetry={onRetry} />}
 
       {/* Loading State */}
-      {loading && !error && (
-        <TransactionListSkeleton count={6} />
-      )}
+      {loading && !error && <TransactionListSkeleton count={6} />}
 
       {/* Empty State */}
-      {!loading && !error && transactions.length === 0 && (
-        <EmptyState />
-      )}
+      {!loading && !error && transactions.length === 0 && <EmptyState />}
 
       {/* Transaction List */}
       {!loading && !error && transactions.length > 0 && (
@@ -318,10 +296,7 @@ export function TransactionHistoryPage({
           {/* Loading more indicator */}
           {loadingMore && (
             <LoadingMoreContainer>
-              <CircularProgress
-                size={24}
-                sx={{ color: colors.accent.primary }}
-              />
+              <CircularProgress size={24} sx={{ color: colors.accent.primary }} />
             </LoadingMoreContainer>
           )}
         </Box>
@@ -329,4 +304,3 @@ export function TransactionHistoryPage({
     </PageShell>
   );
 }
-

@@ -8,7 +8,7 @@
 
 **Input**: Three E2E suites exist (web Playwright, extension Playwright, mobile Maestro) but nothing runs them automatically, and the extension suite could only run headed. Per the approved plan: E2E must NOT run on every PR (slow, flakier per bug caught than unit layers); they run nightly, on demand, and via the `e2e` label — plus a documented pre-release circuit that includes what CI cannot run (Maestro on a simulator, backend-dependent flows). Decision D3: no backend in CI — backend-dependent specs already skip when it is unreachable; decision D4: Maestro stays a local pre-release gate.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Regressions in user flows surface within a day, not at release time (Priority: P1)
 
@@ -43,7 +43,7 @@ A maintainer adds the `e2e` label (created in the oss-hardening batch) to a PR t
 
 1. **Given** the runbook, **When** a maintainer follows it before tagging a release, **Then** every command is copy-pasteable and states its expected outcome and its skip conditions (e.g. Maestro needs a booted simulator; on-chain specs spend real SOL and are opt-in).
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 - **FR-001**: New workflow `.github/workflows/e2e.yml`; triggers: `schedule` (nightly), `workflow_dispatch`, and `pull_request` types `[labeled, synchronize, opened, reopened]` gated on the `e2e` label. Never on plain PRs.
 - **FR-002**: Same security posture as ci.yml: `permissions: {}` top-level, per-job minimal grants, SHA-pinned actions, `persist-credentials: false`, no `pull_request_target`, no secrets in fork context.
@@ -52,7 +52,7 @@ A maintainer adds the `e2e` label (created in the oss-hardening batch) to a PR t
 - **FR-005**: The only production-adjacent change allowed is the fixture headless switch (channel + env flag) and, if needed, config-level project filtering — no spec logic changes in this batch. Known `waitForTimeout` flakiness stays as-is (documented; a later cleanup).
 - **FR-006**: Timeout caps per job; artifacts (playwright-report) uploaded on failure for debugging.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - **SC-001**: Extension suite passes headless locally with `SALMON_E2E_HEADLESS=1` (full run, not a sample).
 - **SC-002**: Web suite passes locally (chromium project at minimum).

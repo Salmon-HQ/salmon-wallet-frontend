@@ -21,16 +21,24 @@ function flatten(obj, prefix = '', out = {}) {
   return out;
 }
 
-const enKeys = new Set(Object.keys(flatten(readJson('packages/shared/src/locales/en/translation.json'))));
-const esKeys = new Set(Object.keys(flatten(readJson('packages/shared/src/locales/es/translation.json'))));
+const enKeys = new Set(
+  Object.keys(flatten(readJson('packages/shared/src/locales/en/translation.json')))
+);
+const esKeys = new Set(
+  Object.keys(flatten(readJson('packages/shared/src/locales/es/translation.json')))
+);
 const enMissingFromEs = [...enKeys].filter((k) => !esKeys.has(k)).sort();
 const esMissingFromEn = [...esKeys].filter((k) => !enKeys.has(k)).sort();
 
 // Extension _locales parity (chrome extension format, flat)
 const extEn = readJson('apps/extension/public/_locales/en/messages.json');
 const extEs = readJson('apps/extension/public/_locales/es/messages.json');
-const extEnMissingFromEs = Object.keys(extEn).filter((k) => !(k in extEs)).sort();
-const extEsMissingFromEn = Object.keys(extEs).filter((k) => !(k in extEn)).sort();
+const extEnMissingFromEs = Object.keys(extEn)
+  .filter((k) => !(k in extEs))
+  .sort();
+const extEsMissingFromEn = Object.keys(extEs)
+  .filter((k) => !(k in extEn))
+  .sort();
 
 // ---- collect source files ----
 const SKIP_DIRS = new Set(['node_modules', 'dist', '.git', 'coverage', 'build']);
@@ -115,7 +123,9 @@ const orphans = [];
 for (const k of enKeys) {
   if (!esKeys.has(k) || isUsed(k)) continue;
   const base = baseKey(k);
-  const indirect = [`'${base}'`, `"${base}"`, '`' + base + '`', `'${k}'`, `"${k}"`].some((s) => blob.includes(s));
+  const indirect = [`'${base}'`, `"${base}"`, '`' + base + '`', `'${k}'`, `"${k}"`].some((s) =>
+    blob.includes(s)
+  );
   if (!indirect) orphans.push(k);
 }
 orphans.sort();
@@ -139,7 +149,10 @@ if (process.argv.includes('--prune')) {
       else break;
     }
   };
-  for (const rel of ['packages/shared/src/locales/en/translation.json', 'packages/shared/src/locales/es/translation.json']) {
+  for (const rel of [
+    'packages/shared/src/locales/en/translation.json',
+    'packages/shared/src/locales/es/translation.json',
+  ]) {
     const data = readJson(rel);
     for (const k of orphans) deleteKey(data, k);
     fs.writeFileSync(path.join(REPO, rel), JSON.stringify(data, null, 2) + '\n');

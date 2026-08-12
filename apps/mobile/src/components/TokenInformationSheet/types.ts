@@ -8,8 +8,10 @@ export type { CoinInfo } from '@salmon/shared';
 /**
  * Props for the TokenInformationSheet component (React Native)
  */
-export interface TokenInformationSheetProps
-  extends Omit<TokenInformationSheetPropsBase<ViewStyle>, 'marketData'> {
+export interface TokenInformationSheetProps extends Omit<
+  TokenInformationSheetPropsBase<ViewStyle>,
+  'marketData'
+> {
   /** Market data (market cap, volume, etc.) */
   marketData: MarketData | undefined;
 }

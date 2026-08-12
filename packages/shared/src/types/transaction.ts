@@ -12,15 +12,7 @@
  * Covers all blockchain transaction categories
  */
 export type TransactionType =
-  | 'send'
-  | 'receive'
-  | 'swap'
-  | 'mint'
-  | 'burn'
-  | 'stake'
-  | 'loan'
-  | 'interaction'
-  | 'unknown';
+  'send' | 'receive' | 'swap' | 'mint' | 'burn' | 'stake' | 'loan' | 'interaction' | 'unknown';
 
 /**
  * Transaction display status for history views
@@ -270,8 +262,7 @@ export const TRANSACTION_STATUS = {
  * Type representing all possible transaction status values.
  * Derived from the TRANSACTION_STATUS constant for type safety.
  */
-export type TransactionStatus =
-  (typeof TRANSACTION_STATUS)[keyof typeof TRANSACTION_STATUS];
+export type TransactionStatus = (typeof TRANSACTION_STATUS)[keyof typeof TRANSACTION_STATUS];
 
 /**
  * Human-readable labels for each transaction status.
@@ -344,10 +335,7 @@ export function isTransactionPending(status: TransactionStatus): boolean {
  * @returns True if the transaction completed successfully
  */
 export function isTransactionSuccess(status: TransactionStatus): boolean {
-  return (
-    status === TRANSACTION_STATUS.SUCCESS ||
-    status === TRANSACTION_STATUS.BRIDGE_SUCCESS
-  );
+  return status === TRANSACTION_STATUS.SUCCESS || status === TRANSACTION_STATUS.BRIDGE_SUCCESS;
 }
 
 /**
@@ -554,4 +542,3 @@ export interface TransactionItem {
   /** Transaction category (Moralis enrichment) */
   category?: string;
 }
-

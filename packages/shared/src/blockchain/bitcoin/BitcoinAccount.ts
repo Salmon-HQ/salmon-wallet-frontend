@@ -24,10 +24,7 @@ export interface BitcoinTransferOptions {
   /** Fee rate in satoshis per byte */
   feeRate?: number;
 }
-import type {
-  BitcoinAccountBalance,
-  BitcoinWalletBalance,
-} from '../../types/balance';
+import type { BitcoinAccountBalance, BitcoinWalletBalance } from '../../types/balance';
 import type { BitcoinNetwork } from '../../types/blockchain';
 
 /**
@@ -271,10 +268,7 @@ export class BitcoinAccount {
    * `priceChange24h` contribute their USD balance unchanged so a
    * partially-priced wallet still produces a meaningful number.
    */
-  private calculateLast24HoursChange(
-    balances: BitcoinBalanceItem[],
-    usdTotal: number
-  ): number {
+  private calculateLast24HoursChange(balances: BitcoinBalanceItem[], usdTotal: number): number {
     if (!usdTotal || usdTotal === 0) {
       return 0;
     }
@@ -282,7 +276,11 @@ export class BitcoinAccount {
     let previousTotal = 0;
 
     balances.forEach((balance) => {
-      if (balance.usdBalance && balance.priceChange24h !== undefined && balance.priceChange24h !== null) {
+      if (
+        balance.usdBalance &&
+        balance.priceChange24h !== undefined &&
+        balance.priceChange24h !== null
+      ) {
         const priceChangeFactor = 1 + balance.priceChange24h / 100;
         const previousBalance = balance.usdBalance / priceChangeFactor;
         previousTotal += previousBalance;
@@ -322,10 +320,7 @@ export class BitcoinAccount {
       return { usdTotal: 0, last24HoursChange: 0, items };
     }
 
-    const usdTotal = items.reduce(
-      (currentValue, next) => (next.usdBalance || 0) + currentValue,
-      0
-    );
+    const usdTotal = items.reduce((currentValue, next) => (next.usdBalance || 0) + currentValue, 0);
     const last24HoursChange = this.calculateLast24HoursChange(items, usdTotal);
     return { usdTotal, last24HoursChange, items };
   }
@@ -352,7 +347,7 @@ export class BitcoinAccount {
     }
 
     const addrType = BitcoinAccount.getAddressType(address, this.network.config.network);
-    const addressType = addrType ? addrType.toUpperCase() as AddressType : 'PUBLIC_KEY';
+    const addressType = addrType ? (addrType.toUpperCase() as AddressType) : 'PUBLIC_KEY';
 
     return { type: 'SUCCESS', code: 'valid', addressType };
   }
@@ -379,9 +374,7 @@ export class BitcoinAccount {
    * @param paging - Pagination parameters
    * @returns Promise resolving to paginated transaction list
    */
-  async getRecentTransactions(
-    paging?: TransactionPaging
-  ): Promise<AccountTransactionListResponse> {
+  async getRecentTransactions(paging?: TransactionPaging): Promise<AccountTransactionListResponse> {
     return this.fetchRecentTransactionsFn(this.network.id, this.address, paging);
   }
 
@@ -425,7 +418,7 @@ export class BitcoinAccount {
     to: string,
     _token: string,
     amount: number,
-    _opts?: BitcoinTransferOptions,
+    _opts?: BitcoinTransferOptions
   ): Promise<{ txId: string }> {
     const node = this.getBip32Node();
     if (!node) {
@@ -439,7 +432,7 @@ export class BitcoinAccount {
       to,
       amount,
       () => this.getUtxos(),
-      (_networkId, _address, serializedTx) => this.broadcast(serializedTx),
+      (_networkId, _address, serializedTx) => this.broadcast(serializedTx)
     );
 
     if (!result.success) {
@@ -462,7 +455,7 @@ export class BitcoinAccount {
     _to: string,
     _token: string,
     _amount: number,
-    opts?: BitcoinTransferOptions,
+    opts?: BitcoinTransferOptions
   ): Promise<FeeEstimateResult | null> {
     const utxos = await this.getUtxos();
     const fee = estimateBitcoinFee(utxos.length, 2, opts?.feeRate);

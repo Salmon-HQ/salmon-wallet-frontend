@@ -20,7 +20,8 @@ import {
   spacing,
   fontSize,
   fontFamilyNative,
-borderRadius, } from '@salmon/shared';
+  borderRadius,
+} from '@salmon/shared';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer } from '../BottomSheetContainer';
@@ -89,9 +90,7 @@ const EmptyState: React.FC = () => {
   return (
     <View style={styles.emptyContainer} testID="activity-empty">
       <Text style={styles.emptyTitle}>{t('transactions.noTransactions')}</Text>
-      <Text style={styles.emptySubtitle}>
-        {t('transactions.emptySubtitle')}
-      </Text>
+      <Text style={styles.emptySubtitle}>{t('transactions.emptySubtitle')}</Text>
     </View>
   );
 };
@@ -169,11 +168,14 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
   );
 
   // Handle scroll to show/hide top fade gradient dynamically
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    const opacity = Math.min(offsetY / 30, 1);
-    topFadeOpacity.setValue(opacity);
-  }, [topFadeOpacity]);
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = event.nativeEvent.contentOffset.y;
+      const opacity = Math.min(offsetY / 30, 1);
+      topFadeOpacity.setValue(opacity);
+    },
+    [topFadeOpacity]
+  );
 
   // Handle end reached for pagination
   const handleEndReached = useCallback(() => {
@@ -204,9 +206,7 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
     );
   }, [loadingMore]);
 
-  const title = (
-    <Text style={styles.title}>{t('transactions.historyTitle')}</Text>
-  );
+  const title = <Text style={styles.title}>{t('transactions.historyTitle')}</Text>;
 
   return (
     <BottomSheetContainer
@@ -221,19 +221,13 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
       {/* Content */}
       <View style={styles.content}>
         {/* Error State */}
-        {error && !loading && (
-          <ErrorState onRetry={onRetry} />
-        )}
+        {error && !loading && <ErrorState onRetry={onRetry} />}
 
         {/* Loading State */}
-        {loading && !error && (
-          <TransactionListSkeleton count={6} />
-        )}
+        {loading && !error && <TransactionListSkeleton count={6} />}
 
         {/* Empty State */}
-        {!loading && !error && transactions.length === 0 && (
-          <EmptyState />
-        )}
+        {!loading && !error && transactions.length === 0 && <EmptyState />}
 
         {/* Transaction List */}
         {!loading && !error && transactions.length > 0 && (

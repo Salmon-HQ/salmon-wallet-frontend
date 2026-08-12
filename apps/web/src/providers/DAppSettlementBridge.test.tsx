@@ -9,11 +9,8 @@ import { DAppSettlementBridge } from './DAppSettlementBridge';
 
 const mockSettleAfterTx = vi.fn();
 const mockUnsubscribe = vi.fn();
-let settlementCallback: ((request: {
-  accountId: string;
-  networkId?: string;
-  kinds: string[];
-}) => void) | null = null;
+let settlementCallback:
+  ((request: { accountId: string; networkId?: string; kinds: string[] }) => void) | null = null;
 
 vi.mock('@salmon/shared', () => ({
   useSettleAfterTx: () => mockSettleAfterTx,

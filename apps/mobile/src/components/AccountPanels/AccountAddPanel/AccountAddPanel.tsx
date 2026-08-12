@@ -52,10 +52,7 @@ import type { AccountAddPanelProps } from './types';
 // Component
 // ============================================================================
 
-export function AccountAddPanel({
-  onComplete,
-  onBack,
-}: AccountAddPanelProps): React.ReactElement {
+export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const [accountState, accountActions] = useAccountsContext();
   const { accounts, activeAccount } = accountState;
@@ -80,7 +77,7 @@ export function AccountAddPanel({
   // Name step state
   const defaultName = useMemo(
     () => t('settings.account_add.default_name', { number: accounts.length + 1 }),
-    [accounts.length, t],
+    [accounts.length, t]
   );
   const [accountName, setAccountName] = useState('');
 
@@ -97,7 +94,7 @@ export function AccountAddPanel({
       const networkIds = await getScanNetworks();
       const { accounts: scanned, failedNetworks: failed } = await scanDerivedAccounts(
         activeAccount.mnemonic,
-        networkIds,
+        networkIds
       );
       setDerivedAccounts(scanned);
       setFailedNetworks(failed);
@@ -116,7 +113,7 @@ export function AccountAddPanel({
   }, []);
 
   const handleDerivedSelect = useCallback((account: DerivedAccountInfo) => {
-    setSelectedDerived(prev => prev?.address === account.address ? null : account);
+    setSelectedDerived((prev) => (prev?.address === account.address ? null : account));
   }, []);
 
   const handleDerivedContinue = useCallback(() => {
@@ -142,7 +139,7 @@ export function AccountAddPanel({
     const name = accountName.trim() || defaultName;
     setLoading(true);
     try {
-      const mnemonic = selectedDerived ? (activeAccount?.mnemonic || '') : seedPhrase;
+      const mnemonic = selectedDerived ? activeAccount?.mnemonic || '' : seedPhrase;
       const startIndex = selectedDerived ? selectedDerived.index : 0;
       const networkIds = await getScanNetworks();
       const { account } = await createAccount({
@@ -165,7 +162,17 @@ export function AccountAddPanel({
       }
       Alert.alert(t('general.error'), t('settings.account_add.creation_error'));
     }
-  }, [loading, accountName, defaultName, selectedDerived, activeAccount, seedPhrase, accountActions, onComplete, t]);
+  }, [
+    loading,
+    accountName,
+    defaultName,
+    selectedDerived,
+    activeAccount,
+    seedPhrase,
+    accountActions,
+    onComplete,
+    t,
+  ]);
 
   const handleStepBack = useCallback(() => {
     if (step === 'set-name') {
@@ -336,7 +343,7 @@ export function AccountAddPanel({
     'derive-scan': t('settings.account_add.create_new'),
     'import-seed': t('settings.account_add.import_seed'),
     'set-name': t('settings.account_add.set_name'),
-    'complete': t('settings.account_add.title'),
+    complete: t('settings.account_add.title'),
   };
   const currentTitle = stepTitles[step];
 
@@ -349,9 +356,11 @@ export function AccountAddPanel({
     <>
       <LoadingScreen
         visible={loading}
-        title={selectedDerived
-          ? t('settings.account_add.confirm_create')
-          : t('settings.account_add.confirm_import')}
+        title={
+          selectedDerived
+            ? t('settings.account_add.confirm_create')
+            : t('settings.account_add.confirm_import')
+        }
         subtitle={t('general.loading')}
       />
       <SettingsScreenLayout title={currentTitle} onBack={handleStepBack}>

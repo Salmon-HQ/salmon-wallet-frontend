@@ -13,11 +13,19 @@ import 'react-native-reanimated';
 
 import { I18nProvider } from '../src/i18n';
 import { WalletInitErrorScreen } from '../src/components/WalletInitErrorScreen';
-import { AccountsProvider, CurrencyProvider, useAccountsContext, useInactivityTimeout, createQueryClient, QueryClientProvider, BridgeSettlementProvider } from '@salmon/shared';
+import {
+  AccountsProvider,
+  CurrencyProvider,
+  useAccountsContext,
+  useInactivityTimeout,
+  createQueryClient,
+  QueryClientProvider,
+  BridgeSettlementProvider,
+} from '@salmon/shared';
 
 export {
   // Catch any errors thrown by the Layout component.
-  ErrorBoundary
+  ErrorBoundary,
 } from 'expo-router';
 
 export const unstable_settings = {
@@ -135,9 +143,16 @@ function RootLayoutNav() {
       // (password, success, derived-accounts) — they're still in the
       // creation flow and should finish before being sent to the app.
       const authScreen = segments.slice(1, 2)[0];
-      const isPostCreationScreen = inAuthGroup &&
+      const isPostCreationScreen =
+        inAuthGroup &&
         typeof authScreen === 'string' &&
-        ['password', 'biometric-setup', 'analytics-consent', 'success', 'derived-accounts'].includes(authScreen);
+        [
+          'password',
+          'biometric-setup',
+          'analytics-consent',
+          'success',
+          'derived-accounts',
+        ].includes(authScreen);
 
       if (!inAppGroup && !hasNavigated && !state.locked && !isPostCreationScreen) {
         // Only auto-navigate to app on initial load when not locked
@@ -145,7 +160,15 @@ function RootLayoutNav() {
         setHasNavigated(true);
       }
     }
-  }, [state.ready, state.locked, state.accounts.length, segments, navigationState?.key, hasNavigated, initFailed]);
+  }, [
+    state.ready,
+    state.locked,
+    state.accounts.length,
+    segments,
+    navigationState?.key,
+    hasNavigated,
+    initFailed,
+  ]);
 
   // Determine if lock screen should be shown
   // Don't show lock screen during onboarding (auth flow) — the user just created
@@ -180,12 +203,9 @@ function RootLayoutNav() {
       // Control Center, notifications — locking on inactive causes a loop
       // when biometric auth is active.
       const goingToBackground =
-        nextState === 'background' &&
-        (previousState === 'active' || previousState === 'inactive');
+        nextState === 'background' && (previousState === 'active' || previousState === 'inactive');
 
-      if (
-        !goingToBackground
-      ) {
+      if (!goingToBackground) {
         return;
       }
 

@@ -350,9 +350,7 @@ export function StepConfirmation({
         >
           <BlurContainer style={{ borderRadius: borderRadius.md }}>
             <AddressContent>
-              <AddressText title={recipientAddress}>
-                {recipientAddress}
-              </AddressText>
+              <AddressText title={recipientAddress}>{recipientAddress}</AddressText>
               {copied ? (
                 <CheckIcon
                   sx={{ fontSize: fontSize.xl, color: colors.status.success, flexShrink: 0 }}
@@ -377,9 +375,7 @@ export function StepConfirmation({
         ) : null}
 
         {/* Error Message */}
-        {isFailed && sendHook.error && (
-          <ErrorText>{t(sendHook.error)}</ErrorText>
-        )}
+        {isFailed && sendHook.error && <ErrorText>{t(sendHook.error)}</ErrorText>}
       </CenterContent>
 
       {/* Bottom Buttons */}

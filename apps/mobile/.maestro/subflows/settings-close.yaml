@@ -2,6 +2,6 @@ appId: io.salmonwallet.app
 ---
 # Tap close (X) in settings sheet header (top-right).
 - tapOn:
-    id: "sheet-close-button"
+    id: 'sheet-close-button'
 - waitForAnimationToEnd:
     timeout: 2000

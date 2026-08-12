@@ -95,7 +95,7 @@ describe('signOffchainMessage', () => {
 
     // Act & Assert
     await expect(
-      signOffchainMessage(account as never, content, [addr(other.publicKey)]),
+      signOffchainMessage(account as never, content, [addr(other.publicKey)])
     ).rejects.toThrow(/not listed in the required signers/);
   });
 });
@@ -162,7 +162,9 @@ describe('golden vectors', () => {
   });
 
   it('pins the OCMS v1 envelope bytes for non-ASCII content', () => {
-    const buffer = buildOffchainMessageV1(encode(UNICODE_CONTENT), [addr(testKeypair(1).publicKey)]);
+    const buffer = buildOffchainMessageV1(encode(UNICODE_CONTENT), [
+      addr(testKeypair(1).publicKey),
+    ]);
 
     expect(toBase64(buffer)).toBe(GOLDEN_OCMS_UNICODE_CONTENT);
   });
@@ -187,7 +189,7 @@ describe('golden vectors', () => {
     const signer = addr(testKeypair(1).publicKey);
 
     expect(() => buildOffchainMessageV1(encode(CONTENT), [signer, signer])).toThrow(
-      /no more than once/,
+      /no more than once/
     );
   });
 });

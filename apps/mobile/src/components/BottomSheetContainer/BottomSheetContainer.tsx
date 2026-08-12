@@ -179,14 +179,18 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
         easing: Easing.out(Easing.cubic),
       });
     } else if (isRendered) {
-      translateY.value = withTiming(SCREEN_HEIGHT, {
-        duration: ANIMATION_DURATION,
-        easing: Easing.in(Easing.cubic),
-      }, (finished) => {
-        if (finished) {
-          runOnJS(completeClose)();
+      translateY.value = withTiming(
+        SCREEN_HEIGHT,
+        {
+          duration: ANIMATION_DURATION,
+          easing: Easing.in(Easing.cubic),
+        },
+        (finished) => {
+          if (finished) {
+            runOnJS(completeClose)();
+          }
         }
-      });
+      );
       backdropOpacity.value = withTiming(0, {
         duration: ANIMATION_DURATION,
         easing: Easing.in(Easing.cubic),
@@ -219,7 +223,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
         backdropOpacity.value = interpolate(
           event.translationY,
           [0, SCREEN_HEIGHT * 0.5],
-          [BACKDROP_OPACITY, 0],
+          [BACKDROP_OPACITY, 0]
         );
       }
     })

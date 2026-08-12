@@ -151,10 +151,9 @@ export async function getSwapOrder(
       queryParams.priorityLevel = params.priorityLevel;
     }
 
-    const { data } = await apiClient.get<SwapOrderResponse>(
-      `/v1/${networkId}/ft/swap/order`,
-      { params: queryParams }
-    );
+    const { data } = await apiClient.get<SwapOrderResponse>(`/v1/${networkId}/ft/swap/order`, {
+      params: queryParams,
+    });
 
     return data;
   } catch (error) {
@@ -219,7 +218,7 @@ import type { SolanaAccountApiFunctions, SolanaBalanceItem } from '../../types/t
 export const fetchSolanaAccountBalance: SolanaAccountApiFunctions['fetchBalance'] = async (
   networkId,
   address,
-  opts = {},
+  opts = {}
 ) => {
   const params: Record<string, string> = { include: 'logo' };
   if (opts.includeSpam) {
@@ -229,10 +228,9 @@ export const fetchSolanaAccountBalance: SolanaAccountApiFunctions['fetchBalance'
   // The salmon-api Solana balance provider already merges Jupiter v2 metadata
   // (logo/name/symbol/coingeckoId/tags), drops zero-amount SPL entries, and
   // drops `unknown`-only tagged tokens unless `?includeSpam=true`.
-  const data = await get<SolanaBalanceItem[]>(
-    `/v1/${networkId}/account/${address}/balance`,
-    { params },
-  );
+  const data = await get<SolanaBalanceItem[]>(`/v1/${networkId}/account/${address}/balance`, {
+    params,
+  });
 
   return data.map((token) => ({
     ...token,

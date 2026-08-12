@@ -58,10 +58,11 @@ function encodeLookupTableAccount(addressCount: number, lastExtendedSlot: bigint
 type SignatureNotifications = () => AsyncGenerator<{ value: { err: unknown } }>;
 
 /** Async iterable that completes without yielding — the confirmation resolves. */
-// eslint-disable-next-line require-yield
+/* eslint-disable require-yield -- generator that completes without yielding; block form survives reformatting */
 const noNotifications: SignatureNotifications = async function* () {
   return;
 };
+/* eslint-enable require-yield */
 
 const failedNotification: SignatureNotifications = async function* () {
   yield { value: { err: { InstructionError: [0, 'InvalidAccountData'] } } };
@@ -88,10 +89,12 @@ function createRpcSubscriptions(notifications: SignatureNotifications = noNotifi
   };
 }
 
-async function createAccount(options: {
-  rpc?: ReturnType<typeof createRpc>;
-  rpcSubscriptions?: ReturnType<typeof createRpcSubscriptions>;
-} = {}) {
+async function createAccount(
+  options: {
+    rpc?: ReturnType<typeof createRpc>;
+    rpcSubscriptions?: ReturnType<typeof createRpcSubscriptions>;
+  } = {}
+) {
   return {
     signer: await createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(1), false),
     getRpc: () => options.rpc ?? createRpc(),

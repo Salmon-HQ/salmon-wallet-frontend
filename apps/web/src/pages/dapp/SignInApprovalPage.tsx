@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  DAppSignInApprovalView,
-} from '@salmon/ui';
+import { DAppSignInApprovalView } from '@salmon/ui';
 import {
   approveSolanaSignIn,
   prepareSignInMessage,
@@ -38,12 +36,13 @@ export function SignInApprovalPage(): React.ReactElement {
   }, [requestId]);
 
   const solanaAccount = useMemo(
-    () => getActiveSolanaApprovalAccount(
-      state.activeAccount,
-      state.activeBlockchainAccount,
-      state.pathIndex,
-    ),
-    [state.activeAccount, state.activeBlockchainAccount, state.pathIndex],
+    () =>
+      getActiveSolanaApprovalAccount(
+        state.activeAccount,
+        state.activeBlockchainAccount,
+        state.pathIndex
+      ),
+    [state.activeAccount, state.activeBlockchainAccount, state.pathIndex]
   );
 
   const input = request?.params?.input;

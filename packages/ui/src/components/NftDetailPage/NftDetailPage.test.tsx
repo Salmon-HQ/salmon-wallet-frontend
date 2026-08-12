@@ -8,15 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockWriteText = vi.fn();
 const mockTransactionSuccessScreen = vi.fn(
-  ({
-    title,
-    summary,
-    onContinue,
-  }: {
-    title: string;
-    summary: string;
-    onContinue?: () => void;
-  }) => (
+  ({ title, summary, onContinue }: { title: string; summary: string; onContinue?: () => void }) => (
     <div>
       <div>{title}</div>
       <div>{summary}</div>
@@ -107,11 +99,8 @@ vi.mock('../PageShell', () => ({
 }));
 
 vi.mock('../TransactionSuccessScreen', () => ({
-  TransactionSuccessScreen: (props: {
-    title: string;
-    summary: string;
-    onContinue?: () => void;
-  }) => mockTransactionSuccessScreen(props),
+  TransactionSuccessScreen: (props: { title: string; summary: string; onContinue?: () => void }) =>
+    mockTransactionSuccessScreen(props),
 }));
 
 Object.assign(globalThis, {
@@ -180,13 +169,15 @@ describe('NftDetailPage', () => {
         nft={BASE_NFT}
         onBack={vi.fn()}
         burnStep="review"
-        burnPreview={{
-          lookupTable: {
-            estimatedRentLamports: '2000000',
-            addressCount: 8,
-            extendTransactionCount: 2,
-          },
-        } as any}
+        burnPreview={
+          {
+            lookupTable: {
+              estimatedRentLamports: '2000000',
+              addressCount: 8,
+              extendTransactionCount: 2,
+            },
+          } as any
+        }
         onBurnBack={onBurnBack}
         onBurnConfirm={onBurnConfirm}
       />

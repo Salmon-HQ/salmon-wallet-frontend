@@ -8,7 +8,14 @@
 import React from 'react';
 import { Modal, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, borderRadius, fontFamilyNative, fontSize, fontWeight, } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  fontFamilyNative,
+  fontSize,
+  fontWeight,
+} from '@salmon/shared';
 import type { QRScannerProps } from './types';
 
 /**
@@ -29,12 +36,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   }
 
   return (
-    <Modal
-      animationType="slide"
-      onRequestClose={onClose}
-      visible={visible}
-      transparent={false}
-    >
+    <Modal animationType="slide" onRequestClose={onClose} visible={visible} transparent={false}>
       <View style={[styles.container, containerStyle]}>
         <View style={styles.header}>
           <Text style={styles.title}>{resolvedTitle}</Text>
@@ -47,9 +49,14 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           <View style={styles.iconContainer}>
             <Text style={styles.icon}>{'📱'}</Text>
           </View>
-          <Text style={styles.messageTitle}>{t('qrScanner.unavailableTitle', 'QR Scanner Unavailable')}</Text>
+          <Text style={styles.messageTitle}>
+            {t('qrScanner.unavailableTitle', 'QR Scanner Unavailable')}
+          </Text>
           <Text style={styles.messageText}>
-            {t('qrScanner.unavailableMessage', 'QR code scanning is only available on the mobile app.')}
+            {t(
+              'qrScanner.unavailableMessage',
+              'QR code scanning is only available on the mobile app.'
+            )}
           </Text>
           <Text style={styles.messageSubtext}>
             {t(

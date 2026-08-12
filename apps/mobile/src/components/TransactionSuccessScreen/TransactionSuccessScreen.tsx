@@ -11,7 +11,21 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, borderRadius, fontSize, fontWeight, gradients, shadows, componentSizes, ms, vs, s, fontFamilyNative, borderWidth } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  fontSize,
+  fontWeight,
+  gradients,
+  shadows,
+  componentSizes,
+  ms,
+  vs,
+  s,
+  fontFamilyNative,
+  borderWidth,
+} from '@salmon/shared';
 import type { TransactionSuccessScreenProps } from '@salmon/shared';
 import { PrimaryButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
@@ -50,10 +64,22 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     circleScale.value = withSpring(1, { damping: 12, stiffness: 180, mass: 0.8 });
-    checkOpacity.value = withDelay(200, withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) }));
-    textOpacity.value = withDelay(400, withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) }));
-    linkOpacity.value = withDelay(500, withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) }));
-    buttonOpacity.value = withDelay(600, withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) }));
+    checkOpacity.value = withDelay(
+      200,
+      withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) })
+    );
+    textOpacity.value = withDelay(
+      400,
+      withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) })
+    );
+    linkOpacity.value = withDelay(
+      500,
+      withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) })
+    );
+    buttonOpacity.value = withDelay(
+      600,
+      withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) })
+    );
   }, [settling, circleScale, checkOpacity, textOpacity, linkOpacity, buttonOpacity]);
 
   const circleStyle = useAnimatedStyle(() => ({
@@ -118,15 +144,26 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           )}
           {bridgeAmountOut && (
             <>
-              <Text style={styles.bridgeLabel}>{t('bridge.estimatedReceive', 'You will receive approximately')}</Text>
+              <Text style={styles.bridgeLabel}>
+                {t('bridge.estimatedReceive', 'You will receive approximately')}
+              </Text>
               <Text style={styles.bridgeValue}>{bridgeAmountOut}</Text>
             </>
           )}
           {bridgeDepositTxId && (
             <>
-              <Text style={styles.bridgeLabel}>{t('bridge.depositTxId', 'Deposit Transaction')}</Text>
-              <TouchableOpacity onPress={() => Linking.openURL(`https://solscan.io/tx/${bridgeDepositTxId}`)}>
-                <Text style={[styles.bridgeValue, { color: colors.accent.primary, textDecorationLine: 'underline' }]}>
+              <Text style={styles.bridgeLabel}>
+                {t('bridge.depositTxId', 'Deposit Transaction')}
+              </Text>
+              <TouchableOpacity
+                onPress={() => Linking.openURL(`https://solscan.io/tx/${bridgeDepositTxId}`)}
+              >
+                <Text
+                  style={[
+                    styles.bridgeValue,
+                    { color: colors.accent.primary, textDecorationLine: 'underline' },
+                  ]}
+                >
                   {bridgeDepositTxId.slice(0, 8)}...{bridgeDepositTxId.slice(-8)}
                 </Text>
               </TouchableOpacity>
@@ -141,7 +178,11 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
         </Animated.View>
       ) : explorerUrl ? (
         <Animated.View style={[styles.linkContainer, linkStyle]}>
-          <TouchableOpacity testID="tx-success-explorer-link" onPress={handleExplorerPress} activeOpacity={0.7}>
+          <TouchableOpacity
+            testID="tx-success-explorer-link"
+            onPress={handleExplorerPress}
+            activeOpacity={0.7}
+          >
             <Text style={styles.explorerLink}>{t('transaction.viewOnExplorer')}</Text>
           </TouchableOpacity>
         </Animated.View>
@@ -154,7 +195,12 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           end={gradients.primaryButton.end}
           style={styles.buttonGradient}
         >
-          <PrimaryButton onPress={onContinue} style={styles.button} disabled={settling} testID="tx-success-continue-button">
+          <PrimaryButton
+            onPress={onContinue}
+            style={styles.button}
+            disabled={settling}
+            testID="tx-success-continue-button"
+          >
             {t('transaction.continue')}
           </PrimaryButton>
         </LinearGradient>

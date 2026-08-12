@@ -109,7 +109,7 @@ describe('dapp approval utilities', () => {
     const rebuilt = serializeSignedTransactionFromApproval(
       bs58.encode(tx.message.serialize()),
       salmon.publicKey.toBase58(),
-      bs58.encode(tx.signatures[1]),
+      bs58.encode(tx.signatures[1])
     );
     const rebuiltTx = VersionedTransaction.deserialize(rebuilt);
 
@@ -145,7 +145,7 @@ describe('dapp approval utilities', () => {
         id: 'req-2',
         method: 'signTransaction',
         params: { message: bs58.encode(tx.message.serialize()) },
-      },
+      }
     );
 
     expect(details.recentBlockhash).toBe(recentBlockhash);
@@ -185,7 +185,7 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
   /** The base64 wire transaction handed to the RPC, back as a web3.js object. */
   const submittedTransaction = (sendTransaction: ReturnType<typeof vi.fn>) =>
     VersionedTransaction.deserialize(
-      new Uint8Array(Buffer.from(sendTransaction.mock.calls[0][0] as string, 'base64')),
+      new Uint8Array(Buffer.from(sendTransaction.mock.calls[0][0] as string, 'base64'))
     );
 
   it('preserves co-signer signatures when signing and sending a versioned transaction', async () => {
@@ -231,7 +231,7 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
       params: {
         message: encodedMessage,
         transaction: bs58.encode(
-          partiallySigned.serialize({ requireAllSignatures: false, verifySignatures: false }),
+          partiallySigned.serialize({ requireAllSignatures: false, verifySignatures: false })
         ),
       },
     });
@@ -280,20 +280,23 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
     const sendTransaction = rpcSendTransaction();
     const account = await makeAccount({ sendTransaction });
 
-    await approveSolanaTransactionRequest(account as never, {
-      id: 'req-6',
-      method: 'signAndSendTransaction',
-      params: {
-        message: encodedMessage,
-        options: {
-          skipPreflight: true,
-          preflightCommitment: 'processed',
-          maxRetries: 3,
-          minContextSlot: 5,
-          evil: 'drop me',
+    await approveSolanaTransactionRequest(
+      account as never,
+      {
+        id: 'req-6',
+        method: 'signAndSendTransaction',
+        params: {
+          message: encodedMessage,
+          options: {
+            skipPreflight: true,
+            preflightCommitment: 'processed',
+            maxRetries: 3,
+            minContextSlot: 5,
+            evil: 'drop me',
+          },
         },
-      },
-    } as never);
+      } as never
+    );
 
     expect(sendTransaction.mock.calls[0][1]).toEqual({
       encoding: 'base64',
@@ -303,18 +306,21 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
       minContextSlot: 5n,
     });
 
-    await approveSolanaTransactionRequest(account as never, {
-      id: 'req-7',
-      method: 'signAndSendTransaction',
-      params: {
-        message: encodedMessage,
-        options: {
-          preflightCommitment: 'whenever',
-          skipPreflight: 'yes',
-          maxRetries: 1.5,
+    await approveSolanaTransactionRequest(
+      account as never,
+      {
+        id: 'req-7',
+        method: 'signAndSendTransaction',
+        params: {
+          message: encodedMessage,
+          options: {
+            preflightCommitment: 'whenever',
+            skipPreflight: 'yes',
+            maxRetries: 1.5,
+          },
         },
-      },
-    } as never);
+      } as never
+    );
 
     expect(sendTransaction.mock.calls[1][1]).toEqual({ encoding: 'base64' });
   });
@@ -360,7 +366,7 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
           message: bs58.encode(previewed.serialize()),
           transaction: bs58.encode(maliciousTransaction.serialize()),
         },
-      }),
+      })
     ).rejects.toThrow(/does not match the approved message/);
 
     expect(sendTransaction).not.toHaveBeenCalled();
@@ -391,10 +397,10 @@ describe('approveSolanaTransactionRequest signAndSendTransaction co-signers', ()
         params: {
           message: bs58.encode(previewed.serialize()),
           transaction: bs58.encode(
-            legacyTransaction.serialize({ requireAllSignatures: false, verifySignatures: false }),
+            legacyTransaction.serialize({ requireAllSignatures: false, verifySignatures: false })
           ),
         },
-      }),
+      })
     ).rejects.toThrow(/does not match the approved message/);
 
     expect(sendTransaction).not.toHaveBeenCalled();
@@ -452,14 +458,14 @@ describe('serializeSignedTransactionFromApproval golden vectors', () => {
     const serialized = serializeSignedTransactionFromApproval(
       bs58.encode(message.serialize()),
       walletAddress,
-      bs58.encode(tx.signatures[1]),
+      bs58.encode(tx.signatures[1])
     );
 
     expect(Buffer.from(serialized).toString('base64')).toBe(GOLDEN_V0_TX);
     // Slot 0 (the co-signer) is left zeroed: the approval flow only ever knows the
     // wallet's own signature. Pinned as current behavior, not endorsed as correct.
     expect(VersionedTransaction.deserialize(serialized).signatures[0].every((b) => b === 0)).toBe(
-      true,
+      true
     );
   });
 
@@ -470,14 +476,12 @@ describe('serializeSignedTransactionFromApproval golden vectors', () => {
     }).add(...transferInstructions());
     const encodedMessage = bs58.encode(tx.serializeMessage());
     tx.partialSign(testKeypair(2));
-    const signed = tx.signatures.find((entry) =>
-      entry.publicKey.equals(testKeypair(2).publicKey),
-    );
+    const signed = tx.signatures.find((entry) => entry.publicKey.equals(testKeypair(2).publicKey));
 
     const serialized = serializeSignedTransactionFromApproval(
       encodedMessage,
       walletAddress,
-      bs58.encode(signed!.signature!),
+      bs58.encode(signed!.signature!)
     );
 
     expect(Buffer.from(serialized).toString('base64')).toBe(GOLDEN_LEGACY_TX);
@@ -496,8 +500,8 @@ describe('serializeSignedTransactionFromApproval golden vectors', () => {
       serializeSignedTransactionFromApproval(
         bs58.encode(message.serialize()),
         testKeypair(3).publicKey.toBase58(),
-        bs58.encode(tx.signatures[1]),
-      ),
+        bs58.encode(tx.signatures[1])
+      )
     ).toThrow('Signer public key not found in transaction message');
   });
 });
@@ -532,7 +536,7 @@ describe('isTransactionLookalike', () => {
         fromPubkey: payer.publicKey,
         toPubkey: Keypair.generate().publicKey,
         lamports: 1,
-      }),
+      })
     );
 
     expect(isTransactionLookalike(transaction.compileMessage().serialize())).toBe(true);
@@ -620,8 +624,8 @@ describe('approveSolanaSignMessage', () => {
       nacl.sign.detached.verify(
         Uint8Array.from(data),
         bs58.decode(result.signature),
-        bs58.decode(account.signer.address),
-      ),
+        bs58.decode(account.signer.address)
+      )
     ).toBe(true);
   });
 
@@ -644,7 +648,7 @@ describe('approveSolanaSignMessage', () => {
 
     // Act & Assert
     await expect(approveSolanaSignMessage(account as never, data)).rejects.toThrow(
-      TransactionLookalikeMessageError,
+      TransactionLookalikeMessageError
     );
   });
 });
@@ -669,8 +673,8 @@ describe('approveSolanaSignOffchainMessage', () => {
       verifyOffchainMessage(
         bs58.decode(result.signedOffchainMessage),
         bs58.decode(result.signature),
-        account.signer.address as Address,
-      ),
+        account.signer.address as Address
+      )
     ).resolves.toBe(true);
   });
 
@@ -679,7 +683,7 @@ describe('approveSolanaSignOffchainMessage', () => {
     const data = Array.from(new TextEncoder().encode('hello'));
 
     await expect(
-      approveSolanaSignOffchainMessage(account as never, data, ['not-a-valid-address']),
+      approveSolanaSignOffchainMessage(account as never, data, ['not-a-valid-address'])
     ).rejects.toThrow();
   });
 });

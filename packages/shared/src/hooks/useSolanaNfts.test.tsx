@@ -62,12 +62,9 @@ describe('useSolanaNfts (react-query)', () => {
       expect(result.current.nfts).toHaveLength(1);
     });
 
-    expect(mockGetSolanaNfts).toHaveBeenCalledWith(
-      'solana-mainnet',
-      'wallet-1',
-      false,
-      { includeSpam: false }
-    );
+    expect(mockGetSolanaNfts).toHaveBeenCalledWith('solana-mainnet', 'wallet-1', false, {
+      includeSpam: false,
+    });
   });
 
   it('does not fetch when publicKey is missing', async () => {
@@ -145,12 +142,9 @@ describe('useSolanaNfts (react-query)', () => {
     );
 
     await waitFor(() => {
-      expect(mockGetSolanaNfts).toHaveBeenCalledWith(
-        'solana-devnet',
-        'wallet-1',
-        false,
-        { includeSpam: true }
-      );
+      expect(mockGetSolanaNfts).toHaveBeenCalledWith('solana-devnet', 'wallet-1', false, {
+        includeSpam: true,
+      });
     });
   });
 });

@@ -49,7 +49,10 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
   style,
 }) => {
   return (
-    <View style={[styles.container, topOffset > 0 && { top: topOffset }, style]} pointerEvents="none">
+    <View
+      style={[styles.container, topOffset > 0 && { top: topOffset }, style]}
+      pointerEvents="none"
+    >
       <Svg width="100%" height="100%">
         <Defs>
           <Pattern

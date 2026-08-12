@@ -6,9 +6,9 @@
 
 **Status**: Draft
 
-**Input**: The app shows a branded splash (`splash-icon.png` over `#10131c`, `app.json:15-19`) before its first frame. Apple's Human Interface Guidelines ask that a launch screen resemble the app's first screen so startup feels instantaneous, and discourage using it as a branding surface. iOS requires *some* launch screen — without one the app runs letterboxed at a reduced resolution — so the question is what it contains, not whether it exists.
+**Input**: The app shows a branded splash (`splash-icon.png` over `#10131c`, `app.json:15-19`) before its first frame. Apple's Human Interface Guidelines ask that a launch screen resemble the app's first screen so startup feels instantaneous, and discourage using it as a branding surface. iOS requires _some_ launch screen — without one the app runs letterboxed at a reduced resolution — so the question is what it contains, not whether it exists.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Open the wallet without a branded interstitial (Priority: P2)
 
@@ -33,7 +33,7 @@ A user taps the icon and the app appears to open directly into its first screen,
 - The app is launched into a deep link rather than the home tab.
 - The launch background must not flash a different colour before the first frame paints.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -43,7 +43,7 @@ A user taps the icon and the app appears to open directly into its first screen,
 - **FR-004**: The launch screen MUST be configured through `app.json`; native directories are generated and MUST NOT be edited.
 - **FR-005**: Removing the splash image MUST NOT leave an orphaned asset in the repo, and MUST NOT break any other reference to that asset.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

@@ -32,7 +32,10 @@ export const VALIDATION_MESSAGES: Record<string, string> = {
 /**
  * Maps ValidationResult to ValidationState.
  */
-export function getValidationState(result: ValidationResult | null, isValidating: boolean): ValidationState {
+export function getValidationState(
+  result: ValidationResult | null,
+  isValidating: boolean
+): ValidationState {
   if (isValidating) return 'loading';
   if (!result) return 'idle';
 

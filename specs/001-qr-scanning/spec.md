@@ -8,7 +8,7 @@
 
 **Input**: The mobile app ships `expo-camera` but never imports it. `apps/mobile/src/components/QRScanner/QRScanner.native.tsx` is a placeholder that renders "Camera Setup Required" and is mounted by no screen, so a user sending funds must type or paste an address by hand. Implement real scanning.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Scan a recipient address when sending (Priority: P1)
 
@@ -69,7 +69,7 @@ A user adding a saved contact scans the address instead of typing it.
 - The user opens the scanner while a send is already in review.
 - The app is backgrounded with the camera preview open.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -90,7 +90,7 @@ A user adding a saved contact scans the address instead of typing it.
 
 - **Scan result**: the decoded payload plus the classification of what it turned out to be — a valid destination for the active chain, an address for another chain, or not an address.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -105,6 +105,6 @@ A user adding a saved contact scans the address instead of typing it.
 - The camera is used for QR scanning only. No photo capture, no video, no audio, now or as part of this spec.
 - Address validation and payment-URI parsing already exist in `packages/shared` for the supported chains and are to be reused; this spec adds no new validation rules.
 - Scanning is mobile-only. The web and extension surfaces keep their current behavior; `QRScanner.tsx` on web continues to tell the user to use the mobile app.
-- QR *generation* for the receive screen already exists and is out of scope.
+- QR _generation_ for the receive screen already exists and is out of scope.
 - This feature requires a native rebuild and a new store binary; it cannot ship over the air.
 - The existing placeholder component and its test will be replaced, not extended.

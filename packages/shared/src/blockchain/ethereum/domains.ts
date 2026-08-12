@@ -32,10 +32,7 @@ import type { Provider } from 'ethers';
  * // Returns: 'vitalik.eth' or null
  * ```
  */
-export async function getEnsName(
-  provider: Provider,
-  address: string
-): Promise<string | null> {
+export async function getEnsName(provider: Provider, address: string): Promise<string | null> {
   try {
     return await provider.lookupAddress(address);
   } catch {
@@ -59,10 +56,7 @@ export async function getEnsName(
  * // Returns: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' or null
  * ```
  */
-export async function resolveEnsName(
-  provider: Provider,
-  name: string
-): Promise<string | null> {
+export async function resolveEnsName(provider: Provider, name: string): Promise<string | null> {
   try {
     return await provider.resolveName(name);
   } catch {
@@ -81,10 +75,7 @@ export async function resolveEnsName(
  * @param address - Ethereum address to look up
  * @returns ENS name, or null if not found
  */
-export async function getDomain(
-  provider: Provider,
-  address: string
-): Promise<string | null> {
+export async function getDomain(provider: Provider, address: string): Promise<string | null> {
   return getEnsName(provider, address);
 }
 

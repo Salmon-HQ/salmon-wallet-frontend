@@ -1,12 +1,7 @@
 import { colors } from '@salmon/shared';
 import { BlurView } from 'expo-blur';
 import React, { useId, useState } from 'react';
-import {
-  type LayoutChangeEvent,
-  Platform,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { type LayoutChangeEvent, Platform, StyleSheet, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useBlurTarget } from './BlurTargetContext';
 import type { BlurContainerProps } from './types';
@@ -52,12 +47,7 @@ function GradientBorderOverlay({
   if (width <= 0 || height <= 0) return null;
 
   return (
-    <Svg
-      width={width}
-      height={height}
-      style={StyleSheet.absoluteFill}
-      pointerEvents="none"
-    >
+    <Svg width={width} height={height} style={StyleSheet.absoluteFill} pointerEvents="none">
       <Defs>
         <RadialGradient
           id={gradientId}
@@ -68,12 +58,7 @@ function GradientBorderOverlay({
           gradientUnits="objectBoundingBox"
         >
           {GLASSY_BORDER_STOPS.map((stop, i) => (
-            <Stop
-              key={i}
-              offset={stop.offset}
-              stopColor={color}
-              stopOpacity={stop.opacity}
-            />
+            <Stop key={i} offset={stop.offset} stopColor={color} stopOpacity={stop.opacity} />
           ))}
         </RadialGradient>
       </Defs>
@@ -109,17 +94,13 @@ export function BlurContainer({
   const handleLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
     setLayout((prev) =>
-      prev.width === width && prev.height === height
-        ? prev
-        : { width, height },
+      prev.width === width && prev.height === height ? prev : { width, height }
     );
   };
 
   const borderRadius = extractBorderRadius(style);
 
-  const solidBorderStyle = !useGradientBorder
-    ? { borderColor, borderWidth }
-    : undefined;
+  const solidBorderStyle = !useGradientBorder ? { borderColor, borderWidth } : undefined;
 
   return (
     <View

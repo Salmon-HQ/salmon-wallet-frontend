@@ -38,16 +38,7 @@ vi.mock('axios', () => {
 });
 
 import axios from 'axios';
-import {
-  ApiError,
-  createApiClient,
-  get,
-  post,
-  put,
-  patch,
-  del,
-  apiClient,
-} from './client';
+import { ApiError, createApiClient, get, post, put, patch, del, apiClient } from './client';
 const mockedAxios = vi.mocked(axios, { deep: true });
 
 describe('API Client Module', () => {
@@ -82,7 +73,13 @@ describe('API Client Module', () => {
       it('should create an instance with all optional parameters', () => {
         const details = { userId: 123 };
         const axiosError = new Error('Network failure') as AxiosError;
-        const error = new ApiError('Complete error', 503, 'SERVICE_UNAVAILABLE', details, axiosError);
+        const error = new ApiError(
+          'Complete error',
+          503,
+          'SERVICE_UNAVAILABLE',
+          details,
+          axiosError
+        );
 
         expect(error.message).toBe('Complete error');
         expect(error.status).toBe(503);
@@ -564,17 +561,12 @@ describe('API Client Module', () => {
 
     describe('real-world error scenarios', () => {
       it('should handle validation error scenario', () => {
-        const error = new ApiError(
-          'Validation failed',
-          422,
-          'VALIDATION_ERROR',
-          {
-            errors: [
-              { field: 'email', message: 'Invalid email format' },
-              { field: 'password', message: 'Password too short' },
-            ],
-          }
-        );
+        const error = new ApiError('Validation failed', 422, 'VALIDATION_ERROR', {
+          errors: [
+            { field: 'email', message: 'Invalid email format' },
+            { field: 'password', message: 'Password too short' },
+          ],
+        });
 
         expect(error.isClientError()).toBe(true);
         expect(error.status).toBe(422);
@@ -583,12 +575,10 @@ describe('API Client Module', () => {
       });
 
       it('should handle authentication failure scenario', () => {
-        const error = new ApiError(
-          'Invalid credentials',
-          401,
-          'INVALID_CREDENTIALS',
-          { attemptCount: 3, maxAttempts: 5 }
-        );
+        const error = new ApiError('Invalid credentials', 401, 'INVALID_CREDENTIALS', {
+          attemptCount: 3,
+          maxAttempts: 5,
+        });
 
         expect(error.isAuthError()).toBe(true);
         expect(error.isClientError()).toBe(true);
@@ -596,12 +586,10 @@ describe('API Client Module', () => {
       });
 
       it('should handle rate limiting scenario', () => {
-        const error = new ApiError(
-          'Rate limit exceeded',
-          429,
-          'RATE_LIMIT_EXCEEDED',
-          { retryAfter: 60, limit: 100 }
-        );
+        const error = new ApiError('Rate limit exceeded', 429, 'RATE_LIMIT_EXCEEDED', {
+          retryAfter: 60,
+          limit: 100,
+        });
 
         expect(error.isClientError()).toBe(true);
         expect(error.status).toBe(429);
@@ -610,37 +598,23 @@ describe('API Client Module', () => {
 
       it('should handle network timeout scenario', () => {
         const axiosError = new Error('timeout of 30000ms exceeded') as AxiosError;
-        const error = new ApiError(
-          'Network timeout',
-          0,
-          'NETWORK_TIMEOUT',
-          undefined,
-          axiosError
-        );
+        const error = new ApiError('Network timeout', 0, 'NETWORK_TIMEOUT', undefined, axiosError);
 
         expect(error.isNetworkError()).toBe(true);
         expect(error.originalError).toBe(axiosError);
       });
 
       it('should handle server maintenance scenario', () => {
-        const error = new ApiError(
-          'Service temporarily unavailable',
-          503,
-          'MAINTENANCE_MODE',
-          { estimatedDowntime: '30 minutes' }
-        );
+        const error = new ApiError('Service temporarily unavailable', 503, 'MAINTENANCE_MODE', {
+          estimatedDowntime: '30 minutes',
+        });
 
         expect(error.isServerError()).toBe(true);
         expect(error.status).toBe(503);
       });
 
       it('should handle resource not found scenario', () => {
-        const error = new ApiError(
-          'User not found',
-          404,
-          'USER_NOT_FOUND',
-          { userId: 'usr_123' }
-        );
+        const error = new ApiError('User not found', 404, 'USER_NOT_FOUND', { userId: 'usr_123' });
 
         expect(error.isNotFound()).toBe(true);
         expect(error.isClientError()).toBe(true);
@@ -648,12 +622,10 @@ describe('API Client Module', () => {
       });
 
       it('should handle permission denied scenario', () => {
-        const error = new ApiError(
-          'Access denied',
-          403,
-          'INSUFFICIENT_PERMISSIONS',
-          { requiredRole: 'admin', userRole: 'user' }
-        );
+        const error = new ApiError('Access denied', 403, 'INSUFFICIENT_PERMISSIONS', {
+          requiredRole: 'admin',
+          userRole: 'user',
+        });
 
         expect(error.isForbidden()).toBe(true);
         expect(error.isClientError()).toBe(true);
@@ -1425,5 +1397,4 @@ describe('API Client Module', () => {
       });
     });
   });
-
 });

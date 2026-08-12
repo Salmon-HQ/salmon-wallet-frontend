@@ -2,8 +2,17 @@
 // NFT Transfer. Waits for async address validation before clicking Save/Send.
 // Requires .playwright/fixtures/wallet-b-addr.txt populated by discover-wallet-addr.mjs.
 import {
-  launch, capture, sleep, openPopup, unlockOrRecover, waitHome, tapConsole,
-  SECRETS, repoRoot, reportsRoot, waitForButtonEnabled,
+  launch,
+  capture,
+  sleep,
+  openPopup,
+  unlockOrRecover,
+  waitHome,
+  tapConsole,
+  SECRETS,
+  repoRoot,
+  reportsRoot,
+  waitForButtonEnabled,
 } from './lib.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -11,10 +20,7 @@ import path from 'node:path';
 const log = (m) => console.log('▶ ' + m);
 const findings = [];
 const errors = [];
-const WALLET_B_ADDR = fs.readFileSync(
-  path.join(fixturesRoot, 'wallet-b-addr.txt'),
-  'utf8',
-).trim();
+const WALLET_B_ADDR = fs.readFileSync(path.join(fixturesRoot, 'wallet-b-addr.txt'), 'utf8').trim();
 log('Wallet B = ' + WALLET_B_ADDR);
 
 const { ctx, extId } = await launch();
@@ -76,7 +82,7 @@ async function step7() {
   await capture(popup, 'state-modifying', '07b-form');
 
   await popup.getByTestId('send-recipient-input').fill(WALLET_B_ADDR);
-  await sleep(1500);  // wait for addr validation
+  await sleep(1500); // wait for addr validation
   const amt = popup.getByTestId('send-amount-input');
   if (await amt.count()) {
     await amt.fill('0.001');
@@ -108,7 +114,12 @@ async function step7() {
   await capture(popup, 'state-modifying', '07e-result');
   const t = await popup.locator('body').innerText();
   const success = /success|sent|confirm|Tx|signature|done/i.test(t);
-  findings.push('Step 7 ' + (success ? 'OK' : 'PARTIAL') + ': result snippet=' + t.slice(0, 200).replace(/\n/g, ' | '));
+  findings.push(
+    'Step 7 ' +
+      (success ? 'OK' : 'PARTIAL') +
+      ': result snippet=' +
+      t.slice(0, 200).replace(/\n/g, ' | ')
+  );
   await popup.close();
 }
 
@@ -116,7 +127,10 @@ async function step7() {
 async function step10() {
   log('=== 10: NFT Transfer Salmon Logo → Wallet B ===');
   const popup = await freshPopup('s10');
-  await popup.getByRole('button', { name: /Collectibles/i }).first().click();
+  await popup
+    .getByRole('button', { name: /Collectibles/i })
+    .first()
+    .click();
   await sleep(2500);
   const target = popup.locator('text=/Salmon Logo/').first();
   if (!(await target.count())) {
@@ -143,7 +157,10 @@ async function step10() {
     await popup.close();
     return;
   }
-  await popup.getByRole('button', { name: /Review|Continue|Next/i }).first().click({ force: true });
+  await popup
+    .getByRole('button', { name: /Review|Continue|Next/i })
+    .first()
+    .click({ force: true });
   await sleep(4000);
   await capture(popup, 'state-modifying', '10c-review');
 
@@ -154,7 +171,9 @@ async function step10() {
     await sleep(30000);
     await capture(popup, 'state-modifying', '10d-result');
     const t = await popup.locator('body').innerText();
-    findings.push('Step 10: NFT transfer submitted, result snippet=' + t.slice(0, 200).replace(/\n/g, ' | '));
+    findings.push(
+      'Step 10: NFT transfer submitted, result snippet=' + t.slice(0, 200).replace(/\n/g, ' | ')
+    );
   } else findings.push('Step 10 PARTIAL: no Send/Confirm on review');
   await popup.close();
 }
@@ -182,7 +201,7 @@ fs.writeFileSync(
     '```',
     errors.length ? errors.slice(0, 60).join('\n') : '(none)',
     '```',
-  ].join('\n'),
+  ].join('\n')
 );
 
 await ctx.close();

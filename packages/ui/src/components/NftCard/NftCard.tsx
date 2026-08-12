@@ -9,7 +9,22 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-import { colors, gradients, fontFamily, fontWeight, borderRadius, fontSize, spacing, shadowsCSS, opacity, duration, easing, componentSizes, blur, borderWidth } from '@salmon/shared';
+import {
+  colors,
+  gradients,
+  fontFamily,
+  fontWeight,
+  borderRadius,
+  fontSize,
+  spacing,
+  shadowsCSS,
+  opacity,
+  duration,
+  easing,
+  componentSizes,
+  blur,
+  borderWidth,
+} from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { NftCardProps } from './types';
 
@@ -195,4 +210,3 @@ export function NftCard({ nft, onPress, style, className, testID }: NftCardProps
     </Container>
   );
 }
-

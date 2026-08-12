@@ -5,13 +5,7 @@
  * exposes the extension id + an opened popup page. Replaces the legacy
  * launch()/openPopup() helpers from scripts/lib.mjs.
  */
-import {
-  test as base,
-  expect,
-  chromium,
-  type BrowserContext,
-  type Page,
-} from '@playwright/test';
+import { test as base, expect, chromium, type BrowserContext, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

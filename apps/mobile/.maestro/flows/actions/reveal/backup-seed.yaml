@@ -5,21 +5,21 @@ appId: io.salmonwallet.app
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-settings.yaml
 - tapOn:
-    id: "settings-item-backup-seed"
+    id: 'settings-item-backup-seed'
 - waitForAnimationToEnd:
     timeout: 4000
-- assertVisible: "Backup Seed Phrase"
+- assertVisible: 'Backup Seed Phrase'
 # Reveal the seed via its labeled overlay.
 - tapOn:
-    id: "backup-seed-reveal-overlay"
+    id: 'backup-seed-reveal-overlay'
 - waitForAnimationToEnd:
     timeout: 4000
 # Verify reveal happened by absence of "Tap to Reveal" placeholder.
 # Do NOT screenshot revealed words and do NOT pin seed-word literals here —
 # matching specific words would leak parts of SALMON_TEST_SEED_A into version control.
-- assertNotVisible: "Tap to Reveal"
+- assertNotVisible: 'Tap to Reveal'
 - tapOn:
-    id: "backup-seed-done-button"
+    id: 'backup-seed-done-button'
 - waitForAnimationToEnd:
     timeout: 2000
-- assertVisible: "Settings"
+- assertVisible: 'Settings'

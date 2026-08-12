@@ -42,7 +42,10 @@ function makeClient(): QueryClient {
   return client;
 }
 
-function setup(getStatus: (id: string) => Promise<BridgeTransaction | null>, pollIntervalMs = 1_000) {
+function setup(
+  getStatus: (id: string) => Promise<BridgeTransaction | null>,
+  pollIntervalMs = 1_000
+) {
   const client = makeClient();
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={client}>
@@ -120,7 +123,7 @@ describe('BridgeSettlementProvider', () => {
     });
     expect(trackFirstTime).toHaveBeenCalledWith(
       'first_swap_completed',
-      STORAGE_KEYS.ANALYTICS_FIRST_SWAP,
+      STORAGE_KEYS.ANALYTICS_FIRST_SWAP
     );
   });
 
@@ -174,7 +177,11 @@ describe('BridgeSettlementProvider', () => {
     vi.useFakeTimers();
 
     act(() => {
-      result.current.trackBridgeExchange({ id: 'ex-3', destNetworkId: DEST_NET, destAccountId: DEST_ACCT });
+      result.current.trackBridgeExchange({
+        id: 'ex-3',
+        destNetworkId: DEST_NET,
+        destAccountId: DEST_ACCT,
+      });
     });
 
     await act(async () => {

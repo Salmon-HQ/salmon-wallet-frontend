@@ -72,10 +72,21 @@ export function useAccountsSelection({
       await setStorageItem(STORAGE_KEYS.ACCOUNT_ID, targetId);
       await setStorageItem(STORAGE_KEYS.PATH_INDEX, 0);
     },
-    [accountId, findAccount, getDefaultPathIndex, networkId, setAccountId, setPathIndex, setSwitchingNetwork]
+    [
+      accountId,
+      findAccount,
+      getDefaultPathIndex,
+      networkId,
+      setAccountId,
+      setPathIndex,
+      setSwitchingNetwork,
+    ]
   );
 
-  const clearSwitchingNetwork = useCallback(() => setSwitchingNetwork(false), [setSwitchingNetwork]);
+  const clearSwitchingNetwork = useCallback(
+    () => setSwitchingNetwork(false),
+    [setSwitchingNetwork]
+  );
 
   const changeNetwork = useCallback(
     async (targetId: string): Promise<void> => {
@@ -102,7 +113,15 @@ export function useAccountsSelection({
       await setStorageItem(STORAGE_KEYS.NETWORK_ID, targetId);
       await setStorageItem(STORAGE_KEYS.PATH_INDEX, targetIndex);
     },
-    [activeAccount, getDefaultPathIndex, networkId, pathIndex, setNetworkId, setPathIndex, setSwitchingNetwork]
+    [
+      activeAccount,
+      getDefaultPathIndex,
+      networkId,
+      pathIndex,
+      setNetworkId,
+      setPathIndex,
+      setSwitchingNetwork,
+    ]
   );
 
   const switchNetwork = useCallback(

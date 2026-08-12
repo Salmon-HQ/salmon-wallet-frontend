@@ -39,7 +39,8 @@ import { sessionArea } from '../../utils/storageCompat';
 // Types
 // ============================================================================
 
-type AuthStep = 'select' | 'create' | 'recover' | 'password' | 'analytics-consent' | 'success' | 'derived';
+type AuthStep =
+  'select' | 'create' | 'recover' | 'password' | 'analytics-consent' | 'success' | 'derived';
 
 interface AuthData {
   mnemonic: string;
@@ -74,15 +75,20 @@ function LoadingSpinner() {
  */
 function App() {
   const [state, actions] = useAccountsContext();
-  const { ready, locked, accounts, error: initError, activeAccount, activeBlockchainAccount, networkId, pathIndex } = state;
+  const {
+    ready,
+    locked,
+    accounts,
+    error: initError,
+    activeAccount,
+    activeBlockchainAccount,
+    networkId,
+    pathIndex,
+  } = state;
   const settleAfterTx = useSettleAfterTx();
   const solanaApprovalAccount = useMemo(
-    () => getActiveSolanaApprovalAccount(
-      activeAccount,
-      activeBlockchainAccount,
-      pathIndex,
-    ),
-    [activeAccount, activeBlockchainAccount, pathIndex],
+    () => getActiveSolanaApprovalAccount(activeAccount, activeBlockchainAccount, pathIndex),
+    [activeAccount, activeBlockchainAccount, pathIndex]
   );
   const solanaAddress = solanaApprovalAccount?.getReceiveAddress() ?? '';
   const solanaApprovalNetworkId = solanaApprovalAccount?.network.id ?? null;
@@ -117,7 +123,9 @@ function App() {
         if (request.method === 'connect' && request.id != null) {
           setPendingDAppRequest({ origin, request });
         } else if (
-          (request.method === 'sign' || request.method === 'signOffchain' || request.method === 'signIn') &&
+          (request.method === 'sign' ||
+            request.method === 'signOffchain' ||
+            request.method === 'signIn') &&
           request.id != null
         ) {
           setPendingDAppSignMessageRequest({ origin, request });
@@ -142,7 +150,9 @@ function App() {
       if (request.method === 'connect' && request.id != null) {
         setPendingDAppRequest({ origin, request });
       } else if (
-        (request.method === 'sign' || request.method === 'signOffchain' || request.method === 'signIn') &&
+        (request.method === 'sign' ||
+          request.method === 'signOffchain' ||
+          request.method === 'signIn') &&
         request.id != null
       ) {
         setPendingDAppSignMessageRequest({ origin, request });
@@ -161,28 +171,34 @@ function App() {
   // Listen for approval requests from background via session storage
   useEffect(() => {
     // Check for existing pending approvals on mount
-    sessionArea.get('salmon_pending_approval').then((result) => {
-      const queue = result['salmon_pending_approval'] as Array<{
-        origin: string;
-        request: DAppApprovalRequest;
-      }> | undefined;
-      if (queue && queue.length > 0) {
-        routeApproval(queue[0]);
-      }
-    }).catch(() => { /* ignore */ });
+    sessionArea
+      .get('salmon_pending_approval')
+      .then((result) => {
+        const queue = result['salmon_pending_approval'] as
+          | Array<{
+              origin: string;
+              request: DAppApprovalRequest;
+            }>
+          | undefined;
+        if (queue && queue.length > 0) {
+          routeApproval(queue[0]);
+        }
+      })
+      .catch(() => {
+        /* ignore */
+      });
 
     // Watch for new approvals written by background.ts
-    const listener = (
-      changes: Record<string, chrome.storage.StorageChange>,
-      areaName: string
-    ) => {
+    const listener = (changes: Record<string, chrome.storage.StorageChange>, areaName: string) => {
       if (areaName !== 'session' && areaName !== 'local') return;
       const change = changes['salmon_pending_approval'];
       if (!change) return;
-      const queue = change.newValue as Array<{
-        origin: string;
-        request: DAppApprovalRequest;
-      }> | undefined;
+      const queue = change.newValue as
+        | Array<{
+            origin: string;
+            request: DAppApprovalRequest;
+          }>
+        | undefined;
       if (queue && queue.length > 0) {
         routeApproval(queue[0]);
       }
@@ -200,32 +216,40 @@ function App() {
     setPendingDAppTxRequest(null);
     setPendingDAppSignMessageRequest(null);
 
-    sessionArea.get('salmon_pending_approval').then((result) => {
-      const queue = result['salmon_pending_approval'] as unknown[] | undefined;
-      if (queue && queue.length > 1) {
-        // Pop the first item; the storage listener will route the next one
-        const remaining = queue.slice(1);
-        sessionArea.set({ 'salmon_pending_approval': remaining });
-      } else {
-        sessionArea.remove('salmon_pending_approval');
-      }
-    }).catch(() => { /* ignore */ });
+    sessionArea
+      .get('salmon_pending_approval')
+      .then((result) => {
+        const queue = result['salmon_pending_approval'] as unknown[] | undefined;
+        if (queue && queue.length > 1) {
+          // Pop the first item; the storage listener will route the next one
+          const remaining = queue.slice(1);
+          sessionArea.set({ salmon_pending_approval: remaining });
+        } else {
+          sessionArea.remove('salmon_pending_approval');
+        }
+      })
+      .catch(() => {
+        /* ignore */
+      });
   }, []);
 
   // After a dApp approval, settle balance + transactions for the active account/network
   // so HomePage re-fetches without a legacy refreshKey prop bridge.
-  const dismissApprovalWithRefresh = useCallback((approved: boolean) => {
-    dismissApproval();
-    if (approved && solanaAddress) {
-      settleAfterTx({
-        accountId: solanaAddress,
-        networkId: (solanaApprovalNetworkId ?? networkId ?? undefined) as NetworkId | undefined,
-        kinds: ['balance', 'transactions'],
-      }).catch((err) => {
-        console.warn('[App] settleAfterTx failed:', err);
-      });
-    }
-  }, [dismissApproval, networkId, settleAfterTx, solanaAddress, solanaApprovalNetworkId]);
+  const dismissApprovalWithRefresh = useCallback(
+    (approved: boolean) => {
+      dismissApproval();
+      if (approved && solanaAddress) {
+        settleAfterTx({
+          accountId: solanaAddress,
+          networkId: (solanaApprovalNetworkId ?? networkId ?? undefined) as NetworkId | undefined,
+          kinds: ['balance', 'transactions'],
+        }).catch((err) => {
+          console.warn('[App] settleAfterTx failed:', err);
+        });
+      }
+    },
+    [dismissApproval, networkId, settleAfterTx, solanaAddress, solanaApprovalNetworkId]
+  );
 
   // Auth flow state
   const [authStep, setAuthStep] = useState<AuthStep>('select');
@@ -326,10 +350,13 @@ function App() {
     setAuthStep('analytics-consent');
   }, []);
 
-  const handleConsentResolve = useCallback((enabled: boolean) => {
-    void resolveConsentPrompt(enabled);
-    setAuthStep('success');
-  }, [resolveConsentPrompt]);
+  const handleConsentResolve = useCallback(
+    (enabled: boolean) => {
+      void resolveConsentPrompt(enabled);
+      setAuthStep('success');
+    },
+    [resolveConsentPrompt]
+  );
 
   const handlePasswordBack = useCallback(() => {
     if (authData?.flowType === 'create') {
@@ -418,28 +445,19 @@ function App() {
   if (accounts.length === 0 || justCreated || isAddingAccount) {
     switch (authStep) {
       case 'create':
-        return (
-          <CreateWalletPage
-            onComplete={handleCreateComplete}
-            onBack={handleAuthBack}
-          />
-        );
+        return <CreateWalletPage onComplete={handleCreateComplete} onBack={handleAuthBack} />;
       case 'recover':
-        return (
-          <RecoverWalletPage
-            onComplete={handleRecoverComplete}
-            onBack={handleAuthBack}
-          />
-        );
+        return <RecoverWalletPage onComplete={handleRecoverComplete} onBack={handleAuthBack} />;
       case 'password':
-        if (!authData) return (
-          <SelectOptionsPage
-            onCreateWallet={handleCreateWallet}
-            onRecoverWallet={handleRecoverWallet}
-            hasAccounts={accounts.length > 0}
-            onAccessExisting={handleAccessExisting}
-          />
-        );
+        if (!authData)
+          return (
+            <SelectOptionsPage
+              onCreateWallet={handleCreateWallet}
+              onRecoverWallet={handleRecoverWallet}
+              hasAccounts={accounts.length > 0}
+              onAccessExisting={handleAccessExisting}
+            />
+          );
         return (
           <PasswordPage
             mnemonic={authData.mnemonic}
@@ -457,16 +475,9 @@ function App() {
           />
         );
       case 'success':
-        return (
-          <SuccessPage
-            onGoToWallet={handleGoToWallet}
-            onCheckDerived={handleCheckDerived}
-          />
-        );
+        return <SuccessPage onGoToWallet={handleGoToWallet} onCheckDerived={handleCheckDerived} />;
       case 'derived':
-        return (
-          <DerivedAccountsPage onComplete={handleDerivedComplete} />
-        );
+        return <DerivedAccountsPage onComplete={handleDerivedComplete} />;
       default:
         return (
           <SelectOptionsPage
@@ -481,12 +492,7 @@ function App() {
 
   // dApp connection approval (popup launched by dApp connect request)
   // dApp sign message approval
-  if (
-    pendingDAppSignMessageRequest &&
-    !locked &&
-    accounts.length > 0 &&
-    solanaApprovalAccount
-  ) {
+  if (pendingDAppSignMessageRequest && !locked && accounts.length > 0 && solanaApprovalAccount) {
     if (pendingDAppSignMessageRequest.request.method === 'signIn') {
       return (
         <DAppSignInApprovalPage
@@ -508,12 +514,7 @@ function App() {
   }
 
   // dApp transaction approval
-  if (
-    pendingDAppTxRequest &&
-    !locked &&
-    accounts.length > 0 &&
-    solanaApprovalAccount
-  ) {
+  if (pendingDAppTxRequest && !locked && accounts.length > 0 && solanaApprovalAccount) {
     return (
       <DAppTransactionApprovalPage
         origin={pendingDAppTxRequest.origin}

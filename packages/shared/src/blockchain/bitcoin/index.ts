@@ -25,10 +25,7 @@ export {
   BITCOIN_TESTNET_COIN_TYPE,
   BITCOIN_NETWORKS,
 } from './factory';
-export type {
-  CreateBitcoinAccountOptions,
-  DeriveBitcoinAccountsOptions,
-} from './factory';
+export type { CreateBitcoinAccountOptions, DeriveBitcoinAccountsOptions } from './factory';
 
 // Transfer functions
 export {

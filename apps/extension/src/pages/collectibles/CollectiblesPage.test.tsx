@@ -84,9 +84,7 @@ describe('CollectiblesPage', () => {
   });
 
   it('renders mainnet NFTs from the useSolanaNfts query', async () => {
-    render(
-      <CollectiblesPage activeAccount={mockAccount as any} developerNetworks={false} />,
-    );
+    render(<CollectiblesPage activeAccount={mockAccount as any} developerNetworks={false} />);
 
     expect(await screen.findByText('Burned NFT')).toBeTruthy();
   });

@@ -15,17 +15,14 @@ export type { BridgeChain, BridgeToken, BridgeEstimate, BridgeExchange };
 /**
  * Props for RecipientAddressInput component (React Native)
  */
-export interface RecipientAddressInputProps
-  extends RecipientAddressInputPropsBase<ViewStyle> {}
+export interface RecipientAddressInputProps extends RecipientAddressInputPropsBase<ViewStyle> {}
 
 /**
  * Props for BridgeRecipientScreen sub-component (React Native)
  */
-export interface BridgeRecipientScreenProps
-  extends BridgeRecipientScreenPropsBase<ViewStyle> {}
+export interface BridgeRecipientScreenProps extends BridgeRecipientScreenPropsBase<ViewStyle> {}
 
 /**
  * Props for BridgeReviewScreen sub-component (React Native)
  */
-export interface BridgeReviewScreenProps
-  extends BridgeReviewScreenPropsBase<ViewStyle> {}
+export interface BridgeReviewScreenProps extends BridgeReviewScreenPropsBase<ViewStyle> {}

@@ -48,7 +48,8 @@ export function TokenDetailRoute(): React.ReactElement {
       price: found.price,
       uiAmount: found.uiAmount,
       usdBalance: found.usdBalance,
-      last24HoursChange: found.priceChange24h !== undefined ? { perc: found.priceChange24h } : undefined,
+      last24HoursChange:
+        found.priceChange24h !== undefined ? { perc: found.priceChange24h } : undefined,
       tags: found.tags,
       coingeckoId: found.coingeckoId,
       decimals: found.decimals,
@@ -74,20 +75,30 @@ export function TokenDetailRoute(): React.ReactElement {
     setChartError(false);
 
     const days = PERIOD_TO_DAYS[chartPeriod];
-    getTokenMarketChart({ coingeckoId: tokenCoingeckoId, address: tokenContractAddress }, days, currency)
+    getTokenMarketChart(
+      { coingeckoId: tokenCoingeckoId, address: tokenContractAddress },
+      days,
+      currency
+    )
       .then((res) => {
         if (cancelled) return;
         if (res?.prices) {
-          setChartData(res.prices.map(([ts, price]: [number, number]) => ({ timestamp: ts, price })));
+          setChartData(
+            res.prices.map(([ts, price]: [number, number]) => ({ timestamp: ts, price }))
+          );
         }
       })
       .catch((e) => {
         console.error('Failed to load chart data:', e);
         if (!cancelled) setChartError(true);
       })
-      .finally(() => { if (!cancelled) setChartLoading(false); });
+      .finally(() => {
+        if (!cancelled) setChartLoading(false);
+      });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [tokenCoingeckoId, tokenContractAddress, chartPeriod, currency]);
 
   // Fetch coin info (once per token; contract-address fallback for tokens
@@ -104,11 +115,16 @@ export function TokenDetailRoute(): React.ReactElement {
       })
       .catch((e) => console.error('Failed to load coin info:', e));
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [tokenCoingeckoId, tokenContractAddress, currency]);
 
   const handleBack = useCallback(() => navigate('/home'), [navigate]);
-  const handleChartPeriodChange = useCallback((period: PriceChartPeriod) => setChartPeriod(period), []);
+  const handleChartPeriodChange = useCallback(
+    (period: PriceChartPeriod) => setChartPeriod(period),
+    []
+  );
 
   const currentBlockchain = useMemo(() => {
     if (!networkId) return 'solana';
@@ -118,16 +134,23 @@ export function TokenDetailRoute(): React.ReactElement {
 
   if (!token) {
     // Token not found yet — could be loading or deep link
-    return <TokenDetailPage
-      token={{ address: tokenAddress || '', name: t('general.loading', 'Loading...'), symbol: '...', uiAmount: 0 }}
-      chartData={[]}
-      chartPeriod={chartPeriod}
-      onChartPeriodChange={handleChartPeriodChange}
-      coinInfo={null}
-      marketData={undefined}
-      loading
-      onBack={handleBack}
-    />;
+    return (
+      <TokenDetailPage
+        token={{
+          address: tokenAddress || '',
+          name: t('general.loading', 'Loading...'),
+          symbol: '...',
+          uiAmount: 0,
+        }}
+        chartData={[]}
+        chartPeriod={chartPeriod}
+        onChartPeriodChange={handleChartPeriodChange}
+        coinInfo={null}
+        marketData={undefined}
+        loading
+        onBack={handleBack}
+      />
+    );
   }
 
   return (

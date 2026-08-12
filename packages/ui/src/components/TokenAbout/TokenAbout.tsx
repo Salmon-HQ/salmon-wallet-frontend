@@ -119,36 +119,16 @@ export function TokenAbout({
         className={className}
       >
         <ContentContainer>
-          <Skeleton
-            variant="text"
-            width={60}
-            height={24}
-            sx={{ bgcolor: colors.skeleton.base }}
-          />
+          <Skeleton variant="text" width={60} height={24} sx={{ bgcolor: colors.skeleton.base }} />
           <Skeleton
             variant="text"
             width="100%"
             height={18}
             sx={{ bgcolor: colors.skeleton.base }}
           />
-          <Skeleton
-            variant="text"
-            width="95%"
-            height={18}
-            sx={{ bgcolor: colors.skeleton.base }}
-          />
-          <Skeleton
-            variant="text"
-            width="90%"
-            height={18}
-            sx={{ bgcolor: colors.skeleton.base }}
-          />
-          <Skeleton
-            variant="text"
-            width="70%"
-            height={18}
-            sx={{ bgcolor: colors.skeleton.base }}
-          />
+          <Skeleton variant="text" width="95%" height={18} sx={{ bgcolor: colors.skeleton.base }} />
+          <Skeleton variant="text" width="90%" height={18} sx={{ bgcolor: colors.skeleton.base }} />
+          <Skeleton variant="text" width="70%" height={18} sx={{ bgcolor: colors.skeleton.base }} />
         </ContentContainer>
       </BlurContainer>
     );
@@ -165,23 +145,24 @@ export function TokenAbout({
     >
       <ContentContainer>
         <Title>{displayTitle}</Title>
-        <Description
-          ref={descriptionRef}
-          $maxLines={maxLines}
-          $expanded={expanded}
-        >
+        <Description ref={descriptionRef} $maxLines={maxLines} $expanded={expanded}>
           {description}
         </Description>
         {shouldShowReadMore && (
           <ReadMoreButton
             onClick={toggleExpanded}
-            aria-label={expanded ? t('token.about.readLess', 'Read less') : t('token.about.readMore', 'Read more')}
+            aria-label={
+              expanded
+                ? t('token.about.readLess', 'Read less')
+                : t('token.about.readMore', 'Read more')
+            }
           >
-            {expanded ? t('token.about.readLess', 'Read less') : t('token.about.readMore', 'Read more')}
+            {expanded
+              ? t('token.about.readLess', 'Read less')
+              : t('token.about.readMore', 'Read more')}
           </ReadMoreButton>
         )}
       </ContentContainer>
     </BlurContainer>
   );
 }
-

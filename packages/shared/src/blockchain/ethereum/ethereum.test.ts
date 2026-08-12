@@ -19,12 +19,8 @@ import {
 } from './factory';
 import { EthereumAccount } from './EthereumAccount';
 import { WEI_PER_ETH_BIGINT } from '../../utils/decimals';
-import {
-  formatAmount,
-} from './transfer';
-import {
-  formatBalanceDisplay,
-} from './balance';
+import { formatAmount } from './transfer';
+import { formatBalanceDisplay } from './balance';
 import {
   ETH_ADDRESS,
   ETH_ADDRESS_ALT,
@@ -34,15 +30,8 @@ import {
   createERC721Token,
   createERC1155Token,
 } from '../../utils/tokens';
-import {
-  parseAmount,
-  ethToWei,
-  weiToEth,
-} from '../../utils/decimals';
-import {
-  isZeroBalance,
-  compareBalances,
-} from '../../utils/balance';
+import { parseAmount, ethToWei, weiToEth } from '../../utils/decimals';
+import { isZeroBalance, compareBalances } from '../../utils/balance';
 import {
   getFeaturedTokenBySymbol,
   getFeaturedTokenByAddress,
@@ -50,10 +39,7 @@ import {
   ETHEREUM_NETWORK_IDS,
   getFeaturedTokens,
 } from './tokens';
-import {
-  isEthereumAddress,
-  isEnsDomain,
-} from './validation';
+import { isEthereumAddress, isEnsDomain } from './validation';
 import { Wallet } from 'ethers';
 
 // ============================================================================
@@ -70,7 +56,8 @@ const mockEthereumApiFunctions = {
  * Standard test mnemonic (BIP39 reference)
  * This is a publicly known test mnemonic - NEVER use in production
  */
-const TEST_MNEMONIC = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+const TEST_MNEMONIC =
+  'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 
 /**
  * Known addresses derived from TEST_MNEMONIC at different indices
@@ -251,7 +238,7 @@ describe('EthereumAccount.isValidAddress', () => {
       '0x9858EfFD232B4033E47d90003D41EC34EcaEda94',
     ];
 
-    validAddresses.forEach(address => {
+    validAddresses.forEach((address) => {
       expect(EthereumAccount.isValidAddress(address)).toBe(true);
     });
   });
@@ -276,7 +263,7 @@ describe('EthereumAccount.isValidAddress', () => {
       '0x',
     ];
 
-    invalidAddresses.forEach(address => {
+    invalidAddresses.forEach((address) => {
       expect(EthereumAccount.isValidAddress(address)).toBe(false);
     });
   });
@@ -578,8 +565,14 @@ describe('Featured Token Functions', () => {
 
     it('should be case-insensitive for addresses', () => {
       const usdcAddress = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
-      const lower = getFeaturedTokenByAddress(ETHEREUM_NETWORK_IDS.MAINNET, usdcAddress.toLowerCase());
-      const upper = getFeaturedTokenByAddress(ETHEREUM_NETWORK_IDS.MAINNET, usdcAddress.toUpperCase());
+      const lower = getFeaturedTokenByAddress(
+        ETHEREUM_NETWORK_IDS.MAINNET,
+        usdcAddress.toLowerCase()
+      );
+      const upper = getFeaturedTokenByAddress(
+        ETHEREUM_NETWORK_IDS.MAINNET,
+        usdcAddress.toUpperCase()
+      );
 
       expect(lower).toEqual(upper);
     });
@@ -1292,7 +1285,6 @@ describe('EthereumAccount Integration Tests', () => {
       expect(result.type).toBe('ERROR');
       expect(result.code).toBe('invalid');
     });
-
   });
 });
 
@@ -1312,11 +1304,8 @@ describe('Token Service Integration Tests', () => {
       const mockProvider = {} as any;
 
       // Test that function throws or handles error when contract is not accessible
-      await expect(
-        getTokenInfo(mockProvider, '0xINVALID_TOKEN_ADDRESS')
-      ).rejects.toThrow();
+      await expect(getTokenInfo(mockProvider, '0xINVALID_TOKEN_ADDRESS')).rejects.toThrow();
     });
-
   });
 
   describe('getTokensByOwner', () => {
@@ -1328,7 +1317,11 @@ describe('Token Service Integration Tests', () => {
       const { getTokensByOwner } = await import('./tokens');
 
       const mockProvider = {} as any;
-      const result = await getTokensByOwner(mockProvider, '0x742D35cc6634c0532925a3B844bc9e7595f35b32', []);
+      const result = await getTokensByOwner(
+        mockProvider,
+        '0x742D35cc6634c0532925a3B844bc9e7595f35b32',
+        []
+      );
 
       expect(result).toEqual([]);
     });
@@ -1349,15 +1342,16 @@ describe('Token Service Integration Tests', () => {
         };
       });
 
-      const knownTokens = [
-        { address: '0xUSDC...', symbol: 'USDC', name: 'USD Coin', decimals: 6 },
-      ];
+      const knownTokens = [{ address: '0xUSDC...', symbol: 'USDC', name: 'USD Coin', decimals: 6 }];
 
-      const result = await getTokensByOwner(mockProvider, '0x742D35cc6634c0532925a3B844bc9e7595f35b32', knownTokens);
+      const result = await getTokensByOwner(
+        mockProvider,
+        '0x742D35cc6634c0532925a3B844bc9e7595f35b32',
+        knownTokens
+      );
 
       expect(result).toEqual([]);
     });
-
   });
 
   describe('getFeaturedTokens', () => {
@@ -1413,7 +1407,6 @@ describe('Token Service Integration Tests', () => {
 
       expect(result).toBe(false);
     });
-
   });
 });
 
@@ -1458,7 +1451,12 @@ describe('Factory - createEthereumAccountFromWallet', () => {
     const privateKey = '0x0123456789012345678901234567890123456789012345678901234567890123';
     const wallet = new Wallet(privateKey);
 
-    const account = createEthereumAccountFromWallet(ETHEREUM_NETWORKS['ethereum-mainnet'], wallet, undefined, mockEthereumApiFunctions);
+    const account = createEthereumAccountFromWallet(
+      ETHEREUM_NETWORKS['ethereum-mainnet'],
+      wallet,
+      undefined,
+      mockEthereumApiFunctions
+    );
 
     expect(account.index).toBe(0);
   });
@@ -1510,7 +1508,12 @@ describe('Factory - createEthereumAccountFromPrivateKey', () => {
 
   it('should create account with default index', () => {
     const privateKey = '0x0123456789012345678901234567890123456789012345678901234567890123';
-    const account = createEthereumAccountFromPrivateKey(ETHEREUM_NETWORKS['ethereum-mainnet'], privateKey, undefined, mockEthereumApiFunctions);
+    const account = createEthereumAccountFromPrivateKey(
+      ETHEREUM_NETWORKS['ethereum-mainnet'],
+      privateKey,
+      undefined,
+      mockEthereumApiFunctions
+    );
 
     expect(account.index).toBe(0);
   });
@@ -1590,7 +1593,7 @@ describe('Factory - deriveEthereumAccounts', () => {
       apiFunctions: mockEthereumApiFunctions,
     });
 
-    const addresses = accounts.map(acc => acc.getReceiveAddress());
+    const addresses = accounts.map((acc) => acc.getReceiveAddress());
     const uniqueAddresses = new Set(addresses);
 
     expect(uniqueAddresses.size).toBe(5);
@@ -1678,7 +1681,7 @@ describe('Balance - getEthereumTokenBalances', () => {
 
     expect(results).toHaveLength(2);
     // Results should include both, even if some fail
-    results.forEach(result => {
+    results.forEach((result) => {
       expect(result).toHaveProperty('success');
       expect(result).toHaveProperty('address');
     });
@@ -1703,7 +1706,9 @@ describe('Balance - getBalance', () => {
 
     const result = await getBalance(mockProvider, '0x742D35cc6634c0532925a3B844bc9e7595f35b32');
 
-    expect(mockProvider.getBalance).toHaveBeenCalledWith('0x742D35cc6634c0532925a3B844bc9e7595f35b32');
+    expect(mockProvider.getBalance).toHaveBeenCalledWith(
+      '0x742D35cc6634c0532925a3B844bc9e7595f35b32'
+    );
     expect(result.native).toBeDefined();
     expect(result.native.symbol).toBe('ETH');
     expect(result.native.balance).toBe(1_000_000_000_000_000_000n);
@@ -1717,11 +1722,9 @@ describe('Balance - getBalance', () => {
       getBalance: vi.fn().mockResolvedValue(1_000_000_000_000_000_000n),
     } as any;
 
-    const result = await getBalance(
-      mockProvider,
-      '0x742D35cc6634c0532925a3B844bc9e7595f35b32',
-      ['0xUSDC...']
-    );
+    const result = await getBalance(mockProvider, '0x742D35cc6634c0532925a3B844bc9e7595f35b32', [
+      '0xUSDC...',
+    ]);
 
     expect(result.native).toBeDefined();
     expect(Array.isArray(result.tokens)).toBe(true);
@@ -1734,11 +1737,9 @@ describe('Balance - getBalance', () => {
       getBalance: vi.fn().mockResolvedValue(1_000_000_000_000_000_000n),
     } as any;
 
-    const result = await getBalance(
-      mockProvider,
-      '0x742D35cc6634c0532925a3B844bc9e7595f35b32',
-      ['0xINVALID...']
-    );
+    const result = await getBalance(mockProvider, '0x742D35cc6634c0532925a3B844bc9e7595f35b32', [
+      '0xINVALID...',
+    ]);
 
     expect(result.native).toBeDefined();
     expect(result.tokens).toEqual([]);
@@ -1817,9 +1818,9 @@ describe('Transfer - confirmTransaction', () => {
       waitForTransaction: vi.fn().mockResolvedValue(null),
     } as any;
 
-    await expect(
-      confirmTransaction(mockProvider, '0xNONEXISTENT_HASH')
-    ).rejects.toThrow('Transaction 0xNONEXISTENT_HASH not found');
+    await expect(confirmTransaction(mockProvider, '0xNONEXISTENT_HASH')).rejects.toThrow(
+      'Transaction 0xNONEXISTENT_HASH not found'
+    );
   });
 
   it('should handle successful transaction', async () => {

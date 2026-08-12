@@ -5,13 +5,13 @@ appId: io.salmonwallet.app
 # below, leaving its own menu on screen. Dismiss it before touching the header.
 - runFlow:
     when:
-      visible: "Fast refresh"
+      visible: 'Fast refresh'
     commands:
-      - tapOn: "Close"
+      - tapOn: 'Close'
 - assertVisible:
-    id: "wallet-header-account-switcher"
+    id: 'wallet-header-account-switcher'
 - tapOn:
-    id: "wallet-header-settings-button"
+    id: 'wallet-header-settings-button'
 - extendedWaitUntil:
-    visible: "Settings"
+    visible: 'Settings'
     timeout: 5000

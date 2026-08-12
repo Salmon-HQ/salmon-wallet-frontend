@@ -3,14 +3,15 @@
  *
  * Dark background with white text, used for secondary actions.
  */
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  ViewStyle,
-} from 'react-native';
-import { colors, componentSizes, fontFamilyNative, fontSize, letterSpacing, spacing, } from '@salmon/shared';
+  colors,
+  componentSizes,
+  fontFamilyNative,
+  fontSize,
+  letterSpacing,
+  spacing,
+} from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 
 interface SecondaryButtonProps extends Testable {

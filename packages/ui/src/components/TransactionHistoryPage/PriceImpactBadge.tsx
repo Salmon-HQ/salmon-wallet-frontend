@@ -16,7 +16,17 @@ import Typography from '@mui/material/Typography';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
-import { colors, spacing, borderRadius, getPriceImpactSeverity, type PriceImpactSeverity, fontSize, fontWeight, lineHeight, componentSizes } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  getPriceImpactSeverity,
+  type PriceImpactSeverity,
+  fontSize,
+  fontWeight,
+  lineHeight,
+  componentSizes,
+} from '@salmon/shared';
 import type { PriceImpactBadgeProps } from './types';
 
 // ============================================================================
@@ -30,9 +40,24 @@ const SEVERITY_COLORS: Record<PriceImpactSeverity, string> = {
 };
 
 const SIZE_CONFIG = {
-  small: { iconSize: componentSizes.iconSizeXxs, fontSize: fontSize.xs, paddingH: spacing.xs, paddingV: spacing.xxs },
-  medium: { iconSize: componentSizes.iconSizeXxsm, fontSize: fontSize.sm, paddingH: spacing.sm, paddingV: spacing.xs },
-  large: { iconSize: componentSizes.iconSizeXs, fontSize: fontSize.base, paddingH: spacing.md, paddingV: spacing.sm },
+  small: {
+    iconSize: componentSizes.iconSizeXxs,
+    fontSize: fontSize.xs,
+    paddingH: spacing.xs,
+    paddingV: spacing.xxs,
+  },
+  medium: {
+    iconSize: componentSizes.iconSizeXxsm,
+    fontSize: fontSize.sm,
+    paddingH: spacing.sm,
+    paddingV: spacing.xs,
+  },
+  large: {
+    iconSize: componentSizes.iconSizeXs,
+    fontSize: fontSize.base,
+    paddingH: spacing.md,
+    paddingV: spacing.sm,
+  },
 } as const;
 
 // ============================================================================
@@ -102,4 +127,3 @@ export function PriceImpactBadge({
     </Container>
   );
 }
-

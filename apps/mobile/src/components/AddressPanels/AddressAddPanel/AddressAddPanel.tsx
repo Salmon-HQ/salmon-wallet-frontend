@@ -3,13 +3,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -21,7 +15,9 @@ import {
   useAddressBookForm,
   type AddressBookAddBaseProps,
   type BlockchainType,
-fontSize, opacity, } from '@salmon/shared';
+  fontSize,
+  opacity,
+} from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { InputAddress } from '../../InputAddress';
 import { QRScanner } from '../../QRScanner';
@@ -56,14 +52,9 @@ export function AddressAddPanel({
   }, [form, onSave]);
 
   return (
-    <SettingsScreenLayout
-      title={t('settings.addressbook.add', 'Add Address')}
-      onBack={onBack}
-    >
+    <SettingsScreenLayout title={t('settings.addressbook.add', 'Add Address')} onBack={onBack}>
       {/* Label */}
-      <Text style={styles.fieldLabel}>
-        {t('settings.addressbook.label', 'Label')}
-      </Text>
+      <Text style={styles.fieldLabel}>{t('settings.addressbook.label', 'Label')}</Text>
       <TextInput
         testID="address-book-label-input"
         style={styles.textInput}
@@ -96,21 +87,17 @@ export function AddressAddPanel({
           onPress={() => setShowScanner(true)}
           activeOpacity={0.7}
         >
-          <Ionicons
-            name="qr-code-outline"
-            size={18}
-            color={colors.accent.primary}
-          />
-          <Text style={styles.scanButtonText}>
-            {t('qrScanner.scanButton', 'Scan QR code')}
-          </Text>
+          <Ionicons name="qr-code-outline" size={18} color={colors.accent.primary} />
+          <Text style={styles.scanButtonText}>{t('qrScanner.scanButton', 'Scan QR code')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Network (read-only) */}
       <Text style={styles.fieldLabel}>{t('settings.addressbook.network')}</Text>
       <View style={styles.networkDisplay}>
-        <Text style={styles.networkText}>{activeBlockchain.charAt(0).toUpperCase() + activeBlockchain.slice(1)}</Text>
+        <Text style={styles.networkText}>
+          {activeBlockchain.charAt(0).toUpperCase() + activeBlockchain.slice(1)}
+        </Text>
       </View>
 
       {/* Save Button */}
@@ -122,9 +109,7 @@ export function AddressAddPanel({
         disabled={!form.canSave}
         activeOpacity={0.7}
       >
-        <Text style={styles.saveButtonText}>
-          {t('settings.addressbook.save', 'Save Address')}
-        </Text>
+        <Text style={styles.saveButtonText}>{t('settings.addressbook.save', 'Save Address')}</Text>
       </TouchableOpacity>
 
       <QRScanner

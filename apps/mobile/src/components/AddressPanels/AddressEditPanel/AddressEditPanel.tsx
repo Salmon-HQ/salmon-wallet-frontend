@@ -3,13 +3,7 @@
  */
 
 import React, { useCallback } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -19,7 +13,9 @@ import {
   fontFamilyNative,
   useAddressBookForm,
   type AddressBookEditBaseProps,
-fontSize, opacity, } from '@salmon/shared';
+  fontSize,
+  opacity,
+} from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { InputAddress } from '../../InputAddress';
 
@@ -48,14 +44,9 @@ export function AddressEditPanel({
   }, [form, onSave, contact.address]);
 
   return (
-    <SettingsScreenLayout
-      title={t('settings.addressbook.edit', 'Edit Address')}
-      onBack={onBack}
-    >
+    <SettingsScreenLayout title={t('settings.addressbook.edit', 'Edit Address')} onBack={onBack}>
       {/* Label */}
-      <Text style={styles.fieldLabel}>
-        {t('settings.addressbook.label', 'Label')}
-      </Text>
+      <Text style={styles.fieldLabel}>{t('settings.addressbook.label', 'Label')}</Text>
       <TextInput
         testID="address-book-label-input"
         style={styles.textInput}
@@ -81,7 +72,10 @@ export function AddressEditPanel({
       {/* Network (read-only) */}
       <Text style={styles.fieldLabel}>{t('settings.addressbook.network')}</Text>
       <View style={styles.networkDisplay}>
-        <Text style={styles.networkText}>{contact.networkId.split('-')[0].charAt(0).toUpperCase() + contact.networkId.split('-')[0].slice(1)}</Text>
+        <Text style={styles.networkText}>
+          {contact.networkId.split('-')[0].charAt(0).toUpperCase() +
+            contact.networkId.split('-')[0].slice(1)}
+        </Text>
       </View>
 
       {/* Save Button */}
@@ -93,9 +87,7 @@ export function AddressEditPanel({
         disabled={!form.canSave}
         activeOpacity={0.7}
       >
-        <Text style={styles.saveButtonText}>
-          {t('settings.addressbook.save', 'Save Address')}
-        </Text>
+        <Text style={styles.saveButtonText}>{t('settings.addressbook.save', 'Save Address')}</Text>
       </TouchableOpacity>
     </SettingsScreenLayout>
   );

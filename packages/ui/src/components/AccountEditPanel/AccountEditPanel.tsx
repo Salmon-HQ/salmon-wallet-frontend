@@ -80,7 +80,8 @@ export function AccountEditPanel({
 }: AccountEditPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const [accountState] = useAccountsContext();
-  const account = accountState.accounts.find((a: Account) => a.id === accountId) || accountState.activeAccount;
+  const account =
+    accountState.accounts.find((a: Account) => a.id === accountId) || accountState.activeAccount;
   const [imgError, setImgError] = useState(false);
   const avatarColor = useMemo(() => getAvatarColor(account?.id || ''), [account?.id]);
   const initials = useMemo(() => getInitials(account?.name || ''), [account?.name]);
@@ -113,12 +114,17 @@ export function AccountEditPanel({
   ];
 
   return (
-    <SettingsPanelContent
-      title={t('settings.account_edit.title')}
-      onBack={onBack}
-    >
+    <SettingsPanelContent title={t('settings.account_edit.title')} onBack={onBack}>
       {account && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: spacing.md, gap: `${spacing.md}px` }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            marginBottom: spacing.md,
+            gap: `${spacing.md}px`,
+          }}
+        >
           {account.avatar && !imgError ? (
             <Avatar
               src={account.avatar}

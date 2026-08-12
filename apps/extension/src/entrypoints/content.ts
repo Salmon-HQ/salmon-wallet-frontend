@@ -57,8 +57,6 @@ function setupMessageRelay(): void {
       return;
     }
 
-    window.dispatchEvent(
-      new CustomEvent('salmon_contentscript_message', { detail: response })
-    );
+    window.dispatchEvent(new CustomEvent('salmon_contentscript_message', { detail: response }));
   });
 }

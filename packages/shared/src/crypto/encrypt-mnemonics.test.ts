@@ -73,7 +73,7 @@ describe('encryptMnemonics — sliding TTL', () => {
 describe('encryptMnemonics — missing material', () => {
   it('throws EncryptionMaterialMissingError when no password and no cached key', async () => {
     await expect(encryptMnemonics(TEST_MNEMONICS)).rejects.toBeInstanceOf(
-      EncryptionMaterialMissingError,
+      EncryptionMaterialMissingError
     );
   });
 
@@ -83,13 +83,13 @@ describe('encryptMnemonics — missing material', () => {
     await setStashItem(STASH_KEYS.DERIVED_KEY, expired);
 
     await expect(encryptMnemonics(TEST_MNEMONICS)).rejects.toBeInstanceOf(
-      EncryptionMaterialMissingError,
+      EncryptionMaterialMissingError
     );
   });
 
   it('does not write anything to the stash when it throws', async () => {
     await expect(encryptMnemonics(TEST_MNEMONICS)).rejects.toBeInstanceOf(
-      EncryptionMaterialMissingError,
+      EncryptionMaterialMissingError
     );
     const persisted = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
     expect(persisted).toBeUndefined();

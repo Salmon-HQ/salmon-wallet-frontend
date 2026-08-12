@@ -2,11 +2,11 @@ appId: io.salmonwallet.app
 ---
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-settings.yaml
-- assertVisible: "Settings"
+- assertVisible: 'Settings'
 - tapOn:
-    id: "settings-item-block-explorer"
+    id: 'settings-item-block-explorer'
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: screenshots/smoke/settings/explorer
 - runFlow: ../../../subflows/settings-back.yaml
-- assertVisible: "Settings"
+- assertVisible: 'Settings'

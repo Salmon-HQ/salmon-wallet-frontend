@@ -6,13 +6,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
@@ -23,18 +17,16 @@ import {
   fontFamilyNative,
   type TrustedAppsSelectorBaseProps,
   type TrustedAppItem,
-fontSize, opacity, } from '@salmon/shared';
+  fontSize,
+  opacity,
+} from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 
 // ============================================================================
 // Component
 // ============================================================================
 
-export function TrustedAppsSelector({
-  apps,
-  onRevokeApp,
-  onBack,
-}: TrustedAppsSelectorBaseProps) {
+export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSelectorBaseProps) {
   const { t } = useTranslation();
   const [revoking, setRevoking] = useState<string | null>(null);
 
@@ -61,11 +53,7 @@ export function TrustedAppsSelector({
               <Image source={{ uri: app.icon }} style={styles.appIcon} />
             ) : (
               <View style={styles.appIconPlaceholder}>
-                <Ionicons
-                  name="globe-outline"
-                  size={20}
-                  color={colors.text.secondary}
-                />
+                <Ionicons name="globe-outline" size={20} color={colors.text.secondary} />
               </View>
             )}
             <View style={styles.appText}>
@@ -86,11 +74,7 @@ export function TrustedAppsSelector({
             disabled={isRevoking}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name="trash-outline"
-              size={18}
-              color={colors.status.error}
-            />
+            <Ionicons name="trash-outline" size={18} color={colors.status.error} />
           </TouchableOpacity>
         </View>
       );
@@ -99,22 +83,14 @@ export function TrustedAppsSelector({
   );
 
   return (
-    <SettingsScreenLayout
-      title={t('settings.trusted_apps', 'Trusted Apps')}
-      onBack={onBack}
-    >
+    <SettingsScreenLayout title={t('settings.trusted_apps', 'Trusted Apps')} onBack={onBack}>
       {apps.length > 0 ? (
         apps.map(renderAppItem)
       ) : (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
-            {t('settings.no_trusted_apps', 'No connected apps')}
-          </Text>
+          <Text style={styles.emptyText}>{t('settings.no_trusted_apps', 'No connected apps')}</Text>
           <Text style={styles.emptySubtext}>
-            {t(
-              'settings.no_trusted_apps_hint',
-              'Apps you connect to will appear here'
-            )}
+            {t('settings.no_trusted_apps_hint', 'Apps you connect to will appear here')}
           </Text>
         </View>
       )}

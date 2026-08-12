@@ -77,9 +77,7 @@ describe('DAppConnectPage', () => {
   it('disables the approval view when no address or networkId is available', () => {
     mockUseDAppMetadata.mockReturnValue({ metadata: null });
 
-    const { getByTestId } = render(
-      <DAppConnectPage {...baseProps} address="" networkId={null} />,
-    );
+    const { getByTestId } = render(<DAppConnectPage {...baseProps} address="" networkId={null} />);
 
     expect(getByTestId('dapp-connect-view').dataset.disabled).toBe('true');
   });

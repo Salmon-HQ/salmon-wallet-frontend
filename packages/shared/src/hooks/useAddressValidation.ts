@@ -29,7 +29,11 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { BlockchainAccount } from '../types/blockchain';
-import type { ValidationResult, ValidationState, ValidationCallbackResult } from '../types/validation';
+import type {
+  ValidationResult,
+  ValidationState,
+  ValidationCallbackResult,
+} from '../types/validation';
 import { VALIDATION_MESSAGES, getValidationState, getMessageType } from '../utils/validation';
 
 /**
@@ -72,10 +76,7 @@ export function useAddressValidation(
   account: BlockchainAccount | undefined,
   options: UseAddressValidationParams = {}
 ): UseAddressValidationResult {
-  const {
-    debounceMs = DEFAULT_DEBOUNCE_MS,
-    onValidation,
-  } = options;
+  const { debounceMs = DEFAULT_DEBOUNCE_MS, onValidation } = options;
 
   // State
   const [isValidating, setIsValidating] = useState(false);
@@ -136,7 +137,10 @@ export function useAddressValidation(
   // Validate address function — delegates to account.validateDestinationAccount()
   const validateAddress = useCallback(
     async (addressToValidate: string) => {
-      if (!account) { reset(); return; }
+      if (!account) {
+        reset();
+        return;
+      }
 
       // Create new abort controller for this validation
       abortControllerRef.current = new AbortController();
@@ -236,10 +240,7 @@ export function useAddressValidation(
     return VALIDATION_MESSAGES[validationResult.code] || 'send.validation.unknown';
   }, [validationResult]);
 
-  const messageType = useMemo(
-    () => getMessageType(validationResult),
-    [validationResult]
-  );
+  const messageType = useMemo(() => getMessageType(validationResult), [validationResult]);
 
   return {
     validationState,
@@ -252,4 +253,3 @@ export function useAddressValidation(
     messageType,
   };
 }
-

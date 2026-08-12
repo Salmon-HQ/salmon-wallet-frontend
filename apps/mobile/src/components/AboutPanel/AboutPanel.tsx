@@ -16,7 +16,9 @@ import {
   componentSizes,
   fontFamilyNative,
   useOpenLink,
-fontSize, letterSpacing, } from '@salmon/shared';
+  fontSize,
+  letterSpacing,
+} from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { Logo } from '@salmon/assets';
 
@@ -48,7 +50,13 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
 
   const renderLinkItem = useCallback(
     (icon: IoniconsName, label: string, url: string, id: string) => (
-      <TouchableOpacity testID={`about-link-${id}`} accessibilityRole="button" style={styles.linkItem} onPress={() => openLink(url)} activeOpacity={0.7}>
+      <TouchableOpacity
+        testID={`about-link-${id}`}
+        accessibilityRole="button"
+        style={styles.linkItem}
+        onPress={() => openLink(url)}
+        activeOpacity={0.7}
+      >
         <View style={styles.linkIconContainer}>
           <Ionicons name={icon} size={20} color={colors.text.primary} />
         </View>
@@ -61,7 +69,13 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
 
   const renderSocialButton = useCallback(
     (icon: IoniconsName, url: string, id: string) => (
-      <TouchableOpacity testID={`about-link-${id}`} accessibilityRole="button" style={styles.socialButton} onPress={() => openLink(url)} activeOpacity={0.7}>
+      <TouchableOpacity
+        testID={`about-link-${id}`}
+        accessibilityRole="button"
+        style={styles.socialButton}
+        onPress={() => openLink(url)}
+        activeOpacity={0.7}
+      >
         <Ionicons name={icon} size={24} color={colors.text.primary} />
       </TouchableOpacity>
     ),
@@ -87,9 +101,24 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
       </View>
 
       <View style={styles.linksSection}>
-        {renderLinkItem('globe-outline', t('settings.about_website', 'Website'), LINKS.website, 'website')}
-        {renderLinkItem('document-text-outline', t('settings.about_privacy', 'Privacy Policy'), LINKS.privacy, 'privacy')}
-        {renderLinkItem('document-outline', t('settings.about_terms', 'Terms of Service'), LINKS.terms, 'terms')}
+        {renderLinkItem(
+          'globe-outline',
+          t('settings.about_website', 'Website'),
+          LINKS.website,
+          'website'
+        )}
+        {renderLinkItem(
+          'document-text-outline',
+          t('settings.about_privacy', 'Privacy Policy'),
+          LINKS.privacy,
+          'privacy'
+        )}
+        {renderLinkItem(
+          'document-outline',
+          t('settings.about_terms', 'Terms of Service'),
+          LINKS.terms,
+          'terms'
+        )}
       </View>
 
       <Text style={styles.copyright}>

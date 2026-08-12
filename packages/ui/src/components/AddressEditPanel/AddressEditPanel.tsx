@@ -123,10 +123,7 @@ export function AddressEditPanel({
   }, [form, onSave, contact.address]);
 
   return (
-    <SettingsPanelContent
-      title={t('settings.addressbook.edit', 'Edit Address')}
-      onBack={onBack}
-    >
+    <SettingsPanelContent title={t('settings.addressbook.edit', 'Edit Address')} onBack={onBack}>
       <Box sx={{ px: `${spacing.lg}px` }}>
         {/* Label */}
         <FieldLabel>{t('settings.addressbook.label', 'Label')}</FieldLabel>
@@ -152,11 +149,18 @@ export function AddressEditPanel({
         {/* Network */}
         <FieldLabel>{t('settings.addressbook.network')}</FieldLabel>
         <NetworkBox>
-          <NetworkText>{contact.networkId.split('-')[0].charAt(0).toUpperCase() + contact.networkId.split('-')[0].slice(1)}</NetworkText>
+          <NetworkText>
+            {contact.networkId.split('-')[0].charAt(0).toUpperCase() +
+              contact.networkId.split('-')[0].slice(1)}
+          </NetworkText>
         </NetworkBox>
 
         {/* Save */}
-        <SaveButton onClick={handleSave} disabled={!form.canSave} data-testid="address-book-save-button">
+        <SaveButton
+          onClick={handleSave}
+          disabled={!form.canSave}
+          data-testid="address-book-save-button"
+        >
           {t('settings.addressbook.save', 'Save Address')}
         </SaveButton>
         {errorText && <ErrorText data-testid="address-book-save-error">{errorText}</ErrorText>}

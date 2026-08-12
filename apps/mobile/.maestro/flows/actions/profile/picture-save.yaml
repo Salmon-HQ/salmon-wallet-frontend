@@ -3,16 +3,16 @@ appId: io.salmonwallet.app
 # Change avatar to pumpkin (last in grid).
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-profile-picture.yaml
-- assertVisible: "Profile Picture"
+- assertVisible: 'Profile Picture'
 # Tap pumpkin avatar (row 5 col 5)
 - tapOn:
-    point: "85%,55%"
+    point: '85%,55%'
 - waitForAnimationToEnd:
     timeout: 1000
 # Tap Save button at bottom
 - tapOn:
-    point: "50%,91%"
+    point: '50%,91%'
 - waitForAnimationToEnd:
     timeout: 4000
-- assertVisible: "Edit Account"
+- assertVisible: 'Edit Account'
 - takeScreenshot: screenshots/actions/profile/profile-picture-saved

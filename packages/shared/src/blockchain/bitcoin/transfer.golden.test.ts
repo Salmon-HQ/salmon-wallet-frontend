@@ -52,10 +52,7 @@ function fundingUtxo(valueSats: number, seedByte: number, payTo: string): UTXO {
   const tx = new bitcoin.Transaction();
   tx.version = 2;
   tx.addInput(Buffer.alloc(32, seedByte), 0);
-  tx.addOutput(
-    bitcoin.address.toOutputScript(payTo, bitcoin.networks.bitcoin),
-    BigInt(valueSats)
-  );
+  tx.addOutput(bitcoin.address.toOutputScript(payTo, bitcoin.networks.bitcoin), BigInt(valueSats));
   return { txid: tx.getId(), vout: 0, satoshis: valueSats, rawTx: tx.toHex() };
 }
 
@@ -80,8 +77,7 @@ const EXPECTED_CHANGE = 60_000 + 50_000 - 80_000 - EXPECTED_FEE;
 // Golden constants (generated — see file header)
 // ============================================================================
 
-const GOLDEN_TX_ID =
-  'a501e53679e6bc8965b6fca1e160435203c009b0a770cf88ee791eeb42d377f6';
+const GOLDEN_TX_ID = 'a501e53679e6bc8965b6fca1e160435203c009b0a770cf88ee791eeb42d377f6';
 
 const GOLDEN_SIGNED_TX_HEX =
   '02000000023a1f3b788f2ce2649b1ce88f48ad08ba34dfe2bd22bc16abb4f3e02a45da4984000000006b483045022100edf12d7fcbb0c0536d456c735b19a852059ae28f7aa4290d177358cf93b4885d022036a853483b73f03cdeb99a24581cefebf24d246c53ab05cfe8d1e19164604035012103aaeb52dd7494c361049de67cc680e83ebcbbbdbeb13637d92cd845f70308af5effffffff790a7e337821e1a8c849d0c6ef8916bf277a71242b809b959811b67767d0356e000000006a47304402203bc96d77c4dc6c6a127ed7e69beb994c2407ccdcb54e4279849f0578ad28fdc9022042a5fd289928a984f25ec6195bcd3c509520fb2b30acfd896425a32736f7bc8a012103aaeb52dd7494c361049de67cc680e83ebcbbbdbeb13637d92cd845f70308af5effffffff0280380100000000001976a91477bff20c60e522dfaa3350c39b030a5d004e839a88ac50720000000000001976a914d986ed01b7a22225a70edbf2ba7cfb63a15cb3aa88ac00000000';
@@ -113,14 +109,14 @@ describe('createTransferTransaction golden vectors', () => {
     expect(decoded.ins).toHaveLength(2);
     expect(decoded.outs).toHaveLength(2);
     expect(decoded.outs[0].value).toBe(BigInt(80_000));
-    expect(
-      bitcoin.address.fromOutputScript(decoded.outs[0].script, bitcoin.networks.bitcoin)
-    ).toBe(RECEIVER_ADDRESS);
+    expect(bitcoin.address.fromOutputScript(decoded.outs[0].script, bitcoin.networks.bitcoin)).toBe(
+      RECEIVER_ADDRESS
+    );
     // Change goes back to the sender.
     expect(decoded.outs[1].value).toBe(BigInt(EXPECTED_CHANGE));
-    expect(
-      bitcoin.address.fromOutputScript(decoded.outs[1].script, bitcoin.networks.bitcoin)
-    ).toBe(keyPair.address);
+    expect(bitcoin.address.fromOutputScript(decoded.outs[1].script, bitcoin.networks.bitcoin)).toBe(
+      keyPair.address
+    );
   });
 
   it('omits the change output when the spend consumes the full balance (no dust threshold exists)', async () => {
@@ -190,11 +186,7 @@ describe('sendBitcoin broadcast seam', () => {
     );
 
     expect(broadcast).toHaveBeenCalledTimes(1);
-    expect(broadcast).toHaveBeenCalledWith(
-      NETWORK.id,
-      keyPair.address,
-      GOLDEN_SIGNED_TX_HEX
-    );
+    expect(broadcast).toHaveBeenCalledWith(NETWORK.id, keyPair.address, GOLDEN_SIGNED_TX_HEX);
     expect(result).toEqual({ txId: 'api-tx-id', success: true });
   });
 });

@@ -36,10 +36,7 @@ import { SOL_CONSTANTS } from '../../utils/balance';
 import type { SolanaNetwork } from '../../types/blockchain';
 import type { SolanaWalletBalance } from '../../types/balance';
 import type { SolanaBalanceItem } from '../../types/transfer';
-import type {
-  FetchSolanaBalanceFn,
-  FetchSolanaTransactionsFn,
-} from '../../types/transfer';
+import type { FetchSolanaBalanceFn, FetchSolanaTransactionsFn } from '../../types/transfer';
 import type { FetchNftsFromBackendFn, Nft } from '../../types/nft';
 import { getAll as getAllNftsFromService } from './nft';
 import {
@@ -88,7 +85,11 @@ export interface SolanaAccountOptions {
 export type SolanaBalance = SolanaWalletBalance;
 
 // Re-export types from services for convenience
-export type { SolanaTransactionPaging, SolanaTransactionListResponse, SolanaTransaction } from './transactions';
+export type {
+  SolanaTransactionPaging,
+  SolanaTransactionListResponse,
+  SolanaTransaction,
+} from './transactions';
 
 export type { ValidationResult };
 
@@ -246,9 +247,7 @@ export class SolanaAccount {
    * salmon-api `multichain/price-enrichers/solana-price-enricher` has a
    * Jupiter quote for the asset.
    */
-  private async fetchSolanaBalance(
-    opts?: { includeSpam?: boolean },
-  ): Promise<SolanaBalanceItem[]> {
+  private async fetchSolanaBalance(opts?: { includeSpam?: boolean }): Promise<SolanaBalanceItem[]> {
     return this.fetchBalanceFn(this.network.id, this.publicKey, opts);
   }
 
@@ -257,15 +256,16 @@ export class SolanaAccount {
    * `priceChange24h` contribute their USD balance unchanged (so a
    * partially-priced wallet still produces a meaningful number).
    */
-  private calculateLast24HoursChange(
-    balances: SolanaBalanceItem[],
-    usdTotal: number
-  ): number {
+  private calculateLast24HoursChange(balances: SolanaBalanceItem[], usdTotal: number): number {
     if (!usdTotal || usdTotal === 0) return 0;
 
     let previousTotal = 0;
     balances.forEach((balance) => {
-      if (balance.usdBalance && balance.priceChange24h !== undefined && balance.priceChange24h !== null) {
+      if (
+        balance.usdBalance &&
+        balance.priceChange24h !== undefined &&
+        balance.priceChange24h !== null
+      ) {
         const priceChangeFactor = 1 + balance.priceChange24h / 100;
         const previousBalance = balance.usdBalance / priceChangeFactor;
         previousTotal += previousBalance;
@@ -300,10 +300,7 @@ export class SolanaAccount {
       return { usdTotal: 0, last24HoursChange: 0, items };
     }
 
-    const usdTotal = items.reduce(
-      (currentValue, next) => (next.usdBalance || 0) + currentValue,
-      0
-    );
+    const usdTotal = items.reduce((currentValue, next) => (next.usdBalance || 0) + currentValue, 0);
     const last24HoursChange = this.calculateLast24HoursChange(items, usdTotal);
     return { usdTotal, last24HoursChange, items };
   }
@@ -466,7 +463,7 @@ export class SolanaAccount {
     to: string,
     token: string,
     amount: number,
-    opts?: SolanaTransferOptions,
+    opts?: SolanaTransferOptions
   ): Promise<{ txId: string }> {
     const result = await createTransfer(
       this.getRpc(),
@@ -474,7 +471,7 @@ export class SolanaAccount {
       address(to),
       token,
       amount,
-      opts,
+      opts
     );
     return { txId: result.txId as string };
   }
@@ -492,7 +489,7 @@ export class SolanaAccount {
     to: string,
     token: string,
     amount: number,
-    opts?: EstimateFeeOptions,
+    opts?: EstimateFeeOptions
   ): Promise<FeeEstimateResult | null> {
     const fee = await estimateSolanaFee(
       this.getRpc(),
@@ -500,7 +497,7 @@ export class SolanaAccount {
       address(to),
       token,
       amount,
-      opts,
+      opts
     );
     if (fee === null) return null;
     const feeInSol = removeDecimals(fee, 9);
@@ -556,11 +553,6 @@ export class SolanaAccount {
    * @returns Array of NFTs
    */
   async getAllNfts(): Promise<Nft[]> {
-    return getAllNftsFromService(
-      this.network,
-      this.publicKey,
-      false,
-      this.fetchNftsFn,
-    );
+    return getAllNftsFromService(this.network, this.publicKey, false, this.fetchNftsFn);
   }
 }

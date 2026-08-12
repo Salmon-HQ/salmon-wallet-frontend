@@ -104,7 +104,7 @@ export function DAppSignMessageApprovalView({
           <Subtitle>
             {t(
               'dapp.sign_message_subtitle',
-              'This app is requesting you to sign a message. This will not submit a transaction.',
+              'This app is requesting you to sign a message. This will not submit a transaction.'
             )}
           </Subtitle>
         </Header>
@@ -131,7 +131,7 @@ export function DAppSignMessageApprovalView({
               <FooterNote>
                 {t(
                   'dapp.sign_message_hint',
-                  'Read the message carefully. Message signatures can still authorize actions off-chain.',
+                  'Read the message carefully. Message signatures can still authorize actions off-chain.'
                 )}
               </FooterNote>
             </HintRow>
@@ -156,7 +156,7 @@ export function DAppSignMessageApprovalView({
                 <WarningNotice title={t('dapp.sign_message_tx_lookalike_title', 'Signing blocked')}>
                   {t(
                     'dapp.sign_message_tx_lookalike_warning',
-                    'This app is trying to make you sign what is actually a transaction, disguised as a plain message. Salmon has refused to sign it to protect your funds.',
+                    'This app is trying to make you sign what is actually a transaction, disguised as a plain message. Salmon has refused to sign it to protect your funds.'
                   )}
                 </WarningNotice>
               </Box>

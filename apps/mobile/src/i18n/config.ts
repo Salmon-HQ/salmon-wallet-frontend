@@ -1,11 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { getLocales } from 'expo-localization';
-import {
-  i18nResources,
-  DEFAULT_LANGUAGE,
-  isLanguageSupported,
-} from '@salmon/shared';
+import { i18nResources, DEFAULT_LANGUAGE, isLanguageSupported } from '@salmon/shared';
 
 // Get the device language code (e.g., 'en', 'es')
 const getDeviceLanguage = (): string => {

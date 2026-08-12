@@ -15,7 +15,8 @@ import {
   borderRadius,
   fontFamilyNative,
   useAccountsContext,
-fontSize, } from '@salmon/shared';
+  fontSize,
+} from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { WarningNotice } from '../WarningNotice';
@@ -26,7 +27,11 @@ interface BackupPanelProps {
   authenticateWithBiometric?: () => Promise<string | null>;
 }
 
-export function BackupPanel({ onBack, biometricAvailable, authenticateWithBiometric }: BackupPanelProps) {
+export function BackupPanel({
+  onBack,
+  biometricAvailable,
+  authenticateWithBiometric,
+}: BackupPanelProps) {
   const { t } = useTranslation();
   const [accountState] = useAccountsContext();
   const { activeAccount } = accountState;
@@ -99,7 +104,11 @@ export function BackupPanel({ onBack, biometricAvailable, authenticateWithBiomet
       )}
 
       <View style={styles.buttonContainer}>
-        <SecondaryButton onPress={handleCopy} disabled={!showSeedPhrase} testID="backup-seed-copy-button">
+        <SecondaryButton
+          onPress={handleCopy}
+          disabled={!showSeedPhrase}
+          testID="backup-seed-copy-button"
+        >
           {copied ? t('wallet.copied') : t('actions.copy').toUpperCase()}
         </SecondaryButton>
         <PrimaryButton onPress={onBack} testID="backup-seed-done-button">

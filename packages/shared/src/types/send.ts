@@ -44,9 +44,4 @@ export interface FeeEstimateResult {
  * Transaction status for the send flow.
  */
 export type SendTransactionStatus =
-  | 'idle'
-  | 'estimating-fee'
-  | 'creating'
-  | 'sending'
-  | 'success'
-  | 'failed';
+  'idle' | 'estimating-fee' | 'creating' | 'sending' | 'success' | 'failed';

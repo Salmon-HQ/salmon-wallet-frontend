@@ -43,16 +43,13 @@ devnet('createTransfer (devnet integration)', () => {
   it('builds a SOL transfer that actually lands and reduces the sender balance', async () => {
     if (!SECRET) {
       throw new Error(
-        'DEVNET_TEST_SECRET_KEY is required (JSON secret-key array of a funded devnet keypair).',
+        'DEVNET_TEST_SECRET_KEY is required (JSON secret-key array of a funded devnet keypair).'
       );
     }
 
     const rpc = createSolanaRpc(RPC);
     const rpcSubscriptions = createSolanaRpcSubscriptions(deriveSolanaWsUrl(RPC));
-    const sender = await createKeyPairSignerFromBytes(
-      Uint8Array.from(JSON.parse(SECRET)),
-      false,
-    );
+    const sender = await createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(SECRET)), false);
     const recipient = address(Keypair.generate().publicKey.toBase58());
 
     const getBalance = async (owner: string) =>

@@ -137,9 +137,19 @@ export function SwapInputScreen({
           placeholder={t('swap.enter_amount')}
         />
 
-        {swapError && <ErrorText data-testid="swap-error-text">{typeof swapError === 'string' ? t(swapError) : t(swapError.key, swapError.params)}</ErrorText>}
+        {swapError && (
+          <ErrorText data-testid="swap-error-text">
+            {typeof swapError === 'string' ? t(swapError) : t(swapError.key, swapError.params)}
+          </ErrorText>
+        )}
 
-        {reviewWarning && <WarningText>{typeof reviewWarning === 'string' ? t(reviewWarning) : t(reviewWarning.key, reviewWarning.params)}</WarningText>}
+        {reviewWarning && (
+          <WarningText>
+            {typeof reviewWarning === 'string'
+              ? t(reviewWarning)
+              : t(reviewWarning.key, reviewWarning.params)}
+          </WarningText>
+        )}
 
         {/* You Receive */}
         <SwapAmountInput
@@ -178,4 +188,3 @@ export function SwapInputScreen({
     </Container>
   );
 }
-

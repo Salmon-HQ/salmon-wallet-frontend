@@ -1,6 +1,18 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
-import { colors, fontSize, letterSpacing, lineHeight, spacing, borderRadius, ms, vs, s, fontFamilyNative, componentSizes } from '@salmon/shared';
+import {
+  colors,
+  fontSize,
+  letterSpacing,
+  lineHeight,
+  spacing,
+  borderRadius,
+  ms,
+  vs,
+  s,
+  fontFamilyNative,
+  componentSizes,
+} from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { SwapReviewCardProps } from './types';
 
@@ -15,9 +27,7 @@ export const SwapReviewCard: React.FC<SwapReviewCardProps> = ({
   style,
 }) => {
   return (
-    <BlurContainer
-      style={[styles.container, style]}
-    >
+    <BlurContainer style={[styles.container, style]}>
       <Text style={styles.label}>{label}</Text>
       <Text style={styles.amount}>{amount}</Text>
       {usdValue != null && <Text style={styles.usdValue}>{usdValue}</Text>}

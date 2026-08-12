@@ -17,5 +17,4 @@ export interface TokenSelectorProps extends TokenSelectorPropsBase<ViewStyle> {}
 /**
  * Props for the TokenSelectorModal component (React Native)
  */
-export interface TokenSelectorModalProps
-  extends TokenSelectorModalPropsBase<ViewStyle> {}
+export interface TokenSelectorModalProps extends TokenSelectorModalPropsBase<ViewStyle> {}

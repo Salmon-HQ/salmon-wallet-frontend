@@ -30,7 +30,11 @@ import {
   DEFAULT_FEE_RATE,
 } from './transfer';
 import { SATOSHIS_PER_BTC, btcToSatoshis, satoshisToBtc } from '../../utils/decimals';
-import type { FetchUtxosFn, BroadcastTransactionFn, BitcoinAccountApiFunctions } from '../../types/transfer';
+import type {
+  FetchUtxosFn,
+  BroadcastTransactionFn,
+  BitcoinAccountApiFunctions,
+} from '../../types/transfer';
 
 // ============================================================================
 // Mock API Functions
@@ -51,7 +55,8 @@ const mockApiFunctions: BitcoinAccountApiFunctions = {
  * Standard test mnemonic from BIP39 test vectors
  * This mnemonic is publicly known and should never be used for real funds
  */
-const TEST_MNEMONIC = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+const TEST_MNEMONIC =
+  'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 
 /**
  * Expected Bitcoin address for the test mnemonic at index 0
@@ -172,7 +177,9 @@ describe('BitcoinAccount.satoshisToBtc', () => {
   });
 
   it('should handle large bigint values correctly', () => {
-    expect(BitcoinAccount.satoshisToBtc(BigInt(21_000_000) * BigInt(SATOSHIS_PER_BTC))).toBe(21_000_000);
+    expect(BitcoinAccount.satoshisToBtc(BigInt(21_000_000) * BigInt(SATOSHIS_PER_BTC))).toBe(
+      21_000_000
+    );
   });
 });
 
@@ -206,7 +213,9 @@ describe('BitcoinAccount.btcToSatoshis', () => {
   });
 
   it('should handle large BTC amounts', () => {
-    expect(BitcoinAccount.btcToSatoshis(21_000_000)).toBe(BigInt(21_000_000) * BigInt(SATOSHIS_PER_BTC));
+    expect(BitcoinAccount.btcToSatoshis(21_000_000)).toBe(
+      BigInt(21_000_000) * BigInt(SATOSHIS_PER_BTC)
+    );
   });
 });
 
@@ -283,54 +292,45 @@ describe('BitcoinAccount.formatAddress', () => {
 describe('BitcoinAccount.isValidAddress', () => {
   describe('valid addresses', () => {
     it('should validate P2PKH mainnet address', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.p2pkh_mainnet,
-        bitcoin.networks.bitcoin
-      )).toBe(true);
+      expect(
+        BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.p2pkh_mainnet, bitcoin.networks.bitcoin)
+      ).toBe(true);
     });
 
     it('should validate P2PKH testnet address', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.p2pkh_testnet,
-        bitcoin.networks.testnet
-      )).toBe(true);
+      expect(
+        BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.p2pkh_testnet, bitcoin.networks.testnet)
+      ).toBe(true);
     });
 
     it('should validate P2SH mainnet address', () => {
       // Using a known valid P2SH address
       const validP2SH = '3Kzh9qAqVWQhEsfQz7zEQL1EuSx5tyNLNS';
-      expect(BitcoinAccount.isValidAddress(
-        validP2SH,
-        bitcoin.networks.bitcoin
-      )).toBe(true);
+      expect(BitcoinAccount.isValidAddress(validP2SH, bitcoin.networks.bitcoin)).toBe(true);
     });
 
     it('should validate P2SH testnet address', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.p2sh_testnet,
-        bitcoin.networks.testnet
-      )).toBe(true);
+      expect(
+        BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.p2sh_testnet, bitcoin.networks.testnet)
+      ).toBe(true);
     });
 
     it('should validate P2WPKH mainnet address (bech32)', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.p2wpkh_mainnet,
-        bitcoin.networks.bitcoin
-      )).toBe(true);
+      expect(
+        BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.p2wpkh_mainnet, bitcoin.networks.bitcoin)
+      ).toBe(true);
     });
 
     it('should validate P2WPKH testnet address (bech32)', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.p2wpkh_testnet,
-        bitcoin.networks.testnet
-      )).toBe(true);
+      expect(
+        BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.p2wpkh_testnet, bitcoin.networks.testnet)
+      ).toBe(true);
     });
 
     it('should validate P2WSH address', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.p2wsh_mainnet,
-        bitcoin.networks.bitcoin
-      )).toBe(true);
+      expect(
+        BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.p2wsh_mainnet, bitcoin.networks.bitcoin)
+      ).toBe(true);
     });
 
     it('should validate P2TR address (taproot)', () => {
@@ -339,10 +339,7 @@ describe('BitcoinAccount.isValidAddress', () => {
       // Note: P2TR validation might not be fully supported in older bitcoinjs-lib versions
       // This test might fail depending on the library version
       try {
-        const result = BitcoinAccount.isValidAddress(
-          validP2TR,
-          bitcoin.networks.bitcoin
-        );
+        const result = BitcoinAccount.isValidAddress(validP2TR, bitcoin.networks.bitcoin);
         // If no error thrown, expect true
         expect(result).toBe(true);
       } catch {
@@ -354,62 +351,53 @@ describe('BitcoinAccount.isValidAddress', () => {
 
   describe('invalid addresses', () => {
     it('should reject address with invalid checksum', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.invalid_checksum,
-        bitcoin.networks.bitcoin
-      )).toBe(false);
+      expect(
+        BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.invalid_checksum, bitcoin.networks.bitcoin)
+      ).toBe(false);
     });
 
     it('should reject address with invalid characters', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.invalid_chars,
-        bitcoin.networks.bitcoin
-      )).toBe(false);
+      expect(
+        BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.invalid_chars, bitcoin.networks.bitcoin)
+      ).toBe(false);
     });
 
     it('should reject empty address', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.invalid_empty,
-        bitcoin.networks.bitcoin
-      )).toBe(false);
+      expect(
+        BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.invalid_empty, bitcoin.networks.bitcoin)
+      ).toBe(false);
     });
 
     it('should reject too short address', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.invalid_too_short,
-        bitcoin.networks.bitcoin
-      )).toBe(false);
+      expect(
+        BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.invalid_too_short, bitcoin.networks.bitcoin)
+      ).toBe(false);
     });
 
     it('should reject random string', () => {
-      expect(BitcoinAccount.isValidAddress(
-        'this is not a bitcoin address',
-        bitcoin.networks.bitcoin
-      )).toBe(false);
+      expect(
+        BitcoinAccount.isValidAddress('this is not a bitcoin address', bitcoin.networks.bitcoin)
+      ).toBe(false);
     });
   });
 
   describe('network validation', () => {
     it('should reject mainnet address on testnet', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.p2pkh_mainnet,
-        bitcoin.networks.testnet
-      )).toBe(false);
+      expect(
+        BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.p2pkh_mainnet, bitcoin.networks.testnet)
+      ).toBe(false);
     });
 
     it('should reject testnet address on mainnet', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.p2pkh_testnet,
-        bitcoin.networks.bitcoin
-      )).toBe(false);
+      expect(
+        BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.p2pkh_testnet, bitcoin.networks.bitcoin)
+      ).toBe(false);
     });
   });
 
   describe('default network', () => {
     it('should use mainnet as default network', () => {
-      expect(BitcoinAccount.isValidAddress(
-        SAMPLE_ADDRESSES.p2pkh_mainnet
-      )).toBe(true);
+      expect(BitcoinAccount.isValidAddress(SAMPLE_ADDRESSES.p2pkh_mainnet)).toBe(true);
     });
   });
 });
@@ -421,17 +409,15 @@ describe('BitcoinAccount.isValidAddress', () => {
 describe('BitcoinAccount.getAddressType', () => {
   describe('P2PKH detection', () => {
     it('should detect P2PKH mainnet address (starts with 1)', () => {
-      expect(BitcoinAccount.getAddressType(
-        SAMPLE_ADDRESSES.p2pkh_mainnet,
-        bitcoin.networks.bitcoin
-      )).toBe('p2pkh');
+      expect(
+        BitcoinAccount.getAddressType(SAMPLE_ADDRESSES.p2pkh_mainnet, bitcoin.networks.bitcoin)
+      ).toBe('p2pkh');
     });
 
     it('should detect P2PKH testnet address (starts with m/n)', () => {
-      expect(BitcoinAccount.getAddressType(
-        SAMPLE_ADDRESSES.p2pkh_testnet,
-        bitcoin.networks.testnet
-      )).toBe('p2pkh');
+      expect(
+        BitcoinAccount.getAddressType(SAMPLE_ADDRESSES.p2pkh_testnet, bitcoin.networks.testnet)
+      ).toBe('p2pkh');
     });
   });
 
@@ -439,82 +425,67 @@ describe('BitcoinAccount.getAddressType', () => {
     it('should detect P2SH mainnet address (starts with 3)', () => {
       // Using a known valid P2SH address
       const validP2SH = '3Kzh9qAqVWQhEsfQz7zEQL1EuSx5tyNLNS';
-      expect(BitcoinAccount.getAddressType(
-        validP2SH,
-        bitcoin.networks.bitcoin
-      )).toBe('p2sh');
+      expect(BitcoinAccount.getAddressType(validP2SH, bitcoin.networks.bitcoin)).toBe('p2sh');
     });
 
     it('should detect P2SH testnet address (starts with 2)', () => {
-      expect(BitcoinAccount.getAddressType(
-        SAMPLE_ADDRESSES.p2sh_testnet,
-        bitcoin.networks.testnet
-      )).toBe('p2sh');
+      expect(
+        BitcoinAccount.getAddressType(SAMPLE_ADDRESSES.p2sh_testnet, bitcoin.networks.testnet)
+      ).toBe('p2sh');
     });
   });
 
   describe('P2WPKH detection', () => {
     it('should detect P2WPKH mainnet address (bc1...)', () => {
-      expect(BitcoinAccount.getAddressType(
-        SAMPLE_ADDRESSES.p2wpkh_mainnet,
-        bitcoin.networks.bitcoin
-      )).toBe('p2wpkh');
+      expect(
+        BitcoinAccount.getAddressType(SAMPLE_ADDRESSES.p2wpkh_mainnet, bitcoin.networks.bitcoin)
+      ).toBe('p2wpkh');
     });
 
     it('should detect P2WPKH testnet address (tb1...)', () => {
-      expect(BitcoinAccount.getAddressType(
-        SAMPLE_ADDRESSES.p2wpkh_testnet,
-        bitcoin.networks.testnet
-      )).toBe('p2wpkh');
+      expect(
+        BitcoinAccount.getAddressType(SAMPLE_ADDRESSES.p2wpkh_testnet, bitcoin.networks.testnet)
+      ).toBe('p2wpkh');
     });
   });
 
   describe('P2WSH detection', () => {
     it('should detect P2WSH address', () => {
-      expect(BitcoinAccount.getAddressType(
-        SAMPLE_ADDRESSES.p2wsh_mainnet,
-        bitcoin.networks.bitcoin
-      )).toBe('p2wsh');
+      expect(
+        BitcoinAccount.getAddressType(SAMPLE_ADDRESSES.p2wsh_mainnet, bitcoin.networks.bitcoin)
+      ).toBe('p2wsh');
     });
   });
 
   describe('P2TR detection', () => {
     it('should detect P2TR address (taproot)', () => {
-      expect(BitcoinAccount.getAddressType(
-        SAMPLE_ADDRESSES.p2tr_mainnet,
-        bitcoin.networks.bitcoin
-      )).toBe('p2tr');
+      expect(
+        BitcoinAccount.getAddressType(SAMPLE_ADDRESSES.p2tr_mainnet, bitcoin.networks.bitcoin)
+      ).toBe('p2tr');
     });
   });
 
   describe('invalid addresses', () => {
     it('should return null for invalid address', () => {
-      expect(BitcoinAccount.getAddressType(
-        SAMPLE_ADDRESSES.invalid_checksum,
-        bitcoin.networks.bitcoin
-      )).toBe(null);
+      expect(
+        BitcoinAccount.getAddressType(SAMPLE_ADDRESSES.invalid_checksum, bitcoin.networks.bitcoin)
+      ).toBe(null);
     });
 
     it('should return null for empty string', () => {
-      expect(BitcoinAccount.getAddressType(
-        '',
-        bitcoin.networks.bitcoin
-      )).toBe(null);
+      expect(BitcoinAccount.getAddressType('', bitcoin.networks.bitcoin)).toBe(null);
     });
 
     it('should return null for random string', () => {
-      expect(BitcoinAccount.getAddressType(
-        'not a bitcoin address',
-        bitcoin.networks.bitcoin
-      )).toBe(null);
+      expect(BitcoinAccount.getAddressType('not a bitcoin address', bitcoin.networks.bitcoin)).toBe(
+        null
+      );
     });
   });
 
   describe('default network', () => {
     it('should use mainnet as default', () => {
-      expect(BitcoinAccount.getAddressType(
-        SAMPLE_ADDRESSES.p2pkh_mainnet
-      )).toBe('p2pkh');
+      expect(BitcoinAccount.getAddressType(SAMPLE_ADDRESSES.p2pkh_mainnet)).toBe('p2pkh');
     });
   });
 });
@@ -1386,7 +1357,9 @@ describe('Bitcoin Transfer Integration Tests', () => {
         mockApiFunctions
       );
 
-      expect(newAccount.retrieveSecurePrivateKey()).toBe(originalAccount.retrieveSecurePrivateKey());
+      expect(newAccount.retrieveSecurePrivateKey()).toBe(
+        originalAccount.retrieveSecurePrivateKey()
+      );
       expect(Buffer.from(newAccount.getPublicKey()).toString('hex')).toBe(
         Buffer.from(originalAccount.getPublicKey()).toString('hex')
       );
@@ -1668,7 +1641,7 @@ describe('Bitcoin Transfer Integration Tests', () => {
         apiFunctions: mockApiFunctions,
       });
 
-      const addresses = accounts.map(acc => acc.getReceiveAddress());
+      const addresses = accounts.map((acc) => acc.getReceiveAddress());
       const uniqueAddresses = new Set(addresses);
 
       expect(uniqueAddresses.size).toBe(10);
@@ -1803,9 +1776,9 @@ describe('Bitcoin Transfer Integration Tests', () => {
     });
 
     it('should handle broadcast errors gracefully', async () => {
-      const mockBroadcast: BroadcastTransactionFn = vi.fn().mockRejectedValue(
-        new Error('Network error')
-      );
+      const mockBroadcast: BroadcastTransactionFn = vi
+        .fn()
+        .mockRejectedValue(new Error('Network error'));
 
       const result = await confirmTransferTransaction(
         BITCOIN_NETWORKS['bitcoin-mainnet'],
@@ -1888,11 +1861,7 @@ describe('Bitcoin Transfer Integration Tests', () => {
         mockBroadcast
       );
 
-      expect(mockBroadcast).toHaveBeenCalledWith(
-        expect.any(String),
-        testAddress,
-        '0100000001'
-      );
+      expect(mockBroadcast).toHaveBeenCalledWith(expect.any(String), testAddress, '0100000001');
     });
 
     it('should pass serialized transaction to broadcast function', async () => {

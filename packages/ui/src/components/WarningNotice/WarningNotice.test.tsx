@@ -49,7 +49,7 @@ describe('WarningNotice', () => {
         action={<button onClick={onRetry}>Check now</button>}
       >
         Body text
-      </WarningNotice>,
+      </WarningNotice>
     );
 
     fireEvent.click(screen.getByText('Check now'));

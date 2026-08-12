@@ -24,14 +24,8 @@ import {
   formatUnits,
   Interface,
 } from 'ethers';
-import {
-  parseAmount,
-} from '../../utils/decimals';
-import {
-  ETH_ADDRESS,
-  isNativeEth,
-  type TransferToken,
-} from '../../utils/tokens';
+import { parseAmount } from '../../utils/decimals';
+import { ETH_ADDRESS, isNativeEth, type TransferToken } from '../../utils/tokens';
 
 // ============================================================================
 // Minimal ABIs (inline to avoid separate files)
@@ -422,38 +416,26 @@ export async function sendTransaction(
       throw new Error('tokenId is required for ERC721 transfers');
     }
     const contract = new Contract(token.address, ERC721_ABI, wallet);
-    response = await contract['safeTransferFrom(address,address,uint256)'](
-      from,
-      to,
-      opts.tokenId,
-      {
-        gasLimit: opts.gasLimit,
-        gasPrice: opts.gasPrice,
-        maxFeePerGas: opts.maxFeePerGas,
-        maxPriorityFeePerGas: opts.maxPriorityFeePerGas,
-        nonce: opts.nonce,
-      }
-    );
+    response = await contract['safeTransferFrom(address,address,uint256)'](from, to, opts.tokenId, {
+      gasLimit: opts.gasLimit,
+      gasPrice: opts.gasPrice,
+      maxFeePerGas: opts.maxFeePerGas,
+      maxPriorityFeePerGas: opts.maxPriorityFeePerGas,
+      nonce: opts.nonce,
+    });
   } else if (token.type === 'erc1155') {
     // ERC1155 multi-token transfer
     if (!opts.tokenId) {
       throw new Error('tokenId is required for ERC1155 transfers');
     }
     const contract = new Contract(token.address, ERC1155_ABI, wallet);
-    response = await contract.safeTransferFrom(
-      from,
-      to,
-      opts.tokenId,
-      amount,
-      opts.data || '0x',
-      {
-        gasLimit: opts.gasLimit,
-        gasPrice: opts.gasPrice,
-        maxFeePerGas: opts.maxFeePerGas,
-        maxPriorityFeePerGas: opts.maxPriorityFeePerGas,
-        nonce: opts.nonce,
-      }
-    );
+    response = await contract.safeTransferFrom(from, to, opts.tokenId, amount, opts.data || '0x', {
+      gasLimit: opts.gasLimit,
+      gasPrice: opts.gasPrice,
+      maxFeePerGas: opts.maxFeePerGas,
+      maxPriorityFeePerGas: opts.maxPriorityFeePerGas,
+      nonce: opts.nonce,
+    });
   } else {
     // ERC20 token transfer
     const contract = new Contract(token.address, ERC20_ABI, wallet);

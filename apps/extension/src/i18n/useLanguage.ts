@@ -1,10 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  AVAILABLE_LANGUAGES,
-  isLanguageSupported,
-  type LanguageCode,
-} from '@salmon/shared';
+import { AVAILABLE_LANGUAGES, isLanguageSupported, type LanguageCode } from '@salmon/shared';
 import { changeLanguage, getCurrentLanguage } from './config';
 
 export interface UseLanguageReturn {

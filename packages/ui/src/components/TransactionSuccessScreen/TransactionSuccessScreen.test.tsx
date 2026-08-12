@@ -94,7 +94,7 @@ describe('TransactionSuccessScreen', () => {
           title="Bridge Initiated"
           bridgeDepositAddress="bc1qdeposit"
           bridgeAmountIn="33 USDC"
-        />,
+        />
       );
 
       expect(screen.getByText('bc1qdeposit')).toBeTruthy();

@@ -1,13 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  AppState,
-  Linking,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { AppState, Linking, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useTranslation } from 'react-i18next';
 import {
@@ -34,9 +26,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   const [appActive, setAppActive] = useState(
     AppState.currentState !== 'background' && AppState.currentState !== 'inactive'
   );
-  const [rejection, setRejection] = useState<'notAddress' | 'wrongChain' | null>(
-    null
-  );
+  const [rejection, setRejection] = useState<'notAddress' | 'wrongChain' | null>(null);
   const scannedRef = useRef(false);
 
   useEffect(() => {
@@ -84,17 +74,10 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   const permissionDenied = permission != null && !permission.granted;
 
   return (
-    <Modal
-      animationType="slide"
-      onRequestClose={onClose}
-      visible={visible}
-      transparent={false}
-    >
+    <Modal animationType="slide" onRequestClose={onClose} visible={visible} transparent={false}>
       <View style={[styles.container, containerStyle]}>
         <View style={styles.header}>
-          <Text style={styles.title}>
-            {title ?? t('qrScanner.title', 'Scan QR Code')}
-          </Text>
+          <Text style={styles.title}>{title ?? t('qrScanner.title', 'Scan QR Code')}</Text>
           <TouchableOpacity
             testID="qr-scanner-close-button"
             accessibilityRole="button"
@@ -102,9 +85,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
             onPress={onClose}
             style={styles.closeButton}
           >
-            <Text style={styles.closeButtonText}>
-              {t('actions.close', 'Close')}
-            </Text>
+            <Text style={styles.closeButtonText}>{t('actions.close', 'Close')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -120,10 +101,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           )}
 
           {permissionDenied && (
-            <View
-              testID="qr-scanner-permission-denied"
-              style={styles.messageContainer}
-            >
+            <View testID="qr-scanner-permission-denied" style={styles.messageContainer}>
               <Text style={styles.messageTitle}>
                 {t('qrScanner.permissionTitle', 'Camera access needed')}
               </Text>
@@ -151,10 +129,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
             <View style={styles.rejectionContainer}>
               <Text testID="qr-scanner-error" style={styles.rejectionText}>
                 {rejection === 'wrongChain'
-                  ? t(
-                      'qrScanner.wrongNetwork',
-                      'This address belongs to a different network'
-                    )
+                  ? t('qrScanner.wrongNetwork', 'This address belongs to a different network')
                   : t('qrScanner.notAddress', 'This code is not a valid address')}
               </Text>
             </View>

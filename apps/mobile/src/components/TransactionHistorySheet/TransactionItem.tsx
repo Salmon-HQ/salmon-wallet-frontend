@@ -1,13 +1,22 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { borderWidth, colors, ms, vs, s, fontSize, borderRadius, formatRawAmount, formatRelativeTimeCompact, getTransactionDescription, fontFamilyNative, spacing, letterSpacing, } from '@salmon/shared';
+import {
+  borderWidth,
+  colors,
+  ms,
+  vs,
+  s,
+  fontSize,
+  borderRadius,
+  formatRawAmount,
+  formatRelativeTimeCompact,
+  getTransactionDescription,
+  fontFamilyNative,
+  spacing,
+  letterSpacing,
+} from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { TokenLogo } from '../TokenLogo';
 import { SwapRouteVisualization } from './SwapRouteVisualization';
@@ -243,7 +252,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     }
 
     // For other types with token logo, show logo with type badge
-    const primaryToken = type === 'receive' ? inputs[0] : (outputs[0] || inputs[0]);
+    const primaryToken = type === 'receive' ? inputs[0] : outputs[0] || inputs[0];
     if (primaryToken?.logo) {
       return (
         <TokenLogoWithBadge
@@ -266,12 +275,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   // Helper to render token amounts
   const renderTokenAmounts = (tokens: TransactionTokenAmount[], sign: '+' | '-') => {
     return tokens.map((token, i) => (
-      <AmountDisplay
-        key={`${sign}-${i}`}
-        token={token}
-        sign={sign}
-        hidden={hiddenBalance}
-      />
+      <AmountDisplay key={`${sign}-${i}`} token={token} sign={sign} hidden={hiddenBalance} />
     ));
   };
 
@@ -304,19 +308,20 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
 
       return (
         <View style={styles.amountsContainer}>
-          {firstOutput && (
-            <AmountDisplay token={firstOutput} sign="-" hidden={hiddenBalance} />
-          )}
-          {firstInput && (
-            <AmountDisplay token={firstInput} sign="+" hidden={hiddenBalance} />
-          )}
+          {firstOutput && <AmountDisplay token={firstOutput} sign="-" hidden={hiddenBalance} />}
+          {firstInput && <AmountDisplay token={firstInput} sign="+" hidden={hiddenBalance} />}
           <TouchableOpacity
             style={styles.expandBadge}
-            onPress={() => setExpanded(prev => !prev)}
+            onPress={() => setExpanded((prev) => !prev)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Text style={styles.expandText}>
-              {expanded ? t('transactions.showLess', 'show less') : t('transactions.detail.nMore', { count: hiddenCount, defaultValue: '+{{count}} more' })}
+              {expanded
+                ? t('transactions.showLess', 'show less')
+                : t('transactions.detail.nMore', {
+                    count: hiddenCount,
+                    defaultValue: '+{{count}} more',
+                  })}
             </Text>
             <Ionicons
               name={expanded ? 'chevron-up' : 'chevron-down'}
@@ -348,13 +353,18 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
         onPress={handlePress}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel={t('accessibility.transaction_row', '{{type}} transaction, {{description}}', { type: t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label), description: descriptionText })}
+        accessibilityLabel={t(
+          'accessibility.transaction_row',
+          '{{type}} transaction, {{description}}',
+          {
+            type: t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label),
+            description: descriptionText,
+          }
+        )}
         accessibilityHint={t('transactions.tapToViewDetails', 'Tap to view transaction details')}
       >
         {/* Left: Logo/Icon */}
-        <View style={styles.logoSection}>
-          {renderLogo()}
-        </View>
+        <View style={styles.logoSection}>{renderLogo()}</View>
 
         {/* Center: Type and description */}
         <View style={styles.infoSection}>
@@ -373,9 +383,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
         <View style={styles.rightSection}>
           {renderAmounts()}
           <View style={styles.timeRow}>
-            <Text style={styles.timeText}>
-              {formatRelativeTimeCompact(timestamp, t)}
-            </Text>
+            <Text style={styles.timeText}>{formatRelativeTimeCompact(timestamp, t)}</Text>
             {isSwap && (
               <Ionicons
                 name={expanded ? 'chevron-up' : 'chevron-down'}
@@ -389,12 +397,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
       </TouchableOpacity>
 
       {/* Expandable route visualization for swaps */}
-      {type === 'swap' && (
-        <SwapRouteVisualization
-          transaction={transaction}
-          expanded={expanded}
-        />
-      )}
+      {type === 'swap' && <SwapRouteVisualization transaction={transaction} expanded={expanded} />}
     </BlurContainer>
   );
 };

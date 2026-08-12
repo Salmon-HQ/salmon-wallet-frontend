@@ -45,10 +45,7 @@ export function BottomSheetTitleHeader({
         </TouchableOpacity>
       )}
       <View pointerEvents="none" style={styles.titleContainer}>
-        <Text
-          style={[styles.title, titleStyle]}
-          numberOfLines={titleNumberOfLines}
-        >
+        <Text style={[styles.title, titleStyle]} numberOfLines={titleNumberOfLines}>
           {title}
         </Text>
       </View>

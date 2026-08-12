@@ -64,8 +64,10 @@ export function CollectiblesTab({
   const { t } = useTranslation();
 
   // Resolve owner addresses per section
-  const solanaMainnetAddress = activeAccount?.networksAccounts?.['solana-mainnet']?.[0]?.getReceiveAddress();
-  const solanaDevnetAddress = activeAccount?.networksAccounts?.['solana-devnet']?.[0]?.getReceiveAddress();
+  const solanaMainnetAddress =
+    activeAccount?.networksAccounts?.['solana-mainnet']?.[0]?.getReceiveAddress();
+  const solanaDevnetAddress =
+    activeAccount?.networksAccounts?.['solana-devnet']?.[0]?.getReceiveAddress();
   const includeSpam = !!developerNetworks;
 
   const mainnetQuery = useSolanaNfts({
@@ -99,7 +101,13 @@ export function CollectiblesTab({
         networkLabel: 'Devnet',
       } as NftSection,
     };
-  }, [mainnetQuery.nfts, mainnetQuery.loading, devnetQuery.nfts, devnetQuery.loading, developerNetworks]);
+  }, [
+    mainnetQuery.nfts,
+    mainnetQuery.loading,
+    devnetQuery.nfts,
+    devnetQuery.loading,
+    developerNetworks,
+  ]);
 
   // Visible section keys
   const visibleKeys = useMemo(() => {
@@ -113,13 +121,19 @@ export function CollectiblesTab({
   const loadError =
     mainnetQuery.error !== null || (developerNetworks && devnetQuery.error !== null);
 
-  const handleNftPress = useCallback((nft: NftData) => {
-    onNftDetailPress?.(nft);
-  }, [onNftDetailPress]);
+  const handleNftPress = useCallback(
+    (nft: NftData) => {
+      onNftDetailPress?.(nft);
+    },
+    [onNftDetailPress]
+  );
 
-  const handleSeeAll = useCallback((_key: NftSectionKey, title: string, nfts: NftData[]) => {
-    onSeeAllPress?.({ title, blockchain: 'solana', nfts });
-  }, [onSeeAllPress]);
+  const handleSeeAll = useCallback(
+    (_key: NftSectionKey, title: string, nfts: NftData[]) => {
+      onSeeAllPress?.({ title, blockchain: 'solana', nfts });
+    },
+    [onSeeAllPress]
+  );
 
   return (
     <ScrollContainer>

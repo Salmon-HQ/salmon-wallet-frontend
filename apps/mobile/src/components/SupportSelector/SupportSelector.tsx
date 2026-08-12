@@ -17,7 +17,8 @@ import {
   fontFamilyNative,
   type SupportSelectorBaseProps,
   type SupportOptionItem,
-fontSize, } from '@salmon/shared';
+  fontSize,
+} from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 
 // ============================================================================
@@ -38,11 +39,7 @@ const ICON_MAP: Record<string, IoniconsName> = {
 // Component
 // ============================================================================
 
-export function SupportSelector({
-  options,
-  onOpenLink,
-  onBack,
-}: SupportSelectorBaseProps) {
+export function SupportSelector({ options, onOpenLink, onBack }: SupportSelectorBaseProps) {
   const { t } = useTranslation();
 
   const renderOption = useCallback(
@@ -64,29 +61,18 @@ export function SupportSelector({
           <Text style={styles.optionTitle}>{option.title}</Text>
           <Text style={styles.optionDescription}>{option.description}</Text>
         </View>
-        <Ionicons
-          name="chevron-forward"
-          size={20}
-          color={colors.text.tertiary}
-        />
+        <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
       </TouchableOpacity>
     ),
     [onOpenLink]
   );
 
   return (
-    <SettingsScreenLayout
-      title={t('settings.help_support', 'Help & Support')}
-      onBack={onBack}
-    >
+    <SettingsScreenLayout title={t('settings.help_support', 'Help & Support')} onBack={onBack}>
       {options.map(renderOption)}
 
       <View style={styles.securityNotice}>
-        <Ionicons
-          name="shield-checkmark-outline"
-          size={20}
-          color={colors.status.warning}
-        />
+        <Ionicons name="shield-checkmark-outline" size={20} color={colors.status.warning} />
         <Text style={styles.securityText}>
           {t(
             'settings.security_notice',

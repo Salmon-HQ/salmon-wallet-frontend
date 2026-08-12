@@ -234,7 +234,11 @@ export {
 } from './swap';
 
 // Transaction transform utilities
-export { transformSolanaTransaction, transformMultichainTransaction, getTransactionDescription } from './transactions';
+export {
+  transformSolanaTransaction,
+  transformMultichainTransaction,
+  getTransactionDescription,
+} from './transactions';
 
 // Content loader (platform-split: native uses react-content-loader/native, web uses SVG)
 export { ContentLoader, Rect, Circle } from './ContentLoader';

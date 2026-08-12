@@ -3,7 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { ContentLoader, Rect } from '@salmon/shared';
-import { colors, spacing, borderRadius, fontFamilyNative, fontWeight, isPositivePerformance, PRICE_CHART_PERIODS, fontSize, opacity, } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  fontFamilyNative,
+  fontWeight,
+  isPositivePerformance,
+  PRICE_CHART_PERIODS,
+  fontSize,
+  opacity,
+} from '@salmon/shared';
 import type { PriceChartPeriod, PriceDataPoint } from '@salmon/shared';
 import type { PriceChartProps } from './types';
 
@@ -81,11 +91,7 @@ const generatePath = (
 /**
  * Generate area fill path (extends line path to bottom)
  */
-const generateAreaPath = (
-  linePath: string,
-  width: number,
-  height: number
-): string => {
+const generateAreaPath = (linePath: string, width: number, height: number): string => {
   if (!linePath) return '';
   return `${linePath} L ${width} ${height} L 0 ${height} Z`;
 };
@@ -263,21 +269,19 @@ export const PriceChart: React.FC<PriceChartProps> = ({
             return (
               <TouchableOpacity
                 key={period}
-                style={[
-                  styles.periodButton,
-                  isSelected && styles.periodButtonSelected,
-                ]}
+                style={[styles.periodButton, isSelected && styles.periodButtonSelected]}
                 onPress={() => handlePeriodPress(period)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={t('accessibility.select_period', 'Select {{period}} time period', { period })}
+                accessibilityLabel={t(
+                  'accessibility.select_period',
+                  'Select {{period}} time period',
+                  { period }
+                )}
                 accessibilityState={{ selected: isSelected }}
               >
                 <Text
-                  style={[
-                    styles.periodButtonText,
-                    isSelected && styles.periodButtonTextSelected,
-                  ]}
+                  style={[styles.periodButtonText, isSelected && styles.periodButtonTextSelected]}
                 >
                   {period}
                 </Text>

@@ -64,7 +64,7 @@ export interface EncryptMnemonicsOptions {
 export async function encryptMnemonics(
   mnemonics: Record<string, string>,
   password?: string,
-  options?: EncryptMnemonicsOptions,
+  options?: EncryptMnemonicsOptions
 ): Promise<EncryptMnemonicsResult> {
   const cacheNewKey = options?.cacheNewKey ?? true;
 

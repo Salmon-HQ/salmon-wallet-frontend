@@ -216,8 +216,8 @@ const ValidationMessage = styled(Typography)<{
     $messageType === 'error'
       ? colors.status.error
       : $messageType === 'warning'
-      ? colors.status.warning
-      : colors.text.secondary,
+        ? colors.status.warning
+        : colors.text.secondary,
 }));
 
 const AmountInputRow = styled(Box)({
@@ -440,9 +440,7 @@ export function StepAddressAmount({
     if (typeof liveBalance === 'number' && Number.isFinite(liveBalance)) {
       return liveBalance;
     }
-    return typeof token.uiAmount === 'string'
-      ? parseFloat(token.uiAmount)
-      : token.uiAmount;
+    return typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount;
   }, [liveBalance, token.uiAmount]);
 
   // Fiat conversion
@@ -484,19 +482,13 @@ export function StepAddressAmount({
   }, [isValid, address, amount, onReview, resolvedAddress]);
 
   // Handle input changes
-  const handleAddressChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setAddress(e.target.value);
-    },
-    []
-  );
+  const handleAddressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setAddress(e.target.value);
+  }, []);
 
-  const handleAmountChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setAmount(sanitizeDecimalInput(e.target.value));
-    },
-    []
-  );
+  const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setAmount(sanitizeDecimalInput(e.target.value));
+  }, []);
 
   // Placeholder text based on blockchain
   const addressPlaceholder = useMemo(() => {
@@ -549,16 +541,19 @@ export function StepAddressAmount({
         {/* Recipient */}
         <FieldGroup>
           <FieldLabel>{t('token.send.recipient')}</FieldLabel>
-          <BlurContainer style={{
-            borderRadius: borderRadius.lg,
-            border: validationState === 'invalid'
-              ? `${borderWidth.thin}px solid ${colors.status.error}`
-              : validationState === 'warning'
-              ? `${borderWidth.thin}px solid ${colors.status.warning}`
-              : validationState === 'valid'
-              ? `${borderWidth.thin}px solid ${colors.status.success}`
-              : undefined,
-          }}>
+          <BlurContainer
+            style={{
+              borderRadius: borderRadius.lg,
+              border:
+                validationState === 'invalid'
+                  ? `${borderWidth.thin}px solid ${colors.status.error}`
+                  : validationState === 'warning'
+                    ? `${borderWidth.thin}px solid ${colors.status.warning}`
+                    : validationState === 'valid'
+                      ? `${borderWidth.thin}px solid ${colors.status.success}`
+                      : undefined,
+            }}
+          >
             <AddressInputRow>
               <StyledInput
                 placeholder={addressPlaceholder}
@@ -576,25 +571,28 @@ export function StepAddressAmount({
               {/* Validation indicator */}
               {address.length > 0 && isValidating && (
                 <ValidationIndicatorBox>
-                  <CircularProgress
-                    size={16}
-                    sx={{ color: colors.text.secondary }}
-                  />
+                  <CircularProgress size={16} sx={{ color: colors.text.secondary }} />
                 </ValidationIndicatorBox>
               )}
               {address.length > 0 && !isValidating && validationState === 'valid' && (
                 <ValidationIndicatorBox>
-                  <span style={{ color: colors.status.success, fontSize: fontSize.md }}>{'\u2713'}</span>
+                  <span style={{ color: colors.status.success, fontSize: fontSize.md }}>
+                    {'\u2713'}
+                  </span>
                 </ValidationIndicatorBox>
               )}
               {address.length > 0 && !isValidating && validationState === 'invalid' && (
                 <ValidationIndicatorBox>
-                  <span style={{ color: colors.status.error, fontSize: fontSize.md }}>{'\u2715'}</span>
+                  <span style={{ color: colors.status.error, fontSize: fontSize.md }}>
+                    {'\u2715'}
+                  </span>
                 </ValidationIndicatorBox>
               )}
               {address.length > 0 && !isValidating && validationState === 'warning' && (
                 <ValidationIndicatorBox>
-                  <span style={{ color: colors.status.warning, fontSize: fontSize.md }}>{'\u26A0'}</span>
+                  <span style={{ color: colors.status.warning, fontSize: fontSize.md }}>
+                    {'\u26A0'}
+                  </span>
                 </ValidationIndicatorBox>
               )}
             </AddressInputRow>
@@ -672,7 +670,9 @@ export function StepAddressAmount({
                     onClick={() => handleQuickFill(option.value)}
                     data-testid={`send-quickfill-${option.label.replace('%', '')}`}
                   >
-                    <QuickFillText>{option.value === 1 ? t('general.max') : option.label}</QuickFillText>
+                    <QuickFillText>
+                      {option.value === 1 ? t('general.max') : option.label}
+                    </QuickFillText>
                   </QuickFillButton>
                 ))}
               </QuickFillButtons>
@@ -690,11 +690,7 @@ export function StepAddressAmount({
           <CancelButtonText>{t('actions.cancel')}</CancelButtonText>
         </CancelButton>
 
-        <ReviewButton
-          onClick={handleReview}
-          disabled={!isValid}
-          data-testid="send-review-button"
-        >
+        <ReviewButton onClick={handleReview} disabled={!isValid} data-testid="send-review-button">
           <ReviewButtonGradient $isDisabled={!isValid}>
             <ReviewButtonText>{t('token.send.reviewAndSend')}</ReviewButtonText>
           </ReviewButtonGradient>

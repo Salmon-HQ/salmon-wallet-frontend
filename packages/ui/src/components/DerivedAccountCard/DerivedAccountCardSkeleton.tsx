@@ -6,7 +6,15 @@
 import React from 'react';
 import { styled, keyframes } from '@mui/material/styles';
 import Box from '@mui/material/Box';
-import { colors, spacing, borderRadius, borderWidth, componentSizes, durationMs, easing } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  borderWidth,
+  componentSizes,
+  durationMs,
+  easing,
+} from '@salmon/shared';
 import type { DerivedAccountCardSkeletonProps } from './types';
 
 const shimmer = keyframes`
@@ -39,19 +47,49 @@ const DerivedAccountCardSkeletonComponent: React.FC<DerivedAccountCardSkeletonPr
   return (
     <Card style={style} className={className}>
       {/* Checkbox skeleton */}
-      <SkeletonRect sx={{ width: componentSizes.checkboxSize, height: componentSizes.checkboxSize, borderRadius: `${borderRadius.sm}px`, mr: `${spacing.lg}px`, flexShrink: 0 }} />
+      <SkeletonRect
+        sx={{
+          width: componentSizes.checkboxSize,
+          height: componentSizes.checkboxSize,
+          borderRadius: `${borderRadius.sm}px`,
+          mr: `${spacing.lg}px`,
+          flexShrink: 0,
+        }}
+      />
 
       {/* Info skeleton */}
       <Box sx={{ flex: 1 }}>
-        <SkeletonRect sx={{ width: '55%', height: componentSizes.iconSizeXs, mb: `${spacing.xxs}px` }} />
-        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: `${spacing.xs}px` }}>
-          <SkeletonRect sx={{ width: componentSizes.iconSizeXs, height: componentSizes.iconSizeXs, borderRadius: `${borderRadius.md}px`, flexShrink: 0 }} />
+        <SkeletonRect
+          sx={{ width: '55%', height: componentSizes.iconSizeXs, mb: `${spacing.xxs}px` }}
+        />
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: `${spacing.xs}px`,
+          }}
+        >
+          <SkeletonRect
+            sx={{
+              width: componentSizes.iconSizeXs,
+              height: componentSizes.iconSizeXs,
+              borderRadius: `${borderRadius.md}px`,
+              flexShrink: 0,
+            }}
+          />
           <SkeletonRect sx={{ width: '35%', height: spacing.md }} />
         </Box>
       </Box>
 
       {/* Balance skeleton */}
-      <SkeletonRect sx={{ width: componentSizes.skeletonBalanceWidth, height: componentSizes.iconSizeXs, flexShrink: 0 }} />
+      <SkeletonRect
+        sx={{
+          width: componentSizes.skeletonBalanceWidth,
+          height: componentSizes.iconSizeXs,
+          flexShrink: 0,
+        }}
+      />
     </Card>
   );
 };

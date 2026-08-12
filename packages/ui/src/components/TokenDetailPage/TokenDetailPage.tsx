@@ -150,18 +150,11 @@ export function TokenDetailPage({
         />
 
         {/* TokenBadgesSection */}
-        <TokenBadgesSection
-          tags={token.tags}
-          loading={loading}
-        />
+        <TokenBadgesSection tags={token.tags} loading={loading} />
 
         {/* TokenAbout */}
-        <TokenAbout
-          description={coinInfo?.description}
-          loading={loading}
-        />
+        <TokenAbout description={coinInfo?.description} loading={loading} />
       </ContentContainer>
     </PageShell>
   );
 }
-

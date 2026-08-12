@@ -30,12 +30,7 @@ vi.mock('../client', () => {
 });
 
 // Now import the functions AFTER mocking
-import {
-  normalizeBackendTokens,
-  getTokenList,
-  searchTokens,
-  clearTokenListCache,
-} from './tokens';
+import { normalizeBackendTokens, getTokenList, searchTokens, clearTokenListCache } from './tokens';
 import { normalizeIpfsUrl } from '../../utils/url';
 import { apiClient } from '../client';
 
@@ -361,7 +356,6 @@ describe('Token Service - Pure Functions', () => {
         // apiClient.get should only be called once due to caching
         expect(mockApiClientGet).toHaveBeenCalledTimes(1);
       });
-
     });
 
     // ========================================================================

@@ -1,13 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Linking,
-  Modal,
-  Pressable,
-} from 'react-native';
+import { Text, StyleSheet, TouchableOpacity, Linking, Modal, Pressable } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -156,10 +149,7 @@ export function ExplorerLinkButton({
 
   return (
     <>
-      <BlurContainer
-        borderColor={colors.palette.amber}
-        style={[styles.blurWrapper, style]}
-      >
+      <BlurContainer borderColor={colors.palette.amber} style={[styles.blurWrapper, style]}>
         <TouchableOpacity
           testID="tx-detail-explorer-link"
           style={styles.button}
@@ -213,11 +203,7 @@ export function ExplorerLinkButton({
                       style={styles.menuItemIcon}
                     />
                     <Text style={styles.menuItemText}>{explorer.name}</Text>
-                    <Ionicons
-                      name="open-outline"
-                      size={16}
-                      color={colors.text.tertiary}
-                    />
+                    <Ionicons name="open-outline" size={16} color={colors.text.tertiary} />
                   </TouchableOpacity>
                 ))}
               </BlurContainer>

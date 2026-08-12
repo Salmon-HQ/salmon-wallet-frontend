@@ -5,16 +5,16 @@ appId: io.salmonwallet.app
 # so drag-to-dismiss does NOT work. Close via top-right X.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - assertVisible:
-    id: "wallet-header-account-switcher"
+    id: 'wallet-header-account-switcher'
 - tapOn:
-    id: "wallet-header-account-switcher"
+    id: 'wallet-header-account-switcher'
 - waitForAnimationToEnd:
     timeout: 3000
-- assertVisible: "Your Wallets"
+- assertVisible: 'Your Wallets'
 - takeScreenshot: screenshots/smoke/mobile/wallet-switcher
 - tapOn:
-    point: "92%,11%"
+    point: '92%,11%'
 - waitForAnimationToEnd:
     timeout: 3000
 - assertVisible:
-    id: "wallet-header-account-switcher"
+    id: 'wallet-header-account-switcher'

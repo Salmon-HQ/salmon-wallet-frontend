@@ -12,10 +12,7 @@
 
 import { useState, useCallback } from 'react';
 import type { BlockchainAccount } from '../types/blockchain';
-import type {
-  NftData,
-  SolanaNftData,
-} from '../utils/nft';
+import type { NftData, SolanaNftData } from '../utils/nft';
 import { useSettleUntilChanged } from '../query/invalidation';
 import { trackEvent } from '../analytics';
 import { createNftTransferTransaction } from '../api/services/nft-transfer';
@@ -47,7 +44,10 @@ export interface UseNftTransferResult {
   reset: () => void;
 }
 
-export function useNftTransfer({ account, onTransferSuccess }: UseNftTransferParams): UseNftTransferResult {
+export function useNftTransfer({
+  account,
+  onTransferSuccess,
+}: UseNftTransferParams): UseNftTransferResult {
   const [status, setStatus] = useState<NftTransferStatus>('idle');
   const [settling, setSettling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -150,7 +150,7 @@ export function useNftTransfer({ account, onTransferSuccess }: UseNftTransferPar
         throw err;
       }
     },
-    [account, onTransferSuccess, settleUntilChanged],
+    [account, onTransferSuccess, settleUntilChanged]
   );
 
   return { sendNft, status, settling, error, isError: error !== null, reset };

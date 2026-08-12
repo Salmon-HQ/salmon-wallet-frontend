@@ -11,10 +11,14 @@ export default function NotFoundScreen() {
     <>
       <Stack.Screen options={{ title: t('general.not_found.title', 'Oops!') }} />
       <View style={styles.container}>
-        <Text style={styles.title}>{t('general.not_found.message', "This screen doesn't exist.")}</Text>
+        <Text style={styles.title}>
+          {t('general.not_found.message', "This screen doesn't exist.")}
+        </Text>
 
         <Link href="/" style={styles.link}>
-          <Text style={styles.linkText}>{t('general.not_found.go_home', 'Go to home screen!')}</Text>
+          <Text style={styles.linkText}>
+            {t('general.not_found.go_home', 'Go to home screen!')}
+          </Text>
         </Link>
       </View>
     </>

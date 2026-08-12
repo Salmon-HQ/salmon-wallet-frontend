@@ -34,7 +34,8 @@ import {
   getSettingsItemTestId,
   type SettingsScreen,
   type SettingsPanelEntry,
-letterSpacing, } from '@salmon/shared';
+  letterSpacing,
+} from '@salmon/shared';
 
 import type { SettingsSheetProps, SettingsOption, SettingsSection } from './types';
 import type { MobilePanelRegistry } from '../SettingsPanelStack';
@@ -102,8 +103,18 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
     options: [
       { id: 'addressBook', icon: 'book-outline', labelKey: 'settings.address_book' },
       { id: 'trustedApps', icon: 'apps-outline', labelKey: 'settings.trusted_apps' },
-      { id: 'network', icon: 'code-slash-outline', labelKey: 'settings.developer_networks', isToggle: true },
-      { id: 'analytics', icon: 'stats-chart-outline', labelKey: 'settings.analytics', isToggle: true },
+      {
+        id: 'network',
+        icon: 'code-slash-outline',
+        labelKey: 'settings.developer_networks',
+        isToggle: true,
+      },
+      {
+        id: 'analytics',
+        icon: 'stats-chart-outline',
+        labelKey: 'settings.analytics',
+        isToggle: true,
+      },
     ],
   },
   {
@@ -117,8 +128,20 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
     titleKey: 'settings.sections.danger_zone',
     isDanger: true,
     options: [
-      { id: 'removeWallet', icon: 'trash-outline', labelKey: 'settings.wallets.remove_wallet', isDanger: true, isAction: true },
-      { id: 'removeAll', icon: 'log-out-outline', labelKey: 'settings.wallets.remove_all_wallets', isDanger: true, isAction: true },
+      {
+        id: 'removeWallet',
+        icon: 'trash-outline',
+        labelKey: 'settings.wallets.remove_wallet',
+        isDanger: true,
+        isAction: true,
+      },
+      {
+        id: 'removeAll',
+        icon: 'log-out-outline',
+        labelKey: 'settings.wallets.remove_all_wallets',
+        isDanger: true,
+        isAction: true,
+      },
     ],
   },
 ];
@@ -207,7 +230,7 @@ export function SettingsSheet({
         finishAnimation();
       }, PUSH_DURATION);
     },
-    [animating, finishAnimation, push],
+    [animating, finishAnimation, push]
   );
 
   const handlePop = useCallback(() => {
@@ -257,12 +280,14 @@ export function SettingsSheet({
     [handlePush, onClose, onRemoveAllWallets, onRemoveWallet, panelRegistry]
   );
 
-
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    const opacity = Math.min(offsetY / 30, 1);
-    topFadeOpacity.setValue(opacity);
-  }, [topFadeOpacity]);
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = event.nativeEvent.contentOffset.y;
+      const opacity = Math.min(offsetY / 30, 1);
+      topFadeOpacity.setValue(opacity);
+    },
+    [topFadeOpacity]
+  );
 
   const renderSectionHeader = useCallback(
     (section: SettingsSection) => {
@@ -272,7 +297,9 @@ export function SettingsSheet({
           key={`header-${section.titleKey}`}
           style={[styles.sectionHeader, section.isDanger && styles.sectionHeaderDanger]}
         >
-          <Text style={[styles.sectionHeaderText, section.isDanger && styles.sectionHeaderTextDanger]}>
+          <Text
+            style={[styles.sectionHeaderText, section.isDanger && styles.sectionHeaderTextDanger]}
+          >
             {title}
           </Text>
         </View>
@@ -340,16 +367,31 @@ export function SettingsSheet({
           accessibilityLabel={label}
         >
           <View style={[styles.iconContainer, isDanger && styles.iconContainerDanger]}>
-            <Ionicons name={option.icon} size={24} color={isDanger ? DANGER_COLORS.text : colors.text.primary} />
+            <Ionicons
+              name={option.icon}
+              size={24}
+              color={isDanger ? DANGER_COLORS.text : colors.text.primary}
+            />
           </View>
           <Text style={[styles.optionLabel, isDanger && styles.optionLabelDanger]}>{label}</Text>
           {!option.isAction && (
-            <Ionicons name="chevron-forward" size={20} color={isDanger ? DANGER_COLORS.text : colors.text.secondary} />
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={isDanger ? DANGER_COLORS.text : colors.text.secondary}
+            />
           )}
         </TouchableOpacity>
       );
     },
-    [t, handleOptionPress, developerNetworksEnabled, onDeveloperNetworksToggle, analyticsEnabled, onAnalyticsToggle]
+    [
+      t,
+      handleOptionPress,
+      developerNetworksEnabled,
+      onDeveloperNetworksToggle,
+      analyticsEnabled,
+      onAnalyticsToggle,
+    ]
   );
 
   const renderSection = useCallback(
@@ -368,9 +410,7 @@ export function SettingsSheet({
     ? t(SCREEN_TITLE_KEYS[currentPanel.screen] || 'settings.title')
     : t('settings.title');
   const currentTitle = headerOverride?.title || fallbackTitle;
-  const currentBackAction = currentPanel
-    ? headerOverride?.onBack || handlePop
-    : undefined;
+  const currentBackAction = currentPanel ? headerOverride?.onBack || handlePop : undefined;
   const invokeHeaderOverrideBack = useCallback(() => {
     headerOverrideBackRef.current?.();
   }, []);
@@ -400,11 +440,11 @@ export function SettingsSheet({
         };
       });
     },
-    [invokeHeaderOverrideBack],
+    [invokeHeaderOverrideBack]
   );
   const headerContextValue = useMemo(
     () => ({ setHeaderState: handleHeaderStateChange }),
-    [handleHeaderStateChange],
+    [handleHeaderStateChange]
   );
   // Report header state to parent (GateContainer)
   useEffect(() => {

@@ -131,15 +131,12 @@ export function useUserConfig({
   /**
    * Converts an object of explorers to an array with keys.
    */
-  const toArray = useCallback(
-    (objects: Record<string, Explorer>): ExplorerWithKey[] => {
-      return Object.keys(objects).map((key) => ({
-        ...objects[key],
-        key,
-      }));
-    },
-    []
-  );
+  const toArray = useCallback((objects: Record<string, Explorer>): ExplorerWithKey[] => {
+    return Object.keys(objects).map((key) => ({
+      ...objects[key],
+      key,
+    }));
+  }, []);
 
   // Load configuration on mount and when blockchain/environment changes
   useEffect(() => {
@@ -272,4 +269,3 @@ export function useUserConfig({
     isLoading,
   };
 }
-

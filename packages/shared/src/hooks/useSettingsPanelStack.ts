@@ -13,12 +13,9 @@ export interface UseSettingsPanelStackResult {
 export function useSettingsPanelStack(): UseSettingsPanelStackResult {
   const [stack, setStack] = useState<SettingsPanelEntry[]>([]);
 
-  const push = useCallback(
-    (screen: SettingsScreen, props?: Record<string, unknown>) => {
-      setStack((prev) => [...prev, { screen, props }]);
-    },
-    [],
-  );
+  const push = useCallback((screen: SettingsScreen, props?: Record<string, unknown>) => {
+    setStack((prev) => [...prev, { screen, props }]);
+  }, []);
 
   const pop = useCallback(() => {
     setStack((prev) => (prev.length > 0 ? prev.slice(0, -1) : prev));
@@ -33,4 +30,3 @@ export function useSettingsPanelStack(): UseSettingsPanelStackResult {
 
   return { stack, push, pop, reset, current, canGoBack };
 }
-

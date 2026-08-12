@@ -1,7 +1,16 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors, fontSize, letterSpacing, lineHeight, spacing, ms, s, fontFamilyNative } from '@salmon/shared';
+import {
+  colors,
+  fontSize,
+  letterSpacing,
+  lineHeight,
+  spacing,
+  ms,
+  s,
+  fontFamilyNative,
+} from '@salmon/shared';
 import type { SwapTabSelectorProps, SwapTab } from './types';
 
 /**

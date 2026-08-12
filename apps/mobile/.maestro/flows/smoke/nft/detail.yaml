@@ -24,21 +24,21 @@ appId: io.salmonwallet.app
 # full-matches text, and the phishing NFT's name is padded with zero-width spaces.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - tapOn:
-    id: "tab-collectibles"
+    id: 'tab-collectibles'
 - extendedWaitUntil:
-    visible: "My Collectibles"
+    visible: 'My Collectibles'
     timeout: 20000
 - extendedWaitUntil:
     visible:
-      id: "nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV"
+      id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
     timeout: 30000
 - tapOn:
-    id: "nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV"
+    id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible: "Mindfolk Founder #5154"
+- assertVisible: 'Mindfolk Founder #5154'
 - takeScreenshot: screenshots/smoke/nft/detail-mindfolk
 - runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
-- assertVisible: "My Collectibles"
+- assertVisible: 'My Collectibles'
 - tapOn:
-    id: "tab-home"
+    id: 'tab-home'

@@ -20,10 +20,7 @@ export function ExplorerSelector({
   );
 
   return (
-    <SettingsPanelContent
-      title={t('settings.explorer', 'Block Explorer')}
-      onBack={onBack}
-    >
+    <SettingsPanelContent title={t('settings.explorer', 'Block Explorer')} onBack={onBack}>
       <SettingsSelectorList
         items={explorers}
         getKey={(item) => item.key}

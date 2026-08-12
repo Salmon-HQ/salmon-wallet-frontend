@@ -1,6 +1,5 @@
 # Salmon Wallet
 
-
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
 ![React Native 0.83.6](https://img.shields.io/badge/React%20Native-0.83.6-61dafb?logo=react&logoColor=white)
 ![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)
@@ -8,7 +7,6 @@
 ![Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 
 <img width="160" alt="logo-salmon" src="https://github.com/salmonw/salmon-wallet-v2/assets/35810074/ac99529f-aff7-47c6-b443-4a58b41a998d">
-
 
 **Open Wallet Infrastructure**
 
@@ -83,32 +81,32 @@ docs/
 
 ### Applications
 
-| Package | Description |
-|----------|-------------|
-| `apps/extension` | Browser extension built with WXT and React |
-| `apps/web` | Web wallet built with Vite and React |
-| `apps/mobile` | Mobile wallet built with Expo and React Native |
+| Package          | Description                                    |
+| ---------------- | ---------------------------------------------- |
+| `apps/extension` | Browser extension built with WXT and React     |
+| `apps/web`       | Web wallet built with Vite and React           |
+| `apps/mobile`    | Mobile wallet built with Expo and React Native |
 
 ### Shared Packages
 
-| Package | Description |
-|----------|-------------|
+| Package           | Description                                                                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------------- |
 | `packages/shared` | Wallet logic, blockchain integrations, APIs, storage, crypto utilities, hooks, types and localization |
-| `packages/ui` | Shared React UI components |
-| `packages/assets` | Shared fonts and image assets |
+| `packages/ui`     | Shared React UI components                                                                            |
+| `packages/assets` | Shared fonts and image assets                                                                         |
 
 ---
 
 ## Tech Stack
 
-| | Web | Extension | Mobile |
-|---|---|---|---|
-| **Language** | TypeScript ~5.9 | TypeScript ~5.9 | TypeScript ~5.9 |
-| **UI** | React 19.1 | React 19.1 | React 19.2 / React Native 0.83.6 |
-| **Framework** | Vite 7 | WXT 0.20 | Expo SDK 55 |
-| **Routing** | react-router-dom 7 | react-router-dom 7 | expo-router 55 |
-| **Styling** | MUI 7 + Emotion | MUI 7 + Emotion | react-native-paper 5 |
-| **Testing** | Vitest + Playwright | Vitest | Jest + Maestro |
+|               | Web                 | Extension          | Mobile                           |
+| ------------- | ------------------- | ------------------ | -------------------------------- |
+| **Language**  | TypeScript ~5.9     | TypeScript ~5.9    | TypeScript ~5.9                  |
+| **UI**        | React 19.1          | React 19.1         | React 19.2 / React Native 0.83.6 |
+| **Framework** | Vite 7              | WXT 0.20           | Expo SDK 55                      |
+| **Routing**   | react-router-dom 7  | react-router-dom 7 | expo-router 55                   |
+| **Styling**   | MUI 7 + Emotion     | MUI 7 + Emotion    | react-native-paper 5             |
+| **Testing**   | Vitest + Playwright | Vitest             | Jest + Maestro                   |
 
 **Monorepo tooling:** pnpm Workspaces · Turborepo · ESLint 9
 

@@ -46,9 +46,13 @@ jest.mock('@expo/vector-icons/FontAwesome', () => ({
 jest.mock('@salmon/assets/src/fonts/DMSans-Light.ttf', () => 'DMSansLight', { virtual: true });
 jest.mock('@salmon/assets/src/fonts/DMSans-Regular.ttf', () => 'DMSansRegular', { virtual: true });
 jest.mock('@salmon/assets/src/fonts/DMSans-Medium.ttf', () => 'DMSansMedium', { virtual: true });
-jest.mock('@salmon/assets/src/fonts/DMSans-SemiBold.ttf', () => 'DMSansSemiBold', { virtual: true });
+jest.mock('@salmon/assets/src/fonts/DMSans-SemiBold.ttf', () => 'DMSansSemiBold', {
+  virtual: true,
+});
 jest.mock('@salmon/assets/src/fonts/DMSans-Bold.ttf', () => 'DMSansBold', { virtual: true });
-jest.mock('@salmon/assets/src/fonts/DMSans-ExtraBold.ttf', () => 'DMSansExtraBold', { virtual: true });
+jest.mock('@salmon/assets/src/fonts/DMSans-ExtraBold.ttf', () => 'DMSansExtraBold', {
+  virtual: true,
+});
 jest.mock('@salmon/assets/src/fonts/DMSans-Black.ttf', () => 'DMSansBlack', { virtual: true });
 
 jest.mock('../src/components/WalletInitErrorScreen', () => {
@@ -112,13 +116,11 @@ describe('RootLayout mobile lock lifecycle', () => {
   });
 
   it('does not lock on Android blur events triggered by in-app overlays like bottom sheets', async () => {
-    jest
-      .spyOn(AppState, 'addEventListener')
-      .mockImplementation((eventType: any, listener: any) => {
-        listeners[eventType] ??= [];
-        listeners[eventType].push(listener);
-        return { remove: jest.fn() } as any;
-      });
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((eventType: any, listener: any) => {
+      listeners[eventType] ??= [];
+      listeners[eventType].push(listener);
+      return { remove: jest.fn() } as any;
+    });
 
     mockLockAccounts.mockResolvedValue(undefined);
 
@@ -135,13 +137,11 @@ describe('RootLayout mobile lock lifecycle', () => {
   });
 
   it('locks on repeated active to background cycles', async () => {
-    jest
-      .spyOn(AppState, 'addEventListener')
-      .mockImplementation((eventType: any, listener: any) => {
-        listeners[eventType] ??= [];
-        listeners[eventType].push(listener);
-        return { remove: jest.fn() } as any;
-      });
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((eventType: any, listener: any) => {
+      listeners[eventType] ??= [];
+      listeners[eventType].push(listener);
+      return { remove: jest.fn() } as any;
+    });
 
     mockLockAccounts.mockResolvedValue(undefined);
 
@@ -165,13 +165,11 @@ describe('RootLayout mobile lock lifecycle', () => {
   });
 
   it('does not lock on iOS-style inactive transitions alone', async () => {
-    jest
-      .spyOn(AppState, 'addEventListener')
-      .mockImplementation((eventType: any, listener: any) => {
-        listeners[eventType] ??= [];
-        listeners[eventType].push(listener);
-        return { remove: jest.fn() } as any;
-      });
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((eventType: any, listener: any) => {
+      listeners[eventType] ??= [];
+      listeners[eventType].push(listener);
+      return { remove: jest.fn() } as any;
+    });
 
     render(<RootLayout />);
 
@@ -236,13 +234,11 @@ describe('RootLayout mobile lock lifecycle', () => {
   });
 
   it('locks when iOS eventually reaches background after becoming inactive', async () => {
-    jest
-      .spyOn(AppState, 'addEventListener')
-      .mockImplementation((eventType: any, listener: any) => {
-        listeners[eventType] ??= [];
-        listeners[eventType].push(listener);
-        return { remove: jest.fn() } as any;
-      });
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((eventType: any, listener: any) => {
+      listeners[eventType] ??= [];
+      listeners[eventType].push(listener);
+      return { remove: jest.fn() } as any;
+    });
 
     mockLockAccounts.mockResolvedValue(undefined);
 

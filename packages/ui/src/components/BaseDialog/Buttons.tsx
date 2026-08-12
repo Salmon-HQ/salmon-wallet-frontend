@@ -41,11 +41,7 @@ export function ActionButton({
       disabled={disabled || loading}
       data-testid={testID}
     >
-      {loading ? (
-        <CircularProgress size={20} sx={{ color: 'inherit' }} />
-      ) : (
-        children
-      )}
+      {loading ? <CircularProgress size={20} sx={{ color: 'inherit' }} /> : children}
     </StyledActionButton>
   );
 }

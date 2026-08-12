@@ -152,7 +152,7 @@ export function PasswordPage({
       setError(null);
       if (showSingleInput) setWrongPassword(false);
     },
-    [showSingleInput],
+    [showSingleInput]
   );
 
   const handleConfirmPasswordChange = useCallback((text: string) => {
@@ -212,14 +212,25 @@ export function PasswordPage({
       setError(
         err instanceof ApiError && err.isNetworkError()
           ? t('wallet.create.recovery_network_error') ||
-            'Could not reach the server. Check your connection and try again. Your seed phrase is fine.'
+              'Could not reach the server. Check your connection and try again. Your seed phrase is fine.'
           : t('wallet.create.recovery_error') ||
-            'Failed to create account. Please check your seed phrase and try again.',
+              'Failed to create account. Please check your seed phrase and try again.'
       );
     } finally {
       setIsLoading(false);
     }
-  }, [actions, flowType, isFormValid, mnemonic, onCreating, onSuccess, password, showSingleInput, state.counter, t]);
+  }, [
+    actions,
+    flowType,
+    isFormValid,
+    mnemonic,
+    onCreating,
+    onSuccess,
+    password,
+    showSingleInput,
+    state.counter,
+    t,
+  ]);
 
   const passwordIssue =
     !showSingleInput && password.length > 0 ? getPasswordIssue(passwordValidation) : null;

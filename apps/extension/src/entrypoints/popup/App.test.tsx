@@ -20,20 +20,23 @@ vi.mock('@salmon/shared', () => ({
     background: { primary: '#000' },
     accent: { primary: '#0f0', tint: '#0f04' },
   },
-  useAccountsContext: () => [{
-    ready: true,
-    locked: false,
-    accounts: [{ id: 'account-1' }],
-    activeAccount: null,
-    activeBlockchainAccount: null,
-    accountId: 'account-1',
-    networkId: 'solana-mainnet',
-    pathIndex: 0,
-  }, {
-    lockAccounts: mockLockAccounts,
-    removeAllAccounts: mockRemoveAllAccounts,
-    unlockWithCachedKey: mockUnlockWithCachedKey,
-  }],
+  useAccountsContext: () => [
+    {
+      ready: true,
+      locked: false,
+      accounts: [{ id: 'account-1' }],
+      activeAccount: null,
+      activeBlockchainAccount: null,
+      accountId: 'account-1',
+      networkId: 'solana-mainnet',
+      pathIndex: 0,
+    },
+    {
+      lockAccounts: mockLockAccounts,
+      removeAllAccounts: mockRemoveAllAccounts,
+      unlockWithCachedKey: mockUnlockWithCachedKey,
+    },
+  ],
   useInactivityTimeout: (config: unknown) => mockUseInactivityTimeout(config),
   useSettleAfterTx: () => vi.fn(),
   useAnalyticsConsent: () => ({ resolveConsentPrompt: vi.fn() }),
@@ -142,7 +145,8 @@ describe('Extension popup inactivity lock', () => {
   it('clears session cache and locks accounts on inactivity timeout', async () => {
     render(<App />);
 
-    const onTimeout = mockUseInactivityTimeout.mock.calls[0]?.[0]?.onTimeout as (() => void) | undefined;
+    const onTimeout = mockUseInactivityTimeout.mock.calls[0]?.[0]?.onTimeout as
+      (() => void) | undefined;
 
     expect(onTimeout).toBeTypeOf('function');
     onTimeout?.();

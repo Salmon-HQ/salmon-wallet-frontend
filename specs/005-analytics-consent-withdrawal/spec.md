@@ -8,7 +8,7 @@
 
 **Input**: App Review Guideline 5.1.1(ii) requires apps that collect usage data to secure consent "even if such data is considered to be anonymous", and to provide "an easily accessible and understandable way to withdraw" it. The app asks for analytics consent during onboarding and proxies events to GA4 through its own backend. What is not established is whether a user who accepted can later change their mind from inside the app.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Turn analytics off after having accepted (Priority: P1)
 
@@ -50,7 +50,7 @@ A user reads, next to the control, what the data is and what it is not.
 - Consent state and its storage must survive a restart but not survive a reinstall.
 - Crash and diagnostic reporting, if any, is a separate consent from product analytics and must not be conflated with it.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -68,7 +68,7 @@ A user reads, next to the control, what the data is and what it is not.
 
 - **Analytics consent**: a persisted, per-install decision with three meaningful states — accepted, declined, and never asked — that gates every outbound event.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

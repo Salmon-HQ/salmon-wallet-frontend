@@ -87,7 +87,11 @@ export function createNativeToken(decimals: number = 18): TransferToken {
 /**
  * Creates a TransferToken object for an ERC20 token
  */
-export function createERC20Token(address: string, decimals: number, symbol?: string): TransferToken {
+export function createERC20Token(
+  address: string,
+  decimals: number,
+  symbol?: string
+): TransferToken {
   return { address, decimals, symbol, type: 'erc20' };
 }
 
@@ -136,7 +140,10 @@ const MIN_SEARCH_LENGTH = 3;
  * Filters tokens locally by name or symbol.
  * Returns all tokens if query is shorter than MIN_SEARCH_LENGTH.
  */
-export function filterTokensLocally(tokens: TokenSelectorToken[], query: string): TokenSelectorToken[] {
+export function filterTokensLocally(
+  tokens: TokenSelectorToken[],
+  query: string
+): TokenSelectorToken[] {
   if (query.length < MIN_SEARCH_LENGTH) {
     return tokens;
   }
@@ -235,10 +242,7 @@ export function formatERC20TokenBalance(
   const wholePart = balanceBigInt / divisor;
   const fractionPart = balanceBigInt % divisor;
 
-  const fractionStr = fractionPart
-    .toString()
-    .padStart(decimals, '0')
-    .slice(0, displayDecimals);
+  const fractionStr = fractionPart.toString().padStart(decimals, '0').slice(0, displayDecimals);
 
   const numValue = parseFloat(`${wholePart}.${fractionStr}`);
 
@@ -262,7 +266,14 @@ export function formatERC20TokenBalance(
  */
 export function mergeTokenLists(
   detectedTokens: DetectedERC20Token[],
-  featuredTokens: Array<{ address: string; symbol: string; name: string; decimals: number; logoUri?: string; coingeckoId?: string }>
+  featuredTokens: Array<{
+    address: string;
+    symbol: string;
+    name: string;
+    decimals: number;
+    logoUri?: string;
+    coingeckoId?: string;
+  }>
 ): DetectedERC20Token[] {
   const tokenMap = new Map<string, DetectedERC20Token>();
 

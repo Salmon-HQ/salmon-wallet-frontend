@@ -20,8 +20,7 @@ export interface TokenSelectorProps extends TokenSelectorPropsBase<CSSProperties
 /**
  * Props for the TokenSelectorModal component (Web/Extension)
  */
-export interface TokenSelectorModalProps
-  extends TokenSelectorModalPropsBase<CSSProperties> {
+export interface TokenSelectorModalProps extends TokenSelectorModalPropsBase<CSSProperties> {
   /** Additional CSS class name */
   className?: string;
 }

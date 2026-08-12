@@ -58,7 +58,11 @@ export function classifyBridgeError(
 
   // Errors thrown with an i18n key as message (e.g. from useBridge's own
   // parser) are already user-ready — pass them through unchanged.
-  if (['bridge.errors.', 'transaction.errors.', 'swap.errors.'].some((prefix) => message.startsWith(prefix))) {
+  if (
+    ['bridge.errors.', 'transaction.errors.', 'swap.errors.'].some((prefix) =>
+      message.startsWith(prefix)
+    )
+  ) {
     return message;
   }
 

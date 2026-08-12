@@ -5,9 +5,7 @@
 //
 // Usage: `node .playwright/scripts/interactive-launch.mjs`
 //        Ctrl-C to quit. Profile state persists between launches.
-import {
-  launch, profileDir, extDist, repoRoot,
-} from './lib.mjs';
+import { launch, profileDir, extDist, repoRoot } from './lib.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -28,7 +26,7 @@ const stateFile = path.join(fixturesRoot, 'last-session.json');
 fs.mkdirSync(path.dirname(stateFile), { recursive: true });
 fs.writeFileSync(
   stateFile,
-  JSON.stringify({ extId, profileDir, extDist, ts: new Date().toISOString() }, null, 2),
+  JSON.stringify({ extId, profileDir, extDist, ts: new Date().toISOString() }, null, 2)
 );
 
 console.log('\nPress Ctrl-C to exit. Profile persists.');

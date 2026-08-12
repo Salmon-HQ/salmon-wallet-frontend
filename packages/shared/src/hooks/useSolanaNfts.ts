@@ -58,8 +58,7 @@ export function useSolanaNfts(params: UseSolanaNftsParams): UseSolanaNftsResult 
       networkId: (networkId ?? 'solana-mainnet') as NetworkId,
       includeSpam,
     }),
-    queryFn: () =>
-      getSolanaNfts(networkId as string, publicKey as string, false, { includeSpam }),
+    queryFn: () => getSolanaNfts(networkId as string, publicKey as string, false, { includeSpam }),
     enabled: isEnabled,
     staleTime: 60_000,
   });

@@ -10,7 +10,7 @@ const SESSION_KEY_STORAGE_KEY = 'salmon_session_key';
 export async function storeSessionKey(keyCache: DerivedKeyCache): Promise<void> {
   try {
     await sessionArea.set({
-      [SESSION_KEY_STORAGE_KEY]: keyCache
+      [SESSION_KEY_STORAGE_KEY]: keyCache,
     });
   } catch (error) {
     console.warn('Failed to store session key:', error);

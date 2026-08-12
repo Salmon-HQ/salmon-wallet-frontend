@@ -16,7 +16,20 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useTokenSearch, colors, spacing, borderRadius, ContentLoader, Rect, Circle, getShortAddress, getTokenKey, fontFamilyNative, fontSize, fontWeight, } from '@salmon/shared';
+import {
+  useTokenSearch,
+  colors,
+  spacing,
+  borderRadius,
+  ContentLoader,
+  Rect,
+  Circle,
+  getShortAddress,
+  getTokenKey,
+  fontFamilyNative,
+  fontSize,
+  fontWeight,
+} from '@salmon/shared';
 import { BlurContainer, BlurTargetProvider } from '../BlurContainer';
 import { ScalesBackground } from '../ScalesBackground';
 import { TokenLogo } from '../TokenLogo';
@@ -75,10 +88,7 @@ export function TokenSelectorModal({
         : token.symbol || '';
 
       return (
-        <BlurContainer
-          style={styles.tokenItemShell}
-          backgroundColor={colors.background.tokenItem}
-        >
+        <BlurContainer style={styles.tokenItemShell} backgroundColor={colors.background.tokenItem}>
           <TouchableOpacity
             testID={`token-row-${token.symbol}`}
             accessibilityRole="button"
@@ -99,9 +109,7 @@ export function TokenSelectorModal({
                 </View>
                 {showNetworkChip && token.network && (
                   <View style={styles.networkChip}>
-                    <Text style={styles.networkChipText}>
-                      {token.network.toUpperCase()}
-                    </Text>
+                    <Text style={styles.networkChipText}>{token.network.toUpperCase()}</Text>
                   </View>
                 )}
               </View>
@@ -150,9 +158,7 @@ export function TokenSelectorModal({
         {isSearching && (
           <View style={styles.searchingContainer}>
             <ActivityIndicator size="small" color={colors.text.secondary} />
-            <Text style={styles.searchingText}>
-              {t('actions.searching', 'Searching...')}
-            </Text>
+            <Text style={styles.searchingText}>{t('actions.searching', 'Searching...')}</Text>
           </View>
         )}
         {renderFeaturedTokens()}
@@ -223,7 +229,10 @@ export function TokenSelectorModal({
                 <Text style={styles.title}>{t('wallet.select_token', 'Select Token')}</Text>
               </View>
 
-              <BlurContainer style={styles.searchContainer} backgroundColor={colors.background.tokenItem}>
+              <BlurContainer
+                style={styles.searchContainer}
+                backgroundColor={colors.background.tokenItem}
+              >
                 <TextInput
                   testID="token-search-input"
                   style={styles.searchInput}

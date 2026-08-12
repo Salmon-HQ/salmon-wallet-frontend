@@ -4,6 +4,7 @@ Lives at `apps/extension/.playwright/`. Drives the extension build through
 Chromium with Playwright.
 
 > **Migration in progress — two runners coexist.**
+>
 > - **`@playwright/test` (target).** New specs live in `tests/*.spec.ts` and
 >   run with the official runner via `pnpm --filter @salmon/extension e2e`.
 >   They select elements by the shared `data-testid` contract (`Testable` in
@@ -21,20 +22,20 @@ Chromium with Playwright.
 
 ## Layout
 
-| Path | Purpose |
-|---|---|
-| `playwright.config.ts` | `@playwright/test` config — `testIdAttribute: data-testid`, serial, single worker |
-| `tests/` | Migrated specs (`*.spec.ts`) run by `@playwright/test` |
-| `fixtures.ts` | Extension fixture — loads the MV3 build into a persistent profile, exposes `{ context, extensionId, popup }` |
-| `helpers.ts` | Flow helpers for specs (`unlockOrRecover`, `waitHome`), ported from `lib.mjs` |
-| `env.ts` | Suite-local `.env.test` loader + `isBackendUp()` (used by config/global-setup/specs) |
-| `global-setup.ts` | Loads secrets and fails fast if the password is missing |
-| `scripts/` | Legacy runnable `.mjs` scripts + shared `lib.mjs` (being phased out) |
-| `scripts/lib.mjs` | Legacy shared helpers: `launch`, `openPopup`, `unlockOrRecover`, `waitHome`, `capture`, `waitForButtonEnabled`, secrets loader |
-| `fixtures/` | Generated artifacts that scripts depend on (e.g. `wallet-b-addr.txt`) |
-| `profiles/extension/` | Persistent Chromium profile — wallet recovery, dev-mode toggle, etc. survive across runs |
-| `reports/` | Markdown reports written by each script |
-| `.env.test` | Secrets (test seeds + password). Loaded by `lib.mjs`. Never inline elsewhere |
+| Path                   | Purpose                                                                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `playwright.config.ts` | `@playwright/test` config — `testIdAttribute: data-testid`, serial, single worker                                              |
+| `tests/`               | Migrated specs (`*.spec.ts`) run by `@playwright/test`                                                                         |
+| `fixtures.ts`          | Extension fixture — loads the MV3 build into a persistent profile, exposes `{ context, extensionId, popup }`                   |
+| `helpers.ts`           | Flow helpers for specs (`unlockOrRecover`, `waitHome`), ported from `lib.mjs`                                                  |
+| `env.ts`               | Suite-local `.env.test` loader + `isBackendUp()` (used by config/global-setup/specs)                                           |
+| `global-setup.ts`      | Loads secrets and fails fast if the password is missing                                                                        |
+| `scripts/`             | Legacy runnable `.mjs` scripts + shared `lib.mjs` (being phased out)                                                           |
+| `scripts/lib.mjs`      | Legacy shared helpers: `launch`, `openPopup`, `unlockOrRecover`, `waitHome`, `capture`, `waitForButtonEnabled`, secrets loader |
+| `fixtures/`            | Generated artifacts that scripts depend on (e.g. `wallet-b-addr.txt`)                                                          |
+| `profiles/extension/`  | Persistent Chromium profile — wallet recovery, dev-mode toggle, etc. survive across runs                                       |
+| `reports/`             | Markdown reports written by each script                                                                                        |
+| `.env.test`            | Secrets (test seeds + password). Loaded by `lib.mjs`. Never inline elsewhere                                                   |
 
 `screenshots/` and `snapshots/` are recreated by `lib.mjs` on first capture
 inside a script run. They are deliberately not checked in.
@@ -48,9 +49,11 @@ these scripts.
 
 1. **Chromium.** `@playwright/test` is a devDependency of `@salmon/extension`.
    Install the browser once:
+
    ```sh
    pnpm --filter @salmon/extension exec playwright install chromium
    ```
+
    Extensions require a headed (non-headless-shell) Chromium — the fixture
    launches with `headless: false`.
    (Legacy `.mjs` scripts instead resolve Chromium at runtime via a local
@@ -59,12 +62,14 @@ these scripts.
 2. **Extension build**. The scripts load `apps/extension/dist/chrome-mv3`.
    For local-backend testing build with development mode so the bundle
    targets `localhost:3001/local`:
+
    ```sh
    cd apps/extension
    pnpm build --mode development
    # build emits dist/chrome-mv3-dev — symlink for the test runner:
    ln -sfn chrome-mv3-dev dist/chrome-mv3
    ```
+
    Build with default mode (`pnpm build`) produces a prod-pointing bundle —
    useful for smoke tests against the staging API but tokens/NFTs come from
    real production data.
@@ -91,12 +96,12 @@ money — know the balance before a script spends it.
 
 Per-flow prerequisites:
 
-| Flow | Needs |
-|---|---|
-| `lock.spec.ts`, `dapp-providers.mjs`, connect/sign flows | nothing — no funds required |
-| `state-modifying.mjs` (Send, Address Book) | Wallet A: SOL for fee + the 0.001 SOL amount |
-| `nft-transfer.mjs` | Wallet A: an NFT to send |
-| `burn-cnft.mjs` | Wallet B: the target scam cNFT |
+| Flow                                                     | Needs                                        |
+| -------------------------------------------------------- | -------------------------------------------- |
+| `lock.spec.ts`, `dapp-providers.mjs`, connect/sign flows | nothing — no funds required                  |
+| `state-modifying.mjs` (Send, Address Book)               | Wallet A: SOL for fee + the 0.001 SOL amount |
+| `nft-transfer.mjs`                                       | Wallet A: an NFT to send                     |
+| `burn-cnft.mjs`                                          | Wallet B: the target scam cNFT               |
 
 Repo policy: a spec/script that finds its prerequisite missing skips (or
 stops, for legacy `.mjs` scripts) with a clear message, never a cryptic
@@ -141,35 +146,35 @@ tail -f apps/extension/.playwright/reports/PHASE1-WALKTHROUGH.md
 
 ### Setup / debug
 
-| Script | Purpose |
-|---|---|
-| `bootstrap.mjs` | Quick infra sanity check — launches the extension, opens the popup, captures the initial state. Run first when something feels off. |
-| `interactive-launch.mjs` | Opens Chromium with the extension loaded and **stays alive** until Ctrl-C. Useful for manual exploration or attaching DevTools. |
-| `state-check.mjs` | Verifies the persisted profile is intact (wallet recovered, NFTs present). Run after destructive tests. |
+| Script                   | Purpose                                                                                                                             |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `bootstrap.mjs`          | Quick infra sanity check — launches the extension, opens the popup, captures the initial state. Run first when something feels off. |
+| `interactive-launch.mjs` | Opens Chromium with the extension loaded and **stays alive** until Ctrl-C. Useful for manual exploration or attaching DevTools.     |
+| `state-check.mjs`        | Verifies the persisted profile is intact (wallet recovered, NFTs present). Run after destructive tests.                             |
 
 ### Phase 1 — read-only (no on-chain side effects)
 
-| Script | What it covers |
-|---|---|
-| `walkthrough.mjs` | Full sweep — onboarding, recover, home, tabs (Home/Collectibles/Swap), Send/Receive/Activity, every Settings panel via the legacy in-place driver. |
-| `settings-panels.mjs` | The 10 Settings sub-panels, each captured from a **fresh popup** (works around an SPA route issue in the legacy walkthrough). |
-| `lock-and-pages.mjs` | Lock cycle, re-lock-on-reload regression, About + Help & Support, NFT detail navigation. |
-| `dapp-providers.mjs` | Inspects the injected `window.solana` / `window.salmon` provider against jup.ag, plus a deep dump of the Security panel. |
+| Script                | What it covers                                                                                                                                     |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `walkthrough.mjs`     | Full sweep — onboarding, recover, home, tabs (Home/Collectibles/Swap), Send/Receive/Activity, every Settings panel via the legacy in-place driver. |
+| `settings-panels.mjs` | The 10 Settings sub-panels, each captured from a **fresh popup** (works around an SPA route issue in the legacy walkthrough).                      |
+| `lock-and-pages.mjs`  | Lock cycle, re-lock-on-reload regression, About + Help & Support, NFT detail navigation.                                                           |
+| `dapp-providers.mjs`  | Inspects the injected `window.solana` / `window.salmon` provider against jup.ag, plus a deep dump of the Security panel.                           |
 
 ### Wallet plumbing
 
-| Script | Purpose |
-|---|---|
+| Script                     | Purpose                                                                                                                                                                                                                                |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `discover-wallet-addr.mjs` | Wipes profile, recovers with `SEED_B`, captures the Solana receive address, writes it to `fixtures/wallet-b-addr.txt`, then wipes profile so subsequent runs default back to `SEED_A`. **Run this once** before any cross-wallet test. |
-| `nft-spam-filter.mjs` | Validates that toggling Developer Networks reveals scam cNFTs that the spam filter (`packages/shared/src/utils/nft-spam-filter.ts`) hides by default. Uses Wallet B which has known scam airdrops. |
+| `nft-spam-filter.mjs`      | Validates that toggling Developer Networks reveals scam cNFTs that the spam filter (`packages/shared/src/utils/nft-spam-filter.ts`) hides by default. Uses Wallet B which has known scam airdrops.                                     |
 
 ### Phase 2 — state-modifying / on-chain
 
-| Script | Action |
-|---|---|
-| `state-modifying.mjs` | Address Book Save (Wallet B), Send 0.001 SOL Wallet A → Wallet B (real on-chain mainnet). Waits for async address validation before clicking Save/Send. |
-| `nft-transfer.mjs` | Send a Solana NFT from Wallet A to Wallet B. The dialog shows a Confirm modal directly (no Review step) and may trigger a password prompt that the driver does not currently handle — outcome inconclusive when fully automated. |
-| `burn-cnft.mjs` | Burn the `JUP.PRO Drop Pass` scam cNFT from Wallet B (mainnet). Verified on-chain success. Selector targets `aria-label="Burn NFT"` — see lessons learned in `AGENTS.md`. |
+| Script                | Action                                                                                                                                                                                                                           |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `state-modifying.mjs` | Address Book Save (Wallet B), Send 0.001 SOL Wallet A → Wallet B (real on-chain mainnet). Waits for async address validation before clicking Save/Send.                                                                          |
+| `nft-transfer.mjs`    | Send a Solana NFT from Wallet A to Wallet B. The dialog shows a Confirm modal directly (no Review step) and may trigger a password prompt that the driver does not currently handle — outcome inconclusive when fully automated. |
+| `burn-cnft.mjs`       | Burn the `JUP.PRO Drop Pass` scam cNFT from Wallet B (mainnet). Verified on-chain success. Selector targets `aria-label="Burn NFT"` — see lessons learned in `AGENTS.md`.                                                        |
 
 ## Reports
 

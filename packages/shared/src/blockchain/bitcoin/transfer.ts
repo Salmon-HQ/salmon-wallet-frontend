@@ -15,11 +15,7 @@
 
 import * as bitcoin from 'bitcoinjs-lib';
 import type { BitcoinNetwork } from '../../types/blockchain';
-import {
-  btcToSatoshis,
-  satoshisToBtc,
-  SATOSHIS_PER_BTC,
-} from '../../utils/decimals';
+import { btcToSatoshis, satoshisToBtc, SATOSHIS_PER_BTC } from '../../utils/decimals';
 import type {
   UTXO,
   TransferTransactionResult,
@@ -122,10 +118,7 @@ async function resolveInputs(
 ): Promise<ResolvedInputs> {
   const utxos = await getUtxos(network, sourceAddress, fetchUtxos);
 
-  const totalAmountAvailable = utxos.reduce(
-    (total, utxo) => total + utxo.satoshis,
-    0
-  );
+  const totalAmountAvailable = utxos.reduce((total, utxo) => total + utxo.satoshis, 0);
 
   return { inputs: utxos, totalAmountAvailable };
 }
@@ -142,11 +135,7 @@ async function resolveInputs(
  * @param fee - Transaction fee in satoshis
  * @throws Error if balance is insufficient
  */
-function validateBalance(
-  totalAmountAvailable: number,
-  satoshiToSend: number,
-  fee: number
-): void {
+function validateBalance(totalAmountAvailable: number, satoshiToSend: number, fee: number): void {
   if (totalAmountAvailable - satoshiToSend - fee < 0) {
     throw new Error('Balance is too low for this transaction');
   }
@@ -187,7 +176,9 @@ function buildTransaction(params: {
         nonWitnessUtxo: Buffer.from(utxo.rawTx, 'hex'),
       });
     } else {
-      throw new Error(`UTXO ${utxo.txid}:${utxo.vout} missing rawTx: cannot build secure transaction input`);
+      throw new Error(
+        `UTXO ${utxo.txid}:${utxo.vout} missing rawTx: cannot build secure transaction input`
+      );
     }
   }
 
@@ -269,11 +260,7 @@ export async function createTransferTransaction(
   const satoshiToSend = Math.round(amountBtc * SATOSHIS_PER_BTC);
 
   // Fetch UTXOs and calculate available balance
-  const { inputs, totalAmountAvailable } = await resolveInputs(
-    network,
-    sourceAddress,
-    fetchUtxos
-  );
+  const { inputs, totalAmountAvailable } = await resolveInputs(network, sourceAddress, fetchUtxos);
 
   // Estimate fee (2 outputs: receiver + change)
   const outputCount = 2;
@@ -344,7 +331,8 @@ export async function confirmTransferTransaction(
   network: BitcoinNetwork,
   address: string,
   serializedTx: string,
-  broadcast: BroadcastTransactionFn = () => Promise.resolve({ success: false, error: 'No broadcast function provided' })
+  broadcast: BroadcastTransactionFn = () =>
+    Promise.resolve({ success: false, error: 'No broadcast function provided' })
 ): Promise<BroadcastResult> {
   try {
     const response = await broadcast(network.id, address, serializedTx);
@@ -397,7 +385,8 @@ export async function sendBitcoin(
   receiverAddress: string,
   amountBtc: number,
   fetchUtxos: FetchUtxosFn = () => Promise.resolve([]),
-  broadcast: BroadcastTransactionFn = () => Promise.resolve({ success: false, error: 'No broadcast function provided' })
+  broadcast: BroadcastTransactionFn = () =>
+    Promise.resolve({ success: false, error: 'No broadcast function provided' })
 ): Promise<BroadcastResult> {
   const { txId, serializedTx } = await createTransferTransaction(
     network,

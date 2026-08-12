@@ -11,13 +11,7 @@ interface TokenLogoProps {
   style?: ViewStyle;
 }
 
-const TokenLogo: React.FC<TokenLogoProps> = ({
-  uri,
-  symbol,
-  size,
-  borderRadius,
-  style,
-}) => {
+const TokenLogo: React.FC<TokenLogoProps> = ({ uri, symbol, size, borderRadius, style }) => {
   const [error, setError] = useState(false);
 
   const handleError = useCallback(() => {
@@ -37,9 +31,7 @@ const TokenLogo: React.FC<TokenLogoProps> = ({
     const label = symbol ? symbol.slice(0, 3).toUpperCase() : '?';
     return (
       <View style={[styles.fallback, containerStyle]}>
-        <Text style={[styles.fallbackText, { fontSize: ms(size * 0.32) }]}>
-          {label}
-        </Text>
+        <Text style={[styles.fallbackText, { fontSize: ms(size * 0.32) }]}>{label}</Text>
       </View>
     );
   }

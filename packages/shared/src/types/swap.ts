@@ -30,12 +30,7 @@ export type SwapChainType = BlockchainType;
  * Status of the swap operation.
  */
 export type SwapStatus =
-  | 'idle'
-  | 'getting-quote'
-  | 'quote-ready'
-  | 'executing'
-  | 'success'
-  | 'failed';
+  'idle' | 'getting-quote' | 'quote-ready' | 'executing' | 'success' | 'failed';
 
 /**
  * Parameters for getting a swap quote.
@@ -643,7 +638,11 @@ export interface SwapScreenProps<StyleType> {
   /** Callback when bridge fails */
   onBridgeError?: (error: Error) => void;
   /** Callback to send deposit to bridge exchange address */
-  onSendDeposit?: (depositAddress: string, tokenAddress: string, amount: number) => Promise<{ txId: string }>;
+  onSendDeposit?: (
+    depositAddress: string,
+    tokenAddress: string,
+    amount: number
+  ) => Promise<{ txId: string }>;
   /** Callback to search bridge source tokens */
   onSearchBridgeTokens?: (query: string) => Promise<BridgeTokenSimple[]>;
   /** Callback to navigate to home after success */

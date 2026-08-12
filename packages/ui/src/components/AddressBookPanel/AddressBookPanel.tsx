@@ -114,7 +114,7 @@ export function AddressBookPanel({
       setRemoveErrorKey(
         err instanceof AddressbookError && err.kind === 'resolve'
           ? 'settings.addressbook.resolve_failed'
-          : 'settings.addressbook.remove_failed',
+          : 'settings.addressbook.remove_failed'
       );
     } finally {
       setDeleteTarget(null);
@@ -122,10 +122,7 @@ export function AddressBookPanel({
   }, [deleteTarget, onRemoveContact]);
 
   return (
-    <SettingsPanelContent
-      title={t('settings.address_book', 'Address Book')}
-      onBack={onBack}
-    >
+    <SettingsPanelContent title={t('settings.address_book', 'Address Book')} onBack={onBack}>
       {error ? (
         <EmptyContainer data-testid="address-book-error">
           <EmptyText>
@@ -152,7 +149,10 @@ export function AddressBookPanel({
                       size="small"
                       aria-label={t('actions.edit', 'Edit')}
                       data-testid={`address-book-edit-${contact.address}`}
-                      sx={{ color: colors.text.secondary, '&:hover': { backgroundColor: colors.background.card } }}
+                      sx={{
+                        color: colors.text.secondary,
+                        '&:hover': { backgroundColor: colors.background.card },
+                      }}
                     >
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
@@ -162,17 +162,25 @@ export function AddressBookPanel({
                       size="small"
                       aria-label={t('actions.remove', 'Remove')}
                       data-testid={`address-book-remove-${contact.address}`}
-                      sx={{ color: colors.status.error, '&:hover': { backgroundColor: colors.status.errorBackground } }}
+                      sx={{
+                        color: colors.status.error,
+                        '&:hover': { backgroundColor: colors.status.errorBackground },
+                      }}
                     >
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
                   </Box>
                 }
               >
-                <StyledListItemButton disableRipple data-testid={`address-book-contact-${contact.address}`}>
+                <StyledListItemButton
+                  disableRipple
+                  data-testid={`address-book-contact-${contact.address}`}
+                >
                   <ListItemAvatar>
                     <ContactAvatar>
-                      <PersonOutlineIcon sx={{ fontSize: fontSize.xl, color: colors.text.secondary }} />
+                      <PersonOutlineIcon
+                        sx={{ fontSize: fontSize.xl, color: colors.text.secondary }}
+                      />
                     </ContactAvatar>
                   </ListItemAvatar>
                   <ListItemText
@@ -181,7 +189,8 @@ export function AddressBookPanel({
                       <>
                         {contact.domain || getShortAddress(contact.address, 6)}
                         {' \u00B7 '}
-                        {contact.networkId.split('-')[0].charAt(0).toUpperCase() + contact.networkId.split('-')[0].slice(1)}
+                        {contact.networkId.split('-')[0].charAt(0).toUpperCase() +
+                          contact.networkId.split('-')[0].slice(1)}
                       </>
                     }
                     primaryTypographyProps={{
@@ -209,7 +218,11 @@ export function AddressBookPanel({
             ))}
           </StyledList>
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <AddButton startIcon={<AddCircleOutlineIcon />} onClick={onAddContact} data-testid="address-book-add-button">
+            <AddButton
+              startIcon={<AddCircleOutlineIcon />}
+              onClick={onAddContact}
+              data-testid="address-book-add-button"
+            >
               {t('settings.addressbook.addnew', 'Add New Address')}
             </AddButton>
           </Box>
@@ -217,7 +230,10 @@ export function AddressBookPanel({
       ) : (
         <EmptyContainer>
           <EmptyText>
-            {t('settings.addressbook.empty', 'Looks empty in here.\nAdd your first contact clicking the button.')}
+            {t(
+              'settings.addressbook.empty',
+              'Looks empty in here.\nAdd your first contact clicking the button.'
+            )}
           </EmptyText>
           <AddButton
             startIcon={<AddCircleOutlineIcon />}
@@ -230,9 +246,7 @@ export function AddressBookPanel({
       )}
 
       {removeErrorKey && (
-        <WriteErrorText data-testid="address-book-remove-error">
-          {t(removeErrorKey)}
-        </WriteErrorText>
+        <WriteErrorText data-testid="address-book-remove-error">{t(removeErrorKey)}</WriteErrorText>
       )}
 
       {/* Delete Confirmation Dialog */}

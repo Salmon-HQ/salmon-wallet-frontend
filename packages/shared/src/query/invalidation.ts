@@ -85,19 +85,14 @@ function getRemovedMintAddress(item: unknown): string | undefined {
 function matchesInvalidation(opts: InvalidationOptions, kind: InvalidationKind) {
   const prefix = KIND_TO_PREFIX[kind];
   return (query: { queryKey: readonly unknown[] }): boolean => {
-    const [head, params] = query.queryKey as [
-      string,
-      Record<string, unknown> | undefined,
-    ];
+    const [head, params] = query.queryKey as [string, Record<string, unknown> | undefined];
     // 'nfts' kind also invalidates single-NFT detail caches
-    const matchesHead =
-      head === prefix || (kind === 'nfts' && head === 'solana-nft-detail');
+    const matchesHead = head === prefix || (kind === 'nfts' && head === 'solana-nft-detail');
     if (!matchesHead) return false;
     const accountId =
-      kind === 'avatar-nfts' ? opts.avatarAccountId ?? opts.accountId : opts.accountId;
+      kind === 'avatar-nfts' ? (opts.avatarAccountId ?? opts.accountId) : opts.accountId;
     if (accountId && params?.accountId !== accountId) return false;
-    if (opts.networkId && params?.networkId && params.networkId !== opts.networkId)
-      return false;
+    if (opts.networkId && params?.networkId && params.networkId !== opts.networkId) return false;
     return true;
   };
 }
@@ -109,13 +104,10 @@ function removeOptimisticNfts(queryClient: QueryClient, opts: InvalidationOption
   queryClient.setQueriesData<unknown[]>(
     {
       predicate: (query) => {
-        const [head, params] = query.queryKey as [
-          string,
-          Record<string, unknown> | undefined,
-        ];
+        const [head, params] = query.queryKey as [string, Record<string, unknown> | undefined];
         if (head !== 'solana-nfts' && head !== 'avatar-nfts') return false;
         const accountId =
-          head === 'avatar-nfts' ? opts.avatarAccountId ?? opts.accountId : opts.accountId;
+          head === 'avatar-nfts' ? (opts.avatarAccountId ?? opts.accountId) : opts.accountId;
         if (accountId && params?.accountId !== accountId) return false;
         if (
           head === 'solana-nfts' &&
@@ -134,14 +126,11 @@ function removeOptimisticNfts(queryClient: QueryClient, opts: InvalidationOption
         const mintAddress = getRemovedMintAddress(nft);
         return !mintAddress || !removed.has(mintAddress);
       });
-    },
+    }
   );
   queryClient.removeQueries({
     predicate: (query) => {
-      const [head, params] = query.queryKey as [
-        string,
-        Record<string, unknown> | undefined,
-      ];
+      const [head, params] = query.queryKey as [string, Record<string, unknown> | undefined];
       if (head !== 'solana-nft-detail') return false;
       if (opts.networkId && params?.networkId && params.networkId !== opts.networkId) {
         return false;
@@ -151,7 +140,10 @@ function removeOptimisticNfts(queryClient: QueryClient, opts: InvalidationOption
   });
 }
 
-async function invalidateAfterTx(queryClient: QueryClient, opts: InvalidationOptions): Promise<void> {
+async function invalidateAfterTx(
+  queryClient: QueryClient,
+  opts: InvalidationOptions
+): Promise<void> {
   // Optimistic NFT removal runs before invalidation so the UI updates
   // immediately while DAS providers catch up.
   removeOptimisticNfts(queryClient, opts);
@@ -170,7 +162,7 @@ async function invalidateAfterTx(queryClient: QueryClient, opts: InvalidationOpt
           // modal. Result: stale balances until full page reload.
           refetchType: 'all',
         })
-        .then(() => undefined),
+        .then(() => undefined)
     );
   }
   await Promise.all(tasks);
@@ -186,7 +178,7 @@ async function refetchAfterTx(queryClient: QueryClient, opts: InvalidationOption
           predicate: matchesInvalidation(opts, kind),
           type: 'all',
         })
-        .then(() => undefined),
+        .then(() => undefined)
     );
   }
   await Promise.all(tasks);
@@ -199,7 +191,7 @@ export function useInvalidateAfterTx(): (opts: InvalidationOptions) => Promise<v
     async (opts) => {
       await invalidateAfterTx(queryClient, opts);
     },
-    [queryClient],
+    [queryClient]
   );
 }
 
@@ -223,7 +215,7 @@ export function useSettleAfterTx(): (opts: SettlementOptions) => Promise<void> {
         }, delay);
       }
     },
-    [queryClient],
+    [queryClient]
   );
 }
 
@@ -264,7 +256,9 @@ function balanceSignature(queryClient: QueryClient, opts: InvalidationOptions): 
  * destination balance is settled by the background exchange-status poller
  * instead of by blocking a screen.
  */
-export function useSettleUntilChanged(): (opts: SettleUntilChangedOptions) => Promise<SettleResult> {
+export function useSettleUntilChanged(): (
+  opts: SettleUntilChangedOptions
+) => Promise<SettleResult> {
   const queryClient = useQueryClient();
 
   return useCallback(
@@ -309,6 +303,6 @@ export function useSettleUntilChanged(): (opts: SettleUntilChangedOptions) => Pr
       removeOptimisticNfts(queryClient, inv);
       return { changed: false, waitedMs: Date.now() - start };
     },
-    [queryClient],
+    [queryClient]
   );
 }

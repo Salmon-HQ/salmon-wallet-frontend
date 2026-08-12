@@ -68,7 +68,7 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
   const { spaciousContentBottomPadding } = useBottomSheetChrome();
 
   // Calculate QR size: full width minus padding and border
-  const qrSize = screenWidth - (CONTENT_PADDING_HORIZONTAL * 2) - (componentSizes.qrBorderWidth * 2);
+  const qrSize = screenWidth - CONTENT_PADDING_HORIZONTAL * 2 - componentSizes.qrBorderWidth * 2;
 
   // Reset copied state when sheet closes
   useEffect(() => {
@@ -88,9 +88,7 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
     }
   }, [onCopy, showCopied]);
 
-  const title = (
-    <Text style={styles.title}>{t('token.receive.title')}</Text>
-  );
+  const title = <Text style={styles.title}>{t('token.receive.title')}</Text>;
 
   return (
     <BottomSheetContainer

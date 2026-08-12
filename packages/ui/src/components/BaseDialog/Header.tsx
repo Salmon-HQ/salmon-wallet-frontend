@@ -5,21 +5,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import CloseIcon from '@mui/icons-material/Close';
-import {
-  StyledDialogTitle,
-  TitleContainer,
-  TitleText,
-  WarningIcon,
-  CloseButton,
-} from './styles';
+import { StyledDialogTitle, TitleContainer, TitleText, WarningIcon, CloseButton } from './styles';
 import { useBaseDialog } from './BaseDialog';
 import type { HeaderProps } from './types';
 
-export function Header({
-  title,
-  showWarning = false,
-  onClose,
-}: HeaderProps): React.ReactElement {
+export function Header({ title, showWarning = false, onClose }: HeaderProps): React.ReactElement {
   const { t } = useTranslation();
   const context = useBaseDialog();
   const handleClose = onClose || context.onClose;

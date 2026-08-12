@@ -53,7 +53,26 @@ import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import { borderRadius, borderWidth, colors, componentSizes, copyToClipboard, fontFamily, fontSize, fontWeight, formatBlockNumber, formatDateTime, formatRawAmount, getShortAddress, letterSpacing, spacing, truncateHash, duration, durationMs, easing } from '@salmon/shared';
+import {
+  borderRadius,
+  borderWidth,
+  colors,
+  componentSizes,
+  copyToClipboard,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  formatBlockNumber,
+  formatDateTime,
+  formatRawAmount,
+  getShortAddress,
+  letterSpacing,
+  spacing,
+  truncateHash,
+  duration,
+  durationMs,
+  easing,
+} from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
@@ -136,10 +155,7 @@ const TRANSACTION_TYPE_CONFIG: Record<
 /**
  * Status display configuration
  */
-const STATUS_CONFIG: Record<
-  string,
-  { label: string; color: string; icon: React.ReactNode }
-> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   completed: {
     label: 'Completed',
     color: colors.status.success,
@@ -422,7 +438,7 @@ const SwapContainer = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-around',
-  padding: `${spacing.sm}px 0`
+  padding: `${spacing.sm}px 0`,
 });
 
 const SwapTokenSection = styled(Box)({
@@ -724,9 +740,7 @@ const TokenLogo: React.FC<{ uri?: string | null; size?: number }> = ({
   }
 
   return (
-    <TokenLogoPlaceholder
-      sx={{ width: size, height: size, borderRadius: `${size / 2}px` }}
-    >
+    <TokenLogoPlaceholder sx={{ width: size, height: size, borderRadius: `${size / 2}px` }}>
       <HelpOutlineIcon sx={{ fontSize: size * 0.6, color: colors.text.secondary }} />
     </TokenLogoPlaceholder>
   );
@@ -743,7 +757,15 @@ const TokenAmountRow: React.FC<{
   const formattedAmount = formatRawAmount(token.amount, token.decimals);
 
   return (
-    <BlurContainer style={{ borderRadius: borderRadius.md, padding: spacing.md, display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+    <BlurContainer
+      style={{
+        borderRadius: borderRadius.md,
+        padding: spacing.md,
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+      }}
+    >
       <TokenLogo uri={token.logo} size={32} />
       <TokenInfoBox>
         <TokenSymbol>{token.symbol}</TokenSymbol>
@@ -778,9 +800,7 @@ const SwapVisualization: React.FC<{
             <HelpOutlineIcon sx={{ fontSize: fontSize['2xl'], color: colors.text.secondary }} />
           </SwapLogoPlaceholder>
         )}
-        <SwapAmount>
-          {formatRawAmount(fromToken.amount, fromToken.decimals)}
-        </SwapAmount>
+        <SwapAmount>{formatRawAmount(fromToken.amount, fromToken.decimals)}</SwapAmount>
         <SwapSymbol>{fromToken.symbol}</SwapSymbol>
       </SwapTokenSection>
       <Box sx={{ px: `${spacing.md}px` }}>
@@ -794,9 +814,7 @@ const SwapVisualization: React.FC<{
             <HelpOutlineIcon sx={{ fontSize: fontSize['2xl'], color: colors.text.secondary }} />
           </SwapLogoPlaceholder>
         )}
-        <SwapAmount>
-          {formatRawAmount(toToken.amount, toToken.decimals)}
-        </SwapAmount>
+        <SwapAmount>{formatRawAmount(toToken.amount, toToken.decimals)}</SwapAmount>
         <SwapSymbol>{toToken.symbol}</SwapSymbol>
       </SwapTokenSection>
     </SwapContainer>
@@ -806,9 +824,7 @@ const SwapVisualization: React.FC<{
 /**
  * NFT Attribute chip component
  */
-const NftAttributeChipComponent: React.FC<{ attribute: NftAttribute }> = ({
-  attribute,
-}) => {
+const NftAttributeChipComponent: React.FC<{ attribute: NftAttribute }> = ({ attribute }) => {
   return (
     <NftAttributeChip>
       <NftAttributeType>{attribute.trait_type}</NftAttributeType>
@@ -833,7 +849,10 @@ const NftMetadataSection: React.FC<{
       {/* NFT Media Preview */}
       {token.nftMedia && (
         <NftMediaContainer>
-          <NftMediaPreview src={token.nftMedia} alt={t('transactions.detail.nftMediaAlt', 'NFT media')} />
+          <NftMediaPreview
+            src={token.nftMedia}
+            alt={t('transactions.detail.nftMediaAlt', 'NFT media')}
+          />
         </NftMediaContainer>
       )}
 
@@ -867,10 +886,7 @@ const NftMetadataSection: React.FC<{
           </Typography>
           <NftAttributesGrid>
             {token.nftAttributes.map((attr, index) => (
-              <NftAttributeChipComponent
-                key={`${attr.trait_type}-${index}`}
-                attribute={attr}
-              />
+              <NftAttributeChipComponent key={`${attr.trait_type}-${index}`} attribute={attr} />
             ))}
           </NftAttributesGrid>
         </Box>
@@ -950,10 +966,14 @@ export function TransactionDetailModal({
       <HeaderContainer>
         <HeaderRow>
           {/* Type icon */}
-          <TypeIconContainer
-            sx={{ backgroundColor: `${typeConfig.color}20` }}
-          >
-            <Box sx={{ display: 'flex', color: typeConfig.color, '& > svg': { fontSize: fontSize.xl } }}>
+          <TypeIconContainer sx={{ backgroundColor: `${typeConfig.color}20` }}>
+            <Box
+              sx={{
+                display: 'flex',
+                color: typeConfig.color,
+                '& > svg': { fontSize: fontSize.xl },
+              }}
+            >
               {typeConfig.icon}
             </Box>
           </TypeIconContainer>
@@ -987,7 +1007,11 @@ export function TransactionDetailModal({
           </HeaderInfoBox>
 
           {/* Close button */}
-          <CloseButton onClick={onClose} aria-label={t('general.close')} data-testid="tx-detail-close-button">
+          <CloseButton
+            onClick={onClose}
+            aria-label={t('general.close')}
+            data-testid="tx-detail-close-button"
+          >
             <CloseIcon />
           </CloseButton>
         </HeaderRow>
@@ -1007,7 +1031,9 @@ export function TransactionDetailModal({
               <>
                 <InternalDivider />
                 <SectionRow>
-                  <SectionLabel>{t('transactions.detail.confirmation', 'Confirmation')}</SectionLabel>
+                  <SectionLabel>
+                    {t('transactions.detail.confirmation', 'Confirmation')}
+                  </SectionLabel>
                   <ConfirmationBadge
                     sx={{
                       backgroundColor: `${CONFIRMATION_STATUS_CONFIG[transaction.confirmationStatus]?.color ?? colors.text.secondary}20`,
@@ -1015,10 +1041,16 @@ export function TransactionDetailModal({
                   >
                     <ConfirmationText
                       sx={{
-                        color: CONFIRMATION_STATUS_CONFIG[transaction.confirmationStatus]?.color ?? colors.text.secondary,
+                        color:
+                          CONFIRMATION_STATUS_CONFIG[transaction.confirmationStatus]?.color ??
+                          colors.text.secondary,
                       }}
                     >
-                      {t(CONFIRMATION_LABEL_KEYS[transaction.confirmationStatus] ?? '', CONFIRMATION_STATUS_CONFIG[transaction.confirmationStatus]?.label ?? transaction.confirmationStatus)}
+                      {t(
+                        CONFIRMATION_LABEL_KEYS[transaction.confirmationStatus] ?? '',
+                        CONFIRMATION_STATUS_CONFIG[transaction.confirmationStatus]?.label ??
+                          transaction.confirmationStatus
+                      )}
                     </ConfirmationText>
                   </ConfirmationBadge>
                 </SectionRow>
@@ -1041,7 +1073,9 @@ export function TransactionDetailModal({
         {transaction.type === 'swap' && (
           <Section>
             <SwapHeaderRow>
-              <SectionTitle sx={{ mb: 0 }}>{t('transactions.detail.conversion', 'Conversion')}</SectionTitle>
+              <SectionTitle sx={{ mb: 0 }}>
+                {t('transactions.detail.conversion', 'Conversion')}
+              </SectionTitle>
               {transaction.swapRoute?.priceImpact && (
                 <PriceImpactBadge
                   value={transaction.swapRoute.priceImpact}
@@ -1050,10 +1084,7 @@ export function TransactionDetailModal({
                 />
               )}
             </SwapHeaderRow>
-            <SwapVisualization
-              outputs={transaction.outputs}
-              inputs={transaction.inputs}
-            />
+            <SwapVisualization outputs={transaction.outputs} inputs={transaction.inputs} />
             {transaction.swapRoute?.conversionRate && (
               <ConversionRateContainer>
                 <ConversionRateDisplay
@@ -1068,89 +1099,90 @@ export function TransactionDetailModal({
         )}
 
         {/* Swap Route Hops (for multi-hop swaps) */}
-        {transaction.type === 'swap' && transaction.swapRoute?.hops && transaction.swapRoute.hops.length > 0 && (
-          <Section>
-            <SectionTitle>{t('transactions.detail.swapRoute', 'Swap Route')}</SectionTitle>
-            {transaction.swapRoute.hops.map((hop, index) => (
-              <HopRow key={`hop-${index}`}>
-                <HopBadge>
-                  <HopBadgeText>{hop.dex}</HopBadgeText>
-                </HopBadge>
-                <HopTokens>
-                  <HopTokenText>{hop.inputToken.symbol}</HopTokenText>
-                  <ArrowForwardIcon sx={{ fontSize: fontSize.sm, color: colors.text.tertiary }} />
-                  <HopTokenText>{hop.outputToken.symbol}</HopTokenText>
-                </HopTokens>
-                {hop.percent < 100 && (
-                  <HopPercent>{hop.percent}%</HopPercent>
-                )}
-              </HopRow>
-            ))}
-          </Section>
-        )}
+        {transaction.type === 'swap' &&
+          transaction.swapRoute?.hops &&
+          transaction.swapRoute.hops.length > 0 && (
+            <Section>
+              <SectionTitle>{t('transactions.detail.swapRoute', 'Swap Route')}</SectionTitle>
+              {transaction.swapRoute.hops.map((hop, index) => (
+                <HopRow key={`hop-${index}`}>
+                  <HopBadge>
+                    <HopBadgeText>{hop.dex}</HopBadgeText>
+                  </HopBadge>
+                  <HopTokens>
+                    <HopTokenText>{hop.inputToken.symbol}</HopTokenText>
+                    <ArrowForwardIcon sx={{ fontSize: fontSize.sm, color: colors.text.tertiary }} />
+                    <HopTokenText>{hop.outputToken.symbol}</HopTokenText>
+                  </HopTokens>
+                  {hop.percent < 100 && <HopPercent>{hop.percent}%</HopPercent>}
+                </HopRow>
+              ))}
+            </Section>
+          )}
 
         {/* Card 2 — Tokens (non-swap): Sent + Received merged */}
-        {transaction.type !== 'swap' && (transaction.outputs.length > 0 || transaction.inputs.length > 0) && (
-          <Section>
-            {transaction.outputs.length > 0 && (
-              <>
-                <SectionTitle>{t('transactions.detail.sentLabel', 'Sent')}</SectionTitle>
-                {transaction.outputs.map((token, index) => (
-                  <TokenAmountRow key={`out-${index}`} token={token} sign="-" />
-                ))}
-              </>
-            )}
-            {transaction.outputs.length > 0 && transaction.inputs.length > 0 && (
-              <InternalDivider />
-            )}
-            {transaction.inputs.length > 0 && (
-              <>
-                <SectionTitle>{t('transactions.detail.receivedLabel', 'Received')}</SectionTitle>
-                {transaction.inputs.map((token, index) => (
-                  <TokenAmountRow key={`in-${index}`} token={token} sign="+" />
-                ))}
-              </>
-            )}
-          </Section>
-        )}
+        {transaction.type !== 'swap' &&
+          (transaction.outputs.length > 0 || transaction.inputs.length > 0) && (
+            <Section>
+              {transaction.outputs.length > 0 && (
+                <>
+                  <SectionTitle>{t('transactions.detail.sentLabel', 'Sent')}</SectionTitle>
+                  {transaction.outputs.map((token, index) => (
+                    <TokenAmountRow key={`out-${index}`} token={token} sign="-" />
+                  ))}
+                </>
+              )}
+              {transaction.outputs.length > 0 && transaction.inputs.length > 0 && (
+                <InternalDivider />
+              )}
+              {transaction.inputs.length > 0 && (
+                <>
+                  <SectionTitle>{t('transactions.detail.receivedLabel', 'Received')}</SectionTitle>
+                  {transaction.inputs.map((token, index) => (
+                    <TokenAmountRow key={`in-${index}`} token={token} sign="+" />
+                  ))}
+                </>
+              )}
+            </Section>
+          )}
 
         {/* Address Section */}
         {(transaction.outputs.some((t) => t.destination) ||
           transaction.inputs.some((t) => t.source) ||
           transaction.feePayer) && (
-            <Section>
-              <SectionTitle>{t('transactions.detail.addresses', 'Addresses')}</SectionTitle>
-              <AddressesContainer>
-                {transaction.outputs.map((token, index) =>
-                  token.destination ? (
-                    <AddressCopyRow
-                      key={`to-${index}`}
-                      label={t('transactions.to', 'To')}
-                      address={token.destination}
-                      truncate="medium"
-                    />
-                  ) : null
-                )}
-                {transaction.inputs.map((token, index) =>
-                  token.source ? (
-                    <AddressCopyRow
-                      key={`from-${index}`}
-                      label={t('transactions.from', 'From')}
-                      address={token.source}
-                      truncate="medium"
-                    />
-                  ) : null
-                )}
-                {transaction.feePayer && (
+          <Section>
+            <SectionTitle>{t('transactions.detail.addresses', 'Addresses')}</SectionTitle>
+            <AddressesContainer>
+              {transaction.outputs.map((token, index) =>
+                token.destination ? (
                   <AddressCopyRow
-                    label={t('transactions.detail.feePayer', 'Fee Payer')}
-                    address={transaction.feePayer}
+                    key={`to-${index}`}
+                    label={t('transactions.to', 'To')}
+                    address={token.destination}
                     truncate="medium"
                   />
-                )}
-              </AddressesContainer>
-            </Section>
-          )}
+                ) : null
+              )}
+              {transaction.inputs.map((token, index) =>
+                token.source ? (
+                  <AddressCopyRow
+                    key={`from-${index}`}
+                    label={t('transactions.from', 'From')}
+                    address={token.source}
+                    truncate="medium"
+                  />
+                ) : null
+              )}
+              {transaction.feePayer && (
+                <AddressCopyRow
+                  label={t('transactions.detail.feePayer', 'Fee Payer')}
+                  address={transaction.feePayer}
+                  truncate="medium"
+                />
+              )}
+            </AddressesContainer>
+          </Section>
+        )}
 
         {/* NFT Metadata Sections */}
         {transaction.inputs
@@ -1192,7 +1224,9 @@ export function TransactionDetailModal({
             {(transaction.fee || transaction.swapRoute?.totalFee) && <InternalDivider />}
 
             <SectionRow>
-              <SectionLabel>{t('transactions.detail.transactionHash', 'Transaction Hash')}</SectionLabel>
+              <SectionLabel>
+                {t('transactions.detail.transactionHash', 'Transaction Hash')}
+              </SectionLabel>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: `${spacing.xs}px` }}>
                 <HashValue>{truncateHash(transaction.id, 8)}</HashValue>
                 <CopyIconButton
@@ -1205,7 +1239,9 @@ export function TransactionDetailModal({
                   {hashCopied ? (
                     <CheckIcon sx={{ fontSize: fontSize.base, color: colors.status.success }} />
                   ) : (
-                    <ContentCopyIcon sx={{ fontSize: fontSize.base, color: colors.text.secondary }} />
+                    <ContentCopyIcon
+                      sx={{ fontSize: fontSize.base, color: colors.text.secondary }}
+                    />
                   )}
                 </CopyIconButton>
               </Box>
@@ -1218,7 +1254,9 @@ export function TransactionDetailModal({
           <Section>
             <DevSectionHeader>
               <CodeIcon sx={{ fontSize: fontSize.md, color: colors.text.secondary }} />
-              <SectionTitle sx={{ mb: 0 }}>{t('transactions.detail.developerInfo', 'Developer Info')}</SectionTitle>
+              <SectionTitle sx={{ mb: 0 }}>
+                {t('transactions.detail.developerInfo', 'Developer Info')}
+              </SectionTitle>
             </DevSectionHeader>
 
             {transaction.heliusType && (
@@ -1232,7 +1270,9 @@ export function TransactionDetailModal({
 
             {transaction.accountsInvolved != null && (
               <SectionRow sx={{ mt: `${spacing.sm}px` }}>
-                <SectionLabel>{t('transactions.detail.accountsInvolved', 'Accounts Involved')}</SectionLabel>
+                <SectionLabel>
+                  {t('transactions.detail.accountsInvolved', 'Accounts Involved')}
+                </SectionLabel>
                 <SectionValue>{transaction.accountsInvolved}</SectionValue>
               </SectionRow>
             )}
@@ -1242,9 +1282,7 @@ export function TransactionDetailModal({
                 <DevSubTitle>{t('transactions.detail.programs', 'Programs')}</DevSubTitle>
                 {transaction.instructions.map((ix, index) => (
                   <DevRow key={`ix-${index}`}>
-                    <DevMonoText>
-                      {getShortAddress(ix.programId, 6)}
-                    </DevMonoText>
+                    <DevMonoText>{getShortAddress(ix.programId, 6)}</DevMonoText>
                     {ix.innerInstructionsCount > 0 && (
                       <DevSecondaryText>
                         {t('transactions.detail.innerCount', { count: ix.innerInstructionsCount })}
@@ -1260,9 +1298,7 @@ export function TransactionDetailModal({
                 <DevSubTitle>{t('transactions.detail.innerSwaps', 'Inner Swaps')}</DevSubTitle>
                 {transaction.innerSwaps.map((swap, index) => (
                   <DevRow key={`inner-${index}`}>
-                    <DevMonoText>
-                      {swap.programInfo.source}
-                    </DevMonoText>
+                    <DevMonoText>{swap.programInfo.source}</DevMonoText>
                     <DevSecondaryText>
                       {swap.programInfo.programName} / {swap.programInfo.instructionName}
                     </DevSecondaryText>
@@ -1276,19 +1312,13 @@ export function TransactionDetailModal({
                 <DevSubTitle>{t('transactions.detail.swapFees', 'Swap Fees')}</DevSubTitle>
                 {transaction.swapFees.nativeFees.map((fee, index) => (
                   <DevRow key={`nfee-${index}`}>
-                    <DevMonoText>
-                      {getShortAddress(fee.account, 6)}
-                    </DevMonoText>
-                    <DevSecondaryText>
-                      {fee.amount} SOL
-                    </DevSecondaryText>
+                    <DevMonoText>{getShortAddress(fee.account, 6)}</DevMonoText>
+                    <DevSecondaryText>{fee.amount} SOL</DevSecondaryText>
                   </DevRow>
                 ))}
                 {transaction.swapFees.tokenFees.map((fee, index) => (
                   <DevRow key={`tfee-${index}`}>
-                    <DevMonoText>
-                      {getShortAddress(fee.account, 6)}
-                    </DevMonoText>
+                    <DevMonoText>{getShortAddress(fee.account, 6)}</DevMonoText>
                     <DevSecondaryText>
                       {fee.amount} ({getShortAddress(fee.mint, 4)})
                     </DevSecondaryText>
@@ -1325,4 +1355,3 @@ export function TransactionDetailModal({
     </StyledDialog>
   );
 }
-

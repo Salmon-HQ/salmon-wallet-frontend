@@ -91,12 +91,12 @@ export interface PriceDataPoint {
  * Based on CoinGecko Free Tier limits (max 365 days)
  */
 export const PRICE_CHART_PERIODS: PriceChartPeriod[] = [
-  '1H',  // Uses 1 day of data with 5-min intervals
-  '1D',  // 1 day, 5-min intervals
-  '1W',  // 7 days, hourly intervals
-  '1M',  // 30 days, hourly intervals
-  '3M',  // 90 days, hourly intervals
-  '1Y',  // 365 days, daily intervals
+  '1H', // Uses 1 day of data with 5-min intervals
+  '1D', // 1 day, 5-min intervals
+  '1W', // 7 days, hourly intervals
+  '1M', // 30 days, hourly intervals
+  '3M', // 90 days, hourly intervals
+  '1Y', // 365 days, daily intervals
   // 'All', // Requires paid CoinGecko tier for >365 days
 ];
 

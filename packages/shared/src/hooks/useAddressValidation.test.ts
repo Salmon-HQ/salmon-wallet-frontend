@@ -22,9 +22,7 @@ describe('useAddressValidation', () => {
       validateDestinationAccount: vi.fn(),
     };
 
-    const { result } = renderHook(() =>
-      useAddressValidation('', account as any, { onValidation }),
-    );
+    const { result } = renderHook(() => useAddressValidation('', account as any, { onValidation }));
 
     expect(result.current.validationState).toBe('idle');
     expect(result.current.validationResult).toBeNull();
@@ -50,7 +48,7 @@ describe('useAddressValidation', () => {
     };
 
     const { result } = renderHook(() =>
-      useAddressValidation(DOMAIN, account as any, { debounceMs: 100, onValidation }),
+      useAddressValidation(DOMAIN, account as any, { debounceMs: 100, onValidation })
     );
 
     expect(result.current.validationState).toBe('idle');
@@ -88,7 +86,7 @@ describe('useAddressValidation', () => {
     };
 
     const { result } = renderHook(() =>
-      useAddressValidation(VALID_ADDRESS, account as any, { debounceMs: 50 }),
+      useAddressValidation(VALID_ADDRESS, account as any, { debounceMs: 50 })
     );
 
     await act(async () => {
@@ -112,7 +110,7 @@ describe('useAddressValidation', () => {
     };
 
     const { result } = renderHook(() =>
-      useAddressValidation(VALID_ADDRESS, account as any, { debounceMs: 50 }),
+      useAddressValidation(VALID_ADDRESS, account as any, { debounceMs: 50 })
     );
 
     await act(async () => {
@@ -133,7 +131,7 @@ describe('useAddressValidation', () => {
     };
 
     const { result } = renderHook(() =>
-      useAddressValidation(VALID_ADDRESS, account as any, { debounceMs: 50, onValidation }),
+      useAddressValidation(VALID_ADDRESS, account as any, { debounceMs: 50, onValidation })
     );
 
     await act(async () => {
@@ -161,7 +159,7 @@ describe('useAddressValidation', () => {
     const onValidation = vi.fn();
 
     const { result } = renderHook(() =>
-      useAddressValidation(VALID_ADDRESS, undefined, { debounceMs: 50, onValidation }),
+      useAddressValidation(VALID_ADDRESS, undefined, { debounceMs: 50, onValidation })
     );
 
     await act(async () => {

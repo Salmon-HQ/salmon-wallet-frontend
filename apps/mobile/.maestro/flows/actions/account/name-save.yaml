@@ -5,27 +5,27 @@ appId: io.salmonwallet.app
 - runFlow: ../../../subflows/open-accounts-panel.yaml
 # Tap edit pencil on Account #1 row (right side)
 - tapOn:
-    point: "82%,18%"
+    point: '82%,18%'
 - waitForAnimationToEnd:
     timeout: 3000
-- assertVisible: "Edit Account"
+- assertVisible: 'Edit Account'
 - tapOn:
-    id: "account-edit-name"
+    id: 'account-edit-name'
 - waitForAnimationToEnd:
     timeout: 3000
 - assertVisible:
-    id: "account-name-input"
+    id: 'account-name-input'
 - tapOn:
-    id: "account-name-input"
+    id: 'account-name-input'
 - eraseText: 32
-- inputText: "Wallet A Test"
+- inputText: 'Wallet A Test'
 # First tap dismisses keyboard (autoFocus on input grabs first tap),
 # second tap fires the save handler.
 - tapOn:
-    id: "account-name-save-button"
+    id: 'account-name-save-button'
 - tapOn:
-    id: "account-name-save-button"
+    id: 'account-name-save-button'
 - waitForAnimationToEnd:
     timeout: 4000
-- assertVisible: "Edit Account"
+- assertVisible: 'Edit Account'
 - takeScreenshot: screenshots/actions/account/account-name-saved

@@ -79,10 +79,9 @@ describe('bitcoin service', () => {
 
     const result = await fetchUtxos('bitcoin-mainnet', 'bc1-address');
 
-    expect(mockApiClientGet).toHaveBeenCalledWith(
-      '/v1/bitcoin-mainnet/account/bc1-address/utxo',
-      { params: { pageSize: 100 } },
-    );
+    expect(mockApiClientGet).toHaveBeenCalledWith('/v1/bitcoin-mainnet/account/bc1-address/utxo', {
+      params: { pageSize: 100 },
+    });
     expect(result).toEqual(MOCK_UTXO_ITEMS);
   });
 
@@ -101,10 +100,9 @@ describe('bitcoin service', () => {
 
     const result = await fetchBitcoinAccountBalance('bitcoin-mainnet', 'bc1-address');
 
-    expect(mockGet).toHaveBeenCalledWith(
-      '/v1/bitcoin-mainnet/account/bc1-address/balance',
-      { params: { include: 'logo' } },
-    );
+    expect(mockGet).toHaveBeenCalledWith('/v1/bitcoin-mainnet/account/bc1-address/balance', {
+      params: { include: 'logo' },
+    });
     expect(result).toEqual([
       expect.objectContaining({
         amount: 364735619,
@@ -125,21 +123,21 @@ describe('bitcoin service', () => {
       pageSize: 5,
     });
 
-    expect(mockGet).toHaveBeenCalledWith(
-      '/v1/bitcoin-mainnet/account/bc1-address/transactions',
-      {
-        params: {
-          pageToken: 'cursor-1',
-          pageSize: 5,
-        },
+    expect(mockGet).toHaveBeenCalledWith('/v1/bitcoin-mainnet/account/bc1-address/transactions', {
+      params: {
+        pageToken: 'cursor-1',
+        pageSize: 5,
       },
-    );
+    });
     expect(result).toEqual(MOCK_ACCOUNT_TRANSACTIONS);
   });
 });
 
 describe.skipIf(!backendBaseUrl)('bitcoin service integration', () => {
-  const liveGet = async <T>(path: string, config?: { params?: Record<string, string | number> }): Promise<T> => {
+  const liveGet = async <T>(
+    path: string,
+    config?: { params?: Record<string, string | number> }
+  ): Promise<T> => {
     const url = new URL(`${backendBaseUrl!}${path}`);
     if (config?.params) {
       for (const [key, value] of Object.entries(config.params)) {
@@ -159,55 +157,46 @@ describe.skipIf(!backendBaseUrl)('bitcoin service integration', () => {
     return (await response.json()) as T;
   };
 
-  it(
-    'reads live bitcoin balance data from salmon-api',
-    async () => {
-      mockGet.mockImplementation(liveGet as typeof get);
+  it('reads live bitcoin balance data from salmon-api', async () => {
+    mockGet.mockImplementation(liveGet as typeof get);
 
-      const result = await fetchBitcoinAccountBalance(
-        'bitcoin-mainnet',
-        'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-      );
+    const result = await fetchBitcoinAccountBalance(
+      'bitcoin-mainnet',
+      'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh'
+    );
 
-      expect(result.length).toBeGreaterThan(0);
-      expect(result[0]).toEqual(
-        expect.objectContaining({
-          // The live balance resource serializes `amount` as a string.
-          amount: expect.any(String),
-          decimals: 8,
-          coingeckoId: 'bitcoin',
-          uiAmount: expect.any(Number),
-        }),
-      );
-    },
-    20000,
-  );
+    expect(result.length).toBeGreaterThan(0);
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        // The live balance resource serializes `amount` as a string.
+        amount: expect.any(String),
+        decimals: 8,
+        coingeckoId: 'bitcoin',
+        uiAmount: expect.any(Number),
+      })
+    );
+  }, 20000);
 
-  it(
-    'reads live bitcoin transaction history from salmon-api',
-    async () => {
-      mockGet.mockImplementation(liveGet as typeof get);
+  it('reads live bitcoin transaction history from salmon-api', async () => {
+    mockGet.mockImplementation(liveGet as typeof get);
 
-      const result = await fetchBitcoinAccountRecentTransactions(
-        'bitcoin-mainnet',
-        '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-        { pageSize: 1 },
-      );
+    const result = await fetchBitcoinAccountRecentTransactions(
+      'bitcoin-mainnet',
+      '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+      { pageSize: 1 }
+    );
 
-      expect(Array.isArray(result.items)).toBe(true);
-      expect(result.items.length).toBeGreaterThan(0);
-      expect(result.items[0]).toEqual(
-        expect.objectContaining({
-          id: expect.any(String),
-          timestamp: expect.any(Number),
-          status: expect.any(String),
-          type: expect.any(String),
-          inputs: expect.any(Array),
-          outputs: expect.any(Array),
-        }),
-      );
-    },
-    20000,
-  );
-
+    expect(Array.isArray(result.items)).toBe(true);
+    expect(result.items.length).toBeGreaterThan(0);
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        timestamp: expect.any(Number),
+        status: expect.any(String),
+        type: expect.any(String),
+        inputs: expect.any(Array),
+        outputs: expect.any(Array),
+      })
+    );
+  }, 20000);
 });

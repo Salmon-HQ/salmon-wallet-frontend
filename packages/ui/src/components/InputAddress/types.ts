@@ -10,9 +10,7 @@
  */
 
 import type { CSSProperties } from 'react';
-import type {
-  InputAddressPropsBase,
-} from '@salmon/shared';
+import type { InputAddressPropsBase } from '@salmon/shared';
 
 /**
  * Props for the InputAddress component (Web/Extension)

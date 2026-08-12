@@ -1,7 +1,7 @@
 import React from 'react';
 import { Dimensions, View, StyleSheet, ScrollView } from 'react-native';
 import { ContentLoader, Rect } from '@salmon/shared';
-import { colors, ms, s, vs, spacing, } from '@salmon/shared';
+import { colors, ms, s, vs, spacing } from '@salmon/shared';
 import type { NftCarouselSectionSkeletonProps } from './types';
 
 // Card dimensions for carousel (matches Figma node 1702:6142 — ~194x193pt)

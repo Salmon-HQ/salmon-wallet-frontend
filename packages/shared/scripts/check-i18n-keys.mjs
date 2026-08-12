@@ -28,8 +28,13 @@ const GROUPS = [
   },
   {
     name: 'extension/_locales',
-    ref: { code: 'en', file: path.join(repoRoot, 'apps/extension/public/_locales/en/messages.json') },
-    others: [{ code: 'es', file: path.join(repoRoot, 'apps/extension/public/_locales/es/messages.json') }],
+    ref: {
+      code: 'en',
+      file: path.join(repoRoot, 'apps/extension/public/_locales/en/messages.json'),
+    },
+    others: [
+      { code: 'es', file: path.join(repoRoot, 'apps/extension/public/_locales/es/messages.json') },
+    ],
   },
 ];
 

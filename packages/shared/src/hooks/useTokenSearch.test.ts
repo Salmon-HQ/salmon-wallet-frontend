@@ -32,7 +32,9 @@ describe('useTokenSearch', () => {
   });
 
   it('debounces external search and exposes async results', async () => {
-    const onSearch = vi.fn().mockResolvedValue([{ address: 'ray', symbol: 'RAY', name: 'Raydium' }]);
+    const onSearch = vi
+      .fn()
+      .mockResolvedValue([{ address: 'ray', symbol: 'RAY', name: 'Raydium' }]);
     const { result } = renderHook(() => useTokenSearch(TOKENS, onSearch));
 
     act(() => {

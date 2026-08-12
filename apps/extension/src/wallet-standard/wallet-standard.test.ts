@@ -58,7 +58,9 @@ function createMockSalmon(publicKey: SalmonPublicKey | null = null): Salmon {
         signature: new Uint8Array(64).fill(5),
         signatureType: 'ed25519' as const,
         ...(input?.useOffchainMessage
-          ? { signedMessageFormat: { kind: 'offchainMessage' as const, messageVersion: 1 as const } }
+          ? {
+              signedMessageFormat: { kind: 'offchainMessage' as const, messageVersion: 1 as const },
+            }
           : {}),
       };
     }),
@@ -105,7 +107,7 @@ describe('registerWallet', () => {
     window.dispatchEvent(
       new CustomEvent('wallet-standard:app-ready', {
         detail: { register: (incoming: Wallet) => registered.push(incoming) },
-      }),
+      })
     );
 
     // Assert — registerWallet keeps its app-ready listener forever (by design),
@@ -132,9 +134,9 @@ describe('initialize', () => {
     // Assert
     expect(registered).toHaveLength(1);
     expect(registered[0].name).toBe('Salmon');
-    expect(
-      (registered[0].features as { 'salmon:': { salmon: Salmon } })['salmon:'].salmon,
-    ).toBe(salmon);
+    expect((registered[0].features as { 'salmon:': { salmon: Salmon } })['salmon:'].salmon).toBe(
+      salmon
+    );
     window.removeEventListener('wallet-standard:register-wallet', onRegister);
   });
 });
@@ -168,15 +170,15 @@ describe('SalmonWallet', () => {
       'standard:disconnect',
       'standard:events',
     ]);
-    expect(
-      wallet.features['solana:signTransaction'].supportedTransactionVersions,
-    ).toEqual(['legacy', 0]);
-    expect(
-      wallet.features['solana:signAndSendTransaction'].supportedTransactionVersions,
-    ).toEqual(['legacy', 0]);
-    expect(
-      wallet.features['solana:signOffchainMessage'].supportedMessageVersions,
-    ).toEqual([1]);
+    expect(wallet.features['solana:signTransaction'].supportedTransactionVersions).toEqual([
+      'legacy',
+      0,
+    ]);
+    expect(wallet.features['solana:signAndSendTransaction'].supportedTransactionVersions).toEqual([
+      'legacy',
+      0,
+    ]);
+    expect(wallet.features['solana:signOffchainMessage'].supportedMessageVersions).toEqual([1]);
     expect(wallet.features['solana:signOffchainMessage'].version).toBe('1.0.0');
     // 1.1.0 advertises PR#93 `useOffchainMessage` support.
     expect(wallet.features['solana:signIn'].version).toBe('1.1.0');
@@ -309,7 +311,7 @@ describe('SalmonWallet', () => {
         statement: 'Sign in to Example.',
         nonce: 'abcd1234',
         useOffchainMessage: { messageVersion: 1 },
-      }),
+      })
     );
     expect(outputs[0].signedMessageFormat).toEqual({
       kind: 'offchainMessage',
@@ -329,7 +331,7 @@ describe('SalmonWallet', () => {
         message: 'hello',
         messageVersion: 2 as unknown as 1,
         requiredSigners: [],
-      }),
+      })
     ).rejects.toThrow('unsupported message version');
     expect(salmon.signOffchainMessage).not.toHaveBeenCalled();
   });
@@ -347,7 +349,7 @@ describe('SalmonWallet', () => {
         message: 'hello',
         messageVersion: 1,
         requiredSigners: [],
-      }),
+      })
     ).rejects.toThrow('invalid account');
     expect(salmon.signOffchainMessage).not.toHaveBeenCalled();
   });
@@ -363,7 +365,7 @@ describe('SalmonWallet', () => {
       wallet.features['solana:signMessage'].signMessage({
         account: foreignWallet.accounts[0],
         message: new Uint8Array([1, 2, 3]),
-      }),
+      })
     ).rejects.toThrow('invalid account');
     expect(salmon.signMessage).not.toHaveBeenCalled();
   });

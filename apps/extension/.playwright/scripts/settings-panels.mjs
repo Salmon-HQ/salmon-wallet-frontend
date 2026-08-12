@@ -2,8 +2,17 @@
 // Bug observado: tras navegar a un sub-panel (Accounts), `popup.goto(popupUrl)`
 // no resetea el route SPA — la app retiene state vía localStorage/route. Para
 // cada panel: cerrar la page por completo y abrir una nueva.
-import { launch, capture, tapConsole, sleep, openPopup, unlockOrRecover, waitHome, reportsRoot } from "./lib.mjs";
-import path from "node:path";
+import {
+  launch,
+  capture,
+  tapConsole,
+  sleep,
+  openPopup,
+  unlockOrRecover,
+  waitHome,
+  reportsRoot,
+} from './lib.mjs';
+import path from 'node:path';
 import fs from 'node:fs';
 
 const allErrors = [];
@@ -64,9 +73,7 @@ const panels = [
 ];
 
 for (const [slug, name] of panels) {
-  await openSettingsAndCapture(slug, name).catch((e) =>
-    log('  unexpected: ' + e.message),
-  );
+  await openSettingsAndCapture(slug, name).catch((e) => log('  unexpected: ' + e.message));
 }
 
 fs.mkdirSync(reportsRoot, { recursive: true });
@@ -79,7 +86,7 @@ fs.writeFileSync(
     '```',
     allErrors.length ? allErrors.join('\n') : '(none)',
     '```',
-  ].join('\n'),
+  ].join('\n')
 );
 
 await sleep(500);

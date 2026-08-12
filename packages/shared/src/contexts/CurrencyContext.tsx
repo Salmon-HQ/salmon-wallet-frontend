@@ -165,26 +165,20 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
     }
   }, []);
 
-  const convert = useCallback(
-    (usdAmount: number) => usdAmount * exchangeRate,
-    [exchangeRate]
-  );
+  const convert = useCallback((usdAmount: number) => usdAmount * exchangeRate, [exchangeRate]);
 
   const formatValue = useCallback(
-    (usdAmount: number | null | undefined) =>
-      formatFiatValue(usdAmount, currency, exchangeRate),
+    (usdAmount: number | null | undefined) => formatFiatValue(usdAmount, currency, exchangeRate),
     [currency, exchangeRate]
   );
 
   const formatLarge = useCallback(
-    (usdAmount: number | null | undefined) =>
-      formatFiatLarge(usdAmount, currency, exchangeRate),
+    (usdAmount: number | null | undefined) => formatFiatLarge(usdAmount, currency, exchangeRate),
     [currency, exchangeRate]
   );
 
   const formatChange = useCallback(
-    (usdAmount: number | null | undefined) =>
-      formatFiatChange(usdAmount, currency, exchangeRate),
+    (usdAmount: number | null | undefined) => formatFiatChange(usdAmount, currency, exchangeRate),
     [currency, exchangeRate]
   );
 
@@ -207,16 +201,35 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
   const value = useMemo<CurrencyContextValue>(
     () => [
       { currency, currencyInfo, exchangeRate, rates, isLoading },
-      { changeCurrency, convert, formatValue, formatLarge, formatChange, formatPrecise, symbol, refreshRates },
+      {
+        changeCurrency,
+        convert,
+        formatValue,
+        formatLarge,
+        formatChange,
+        formatPrecise,
+        symbol,
+        refreshRates,
+      },
     ],
-    [currency, currencyInfo, exchangeRate, rates, isLoading, changeCurrency, convert, formatValue, formatLarge, formatChange, formatPrecise, symbol, refreshRates]
+    [
+      currency,
+      currencyInfo,
+      exchangeRate,
+      rates,
+      isLoading,
+      changeCurrency,
+      convert,
+      formatValue,
+      formatLarge,
+      formatChange,
+      formatPrecise,
+      symbol,
+      refreshRates,
+    ]
   );
 
-  return (
-    <CurrencyContext.Provider value={value}>
-      {children}
-    </CurrencyContext.Provider>
-  );
+  return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>;
 }
 
 // ============================================================================
@@ -240,7 +253,7 @@ export function useCurrencyContext(): CurrencyContextValue {
   if (!context) {
     throw new Error(
       'useCurrencyContext must be used within a CurrencyProvider. ' +
-      'Make sure to wrap your app with <CurrencyProvider>.'
+        'Make sure to wrap your app with <CurrencyProvider>.'
     );
   }
 

@@ -2,6 +2,6 @@ appId: io.salmonwallet.app
 ---
 # Tap back chevron in settings sheet header (top-left).
 - tapOn:
-    id: "screen-header-back-button"
+    id: 'screen-header-back-button'
 - waitForAnimationToEnd:
     timeout: 2000

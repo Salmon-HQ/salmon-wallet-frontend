@@ -32,19 +32,24 @@ vi.mock('@salmon/shared', () => ({
   fontFamily: { sans: 'sans-serif' },
   fontSize: { lg: 18, md: 16 },
   spacing: { '2xl': 24, md: 12 },
-  useAccountsContext: () => [{
-    activeAccount: {
-      networksAccounts: {
-        'solana-mainnet': [{
-          getReceiveAddress: () => 'Owner111',
-          getCredit: vi.fn().mockResolvedValue(10_000_000),
-        }],
+  useAccountsContext: () => [
+    {
+      activeAccount: {
+        networksAccounts: {
+          'solana-mainnet': [
+            {
+              getReceiveAddress: () => 'Owner111',
+              getCredit: vi.fn().mockResolvedValue(10_000_000),
+            },
+          ],
+        },
       },
     },
-  }],
+  ],
   isSolanaNft: () => true,
   createBurnTransaction: (...args: unknown[]) => mockCreateBurnTransaction(...args),
-  signAndSendPreparedSolanaTransactions: (...args: unknown[]) => mockSignAndSendPreparedSolanaTransactions(...args),
+  signAndSendPreparedSolanaTransactions: (...args: unknown[]) =>
+    mockSignAndSendPreparedSolanaTransactions(...args),
   isSolanaAccount: () => true,
   useNftBurn: () => ({
     burnNft: (...args: unknown[]) => mockSignAndSendPreparedSolanaTransactions(...args),

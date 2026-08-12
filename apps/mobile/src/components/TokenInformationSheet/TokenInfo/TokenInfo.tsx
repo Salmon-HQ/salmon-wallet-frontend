@@ -15,13 +15,7 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Linking,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { TokenInfoProps } from './types';
 
 /**
@@ -170,25 +164,19 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
             {circulatingSupply !== undefined && (
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>{t('token.info.circulating', 'Circulating')}</Text>
-                <Text style={styles.statValue}>
-                  {formatLargeNumber(circulatingSupply)}
-                </Text>
+                <Text style={styles.statValue}>{formatLargeNumber(circulatingSupply)}</Text>
               </View>
             )}
             {totalSupply !== undefined && (
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>{t('token.info.totalSupply', 'Total Supply')}</Text>
-                <Text style={styles.statValue}>
-                  {formatLargeNumber(totalSupply)}
-                </Text>
+                <Text style={styles.statValue}>{formatLargeNumber(totalSupply)}</Text>
               </View>
             )}
             {maxSupply !== undefined && (
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>{t('token.info.maxSupply', 'Max Supply')}</Text>
-                <Text style={styles.statValue}>
-                  {formatLargeNumber(maxSupply)}
-                </Text>
+                <Text style={styles.statValue}>{formatLargeNumber(maxSupply)}</Text>
               </View>
             )}
           </View>
@@ -198,7 +186,9 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
       {/* Contract address */}
       {contractAddress && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('token.info.contractAddress', 'Contract Address')}</Text>
+          <Text style={styles.sectionTitle}>
+            {t('token.info.contractAddress', 'Contract Address')}
+          </Text>
           <TouchableOpacity
             style={styles.contractRow}
             onPress={handleCopyAddress}
@@ -206,9 +196,7 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
             accessibilityRole="button"
             accessibilityLabel={t('accessibility.copy_contract_address', 'Copy contract address')}
           >
-            <Text style={styles.contractAddress}>
-              {getShortAddress(contractAddress, 6) ?? ''}
-            </Text>
+            <Text style={styles.contractAddress}>{getShortAddress(contractAddress, 6) ?? ''}</Text>
             <View style={styles.copyButton}>
               <Ionicons
                 name={copied ? 'checkmark' : 'copy-outline'}
@@ -227,13 +215,11 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
           onPress={handleOpenWebsite}
           activeOpacity={0.7}
           accessibilityRole="link"
-          accessibilityLabel={t('accessibility.open_website', 'Open website: {{url}}', { url: website })}
+          accessibilityLabel={t('accessibility.open_website', 'Open website: {{url}}', {
+            url: website,
+          })}
         >
-          <Ionicons
-            name="globe-outline"
-            size={20}
-            color={colors.accent.primary}
-          />
+          <Ionicons name="globe-outline" size={20} color={colors.accent.primary} />
           <Text style={styles.websiteText}>{t('token.info.visitWebsite', 'Visit Website')}</Text>
           <Ionicons
             name="open-outline"

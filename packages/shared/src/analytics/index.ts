@@ -40,17 +40,9 @@ export {
   type ValidatedEvent,
 } from './schema';
 
-export {
-  getOrCreateInstallId,
-  clearInstallId,
-  createSessionId,
-} from './install-id';
+export { getOrCreateInstallId, clearInstallId, createSessionId } from './install-id';
 
-export {
-  createHttpTransport,
-  createMemoryTransport,
-  EVENTS_ENDPOINT,
-} from './transport';
+export { createHttpTransport, createMemoryTransport, EVENTS_ENDPOINT } from './transport';
 
 export {
   initAnalytics,

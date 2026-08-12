@@ -28,16 +28,8 @@ vi.mock('@salmon/ui', () => ({
       data-message={String(props.messageText ?? '')}
       data-disabled={String(props.disabled ?? '')}
     >
-      <button
-        type="button"
-        data-testid="approve-button"
-        onClick={props.onApprove as () => void}
-      />
-      <button
-        type="button"
-        data-testid="reject-button"
-        onClick={props.onReject as () => void}
-      />
+      <button type="button" data-testid="approve-button" onClick={props.onApprove as () => void} />
+      <button type="button" data-testid="reject-button" onClick={props.onReject as () => void} />
     </div>
   ),
 }));
@@ -87,9 +79,7 @@ describe('DAppSignInApprovalPage', () => {
     const sendMessage = stubChrome();
     const onDismiss = vi.fn();
 
-    const { getByTestId } = render(
-      <DAppSignInApprovalPage {...baseProps} onDismiss={onDismiss} />,
-    );
+    const { getByTestId } = render(<DAppSignInApprovalPage {...baseProps} onDismiss={onDismiss} />);
     getByTestId('reject-button').click();
 
     expect(sendMessage).toHaveBeenCalledWith({
@@ -105,7 +95,7 @@ describe('DAppSignInApprovalPage', () => {
     const onDismiss = vi.fn();
 
     const { getByTestId } = render(
-      <DAppSignInApprovalPage {...baseProps} account={undefined} onDismiss={onDismiss} />,
+      <DAppSignInApprovalPage {...baseProps} account={undefined} onDismiss={onDismiss} />
     );
     getByTestId('approve-button').click();
 
@@ -123,16 +113,14 @@ describe('DAppSignInApprovalPage', () => {
     const payload = { account: { address: 'Address1' }, signedMessage: 'b64', signature: 'b64sig' };
     mockApproveSolanaSignIn.mockResolvedValue(payload);
 
-    const { getByTestId } = render(
-      <DAppSignInApprovalPage {...baseProps} onDismiss={onDismiss} />,
-    );
+    const { getByTestId } = render(<DAppSignInApprovalPage {...baseProps} onDismiss={onDismiss} />);
     getByTestId('approve-button').click();
     await vi.waitFor(() => expect(onDismiss).toHaveBeenCalledWith(true));
 
     expect(mockApproveSolanaSignIn).toHaveBeenCalledWith(
       baseProps.account,
       signInInput,
-      baseProps.origin,
+      baseProps.origin
     );
     expect(sendMessage).toHaveBeenCalledWith({
       channel: 'salmon_extension_background_channel',
@@ -145,9 +133,7 @@ describe('DAppSignInApprovalPage', () => {
     const onDismiss = vi.fn();
     mockApproveSolanaSignIn.mockRejectedValue(new Error('some internal RPC detail'));
 
-    const { getByTestId } = render(
-      <DAppSignInApprovalPage {...baseProps} onDismiss={onDismiss} />,
-    );
+    const { getByTestId } = render(<DAppSignInApprovalPage {...baseProps} onDismiss={onDismiss} />);
     getByTestId('approve-button').click();
     await vi.waitFor(() => expect(onDismiss).toHaveBeenCalledWith(false));
 

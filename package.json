@@ -42,7 +42,9 @@
     "check:i18n": "node scripts/check-i18n.mjs",
     "pack:sources": "git archive --format=zip -o salmon-wallet-source.zip HEAD",
     "check:duplicates": "jscpd packages/ apps/ --min-lines 5 --min-tokens 50 --format typescript,javascript,tsx,jsx --ignore \"**/node_modules/**,**/coverage/**,**/dist/**,**/*.test.ts,**/*.spec.ts,**/.expo/**\" --reporters console",
-    "check:duplicates:report": "jscpd packages/ apps/ --min-lines 5 --min-tokens 50 --format typescript,javascript,tsx,jsx --ignore \"**/node_modules/**,**/coverage/**,**/dist/**,**/*.test.ts,**/*.spec.ts,**/.expo/**\" --reporters html,console --output ./duplication-report"
+    "check:duplicates:report": "jscpd packages/ apps/ --min-lines 5 --min-tokens 50 --format typescript,javascript,tsx,jsx --ignore \"**/node_modules/**,**/coverage/**,**/dist/**,**/*.test.ts,**/*.spec.ts,**/.expo/**\" --reporters html,console --output ./duplication-report",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -53,6 +55,7 @@
     "eslint-plugin-react-hooks": "~7.0.1",
     "jscpd": "^5.0.14",
     "patch-package": "^8.0.1",
+    "prettier": "3.9.6",
     "turbo": "^2.10.9"
   },
   "packageManager": "pnpm@9.0.0",

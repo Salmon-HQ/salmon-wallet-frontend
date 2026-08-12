@@ -22,11 +22,7 @@ import {
   STASH_KEYS,
   validateMnemonic,
 } from '@salmon/shared';
-import {
-  PrimaryButton,
-  ScreenHeader,
-  SecondaryButton,
-} from '../../src/components';
+import { PrimaryButton, ScreenHeader, SecondaryButton } from '../../src/components';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -119,10 +115,7 @@ export default function RecoverWalletScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           {/* Header with step indicator */}
-          <ScreenHeader
-            onBack={handleBack}
-            stepIndicator={{ totalSteps: 2, currentStep: 1 }}
-          />
+          <ScreenHeader onBack={handleBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />
 
           {/* Content */}
           <ScrollView
@@ -133,29 +126,20 @@ export default function RecoverWalletScreen() {
           >
             {/* Logo */}
             <View style={styles.logoContainer}>
-              <Image
-                source={Logo}
-                style={styles.logo}
-                resizeMode="contain"
-              />
+              <Image source={Logo} style={styles.logo} resizeMode="contain" />
             </View>
 
             {/* Title */}
             <Text style={styles.title}>{t('wallet.recover.messageTitle')}</Text>
 
             {/* Subtitle */}
-            <Text style={styles.subtitle}>
-              {t('wallet.recover.messageBody')}
-            </Text>
+            <Text style={styles.subtitle}>{t('wallet.recover.messageBody')}</Text>
 
             {/* Seed Phrase Input */}
             <View style={styles.inputContainer}>
               <TextInput
                 testID="recover-seed-input"
-                style={[
-                  styles.textarea,
-                  { borderColor: getInputBorderColor() },
-                ]}
+                style={[styles.textarea, { borderColor: getInputBorderColor() }]}
                 placeholder={t('wallet.recover.placeholder')}
                 placeholderTextColor={colors.text.tertiary}
                 value={seedPhrase}

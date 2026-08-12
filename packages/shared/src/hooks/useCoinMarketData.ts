@@ -51,7 +51,8 @@ export function useCoinMarketData(params: UseCoinMarketDataParams): UseCoinMarke
         queryKey: tokenId
           ? queryKeys.coinInfo({ coinId: tokenId, currency })
           : ['coin-info', 'disabled'],
-        queryFn: () => getTokenCoinInfo({ coingeckoId: coinId, address: contractAddress }, currency),
+        queryFn: () =>
+          getTokenCoinInfo({ coingeckoId: coinId, address: contractAddress }, currency),
         enabled: isEnabled,
         staleTime: 60_000,
       },
@@ -59,7 +60,8 @@ export function useCoinMarketData(params: UseCoinMarketDataParams): UseCoinMarke
         queryKey: tokenId
           ? queryKeys.marketChart({ coinId: tokenId, currency, days })
           : ['market-chart', 'disabled'],
-        queryFn: () => getTokenMarketChart({ coingeckoId: coinId, address: contractAddress }, days, currency),
+        queryFn: () =>
+          getTokenMarketChart({ coingeckoId: coinId, address: contractAddress }, days, currency),
         enabled: isEnabled,
         staleTime: 60_000,
       },
@@ -80,8 +82,12 @@ export function useCoinMarketData(params: UseCoinMarketDataParams): UseCoinMarke
   const refresh = useCallback(async () => {
     if (!tokenId) return;
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.coinInfo({ coinId: tokenId, currency }) }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.marketChart({ coinId: tokenId, currency, days }) }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.coinInfo({ coinId: tokenId, currency }),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.marketChart({ coinId: tokenId, currency, days }),
+      }),
     ]);
   }, [queryClient, tokenId, currency, days]);
 

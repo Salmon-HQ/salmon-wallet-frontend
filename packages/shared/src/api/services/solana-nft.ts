@@ -87,7 +87,7 @@ export async function getSolanaNfts(
   networkId: string,
   publicKey: string,
   noCache: boolean,
-  opts: { includeSpam?: boolean } = {},
+  opts: { includeSpam?: boolean } = {}
 ): Promise<Nft[]> {
   const params: Record<string, string | boolean> = { publicKey, noCache };
   if (opts.includeSpam) {

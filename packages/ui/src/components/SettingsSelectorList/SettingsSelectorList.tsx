@@ -19,17 +19,13 @@ const StyledList = styled(List)({
   padding: `${spacing.sm}px 0`,
 });
 
-const StyledListItemButton = styled(ListItemButton)<{ $selected?: boolean }>(
-  ({ $selected }) => ({
-    padding: `${spacing.md}px ${spacing.lg}px`,
-    backgroundColor: $selected ? colors.accent.tint : 'transparent',
-    '&:hover': {
-      backgroundColor: $selected
-        ? colors.accent.tintHover
-        : colors.background.card,
-    },
-  })
-);
+const StyledListItemButton = styled(ListItemButton)<{ $selected?: boolean }>(({ $selected }) => ({
+  padding: `${spacing.md}px ${spacing.lg}px`,
+  backgroundColor: $selected ? colors.accent.tint : 'transparent',
+  '&:hover': {
+    backgroundColor: $selected ? colors.accent.tintHover : colors.background.card,
+  },
+}));
 
 const CheckIconStyled = styled(CheckIcon)({
   color: colors.accent.primary,

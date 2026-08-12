@@ -14,11 +14,9 @@ export type { BridgeChain, BridgeToken, BridgeEstimate, BridgeExchange };
 /**
  * Props for BridgeRecipientScreen sub-component (Web/Extension)
  */
-export interface BridgeRecipientScreenProps
-  extends BridgeRecipientScreenPropsBase<CSSProperties> {}
+export interface BridgeRecipientScreenProps extends BridgeRecipientScreenPropsBase<CSSProperties> {}
 
 /**
  * Props for BridgeReviewScreen sub-component (Web/Extension)
  */
-export interface BridgeReviewScreenProps
-  extends BridgeReviewScreenPropsBase<CSSProperties> {}
+export interface BridgeReviewScreenProps extends BridgeReviewScreenPropsBase<CSSProperties> {}

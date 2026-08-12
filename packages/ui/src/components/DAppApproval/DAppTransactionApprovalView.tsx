@@ -1,12 +1,7 @@
 import React from 'react';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
-import {
-  colors,
-  formatOrigin,
-  fontFamily,
-  fontSize,
-} from '@salmon/shared';
+import { colors, formatOrigin, fontFamily, fontSize } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import {
   AppIdentityIcon,
@@ -64,7 +59,7 @@ export function DAppTransactionApprovalView({
           <Subtitle>
             {t(
               'dapp.transaction_subtitle',
-              'Review the transaction details before approving this request.',
+              'Review the transaction details before approving this request.'
             )}
           </Subtitle>
         </Header>
@@ -86,7 +81,7 @@ export function DAppTransactionApprovalView({
             <FooterNote sx={{ marginTop: 1.5 }}>
               {t(
                 'dapp.transaction_risk_hint',
-                'Only approve if you trust the app and recognize the action being requested.',
+                'Only approve if you trust the app and recognize the action being requested.'
               )}
             </FooterNote>
           </Card>
@@ -159,7 +154,7 @@ export function DAppTransactionApprovalView({
                   >
                     {t(
                       'dapp.decode_error',
-                      'This transaction could not be decoded. Do not approve unless you trust this site.',
+                      'This transaction could not be decoded. Do not approve unless you trust this site.'
                     )}
                   </Typography>
                 </SummaryItem>
@@ -169,7 +164,11 @@ export function DAppTransactionApprovalView({
         </ScrollArea>
 
         <ButtonsContainer>
-          <PrimaryButton onClick={onApprove} loading={loading} disabled={disabled || loading || !!parsingError}>
+          <PrimaryButton
+            onClick={onApprove}
+            loading={loading}
+            disabled={disabled || loading || !!parsingError}
+          >
             {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
           </PrimaryButton>
           <SecondaryButton onClick={onReject} disabled={loading}>

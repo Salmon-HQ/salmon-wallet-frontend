@@ -20,7 +20,7 @@ export type Consent = 'accept' | 'decline';
  */
 export async function unlockOrRecover(
   page: Page,
-  { consent = 'decline' }: { consent?: Consent } = {},
+  { consent = 'decline' }: { consent?: Consent } = {}
 ): Promise<EntryState> {
   // Wait for the app to finish booting into one of the entry surfaces before
   // branching — otherwise the testid counts race the initial React mount.

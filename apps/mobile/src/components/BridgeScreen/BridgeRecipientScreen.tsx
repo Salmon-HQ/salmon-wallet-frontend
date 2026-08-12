@@ -2,7 +2,22 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fontSize, letterSpacing, lineHeight, spacing, borderRadius, gradients, shadows, componentSizes, ms, vs, s, fontFamilyNative, borderWidth } from '@salmon/shared';
+import {
+  colors,
+  fontSize,
+  letterSpacing,
+  lineHeight,
+  spacing,
+  borderRadius,
+  gradients,
+  shadows,
+  componentSizes,
+  ms,
+  vs,
+  s,
+  fontFamilyNative,
+  borderWidth,
+} from '@salmon/shared';
 import { RecipientAddressInput } from './RecipientAddressInput';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { useTabChrome } from '../../../hooks/useTabChrome';
@@ -38,7 +53,10 @@ export const BridgeRecipientScreen: React.FC<BridgeRecipientScreenProps> = ({
 
         {/* Description */}
         <Text style={styles.description}>
-          {t('bridge.recipient.description', 'Enter the address where you want to receive your swapped tokens')}
+          {t(
+            'bridge.recipient.description',
+            'Enter the address where you want to receive your swapped tokens'
+          )}
           {targetChain ? ` on ${targetChain.name}` : ''}.
         </Text>
 
@@ -58,17 +76,17 @@ export const BridgeRecipientScreen: React.FC<BridgeRecipientScreenProps> = ({
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>{t('bridge.recipient.important', 'Important')}</Text>
           <Text style={styles.infoText}>
-            {t('bridge.recipient.importantText', 'Make sure the address is correct. Cross-chain transactions cannot be reversed once initiated.')}
+            {t(
+              'bridge.recipient.importantText',
+              'Make sure the address is correct. Cross-chain transactions cannot be reversed once initiated.'
+            )}
           </Text>
         </View>
       </ScrollView>
 
       {/* Buttons */}
       <View style={[styles.buttonsContainer, { bottom: floatingBottomOffset }]}>
-        <SecondaryButton
-          onPress={onBack}
-          style={styles.backButton}
-        >
+        <SecondaryButton onPress={onBack} style={styles.backButton}>
           {t('actions.back', 'Back')}
         </SecondaryButton>
         <LinearGradient
@@ -80,11 +98,7 @@ export const BridgeRecipientScreen: React.FC<BridgeRecipientScreenProps> = ({
             canContinue && styles.continueButtonGradientActive,
           ]}
         >
-          <PrimaryButton
-            onPress={onContinue}
-            disabled={!canContinue}
-            style={styles.continueButton}
-          >
+          <PrimaryButton onPress={onContinue} disabled={!canContinue} style={styles.continueButton}>
             {t('bridge.recipient.review', 'Review')}
           </PrimaryButton>
         </LinearGradient>

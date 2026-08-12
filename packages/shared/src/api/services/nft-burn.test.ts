@@ -51,15 +51,11 @@ describe('NFT burn service', () => {
       ownerAddress: 'owner-1',
     });
 
-    expect(mockApiClientPost).toHaveBeenCalledWith(
-      '/v1/solana-mainnet/nft/mint-1',
-      undefined,
-      {
-        params: {
-          owner: 'owner-1',
-        },
+    expect(mockApiClientPost).toHaveBeenCalledWith('/v1/solana-mainnet/nft/mint-1', undefined, {
+      params: {
+        owner: 'owner-1',
       },
-    );
+    });
     expect(result).toEqual(MOCK_TRANSACTION);
   });
 
@@ -71,15 +67,11 @@ describe('NFT burn service', () => {
       ownerAddress: 'owner-2',
     });
 
-    expect(mockApiClientPost).toHaveBeenCalledWith(
-      '/v1/solana-mainnet/nft/mint-2',
-      undefined,
-      {
-        params: {
-          owner: 'owner-2',
-        },
+    expect(mockApiClientPost).toHaveBeenCalledWith('/v1/solana-mainnet/nft/mint-2', undefined, {
+      params: {
+        owner: 'owner-2',
       },
-    );
+    });
     expect(result).toEqual(MOCK_MULTI_STEP_TRANSACTION);
   });
 
@@ -90,7 +82,7 @@ describe('NFT burn service', () => {
       createBurnTransaction({
         mintAddress: 'mint-3',
         ownerAddress: 'owner-3',
-      }),
+      })
     ).rejects.toThrow('Burn transaction was not returned by the API');
   });
 });

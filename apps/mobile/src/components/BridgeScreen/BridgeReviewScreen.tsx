@@ -1,7 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { borderWidth, colors, fontSize, letterSpacing, lineHeight, spacing, borderRadius, ms, vs, s, fontFamilyNative, formatAmountWithSymbol, getShortAddress } from '@salmon/shared';
+import {
+  borderWidth,
+  colors,
+  fontSize,
+  letterSpacing,
+  lineHeight,
+  spacing,
+  borderRadius,
+  ms,
+  vs,
+  s,
+  fontFamilyNative,
+  formatAmountWithSymbol,
+  getShortAddress,
+} from '@salmon/shared';
 import { SwapDetailRow } from '../SwapScreen/SwapDetailRow';
 import { SwapReviewCard } from '../SwapScreen/SwapReviewCard';
 import { SwapReviewButtons } from '../SwapScreen/SwapReviewButtons';
@@ -78,17 +92,17 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
               />
             </>
           )}
-          <SwapDetailRow
-            label={t('bridge.review.provider', 'Provider')}
-            value="StealthEX"
-          />
+          <SwapDetailRow label={t('bridge.review.provider', 'Provider')} value="StealthEX" />
         </View>
 
         {/* Warning Box */}
         <View style={styles.warningBox}>
           <Text style={styles.warningTitle}>{t('bridge.review.pleaseNote', 'Please Note')}</Text>
           <Text style={styles.warningText}>
-            {t('bridge.review.pleaseNoteText', 'Cross-chain swaps typically take 10-30 minutes to complete. You will receive a deposit address after confirmation.')}
+            {t(
+              'bridge.review.pleaseNoteText',
+              'Cross-chain swaps typically take 10-30 minutes to complete. You will receive a deposit address after confirmation.'
+            )}
           </Text>
         </View>
       </ScrollView>

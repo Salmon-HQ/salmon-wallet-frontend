@@ -2,13 +2,7 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 afterEach(cleanup);
@@ -24,14 +18,10 @@ vi.mock('@salmon/shared', () => {
   const useSettingsPanelStack = () => {
     const [stack, setStack] = React.useState<StackEntry[]>([]);
     const push = React.useCallback(
-      (screen: string, props?: unknown) =>
-        setStack((p) => [...p, { screen, props }]),
-      [],
+      (screen: string, props?: unknown) => setStack((p) => [...p, { screen, props }]),
+      []
     );
-    const pop = React.useCallback(
-      () => setStack((p) => (p.length ? p.slice(0, -1) : p)),
-      [],
-    );
+    const pop = React.useCallback(() => setStack((p) => (p.length ? p.slice(0, -1) : p)), []);
     const reset = React.useCallback(() => setStack([]), []);
     return {
       stack,
@@ -94,7 +84,7 @@ const renderStack = () =>
       onDeveloperNetworksToggle={vi.fn()}
       onRemoveWallet={vi.fn()}
       onRemoveAllWallets={vi.fn()}
-    />,
+    />
   );
 
 describe('SettingsPanelStack — menu routing', () => {
@@ -119,9 +109,7 @@ describe('SettingsPanelStack — menu routing', () => {
     await waitFor(() => {
       expect(screen.getByTestId(expectedTestId)).toBeTruthy();
     });
-    const otherIds = cases
-      .map(([, id]) => id)
-      .filter((id) => id !== expectedTestId);
+    const otherIds = cases.map(([, id]) => id).filter((id) => id !== expectedTestId);
     for (const id of otherIds) {
       expect(screen.queryByTestId(id)).toBeNull();
     }

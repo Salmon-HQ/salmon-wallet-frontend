@@ -78,10 +78,7 @@ export function formatAmount(amount: number, decimals: number): string {
  * @param decimals - Number of decimal places (default: 2)
  * @returns Formatted string with dollar sign, or '-' if amount is nil
  */
-export function showAmount(
-  amount: number | null | undefined,
-  decimals: number = 2
-): string {
+export function showAmount(amount: number | null | undefined, decimals: number = 2): string {
   return !isNil(amount) ? `$${round(amount, decimals).toFixed(decimals)}` : '-';
 }
 
@@ -101,10 +98,7 @@ export function showAmount(
  * showValue(0)             // '0.00'
  * ```
  */
-export function showValue(
-  amount: number | null | undefined,
-  decimals: number = 2
-): string {
+export function showValue(amount: number | null | undefined, decimals: number = 2): string {
   return !isNil(amount) ? `${round(amount, decimals).toFixed(decimals)}` : '-';
 }
 
@@ -323,10 +317,7 @@ export function formatTokenBalance(
 }
 
 /** @deprecated Use `formatFiatPrecise` from `currencyFormatting` for multi-currency support. */
-export function formatUsdPrecise(
-  value: number | undefined | null,
-  decimals: number = 4
-): string {
+export function formatUsdPrecise(value: number | undefined | null, decimals: number = 4): string {
   if (value === undefined || value === null) return (0).toFixed(decimals);
   return value.toFixed(decimals);
 }
@@ -342,9 +333,7 @@ export function formatAmountWithSymbol(
   return `${formatted} ${symbol}`;
 }
 
-export function formatPercentageCompact(
-  value: number | undefined | null
-): string {
+export function formatPercentageCompact(value: number | undefined | null): string {
   if (value === undefined || value === null) return '-';
   const sign = value >= 0 ? '+' : '';
   return `${sign}${value.toFixed(2)}%`;

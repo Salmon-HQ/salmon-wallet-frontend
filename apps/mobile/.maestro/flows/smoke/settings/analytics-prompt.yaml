@@ -16,25 +16,25 @@ appId: io.salmonwallet.app
 - runFlow:
     when:
       visible:
-        id: "biometric-skip-button"
+        id: 'biometric-skip-button'
     commands:
       - tapOn:
-          id: "biometric-skip-button"
+          id: 'biometric-skip-button'
 - extendedWaitUntil:
     visible:
-      id: "analytics-consent-screen"
+      id: 'analytics-consent-screen'
     timeout: 30000
 - assertVisible:
-    id: "analytics-consent-screen"
+    id: 'analytics-consent-screen'
 - takeScreenshot: screenshots/smoke/settings/analytics-prompt-screen
 # "Ahora no" declines and advances to Success.
 - tapOn:
-    id: "analytics-consent-decline"
+    id: 'analytics-consent-decline'
 - extendedWaitUntil:
-    visible: "Congratulations!"
+    visible: 'Congratulations!'
     timeout: 60000
 - assertVisible:
-    id: "success-go-to-wallet-button"
+    id: 'success-go-to-wallet-button'
 - takeScreenshot: screenshots/smoke/settings/analytics-prompt-declined
 
 # --- Accept path (fresh onboarding) -----------------------------------------
@@ -45,23 +45,23 @@ appId: io.salmonwallet.app
 - runFlow:
     when:
       visible:
-        id: "biometric-skip-button"
+        id: 'biometric-skip-button'
     commands:
       - tapOn:
-          id: "biometric-skip-button"
+          id: 'biometric-skip-button'
 - extendedWaitUntil:
     visible:
-      id: "analytics-consent-screen"
+      id: 'analytics-consent-screen'
     timeout: 30000
 # "Compartir datos anónimos" accepts and advances to Success.
 - tapOn:
-    id: "analytics-consent-accept"
+    id: 'analytics-consent-accept'
 - extendedWaitUntil:
-    visible: "Congratulations!"
+    visible: 'Congratulations!'
     timeout: 60000
 - tapOn:
-    id: "success-go-to-wallet-button"
+    id: 'success-go-to-wallet-button'
 - extendedWaitUntil:
-    visible: "Switch wallet account"
+    visible: 'Switch wallet account'
     timeout: 30000
 - takeScreenshot: screenshots/smoke/settings/analytics-prompt-accepted

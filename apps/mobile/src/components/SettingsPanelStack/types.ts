@@ -1,7 +1,4 @@
-import type {
-  SettingsScreen,
-  SettingsPanelEntry,
-} from '@salmon/shared';
+import type { SettingsScreen, SettingsPanelEntry } from '@salmon/shared';
 
 /**
  * Props that every panel content component receives.

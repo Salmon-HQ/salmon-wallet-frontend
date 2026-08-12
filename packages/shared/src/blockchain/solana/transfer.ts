@@ -52,12 +52,8 @@ import {
 } from '@solana-program/token-2022';
 import type { Extension, TransferFee } from '@solana-program/token-2022';
 
-import {
-  applyDecimals,
-} from '../../utils/decimals';
-import {
-  isNativeSol,
-} from '../../utils/tokens';
+import { applyDecimals } from '../../utils/decimals';
+import { isNativeSol } from '../../utils/tokens';
 import { LAMPORTS_PER_SOL, SOL_CONSTANTS } from '../../utils/balance';
 import type { SolanaRpc } from './networks';
 
@@ -364,9 +360,7 @@ async function executeTransaction(
   const wireTransaction = getBase64EncodedWireTransaction(signed);
 
   if (simulate) {
-    const { value } = await rpc
-      .simulateTransaction(wireTransaction, { encoding: 'base64' })
-      .send();
+    const { value } = await rpc.simulateTransaction(wireTransaction, { encoding: 'base64' }).send();
     return value;
   }
 
@@ -410,9 +404,7 @@ export async function estimateFee(
     : await createSplTransaction(rpc, signer, to, token, amount, opts);
 
   const compiled = compileTransaction(transaction);
-  const message = getBase64Decoder().decode(
-    compiled.messageBytes
-  ) as TransactionMessageBytesBase64;
+  const message = getBase64Decoder().decode(compiled.messageBytes) as TransactionMessageBytesBase64;
   const { value } = await rpc.getFeeForMessage(message).send();
   return value === null ? null : Number(value);
 }

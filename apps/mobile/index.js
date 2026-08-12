@@ -156,7 +156,12 @@ if (typeof process === 'undefined') {
 // =============================================================================
 // 4. Initialize Storage & Stash - Required before useAccounts hook
 // =============================================================================
-const { initStorage, initStash, initAnalytics, createAsyncStorageAdapter } = require('@salmon/shared');
+const {
+  initStorage,
+  initStash,
+  initAnalytics,
+  createAsyncStorageAdapter,
+} = require('@salmon/shared');
 const AsyncStorage = require('@react-native-async-storage/async-storage').default;
 
 // Create adapter using AsyncStorage for persistent storage

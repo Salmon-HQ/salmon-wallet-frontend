@@ -133,14 +133,16 @@ vi.mock('../api/services/network', () => ({
     { id: 'ethereum-sepolia', blockchain: 'ethereum', enabled: true, config: {} },
   ]),
   isBackendNetworkEnabled: vi.fn().mockResolvedValue(true),
-  getEnabledNetworkIds: vi.fn().mockResolvedValue([
-    'solana-mainnet',
-    'solana-devnet',
-    'bitcoin-mainnet',
-    'bitcoin-testnet',
-    'ethereum-mainnet',
-    'ethereum-sepolia',
-  ]),
+  getEnabledNetworkIds: vi
+    .fn()
+    .mockResolvedValue([
+      'solana-mainnet',
+      'solana-devnet',
+      'bitcoin-mainnet',
+      'bitcoin-testnet',
+      'ethereum-mainnet',
+      'ethereum-sepolia',
+    ]),
 }));
 
 vi.mock('./useAvailableNetworks', () => ({
@@ -284,12 +286,14 @@ describe('useAccounts Hook', () => {
 
     it('should load accounts from storage', async () => {
       const mockAccount = createMockAccount();
-      const storedAccounts = [{
-        id: mockAccount.id,
-        name: mockAccount.name,
-        avatar: mockAccount.avatar,
-        pathIndexes: mockAccount.pathIndexes,
-      }];
+      const storedAccounts = [
+        {
+          id: mockAccount.id,
+          name: mockAccount.name,
+          avatar: mockAccount.avatar,
+          pathIndexes: mockAccount.pathIndexes,
+        },
+      ];
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
         if (key === 'salmon_accounts') return Promise.resolve(storedAccounts);
@@ -340,12 +344,14 @@ describe('useAccounts Hook', () => {
 
     it('should load account metadata even when locked (without decrypting mnemonics)', async () => {
       const mockAccount = createMockAccount();
-      const storedAccounts = [{
-        id: mockAccount.id,
-        name: mockAccount.name,
-        avatar: mockAccount.avatar,
-        pathIndexes: mockAccount.pathIndexes,
-      }];
+      const storedAccounts = [
+        {
+          id: mockAccount.id,
+          name: mockAccount.name,
+          avatar: mockAccount.avatar,
+          pathIndexes: mockAccount.pathIndexes,
+        },
+      ];
 
       const encryptedData = {
         isEncrypted: true,
@@ -491,12 +497,15 @@ describe('useAccounts Hook', () => {
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
         if (key === 'salmon_mnemonics') return Promise.resolve(encryptedData);
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_wallets') return Promise.resolve(null);
         return Promise.resolve(null);
       });
@@ -581,12 +590,14 @@ describe('useAccounts Hook', () => {
       (storage.getStorageItem as any).mockImplementation((key: string) => {
         if (key === 'salmon_mnemonics') return Promise.resolve(encryptedData);
         if (key === 'salmon_accounts') {
-          return Promise.resolve([{
-            id: mockAccount.id,
-            name: mockAccount.name,
-            avatar: mockAccount.avatar,
-            pathIndexes: mockAccount.pathIndexes,
-          }]);
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         }
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
@@ -596,7 +607,9 @@ describe('useAccounts Hook', () => {
 
       stashStore['derived_key_cache'] = mockKeyCache;
 
-      (encryption.isKeyCacheValid as any).mockImplementation((keyCache: unknown) => Boolean(keyCache));
+      (encryption.isKeyCacheValid as any).mockImplementation((keyCache: unknown) =>
+        Boolean(keyCache)
+      );
       (encryption.unlockWithKey as any).mockReturnValue({ [mockAccount.id]: MOCK_MNEMONIC });
 
       const firstHook = renderHook(() => useAccounts());
@@ -686,10 +699,7 @@ describe('useAccounts Hook', () => {
       });
 
       expect(encryption.unlockAndGetKey).toHaveBeenCalledWith(encryptedData, MOCK_PASSWORD);
-      expect(encryption.lock).toHaveBeenCalledWith(
-        decryptedMnemonics,
-        'NewSecurePassword456!'
-      );
+      expect(encryption.lock).toHaveBeenCalledWith(decryptedMnemonics, 'NewSecurePassword456!');
       expect(storage.setStorageItem).toHaveBeenCalledWith('salmon_mnemonics', newVault);
       expect(storage.removeStashItem).toHaveBeenCalledWith('derived_key_cache');
       expect(stashStore['derived_key_cache']).toBeUndefined();
@@ -697,12 +707,14 @@ describe('useAccounts Hook', () => {
 
     it('should ignore an invalid cached key on init and remain locked with metadata loaded', async () => {
       const mockAccount = createMockAccount();
-      const storedAccounts = [{
-        id: mockAccount.id,
-        name: mockAccount.name,
-        avatar: mockAccount.avatar,
-        pathIndexes: mockAccount.pathIndexes,
-      }];
+      const storedAccounts = [
+        {
+          id: mockAccount.id,
+          name: mockAccount.name,
+          avatar: mockAccount.avatar,
+          pathIndexes: mockAccount.pathIndexes,
+        },
+      ];
 
       const encryptedData = {
         isEncrypted: true,
@@ -763,10 +775,7 @@ describe('useAccounts Hook', () => {
       const [state] = result.current;
       expect(state.accounts).toHaveLength(1);
       expect(state.accounts[0].id).toBe(newAccount.id);
-      expect(storage.setStorageItem).toHaveBeenCalledWith(
-        'salmon_accounts',
-        expect.any(Array)
-      );
+      expect(storage.setStorageItem).toHaveBeenCalledWith('salmon_accounts', expect.any(Array));
     });
 
     it('should add account with password encryption', async () => {
@@ -787,7 +796,7 @@ describe('useAccounts Hook', () => {
       expect(encryptMnemonics).toHaveBeenCalledWith(
         { [newAccount.id]: MOCK_MNEMONIC },
         MOCK_PASSWORD,
-        { cacheNewKey: true },
+        { cacheNewKey: true }
       );
       expect(storage.setStorageItem).toHaveBeenCalledWith(
         'salmon_mnemonics',
@@ -812,11 +821,9 @@ describe('useAccounts Hook', () => {
       });
 
       // encryptMnemonics is called without password — it internally decides how to encrypt
-      expect(encryptMnemonics).toHaveBeenCalledWith(
-        { [newAccount.id]: MOCK_MNEMONIC },
-        undefined,
-        { cacheNewKey: false },
-      );
+      expect(encryptMnemonics).toHaveBeenCalledWith({ [newAccount.id]: MOCK_MNEMONIC }, undefined, {
+        cacheNewKey: false,
+      });
       expect(storage.setStorageItem).toHaveBeenCalledWith(
         'salmon_mnemonics',
         expect.objectContaining({ isEncrypted: true })
@@ -850,7 +857,7 @@ describe('useAccounts Hook', () => {
       // Storage was not written
       expect(storage.setStorageItem).not.toHaveBeenCalledWith(
         'salmon_mnemonics',
-        expect.anything(),
+        expect.anything()
       );
     });
 
@@ -859,14 +866,26 @@ describe('useAccounts Hook', () => {
       const mockAccount2 = { ...createMockAccount(), id: 'account_throw_remove' };
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([
-          { id: mockAccount1.id, name: mockAccount1.name, avatar: mockAccount1.avatar, pathIndexes: mockAccount1.pathIndexes },
-          { id: mockAccount2.id, name: mockAccount2.name, avatar: mockAccount2.avatar, pathIndexes: mockAccount2.pathIndexes },
-        ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({
-          [mockAccount1.id]: MOCK_MNEMONIC,
-          [mockAccount2.id]: MOCK_MNEMONIC,
-        });
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount1.id,
+              name: mockAccount1.name,
+              avatar: mockAccount1.avatar,
+              pathIndexes: mockAccount1.pathIndexes,
+            },
+            {
+              id: mockAccount2.id,
+              name: mockAccount2.name,
+              avatar: mockAccount2.avatar,
+              pathIndexes: mockAccount2.pathIndexes,
+            },
+          ]);
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve({
+            [mockAccount1.id]: MOCK_MNEMONIC,
+            [mockAccount2.id]: MOCK_MNEMONIC,
+          });
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount1.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         return Promise.resolve(null);
@@ -886,7 +905,7 @@ describe('useAccounts Hook', () => {
 
       await act(async () => {
         await expect(result.current[1].removeAccount(mockAccount1.id)).rejects.toThrow(
-          'material missing',
+          'material missing'
         );
       });
 
@@ -897,7 +916,7 @@ describe('useAccounts Hook', () => {
       // Vault never overwritten
       expect(storage.setStorageItem).not.toHaveBeenCalledWith(
         'salmon_mnemonics',
-        expect.anything(),
+        expect.anything()
       );
     });
 
@@ -908,14 +927,26 @@ describe('useAccounts Hook', () => {
       const mockAccount2 = { ...createMockAccount(), id: 'account_789' };
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([
-          { id: mockAccount1.id, name: mockAccount1.name, avatar: mockAccount1.avatar, pathIndexes: mockAccount1.pathIndexes },
-          { id: mockAccount2.id, name: mockAccount2.name, avatar: mockAccount2.avatar, pathIndexes: mockAccount2.pathIndexes },
-        ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({
-          [mockAccount1.id]: MOCK_MNEMONIC,
-          [mockAccount2.id]: MOCK_MNEMONIC,
-        });
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount1.id,
+              name: mockAccount1.name,
+              avatar: mockAccount1.avatar,
+              pathIndexes: mockAccount1.pathIndexes,
+            },
+            {
+              id: mockAccount2.id,
+              name: mockAccount2.name,
+              avatar: mockAccount2.avatar,
+              pathIndexes: mockAccount2.pathIndexes,
+            },
+          ]);
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve({
+            [mockAccount1.id]: MOCK_MNEMONIC,
+            [mockAccount2.id]: MOCK_MNEMONIC,
+          });
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount1.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         return Promise.resolve(null);
@@ -937,7 +968,7 @@ describe('useAccounts Hook', () => {
       expect(encryptMnemonics).toHaveBeenCalledWith(
         { [mockAccount2.id]: MOCK_MNEMONIC },
         undefined,
-        { cacheNewKey: false },
+        { cacheNewKey: false }
       );
       expect(storage.setStorageItem).toHaveBeenCalledWith(
         'salmon_mnemonics',
@@ -948,12 +979,15 @@ describe('useAccounts Hook', () => {
     it('should edit account name', async () => {
       const mockAccount = createMockAccount();
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         return Promise.resolve(null);
       });
@@ -978,12 +1012,15 @@ describe('useAccounts Hook', () => {
     it('should edit account avatar', async () => {
       const mockAccount = createMockAccount();
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         return Promise.resolve(null);
       });
@@ -1010,24 +1047,26 @@ describe('useAccounts Hook', () => {
       const mockAccount2 = { ...createMockAccount(), id: 'account_789' };
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([
-          {
-            id: mockAccount1.id,
-            name: mockAccount1.name,
-            avatar: mockAccount1.avatar,
-            pathIndexes: mockAccount1.pathIndexes,
-          },
-          {
-            id: mockAccount2.id,
-            name: mockAccount2.name,
-            avatar: mockAccount2.avatar,
-            pathIndexes: mockAccount2.pathIndexes,
-          },
-        ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({
-          [mockAccount1.id]: MOCK_MNEMONIC,
-          [mockAccount2.id]: MOCK_MNEMONIC,
-        });
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount1.id,
+              name: mockAccount1.name,
+              avatar: mockAccount1.avatar,
+              pathIndexes: mockAccount1.pathIndexes,
+            },
+            {
+              id: mockAccount2.id,
+              name: mockAccount2.name,
+              avatar: mockAccount2.avatar,
+              pathIndexes: mockAccount2.pathIndexes,
+            },
+          ]);
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve({
+            [mockAccount1.id]: MOCK_MNEMONIC,
+            [mockAccount2.id]: MOCK_MNEMONIC,
+          });
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount1.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         return Promise.resolve(null);
@@ -1055,12 +1094,15 @@ describe('useAccounts Hook', () => {
       const mockAccount = createMockAccount();
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         return Promise.resolve(null);
       });
@@ -1086,12 +1128,15 @@ describe('useAccounts Hook', () => {
     it('should remove all accounts', async () => {
       const mockAccount = createMockAccount();
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         return Promise.resolve(null);
       });
@@ -1128,12 +1173,15 @@ describe('useAccounts Hook', () => {
       };
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         return Promise.resolve(null);
       });
@@ -1162,24 +1210,26 @@ describe('useAccounts Hook', () => {
       const mockAccount2 = { ...createMockAccount(), id: 'account_789' };
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([
-          {
-            id: mockAccount1.id,
-            name: mockAccount1.name,
-            avatar: mockAccount1.avatar,
-            pathIndexes: mockAccount1.pathIndexes,
-          },
-          {
-            id: mockAccount2.id,
-            name: mockAccount2.name,
-            avatar: mockAccount2.avatar,
-            pathIndexes: mockAccount2.pathIndexes,
-          },
-        ]);
-        if (key === 'salmon_mnemonics') return Promise.resolve({
-          [mockAccount1.id]: MOCK_MNEMONIC,
-          [mockAccount2.id]: MOCK_MNEMONIC,
-        });
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount1.id,
+              name: mockAccount1.name,
+              avatar: mockAccount1.avatar,
+              pathIndexes: mockAccount1.pathIndexes,
+            },
+            {
+              id: mockAccount2.id,
+              name: mockAccount2.name,
+              avatar: mockAccount2.avatar,
+              pathIndexes: mockAccount2.pathIndexes,
+            },
+          ]);
+        if (key === 'salmon_mnemonics')
+          return Promise.resolve({
+            [mockAccount1.id]: MOCK_MNEMONIC,
+            [mockAccount2.id]: MOCK_MNEMONIC,
+          });
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount1.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         return Promise.resolve(null);
@@ -1199,7 +1249,10 @@ describe('useAccounts Hook', () => {
 
       const [state] = result.current;
       expect(state.accountId).toBe(mockAccount2.id);
-      expect(storage.setStorageItem).toHaveBeenCalledWith('salmon_active_account_id', mockAccount2.id);
+      expect(storage.setStorageItem).toHaveBeenCalledWith(
+        'salmon_active_account_id',
+        mockAccount2.id
+      );
     });
 
     it('should change active network', async () => {
@@ -1208,12 +1261,15 @@ describe('useAccounts Hook', () => {
       mockAccount.pathIndexes['solana-devnet'] = [0];
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
@@ -1234,7 +1290,10 @@ describe('useAccounts Hook', () => {
 
       const [state] = result.current;
       expect(state.networkId).toBe('solana-devnet');
-      expect(storage.setStorageItem).toHaveBeenCalledWith('salmon_active_network_id', 'solana-devnet');
+      expect(storage.setStorageItem).toHaveBeenCalledWith(
+        'salmon_active_network_id',
+        'solana-devnet'
+      );
     });
 
     it('should switch accounts after adding two accounts via addAccount (real user flow)', async () => {
@@ -1300,10 +1359,21 @@ describe('useAccounts Hook', () => {
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
         if (key === 'salmon_mnemonics') return Promise.resolve(encryptedData);
-        if (key === 'salmon_accounts') return Promise.resolve([
-          { id: mockAccount1.id, name: mockAccount1.name, avatar: mockAccount1.avatar, pathIndexes: mockAccount1.pathIndexes },
-          { id: mockAccount2.id, name: mockAccount2.name, avatar: mockAccount2.avatar, pathIndexes: mockAccount2.pathIndexes },
-        ]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount1.id,
+              name: mockAccount1.name,
+              avatar: mockAccount1.avatar,
+              pathIndexes: mockAccount1.pathIndexes,
+            },
+            {
+              id: mockAccount2.id,
+              name: mockAccount2.name,
+              avatar: mockAccount2.avatar,
+              pathIndexes: mockAccount2.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount1.id);
         // INTENTIONALLY not providing salmon_active_network_id
         // loadMetadata will set networkId = null
@@ -1337,16 +1407,22 @@ describe('useAccounts Hook', () => {
 
     it('should change path index', async () => {
       const mockAccount = createMockAccount();
-      mockAccount.networksAccounts['solana-mainnet'] = [mockSolanaAccount as any, mockSolanaAccount as any];
+      mockAccount.networksAccounts['solana-mainnet'] = [
+        mockSolanaAccount as any,
+        mockSolanaAccount as any,
+      ];
       mockAccount.pathIndexes['solana-mainnet'] = [0, 1];
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
@@ -1379,12 +1455,15 @@ describe('useAccounts Hook', () => {
       mockAccount.pathIndexes['solana-devnet'] = [0];
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
@@ -1405,19 +1484,25 @@ describe('useAccounts Hook', () => {
 
       const [state] = result.current;
       expect(state.networkId).toBe('solana-devnet');
-      expect(storage.setStorageItem).toHaveBeenCalledWith('salmon_active_network_id', 'solana-devnet');
+      expect(storage.setStorageItem).toHaveBeenCalledWith(
+        'salmon_active_network_id',
+        'solana-devnet'
+      );
     });
 
     it('should handle switching to an invalid network gracefully', async () => {
       const mockAccount = createMockAccount();
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
@@ -1447,12 +1532,15 @@ describe('useAccounts Hook', () => {
       const mockAccount = createMockAccount();
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
@@ -1489,12 +1577,15 @@ describe('useAccounts Hook', () => {
     it('should add trusted app', async () => {
       const mockAccount = createMockAccount();
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         if (key === 'salmon_trusted_apps') return Promise.resolve({});
@@ -1527,12 +1618,15 @@ describe('useAccounts Hook', () => {
       };
 
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         if (key === 'salmon_trusted_apps') return Promise.resolve(initialTrustedApps);
@@ -1560,12 +1654,15 @@ describe('useAccounts Hook', () => {
     it('should import custom tokens', async () => {
       const mockAccount = createMockAccount();
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');
         if (key === 'salmon_custom_tokens') return Promise.resolve({});
@@ -1602,12 +1699,15 @@ describe('useAccounts Hook', () => {
     it('should provide active account', async () => {
       const mockAccount = createMockAccount();
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         return Promise.resolve(null);
@@ -1627,12 +1727,15 @@ describe('useAccounts Hook', () => {
     it('should provide active blockchain account', async () => {
       const mockAccount = createMockAccount();
       (storage.getStorageItem as any).mockImplementation((key: string) => {
-        if (key === 'salmon_accounts') return Promise.resolve([{
-          id: mockAccount.id,
-          name: mockAccount.name,
-          avatar: mockAccount.avatar,
-          pathIndexes: mockAccount.pathIndexes,
-        }]);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: mockAccount.id,
+              name: mockAccount.name,
+              avatar: mockAccount.avatar,
+              pathIndexes: mockAccount.pathIndexes,
+            },
+          ]);
         if (key === 'salmon_mnemonics') return Promise.resolve({ [mockAccount.id]: MOCK_MNEMONIC });
         if (key === 'salmon_active_account_id') return Promise.resolve(mockAccount.id);
         if (key === 'salmon_active_network_id') return Promise.resolve('solana-mainnet');

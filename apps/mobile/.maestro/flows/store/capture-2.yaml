@@ -6,16 +6,16 @@ appId: io.salmonwallet.app
 
 - extendedWaitUntil:
     visible:
-      id: "token-row-SOL"
+      id: 'token-row-SOL'
     timeout: 60000
 
 # ------------------------------------------ 03 transactions (re-captured) --
 # The NFT receive is now Mindfolk, matching the detail shot.
 - tapOn:
-    id: "home-activity-button"
+    id: 'home-activity-button'
 - extendedWaitUntil:
     visible:
-      id: "activity-list"
+      id: 'activity-list'
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 20000
@@ -23,27 +23,27 @@ appId: io.salmonwallet.app
 - runFlow: ../../subflows/dismiss-bottom-sheet.yaml
 - extendedWaitUntil:
     visible:
-      id: "wallet-header-account-switcher"
+      id: 'wallet-header-account-switcher'
     timeout: 20000
 
 # --------------------------------------------- 05 nft detail (re-captured) --
 # Mindfolk Founder #5154 replaces Mad Lads #8420: it is the one NFT the test
 # wallet genuinely holds. The grid itself is unchanged.
 - tapOn:
-    id: "tab-collectibles"
+    id: 'tab-collectibles'
 - extendedWaitUntil:
-    visible: "My Collectibles"
+    visible: 'My Collectibles'
     timeout: 30000
 - extendedWaitUntil:
     visible:
-      id: "nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV"
+      id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
     timeout: 40000
 - waitForAnimationToEnd:
     timeout: 45000
 - tapOn:
-    id: "nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV"
+    id: 'nft-card-CNM8WMZvQ15baEV1r4QEW1MPR3xwaotattgtA4abnDmV'
 - extendedWaitUntil:
-    visible: "Mindfolk Founder #5154"
+    visible: 'Mindfolk Founder #5154'
     timeout: 30000
 # Full-size artwork is a fresh arweave fetch even when the grid thumb is warm;
 # a short wait ships a grey placeholder with no error.
@@ -52,31 +52,31 @@ appId: io.salmonwallet.app
 - takeScreenshot: ${OUT}/05-nft-detail
 - runFlow: ../../subflows/dismiss-bottom-sheet.yaml
 - extendedWaitUntil:
-    visible: "My Collectibles"
+    visible: 'My Collectibles'
     timeout: 20000
 
 # ----------------------------------------------------------------- 07 swap --
 - tapOn:
-    id: "tab-swap"
+    id: 'tab-swap'
 - extendedWaitUntil:
     visible:
-      id: "swap-from-token"
+      id: 'swap-from-token'
     timeout: 30000
 # Both sides must be set explicitly: swapTokens[0] is not SOL, so leaving the
 # "from" side alone produced inputMint == outputMint and no quote at all.
 - tapOn:
-    id: "swap-from-token"
+    id: 'swap-from-token'
 - extendedWaitUntil:
     visible:
-      id: "token-search-input"
+      id: 'token-search-input'
     timeout: 20000
 - tapOn:
-    id: "token-search-input"
-- inputText: "SOL"
+    id: 'token-search-input'
+- inputText: 'SOL'
 - waitForAnimationToEnd:
     timeout: 6000
 - tapOn:
-    id: "token-row-SOL"
+    id: 'token-row-SOL'
 # Amount BEFORE the output token, on purpose. The numeric keyboard covers
 # "Review & Swap" (absolutely positioned at the bottom) and this screen is a
 # plain View, not a keyboardShouldPersistTaps ScrollView — so unlike 02-send,
@@ -87,30 +87,30 @@ appId: io.salmonwallet.app
 # platforms for free, so pick the output token last.
 - extendedWaitUntil:
     visible:
-      id: "swap-from-amount"
+      id: 'swap-from-amount'
     timeout: 20000
 - tapOn:
-    id: "swap-from-amount"
-- inputText: "5"
+    id: 'swap-from-amount'
+- inputText: '5'
 - waitForAnimationToEnd:
     timeout: 3000
 - extendedWaitUntil:
     visible:
-      id: "swap-to-token"
+      id: 'swap-to-token'
     timeout: 20000
 - tapOn:
-    id: "swap-to-token"
+    id: 'swap-to-token'
 - extendedWaitUntil:
     visible:
-      id: "token-search-input"
+      id: 'token-search-input'
     timeout: 20000
 - tapOn:
-    id: "token-search-input"
-- inputText: "USDC"
+    id: 'token-search-input'
+- inputText: 'USDC'
 - waitForAnimationToEnd:
     timeout: 6000
 - tapOn:
-    id: "token-row-USDC"
+    id: 'token-row-USDC'
 - waitForAnimationToEnd:
     timeout: 4000
 # Android re-focuses the amount field when the picker closes, so the keyboard
@@ -128,7 +128,7 @@ appId: io.salmonwallet.app
 # lands, so wait on the button rather than a fixed sleep.
 - extendedWaitUntil:
     visible:
-      id: "swap-review-button"
+      id: 'swap-review-button'
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 8000
@@ -136,38 +136,38 @@ appId: io.salmonwallet.app
 
 # ---------------------------------------------------------- 08 swap review --
 - tapOn:
-    id: "swap-review-button"
+    id: 'swap-review-button'
 - extendedWaitUntil:
-    visible: "Swap Review"
+    visible: 'Swap Review'
     timeout: 20000
 - waitForAnimationToEnd:
     timeout: 8000
 # Review state only. swap-confirm-button is deliberately never tapped.
 - takeScreenshot: ${OUT}/08-swap-review
 - tapOn:
-    id: "swap-back-button"
+    id: 'swap-back-button'
 - waitForAnimationToEnd:
     timeout: 5000
 
 # ---------------------------------------------------------------- 09 about --
 - tapOn:
-    id: "tab-home"
+    id: 'tab-home'
 - extendedWaitUntil:
     visible:
-      id: "wallet-header-account-switcher"
+      id: 'wallet-header-account-switcher'
     timeout: 30000
 - runFlow: ../../subflows/open-settings.yaml
 # "About" is the second-to-last row of a long sheet — it is off-screen on open,
 # so a plain tapOn reports "element not found" rather than scrolling to it.
 - scrollUntilVisible:
     element:
-      text: "About"
+      text: 'About'
     direction: DOWN
     timeout: 20000
-- tapOn: "About"
+- tapOn: 'About'
 - extendedWaitUntil:
     visible:
-      id: "about-link-github"
+      id: 'about-link-github'
     timeout: 20000
 - waitForAnimationToEnd:
     timeout: 6000

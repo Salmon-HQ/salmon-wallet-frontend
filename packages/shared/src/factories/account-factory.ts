@@ -51,9 +51,7 @@ import type { BlockchainAccount } from '../types/blockchain';
  * console.log(result.blockchainAccounts['ethereum-mainnet'][0]); // EthereumAccount
  * ```
  */
-export async function createAccount(
-  options: CreateAccountOptions
-): Promise<CreateAccountResult> {
+export async function createAccount(options: CreateAccountOptions): Promise<CreateAccountResult> {
   const {
     id = generateAccountId(),
     name,
@@ -135,11 +133,7 @@ export async function deriveBlockchainAccount(
   networkId: string,
   index: number
 ): Promise<BlockchainAccount> {
-  const blockchainAccount = await createBlockchainAccountForNetwork(
-    networkId,
-    mnemonic,
-    index
-  );
+  const blockchainAccount = await createBlockchainAccountForNetwork(networkId, mnemonic, index);
 
   if (!blockchainAccount) {
     throw new Error(`Unknown network: ${networkId}`);

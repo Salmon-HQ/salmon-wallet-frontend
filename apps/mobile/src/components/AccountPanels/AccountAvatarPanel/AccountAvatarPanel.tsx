@@ -60,7 +60,7 @@ function getResponsiveColumns(
   availableWidth: number,
   minItemSize: number,
   minColumns: number,
-  maxColumns: number,
+  maxColumns: number
 ): number {
   const columns = Math.floor((availableWidth + GRID_GAP) / (minItemSize + GRID_GAP));
   return Math.max(minColumns, Math.min(maxColumns, columns));
@@ -87,25 +87,23 @@ export function AccountAvatarPanel({
   });
 
   const hasChanged = selectedUrl !== currentAvatarUrl;
-  const availableWidth = useMemo(
-    () => windowWidth - contentPadding.screen * 2,
-    [windowWidth],
-  );
+  const availableWidth = useMemo(() => windowWidth - contentPadding.screen * 2, [windowWidth]);
   const presetColumns = useMemo(
-    () => getResponsiveColumns(availableWidth, PRESET_MIN_SIZE, PRESET_MIN_COLUMNS, PRESET_MAX_COLUMNS),
-    [availableWidth],
+    () =>
+      getResponsiveColumns(availableWidth, PRESET_MIN_SIZE, PRESET_MIN_COLUMNS, PRESET_MAX_COLUMNS),
+    [availableWidth]
   );
   const nftColumns = useMemo(
     () => getResponsiveColumns(availableWidth, NFT_MIN_SIZE, NFT_MIN_COLUMNS, NFT_MAX_COLUMNS),
-    [availableWidth],
+    [availableWidth]
   );
   const presetItemSize = useMemo(
     () => (availableWidth - GRID_GAP * (presetColumns - 1)) / presetColumns,
-    [availableWidth, presetColumns],
+    [availableWidth, presetColumns]
   );
   const nftItemSize = useMemo(
     () => (availableWidth - GRID_GAP * (nftColumns - 1)) / nftColumns,
-    [availableWidth, nftColumns],
+    [availableWidth, nftColumns]
   );
 
   const handleSave = useCallback(() => {
@@ -136,17 +134,14 @@ export function AccountAvatarPanel({
         >
           <Image
             source={{ uri: item }}
-            style={[
-              styles.presetImage,
-              { borderRadius: presetItemSize / 2 },
-            ]}
+            style={[styles.presetImage, { borderRadius: presetItemSize / 2 }]}
             contentFit="cover"
             transition={200}
           />
         </TouchableOpacity>
       );
     },
-    [presetItemSize, selectedUrl],
+    [presetItemSize, selectedUrl]
   );
 
   // NFT item renderer
@@ -177,18 +172,14 @@ export function AccountAvatarPanel({
         </TouchableOpacity>
       );
     },
-    [nftItemSize, selectedUrl],
+    [nftItemSize, selectedUrl]
   );
 
   const presetKeyExtractor = useCallback((_item: string, index: number) => `preset-${index}`, []);
   const nftKeyExtractor = useCallback((item: NftAvatarItem) => item.mint, []);
 
   return (
-    <SettingsScreenLayout
-      title={t('settings.profile_picture')}
-      onBack={onBack}
-      scrollable={false}
-    >
+    <SettingsScreenLayout title={t('settings.profile_picture')} onBack={onBack} scrollable={false}>
       <View style={styles.container}>
         {/* Tab Bar */}
         <View style={styles.tabBar}>

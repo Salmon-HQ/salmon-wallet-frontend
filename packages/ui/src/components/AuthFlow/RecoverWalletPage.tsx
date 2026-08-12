@@ -138,10 +138,7 @@ export function RecoverWalletPage({
 
   return (
     <Container $contained={contained}>
-      <ScreenHeader
-        onBack={onBack}
-        stepIndicator={{ totalSteps: 2, currentStep: 1 }}
-      />
+      <ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />
       <Content>
         <FormArea>
           <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />

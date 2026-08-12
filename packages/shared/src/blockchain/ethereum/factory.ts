@@ -196,4 +196,3 @@ export function createEthereumAccountFromPrivateKey(
   const wallet = new Wallet(privateKey);
   return createEthereumAccountFromWallet(network, wallet, index, apiFunctions);
 }
-

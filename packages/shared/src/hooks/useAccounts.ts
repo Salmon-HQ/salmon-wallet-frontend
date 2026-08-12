@@ -13,26 +13,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import mapValues from 'lodash-es/mapValues';
 
-import {
-  updateLastActivity,
-} from '../storage';
-import {
-  type DerivedKeyCache,
-} from '../crypto/encryption';
+import { updateLastActivity } from '../storage';
+import { type DerivedKeyCache } from '../crypto/encryption';
 import { useAccountsLoader } from './useAccountsLoader';
 import { useAccountsConnection } from './useAccountsConnection';
 import { useAccountsMutations } from './useAccountsMutations';
 import { useAccountsNetworkPreferences } from './useAccountsNetworkPreferences';
 import { useAccountsSelection } from './useAccountsSelection';
 import { useAccountsSecurity } from './useAccountsSecurity';
-import {
-  generateAccountId,
-  createBlockchainAccountForNetwork,
-} from '../utils';
+import { generateAccountId, createBlockchainAccountForNetwork } from '../utils';
 import { getRandomAvatar } from '../utils/avatar';
-import type {
-  BlockchainAccount,
-} from '../types/blockchain';
+import type { BlockchainAccount } from '../types/blockchain';
 import type {
   NetworksAccounts,
   StoredAccount,
@@ -172,9 +163,8 @@ async function restoreAccount(options: RestoreAccountOptions): Promise<Account> 
 
   const id = generateAccountId();
   // Default to Solana mainnet if no path indexes provided
-  const defaultPathIndexes = Object.keys(pathIndexes).length > 0
-    ? pathIndexes
-    : { 'solana-mainnet': [0] };
+  const defaultPathIndexes =
+    Object.keys(pathIndexes).length > 0 ? pathIndexes : { 'solana-mainnet': [0] };
 
   const networksEntries = await Promise.all(
     Object.entries(defaultPathIndexes).map(async ([networkId, indexes]) => {
@@ -184,11 +174,7 @@ async function restoreAccount(options: RestoreAccountOptions): Promise<Account> 
             return { index: null as null, account: null };
           }
 
-          const account = await createBlockchainAccountForNetwork(
-            networkId,
-            mnemonic,
-            index
-          );
+          const account = await createBlockchainAccountForNetwork(networkId, mnemonic, index);
 
           return { index, account };
         })
@@ -373,31 +359,21 @@ export function useAccounts(): [UseAccountsState, UseAccountsActions] {
     getDefaultPathIndex,
   });
 
-  const {
-    activeTrustedApps,
-    activeTokens,
-    addTrustedApp,
-    removeTrustedApp,
-    importTokens,
-  } = useAccountsNetworkPreferences({
-    networkId,
-    trustedApps,
-    setTrustedApps,
-    tokens,
-    setTokens,
-  });
+  const { activeTrustedApps, activeTokens, addTrustedApp, removeTrustedApp, importTokens } =
+    useAccountsNetworkPreferences({
+      networkId,
+      trustedApps,
+      setTrustedApps,
+      tokens,
+      setTokens,
+    });
 
   useAccountsConnection({
     activeBlockchainAccount,
     networkId,
   });
 
-  const {
-    addAccount,
-    editAccount,
-    removeAccount,
-    removeAllAccounts,
-  } = useAccountsMutations({
+  const { addAccount, editAccount, removeAccount, removeAllAccounts } = useAccountsMutations({
     counter,
     setCounter,
     accounts,

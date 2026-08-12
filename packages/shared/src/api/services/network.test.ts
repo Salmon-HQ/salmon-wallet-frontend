@@ -88,8 +88,24 @@ describe('Network Service', () => {
   describe('getNetworks()', () => {
     it('should return array of networks', async () => {
       const mockNetworks: NetworkCatalogEntry[] = [
-        { id: 'solana-mainnet', name: 'Solana Mainnet', blockchain: 'solana', environment: 'mainnet', config: { nodeUrl: 'https://api.mainnet-beta.solana.com' }, enabled: true, sections: {} as never },
-        { id: 'ethereum-mainnet', name: 'Ethereum Mainnet', blockchain: 'ethereum', environment: 'mainnet', config: { rpcUrl: 'https://eth.llamarpc.com', chainId: 1 }, enabled: false, sections: {} as never },
+        {
+          id: 'solana-mainnet',
+          name: 'Solana Mainnet',
+          blockchain: 'solana',
+          environment: 'mainnet',
+          config: { nodeUrl: 'https://api.mainnet-beta.solana.com' },
+          enabled: true,
+          sections: {} as never,
+        },
+        {
+          id: 'ethereum-mainnet',
+          name: 'Ethereum Mainnet',
+          blockchain: 'ethereum',
+          environment: 'mainnet',
+          config: { rpcUrl: 'https://eth.llamarpc.com', chainId: 1 },
+          enabled: false,
+          sections: {} as never,
+        },
       ];
 
       apiClient.get = vi.fn().mockResolvedValue({ data: mockNetworks });
@@ -104,7 +120,15 @@ describe('Network Service', () => {
 
     it('should cache networks data on subsequent calls', async () => {
       const mockNetworks: NetworkCatalogEntry[] = [
-        { id: 'solana-mainnet', name: 'Solana Mainnet', blockchain: 'solana', environment: 'mainnet', config: { nodeUrl: 'https://api.mainnet-beta.solana.com' }, enabled: true, sections: {} as never },
+        {
+          id: 'solana-mainnet',
+          name: 'Solana Mainnet',
+          blockchain: 'solana',
+          environment: 'mainnet',
+          config: { nodeUrl: 'https://api.mainnet-beta.solana.com' },
+          enabled: true,
+          sections: {} as never,
+        },
       ];
 
       apiClient.get = vi.fn().mockResolvedValue({ data: mockNetworks });
@@ -120,7 +144,19 @@ describe('Network Service', () => {
       apiClient.get = vi
         .fn()
         .mockRejectedValueOnce(new Error('Network error'))
-        .mockResolvedValueOnce({ data: [{ id: 'bitcoin-testnet', name: 'Test Network', blockchain: 'bitcoin', environment: 'testnet', config: {}, enabled: false, sections: {} as never }] });
+        .mockResolvedValueOnce({
+          data: [
+            {
+              id: 'bitcoin-testnet',
+              name: 'Test Network',
+              blockchain: 'bitcoin',
+              environment: 'testnet',
+              config: {},
+              enabled: false,
+              sections: {} as never,
+            },
+          ],
+        });
 
       await expect(getNetworks()).rejects.toThrow('Network error');
 
@@ -142,8 +178,24 @@ describe('Network Service', () => {
   describe('getNetwork()', () => {
     it('should return specific network by id', async () => {
       const mockNetworks: NetworkCatalogEntry[] = [
-        { id: 'solana-mainnet', name: 'Solana Mainnet', blockchain: 'solana', environment: 'mainnet', config: { nodeUrl: 'https://api.mainnet-beta.solana.com' }, enabled: true, sections: {} as never },
-        { id: 'ethereum-mainnet', name: 'Ethereum Mainnet', blockchain: 'ethereum', environment: 'mainnet', config: { rpcUrl: 'https://eth.llamarpc.com', chainId: 1 }, enabled: false, sections: {} as never },
+        {
+          id: 'solana-mainnet',
+          name: 'Solana Mainnet',
+          blockchain: 'solana',
+          environment: 'mainnet',
+          config: { nodeUrl: 'https://api.mainnet-beta.solana.com' },
+          enabled: true,
+          sections: {} as never,
+        },
+        {
+          id: 'ethereum-mainnet',
+          name: 'Ethereum Mainnet',
+          blockchain: 'ethereum',
+          environment: 'mainnet',
+          config: { rpcUrl: 'https://eth.llamarpc.com', chainId: 1 },
+          enabled: false,
+          sections: {} as never,
+        },
       ];
 
       apiClient.get = vi.fn().mockResolvedValue({ data: mockNetworks });
@@ -157,7 +209,15 @@ describe('Network Service', () => {
 
     it('should return undefined for non-existent network', async () => {
       const mockNetworks: NetworkCatalogEntry[] = [
-        { id: 'solana-mainnet', name: 'Solana Mainnet', blockchain: 'solana', environment: 'mainnet', config: { nodeUrl: 'https://api.mainnet-beta.solana.com' }, enabled: true, sections: {} as never },
+        {
+          id: 'solana-mainnet',
+          name: 'Solana Mainnet',
+          blockchain: 'solana',
+          environment: 'mainnet',
+          config: { nodeUrl: 'https://api.mainnet-beta.solana.com' },
+          enabled: true,
+          sections: {} as never,
+        },
       ];
 
       apiClient.get = vi.fn().mockResolvedValue({ data: mockNetworks });
@@ -169,7 +229,15 @@ describe('Network Service', () => {
 
     it('should use cached networks data', async () => {
       const mockNetworks: NetworkCatalogEntry[] = [
-        { id: 'bitcoin-testnet', name: 'Test Network', blockchain: 'bitcoin', environment: 'testnet', config: {}, enabled: false, sections: {} as never },
+        {
+          id: 'bitcoin-testnet',
+          name: 'Test Network',
+          blockchain: 'bitcoin',
+          environment: 'testnet',
+          config: {},
+          enabled: false,
+          sections: {} as never,
+        },
       ];
 
       apiClient.get = vi.fn().mockResolvedValue({ data: mockNetworks });
@@ -182,7 +250,15 @@ describe('Network Service', () => {
 
     it('should return undefined for network ids not present in the cached catalog', async () => {
       const mockNetworks: NetworkCatalogEntry[] = [
-        { id: 'solana-mainnet', name: 'Solana Mainnet', blockchain: 'solana', environment: 'mainnet', config: { nodeUrl: 'https://rpc.solana.example' }, enabled: true, sections: {} as never },
+        {
+          id: 'solana-mainnet',
+          name: 'Solana Mainnet',
+          blockchain: 'solana',
+          environment: 'mainnet',
+          config: { nodeUrl: 'https://rpc.solana.example' },
+          enabled: true,
+          sections: {} as never,
+        },
       ];
 
       apiClient.get = vi.fn().mockResolvedValue({ data: mockNetworks });
@@ -198,8 +274,24 @@ describe('Network Service', () => {
   describe('backend capability helpers', () => {
     it('returns enabled network ids from the catalog', async () => {
       const mockNetworks: NetworkCatalogEntry[] = [
-        { id: 'solana-mainnet', name: 'Solana Mainnet', blockchain: 'solana', environment: 'mainnet', config: { nodeUrl: 'https://rpc.solana.example' }, enabled: true, sections: {} as never },
-        { id: 'ethereum-mainnet', name: 'Ethereum Mainnet', blockchain: 'ethereum', environment: 'mainnet', config: { rpcUrl: 'https://eth.example', chainId: 1 }, enabled: false, sections: {} as never },
+        {
+          id: 'solana-mainnet',
+          name: 'Solana Mainnet',
+          blockchain: 'solana',
+          environment: 'mainnet',
+          config: { nodeUrl: 'https://rpc.solana.example' },
+          enabled: true,
+          sections: {} as never,
+        },
+        {
+          id: 'ethereum-mainnet',
+          name: 'Ethereum Mainnet',
+          blockchain: 'ethereum',
+          environment: 'mainnet',
+          config: { rpcUrl: 'https://eth.example', chainId: 1 },
+          enabled: false,
+          sections: {} as never,
+        },
       ];
 
       apiClient.get = vi.fn().mockResolvedValue({ data: mockNetworks });
@@ -209,8 +301,24 @@ describe('Network Service', () => {
 
     it('checks whether a specific backend network is enabled', async () => {
       const mockNetworks: NetworkCatalogEntry[] = [
-        { id: 'solana-mainnet', name: 'Solana Mainnet', blockchain: 'solana', environment: 'mainnet', config: { nodeUrl: 'https://rpc.solana.example' }, enabled: true, sections: {} as never },
-        { id: 'ethereum-mainnet', name: 'Ethereum Mainnet', blockchain: 'ethereum', environment: 'mainnet', config: { rpcUrl: 'https://eth.example', chainId: 1 }, enabled: false, sections: {} as never },
+        {
+          id: 'solana-mainnet',
+          name: 'Solana Mainnet',
+          blockchain: 'solana',
+          environment: 'mainnet',
+          config: { nodeUrl: 'https://rpc.solana.example' },
+          enabled: true,
+          sections: {} as never,
+        },
+        {
+          id: 'ethereum-mainnet',
+          name: 'Ethereum Mainnet',
+          blockchain: 'ethereum',
+          environment: 'mainnet',
+          config: { rpcUrl: 'https://eth.example', chainId: 1 },
+          enabled: false,
+          sections: {} as never,
+        },
       ];
 
       apiClient.get = vi.fn().mockResolvedValue({ data: mockNetworks });
@@ -224,7 +332,15 @@ describe('Network Service', () => {
   describe('clearNetworksCache()', () => {
     it('should clear the networks cache', async () => {
       const mockNetworks: NetworkCatalogEntry[] = [
-        { id: 'bitcoin-testnet', name: 'Test', blockchain: 'bitcoin', environment: 'testnet', config: {}, enabled: false, sections: {} as never },
+        {
+          id: 'bitcoin-testnet',
+          name: 'Test',
+          blockchain: 'bitcoin',
+          environment: 'testnet',
+          config: {},
+          enabled: false,
+          sections: {} as never,
+        },
       ];
 
       apiClient.get = vi.fn().mockResolvedValue({ data: mockNetworks });
@@ -239,8 +355,28 @@ describe('Network Service', () => {
     });
 
     it('should allow fresh fetch after cache clear', async () => {
-      const mockNetworks1: NetworkCatalogEntry[] = [{ id: 'solana-mainnet', name: 'Network 1', blockchain: 'solana', environment: 'mainnet', config: { nodeUrl: 'https://rpc.solana.example' }, enabled: true, sections: {} as never }];
-      const mockNetworks2: NetworkCatalogEntry[] = [{ id: 'bitcoin-mainnet', name: 'Network 2', blockchain: 'bitcoin', environment: 'mainnet', config: {}, enabled: true, sections: {} as never }];
+      const mockNetworks1: NetworkCatalogEntry[] = [
+        {
+          id: 'solana-mainnet',
+          name: 'Network 1',
+          blockchain: 'solana',
+          environment: 'mainnet',
+          config: { nodeUrl: 'https://rpc.solana.example' },
+          enabled: true,
+          sections: {} as never,
+        },
+      ];
+      const mockNetworks2: NetworkCatalogEntry[] = [
+        {
+          id: 'bitcoin-mainnet',
+          name: 'Network 2',
+          blockchain: 'bitcoin',
+          environment: 'mainnet',
+          config: {},
+          enabled: true,
+          sections: {} as never,
+        },
+      ];
 
       apiClient.get = vi
         .fn()
@@ -259,59 +395,55 @@ describe('Network Service', () => {
 });
 
 describe('Network Service integration', () => {
-  it(
-    'reads live network catalog from salmon-api and preserves contract invariants',
-    async () => {
-      const liveBackendBaseUrl = backendBaseUrl ?? await getReachableBackendBaseUrl();
-      if (!liveBackendBaseUrl) {
-        console.log('Skipping live network catalog assertions: backend not reachable');
-        return;
+  it('reads live network catalog from salmon-api and preserves contract invariants', async () => {
+    const liveBackendBaseUrl = backendBaseUrl ?? (await getReachableBackendBaseUrl());
+    if (!liveBackendBaseUrl) {
+      console.log('Skipping live network catalog assertions: backend not reachable');
+      return;
+    }
+
+    apiClient.get = vi.fn().mockImplementation(async (path) => {
+      const response = await fetchWithRetry(`${liveBackendBaseUrl}${path as string}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
 
-      apiClient.get = vi.fn().mockImplementation(async (path) => {
-        const response = await fetchWithRetry(`${liveBackendBaseUrl}${path as string}`);
+      return {
+        data: await response.json(),
+      } as { data: NetworkCatalogEntry[] };
+    });
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
+    const result = await getNetworks();
 
-        return {
-          data: await response.json(),
-        } as { data: NetworkCatalogEntry[] };
-      });
-
-      const result = await getNetworks();
-
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
-      result.forEach((network) => {
-        expect(network).toEqual(
-          expect.objectContaining({
-            id: expect.any(String),
-            blockchain: expect.any(String),
-            environment: expect.any(String),
-            name: expect.any(String),
-            config: expect.any(Object),
-            enabled: expect.any(Boolean),
-            sections: expect.any(Object),
-          }),
-        );
-      });
-
-      const solanaMainnet = result.find((network) => network.id === 'solana-mainnet');
-      expect(solanaMainnet).toEqual(
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBeGreaterThan(0);
+    result.forEach((network) => {
+      expect(network).toEqual(
         expect.objectContaining({
-          blockchain: 'solana',
-          config: expect.objectContaining({
-            nodeUrl: expect.any(String),
-          }),
-          sections: expect.objectContaining({
-            overview: expect.any(Object),
-            transactions: expect.any(Object),
-          }),
-        }),
+          id: expect.any(String),
+          blockchain: expect.any(String),
+          environment: expect.any(String),
+          name: expect.any(String),
+          config: expect.any(Object),
+          enabled: expect.any(Boolean),
+          sections: expect.any(Object),
+        })
       );
-    },
-    20000,
-  );
+    });
+
+    const solanaMainnet = result.find((network) => network.id === 'solana-mainnet');
+    expect(solanaMainnet).toEqual(
+      expect.objectContaining({
+        blockchain: 'solana',
+        config: expect.objectContaining({
+          nodeUrl: expect.any(String),
+        }),
+        sections: expect.objectContaining({
+          overview: expect.any(Object),
+          transactions: expect.any(Object),
+        }),
+      })
+    );
+  }, 20000);
 });

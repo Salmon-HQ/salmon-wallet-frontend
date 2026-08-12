@@ -7,13 +7,7 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -67,7 +61,11 @@ function AccountListItem({
       style={[styles.accountItem, isActive && styles.accountItemActive]}
       onPress={onPress}
       activeOpacity={0.7}
-      accessibilityLabel={isActive ? t('accessibility.active_account', '{{name}}, active', { name: account.name }) : account.name}
+      accessibilityLabel={
+        isActive
+          ? t('accessibility.active_account', '{{name}}, active', { name: account.name })
+          : account.name
+      }
       accessibilityRole="button"
       accessibilityState={{ selected: isActive }}
     >
@@ -163,10 +161,10 @@ export function AccountsPanel({
             style: 'destructive',
             onPress: () => onDeleteAccount(accountId),
           },
-        ],
+        ]
       );
     },
-    [onDeleteAccount, t],
+    [onDeleteAccount, t]
   );
 
   const renderItem = useCallback(
@@ -180,7 +178,7 @@ export function AccountsPanel({
         canDelete={canDelete}
       />
     ),
-    [activeAccountId, onSelectAccount, onEditAccount, handleDelete, canDelete],
+    [activeAccountId, onSelectAccount, onEditAccount, handleDelete, canDelete]
   );
 
   const ListFooter = useMemo(
@@ -196,25 +194,17 @@ export function AccountsPanel({
         <View style={styles.addAccountIcon}>
           <Ionicons name="add" size={24} color={colors.text.primary} />
         </View>
-        <Text style={styles.addAccountText}>
-          {t('settings.account_add.title')}
-        </Text>
+        <Text style={styles.addAccountText}>{t('settings.account_add.title')}</Text>
       </TouchableOpacity>
     ),
-    [onAddAccount, t],
+    [onAddAccount, t]
   );
 
   return (
-    <SettingsScreenLayout
-      title={t('settings.accounts.title')}
-      onBack={onBack}
-      scrollable={false}
-    >
+    <SettingsScreenLayout title={t('settings.accounts.title')} onBack={onBack} scrollable={false}>
       <View>
         {accounts.map((account) => (
-          <React.Fragment key={account.id}>
-            {renderItem(account)}
-          </React.Fragment>
+          <React.Fragment key={account.id}>{renderItem(account)}</React.Fragment>
         ))}
         {ListFooter}
       </View>

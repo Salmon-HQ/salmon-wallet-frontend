@@ -1,6 +1,6 @@
 # AGENTS.md instructions for `apps/web/.playwright`
 
-> Companion to `README.md`. README explains *what* exists and *how to run it*.
+> Companion to `README.md`. README explains _what_ exists and _how to run it_.
 > This file documents conventions and decision rules for extending the suite.
 > The canonical pattern is `apps/extension/.playwright/AGENTS.md`; this file
 > only records the web-specific differences.

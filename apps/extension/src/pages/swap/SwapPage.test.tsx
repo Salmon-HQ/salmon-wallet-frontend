@@ -70,7 +70,9 @@ function buildAccountState(overrides: Record<string, unknown> = {}) {
     ready: true,
     activeAccount: {
       networksAccounts: {
-        'bitcoin-mainnet': [{ getReceiveAddress: () => 'BtcRecv1111111111111111111111111111111111' }],
+        'bitcoin-mainnet': [
+          { getReceiveAddress: () => 'BtcRecv1111111111111111111111111111111111' },
+        ],
       },
     },
     activeBlockchainAccount: blockchainAccount,
@@ -129,15 +131,13 @@ describe('SwapPage', () => {
     });
 
     const onGetBridgeTransactionStatus = lastSwapScreenProps().onGetBridgeTransactionStatus as (
-      id: string,
+      id: string
     ) => Promise<{ status: string; payoutTxId: string | undefined } | null>;
     const result = await onGetBridgeTransactionStatus('exchange-1');
     expect(mockBridgeStatus).toHaveBeenCalledWith('exchange-1');
     expect(result).toEqual({ status: 'finished', payoutTxId: 'tx-hash' });
 
-    const onBridgeSuccess = lastSwapScreenProps().onBridgeSuccess as (
-      exchange: unknown,
-    ) => void;
+    const onBridgeSuccess = lastSwapScreenProps().onBridgeSuccess as (exchange: unknown) => void;
     onBridgeSuccess({ id: 'x' });
     expect(mockResetBridge).toHaveBeenCalledTimes(1);
   });
@@ -153,7 +153,7 @@ describe('SwapPage', () => {
     });
 
     const onGetBridgeTransactionStatus = lastSwapScreenProps().onGetBridgeTransactionStatus as (
-      id: string,
+      id: string
     ) => Promise<unknown>;
     const result = await onGetBridgeTransactionStatus('exchange-2');
     expect(result).toBeNull();

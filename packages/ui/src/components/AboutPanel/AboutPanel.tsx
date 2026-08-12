@@ -26,7 +26,17 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { useTranslation } from 'react-i18next';
-import { APP_VERSION, colors, spacing, borderRadius, fontSize, fontWeight, letterSpacing, opacity, componentSizes } from '@salmon/shared';
+import {
+  APP_VERSION,
+  colors,
+  spacing,
+  borderRadius,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  opacity,
+  componentSizes,
+} from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import type { AboutPanelProps } from './types';
 
@@ -181,7 +191,10 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
   const renderLinkItem = useCallback(
     (link: LinkItem) => (
       <ListItem key={link.id} disablePadding>
-        <StyledListItemButton onClick={() => handleLinkClick(link.url)} data-testid={`about-link-${link.id}`}>
+        <StyledListItemButton
+          onClick={() => handleLinkClick(link.url)}
+          data-testid={`about-link-${link.id}`}
+        >
           <StyledListItemIcon>{link.icon}</StyledListItemIcon>
           <ListItemText
             primary={
@@ -205,51 +218,37 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
   );
 
   return (
-    <SettingsPanelContent
-      title={t('settings.about', 'About')}
-      onBack={onBack}
-    >
-        <LogoSection>
-          <LogoContainer>
-            <img
-              src="/images/Logo.png"
-              alt="Salmon Wallet"
-              style={{ width: componentSizes.iconSize3XL, height: componentSizes.iconSize3XL }}
-            />
-          </LogoContainer>
-          <AppName>Salmon Wallet</AppName>
-          <VersionText>
-            {t('settings.app_version', { version: APP_VERSION })}
-          </VersionText>
-        </LogoSection>
+    <SettingsPanelContent title={t('settings.about', 'About')} onBack={onBack}>
+      <LogoSection>
+        <LogoContainer>
+          <img
+            src="/images/Logo.png"
+            alt="Salmon Wallet"
+            style={{ width: componentSizes.iconSize3XL, height: componentSizes.iconSize3XL }}
+          />
+        </LogoContainer>
+        <AppName>Salmon Wallet</AppName>
+        <VersionText>{t('settings.app_version', { version: APP_VERSION })}</VersionText>
+      </LogoSection>
 
-        <StyledDivider />
+      <StyledDivider />
 
-        <SectionTitle>{t('settings.about_general', 'General')}</SectionTitle>
-        <StyledList>
-          {GENERAL_LINKS.map(renderLinkItem)}
-        </StyledList>
+      <SectionTitle>{t('settings.about_general', 'General')}</SectionTitle>
+      <StyledList>{GENERAL_LINKS.map(renderLinkItem)}</StyledList>
 
-        <StyledDivider />
+      <StyledDivider />
 
-        <SectionTitle>{t('settings.about_legal', 'Legal')}</SectionTitle>
-        <StyledList>
-          {LEGAL_LINKS.map(renderLinkItem)}
-        </StyledList>
+      <SectionTitle>{t('settings.about_legal', 'Legal')}</SectionTitle>
+      <StyledList>{LEGAL_LINKS.map(renderLinkItem)}</StyledList>
 
-        <StyledDivider />
+      <StyledDivider />
 
-        <SectionTitle>{t('settings.about_social', 'Follow Us')}</SectionTitle>
-        <StyledList>
-          {SOCIAL_LINKS.map(renderLinkItem)}
-        </StyledList>
+      <SectionTitle>{t('settings.about_social', 'Follow Us')}</SectionTitle>
+      <StyledList>{SOCIAL_LINKS.map(renderLinkItem)}</StyledList>
 
-        <FooterText>
-          {t(
-            'settings.about_made_with_love',
-            'Made with love by the Salmon team'
-          )}
-        </FooterText>
+      <FooterText>
+        {t('settings.about_made_with_love', 'Made with love by the Salmon team')}
+      </FooterText>
     </SettingsPanelContent>
   );
 }

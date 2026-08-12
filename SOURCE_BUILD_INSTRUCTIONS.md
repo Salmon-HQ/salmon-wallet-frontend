@@ -17,11 +17,11 @@ source package, in a clean environment.
 
 ## 1. Prerequisites
 
-| Tool | Exact version | Notes |
-|------|---------------|-------|
-| Node.js | **22.12.0** (any 22.12.x LTS) | Pinned in `.nvmrc`. Node 20.19+ also works; **Node 24 is not supported.** |
-| pnpm | **9.x** | The only supported package manager. Provided via Corepack — do not use npm or yarn. |
-| OS | Linux / macOS | A POSIX shell. |
+| Tool    | Exact version                 | Notes                                                                               |
+| ------- | ----------------------------- | ----------------------------------------------------------------------------------- |
+| Node.js | **22.12.0** (any 22.12.x LTS) | Pinned in `.nvmrc`. Node 20.19+ also works; **Node 24 is not supported.**           |
+| pnpm    | **9.x**                       | The only supported package manager. Provided via Corepack — do not use npm or yarn. |
+| OS      | Linux / macOS                 | A POSIX shell.                                                                      |
 
 > **Why pnpm only:** this is a pnpm-workspace monorepo. The extension depends on
 > `packages/shared` and `packages/ui` through the `workspace:*` protocol, which

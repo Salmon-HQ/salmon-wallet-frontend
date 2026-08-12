@@ -42,8 +42,14 @@ await sleep(1500);
 await page.getByTestId('password-input').fill(SECRETS.SALMON_TEST_PASSWORD);
 await page.getByTestId('password-confirm-input').fill(SECRETS.SALMON_TEST_PASSWORD);
 await page.getByTestId('password-submit-button').click();
-await page.getByTestId('analytics-consent-decline').click({ timeout: 60000 }).catch(() => {});
-await page.getByTestId('success-go-to-wallet-button').click({ timeout: 60000 }).catch(() => {});
+await page
+  .getByTestId('analytics-consent-decline')
+  .click({ timeout: 60000 })
+  .catch(() => {});
+await page
+  .getByTestId('success-go-to-wallet-button')
+  .click({ timeout: 60000 })
+  .catch(() => {});
 await page.getByTestId('home-screen').waitFor({ state: 'visible', timeout: 30000 });
 await sleep(6000);
 
@@ -64,7 +70,10 @@ if (!/USDC/i.test(sendLabel)) {
   console.log('send token is not USDC (' + sendLabel + ') — selecting USDC');
   await sendBtn.click({ timeout: 10000 });
   await sleep(2000);
-  await page.getByRole('button', { name: /^Select USD Coin|^Select USDC/i }).first().click({ timeout: 10000 });
+  await page
+    .getByRole('button', { name: /^Select USD Coin|^Select USDC/i })
+    .first()
+    .click({ timeout: 10000 });
   await sleep(3000);
 } else {
   console.log('send token already USDC');
@@ -75,7 +84,10 @@ const sel = page.getByRole('button', { name: 'Select token: Select' }).first();
 if (await sel.count()) {
   await sel.click({ timeout: 10000 });
   await sleep(2000);
-  await page.getByRole('button', { name: /^Select Solana/i }).first().click({ timeout: 10000 });
+  await page
+    .getByRole('button', { name: /^Select Solana/i })
+    .first()
+    .click({ timeout: 10000 });
   await sleep(3000);
 }
 
@@ -113,7 +125,10 @@ async function stage() {
       }
 
       document.querySelectorAll('img').forEach((img) => {
-        if (/\/avatar\/\d\d\.png/.test(img.src) && img.src !== avatar) { img.src = avatar; out.avatarImg++; }
+        if (/\/avatar\/\d\d\.png/.test(img.src) && img.src !== avatar) {
+          img.src = avatar;
+          out.avatarImg++;
+        }
       });
       document.querySelectorAll('div').forEach((el) => {
         const bg = el.style.backgroundImage || '';
@@ -131,7 +146,7 @@ async function stage() {
       }
       return out;
     },
-    { head: ADDR_HEAD, tail: ADDR_TAIL, avatar: AVATAR, real: REAL_USDC, staged: STAGED_USDC },
+    { head: ADDR_HEAD, tail: ADDR_TAIL, avatar: AVATAR, real: REAL_USDC, staged: STAGED_USDC }
   );
 }
 
@@ -140,7 +155,7 @@ console.log('stage pass 1:', JSON.stringify(first));
 console.log(
   first.availablePatched > 0
     ? 'Available: DOM-patched (mock did not feed it)'
-    : 'Available: fed by balance route mock',
+    : 'Available: fed by balance route mock'
 );
 await sleep(2500); // avatar image load
 const second = await stage();

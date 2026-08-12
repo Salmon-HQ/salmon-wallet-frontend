@@ -3,14 +3,8 @@
  *
  * White background with dark text, used for primary actions.
  */
-import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  ViewStyle,
-} from 'react-native';
-import { colors, componentSizes, fontFamilyNative, fontSize, letterSpacing, } from '@salmon/shared';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
+import { colors, componentSizes, fontFamilyNative, fontSize, letterSpacing } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 
 interface PrimaryButtonProps extends Testable {
@@ -45,7 +39,9 @@ export function PrimaryButton({
       {loading ? (
         <ActivityIndicator color={colors.button.primaryText} />
       ) : (
-        <Text style={styles.text} numberOfLines={1} adjustsFontSizeToFit>{children}</Text>
+        <Text style={styles.text} numberOfLines={1} adjustsFontSizeToFit>
+          {children}
+        </Text>
       )}
     </TouchableOpacity>
   );

@@ -37,10 +37,7 @@ import type { RuntimeInfo } from './useRuntime.shared';
  * Synchronously resolves context from URL hash.
  */
 const useRuntimeWeb = (): RuntimeInfo => {
-  const context = useMemo(
-    () => new URLSearchParams(window.location.hash.slice(1)),
-    []
-  );
+  const context = useMemo(() => new URLSearchParams(window.location.hash.slice(1)), []);
 
   const opener = useMemo(() => window.opener as Window | null, []);
 
@@ -77,8 +74,8 @@ const useRuntime = (): RuntimeInfo => {
   if (isReactNative()) {
     throw new Error(
       'useRuntime: Detected React Native environment but using web implementation. ' +
-      'Configure your bundler to resolve .native.ts extensions, or import from ' +
-      "'@salmon/shared/hooks/useRuntime.native' directly."
+        'Configure your bundler to resolve .native.ts extensions, or import from ' +
+        "'@salmon/shared/hooks/useRuntime.native' directly."
     );
   }
 

@@ -98,10 +98,7 @@ export function isEnsDomain(input: string): boolean {
  * @param address - Ethereum address to validate
  * @returns Validation result with balance information
  */
-async function validateAddress(
-  provider: Provider,
-  address: string
-): Promise<ValidationResult> {
+async function validateAddress(provider: Provider, address: string): Promise<ValidationResult> {
   try {
     const balance = await provider.getBalance(address);
 
@@ -129,10 +126,7 @@ async function validateAddress(
  * @param domain - ENS domain to validate and resolve
  * @returns Validation result with resolved address if successful
  */
-async function validateDomain(
-  provider: Provider,
-  domain: string
-): Promise<ValidationResult> {
+async function validateDomain(provider: Provider, domain: string): Promise<ValidationResult> {
   try {
     const resolvedAddress = await provider.resolveName(domain);
 

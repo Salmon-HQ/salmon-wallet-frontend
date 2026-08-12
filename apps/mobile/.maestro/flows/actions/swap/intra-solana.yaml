@@ -9,35 +9,35 @@ appId: io.salmonwallet.app
 # form never got past token selection.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - tapOn:
-    id: "tab-swap"
+    id: 'tab-swap'
 - waitForAnimationToEnd:
     timeout: 8000
 # The tappable ids are swap-from-token / swap-to-token; the swap-from / swap-to
 # wrappers do not surface in the accessibility hierarchy. Selector rows carry
 # token-row-<SYMBOL>.
 - tapOn:
-    id: "swap-from-token"
+    id: 'swap-from-token'
 - extendedWaitUntil:
     visible:
-      id: "token-row-SOL"
+      id: 'token-row-SOL'
     timeout: 20000
 - tapOn:
-    id: "token-row-SOL"
+    id: 'token-row-SOL'
 - waitForAnimationToEnd:
     timeout: 6000
 - tapOn:
-    id: "swap-to-token"
+    id: 'swap-to-token'
 # Search rather than reach into the list. The sheet is ordered by balance/value,
 # so positions move between runs, and the receive side is not restricted to what
 # the wallet holds — Wallet A has no BONK, so the row is not in the initial list
 # at all. Filtering first makes the row unambiguous. Tap it by testID, never by
 # its text node: bare "SOL"/"Solana" also matches "Marinade staked SOL".
 - tapOn:
-    id: "token-search-input"
-- inputText: "Bonk"
+    id: 'token-search-input'
+- inputText: 'Bonk'
 - extendedWaitUntil:
     visible:
-      id: "token-row-Bonk"
+      id: 'token-row-Bonk'
     timeout: 20000
 # Results stream in from a remote search, so the row that satisfied the wait can
 # still be re-ordered underneath the tap. Let the list settle first, otherwise
@@ -46,19 +46,19 @@ appId: io.salmonwallet.app
 - waitForAnimationToEnd:
     timeout: 8000
 - tapOn:
-    id: "token-row-Bonk"
+    id: 'token-row-Bonk'
 - extendedWaitUntil:
     notVisible:
-      id: "token-search-input"
+      id: 'token-search-input'
     timeout: 15000
 - extendedWaitUntil:
     visible:
-      id: "swap-from-amount"
+      id: 'swap-from-amount'
     timeout: 20000
 # Use the 50% shortcut rather than typing: the numeric keypad covers the floating
 # Review button and this screen offers no way to dismiss it. It also keeps the
 # leg above the $1.00 USD swap minimum without hard-coding a drifting amount.
-- tapOn: "50%"
+- tapOn: '50%'
 - waitForAnimationToEnd:
     timeout: 12000
 - takeScreenshot: screenshots/actions/swap/swap-form

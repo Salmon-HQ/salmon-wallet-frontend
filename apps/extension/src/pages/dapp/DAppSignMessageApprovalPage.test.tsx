@@ -36,16 +36,8 @@ vi.mock('@salmon/ui', () => ({
         props.requiredSigners === undefined ? 'undefined' : JSON.stringify(props.requiredSigners)
       }
     >
-      <button
-        type="button"
-        data-testid="approve-button"
-        onClick={props.onApprove as () => void}
-      />
-      <button
-        type="button"
-        data-testid="reject-button"
-        onClick={props.onReject as () => void}
-      />
+      <button type="button" data-testid="approve-button" onClick={props.onApprove as () => void} />
+      <button type="button" data-testid="reject-button" onClick={props.onReject as () => void} />
     </div>
   ),
 }));
@@ -60,7 +52,9 @@ const baseRequest: DAppSignMessageRequest = {
   params: { data: messageBytes },
 } as unknown as DAppSignMessageRequest;
 
-const fakeAccount = { kind: 'solana' } as unknown as Parameters<typeof DAppSignMessageApprovalPage>[0]['account'];
+const fakeAccount = { kind: 'solana' } as unknown as Parameters<
+  typeof DAppSignMessageApprovalPage
+>[0]['account'];
 
 const baseProps = {
   origin: 'https://dapp.example',
@@ -108,7 +102,7 @@ describe('DAppSignMessageApprovalPage', () => {
     } as unknown as DAppSignMessageRequest;
 
     const { getByTestId } = render(
-      <DAppSignMessageApprovalPage {...baseProps} request={requestWithoutData} />,
+      <DAppSignMessageApprovalPage {...baseProps} request={requestWithoutData} />
     );
 
     expect(getByTestId('sign-message-view').dataset.disabled).toBe('true');
@@ -135,7 +129,7 @@ describe('DAppSignMessageApprovalPage', () => {
     };
 
     const { getByTestId } = render(
-      <DAppSignMessageApprovalPage {...baseProps} request={offchainRequest} />,
+      <DAppSignMessageApprovalPage {...baseProps} request={offchainRequest} />
     );
 
     const view = getByTestId('sign-message-view');
@@ -162,11 +156,7 @@ describe('DAppSignMessageApprovalPage', () => {
     };
 
     const { getByTestId } = render(
-      <DAppSignMessageApprovalPage
-        {...baseProps}
-        request={offchainRequest}
-        onDismiss={onDismiss}
-      />,
+      <DAppSignMessageApprovalPage {...baseProps} request={offchainRequest} onDismiss={onDismiss} />
     );
     getByTestId('approve-button').click();
     await vi.waitFor(() => expect(onDismiss).toHaveBeenCalledWith(true));
@@ -193,7 +183,7 @@ describe('DAppSignMessageApprovalPage', () => {
     const onDismiss = vi.fn();
 
     const { getByTestId } = render(
-      <DAppSignMessageApprovalPage {...baseProps} onDismiss={onDismiss} />,
+      <DAppSignMessageApprovalPage {...baseProps} onDismiss={onDismiss} />
     );
     getByTestId('approve-button').click();
     await vi.waitFor(() => expect(onDismiss).toHaveBeenCalledWith(true));
@@ -214,7 +204,7 @@ describe('DAppSignMessageApprovalPage', () => {
     const onDismiss = vi.fn();
 
     const { getByTestId } = render(
-      <DAppSignMessageApprovalPage {...baseProps} onDismiss={onDismiss} />,
+      <DAppSignMessageApprovalPage {...baseProps} onDismiss={onDismiss} />
     );
     getByTestId('reject-button').click();
 
@@ -234,7 +224,7 @@ describe('DAppSignMessageApprovalPage', () => {
     const onDismiss = vi.fn();
 
     const { getByTestId } = render(
-      <DAppSignMessageApprovalPage {...baseProps} account={undefined} onDismiss={onDismiss} />,
+      <DAppSignMessageApprovalPage {...baseProps} account={undefined} onDismiss={onDismiss} />
     );
     getByTestId('approve-button').click();
 
@@ -262,7 +252,7 @@ describe('DAppSignMessageApprovalPage', () => {
         {...baseProps}
         request={requestWithoutData}
         onDismiss={onDismiss}
-      />,
+      />
     );
     getByTestId('approve-button').click();
 
@@ -283,7 +273,7 @@ describe('DAppSignMessageApprovalPage', () => {
     mockApproveSolanaSignMessage.mockRejectedValue(new Error('some internal RPC detail'));
 
     const { getByTestId } = render(
-      <DAppSignMessageApprovalPage {...baseProps} onDismiss={onDismiss} />,
+      <DAppSignMessageApprovalPage {...baseProps} onDismiss={onDismiss} />
     );
     getByTestId('approve-button').click();
     await vi.waitFor(() => expect(onDismiss).toHaveBeenCalledWith(false));

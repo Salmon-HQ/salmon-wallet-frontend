@@ -89,16 +89,16 @@ a stop.
 
 ## Coverage matrix
 
-| Dimension | web | extension | mobile | How |
-|---|---|---|---|---|
-| Types | ✅ | ✅ | ✅ | `turbo typecheck` |
-| Unit / component | — (shared/ui) | — | ✅ jest | vitest / jest |
-| Functional e2e | ✅ Playwright | ✅ Playwright | ✅ Maestro | per-suite |
-| Accessibility (automated) | ✅ axe + Lighthouse | ✅ axe | 🟡 a11y props only | axe critical gate |
-| Performance / CWV | ✅ Lighthouse | ❌ (popup, N/A) | ❌ | `lh` |
-| Cross-browser | ✅ chromium+firefox+webkit | chromium only | n/a | Playwright projects |
-| Responsive | ✅ breakpoint overflow | n/a (fixed popup) | 🟡 single simulator | `responsive.spec` |
-| i18n parity | ✅ | ✅ | ✅ (shared locales) | `i18n:check` |
+| Dimension                 | web                        | extension         | mobile              | How                 |
+| ------------------------- | -------------------------- | ----------------- | ------------------- | ------------------- |
+| Types                     | ✅                         | ✅                | ✅                  | `turbo typecheck`   |
+| Unit / component          | — (shared/ui)              | —                 | ✅ jest             | vitest / jest       |
+| Functional e2e            | ✅ Playwright              | ✅ Playwright     | ✅ Maestro          | per-suite           |
+| Accessibility (automated) | ✅ axe + Lighthouse        | ✅ axe            | 🟡 a11y props only  | axe critical gate   |
+| Performance / CWV         | ✅ Lighthouse              | ❌ (popup, N/A)   | ❌                  | `lh`                |
+| Cross-browser             | ✅ chromium+firefox+webkit | chromium only     | n/a                 | Playwright projects |
+| Responsive                | ✅ breakpoint overflow     | n/a (fixed popup) | 🟡 single simulator | `responsive.spec`   |
+| i18n parity               | ✅                         | ✅                | ✅ (shared locales) | `i18n:check`        |
 
 ✅ automated · 🟡 partial / manual · ❌ not covered (see Known gaps).
 
@@ -167,16 +167,16 @@ pnpm --filter @salmon/web lh
 `lighthouserc.cjs` serves the **production build** through `vite preview` (SPA
 fallback) and runs Lighthouse 3× against the welcome screen, asserting:
 
-| Category / metric | Threshold | Current |
-|---|---|---|
-| Accessibility | ≥ 0.95 | **1.00** |
-| Best Practices | ≥ 0.95 | **1.00** |
-| SEO | ≥ 0.95 | **1.00** |
-| Performance | ≥ 0.80 | 0.84 |
-| LCP | ≤ 2.5 s | ~1.8 s |
-| CLS | ≤ 0.1 | ok |
-| TBT | ≤ 300 ms | ok |
-| FCP | ≤ 1.5 s (warn) | ~1.8 s |
+| Category / metric | Threshold      | Current  |
+| ----------------- | -------------- | -------- |
+| Accessibility     | ≥ 0.95         | **1.00** |
+| Best Practices    | ≥ 0.95         | **1.00** |
+| SEO               | ≥ 0.95         | **1.00** |
+| Performance       | ≥ 0.80         | 0.84     |
+| LCP               | ≤ 2.5 s        | ~1.8 s   |
+| CLS               | ≤ 0.1          | ok       |
+| TBT               | ≤ 300 ms       | ok       |
+| FCP               | ≤ 1.5 s (warn) | ~1.8 s   |
 
 > Note: serve via `vite preview`, **not** a bare static dir — a static dir 404s
 > client routes and Lighthouse ends up scoring the React Router error page.

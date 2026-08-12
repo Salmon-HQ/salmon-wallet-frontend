@@ -27,7 +27,7 @@ interface SalmonWebWallet {
   supportedOffchainMessageVersions: readonly number[];
   signOffchainMessage(
     origin: string,
-    input: { messageVersion: number; message: string; requiredSigners: Uint8Array[] },
+    input: { messageVersion: number; message: string; requiredSigners: Uint8Array[] }
   ): Promise<{
     signedOffchainMessage: Uint8Array;
     signature: Uint8Array;
@@ -87,7 +87,7 @@ describe('SalmonWalletProvider signOffchainMessage', () => {
     expect(bridgeRequest.origin).toBe('https://dapp.example');
     expect(bridgeRequest.request.method).toBe('signOffchain');
     expect(bridgeRequest.request.params.data).toEqual(
-      Array.from(new TextEncoder().encode('hello ocms')),
+      Array.from(new TextEncoder().encode('hello ocms'))
     );
     expect(bridgeRequest.request.params.requiredSigners).toEqual([bs58.encode(signerBytes)]);
 
@@ -106,14 +106,17 @@ describe('SalmonWalletProvider signOffchainMessage', () => {
         messageVersion: 2,
         message: 'hello',
         requiredSigners: [],
-      }),
+      })
     ).rejects.toThrow('Unsupported off-chain message version');
     expect(mockSendRequestAndWait).not.toHaveBeenCalled();
   });
 
   it('returns null when the user rejects', async () => {
     const wallet = getWallet();
-    mockSendRequestAndWait.mockResolvedValue({ approved: false, error: 'User rejected the request' });
+    mockSendRequestAndWait.mockResolvedValue({
+      approved: false,
+      error: 'User rejected the request',
+    });
 
     const result = await wallet.signOffchainMessage('https://dapp.example', {
       messageVersion: 1,

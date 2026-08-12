@@ -15,7 +15,9 @@ test.beforeAll(async () => {
   backendUp = await isBackendUp();
 });
 
-test('walks send entry → token → address-amount and cancels (no on-chain tx)', async ({ popup }) => {
+test('walks send entry → token → address-amount and cancels (no on-chain tx)', async ({
+  popup,
+}) => {
   test.skip(!backendUp, 'salmon-api (127.0.0.1:3001) not reachable');
 
   await unlockOrRecover(popup);

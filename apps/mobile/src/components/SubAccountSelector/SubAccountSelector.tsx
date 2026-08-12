@@ -43,7 +43,12 @@ export const SubAccountSelector = memo(function SubAccountSelector({
             {isPending ? (
               <ActivityIndicator size="small" color={colors.text.secondary} />
             ) : (
-              <Text style={[styles.chipText, isActive ? styles.chipTextActive : styles.chipTextInactive]}>
+              <Text
+                style={[
+                  styles.chipText,
+                  isActive ? styles.chipTextActive : styles.chipTextInactive,
+                ]}
+              >
                 #{account.index}
               </Text>
             )}

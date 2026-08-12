@@ -88,7 +88,10 @@ export function SwapTab({ onNavigateHome }: SwapTabProps): React.ReactElement {
   });
 
   // Swap tokens
-  const swapTokens: SwapToken[] = useMemo(() => multiChainTokens.map(unifiedToSwapToken), [multiChainTokens]);
+  const swapTokens: SwapToken[] = useMemo(
+    () => multiChainTokens.map(unifiedToSwapToken),
+    [multiChainTokens]
+  );
   const featuredTokens: SwapToken[] = useMemo(() => topTokens.map(unifiedToSwapToken), [topTokens]);
 
   // Jupiter token list (shared React Query hook)
@@ -97,7 +100,8 @@ export function SwapTab({ onNavigateHome }: SwapTabProps): React.ReactElement {
   // Default recipient address (BTC for bridges)
   const defaultRecipientAddress = useMemo(() => {
     const btcAccounts = activeAccount?.networksAccounts?.['bitcoin-mainnet'];
-    const btcAccount = btcAccounts?.find((a) => a !== null) as { getReceiveAddress(): string } | undefined;
+    const btcAccount = btcAccounts?.find((a) => a !== null) as
+      { getReceiveAddress(): string } | undefined;
     return btcAccount?.getReceiveAddress() ?? '';
   }, [activeAccount]);
 
@@ -128,114 +132,151 @@ export function SwapTab({ onNavigateHome }: SwapTabProps): React.ReactElement {
   // Callbacks
   // ---------------------------------------------------------------------------
 
-  const handleGetQuote = useCallback(async (inToken: SwapToken, outToken: SwapToken, amount: string): Promise<SwapQuote> => {
-    const quote = await getSwapQuote({
-      inputMint: inToken.address,
-      outputMint: outToken.address,
-      amount: parseFloat(amount),
-      inputDecimals: inToken.decimals,
-      slippageBps: 50,
-    });
-    currentSharedQuoteRef.current = quote;
-    return quote as unknown as SwapQuote;
-  }, [getSwapQuote]);
+  const handleGetQuote = useCallback(
+    async (inToken: SwapToken, outToken: SwapToken, amount: string): Promise<SwapQuote> => {
+      const quote = await getSwapQuote({
+        inputMint: inToken.address,
+        outputMint: outToken.address,
+        amount: parseFloat(amount),
+        inputDecimals: inToken.decimals,
+        slippageBps: 50,
+      });
+      currentSharedQuoteRef.current = quote;
+      return quote as unknown as SwapQuote;
+    },
+    [getSwapQuote]
+  );
 
-  const handleSwap = useCallback(async (_quote: SwapQuote): Promise<{ txId: string }> => {
-    if (!swapQuote || !currentSharedQuoteRef.current) {
-      throw new Error('transaction.errors.quoteExpired');
-    }
-    const result = await executeSwapHook();
-    return { txId: result.txId || '' };
-  }, [swapQuote, executeSwapHook]);
+  const handleSwap = useCallback(
+    async (_quote: SwapQuote): Promise<{ txId: string }> => {
+      if (!swapQuote || !currentSharedQuoteRef.current) {
+        throw new Error('transaction.errors.quoteExpired');
+      }
+      const result = await executeSwapHook();
+      return { txId: result.txId || '' };
+    },
+    [swapQuote, executeSwapHook]
+  );
 
   const handleSwapSuccess = useCallback(() => resetSwap(), [resetSwap]);
 
-  const handleSwapError = useCallback((error: Error) => {
-    resetSwap();
-    console.error('Swap Failed:', error.message);
-  }, [resetSwap]);
+  const handleSwapError = useCallback(
+    (error: Error) => {
+      resetSwap();
+      console.error('Swap Failed:', error.message);
+    },
+    [resetSwap]
+  );
 
-  const handleSearchTokens = useCallback(async (query: string): Promise<SwapToken[]> => {
-    const network = networkId === 'solana-devnet' ? 'solana-devnet' : 'solana-mainnet';
-    const results = await searchTokens(query, network);
-    return results.map((token) => mapToSwapToken(token));
-  }, [networkId]);
+  const handleSearchTokens = useCallback(
+    async (query: string): Promise<SwapToken[]> => {
+      const network = networkId === 'solana-devnet' ? 'solana-devnet' : 'solana-mainnet';
+      const results = await searchTokens(query, network);
+      return results.map((token) => mapToSwapToken(token));
+    },
+    [networkId]
+  );
 
-  const handleGetAvailableTokens = useCallback(async (sourceSymbol: string): Promise<BridgeTokenSimple[]> => {
-    const result = await getBridgeAvailableTokens(sourceSymbol);
-    if (!result) return [];
-    return result.map((t) => ({
-      symbol: t.symbol,
-      name: t.name,
-      logo: t.logo,
-      network: t.network,
-    }));
-  }, [getBridgeAvailableTokens]);
+  const handleGetAvailableTokens = useCallback(
+    async (sourceSymbol: string): Promise<BridgeTokenSimple[]> => {
+      const result = await getBridgeAvailableTokens(sourceSymbol);
+      if (!result) return [];
+      return result.map((t) => ({
+        symbol: t.symbol,
+        name: t.name,
+        logo: t.logo,
+        network: t.network,
+      }));
+    },
+    [getBridgeAvailableTokens]
+  );
 
-  const handleGetBridgeEstimate = useCallback(async (
-    symbolIn: string,
-    symbolOut: string,
-    amount: number,
-    networkIn?: string,
-    networkOut?: string,
-  ): Promise<BridgeEstimateSimple | null> => {
-    const result = await getBridgeEstimate(symbolIn, symbolOut, amount, networkIn, networkOut);
-    if (!result) return null;
-    return {
-      estimatedAmount: result.estimatedAmount,
-      minAmount: result.minAmount,
-      maxAmount: result.maxAmount ?? null,
-      symbolIn,
-      symbolOut,
-    };
-  }, [getBridgeEstimate]);
+  const handleGetBridgeEstimate = useCallback(
+    async (
+      symbolIn: string,
+      symbolOut: string,
+      amount: number,
+      networkIn?: string,
+      networkOut?: string
+    ): Promise<BridgeEstimateSimple | null> => {
+      const result = await getBridgeEstimate(symbolIn, symbolOut, amount, networkIn, networkOut);
+      if (!result) return null;
+      return {
+        estimatedAmount: result.estimatedAmount,
+        minAmount: result.minAmount,
+        maxAmount: result.maxAmount ?? null,
+        symbolIn,
+        symbolOut,
+      };
+    },
+    [getBridgeEstimate]
+  );
 
-  const handleCreateBridgeExchange = useCallback(async (
-    symbolIn: string,
-    symbolOut: string,
-    amount: number,
-    addressTo: string,
-    networkIn?: string,
-    networkOut?: string,
-  ): Promise<BridgeExchangeSimple | null> => {
-    const result = await createBridgeExchange(symbolIn, symbolOut, amount, addressTo, networkIn, networkOut);
-    if (!result) return null;
-    return {
-      id: result.id,
-      depositAddress: result.payinAddress,
-      amountIn: amount,
-      amountOut: result.amountExpectedTo,
-      symbolIn,
-      symbolOut,
-      addressTo,
-      status: result.status,
-    };
-  }, [createBridgeExchange]);
+  const handleCreateBridgeExchange = useCallback(
+    async (
+      symbolIn: string,
+      symbolOut: string,
+      amount: number,
+      addressTo: string,
+      networkIn?: string,
+      networkOut?: string
+    ): Promise<BridgeExchangeSimple | null> => {
+      const result = await createBridgeExchange(
+        symbolIn,
+        symbolOut,
+        amount,
+        addressTo,
+        networkIn,
+        networkOut
+      );
+      if (!result) return null;
+      return {
+        id: result.id,
+        depositAddress: result.payinAddress,
+        amountIn: amount,
+        amountOut: result.amountExpectedTo,
+        symbolIn,
+        symbolOut,
+        addressTo,
+        status: result.status,
+      };
+    },
+    [createBridgeExchange]
+  );
 
-  const handleGetBridgeTransactionStatus = useCallback(async (id: string) => {
-    const result = await getBridgeTransactionStatus(id);
-    if (!result) return null;
-    return {
-      status: result.status,
-      payoutTxId: result.payoutHash,
-    };
-  }, [getBridgeTransactionStatus]);
+  const handleGetBridgeTransactionStatus = useCallback(
+    async (id: string) => {
+      const result = await getBridgeTransactionStatus(id);
+      if (!result) return null;
+      return {
+        status: result.status,
+        payoutTxId: result.payoutHash,
+      };
+    },
+    [getBridgeTransactionStatus]
+  );
 
-  const handleSendDeposit = useCallback(async (
-    depositAddress: string,
-    tokenAddress: string,
-    amount: number,
-  ): Promise<{ txId: string }> => {
-    if (!activeBlockchainAccount) return { txId: '' };
-    return activeBlockchainAccount.transfer(depositAddress, tokenAddress, amount);
-  }, [activeBlockchainAccount]);
+  const handleSendDeposit = useCallback(
+    async (
+      depositAddress: string,
+      tokenAddress: string,
+      amount: number
+    ): Promise<{ txId: string }> => {
+      if (!activeBlockchainAccount) return { txId: '' };
+      return activeBlockchainAccount.transfer(depositAddress, tokenAddress, amount);
+    },
+    [activeBlockchainAccount]
+  );
 
   const handleBridgeSuccess = useCallback(() => resetBridge(), [resetBridge]);
 
-  const handleBridgeError = useCallback((error: Error) => {
-    resetBridge();
-    console.error('Bridge Failed:', error.message);
-  }, [resetBridge]);
+  const handleBridgeError = useCallback(
+    (error: Error) => {
+      resetBridge();
+      console.error('Bridge Failed:', error.message);
+    },
+    [resetBridge]
+  );
 
   return (
     <Container>

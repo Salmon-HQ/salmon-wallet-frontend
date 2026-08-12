@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  DAppTransactionApprovalView,
-} from '@salmon/ui';
+import { DAppTransactionApprovalView } from '@salmon/ui';
 import {
   approveSolanaTransactionRequest,
   getDAppTransactionRequestSummary,
@@ -68,17 +66,20 @@ export function DAppTransactionApprovalPage({
     };
   }, [account, request]);
 
-  const sendToBackground = useCallback((data: Record<string, unknown>) => {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.sendMessage({
-        channel: 'salmon_extension_background_channel',
-        data: {
-          ...data,
-          id: request.id,
-        },
-      });
-    }
-  }, [request.id]);
+  const sendToBackground = useCallback(
+    (data: Record<string, unknown>) => {
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.sendMessage({
+          channel: 'salmon_extension_background_channel',
+          data: {
+            ...data,
+            id: request.id,
+          },
+        });
+      }
+    },
+    [request.id]
+  );
 
   const handleReject = useCallback(() => {
     sendToBackground({ error: 'User rejected the request' });

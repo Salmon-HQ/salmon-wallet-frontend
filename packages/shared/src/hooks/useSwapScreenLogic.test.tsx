@@ -204,7 +204,10 @@ describe('useSwapScreenLogic', () => {
     });
 
     expect(result.current.canReview).toBe(false);
-    expect(result.current.reviewWarning).toEqual({ key: 'swap.errors.minimumAmount', params: { amount: '1.00' } });
+    expect(result.current.reviewWarning).toEqual({
+      key: 'swap.errors.minimumAmount',
+      params: { amount: '1.00' },
+    });
   });
 
   it('refreshes in-token balance when tokens prop changes', async () => {
@@ -431,7 +434,7 @@ describe('useSwapScreenLogic', () => {
       onSwap: vi
         .fn()
         .mockRejectedValue(
-          new Error('Attempt to debit an account but found no record of a prior credit.'),
+          new Error('Attempt to debit an account but found no record of a prior credit.')
         ),
     });
 
@@ -490,7 +493,7 @@ describe('useSwapScreenLogic', () => {
       {
         initialProps: props,
         wrapper,
-      },
+      }
     );
 
     await waitFor(() => {
@@ -537,9 +540,9 @@ describe('useSwapScreenLogic', () => {
     await waitFor(() => {
       expect(result.current.swapLogic.settling).toBe(false);
     });
-    expect((client.getQueryData(balanceKey) as { items: Array<{ amount: string }> }).items[0].amount).toBe(
-      '990000000',
-    );
+    expect(
+      (client.getQueryData(balanceKey) as { items: Array<{ amount: string }> }).items[0].amount
+    ).toBe('990000000');
   });
 
   it('resets state after success and refreshes balances again on continue', async () => {
@@ -682,10 +685,7 @@ describe('useSwapScreenLogic', () => {
     });
 
     it('blocks review and warns when the amount exceeds the pair maximum', async () => {
-      const result = await renderBridgeWithEstimate(
-        { ...BRIDGE_ESTIMATE, maxAmount: 0.5 },
-        '1',
-      );
+      const result = await renderBridgeWithEstimate({ ...BRIDGE_ESTIMATE, maxAmount: 0.5 }, '1');
 
       expect(result.current.canReview).toBe(false);
       expect(result.current.reviewWarning).toEqual({
@@ -695,10 +695,7 @@ describe('useSwapScreenLogic', () => {
     });
 
     it('allows review when the amount is within the pair maximum', async () => {
-      const result = await renderBridgeWithEstimate(
-        { ...BRIDGE_ESTIMATE, maxAmount: 1.5 },
-        '1',
-      );
+      const result = await renderBridgeWithEstimate({ ...BRIDGE_ESTIMATE, maxAmount: 1.5 }, '1');
 
       expect(result.current.canReview).toBe(true);
       expect(result.current.reviewWarning).toBeNull();
@@ -950,9 +947,9 @@ describe('useSwapScreenLogic', () => {
         tokens: [SOL],
         featuredTokens: [SOL],
         jupiterTokens: [SOL],
-        onGetAvailableTokens: vi.fn().mockResolvedValue([
-          { symbol: 'BTC', name: 'Bitcoin', network: null, logo: 'btc.png' },
-        ]),
+        onGetAvailableTokens: vi
+          .fn()
+          .mockResolvedValue([{ symbol: 'BTC', name: 'Bitcoin', network: null, logo: 'btc.png' }]),
       });
 
       const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
@@ -970,18 +967,18 @@ describe('useSwapScreenLogic', () => {
 
     it('drops tokens whose chain is not in the enabled set', async () => {
       const networkModule = await import('../api/services/network');
-      vi.mocked(networkModule.getEnabledNetworkIds).mockResolvedValueOnce([
-        'solana-mainnet',
-      ]);
+      vi.mocked(networkModule.getEnabledNetworkIds).mockResolvedValueOnce(['solana-mainnet']);
 
       const props = createProps({
         initialInToken: SOL,
         tokens: [SOL],
         featuredTokens: [SOL],
         jupiterTokens: [SOL],
-        onGetAvailableTokens: vi.fn().mockResolvedValue([
-          { symbol: 'BTC', name: 'Bitcoin', network: null, chain: 'bitcoin', logo: 'btc.png' },
-        ]),
+        onGetAvailableTokens: vi
+          .fn()
+          .mockResolvedValue([
+            { symbol: 'BTC', name: 'Bitcoin', network: null, chain: 'bitcoin', logo: 'btc.png' },
+          ]),
       });
 
       const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
@@ -1006,9 +1003,11 @@ describe('useSwapScreenLogic', () => {
         tokens: [SOL],
         featuredTokens: [SOL],
         jupiterTokens: [SOL],
-        onGetAvailableTokens: vi.fn().mockResolvedValue([
-          { symbol: 'BTC', name: 'Bitcoin', network: null, chain: 'bitcoin', logo: 'btc.png' },
-        ]),
+        onGetAvailableTokens: vi
+          .fn()
+          .mockResolvedValue([
+            { symbol: 'BTC', name: 'Bitcoin', network: null, chain: 'bitcoin', logo: 'btc.png' },
+          ]),
       });
 
       const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
@@ -1037,7 +1036,13 @@ describe('useSwapScreenLogic', () => {
         featuredTokens: [SOL],
         jupiterTokens: [SOL],
         onGetAvailableTokens: vi.fn().mockResolvedValue([
-          { symbol: 'USDC', name: 'USD Coin (Base)', network: 'base', chain: 'ethereum', logo: 'usdc.png' },
+          {
+            symbol: 'USDC',
+            name: 'USD Coin (Base)',
+            network: 'base',
+            chain: 'ethereum',
+            logo: 'usdc.png',
+          },
         ]),
       });
 

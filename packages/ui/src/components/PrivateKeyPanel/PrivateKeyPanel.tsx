@@ -209,10 +209,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
   const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
 
   // Build network list from the active account
-  const networks = useMemo(
-    () => buildNetworkListFromAccount(activeAccount),
-    [activeAccount],
-  );
+  const networks = useMemo(() => buildNetworkListFromAccount(activeAccount), [activeAccount]);
 
   // Auto-select if only one network
   const effectiveNetworkId = networks.length === 1 ? networks[0].id : selectedNetworkId;
@@ -220,7 +217,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
   // Get accounts for the selected network
   const accountKeys: AccountKeyInfo[] = useMemo(
     () => getAccountKeysForNetwork(activeAccount, effectiveNetworkId),
-    [effectiveNetworkId, activeAccount],
+    [effectiveNetworkId, activeAccount]
   );
 
   const handleSelectNetwork = useCallback((networkId: string) => {
@@ -260,7 +257,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
         setCopyFailedIndex(index);
       }
     },
-    [revealedIndexes],
+    [revealedIndexes]
   );
 
   const handleBackToNetworks = useCallback(() => {
@@ -276,15 +273,9 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
 
   if (!effectiveNetworkId) {
     return (
-      <SettingsPanelContent
-        title={t('settings.select_network')}
-        onBack={onBack}
-      >
+      <SettingsPanelContent title={t('settings.select_network')} onBack={onBack}>
         <PageContent>
-          <Typography
-            variant="body2"
-            sx={{ color: colors.text.secondary, mb: `${spacing.sm}px` }}
-          >
+          <Typography variant="body2" sx={{ color: colors.text.secondary, mb: `${spacing.sm}px` }}>
             {t('settings.select_network_description')}
           </Typography>
           <List disablePadding>
@@ -299,7 +290,9 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                   </NetworkListItemIcon>
                   <NetworkListItemText
                     primary={network.name}
-                    secondary={network.blockchain.charAt(0).toUpperCase() + network.blockchain.slice(1)}
+                    secondary={
+                      network.blockchain.charAt(0).toUpperCase() + network.blockchain.slice(1)
+                    }
                   />
                   <ChevronIcon />
                 </NetworkListItemButton>
@@ -345,31 +338,36 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                 <PathValue>{accountKey.path}</PathValue>
                 <AddressValue>{getShortAddress(accountKey.address, 8)}</AddressValue>
 
-                <PrivateKeyCard sx={{ mt: `${spacing.sm}px` }} data-testid={`private-key-card-${index}`}>
+                <PrivateKeyCard
+                  sx={{ mt: `${spacing.sm}px` }}
+                  data-testid={`private-key-card-${index}`}
+                >
                   <KeyText>
-                    {isRevealed
-                      ? accountKey.privateKey
-                      : accountKey.privateKey.replace(/./g, '*')}
+                    {isRevealed ? accountKey.privateKey : accountKey.privateKey.replace(/./g, '*')}
                   </KeyText>
 
                   {!isRevealed && (
-                    <BlurOverlay onClick={() => handleReveal(index)} data-testid={`private-key-reveal-overlay-${index}`}>
+                    <BlurOverlay
+                      onClick={() => handleReveal(index)}
+                      data-testid={`private-key-reveal-overlay-${index}`}
+                    >
                       <KeyIcon sx={{ fontSize: fontSize.iconLg, color: colors.text.secondary }} />
-                      <RevealText>
-                        {t('settings.tap_to_reveal', 'Tap to reveal')}
-                      </RevealText>
+                      <RevealText>{t('settings.tap_to_reveal', 'Tap to reveal')}</RevealText>
                     </BlurOverlay>
                   )}
                 </PrivateKeyCard>
 
                 <ActionRow>
-                  <Tooltip
-                    title={isCopied ? t('wallet.copied', 'Copied!') : ''}
-                    open={isCopied}
-                  >
+                  <Tooltip title={isCopied ? t('wallet.copied', 'Copied!') : ''} open={isCopied}>
                     <CopyButton
                       variant="outlined"
-                      startIcon={isCopied ? <CheckIcon sx={{ color: colors.status.success }} /> : <ContentCopyIcon />}
+                      startIcon={
+                        isCopied ? (
+                          <CheckIcon sx={{ color: colors.status.success }} />
+                        ) : (
+                          <ContentCopyIcon />
+                        )
+                      }
                       onClick={() => handleCopy(accountKey.privateKey, index)}
                       disabled={!isRevealed}
                       data-testid={`private-key-copy-button-${index}`}
@@ -383,9 +381,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                     onClick={() => (isRevealed ? handleHide(index) : handleReveal(index))}
                     data-testid={`private-key-reveal-button-${index}`}
                     sx={{
-                      backgroundColor: isRevealed
-                        ? colors.accent.primary
-                        : colors.background.card,
+                      backgroundColor: isRevealed ? colors.accent.primary : colors.background.card,
                       color: isRevealed ? colors.text.primary : colors.text.primary,
                       border: `${borderWidth.thin}px solid ${
                         isRevealed ? colors.accent.primary : colors.border.default
@@ -397,9 +393,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                       },
                     }}
                   >
-                    {isRevealed
-                      ? t('actions.hide', 'Hide')
-                      : t('actions.reveal', 'Reveal')}
+                    {isRevealed ? t('actions.hide', 'Hide') : t('actions.reveal', 'Reveal')}
                   </ActionButton>
                 </ActionRow>
                 {copyFailedIndex === index && (

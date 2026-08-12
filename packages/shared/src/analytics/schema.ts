@@ -7,12 +7,7 @@
  * token mints, raw numbers, or oversized free-form strings.
  */
 
-import {
-  isAnalyticsEvent,
-  isAllowedPropKey,
-  PROP_ENUMS,
-  type AnalyticsEventName,
-} from './events';
+import { isAnalyticsEvent, isAllowedPropKey, PROP_ENUMS, type AnalyticsEventName } from './events';
 import type { AnalyticsProps, AnalyticsPropValue } from './types';
 
 /** Max length for any string prop value. Long strings smell like dumped data. */

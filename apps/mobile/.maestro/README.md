@@ -70,12 +70,12 @@ and checking Home/Collectibles. These are real mainnet wallets.
 
 Per-flow prerequisites:
 
-| Flow | Needs |
-|---|---|
-| `auth/*`, `home/*`, `settings/*` (smoke), connect/sign | no funds, but the backend must be reachable — see below |
-| `actions/send/sol-transfer.yaml` | Wallet A: SOL for fee + 0.001 SOL |
-| `actions/swap/*` | Wallet A: balance of the input token |
-| `actions/nft/*` | Wallet A: the "Mindfolk Founder #5154" NFT (mint `CNM8…`) |
+| Flow                                                   | Needs                                                     |
+| ------------------------------------------------------ | --------------------------------------------------------- |
+| `auth/*`, `home/*`, `settings/*` (smoke), connect/sign | no funds, but the backend must be reachable — see below   |
+| `actions/send/sol-transfer.yaml`                       | Wallet A: SOL for fee + 0.001 SOL                         |
+| `actions/swap/*`                                       | Wallet A: balance of the input token                      |
+| `actions/nft/*`                                        | Wallet A: the "Mindfolk Founder #5154" NFT (mint `CNM8…`) |
 
 Repo policy: a flow that finds its prerequisite missing skips with a clear
 message, never a cryptic failure. If the backend is reachable but behaves

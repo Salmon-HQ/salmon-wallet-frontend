@@ -6,10 +6,7 @@
  */
 
 import type { ViewStyle } from 'react-native';
-import type {
-  TransactionItemPropsBase,
-  TransactionHistorySheetPropsBase,
-} from '@salmon/shared';
+import type { TransactionItemPropsBase, TransactionHistorySheetPropsBase } from '@salmon/shared';
 
 // Re-export shared types for convenience
 export type {
@@ -33,5 +30,4 @@ export interface TransactionItemProps extends TransactionItemPropsBase<ViewStyle
 /**
  * Props for TransactionHistorySheet component (React Native)
  */
-export interface TransactionHistorySheetProps
-  extends TransactionHistorySheetPropsBase<ViewStyle> {}
+export interface TransactionHistorySheetProps extends TransactionHistorySheetPropsBase<ViewStyle> {}

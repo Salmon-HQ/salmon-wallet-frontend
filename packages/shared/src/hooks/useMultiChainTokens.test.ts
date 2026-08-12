@@ -135,7 +135,11 @@ describe('useMultiChainTokens', () => {
       'solana',
     ]);
     expect(result.current.tokens.find((token) => token.symbol === 'UNKNOWN')).toBeUndefined();
-    expect(result.current.featuredTokens.map((token) => token.symbol)).toEqual(['BTC', 'ETH', 'SOL']);
+    expect(result.current.featuredTokens.map((token) => token.symbol)).toEqual([
+      'BTC',
+      'ETH',
+      'SOL',
+    ]);
   });
 
   it('groups tokens by chain and exposes per-chain helpers', () => {
@@ -158,8 +162,12 @@ describe('useMultiChainTokens', () => {
       'SOL',
       'UNKNOWN',
     ]);
-    expect(result.current.getTokensForChain('bitcoin').map((token) => token.symbol)).toEqual(['BTC']);
-    expect(result.current.getTokensForChain('ethereum').map((token) => token.symbol)).toEqual(['ETH']);
+    expect(result.current.getTokensForChain('bitcoin').map((token) => token.symbol)).toEqual([
+      'BTC',
+    ]);
+    expect(result.current.getTokensForChain('ethereum').map((token) => token.symbol)).toEqual([
+      'ETH',
+    ]);
   });
 
   it('derives loading, ready, and error state from per-chain balances', () => {

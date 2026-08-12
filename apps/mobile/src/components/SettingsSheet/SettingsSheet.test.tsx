@@ -133,13 +133,7 @@ describe('SettingsSheet', () => {
     const onRemoveAllWallets = jest.fn();
     const onClose = jest.fn();
 
-    render(
-      <SettingsSheet
-        visible
-        onClose={onClose}
-        onRemoveAllWallets={onRemoveAllWallets}
-      />
-    );
+    render(<SettingsSheet visible onClose={onClose} onRemoveAllWallets={onRemoveAllWallets} />);
 
     fireEvent.press(screen.getByLabelText('settings.wallets.remove_all_wallets'));
 
@@ -148,13 +142,7 @@ describe('SettingsSheet', () => {
   });
 
   it('pushes a settings panel for navigable options when a registry is available', () => {
-    render(
-      <SettingsSheet
-        visible
-        onClose={jest.fn()}
-        panelRegistry={{} as any}
-      />
-    );
+    render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
 
     fireEvent.press(screen.getByLabelText('settings.currency'));
 

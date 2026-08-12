@@ -35,7 +35,7 @@ export function CurrencySelector({
 
   const handleSelect = useCallback(
     (item: CurrencySelectorItem) => onSelectCurrency(item.code),
-    [onSelectCurrency],
+    [onSelectCurrency]
   );
 
   const renderSymbol = useCallback(
@@ -44,14 +44,11 @@ export function CurrencySelector({
         <Text style={styles.symbolText}>{item.symbol}</Text>
       </View>
     ),
-    [],
+    []
   );
 
   return (
-    <SettingsScreenLayout
-      title={t('settings.currency', 'Display Currency')}
-      onBack={onBack}
-    >
+    <SettingsScreenLayout title={t('settings.currency', 'Display Currency')} onBack={onBack}>
       <SettingsSelectorList
         items={currencies}
         getKey={(item) => item.code}

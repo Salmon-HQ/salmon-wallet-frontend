@@ -114,8 +114,18 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
     items: [
       { id: 'addressBook', labelKey: 'settings.address_book', type: 'navigation' },
       { id: 'trustedApps', labelKey: 'settings.trusted_apps', type: 'navigation' },
-      { id: 'developerNetworks', labelKey: 'settings.developer_networks', descriptionKey: 'settings.developer_networks_desc', type: 'toggle' },
-      { id: 'analytics', labelKey: 'settings.analytics', descriptionKey: 'settings.analytics_description', type: 'toggle' },
+      {
+        id: 'developerNetworks',
+        labelKey: 'settings.developer_networks',
+        descriptionKey: 'settings.developer_networks_desc',
+        type: 'toggle',
+      },
+      {
+        id: 'analytics',
+        labelKey: 'settings.analytics',
+        descriptionKey: 'settings.analytics_description',
+        type: 'toggle',
+      },
       { id: 'about', labelKey: 'settings.about', type: 'navigation' },
       { id: 'support', labelKey: 'settings.help_support', type: 'navigation' },
     ],
@@ -186,38 +196,30 @@ const StyledListItem = styled(ListItem)({
   padding: 0,
 });
 
-const StyledListItemButton = styled(ListItemButton)<{ $isDanger?: boolean }>(
-  ({ $isDanger }) => ({
-    padding: `${spacing.md}px ${spacing.lg}px`,
-    '&:hover': {
-      backgroundColor: $isDanger
-        ? colors.status.errorBackground
-        : colors.background.card,
-    },
-  })
-);
+const StyledListItemButton = styled(ListItemButton)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
+  padding: `${spacing.md}px ${spacing.lg}px`,
+  '&:hover': {
+    backgroundColor: $isDanger ? colors.status.errorBackground : colors.background.card,
+  },
+}));
 
-const StyledListItemIcon = styled(ListItemIcon)<{ $isDanger?: boolean }>(
-  ({ $isDanger }) => ({
-    minWidth: componentSizes.backButtonSize,
-    color: $isDanger ? colors.status.error : colors.text.secondary,
-  })
-);
+const StyledListItemIcon = styled(ListItemIcon)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
+  minWidth: componentSizes.backButtonSize,
+  color: $isDanger ? colors.status.error : colors.text.secondary,
+}));
 
-const StyledListItemText = styled(ListItemText)<{ $isDanger?: boolean }>(
-  ({ $isDanger }) => ({
-    '& .MuiListItemText-primary': {
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.medium,
-      color: $isDanger ? colors.status.error : colors.text.primary,
-    },
-    '& .MuiListItemText-secondary': {
-      fontSize: fontSize.sm,
-      color: colors.text.secondary,
-      marginTop: spacing.xxs,
-    },
-  })
-);
+const StyledListItemText = styled(ListItemText)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
+  '& .MuiListItemText-primary': {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.medium,
+    color: $isDanger ? colors.status.error : colors.text.primary,
+  },
+  '& .MuiListItemText-secondary': {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    marginTop: spacing.xxs,
+  },
+}));
 
 const StyledSwitch = styled(Switch)({
   '& .MuiSwitch-switchBase': {
@@ -313,7 +315,7 @@ export function SettingsPanelStack({
         setAnimating(false);
       }, PUSH_DURATION);
     },
-    [push, animating],
+    [push, animating]
   );
 
   const handlePop = useCallback(() => {
@@ -347,13 +349,15 @@ export function SettingsPanelStack({
         }
       }
     },
-    [handlePush, onRemoveWallet, onRemoveAllWallets],
+    [handlePush, onRemoveWallet, onRemoveAllWallets]
   );
 
   // Resolves the checked state, handler, and test id for each toggle item, so
   // the toggle row renders generically instead of hard-coding one setting.
   const toggleConfigFor = useCallback(
-    (id: string): { checked: boolean; onToggle?: (enabled: boolean) => void; testId: string } | null => {
+    (
+      id: string
+    ): { checked: boolean; onToggle?: (enabled: boolean) => void; testId: string } | null => {
       if (id === 'developerNetworks') {
         return {
           checked: developerNetworksEnabled,
@@ -370,7 +374,7 @@ export function SettingsPanelStack({
       }
       return null;
     },
-    [developerNetworksEnabled, onDeveloperNetworksToggle, analyticsEnabled, onAnalyticsToggle],
+    [developerNetworksEnabled, onDeveloperNetworksToggle, analyticsEnabled, onAnalyticsToggle]
   );
 
   const renderItem = useCallback(
@@ -385,10 +389,7 @@ export function SettingsPanelStack({
         const fireToggle = () => toggle?.onToggle?.(!checked);
         return (
           <StyledListItem key={item.id}>
-            <StyledListItemButton
-              data-testid={getSettingsItemTestId(item.id)}
-              onClick={fireToggle}
-            >
+            <StyledListItemButton data-testid={getSettingsItemTestId(item.id)} onClick={fireToggle}>
               <StyledListItemIcon>{icon}</StyledListItemIcon>
               <StyledListItemText primary={label} secondary={description} />
               <StyledSwitch
@@ -396,7 +397,12 @@ export function SettingsPanelStack({
                 checked={checked}
                 onChange={fireToggle}
                 onClick={(e) => e.stopPropagation()}
-                slotProps={{ input: { 'data-testid': toggle?.testId ?? getSettingsItemTestId(item.id), 'aria-label': label } as React.InputHTMLAttributes<HTMLInputElement> }}
+                slotProps={{
+                  input: {
+                    'data-testid': toggle?.testId ?? getSettingsItemTestId(item.id),
+                    'aria-label': label,
+                  } as React.InputHTMLAttributes<HTMLInputElement>,
+                }}
               />
             </StyledListItemButton>
           </StyledListItem>
@@ -410,16 +416,14 @@ export function SettingsPanelStack({
             $isDanger={item.isDanger}
             onClick={() => handleItemClick(item)}
           >
-            <StyledListItemIcon $isDanger={item.isDanger}>
-              {icon}
-            </StyledListItemIcon>
+            <StyledListItemIcon $isDanger={item.isDanger}>{icon}</StyledListItemIcon>
             <StyledListItemText $isDanger={item.isDanger} primary={label} secondary={description} />
             {item.type === 'navigation' && <ChevronIcon />}
           </StyledListItemButton>
         </StyledListItem>
       );
     },
-    [t, toggleConfigFor, handleItemClick],
+    [t, toggleConfigFor, handleItemClick]
   );
 
   const renderSection = useCallback(
@@ -430,14 +434,12 @@ export function SettingsPanelStack({
           <SectionTitle $isDanger={section.isDanger}>
             {t(section.titleKey) || section.titleKey}
           </SectionTitle>
-          <List disablePadding>
-            {section.items.map(renderItem)}
-          </List>
+          <List disablePadding>{section.items.map(renderItem)}</List>
           {!isLastSection && <StyledDivider />}
         </React.Fragment>
       );
     },
-    [t, renderItem],
+    [t, renderItem]
   );
 
   return (
@@ -464,13 +466,15 @@ export function SettingsPanelStack({
         {/* Base: Settings Menu (panel 0) */}
         <Header>
           <HeaderTitle>{t('settings.title', 'Settings')}</HeaderTitle>
-          <CloseButton onClick={handleClose} aria-label={t('actions.close', 'Close')} data-testid="settings-close-button">
+          <CloseButton
+            onClick={handleClose}
+            aria-label={t('actions.close', 'Close')}
+            data-testid="settings-close-button"
+          >
             <CloseIcon />
           </CloseButton>
         </Header>
-        <MenuContent>
-          {SETTINGS_SECTIONS.map(renderSection)}
-        </MenuContent>
+        <MenuContent>{SETTINGS_SECTIONS.map(renderSection)}</MenuContent>
 
         {/* Stacked panels */}
         {stack.map((entry, idx) => {
@@ -508,43 +512,43 @@ export function SettingsPanelStack({
 // ============================================================================
 
 const PanelWrapper = styled(Box, {
-  shouldForwardProp: (prop) =>
-    prop !== '$isTop' && prop !== '$animating' && prop !== '$direction',
-})<{ $isTop: boolean; $animating: boolean; $direction: 'in' | 'out' | 'idle' }>(
-  ({ $isTop, $animating, $direction }) => {
-    const isSlideIn = $animating && $isTop && $direction === 'in';
-    const isSlideOut = $animating && $isTop && $direction === 'out';
+  shouldForwardProp: (prop) => prop !== '$isTop' && prop !== '$animating' && prop !== '$direction',
+})<{ $isTop: boolean; $animating: boolean; $direction: 'in' | 'out' | 'idle' }>(({
+  $isTop,
+  $animating,
+  $direction,
+}) => {
+  const isSlideIn = $animating && $isTop && $direction === 'in';
+  const isSlideOut = $animating && $isTop && $direction === 'out';
 
-    return {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: colors.background.primary,
-      display: 'flex',
-      flexDirection: 'column',
-      zIndex: $isTop ? 2 : 1,
-      transform: 'translateX(0)',
-      ...(isSlideIn
-        ? {
-            animation: `slideInFromRight ${PUSH_DURATION}ms ease-out forwards`,
-          }
-        : {}),
-      ...(isSlideOut
-        ? {
-            animation: `slideOutToRight ${POP_DURATION}ms ease-in forwards`,
-          }
-        : {}),
-      '@keyframes slideInFromRight': {
-        from: { transform: 'translateX(100%)' },
-        to: { transform: 'translateX(0)' },
-      },
-      '@keyframes slideOutToRight': {
-        from: { transform: 'translateX(0)' },
-        to: { transform: 'translateX(100%)' },
-      },
-    };
-  },
-);
-
+  return {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.background.primary,
+    display: 'flex',
+    flexDirection: 'column',
+    zIndex: $isTop ? 2 : 1,
+    transform: 'translateX(0)',
+    ...(isSlideIn
+      ? {
+          animation: `slideInFromRight ${PUSH_DURATION}ms ease-out forwards`,
+        }
+      : {}),
+    ...(isSlideOut
+      ? {
+          animation: `slideOutToRight ${POP_DURATION}ms ease-in forwards`,
+        }
+      : {}),
+    '@keyframes slideInFromRight': {
+      from: { transform: 'translateX(100%)' },
+      to: { transform: 'translateX(0)' },
+    },
+    '@keyframes slideOutToRight': {
+      from: { transform: 'translateX(0)' },
+      to: { transform: 'translateX(100%)' },
+    },
+  };
+});

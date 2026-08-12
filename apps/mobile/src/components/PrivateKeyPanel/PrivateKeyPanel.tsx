@@ -22,7 +22,9 @@ import {
   getAccountKeysForNetwork,
   type Account,
   type AccountKeyInfo,
-fontSize, letterSpacing, } from '@salmon/shared';
+  fontSize,
+  letterSpacing,
+} from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { useSettingsHeaderOverride } from '../SettingsHeaderContext';
@@ -60,7 +62,7 @@ export function PrivateKeyPanel({
 
   // Step management: 'selectNetwork' or 'displayKeys'
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(
-    networks.length === 1 ? networks[0].id : null,
+    networks.length === 1 ? networks[0].id : null
   );
 
   // Track which account indexes have been revealed (by index)
@@ -71,7 +73,7 @@ export function PrivateKeyPanel({
   // Get accounts for the selected network
   const accountKeys: AccountKeyInfo[] = useMemo(
     () => getAccountKeysForNetwork(activeAccount, selectedNetworkId),
-    [selectedNetworkId, activeAccount],
+    [selectedNetworkId, activeAccount]
   );
 
   /**
@@ -100,7 +102,7 @@ export function PrivateKeyPanel({
         return next;
       });
     },
-    [biometricAvailable, authenticateWithBiometric],
+    [biometricAvailable, authenticateWithBiometric]
   );
 
   /**
@@ -121,7 +123,7 @@ export function PrivateKeyPanel({
         setCopyFailedIndex(index);
       }
     },
-    [revealedIndexes],
+    [revealedIndexes]
   );
 
   /**
@@ -133,12 +135,9 @@ export function PrivateKeyPanel({
     setCopiedIndex(null);
     setCopyFailedIndex(null);
   }, []);
-  const currentTitle = selectedNetworkId
-    ? t('settings.private_key')
-    : t('settings.select_network');
-  const currentBackAction = selectedNetworkId && networks.length > 1
-    ? handleBackToNetworks
-    : onBack;
+  const currentTitle = selectedNetworkId ? t('settings.private_key') : t('settings.select_network');
+  const currentBackAction =
+    selectedNetworkId && networks.length > 1 ? handleBackToNetworks : onBack;
 
   useSettingsHeaderOverride({
     title: currentTitle,
@@ -167,11 +166,7 @@ export function PrivateKeyPanel({
               activeOpacity={0.7}
             >
               <View style={styles.networkIconContainer}>
-                <Ionicons
-                  name="globe-outline"
-                  size={24}
-                  color={colors.text.primary}
-                />
+                <Ionicons name="globe-outline" size={24} color={colors.text.primary} />
               </View>
               <View style={styles.networkInfo}>
                 <Text style={styles.networkName}>{network.name}</Text>
@@ -179,11 +174,7 @@ export function PrivateKeyPanel({
                   {network.blockchain.charAt(0).toUpperCase() + network.blockchain.slice(1)}
                 </Text>
               </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.text.secondary}
-              />
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
             </TouchableOpacity>
           ))}
         </View>
@@ -196,27 +187,16 @@ export function PrivateKeyPanel({
   // ========================================================================
 
   return (
-    <SettingsScreenLayout
-      title={t('settings.private_key')}
-      onBack={currentBackAction}
-    >
+    <SettingsScreenLayout title={t('settings.private_key')} onBack={currentBackAction}>
       {/* Warning */}
       <View style={styles.warningContainer}>
-        <Ionicons
-          name="warning-outline"
-          size={20}
-          color={colors.status.warning}
-        />
-        <Text style={styles.warningText}>
-          {t('settings.private_key_warning')}
-        </Text>
+        <Ionicons name="warning-outline" size={20} color={colors.status.warning} />
+        <Text style={styles.warningText}>{t('settings.private_key_warning')}</Text>
       </View>
 
       {/* Account cards */}
       {accountKeys.length === 0 ? (
-        <Text style={styles.emptyText}>
-          {t('settings.no_accounts_for_network')}
-        </Text>
+        <Text style={styles.emptyText}>{t('settings.no_accounts_for_network')}</Text>
       ) : (
         accountKeys.map((accountKey, index) => {
           const isRevealed = revealedIndexes.has(index);
@@ -226,13 +206,9 @@ export function PrivateKeyPanel({
             <View key={index} style={styles.keyCard}>
               {/* Derivation path and address */}
               <View style={styles.keyHeader}>
-                <Text style={styles.pathLabel}>
-                  {t('settings.derivation_path')}
-                </Text>
+                <Text style={styles.pathLabel}>{t('settings.derivation_path')}</Text>
                 <Text style={styles.pathValue}>{accountKey.path}</Text>
-                <Text style={styles.addressValue}>
-                  {getShortAddress(accountKey.address, 8)}
-                </Text>
+                <Text style={styles.addressValue}>{getShortAddress(accountKey.address, 8)}</Text>
               </View>
 
               {/* Private key with reveal overlay */}
@@ -245,11 +221,7 @@ export function PrivateKeyPanel({
                     testID={`private-key-reveal-overlay-${index}`}
                     accessibilityRole="button"
                   >
-                    <Ionicons
-                      name="eye-outline"
-                      size={32}
-                      color={colors.text.primary}
-                    />
+                    <Ionicons name="eye-outline" size={32} color={colors.text.primary} />
                     <Text style={styles.revealText}>
                       {biometricAvailable
                         ? t('settings.authenticate_to_reveal')
@@ -257,10 +229,7 @@ export function PrivateKeyPanel({
                     </Text>
                   </TouchableOpacity>
                 )}
-                <Text
-                  style={styles.keyText}
-                  selectable={isRevealed}
-                >
+                <Text style={styles.keyText} selectable={isRevealed}>
                   {isRevealed ? accountKey.privateKey : accountKey.privateKey.replace(/./g, '*')}
                 </Text>
               </View>

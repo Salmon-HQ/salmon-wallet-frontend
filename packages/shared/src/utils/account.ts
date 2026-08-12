@@ -26,10 +26,13 @@ export { getBlockchainFromNetworkId } from '../config/blockchains';
  */
 export function getChainDisplayName(chain?: BlockchainType | string): string {
   switch (chain) {
-    case 'bitcoin': return 'Bitcoin';
-    case 'ethereum': return 'Ethereum';
+    case 'bitcoin':
+      return 'Bitcoin';
+    case 'ethereum':
+      return 'Ethereum';
     case 'solana':
-    default: return 'Solana';
+    default:
+      return 'Solana';
   }
 }
 
@@ -158,7 +161,12 @@ export async function createBlockchainAccountForNetwork(
         console.warn(`Unknown Ethereum network: ${networkId}`);
         return null;
       }
-      return createEthereumAccount({ network, mnemonic, index, apiFunctions: ethereumApiFunctions });
+      return createEthereumAccount({
+        network,
+        mnemonic,
+        index,
+        apiFunctions: ethereumApiFunctions,
+      });
     }
 
     case 'solana':
@@ -214,7 +222,7 @@ export function getPathIndex(path: string): number | undefined {
  * Shared between mobile and extension private key reveal screens.
  */
 export function buildNetworkListFromAccount(
-  activeAccount: Account | null | undefined,
+  activeAccount: Account | null | undefined
 ): Array<{ id: string; name: string; blockchain: string }> {
   if (!activeAccount?.networksAccounts) return [];
 
@@ -261,7 +269,7 @@ export function getAccountAddress(account: Account): string {
 export function getActiveSolanaApprovalAccount(
   activeAccount: Account | null | undefined,
   activeBlockchainAccount: BlockchainAccount | null | undefined,
-  pathIndex = 0,
+  pathIndex = 0
 ): SolanaAccount | null {
   if (activeBlockchainAccount && isSolanaAccount(activeBlockchainAccount)) {
     return activeBlockchainAccount;
@@ -271,7 +279,9 @@ export function getActiveSolanaApprovalAccount(
 
   const candidateNetworkIds = [
     'solana-mainnet',
-    ...Object.keys(activeAccount.networksAccounts).filter((id) => id.startsWith('solana-') && id !== 'solana-mainnet'),
+    ...Object.keys(activeAccount.networksAccounts).filter(
+      (id) => id.startsWith('solana-') && id !== 'solana-mainnet'
+    ),
   ];
 
   for (const networkId of candidateNetworkIds) {
@@ -301,7 +311,7 @@ export function getActiveSolanaApprovalAccount(
  */
 export function getAccountKeysForNetwork(
   activeAccount: Account | null | undefined,
-  networkId: string | null,
+  networkId: string | null
 ): AccountKeyInfo[] {
   if (!networkId || !activeAccount?.networksAccounts) return [];
   const networkAccounts = activeAccount.networksAccounts[networkId];

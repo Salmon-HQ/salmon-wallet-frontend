@@ -47,7 +47,9 @@ function installAbortSignalGapFill(scope = globalThis) {
     signalWith(abortError('The operation was aborted due to timeout', 'TimeoutError'), ms);
 
   AbortSignalCtor.abort = (reason) =>
-    signalWith(reason === undefined ? abortError('The operation was aborted', 'AbortError') : reason);
+    signalWith(
+      reason === undefined ? abortError('The operation was aborted', 'AbortError') : reason
+    );
 
   AbortSignalCtor.any = (signals) => {
     const controller = new scope.AbortController();

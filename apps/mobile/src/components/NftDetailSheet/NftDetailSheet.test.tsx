@@ -71,7 +71,13 @@ jest.mock('../BlurContainer', () => ({
 }));
 
 jest.mock('../BottomSheetContainer', () => ({
-  BottomSheetContainer: ({ children, headerContent }: { children?: React.ReactNode; headerContent?: React.ReactNode }) => (
+  BottomSheetContainer: ({
+    children,
+    headerContent,
+  }: {
+    children?: React.ReactNode;
+    headerContent?: React.ReactNode;
+  }) => (
     <>
       {headerContent}
       {children}
@@ -108,14 +114,16 @@ describe('NftDetailSheet', () => {
       <NftDetailSheet
         visible
         onClose={jest.fn()}
-        nft={{
-          mint: 'Mint111',
-          name: 'Blur NFT',
-          image: 'https://example.com/nft.png',
-          blockchain: 'solana',
-          description: 'A collectible',
-          attributes: [{ trait_type: 'Mood', value: 'Blurred' }],
-        } as any}
+        nft={
+          {
+            mint: 'Mint111',
+            name: 'Blur NFT',
+            image: 'https://example.com/nft.png',
+            blockchain: 'solana',
+            description: 'A collectible',
+            attributes: [{ trait_type: 'Mood', value: 'Blurred' }],
+          } as any
+        }
       />
     );
 

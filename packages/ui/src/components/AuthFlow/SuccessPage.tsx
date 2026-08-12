@@ -89,7 +89,11 @@ export function SuccessPage({
           {t('wallet.create.check_derivables')}
         </SecondaryButton>
         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <TextButton onClick={toggleDialog} color={colors.text.secondary} testID="success-info-button">
+          <TextButton
+            onClick={toggleDialog}
+            color={colors.text.secondary}
+            testID="success-info-button"
+          >
             {t('wallet.create.derivable_info_icon')}
           </TextButton>
         </Box>

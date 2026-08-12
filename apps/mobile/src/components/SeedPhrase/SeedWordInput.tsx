@@ -3,7 +3,14 @@
  */
 import { useTranslation } from 'react-i18next';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { colors, spacing, componentSizes, fontSize, borderWidth, fontFamilyNative, } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  componentSizes,
+  fontSize,
+  borderWidth,
+  fontFamilyNative,
+} from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 
 type ValidationState = 'idle' | 'correct' | 'incorrect';
@@ -35,9 +42,12 @@ export function SeedWordInput({
   const { t } = useTranslation();
   const getBorderColor = () => {
     switch (validationState) {
-      case 'correct': return colors.status.success;
-      case 'incorrect': return colors.status.error;
-      default: return colors.input.border;
+      case 'correct':
+        return colors.status.success;
+      case 'incorrect':
+        return colors.status.error;
+      default:
+        return colors.input.border;
     }
   };
 

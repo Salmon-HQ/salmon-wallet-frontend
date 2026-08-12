@@ -42,12 +42,16 @@ describe('classifyScanPayload', () => {
   });
 
   it('parses a payment URI and extracts the amount', () => {
-    expect(
-      classifyScanPayload(`solana:${SOLANA_ADDRESS}?amount=1.5`, 'solana')
-    ).toEqual({ kind: 'valid', address: SOLANA_ADDRESS, amount: '1.5' });
-    expect(
-      classifyScanPayload(`bitcoin:${BITCOIN_ADDRESS}?amount=0.01`, 'bitcoin')
-    ).toEqual({ kind: 'valid', address: BITCOIN_ADDRESS, amount: '0.01' });
+    expect(classifyScanPayload(`solana:${SOLANA_ADDRESS}?amount=1.5`, 'solana')).toEqual({
+      kind: 'valid',
+      address: SOLANA_ADDRESS,
+      amount: '1.5',
+    });
+    expect(classifyScanPayload(`bitcoin:${BITCOIN_ADDRESS}?amount=0.01`, 'bitcoin')).toEqual({
+      kind: 'valid',
+      address: BITCOIN_ADDRESS,
+      amount: '0.01',
+    });
   });
 
   it('drops the amount when the URI targets an SPL token', () => {
@@ -60,9 +64,11 @@ describe('classifyScanPayload', () => {
   });
 
   it('ignores a malformed amount', () => {
-    expect(
-      classifyScanPayload(`solana:${SOLANA_ADDRESS}?amount=abc`, 'solana')
-    ).toEqual({ kind: 'valid', address: SOLANA_ADDRESS, amount: undefined });
+    expect(classifyScanPayload(`solana:${SOLANA_ADDRESS}?amount=abc`, 'solana')).toEqual({
+      kind: 'valid',
+      address: SOLANA_ADDRESS,
+      amount: undefined,
+    });
   });
 
   it('rejects an address for a different chain as wrongChain', () => {
@@ -78,18 +84,18 @@ describe('classifyScanPayload', () => {
   });
 
   it('rejects a payment URI for a different chain as wrongChain', () => {
-    expect(
-      classifyScanPayload(`bitcoin:${BITCOIN_ADDRESS}?amount=1`, 'solana')
-    ).toEqual({ kind: 'wrongChain' });
+    expect(classifyScanPayload(`bitcoin:${BITCOIN_ADDRESS}?amount=1`, 'solana')).toEqual({
+      kind: 'wrongChain',
+    });
   });
 
   it('rejects non-address payloads as notAddress', () => {
     expect(classifyScanPayload('https://example.com', 'solana')).toEqual({
       kind: 'notAddress',
     });
-    expect(
-      classifyScanPayload('WIFI:T:WPA;S:network;P:password;;', 'solana')
-    ).toEqual({ kind: 'notAddress' });
+    expect(classifyScanPayload('WIFI:T:WPA;S:network;P:password;;', 'solana')).toEqual({
+      kind: 'notAddress',
+    });
     expect(classifyScanPayload('hello world', 'solana')).toEqual({
       kind: 'notAddress',
     });

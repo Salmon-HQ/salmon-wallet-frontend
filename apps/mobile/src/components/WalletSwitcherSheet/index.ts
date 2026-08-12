@@ -6,7 +6,4 @@
  */
 
 export { WalletSwitcherSheet, default } from './WalletSwitcherSheet';
-export type {
-  WalletSwitcherSheetProps,
-  AccountListItemProps,
-} from './types';
+export type { WalletSwitcherSheetProps, AccountListItemProps } from './types';

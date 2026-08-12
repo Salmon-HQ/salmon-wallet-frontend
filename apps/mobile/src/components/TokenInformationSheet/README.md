@@ -16,6 +16,7 @@ Bottom sheet modal component that displays comprehensive token information when 
 ## Design Specifications (from Figma)
 
 ### Container
+
 - Background: `#161c2d`
 - Border top: `0.75px solid #404962`
 - Border top radius: `26px`
@@ -23,12 +24,14 @@ Bottom sheet modal component that displays comprehensive token information when 
 - Max height: `90%` of screen
 
 ### Drag Handle
+
 - Width: `70px`
 - Height: `6px`
 - Color: `#b9b9b9` at `40%` opacity
 - Border radius: `75px`
 
 ### Title
+
 - Text: "Token Information"
 - Font size: `24px`
 - Font weight: ExtraBold
@@ -36,6 +39,7 @@ Bottom sheet modal component that displays comprehensive token information when 
 - Alignment: Center
 
 ### Content
+
 - Horizontal padding: `18px`
 - Gap between sections: `15px`
 - Bottom padding: `30px`
@@ -53,16 +57,16 @@ The sheet displays the following components in order:
 
 ```typescript
 interface TokenInformationSheetProps {
-  visible: boolean;                                    // Sheet visibility
-  onClose: () => void;                                 // Close callback
-  token: Token;                                        // Token data
-  chartData: PriceDataPoint[];                        // Chart price data
-  chartPeriod: PriceChartPeriod;                      // Selected chart period
+  visible: boolean; // Sheet visibility
+  onClose: () => void; // Close callback
+  token: Token; // Token data
+  chartData: PriceDataPoint[]; // Chart price data
+  chartPeriod: PriceChartPeriod; // Selected chart period
   onChartPeriodChange: (period: PriceChartPeriod) => void; // Chart period change handler
-  coinInfo: CoinInfo | null;                          // Coin information (description, etc.)
-  marketData: MarketData | undefined;                 // Market statistics
-  loading?: boolean;                                   // Loading state
-  style?: ViewStyle;                                   // Optional custom styles
+  coinInfo: CoinInfo | null; // Coin information (description, etc.)
+  marketData: MarketData | undefined; // Market statistics
+  loading?: boolean; // Loading state
+  style?: ViewStyle; // Optional custom styles
 }
 ```
 

@@ -49,12 +49,21 @@ test('home, receive and settings have no critical a11y violations', async ({ pop
 
   // Receive sheet
   await popup.getByTestId('home-receive-button').click();
-  await popup.getByTestId('receive-sheet').waitFor({ state: 'visible', timeout: 15_000 }).catch(() => {});
+  await popup
+    .getByTestId('receive-sheet')
+    .waitFor({ state: 'visible', timeout: 15_000 })
+    .catch(() => {});
   await scan(popup, 'receive');
-  await popup.getByTestId('sheet-close-button').click().catch(() => {});
+  await popup
+    .getByTestId('sheet-close-button')
+    .click()
+    .catch(() => {});
 
   // Settings drawer (menu only — no secret panels)
   await popup.getByTestId('wallet-header-settings-button').click();
-  await popup.getByTestId('settings-item-accounts').waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  await popup
+    .getByTestId('settings-item-accounts')
+    .waitFor({ state: 'visible', timeout: 10_000 })
+    .catch(() => {});
   await scan(popup, 'settings');
 });

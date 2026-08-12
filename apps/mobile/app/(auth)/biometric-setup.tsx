@@ -38,7 +38,7 @@ const ICON_SIZE = 80;
 // ============================================================================
 
 function getBiometricIcon(
-  type: 'fingerprint' | 'facial' | 'iris' | null,
+  type: 'fingerprint' | 'facial' | 'iris' | null
 ): 'finger-print-outline' | 'scan-outline' | 'eye-outline' {
   switch (type) {
     case 'facial':
@@ -121,11 +121,7 @@ export default function BiometricSetupScreen() {
         <View style={styles.centerContent}>
           {/* Logo */}
           <View style={styles.logoContainer}>
-            <Image
-              source={Logo}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            <Image source={Logo} style={styles.logo} resizeMode="contain" />
           </View>
 
           {/* Biometric icon */}
@@ -138,14 +134,10 @@ export default function BiometricSetupScreen() {
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>
-            {t('wallet.create.biometric_setup_title')}
-          </Text>
+          <Text style={styles.title}>{t('wallet.create.biometric_setup_title')}</Text>
 
           {/* Subtitle */}
-          <Text style={styles.subtitle}>
-            {t('wallet.create.biometric_setup_subtitle')}
-          </Text>
+          <Text style={styles.subtitle}>{t('wallet.create.biometric_setup_subtitle')}</Text>
 
           {/* Error message */}
           {error && <Text style={styles.error}>{error}</Text>}
@@ -163,11 +155,7 @@ export default function BiometricSetupScreen() {
             {buttonLabel}
           </PrimaryButton>
 
-          <SecondaryButton
-            onPress={handleSkip}
-            disabled={isStoring}
-            testID="biometric-skip-button"
-          >
+          <SecondaryButton onPress={handleSkip} disabled={isStoring} testID="biometric-skip-button">
             {t('wallet.create.biometric_setup_skip')}
           </SecondaryButton>
         </View>

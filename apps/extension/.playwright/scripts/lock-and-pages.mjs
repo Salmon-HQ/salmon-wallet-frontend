@@ -1,7 +1,15 @@
 // Phase 1 extras: lock cycle, re-lock-on-reload, About/Help, NFT detail.
 // Each section isolated (own page) for state hygiene.
-import { launch, capture, sleep, openPopup, unlockOrRecover, waitHome, reportsRoot } from "./lib.mjs";
-import path from "node:path";
+import {
+  launch,
+  capture,
+  sleep,
+  openPopup,
+  unlockOrRecover,
+  waitHome,
+  reportsRoot,
+} from './lib.mjs';
+import path from 'node:path';
 import fs from 'node:fs';
 
 const log = (m) => console.log('▶ ' + m);
@@ -30,7 +38,9 @@ async function testLockCycle() {
     await capture(popup, 'lock', '01-after-lock-click');
     findings.push('lock cycle: explicit lock button exists');
   } else {
-    findings.push('lock cycle: NO explicit lock button on home — would require Security panel or auto-lock');
+    findings.push(
+      'lock cycle: NO explicit lock button on home — would require Security panel or auto-lock'
+    );
     await capture(popup, 'lock', '01-no-lock-btn');
   }
   await popup.close();
@@ -58,7 +68,9 @@ async function testRelockOnReload() {
 
   await capture(popup, 'lock', '02-after-reload');
   if (wasUnlocked && !stillUnlocked) {
-    findings.push('re-lock on reload: BUG — popup re-locks immediately after reload (unexpected for MV3 with valid session)');
+    findings.push(
+      're-lock on reload: BUG — popup re-locks immediately after reload (unexpected for MV3 with valid session)'
+    );
   } else if (wasUnlocked && stillUnlocked) {
     findings.push('re-lock on reload: OK — popup stays unlocked across reload');
   } else {
@@ -91,7 +103,9 @@ async function testAboutHelp() {
     await sleep(2500);
     await capture(popup, 'settings', 'panel-' + slug);
     const text = await popup.locator('body').innerText();
-    findings.push(slug + ': panel opened, content snippet = ' + text.slice(0, 120).replace(/\n/g, ' | '));
+    findings.push(
+      slug + ': panel opened, content snippet = ' + text.slice(0, 120).replace(/\n/g, ' | ')
+    );
     await popup.close();
   }
 }
@@ -130,7 +144,12 @@ async function testNftDetail() {
       if (/Send|Burn|Description|Properties|Owner/i.test(text)) {
         opened = true;
         await capture(popup, 'nft', '02-detail');
-        findings.push('NFT detail: opened via "' + sel + '" — keys=' + (text.match(/Send|Burn|Description|Properties|Owner/g) || []).join(','));
+        findings.push(
+          'NFT detail: opened via "' +
+            sel +
+            '" — keys=' +
+            (text.match(/Send|Burn|Description|Properties|Owner/g) || []).join(',')
+        );
         break;
       }
     }
@@ -150,7 +169,9 @@ await testNftDetail().catch((e) => log('  nft err: ' + e.message));
 fs.mkdirSync(reportsRoot, { recursive: true });
 fs.writeFileSync(
   path.join(reportsRoot, 'PHASE1-LOCK-AND-PAGES.md'),
-  ['# Phase 1 extras — ' + new Date().toISOString(), '', ...findings.map((f) => '- ' + f)].join('\n'),
+  ['# Phase 1 extras — ' + new Date().toISOString(), '', ...findings.map((f) => '- ' + f)].join(
+    '\n'
+  )
 );
 
 await ctx.close();

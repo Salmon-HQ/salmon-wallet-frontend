@@ -84,7 +84,15 @@ describe('transaction utils', () => {
       getTransactionDescription(
         'send',
         [],
-        [{ amount: '1', decimals: 9, symbol: 'SOL', contract: 'mint', destination: 'ABCDEFGH12345678' }],
+        [
+          {
+            amount: '1',
+            decimals: 9,
+            symbol: 'SOL',
+            contract: 'mint',
+            destination: 'ABCDEFGH12345678',
+          },
+        ]
       )
     ).toContain('To ');
 
@@ -92,7 +100,7 @@ describe('transaction utils', () => {
       getTransactionDescription(
         'receive',
         [{ amount: '1', decimals: 9, symbol: 'SOL', contract: 'mint', source: 'ABCDEFGH12345678' }],
-        [],
+        []
       )
     ).toContain('From ');
 
@@ -100,7 +108,7 @@ describe('transaction utils', () => {
       getTransactionDescription(
         'swap',
         [{ amount: '1', decimals: 9, symbol: 'SOL', contract: 'sol' }],
-        [{ amount: '2', decimals: 6, symbol: 'USDC', contract: 'usdc' }],
+        [{ amount: '2', decimals: 6, symbol: 'USDC', contract: 'usdc' }]
       )
     ).toBe('USDC to SOL');
   });

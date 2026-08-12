@@ -33,12 +33,11 @@ const state = {
   swUrl: sw.url(),
 };
 fs.mkdirSync(fixturesRoot, { recursive: true });
-fs.writeFileSync(
-  path.join(fixturesRoot, 'last-bootstrap.json'),
-  JSON.stringify(state, null, 2),
-);
+fs.writeFileSync(path.join(fixturesRoot, 'last-bootstrap.json'), JSON.stringify(state, null, 2));
 
-console.log(JSON.stringify({ done: true, errors: { popup: popupErrors, sidepanel: sideErrors } }, null, 2));
+console.log(
+  JSON.stringify({ done: true, errors: { popup: popupErrors, sidepanel: sideErrors } }, null, 2)
+);
 
 // keep alive briefly so screenshots flush, then exit cleanly
 await sleep(500);

@@ -1,10 +1,6 @@
 // Solana Account
 export { SolanaAccount } from './SolanaAccount';
-export type {
-  SolanaAccountOptions,
-  SolanaBalance,
-  SolanaSigningKey,
-} from './SolanaAccount';
+export type { SolanaAccountOptions, SolanaBalance, SolanaSigningKey } from './SolanaAccount';
 
 // Factory functions and utilities
 export {
@@ -17,10 +13,7 @@ export {
   SOLANA_COIN_TYPE,
   SOLANA_NETWORKS,
 } from './factory';
-export type {
-  CreateSolanaAccountOptions,
-  DeriveSolanaAccountsOptions,
-} from './factory';
+export type { CreateSolanaAccountOptions, DeriveSolanaAccountsOptions } from './factory';
 
 // Transfer functions
 export {
@@ -84,9 +77,7 @@ export {
   getPreparedSolanaTransactions,
   signAndSendPreparedSolanaTransactions,
 } from './prepared-transactions';
-export type {
-  SignAndSendPreparedSolanaTransactionsOptions,
-} from './prepared-transactions';
+export type { SignAndSendPreparedSolanaTransactionsOptions } from './prepared-transactions';
 
 export {
   getRecentTransactions,

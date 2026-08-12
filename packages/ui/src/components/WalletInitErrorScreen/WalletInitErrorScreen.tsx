@@ -91,7 +91,9 @@ export function WalletInitErrorScreen({ onRetry }: WalletInitErrorScreenProps): 
   return (
     <Container data-testid="wallet-init-error">
       <Title>{t('wallet.init_failed_title', "Couldn't load your wallet")}</Title>
-      <Body>{t('wallet.init_failed_body', 'Your accounts and funds are safe. Please try again.')}</Body>
+      <Body>
+        {t('wallet.init_failed_body', 'Your accounts and funds are safe. Please try again.')}
+      </Body>
       <RetryButton onClick={handleRetry} disabled={retrying} data-testid="wallet-init-retry">
         {retrying ? (
           <CircularProgress size={18} sx={{ color: colors.text.primary }} />

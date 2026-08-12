@@ -67,6 +67,7 @@ const iconUrl = getAssetUrl('/images/IconWallet.png');
 ## Available Asset Groups
 
 ### Navigation Icons
+
 - `IconWallet`, `IconWalletSVG`
 - `IconNFT`, `IconNFTSVG`
 - `IconSwap`, `IconSwapSVG`
@@ -74,6 +75,7 @@ const iconUrl = getAssetUrl('/images/IconWallet.png');
 - `IconSettings`, `IconSettingsSVG`
 
 ### Transaction Icons
+
 - `IconTransactionSent`
 - `IconTransactionReceived`
 - `IconTransactionSwap`
@@ -84,6 +86,7 @@ const iconUrl = getAssetUrl('/images/IconWallet.png');
 - `IconTransactionUnknown`
 
 ### Brand Assets
+
 - `AppIcon`
 - `Logo`
 - `AppTitle`
@@ -91,6 +94,7 @@ const iconUrl = getAssetUrl('/images/IconWallet.png');
 - `BoolSplashLogo` (includes @2x, @3x, @4x variants)
 
 ### Common UI Icons
+
 - `IconCopy`, `IconClose`, `IconAdd`, `IconSearch`
 - `IconChevronLeft`, `IconChevronRight`
 - `IconExpandMore`, `IconExpandLess`
@@ -101,6 +105,7 @@ const iconUrl = getAssetUrl('/images/IconWallet.png');
 - `IconQRCodeScanner`
 
 ### Fonts
+
 - `DMSansRegular` (400)
 - `DMSansMedium` (500)
 - `DMSansBold` (700)
@@ -108,6 +113,7 @@ const iconUrl = getAssetUrl('/images/IconWallet.png');
 ## Configuration
 
 ### WXT Config
+
 Assets in the `public/` directory are automatically included in the extension build. The `wxt.config.ts` has been configured to make images and fonts web-accessible:
 
 ```typescript
@@ -116,10 +122,11 @@ web_accessible_resources: [
     resources: ['images/*', 'fonts/*'],
     matches: ['<all_urls>'],
   },
-]
+];
 ```
 
 ### TypeScript Config
+
 Path alias `@/assets` has been added to `tsconfig.json` for easier imports:
 
 ```json
@@ -137,6 +144,7 @@ Path alias `@/assets` has been added to `tsconfig.json` for easier imports:
    - Fonts → `public/fonts/`
 
 2. Export the path in `src/assets/index.ts`:
+
    ```typescript
    export const NewIcon = '/images/NewIcon.png';
    ```

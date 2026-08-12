@@ -1,8 +1,25 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, TouchableOpacity, StyleSheet, TextLayoutEventData, NativeSyntheticEvent } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  TextLayoutEventData,
+  NativeSyntheticEvent,
+} from 'react-native';
 import { ContentLoader, Rect } from '@salmon/shared';
-import { colors, fontFamilyNative, fontSize, lineHeight, ms, vs, s, borderRadius, spacing, } from '@salmon/shared';
+import {
+  colors,
+  fontFamilyNative,
+  fontSize,
+  lineHeight,
+  ms,
+  vs,
+  s,
+  borderRadius,
+  spacing,
+} from '@salmon/shared';
 import { BlurContainer } from '../../BlurContainer';
 import type { TokenAboutProps } from './types';
 
@@ -90,10 +107,16 @@ export const TokenAbout: React.FC<TokenAboutProps> = ({
             onPress={toggleExpanded}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel={expanded ? t('token.about.readLess', 'Read less') : t('token.about.readMore', 'Read more')}
+            accessibilityLabel={
+              expanded
+                ? t('token.about.readLess', 'Read less')
+                : t('token.about.readMore', 'Read more')
+            }
           >
             <Text style={styles.readMore}>
-              {expanded ? t('token.about.readLess', 'Read less') : t('token.about.readMore', 'Read more')}
+              {expanded
+                ? t('token.about.readLess', 'Read less')
+                : t('token.about.readMore', 'Read more')}
             </Text>
           </TouchableOpacity>
         )}

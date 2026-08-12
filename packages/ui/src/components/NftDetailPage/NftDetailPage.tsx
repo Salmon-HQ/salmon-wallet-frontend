@@ -289,7 +289,9 @@ export function NftDetailPage({
           {nft.compressed !== undefined && (
             <DetailRow>
               <DetailLabel>{t('nft.detail.compressed', 'Compressed')}</DetailLabel>
-              <DetailValue>{nft.compressed ? t('general.yes', 'Yes') : t('general.no', 'No')}</DetailValue>
+              <DetailValue>
+                {nft.compressed ? t('general.yes', 'Yes') : t('general.no', 'No')}
+              </DetailValue>
             </DetailRow>
           )}
           {nft.collectionVerified !== undefined && (
@@ -363,7 +365,9 @@ export function NftDetailPage({
             ? t('nft.burn.successTitle', 'NFT burned')
             : nft.name
       }
-      onBack={isBurnReviewStep ? handleBurnBack : isBurnSuccessStep ? handleBurnSuccessContinue : onBack}
+      onBack={
+        isBurnReviewStep ? handleBurnBack : isBurnSuccessStep ? handleBurnSuccessContinue : onBack
+      }
       showScalesBackground
       style={style}
       className={className}
@@ -385,7 +389,10 @@ export function NftDetailPage({
           <>
             {nft.image && (
               <ImageContainer>
-                <NftImage src={nft.image} alt={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: nft.name })} />
+                <NftImage
+                  src={nft.image}
+                  alt={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: nft.name })}
+                />
               </ImageContainer>
             )}
 
@@ -416,9 +423,7 @@ export function NftDetailPage({
               >
                 <SectionContent>
                   <SectionTitle>{t('nft.detail.attributes', 'Attributes')}</SectionTitle>
-                  <AttributesGrid>
-                    {nft.attributes.map(renderAttribute)}
-                  </AttributesGrid>
+                  <AttributesGrid>{nft.attributes.map(renderAttribute)}</AttributesGrid>
                 </SectionContent>
               </BlurContainer>
             )}
@@ -470,7 +475,9 @@ export function NftDetailPage({
                     style={blurStyle}
                   >
                     <SectionContent>
-                      <SectionTitle>{t('nft.burn.lutTitle', 'Temporary lookup table required')}</SectionTitle>
+                      <SectionTitle>
+                        {t('nft.burn.lutTitle', 'Temporary lookup table required')}
+                      </SectionTitle>
                       <DescriptionText>
                         {t(
                           'nft.burn.lutBody',
@@ -479,14 +486,20 @@ export function NftDetailPage({
                       </DescriptionText>
                       <DetailRow>
                         <DetailLabel>{t('nft.burn.lutRent', 'Approximate rent lock')}</DetailLabel>
-                        <DetailValue>{formatRawAmount(lutInfo.estimatedRentLamports, 9)} SOL</DetailValue>
+                        <DetailValue>
+                          {formatRawAmount(lutInfo.estimatedRentLamports, 9)} SOL
+                        </DetailValue>
                       </DetailRow>
                       <DetailRow>
-                        <DetailLabel>{t('nft.burn.lutAddressCount', 'Addresses stored')}</DetailLabel>
+                        <DetailLabel>
+                          {t('nft.burn.lutAddressCount', 'Addresses stored')}
+                        </DetailLabel>
                         <DetailValue>{lutInfo.addressCount}</DetailValue>
                       </DetailRow>
                       <DetailRow>
-                        <DetailLabel>{t('nft.burn.lutSteps', 'Additional setup transactions')}</DetailLabel>
+                        <DetailLabel>
+                          {t('nft.burn.lutSteps', 'Additional setup transactions')}
+                        </DetailLabel>
                         <DetailValue>{lutInfo.extendTransactionCount + 1}</DetailValue>
                       </DetailRow>
                       <DescriptionText sx={{ marginTop: spacing.md }}>
@@ -513,9 +526,18 @@ export function NftDetailPage({
                     backgroundColor={colors.interactive.surface}
                     borderColor={colors.accent.border}
                     borderWidth={borderWidth.actionButton}
-                    style={{ borderRadius: borderRadius.button, overflow: 'hidden', flex: 1, maxWidth: componentSizes.buttonMinWidthLg }}
+                    style={{
+                      borderRadius: borderRadius.button,
+                      overflow: 'hidden',
+                      flex: 1,
+                      maxWidth: componentSizes.buttonMinWidthLg,
+                    }}
                   >
-                    <SecondaryButtonInner onClick={handleBurnBack} aria-label={t('nft.detail.backToDetails', 'Back to NFT details')} data-testid="nft-burn-back-button">
+                    <SecondaryButtonInner
+                      onClick={handleBurnBack}
+                      aria-label={t('nft.detail.backToDetails', 'Back to NFT details')}
+                      data-testid="nft-burn-back-button"
+                    >
                       <ButtonText>{t('actions.back', 'Back')}</ButtonText>
                     </SecondaryButtonInner>
                   </BlurContainer>
@@ -525,16 +547,24 @@ export function NftDetailPage({
                     aria-label={t('nft.burn.confirm', 'Confirm burn')}
                     data-testid="nft-burn-confirm-button"
                     disabled={burnPreparing || !burnPreview || !!burnError}
-                    sx={{ opacity: burnPreparing || !burnPreview || !!burnError ? opacity.medium : 1 }}
+                    sx={{
+                      opacity: burnPreparing || !burnPreview || !!burnError ? opacity.medium : 1,
+                    }}
                   >
-                    <LocalFireDepartmentIcon sx={{ fontSize: fontSize.md, color: colors.text.balance }} />
+                    <LocalFireDepartmentIcon
+                      sx={{ fontSize: fontSize.md, color: colors.text.balance }}
+                    />
                     <ButtonText>{t('nft.burn_nft', 'Burn')}</ButtonText>
                   </PrimaryButtonBase>
                 </ActionButtonsContainer>
               </>
             ) : (
               <ActionButtonsContainer>
-                <PrimaryButtonBase onClick={handleSendPress} aria-label={t('nft.send.title', 'Send NFT')} data-testid="nft-detail-send-button">
+                <PrimaryButtonBase
+                  onClick={handleSendPress}
+                  aria-label={t('nft.send.title', 'Send NFT')}
+                  data-testid="nft-detail-send-button"
+                >
                   <CallMadeIcon sx={{ fontSize: fontSize.md, color: colors.text.balance }} />
                   <ButtonText>{t('actions.send', 'Send')}</ButtonText>
                 </PrimaryButtonBase>
@@ -544,10 +574,21 @@ export function NftDetailPage({
                   backgroundColor={colors.interactive.surface}
                   borderColor={colors.accent.border}
                   borderWidth={borderWidth.actionButton}
-                  style={{ borderRadius: borderRadius.button, overflow: 'hidden', flex: 1, maxWidth: componentSizes.buttonMinWidthLg }}
+                  style={{
+                    borderRadius: borderRadius.button,
+                    overflow: 'hidden',
+                    flex: 1,
+                    maxWidth: componentSizes.buttonMinWidthLg,
+                  }}
                 >
-                  <SecondaryButtonInner onClick={handleBurnPress} aria-label={t('nft.burn.reviewTitle', 'Burn NFT')} data-testid="nft-detail-burn-button">
-                    <LocalFireDepartmentIcon sx={{ fontSize: fontSize.md, color: colors.text.balance }} />
+                  <SecondaryButtonInner
+                    onClick={handleBurnPress}
+                    aria-label={t('nft.burn.reviewTitle', 'Burn NFT')}
+                    data-testid="nft-detail-burn-button"
+                  >
+                    <LocalFireDepartmentIcon
+                      sx={{ fontSize: fontSize.md, color: colors.text.balance }}
+                    />
                     <ButtonText>{t('nft.burn_nft', 'Burn')}</ButtonText>
                   </SecondaryButtonInner>
                 </BlurContainer>

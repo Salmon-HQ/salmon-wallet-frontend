@@ -163,7 +163,12 @@ export function ActionButtonRow({
             aria-label={t('accessibility.receive_tokens', 'Receive tokens')}
             data-testid="home-receive-button"
           >
-            <ReceiveIcon sx={{ fontSize: iconSize, color: receiveDisabled ? colors.button.disabledText : colors.text.balance }} />
+            <ReceiveIcon
+              sx={{
+                fontSize: iconSize,
+                color: receiveDisabled ? colors.button.disabledText : colors.text.balance,
+              }}
+            />
             <ButtonText $disabled={receiveDisabled}>{t('actions.receive', 'Receive')}</ButtonText>
           </SecondaryButton>
         </BlurContainer>
@@ -182,8 +187,15 @@ export function ActionButtonRow({
             aria-label={t('accessibility.view_activity', 'View activity')}
             data-testid="home-activity-button"
           >
-            <ActivityIcon sx={{ fontSize: iconSize, color: activityDisabled ? colors.button.disabledText : colors.text.balance }} />
-            <ButtonText $disabled={activityDisabled}>{t('actions.activity', 'Activity')}</ButtonText>
+            <ActivityIcon
+              sx={{
+                fontSize: iconSize,
+                color: activityDisabled ? colors.button.disabledText : colors.text.balance,
+              }}
+            />
+            <ButtonText $disabled={activityDisabled}>
+              {t('actions.activity', 'Activity')}
+            </ButtonText>
           </SecondaryButton>
         </BlurContainer>
       </ButtonWrapper>

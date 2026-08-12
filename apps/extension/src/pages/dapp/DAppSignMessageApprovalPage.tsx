@@ -1,7 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import {
-  DAppSignMessageApprovalView,
-} from '@salmon/ui';
+import { DAppSignMessageApprovalView } from '@salmon/ui';
 import {
   approveSolanaSignMessage,
   approveSolanaSignOffchainMessage,
@@ -38,21 +36,24 @@ export function DAppSignMessageApprovalPage({
   // Presence of requiredSigners switches the shared view into OCMS mode;
   // undefined keeps the legacy raw-sign rendering (incl. tx-lookalike banner).
   const requiredSigners = useMemo(
-    () => (request.method === 'signOffchain' ? request.params?.requiredSigners ?? [] : undefined),
-    [request],
+    () => (request.method === 'signOffchain' ? (request.params?.requiredSigners ?? []) : undefined),
+    [request]
   );
 
-  const sendToBackground = useCallback((data: Record<string, unknown>) => {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.sendMessage({
-        channel: 'salmon_extension_background_channel',
-        data: {
-          ...data,
-          id: request.id,
-        },
-      });
-    }
-  }, [request.id]);
+  const sendToBackground = useCallback(
+    (data: Record<string, unknown>) => {
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.sendMessage({
+          channel: 'salmon_extension_background_channel',
+          data: {
+            ...data,
+            id: request.id,
+          },
+        });
+      }
+    },
+    [request.id]
+  );
 
   const handleReject = useCallback(() => {
     sendToBackground({ error: 'User rejected the request' });
@@ -75,13 +76,14 @@ export function DAppSignMessageApprovalPage({
 
     setLoading(true);
     try {
-      const result = request.method === 'signOffchain'
-        ? await approveSolanaSignOffchainMessage(
-            account,
-            data,
-            request.params?.requiredSigners ?? [],
-          )
-        : await approveSolanaSignMessage(account, data);
+      const result =
+        request.method === 'signOffchain'
+          ? await approveSolanaSignOffchainMessage(
+              account,
+              data,
+              request.params?.requiredSigners ?? []
+            )
+          : await approveSolanaSignMessage(account, data);
       sendToBackground({ result });
       onDismiss(true);
     } catch {

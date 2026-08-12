@@ -243,7 +243,9 @@ describe('useTransactions (react-query infinite)', () => {
 
   it('configures staleTime to 60s on the underlying RQ query', async () => {
     const account = {
-      getRecentTransactions: vi.fn().mockResolvedValue({ data: [{ id: 'tx-stale' }], pageToken: null }),
+      getRecentTransactions: vi
+        .fn()
+        .mockResolvedValue({ data: [{ id: 'tx-stale' }], pageToken: null }),
     };
 
     const { client, wrapper } = makeWrapper();

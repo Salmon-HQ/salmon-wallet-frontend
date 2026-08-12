@@ -50,10 +50,7 @@ export function getNetworkLabel(blockchain: BlockchainId): string | null {
  * Sorts networks according to a predefined order.
  * Networks not in the order list are placed at the end in their original order.
  */
-export function sortNetworks<T extends { id: string }>(
-  networks: T[],
-  order: string[]
-): T[] {
+export function sortNetworks<T extends { id: string }>(networks: T[], order: string[]): T[] {
   return networks.sort((a, b) => {
     const aIndex = order.indexOf(a.id);
     const bIndex = order.indexOf(b.id);

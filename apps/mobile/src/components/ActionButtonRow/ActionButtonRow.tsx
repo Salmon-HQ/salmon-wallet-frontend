@@ -15,11 +15,7 @@ import React, { useCallback } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { BlurContainer } from '../BlurContainer';
-import {
-  CallMadeSvgIcon,
-  QrCodeScannerSvgIcon,
-  ReceiptLongSvgIcon,
-} from '../Icon/SvgIcons';
+import { CallMadeSvgIcon, QrCodeScannerSvgIcon, ReceiptLongSvgIcon } from '../Icon/SvgIcons';
 import type { ActionButtonRowProps } from './types';
 
 const ACTION_BUTTON_ICON_SIZE = fontSize.lg;
@@ -94,7 +90,14 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
           style={styles.primaryButton}
         >
           <CallMadeSvgIcon size={ms(ACTION_BUTTON_ICON_SIZE)} color={colors.text.balance} />
-          <Text style={styles.primaryButtonText} numberOfLines={1} ellipsizeMode="tail" maxFontSizeMultiplier={fontScaleCap.chrome}>{t('actions.send', 'Send')}</Text>
+          <Text
+            style={styles.primaryButtonText}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            maxFontSizeMultiplier={fontScaleCap.chrome}
+          >
+            {t('actions.send', 'Send')}
+          </Text>
         </LinearGradient>
       </TouchableOpacity>
 
@@ -118,7 +121,12 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
               size={ms(ACTION_BUTTON_ICON_SIZE)}
               color={receiveDisabled ? colors.button.disabledText : colors.text.balance}
             />
-            <Text style={[styles.secondaryButtonText, receiveDisabled && styles.textDisabled]} numberOfLines={1} ellipsizeMode="tail" maxFontSizeMultiplier={fontScaleCap.chrome}>
+            <Text
+              style={[styles.secondaryButtonText, receiveDisabled && styles.textDisabled]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              maxFontSizeMultiplier={fontScaleCap.chrome}
+            >
               {t('actions.receive', 'Receive')}
             </Text>
           </TouchableOpacity>
@@ -145,7 +153,12 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
               size={ms(ACTION_BUTTON_ICON_SIZE)}
               color={activityDisabled ? colors.button.disabledText : colors.text.balance}
             />
-            <Text style={[styles.secondaryButtonText, activityDisabled && styles.textDisabled]} numberOfLines={1} ellipsizeMode="tail" maxFontSizeMultiplier={fontScaleCap.chrome}>
+            <Text
+              style={[styles.secondaryButtonText, activityDisabled && styles.textDisabled]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              maxFontSizeMultiplier={fontScaleCap.chrome}
+            >
               {t('actions.activity', 'Activity')}
             </Text>
           </TouchableOpacity>

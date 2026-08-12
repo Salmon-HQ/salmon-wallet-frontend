@@ -233,10 +233,7 @@ const TokenRow = React.memo(function TokenRow({ token, onPress }: TokenRowProps)
   }, [token, onPress]);
 
   const balanceDisplay = useMemo(() => {
-    const amount =
-      typeof token.uiAmount === 'string'
-        ? parseFloat(token.uiAmount)
-        : token.uiAmount;
+    const amount = typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount;
     if (amount === 0) return `0 ${token.symbol}`;
     if (amount < 0.0001) return `<0.0001 ${token.symbol}`;
     return `${Number(amount.toFixed(4))} ${token.symbol}`;
@@ -296,9 +293,7 @@ export function StepTokenSelect({
   const verifiedTokens = useMemo(() => {
     return tokens.filter((token) => {
       const hasMeaningfulTags =
-        token.tags &&
-        token.tags.length > 0 &&
-        token.tags.some((tag) => tag !== 'unknown');
+        token.tags && token.tags.length > 0 && token.tags.some((tag) => tag !== 'unknown');
       if (hasMeaningfulTags) return true;
       return !!showUnverifiedTokens;
     });
@@ -315,20 +310,14 @@ export function StepTokenSelect({
     );
   }, [verifiedTokens, searchQuery]);
 
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchQuery(e.target.value);
-    },
-    []
-  );
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, []);
 
-  const handleScroll = useCallback(
-    (e: React.UIEvent<HTMLDivElement>) => {
-      const scrollTop = (e.target as HTMLDivElement).scrollTop;
-      setScrolled(scrollTop > 5);
-    },
-    []
-  );
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = (e.target as HTMLDivElement).scrollTop;
+    setScrolled(scrollTop > 5);
+  }, []);
 
   if (loading) {
     return (
@@ -336,7 +325,14 @@ export function StepTokenSelect({
         {/* Search bar skeleton */}
         <SearchWrapper>
           <BlurContainer style={{ borderRadius: borderRadius.md }}>
-            <Box sx={{ padding: `${spacing.sm}px ${spacing.md}px`, display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+            <Box
+              sx={{
+                padding: `${spacing.sm}px ${spacing.md}px`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing.sm,
+              }}
+            >
               <SkeletonLogo variant="circular" width={18} height={18} />
               <SkeletonText variant="text" width="60%" height={20} />
             </Box>
@@ -396,11 +392,7 @@ export function StepTokenSelect({
             <EmptyMessage>{t('wallet.no_tokens_found')}</EmptyMessage>
           ) : (
             filteredTokens.map((token) => (
-              <TokenRow
-                key={token.address}
-                token={token}
-                onPress={onSelectToken}
-              />
+              <TokenRow key={token.address} token={token} onPress={onSelectToken} />
             ))
           )}
         </ListContent>
@@ -408,4 +400,3 @@ export function StepTokenSelect({
     </Container>
   );
 }
-

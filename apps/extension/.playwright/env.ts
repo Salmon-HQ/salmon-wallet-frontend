@@ -29,9 +29,7 @@ function unquote(value: string): string {
 
 export function loadTestEnv(): void {
   if (!fs.existsSync(envPath)) {
-    throw new Error(
-      `Missing ${envPath}. Copy .env.test.example to .env.test and fill it in.`
-    );
+    throw new Error(`Missing ${envPath}. Copy .env.test.example to .env.test and fill it in.`);
   }
   const raw = fs.readFileSync(envPath, 'utf8');
   for (const line of raw.split('\n')) {

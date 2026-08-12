@@ -3,20 +3,20 @@ appId: io.salmonwallet.app
 # Open the Receive sheet (QR + address) and dismiss it.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - assertVisible:
-    id: "wallet-header-account-switcher"
+    id: 'wallet-header-account-switcher'
 - tapOn:
-    id: "home-receive-button"
+    id: 'home-receive-button'
 # Assert on the sheet's contents, not the BottomSheetContainer's own testID —
 # that wrapper does not surface in the accessibility hierarchy.
 - extendedWaitUntil:
     visible:
-      id: "receive-qr-code"
+      id: 'receive-qr-code'
     timeout: 10000
 - assertVisible:
-    id: "receive-address"
+    id: 'receive-address'
 - assertVisible:
-    id: "receive-copy-button"
+    id: 'receive-copy-button'
 - takeScreenshot: screenshots/smoke/receive/sheet-default
 - runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
 - assertVisible:
-    id: "wallet-header-account-switcher"
+    id: 'wallet-header-account-switcher'

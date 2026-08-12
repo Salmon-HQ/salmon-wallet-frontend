@@ -11,10 +11,22 @@ import MuiAvatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import CheckIcon from '@mui/icons-material/Check';
-import { colors, spacing, borderRadius, fontFamily, fontWeight, fontSize, getAvatarColor, getShortAddress, getInitials, opacity, componentSizes, durationMs } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  fontFamily,
+  fontWeight,
+  fontSize,
+  getAvatarColor,
+  getShortAddress,
+  getInitials,
+  opacity,
+  componentSizes,
+  durationMs,
+} from '@salmon/shared';
 import { CopyIcon, RefreshIcon, SettingsIcon } from '../Icon';
 import type { WalletHeaderProps } from './types';
-
 
 const Container = styled(Box)({
   display: 'flex',
@@ -150,7 +162,7 @@ export function WalletHeader({
 
   const avatarColor = useMemo(
     () => (accountId ? getAvatarColor(accountId) : colors.text.muted),
-    [accountId],
+    [accountId]
   );
   const initials = useMemo(() => getInitials(accountName), [accountName]);
 
@@ -170,7 +182,12 @@ export function WalletHeader({
             data-testid="wallet-header-account-switcher"
             role="button"
             aria-label={t('accessibility.switch_wallet')}
-            sx={{ width: componentSizes.iconSizeLarge, height: componentSizes.iconSizeLarge, marginRight: `${spacing.md}px`, cursor: 'pointer' }}
+            sx={{
+              width: componentSizes.iconSizeLarge,
+              height: componentSizes.iconSizeLarge,
+              marginRight: `${spacing.md}px`,
+              cursor: 'pointer',
+            }}
             imgProps={{ alt: '', onError: () => setImgError(true) }}
             onClick={(e) => {
               e.stopPropagation();
@@ -204,7 +221,13 @@ export function WalletHeader({
           <AddressContainer>
             <Address>{truncatedAddress}</Address>
             {copied ? (
-              <CheckIcon sx={{ marginLeft: `${spacing.sm}px`, fontSize: fontSize.base, color: colors.status.success }} />
+              <CheckIcon
+                sx={{
+                  marginLeft: `${spacing.sm}px`,
+                  fontSize: fontSize.base,
+                  color: colors.status.success,
+                }}
+              />
             ) : (
               <CopyIconStyled />
             )}
@@ -215,7 +238,11 @@ export function WalletHeader({
       {/* Right side - Refresh + Settings buttons */}
       <ActionButtons>
         {onRefreshPress && (
-          <HeaderButton onClick={onRefreshPress} aria-label={t('accessibility.refresh_balance', 'Refresh balance')} data-testid="wallet-header-refresh-button">
+          <HeaderButton
+            onClick={onRefreshPress}
+            aria-label={t('accessibility.refresh_balance', 'Refresh balance')}
+            data-testid="wallet-header-refresh-button"
+          >
             <RefreshIcon
               sx={{
                 color: colors.text.primary,
@@ -231,11 +258,14 @@ export function WalletHeader({
             />
           </HeaderButton>
         )}
-        <HeaderButton onClick={handleSettingsPress} aria-label={t('accessibility.open_settings')} data-testid="wallet-header-settings-button">
+        <HeaderButton
+          onClick={handleSettingsPress}
+          aria-label={t('accessibility.open_settings')}
+          data-testid="wallet-header-settings-button"
+        >
           <SettingsIcon sx={{ color: colors.text.primary, fontSize: fontSize['2xl'] }} />
         </HeaderButton>
       </ActionButtons>
     </Container>
   );
 }
-

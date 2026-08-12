@@ -213,8 +213,7 @@ export function useTransactions({
     : null;
 
   const loading = query.isPending && enabled;
-  const refreshing =
-    query.isFetching && !query.isPending && !query.isFetchingNextPage;
+  const refreshing = query.isFetching && !query.isPending && !query.isFetchingNextPage;
 
   return {
     transactions,

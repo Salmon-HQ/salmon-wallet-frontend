@@ -1,16 +1,21 @@
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ViewStyle,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
-import { borderWidth, colors, ms, vs, s, fontSize, fontFamilyNative, borderRadius, getShortAddress, spacing, } from '@salmon/shared';
+import {
+  borderWidth,
+  colors,
+  ms,
+  vs,
+  s,
+  fontSize,
+  fontFamilyNative,
+  borderRadius,
+  getShortAddress,
+  spacing,
+} from '@salmon/shared';
 
 // ============================================================================
 // Types

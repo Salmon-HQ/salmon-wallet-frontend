@@ -195,10 +195,7 @@ export function validateMnemonic(mnemonic: string): boolean {
  * console.log(seed.length); // 64
  * ```
  */
-export async function mnemonicToSeed(
-  mnemonic: string,
-  passphrase: string = ''
-): Promise<Buffer> {
+export async function mnemonicToSeed(mnemonic: string, passphrase: string = ''): Promise<Buffer> {
   const cacheKey = hashCacheKey(mnemonic, passphrase);
 
   // 1. Return cached seed if not expired
@@ -227,10 +224,7 @@ export async function mnemonicToSeed(
  * Internal: runs the actual PBKDF2 derivation.
  * Called only once per unique (mnemonic, passphrase) pair thanks to deduplication.
  */
-async function deriveSeedInternal(
-  mnemonic: string,
-  passphrase: string
-): Promise<Buffer> {
+async function deriveSeedInternal(mnemonic: string, passphrase: string): Promise<Buffer> {
   if (!validateMnemonic(mnemonic)) {
     throw new Error('Invalid seed words');
   }
@@ -239,16 +233,8 @@ async function deriveSeedInternal(
   if (pbkdf2?.deriveAsync) {
     try {
       const passwordBytes = new TextEncoder().encode(mnemonic.normalize('NFKD'));
-      const saltBytes = new TextEncoder().encode(
-        ('mnemonic' + passphrase).normalize('NFKD')
-      );
-      const derived = await pbkdf2.deriveAsync(
-        passwordBytes,
-        saltBytes,
-        2048,
-        64,
-        'sha512'
-      );
+      const saltBytes = new TextEncoder().encode(('mnemonic' + passphrase).normalize('NFKD'));
+      const derived = await pbkdf2.deriveAsync(passwordBytes, saltBytes, 2048, 64, 'sha512');
       return Buffer.from(derived);
     } catch {
       // Native module unavailable — fall through
@@ -264,9 +250,7 @@ async function deriveSeedInternal(
   if (subtle && typeof subtle.deriveBits === 'function') {
     try {
       const passwordBytes = new TextEncoder().encode(mnemonic.normalize('NFKD'));
-      const saltBytes = new TextEncoder().encode(
-        ('mnemonic' + passphrase).normalize('NFKD')
-      );
+      const saltBytes = new TextEncoder().encode(('mnemonic' + passphrase).normalize('NFKD'));
       const baseKey = await subtle.importKey('raw', passwordBytes, 'PBKDF2', false, ['deriveBits']);
       const derived = await subtle.deriveBits(
         { name: 'PBKDF2', salt: saltBytes, iterations: 2048, hash: 'SHA-512' },
@@ -383,10 +367,7 @@ export async function deriveBitcoinKeypair(
  * const node = await deriveChildFromPath(mnemonic, "m/44'/60'/0'/0/0");
  * ```
  */
-export async function deriveChildFromPath(
-  mnemonic: string,
-  path: string
-): Promise<BIP32Interface> {
+export async function deriveChildFromPath(mnemonic: string, path: string): Promise<BIP32Interface> {
   const seed = await mnemonicToSeed(mnemonic);
   const root = bip32.fromSeed(seed);
   return root.derivePath(path);
@@ -411,10 +392,7 @@ export async function deriveChildFromPath(
  * // Returns: 'apple banana cherry'
  */
 export function normalizeMnemonic(phrase: string): string {
-  return phrase
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, ' ');
+  return phrase.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
 // ============================================================================
@@ -435,10 +413,7 @@ export function normalizeMnemonic(phrase: string): string {
  * generateValidationPositions(12, 3);
  * // Returns something like: [2, 6, 10] (one from each third)
  */
-export function generateValidationPositions(
-  wordCount: number,
-  count: number = 3
-): number[] {
+export function generateValidationPositions(wordCount: number, count: number = 3): number[] {
   if (count > wordCount) {
     throw new Error('Count cannot exceed word count');
   }
@@ -502,7 +477,7 @@ export function validateMnemonicWords(
   });
 
   return {
-    isValid: results.every(r => r.isCorrect),
+    isValid: results.every((r) => r.isCorrect),
     results,
   };
 }

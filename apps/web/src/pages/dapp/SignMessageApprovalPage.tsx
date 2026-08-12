@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  DAppSignMessageApprovalView,
-} from '@salmon/ui';
+import { DAppSignMessageApprovalView } from '@salmon/ui';
 import {
   approveSolanaSignMessage,
   approveSolanaSignOffchainMessage,
@@ -42,12 +40,13 @@ export function SignMessageApprovalPage(): React.ReactElement {
   }, [requestId]);
 
   const solanaAccount = useMemo(
-    () => getActiveSolanaApprovalAccount(
-      state.activeAccount,
-      state.activeBlockchainAccount,
-      state.pathIndex,
-    ),
-    [state.activeAccount, state.activeBlockchainAccount, state.pathIndex],
+    () =>
+      getActiveSolanaApprovalAccount(
+        state.activeAccount,
+        state.activeBlockchainAccount,
+        state.pathIndex
+      ),
+    [state.activeAccount, state.activeBlockchainAccount, state.pathIndex]
   );
 
   const messageData = useMemo(() => {
@@ -59,8 +58,9 @@ export function SignMessageApprovalPage(): React.ReactElement {
   // Presence of requiredSigners switches the shared view into OCMS mode;
   // undefined keeps the legacy raw-sign rendering (incl. tx-lookalike banner).
   const requiredSigners = useMemo(
-    () => (request?.method === 'signOffchain' ? request.params?.requiredSigners ?? [] : undefined),
-    [request],
+    () =>
+      request?.method === 'signOffchain' ? (request.params?.requiredSigners ?? []) : undefined,
+    [request]
   );
 
   const handleApprove = useCallback(async () => {
@@ -76,7 +76,7 @@ export function SignMessageApprovalPage(): React.ReactElement {
           ? await approveSolanaSignOffchainMessage(
               solanaAccount,
               data,
-              request.params?.requiredSigners ?? [],
+              request.params?.requiredSigners ?? []
             )
           : await approveSolanaSignMessage(solanaAccount, data);
       sendResponse({

@@ -146,9 +146,7 @@ export function NftSendDialog({
             {nft.image && <NftImage src={nft.image} alt={nft.name} />}
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <NftName>{nft.name}</NftName>
-              {nft.collectionName && (
-                <NftCollection>{nft.collectionName}</NftCollection>
-              )}
+              {nft.collectionName && <NftCollection>{nft.collectionName}</NftCollection>}
             </Box>
           </NftPreview>
         )}
@@ -159,10 +157,11 @@ export function NftSendDialog({
           </MessageText>
         ) : loading ? (
           <StatusContainer>
-            <CircularProgress size={componentSizes.iconSizeLarge} sx={{ color: colors.accent.primary }} />
-            <MessageText>
-              {t('nft.sending', 'Sending NFT...')}
-            </MessageText>
+            <CircularProgress
+              size={componentSizes.iconSizeLarge}
+              sx={{ color: colors.accent.primary }}
+            />
+            <MessageText>{t('nft.sending', 'Sending NFT...')}</MessageText>
           </StatusContainer>
         ) : (
           <>
@@ -193,9 +192,7 @@ export function NftSendDialog({
             disabled={!canConfirm}
             testID="nft-send-confirm-button"
           >
-            {loading
-              ? t('actions.sending', 'Sending...')
-              : t('actions.confirm', 'Confirm')}
+            {loading ? t('actions.sending', 'Sending...') : t('actions.confirm', 'Confirm')}
           </BaseDialog.ActionButton>
         )}
       </BaseDialog.Actions>

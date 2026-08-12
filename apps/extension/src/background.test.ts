@@ -53,9 +53,7 @@ function startBackground() {
   vi.spyOn(fakeBrowser.tabs, 'query').mockResolvedValue([] as never);
   // fake-browser has no in-memory onConnect implementation; the keep-alive
   // port is irrelevant to routing, so a no-op registration is enough.
-  vi.spyOn(fakeBrowser.runtime.onConnect, 'addListener').mockImplementation(
-    () => undefined
-  );
+  vi.spyOn(fakeBrowser.runtime.onConnect, 'addListener').mockImplementation(() => undefined);
 
   background.main();
 
@@ -70,11 +68,7 @@ const ownSender = (origin: string = DAPP_ORIGIN) => ({
   origin,
 });
 
-const dappRequest = (
-  method: string,
-  id = 'req-1',
-  params?: Record<string, unknown>
-) => ({
+const dappRequest = (method: string, id = 'req-1', params?: Record<string, unknown>) => ({
   channel: CONTENT_CHANNEL,
   data: { id, method, ...(params ? { params } : {}) },
 });
@@ -164,16 +158,10 @@ describe('approval routing', () => {
       method: 'signed',
       result: { signature: 'abc' },
     };
-    route(
-      { channel: EXTENSION_CHANNEL, data: approvalAnswer },
-      ownSender(),
-      vi.fn()
-    );
+    route({ channel: EXTENSION_CHANNEL, data: approvalAnswer }, ownSender(), vi.fn());
 
     expect(sendResponse).toHaveBeenCalledWith(approvalAnswer, 'req-42');
-    await vi.waitFor(() =>
-      expect(windowsRemove).toHaveBeenCalledWith(POPUP_WINDOW_ID)
-    );
+    await vi.waitFor(() => expect(windowsRemove).toHaveBeenCalledWith(POPUP_WINDOW_ID));
   });
 
   it('answers only the protocol error shape when the approval window closes without a response', async () => {
@@ -184,9 +172,7 @@ describe('approval routing', () => {
     await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
 
     // Simulate the user closing the approval popup window.
-    const removedListener = onWindowRemoved.mock.calls.at(-1)?.[0] as (
-      windowId: number
-    ) => void;
+    const removedListener = onWindowRemoved.mock.calls.at(-1)?.[0] as (windowId: number) => void;
     removedListener(POPUP_WINDOW_ID);
 
     // Consistent with the page-level "never the raw error" tests: the origin
@@ -288,18 +274,12 @@ describe('stash channel session hygiene', () => {
   it('drops the derived key when the lock alarm fires so an unlocked session cannot outlive the timeout', async () => {
     const { route } = startBackground();
     const stash = (data: Record<string, unknown>, sendResponse = vi.fn()) => {
-      route(
-        { channel: 'salmon_extension_stash_channel', data },
-        ownSender(),
-        sendResponse
-      );
+      route({ channel: 'salmon_extension_stash_channel', data }, ownSender(), sendResponse);
       return sendResponse;
     };
 
     stash({ method: 'set', key: 'derived_key_cache', value: 'sensitive' });
-    expect(
-      stash({ method: 'get', key: 'derived_key_cache' })
-    ).toHaveBeenCalledWith('sensitive');
+    expect(stash({ method: 'get', key: 'derived_key_cache' })).toHaveBeenCalledWith('sensitive');
 
     // Setting the derived key must schedule the auto-lock alarm.
     const alarm = await fakeBrowser.alarms.get('salmon_lock_alarm');
@@ -311,8 +291,6 @@ describe('stash channel session hygiene', () => {
       persistAcrossSessions: false,
     });
 
-    expect(
-      stash({ method: 'get', key: 'derived_key_cache' })
-    ).toHaveBeenCalledWith(undefined);
+    expect(stash({ method: 'get', key: 'derived_key_cache' })).toHaveBeenCalledWith(undefined);
   });
 });
