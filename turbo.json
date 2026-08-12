@@ -3,17 +3,26 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.{test,spec}.{ts,tsx}",
+        "!**/__tests__/**",
+        "!.playwright/**",
+        "!.maestro/**",
+        "!README.md"
+      ],
       "outputs": ["dist/**"]
     },
     "typecheck": {
       "dependsOn": ["^typecheck"]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^lint"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/eslint.config.js"]
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "outputs": []
     },
     "test:coverage": {
       "dependsOn": ["^build"],
