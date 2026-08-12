@@ -137,7 +137,7 @@ function RootLayoutNav() {
       const authScreen = segments.slice(1, 2)[0];
       const isPostCreationScreen = inAuthGroup &&
         typeof authScreen === 'string' &&
-        ['password', 'biometric-setup', 'success', 'derived-accounts'].includes(authScreen);
+        ['password', 'biometric-setup', 'analytics-consent', 'success', 'derived-accounts'].includes(authScreen);
 
       if (!inAppGroup && !hasNavigated && !state.locked && !isPostCreationScreen) {
         // Only auto-navigate to app on initial load when not locked
