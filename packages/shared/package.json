@@ -19,7 +19,7 @@
     "@zxcvbn-ts/language-en": "^3.0.2",
     "@onsol/tldparser-kit": "^1.0.2",
     "@scure/bip39": "~2.2.0",
-    "@solana-name-service/sns-sdk-kit": "^0.10.1",
+    "@solana-name-service/sns-sdk-kit": "^1.0.1",
     "@solana-program/address-lookup-table": "^0.13.0",
     "@solana-program/memo": "^0.12.0",
     "@solana-program/system": "^0.13.0",
