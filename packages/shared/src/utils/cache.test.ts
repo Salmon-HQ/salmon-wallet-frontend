@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SmartCache } from './cache';
 
 describe('SmartCache', () => {
@@ -17,14 +17,20 @@ describe('SmartCache', () => {
     expect(cache.get('nonexistent')).toBeUndefined();
   });
 
-  it('should respect TTL and expire old values', async () => {
-    cache = new SmartCache<string>({ maxSize: 3, ttl: 100 });
-    cache.set('key1', 'value1');
-    expect(cache.get('key1')).toBe('value1');
+  it('should respect TTL and expire old values', () => {
+    // SmartCache expiry is based on Date.now(); vi.useFakeTimers() fakes Date too.
+    vi.useFakeTimers();
+    try {
+      cache = new SmartCache<string>({ maxSize: 3, ttl: 100 });
+      cache.set('key1', 'value1');
+      expect(cache.get('key1')).toBe('value1');
 
-    await new Promise((resolve) => setTimeout(resolve, 150));
+      vi.advanceTimersByTime(150);
 
-    expect(cache.get('key1')).toBeUndefined();
+      expect(cache.get('key1')).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('should evict oldest item when maxSize is exceeded', () => {

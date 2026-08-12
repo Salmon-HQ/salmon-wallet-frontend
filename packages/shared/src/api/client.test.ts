@@ -47,7 +47,6 @@ import {
   patch,
   del,
   apiClient,
-  staticApiClient,
 } from './client';
 const mockedAxios = vi.mocked(axios, { deep: true });
 
@@ -1427,17 +1426,4 @@ describe('API Client Module', () => {
     });
   });
 
-  describe('Pre-configured Client Instances', () => {
-    it('should export apiClient instance', () => {
-      expect(apiClient).toBeDefined();
-      expect(typeof apiClient.get).toBe('function');
-      expect(typeof apiClient.post).toBe('function');
-    });
-
-    it('should export staticApiClient instance', () => {
-      expect(staticApiClient).toBeDefined();
-      expect(typeof staticApiClient.get).toBe('function');
-      expect(typeof staticApiClient.post).toBe('function');
-    });
-  });
 });

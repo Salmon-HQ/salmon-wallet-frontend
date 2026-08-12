@@ -71,6 +71,15 @@ describe('NFT burn service', () => {
       ownerAddress: 'owner-2',
     });
 
+    expect(mockApiClientPost).toHaveBeenCalledWith(
+      '/v1/solana-mainnet/nft/mint-2',
+      undefined,
+      {
+        params: {
+          owner: 'owner-2',
+        },
+      },
+    );
     expect(result).toEqual(MOCK_MULTI_STEP_TRANSACTION);
   });
 

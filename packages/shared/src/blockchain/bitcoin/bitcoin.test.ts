@@ -938,11 +938,6 @@ describe('Bitcoin Transfer Integration Tests', () => {
   // ============================================================================
 
   describe('createTransferTransaction', () => {
-    it('should have createTransferTransaction function available', async () => {
-      const { createTransferTransaction } = await import('./transfer');
-      expect(typeof createTransferTransaction).toBe('function');
-    });
-
     it('should throw error when balance is insufficient', async () => {
       const { createTransferTransaction } = await import('./transfer');
 
@@ -986,19 +981,6 @@ describe('Bitcoin Transfer Integration Tests', () => {
           mockFetchUtxos
         )
       ).rejects.toThrow('Balance is too low');
-    });
-
-    it('should require BIP32 node for signing', async () => {
-      const account = await createBitcoinAccount({
-        network: BITCOIN_NETWORKS['bitcoin-mainnet'],
-        mnemonic: TEST_MNEMONIC,
-        index: 0,
-        apiFunctions: mockApiFunctions,
-      });
-
-      const node = account.getBip32Node();
-      expect(node).toBeDefined();
-      expect(typeof node?.sign).toBe('function');
     });
   });
 
@@ -1115,44 +1097,6 @@ describe('Bitcoin Transfer Integration Tests', () => {
   });
 
   // ============================================================================
-  // BitcoinAccount.getBalance Tests
-  // ============================================================================
-
-  describe('BitcoinAccount.getBalance', () => {
-    it('should have getBalance method defined', async () => {
-      const account = await createBitcoinAccount({
-        network: BITCOIN_NETWORKS['bitcoin-mainnet'],
-        mnemonic: TEST_MNEMONIC,
-        index: 0,
-        apiFunctions: mockApiFunctions,
-      });
-
-      expect(typeof account.getBalance).toBe('function');
-    });
-
-    it('should return balance structure when backend is available', async () => {
-      // This test requires a running backend - skip if not available
-      const account = await createBitcoinAccount({
-        network: BITCOIN_NETWORKS['bitcoin-mainnet'],
-        mnemonic: TEST_MNEMONIC,
-        index: 0,
-        apiFunctions: mockApiFunctions,
-      });
-
-      try {
-        const balance = await account.getBalance();
-        // If we get here, backend is available
-        expect(balance).toHaveProperty('items');
-        expect(balance).toHaveProperty('usdTotal');
-      } catch (_error) {
-        // Backend not available - skip test
-        console.log('Skipping getBalance test - backend not available');
-        expect(true).toBe(true); // Pass the test
-      }
-    });
-  });
-
-  // ============================================================================
   // BitcoinAccount.validateDestinationAccount Tests
   // ============================================================================
 
@@ -1244,62 +1188,6 @@ describe('Bitcoin Transfer Integration Tests', () => {
       expect(result.type).toBe('SUCCESS');
       expect(result.code).toBe('valid');
       expect(result.addressType).toBe('P2SH');
-    });
-  });
-
-  // ============================================================================
-  // BitcoinAccount.getRecentTransactions Tests
-  // ============================================================================
-
-  describe('BitcoinAccount.getRecentTransactions', () => {
-    it('should have getRecentTransactions method defined', async () => {
-      const account = await createBitcoinAccount({
-        network: BITCOIN_NETWORKS['bitcoin-mainnet'],
-        mnemonic: TEST_MNEMONIC,
-        index: 0,
-        apiFunctions: mockApiFunctions,
-      });
-
-      expect(typeof account.getRecentTransactions).toBe('function');
-    });
-
-    it('should return transactions structure when backend is available', async () => {
-      // This test requires a running backend - skip if not available
-      const account = await createBitcoinAccount({
-        network: BITCOIN_NETWORKS['bitcoin-mainnet'],
-        mnemonic: TEST_MNEMONIC,
-        index: 0,
-        apiFunctions: mockApiFunctions,
-      });
-
-      try {
-        const transactions = await account.getRecentTransactions();
-        // If we get here, backend is available
-        expect(transactions).toHaveProperty('items');
-        expect(Array.isArray(transactions.items)).toBe(true);
-      } catch (_error) {
-        // Backend not available or address not found - skip test
-        console.log('Skipping getRecentTransactions test - backend not available');
-        expect(true).toBe(true); // Pass the test
-      }
-    });
-
-    it('should accept pagination parameters', async () => {
-      const account = await createBitcoinAccount({
-        network: BITCOIN_NETWORKS['bitcoin-mainnet'],
-        mnemonic: TEST_MNEMONIC,
-        index: 0,
-        apiFunctions: mockApiFunctions,
-      });
-
-      try {
-        const transactions = await account.getRecentTransactions({ pageSize: 5 });
-        expect(transactions).toHaveProperty('items');
-      } catch (_error) {
-        // Backend not available - skip test
-        console.log('Skipping pagination test - backend not available');
-        expect(true).toBe(true);
-      }
     });
   });
 
@@ -1896,10 +1784,6 @@ describe('Bitcoin Transfer Integration Tests', () => {
   // ============================================================================
 
   describe('confirmTransferTransaction', () => {
-    it('should have confirmTransferTransaction function available', () => {
-      expect(typeof confirmTransferTransaction).toBe('function');
-    });
-
     it('should broadcast transaction with injected broadcast function', async () => {
       const mockBroadcast: BroadcastTransactionFn = vi.fn().mockResolvedValue({
         txId: 'a'.repeat(64),
@@ -2039,10 +1923,6 @@ describe('Bitcoin Transfer Integration Tests', () => {
   // ============================================================================
 
   describe('sendBitcoin', () => {
-    it('should have sendBitcoin function available', () => {
-      expect(typeof sendBitcoin).toBe('function');
-    });
-
     it.skip('should create and broadcast transaction with mocked API', async () => {
       // This test is skipped because it requires complex mock raw transaction data
       // that's difficult to generate. In a real scenario, the API would provide
