@@ -15,11 +15,19 @@
 import { apiClient } from '../client';
 import type {
   BridgeAvailableToken,
+  BridgeAmountRange,
   BridgeEstimateResponse,
   BridgeMinimalResponse,
   BridgeExchange,
   BridgeTransaction,
 } from '../../types/bridge';
+
+/** Coerce a wire decimal string to a finite number, or null when absent/unparsable. */
+function toFiniteNumber(value: string | number | undefined | null): number | null {
+  if (value == null) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
 // ============================================================================
 // Bridge Service Functions
@@ -79,20 +87,24 @@ export async function getBridgeEstimatedAmount(
 }
 
 /**
- * Get minimum amount required for a bridge swap
+ * Get the allowed input amount range for a bridge swap
  *
  * Endpoint: GET /v1/bridge/minimal
  *
+ * The backend returns both amounts as decimal strings and omits `max_amount`
+ * when the pair has no upstream cap; this boundary coerces them to numbers
+ * (see {@link BridgeMinimalResponse}).
+ *
  * @param symbolIn - Input token symbol
  * @param symbolOut - Output token symbol
- * @returns Minimum required input amount or null if unavailable
+ * @returns `{min, max}` — each null when absent or unparsable
  */
 export async function getBridgeMinimalAmount(
   symbolIn: string,
   symbolOut: string,
   networkIn?: string,
   networkOut?: string
-): Promise<number | null> {
+): Promise<BridgeAmountRange> {
   try {
     const params: Record<string, string> = { symbolIn: symbolIn.toLowerCase(), symbolOut: symbolOut.toLowerCase() };
     if (networkIn) params.networkIn = networkIn;
@@ -100,7 +112,10 @@ export async function getBridgeMinimalAmount(
     const { data } = await apiClient.get<BridgeMinimalResponse>('/v1/bridge/minimal', {
       params,
     });
-    return data?.min_amount ?? null;
+    return {
+      min: toFiniteNumber(data?.min_amount),
+      max: toFiniteNumber(data?.max_amount),
+    };
   } catch (error) {
     console.warn('[BridgeService] Failed to fetch minimal amount:', error);
     throw new Error(`Bridge fetch minimal amount failed: ${error instanceof Error ? error.message : error}`);

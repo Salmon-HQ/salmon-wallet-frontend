@@ -404,6 +404,8 @@ export interface BridgeEstimateSimple {
   estimatedAmount: number;
   /** Minimum required input amount */
   minAmount: number;
+  /** Maximum allowed input amount; null/undefined when the pair has no cap */
+  maxAmount?: number | null;
   /** Input token symbol */
   symbolIn: string;
   /** Output token symbol */

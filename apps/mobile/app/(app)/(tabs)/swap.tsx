@@ -272,6 +272,7 @@ export default function SwapScreenPage() {
     return {
       estimatedAmount: estimate.estimatedAmount,
       minAmount: estimate.minAmount,
+      maxAmount: estimate.maxAmount ?? null,
       symbolIn: estimate.symbolIn,
       symbolOut: estimate.symbolOut,
     };

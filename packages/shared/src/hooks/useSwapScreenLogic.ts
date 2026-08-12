@@ -413,7 +413,9 @@ export function useSwapScreenLogic<StyleType = unknown>({
     !isLoadingEstimate &&
     !quoteError &&
     !!bridgeEstimate &&
-    (!bridgeEstimate.minAmount || parseFloat(inAmount) >= bridgeEstimate.minAmount);
+    (!bridgeEstimate.minAmount || parseFloat(inAmount) >= bridgeEstimate.minAmount) &&
+    // maxAmount is null/undefined when the pair has no upstream cap — never block then.
+    (bridgeEstimate.maxAmount == null || parseFloat(inAmount) <= bridgeEstimate.maxAmount);
 
   const canReview = canReviewJupiter || canContinueToBridge;
 
@@ -423,6 +425,11 @@ export function useSwapScreenLogic<StyleType = unknown>({
     if (inUsdValue > 0 && inUsdValue < MIN_SWAP_USD)
       return { key: 'swap.errors.minimumAmount', params: { amount: MIN_SWAP_USD.toFixed(2) } };
     if (quoteError) return quoteError;
+    if (bridgeEstimate?.maxAmount != null && parseFloat(inAmount) > bridgeEstimate.maxAmount)
+      return {
+        key: 'bridge.errors.aboveMaximumWithAmount',
+        params: { max: `${bridgeEstimate.maxAmount} ${bridgeEstimate.symbolIn.toUpperCase()}` },
+      };
     if (quote?.custom?.priceImpact != null && quote.custom.priceImpact > 3)
       return 'swap.errors.highPriceImpact';
     return null;
@@ -744,6 +751,9 @@ export function useSwapScreenLogic<StyleType = unknown>({
           error,
           bridgeEstimate
             ? { amount: bridgeEstimate.minAmount, symbol: bridgeEstimate.symbolIn }
+            : undefined,
+          bridgeEstimate?.maxAmount != null
+            ? { amount: bridgeEstimate.maxAmount, symbol: bridgeEstimate.symbolIn }
             : undefined
         )
       );

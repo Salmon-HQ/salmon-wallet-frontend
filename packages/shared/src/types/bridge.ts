@@ -29,6 +29,8 @@ export interface BridgeEstimate {
   estimatedAmount: number;
   /** Minimum required input amount */
   minAmount: number;
+  /** Maximum allowed input amount; null/undefined when the pair has no cap */
+  maxAmount?: number | null;
   /** Input symbol */
   symbolIn: string;
   /** Output symbol */
@@ -124,15 +126,36 @@ export interface BridgeEstimateResponse {
 }
 
 /**
- * Minimal amount response from bridge
+ * Minimal amount response from bridge.
+ *
+ * Wire contract (salmon-api `GET /v1/bridge/minimal`): both amounts arrive as
+ * decimal STRINGS (StealthEX sends strings, e.g. "0.39359748097612175282"),
+ * and `max_amount` is additive — omitted when the pair has no upstream cap.
+ * Convention: the service boundary (`getBridgeMinimalAmount`) coerces both
+ * fields with `Number()` + NaN guard, so the rest of the app only ever sees
+ * numbers (`null` when absent or unparsable).
  */
 export interface BridgeMinimalResponse {
-  /** Minimum required input amount */
-  min_amount: number;
+  /** Minimum required input amount (decimal string) */
+  min_amount: string;
+  /** Maximum allowed input amount (decimal string); omitted when the pair has no cap */
+  max_amount?: string;
   /** Input symbol */
   from?: string;
   /** Output symbol */
   to?: string;
+}
+
+/**
+ * Pair amount range coerced to numbers at the service boundary.
+ * `null` means the value is absent or unparsable — `max: null` is the
+ * "no upstream cap" case and must not block anything.
+ */
+export interface BridgeAmountRange {
+  /** Minimum required input amount, or null when unavailable */
+  min: number | null;
+  /** Maximum allowed input amount, or null when the pair has no cap */
+  max: number | null;
 }
 
 /**

@@ -16,7 +16,6 @@ import { removeDecimals } from '../../utils/decimals';
 import type { SolanaNetworkId } from '../../types/blockchain';
 import type {
   SolanaTransaction,
-  SolanaTransactionType,
   SolanaPagingParams,
   SolanaTransactionsResponse,
 } from '../../types/transaction';

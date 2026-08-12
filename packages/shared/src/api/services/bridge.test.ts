@@ -133,7 +133,7 @@ describe('bridge service', () => {
 
   it('includes optional network filters when fetching bridge minimum amount', async () => {
     mockApiClientGet.mockResolvedValueOnce({
-      data: { min_amount: 0.1 },
+      data: { min_amount: '0.1' },
     });
 
     const result = await getBridgeMinimalAmount('SOL', 'BTC', 'SOLANA', 'BITCOIN');
@@ -146,7 +146,39 @@ describe('bridge service', () => {
         networkOut: 'BITCOIN',
       },
     });
-    expect(result).toBe(0.1);
+    expect(result).toEqual({ min: 0.1, max: null });
+  });
+
+  it('coerces string min_amount and max_amount to numbers', async () => {
+    mockApiClientGet.mockResolvedValueOnce({
+      data: { min_amount: '0.39359748097612175282', max_amount: '250' },
+    });
+
+    const result = await getBridgeMinimalAmount('SOL', 'BTC');
+
+    // Number('0.39359748097612175282') rounds to the nearest double — assert
+    // against the same coercion instead of a literal that loses precision.
+    expect(result).toEqual({ min: Number('0.39359748097612175282'), max: 250 });
+  });
+
+  it('returns max null when the pair has no upstream cap', async () => {
+    mockApiClientGet.mockResolvedValueOnce({
+      data: { min_amount: '0.015' },
+    });
+
+    const result = await getBridgeMinimalAmount('SOL', 'BTC');
+
+    expect(result).toEqual({ min: 0.015, max: null });
+  });
+
+  it('returns null amounts when the payload is missing or unparsable', async () => {
+    mockApiClientGet.mockResolvedValueOnce({
+      data: { min_amount: 'not-a-number', max_amount: 'also-bad' },
+    });
+
+    const result = await getBridgeMinimalAmount('SOL', 'BTC');
+
+    expect(result).toEqual({ min: null, max: null });
   });
 
   it('lowercases symbols and forwards destination data when creating an exchange', async () => {
@@ -214,9 +246,20 @@ describe('bridge service integration', () => {
       // conditions. Query it first so the integration test stays valid as the
       // min amount changes. Apply a 50% safety buffer to absorb sub-second
       // fluctuations between the minimal query and the exchange call.
-      const minimalResponse = await client.get<{ min_amount: string }>('/v1/bridge/minimal', {
-        params: { symbolIn: 'sol', symbolOut: 'btc' },
-      });
+      const minimalResponse = await client.get<{ min_amount: string; max_amount?: string }>(
+        '/v1/bridge/minimal',
+        {
+          params: { symbolIn: 'sol', symbolOut: 'btc' },
+        },
+      );
+
+      // Contract: min_amount is a decimal string; max_amount is additive and,
+      // when present, must also be a positive decimal string.
+      expect(typeof minimalResponse.data?.min_amount).toBe('string');
+      if (minimalResponse.data?.max_amount !== undefined) {
+        expect(typeof minimalResponse.data.max_amount).toBe('string');
+        expect(Number(minimalResponse.data.max_amount)).toBeGreaterThan(0);
+      }
 
       const minAmount = Number(minimalResponse.data?.min_amount);
       if (!Number.isFinite(minAmount) || minAmount <= 0) {

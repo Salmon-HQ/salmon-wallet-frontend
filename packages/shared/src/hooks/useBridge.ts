@@ -217,15 +217,19 @@ export function useBridge(_params?: UseBridgeParams): UseBridgeResult {
       ]);
 
       const estimatedAmount = estimateResult.status === 'fulfilled' ? estimateResult.value : null;
-      const minAmount = minResult.status === 'fulfilled' ? minResult.value : null;
+      const range = minResult.status === 'fulfilled' ? minResult.value : null;
+      const minAmount = range?.min ?? null;
+      const maxAmount = range?.max ?? null;
 
       // If estimate failed, produce a user-readable error and throw
       if (estimatedAmount === null) {
         let errorMessage: string;
 
-        if (minAmount !== null && amount < Number(minAmount)) {
-          const formatted = parseFloat(Number(minAmount).toPrecision(4));
+        if (minAmount !== null && amount < minAmount) {
+          const formatted = parseFloat(minAmount.toPrecision(4));
           errorMessage = `Minimum bridge amount is ${formatted} ${symbolIn.toUpperCase()}`;
+        } else if (maxAmount !== null && amount > maxAmount) {
+          errorMessage = 'bridge.errors.aboveMaximum';
         } else {
           const rawReason = estimateResult.status === 'rejected'
             ? (estimateResult.reason instanceof Error ? estimateResult.reason.message : String(estimateResult.reason))
@@ -239,10 +243,12 @@ export function useBridge(_params?: UseBridgeParams): UseBridgeResult {
         throw new Error(errorMessage);
       }
 
-      // Estimate succeeded — if minAmount failed, proceed with 0
+      // Estimate succeeded — if minAmount failed, proceed with 0.
+      // maxAmount stays null when the pair has no upstream cap.
       const result: BridgeEstimate = {
         estimatedAmount,
         minAmount: minAmount ?? 0,
+        maxAmount,
         symbolIn,
         symbolOut,
       };
