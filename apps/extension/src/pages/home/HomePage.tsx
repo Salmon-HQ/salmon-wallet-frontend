@@ -932,7 +932,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     setBitcoinChartPeriod(period);
   }, []);
 
-  // Selected token chart + coin info via shared React Query hook
+  // Selected token chart + coin info via shared React Query hook.
+  // Tokens without a coingeckoId fall back to the contract-address chart
+  // endpoint via their mint (handled inside the hook/service).
   const selectedTokenCoinId = selectedToken?.coingeckoId ?? undefined;
   const {
     coinInfo: selectedTokenCoinInfo,
@@ -941,9 +943,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     error: selectedTokenError,
   } = useCoinMarketData({
     coinId: selectedTokenCoinId,
+    contractAddress: selectedToken?.address,
     currency,
     days: PERIOD_TO_DAYS[selectedTokenChartPeriod],
-    enabled: !!selectedToken && currentPage === 'tokenDetail' && !!selectedTokenCoinId,
+    enabled: !!selectedToken && currentPage === 'tokenDetail',
   });
   const selectedTokenChartData: PriceDataPoint[] = selectedTokenChartDataRaw ?? [];
   const selectedTokenMarketData: MarketData | undefined = useMemo(

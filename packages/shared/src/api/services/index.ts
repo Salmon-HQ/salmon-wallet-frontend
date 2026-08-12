@@ -24,7 +24,11 @@
 export {
   // Functions
   getMarketChart,
+  getContractMarketChart,
+  getTokenMarketChart,
   getCoinInfo,
+  getContractCoinInfo,
+  getTokenCoinInfo,
 } from './price';
 
 // ============================================================================

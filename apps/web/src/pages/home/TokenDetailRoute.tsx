@@ -5,8 +5,8 @@ import {
   useAccountsContext,
   useBalance,
   useCurrencyContext,
-  getMarketChart,
-  getCoinInfo,
+  getTokenMarketChart,
+  getTokenCoinInfo,
   coinInfoToMarketData,
   getBlockchainFromNetworkId,
   PERIOD_TO_DAYS,
@@ -63,15 +63,18 @@ export function TokenDetailRoute(): React.ReactElement {
   const [chartLoading, setChartLoading] = useState(false);
   const [chartError, setChartError] = useState(false);
 
-  // Fetch chart data
+  // Fetch chart data (classic endpoint by coingeckoId, contract-address
+  // fallback by mint for SPL tokens without one; null means "no chart")
+  const tokenCoingeckoId = token?.coingeckoId ?? undefined;
+  const tokenContractAddress = token?.address;
   useEffect(() => {
-    if (!token?.coingeckoId) return;
+    if (!tokenCoingeckoId && !tokenContractAddress) return;
     let cancelled = false;
     setChartLoading(true);
     setChartError(false);
 
     const days = PERIOD_TO_DAYS[chartPeriod];
-    getMarketChart(token.coingeckoId, days, currency)
+    getTokenMarketChart({ coingeckoId: tokenCoingeckoId, address: tokenContractAddress }, days, currency)
       .then((res) => {
         if (cancelled) return;
         if (res?.prices) {
@@ -85,14 +88,15 @@ export function TokenDetailRoute(): React.ReactElement {
       .finally(() => { if (!cancelled) setChartLoading(false); });
 
     return () => { cancelled = true; };
-  }, [token?.coingeckoId, chartPeriod, currency]);
+  }, [tokenCoingeckoId, tokenContractAddress, chartPeriod, currency]);
 
-  // Fetch coin info (once per token)
+  // Fetch coin info (once per token; contract-address fallback for tokens
+  // without a coingeckoId — null means "no info" and keeps sections hidden)
   useEffect(() => {
-    if (!token?.coingeckoId) return;
+    if (!tokenCoingeckoId && !tokenContractAddress) return;
     let cancelled = false;
 
-    getCoinInfo(token.coingeckoId, currency)
+    getTokenCoinInfo({ coingeckoId: tokenCoingeckoId, address: tokenContractAddress }, currency)
       .then((info) => {
         if (cancelled || !info) return;
         setCoinInfo(info);
@@ -101,7 +105,7 @@ export function TokenDetailRoute(): React.ReactElement {
       .catch((e) => console.error('Failed to load coin info:', e));
 
     return () => { cancelled = true; };
-  }, [token?.coingeckoId, currency]);
+  }, [tokenCoingeckoId, tokenContractAddress, currency]);
 
   const handleBack = useCallback(() => navigate('/home'), [navigate]);
   const handleChartPeriodChange = useCallback((period: PriceChartPeriod) => setChartPeriod(period), []);
