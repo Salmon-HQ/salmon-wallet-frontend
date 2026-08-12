@@ -5,7 +5,7 @@ import {
   useAccountsContext,
   useBalance,
   useCurrencyContext,
-  getMarketChart,
+  getTokenMarketChart,
   getCoinInfo,
   coinInfoToMarketData,
   getBlockchainFromNetworkId,
@@ -63,15 +63,18 @@ export function TokenDetailRoute(): React.ReactElement {
   const [chartLoading, setChartLoading] = useState(false);
   const [chartError, setChartError] = useState(false);
 
-  // Fetch chart data
+  // Fetch chart data (classic endpoint by coingeckoId, contract-address
+  // fallback by mint for SPL tokens without one; null means "no chart")
+  const tokenCoingeckoId = token?.coingeckoId ?? undefined;
+  const tokenContractAddress = token?.address;
   useEffect(() => {
-    if (!token?.coingeckoId) return;
+    if (!tokenCoingeckoId && !tokenContractAddress) return;
     let cancelled = false;
     setChartLoading(true);
     setChartError(false);
 
     const days = PERIOD_TO_DAYS[chartPeriod];
-    getMarketChart(token.coingeckoId, days, currency)
+    getTokenMarketChart({ coingeckoId: tokenCoingeckoId, address: tokenContractAddress }, days, currency)
       .then((res) => {
         if (cancelled) return;
         if (res?.prices) {
@@ -85,7 +88,7 @@ export function TokenDetailRoute(): React.ReactElement {
       .finally(() => { if (!cancelled) setChartLoading(false); });
 
     return () => { cancelled = true; };
-  }, [token?.coingeckoId, chartPeriod, currency]);
+  }, [tokenCoingeckoId, tokenContractAddress, chartPeriod, currency]);
 
   // Fetch coin info (once per token)
   useEffect(() => {

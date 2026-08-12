@@ -5,10 +5,11 @@
  *
  * API endpoints used here:
  * - GET /v1/chart/{coinId} - Market chart data (price history)
+ * - GET /v1/chart/{platform}/contract/{address} - Market chart by contract address (mint)
  * - GET /v1/coin/{coinId}  - Detailed coin info
  */
 
-import { apiClient } from '../client';
+import { apiClient, ApiError } from '../client';
 import type {
   MarketChartData,
   CoinInfo,
@@ -42,6 +43,72 @@ export async function getMarketChart(
     console.error(`[PriceService] Failed to fetch chart for ${coinId}:`, error);
     return null;
   }
+}
+
+/**
+ * Get market chart data for a token by contract address (mint)
+ *
+ * Endpoint: GET /v1/chart/{platform}/contract/{address}
+ *
+ * Fallback for SPL tokens whose metadata has no CoinGecko coin ID.
+ * A 404 (`chart_not_found`) is an expected outcome for long-tail tokens
+ * not listed on CoinGecko — it means "no chart", not a failure — so it
+ * resolves to null. Real failures (5xx, network) are logged and rethrown
+ * so callers can surface an error state.
+ *
+ * @param platform - CoinGecko asset platform (e.g., 'solana')
+ * @param address - Token contract address (mint)
+ * @param days - Number of days (1, 7, 30, 90, 365)
+ * @param currency - Currency for prices (default: 'usd')
+ * @returns Chart data, or null when the contract has no chart (404)
+ */
+export async function getContractMarketChart(
+  platform: string,
+  address: string,
+  days: 1 | 7 | 30 | 90 | 365 = 7,
+  currency: string = 'usd'
+): Promise<MarketChartData | null> {
+  try {
+    const { data } = await apiClient.get<MarketChartData>(
+      `/v1/chart/${platform}/contract/${address}`,
+      { params: { days, currency } }
+    );
+    return data;
+  } catch (error) {
+    if (error instanceof ApiError && error.isNotFound()) {
+      return null;
+    }
+    console.error(`[PriceService] Failed to fetch contract chart for ${platform}:${address}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get market chart data for a token, resolving the best endpoint.
+ *
+ * Single dispatch point shared by all apps: tokens with a CoinGecko coin ID
+ * use the classic chart endpoint; tokens without one fall back to the
+ * contract-address endpoint using their mint. Tokens with neither resolve
+ * to null (no chart).
+ *
+ * Error semantics follow the underlying call: the classic path resolves to
+ * null on any failure (unchanged behavior); the contract path resolves to
+ * null only on 404 and throws on real failures.
+ */
+export async function getTokenMarketChart(
+  token: { coingeckoId?: string; address?: string },
+  days: 1 | 7 | 30 | 90 | 365 = 7,
+  currency: string = 'usd'
+): Promise<MarketChartData | null> {
+  if (token.coingeckoId) {
+    return getMarketChart(token.coingeckoId, days, currency);
+  }
+  if (token.address) {
+    // ponytail: platform hardcoded to 'solana' — only SPL tokens lack a
+    // coingeckoId today; parametrize when another chain needs the fallback.
+    return getContractMarketChart('solana', token.address, days, currency);
+  }
+  return null;
 }
 
 /**

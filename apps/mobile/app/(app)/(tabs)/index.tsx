@@ -40,6 +40,7 @@ import {
   fontSize,
   getCoinInfo,
   getMarketChart,
+  getTokenMarketChart,
   getShortAddress,
   spacing,
   useAccountsContext,
@@ -473,18 +474,23 @@ export default function HomeScreen() {
   }, [currentBlockchain, bitcoinCoinInfo, currency]);
 
   // Load selected token chart data when token is selected or period changes
+  // (classic endpoint by coingeckoId, contract-address fallback by mint;
+  // null means "no chart" and keeps the chart section hidden without error)
   useEffect(() => {
     const loadSelectedTokenChartData = async () => {
       if (!selectedToken || !tokenSheetVisible) return;
 
-      const coinId = selectedToken.coingeckoId;
-      if (!coinId) return;
+      if (!selectedToken.coingeckoId && !selectedToken.address) return;
 
       setSelectedTokenLoading(true);
       setSelectedTokenChartError(false);
       try {
         const days = PERIOD_TO_DAYS[selectedTokenChartPeriod];
-        const chartResponse = await getMarketChart(coinId, days, currency);
+        const chartResponse = await getTokenMarketChart(
+          { coingeckoId: selectedToken.coingeckoId ?? undefined, address: selectedToken.address },
+          days,
+          currency
+        );
 
         if (chartResponse?.prices) {
           const priceData: PriceDataPoint[] = chartResponse.prices.map(([timestamp, price]) => ({

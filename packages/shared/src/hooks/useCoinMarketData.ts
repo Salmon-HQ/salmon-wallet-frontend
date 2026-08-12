@@ -9,7 +9,7 @@
 import { useCallback, useMemo } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../query/keys';
-import { getCoinInfo, getMarketChart } from '../api/services';
+import { getCoinInfo, getTokenMarketChart } from '../api/services';
 import type { CoinInfo } from '../types/price';
 
 export interface MarketChartPoint {
@@ -19,6 +19,11 @@ export interface MarketChartPoint {
 
 export interface UseCoinMarketDataParams {
   coinId: string | undefined;
+  /**
+   * Token contract address (mint). Fallback chart source for tokens
+   * without a CoinGecko coin ID — coin info is still gated by coinId.
+   */
+  contractAddress?: string;
   currency: string;
   days: 1 | 7 | 30 | 90 | 365;
   enabled?: boolean;
@@ -33,8 +38,12 @@ export interface UseCoinMarketDataResult {
 }
 
 export function useCoinMarketData(params: UseCoinMarketDataParams): UseCoinMarketDataResult {
-  const { coinId, currency, days, enabled = true } = params;
-  const isEnabled = enabled && !!coinId;
+  const { coinId, contractAddress, currency, days, enabled = true } = params;
+  // Chart identity: CoinGecko coin ID when available, otherwise the mint
+  // (contract-address fallback). Coin info exists only for coinId tokens.
+  const chartId = coinId ?? (contractAddress ? `contract:solana:${contractAddress}` : undefined);
+  const infoEnabled = enabled && !!coinId;
+  const chartEnabled = enabled && !!chartId;
   const queryClient = useQueryClient();
 
   const results = useQueries({
@@ -42,15 +51,15 @@ export function useCoinMarketData(params: UseCoinMarketDataParams): UseCoinMarke
       {
         queryKey: coinId ? queryKeys.coinInfo({ coinId, currency }) : ['coin-info', 'disabled'],
         queryFn: () => getCoinInfo(coinId as string, currency),
-        enabled: isEnabled,
+        enabled: infoEnabled,
         staleTime: 60_000,
       },
       {
-        queryKey: coinId
-          ? queryKeys.marketChart({ coinId, currency, days })
+        queryKey: chartId
+          ? queryKeys.marketChart({ coinId: chartId, currency, days })
           : ['market-chart', 'disabled'],
-        queryFn: () => getMarketChart(coinId as string, days, currency),
-        enabled: isEnabled,
+        queryFn: () => getTokenMarketChart({ coingeckoId: coinId, address: contractAddress }, days, currency),
+        enabled: chartEnabled,
         staleTime: 60_000,
       },
     ],
@@ -68,17 +77,19 @@ export function useCoinMarketData(params: UseCoinMarketDataParams): UseCoinMarke
   const error = errorObj ? (errorObj instanceof Error ? errorObj.message : String(errorObj)) : null;
 
   const refresh = useCallback(async () => {
-    if (!coinId) return;
+    if (!chartId) return;
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.coinInfo({ coinId, currency }) }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.marketChart({ coinId, currency, days }) }),
+      coinId
+        ? queryClient.invalidateQueries({ queryKey: queryKeys.coinInfo({ coinId, currency }) })
+        : Promise.resolve(),
+      queryClient.invalidateQueries({ queryKey: queryKeys.marketChart({ coinId: chartId, currency, days }) }),
     ]);
-  }, [queryClient, coinId, currency, days]);
+  }, [queryClient, coinId, chartId, currency, days]);
 
   return {
     coinInfo: infoQuery.data ?? null,
     chartData,
-    loading: isEnabled && (infoQuery.isPending || chartQuery.isPending),
+    loading: (infoEnabled && infoQuery.isPending) || (chartEnabled && chartQuery.isPending),
     error,
     refresh,
   };

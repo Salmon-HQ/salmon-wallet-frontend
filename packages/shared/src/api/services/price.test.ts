@@ -61,13 +61,15 @@ vi.mock('../client', () => {
 // Now import the functions AFTER mocking
 import {
   getMarketChart,
+  getContractMarketChart,
+  getTokenMarketChart,
   getCoinInfo,
 } from './price';
 import type {
   MarketChartData,
   CoinInfo,
 } from '../../types/price';
-import { apiClient, staticApiClient } from '../client';
+import { apiClient, staticApiClient, ApiError } from '../client';
 
 // Get access to the mocked functions
 const mockApiClientGet = vi.mocked(apiClient.get);
@@ -267,6 +269,92 @@ describe('Price Service', () => {
   });
 
   // ==========================================================================
+  // getContractMarketChart Tests
+  // ==========================================================================
+
+  describe('getContractMarketChart', () => {
+    const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+    it('should fetch contract chart and return camelCase shape', async () => {
+      mockApiClientGet.mockResolvedValueOnce({ data: MOCK_MARKET_CHART });
+
+      const result = await getContractMarketChart('solana', USDC_MINT, 7);
+
+      expect(mockApiClientGet).toHaveBeenCalledWith(
+        `/v1/chart/solana/contract/${USDC_MINT}`,
+        { params: { days: 7, currency: 'usd' } }
+      );
+      expect(result).toEqual(MOCK_MARKET_CHART);
+      expect(result).toHaveProperty('marketCaps');
+      expect(result).toHaveProperty('totalVolumes');
+      expect(Array.isArray(result!.prices)).toBe(true);
+    });
+
+    it('should return null on 404 (chart_not_found is an expected outcome)', async () => {
+      mockApiClientGet.mockRejectedValueOnce(
+        new ApiError('No CoinGecko chart for contract', 404, 'chart_not_found')
+      );
+
+      const result = await getContractMarketChart('solana', USDC_MINT);
+
+      expect(result).toBeNull();
+    });
+
+    it('should throw on server errors (5xx)', async () => {
+      mockApiClientGet.mockRejectedValueOnce(new ApiError('Internal error', 500));
+
+      await expect(getContractMarketChart('solana', USDC_MINT)).rejects.toThrow('Internal error');
+    });
+
+    it('should throw on network errors', async () => {
+      mockApiClientGet.mockRejectedValueOnce(new Error('Network Error'));
+
+      await expect(getContractMarketChart('solana', USDC_MINT)).rejects.toThrow('Network Error');
+    });
+  });
+
+  // ==========================================================================
+  // getTokenMarketChart Tests (dispatch)
+  // ==========================================================================
+
+  describe('getTokenMarketChart', () => {
+    const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+    it('should use the classic endpoint when coingeckoId is present', async () => {
+      mockApiClientGet.mockResolvedValueOnce({ data: MOCK_MARKET_CHART });
+
+      const result = await getTokenMarketChart(
+        { coingeckoId: 'solana', address: USDC_MINT },
+        7
+      );
+
+      expect(mockApiClientGet).toHaveBeenCalledWith('/v1/chart/solana', {
+        params: { days: 7, currency: 'usd' },
+      });
+      expect(result).toEqual(MOCK_MARKET_CHART);
+    });
+
+    it('should fall back to the contract endpoint when coingeckoId is missing', async () => {
+      mockApiClientGet.mockResolvedValueOnce({ data: MOCK_MARKET_CHART });
+
+      const result = await getTokenMarketChart({ address: USDC_MINT }, 30);
+
+      expect(mockApiClientGet).toHaveBeenCalledWith(
+        `/v1/chart/solana/contract/${USDC_MINT}`,
+        { params: { days: 30, currency: 'usd' } }
+      );
+      expect(result).toEqual(MOCK_MARKET_CHART);
+    });
+
+    it('should return null without calling the API when neither identifier exists', async () => {
+      const result = await getTokenMarketChart({});
+
+      expect(result).toBeNull();
+      expect(mockApiClientGet).not.toHaveBeenCalled();
+    });
+  });
+
+  // ==========================================================================
   // getCoinInfo Tests
   // ==========================================================================
 
@@ -383,6 +471,39 @@ describe('Price Service', () => {
         expect(result).toHaveProperty('prices');
         expect(Array.isArray(result!.prices)).toBe(true);
         expect(result!.prices.length).toBeGreaterThan(0);
+      },
+      10000
+    );
+
+    it(
+      'should fetch real contract chart for USDC from backend',
+      async () => {
+        if (!backendBaseUrl) {
+          console.log('Skipping backend integration test - backend not available');
+          return;
+        }
+
+        const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+        // Proxy the mocked apiClient to the live backend, preserving params.
+        mockApiClientGet.mockImplementation(async (path, config) => {
+          const params = (config as { params?: Record<string, string | number> } | undefined)?.params ?? {};
+          const qs = new URLSearchParams(
+            Object.entries(params).map(([k, v]) => [k, String(v)])
+          ).toString();
+          return { data: await fetchBackendJson(`${path}${qs ? `?${qs}` : ''}`) };
+        });
+
+        const result = await getContractMarketChart('solana', USDC_MINT, 7);
+
+        expect(result).not.toBeNull();
+        expect(result).toHaveProperty('prices');
+        expect(result).toHaveProperty('marketCaps');
+        expect(result).toHaveProperty('totalVolumes');
+        expect(Array.isArray(result!.prices)).toBe(true);
+        expect(result!.prices.length).toBeGreaterThan(0);
+        expect(typeof result!.prices[0][0]).toBe('number');
+        expect(typeof result!.prices[0][1]).toBe('number');
       },
       10000
     );

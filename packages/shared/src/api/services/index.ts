@@ -24,6 +24,8 @@
 export {
   // Functions
   getMarketChart,
+  getContractMarketChart,
+  getTokenMarketChart,
   getCoinInfo,
 } from './price';
 
