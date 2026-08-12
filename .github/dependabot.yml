@@ -9,6 +9,11 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    # Cooldown: a freshly published version waits before being proposed, so a
+    # compromised release gets caught by the ecosystem before it reaches a
+    # wallet PR (zizmor dependabot-cooldown).
+    cooldown:
+      default-days: 7
     groups:
       npm-minor-and-patch:
         update-types: [minor, patch]
