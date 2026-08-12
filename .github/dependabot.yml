@@ -18,6 +18,42 @@ updates:
       npm-minor-and-patch:
         update-types: [minor, patch]
     # Majors need a human decision in a wallet; they arrive as separate PRs.
+    ignore:
+      # Expo SDK owns these versions (currently SDK 55). Bumping them out of
+      # band breaks the native build silently; they move only in a deliberate
+      # SDK migration.
+      - dependency-name: react-native
+        update-types: [version-update:semver-major, version-update:semver-minor]
+      - dependency-name: react-native-reanimated
+      - dependency-name: react-native-worklets
+      - dependency-name: react-native-screens
+      - dependency-name: react-native-safe-area-context
+      - dependency-name: react-native-svg
+      - dependency-name: react
+      - dependency-name: react-dom
+      - dependency-name: expo*
+        update-types: [version-update:semver-major]
+      # jest is pinned by jest-expo (SDK 55 ships jest 29 internals); it moves
+      # with the SDK, not on its own.
+      - dependency-name: jest
+        update-types: [version-update:semver-major]
+      - dependency-name: '@types/jest'
+        update-types: [version-update:semver-major]
+      # react-i18next 17 requires i18next >= 26; both majors move together in
+      # a deliberate migration.
+      - dependency-name: react-i18next
+        update-types: [version-update:semver-major]
+      - dependency-name: i18next
+        update-types: [version-update:semver-major]
+      # @testing-library/react-native 14 makes render/fireEvent async and
+      # swaps react-test-renderer for the new test-renderer peer — a test
+      # suite migration, not a bump.
+      - dependency-name: '@testing-library/react-native'
+        update-types: [version-update:semver-major]
+      # 7.1 enables React Compiler-backed rules the codebase does not pass
+      # yet; upgrade deliberately together with the rule fixes.
+      - dependency-name: eslint-plugin-react-hooks
+        update-types: [version-update:semver-major, version-update:semver-minor]
 
   - package-ecosystem: github-actions
     directory: /

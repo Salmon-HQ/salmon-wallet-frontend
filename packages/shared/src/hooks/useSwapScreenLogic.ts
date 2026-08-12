@@ -491,11 +491,15 @@ export function useSwapScreenLogic<StyleType = unknown>({
     loadBridgeTokens();
   }, [inToken, onGetAvailableTokens]);
 
-  // Stabilize callback refs
+  // Stabilize callback refs (updated in an effect: react-hooks/refs forbids
+  // ref writes during render; both refs are only read inside debounced
+  // timers, which fire after effects have run)
   const onGetQuoteRef = useRef(onGetQuote);
-  onGetQuoteRef.current = onGetQuote;
   const onGetBridgeEstimateRef = useRef(onGetBridgeEstimate);
-  onGetBridgeEstimateRef.current = onGetBridgeEstimate;
+  useEffect(() => {
+    onGetQuoteRef.current = onGetQuote;
+    onGetBridgeEstimateRef.current = onGetBridgeEstimate;
+  });
 
   // Fetch quote/estimate when input changes
   useEffect(() => {

@@ -2,6 +2,12 @@
   "extends": "./.wxt/tsconfig.json",
   "compilerOptions": {
     "jsx": "react-jsx",
+    // wxt 0.21 turned these on in its generated tsconfig; the workspace
+    // (shared/ui sources type-checked through our paths) is not ready for
+    // them yet. Revisit as a deliberate strictness migration.
+    "verbatimModuleSyntax": false,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": false,
     "paths": {
       "@/*": ["./src/*"],
       "@/assets": ["./src/assets"],
