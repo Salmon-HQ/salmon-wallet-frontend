@@ -18,12 +18,7 @@ appId: io.salmonwallet.app
 # screen itself is covered by flows/smoke/settings/analytics-prompt.yaml.)
 # Key derivation (PBKDF2, 210k iterations) runs between the password screen and
 # this one. It takes over 30s on a cold emulator, so the wait has to outlast it.
-- extendedWaitUntil:
-    visible:
-      id: "analytics-consent-screen"
-    timeout: 90000
-- tapOn:
-    id: "analytics-consent-decline"
+- runFlow: ../../../subflows/decline-analytics-consent.yaml
 - extendedWaitUntil:
     visible: "Congratulations!"
     timeout: 60000

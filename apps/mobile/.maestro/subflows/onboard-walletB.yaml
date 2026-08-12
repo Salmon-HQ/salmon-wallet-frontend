@@ -14,12 +14,7 @@ appId: io.salmonwallet.app
       - tapOn:
           id: "biometric-skip-button"
 # First-run analytics consent is the final onboarding step. Decline to reach Home.
-- extendedWaitUntil:
-    visible:
-      id: "analytics-consent-screen"
-    timeout: 30000
-- tapOn:
-    id: "analytics-consent-decline"
+- runFlow: ./decline-analytics-consent.yaml
 - extendedWaitUntil:
     visible: "Congratulations!"
     timeout: 60000
