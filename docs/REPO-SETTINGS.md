@@ -46,12 +46,20 @@ Today anyone with write access can deploy to production by pushing a
 
 Step 2 is a workflow change — do it in a PR when enabling the environment.
 
-## 4. Private vulnerability reporting
+## 4. Advanced Security toggles (one screen, three switches)
 
-SECURITY.md and the issue templates point users to GitHub Security
-Advisories. Verify it is actually enabled: Settings → Advanced Security →
-**Private vulnerability reporting** ON. (It is not automatic on public
-repos.)
+Settings → Advanced Security:
+
+- **Private vulnerability reporting**: ON. SECURITY.md and the issue
+  templates point users to GitHub Security Advisories; without this switch
+  that flow does not exist. (Not automatic on public repos.)
+- **Dependabot alerts**: ON. Warns about known vulnerabilities in
+  dependencies even when no update exists yet. (Usually default-on for
+  public repos — verify.)
+- **Dependabot security updates**: ON. Opens patch PRs immediately when an
+  advisory lands, bypassing the 7-day cooldown that regular version updates
+  respect (`.github/dependabot.yml`). Version updates themselves need no
+  toggle — the committed config file activates them.
 
 ## 5. Labels
 
