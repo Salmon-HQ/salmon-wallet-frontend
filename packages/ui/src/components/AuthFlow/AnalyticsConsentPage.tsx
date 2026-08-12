@@ -60,7 +60,7 @@ const Title = styled(Typography)({
 });
 
 const Body = styled(Typography)({
-  color: colors.text.secondary,
+  color: colors.text.primary,
   fontFamily: fontFamily.sans,
   fontSize: fontSize.lg,
   lineHeight: lineHeight.relaxed,
@@ -76,7 +76,6 @@ const Footnote = styled(Typography)({
   fontFamily: fontFamily.sans,
   fontSize: fontSize.base,
   lineHeight: lineHeight.normal,
-  opacity: 0.8,
   marginTop: spacing.xl,
   textAlign: 'center',
 });

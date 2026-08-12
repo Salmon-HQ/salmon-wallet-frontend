@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   body: {
-    color: colors.text.secondary,
+    color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.lg,
     lineHeight: fontSize.lg * lineHeight.relaxed,
@@ -140,7 +140,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.base,
     lineHeight: fontSize.base * lineHeight.normal,
-    opacity: 0.8,
     marginTop: spacing.xl,
     textAlign: 'center',
   },
