@@ -40,7 +40,15 @@ export function needsMnemonicUpgrade(vault: EncryptedMnemonics): boolean {
 }
 
 export async function getStoredMnemonics(): Promise<StoredMnemonics | null> {
-  return getStorageItem<StoredMnemonics>(STORAGE_KEYS.MNEMONICS);
+  const stored = await getStorageItem<StoredMnemonics>(STORAGE_KEYS.MNEMONICS);
+  // Fail closed on a corrupt vault: when JSON.parse fails, storage returns the
+  // raw string; both legit shapes (encrypted vault, plaintext record) are
+  // objects, so a non-object means corruption — return null so the lock is
+  // never skipped (see initializeAccountsSecurity's plaintext branch).
+  if (typeof stored !== 'object' || stored === null) {
+    return null;
+  }
+  return stored;
 }
 
 export async function getEncryptedStoredMnemonics(): Promise<EncryptedMnemonics | null> {

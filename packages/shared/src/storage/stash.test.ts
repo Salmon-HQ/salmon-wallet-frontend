@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
+  createExtensionStash,
   createMemoryStash,
   createStashHandler,
   initStash,
@@ -221,6 +222,84 @@ describe('stash', () => {
       call(handler, { method: 'set', key: 'b', value: 1 });
       call(handler, { method: 'clear' });
       expect(stashMap.size).toBe(0);
+    });
+  });
+
+  // ==========================================================================
+  // Extension stash sender — sendMessage wrapper + chrome.runtime.lastError
+  // (spec 012, US4.2) — the sender side of the derived-key-cache channel.
+  // ==========================================================================
+
+  describe('createExtensionStash', () => {
+    const CHANNEL = 'salmon_extension_stash_channel';
+    type ChromeStub = {
+      runtime: {
+        sendMessage: (message: unknown, callback: (response: unknown) => void) => void;
+        lastError?: { message: string };
+      };
+    };
+    const glob = globalThis as unknown as { chrome: ChromeStub | undefined };
+    let originalChrome: ChromeStub | undefined;
+
+    beforeEach(() => {
+      originalChrome = glob.chrome;
+    });
+
+    afterEach(() => {
+      glob.chrome = originalChrome;
+    });
+
+    it('throws when the chrome runtime API is unavailable', () => {
+      glob.chrome = undefined;
+      expect(() => createExtensionStash()).toThrow('Chrome runtime API is not available');
+    });
+
+    it('setItem sends the set message and resolves once the callback fires', async () => {
+      const sendMessage = vi.fn((_message: unknown, cb: (r: unknown) => void) => cb(undefined));
+      glob.chrome = { runtime: { sendMessage, lastError: undefined } };
+
+      const stash = createExtensionStash();
+      await stash.setItem('derived_key_cache', { key: [1, 2, 3] });
+
+      expect(sendMessage).toHaveBeenCalledTimes(1);
+      expect(sendMessage.mock.calls[0][0]).toEqual({
+        channel: CHANNEL,
+        data: { method: 'set', key: 'derived_key_cache', value: { key: [1, 2, 3] } },
+      });
+    });
+
+    it('getItem resolves with the value the background worker returns', async () => {
+      const cached = { key: [9, 9, 9] };
+      const sendMessage = vi.fn((_message: unknown, cb: (r: unknown) => void) => cb(cached));
+      glob.chrome = { runtime: { sendMessage, lastError: undefined } };
+
+      const stash = createExtensionStash();
+      await expect(stash.getItem('derived_key_cache')).resolves.toEqual(cached);
+      expect(sendMessage.mock.calls[0][0]).toEqual({
+        channel: CHANNEL,
+        data: { method: 'get', key: 'derived_key_cache' },
+      });
+    });
+
+    it('rejects with chrome.runtime.lastError.message when the send fails', async () => {
+      const sendMessage = vi.fn((_message: unknown, cb: (r: unknown) => void) => {
+        glob.chrome!.runtime.lastError = { message: 'Receiving end does not exist' };
+        cb(undefined);
+      });
+      glob.chrome = { runtime: { sendMessage, lastError: undefined } };
+
+      const stash = createExtensionStash();
+      await expect(stash.setItem('k', 'v')).rejects.toThrow('Receiving end does not exist');
+    });
+
+    it('rejects when chrome.runtime.sendMessage throws synchronously', async () => {
+      const sendMessage = vi.fn(() => {
+        throw new Error('boom');
+      });
+      glob.chrome = { runtime: { sendMessage, lastError: undefined } };
+
+      const stash = createExtensionStash();
+      await expect(stash.clear()).rejects.toThrow('boom');
     });
   });
 });

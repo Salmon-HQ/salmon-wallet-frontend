@@ -89,6 +89,29 @@ const FAST_VAULT: LockedVault = {
   kdf: 'pbkdf2',
 };
 
+/**
+ * SHA256 GOLDEN VAULT FIXTURE — pins the legacy v2 digest path (spec 012, US3).
+ *
+ * Same content and password as the fixtures above, but locked with
+ * `digest: 'sha256'` — the legacy shape that `needsMnemonicUpgrade` and
+ * `migrateLegacyWallets` exist to upgrade. Generated once on 2026-08-12 by
+ * running the real implementation:
+ *   await lock(GOLDEN_CONTENT, GOLDEN_PASSWORD, { iterations: 1000, digest: 'sha256' })
+ * and committing the result verbatim. It is NEVER regenerated at test time.
+ *
+ * Proves the sha256 decrypt path still opens existing user vaults, not just
+ * sha512.
+ */
+const SHA256_VAULT: LockedVault = {
+  encrypted:
+    '2egTHMLUtj57XgARWjoeaFG4N6bGhgNcVVEGEMViTcjjkqFQ3xQffF53XRgLpuPq7bLibm5rLjzFG37kCq2R7itscaA7SLrf34sQJa2uGSGk8Qb32w2swFuEqaVqB1ADnzVVaYBuCwtmcZN55njdTFR7bBc6EuY8CA9tpgiryLUGJF',
+  nonce: '8i6eogpf9j7cwjPVWaKLEisXJYUTGdG4X',
+  salt: 'JsBjBf4ckeh4E88yGbSyL6',
+  iterations: 1000,
+  digest: 'sha256',
+  kdf: 'pbkdf2',
+};
+
 const GOLDEN_CONTENT = { mnemonics: [VALID_MNEMONIC] };
 
 /**
@@ -250,6 +273,16 @@ describe('Encryption Module', () => {
       expect(vault1.nonce).not.toBe(vault2.nonce);
       expect(vault1.salt).not.toBe(vault2.salt);
     });
+
+    it('locks with the production KDF defaults when called with no options (spec 012, US2)', async () => {
+      // A KDF downgrade that hardcodes a weaker iteration/digest inside lock()
+      // without touching the DEFAULT_* constants must fail here: this asserts
+      // the vault PRODUCED with defaults, not just the constant values.
+      const vault = await lock(TEST_DATA, TEST_PASSWORD);
+
+      expect(vault.iterations).toBe(DEFAULT_ITERATIONS);
+      expect(vault.digest).toBe(DEFAULT_DIGEST);
+    });
   });
 
   // ==========================================================================
@@ -402,6 +435,33 @@ describe('Encryption Module', () => {
 
     it('unlocks the committed fast fixture (1000 iterations) identically', async () => {
       const data = await unlock<typeof GOLDEN_CONTENT>(FAST_VAULT, GOLDEN_PASSWORD);
+      expect(data).toEqual(GOLDEN_CONTENT);
+    });
+
+    it('unlocks a committed sha256 legacy vault to the exact expected mnemonics (spec 012, US3)', async () => {
+      // Pins that the legacy sha256 decrypt path still works — this is the
+      // digest older vaults were created with, before sha512 became the default.
+      expect(SHA256_VAULT.digest).toBe('sha256');
+      const data = await unlock<typeof GOLDEN_CONTENT>(SHA256_VAULT, GOLDEN_PASSWORD);
+      expect(data).toEqual(GOLDEN_CONTENT);
+    });
+  });
+
+  // ==========================================================================
+  // Unknown KDF handling — documents CURRENT behavior (spec 012, US5.1)
+  // ==========================================================================
+
+  describe('unknown kdf', () => {
+    it('does NOT reject an unknown kdf today — validateVault ignores the field', async () => {
+      // TODO(specs/012, US5.1): `validateVault` only checks digest, not kdf, so a
+      // vault claiming an unknown kdf (e.g. 'scrypt') still decrypts via pbkdf2.
+      // This test PINS the current, documented behavior. Making unlock reject an
+      // unknown kdf would be a production change to validateVault, which FR-002
+      // forbids in this batch — do not "fix" this test by changing encryption.ts.
+      const data = await unlock<typeof GOLDEN_CONTENT>(
+        { ...FAST_VAULT, kdf: 'scrypt' } as unknown as LockedVault,
+        GOLDEN_PASSWORD
+      );
       expect(data).toEqual(GOLDEN_CONTENT);
     });
   });
