@@ -227,10 +227,7 @@ export function createStashHandler(): {
 } {
   const stashMap = new Map<string, unknown>();
 
-  const handler = (
-    message: StashMessage,
-    sendResponse: (response: unknown) => void
-  ): boolean => {
+  const handler = (message: StashMessage, sendResponse: (response: unknown) => void): boolean => {
     if (message.channel !== EXTENSION_STASH_CHANNEL) {
       return false;
     }

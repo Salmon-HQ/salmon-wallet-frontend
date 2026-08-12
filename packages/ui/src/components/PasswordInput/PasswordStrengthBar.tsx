@@ -34,25 +34,21 @@ const BarsContainer = styled(Box)({
   gap: spacing.xs,
 });
 
-const Bar = styled(Box)<{ $active: boolean; $barColor: string }>(
-  ({ $active, $barColor }) => ({
-    width: componentSizes.iconSizeLarge,
-    height: spacing.xs,
-    borderRadius: borderRadius.scrollbar,
-    backgroundColor: $active ? $barColor : colors.step.inactive,
-    transition: `background-color ${duration.normal} ${easing.ease}`,
-  }),
-);
+const Bar = styled(Box)<{ $active: boolean; $barColor: string }>(({ $active, $barColor }) => ({
+  width: componentSizes.iconSizeLarge,
+  height: spacing.xs,
+  borderRadius: borderRadius.scrollbar,
+  backgroundColor: $active ? $barColor : colors.step.inactive,
+  transition: `background-color ${duration.normal} ${easing.ease}`,
+}));
 
-const Label = styled(Typography)<{ $labelColor: string }>(
-  ({ $labelColor }) => ({
-    fontFamily: fontFamily.sans,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    textTransform: 'capitalize',
-    color: $labelColor,
-  }),
-);
+const Label = styled(Typography)<{ $labelColor: string }>(({ $labelColor }) => ({
+  fontFamily: fontFamily.sans,
+  fontSize: fontSize.sm,
+  fontWeight: fontWeight.medium,
+  textTransform: 'capitalize',
+  color: $labelColor,
+}));
 
 /**
  * PasswordStrengthBar component for visual password strength feedback
@@ -68,12 +64,7 @@ const Label = styled(Typography)<{ $labelColor: string }>(
  * <PasswordStrengthBar strength="strong" t={i18n.t} />
  * ```
  */
-export function PasswordStrengthBar({
-  strength,
-  t,
-  className,
-  style,
-}: PasswordStrengthBarProps) {
+export function PasswordStrengthBar({ strength, t, className, style }: PasswordStrengthBarProps) {
   const getStrengthColor = () => {
     switch (strength) {
       case 'strong':
@@ -104,15 +95,10 @@ export function PasswordStrengthBar({
     <Container className={className} style={style}>
       <BarsContainer>
         {[0, 1, 2].map((index) => (
-          <Bar
-            key={index}
-            $active={index < activeCount}
-            $barColor={barColor}
-          />
+          <Bar key={index} $active={index < activeCount} $barColor={barColor} />
         ))}
       </BarsContainer>
       <Label $labelColor={barColor}>{label}</Label>
     </Container>
   );
 }
-

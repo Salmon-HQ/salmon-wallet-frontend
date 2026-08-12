@@ -8,13 +8,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import {
-  colors,
-  spacing,
-  fontSize,
-  fontFamilyNative,
-  vs,
-} from '@salmon/shared';
+import { colors, spacing, fontSize, fontFamilyNative, vs } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { PrimaryButton } from '../Button/PrimaryButton';
@@ -98,9 +92,7 @@ export function ConfirmSheet({
           return;
         }
       } catch {
-        setPasswordError(
-          t('errors.password_check_failed', 'Failed to verify password'),
-        );
+        setPasswordError(t('errors.password_check_failed', 'Failed to verify password'));
         setLoading(false);
         return;
       }
@@ -124,7 +116,7 @@ export function ConfirmSheet({
         setPasswordError(undefined);
       }
     },
-    [passwordError],
+    [passwordError]
   );
 
   const canConfirm = !requirePassword || password.length > 0;

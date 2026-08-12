@@ -92,16 +92,12 @@ export async function getRecentTransactions(
     apiPaging.limit = pageSize;
   }
 
-  const response = await fetchTransactions(
-    networkId as SolanaNetworkId,
-    address,
-    apiPaging
-  );
+  const response = await fetchTransactions(networkId as SolanaNetworkId, address, apiPaging);
 
   // Convert API response to v2-compatible format
   return {
     data: response.transactions,
-    pageToken: response.hasMore ? response.oldestSignature ?? undefined : undefined,
+    pageToken: response.hasMore ? (response.oldestSignature ?? undefined) : undefined,
   };
 }
 
@@ -222,7 +218,7 @@ export function getTransactionDate(tx: SolanaTransaction): Date {
  */
 export function getTimeAgo(
   tx: SolanaTransaction,
-  t?: (key: string, options?: Record<string, unknown>) => string,
+  t?: (key: string, options?: Record<string, unknown>) => string
 ): string {
   return formatRelativeTimeCompact(tx.timestamp, t);
 }
@@ -244,4 +240,3 @@ export function isStakingTransaction(tx: SolanaTransaction): boolean {
 export function isTokenMintOrBurn(tx: SolanaTransaction): boolean {
   return tx.type === 'mint' || tx.type === 'burn';
 }
-

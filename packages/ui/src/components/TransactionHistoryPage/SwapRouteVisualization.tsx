@@ -244,13 +244,7 @@ const TokenIcon: React.FC<{ uri?: string | null; size?: number }> = ({
   size = componentSizes.iconSizeMedium,
 }) => {
   if (uri) {
-    return (
-      <TokenIconImg
-        src={uri}
-        alt=""
-        style={{ width: size, height: size }}
-      />
-    );
+    return <TokenIconImg src={uri} alt="" style={{ width: size, height: size }} />;
   }
 
   return (
@@ -314,7 +308,8 @@ const RouteHop: React.FC<{ hop: SwapRouteHop; isLast: boolean }> = ({ hop, isLas
         <HopToken>
           <TokenIcon uri={hop.outputToken.logo} size={20} />
           <HopAmount>
-            {formatRawAmount(hop.outputToken.amount, hop.outputToken.decimals)} {hop.outputToken.symbol}
+            {formatRawAmount(hop.outputToken.amount, hop.outputToken.decimals)}{' '}
+            {hop.outputToken.symbol}
           </HopAmount>
         </HopToken>
       )}
@@ -372,7 +367,9 @@ const TransactionSummaryRows: React.FC<{ transaction: Transaction }> = ({ transa
       {swapRoute?.totalFee && (
         <SummaryRow>
           <SummaryLabel>{t('transactions.detail.totalFees')}</SummaryLabel>
-          <SummaryValue>{swapRoute.totalFee.amount} {swapRoute.totalFee.symbol}</SummaryValue>
+          <SummaryValue>
+            {swapRoute.totalFee.amount} {swapRoute.totalFee.symbol}
+          </SummaryValue>
         </SummaryRow>
       )}
 
@@ -431,14 +428,18 @@ const TransactionSummaryRows: React.FC<{ transaction: Transaction }> = ({ transa
       {transaction.swapFees?.nativeFees && transaction.swapFees.nativeFees.length > 0 && (
         <SummaryRow>
           <SummaryLabel>{t('transactions.detail.swapFeesNative')}</SummaryLabel>
-          <SummaryValue>{t('transactions.detail.feeCount', { count: transaction.swapFees.nativeFees.length })}</SummaryValue>
+          <SummaryValue>
+            {t('transactions.detail.feeCount', { count: transaction.swapFees.nativeFees.length })}
+          </SummaryValue>
         </SummaryRow>
       )}
 
       {transaction.innerSwaps && transaction.innerSwaps.length > 0 && (
         <SummaryRow>
           <SummaryLabel>{t('transactions.detail.routeHops')}</SummaryLabel>
-          <SummaryValue>{t('transactions.detail.hopCount', { count: transaction.innerSwaps.length })}</SummaryValue>
+          <SummaryValue>
+            {t('transactions.detail.hopCount', { count: transaction.innerSwaps.length })}
+          </SummaryValue>
         </SummaryRow>
       )}
     </RouteSummary>
@@ -454,7 +455,8 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
       <RouteHeader>
         <AccountTreeIcon sx={{ fontSize: fontSize.md, color: colors.text.secondary }} />
         <RouteHeaderText>
-          {t('transactions.detail.route')}{source ? ` ${t('transactions.detail.viaSource', { source })}` : ''}
+          {t('transactions.detail.route')}
+          {source ? ` ${t('transactions.detail.viaSource', { source })}` : ''}
         </RouteHeaderText>
       </RouteHeader>
 
@@ -512,18 +514,15 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
       <RouteHeader>
         <AccountTreeIcon sx={{ fontSize: fontSize.md, color: colors.text.secondary }} />
         <RouteHeaderText>
-          {t('transactions.detail.route')}{source ? ` ${t('transactions.detail.viaSource', { source })}` : ''}{' '}
-          ({t('transactions.detail.hopCount', { count: swapRoute.hops.length })})
+          {t('transactions.detail.route')}
+          {source ? ` ${t('transactions.detail.viaSource', { source })}` : ''} (
+          {t('transactions.detail.hopCount', { count: swapRoute.hops.length })})
         </RouteHeaderText>
       </RouteHeader>
 
       <Box sx={{ mb: `${spacing.xs}px` }}>
         {swapRoute.hops.map((hop, index) => (
-          <RouteHop
-            key={`hop-${index}`}
-            hop={hop}
-            isLast={index === swapRoute.hops.length - 1}
-          />
+          <RouteHop key={`hop-${index}`} hop={hop} isLast={index === swapRoute.hops.length - 1} />
         ))}
       </Box>
 
@@ -536,10 +535,7 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
 // Main Component
 // ============================================================================
 
-export function SwapRouteVisualization({
-  transaction,
-  expanded,
-}: SwapRouteVisualizationProps) {
+export function SwapRouteVisualization({ transaction, expanded }: SwapRouteVisualizationProps) {
   if (transaction.type !== 'swap') {
     return null;
   }
@@ -562,4 +558,3 @@ export function SwapRouteVisualization({
     </Container>
   );
 }
-

@@ -1,8 +1,5 @@
 import type { ViewStyle } from 'react-native';
-import type {
-  BlockchainAccount,
-  PreparedNftTransactionResponse,
-} from '@salmon/shared';
+import type { BlockchainAccount, PreparedNftTransactionResponse } from '@salmon/shared';
 import type { NftData } from '../NftCard/types';
 
 // Re-export for convenience

@@ -58,9 +58,7 @@ const StyledListItem = styled(ListItem)<{ $isActive?: boolean }>(({ $isActive })
   backgroundColor: $isActive ? colors.accent.tint : 'transparent',
   transition: `background-color ${duration.normal} ${easing.ease}`,
   '&:hover': {
-    backgroundColor: $isActive
-      ? colors.accent.tintHover
-      : colors.background.card,
+    backgroundColor: $isActive ? colors.accent.tintHover : colors.background.card,
   },
 }));
 
@@ -191,13 +189,7 @@ const DeleteButton = styled(Button)({
 /**
  * Individual account row in the wallet switcher list.
  */
-function AccountListItem({
-  account,
-  isActive,
-  onSelect,
-  onEdit,
-  onDelete,
-}: AccountListItemProps) {
+function AccountListItem({ account, isActive, onSelect, onEdit, onDelete }: AccountListItemProps) {
   const { t } = useTranslation();
   const avatarColor = useMemo(() => getAvatarColor(account.id), [account.id]);
   const initials = useMemo(() => getInitials(account.name), [account.name]);
@@ -245,7 +237,11 @@ function AccountListItem({
       onClick={onSelect}
       data-testid={`wallet-switcher-account-${account.id}`}
       role="button"
-      aria-label={isActive ? t('accessibility.active_account', '{{name}}, active', { name: account.name }) : account.name}
+      aria-label={
+        isActive
+          ? t('accessibility.active_account', '{{name}}, active', { name: account.name })
+          : account.name
+      }
     >
       <ListItemAvatar>
         {account.avatar && !imgError ? (
@@ -379,9 +375,7 @@ export function WalletSwitcherSheet({
         showScalesBackground={false}
         ariaLabelledBy="wallet-switcher-title"
       >
-        <BaseSheetDialog.StandardHeader
-          title={t('walletSwitcher.title', 'Your Wallets')}
-        />
+        <BaseSheetDialog.StandardHeader title={t('walletSwitcher.title', 'Your Wallets')} />
 
         <BaseSheetDialog.Content padding="none">
           <StyledList>
@@ -413,13 +407,9 @@ export function WalletSwitcherSheet({
       <Dialog
         open={deleteConfirmAccountId !== null}
         onClose={handleDeleteCancel}
-        PaperComponent={({ children }) => (
-          <ConfirmDialogPaper>{children}</ConfirmDialogPaper>
-        )}
+        PaperComponent={({ children }) => <ConfirmDialogPaper>{children}</ConfirmDialogPaper>}
       >
-        <ConfirmTitle>
-          {t('walletSwitcher.deleteConfirmTitle', 'Delete Account?')}
-        </ConfirmTitle>
+        <ConfirmTitle>{t('walletSwitcher.deleteConfirmTitle', 'Delete Account?')}</ConfirmTitle>
         <ConfirmMessage>
           {t(
             'walletSwitcher.deleteConfirmMessage',
@@ -428,15 +418,10 @@ export function WalletSwitcherSheet({
           )}
         </ConfirmMessage>
         <ConfirmButtonsRow>
-          <CancelButton onClick={handleDeleteCancel}>
-            {t('common.cancel', 'Cancel')}
-          </CancelButton>
-          <DeleteButton onClick={handleDeleteConfirm}>
-            {t('common.delete', 'Delete')}
-          </DeleteButton>
+          <CancelButton onClick={handleDeleteCancel}>{t('common.cancel', 'Cancel')}</CancelButton>
+          <DeleteButton onClick={handleDeleteConfirm}>{t('common.delete', 'Delete')}</DeleteButton>
         </ConfirmButtonsRow>
       </Dialog>
     </>
   );
 }
-

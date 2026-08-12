@@ -8,7 +8,18 @@ import { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
-import { colors, spacing, borderRadius, fontSize, fontWeight, lineHeight, componentSizes, durationMs, duration, easing } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  fontSize,
+  fontWeight,
+  lineHeight,
+  componentSizes,
+  durationMs,
+  duration,
+  easing,
+} from '@salmon/shared';
 import { BalanceCard } from './BalanceCard';
 import type { BalanceCardCarouselProps } from './types';
 
@@ -122,7 +133,7 @@ export function BalanceCardCarousel({
         });
       }, SLIDE_OUT_MS);
     },
-    [blockchains, onBlockchainChange],
+    [blockchains, onBlockchainChange]
   );
 
   const goLeft = useCallback(() => {
@@ -159,8 +170,8 @@ export function BalanceCardCarousel({
           style={{
             ...slideStyle,
             transition: needsTransition
-              ? undefined  // Use the CSS class transition
-              : 'none',    // Instant repositioning
+              ? undefined // Use the CSS class transition
+              : 'none', // Instant repositioning
           }}
         >
           <BalanceCard

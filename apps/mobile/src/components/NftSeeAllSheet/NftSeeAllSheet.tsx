@@ -107,13 +107,7 @@ export const NftSeeAllSheet: React.FC<NftSeeAllSheetProps> = ({
   // Render NFT item
   const renderNftItem = useCallback(
     ({ item }: { item: NftData }) => {
-      return (
-        <NftCard
-          nft={item}
-          onPress={() => onNftPress?.(item)}
-          style={styles.nftCard}
-        />
-      );
+      return <NftCard nft={item} onPress={() => onNftPress?.(item)} style={styles.nftCard} />;
     },
     [onNftPress]
   );

@@ -23,10 +23,7 @@ import { ADAPTER_PREFIXES } from './useRuntime';
  * Helper to test isReactNative detection logic.
  */
 function testIsReactNative(navigatorProduct: string | undefined): boolean {
-  return (
-    typeof navigator !== 'undefined' &&
-    navigatorProduct === 'ReactNative'
-  );
+  return typeof navigator !== 'undefined' && navigatorProduct === 'ReactNative';
 }
 
 /**
@@ -289,6 +286,6 @@ describe('Adapter Prefixes', () => {
   });
 
   it('should contain salmon wallet adapter URL prefix', () => {
-    expect(ADAPTER_PREFIXES.some(prefix => prefix.includes('salmonwallet'))).toBe(true);
+    expect(ADAPTER_PREFIXES.some((prefix) => prefix.includes('salmonwallet'))).toBe(true);
   });
 });

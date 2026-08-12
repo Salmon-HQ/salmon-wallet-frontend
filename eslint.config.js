@@ -108,14 +108,17 @@ export default [
       'no-undef': 'off', // TypeScript handles this
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', {
-        args: 'all',
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_',
-        destructuredArrayIgnorePattern: '^_',
-        ignoreRestSiblings: true,
-      }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          args: 'all',
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
@@ -197,17 +200,10 @@ export default [
   // misses `import('@solana/web3.js').Commitment`. The selector covers that form.
   {
     files: ['**/*.{ts,tsx}'],
-    ignores: [
-      '**/*.test.{ts,tsx}',
-      '**/*.spec.{ts,tsx}',
-      '**/__tests__/**/*.{ts,tsx}',
-    ],
+    ignores: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}'],
     plugins: { '@typescript-eslint': typescript },
     rules: {
-      '@typescript-eslint/no-restricted-imports': [
-        'error',
-        { patterns: ['@solana/web3.js'] },
-      ],
+      '@typescript-eslint/no-restricted-imports': ['error', { patterns: ['@solana/web3.js'] }],
       'no-restricted-syntax': [
         'error',
         {

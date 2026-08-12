@@ -408,9 +408,7 @@ export function TokenSelectorModal({
     >
       {/* Header */}
       <StyledDialogTitle id="token-selector-title">
-        <TitleText>
-          {t('wallet.select_token', 'Select Token')}
-        </TitleText>
+        <TitleText>{t('wallet.select_token', 'Select Token')}</TitleText>
         <CloseButton onClick={handleClose} aria-label={t('general.close', 'Close')}>
           <CloseIcon />
         </CloseButton>
@@ -445,10 +443,11 @@ export function TokenSelectorModal({
         {/* Searching Indicator */}
         {isSearching && (
           <SearchingContainer>
-            <CircularProgress size={componentSizes.iconSizeXs} sx={{ color: colors.text.secondary }} />
-            <SearchingText>
-              {t('actions.searching', 'Searching...')}
-            </SearchingText>
+            <CircularProgress
+              size={componentSizes.iconSizeXs}
+              sx={{ color: colors.text.secondary }}
+            />
+            <SearchingText>{t('actions.searching', 'Searching...')}</SearchingText>
           </SearchingContainer>
         )}
 
@@ -460,7 +459,9 @@ export function TokenSelectorModal({
                 key={getTokenKey(token)}
                 onClick={() => handleSelect(token)}
                 role="button"
-                aria-label={t('accessibility.select_token', 'Select {{name}}', { name: token.symbol || token.name })}
+                aria-label={t('accessibility.select_token', 'Select {{name}}', {
+                  name: token.symbol || token.name,
+                })}
                 data-testid={`token-select-featured-${token.symbol || token.name}`}
               >
                 {token.logo ? (
@@ -485,7 +486,10 @@ export function TokenSelectorModal({
         <TokenListContainer>
           {loading ? (
             Array.from({ length: 5 }, (_, i) => (
-              <TokenItemContainer key={i} sx={{ cursor: 'default', '&:hover': { backgroundColor: colors.background.card } }}>
+              <TokenItemContainer
+                key={i}
+                sx={{ cursor: 'default', '&:hover': { backgroundColor: colors.background.card } }}
+              >
                 <ContentLoader
                   speed={1.5}
                   width={320}
@@ -502,18 +506,14 @@ export function TokenSelectorModal({
             ))
           ) : isError && !isSearching ? (
             <EmptyContainer data-testid="token-search-error">
-              <EmptyText>
-                {t('wallet.token_search_failed')}
-              </EmptyText>
+              <EmptyText>{t('wallet.token_search_failed')}</EmptyText>
               <LoadMoreButton onClick={retry} data-testid="token-search-retry-button">
                 {t('transactions.tapToRetry')}
               </LoadMoreButton>
             </EmptyContainer>
           ) : paginatedTokens.length === 0 && !isSearching ? (
             <EmptyContainer>
-              <EmptyText>
-                {t('wallet.no_tokens_found', 'No tokens found')}
-              </EmptyText>
+              <EmptyText>{t('wallet.no_tokens_found', 'No tokens found')}</EmptyText>
             </EmptyContainer>
           ) : (
             paginatedTokens.map((token) => {
@@ -527,7 +527,9 @@ export function TokenSelectorModal({
                   key={getTokenKey(token)}
                   onClick={() => handleSelect(token)}
                   role="button"
-                  aria-label={t('accessibility.select_token', 'Select {{name}}', { name: tokenName })}
+                  aria-label={t('accessibility.select_token', 'Select {{name}}', {
+                    name: tokenName,
+                  })}
                   data-testid={`token-select-${token.symbol || tokenName}`}
                 >
                   {/* Token Icon */}
@@ -540,9 +542,7 @@ export function TokenSelectorModal({
                       }}
                     />
                   ) : (
-                    <TokenIconPlaceholder>
-                      {token.symbol?.[0] || '?'}
-                    </TokenIconPlaceholder>
+                    <TokenIconPlaceholder>{token.symbol?.[0] || '?'}</TokenIconPlaceholder>
                   )}
 
                   {/* Token Info */}
@@ -551,15 +551,12 @@ export function TokenSelectorModal({
                       <TokenName>{tokenName}</TokenName>
                       {showNetworkChip && token.network && (
                         <NetworkChip>
-                          <NetworkChipText>
-                            {token.network.toUpperCase()}
-                          </NetworkChipText>
+                          <NetworkChipText>{token.network.toUpperCase()}</NetworkChipText>
                         </NetworkChip>
                       )}
                     </TokenNameRow>
                     <TokenBalance>{balanceText}</TokenBalance>
                   </TokenInfo>
-
                 </TokenItemContainer>
               );
             })
@@ -576,11 +573,8 @@ export function TokenSelectorModal({
 
       {/* Footer */}
       <FooterContainer>
-        <CloseActionButton onClick={handleClose}>
-          {t('actions.close', 'Close')}
-        </CloseActionButton>
+        <CloseActionButton onClick={handleClose}>{t('actions.close', 'Close')}</CloseActionButton>
       </FooterContainer>
     </StyledDialog>
   );
 }
-

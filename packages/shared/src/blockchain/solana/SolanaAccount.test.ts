@@ -9,11 +9,7 @@ vi.mock('./domains', () => ({
 
 import { SOLANA_NETWORKS } from './networks';
 import { SolanaAccount } from './SolanaAccount';
-import {
-  getDomain,
-  getDomainFromPublicKey,
-  getPublicKeyFromDomain,
-} from './domains';
+import { getDomain, getDomainFromPublicKey, getPublicKeyFromDomain } from './domains';
 
 const mockGetDomain = vi.mocked(getDomain);
 const mockGetDomainFromPublicKey = vi.mocked(getDomainFromPublicKey);

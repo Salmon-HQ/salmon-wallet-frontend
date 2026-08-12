@@ -138,7 +138,7 @@ async function dismissSuccess(popup: Page): Promise<void> {
 /** Run one leg of a swap, end to end, and land back on the swap form. */
 async function doSwap(
   popup: Page,
-  { from, to, quickfill }: { from: string; to: string; quickfill: string },
+  { from, to, quickfill }: { from: string; to: string; quickfill: string }
 ): Promise<void> {
   await popup.getByTestId('tab-swap').click();
 
@@ -167,7 +167,9 @@ async function sendNft(popup: Page, destination: string): Promise<void> {
   await popup.getByTestId('tab-collectibles').click();
   // Generous: right after a transfer the DAS index needs a moment to report the
   // new owner, so the card can take a while to show up under the new wallet.
-  await expect(popup.getByTestId(`nft-card-${NFT_MINT}`)).toBeVisible({ timeout: CONFIRM_TIMEOUT_MS });
+  await expect(popup.getByTestId(`nft-card-${NFT_MINT}`)).toBeVisible({
+    timeout: CONFIRM_TIMEOUT_MS,
+  });
   await popup.getByTestId(`nft-card-${NFT_MINT}`).click();
 
   await popup.getByTestId('nft-detail-send-button').click();
@@ -278,7 +280,7 @@ test('every on-chain event in the catalog actually fires', async ({ popup }) => 
     const body = request.postData() ?? '';
     expect(JSON.parse(body).context.platform).toBe('extension');
     expect(body, 'payload must not contain an address or mint').not.toMatch(
-      /\b([1-9A-HJ-NP-Za-km-z]{32,44}|0x[0-9a-fA-F]{40})\b/,
+      /\b([1-9A-HJ-NP-Za-km-z]{32,44}|0x[0-9a-fA-F]{40})\b/
     );
   }
 });

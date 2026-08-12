@@ -122,9 +122,7 @@ export function validatePassword(password: string): PasswordValidation {
   // Enforced policy (NIST 800-63B): length window + not weak/common/guessable.
   // Composition (uppercase/number/symbol) is intentionally NOT part of the gate.
   const isValid =
-    checks.hasMinLength &&
-    checks.hasMaxLength &&
-    score >= PASSWORD_CONSTRAINTS.MIN_STRENGTH_SCORE;
+    checks.hasMinLength && checks.hasMaxLength && score >= PASSWORD_CONSTRAINTS.MIN_STRENGTH_SCORE;
 
   return {
     isValid,

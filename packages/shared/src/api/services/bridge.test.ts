@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type {
-  BridgeAvailableToken,
-  BridgeExchange,
-  BridgeTransaction,
-} from '../../types/bridge';
+import type { BridgeAvailableToken, BridgeExchange, BridgeTransaction } from '../../types/bridge';
 
 vi.mock('../client', async () => {
   const actual = await vi.importActual<typeof import('../client')>('../client');
@@ -30,8 +26,10 @@ const mockApiClientGet = vi.mocked(apiClient.get);
 const DEFAULT_LOCAL_HOST = 'localhost';
 
 function getBackendBaseUrlCandidates(): string[] {
-  const envApiUrl = process.env.EXPO_PUBLIC_API_URL || process.env.VITE_API_URL || process.env.API_URL;
-  const envHost = process.env.EXPO_PUBLIC_API_HOST || process.env.VITE_API_HOST || DEFAULT_LOCAL_HOST;
+  const envApiUrl =
+    process.env.EXPO_PUBLIC_API_URL || process.env.VITE_API_URL || process.env.API_URL;
+  const envHost =
+    process.env.EXPO_PUBLIC_API_HOST || process.env.VITE_API_HOST || DEFAULT_LOCAL_HOST;
   const envPort = process.env.EXPO_PUBLIC_API_PORT || process.env.VITE_API_PORT;
   const candidates = [
     envApiUrl,
@@ -190,7 +188,7 @@ describe('bridge service', () => {
       1.5,
       'destination-address',
       'SOLANA',
-      'BITCOIN',
+      'BITCOIN'
     );
 
     expect(mockApiClientGet).toHaveBeenCalledWith('/v1/bridge/exchange', {
@@ -220,78 +218,74 @@ describe('bridge service', () => {
   it('wraps exchange creation failures with bridge-specific context', async () => {
     mockApiClientGet.mockRejectedValueOnce(new Error('exchange down'));
 
-    await expect(
-      createBridgeExchange('SOL', 'BTC', 1.5, 'destination-address'),
-    ).rejects.toThrow('Bridge create exchange failed: exchange down');
+    await expect(createBridgeExchange('SOL', 'BTC', 1.5, 'destination-address')).rejects.toThrow(
+      'Bridge create exchange failed: exchange down'
+    );
   });
 });
 
 const backendBaseUrl = await getReachableBackendBaseUrl();
 
 describe('bridge service integration', () => {
-  it(
-    'reads the live bridge transaction endpoint contract from salmon-api',
-    async () => {
-      if (!backendBaseUrl) {
-        console.log('Skipping live bridge integration assertions: backend not reachable');
-        return;
+  it('reads the live bridge transaction endpoint contract from salmon-api', async () => {
+    if (!backendBaseUrl) {
+      console.log('Skipping live bridge integration assertions: backend not reachable');
+      return;
+    }
+
+    const client = createApiClient({
+      baseUrl: backendBaseUrl,
+      timeout: 10000,
+    });
+
+    // StealthEX enforces a dynamic minimum per pair that drifts with market
+    // conditions. Query it first so the integration test stays valid as the
+    // min amount changes. Apply a 50% safety buffer to absorb sub-second
+    // fluctuations between the minimal query and the exchange call.
+    const minimalResponse = await client.get<{ min_amount: string; max_amount?: string }>(
+      '/v1/bridge/minimal',
+      {
+        params: { symbolIn: 'sol', symbolOut: 'btc' },
       }
+    );
 
-      const client = createApiClient({
-        baseUrl: backendBaseUrl,
-        timeout: 10000,
-      });
+    // Contract: min_amount is a decimal string; max_amount is additive and,
+    // when present, must also be a positive decimal string.
+    expect(typeof minimalResponse.data?.min_amount).toBe('string');
+    if (minimalResponse.data?.max_amount !== undefined) {
+      expect(typeof minimalResponse.data.max_amount).toBe('string');
+      expect(Number(minimalResponse.data.max_amount)).toBeGreaterThan(0);
+    }
 
-      // StealthEX enforces a dynamic minimum per pair that drifts with market
-      // conditions. Query it first so the integration test stays valid as the
-      // min amount changes. Apply a 50% safety buffer to absorb sub-second
-      // fluctuations between the minimal query and the exchange call.
-      const minimalResponse = await client.get<{ min_amount: string; max_amount?: string }>(
-        '/v1/bridge/minimal',
-        {
-          params: { symbolIn: 'sol', symbolOut: 'btc' },
-        },
+    const minAmount = Number(minimalResponse.data?.min_amount);
+    if (!Number.isFinite(minAmount) || minAmount <= 0) {
+      throw new Error(
+        `Invalid min_amount from /v1/bridge/minimal: ${minimalResponse.data?.min_amount}`
       );
+    }
 
-      // Contract: min_amount is a decimal string; max_amount is additive and,
-      // when present, must also be a positive decimal string.
-      expect(typeof minimalResponse.data?.min_amount).toBe('string');
-      if (minimalResponse.data?.max_amount !== undefined) {
-        expect(typeof minimalResponse.data.max_amount).toBe('string');
-        expect(Number(minimalResponse.data.max_amount)).toBeGreaterThan(0);
-      }
+    const safeAmount = Number((minAmount * 1.5).toFixed(8));
 
-      const minAmount = Number(minimalResponse.data?.min_amount);
-      if (!Number.isFinite(minAmount) || minAmount <= 0) {
-        throw new Error(
-          `Invalid min_amount from /v1/bridge/minimal: ${minimalResponse.data?.min_amount}`,
-        );
-      }
+    const exchangeResponse = await client.get<BridgeExchange>('/v1/bridge/exchange', {
+      params: {
+        symbolIn: 'sol',
+        symbolOut: 'btc',
+        amount: safeAmount,
+        addressTo: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+        networkIn: 'SOLANA',
+        networkOut: 'BITCOIN',
+      },
+    });
 
-      const safeAmount = Number((minAmount * 1.5).toFixed(8));
+    expect(exchangeResponse.status).toBe(200);
+    expect(exchangeResponse.data.id).toBeTruthy();
 
-      const exchangeResponse = await client.get<BridgeExchange>('/v1/bridge/exchange', {
-        params: {
-          symbolIn: 'sol',
-          symbolOut: 'btc',
-          amount: safeAmount,
-          addressTo: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-          networkIn: 'SOLANA',
-          networkOut: 'BITCOIN',
-        },
-      });
+    const response = await client.get<BridgeTransaction>('/v1/bridge/transaction', {
+      params: { id: exchangeResponse.data.id },
+    });
 
-      expect(exchangeResponse.status).toBe(200);
-      expect(exchangeResponse.data.id).toBeTruthy();
-
-      const response = await client.get<BridgeTransaction>('/v1/bridge/transaction', {
-        params: { id: exchangeResponse.data.id },
-      });
-
-      expect(response.status).toBe(200);
-      expect(response.data.id).toBe(exchangeResponse.data.id);
-      expect(response.data.status).toBeTruthy();
-    },
-    20000,
-  );
+    expect(response.status).toBe(200);
+    expect(response.data.id).toBe(exchangeResponse.data.id);
+    expect(response.data.status).toBeTruthy();
+  }, 20000);
 });

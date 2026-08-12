@@ -10,13 +10,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
-import {
-  colors,
-  spacing,
-  borderRadius,
-  fontSize,
-  fontFamilyNative,
-} from '@salmon/shared';
+import { colors, spacing, borderRadius, fontSize, fontFamilyNative } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import type { AccountEditPanelProps } from './types';
 
@@ -83,10 +77,7 @@ export function AccountEditPanel({
           <TouchableOpacity
             key={item.labelKey}
             testID={item.testID}
-            style={[
-              styles.row,
-              index < sections.length - 1 && styles.rowBorder,
-            ]}
+            style={[styles.row, index < sections.length - 1 && styles.rowBorder]}
             onPress={item.onPress}
             activeOpacity={0.7}
             accessibilityRole="button"
@@ -96,11 +87,7 @@ export function AccountEditPanel({
               <Ionicons name={item.icon} size={24} color={colors.text.primary} />
             </View>
             <Text style={styles.rowLabel}>{t(item.labelKey)}</Text>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={colors.text.secondary}
-            />
+            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
           </TouchableOpacity>
         ))}
       </View>

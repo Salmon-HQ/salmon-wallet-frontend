@@ -143,11 +143,7 @@ export function ConfirmDialog({
   const canConfirm = !requirePassword || password.length > 0;
 
   return (
-    <BaseDialog
-      visible={visible}
-      onClose={onClose}
-      ariaLabelledBy="confirm-dialog-title"
-    >
+    <BaseDialog visible={visible} onClose={onClose} ariaLabelledBy="confirm-dialog-title">
       <BaseDialog.Header title={title} showWarning={isDanger} />
 
       <BaseDialog.Content>

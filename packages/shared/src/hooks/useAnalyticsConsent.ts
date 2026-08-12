@@ -80,5 +80,12 @@ export function useAnalyticsConsent(): UseAnalyticsConsentResult {
     setConsentState(client.getConsent());
   }, []);
 
-  return { consent, isLoading, setConsent, toggleConsent, needsConsentPrompt, resolveConsentPrompt };
+  return {
+    consent,
+    isLoading,
+    setConsent,
+    toggleConsent,
+    needsConsentPrompt,
+    resolveConsentPrompt,
+  };
 }

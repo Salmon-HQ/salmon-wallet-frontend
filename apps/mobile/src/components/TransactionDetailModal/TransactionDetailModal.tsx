@@ -12,7 +12,23 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
-import { borderWidth, colors, ms, vs, s, spacing, fontSize, borderRadius, letterSpacing, fontFamilyNative, formatBlockNumber, formatDateTime, formatRawAmount, truncateHash, getShortAddress } from '@salmon/shared';
+import {
+  borderWidth,
+  colors,
+  ms,
+  vs,
+  s,
+  spacing,
+  fontSize,
+  borderRadius,
+  letterSpacing,
+  fontFamilyNative,
+  formatBlockNumber,
+  formatDateTime,
+  formatRawAmount,
+  truncateHash,
+  getShortAddress,
+} from '@salmon/shared';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
@@ -24,7 +40,11 @@ import { ExplorerLinkButton } from '../TransactionHistorySheet/ExplorerLinkButto
 import { PriceImpactBadge } from '../TransactionHistorySheet/PriceImpactBadge';
 import { ConversionRateDisplay } from '../TransactionHistorySheet/ConversionRateDisplay';
 import type { TransactionDetailModalProps } from './types';
-import type { TransactionType, TransactionTokenAmount, NftAttribute } from '../TransactionHistorySheet/types';
+import type {
+  TransactionType,
+  TransactionTokenAmount,
+  NftAttribute,
+} from '../TransactionHistorySheet/types';
 
 /**
  * Transaction type display configuration
@@ -164,7 +184,9 @@ const TokenAmountRow: React.FC<{
       <View style={styles.tokenInfo}>
         <Text style={styles.tokenSymbol}>{token.symbol}</Text>
         {token.name && (
-          <Text style={styles.tokenName} numberOfLines={1}>{token.name}</Text>
+          <Text style={styles.tokenName} numberOfLines={1}>
+            {token.name}
+          </Text>
         )}
       </View>
       <Text style={[styles.tokenAmount, { color }]}>
@@ -200,9 +222,7 @@ const SwapVisualization: React.FC<{
       </View>
       <View style={styles.swapTokenSection}>
         <TokenLogo uri={toToken.logo || undefined} symbol={toToken.symbol} size={40} />
-        <Text style={styles.swapAmount}>
-          {formatRawAmount(toToken.amount, toToken.decimals)}
-        </Text>
+        <Text style={styles.swapAmount}>{formatRawAmount(toToken.amount, toToken.decimals)}</Text>
         <Text style={styles.swapSymbol}>{toToken.symbol}</Text>
       </View>
     </View>
@@ -250,7 +270,9 @@ const NftMetadataSection: React.FC<{
       {/* Collection Info */}
       {token.nftCollection && (
         <View style={styles.nftCollectionRow}>
-          <Text style={styles.sectionLabel}>{t('transactions.detail.collection', 'Collection')}</Text>
+          <Text style={styles.sectionLabel}>
+            {t('transactions.detail.collection', 'Collection')}
+          </Text>
           <View style={styles.nftCollectionInfo}>
             <Text style={styles.sectionValue}>{token.nftCollection}</Text>
             {token.nftCollectionVerified && (
@@ -268,7 +290,9 @@ const NftMetadataSection: React.FC<{
       {/* NFT Attributes Grid */}
       {token.nftAttributes && token.nftAttributes.length > 0 && (
         <View style={styles.nftAttributesContainer}>
-          <Text style={styles.nftAttributesLabel}>{t('transactions.detail.attributes', 'Attributes')}</Text>
+          <Text style={styles.nftAttributesLabel}>
+            {t('transactions.detail.attributes', 'Attributes')}
+          </Text>
           <View style={styles.nftAttributesGrid}>
             {token.nftAttributes.map((attr, index) => (
               <NftAttributeChip key={`${attr.trait_type}-${index}`} attribute={attr} />
@@ -290,7 +314,12 @@ const ActionButton: React.FC<{
   testID?: string;
 }> = ({ icon, label, onPress, testID }) => {
   return (
-    <TouchableOpacity testID={testID} style={styles.actionButton} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      testID={testID}
+      style={styles.actionButton}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <Ionicons name={icon} size={20} color={colors.text.primary} />
       <Text style={styles.actionButtonText}>{label}</Text>
     </TouchableOpacity>
@@ -358,7 +387,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
       </View>
       <View style={styles.headerInfo}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>{t(TYPE_LABEL_KEYS[transaction.type] ?? TYPE_LABEL_KEYS.unknown, typeConfig.label)}</Text>
+          <Text style={styles.title}>
+            {t(TYPE_LABEL_KEYS[transaction.type] ?? TYPE_LABEL_KEYS.unknown, typeConfig.label)}
+          </Text>
           {transaction.source && (
             <View style={styles.sourceBadge}>
               <Text style={styles.sourceText}>{transaction.source}</Text>
@@ -382,345 +413,372 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
       headerContent={headerContent}
       style={[styles.sheetContainer, style]}
     >
+      {/* Content */}
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Card 1 — Details: Date/Time + Confirmation + Block */}
+        <BlurContainer style={styles.section}>
+          <View style={styles.sectionRow}>
+            <Text style={styles.sectionLabel}>
+              {t('transactions.detail.dateTime', 'Date & Time')}
+            </Text>
+            <Text style={styles.sectionValue}>{formatDateTime(transaction.timestamp)}</Text>
+          </View>
 
-            {/* Content */}
-            <ScrollView
-              style={styles.content}
-              contentContainerStyle={styles.contentContainer}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Card 1 — Details: Date/Time + Confirmation + Block */}
-              <BlurContainer style={styles.section}>
-                <View style={styles.sectionRow}>
-                  <Text style={styles.sectionLabel}>{t('transactions.detail.dateTime', 'Date & Time')}</Text>
-                  <Text style={styles.sectionValue}>
-                    {formatDateTime(transaction.timestamp)}
+          {transaction.confirmationStatus && (
+            <>
+              <InternalDivider />
+              <View style={styles.sectionRow}>
+                <Text style={styles.sectionLabel}>
+                  {t('transactions.detail.confirmation', 'Confirmation')}
+                </Text>
+                <View
+                  style={[
+                    styles.confirmationBadge,
+                    {
+                      backgroundColor: `${CONFIRMATION_STATUS_CONFIG[transaction.confirmationStatus]?.color ?? colors.text.secondary}20`,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.confirmationText,
+                      {
+                        color:
+                          CONFIRMATION_STATUS_CONFIG[transaction.confirmationStatus]?.color ??
+                          colors.text.secondary,
+                      },
+                    ]}
+                  >
+                    {t(
+                      CONFIRMATION_LABEL_KEYS[transaction.confirmationStatus] ?? '',
+                      CONFIRMATION_STATUS_CONFIG[transaction.confirmationStatus]?.label ??
+                        transaction.confirmationStatus
+                    )}
                   </Text>
                 </View>
+              </View>
+            </>
+          )}
 
-                {transaction.confirmationStatus && (
-                  <>
-                    <InternalDivider />
-                    <View style={styles.sectionRow}>
-                      <Text style={styles.sectionLabel}>{t('transactions.detail.confirmation', 'Confirmation')}</Text>
-                      <View style={[
-                        styles.confirmationBadge,
-                        { backgroundColor: `${CONFIRMATION_STATUS_CONFIG[transaction.confirmationStatus]?.color ?? colors.text.secondary}20` },
-                      ]}>
-                        <Text style={[
-                          styles.confirmationText,
-                          { color: CONFIRMATION_STATUS_CONFIG[transaction.confirmationStatus]?.color ?? colors.text.secondary },
-                        ]}>
-                          {t(CONFIRMATION_LABEL_KEYS[transaction.confirmationStatus] ?? '', CONFIRMATION_STATUS_CONFIG[transaction.confirmationStatus]?.label ?? transaction.confirmationStatus)}
-                        </Text>
-                      </View>
-                    </View>
-                  </>
-                )}
+          {transaction.slot && (
+            <>
+              <InternalDivider />
+              <View style={styles.sectionRow}>
+                <Text style={styles.sectionLabel}>{t('transactions.detail.block', 'Block')}</Text>
+                <Text style={styles.sectionValue}>#{formatBlockNumber(transaction.slot)}</Text>
+              </View>
+            </>
+          )}
+        </BlurContainer>
 
-                {transaction.slot && (
-                  <>
-                    <InternalDivider />
-                    <View style={styles.sectionRow}>
-                      <Text style={styles.sectionLabel}>{t('transactions.detail.block', 'Block')}</Text>
-                      <Text style={styles.sectionValue}>
-                        #{formatBlockNumber(transaction.slot)}
-                      </Text>
-                    </View>
-                  </>
-                )}
-              </BlurContainer>
-
-              {/* Swap Visualization (for swaps) */}
-              {transaction.type === 'swap' && (
-                <BlurContainer style={styles.section}>
-                  <View style={styles.swapHeaderRow}>
-                    <Text style={styles.sectionTitle}>{t('transactions.detail.conversion', 'Conversion')}</Text>
-                    {transaction.swapRoute?.priceImpact && (
-                      <PriceImpactBadge
-                        value={transaction.swapRoute.priceImpact}
-                        size="medium"
-                        showIcon
-                      />
-                    )}
-                  </View>
-                  <SwapVisualization
-                    outputs={transaction.outputs}
-                    inputs={transaction.inputs}
-                  />
-                  {transaction.swapRoute?.conversionRate && (
-                    <View style={styles.conversionRateContainer}>
-                      <ConversionRateDisplay
-                        fromSymbol={transaction.swapRoute.conversionRate.fromSymbol}
-                        toSymbol={transaction.swapRoute.conversionRate.toSymbol}
-                        rate={transaction.swapRoute.conversionRate.rate}
-                        size="medium"
-                      />
-                    </View>
-                  )}
-                </BlurContainer>
-              )}
-
-              {/* Swap Route Hops (for multi-hop swaps) */}
-              {transaction.type === 'swap' && transaction.swapRoute?.hops && transaction.swapRoute.hops.length > 0 && (
-                <BlurContainer style={styles.section}>
-                  <Text style={styles.sectionTitle}>{t('transactions.detail.swapRoute', 'Swap Route')}</Text>
-                  {transaction.swapRoute.hops.map((hop, index) => (
-                    <View key={`hop-${index}`} style={styles.hopRow}>
-                      <View style={styles.hopBadge}>
-                        <Text style={styles.hopBadgeText}>{hop.dex}</Text>
-                      </View>
-                      <View style={styles.hopTokens}>
-                        <Text style={styles.hopTokenText}>
-                          {hop.inputToken.symbol}
-                        </Text>
-                        <Ionicons name="arrow-forward" size={12} color={colors.text.tertiary} />
-                        <Text style={styles.hopTokenText}>
-                          {hop.outputToken.symbol}
-                        </Text>
-                      </View>
-                      {hop.percent < 100 && (
-                        <Text style={styles.hopPercent}>{hop.percent}%</Text>
-                      )}
-                    </View>
-                  ))}
-                </BlurContainer>
-              )}
-
-              {/* Card 2 — Tokens (non-swap): Sent + Received merged */}
-              {transaction.type !== 'swap' && (transaction.outputs.length > 0 || transaction.inputs.length > 0) && (
-                <BlurContainer style={styles.section}>
-                  {transaction.outputs.length > 0 && (
-                    <>
-                      <Text style={styles.sectionTitle}>{t('transactions.detail.sentLabel', 'Sent')}</Text>
-                      {transaction.outputs.map((token, index) => (
-                        <TokenAmountRow key={`out-${index}`} token={token} sign="-" />
-                      ))}
-                    </>
-                  )}
-                  {transaction.outputs.length > 0 && transaction.inputs.length > 0 && (
-                    <InternalDivider />
-                  )}
-                  {transaction.inputs.length > 0 && (
-                    <>
-                      <Text style={styles.sectionTitle}>{t('transactions.detail.receivedLabel', 'Received')}</Text>
-                      {transaction.inputs.map((token, index) => (
-                        <TokenAmountRow key={`in-${index}`} token={token} sign="+" />
-                      ))}
-                    </>
-                  )}
-                </BlurContainer>
-              )}
-
-              {/* NFT Metadata Sections */}
-              {transaction.inputs
-                .filter(token => token.isNft)
-                .map((token, index) => (
-                  <NftMetadataSection key={`nft-in-${index}`} token={token} />
-                ))}
-              {transaction.outputs
-                .filter(token => token.isNft)
-                .map((token, index) => (
-                  <NftMetadataSection key={`nft-out-${index}`} token={token} />
-                ))}
-
-              {/* Card 3 — Addresses + Fee + Hash merged */}
-              <BlurContainer style={styles.section}>
-                {/* Addresses (hidden for swaps) */}
-                {transaction.type !== 'swap' && (
-                  <>
-                    {transaction.inputs.map((token, index) =>
-                      token.source ? (
-                        <React.Fragment key={`from-${index}`}>
-                          <AddressCopyRow
-                            label={t('transactions.from', 'From')}
-                            address={token.source}
-                            truncate="medium"
-                            style={styles.addressRow}
-                          />
-                          <InternalDivider />
-                        </React.Fragment>
-                      ) : null
-                    )}
-                    {transaction.outputs.map((token, index) =>
-                      token.destination ? (
-                        <React.Fragment key={`to-${index}`}>
-                          <AddressCopyRow
-                            label={t('transactions.to', 'To')}
-                            address={token.destination}
-                            truncate="medium"
-                            style={styles.addressRow}
-                          />
-                          <InternalDivider />
-                        </React.Fragment>
-                      ) : null
-                    )}
-                  </>
-                )}
-
-                {transaction.fee && (
-                  <View style={styles.sectionRow}>
-                    <Text style={styles.sectionLabel}>{t('transactions.detail.networkFee', 'Network Fee')}</Text>
-                    <Text style={styles.sectionValue}>
-                      {formatRawAmount(transaction.fee.amount, transaction.fee.decimals)} {transaction.fee.symbol}
-                    </Text>
-                  </View>
-                )}
-
-                {transaction.swapRoute?.totalFee && (
-                  <>
-                    {transaction.fee && <InternalDivider />}
-                    <View style={styles.sectionRow}>
-                      <Text style={styles.sectionLabel}>{t('transactions.detail.swapFee', 'Swap Fee')}</Text>
-                      <Text style={styles.sectionValue}>
-                        {transaction.swapRoute.totalFee.amount} {transaction.swapRoute.totalFee.symbol}
-                      </Text>
-                    </View>
-                  </>
-                )}
-
-                {(transaction.fee || transaction.swapRoute?.totalFee) && <InternalDivider />}
-
-                <View style={styles.sectionRow}>
-                  <Text style={styles.sectionLabel}>{t('transactions.detail.transactionHash', 'Transaction Hash')}</Text>
-                  <View style={styles.hashRow}>
-                    <Text style={styles.hashValue}>{truncateHash(transaction.id, 8)}</Text>
-                    <TouchableOpacity
-                      testID="tx-detail-copy-hash"
-                      onPress={handleCopyInlineHash}
-                      style={[styles.copyIconButton, hashCopied && styles.copyIconButtonCopied]}
-                      activeOpacity={0.6}
-                      accessibilityRole="button"
-                      accessibilityLabel={
-                        hashCopied
-                          ? t('actions.copied', 'Copied!')
-                          : t('transactions.detail.copyTransactionHash', 'Copy transaction hash')
-                      }
-                    >
-                      {hashCopied ? (
-                        <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-                          <Ionicons name="checkmark" size={14} color={colors.accent.primary} />
-                        </Animated.View>
-                      ) : (
-                        <Ionicons name="copy-outline" size={14} color={colors.text.secondary} />
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </BlurContainer>
-
-              {/* Developer Info (dev mode only) */}
-              {developerMode && (
-                <BlurContainer style={styles.section}>
-                  <View style={styles.devSectionHeader}>
-                    <Ionicons name="code-slash-outline" size={16} color={colors.text.secondary} />
-                    <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{t('transactions.detail.developerInfo', 'Developer Info')}</Text>
-                  </View>
-
-                  {transaction.heliusType && (
-                    <View style={styles.sectionRow}>
-                      <Text style={styles.sectionLabel}>{t('transactions.detail.heliusType', 'Helius Type')}</Text>
-                      <View style={styles.devBadge}>
-                        <Text style={styles.devBadgeText}>{transaction.heliusType}</Text>
-                      </View>
-                    </View>
-                  )}
-
-                  {transaction.accountsInvolved != null && (
-                    <View style={[styles.sectionRow, { marginTop: vs(spacing.sm) }]}>
-                      <Text style={styles.sectionLabel}>{t('transactions.detail.accountsInvolved', 'Accounts Involved')}</Text>
-                      <Text style={styles.sectionValue}>{transaction.accountsInvolved}</Text>
-                    </View>
-                  )}
-
-                  {transaction.instructions && transaction.instructions.length > 0 && (
-                    <View style={styles.devSubSection}>
-                      <Text style={styles.devSubTitle}>{t('transactions.detail.programs', 'Programs')}</Text>
-                      {transaction.instructions.map((ix, index) => (
-                        <View key={`ix-${index}`} style={styles.devRow}>
-                          <Text style={styles.devMonoText}>
-                            {getShortAddress(ix.programId, 6)}
-                          </Text>
-                          {ix.innerInstructionsCount > 0 && (
-                            <Text style={styles.devSecondaryText}>
-                              {t('transactions.detail.innerCount', { count: ix.innerInstructionsCount, defaultValue: '{{count}} inner' })}
-                            </Text>
-                          )}
-                        </View>
-                      ))}
-                    </View>
-                  )}
-
-                  {transaction.innerSwaps && transaction.innerSwaps.length > 0 && (
-                    <View style={styles.devSubSection}>
-                      <Text style={styles.devSubTitle}>{t('transactions.detail.innerSwaps', 'Inner Swaps')}</Text>
-                      {transaction.innerSwaps.map((swap, index) => (
-                        <View key={`inner-${index}`} style={styles.devRow}>
-                          <Text style={styles.devMonoText}>
-                            {swap.programInfo.source}
-                          </Text>
-                          <Text style={styles.devSecondaryText}>
-                            {swap.programInfo.programName} / {swap.programInfo.instructionName}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-
-                  {transaction.swapFees && (
-                    <View style={styles.devSubSection}>
-                      <Text style={styles.devSubTitle}>{t('transactions.detail.swapFees', 'Swap Fees')}</Text>
-                      {transaction.swapFees.nativeFees.map((fee, index) => (
-                        <View key={`nfee-${index}`} style={styles.devRow}>
-                          <Text style={styles.devMonoText}>
-                            {getShortAddress(fee.account, 6)}
-                          </Text>
-                          <Text style={styles.devSecondaryText}>
-                            {fee.amount} SOL
-                          </Text>
-                        </View>
-                      ))}
-                      {transaction.swapFees.tokenFees.map((fee, index) => (
-                        <View key={`tfee-${index}`} style={styles.devRow}>
-                          <Text style={styles.devMonoText}>
-                            {getShortAddress(fee.account, 6)}
-                          </Text>
-                          <Text style={styles.devSecondaryText}>
-                            {fee.amount} ({getShortAddress(fee.mint, 4)})
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </BlurContainer>
-              )}
-            </ScrollView>
-
-            {/* Fixed Bottom Action Bar — pad past the system nav bar (e.g.
-                Samsung 3-button) so the Share action is never hidden. */}
-            <View style={[styles.fixedBottomBar, { paddingBottom: insets.bottom + vs(spacing.md) }]}>
-              <ExplorerLinkButton
-                txHash={transaction.id}
-                blockchain="SOLANA"
-                environment="solana-mainnet"
-                showMenu
-                onPress={(_url, _explorerName) => {
-                  if (onViewExplorer) {
-                    onViewExplorer(transaction);
-                  }
-                }}
-              />
-              {onShare && (
-                <View style={styles.actionsRow}>
-                  <ActionButton
-                    icon="share-outline"
-                    label={t('transactions.detail.share', 'Share')}
-                    onPress={handleShare}
-                    testID="tx-detail-share-button"
-                  />
-                </View>
+        {/* Swap Visualization (for swaps) */}
+        {transaction.type === 'swap' && (
+          <BlurContainer style={styles.section}>
+            <View style={styles.swapHeaderRow}>
+              <Text style={styles.sectionTitle}>
+                {t('transactions.detail.conversion', 'Conversion')}
+              </Text>
+              {transaction.swapRoute?.priceImpact && (
+                <PriceImpactBadge
+                  value={transaction.swapRoute.priceImpact}
+                  size="medium"
+                  showIcon
+                />
               )}
             </View>
+            <SwapVisualization outputs={transaction.outputs} inputs={transaction.inputs} />
+            {transaction.swapRoute?.conversionRate && (
+              <View style={styles.conversionRateContainer}>
+                <ConversionRateDisplay
+                  fromSymbol={transaction.swapRoute.conversionRate.fromSymbol}
+                  toSymbol={transaction.swapRoute.conversionRate.toSymbol}
+                  rate={transaction.swapRoute.conversionRate.rate}
+                  size="medium"
+                />
+              </View>
+            )}
+          </BlurContainer>
+        )}
+
+        {/* Swap Route Hops (for multi-hop swaps) */}
+        {transaction.type === 'swap' &&
+          transaction.swapRoute?.hops &&
+          transaction.swapRoute.hops.length > 0 && (
+            <BlurContainer style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                {t('transactions.detail.swapRoute', 'Swap Route')}
+              </Text>
+              {transaction.swapRoute.hops.map((hop, index) => (
+                <View key={`hop-${index}`} style={styles.hopRow}>
+                  <View style={styles.hopBadge}>
+                    <Text style={styles.hopBadgeText}>{hop.dex}</Text>
+                  </View>
+                  <View style={styles.hopTokens}>
+                    <Text style={styles.hopTokenText}>{hop.inputToken.symbol}</Text>
+                    <Ionicons name="arrow-forward" size={12} color={colors.text.tertiary} />
+                    <Text style={styles.hopTokenText}>{hop.outputToken.symbol}</Text>
+                  </View>
+                  {hop.percent < 100 && <Text style={styles.hopPercent}>{hop.percent}%</Text>}
+                </View>
+              ))}
+            </BlurContainer>
+          )}
+
+        {/* Card 2 — Tokens (non-swap): Sent + Received merged */}
+        {transaction.type !== 'swap' &&
+          (transaction.outputs.length > 0 || transaction.inputs.length > 0) && (
+            <BlurContainer style={styles.section}>
+              {transaction.outputs.length > 0 && (
+                <>
+                  <Text style={styles.sectionTitle}>
+                    {t('transactions.detail.sentLabel', 'Sent')}
+                  </Text>
+                  {transaction.outputs.map((token, index) => (
+                    <TokenAmountRow key={`out-${index}`} token={token} sign="-" />
+                  ))}
+                </>
+              )}
+              {transaction.outputs.length > 0 && transaction.inputs.length > 0 && (
+                <InternalDivider />
+              )}
+              {transaction.inputs.length > 0 && (
+                <>
+                  <Text style={styles.sectionTitle}>
+                    {t('transactions.detail.receivedLabel', 'Received')}
+                  </Text>
+                  {transaction.inputs.map((token, index) => (
+                    <TokenAmountRow key={`in-${index}`} token={token} sign="+" />
+                  ))}
+                </>
+              )}
+            </BlurContainer>
+          )}
+
+        {/* NFT Metadata Sections */}
+        {transaction.inputs
+          .filter((token) => token.isNft)
+          .map((token, index) => (
+            <NftMetadataSection key={`nft-in-${index}`} token={token} />
+          ))}
+        {transaction.outputs
+          .filter((token) => token.isNft)
+          .map((token, index) => (
+            <NftMetadataSection key={`nft-out-${index}`} token={token} />
+          ))}
+
+        {/* Card 3 — Addresses + Fee + Hash merged */}
+        <BlurContainer style={styles.section}>
+          {/* Addresses (hidden for swaps) */}
+          {transaction.type !== 'swap' && (
+            <>
+              {transaction.inputs.map((token, index) =>
+                token.source ? (
+                  <React.Fragment key={`from-${index}`}>
+                    <AddressCopyRow
+                      label={t('transactions.from', 'From')}
+                      address={token.source}
+                      truncate="medium"
+                      style={styles.addressRow}
+                    />
+                    <InternalDivider />
+                  </React.Fragment>
+                ) : null
+              )}
+              {transaction.outputs.map((token, index) =>
+                token.destination ? (
+                  <React.Fragment key={`to-${index}`}>
+                    <AddressCopyRow
+                      label={t('transactions.to', 'To')}
+                      address={token.destination}
+                      truncate="medium"
+                      style={styles.addressRow}
+                    />
+                    <InternalDivider />
+                  </React.Fragment>
+                ) : null
+              )}
+            </>
+          )}
+
+          {transaction.fee && (
+            <View style={styles.sectionRow}>
+              <Text style={styles.sectionLabel}>
+                {t('transactions.detail.networkFee', 'Network Fee')}
+              </Text>
+              <Text style={styles.sectionValue}>
+                {formatRawAmount(transaction.fee.amount, transaction.fee.decimals)}{' '}
+                {transaction.fee.symbol}
+              </Text>
+            </View>
+          )}
+
+          {transaction.swapRoute?.totalFee && (
+            <>
+              {transaction.fee && <InternalDivider />}
+              <View style={styles.sectionRow}>
+                <Text style={styles.sectionLabel}>
+                  {t('transactions.detail.swapFee', 'Swap Fee')}
+                </Text>
+                <Text style={styles.sectionValue}>
+                  {transaction.swapRoute.totalFee.amount} {transaction.swapRoute.totalFee.symbol}
+                </Text>
+              </View>
+            </>
+          )}
+
+          {(transaction.fee || transaction.swapRoute?.totalFee) && <InternalDivider />}
+
+          <View style={styles.sectionRow}>
+            <Text style={styles.sectionLabel}>
+              {t('transactions.detail.transactionHash', 'Transaction Hash')}
+            </Text>
+            <View style={styles.hashRow}>
+              <Text style={styles.hashValue}>{truncateHash(transaction.id, 8)}</Text>
+              <TouchableOpacity
+                testID="tx-detail-copy-hash"
+                onPress={handleCopyInlineHash}
+                style={[styles.copyIconButton, hashCopied && styles.copyIconButtonCopied]}
+                activeOpacity={0.6}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  hashCopied
+                    ? t('actions.copied', 'Copied!')
+                    : t('transactions.detail.copyTransactionHash', 'Copy transaction hash')
+                }
+              >
+                {hashCopied ? (
+                  <Animated.View style={{ transform: [{ scale: tickScale }] }}>
+                    <Ionicons name="checkmark" size={14} color={colors.accent.primary} />
+                  </Animated.View>
+                ) : (
+                  <Ionicons name="copy-outline" size={14} color={colors.text.secondary} />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </BlurContainer>
+
+        {/* Developer Info (dev mode only) */}
+        {developerMode && (
+          <BlurContainer style={styles.section}>
+            <View style={styles.devSectionHeader}>
+              <Ionicons name="code-slash-outline" size={16} color={colors.text.secondary} />
+              <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>
+                {t('transactions.detail.developerInfo', 'Developer Info')}
+              </Text>
+            </View>
+
+            {transaction.heliusType && (
+              <View style={styles.sectionRow}>
+                <Text style={styles.sectionLabel}>
+                  {t('transactions.detail.heliusType', 'Helius Type')}
+                </Text>
+                <View style={styles.devBadge}>
+                  <Text style={styles.devBadgeText}>{transaction.heliusType}</Text>
+                </View>
+              </View>
+            )}
+
+            {transaction.accountsInvolved != null && (
+              <View style={[styles.sectionRow, { marginTop: vs(spacing.sm) }]}>
+                <Text style={styles.sectionLabel}>
+                  {t('transactions.detail.accountsInvolved', 'Accounts Involved')}
+                </Text>
+                <Text style={styles.sectionValue}>{transaction.accountsInvolved}</Text>
+              </View>
+            )}
+
+            {transaction.instructions && transaction.instructions.length > 0 && (
+              <View style={styles.devSubSection}>
+                <Text style={styles.devSubTitle}>
+                  {t('transactions.detail.programs', 'Programs')}
+                </Text>
+                {transaction.instructions.map((ix, index) => (
+                  <View key={`ix-${index}`} style={styles.devRow}>
+                    <Text style={styles.devMonoText}>{getShortAddress(ix.programId, 6)}</Text>
+                    {ix.innerInstructionsCount > 0 && (
+                      <Text style={styles.devSecondaryText}>
+                        {t('transactions.detail.innerCount', {
+                          count: ix.innerInstructionsCount,
+                          defaultValue: '{{count}} inner',
+                        })}
+                      </Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {transaction.innerSwaps && transaction.innerSwaps.length > 0 && (
+              <View style={styles.devSubSection}>
+                <Text style={styles.devSubTitle}>
+                  {t('transactions.detail.innerSwaps', 'Inner Swaps')}
+                </Text>
+                {transaction.innerSwaps.map((swap, index) => (
+                  <View key={`inner-${index}`} style={styles.devRow}>
+                    <Text style={styles.devMonoText}>{swap.programInfo.source}</Text>
+                    <Text style={styles.devSecondaryText}>
+                      {swap.programInfo.programName} / {swap.programInfo.instructionName}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {transaction.swapFees && (
+              <View style={styles.devSubSection}>
+                <Text style={styles.devSubTitle}>
+                  {t('transactions.detail.swapFees', 'Swap Fees')}
+                </Text>
+                {transaction.swapFees.nativeFees.map((fee, index) => (
+                  <View key={`nfee-${index}`} style={styles.devRow}>
+                    <Text style={styles.devMonoText}>{getShortAddress(fee.account, 6)}</Text>
+                    <Text style={styles.devSecondaryText}>{fee.amount} SOL</Text>
+                  </View>
+                ))}
+                {transaction.swapFees.tokenFees.map((fee, index) => (
+                  <View key={`tfee-${index}`} style={styles.devRow}>
+                    <Text style={styles.devMonoText}>{getShortAddress(fee.account, 6)}</Text>
+                    <Text style={styles.devSecondaryText}>
+                      {fee.amount} ({getShortAddress(fee.mint, 4)})
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </BlurContainer>
+        )}
+      </ScrollView>
+
+      {/* Fixed Bottom Action Bar — pad past the system nav bar (e.g.
+                Samsung 3-button) so the Share action is never hidden. */}
+      <View style={[styles.fixedBottomBar, { paddingBottom: insets.bottom + vs(spacing.md) }]}>
+        <ExplorerLinkButton
+          txHash={transaction.id}
+          blockchain="SOLANA"
+          environment="solana-mainnet"
+          showMenu
+          onPress={(_url, _explorerName) => {
+            if (onViewExplorer) {
+              onViewExplorer(transaction);
+            }
+          }}
+        />
+        {onShare && (
+          <View style={styles.actionsRow}>
+            <ActionButton
+              icon="share-outline"
+              label={t('transactions.detail.share', 'Share')}
+              onPress={handleShare}
+              testID="tx-detail-share-button"
+            />
+          </View>
+        )}
+      </View>
     </BottomSheetContainer>
   );
 };

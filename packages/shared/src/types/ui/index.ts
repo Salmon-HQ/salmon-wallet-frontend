@@ -120,10 +120,7 @@ export type {
 } from './wallet-switcher-sheet';
 
 // Avatar Picker
-export type {
-  NftAvatarItem,
-  AvatarPickerPropsBase,
-} from './avatar-picker';
+export type { NftAvatarItem, AvatarPickerPropsBase } from './avatar-picker';
 
 // Accounts Panel
 export type { AccountsPanelPropsBase } from './accounts-panel';
@@ -135,10 +132,7 @@ export type { AccountEditPanelPropsBase } from './account-edit-panel';
 export type { AccountAddStep, AccountAddPanelPropsBase } from './account-add';
 
 // Security Panel
-export type {
-  SecurityPanelPropsBase,
-  SecurityPanelPropsMobile,
-} from './security-panel';
+export type { SecurityPanelPropsBase, SecurityPanelPropsMobile } from './security-panel';
 
 // Transaction Success Screen
 export type { TransactionSuccessScreenProps } from './transaction-success-screen';

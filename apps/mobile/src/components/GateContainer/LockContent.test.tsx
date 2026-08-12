@@ -42,7 +42,15 @@ jest.mock('@salmon/shared', () => ({
   shadows: { button: {} },
   ms: (value: number) => value,
   s: (value: number) => value,
-  spacing: { sm: 8, md: 12, lg: 16, lockScreenPadding: 20, lockScreenSectionGap: 20, lockScreenGap: 16, '4xl': 40 },
+  spacing: {
+    sm: 8,
+    md: 12,
+    lg: 16,
+    lockScreenPadding: 20,
+    lockScreenSectionGap: 20,
+    lockScreenGap: 16,
+    '4xl': 40,
+  },
   vs: (value: number) => value,
 }));
 

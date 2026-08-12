@@ -10,7 +10,7 @@
 
 **Owner**: This is console and paperwork rather than code. It is written down so nothing is lost between the people doing it.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Pass the console gates that block submission (Priority: P1)
 
@@ -50,7 +50,7 @@ A reviewer opens the app and can complete a swap and a bridge without obtaining 
 
 The team has a written answer to why a swap and a bridge are not an unlicensed exchange, and a territory list it can defend.
 
-**Why this priority**: This is the question that decides the outcome. Guideline 3.1.5(iii) permits facilitating cryptocurrency transactions "on an approved exchange" and only where the app holds "appropriate licensing", and defines neither term. Two documented cases of non-custodial apps — both with *less* exchange-like surface than a Jupiter swap plus a cross-chain bridge — were rejected and asked for licensing evidence covering every territory they shipped to.
+**Why this priority**: This is the question that decides the outcome. Guideline 3.1.5(iii) permits facilitating cryptocurrency transactions "on an approved exchange" and only where the app holds "appropriate licensing", and defines neither term. Two documented cases of non-custodial apps — both with _less_ exchange-like surface than a Jupiter swap plus a cross-chain bridge — were rejected and asked for licensing evidence covering every territory they shipped to.
 
 **Independent Test**: Read the prepared answer as if you were a reviewer who has just asked "what licenses do you hold, and where".
 
@@ -70,7 +70,7 @@ The team has a written answer to why a swap and a bridge are not an unlicensed e
 - Screenshots show a feature or a balance that the submitted build does not produce.
 - The seller name shown on the product page is not the legal entity.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -85,7 +85,7 @@ The team has a written answer to why a swap and a bridge are not an unlicensed e
 - **FR-009**: The export compliance answer MUST be verified against the cryptography the app actually ships rather than assumed.
 - **FR-010**: The version string on the App Store Connect record MUST match the build being submitted.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

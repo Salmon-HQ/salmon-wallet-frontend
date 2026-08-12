@@ -312,9 +312,7 @@ export function getSatRarityColor(rarity?: string): string {
  * Section key for multi-chain NFT display.
  * Combines blockchain + network for testnet support.
  */
-export type NftSectionKey =
-  | 'solana'
-  | 'solana-devnet';
+export type NftSectionKey = 'solana' | 'solana-devnet';
 
 /**
  * State for a single NFT section (one blockchain+network).
@@ -336,7 +334,7 @@ export type NftsBySection = Record<NftSectionKey, NftSection>;
  * Maps each section key to its network account key in networksAccounts.
  */
 export const SECTION_TO_NETWORK: Record<NftSectionKey, string> = {
-  'solana': 'solana-mainnet',
+  solana: 'solana-mainnet',
   'solana-devnet': 'solana-devnet',
 };
 
@@ -345,7 +343,13 @@ export const SECTION_TO_NETWORK: Record<NftSectionKey, string> = {
  */
 export const INITIAL_NFT_SECTIONS: NftsBySection = {
   solana: { nfts: [], loading: true, blockchain: 'solana', isTestnet: false },
-  'solana-devnet': { nfts: [], loading: false, blockchain: 'solana', networkLabel: 'Devnet', isTestnet: true },
+  'solana-devnet': {
+    nfts: [],
+    loading: false,
+    blockchain: 'solana',
+    networkLabel: 'Devnet',
+    isTestnet: true,
+  },
 };
 
 /**

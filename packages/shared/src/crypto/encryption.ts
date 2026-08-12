@@ -203,13 +203,7 @@ async function deriveWithWebCrypto(
   const algo = digest === 'sha512' ? 'SHA-512' : 'SHA-256';
   const passwordBytes = new TextEncoder().encode(password);
 
-  const baseKey = await subtle.importKey(
-    'raw',
-    passwordBytes,
-    'PBKDF2',
-    false,
-    ['deriveBits']
-  );
+  const baseKey = await subtle.importKey('raw', passwordBytes, 'PBKDF2', false, ['deriveBits']);
 
   const derived = await subtle.deriveBits(
     { name: 'PBKDF2', salt: salt as BufferSource, iterations, hash: algo },
@@ -404,11 +398,7 @@ function validateVault(locked: LockedVault): void {
  * Centralises the decrypt → parse → error-handling logic shared by
  * `unlock`, `unlockAndGetKey` and `unlockWithKey`.
  */
-function decryptAndParse<T>(
-  encrypted: Uint8Array,
-  nonce: Uint8Array,
-  key: Uint8Array
-): T {
+function decryptAndParse<T>(encrypted: Uint8Array, nonce: Uint8Array, key: Uint8Array): T {
   const plaintext = secretbox.open(encrypted, nonce, key);
 
   if (!plaintext) {
@@ -526,7 +516,9 @@ export function lockWithKey<T>(unlocked: T, keyCache: DerivedKeyCache): LockedVa
 /**
  * Checks if a key cache is still valid (not expired).
  */
-export function isKeyCacheValid(keyCache: DerivedKeyCache | null | undefined): keyCache is DerivedKeyCache {
+export function isKeyCacheValid(
+  keyCache: DerivedKeyCache | null | undefined
+): keyCache is DerivedKeyCache {
   return !!keyCache && keyCache.expiresAt > Date.now();
 }
 

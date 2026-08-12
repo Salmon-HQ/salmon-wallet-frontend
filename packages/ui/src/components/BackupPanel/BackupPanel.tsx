@@ -24,7 +24,21 @@ import CheckIcon from '@mui/icons-material/Check';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import KeyIcon from '@mui/icons-material/Key';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, borderRadius, borderWidth, useAccountsContext, fontFamily, fontSize, fontWeight, letterSpacing, opacity, componentSizes, duration, durationMs } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  borderWidth,
+  useAccountsContext,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  opacity,
+  componentSizes,
+  duration,
+  durationMs,
+} from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { WarningNotice } from '../WarningNotice';
 import type { BackupPanelProps } from './types';
@@ -194,20 +208,11 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
   const hasNoMnemonic = !mnemonic || words.length === 0;
 
   return (
-    <SettingsPanelContent
-      title={t('settings.backup', 'Backup Wallet')}
-      onBack={onBack}
-    >
+    <SettingsPanelContent title={t('settings.backup', 'Backup Wallet')} onBack={onBack}>
       <PageContent>
-        <WarningAlert
-          severity="warning"
-          icon={<WarningAmberIcon />}
-        >
+        <WarningAlert severity="warning" icon={<WarningAmberIcon />}>
           <Typography variant="body2" sx={{ fontWeight: fontWeight.medium }}>
-            {t(
-              'settings.backup_warning_title',
-              'Never share your recovery phrase'
-            )}
+            {t('settings.backup_warning_title', 'Never share your recovery phrase')}
           </Typography>
           <Typography variant="body2" sx={{ mt: `${spacing.xs}px`, opacity: opacity.soft }}>
             {t(
@@ -229,17 +234,13 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
         ) : (
           <>
             <Box>
-              <SectionLabel>
-                {t('settings.recovery_phrase', 'Recovery Phrase')}
-              </SectionLabel>
+              <SectionLabel>{t('settings.recovery_phrase', 'Recovery Phrase')}</SectionLabel>
               <SeedPhraseCard data-testid="backup-seed-phrase">
                 <SeedPhraseGrid>
                   {words.map((word, index) => (
                     <WordChip key={index}>
                       <WordNumber>{index + 1}.</WordNumber>
-                      <WordText>
-                        {seedPhraseVisible ? word : '****'}
-                      </WordText>
+                      <WordText>{seedPhraseVisible ? word : '****'}</WordText>
                     </WordChip>
                   ))}
                 </SeedPhraseGrid>
@@ -247,9 +248,7 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
                 {!seedPhraseVisible && (
                   <BlurOverlay onClick={handleReveal} data-testid="backup-seed-reveal-overlay">
                     <KeyIcon sx={{ fontSize: fontSize.iconLg, color: colors.text.secondary }} />
-                    <RevealText>
-                      {t('settings.tap_to_reveal', 'Tap to reveal')}
-                    </RevealText>
+                    <RevealText>{t('settings.tap_to_reveal', 'Tap to reveal')}</RevealText>
                   </BlurOverlay>
                 )}
               </SeedPhraseCard>
@@ -258,7 +257,13 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
                 <Tooltip title={copied ? t('actions.copied', 'Copied!') : ''} open={copied}>
                   <CopyButton
                     variant="outlined"
-                    startIcon={copied ? <CheckIcon sx={{ color: colors.status.success }} /> : <ContentCopyIcon />}
+                    startIcon={
+                      copied ? (
+                        <CheckIcon sx={{ color: colors.status.success }} />
+                      ) : (
+                        <ContentCopyIcon />
+                      )
+                    }
                     onClick={handleCopy}
                     disabled={!seedPhraseVisible}
                     data-testid="backup-seed-copy-button"
@@ -275,9 +280,7 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
                     backgroundColor: seedPhraseVisible
                       ? colors.accent.primary
                       : colors.background.card,
-                    color: seedPhraseVisible
-                      ? colors.text.primary
-                      : colors.text.primary,
+                    color: seedPhraseVisible ? colors.text.primary : colors.text.primary,
                     border: `${borderWidth.thin}px solid ${
                       seedPhraseVisible ? colors.accent.primary : colors.border.default
                     }`,
@@ -288,9 +291,7 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
                     },
                   }}
                 >
-                  {seedPhraseVisible
-                    ? t('actions.hide', 'Hide')
-                    : t('actions.reveal', 'Reveal')}
+                  {seedPhraseVisible ? t('actions.hide', 'Hide') : t('actions.reveal', 'Reveal')}
                 </ActionButton>
               </ActionRow>
               {copyFailed && (

@@ -154,12 +154,14 @@ export function SwapReviewScreen({
   const inSymbol = input?.symbol ?? inToken.symbol;
   const outSymbol = output?.symbol ?? outToken.symbol;
 
-  const displayInAmount = input?.amount != null
-    ? Number(input.amount) / (10 ** inDecimals)
-    : parseFloat(inAmount || '0') || 0;
-  const displayOutAmount = output?.amount != null
-    ? Number(output.amount) / (10 ** outDecimals)
-    : parseFloat(outAmount || '0') || 0;
+  const displayInAmount =
+    input?.amount != null
+      ? Number(input.amount) / 10 ** inDecimals
+      : parseFloat(inAmount || '0') || 0;
+  const displayOutAmount =
+    output?.amount != null
+      ? Number(output.amount) / 10 ** outDecimals
+      : parseFloat(outAmount || '0') || 0;
 
   return (
     <Container style={style}>
@@ -194,24 +196,11 @@ export function SwapReviewScreen({
                 value={formatPercent(fee.percent)}
               />
             )}
-            {details?.router && (
-              <SwapDetailRow
-                label={t('swap.router')}
-                value={details.router}
-              />
-            )}
+            {details?.router && <SwapDetailRow label={t('swap.router')} value={details.router} />}
             {routeNames && routeNames.length > 0 && (
-              <SwapDetailRow
-                label={t('swap.review.route')}
-                value={routeNames.join(' → ')}
-              />
+              <SwapDetailRow label={t('swap.review.route')} value={routeNames.join(' → ')} />
             )}
-            {details?.gasless && (
-              <SwapDetailRow
-                label={t('swap.gasless')}
-                value={t('swap.yes')}
-              />
-            )}
+            {details?.gasless && <SwapDetailRow label={t('swap.gasless')} value={t('swap.yes')} />}
             {details?.prioritizationFeeLamports != null && (
               <SwapDetailRow
                 label={t('swap.priority_fee')}
@@ -233,14 +222,14 @@ export function SwapReviewScreen({
             {details?.otherAmountThreshold != null && (
               <SwapDetailRow
                 label={t('swap.minimum_received')}
-                value={formatAmountWithSymbol(Number(details.otherAmountThreshold) / (10 ** outDecimals), outSymbol)}
+                value={formatAmountWithSymbol(
+                  Number(details.otherAmountThreshold) / 10 ** outDecimals,
+                  outSymbol
+                )}
               />
             )}
             {details?.swapMode && (
-              <SwapDetailRow
-                label={t('swap.swap_mode')}
-                value={details.swapMode}
-              />
+              <SwapDetailRow label={t('swap.swap_mode')} value={details.swapMode} />
             )}
           </DetailsContainer>
 
@@ -262,9 +251,7 @@ export function SwapReviewScreen({
           >
             <WarningContent>
               <WarningTitle>{t('swap.review.pleaseNote')}</WarningTitle>
-              <WarningBodyText>
-                {t('swap.review.pleaseNoteText')}
-              </WarningBodyText>
+              <WarningBodyText>{t('swap.review.pleaseNoteText')}</WarningBodyText>
             </WarningContent>
           </BlurContainer>
         </ScrollContent>
@@ -280,4 +267,3 @@ export function SwapReviewScreen({
     </Container>
   );
 }
-

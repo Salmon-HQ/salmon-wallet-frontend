@@ -6,18 +6,18 @@ appId: io.salmonwallet.app
     stopApp: true
 - runFlow:
     when:
-      visible: "Fast refresh"
+      visible: 'Fast refresh'
     commands:
-      - tapOn: "Close"
+      - tapOn: 'Close'
 - extendedWaitUntil:
-    visible: "Welcome back"
+    visible: 'Welcome back'
     timeout: 60000
 - takeScreenshot: screenshots/smoke/mobile/lock-overlay
 - tapOn:
-    id: "lock-password-input"
+    id: 'lock-password-input'
 - inputText: ${SALMON_TEST_PASSWORD}
-- tapOn: "Unlock"
+- tapOn: 'Unlock'
 - extendedWaitUntil:
-    visible: "Switch wallet account"
+    visible: 'Switch wallet account'
     timeout: 30000
 - takeScreenshot: screenshots/smoke/mobile/lock-unlocked

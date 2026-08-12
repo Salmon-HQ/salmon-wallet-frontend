@@ -7,9 +7,7 @@
 
 export { InputAddress, default } from './InputAddress';
 export { useAddressValidation } from '@salmon/shared';
-export type {
-  InputAddressProps,
-} from './types';
+export type { InputAddressProps } from './types';
 export type {
   BlockchainType,
   ValidationState,

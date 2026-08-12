@@ -5,7 +5,10 @@ import {
   colors,
   componentSizes,
   spacing,
-fontSize, fontFamilyNative, opacity, } from '@salmon/shared';
+  fontSize,
+  fontFamilyNative,
+  opacity,
+} from '@salmon/shared';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from '../Icon/SvgIcons';
@@ -55,15 +58,15 @@ const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
         <Text style={styles.address}>{address}</Text>
         <View style={styles.networkRow}>
           <BlockchainIcon blockchain={blockchain} />
-          <Text style={styles.path}>{networkName} · {path}</Text>
+          <Text style={styles.path}>
+            {networkName} · {path}
+          </Text>
         </View>
       </View>
 
       {/* Balance */}
       <View style={styles.balanceContainer}>
-        <Text style={[styles.balance, dimmed && styles.dimmed]}>
-          {balanceFormatted}
-        </Text>
+        <Text style={[styles.balance, dimmed && styles.dimmed]}>{balanceFormatted}</Text>
       </View>
     </TouchableOpacity>
   );

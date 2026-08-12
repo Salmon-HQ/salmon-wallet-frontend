@@ -275,17 +275,26 @@ export function HomePage(): React.ReactElement {
       },
     },
   });
-  const { developerNetworks, toggleDeveloperNetworks, explorer, explorers, changeExplorer, isLoading: explorerLoading } = userConfig;
+  const {
+    developerNetworks,
+    toggleDeveloperNetworks,
+    explorer,
+    explorers,
+    changeExplorer,
+    isLoading: explorerLoading,
+  } = userConfig;
 
   // Anonymous usage-analytics consent (opt-in). The first-run prompt now lives
   // in onboarding (auth/analytics-consent); here we only bind the Settings toggle.
-  const {
-    consent: analyticsConsent,
-    setConsent: setAnalyticsConsent,
-  } = useAnalyticsConsent();
+  const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
 
   // Language
-  const { language: currentLanguage, availableLanguages, languageNames, changeLanguage } = useLanguage();
+  const {
+    language: currentLanguage,
+    availableLanguages,
+    languageNames,
+    changeLanguage,
+  } = useLanguage();
 
   // Available networks
   const { allNetworks: availableNetworks, networksReady } = useAvailableNetworks({
@@ -299,16 +308,30 @@ export function HomePage(): React.ReactElement {
   });
 
   // Address book
-  const networkAdapter: NetworkAdapter = useMemo(() => ({
-    getNetwork: async (id: string) => {
-      const found = (availableNetworks || []).find((n) => n.id === id);
-      if (!found) return undefined;
-      return { id: found.id, name: found.name, blockchain: found.id.split('-')[0] as BlockchainType };
-    },
-    getNetworks: async () =>
-      (availableNetworks || []).map((n) => ({ id: n.id, name: n.name, blockchain: n.id.split('-')[0] as BlockchainType })),
-  }), [availableNetworks]);
-  const [{ contacts, error: addressBookError }, { addContact, editContact: editAddressBookContact, removeContact, reload: reloadAddressBook }] = useAddressbook({ networkAdapter });
+  const networkAdapter: NetworkAdapter = useMemo(
+    () => ({
+      getNetwork: async (id: string) => {
+        const found = (availableNetworks || []).find((n) => n.id === id);
+        if (!found) return undefined;
+        return {
+          id: found.id,
+          name: found.name,
+          blockchain: found.id.split('-')[0] as BlockchainType,
+        };
+      },
+      getNetworks: async () =>
+        (availableNetworks || []).map((n) => ({
+          id: n.id,
+          name: n.name,
+          blockchain: n.id.split('-')[0] as BlockchainType,
+        })),
+    }),
+    [availableNetworks]
+  );
+  const [
+    { contacts, error: addressBookError },
+    { addContact, editContact: editAddressBookContact, removeContact, reload: reloadAddressBook },
+  ] = useAddressbook({ networkAdapter });
   // Inline error for address-book writes (translation key, rendered by the open panel)
   const [addressBookWriteErrorKey, setAddressBookWriteErrorKey] = useState<string | null>(null);
 
@@ -321,16 +344,21 @@ export function HomePage(): React.ReactElement {
     setActiveTabState((prev) => (prev === next ? prev : next));
   }, [location.hash]);
 
-  const setActiveTab = useCallback((tab: ActiveTab) => {
-    setActiveTabState(tab);
-    const targetHash = TAB_HASHES[tab];
-    if (location.hash !== targetHash) {
-      navigate({ pathname: location.pathname, hash: targetHash }, { replace: true });
-    }
-  }, [navigate, location.hash, location.pathname]);
+  const setActiveTab = useCallback(
+    (tab: ActiveTab) => {
+      setActiveTabState(tab);
+      const targetHash = TAB_HASHES[tab];
+      if (location.hash !== targetHash) {
+        navigate({ pathname: location.pathname, hash: targetHash }, { replace: true });
+      }
+    },
+    [navigate, location.hash, location.pathname]
+  );
   const [activeBlockchainIndex, setActiveBlockchainIndex] = useState(0);
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [settingsInitialPanels, setSettingsInitialPanels] = useState<SettingsPanelEntry[] | undefined>(undefined);
+  const [settingsInitialPanels, setSettingsInitialPanels] = useState<
+    SettingsPanelEntry[] | undefined
+  >(undefined);
   const [walletSwitcherVisible, setWalletSwitcherVisible] = useState(false);
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
   const [removeWalletDialogVisible, setRemoveWalletDialogVisible] = useState(false);
@@ -427,15 +455,27 @@ export function HomePage(): React.ReactElement {
         loading: false,
       };
     });
-  }, [allNetworks, networkId, switchingNetwork, refreshing, usdTotal, changePercent, changeAmount, loading]);
+  }, [
+    allNetworks,
+    networkId,
+    switchingNetwork,
+    refreshing,
+    usdTotal,
+    changePercent,
+    changeAmount,
+    loading,
+  ]);
 
-  const handleBlockchainChange = useCallback((_blockchain: BlockchainId, index: number) => {
-    setActiveBlockchainIndex(index);
-    const selectedBalance = blockchainBalances[index];
-    if (selectedBalance) {
-      actions.changeNetwork(selectedBalance.network.id);
-    }
-  }, [blockchainBalances, actions]);
+  const handleBlockchainChange = useCallback(
+    (_blockchain: BlockchainId, index: number) => {
+      setActiveBlockchainIndex(index);
+      const selectedBalance = blockchainBalances[index];
+      if (selectedBalance) {
+        actions.changeNetwork(selectedBalance.network.id);
+      }
+    },
+    [blockchainBalances, actions]
+  );
 
   const currentBlockchain = useMemo(() => {
     const active = blockchainBalances[activeBlockchainIndex];
@@ -453,7 +493,8 @@ export function HomePage(): React.ReactElement {
       price: token.price,
       uiAmount: token.uiAmount,
       usdBalance: token.usdBalance,
-      last24HoursChange: token.priceChange24h !== undefined ? { perc: token.priceChange24h } : undefined,
+      last24HoursChange:
+        token.priceChange24h !== undefined ? { perc: token.priceChange24h } : undefined,
       tags: token.tags,
       coingeckoId: token.coingeckoId,
       decimals: token.decimals,
@@ -461,9 +502,8 @@ export function HomePage(): React.ReactElement {
   }, [tokens]);
 
   // Bitcoin coin info + chart data via shared React Query hook
-  const bitcoinCoinId = currentBlockchain === 'bitcoin'
-    ? BLOCKCHAIN_TO_COINGECKO[currentBlockchain]
-    : undefined;
+  const bitcoinCoinId =
+    currentBlockchain === 'bitcoin' ? BLOCKCHAIN_TO_COINGECKO[currentBlockchain] : undefined;
   const {
     coinInfo: bitcoinCoinInfo,
     chartData: bitcoinChartDataRaw,
@@ -493,7 +533,9 @@ export function HomePage(): React.ReactElement {
       price: md.currentPrice,
       uiAmount: 0,
       usdBalance: 0,
-      last24HoursChange: md.priceChangePercentage24h ? { perc: md.priceChangePercentage24h, abs: md.priceChange24h } : null,
+      last24HoursChange: md.priceChangePercentage24h
+        ? { perc: md.priceChangePercentage24h, abs: md.priceChange24h }
+        : null,
       isVerified: true,
     };
   }, [bitcoinCoinInfo]);
@@ -521,9 +563,12 @@ export function HomePage(): React.ReactElement {
     if (accountAddress) navigator.clipboard.writeText(accountAddress);
   }, [accountAddress]);
 
-  const handleTokenPress = useCallback((token: Token) => {
-    navigate(`/token/${token.address}`);
-  }, [navigate]);
+  const handleTokenPress = useCallback(
+    (token: Token) => {
+      navigate(`/token/${token.address}`);
+    },
+    [navigate]
+  );
 
   const handleSendPress = useCallback(() => navigate('/send'), [navigate]);
   const handleReceivePress = useCallback(() => setReceiveSheetVisible(true), []);
@@ -531,220 +576,255 @@ export function HomePage(): React.ReactElement {
 
   // Address book items
   const addressBookItems: AddressBookItem[] = useMemo(
-    () => contacts.map((c) => ({
-      name: c.name, address: c.address,
-      networkId: c.network.id, networkName: c.network.name,
-      domain: c.domain,
-    })),
-    [contacts],
+    () =>
+      contacts.map((c) => ({
+        name: c.name,
+        address: c.address,
+        networkId: c.network.id,
+        networkName: c.network.name,
+        domain: c.domain,
+      })),
+    [contacts]
   );
 
   // Build panel registry for SettingsPanelStack
-  const panelRegistry: PanelRegistry = useMemo(() => ({
-    avatar: ({ onBack }) => <AccountAvatarPanel onBack={onBack} />,
-    backup: ({ onBack }) => <BackupPanel onBack={onBack} />,
-    privateKey: ({ onBack }) => <PrivateKeyPanel onBack={onBack} />,
-    currency: ({ onBack }) => {
-      const currencyItems: CurrencySelectorItem[] = SUPPORTED_CURRENCIES.map(
-        (code) => ({
+  const panelRegistry: PanelRegistry = useMemo(
+    () => ({
+      avatar: ({ onBack }) => <AccountAvatarPanel onBack={onBack} />,
+      backup: ({ onBack }) => <BackupPanel onBack={onBack} />,
+      privateKey: ({ onBack }) => <PrivateKeyPanel onBack={onBack} />,
+      currency: ({ onBack }) => {
+        const currencyItems: CurrencySelectorItem[] = SUPPORTED_CURRENCIES.map((code) => ({
           code,
           name: CURRENCY_MAP[code].name,
           symbol: CURRENCY_MAP[code].symbol,
-        })
-      );
-      return (
-        <CurrencySelector
-          currencies={currencyItems}
-          activeCurrencyCode={currency}
-          onSelectCurrency={(code) => { changeCurrency(code as typeof currency); }}
+        }));
+        return (
+          <CurrencySelector
+            currencies={currencyItems}
+            activeCurrencyCode={currency}
+            onSelectCurrency={(code) => {
+              changeCurrency(code as typeof currency);
+            }}
+            onBack={onBack}
+          />
+        );
+      },
+      about: ({ onBack }) => <AboutPanel onBack={onBack} />,
+      support: ({ onBack }) => (
+        <SupportSelector
+          options={SUPPORT_OPTIONS}
+          onOpenLink={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
           onBack={onBack}
         />
-      );
-    },
-    about: ({ onBack }) => <AboutPanel onBack={onBack} />,
-    support: ({ onBack }) => (
-      <SupportSelector
-        options={SUPPORT_OPTIONS}
-        onOpenLink={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
-        onBack={onBack}
-      />
-    ),
-    language: ({ onBack }) => {
-      const languageItems: LanguageSelectorItem[] = availableLanguages.map(
-        (code) => ({
+      ),
+      language: ({ onBack }) => {
+        const languageItems: LanguageSelectorItem[] = availableLanguages.map((code) => ({
           code,
           nativeName: languageNames[code],
-        })
-      );
-      return (
-        <LanguageSelector
-          languages={languageItems}
-          activeLanguageCode={currentLanguage}
-          onSelectLanguage={(code) => { changeLanguage(code as typeof currentLanguage); }}
-          onBack={onBack}
-        />
-      );
-    },
-    explorer: ({ onBack }) => {
-      const explorerItems: ExplorerSelectorItem[] = explorers.map((e) => ({
-        key: e.key,
-        name: e.name,
-      }));
-      return (
-        <ExplorerSelector
-          explorers={explorerItems}
-          activeExplorerName={explorer?.name || ''}
-          onSelectExplorer={(key) => { changeExplorer(key); }}
-          onBack={onBack}
-          loading={explorerLoading}
-        />
-      );
-    },
-    network: ({ onBack }) => {
-      const userNetworks = activeAccount?.networksAccounts
-        ? allNetworks.filter((n) => Object.keys(activeAccount.networksAccounts!).includes(n.id))
-        : allNetworks;
-      const networkItems: NetworkSelectorItem[] = userNetworks.map((n) => ({
-        id: n.id, name: n.name, blockchain: n.id.split('-')[0],
-      }));
-      return (
-        <NetworkSelector
-          networks={networkItems}
+        }));
+        return (
+          <LanguageSelector
+            languages={languageItems}
+            activeLanguageCode={currentLanguage}
+            onSelectLanguage={(code) => {
+              changeLanguage(code as typeof currentLanguage);
+            }}
+            onBack={onBack}
+          />
+        );
+      },
+      explorer: ({ onBack }) => {
+        const explorerItems: ExplorerSelectorItem[] = explorers.map((e) => ({
+          key: e.key,
+          name: e.name,
+        }));
+        return (
+          <ExplorerSelector
+            explorers={explorerItems}
+            activeExplorerName={explorer?.name || ''}
+            onSelectExplorer={(key) => {
+              changeExplorer(key);
+            }}
+            onBack={onBack}
+            loading={explorerLoading}
+          />
+        );
+      },
+      network: ({ onBack }) => {
+        const userNetworks = activeAccount?.networksAccounts
+          ? allNetworks.filter((n) => Object.keys(activeAccount.networksAccounts!).includes(n.id))
+          : allNetworks;
+        const networkItems: NetworkSelectorItem[] = userNetworks.map((n) => ({
+          id: n.id,
+          name: n.name,
+          blockchain: n.id.split('-')[0],
+        }));
+        return (
+          <NetworkSelector
+            networks={networkItems}
+            activeNetworkId={networkId || 'solana-mainnet'}
+            onSelectNetwork={(id) => {
+              actions.changeNetwork(id);
+            }}
+            onBack={onBack}
+          />
+        );
+      },
+      addressBook: ({ onBack, onNavigate }) => (
+        <AddressBookPanel
+          contacts={addressBookItems}
           activeNetworkId={networkId || 'solana-mainnet'}
-          onSelectNetwork={(id) => { actions.changeNetwork(id); }}
-          onBack={onBack}
-        />
-      );
-    },
-    addressBook: ({ onBack, onNavigate }) => (
-      <AddressBookPanel
-        contacts={addressBookItems}
-        activeNetworkId={networkId || 'solana-mainnet'}
-        onAddContact={() => {
-          setAddressBookWriteErrorKey(null);
-          onNavigate('address-book-add');
-        }}
-        onEditContact={(contact) => {
-          setAddressBookWriteErrorKey(null);
-          setEditingContact(contact);
-          onNavigate('address-book-edit');
-        }}
-        onRemoveContact={async (address) => { await removeContact(address); }}
-        onBack={onBack}
-        error={addressBookError}
-        onRetry={reloadAddressBook}
-      />
-    ),
-    'address-book-add': ({ onBack }) => {
-      const activeNet = allNetworks.find((n) => n.id === networkId) || allNetworks[0];
-      const blockchain = (networkId || 'solana-mainnet').split('-')[0];
-      return (
-        <AddressAddPanel
-          activeNetworkId={activeNet?.id || 'solana-mainnet'}
-          activeNetworkName={activeNet?.name || t('general.network_solana_mainnet', 'Solana Mainnet')}
-          activeBlockchain={blockchain}
-          onSave={async (input: AddressInput) => {
+          onAddContact={() => {
             setAddressBookWriteErrorKey(null);
-            try {
-              await addContact(input);
-            } catch (err) {
-              setAddressBookWriteErrorKey(
-                err instanceof AddressbookError && err.kind === 'resolve'
-                  ? 'settings.addressbook.resolve_failed'
-                  : 'settings.addressbook.save_failed',
-              );
-            }
+            onNavigate('address-book-add');
+          }}
+          onEditContact={(contact) => {
+            setAddressBookWriteErrorKey(null);
+            setEditingContact(contact);
+            onNavigate('address-book-edit');
+          }}
+          onRemoveContact={async (address) => {
+            await removeContact(address);
           }}
           onBack={onBack}
-          errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
+          error={addressBookError}
+          onRetry={reloadAddressBook}
         />
-      );
-    },
-    'address-book-edit': ({ onBack }) => {
-      if (!editingContact) return null;
-      const blockchain = (editingContact.networkId || 'solana-mainnet').split('-')[0];
-      return (
-        <AddressEditPanel
-          contact={editingContact}
-          activeBlockchain={blockchain}
-          onSave={async (originalAddress: string, input: AddressInput) => {
-            setAddressBookWriteErrorKey(null);
-            try {
-              await editAddressBookContact(originalAddress, input);
-              setEditingContact(null);
-            } catch (err) {
-              setAddressBookWriteErrorKey(
-                err instanceof AddressbookError && err.kind === 'resolve'
-                  ? 'settings.addressbook.resolve_failed'
-                  : 'settings.addressbook.save_failed',
-              );
+      ),
+      'address-book-add': ({ onBack }) => {
+        const activeNet = allNetworks.find((n) => n.id === networkId) || allNetworks[0];
+        const blockchain = (networkId || 'solana-mainnet').split('-')[0];
+        return (
+          <AddressAddPanel
+            activeNetworkId={activeNet?.id || 'solana-mainnet'}
+            activeNetworkName={
+              activeNet?.name || t('general.network_solana_mainnet', 'Solana Mainnet')
             }
+            activeBlockchain={blockchain}
+            onSave={async (input: AddressInput) => {
+              setAddressBookWriteErrorKey(null);
+              try {
+                await addContact(input);
+              } catch (err) {
+                setAddressBookWriteErrorKey(
+                  err instanceof AddressbookError && err.kind === 'resolve'
+                    ? 'settings.addressbook.resolve_failed'
+                    : 'settings.addressbook.save_failed'
+                );
+              }
+            }}
+            onBack={onBack}
+            errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
+          />
+        );
+      },
+      'address-book-edit': ({ onBack }) => {
+        if (!editingContact) return null;
+        const blockchain = (editingContact.networkId || 'solana-mainnet').split('-')[0];
+        return (
+          <AddressEditPanel
+            contact={editingContact}
+            activeBlockchain={blockchain}
+            onSave={async (originalAddress: string, input: AddressInput) => {
+              setAddressBookWriteErrorKey(null);
+              try {
+                await editAddressBookContact(originalAddress, input);
+                setEditingContact(null);
+              } catch (err) {
+                setAddressBookWriteErrorKey(
+                  err instanceof AddressbookError && err.kind === 'resolve'
+                    ? 'settings.addressbook.resolve_failed'
+                    : 'settings.addressbook.save_failed'
+                );
+              }
+            }}
+            onBack={onBack}
+            errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
+          />
+        );
+      },
+      trustedApps: ({ onBack }) => {
+        const trustedAppItems: TrustedAppItem[] = Object.entries(activeTrustedApps || {}).map(
+          ([domain, app]) => ({
+            domain,
+            name: app.name,
+            icon: app.icon,
+          })
+        );
+        return (
+          <TrustedAppsSelector
+            apps={trustedAppItems}
+            onRevokeApp={(domain) => {
+              actions.removeTrustedApp(domain);
+            }}
+            onBack={onBack}
+          />
+        );
+      },
+      security: ({ onBack }) => (
+        <SecurityPanel onBack={onBack} onPasswordChanged={clearSessionKey} />
+      ),
+      accounts: ({ onBack, onNavigate }) => (
+        <AccountsPanel
+          onBack={onBack}
+          onEditAccount={(id) => {
+            setEditingAccountId(id);
+            onNavigate('account-edit', { accountId: id });
           }}
-          onBack={onBack}
-          errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
+          onAddAccount={() => onNavigate('account-add')}
         />
-      );
-    },
-    trustedApps: ({ onBack }) => {
-      const trustedAppItems: TrustedAppItem[] = Object.entries(
-        activeTrustedApps || {}
-      ).map(([domain, app]) => ({
-        domain,
-        name: app.name,
-        icon: app.icon,
-      }));
-      return (
-        <TrustedAppsSelector
-          apps={trustedAppItems}
-          onRevokeApp={(domain) => { actions.removeTrustedApp(domain); }}
+      ),
+      'account-edit': ({ onBack, onNavigate, ...props }) => (
+        <AccountEditPanel
+          accountId={(props.accountId as string) || editingAccountId || accountId || ''}
+          onEditName={(id) => {
+            setEditingAccountId(id);
+            onNavigate('account-name', { accountId: id });
+          }}
+          onEditAvatar={() => onNavigate('avatar')}
+          onBackupSeed={() => onNavigate('backup')}
+          onExportPrivateKey={() => onNavigate('privateKey')}
           onBack={onBack}
         />
-      );
-    },
-    security: ({ onBack }) => <SecurityPanel onBack={onBack} onPasswordChanged={clearSessionKey} />,
-    accounts: ({ onBack, onNavigate }) => (
-      <AccountsPanel
-        onBack={onBack}
-        onEditAccount={(id) => {
-          setEditingAccountId(id);
-          onNavigate('account-edit', { accountId: id });
-        }}
-        onAddAccount={() => onNavigate('account-add')}
-      />
-    ),
-    'account-edit': ({ onBack, onNavigate, ...props }) => (
-      <AccountEditPanel
-        accountId={(props.accountId as string) || editingAccountId || accountId || ''}
-        onEditName={(id) => {
-          setEditingAccountId(id);
-          onNavigate('account-name', { accountId: id });
-        }}
-        onEditAvatar={() => onNavigate('avatar')}
-        onBackupSeed={() => onNavigate('backup')}
-        onExportPrivateKey={() => onNavigate('privateKey')}
-        onBack={onBack}
-      />
-    ),
-    'account-name': ({ onBack, ...props }) => (
-      <AccountNamePanel
-        accountId={(props.accountId as string) || editingAccountId || accountId || ''}
-        onBack={onBack}
-      />
-    ),
-    'account-add': ({ onBack }) => (
-      <AccountAddPanel
-        onComplete={onBack}
-        onBack={onBack}
-      />
-    ),
-  }), [
-    currency, changeCurrency, availableLanguages, currentLanguage, languageNames, changeLanguage,
-    explorers, explorer, changeExplorer, explorerLoading, addressBookItems,
-    networkId, allNetworks, addContact, editAddressBookContact, removeContact,
-    addressBookError, reloadAddressBook, addressBookWriteErrorKey,
-    editingContact, activeTrustedApps, actions, editingAccountId, accountId,
-    activeAccount, t,
-  ]);
+      ),
+      'account-name': ({ onBack, ...props }) => (
+        <AccountNamePanel
+          accountId={(props.accountId as string) || editingAccountId || accountId || ''}
+          onBack={onBack}
+        />
+      ),
+      'account-add': ({ onBack }) => <AccountAddPanel onComplete={onBack} onBack={onBack} />,
+    }),
+    [
+      currency,
+      changeCurrency,
+      availableLanguages,
+      currentLanguage,
+      languageNames,
+      changeLanguage,
+      explorers,
+      explorer,
+      changeExplorer,
+      explorerLoading,
+      addressBookItems,
+      networkId,
+      allNetworks,
+      addContact,
+      editAddressBookContact,
+      removeContact,
+      addressBookError,
+      reloadAddressBook,
+      addressBookWriteErrorKey,
+      editingContact,
+      activeTrustedApps,
+      actions,
+      editingAccountId,
+      accountId,
+      activeAccount,
+      t,
+    ]
+  );
 
   // Reset initialPanels after settings closes
   const handleSettingsClose = useCallback(() => {
@@ -753,25 +833,31 @@ export function HomePage(): React.ReactElement {
   }, []);
 
   // Wallet switcher
-  const handleSelectAccount = useCallback((targetAccountId: string) => {
-    actions.changeAccount(targetAccountId);
-    setWalletSwitcherVisible(false);
-  }, [actions]);
+  const handleSelectAccount = useCallback(
+    (targetAccountId: string) => {
+      actions.changeAccount(targetAccountId);
+      setWalletSwitcherVisible(false);
+    },
+    [actions]
+  );
 
   const handleAddAccount = useCallback(() => {
     setWalletSwitcherVisible(false);
     navigate('/auth/create');
   }, [navigate]);
 
-  const handleDeleteAccount = useCallback(async (targetAccountId: string) => {
-    await actions.removeAccount(targetAccountId);
-    setWalletSwitcherVisible(false);
-  }, [actions]);
+  const handleDeleteAccount = useCallback(
+    async (targetAccountId: string) => {
+      await actions.removeAccount(targetAccountId);
+      setWalletSwitcherVisible(false);
+    },
+    [actions]
+  );
 
   // Remove wallet dialogs
   const validatePassword = useCallback(
     async (password: string): Promise<boolean> => actions.checkPassword(password),
-    [actions],
+    [actions]
   );
 
   const confirmRemoveWallet = useCallback(async () => {
@@ -804,13 +890,25 @@ export function HomePage(): React.ReactElement {
 
       {/* Tab Bar */}
       <TabBar>
-        <TabButton active={activeTab === 'home'} onClick={() => setActiveTab('home')} data-testid="tab-home">
+        <TabButton
+          active={activeTab === 'home'}
+          onClick={() => setActiveTab('home')}
+          data-testid="tab-home"
+        >
           {t('tabs.home', 'Home')}
         </TabButton>
-        <TabButton active={activeTab === 'collectibles'} onClick={() => setActiveTab('collectibles')} data-testid="tab-collectibles">
+        <TabButton
+          active={activeTab === 'collectibles'}
+          onClick={() => setActiveTab('collectibles')}
+          data-testid="tab-collectibles"
+        >
           {t('tabs.collectibles', 'Collectibles')}
         </TabButton>
-        <TabButton active={activeTab === 'swap'} onClick={() => setActiveTab('swap')} data-testid="tab-swap">
+        <TabButton
+          active={activeTab === 'swap'}
+          onClick={() => setActiveTab('swap')}
+          data-testid="tab-swap"
+        >
           {t('tabs.swap', 'Swap')}
         </TabButton>
       </TabBar>
@@ -841,10 +939,16 @@ export function HomePage(): React.ReactElement {
               {/* Partial-load failure: keep whatever data loaded visible;
                   retry is the header refresh button. */}
               {balanceError && !switchingNetwork && (
-                <Box sx={{ padding: `0 ${spacing.lg}px`, marginBottom: `${spacing.md}px` }} data-testid="balance-load-error">
+                <Box
+                  sx={{ padding: `0 ${spacing.lg}px`, marginBottom: `${spacing.md}px` }}
+                  data-testid="balance-load-error"
+                >
                   <WarningNotice
                     tone="warning"
-                    title={t('wallet.partial_load_error', "Some balances couldn't be loaded. Shown data may be incomplete.")}
+                    title={t(
+                      'wallet.partial_load_error',
+                      "Some balances couldn't be loaded. Shown data may be incomplete."
+                    )}
                   />
                 </Box>
               )}
@@ -862,14 +966,16 @@ export function HomePage(): React.ReactElement {
                       height={180}
                       style={{ marginLeft: -spacing.lg, marginRight: -spacing.lg }}
                     />
-                    {(switchingNetwork || refreshing) ? (
+                    {switchingNetwork || refreshing ? (
                       <TokenListSkeleton count={1} />
-                    ) : bitcoinToken && (
-                      <TokenListItem
-                        token={bitcoinToken}
-                        hiddenBalance={hiddenBalance}
-                        blockchain="bitcoin"
-                      />
+                    ) : (
+                      bitcoinToken && (
+                        <TokenListItem
+                          token={bitcoinToken}
+                          hiddenBalance={hiddenBalance}
+                          blockchain="bitcoin"
+                        />
+                      )
                     )}
                     <TokenMarketData
                       data={bitcoinMarketData}
@@ -888,8 +994,12 @@ export function HomePage(): React.ReactElement {
                   <TokenSection onScroll={handleTokenListScroll}>
                     {formattedTokens.length > 0 || loading || switchingNetwork || refreshing ? (
                       <TokenList
-                        tokens={(switchingNetwork || refreshing) ? [] : formattedTokens}
-                        loading={(switchingNetwork || refreshing) || (loading && formattedTokens.length === 0)}
+                        tokens={switchingNetwork || refreshing ? [] : formattedTokens}
+                        loading={
+                          switchingNetwork ||
+                          refreshing ||
+                          (loading && formattedTokens.length === 0)
+                        }
                         onTokenPress={handleTokenPress}
                         hiddenBalance={hiddenBalance}
                         blockchain={getBlockchainFromNetworkId(currentBlockchain)}
@@ -897,7 +1007,12 @@ export function HomePage(): React.ReactElement {
                     ) : (
                       <EmptyState>
                         <EmptyStateText>{t('home.no_tokens', 'No tokens found')}</EmptyStateText>
-                        <EmptyStateSubtext>{t('home.no_tokens_hint', 'Your tokens will appear here once you receive some')}</EmptyStateSubtext>
+                        <EmptyStateSubtext>
+                          {t(
+                            'home.no_tokens_hint',
+                            'Your tokens will appear here once you receive some'
+                          )}
+                        </EmptyStateSubtext>
                       </EmptyState>
                     )}
                   </TokenSection>
@@ -917,7 +1032,12 @@ export function HomePage(): React.ReactElement {
           )}
 
           {activeTab === 'swap' && (
-            <SwapTab onNavigateHome={() => { setActiveTab('home'); refresh(); }} />
+            <SwapTab
+              onNavigateHome={() => {
+                setActiveTab('home');
+                refresh();
+              }}
+            />
           )}
         </TabContent>
       </Main>
@@ -932,8 +1052,14 @@ export function HomePage(): React.ReactElement {
         onDeveloperNetworksToggle={toggleDeveloperNetworks}
         analyticsEnabled={analyticsConsent}
         onAnalyticsToggle={setAnalyticsConsent}
-        onRemoveWallet={() => { setSettingsVisible(false); setRemoveWalletDialogVisible(true); }}
-        onRemoveAllWallets={() => { setSettingsVisible(false); setRemoveAllWalletsDialogVisible(true); }}
+        onRemoveWallet={() => {
+          setSettingsVisible(false);
+          setRemoveWalletDialogVisible(true);
+        }}
+        onRemoveAllWallets={() => {
+          setSettingsVisible(false);
+          setRemoveAllWalletsDialogVisible(true);
+        }}
       />
 
       <WalletSwitcherSheet
@@ -946,7 +1072,10 @@ export function HomePage(): React.ReactElement {
         onEditAccount={(id) => {
           setWalletSwitcherVisible(false);
           setEditingAccountId(id);
-          setSettingsInitialPanels([{ screen: 'accounts' }, { screen: 'account-edit', props: { accountId: id } }]);
+          setSettingsInitialPanels([
+            { screen: 'accounts' },
+            { screen: 'account-edit', props: { accountId: id } },
+          ]);
           setSettingsVisible(true);
         }}
         onDeleteAccount={handleDeleteAccount}
@@ -956,7 +1085,10 @@ export function HomePage(): React.ReactElement {
         visible={removeWalletDialogVisible}
         onClose={() => setRemoveWalletDialogVisible(false)}
         title={t('settings.remove_wallet', 'Remove Wallet')}
-        message={t('settings.remove_wallet_description', 'Are you sure you want to remove this wallet? Make sure you have backed up your recovery phrase before removing.')}
+        message={t(
+          'settings.remove_wallet_description',
+          'Are you sure you want to remove this wallet? Make sure you have backed up your recovery phrase before removing.'
+        )}
         confirmText={t('actions.remove', 'Remove')}
         isDanger
         requirePassword
@@ -968,7 +1100,10 @@ export function HomePage(): React.ReactElement {
         visible={removeAllWalletsDialogVisible}
         onClose={() => setRemoveAllWalletsDialogVisible(false)}
         title={t('settings.remove_all_wallets', 'Remove All Wallets')}
-        message={t('settings.remove_all_wallets_description', 'This will remove ALL wallets from this device. This action cannot be undone. Make sure you have backed up all recovery phrases.')}
+        message={t(
+          'settings.remove_all_wallets_description',
+          'This will remove ALL wallets from this device. This action cannot be undone. Make sure you have backed up all recovery phrases.'
+        )}
         confirmText={t('actions.remove_all', 'Remove All')}
         isDanger
         onConfirm={confirmRemoveAllWallets}

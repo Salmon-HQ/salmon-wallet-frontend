@@ -20,7 +20,17 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { colors, spacing, borderRadius, fontFamily, fontSize, fontWeight, letterSpacing, opacity, componentSizes } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  opacity,
+  componentSizes,
+} from '@salmon/shared';
 import type { HandleHeaderProps } from './types';
 
 // ============================================================================

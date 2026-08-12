@@ -9,7 +9,18 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
-import { colors, spacing, borderWidth, componentSizes, fontFamily, fontSize, fontWeight, opacity, duration, easing } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderWidth,
+  componentSizes,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  opacity,
+  duration,
+  easing,
+} from '@salmon/shared';
 import type { SeedWordInputProps, ValidationState } from './types';
 
 const Container = styled(Box)({
@@ -47,9 +58,12 @@ const StyledInput = styled(InputBase)<{ $borderColor: string }>(({ $borderColor 
 
 function getBorderColor(state: ValidationState): string {
   switch (state) {
-    case 'correct': return colors.status.success;
-    case 'incorrect': return colors.status.error;
-    default: return colors.input.border;
+    case 'correct':
+      return colors.status.success;
+    case 'incorrect':
+      return colors.status.error;
+    default:
+      return colors.input.border;
   }
 }
 
@@ -69,7 +83,7 @@ export function SeedWordInput({
         onSubmitEditing();
       }
     },
-    [onSubmitEditing],
+    [onSubmitEditing]
   );
 
   return (

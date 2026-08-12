@@ -15,10 +15,7 @@ export function useSettingsHeader(): SettingsHeaderContextValue | null {
   return React.useContext(SettingsHeaderContext);
 }
 
-export function useSettingsHeaderOverride(
-  state: SettingsHeaderState | null,
-  enabled = true,
-): void {
+export function useSettingsHeaderOverride(state: SettingsHeaderState | null, enabled = true): void {
   const settingsHeader = useSettingsHeader();
   const setHeaderState = settingsHeader?.setHeaderState;
   const title = state?.title;
@@ -40,10 +37,7 @@ export function useSettingsHeaderOverride(
     }
 
     const previousState = lastAppliedStateRef.current;
-    if (
-      previousState?.title === title &&
-      previousState?.onBack === onBack
-    ) {
+    if (previousState?.title === title && previousState?.onBack === onBack) {
       return undefined;
     }
 

@@ -37,7 +37,7 @@ describe('BlurContainer', () => {
     render(
       <BlurContainer style={{ borderRadius: 12 }}>
         <>child</>
-      </BlurContainer>,
+      </BlurContainer>
     );
 
     expect(mockBlurView).toHaveBeenCalledTimes(1);
@@ -50,7 +50,7 @@ describe('BlurContainer', () => {
         tint: 'dark',
         pointerEvents: 'none',
         style: expect.any(Array),
-      }),
+      })
     );
   });
 });

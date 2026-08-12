@@ -41,7 +41,7 @@ export default function AnalyticsConsentScreen() {
       void resolveConsentPrompt(enabled);
       router.replace('/(auth)/success');
     },
-    [resolveConsentPrompt],
+    [resolveConsentPrompt]
   );
 
   return (

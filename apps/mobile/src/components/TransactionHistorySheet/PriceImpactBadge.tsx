@@ -1,7 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, ms, vs, s, fontSize, spacing, borderRadius, fontFamilyNative, getPriceImpactSeverity, type PriceImpactSeverity } from '@salmon/shared';
+import {
+  colors,
+  ms,
+  vs,
+  s,
+  fontSize,
+  spacing,
+  borderRadius,
+  fontFamilyNative,
+  getPriceImpactSeverity,
+  type PriceImpactSeverity,
+} from '@salmon/shared';
 
 // ============================================================================
 // Types
@@ -55,7 +66,10 @@ const SEVERITY_COLORS: Record<PriceImpactSeverity, string> = {
 /**
  * Size configurations for each variant
  */
-const SIZE_CONFIG: Record<PriceImpactSize, { iconSize: number; fontSize: number; paddingH: number; paddingV: number }> = {
+const SIZE_CONFIG: Record<
+  PriceImpactSize,
+  { iconSize: number; fontSize: number; paddingH: number; paddingV: number }
+> = {
   small: {
     iconSize: 12,
     fontSize: fontSize.xs,

@@ -7,15 +7,13 @@ export function RecoverPage(): React.ReactElement {
   const navigate = useNavigate();
   const { setMnemonic } = useAuthFlow();
 
-  const handleComplete = useCallback((mnemonic: string) => {
-    setMnemonic(mnemonic);
-    navigate('/auth/password');
-  }, [navigate, setMnemonic]);
-
-  return (
-    <RecoverWalletPage
-      onComplete={handleComplete}
-      onBack={() => navigate('/auth/select')}
-    />
+  const handleComplete = useCallback(
+    (mnemonic: string) => {
+      setMnemonic(mnemonic);
+      navigate('/auth/password');
+    },
+    [navigate, setMnemonic]
   );
+
+  return <RecoverWalletPage onComplete={handleComplete} onBack={() => navigate('/auth/select')} />;
 }

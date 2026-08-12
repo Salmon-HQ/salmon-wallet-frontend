@@ -3,11 +3,11 @@ appId: io.salmonwallet.app
 # Assumes Home. Navigates Settings → Address Book → Add Address form.
 - runFlow: ./open-settings.yaml
 - tapOn:
-    id: "settings-item-address-book"
+    id: 'settings-item-address-book'
 - waitForAnimationToEnd:
     timeout: 3000
 - tapOn:
-    id: "address-book-add-button"
+    id: 'address-book-add-button'
 - extendedWaitUntil:
-    visible: "Add Address"
+    visible: 'Add Address'
     timeout: 5000

@@ -1,12 +1,7 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 
-import {
-  isKeyCacheValid,
-  type DerivedKeyCache,
-} from '../crypto/encryption';
-import {
-  removeStashItem,
-} from '../storage';
+import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
+import { removeStashItem } from '../storage';
 import { migrateLegacyWallets } from '../utils/legacy-migration';
 import type { Account, StoredAccount } from '../types/account';
 import {
@@ -57,21 +52,24 @@ export function useAccountsSecurity({
   restoreAccount,
   formatAccountForStorage,
 }: UseAccountsSecurityParams): UseAccountsSecurityResult {
-  const runUpgrades = useCallback(async (password?: string): Promise<boolean> => {
-    const result = await migrateLegacyWallets(
-      { restoreAccount, formatAccountForStorage },
-      password,
-    );
+  const runUpgrades = useCallback(
+    async (password?: string): Promise<boolean> => {
+      const result = await migrateLegacyWallets(
+        { restoreAccount, formatAccountForStorage },
+        password
+      );
 
-    if (result.status === 'no-migration') return true;
+      if (result.status === 'no-migration') return true;
 
-    if (result.status === 'needs-password') {
-      setLocked(true);
-      return false;
-    }
+      if (result.status === 'needs-password') {
+        setLocked(true);
+        return false;
+      }
 
-    return true;
-  }, [formatAccountForStorage, restoreAccount, setLocked]);
+      return true;
+    },
+    [formatAccountForStorage, restoreAccount, setLocked]
+  );
 
   const checkPassword = useCallback(async (password: string): Promise<boolean> => {
     try {
@@ -88,20 +86,23 @@ export function useAccountsSecurity({
     }
   }, []);
 
-  const changePassword = useCallback(async (oldPassword: string, newPassword: string): Promise<boolean> => {
-    try {
-      const storedMnemonics = await getEncryptedStoredMnemonics();
-      if (!storedMnemonics) {
+  const changePassword = useCallback(
+    async (oldPassword: string, newPassword: string): Promise<boolean> => {
+      try {
+        const storedMnemonics = await getEncryptedStoredMnemonics();
+        if (!storedMnemonics) {
+          return false;
+        }
+
+        await changeStoredPassword(storedMnemonics, oldPassword, newPassword);
+
+        return true;
+      } catch {
         return false;
       }
-
-      await changeStoredPassword(storedMnemonics, oldPassword, newPassword);
-
-      return true;
-    } catch {
-      return false;
-    }
-  }, []);
+    },
+    []
+  );
 
   const lockAccounts = useCallback(async (): Promise<void> => {
     setLocked(true);

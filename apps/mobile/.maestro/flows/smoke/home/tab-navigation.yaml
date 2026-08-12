@@ -4,16 +4,16 @@ appId: io.salmonwallet.app
 # Settings is NOT a tab — accessed via gear icon (Open settings).
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - tapOn:
-    id: "tab-home"
+    id: 'tab-home'
 - takeScreenshot: screenshots/smoke/home/tab-home
 - tapOn:
-    id: "tab-collectibles"
+    id: 'tab-collectibles'
 - takeScreenshot: screenshots/smoke/home/tab-collectibles
 - tapOn:
-    id: "tab-swap"
+    id: 'tab-swap'
 - takeScreenshot: screenshots/smoke/home/tab-swap
 - tapOn:
-    id: "tab-home"
+    id: 'tab-home'
 - assertVisible:
-    id: "wallet-header-account-switcher"
+    id: 'wallet-header-account-switcher'
 - takeScreenshot: screenshots/smoke/home/tab-home-back

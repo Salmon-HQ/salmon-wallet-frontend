@@ -24,7 +24,14 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { Logo } from '@salmon/assets';
-import { colors, DEFAULT_WALLET_TIP_KEYS, fontFamilyNative, letterSpacing, spacing, fontSize, } from '@salmon/shared';
+import {
+  colors,
+  DEFAULT_WALLET_TIP_KEYS,
+  fontFamilyNative,
+  letterSpacing,
+  spacing,
+  fontSize,
+} from '@salmon/shared';
 
 import { LoadingScreenProps } from './types';
 
@@ -54,10 +61,7 @@ export function LoadingScreen({
   const { t } = useTranslation();
 
   // Resolve tip keys through t() for i18n
-  const resolvedTips = useMemo(
-    () => tips.map((tipKey) => t(tipKey, tipKey)),
-    [tips, t],
-  );
+  const resolvedTips = useMemo(() => tips.map((tipKey) => t(tipKey, tipKey)), [tips, t]);
 
   // State
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
@@ -137,7 +141,15 @@ export function LoadingScreen({
     }, tipInterval);
 
     return () => clearInterval(interval);
-  }, [visible, showTips, resolvedTips.length, tipInterval, tipOpacity, advanceToNextTip, fadeInTip]);
+  }, [
+    visible,
+    showTips,
+    resolvedTips.length,
+    tipInterval,
+    tipOpacity,
+    advanceToNextTip,
+    fadeInTip,
+  ]);
 
   // Animated styles
   const pulseStyle = useAnimatedStyle(() => ({

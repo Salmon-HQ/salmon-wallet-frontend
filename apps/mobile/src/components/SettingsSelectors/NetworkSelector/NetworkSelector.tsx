@@ -9,10 +9,7 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import {
-  type NetworkSelectorBaseProps,
-  type NetworkSelectorItem,
-} from '@salmon/shared';
+import { type NetworkSelectorBaseProps, type NetworkSelectorItem } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
 
@@ -31,14 +28,11 @@ export function NetworkSelector({
 
   const handleSelect = useCallback(
     (network: NetworkSelectorItem) => onSelectNetwork(network.id),
-    [onSelectNetwork],
+    [onSelectNetwork]
   );
 
   return (
-    <SettingsScreenLayout
-      title={t('settings.change_network', 'Network')}
-      onBack={onBack}
-    >
+    <SettingsScreenLayout title={t('settings.change_network', 'Network')} onBack={onBack}>
       <SettingsSelectorList
         items={networks}
         getKey={(network) => network.id}

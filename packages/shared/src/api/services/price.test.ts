@@ -68,10 +68,7 @@ import {
   getTokenCoinInfo,
   clearResolvedCoinIdCache,
 } from './price';
-import type {
-  MarketChartData,
-  CoinInfo,
-} from '../../types/price';
+import type { MarketChartData, CoinInfo } from '../../types/price';
 import { apiClient, staticApiClient, ApiError } from '../client';
 
 // Get access to the mocked functions
@@ -116,7 +113,8 @@ const MOCK_COIN_INFO: CoinInfo = {
   id: 'solana',
   symbol: 'sol',
   name: 'Solana',
-  description: 'Solana is a highly functional open source project that banks on blockchain technology.',
+  description:
+    'Solana is a highly functional open source project that banks on blockchain technology.',
   image: 'https://assets.coingecko.com/coins/images/4128/large/solana.png',
   marketData: {
     currentPrice: 100.5,
@@ -284,10 +282,9 @@ describe('Price Service', () => {
 
       const result = await getContractMarketChart('solana', USDC_MINT, 7);
 
-      expect(mockApiClientGet).toHaveBeenCalledWith(
-        `/v1/chart/solana/contract/${USDC_MINT}`,
-        { params: { days: 7, currency: 'usd' } }
-      );
+      expect(mockApiClientGet).toHaveBeenCalledWith(`/v1/chart/solana/contract/${USDC_MINT}`, {
+        params: { days: 7, currency: 'usd' },
+      });
       expect(result).toEqual(MOCK_MARKET_CHART);
       expect(result).toHaveProperty('marketCaps');
       expect(result).toHaveProperty('totalVolumes');
@@ -327,10 +324,7 @@ describe('Price Service', () => {
     it('should use the classic endpoint when coingeckoId is present', async () => {
       mockApiClientGet.mockResolvedValueOnce({ data: MOCK_MARKET_CHART });
 
-      const result = await getTokenMarketChart(
-        { coingeckoId: 'solana', address: USDC_MINT },
-        7
-      );
+      const result = await getTokenMarketChart({ coingeckoId: 'solana', address: USDC_MINT }, 7);
 
       expect(mockApiClientGet).toHaveBeenCalledWith('/v1/chart/solana', {
         params: { days: 7, currency: 'usd' },
@@ -343,10 +337,9 @@ describe('Price Service', () => {
 
       const result = await getTokenMarketChart({ address: USDC_MINT }, 30);
 
-      expect(mockApiClientGet).toHaveBeenCalledWith(
-        `/v1/chart/solana/contract/${USDC_MINT}`,
-        { params: { days: 30, currency: 'usd' } }
-      );
+      expect(mockApiClientGet).toHaveBeenCalledWith(`/v1/chart/solana/contract/${USDC_MINT}`, {
+        params: { days: 30, currency: 'usd' },
+      });
       expect(result).toEqual(MOCK_MARKET_CHART);
     });
 
@@ -456,10 +449,9 @@ describe('Price Service', () => {
 
       const result = await getContractCoinInfo('solana', USDC_MINT);
 
-      expect(mockApiClientGet).toHaveBeenCalledWith(
-        `/v1/coin/solana/contract/${USDC_MINT}`,
-        { params: { currency: 'usd' } }
-      );
+      expect(mockApiClientGet).toHaveBeenCalledWith(`/v1/coin/solana/contract/${USDC_MINT}`, {
+        params: { currency: 'usd' },
+      });
       expect(result).toEqual(MOCK_COIN_INFO);
       expect(result).toHaveProperty('id');
       expect(result).toHaveProperty('marketData');
@@ -525,10 +517,9 @@ describe('Price Service', () => {
 
       const result = await getTokenCoinInfo({ address: USDC_MINT }, 'eur');
 
-      expect(mockApiClientGet).toHaveBeenCalledWith(
-        `/v1/coin/solana/contract/${USDC_MINT}`,
-        { params: { currency: 'eur' } }
-      );
+      expect(mockApiClientGet).toHaveBeenCalledWith(`/v1/coin/solana/contract/${USDC_MINT}`, {
+        params: { currency: 'eur' },
+      });
       expect(result).toEqual(MOCK_COIN_INFO);
     });
 
@@ -552,10 +543,9 @@ describe('Price Service', () => {
       // the resolved id.
       mockApiClientGet.mockResolvedValueOnce({ data: { ...MOCK_COIN_INFO, id: 'usd-coin' } });
       await getTokenCoinInfo({ address: USDC_MINT });
-      expect(mockApiClientGet).toHaveBeenLastCalledWith(
-        `/v1/coin/solana/contract/${USDC_MINT}`,
-        { params: { currency: 'usd' } }
-      );
+      expect(mockApiClientGet).toHaveBeenLastCalledWith(`/v1/coin/solana/contract/${USDC_MINT}`, {
+        params: { currency: 'usd' },
+      });
 
       // Chart for the same mint now goes classic by the cached id.
       mockApiClientGet.mockResolvedValueOnce({ data: MOCK_MARKET_CHART });
@@ -578,10 +568,9 @@ describe('Price Service', () => {
 
       mockApiClientGet.mockResolvedValueOnce({ data: MOCK_MARKET_CHART });
       await getTokenMarketChart({ address: USDC_MINT });
-      expect(mockApiClientGet).toHaveBeenLastCalledWith(
-        `/v1/chart/solana/contract/${USDC_MINT}`,
-        { params: { days: 7, currency: 'usd' } }
-      );
+      expect(mockApiClientGet).toHaveBeenLastCalledWith(`/v1/chart/solana/contract/${USDC_MINT}`, {
+        params: { days: 7, currency: 'usd' },
+      });
     });
   });
 
@@ -594,128 +583,119 @@ describe('Price Service', () => {
   // ==========================================================================
 
   describe('Integration with backend (if available)', () => {
-    it(
-      'should fetch real market chart from backend',
-      async () => {
-        if (!backendBaseUrl) {
-          console.log('Skipping backend integration test - backend not available');
+    it('should fetch real market chart from backend', async () => {
+      if (!backendBaseUrl) {
+        console.log('Skipping backend integration test - backend not available');
+        return;
+      }
+      if (!hasExplicitStaticApi) {
+        console.log('Skipping price integration test - static API URL is not configured');
+        return;
+      }
+
+      mockStaticApiClientGet.mockImplementation(async (path) => ({
+        data: await fetchBackendJson(path as string),
+      }));
+
+      const result = await getMarketChart('solana', 7);
+
+      expect(result).not.toBeNull();
+      expect(result).toHaveProperty('prices');
+      expect(Array.isArray(result!.prices)).toBe(true);
+      expect(result!.prices.length).toBeGreaterThan(0);
+    }, 10000);
+
+    it('should fetch real contract chart for USDC from backend', async () => {
+      if (!backendBaseUrl) {
+        console.log('Skipping backend integration test - backend not available');
+        return;
+      }
+
+      const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+      // Proxy the mocked apiClient to the live backend, preserving params.
+      mockApiClientGet.mockImplementation(async (path, config) => {
+        const params =
+          (config as { params?: Record<string, string | number> } | undefined)?.params ?? {};
+        const qs = new URLSearchParams(
+          Object.entries(params).map(([k, v]) => [k, String(v)])
+        ).toString();
+        return { data: await fetchBackendJson(`${path}${qs ? `?${qs}` : ''}`) };
+      });
+
+      const result = await getContractMarketChart('solana', USDC_MINT, 7);
+
+      expect(result).not.toBeNull();
+      expect(result).toHaveProperty('prices');
+      expect(result).toHaveProperty('marketCaps');
+      expect(result).toHaveProperty('totalVolumes');
+      expect(Array.isArray(result!.prices)).toBe(true);
+      expect(result!.prices.length).toBeGreaterThan(0);
+      expect(typeof result!.prices[0][0]).toBe('number');
+      expect(typeof result!.prices[0][1]).toBe('number');
+    }, 10000);
+
+    it('should fetch real contract coin info for USDC from backend (arms itself when the route ships)', async () => {
+      if (!backendBaseUrl) {
+        console.log('Skipping backend integration test - backend not available');
+        return;
+      }
+
+      const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+      const BOGUS_MINT = '11111111111111111111111111111111';
+
+      // Probe: a live backend that predates salmon-api PR #15 has no
+      // /v1/coin/{platform}/contract/{address} route — express answers a
+      // route-level 404 ("Cannot GET", no info_not_found shape). That is a
+      // deploy-order gap, not a contract break: skip with a clear message.
+      // Once the route exists, USDC must resolve (it is listed), so any
+      // 404 shape for it falls through and fails the assertions below.
+      const probe = await fetch(
+        `${backendBaseUrl}/v1/coin/solana/contract/${USDC_MINT}?currency=usd`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      if (probe.status === 404) {
+        const body = await probe.json().catch(() => null);
+        if (body?.error !== 'info_not_found') {
+          console.log('Skipping - backend predates /v1/coin contract route (salmon-api PR #15)');
           return;
         }
-        if (!hasExplicitStaticApi) {
-          console.log('Skipping price integration test - static API URL is not configured');
-          return;
-        }
+      }
 
-        mockStaticApiClientGet.mockImplementation(async (path) => ({
-          data: await fetchBackendJson(path as string),
-        }));
-
-        const result = await getMarketChart('solana', 7);
-
-        expect(result).not.toBeNull();
-        expect(result).toHaveProperty('prices');
-        expect(Array.isArray(result!.prices)).toBe(true);
-        expect(result!.prices.length).toBeGreaterThan(0);
-      },
-      10000
-    );
-
-    it(
-      'should fetch real contract chart for USDC from backend',
-      async () => {
-        if (!backendBaseUrl) {
-          console.log('Skipping backend integration test - backend not available');
-          return;
-        }
-
-        const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-
-        // Proxy the mocked apiClient to the live backend, preserving params.
-        mockApiClientGet.mockImplementation(async (path, config) => {
-          const params = (config as { params?: Record<string, string | number> } | undefined)?.params ?? {};
-          const qs = new URLSearchParams(
-            Object.entries(params).map(([k, v]) => [k, String(v)])
-          ).toString();
-          return { data: await fetchBackendJson(`${path}${qs ? `?${qs}` : ''}`) };
+      // Proxy the mocked apiClient to the live backend, mapping non-2xx to
+      // ApiError so the 404 -> null semantics are exercised end to end.
+      mockApiClientGet.mockImplementation(async (path, config) => {
+        const params =
+          (config as { params?: Record<string, string | number> } | undefined)?.params ?? {};
+        const qs = new URLSearchParams(
+          Object.entries(params).map(([k, v]) => [k, String(v)])
+        ).toString();
+        const response = await fetch(`${backendBaseUrl}${path}${qs ? `?${qs}` : ''}`, {
+          signal: AbortSignal.timeout(5000),
         });
-
-        const result = await getContractMarketChart('solana', USDC_MINT, 7);
-
-        expect(result).not.toBeNull();
-        expect(result).toHaveProperty('prices');
-        expect(result).toHaveProperty('marketCaps');
-        expect(result).toHaveProperty('totalVolumes');
-        expect(Array.isArray(result!.prices)).toBe(true);
-        expect(result!.prices.length).toBeGreaterThan(0);
-        expect(typeof result!.prices[0][0]).toBe('number');
-        expect(typeof result!.prices[0][1]).toBe('number');
-      },
-      10000
-    );
-
-    it(
-      'should fetch real contract coin info for USDC from backend (arms itself when the route ships)',
-      async () => {
-        if (!backendBaseUrl) {
-          console.log('Skipping backend integration test - backend not available');
-          return;
+        if (!response.ok) {
+          const body = (await response.json().catch(() => null)) as {
+            error?: string;
+            error_description?: string;
+          } | null;
+          throw new ApiError(
+            body?.error_description ?? `Backend request failed: ${response.status}`,
+            response.status,
+            body?.error
+          );
         }
+        return { data: await response.json() };
+      });
 
-        const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-        const BOGUS_MINT = '11111111111111111111111111111111';
+      const info = await getContractCoinInfo('solana', USDC_MINT);
+      expect(info).not.toBeNull();
+      expect(info!.id).toBeTruthy();
+      expect(info!.marketData).toBeDefined();
+      expect(info!.description).toBeTruthy();
 
-        // Probe: a live backend that predates salmon-api PR #15 has no
-        // /v1/coin/{platform}/contract/{address} route — express answers a
-        // route-level 404 ("Cannot GET", no info_not_found shape). That is a
-        // deploy-order gap, not a contract break: skip with a clear message.
-        // Once the route exists, USDC must resolve (it is listed), so any
-        // 404 shape for it falls through and fails the assertions below.
-        const probe = await fetch(
-          `${backendBaseUrl}/v1/coin/solana/contract/${USDC_MINT}?currency=usd`,
-          { signal: AbortSignal.timeout(5000) }
-        );
-        if (probe.status === 404) {
-          const body = await probe.json().catch(() => null);
-          if (body?.error !== 'info_not_found') {
-            console.log('Skipping - backend predates /v1/coin contract route (salmon-api PR #15)');
-            return;
-          }
-        }
-
-        // Proxy the mocked apiClient to the live backend, mapping non-2xx to
-        // ApiError so the 404 -> null semantics are exercised end to end.
-        mockApiClientGet.mockImplementation(async (path, config) => {
-          const params = (config as { params?: Record<string, string | number> } | undefined)?.params ?? {};
-          const qs = new URLSearchParams(
-            Object.entries(params).map(([k, v]) => [k, String(v)])
-          ).toString();
-          const response = await fetch(`${backendBaseUrl}${path}${qs ? `?${qs}` : ''}`, {
-            signal: AbortSignal.timeout(5000),
-          });
-          if (!response.ok) {
-            const body = (await response.json().catch(() => null)) as
-              | { error?: string; error_description?: string }
-              | null;
-            throw new ApiError(
-              body?.error_description ?? `Backend request failed: ${response.status}`,
-              response.status,
-              body?.error
-            );
-          }
-          return { data: await response.json() };
-        });
-
-        const info = await getContractCoinInfo('solana', USDC_MINT);
-        expect(info).not.toBeNull();
-        expect(info!.id).toBeTruthy();
-        expect(info!.marketData).toBeDefined();
-        expect(info!.description).toBeTruthy();
-
-        const bogus = await getContractCoinInfo('solana', BOGUS_MINT);
-        expect(bogus).toBeNull();
-      },
-      15000
-    );
+      const bogus = await getContractCoinInfo('solana', BOGUS_MINT);
+      expect(bogus).toBeNull();
+    }, 15000);
   });
 
   // ==========================================================================

@@ -25,7 +25,7 @@ import type { NetworkAdapter, StoredAddress, AddressBookNetwork } from '../types
 const SOLANA_NETWORK = { id: 'solana-mainnet', name: 'Solana' } as unknown as AddressBookNetwork;
 
 function makeAdapter(
-  getNetwork: NetworkAdapter['getNetwork'] = async () => SOLANA_NETWORK,
+  getNetwork: NetworkAdapter['getNetwork'] = async () => SOLANA_NETWORK
 ): NetworkAdapter {
   return { getNetwork, getNetworks: async () => [SOLANA_NETWORK] };
 }
@@ -97,11 +97,9 @@ describe('useAddressbook', () => {
     const { result } = renderHook(() => useAddressbook({ networkAdapter: adapter }));
     await waitFor(() => expect(result.current[0].isLoading).toBe(false));
 
-    const setItemSpy = vi
-      .spyOn(Storage.prototype, 'setItem')
-      .mockImplementation(() => {
-        throw new Error('disk full');
-      });
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('disk full');
+    });
 
     await act(async () => {
       await expect(result.current[1].addContact(CONTACT_INPUT)).rejects.toMatchObject({

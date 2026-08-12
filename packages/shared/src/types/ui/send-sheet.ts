@@ -74,11 +74,7 @@ export interface StepAddressAmountPropsBase {
   /** Navigate back to token selection */
   onBack: () => void;
   /** Proceed to confirmation */
-  onReview: (
-    address: string,
-    amount: string,
-    resolvedRecipientAddress?: string
-  ) => void;
+  onReview: (address: string, amount: string, resolvedRecipientAddress?: string) => void;
   /** Cancel and close the sheet */
   onCancel: () => void;
 }

@@ -8,14 +8,30 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CheckIcon from '@mui/icons-material/Check';
-import { colors, spacing, borderRadius, borderWidth, componentSizes, fontFamily, fontWeight, fontSize, duration, easing } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  borderWidth,
+  componentSizes,
+  fontFamily,
+  fontWeight,
+  fontSize,
+  duration,
+  easing,
+} from '@salmon/shared';
 import { SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from '../Icon';
 import type { DerivedAccountCardProps } from './types';
 
 const ICON_SIZE = componentSizes.iconSizeXs;
 
 const BlockchainIcon: React.FC<{ blockchain?: string }> = ({ blockchain }) => {
-  const iconStyle = { fontSize: ICON_SIZE, width: ICON_SIZE, height: ICON_SIZE, color: colors.text.tertiary };
+  const iconStyle = {
+    fontSize: ICON_SIZE,
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+    color: colors.text.tertiary,
+  };
   switch (blockchain) {
     case 'solana':
       return <SolanaSvgIcon style={iconStyle} />;
@@ -109,7 +125,13 @@ const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
   testID,
 }) => {
   return (
-    <Card $selected={selected} onClick={onToggle} style={style} className={className} data-testid={testID}>
+    <Card
+      $selected={selected}
+      onClick={onToggle}
+      style={style}
+      className={className}
+      data-testid={testID}
+    >
       <Checkbox $selected={selected}>
         {selected && <CheckIcon sx={{ fontSize: fontSize.md, color: colors.text.primary }} />}
       </Checkbox>
@@ -118,7 +140,9 @@ const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
         <Address>{address}</Address>
         <NetworkRow>
           <BlockchainIcon blockchain={blockchain} />
-          <PathText>{networkName} &middot; {path}</PathText>
+          <PathText>
+            {networkName} &middot; {path}
+          </PathText>
         </NetworkRow>
       </Info>
 

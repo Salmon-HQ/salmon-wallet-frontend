@@ -11,21 +11,14 @@
  * Detects if running in a React Native environment.
  */
 export function isReactNative(): boolean {
-  return (
-    typeof navigator !== 'undefined' &&
-    navigator.product === 'ReactNative'
-  );
+  return typeof navigator !== 'undefined' && navigator.product === 'ReactNative';
 }
 
 /**
  * Detects if running in a web browser environment (not React Native).
  */
 export function isWebEnvironment(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    typeof document !== 'undefined' &&
-    !isReactNative()
-  );
+  return typeof window !== 'undefined' && typeof document !== 'undefined' && !isReactNative();
 }
 
 /**

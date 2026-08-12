@@ -49,7 +49,9 @@ export function createHttpTransport(): AnalyticsTransport {
 }
 
 /** A transport that records batches in memory. Useful for tests and previews. */
-export function createMemoryTransport(): AnalyticsTransport & { readonly batches: AnalyticsBatch[] } {
+export function createMemoryTransport(): AnalyticsTransport & {
+  readonly batches: AnalyticsBatch[];
+} {
   const batches: AnalyticsBatch[] = [];
   return {
     batches,

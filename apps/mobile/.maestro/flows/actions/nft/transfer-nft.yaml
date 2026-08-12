@@ -33,9 +33,9 @@ appId: io.salmonwallet.app
 
 # --- Load Wallet B alongside Wallet A; the imported account becomes active ---
 - tapOn:
-    id: "tab-home"
+    id: 'tab-home'
 - extendedWaitUntil:
-    visible: "Switch wallet account"
+    visible: 'Switch wallet account'
     timeout: 20000
 - runFlow:
     file: ../../../subflows/import-account.yaml

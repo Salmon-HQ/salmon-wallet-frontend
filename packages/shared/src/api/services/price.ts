@@ -11,10 +11,7 @@
  */
 
 import { apiClient, ApiError } from '../client';
-import type {
-  MarketChartData,
-  CoinInfo,
-  } from '../../types/price';
+import type { MarketChartData, CoinInfo } from '../../types/price';
 
 // ============================================================================
 // Resolved coin-id cache
@@ -100,7 +97,10 @@ export async function getContractMarketChart(
     if (error instanceof ApiError && error.isNotFound()) {
       return null;
     }
-    console.error(`[PriceService] Failed to fetch contract chart for ${platform}:${address}:`, error);
+    console.error(
+      `[PriceService] Failed to fetch contract chart for ${platform}:${address}:`,
+      error
+    );
     throw error;
   }
 }
@@ -161,10 +161,9 @@ export async function getContractCoinInfo(
   currency: string = 'usd'
 ): Promise<CoinInfo | null> {
   try {
-    const { data } = await apiClient.get<CoinInfo>(
-      `/v1/coin/${platform}/contract/${address}`,
-      { params: { currency } }
-    );
+    const { data } = await apiClient.get<CoinInfo>(`/v1/coin/${platform}/contract/${address}`, {
+      params: { currency },
+    });
     if (data?.id) {
       resolvedCoinIds.set(address, data.id);
     }
@@ -173,7 +172,10 @@ export async function getContractCoinInfo(
     if (error instanceof ApiError && error.isNotFound()) {
       return null;
     }
-    console.error(`[PriceService] Failed to fetch contract coin info for ${platform}:${address}:`, error);
+    console.error(
+      `[PriceService] Failed to fetch contract coin info for ${platform}:${address}:`,
+      error
+    );
     throw error;
   }
 }

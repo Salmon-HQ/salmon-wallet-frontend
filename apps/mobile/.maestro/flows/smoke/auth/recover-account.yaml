@@ -9,10 +9,10 @@ appId: io.salmonwallet.app
 - runFlow:
     when:
       visible:
-        id: "biometric-skip-button"
+        id: 'biometric-skip-button'
     commands:
       - tapOn:
-          id: "biometric-skip-button"
+          id: 'biometric-skip-button'
 # First-run analytics consent is the final onboarding step. Decline to reach
 # the success screen, the same way subflows/onboard-walletA.yaml does. (The
 # screen itself is covered by flows/smoke/settings/analytics-prompt.yaml.)
@@ -20,12 +20,12 @@ appId: io.salmonwallet.app
 # this one. It takes over 30s on a cold emulator, so the wait has to outlast it.
 - runFlow: ../../../subflows/decline-analytics-consent.yaml
 - extendedWaitUntil:
-    visible: "Congratulations!"
+    visible: 'Congratulations!'
     timeout: 60000
 - takeScreenshot: screenshots/smoke/auth/recover-success
 - tapOn:
-    id: "success-go-to-wallet-button"
+    id: 'success-go-to-wallet-button'
 - extendedWaitUntil:
-    visible: "Switch wallet account"
+    visible: 'Switch wallet account'
     timeout: 30000
 - takeScreenshot: screenshots/smoke/auth/home-after-recover

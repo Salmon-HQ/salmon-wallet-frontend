@@ -31,15 +31,19 @@ import { apiClient, get } from '../client';
 export const fetchUtxos: FetchUtxosFn = async (networkId, address) => {
   const { data } = await apiClient.get<{ data: UTXO[]; nextPageToken?: string }>(
     `/v1/${networkId}/account/${address}/utxo`,
-    { params: { pageSize: 100 } },
+    { params: { pageSize: 100 } }
   );
   return data.data;
 };
 
-export const broadcastTransaction: BroadcastTransactionFn = async (networkId, address, serializedTx) => {
+export const broadcastTransaction: BroadcastTransactionFn = async (
+  networkId,
+  address,
+  serializedTx
+) => {
   const { data } = await apiClient.post<{ txId?: string; success?: boolean }>(
     `/v1/${networkId}/account/${address}/transactions`,
-    { tx: serializedTx },
+    { tx: serializedTx }
   );
   return {
     txId: data.txId,
@@ -53,15 +57,14 @@ export const broadcastTransaction: BroadcastTransactionFn = async (networkId, ad
 
 export const fetchBitcoinAccountBalance: FetchBitcoinBalanceFn = async (
   networkId: string,
-  address: string,
+  address: string
 ): Promise<BitcoinBalanceItem[]> => {
   // The salmon-api balance resource already sets `coingeckoId: 'bitcoin'`
   // for the native BTC item via `NATIVE_COINGECKO_ID`, so the FE only needs
   // to fill in `uiAmount` (derived from `amount`/`decimals`).
-  const data = await get<BitcoinBalanceItem[]>(
-    `/v1/${networkId}/account/${address}/balance`,
-    { params: { include: 'logo' } },
-  );
+  const data = await get<BitcoinBalanceItem[]>(`/v1/${networkId}/account/${address}/balance`, {
+    params: { include: 'logo' },
+  });
 
   return data.map((token) => ({
     ...token,
@@ -86,7 +89,7 @@ export const fetchBitcoinAccountRecentTransactions: FetchBitcoinRecentTransactio
 
   const raw = await get<{ data: AccountTransaction[]; meta: { nextPageToken?: string } }>(
     `/v1/${networkId}/account/${address}/transactions`,
-    { params },
+    { params }
   );
 
   return {

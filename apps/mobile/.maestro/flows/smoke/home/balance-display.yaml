@@ -3,11 +3,11 @@ appId: io.salmonwallet.app
 # Verify Home shell renders the action chips after recovery.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - assertVisible:
-    id: "wallet-header-account-switcher"
+    id: 'wallet-header-account-switcher'
 - assertVisible:
-    id: "home-send-button"
+    id: 'home-send-button'
 - assertVisible:
-    id: "home-receive-button"
+    id: 'home-receive-button'
 - assertVisible:
-    id: "home-activity-button"
+    id: 'home-activity-button'
 - takeScreenshot: screenshots/smoke/home/balance-default

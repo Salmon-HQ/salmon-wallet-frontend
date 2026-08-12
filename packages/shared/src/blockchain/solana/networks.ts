@@ -1,9 +1,4 @@
-import type {
-  Rpc,
-  RpcSubscriptions,
-  SolanaRpcApi,
-  SolanaRpcSubscriptionsApi,
-} from '@solana/kit';
+import type { Rpc, RpcSubscriptions, SolanaRpcApi, SolanaRpcSubscriptionsApi } from '@solana/kit';
 import type { SolanaNetwork } from '../../types/blockchain';
 
 /** The kit RPC client this package talks to Solana through. */

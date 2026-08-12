@@ -282,7 +282,11 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
       serialized = transaction.serializeMessage();
     }
     // Handle VersionedTransaction with message.serialize method
-    else if ('message' in transaction && transaction.message && typeof transaction.message.serialize === 'function') {
+    else if (
+      'message' in transaction &&
+      transaction.message &&
+      typeof transaction.message.serialize === 'function'
+    ) {
       serialized = transaction.message.serialize();
     } else {
       throw new Error('Unable to serialize transaction');
@@ -327,9 +331,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
 
       window.addEventListener('salmon_contentscript_message', listener);
 
-      window.dispatchEvent(
-        new CustomEvent('salmon_injected_script_message', { detail: message })
-      );
+      window.dispatchEvent(new CustomEvent('salmon_injected_script_message', { detail: message }));
     });
   };
 
@@ -462,7 +464,10 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
    * @param network - The network context for the transaction
    * @returns The signed transaction, still in wire format
    */
-  signTransactionBytes = async (transaction: Uint8Array, network?: Network): Promise<Uint8Array> => {
+  signTransactionBytes = async (
+    transaction: Uint8Array,
+    network?: Network
+  ): Promise<Uint8Array> => {
     const decoded = getTransactionDecoder().decode(transaction);
     const response = await this.sendRequest('signTransaction', {
       message: getBase58Decoder().decode(decoded.messageBytes),
@@ -490,7 +495,10 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
    * @param network - The network context for the transactions
    * @returns The signed transactions, still in wire format
    */
-  signAllTransactionsBytes = async (transactions: Uint8Array[], network?: Network): Promise<Uint8Array[]> => {
+  signAllTransactionsBytes = async (
+    transactions: Uint8Array[],
+    network?: Network
+  ): Promise<Uint8Array[]> => {
     const decodedList = transactions.map((wire) => getTransactionDecoder().decode(wire));
     const response = await this.sendRequest('signAllTransactions', {
       messages: decodedList.map((decoded) => getBase58Decoder().decode(decoded.messageBytes)),
@@ -622,10 +630,7 @@ export class SolanaProvider extends EventEmitter<SolanaProviderEvents> {
       signedMessage: new Uint8Array(bs58.decode(result.signedMessage)),
       signature: new Uint8Array(bs58.decode(result.signature)),
       signatureType: result.signatureType,
-      ...(result.signedMessageFormat
-        ? { signedMessageFormat: result.signedMessageFormat }
-        : {}),
+      ...(result.signedMessageFormat ? { signedMessageFormat: result.signedMessageFormat } : {}),
     };
   };
-
 }

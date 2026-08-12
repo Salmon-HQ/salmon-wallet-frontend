@@ -49,7 +49,7 @@ const MIRROR_NETWORK_CANDIDATES: Record<string, string> = Object.fromEntries(
     'solana-mainnet': 'solana-devnet',
     'bitcoin-mainnet': 'bitcoin-testnet',
     'ethereum-mainnet': 'ethereum-sepolia',
-  } as Record<string, string>),
+  } as Record<string, string>)
 );
 
 /**
@@ -57,12 +57,12 @@ const MIRROR_NETWORK_CANDIDATES: Record<string, string> = Object.fromEntries(
  * Includes the ticker symbol and human-readable name shown in the UI.
  */
 export const NETWORK_DISPLAY: Record<string, NetworkDisplayInfo> = {
-  'solana-mainnet':  { symbol: 'SOL', name: 'Solana',           blockchain: 'solana'   },
-  'solana-devnet':   { symbol: 'SOL', name: 'Solana Devnet',    blockchain: 'solana'   },
-  'bitcoin-mainnet': { symbol: 'BTC', name: 'Bitcoin',          blockchain: 'bitcoin'  },
-  'bitcoin-testnet': { symbol: 'BTC', name: 'Bitcoin Testnet',  blockchain: 'bitcoin'  },
-  'ethereum-mainnet':{ symbol: 'ETH', name: 'Ethereum',         blockchain: 'ethereum' },
-  'ethereum-sepolia':{ symbol: 'ETH', name: 'Ethereum Sepolia', blockchain: 'ethereum' },
+  'solana-mainnet': { symbol: 'SOL', name: 'Solana', blockchain: 'solana' },
+  'solana-devnet': { symbol: 'SOL', name: 'Solana Devnet', blockchain: 'solana' },
+  'bitcoin-mainnet': { symbol: 'BTC', name: 'Bitcoin', blockchain: 'bitcoin' },
+  'bitcoin-testnet': { symbol: 'BTC', name: 'Bitcoin Testnet', blockchain: 'bitcoin' },
+  'ethereum-mainnet': { symbol: 'ETH', name: 'Ethereum', blockchain: 'ethereum' },
+  'ethereum-sepolia': { symbol: 'ETH', name: 'Ethereum Sepolia', blockchain: 'ethereum' },
 };
 
 // ============================================================================
@@ -122,7 +122,7 @@ export interface DerivedAccountInfo {
  */
 export async function getAccountBalance(
   account: BlockchainAccount,
-  networkId: string,
+  networkId: string
 ): Promise<number> {
   const info = NETWORK_DISPLAY[networkId];
   if (!info) return 0;
@@ -187,9 +187,9 @@ export async function getMirrorNetworks(): Promise<Record<string, string>> {
   const enabledNetworkIds = new Set(await getEnabledNetworkIds());
 
   return Object.fromEntries(
-    Object.entries(MIRROR_NETWORK_CANDIDATES).filter(([source, target]) => (
-      enabledNetworkIds.has(source) && enabledNetworkIds.has(target)
-    ))
+    Object.entries(MIRROR_NETWORK_CANDIDATES).filter(
+      ([source, target]) => enabledNetworkIds.has(source) && enabledNetworkIds.has(target)
+    )
   );
 }
 
@@ -244,8 +244,11 @@ export interface ScanDerivedAccountsResult {
 export async function scanDerivedAccounts(
   mnemonic: string,
   networkIds: string[],
-  getBalance: (account: BlockchainAccount, networkId: string) => Promise<number> = getAccountBalance,
-  isCancelled?: () => boolean,
+  getBalance: (
+    account: BlockchainAccount,
+    networkId: string
+  ) => Promise<number> = getAccountBalance,
+  isCancelled?: () => boolean
 ): Promise<ScanDerivedAccountsResult> {
   const failedNetworkSet = new Set<string>();
   const allResults = await Promise.all(
@@ -304,7 +307,7 @@ export async function scanDerivedAccounts(
       }
 
       return networkAccounts;
-    }),
+    })
   );
 
   return { accounts: allResults.flat(), failedNetworks: [...failedNetworkSet] };

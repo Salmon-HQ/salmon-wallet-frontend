@@ -63,7 +63,6 @@ export type EthereumBalance = EthereumWalletBalance;
 
 // EthereumAddressValidationResult removed — validateDestinationAccount now returns shared ValidationResult
 
-
 /**
  * EthereumAccount provides core functionality for interacting with the Ethereum blockchain.
  * It manages a wallet (keypair) and provides methods for address retrieval and validation.
@@ -212,15 +211,16 @@ export class EthereumAccount {
    * Reduces priced items into the portfolio 24h delta. Items without
    * `priceChange24h` contribute their USD balance unchanged.
    */
-  private calculateLast24HoursChange(
-    balances: EthereumBalanceItem[],
-    usdTotal: number
-  ): number {
+  private calculateLast24HoursChange(balances: EthereumBalanceItem[], usdTotal: number): number {
     if (!usdTotal || usdTotal === 0) return 0;
 
     let previousTotal = 0;
     balances.forEach((balance) => {
-      if (balance.usdBalance && balance.priceChange24h !== undefined && balance.priceChange24h !== null) {
+      if (
+        balance.usdBalance &&
+        balance.priceChange24h !== undefined &&
+        balance.priceChange24h !== null
+      ) {
         const priceChangeFactor = 1 + balance.priceChange24h / 100;
         const previousBalance = balance.usdBalance / priceChangeFactor;
         previousTotal += previousBalance;
@@ -244,10 +244,7 @@ export class EthereumAccount {
       return { usdTotal: 0, last24HoursChange: 0, items };
     }
 
-    const usdTotal = items.reduce(
-      (currentValue, next) => (next.usdBalance || 0) + currentValue,
-      0
-    );
+    const usdTotal = items.reduce((currentValue, next) => (next.usdBalance || 0) + currentValue, 0);
     const last24HoursChange = this.calculateLast24HoursChange(items, usdTotal);
     return { usdTotal, last24HoursChange, items };
   }
@@ -388,7 +385,7 @@ export class EthereumAccount {
     to: string,
     token: string,
     amount: number,
-    opts?: EthereumAccountTransferOptions,
+    opts?: EthereumAccountTransferOptions
   ): Promise<{ txId: string }> {
     const wallet = await this.getConnection();
 
@@ -420,7 +417,7 @@ export class EthereumAccount {
     to: string,
     token: string,
     amount: number,
-    opts?: EthereumAccountTransferOptions,
+    opts?: EthereumAccountTransferOptions
   ): Promise<FeeEstimateResult | null> {
     const provider = await this.getProvider();
 

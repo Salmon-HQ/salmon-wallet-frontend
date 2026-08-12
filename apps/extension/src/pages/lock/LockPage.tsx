@@ -1,14 +1,17 @@
-import React, { useState, useCallback, useEffect, useRef, type FormEvent, type ChangeEvent } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  type FormEvent,
+  type ChangeEvent,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import InputBase from '@mui/material/InputBase';
-import {
-  PrimaryButton,
-  ConfirmDialog,
-  LoadingScreen,
-} from '../../components';
+import { PrimaryButton, ConfirmDialog, LoadingScreen } from '../../components';
 import {
   colors,
   fontFamily,
@@ -133,7 +136,11 @@ const ForgotPasswordButton = styled('button')({
 // Component
 // ============================================================================
 
-export function LockPage({ onUnlock, onUnlockWithCachedKey: _onUnlockWithCachedKey, onRemoveAllAccounts }: LockPageProps) {
+export function LockPage({
+  onUnlock,
+  onUnlockWithCachedKey: _onUnlockWithCachedKey,
+  onRemoveAllAccounts,
+}: LockPageProps) {
   const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -150,46 +157,52 @@ export function LockPage({ onUnlock, onUnlockWithCachedKey: _onUnlockWithCachedK
     void clearSessionKey();
   }, []);
 
-  const handlePasswordChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
-    if (error) setError(null);
-  }, [error]);
+  const handlePasswordChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setPassword(e.target.value);
+      if (error) setError(null);
+    },
+    [error]
+  );
 
-  const handleSubmit = useCallback(async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault();
 
-    if (!password.trim()) {
-      setError(t('lock.error.empty_password', 'Please enter your password'));
-      return;
-    }
-
-    setShowLoadingScreen(true);
-    setIsUnlocking(true);
-    setError(null);
-
-    try {
-      const success = await onUnlock(password);
-      if (!success) {
-        setError(t('lock.error.invalid_password', 'Invalid password'));
-        setPassword('');
-        setShowLoadingScreen(false);
-      } else {
-        try {
-          const derivedKey = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
-          if (derivedKey) {
-            await storeSessionKey(derivedKey);
-          }
-        } catch (cacheError) {
-          console.warn('Failed to cache session key:', cacheError);
-        }
+      if (!password.trim()) {
+        setError(t('lock.error.empty_password', 'Please enter your password'));
+        return;
       }
-    } catch {
-      setError(t('lock.error.unlock_failed', 'Failed to unlock wallet'));
-      setShowLoadingScreen(false);
-    } finally {
-      setIsUnlocking(false);
-    }
-  }, [password, onUnlock, t]);
+
+      setShowLoadingScreen(true);
+      setIsUnlocking(true);
+      setError(null);
+
+      try {
+        const success = await onUnlock(password);
+        if (!success) {
+          setError(t('lock.error.invalid_password', 'Invalid password'));
+          setPassword('');
+          setShowLoadingScreen(false);
+        } else {
+          try {
+            const derivedKey = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
+            if (derivedKey) {
+              await storeSessionKey(derivedKey);
+            }
+          } catch (cacheError) {
+            console.warn('Failed to cache session key:', cacheError);
+          }
+        }
+      } catch {
+        setError(t('lock.error.unlock_failed', 'Failed to unlock wallet'));
+        setShowLoadingScreen(false);
+      } finally {
+        setIsUnlocking(false);
+      }
+    },
+    [password, onUnlock, t]
+  );
 
   const handleForgotPassword = useCallback(() => {
     setShowResetDialog(true);
@@ -217,9 +230,7 @@ export function LockPage({ onUnlock, onUnlockWithCachedKey: _onUnlockWithCachedK
 
           <Title>{t('lock.title', 'Welcome Back')}</Title>
 
-          <Subtitle>
-            {t('lock.subtitle', 'Enter your password to unlock your wallet')}
-          </Subtitle>
+          <Subtitle>{t('lock.subtitle', 'Enter your password to unlock your wallet')}</Subtitle>
 
           <Form onSubmit={handleSubmit}>
             <InputContainer>
@@ -266,7 +277,10 @@ export function LockPage({ onUnlock, onUnlockWithCachedKey: _onUnlockWithCachedK
           visible={showResetDialog}
           onClose={() => setShowResetDialog(false)}
           title={t('lock.reset_wallet.title', 'Reset Wallet')}
-          message={t('lock.reset_wallet.message', 'If you forgot your password, you will need to reset your wallet. This will permanently delete all accounts and data. You can restore your wallet using your seed phrase after resetting.')}
+          message={t(
+            'lock.reset_wallet.message',
+            'If you forgot your password, you will need to reset your wallet. This will permanently delete all accounts and data. You can restore your wallet using your seed phrase after resetting.'
+          )}
           confirmText={t('lock.reset_wallet.reset', 'Reset Wallet')}
           cancelText={t('lock.reset_wallet.cancel', 'Cancel')}
           isDanger
@@ -278,7 +292,10 @@ export function LockPage({ onUnlock, onUnlockWithCachedKey: _onUnlockWithCachedK
           visible={showConfirmDialog}
           onClose={() => setShowConfirmDialog(false)}
           title={t('lock.confirm_reset.title', 'Are you sure?')}
-          message={t('lock.confirm_reset.message', 'This action cannot be undone. All wallet data will be permanently deleted.')}
+          message={t(
+            'lock.confirm_reset.message',
+            'This action cannot be undone. All wallet data will be permanently deleted.'
+          )}
           confirmText={t('lock.confirm_reset.confirm', 'Delete All Data')}
           cancelText={t('lock.confirm_reset.cancel', 'Cancel')}
           isDanger

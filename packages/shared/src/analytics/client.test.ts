@@ -192,7 +192,11 @@ describe('AnalyticsClient withdrawing consent', () => {
 
 describe('AnalyticsClient consent persistence across restarts', () => {
   it('keeps a declined choice, and does not re-prompt', async () => {
-    const first = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport: createMemoryTransport() });
+    const first = initAnalytics({
+      platform: 'web',
+      appVersion: '3.0.0',
+      transport: createMemoryTransport(),
+    });
     await first.whenReady();
     await first.setConsent(false);
     await first.markPrompted();
@@ -212,7 +216,11 @@ describe('AnalyticsClient consent persistence across restarts', () => {
   });
 
   it('keeps a granted choice', async () => {
-    const first = initAnalytics({ platform: 'web', appVersion: '3.0.0', transport: createMemoryTransport() });
+    const first = initAnalytics({
+      platform: 'web',
+      appVersion: '3.0.0',
+      transport: createMemoryTransport(),
+    });
     await first.whenReady();
     await first.setConsent(true);
 

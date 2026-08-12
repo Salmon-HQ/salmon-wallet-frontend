@@ -12,7 +12,8 @@ const mockBlurContainer = vi.fn(({ children }: { children?: React.ReactNode }) =
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, params?: Record<string, string>) => params?.name ? `View on ${params.name}` : key,
+    t: (key: string, params?: Record<string, string>) =>
+      params?.name ? `View on ${params.name}` : key,
   }),
 }));
 
@@ -29,7 +30,8 @@ vi.mock('@salmon/shared', () => ({
   },
   borderRadius: { md: 12, lg: 16 },
   borderWidth: { thin: 1 },
-  getTransactionUrl: (_b: string, _e: string, explorer: string, txHash: string) => `https://explorer/${explorer}/${txHash}`,
+  getTransactionUrl: (_b: string, _e: string, explorer: string, txHash: string) =>
+    `https://explorer/${explorer}/${txHash}`,
   getAvailableExplorers: () => [
     { key: 'solscan', name: 'Solscan' },
     { key: 'explorer', name: 'Explorer' },
@@ -55,12 +57,7 @@ describe('ExplorerLinkButton', () => {
   });
 
   it('uses BlurContainer for both the trigger and the menu surface', () => {
-    render(
-      <ExplorerLinkButton
-        txHash="tx-123"
-        showMenu
-      />
-    );
+    render(<ExplorerLinkButton txHash="tx-123" showMenu />);
 
     fireEvent.click(screen.getByRole('button'));
 

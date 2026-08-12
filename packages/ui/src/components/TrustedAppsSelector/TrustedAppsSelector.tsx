@@ -104,10 +104,7 @@ export function TrustedAppsSelector({
   );
 
   return (
-    <SettingsPanelContent
-      title={t('settings.trusted_apps', 'Trusted Apps')}
-      onBack={onBack}
-    >
+    <SettingsPanelContent title={t('settings.trusted_apps', 'Trusted Apps')} onBack={onBack}>
       {apps.length > 0 ? (
         <StyledList>
           {apps.map((app: TrustedAppItem) => (
@@ -166,14 +163,9 @@ export function TrustedAppsSelector({
         </StyledList>
       ) : (
         <EmptyContainer>
-          <EmptyText>
-            {t('settings.no_trusted_apps', 'No connected apps')}
-          </EmptyText>
+          <EmptyText>{t('settings.no_trusted_apps', 'No connected apps')}</EmptyText>
           <EmptySubtext>
-            {t(
-              'settings.no_trusted_apps_hint',
-              'Apps you connect to will appear here'
-            )}
+            {t('settings.no_trusted_apps_hint', 'Apps you connect to will appear here')}
           </EmptySubtext>
         </EmptyContainer>
       )}

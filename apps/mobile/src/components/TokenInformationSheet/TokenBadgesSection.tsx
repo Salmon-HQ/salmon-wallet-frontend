@@ -1,5 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import { colors, fontFamilyNative, fontSize, componentSizes, ms, s, spacing, vs, borderRadius } from '@salmon/shared';
+import {
+  colors,
+  fontFamilyNative,
+  fontSize,
+  componentSizes,
+  ms,
+  s,
+  spacing,
+  vs,
+  borderRadius,
+} from '@salmon/shared';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
@@ -246,14 +256,56 @@ export const TokenBadgesSection: React.FC<TokenBadgesSectionProps> = ({
             {/* Title "Badges" */}
             <Rect x="0" y="0" rx="4" ry="4" width="60" height={titleHeight} />
             {/* Badge 1: circle + label */}
-            <Rect x={0} y={badgeRowY} rx={circleRadius} ry={circleRadius} width={circleSize} height={circleSize} />
-            <Rect x={(circleSize - 30) / 2} y={badgeRowY + circleSize + labelGap} rx="3" ry="3" width="30" height={labelHeight} />
+            <Rect
+              x={0}
+              y={badgeRowY}
+              rx={circleRadius}
+              ry={circleRadius}
+              width={circleSize}
+              height={circleSize}
+            />
+            <Rect
+              x={(circleSize - 30) / 2}
+              y={badgeRowY + circleSize + labelGap}
+              rx="3"
+              ry="3"
+              width="30"
+              height={labelHeight}
+            />
             {/* Badge 2 */}
-            <Rect x={badgeItemWidth + badgeGap} y={badgeRowY} rx={circleRadius} ry={circleRadius} width={circleSize} height={circleSize} />
-            <Rect x={badgeItemWidth + badgeGap + (circleSize - 30) / 2} y={badgeRowY + circleSize + labelGap} rx="3" ry="3" width="30" height={labelHeight} />
+            <Rect
+              x={badgeItemWidth + badgeGap}
+              y={badgeRowY}
+              rx={circleRadius}
+              ry={circleRadius}
+              width={circleSize}
+              height={circleSize}
+            />
+            <Rect
+              x={badgeItemWidth + badgeGap + (circleSize - 30) / 2}
+              y={badgeRowY + circleSize + labelGap}
+              rx="3"
+              ry="3"
+              width="30"
+              height={labelHeight}
+            />
             {/* Badge 3 */}
-            <Rect x={(badgeItemWidth + badgeGap) * 2} y={badgeRowY} rx={circleRadius} ry={circleRadius} width={circleSize} height={circleSize} />
-            <Rect x={(badgeItemWidth + badgeGap) * 2 + (circleSize - 30) / 2} y={badgeRowY + circleSize + labelGap} rx="3" ry="3" width="30" height={labelHeight} />
+            <Rect
+              x={(badgeItemWidth + badgeGap) * 2}
+              y={badgeRowY}
+              rx={circleRadius}
+              ry={circleRadius}
+              width={circleSize}
+              height={circleSize}
+            />
+            <Rect
+              x={(badgeItemWidth + badgeGap) * 2 + (circleSize - 30) / 2}
+              y={badgeRowY + circleSize + labelGap}
+              rx="3"
+              ry="3"
+              width="30"
+              height={labelHeight}
+            />
           </ContentLoader>
         </View>
       </BlurContainer>

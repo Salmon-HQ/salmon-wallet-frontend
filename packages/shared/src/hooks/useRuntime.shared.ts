@@ -43,7 +43,4 @@ export interface RuntimeInfo {
 /**
  * Adapter URL prefixes used to detect adapter mode on React Native.
  */
-export const ADAPTER_PREFIXES = [
-  'solana-wallet:',
-  'https://salmonwallet.io/adapter',
-] as const;
+export const ADAPTER_PREFIXES = ['solana-wallet:', 'https://salmonwallet.io/adapter'] as const;

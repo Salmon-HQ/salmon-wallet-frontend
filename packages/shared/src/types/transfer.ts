@@ -72,10 +72,7 @@ export interface SigningKeyPair {
 // Dependency injection function signatures
 // ============================================================================
 
-export type FetchUtxosFn = (
-  networkId: string,
-  address: string
-) => Promise<UTXO[]>;
+export type FetchUtxosFn = (networkId: string, address: string) => Promise<UTXO[]>;
 
 export type BroadcastTransactionFn = (
   networkId: string,

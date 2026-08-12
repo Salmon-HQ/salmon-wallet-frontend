@@ -196,10 +196,7 @@ export type FetchNftsFromBackendPaginatedFn = (
   options: GetNftsOptions
 ) => Promise<NftPaginatedResponse>;
 
-export type FetchNftByAddressFn = (
-  networkId: string,
-  mintAddress: string
-) => Promise<Nft | null>;
+export type FetchNftByAddressFn = (networkId: string, mintAddress: string) => Promise<Nft | null>;
 
 /**
  * Options for fetching NFTs

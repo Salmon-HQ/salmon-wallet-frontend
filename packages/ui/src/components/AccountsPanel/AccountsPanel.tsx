@@ -123,17 +123,14 @@ export function AccountsPanel({
         accountActions.changeAccount(targetId);
       }
     },
-    [accountId, accountActions],
+    [accountId, accountActions]
   );
 
-  const handleDeleteClick = useCallback(
-    (account: Account) => {
-      setDeletingAccountId(account.id);
-      setDeletingAccountName(account.name);
-      setDeleteDialogVisible(true);
-    },
-    [],
-  );
+  const handleDeleteClick = useCallback((account: Account) => {
+    setDeletingAccountId(account.id);
+    setDeletingAccountName(account.name);
+    setDeleteDialogVisible(true);
+  }, []);
 
   const confirmDelete = useCallback(async () => {
     if (deletingAccountId) {

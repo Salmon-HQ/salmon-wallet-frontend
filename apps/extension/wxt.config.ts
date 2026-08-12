@@ -16,12 +16,12 @@ export default defineConfig({
     const env = loadEnv(wxtEnv.mode, __dirname, 'VITE_');
     return {
       define: {
-        'global': 'globalThis',
-        '__APP_VERSION__': JSON.stringify(appVersion),
+        global: 'globalThis',
+        __APP_VERSION__: JSON.stringify(appVersion),
         // Define process as a minimal object so typeof process !== 'undefined' guards pass
         // (process global doesn't exist in extension runtime — the npm polyfill is only
         // injected during dev pre-bundling, not in production Rollup/esbuild builds)
-        'process': JSON.stringify({ env: {} }),
+        process: JSON.stringify({ env: {} }),
         // Define process.env as a complete object so both static (process.env.X) and
         // dynamic (process.env[key]) access work at runtime.
         // esbuild/Rollup use the most specific match: process.env wins over process.
@@ -40,11 +40,14 @@ export default defineConfig({
           '@salmon/shared': path.resolve(__dirname, '../../packages/shared/src'),
           '@salmon/ui': path.resolve(__dirname, '../../packages/ui/src'),
           // Mock react-native modules for web extension build
-          'react-native-fast-crypto': path.resolve(__dirname, 'src/stubs/react-native-fast-crypto.ts'),
+          'react-native-fast-crypto': path.resolve(
+            __dirname,
+            'src/stubs/react-native-fast-crypto.ts'
+          ),
           'react-native': path.resolve(__dirname, 'src/stubs/react-native.ts'),
           // Resolve Node.js built-ins to npm polyfills (prevents Vite from externalizing them)
-          'buffer': bufferPath,
-          'process': processPath,
+          buffer: bufferPath,
+          process: processPath,
         },
       },
       optimizeDeps: {

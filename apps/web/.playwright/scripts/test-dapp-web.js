@@ -13,8 +13,12 @@
 
   const provider = window.__salmonWallet;
   if (!provider) {
-    console.error('[salmon-harness] window.__salmonWallet not found. Open the running web wallet SPA (http://localhost:5173/) and unlock a wallet first.');
-    alert('window.__salmonWallet no encontrado.\nAbrí la wallet web (http://localhost:5173/), desbloqueá una cuenta y volvé a pegar el script.');
+    console.error(
+      '[salmon-harness] window.__salmonWallet not found. Open the running web wallet SPA (http://localhost:5173/) and unlock a wallet first.'
+    );
+    alert(
+      'window.__salmonWallet no encontrado.\nAbrí la wallet web (http://localhost:5173/), desbloqueá una cuenta y volvé a pegar el script.'
+    );
     return;
   }
   if (document.getElementById('salmon-harness')) {
@@ -26,7 +30,13 @@
   const DAPP_ORIGIN = 'https://test-dapp.salmon.example';
 
   // Real serialized legacy Solana Message — isTransactionLookalike() -> true.
-  const TX_MESSAGE_BYTES = [1,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,155,136,87,254,171,129,132,251,104,127,99,70,24,192,53,218,196,57,220,26,235,59,85,152,160,240,0,0,0,0,1,196,154,231,118,3,120,32,84,241,122,157,236,234,67,180,68,235,160,237,177,44,111,29,49,198,224,228,168,75,240,82,235,1,0,2,0,1,12,2,0,0,0,232,3,0,0,0,0,0,0];
+  const TX_MESSAGE_BYTES = [
+    1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 6, 155, 136, 87, 254, 171, 129, 132, 251, 104, 127, 99, 70, 24, 192, 53, 218, 196,
+    57, 220, 26, 235, 59, 85, 152, 160, 240, 0, 0, 0, 0, 1, 196, 154, 231, 118, 3, 120, 32, 84, 241,
+    122, 157, 236, 234, 67, 180, 68, 235, 160, 237, 177, 44, 111, 29, 49, 198, 224, 228, 168, 75,
+    240, 82, 235, 1, 0, 2, 0, 1, 12, 2, 0, 0, 0, 232, 3, 0, 0, 0, 0, 0, 0,
+  ];
 
   // Minimal base58 decode (Bitcoin alphabet) so we can turn the connected address
   // into the Uint8Array[] requiredSigners the web provider expects for OCMS.
@@ -37,16 +47,32 @@
       const v = A.indexOf(ch);
       if (v === -1) throw new Error('bad base58 char: ' + ch);
       let carry = v;
-      for (let j = 0; j < bytes.length; j++) { carry += bytes[j] * 58; bytes[j] = carry & 0xff; carry >>= 8; }
-      while (carry > 0) { bytes.push(carry & 0xff); carry >>= 8; }
+      for (let j = 0; j < bytes.length; j++) {
+        carry += bytes[j] * 58;
+        bytes[j] = carry & 0xff;
+        carry >>= 8;
+      }
+      while (carry > 0) {
+        bytes.push(carry & 0xff);
+        carry >>= 8;
+      }
     }
     for (let k = 0; k < str.length && str[k] === '1'; k++) bytes.push(0);
     return new Uint8Array(bytes.reverse());
   }
 
   const b64 = (u8) => btoa(String.fromCharCode.apply(null, u8));
-  const hex = (u8) => Array.from(u8).map((b) => b.toString(16).padStart(2, '0')).join('');
-  const utf8 = (u8) => { try { return new TextDecoder('utf-8').decode(u8); } catch { return '(no-utf8)'; } };
+  const hex = (u8) =>
+    Array.from(u8)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  const utf8 = (u8) => {
+    try {
+      return new TextDecoder('utf-8').decode(u8);
+    } catch {
+      return '(no-utf8)';
+    }
+  };
   const errText = (e) => (e && e.message ? e.message : String(e));
 
   let account = null; // { address, pubKeyBytes }
@@ -126,7 +152,7 @@
   $('h-origin').textContent = 'dApp origin: ' + DAPP_ORIGIN;
   function setAcct(addr, bytes) {
     account = addr ? { address: addr, pubKeyBytes: bytes } : null;
-    $('h-acct').textContent = addr ? ('account: ' + addr) : 'account: (none)';
+    $('h-acct').textContent = addr ? 'account: ' + addr : 'account: (none)';
   }
   setAcct(null);
   function show(id, cls, obj) {
@@ -147,7 +173,9 @@
       show('o-connect', 'ok', { connected: true, address: addr });
     },
     async disconnect() {
-      try { await provider.disconnect?.(DAPP_ORIGIN); } catch {}
+      try {
+        await provider.disconnect?.(DAPP_ORIGIN);
+      } catch {}
       setAcct(null);
       show('o-connect', 'warn', 'disconnected (local)');
     },
@@ -159,9 +187,18 @@
       show('o-text', 'ok', { message: msg, signature_b64: b64(sig), len: sig.length });
     },
     async tx() {
-      show('o-tx', 'warn', 'Mandando tx-lookalike… mirá el popup (banner rojo + Firmar deshabilitado).');
+      show(
+        'o-tx',
+        'warn',
+        'Mandando tx-lookalike… mirá el popup (banner rojo + Firmar deshabilitado).'
+      );
       const sig = await provider.signMessage(DAPP_ORIGIN, new Uint8Array(TX_MESSAGE_BYTES));
-      if (!sig) return show('o-tx', 'ok', 'Bloqueado/rechazado (esperado). El popup mostró banner "Signing blocked" y Firmar deshabilitado.');
+      if (!sig)
+        return show(
+          'o-tx',
+          'ok',
+          'Bloqueado/rechazado (esperado). El popup mostró banner "Signing blocked" y Firmar deshabilitado.'
+        );
       show('o-tx', 'err', '⚠️ GUARD FALLÓ: firmó una tx disfrazada. sig_b64=' + b64(sig));
     },
     async ocms() {
@@ -169,33 +206,53 @@
       const msg = 'OCMS test: login challenge ' + Date.now();
       show('o-ocms', 'warn', 'Firmando OCMS… aprobá en el popup.');
       const res = await provider.signOffchainMessage(DAPP_ORIGIN, {
-        messageVersion: 1, message: msg, requiredSigners: [account.pubKeyBytes],
+        messageVersion: 1,
+        message: msg,
+        requiredSigners: [account.pubKeyBytes],
       });
       if (!res) return show('o-ocms', 'err', 'rechazado (null)');
       show('o-ocms', 'ok', {
-        message: msg, signatureType: res.signatureType,
+        message: msg,
+        signatureType: res.signatureType,
         signature_b64: b64(res.signature),
         signedOffchainMessage_len: res.signedOffchainMessage.length,
         domain_prefix_hex: hex(res.signedOffchainMessage.slice(0, 16)),
       });
     },
-    siws() { return runSiws($('siws-domain').value.trim(), 'o-siws'); },
-    'siws-fake'() { return runSiws('phishing-site.example', 'o-siws'); },
+    siws() {
+      return runSiws($('siws-domain').value.trim(), 'o-siws');
+    },
+    'siws-fake'() {
+      return runSiws('phishing-site.example', 'o-siws');
+    },
   };
 
   async function runSiws(domainValue, outId) {
     const input = {
       statement: 'Sign in to the Salmon web harness.',
-      uri: DAPP_ORIGIN, version: '1', chainId: 'solana:mainnet',
-      nonce: String(Date.now()), issuedAt: new Date().toISOString(),
+      uri: DAPP_ORIGIN,
+      version: '1',
+      chainId: 'solana:mainnet',
+      nonce: String(Date.now()),
+      issuedAt: new Date().toISOString(),
     };
     if (domainValue) input.domain = domainValue;
     if ($('siws-ocms').checked) input.useOffchainMessage = { messageVersion: 1 };
-    show(outId, 'warn', 'signIn… aprobá en el popup (domain: ' + (domainValue || '(origin real)') + ').');
+    show(
+      outId,
+      'warn',
+      'signIn… aprobá en el popup (domain: ' + (domainValue || '(origin real)') + ').'
+    );
     const res = await provider.signIn(DAPP_ORIGIN, input);
-    if (!res) return show(outId, 'ok', 'Rechazado (null). En el caso dominio-falso, esto = mismatch correctamente rechazado (banner en el popup, Firmar deshabilitado).');
+    if (!res)
+      return show(
+        outId,
+        'ok',
+        'Rechazado (null). En el caso dominio-falso, esto = mismatch correctamente rechazado (banner en el popup, Firmar deshabilitado).'
+      );
     show(outId, 'ok', {
-      address: res.account.address, signatureType: res.signatureType,
+      address: res.account.address,
+      signatureType: res.signatureType,
       signedMessageFormat: res.signedMessageFormat || '(raw utf-8)',
       signature_b64: b64(res.signature),
       signedMessage_preview: utf8(res.signedMessage).slice(0, 300),
@@ -206,7 +263,15 @@
     const a = e.target && e.target.getAttribute && e.target.getAttribute('data-a');
     if (!a || !handlers[a]) return;
     Promise.resolve(handlers[a]()).catch((err) => {
-      const outId = { connect: 'o-connect', disconnect: 'o-connect', text: 'o-text', tx: 'o-tx', ocms: 'o-ocms', siws: 'o-siws', 'siws-fake': 'o-siws' }[a];
+      const outId = {
+        connect: 'o-connect',
+        disconnect: 'o-connect',
+        text: 'o-text',
+        tx: 'o-tx',
+        ocms: 'o-ocms',
+        siws: 'o-siws',
+        'siws-fake': 'o-siws',
+      }[a];
       show(outId, 'err', errText(err));
     });
   });

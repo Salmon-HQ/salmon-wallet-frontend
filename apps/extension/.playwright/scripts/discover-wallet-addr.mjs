@@ -1,7 +1,7 @@
 // Recover a seed (defaults to SEED_B) and capture its Solana receive address.
 // Writes to .playwright/fixtures/wallet-b-addr.txt for downstream tests.
 // Wipes profile at start AND end so subsequent runs default back to SEED_A.
-$1, fixturesRoot$2
+($1, fixturesRoot$2);
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -55,8 +55,9 @@ await capture(popup, 'walletB-discover', '04-receive');
 
 // Read body for address
 const text = await popup.locator('body').innerText();
-const candidates = (text.match(/\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/g) || [])
-  .filter((s) => !/^(Account|Wallet|Settings|Backup|Reveal|Receive|Click)/.test(s));
+const candidates = (text.match(/\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/g) || []).filter(
+  (s) => !/^(Account|Wallet|Settings|Backup|Reveal|Receive|Click)/.test(s)
+);
 const addr = candidates.sort((a, b) => b.length - a.length)[0];
 
 if (!addr) {

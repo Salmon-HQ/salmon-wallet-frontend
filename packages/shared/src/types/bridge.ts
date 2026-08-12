@@ -196,12 +196,7 @@ export interface BridgeExchange {
  * `failed` -> `'fail'`, `refunded` -> `'refunded'`, anything else ->
  * `'unknown'`.
  */
-export type BridgeTransactionStatus =
-  | 'inProgress'
-  | 'success'
-  | 'fail'
-  | 'refunded'
-  | 'unknown';
+export type BridgeTransactionStatus = 'inProgress' | 'success' | 'fail' | 'refunded' | 'unknown';
 
 /**
  * Bridge transaction status response

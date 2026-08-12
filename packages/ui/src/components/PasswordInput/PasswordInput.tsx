@@ -126,7 +126,7 @@ export function PasswordInput({
         onSubmitEditing();
       }
     },
-    [onSubmitEditing],
+    [onSubmitEditing]
   );
 
   return (
@@ -173,4 +173,3 @@ export function PasswordInput({
     </Container>
   );
 }
-

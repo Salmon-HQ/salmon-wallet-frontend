@@ -6,7 +6,16 @@
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { colors, spacing, borderRadius, borderWidth, fontFamily, fontSize, fontWeight, componentSizes } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  borderWidth,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  componentSizes,
+} from '@salmon/shared';
 import type { SeedWordGridProps } from './types';
 
 const Container = styled(Box)({

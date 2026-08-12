@@ -143,7 +143,9 @@ export function LoadingScreenWeb({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    animation: isFadingOut ? 'salmonFadeOut 0.3s ease-out forwards' : 'salmonFadeIn 0.3s ease-out forwards',
+    animation: isFadingOut
+      ? 'salmonFadeOut 0.3s ease-out forwards'
+      : 'salmonFadeIn 0.3s ease-out forwards',
   };
 
   const contentStyle: CSSProperties = {

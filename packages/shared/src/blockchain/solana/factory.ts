@@ -1,7 +1,4 @@
-import {
-  createKeyPairSignerFromBytes,
-  createKeyPairSignerFromPrivateKeyBytes,
-} from '@solana/kit';
+import { createKeyPairSignerFromBytes, createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
 import HDKey from 'micro-key-producer/slip10.js';
 import { SolanaAccount, type SolanaSigningKey } from './SolanaAccount';
 import type { SolanaNetwork } from '../../types/blockchain';
@@ -9,11 +6,7 @@ import type { SolanaNetwork } from '../../types/blockchain';
 // Re-export for backward compatibility — canonical definition is in ./networks
 export { SOLANA_NETWORKS } from './networks';
 import type { SolanaAccountApiFunctions } from '../../types/transfer';
-import {
-  mnemonicToSeed,
-  COIN_TYPES,
-  SOLANA_PATH,
-} from '../../crypto/mnemonic';
+import { mnemonicToSeed, COIN_TYPES, SOLANA_PATH } from '../../crypto/mnemonic';
 
 /**
  * SLIP-0044 coin type for Solana
@@ -77,10 +70,7 @@ export function getSolanaDerivationPath(index: number): string {
  * @param path - BIP44 derivation path
  * @returns Promise resolving to the 32-byte seed and its kit signer
  */
-export async function generateKeyPair(
-  mnemonic: string,
-  path: string
-): Promise<SolanaSigningKey> {
+export async function generateKeyPair(mnemonic: string, path: string): Promise<SolanaSigningKey> {
   const seed = await mnemonicToSeed(mnemonic);
   const hdkey = HDKey.fromMasterSeed(seed);
   const derived = hdkey.derive(path);
@@ -222,4 +212,3 @@ export async function createSolanaAccountFromSecretKey(
     apiFunctions
   );
 }
-

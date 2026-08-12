@@ -4,11 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  getERC20TokenBalances,
-  getTokenMetadataBatch,
-  type DetectedERC20Token,
-} from './ethereum';
+import { getERC20TokenBalances, getTokenMetadataBatch, type DetectedERC20Token } from './ethereum';
 import {
   hexToBalance,
   formatERC20TokenBalance as formatTokenBalance,

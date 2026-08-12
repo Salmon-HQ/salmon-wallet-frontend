@@ -33,4 +33,3 @@ export function StepIndicator({ totalSteps, currentStep }: StepIndicatorProps) {
     </Container>
   );
 }
-

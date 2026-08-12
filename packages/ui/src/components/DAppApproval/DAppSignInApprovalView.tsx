@@ -117,7 +117,7 @@ export function DAppSignInApprovalView({
           <Subtitle>
             {t(
               'dapp.sign_in_subtitle',
-              'This app is requesting you to sign in with your Solana account. This will not submit a transaction.',
+              'This app is requesting you to sign in with your Solana account. This will not submit a transaction.'
             )}
           </Subtitle>
         </Header>
@@ -144,7 +144,7 @@ export function DAppSignInApprovalView({
               <FooterNote>
                 {t(
                   'dapp.sign_in_hint',
-                  'Salmon built this sign-in message from the site you are actually visiting, so it cannot impersonate another site.',
+                  'Salmon built this sign-in message from the site you are actually visiting, so it cannot impersonate another site.'
                 )}
               </FooterNote>
             </HintRow>
@@ -206,7 +206,9 @@ export function DAppSignInApprovalView({
                     >
                       {getShortAddress(siws.address)}
                       {copied ? (
-                        <CheckIcon sx={{ fontSize: 14, color: colors.status.success, flexShrink: 0 }} />
+                        <CheckIcon
+                          sx={{ fontSize: 14, color: colors.status.success, flexShrink: 0 }}
+                        />
                       ) : (
                         <ContentCopyOutlinedIcon
                           sx={{ fontSize: 14, color: colors.text.secondary, flexShrink: 0 }}
@@ -250,7 +252,7 @@ export function DAppSignInApprovalView({
                     <FooterNote>
                       {t(
                         'dapp.sign_in_offchain_note',
-                        'This message will be signed as a Solana off-chain message (OCMS).',
+                        'This message will be signed as a Solana off-chain message (OCMS).'
                       )}
                     </FooterNote>
                   </HintRow>
@@ -295,7 +297,10 @@ export function DAppSignInApprovalView({
               </>
             ) : (
               <Value sx={{ fontWeight: 400 }}>
-                {t('dapp.sign_in_invalid_request', 'This sign-in request is invalid and cannot be signed.')}
+                {t(
+                  'dapp.sign_in_invalid_request',
+                  'This sign-in request is invalid and cannot be signed.'
+                )}
               </Value>
             )}
           </Card>

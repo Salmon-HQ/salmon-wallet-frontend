@@ -67,9 +67,7 @@ export function WalletInitErrorScreen({ onRetry }: WalletInitErrorScreenProps): 
           {retrying ? (
             <ActivityIndicator size="small" color={colors.text.primary} />
           ) : (
-            <Text style={styles.retryButtonText}>
-              {t('actions.retry', 'Retry').toUpperCase()}
-            </Text>
+            <Text style={styles.retryButtonText}>{t('actions.retry', 'Retry').toUpperCase()}</Text>
           )}
         </LinearGradient>
       </TouchableOpacity>

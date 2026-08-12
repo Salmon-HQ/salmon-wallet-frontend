@@ -16,10 +16,5 @@ export function SuccessPage(): React.ReactElement {
     navigate('/auth/derived');
   }, [navigate]);
 
-  return (
-    <AuthSuccessPage
-      onGoToWallet={handleGoToWallet}
-      onCheckDerived={handleCheckDerived}
-    />
-  );
+  return <AuthSuccessPage onGoToWallet={handleGoToWallet} onCheckDerived={handleCheckDerived} />;
 }

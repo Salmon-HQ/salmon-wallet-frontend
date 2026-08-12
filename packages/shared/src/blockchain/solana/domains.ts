@@ -39,10 +39,7 @@ import type { SolanaRpc } from './networks';
  * // Returns: 'mydomain.sol' or null
  * ```
  */
-export async function getSolDomain(
-  rpc: SolanaRpc,
-  walletAddress: Address
-): Promise<string | null> {
+export async function getSolDomain(rpc: SolanaRpc, walletAddress: Address): Promise<string | null> {
   try {
     const favorite = await getPrimaryDomain({ rpc, walletAddress });
     if (!favorite?.domainName) {
@@ -67,14 +64,9 @@ export async function getSolDomain(
  * // Returns: 'AddressBase58...' or null
  * ```
  */
-export async function resolveSolDomain(
-  rpc: SolanaRpc,
-  domain: string
-): Promise<string | null> {
+export async function resolveSolDomain(rpc: SolanaRpc, domain: string): Promise<string | null> {
   try {
-    const domainName = domain.endsWith('.sol')
-      ? domain.slice(0, -4)
-      : domain;
+    const domainName = domain.endsWith('.sol') ? domain.slice(0, -4) : domain;
     const owner = await resolveDomain({ rpc, domain: domainName });
     if (!owner) {
       return null;
@@ -105,10 +97,7 @@ export async function resolveSolDomain(
  * // Returns: 'mydomain.abc' or null
  * ```
  */
-export async function getAllDomain(
-  rpc: SolanaRpc,
-  walletAddress: Address
-): Promise<string | null> {
+export async function getAllDomain(rpc: SolanaRpc, walletAddress: Address): Promise<string | null> {
   try {
     // @onsol/tldparser-kit pulls @solana/kit as a hard dependency (not a
     // peer, unlike sns-sdk-kit), so it carries its own private v5 copy. Its
@@ -140,10 +129,7 @@ export async function getAllDomain(
  * // Returns: 'AddressBase58...' or null
  * ```
  */
-export async function resolveAllDomain(
-  rpc: SolanaRpc,
-  domain: string
-): Promise<string | null> {
+export async function resolveAllDomain(rpc: SolanaRpc, domain: string): Promise<string | null> {
   try {
     // @onsol/tldparser-kit pulls @solana/kit as a hard dependency (not a
     // peer, unlike sns-sdk-kit), so it carries its own private v5 copy. Its
@@ -182,10 +168,7 @@ export async function resolveAllDomain(
  * // Returns: 'mydomain.abc', 'mydomain.sol', or null
  * ```
  */
-export async function getDomain(
-  rpc: SolanaRpc,
-  walletAddress: Address
-): Promise<string | null> {
+export async function getDomain(rpc: SolanaRpc, walletAddress: Address): Promise<string | null> {
   // Try AllDomains first (supports multiple TLDs)
   const allDomain = await getAllDomain(rpc, walletAddress);
   if (allDomain) {

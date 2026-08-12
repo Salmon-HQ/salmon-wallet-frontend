@@ -186,9 +186,7 @@ describe('Encryption Module', () => {
       const key2 = await deriveEncryptionKey('password2', salt, 1000, 'sha256');
 
       // Keys should be different for different passwords
-      expect(Buffer.from(key1).toString('hex')).not.toBe(
-        Buffer.from(key2).toString('hex')
-      );
+      expect(Buffer.from(key1).toString('hex')).not.toBe(Buffer.from(key2).toString('hex'));
     });
 
     it('skips Web Crypto when crypto.subtle has no deriveBits (Ed25519 polyfill)', async () => {
@@ -269,9 +267,7 @@ describe('Encryption Module', () => {
     it('should throw IncorrectPasswordError with wrong password', async () => {
       const vault = await lock(TEST_DATA, TEST_PASSWORD, TEST_OPTIONS);
 
-      await expect(unlock(vault, 'wrongPassword')).rejects.toThrow(
-        IncorrectPasswordError
-      );
+      await expect(unlock(vault, 'wrongPassword')).rejects.toThrow(IncorrectPasswordError);
     });
   });
 
@@ -471,9 +467,7 @@ describe('Encryption Module', () => {
     });
 
     it('unlockAndGetKey throws IncorrectPasswordError for a wrong password', async () => {
-      await expect(unlockAndGetKey(vault, 'wrongPassword')).rejects.toThrow(
-        IncorrectPasswordError
-      );
+      await expect(unlockAndGetKey(vault, 'wrongPassword')).rejects.toThrow(IncorrectPasswordError);
     });
 
     it('unlockWithKey decrypts the vault using the cached key, no password needed', () => {

@@ -9,14 +9,14 @@ appId: io.salmonwallet.app
 - runFlow: ./open-settings.yaml
 - scrollUntilVisible:
     element:
-      id: "settings-analytics-toggle"
+      id: 'settings-analytics-toggle'
     direction: DOWN
     timeout: 20000
 - tapOn:
-    id: "settings-analytics-toggle"
+    id: 'settings-analytics-toggle'
 - waitForAnimationToEnd:
     timeout: 2000
 - runFlow: ./settings-close.yaml
 - extendedWaitUntil:
-    visible: "Switch wallet account"
+    visible: 'Switch wallet account'
     timeout: 20000

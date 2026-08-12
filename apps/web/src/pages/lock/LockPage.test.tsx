@@ -42,11 +42,8 @@ vi.mock('react-router-dom', () => ({
 
 vi.mock('@salmon/ui', () => ({
   styled: (Component: React.ElementType | ComponentType<unknown>) => () => {
-    const StyledComponent = ({ children, ...props }: PropsWithChildren<Record<string, unknown>>) => React.createElement(
-      Component as React.ElementType,
-      sanitizeDomProps(props),
-      children,
-    );
+    const StyledComponent = ({ children, ...props }: PropsWithChildren<Record<string, unknown>>) =>
+      React.createElement(Component as React.ElementType, sanitizeDomProps(props), children);
     return StyledComponent;
   },
   PrimaryButton: ({ children, ...props }: PropsWithChildren<Record<string, unknown>>) => (
@@ -80,11 +77,14 @@ vi.mock('@salmon/shared', () => {
     componentSizes: { inputRadius: 8 },
     STASH_KEYS: { DERIVED_KEY: 'derivedKey' },
     getStashItem: (...args: unknown[]) => mockGetStashItem(...args),
-    useAccountsContext: () => [null, {
-      unlockWithCachedKey: mockUnlockWithCachedKey,
-      unlockAccounts: mockUnlockAccounts,
-      removeAllAccounts: mockRemoveAllAccounts,
-    }],
+    useAccountsContext: () => [
+      null,
+      {
+        unlockWithCachedKey: mockUnlockWithCachedKey,
+        unlockAccounts: mockUnlockAccounts,
+        removeAllAccounts: mockRemoveAllAccounts,
+      },
+    ],
   };
 });
 

@@ -1,14 +1,18 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-} from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { borderWidth, colors, getShortAddress, borderRadius, spacing, fontFamilyNative, fontSize, fontWeight, opacity, } from '@salmon/shared';
+import {
+  borderWidth,
+  colors,
+  getShortAddress,
+  borderRadius,
+  spacing,
+  fontFamilyNative,
+  fontSize,
+  fontWeight,
+  opacity,
+} from '@salmon/shared';
 import { TokenSelectorModal } from './TokenSelectorModal';
 import type { TokenSelectorToken, TokenSelectorProps } from './types';
 
@@ -79,7 +83,8 @@ export function TokenSelector({
     [onChangeValue]
   );
 
-  const tokenName = selectedToken?.name || selectedToken?.symbol || t('wallet.select_token', 'Select');
+  const tokenName =
+    selectedToken?.name || selectedToken?.symbol || t('wallet.select_token', 'Select');
   const tokenSymbol = selectedToken?.symbol;
   const tokenLogo = selectedToken?.logo;
   const tokenAddress = selectedToken?.mint || selectedToken?.address;

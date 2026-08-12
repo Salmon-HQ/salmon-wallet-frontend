@@ -49,14 +49,12 @@ export interface UseAddressBookFormResult {
 // Hook
 // ============================================================================
 
-export function useAddressBookForm(
-  initial: AddressBookFormInitial,
-): UseAddressBookFormResult {
+export function useAddressBookForm(initial: AddressBookFormInitial): UseAddressBookFormResult {
   const [label, setLabel] = useState(initial.label ?? '');
   const [address, setAddress] = useState(initial.address ?? '');
   const [isAddressValid, setIsAddressValid] = useState(!!initial.resolvedAddress);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(
-    initial.resolvedAddress ?? null,
+    initial.resolvedAddress ?? null
   );
   const [isDomain, setIsDomain] = useState(initial.isDomain ?? false);
 
@@ -66,10 +64,7 @@ export function useAddressBookForm(
     setIsDomain(result.isDomain || false);
   }, []);
 
-  const canSave = useMemo(
-    () => label.trim().length > 0 && isAddressValid,
-    [label, isAddressValid],
-  );
+  const canSave = useMemo(() => label.trim().length > 0 && isAddressValid, [label, isAddressValid]);
 
   const buildInput = useCallback(
     (): AddressInput => ({
@@ -78,7 +73,7 @@ export function useAddressBookForm(
       networkId: initial.networkId,
       domain: isDomain ? address : undefined,
     }),
-    [resolvedAddress, address, label, initial.networkId, isDomain],
+    [resolvedAddress, address, label, initial.networkId, isDomain]
   );
 
   return {
@@ -94,4 +89,3 @@ export function useAddressBookForm(
     buildInput,
   };
 }
-

@@ -1,14 +1,7 @@
 import React, { useCallback, useState } from 'react';
-import {
-  DAppConnectApprovalView,
-} from '@salmon/ui';
-import {
-  useDAppMetadata,
-  type TrustedApp,
-} from '@salmon/shared';
-import type {
-  DAppConnectRequest,
-} from '@salmon/shared';
+import { DAppConnectApprovalView } from '@salmon/ui';
+import { useDAppMetadata, type TrustedApp } from '@salmon/shared';
+import type { DAppConnectRequest } from '@salmon/shared';
 
 interface DAppConnectPageProps {
   origin: string;
@@ -35,10 +28,7 @@ export function DAppConnectPage({
   const handleApprove = useCallback(async () => {
     setLoading(true);
     try {
-      await onApprove(
-        origin,
-        metadata ? { name: metadata.name, icon: metadata.icon } : undefined
-      );
+      await onApprove(origin, metadata ? { name: metadata.name, icon: metadata.icon } : undefined);
       if (typeof chrome !== 'undefined' && chrome.runtime) {
         chrome.runtime.sendMessage({
           channel: 'salmon_extension_background_channel',

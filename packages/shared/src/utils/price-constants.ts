@@ -8,11 +8,11 @@ import type { MarketData } from '../types/ui/token-market-data';
  * Devnets/testnets map to their mainnet counterparts.
  */
 export const BLOCKCHAIN_TO_COINGECKO: Record<BlockchainId, string> = {
-  'solana': 'solana',
+  solana: 'solana',
   'solana-devnet': 'solana',
-  'bitcoin': 'bitcoin',
+  bitcoin: 'bitcoin',
   'bitcoin-testnet': 'bitcoin',
-  'ethereum': 'ethereum',
+  ethereum: 'ethereum',
   'ethereum-sepolia': 'ethereum',
 };
 

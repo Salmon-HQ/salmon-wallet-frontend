@@ -35,13 +35,45 @@ export const router = createBrowserRouter([
         path: '/auth',
         element: <AuthLayout />,
         children: [
-          { path: 'select', lazy: () => import('./pages/auth/SelectPage').then((m) => ({ Component: m.SelectPage })) },
-          { path: 'create', lazy: () => import('./pages/auth/CreatePage').then((m) => ({ Component: m.CreatePage })) },
-          { path: 'recover', lazy: () => import('./pages/auth/RecoverPage').then((m) => ({ Component: m.RecoverPage })) },
-          { path: 'password', lazy: () => import('./pages/auth/PasswordPage').then((m) => ({ Component: m.PasswordPage })) },
-          { path: 'analytics-consent', lazy: () => import('./pages/auth/AnalyticsConsentPage').then((m) => ({ Component: m.AnalyticsConsentPage })) },
-          { path: 'success', lazy: () => import('./pages/auth/SuccessPage').then((m) => ({ Component: m.SuccessPage })) },
-          { path: 'derived', lazy: () => import('./pages/auth/DerivedAccountsPage').then((m) => ({ Component: m.DerivedAccountsPage })) },
+          {
+            path: 'select',
+            lazy: () =>
+              import('./pages/auth/SelectPage').then((m) => ({ Component: m.SelectPage })),
+          },
+          {
+            path: 'create',
+            lazy: () =>
+              import('./pages/auth/CreatePage').then((m) => ({ Component: m.CreatePage })),
+          },
+          {
+            path: 'recover',
+            lazy: () =>
+              import('./pages/auth/RecoverPage').then((m) => ({ Component: m.RecoverPage })),
+          },
+          {
+            path: 'password',
+            lazy: () =>
+              import('./pages/auth/PasswordPage').then((m) => ({ Component: m.PasswordPage })),
+          },
+          {
+            path: 'analytics-consent',
+            lazy: () =>
+              import('./pages/auth/AnalyticsConsentPage').then((m) => ({
+                Component: m.AnalyticsConsentPage,
+              })),
+          },
+          {
+            path: 'success',
+            lazy: () =>
+              import('./pages/auth/SuccessPage').then((m) => ({ Component: m.SuccessPage })),
+          },
+          {
+            path: 'derived',
+            lazy: () =>
+              import('./pages/auth/DerivedAccountsPage').then((m) => ({
+                Component: m.DerivedAccountsPage,
+              })),
+          },
         ],
       },
 
@@ -61,19 +93,31 @@ export const router = createBrowserRouter([
         children: [
           {
             path: '/dapp/connect',
-            lazy: () => import('./pages/dapp/ConnectApprovalPage').then((m) => ({ Component: m.ConnectApprovalPage })),
+            lazy: () =>
+              import('./pages/dapp/ConnectApprovalPage').then((m) => ({
+                Component: m.ConnectApprovalPage,
+              })),
           },
           {
             path: '/dapp/sign-message',
-            lazy: () => import('./pages/dapp/SignMessageApprovalPage').then((m) => ({ Component: m.SignMessageApprovalPage })),
+            lazy: () =>
+              import('./pages/dapp/SignMessageApprovalPage').then((m) => ({
+                Component: m.SignMessageApprovalPage,
+              })),
           },
           {
             path: '/dapp/sign-in',
-            lazy: () => import('./pages/dapp/SignInApprovalPage').then((m) => ({ Component: m.SignInApprovalPage })),
+            lazy: () =>
+              import('./pages/dapp/SignInApprovalPage').then((m) => ({
+                Component: m.SignInApprovalPage,
+              })),
           },
           {
             path: '/dapp/sign-transaction',
-            lazy: () => import('./pages/dapp/SignTransactionApprovalPage').then((m) => ({ Component: m.SignTransactionApprovalPage })),
+            lazy: () =>
+              import('./pages/dapp/SignTransactionApprovalPage').then((m) => ({
+                Component: m.SignTransactionApprovalPage,
+              })),
           },
         ],
       },
@@ -83,23 +127,51 @@ export const router = createBrowserRouter([
         element: <AuthGuard />,
         children: [
           // Home (tabs: home / collectibles / swap)
-          { path: '/home', lazy: () => import('./pages/home/HomePage').then((m) => ({ Component: m.HomePage })) },
+          {
+            path: '/home',
+            lazy: () => import('./pages/home/HomePage').then((m) => ({ Component: m.HomePage })),
+          },
 
           // Token detail
-          { path: '/token/:id', lazy: () => import('./pages/home/TokenDetailRoute').then((m) => ({ Component: m.TokenDetailRoute })) },
+          {
+            path: '/token/:id',
+            lazy: () =>
+              import('./pages/home/TokenDetailRoute').then((m) => ({
+                Component: m.TokenDetailRoute,
+              })),
+          },
 
           // NFT routes
-          { path: '/nft/:mint', lazy: () => import('./pages/home/NftDetailRoute').then((m) => ({ Component: m.NftDetailRoute })) },
-          { path: '/nft/all', lazy: () => import('./pages/home/NftSeeAllRoute').then((m) => ({ Component: m.NftSeeAllRoute })) },
+          {
+            path: '/nft/:mint',
+            lazy: () =>
+              import('./pages/home/NftDetailRoute').then((m) => ({ Component: m.NftDetailRoute })),
+          },
+          {
+            path: '/nft/all',
+            lazy: () =>
+              import('./pages/home/NftSeeAllRoute').then((m) => ({ Component: m.NftSeeAllRoute })),
+          },
 
           // Activity
-          { path: '/activity', lazy: () => import('./pages/home/ActivityRoute').then((m) => ({ Component: m.ActivityRoute })) },
+          {
+            path: '/activity',
+            lazy: () =>
+              import('./pages/home/ActivityRoute').then((m) => ({ Component: m.ActivityRoute })),
+          },
 
           // Send
-          { path: '/send', lazy: () => import('./pages/home/SendRoute').then((m) => ({ Component: m.SendRoute })) },
+          {
+            path: '/send',
+            lazy: () => import('./pages/home/SendRoute').then((m) => ({ Component: m.SendRoute })),
+          },
 
           // Settings (redirects to /home and opens SettingsPanelStack drawer)
-          { path: '/settings', lazy: () => import('./pages/settings/SettingsPage').then((m) => ({ Component: m.SettingsPage })) },
+          {
+            path: '/settings',
+            lazy: () =>
+              import('./pages/settings/SettingsPage').then((m) => ({ Component: m.SettingsPage })),
+          },
           { path: '/settings/*', element: <Navigate to="/settings" replace /> },
         ],
       },

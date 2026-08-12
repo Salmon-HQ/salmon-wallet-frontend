@@ -2,7 +2,7 @@ appId: io.salmonwallet.app
 ---
 # Drag down to dismiss any open bottom sheet. Long swipe to clear scroll + sheet.
 - swipe:
-    start: "50%, 20%"
-    end: "50%, 99%"
+    start: '50%, 20%'
+    end: '50%, 99%'
 - waitForAnimationToEnd:
     timeout: 3000

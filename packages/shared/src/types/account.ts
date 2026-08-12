@@ -8,10 +8,7 @@
  */
 
 import type { BlockchainAccount } from './blockchain';
-import type {
-  DefaultExplorers,
-  NetworkEnvironment,
-} from '../config/explorers';
+import type { DefaultExplorers, NetworkEnvironment } from '../config/explorers';
 
 // ============================================================================
 // Path / Network accounts

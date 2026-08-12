@@ -15,8 +15,10 @@ const DEFAULT_LOCAL_HOST = 'localhost';
 const DEFAULT_RETRY_DELAY_MS = 250;
 
 export function getBackendBaseUrlCandidates(): string[] {
-  const envApiUrl = process.env.EXPO_PUBLIC_API_URL || process.env.VITE_API_URL || process.env.API_URL;
-  const envHost = process.env.EXPO_PUBLIC_API_HOST || process.env.VITE_API_HOST || DEFAULT_LOCAL_HOST;
+  const envApiUrl =
+    process.env.EXPO_PUBLIC_API_URL || process.env.VITE_API_URL || process.env.API_URL;
+  const envHost =
+    process.env.EXPO_PUBLIC_API_HOST || process.env.VITE_API_HOST || DEFAULT_LOCAL_HOST;
   const envPort = process.env.EXPO_PUBLIC_API_PORT || process.env.VITE_API_PORT;
   const candidates = [
     envApiUrl,

@@ -135,10 +135,11 @@ vi.mock('../TransactionHistoryPage/ConversionRateDisplay', () => ({
 
 vi.mock('../TransactionHistoryPage/ExplorerLinkButton', () => ({
   ExplorerLinkButton: ({ onPress }: { onPress?: (url: string, explorerName: string) => void }) => (
-    <button onClick={() => {
-      mockExplorerOnPress();
-      onPress?.('https://explorer/tx', 'Solscan');
-    }}
+    <button
+      onClick={() => {
+        mockExplorerOnPress();
+        onPress?.('https://explorer/tx', 'Solscan');
+      }}
     >
       Explorer
     </button>
@@ -224,11 +225,7 @@ describe('TransactionDetailModal', () => {
 
   it('does not render when transaction is missing', () => {
     const { container } = render(
-      <TransactionDetailModal
-        visible
-        onClose={vi.fn()}
-        transaction={null as any}
-      />
+      <TransactionDetailModal visible onClose={vi.fn()} transaction={null as any} />
     );
 
     expect(container.innerHTML).toBe('');

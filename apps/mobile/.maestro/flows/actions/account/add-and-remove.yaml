@@ -4,74 +4,74 @@ appId: io.salmonwallet.app
 # lifecycle on a clean install.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 # Open WalletSwitcher
-- tapOn: "Switch wallet account"
+- tapOn: 'Switch wallet account'
 - waitForAnimationToEnd:
     timeout: 3000
-- assertVisible: "Your Wallets"
-- assertVisible: "Add New Account"
+- assertVisible: 'Your Wallets'
+- assertVisible: 'Add New Account'
 - takeScreenshot: screenshots/actions/account/wallets-before-add
 # Add Account 2
-- tapOn: "Add New Account"
+- tapOn: 'Add New Account'
 - waitForAnimationToEnd:
     timeout: 4000
-- assertVisible: "Add Account"
+- assertVisible: 'Add Account'
 - tapOn:
-    id: "account-add-method-derive"
+    id: 'account-add-method-derive'
 # Wait for the scan to actually render a row. "Scanning for accounts" can be
 # absent for a beat before the list appears, so keying off its disappearance
 # taps into an empty screen.
 - extendedWaitUntil:
-    visible: ".*Solana.*SOL"
+    visible: '.*Solana.*SOL'
     timeout: 90000
 # Select the derived row by its accessibility text (address + path + balance).
 # A point tap at the checkbox misses and leaves Continue disabled.
-- tapOn: ".*Solana.*SOL"
+- tapOn: '.*Solana.*SOL'
 - waitForAnimationToEnd:
     timeout: 2000
 - tapOn:
-    id: "account-add-derive-continue-button"
+    id: 'account-add-derive-continue-button'
 - extendedWaitUntil:
-    visible: "Account Name"
+    visible: 'Account Name'
     timeout: 20000
 # Confirm
-- tapOn: "Confirm"
+- tapOn: 'Confirm'
 - waitForAnimationToEnd:
     timeout: 15000
 # Confirm pops the panel back to the Settings sheet (not Home). Close it, then
 # re-open the wallet switcher to verify the new account.
 - extendedWaitUntil:
-    visible: "Settings"
+    visible: 'Settings'
     timeout: 30000
 - runFlow: ../../../subflows/settings-close.yaml
 - extendedWaitUntil:
-    visible: "Switch wallet account"
+    visible: 'Switch wallet account'
     timeout: 20000
-- tapOn: "Switch wallet account"
+- tapOn: 'Switch wallet account'
 - extendedWaitUntil:
-    visible: "Your Wallets"
+    visible: 'Your Wallets'
     timeout: 8000
 # The row's accessibility text is "Account 2, <short address>", and Maestro
 # full-matches, so a bare "Account 2" never matches.
-- assertVisible: "Account 2, .*"
+- assertVisible: 'Account 2, .*'
 - takeScreenshot: screenshots/actions/account/account-2-added
 # Trash icon on the Account 2 row.
 - tapOn:
-    point: "83%,26%"
+    point: '83%,26%'
 - extendedWaitUntil:
-    visible: "Delete Account?"
+    visible: 'Delete Account?'
     timeout: 5000
-- assertVisible: "Yes, remove"
-- tapOn: "Yes, remove"
+- assertVisible: 'Yes, remove'
+- tapOn: 'Yes, remove'
 - waitForAnimationToEnd:
     timeout: 5000
 # Re-open switcher to verify Account 2 gone
 - runFlow:
     when:
-      notVisible: "Your Wallets"
+      notVisible: 'Your Wallets'
     commands:
-      - tapOn: "Switch wallet account"
+      - tapOn: 'Switch wallet account'
       - waitForAnimationToEnd:
           timeout: 3000
-- assertVisible: "Your Wallets"
-- assertNotVisible: "Account 2, .*"
+- assertVisible: 'Your Wallets'
+- assertNotVisible: 'Account 2, .*'
 - takeScreenshot: screenshots/actions/account/account-2-removed

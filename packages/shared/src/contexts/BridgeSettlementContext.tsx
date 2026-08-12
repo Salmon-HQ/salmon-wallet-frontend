@@ -33,12 +33,7 @@ import type { BridgeTransaction } from '../types/bridge';
 import { getBridgeTransaction } from '../api/services/bridge';
 import { trackEvent, trackFirstTime } from '../analytics';
 import { useSettleAfterTx } from '../query/invalidation';
-import {
-  getStorageItem,
-  setStorageItem,
-  isStorageInitialized,
-  STORAGE_KEYS,
-} from '../storage';
+import { getStorageItem, setStorageItem, isStorageInitialized, STORAGE_KEYS } from '../storage';
 
 export interface PendingBridgeExchange {
   /** StealthEX exchange id — used to poll status. */
@@ -135,7 +130,7 @@ export function BridgeSettlementProvider({
 
   const trackBridgeExchange = useCallback((exchange: PendingBridgeExchange) => {
     setPendingExchanges((prev) =>
-      prev.some((p) => p.id === exchange.id) ? prev : [...prev, exchange],
+      prev.some((p) => p.id === exchange.id) ? prev : [...prev, exchange]
     );
   }, []);
 
@@ -152,7 +147,7 @@ export function BridgeSettlementProvider({
       if (isStorageInitialized()) {
         try {
           const stored = await getStorageItem<PendingBridgeExchange[]>(
-            STORAGE_KEYS.PENDING_BRIDGES,
+            STORAGE_KEYS.PENDING_BRIDGES
           );
           if (active && Array.isArray(stored) && stored.length > 0) {
             setPendingExchanges(stored);
@@ -259,7 +254,7 @@ export function BridgeSettlementProvider({
 
   const value = useMemo(
     () => ({ trackBridgeExchange, pendingExchanges, isStalled, retryNow }),
-    [trackBridgeExchange, pendingExchanges, isStalled, retryNow],
+    [trackBridgeExchange, pendingExchanges, isStalled, retryNow]
   );
 
   return (

@@ -9,10 +9,7 @@ import {
 import type { Address, Commitment, TransactionMessageBytes } from '@solana/kit';
 import { fetchMaybeAddressLookupTable } from '@solana-program/address-lookup-table';
 import { createRecentSignatureConfirmationPromiseFactory } from '@solana/transaction-confirmation';
-import type {
-  PreparedNftTransaction,
-  PreparedNftTransactionResponse,
-} from '../../types/nft';
+import type { PreparedNftTransaction, PreparedNftTransactionResponse } from '../../types/nft';
 import type { SolanaAccount } from './SolanaAccount';
 import type { SolanaRpc } from './networks';
 

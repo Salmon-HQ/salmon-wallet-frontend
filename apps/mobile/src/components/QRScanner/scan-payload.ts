@@ -61,10 +61,7 @@ function parsePayload(raw: string): ParsedPayload {
   };
 }
 
-export function classifyScanPayload(
-  raw: string,
-  activeChain: BlockchainType
-): ScanClassification {
+export function classifyScanPayload(raw: string, activeChain: BlockchainType): ScanClassification {
   const validator = VALIDATORS[activeChain];
   if (!validator) {
     return { kind: 'notAddress' };

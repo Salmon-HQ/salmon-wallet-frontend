@@ -60,7 +60,10 @@ describe('signAndSendPreparedSolanaTransactions golden vectors', () => {
     const rpcSubscriptions = {
       signatureNotifications: () => ({
         /* eslint-disable require-yield -- generator that completes without yielding; block form survives reformatting */
-        subscribe: async () => (async function* () { return; })(),
+        subscribe: async () =>
+          (async function* () {
+            return;
+          })(),
         /* eslint-enable require-yield */
       }),
     };

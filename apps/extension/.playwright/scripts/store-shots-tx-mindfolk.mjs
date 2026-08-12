@@ -26,10 +26,14 @@ const nftBody = mock('mock-nfts.json');
 const OFFSETS = [2 * 3600 + 1200, 30 * 3600, 54 * 3600, 102 * 3600, 150 * 3600];
 const txJson = JSON.parse(mock('mock-transactions.json'));
 const now = Math.floor(Date.now() / 1000);
-txJson.data.forEach((tx, i) => { tx.timestamp = now - OFFSETS[i]; });
+txJson.data.forEach((tx, i) => {
+  tx.timestamp = now - OFFSETS[i];
+});
 const txBody = JSON.stringify(txJson);
-console.log('staged rows:', txJson.data.map((t) =>
-  `${t.type}:${(t.inputs[0] ?? t.outputs[0])?.symbol}`).join(' '));
+console.log(
+  'staged rows:',
+  txJson.data.map((t) => `${t.type}:${(t.inputs[0] ?? t.outputs[0])?.symbol}`).join(' ')
+);
 
 const browser = await chromium.launch({ headless: false });
 const ctx = await browser.newContext({
@@ -38,11 +42,14 @@ const ctx = await browser.newContext({
   locale: 'en-US',
 });
 await ctx.route(/\/v1\/solana-mainnet\/account\/[^/]+\/balance/, (route) =>
-  route.fulfill({ status: 200, contentType: 'application/json', body: balanceBody }));
+  route.fulfill({ status: 200, contentType: 'application/json', body: balanceBody })
+);
 await ctx.route(/\/v1\/solana-mainnet\/account\/[^/]+\/transactions(\?|$)/, (route) =>
-  route.fulfill({ status: 200, contentType: 'application/json', body: txBody }));
+  route.fulfill({ status: 200, contentType: 'application/json', body: txBody })
+);
 await ctx.route(/\/v1\/solana-mainnet\/nft\?/, (route) =>
-  route.fulfill({ status: 200, contentType: 'application/json', body: nftBody }));
+  route.fulfill({ status: 200, contentType: 'application/json', body: nftBody })
+);
 
 const page = await ctx.newPage();
 
@@ -60,8 +67,14 @@ if (await recoverBtn.count()) {
   await page.getByTestId('password-input').fill(SECRETS.SALMON_TEST_PASSWORD);
   await page.getByTestId('password-confirm-input').fill(SECRETS.SALMON_TEST_PASSWORD);
   await page.getByTestId('password-submit-button').click();
-  await page.getByTestId('analytics-consent-decline').click({ timeout: 60000 }).catch(() => {});
-  await page.getByTestId('success-go-to-wallet-button').click({ timeout: 60000 }).catch(() => {});
+  await page
+    .getByTestId('analytics-consent-decline')
+    .click({ timeout: 60000 })
+    .catch(() => {});
+  await page
+    .getByTestId('success-go-to-wallet-button')
+    .click({ timeout: 60000 })
+    .catch(() => {});
 }
 await page.getByTestId('home-screen').waitFor({ state: 'visible', timeout: 30000 });
 await sleep(10000);
@@ -72,32 +85,47 @@ await sleep(6000);
 
 // Recovery assigns a random avatar; pin it to the one 01-home.png uses.
 const AVATAR = 'https://static.salmonwallet.io/avatar/08.png';
-const stageAvatar = () => page.evaluate((avatar) => {
-  let img = 0, bg = 0;
-  document.querySelectorAll('img').forEach((el) => {
-    if (/\/avatar\/\d\d\.png/.test(el.src) && el.src !== avatar) { el.src = avatar; img++; }
-  });
-  document.querySelectorAll('div').forEach((el) => {
-    const b = el.style.backgroundImage || '';
-    if (/\/avatar\/\d\d\.png/.test(b) && !b.includes(avatar)) {
-      el.style.backgroundImage = `url("${avatar}")`;
-      bg++;
-    }
-  });
-  return { img, bg };
-}, AVATAR);
+const stageAvatar = () =>
+  page.evaluate((avatar) => {
+    let img = 0,
+      bg = 0;
+    document.querySelectorAll('img').forEach((el) => {
+      if (/\/avatar\/\d\d\.png/.test(el.src) && el.src !== avatar) {
+        el.src = avatar;
+        img++;
+      }
+    });
+    document.querySelectorAll('div').forEach((el) => {
+      const b = el.style.backgroundImage || '';
+      if (/\/avatar\/\d\d\.png/.test(b) && !b.includes(avatar)) {
+        el.style.backgroundImage = `url("${avatar}")`;
+        bg++;
+      }
+    });
+    return { img, bg };
+  }, AVATAR);
 console.log('avatar pass 1:', JSON.stringify(await stageAvatar()));
 await sleep(2500);
 console.log('avatar pass 2:', JSON.stringify(await stageAvatar()));
 
 // Block on artwork actually being decoded — a pending arweave thumbnail ships as
 // a grey placeholder with no other symptom.
-await page.waitForFunction(() => {
-  const imgs = [...document.querySelectorAll('img')];
-  return imgs.length > 0 && imgs.every((i) => i.complete && i.naturalWidth > 0);
-}, null, { timeout: 60000 });
-console.log('images decoded:', await page.evaluate(() =>
-  [...document.querySelectorAll('img')].map((i) => `${i.naturalWidth}x${i.naturalHeight}`).join(' ')));
+await page.waitForFunction(
+  () => {
+    const imgs = [...document.querySelectorAll('img')];
+    return imgs.length > 0 && imgs.every((i) => i.complete && i.naturalWidth > 0);
+  },
+  null,
+  { timeout: 60000 }
+);
+console.log(
+  'images decoded:',
+  await page.evaluate(() =>
+    [...document.querySelectorAll('img')]
+      .map((i) => `${i.naturalWidth}x${i.naturalHeight}`)
+      .join(' ')
+  )
+);
 await sleep(2000);
 
 await page.screenshot({ path: path.join(OUT_DIR, '04-transactions.png'), fullPage: false });

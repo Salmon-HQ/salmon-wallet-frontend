@@ -23,7 +23,9 @@ describe('NFT shared section contract', () => {
 
   it('labels active NFT section titles', () => {
     expect(getNftSectionTitle('solana', INITIAL_NFT_SECTIONS.solana)).toBe('Solana');
-    expect(getNftSectionTitle('solana-devnet', INITIAL_NFT_SECTIONS['solana-devnet'])).toBe('Solana Devnet');
+    expect(getNftSectionTitle('solana-devnet', INITIAL_NFT_SECTIONS['solana-devnet'])).toBe(
+      'Solana Devnet'
+    );
   });
 });
 

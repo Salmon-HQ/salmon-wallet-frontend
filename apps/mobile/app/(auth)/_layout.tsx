@@ -37,65 +37,65 @@ export default function AuthLayout() {
           contentStyle: { backgroundColor: 'transparent' },
         }}
       >
-      {/* Welcome screen - entry point */}
-      <Stack.Screen
-        name="index"
-        options={{
-          // Can't go back from welcome
-          gestureEnabled: false,
-        }}
-      />
+        {/* Welcome screen - entry point */}
+        <Stack.Screen
+          name="index"
+          options={{
+            // Can't go back from welcome
+            gestureEnabled: false,
+          }}
+        />
 
-      {/* Recover wallet with seed phrase */}
-      <Stack.Screen name="recover" />
+        {/* Recover wallet with seed phrase */}
+        <Stack.Screen name="recover" />
 
-      {/* Create new wallet */}
-      <Stack.Screen name="create" />
+        {/* Create new wallet */}
+        <Stack.Screen name="create" />
 
-      {/* Set password */}
-      <Stack.Screen
-        name="password"
-        options={{
-          // Don't allow back gesture during password setup
-          // to prevent accidentally losing progress
-          gestureEnabled: false,
-        }}
-      />
+        {/* Set password */}
+        <Stack.Screen
+          name="password"
+          options={{
+            // Don't allow back gesture during password setup
+            // to prevent accidentally losing progress
+            gestureEnabled: false,
+          }}
+        />
 
-      {/* Biometric setup prompt */}
-      <Stack.Screen
-        name="biometric-setup"
-        options={{
-          gestureEnabled: false,
-        }}
-      />
+        {/* Biometric setup prompt */}
+        <Stack.Screen
+          name="biometric-setup"
+          options={{
+            gestureEnabled: false,
+          }}
+        />
 
-      {/* First-run anonymous-analytics consent (final onboarding step) */}
-      <Stack.Screen
-        name="analytics-consent"
-        options={{
-          gestureEnabled: false,
-        }}
-      />
+        {/* First-run anonymous-analytics consent (final onboarding step) */}
+        <Stack.Screen
+          name="analytics-consent"
+          options={{
+            gestureEnabled: false,
+          }}
+        />
 
-      {/* Success confirmation */}
-      <Stack.Screen
-        name="success"
-        options={{
-          // Can't go back from success
-          gestureEnabled: false,
-        }}
-      />
+        {/* Success confirmation */}
+        <Stack.Screen
+          name="success"
+          options={{
+            // Can't go back from success
+            gestureEnabled: false,
+          }}
+        />
 
-      {/* Derived accounts selection */}
-      <Stack.Screen
-        name="derived-accounts"
-        options={{
-          // Can't go back from derived accounts
-          gestureEnabled: false,
-        }}
-      />
-    </Stack>
+        {/* Derived accounts selection */}
+        <Stack.Screen
+          name="derived-accounts"
+          options={{
+            // Can't go back from derived accounts
+            gestureEnabled: false,
+          }}
+        />
+      </Stack>
     </View>
   );
 }

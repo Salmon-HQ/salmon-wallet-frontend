@@ -3,12 +3,12 @@ appId: io.salmonwallet.app
 # Open the Activity sheet from the Home action chip.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - assertVisible:
-    id: "wallet-header-account-switcher"
+    id: 'wallet-header-account-switcher'
 - tapOn:
-    id: "home-activity-button"
+    id: 'home-activity-button'
 - assertVisible:
-    id: "activity-list"
+    id: 'activity-list'
 - takeScreenshot: screenshots/smoke/activity/list
 - runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
 - assertVisible:
-    id: "wallet-header-account-switcher"
+    id: 'wallet-header-account-switcher'

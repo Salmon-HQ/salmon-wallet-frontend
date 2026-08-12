@@ -1,7 +1,16 @@
 // Phase 1 extras-2: NFT refresh+detail, dApp sign message (read-only), Security
 // panel deep inspection for lock action.
-import { launch, capture, sleep, openPopup, unlockOrRecover, waitHome, tapConsole, reportsRoot } from "./lib.mjs";
-import path from "node:path";
+import {
+  launch,
+  capture,
+  sleep,
+  openPopup,
+  unlockOrRecover,
+  waitHome,
+  tapConsole,
+  reportsRoot,
+} from './lib.mjs';
+import path from 'node:path';
 import fs from 'node:fs';
 
 const log = (m) => console.log('▶ ' + m);
@@ -44,7 +53,9 @@ async function testNftDetailHot() {
   log('  collectibles state: ' + listText.slice(0, 150).replace(/\n/g, ' | '));
 
   if (/No collectibles found/i.test(listText)) {
-    findings.push('NFT list (hot): empty — Helius DAS API likely not returning. Need 2nd refresh after backend warm-up.');
+    findings.push(
+      'NFT list (hot): empty — Helius DAS API likely not returning. Need 2nd refresh after backend warm-up.'
+    );
     await popup.close();
     return;
   }
@@ -53,7 +64,11 @@ async function testNftDetailHot() {
   const strategies = [
     () => popup.locator('img[alt*="Mindfolk"]').first(),
     () => popup.locator('img[alt*="Salmon"]').first(),
-    () => popup.locator('[role="button"]').filter({ hasText: /Mindfolk|Salmon Logo/ }).first(),
+    () =>
+      popup
+        .locator('[role="button"]')
+        .filter({ hasText: /Mindfolk|Salmon Logo/ })
+        .first(),
     () => popup.locator('img').nth(2),
   ];
   let opened = false;
@@ -66,7 +81,9 @@ async function testNftDetailHot() {
       if (/Send|Burn|Description|Properties|Collection|Owner/i.test(t)) {
         opened = true;
         await capture(popup, 'nft-hot', '02-detail');
-        const keys = (t.match(/Send|Burn|Description|Properties|Collection|Owner/g) || []).join(',');
+        const keys = (t.match(/Send|Burn|Description|Properties|Collection|Owner/g) || []).join(
+          ','
+        );
         findings.push('NFT detail: opened, sections=' + keys);
         break;
       }
@@ -89,14 +106,16 @@ async function testDappSignMessage() {
   await capture(dapp, 'dapp-sign', '01-jup');
 
   // Extract injected wallet provider. wallet-standard registers via window.
-  const providers = await dapp.evaluate(() => {
-    const list = [];
-    // Wallet-standard discovery: window.dispatchEvent + a global registry
-    const w = window;
-    if (w.solana) list.push('window.solana keys=' + Object.keys(w.solana).slice(0, 8).join(','));
-    if (w.salmon) list.push('window.salmon keys=' + Object.keys(w.salmon).slice(0, 8).join(','));
-    return list;
-  }).catch((e) => ['eval err: ' + e.message]);
+  const providers = await dapp
+    .evaluate(() => {
+      const list = [];
+      // Wallet-standard discovery: window.dispatchEvent + a global registry
+      const w = window;
+      if (w.solana) list.push('window.solana keys=' + Object.keys(w.solana).slice(0, 8).join(','));
+      if (w.salmon) list.push('window.salmon keys=' + Object.keys(w.salmon).slice(0, 8).join(','));
+      return list;
+    })
+    .catch((e) => ['eval err: ' + e.message]);
   log('  providers: ' + providers.join(' | '));
 
   // Try to drive signMessage via wallet-standard. If Jupiter's connect button
@@ -104,7 +123,9 @@ async function testDappSignMessage() {
   // is complex (needs a real wallet flow). Instead, we observe whether the
   // approval popup pattern works when triggered programmatically.
   findings.push('dApp sign message: observed providers via jup.ag — ' + providers.join('; '));
-  findings.push('dApp sign message: full programmatic signMessage requires wallet-standard adapter scripting; deferred for focused script');
+  findings.push(
+    'dApp sign message: full programmatic signMessage requires wallet-standard adapter scripting; deferred for focused script'
+  );
 
   await dapp.close();
 }
@@ -124,23 +145,27 @@ async function testSecurityPanel() {
   await capture(popup, 'security-deep', '01-panel');
 
   // Scroll inside the panel to reveal hidden actions
-  await popup.evaluate(() => {
-    const dlg = document.querySelector('[role="presentation"]') || document.body;
-    dlg.scrollTop = dlg.scrollHeight;
-  }).catch(() => {});
+  await popup
+    .evaluate(() => {
+      const dlg = document.querySelector('[role="presentation"]') || document.body;
+      dlg.scrollTop = dlg.scrollHeight;
+    })
+    .catch(() => {});
   await sleep(800);
   await capture(popup, 'security-deep', '02-scrolled');
 
   // Inventory all buttons in panel
-  const buttons = await popup.$$eval(
-    '[role="button"]',
-    (els) => els.map((e) => e.getAttribute('aria-label') || e.textContent?.trim().slice(0, 60)),
+  const buttons = await popup.$$eval('[role="button"]', (els) =>
+    els.map((e) => e.getAttribute('aria-label') || e.textContent?.trim().slice(0, 60))
   );
   const lockHits = buttons.filter((b) => b && /lock|sign out|logout/i.test(b));
   log('  buttons in panel: ' + buttons.length);
   log('  lock-related: ' + (lockHits.length ? lockHits.join(', ') : '(none)'));
   findings.push(
-    'Security panel: ' + buttons.length + ' buttons; lock-related=' + (lockHits.length ? lockHits.join(',') : 'NONE'),
+    'Security panel: ' +
+      buttons.length +
+      ' buttons; lock-related=' +
+      (lockHits.length ? lockHits.join(',') : 'NONE')
   );
 
   // Check entire popup body for any lock action outside Security
@@ -155,7 +180,17 @@ await testSecurityPanel().catch((e) => log('  H err: ' + e.message));
 fs.mkdirSync(reportsRoot, { recursive: true });
 fs.writeFileSync(
   path.join(reportsRoot, 'PHASE1-DAPP-PROVIDERS.md'),
-  ['# Phase 1 extras-2 — ' + new Date().toISOString(), '', '## Findings', ...findings.map((f) => '- ' + f), '', '## Errors', '```', errors.length ? errors.join('\n') : '(none)', '```'].join('\n'),
+  [
+    '# Phase 1 extras-2 — ' + new Date().toISOString(),
+    '',
+    '## Findings',
+    ...findings.map((f) => '- ' + f),
+    '',
+    '## Errors',
+    '```',
+    errors.length ? errors.join('\n') : '(none)',
+    '```',
+  ].join('\n')
 );
 
 await ctx.close();

@@ -1,4 +1,11 @@
-import React, { useState, useCallback, useEffect, useRef, type FormEvent, type ChangeEvent } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  type FormEvent,
+  type ChangeEvent,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { styled } from '@salmon/ui';
@@ -7,12 +14,18 @@ import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
 import { PrimaryButton, ConfirmDialog, LoadingScreen } from '@salmon/ui';
 import {
-  colors, fontFamily, fontSize, fontWeight, spacing, componentSizes,
-  useAccountsContext, type DerivedKeyCache, getStashItem, STASH_KEYS,
+  colors,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  spacing,
+  componentSizes,
+  useAccountsContext,
+  type DerivedKeyCache,
+  getStashItem,
+  STASH_KEYS,
 } from '@salmon/shared';
-import {
-  storeSessionKey, clearSessionKey,
-} from '../../utils/sessionKeyCache';
+import { storeSessionKey, clearSessionKey } from '../../utils/sessionKeyCache';
 
 const Container = styled(Box)({
   display: 'flex',
@@ -119,39 +132,50 @@ export function LockPage(): React.ReactElement {
     void clearSessionKey();
   }, []);
 
-  const handlePasswordChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
-    if (error) setError(null);
-  }, [error]);
+  const handlePasswordChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setPassword(e.target.value);
+      if (error) setError(null);
+    },
+    [error]
+  );
 
-  const handleSubmit = useCallback(async (e: FormEvent) => {
-    e.preventDefault();
-    if (!password.trim()) { setError(t('lock.error.empty_password', 'Please enter your password')); return; }
-
-    setShowLoadingScreen(true);
-    setIsUnlocking(true);
-    setError(null);
-
-    try {
-      const success = await actions.unlockAccounts(password);
-      if (!success) {
-        setError(t('lock.error.invalid_password', 'Invalid password'));
-        setPassword('');
-        setShowLoadingScreen(false);
-      } else {
-        try {
-          const derivedKey = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
-          if (derivedKey) await storeSessionKey(derivedKey);
-        } catch { /* cache miss is ok */ }
-        navigate('/home', { replace: true });
+  const handleSubmit = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault();
+      if (!password.trim()) {
+        setError(t('lock.error.empty_password', 'Please enter your password'));
+        return;
       }
-    } catch {
-      setError(t('lock.error.unlock_failed', 'Failed to unlock wallet'));
-      setShowLoadingScreen(false);
-    } finally {
-      setIsUnlocking(false);
-    }
-  }, [password, actions, t, navigate]);
+
+      setShowLoadingScreen(true);
+      setIsUnlocking(true);
+      setError(null);
+
+      try {
+        const success = await actions.unlockAccounts(password);
+        if (!success) {
+          setError(t('lock.error.invalid_password', 'Invalid password'));
+          setPassword('');
+          setShowLoadingScreen(false);
+        } else {
+          try {
+            const derivedKey = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
+            if (derivedKey) await storeSessionKey(derivedKey);
+          } catch {
+            /* cache miss is ok */
+          }
+          navigate('/home', { replace: true });
+        }
+      } catch {
+        setError(t('lock.error.unlock_failed', 'Failed to unlock wallet'));
+        setShowLoadingScreen(false);
+      } finally {
+        setIsUnlocking(false);
+      }
+    },
+    [password, actions, t, navigate]
+  );
 
   const handleFinalConfirm = useCallback(async () => {
     try {
@@ -188,10 +212,21 @@ export function LockPage(): React.ReactElement {
               />
               {error && <ErrorText>{error}</ErrorText>}
             </InputContainer>
-            <PrimaryButton type="submit" disabled={!password.trim()} loading={isUnlocking} fullWidth testID="lock-unlock-button">
+            <PrimaryButton
+              type="submit"
+              disabled={!password.trim()}
+              loading={isUnlocking}
+              fullWidth
+              testID="lock-unlock-button"
+            >
               {t('lock.unlock', 'Unlock')}
             </PrimaryButton>
-            <ForgotPasswordButton type="button" onClick={() => setShowResetDialog(true)} disabled={isUnlocking} data-testid="lock-forgot-password-button">
+            <ForgotPasswordButton
+              type="button"
+              onClick={() => setShowResetDialog(true)}
+              disabled={isUnlocking}
+              data-testid="lock-forgot-password-button"
+            >
               {t('lock.forgot_password', 'I forgot my password')}
             </ForgotPasswordButton>
           </Form>
@@ -201,11 +236,17 @@ export function LockPage(): React.ReactElement {
           visible={showResetDialog}
           onClose={() => setShowResetDialog(false)}
           title={t('lock.reset_wallet.title', 'Reset Wallet')}
-          message={t('lock.reset_wallet.message', 'This will permanently delete all accounts and data. You can restore using your seed phrase.')}
+          message={t(
+            'lock.reset_wallet.message',
+            'This will permanently delete all accounts and data. You can restore using your seed phrase.'
+          )}
           confirmText={t('lock.reset_wallet.reset', 'Reset Wallet')}
           cancelText={t('lock.reset_wallet.cancel', 'Cancel')}
           isDanger
-          onConfirm={async () => { setShowResetDialog(false); setShowConfirmDialog(true); }}
+          onConfirm={async () => {
+            setShowResetDialog(false);
+            setShowConfirmDialog(true);
+          }}
         />
 
         <ConfirmDialog
@@ -220,7 +261,12 @@ export function LockPage(): React.ReactElement {
         />
       </Container>
 
-      <LoadingScreen visible={showLoadingScreen} title={t('lock.unlocking')} showTips tipInterval={3000} />
+      <LoadingScreen
+        visible={showLoadingScreen}
+        title={t('lock.unlocking')}
+        showTips
+        tipInterval={3000}
+      />
     </>
   );
 }

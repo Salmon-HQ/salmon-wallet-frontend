@@ -119,15 +119,21 @@ export function SecurityPanel({
     } finally {
       setLoading(false);
     }
-  }, [currentPassword, newPassword, confirmPassword, passwordValidation.isValid, accountActions, onPasswordChanged, t]);
+  }, [
+    currentPassword,
+    newPassword,
+    confirmPassword,
+    passwordValidation.isValid,
+    accountActions,
+    onPasswordChanged,
+    t,
+  ]);
 
   return (
     <SettingsPanelContent title={t('settings.security.title')} onBack={onBack}>
       <Box sx={{ padding: `0 ${spacing.lg}px` }}>
         <Section>
-          <SectionTitle>
-            {t('settings.security.change_password')}
-          </SectionTitle>
+          <SectionTitle>{t('settings.security.change_password')}</SectionTitle>
 
           <InputGroup>
             <PasswordInput
@@ -169,13 +175,27 @@ export function SecurityPanel({
           </InputGroup>
 
           {error && (
-            <Alert severity="error" sx={{ marginBottom: spacing.md, backgroundColor: colors.status.errorBackground, color: colors.status.error }}>
+            <Alert
+              severity="error"
+              sx={{
+                marginBottom: spacing.md,
+                backgroundColor: colors.status.errorBackground,
+                color: colors.status.error,
+              }}
+            >
               {error}
             </Alert>
           )}
 
           {success && (
-            <Alert severity="success" sx={{ marginBottom: spacing.md, backgroundColor: colors.status.successBackground, color: colors.status.success }}>
+            <Alert
+              severity="success"
+              sx={{
+                marginBottom: spacing.md,
+                backgroundColor: colors.status.successBackground,
+                color: colors.status.success,
+              }}
+            >
               {success}
             </Alert>
           )}

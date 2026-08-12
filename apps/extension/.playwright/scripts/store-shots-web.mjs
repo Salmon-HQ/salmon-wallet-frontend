@@ -25,11 +25,14 @@ const ctx = await browser.newContext({
 // Staged demo portfolio: intercept the three data endpoints, leave prices,
 // networks, swap quotes, and images live.
 await ctx.route(/\/v1\/solana-mainnet\/account\/[^/]+\/balance/, (route) =>
-  route.fulfill({ status: 200, contentType: 'application/json', body: balanceBody }));
+  route.fulfill({ status: 200, contentType: 'application/json', body: balanceBody })
+);
 await ctx.route(/\/v1\/solana-mainnet\/account\/[^/]+\/transactions(\?|$)/, (route) =>
-  route.fulfill({ status: 200, contentType: 'application/json', body: txBody }));
+  route.fulfill({ status: 200, contentType: 'application/json', body: txBody })
+);
 await ctx.route(/\/v1\/solana-mainnet\/nft\?/, (route) =>
-  route.fulfill({ status: 200, contentType: 'application/json', body: nftBody }));
+  route.fulfill({ status: 200, contentType: 'application/json', body: nftBody })
+);
 
 const page = await ctx.newPage();
 
@@ -39,10 +42,15 @@ async function shot(name) {
 }
 async function step(name, fn) {
   for (let attempt = 1; attempt <= 2; attempt++) {
-    try { await fn(); return; } catch (e) {
+    try {
+      await fn();
+      return;
+    } catch (e) {
       console.log((attempt === 2 ? 'SKIP ' : 'RETRY ') + name + ': ' + e.message.split('\n')[0]);
       if (attempt === 2) {
-        await page.screenshot({ path: path.join(MOCK_DIR, 'fail-' + name + '.png') }).catch(() => {});
+        await page
+          .screenshot({ path: path.join(MOCK_DIR, 'fail-' + name + '.png') })
+          .catch(() => {});
       }
       await sleep(3000);
     }
@@ -63,8 +71,14 @@ if (await recoverBtn.count()) {
   await page.getByTestId('password-input').fill(SECRETS.SALMON_TEST_PASSWORD);
   await page.getByTestId('password-confirm-input').fill(SECRETS.SALMON_TEST_PASSWORD);
   await page.getByTestId('password-submit-button').click();
-  await page.getByTestId('analytics-consent-decline').click({ timeout: 60000 }).catch(() => {});
-  await page.getByTestId('success-go-to-wallet-button').click({ timeout: 60000 }).catch(() => {});
+  await page
+    .getByTestId('analytics-consent-decline')
+    .click({ timeout: 60000 })
+    .catch(() => {});
+  await page
+    .getByTestId('success-go-to-wallet-button')
+    .click({ timeout: 60000 })
+    .catch(() => {});
 }
 await page.getByTestId('home-screen').waitFor({ state: 'visible', timeout: 30000 });
 await sleep(10000); // balances + token logos
@@ -92,8 +106,14 @@ await step('swap', async () => {
     await pageB.getByTestId('password-input').fill(SECRETS.SALMON_TEST_PASSWORD);
     await pageB.getByTestId('password-confirm-input').fill(SECRETS.SALMON_TEST_PASSWORD);
     await pageB.getByTestId('password-submit-button').click();
-    await pageB.getByTestId('analytics-consent-decline').click({ timeout: 60000 }).catch(() => {});
-    await pageB.getByTestId('success-go-to-wallet-button').click({ timeout: 60000 }).catch(() => {});
+    await pageB
+      .getByTestId('analytics-consent-decline')
+      .click({ timeout: 60000 })
+      .catch(() => {});
+    await pageB
+      .getByTestId('success-go-to-wallet-button')
+      .click({ timeout: 60000 })
+      .catch(() => {});
     await pageB.getByTestId('home-screen').waitFor({ state: 'visible', timeout: 30000 });
     await sleep(6000);
     await pageB.getByTestId('tab-swap').click({ timeout: 10000 });
@@ -103,7 +123,10 @@ await step('swap', async () => {
     if (await sel.count()) {
       await sel.click({ timeout: 10000 });
       await sleep(2000);
-      await pageB.getByRole('button', { name: /^Select Solana/i }).first().click({ timeout: 10000 });
+      await pageB
+        .getByRole('button', { name: /^Select Solana/i })
+        .first()
+        .click({ timeout: 10000 });
       await sleep(3000);
     }
     const half = pageB.getByRole('button', { name: '50%' }).first();
@@ -136,9 +159,15 @@ await step('activity', async () => {
 // 05 settings (open over Home)
 await step('settings', async () => {
   const back = page.getByRole('button', { name: /^(back|go back)$/i }).first();
-  if (await back.count()) { await back.click().catch(() => {}); await sleep(1500); }
+  if (await back.count()) {
+    await back.click().catch(() => {});
+    await sleep(1500);
+  }
   const homeTab = page.getByTestId('tab-home');
-  if (await homeTab.count()) { await homeTab.click().catch(() => {}); await sleep(2000); }
+  if (await homeTab.count()) {
+    await homeTab.click().catch(() => {});
+    await sleep(2000);
+  }
   await page.getByTestId('wallet-header-settings-button').click({ timeout: 10000 });
   await sleep(2500);
   await shot('05-settings.png');

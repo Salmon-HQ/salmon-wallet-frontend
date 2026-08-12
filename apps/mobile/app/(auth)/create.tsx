@@ -153,10 +153,7 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
 
   return (
     <>
-      <ScreenHeader
-        onBack={onBack}
-        stepIndicator={{ totalSteps: 3, currentStep: 1 }}
-      />
+      <ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 3, currentStep: 1 }} />
 
       {/* Content */}
       <ScrollView
@@ -182,7 +179,11 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
 
         {/* Copy Button */}
         <View style={styles.copyButtonContainer}>
-          <SecondaryButton onPress={handleCopy} style={styles.button} testID="create-copy-seed-button">
+          <SecondaryButton
+            onPress={handleCopy}
+            style={styles.button}
+            testID="create-copy-seed-button"
+          >
             {t('wallet.create.copy_key').toUpperCase()}
           </SecondaryButton>
         </View>
@@ -255,10 +256,7 @@ function ValidateStep({ mnemonic, onComplete, onBack, t }: ValidateStepProps) {
 
   return (
     <>
-      <ScreenHeader
-        onBack={onBack}
-        stepIndicator={{ totalSteps: 3, currentStep: 2 }}
-      />
+      <ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 3, currentStep: 2 }} />
 
       {/* Content */}
       <KeyboardAvoidingView
@@ -377,9 +375,7 @@ export default function CreateWalletScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      {step === 'message' && (
-        <MessageStep onNext={handleStart} onBack={handleBack} t={t} />
-      )}
+      {step === 'message' && <MessageStep onNext={handleStart} onBack={handleBack} t={t} />}
 
       {step === 'seedPhrase' && (
         <SeedPhraseStep

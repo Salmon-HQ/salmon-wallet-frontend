@@ -9,7 +9,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@salmon/shared/utils/': fileURLToPath(new URL('../../packages/shared/src/utils/', import.meta.url)),
+      '@salmon/shared/utils/': fileURLToPath(
+        new URL('../../packages/shared/src/utils/', import.meta.url)
+      ),
     },
   },
 });

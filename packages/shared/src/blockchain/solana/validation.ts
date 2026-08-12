@@ -32,7 +32,8 @@ export type { ValidationResult, ValidationResultType, ValidationResultCode, Addr
 // ============================================================================
 
 // Shared constants from types/validation
-const { VALID_DOMAIN, NO_INFO, INVALID_ADDRESS, INVALID_DOMAIN, NETWORK_ERROR } = VALIDATION_RESULTS;
+const { VALID_DOMAIN, NO_INFO, INVALID_ADDRESS, INVALID_DOMAIN, NETWORK_ERROR } =
+  VALIDATION_RESULTS;
 
 // Chain-specific constants
 const VALID_ACCOUNT: ValidationResult = {
@@ -90,10 +91,7 @@ function isDomainLike(address: string): boolean {
  * @param address - Address string to validate
  * @returns Validation result
  */
-async function validatePublicKey(
-  rpc: SolanaRpc,
-  address: string
-): Promise<ValidationResult> {
+async function validatePublicKey(rpc: SolanaRpc, address: string): Promise<ValidationResult> {
   if (!isAddress(address)) {
     return INVALID_ADDRESS;
   }
@@ -138,10 +136,7 @@ async function validatePublicKey(
  * @param domain - Domain name to validate and resolve
  * @returns Validation result with resolved address if successful
  */
-async function validateDomain(
-  rpc: SolanaRpc,
-  domain: string
-): Promise<ValidationResult> {
+async function validateDomain(rpc: SolanaRpc, domain: string): Promise<ValidationResult> {
   let resolvedAddress;
   try {
     resolvedAddress = await getPublicKeyFromDomain(rpc, domain);

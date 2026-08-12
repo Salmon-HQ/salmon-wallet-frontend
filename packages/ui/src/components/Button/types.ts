@@ -23,7 +23,7 @@ export interface ButtonBaseProps extends Testable {
   type?: 'button' | 'submit' | 'reset';
 }
 
-export interface PrimaryButtonProps extends ButtonBaseProps { }
+export interface PrimaryButtonProps extends ButtonBaseProps {}
 
 export interface SecondaryButtonProps extends ButtonBaseProps {
   /** Variant style */

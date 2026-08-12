@@ -168,14 +168,14 @@ export function DerivedAccountsPage({
       if (cancelled) return;
 
       const networkIds = Object.keys(activeAccount.networksAccounts).filter((id) =>
-        scanNetworks.includes(id),
+        scanNetworks.includes(id)
       );
 
       const { accounts: results, failedNetworks } = await scanDerivedAccounts(
         mnemonic,
         networkIds,
         undefined,
-        () => cancelled,
+        () => cancelled
       );
 
       if (!cancelled) {
@@ -202,8 +202,8 @@ export function DerivedAccountsPage({
       prev.map((account) =>
         `${account.networkId}-${account.index}` === key
           ? { ...account, selected: !account.selected }
-          : account,
-      ),
+          : account
+      )
     );
   }, []);
 
@@ -234,7 +234,7 @@ export function DerivedAccountsPage({
             const mirrorAccount = await deriveBlockchainAccount(
               mnemonic,
               mirrorNetworkId,
-              account.index,
+              account.index
             );
             newDerivedAccounts.push(mirrorAccount);
           } catch {
@@ -311,7 +311,9 @@ export function DerivedAccountsPage({
               balanceFormatted={account.balanceFormatted}
               selected={account.selected}
               dimmed={account.balance === 0}
-              blockchain={NETWORK_DISPLAY[account.networkId]?.blockchain as 'solana' | 'bitcoin' | 'ethereum'}
+              blockchain={
+                NETWORK_DISPLAY[account.networkId]?.blockchain as 'solana' | 'bitcoin' | 'ethereum'
+              }
               onToggle={() => handleToggleAccount(key)}
             />
           );

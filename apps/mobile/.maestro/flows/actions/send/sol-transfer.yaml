@@ -3,51 +3,51 @@ appId: io.salmonwallet.app
 # Send 0.001 SOL → Wallet B Solana address. Fires a real on-chain tx.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - tapOn:
-    id: "home-send-button"
-- assertVisible: "Select Token"
+    id: 'home-send-button'
+- assertVisible: 'Select Token'
 # The token list is populated from the balance query, which is still in flight
 # right after onboarding. Wait for the SOL row instead of tapping into an empty
 # list.
 - extendedWaitUntil:
     visible:
-      id: "send-token-row-SOL"
+      id: 'send-token-row-SOL'
     timeout: 30000
 - tapOn:
-    id: "send-token-row-SOL"
+    id: 'send-token-row-SOL'
 - waitForAnimationToEnd:
     timeout: 4000
 - tapOn:
-    id: "send-recipient-input"
+    id: 'send-recipient-input'
 - inputText: ${SALMON_TEST_WALLET_B_ADDR}
 - waitForAnimationToEnd:
     timeout: 3000
 - tapOn:
-    id: "send-amount-input"
-- inputText: "0.001"
+    id: 'send-amount-input'
+- inputText: '0.001'
 - waitForAnimationToEnd:
     timeout: 2000
 # Tap Recipient label to dismiss numeric keyboard
-- tapOn: "Recipient"
+- tapOn: 'Recipient'
 - waitForAnimationToEnd:
     timeout: 2000
 - tapOn:
-    id: "send-review-button"
+    id: 'send-review-button'
 - extendedWaitUntil:
     visible:
-      id: "send-confirm-button"
+      id: 'send-confirm-button'
     timeout: 10000
 - takeScreenshot: screenshots/actions/send/send-confirm-screen
 - tapOn:
-    id: "send-confirm-button"
+    id: 'send-confirm-button'
 - extendedWaitUntil:
-    visible: "Send Complete"
+    visible: 'Send Complete'
     timeout: 60000
 - takeScreenshot: screenshots/actions/send/send-success
 - tapOn:
-    id: "tx-success-continue-button"
+    id: 'tx-success-continue-button'
 - extendedWaitUntil:
     visible:
-      id: "wallet-header-account-switcher"
+      id: 'wallet-header-account-switcher'
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 8000

@@ -62,10 +62,7 @@ function getFeatureIcon(feature: TokenFeature): string {
 /**
  * Individual feature badge component
  */
-const FeatureBadge: React.FC<{ feature: TokenFeature; index: number }> = ({
-  feature,
-  index,
-}) => {
+const FeatureBadge: React.FC<{ feature: TokenFeature; index: number }> = ({ feature, index }) => {
   const color = getFeatureColor(feature, index);
   const iconName = getFeatureIcon(feature);
 
@@ -128,7 +125,14 @@ export const TokenFeatures: React.FC<TokenFeaturesProps> = ({
               backgroundColor={colors.skeleton.base}
               foregroundColor={colors.skeleton.highlight}
             >
-              <Rect x="0" y="0" rx={badgeHeight / 2} ry={badgeHeight / 2} width={badgeWidth} height={badgeHeight} />
+              <Rect
+                x="0"
+                y="0"
+                rx={badgeHeight / 2}
+                ry={badgeHeight / 2}
+                width={badgeWidth}
+                height={badgeHeight}
+              />
             </ContentLoader>
           ))}
         </ScrollView>

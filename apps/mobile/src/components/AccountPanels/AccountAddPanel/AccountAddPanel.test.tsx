@@ -89,13 +89,7 @@ jest.mock('../../Button', () => ({
 }));
 
 jest.mock('../../DerivedAccountCard', () => ({
-  DerivedAccountCard: ({
-    address,
-    onToggle,
-  }: {
-    address: string;
-    onToggle?: () => void;
-  }) => {
+  DerivedAccountCard: ({ address, onToggle }: { address: string; onToggle?: () => void }) => {
     const React = require('react');
     const { TouchableOpacity, Text } = require('react-native');
     return React.createElement(
@@ -137,7 +131,10 @@ describe('AccountAddPanel', () => {
     render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
 
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
-    fireEvent.changeText(screen.getByPlaceholderText('settings.account_add.seed_placeholder'), 'bad seed');
+    fireEvent.changeText(
+      screen.getByPlaceholderText('settings.account_add.seed_placeholder'),
+      'bad seed'
+    );
     fireEvent.press(screen.getByText('actions.continue'));
 
     expect(screen.getByText('wallet.create.invalidSeed')).toBeTruthy();
@@ -149,7 +146,10 @@ describe('AccountAddPanel', () => {
     render(<AccountAddPanel onComplete={onComplete} onBack={jest.fn()} />);
 
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
-    fireEvent.changeText(screen.getByPlaceholderText('settings.account_add.seed_placeholder'), '  valid   seed phrase  ');
+    fireEvent.changeText(
+      screen.getByPlaceholderText('settings.account_add.seed_placeholder'),
+      '  valid   seed phrase  '
+    );
     fireEvent.press(screen.getByText('actions.continue'));
 
     await waitFor(() => {
@@ -180,7 +180,7 @@ describe('AccountAddPanel', () => {
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
     fireEvent.changeText(
       screen.getByPlaceholderText('settings.account_add.seed_placeholder'),
-      'valid seed phrase',
+      'valid seed phrase'
     );
     fireEvent.press(screen.getByText('actions.continue'));
 
@@ -193,7 +193,7 @@ describe('AccountAddPanel', () => {
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(
         'general.error',
-        'settings.account_add.session_expired',
+        'settings.account_add.session_expired'
       );
     });
   });
@@ -205,7 +205,7 @@ describe('AccountAddPanel', () => {
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
     fireEvent.changeText(
       screen.getByPlaceholderText('settings.account_add.seed_placeholder'),
-      'valid seed phrase',
+      'valid seed phrase'
     );
     fireEvent.press(screen.getByText('actions.continue'));
 
@@ -218,7 +218,7 @@ describe('AccountAddPanel', () => {
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(
         'general.error',
-        'settings.account_add.creation_error',
+        'settings.account_add.creation_error'
       );
     });
   });

@@ -65,7 +65,7 @@ export interface SolanaTransactionApprovalDetails {
  * so the map is always built from the message's own signer order.
  */
 function emptySignatureMap(
-  message: ParsedSolanaTransaction['message'],
+  message: ParsedSolanaTransaction['message']
 ): Record<Address, SignatureBytes | null> {
   const signatures: Record<Address, SignatureBytes | null> = {};
   for (const signer of message.staticAccounts.slice(0, message.header.numSignerAccounts)) {
@@ -114,7 +114,9 @@ function toHex(bytes: Uint8Array): string {
 export function isSecureOrigin(origin: string): boolean {
   try {
     const url = new URL(origin);
-    return url.protocol === 'https:' || url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+    return (
+      url.protocol === 'https:' || url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+    );
   } catch {
     return false;
   }
@@ -139,7 +141,9 @@ export function decodeDAppMessage(data: number[]): DecodedDAppMessage {
  * both decode through the same codec — `message.version` tells them apart — and
  * the raw bytes are carried alongside so callers never have to re-serialize.
  */
-export function buildTransactionFromEncodedMessage(encodedMessage: string): ParsedSolanaTransaction {
+export function buildTransactionFromEncodedMessage(
+  encodedMessage: string
+): ParsedSolanaTransaction {
   const messageBytes = bs58.decode(encodedMessage);
   return {
     messageBytes,
@@ -161,7 +165,7 @@ export class TransactionLookalikeMessageError extends Error {
       'This message cannot be signed as plain text because it decodes as a Solana ' +
         'transaction. Signing it here would let this app move funds without a proper ' +
         'transaction approval. Ask the app to use signTransaction or ' +
-        'solana:signOffchainMessage instead.',
+        'solana:signOffchainMessage instead.'
     );
     this.name = 'TransactionLookalikeMessageError';
     Object.setPrototypeOf(this, TransactionLookalikeMessageError.prototype);
@@ -189,24 +193,25 @@ export function isTransactionLookalike(bytes: Uint8Array): boolean {
 }
 
 export function getDAppTransactionRequestSummary(
-  method: DAppTransactionRequest['method'],
+  method: DAppTransactionRequest['method']
 ): DAppTransactionRequest['method'] {
   return method;
 }
 
 export async function loadSolanaTransactionApprovalDetails(
   account: SolanaAccount,
-  request: DAppTransactionRequest,
+  request: DAppTransactionRequest
 ): Promise<SolanaTransactionApprovalDetails> {
   await fetchAndMergeNetworkConfigs();
 
-  const encodedMessage = request.method === 'signAllTransactions'
-    ? request.params?.messages?.[0] ?? ''
-    : request.params?.message ?? '';
+  const encodedMessage =
+    request.method === 'signAllTransactions'
+      ? (request.params?.messages?.[0] ?? '')
+      : (request.params?.message ?? '');
 
   if (!encodedMessage) {
     throw new Error(
-      request.method === 'signAllTransactions' ? 'Missing messages' : 'Missing message',
+      request.method === 'signAllTransactions' ? 'Missing messages' : 'Missing message'
     );
   }
 
@@ -214,7 +219,7 @@ export async function loadSolanaTransactionApprovalDetails(
   const { value } = await account
     .getRpc()
     .getFeeForMessage(
-      getBase64Decoder().decode(parsed.messageBytes) as TransactionMessageBytesBase64,
+      getBase64Decoder().decode(parsed.messageBytes) as TransactionMessageBytesBase64
     )
     .send();
 
@@ -231,7 +236,7 @@ export async function loadSolanaTransactionApprovalDetails(
 
 export async function approveSolanaSignMessage(
   account: SolanaAccount,
-  data: number[],
+  data: number[]
 ): Promise<DAppSignMessageApprovalPayload> {
   const messageBytes = Uint8Array.from(data);
   if (isTransactionLookalike(messageBytes)) {
@@ -260,7 +265,7 @@ export async function approveSolanaSignMessage(
 export async function approveSolanaSignOffchainMessage(
   account: SolanaAccount,
   data: number[],
-  requiredSigners: string[],
+  requiredSigners: string[]
 ): Promise<DAppSignOffchainMessageApprovalPayload> {
   const messageBytes = Uint8Array.from(data);
   const signers = requiredSigners.map((signer) => address(signer));
@@ -286,7 +291,7 @@ export async function approveSolanaSignOffchainMessage(
  */
 export function parseOffchainMessageForApproval(
   data: number[],
-  requiredSigners: string[],
+  requiredSigners: string[]
 ): ReturnType<typeof parseOffchainMessageV1> {
   const contentBytes = Uint8Array.from(data);
   const signers = requiredSigners.map((signer) => address(signer));
@@ -309,12 +314,12 @@ export function parseOffchainMessageForApproval(
 export async function approveSolanaSignIn(
   account: SolanaAccount,
   input: SolanaSignInInputFields,
-  origin: string,
+  origin: string
 ): Promise<DAppSignInApprovalPayload> {
   const { signedMessage, signature, signedMessageFormat } = await signSiwsMessage(
     account,
     input,
-    origin,
+    origin
   );
 
   return {
@@ -328,7 +333,7 @@ export async function approveSolanaSignIn(
 
 export async function approveSolanaTransactionRequest(
   account: SolanaAccount,
-  request: DAppTransactionRequest,
+  request: DAppTransactionRequest
 ): Promise<
   | DAppSignTransactionApprovalPayload
   | DAppSignAllTransactionsApprovalPayload
@@ -361,7 +366,7 @@ export async function approveSolanaTransactionRequest(
           throw new Error('Failed to sign one of the transactions');
         }
         return bs58.encode(signature);
-      }),
+      })
     );
 
     return {
@@ -393,7 +398,7 @@ export async function approveSolanaTransactionRequest(
     if (getBase58Decoder().decode(decoded.messageBytes) !== encodedMessage) {
       throw new Error(
         'Transaction does not match the approved message. The app sent transaction ' +
-          'bytes that differ from the transaction shown for approval, so it was not signed.',
+          'bytes that differ from the transaction shown for approval, so it was not signed.'
       );
     }
 
@@ -414,7 +419,7 @@ export async function approveSolanaTransactionRequest(
 export function serializeSignedTransactionFromApproval(
   encodedMessage: string,
   publicKey: string,
-  signature: string,
+  signature: string
 ): Uint8Array {
   const { messageBytes, message } = buildTransactionFromEncodedMessage(encodedMessage);
   const signatures = emptySignatureMap(message);
@@ -428,20 +433,20 @@ export function serializeSignedTransactionFromApproval(
     getTransactionEncoder().encode({
       messageBytes: messageBytes as ReadonlyUint8Array as TransactionMessageBytes,
       signatures,
-    }),
+    })
   );
 }
 
 export function serializeSignedTransactionsFromApproval(
   encodedMessages: string[],
   publicKey: string,
-  signatures: string[],
+  signatures: string[]
 ): Uint8Array[] {
   if (encodedMessages.length !== signatures.length) {
     throw new Error('Mismatched messages and signatures');
   }
 
   return encodedMessages.map((encodedMessage, index) =>
-    serializeSignedTransactionFromApproval(encodedMessage, publicKey, signatures[index]),
+    serializeSignedTransactionFromApproval(encodedMessage, publicKey, signatures[index])
   );
 }

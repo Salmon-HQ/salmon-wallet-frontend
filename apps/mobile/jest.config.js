@@ -13,4 +13,4 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   testPathIgnorePatterns: ['/node_modules/', '/.expo/'],
-}
+};

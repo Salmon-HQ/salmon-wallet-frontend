@@ -1,17 +1,8 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 
 import { encryptMnemonics } from '../crypto/encrypt-mnemonics';
-import {
-  removeStashItem,
-  setStorageItem,
-  STASH_KEYS,
-  STORAGE_KEYS,
-} from '../storage';
-import type {
-  Account,
-  EditAccountParams,
-  StoredAccount,
-} from '../types/account';
+import { removeStashItem, setStorageItem, STASH_KEYS, STORAGE_KEYS } from '../storage';
+import type { Account, EditAccountParams, StoredAccount } from '../types/account';
 import type { CustomTokens } from '../types/token';
 import type { TrustedApps } from '../types/trusted-app';
 import {
@@ -101,7 +92,9 @@ export function useAccountsMutations({
       // cached derived key has expired and no password was supplied), abort
       // before touching any state — runtime and storage stay consistent and
       // the caller can surface the error to prompt the user for a password.
-      const encryptResult = await encryptMnemonics(newMnemonics, password, { cacheNewKey: !!password });
+      const encryptResult = await encryptMnemonics(newMnemonics, password, {
+        cacheNewKey: !!password,
+      });
 
       setCounter(newCounter);
       setAccounts(newAccounts);
@@ -134,7 +127,10 @@ export function useAccountsMutations({
   );
 
   const editAccount = useCallback(
-    async (targetId: string, { name, avatar, newDerivedAccounts }: EditAccountParams): Promise<void> => {
+    async (
+      targetId: string,
+      { name, avatar, newDerivedAccounts }: EditAccountParams
+    ): Promise<void> => {
       const index = accounts.findIndex(({ id }) => id === targetId);
       if (index < 0) return;
 

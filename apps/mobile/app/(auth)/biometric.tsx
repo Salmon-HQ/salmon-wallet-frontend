@@ -122,11 +122,7 @@ export default function BiometricScreen() {
 
         {/* Biometric Icon */}
         <View style={styles.iconContainer}>
-          <Ionicons
-            name={getIconName()}
-            size={64}
-            color={colors.accent.primary}
-          />
+          <Ionicons name={getIconName()} size={64} color={colors.accent.primary} />
         </View>
 
         {/* Title */}
@@ -135,9 +131,7 @@ export default function BiometricScreen() {
         </Text>
 
         {/* Subtitle */}
-        <Text style={styles.subtitle}>
-          {t('wallet.create.biometric_subtitle')}
-        </Text>
+        <Text style={styles.subtitle}>{t('wallet.create.biometric_subtitle')}</Text>
 
         {/* Error */}
         {error && <Text style={styles.errorText}>{error}</Text>}
@@ -147,11 +141,7 @@ export default function BiometricScreen() {
 
         {/* Enable Button */}
         <View style={styles.buttonContainer}>
-          <PrimaryButton
-            onPress={handleEnable}
-            loading={isLoading}
-            style={styles.buttonSpacing}
-          >
+          <PrimaryButton onPress={handleEnable} loading={isLoading} style={styles.buttonSpacing}>
             {t('wallet.create.biometric_enable', { type: biometricLabel })}
           </PrimaryButton>
 

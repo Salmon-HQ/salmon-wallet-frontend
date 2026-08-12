@@ -18,10 +18,7 @@ import { useCoinMarketData } from './useCoinMarketData';
 const mockGetTokenCoinInfo = vi.mocked(getTokenCoinInfo);
 const mockGetTokenMarketChart = vi.mocked(getTokenMarketChart);
 
-function renderWithClient<TProps, TResult>(
-  hook: (props: TProps) => TResult,
-  initialProps: TProps,
-) {
+function renderWithClient<TProps, TResult>(hook: (props: TProps) => TResult, initialProps: TProps) {
   const client = createTestQueryClient();
   return renderHook(hook, {
     initialProps,
@@ -48,7 +45,7 @@ describe('useCoinMarketData', () => {
 
     const { result } = renderWithClient(
       () => useCoinMarketData({ coinId: 'bitcoin', currency: 'usd', days: 7 }),
-      undefined as void,
+      undefined as void
     );
 
     await waitFor(() => {
@@ -57,12 +54,12 @@ describe('useCoinMarketData', () => {
 
     expect(mockGetTokenCoinInfo).toHaveBeenCalledWith(
       { coingeckoId: 'bitcoin', address: undefined },
-      'usd',
+      'usd'
     );
     expect(mockGetTokenMarketChart).toHaveBeenCalledWith(
       { coingeckoId: 'bitcoin', address: undefined },
       7,
-      'usd',
+      'usd'
     );
     expect(result.current.coinInfo?.id).toBe('bitcoin');
     expect(result.current.chartData).toEqual([
@@ -74,7 +71,7 @@ describe('useCoinMarketData', () => {
   it('skips fetching when coinId and contractAddress are undefined', () => {
     const { result } = renderWithClient(
       () => useCoinMarketData({ coinId: undefined, currency: 'usd', days: 7 }),
-      undefined as void,
+      undefined as void
     );
     expect(mockGetTokenCoinInfo).not.toHaveBeenCalled();
     expect(mockGetTokenMarketChart).not.toHaveBeenCalled();
@@ -95,13 +92,14 @@ describe('useCoinMarketData', () => {
     });
 
     const { result } = renderWithClient(
-      () => useCoinMarketData({
-        coinId: undefined,
-        contractAddress: USDC_MINT,
-        currency: 'usd',
-        days: 7,
-      }),
-      undefined as void,
+      () =>
+        useCoinMarketData({
+          coinId: undefined,
+          contractAddress: USDC_MINT,
+          currency: 'usd',
+          days: 7,
+        }),
+      undefined as void
     );
 
     await waitFor(() => {
@@ -110,12 +108,12 @@ describe('useCoinMarketData', () => {
 
     expect(mockGetTokenCoinInfo).toHaveBeenCalledWith(
       { coingeckoId: undefined, address: USDC_MINT },
-      'usd',
+      'usd'
     );
     expect(mockGetTokenMarketChart).toHaveBeenCalledWith(
       { coingeckoId: undefined, address: USDC_MINT },
       7,
-      'usd',
+      'usd'
     );
     expect(result.current.coinInfo?.id).toBe('usd-coin');
     expect(result.current.chartData).toEqual([{ timestamp: 1, price: 1 }]);
@@ -127,13 +125,14 @@ describe('useCoinMarketData', () => {
     mockGetTokenMarketChart.mockResolvedValue(null);
 
     const { result } = renderWithClient(
-      () => useCoinMarketData({
-        coinId: undefined,
-        contractAddress: 'mockJUPmintNotListedOnCoinGecko111111111111',
-        currency: 'usd',
-        days: 7,
-      }),
-      undefined as void,
+      () =>
+        useCoinMarketData({
+          coinId: undefined,
+          contractAddress: 'mockJUPmintNotListedOnCoinGecko111111111111',
+          currency: 'usd',
+          days: 7,
+        }),
+      undefined as void
     );
 
     await waitFor(() => {
@@ -151,7 +150,7 @@ describe('useCoinMarketData', () => {
 
     const { result } = renderWithClient(
       () => useCoinMarketData({ coinId: 'bitcoin', currency: 'usd', days: 7 }),
-      undefined as void,
+      undefined as void
     );
 
     await waitFor(() => {
@@ -164,13 +163,14 @@ describe('useCoinMarketData', () => {
     mockGetTokenMarketChart.mockRejectedValue(new Error('Internal error'));
 
     const { result } = renderWithClient(
-      () => useCoinMarketData({
-        coinId: undefined,
-        contractAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-        currency: 'usd',
-        days: 7,
-      }),
-      undefined as void,
+      () =>
+        useCoinMarketData({
+          coinId: undefined,
+          contractAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+          currency: 'usd',
+          days: 7,
+        }),
+      undefined as void
     );
 
     await waitFor(() => {

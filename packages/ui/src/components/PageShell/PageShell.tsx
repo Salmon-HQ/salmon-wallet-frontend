@@ -99,9 +99,7 @@ export function PageShell({
 }: PageShellProps): React.ReactElement {
   const { t } = useTranslation();
   const resolvedBg =
-    backgroundColor === 'primary'
-      ? colors.background.primary
-      : colors.background.secondary;
+    backgroundColor === 'primary' ? colors.background.primary : colors.background.secondary;
 
   return (
     <Container
@@ -116,7 +114,11 @@ export function PageShell({
       )}
 
       <Header>
-        <BackButton onClick={onBack} aria-label={t('general.back', 'Back')} data-testid="screen-header-back-button">
+        <BackButton
+          onClick={onBack}
+          aria-label={t('general.back', 'Back')}
+          data-testid="screen-header-back-button"
+        >
           <ArrowBackIcon />
         </BackButton>
         <HeaderTitle>{title}</HeaderTitle>
@@ -125,7 +127,9 @@ export function PageShell({
 
       <ScrollContent
         style={scrollContentStyle}
-        ref={scrollContentRef ? (node) => scrollContentRef(node as HTMLDivElement | null) : undefined}
+        ref={
+          scrollContentRef ? (node) => scrollContentRef(node as HTMLDivElement | null) : undefined
+        }
         {...scrollContentProps}
       >
         {children}

@@ -25,9 +25,7 @@ export interface UseJupiterTokenListResult {
   refresh: () => Promise<void>;
 }
 
-export function useJupiterTokenList(
-  params: UseJupiterTokenListParams,
-): UseJupiterTokenListResult {
+export function useJupiterTokenList(params: UseJupiterTokenListParams): UseJupiterTokenListResult {
   const { networkId, enabled = true } = params;
   const queryClient = useQueryClient();
   const isEnabled = !!networkId && enabled;

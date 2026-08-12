@@ -35,10 +35,7 @@ export {
 // Exchange Rates Service
 // ============================================================================
 
-export {
-  getExchangeRates,
-  clearExchangeRateCache,
-} from './exchangeRates';
+export { getExchangeRates, clearExchangeRateCache } from './exchangeRates';
 
 // ============================================================================
 // Token Service
@@ -60,10 +57,7 @@ export {
   createBurnTransaction,
 } from './nft-burn';
 
-export {
-  createNftTransferTransaction,
-  type TransferNftParams,
-} from './nft-transfer';
+export { createNftTransferTransaction, type TransferNftParams } from './nft-transfer';
 
 // ============================================================================
 // Bitcoin Service

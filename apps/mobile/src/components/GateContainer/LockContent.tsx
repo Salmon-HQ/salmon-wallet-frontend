@@ -151,7 +151,9 @@ export function LockContent({
       }
     };
     void init();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [locked, refreshBiometricState]);
 
   // Biometric unlock handler
@@ -254,38 +256,30 @@ export function LockContent({
 
   // Forgot password
   const handleForgotPassword = useCallback(() => {
-    Alert.alert(
-      t('lock.reset_wallet_title'),
-      t('lock.reset_wallet_message'),
-      [
-        { text: t('lock.cancel'), style: 'cancel' },
-        {
-          text: t('lock.reset_button'),
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              t('lock.confirm_title'),
-              t('lock.confirm_message'),
-              [
-                { text: t('lock.cancel'), style: 'cancel' },
-                {
-                  text: t('lock.delete_button'),
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      await onRemoveAllAccounts();
-                    } catch (err) {
-                      console.error('Failed to reset wallet:', err);
-                      Alert.alert(t('general.error'), t('lock.reset_failed'));
-                    }
-                  },
-                },
-              ]
-            );
-          },
+    Alert.alert(t('lock.reset_wallet_title'), t('lock.reset_wallet_message'), [
+      { text: t('lock.cancel'), style: 'cancel' },
+      {
+        text: t('lock.reset_button'),
+        style: 'destructive',
+        onPress: () => {
+          Alert.alert(t('lock.confirm_title'), t('lock.confirm_message'), [
+            { text: t('lock.cancel'), style: 'cancel' },
+            {
+              text: t('lock.delete_button'),
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await onRemoveAllAccounts();
+                } catch (err) {
+                  console.error('Failed to reset wallet:', err);
+                  Alert.alert(t('general.error'), t('lock.reset_failed'));
+                }
+              },
+            },
+          ]);
         },
-      ]
-    );
+      },
+    ]);
   }, [onRemoveAllAccounts, t]);
 
   const getInputBorderColor = () => {
@@ -343,7 +337,10 @@ export function LockContent({
                     testID="lock-unlock-button"
                     accessibilityRole="button"
                     accessibilityLabel={t('lock.unlock')}
-                    accessibilityState={{ disabled: isLoading || !password.trim(), busy: isLoading }}
+                    accessibilityState={{
+                      disabled: isLoading || !password.trim(),
+                      busy: isLoading,
+                    }}
                     onPress={handleUnlock}
                     disabled={isLoading || !password.trim()}
                     activeOpacity={0.8}
@@ -372,13 +369,13 @@ export function LockContent({
                       accessibilityRole="button"
                       accessibilityLabel={biometricActionLabel}
                       accessibilityState={{ disabled: isLoading }}
-                      onPress={() => { void handleBiometricUnlock(); }}
+                      onPress={() => {
+                        void handleBiometricUnlock();
+                      }}
                       disabled={isLoading}
                       style={styles.secondaryActionContainer}
                     >
-                      <Text style={styles.secondaryActionText}>
-                        {biometricActionLabel}
-                      </Text>
+                      <Text style={styles.secondaryActionText}>{biometricActionLabel}</Text>
                     </TouchableOpacity>
                   )}
 
@@ -391,9 +388,7 @@ export function LockContent({
                     disabled={isLoading}
                     style={styles.forgotPasswordContainer}
                   >
-                    <Text style={styles.forgotPasswordText}>
-                      {t('lock.forgot_password')}
-                    </Text>
+                    <Text style={styles.forgotPasswordText}>{t('lock.forgot_password')}</Text>
                   </TouchableOpacity>
                 </View>
               )}

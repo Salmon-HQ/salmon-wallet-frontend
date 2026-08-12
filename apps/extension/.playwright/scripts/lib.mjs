@@ -28,7 +28,7 @@ async function resolveChromium() {
     if (fs.existsSync(p)) return (await import(p)).chromium;
   }
   throw new Error(
-    'Playwright not resolvable. Install `playwright` locally OR `@playwright/cli` globally OR set PLAYWRIGHT_PATH.',
+    'Playwright not resolvable. Install `playwright` locally OR `@playwright/cli` globally OR set PLAYWRIGHT_PATH.'
   );
 }
 const chromium = await resolveChromium();
@@ -101,9 +101,15 @@ export async function capture(page, folder, name) {
   fs.mkdirSync(sDir, { recursive: true });
   fs.mkdirSync(yDir, { recursive: true });
   await page.screenshot({ path: path.join(sDir, name + '.png'), fullPage: true });
-  const aria = await page.locator('body').ariaSnapshot().catch(() => '');
+  const aria = await page
+    .locator('body')
+    .ariaSnapshot()
+    .catch(() => '');
   fs.writeFileSync(path.join(yDir, name + '.yml'), aria);
-  const text = await page.locator('body').innerText().catch(() => '');
+  const text = await page
+    .locator('body')
+    .innerText()
+    .catch(() => '');
   fs.writeFileSync(path.join(yDir, name + '.txt'), text);
   console.log('captured ' + folder + '/' + name);
 }
@@ -123,7 +129,9 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function loadSecrets() {
   const envPath = path.resolve(__dirname, '../.env.test');
   if (!fs.existsSync(envPath)) {
-    throw new Error('Missing .playwright/.env.test — copy .env.test.example and fill in test seeds');
+    throw new Error(
+      'Missing .playwright/.env.test — copy .env.test.example and fill in test seeds'
+    );
   }
   const raw = fs.readFileSync(envPath, 'utf8');
   const map = {};
@@ -138,7 +146,9 @@ const PASSWORD = SECRETS.SALMON_TEST_PASSWORD;
 const SEED_A = SECRETS.SALMON_TEST_SEED_A;
 export const SEED_B = SECRETS.SALMON_TEST_SEED_B;
 if (!PASSWORD || !SEED_A || !SEED_B) {
-  throw new Error('Incomplete .playwright/.env.test — need SALMON_TEST_PASSWORD, SALMON_TEST_SEED_A, SALMON_TEST_SEED_B');
+  throw new Error(
+    'Incomplete .playwright/.env.test — need SALMON_TEST_PASSWORD, SALMON_TEST_SEED_A, SALMON_TEST_SEED_B'
+  );
 }
 
 export async function openPopup(ctx, extId) {
@@ -200,7 +210,10 @@ export async function clickBack(page) {
     return true;
   }
   // Fallback: button containing only an img with name "Back"
-  const imgBack = page.locator('button').filter({ has: page.locator('img[alt*="back" i], img[alt*="arrow" i]') }).first();
+  const imgBack = page
+    .locator('button')
+    .filter({ has: page.locator('img[alt*="back" i], img[alt*="arrow" i]') })
+    .first();
   if (await imgBack.count()) {
     await imgBack.click().catch(() => {});
     return true;

@@ -47,9 +47,7 @@ const useRuntime = (): RuntimeInfo => {
 
         if (url) {
           // Check if the URL matches any adapter prefix
-          const isAdapterUrl = ADAPTER_PREFIXES.some((prefix) =>
-            url.startsWith(prefix)
-          );
+          const isAdapterUrl = ADAPTER_PREFIXES.some((prefix) => url.startsWith(prefix));
           setIsAdapter(isAdapterUrl);
 
           // Parse URL parameters from the deep link

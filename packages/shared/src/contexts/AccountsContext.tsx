@@ -67,11 +67,7 @@ export function AccountsProvider({ children }: AccountsProviderProps) {
   // Single source of truth - useAccounts called once here
   const accountsValue = useAccounts();
 
-  return (
-    <AccountsContext.Provider value={accountsValue}>
-      {children}
-    </AccountsContext.Provider>
-  );
+  return <AccountsContext.Provider value={accountsValue}>{children}</AccountsContext.Provider>;
 }
 
 // ============================================================================
@@ -108,7 +104,7 @@ export function useAccountsContext(): AccountsContextValue {
   if (!context) {
     throw new Error(
       'useAccountsContext must be used within an AccountsProvider. ' +
-      'Make sure to wrap your app with <AccountsProvider>.'
+        'Make sure to wrap your app with <AccountsProvider>.'
     );
   }
 

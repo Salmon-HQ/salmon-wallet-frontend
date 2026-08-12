@@ -1,14 +1,7 @@
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  PasswordPage as AuthPasswordPage,
-} from '@salmon/ui';
-import {
-  DerivedKeyCache,
-  getStashItem,
-  STASH_KEYS,
-  useAccountsContext,
-} from '@salmon/shared';
+import { PasswordPage as AuthPasswordPage } from '@salmon/ui';
+import { DerivedKeyCache, getStashItem, STASH_KEYS, useAccountsContext } from '@salmon/shared';
 import { useAuthFlow } from './AuthFlowContext';
 import { clearSessionKey, storeSessionKey } from '../../utils/sessionKeyCache';
 

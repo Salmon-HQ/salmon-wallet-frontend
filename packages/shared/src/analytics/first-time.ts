@@ -23,7 +23,7 @@ import type { AnalyticsProps } from './types';
 export async function trackFirstTime(
   event: AnalyticsEventName,
   flagKey: StorageKey,
-  props?: AnalyticsProps,
+  props?: AnalyticsProps
 ): Promise<void> {
   // Gate on consent before touching the flag: without consent we neither emit
   // nor mark the "first" as spent, preserving it until the user opts in.

@@ -125,7 +125,7 @@ export function formatBlockNumber(slot: number): string {
  */
 export function formatRelativeTimeCompact(
   timestamp: number,
-  t?: (key: string, options?: Record<string, unknown>) => string,
+  t?: (key: string, options?: Record<string, unknown>) => string
 ): string {
   const now = Date.now() / 1000;
   const diff = now - timestamp;

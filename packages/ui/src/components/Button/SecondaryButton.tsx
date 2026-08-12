@@ -27,8 +27,7 @@ const StyledButton = styled(Button)<{
   width: fullWidth ? '100%' : 'auto',
   minWidth: componentSizes.buttonMinWidth,
   height: componentSizes.buttonHeight,
-  backgroundColor:
-    $buttonVariant === 'outline' ? 'transparent' : colors.button.secondaryBackground,
+  backgroundColor: $buttonVariant === 'outline' ? 'transparent' : colors.button.secondaryBackground,
   border: $buttonVariant === 'outline' ? `1px solid ${colors.border.default}` : 'none',
   borderRadius: componentSizes.buttonRadius,
   fontFamily: fontFamily.sans,
@@ -41,9 +40,7 @@ const StyledButton = styled(Button)<{
   transition: `opacity ${duration.normal} ${easing.ease}, transform ${duration.fastest} ${easing.ease}, background-color ${duration.normal} ${easing.ease}`,
   '&:hover': {
     backgroundColor:
-      $buttonVariant === 'outline'
-        ? colors.background.card
-        : colors.button.secondaryBackground,
+      $buttonVariant === 'outline' ? colors.background.card : colors.button.secondaryBackground,
     opacity: opacity.soft,
     boxShadow: shadowsCSS.none,
   },
@@ -101,4 +98,3 @@ export function SecondaryButton({
     </StyledButton>
   );
 }
-

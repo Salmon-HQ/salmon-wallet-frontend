@@ -1,17 +1,22 @@
 // Phase 1 walkthrough — full read-only sweep.
 // Each surface wrapped in try/catch so a single failure doesn't kill the rest.
 import {
-  launch, capture, tapConsole, sleep,
-  openPopup, unlockOrRecover, waitHome, clickBack,
-  reportsRoot, fixturesRoot,
+  launch,
+  capture,
+  tapConsole,
+  sleep,
+  openPopup,
+  unlockOrRecover,
+  waitHome,
+  clickBack,
+  reportsRoot,
+  fixturesRoot,
 } from './lib.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const walletBPath = path.join(fixturesRoot, 'wallet-b-addr.txt');
-const WALLET_B_ADDR = fs.existsSync(walletBPath)
-  ? fs.readFileSync(walletBPath, 'utf8').trim()
-  : '';
+const WALLET_B_ADDR = fs.existsSync(walletBPath) ? fs.readFileSync(walletBPath, 'utf8').trim() : '';
 
 const allErrors = [];
 const log = (m) => console.log('▶ ' + m);
@@ -96,7 +101,8 @@ await step('Receive', async () => {
   await sleep(2200);
   await capture(popup, 'receive', '01-receive-sheet');
 });
-await backHome(); await gotoHomeTab();
+await backHome();
+await gotoHomeTab();
 
 // === Activity ===
 await step('Activity', async () => {
@@ -104,7 +110,8 @@ await step('Activity', async () => {
   await sleep(2500);
   await capture(popup, 'activity', '01-activity');
 });
-await backHome(); await gotoHomeTab();
+await backHome();
+await gotoHomeTab();
 
 // === Send (no review) ===
 await step('Send token list', async () => {
@@ -127,8 +134,10 @@ await step('Send → Solana form', async () => {
     }
   }
 });
-await backHome(); await gotoHomeTab();
-await backHome(); await gotoHomeTab();  // send is 2 levels deep
+await backHome();
+await gotoHomeTab();
+await backHome();
+await gotoHomeTab(); // send is 2 levels deep
 
 // === NFT (Collectibles) ===
 await step('Collectibles list', async () => {
@@ -156,7 +165,8 @@ await step('NFT detail (first NFT)', async () => {
     }
   }
 });
-await backHome(); await gotoHomeTab();
+await backHome();
+await gotoHomeTab();
 
 // === Settings ===
 async function openSettings() {
@@ -164,7 +174,7 @@ async function openSettings() {
   if (await gear.count()) {
     await gear.click({ timeout: 5000 }).catch(() => {});
     await sleep(1200);
-    return await popup.getByRole('dialog').count() > 0;
+    return (await popup.getByRole('dialog').count()) > 0;
   }
   return false;
 }
@@ -216,10 +226,12 @@ await step('settings → developer-networks', async () => {
     await openSettings();
   }
   // scroll dialog
-  await popup.evaluate(() => {
-    const dlg = document.querySelector('[role="dialog"]');
-    if (dlg) dlg.scrollTop = dlg.scrollHeight;
-  }).catch(() => {});
+  await popup
+    .evaluate(() => {
+      const dlg = document.querySelector('[role="dialog"]');
+      if (dlg) dlg.scrollTop = dlg.scrollHeight;
+    })
+    .catch(() => {});
   await sleep(500);
   await capture(popup, 'settings', '03-scrolled-bottom');
   // toggle the developer-networks switch by its stable test id
@@ -263,17 +275,20 @@ await step('Lock + unlock cycle', async () => {
 
 // === report ===
 fs.mkdirSync(reportsRoot, { recursive: true });
-fs.writeFileSync(path.join(reportsRoot, 'PHASE1-WALKTHROUGH.md'), [
-  '# Phase 1 walkthrough — ' + new Date().toISOString(),
-  '',
-  'extId: ' + extId,
-  'init state: ' + initState,
-  '',
-  '## Console errors',
-  '```',
-  allErrors.length ? allErrors.join('\n') : '(none)',
-  '```',
-].join('\n'));
+fs.writeFileSync(
+  path.join(reportsRoot, 'PHASE1-WALKTHROUGH.md'),
+  [
+    '# Phase 1 walkthrough — ' + new Date().toISOString(),
+    '',
+    'extId: ' + extId,
+    'init state: ' + initState,
+    '',
+    '## Console errors',
+    '```',
+    allErrors.length ? allErrors.join('\n') : '(none)',
+    '```',
+  ].join('\n')
+);
 log('done');
 
 await sleep(1000);

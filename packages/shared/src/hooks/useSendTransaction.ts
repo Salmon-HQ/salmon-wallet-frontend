@@ -117,7 +117,7 @@ export function useSendTransaction({
         const result = await account.estimateTransferFee(
           effectiveRecipientAddress,
           params.token.address,
-          params.amount,
+          params.amount
         );
 
         setStatus('idle');
@@ -132,7 +132,7 @@ export function useSendTransaction({
         return null;
       }
     },
-    [account],
+    [account]
   );
 
   // ---- Transaction Execution ----
@@ -157,7 +157,7 @@ export function useSendTransaction({
           params.token.address,
           params.amount,
           // Pass token metadata for Ethereum ERC20/NFT transfers
-          { decimals: params.token.decimals, symbol: params.token.symbol },
+          { decimals: params.token.decimals, symbol: params.token.symbol }
         );
 
         setStatus('success');
@@ -203,7 +203,7 @@ export function useSendTransaction({
         throw err;
       }
     },
-    [account, settleUntilChanged],
+    [account, settleUntilChanged]
   );
 
   return {

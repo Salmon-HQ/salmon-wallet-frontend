@@ -261,9 +261,9 @@ export default function PasswordScreen() {
       setError(
         err instanceof ApiError && err.isNetworkError()
           ? t('wallet.create.recovery_network_error') ||
-            'Could not reach the server. Check your connection and try again. Your seed phrase is fine.'
+              'Could not reach the server. Check your connection and try again. Your seed phrase is fine.'
           : t('wallet.create.recovery_error') ||
-            'Failed to recover account. Please check your seed phrase and try again.'
+              'Failed to recover account. Please check your seed phrase and try again.'
       );
     } finally {
       setIsLoading(false);

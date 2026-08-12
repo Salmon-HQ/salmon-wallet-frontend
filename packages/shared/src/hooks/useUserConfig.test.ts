@@ -358,7 +358,7 @@ describe('useUserConfig Hook', () => {
   describe('Loading State', () => {
     it('should set isLoading to true during initialization', () => {
       mockStorage.getItem.mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve(null), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve(null), 100))
       );
 
       const { result } = renderHook(() =>

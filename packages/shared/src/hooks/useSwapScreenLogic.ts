@@ -18,13 +18,14 @@ import type {
   BridgeTransactionSimple,
 } from '../types/swap';
 import type { TokenSelectorToken } from '../types/ui/token-selector';
-import type {
-  BridgeChain,
-  BridgeToken,
-  BridgeEstimate,
-} from '../types/ui/bridge-screen';
+import type { BridgeChain, BridgeToken, BridgeEstimate } from '../types/ui/bridge-screen';
 import type { NetworkId } from '../types/blockchain';
-import { getSwapMode, validateAddress, getChainFromNetwork, toStealthExNetwork } from '../utils/swap';
+import {
+  getSwapMode,
+  validateAddress,
+  getChainFromNetwork,
+  toStealthExNetwork,
+} from '../utils/swap';
 import { classifyTransactionError } from '../utils/transaction-errors';
 import { classifyBridgeError } from '../utils/bridge-errors';
 import { getChainDisplayName } from '../utils/account';
@@ -69,12 +70,9 @@ const QUOTE_COUNTDOWN_SECONDS = 15;
 function getSwapTokenKey(token: SwapToken | null | undefined): string | null {
   if (!token) return null;
 
-  return [
-    token.chain || '',
-    token.networkId || '',
-    token.address || '',
-    token.symbol || '',
-  ].join(':');
+  return [token.chain || '', token.networkId || '', token.address || '', token.symbol || ''].join(
+    ':'
+  );
 }
 
 function findMatchingToken(
@@ -87,9 +85,7 @@ function findMatchingToken(
   return (
     tokens.find((token) => getSwapTokenKey(token) === targetKey) ??
     tokens.find(
-      (token) =>
-        token.address === target.address &&
-        (token.chain || '') === (target.chain || '')
+      (token) => token.address === target.address && (token.chain || '') === (target.chain || '')
     ) ??
     null
   );
@@ -178,7 +174,12 @@ export interface UseSwapScreenLogicParams<StyleType = unknown> extends SwapScree
    * Platform-specific callback invoked when a bridge exchange is created.
    * Mobile uses Alert.alert; extension uses window.alert.
    */
-  onBridgeInitiated?: (exchange: BridgeExchangeSimple, inAmount: string, inSymbol: string, outSymbol: string) => void;
+  onBridgeInitiated?: (
+    exchange: BridgeExchangeSimple,
+    inAmount: string,
+    inSymbol: string,
+    outSymbol: string
+  ) => void;
   /**
    * Invoked right after a bridge (StealthEX) exchange is created and the deposit
    * is sent. The app should register the exchange with the BridgeSettlement
@@ -193,7 +194,7 @@ export interface UseSwapScreenLogicParams<StyleType = unknown> extends SwapScree
       sourceNetworkId?: string;
       destNetworkId?: string;
       destinationAddress: string;
-    },
+    }
   ) => void;
 }
 
@@ -364,14 +365,13 @@ export function useSwapScreenLogic<StyleType = unknown>({
   // balance-dependent validation always uses fresh data. Falls back to the
   // selected snapshot when no live entry exists (e.g. token not yet in list).
   const inTokenLive = useMemo(
-    () => (inToken ? findMatchingToken(tokens, inToken) ?? inToken : null),
-    [inToken, tokens],
+    () => (inToken ? (findMatchingToken(tokens, inToken) ?? inToken) : null),
+    [inToken, tokens]
   );
 
-  const inTokenPrice = tokens.find(t => t.address === inToken?.address)?.usdPrice ?? inToken?.usdPrice;
-  const inUsdValue = inTokenPrice && inAmount
-    ? parseFloat(inAmount) * inTokenPrice
-    : 0;
+  const inTokenPrice =
+    tokens.find((t) => t.address === inToken?.address)?.usdPrice ?? inToken?.usdPrice;
+  const inUsdValue = inTokenPrice && inAmount ? parseFloat(inAmount) * inTokenPrice : 0;
 
   const targetChain: SwapChainType | null = outToken?.chain || null;
   const addressValidation = validateAddress(recipientAddress, targetChain);
@@ -421,7 +421,8 @@ export function useSwapScreenLogic<StyleType = unknown>({
 
   const reviewWarning: SwapErrorMessage | null = (() => {
     if (!inToken || !inAmount || parseFloat(inAmount) <= 0) return null;
-    if (parseFloat(inAmount) > (inTokenLive?.balance || 0)) return 'swap.errors.insufficientBalance';
+    if (parseFloat(inAmount) > (inTokenLive?.balance || 0))
+      return 'swap.errors.insufficientBalance';
     if (inUsdValue > 0 && inUsdValue < MIN_SWAP_USD)
       return { key: 'swap.errors.minimumAmount', params: { amount: MIN_SWAP_USD.toFixed(2) } };
     if (quoteError) return quoteError;
@@ -450,9 +451,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
         // Backend resolves a canonical chain on each token (e.g. "bitcoin"),
         // so filter at the chain level — native cross-chain tokens carry
         // network=null but still expose a chain.
-        const enabledChains = new Set(
-          enabledNetworkIds.map((id) => id.split('-')[0]),
-        );
+        const enabledChains = new Set(enabledNetworkIds.map((id) => id.split('-')[0]));
         const available = await onGetAvailableTokens(inToken.symbol);
         const bridgeOutputTokens: SwapToken[] = [];
         for (const t of available) {
@@ -574,43 +573,50 @@ export function useSwapScreenLogic<StyleType = unknown>({
 
   // ── Handlers ───────────────────────────────────────────────────────────
 
-  const handleInTokenSelect = useCallback((token: SwapToken) => {
-    setInToken(token);
-    setShowInTokenModal(false);
-    if (outToken?.address === token.address && outToken?.chain === token.chain) {
-      setOutToken(null);
-    }
-    setInAmount('');
-    setOutAmount('');
-    setQuote(null);
-    setBridgeEstimate(null);
-  }, [outToken]);
+  const handleInTokenSelect = useCallback(
+    (token: SwapToken) => {
+      setInToken(token);
+      setShowInTokenModal(false);
+      if (outToken?.address === token.address && outToken?.chain === token.chain) {
+        setOutToken(null);
+      }
+      setInAmount('');
+      setOutAmount('');
+      setQuote(null);
+      setBridgeEstimate(null);
+    },
+    [outToken]
+  );
 
-  const handleOutTokenSelect = useCallback((token: SwapToken) => {
-    setOutToken(token);
-    setShowOutTokenModal(false);
-    if (inToken?.address === token.address && inToken?.chain === token.chain) {
-      setInToken(null);
-    }
-  }, [inToken]);
+  const handleOutTokenSelect = useCallback(
+    (token: SwapToken) => {
+      setOutToken(token);
+      setShowOutTokenModal(false);
+      if (inToken?.address === token.address && inToken?.chain === token.chain) {
+        setInToken(null);
+      }
+    },
+    [inToken]
+  );
 
   // Modal-level handlers: convert TokenSelectorToken → SwapToken and delegate
-  const handleInTokenModalSelect = useCallback((token: TokenSelectorToken) => {
-    const originalToken = tokens.find(
-      (t) => t.address === (token.mint || token.address)
-    );
-    handleInTokenSelect({
-      address: token.mint || token.address || '',
-      symbol: token.symbol || '',
-      name: token.name,
-      decimals: originalToken?.decimals || 9,
-      logo: token.logo,
-      balance: token.uiAmount,
-      usdPrice: originalToken?.usdPrice,
-      chain: originalToken?.chain,
-      networkId: originalToken?.networkId,
-    });
-  }, [tokens, handleInTokenSelect]);
+  const handleInTokenModalSelect = useCallback(
+    (token: TokenSelectorToken) => {
+      const originalToken = tokens.find((t) => t.address === (token.mint || token.address));
+      handleInTokenSelect({
+        address: token.mint || token.address || '',
+        symbol: token.symbol || '',
+        name: token.name,
+        decimals: originalToken?.decimals || 9,
+        logo: token.logo,
+        balance: token.uiAmount,
+        usdPrice: originalToken?.usdPrice,
+        chain: originalToken?.chain,
+        networkId: originalToken?.networkId,
+      });
+    },
+    [tokens, handleInTokenSelect]
+  );
 
   const handleInAmountChange = useCallback((value: string) => {
     setSwapError(null);
@@ -766,7 +772,21 @@ export function useSwapScreenLogic<StyleType = unknown>({
     } finally {
       setIsConfirming(false);
     }
-  }, [inToken, outToken, inAmount, recipientAddress, onCreateBridgeExchange, onSendDeposit, onGetBridgeTransactionStatus, onBridgeSuccess, onBridgeExchangeCreated, onBridgeError, settleAfterTx, bridgeEstimate, captureSuccessSummary]);
+  }, [
+    inToken,
+    outToken,
+    inAmount,
+    recipientAddress,
+    onCreateBridgeExchange,
+    onSendDeposit,
+    onGetBridgeTransactionStatus,
+    onBridgeSuccess,
+    onBridgeExchangeCreated,
+    onBridgeError,
+    settleAfterTx,
+    bridgeEstimate,
+    captureSuccessSummary,
+  ]);
 
   const handleRefreshQuote = useCallback(async () => {
     if (isLoadingQuote || isLoadingEstimate) return;
@@ -797,7 +817,9 @@ export function useSwapScreenLogic<StyleType = unknown>({
       setIsLoadingEstimate(true);
       try {
         const estimate = await onGetBridgeEstimateRef.current!(
-          inToken.symbol, outToken.symbol, parseFloat(inAmount),
+          inToken.symbol,
+          outToken.symbol,
+          parseFloat(inAmount),
           toStealthExNetwork(inToken.networkId || inToken.chain),
           toStealthExNetwork(outToken.networkId || outToken.chain)
         );
@@ -841,7 +863,9 @@ export function useSwapScreenLogic<StyleType = unknown>({
     setSuccessSummary(null);
     setDepositTxId(null);
     setBridgeTransaction(null);
-    settleAfterTx({ kinds: ['balance', 'transactions'], settlementDelaysMs: [] }).catch(() => undefined);
+    settleAfterTx({ kinds: ['balance', 'transactions'], settlementDelaysMs: [] }).catch(
+      () => undefined
+    );
     onNavigateHome?.();
   }, [settleAfterTx, onNavigateHome]);
 
@@ -854,14 +878,16 @@ export function useSwapScreenLogic<StyleType = unknown>({
 
     if (inChain === 'solana') {
       // 1. User's Solana balance tokens first (they have balance/price data)
-      const userSolanaTokens = tokens.filter(t => (t.chain || 'solana') === 'solana');
-      const userAddresses = new Set(userSolanaTokens.map(t => t.address.toLowerCase()));
+      const userSolanaTokens = tokens.filter((t) => (t.chain || 'solana') === 'solana');
+      const userAddresses = new Set(userSolanaTokens.map((t) => t.address.toLowerCase()));
 
       // 2. Jupiter catalog tokens not already in user's list
-      const remainingJupiter = jupiterTokens.filter(t => !userAddresses.has(t.address.toLowerCase()));
+      const remainingJupiter = jupiterTokens.filter(
+        (t) => !userAddresses.has(t.address.toLowerCase())
+      );
 
       // 3. Only cross-chain bridge tokens (exclude Solana — Jupiter covers those)
-      const crossChainBridgeTokens = availableOutTokens.filter(t => t.chain !== 'solana');
+      const crossChainBridgeTokens = availableOutTokens.filter((t) => t.chain !== 'solana');
 
       return [...crossChainBridgeTokens, ...userSolanaTokens, ...remainingJupiter];
     } else {
@@ -923,22 +949,25 @@ export function useSwapScreenLogic<StyleType = unknown>({
   }, [outToken, outputTokens]);
 
   // Modal-level handler for output token (needs outputTokens, so defined after it)
-  const handleOutTokenModalSelect = useCallback((token: TokenSelectorToken) => {
-    const originalToken = outputTokens.find(
-      (t) => t.address === (token.mint || token.address) || t.symbol === token.symbol
-    );
-    handleOutTokenSelect({
-      address: token.mint || token.address || '',
-      symbol: token.symbol || '',
-      name: token.name,
-      decimals: originalToken?.decimals || 9,
-      logo: token.logo,
-      balance: token.uiAmount,
-      usdPrice: originalToken?.usdPrice,
-      chain: originalToken?.chain,
-      networkId: originalToken?.networkId || token.network,
-    });
-  }, [outputTokens, handleOutTokenSelect]);
+  const handleOutTokenModalSelect = useCallback(
+    (token: TokenSelectorToken) => {
+      const originalToken = outputTokens.find(
+        (t) => t.address === (token.mint || token.address) || t.symbol === token.symbol
+      );
+      handleOutTokenSelect({
+        address: token.mint || token.address || '',
+        symbol: token.symbol || '',
+        name: token.name,
+        decimals: originalToken?.decimals || 9,
+        logo: token.logo,
+        balance: token.uiAmount,
+        usdPrice: originalToken?.usdPrice,
+        chain: originalToken?.chain,
+        networkId: originalToken?.networkId || token.network,
+      });
+    },
+    [outputTokens, handleOutTokenSelect]
+  );
 
   // Search wrapper: converts SwapToken[] → TokenSelectorToken[]
   const handleSearchTokens = onSearchTokens
@@ -968,38 +997,48 @@ export function useSwapScreenLogic<StyleType = unknown>({
     ...t,
     mint: t.address,
     uiAmount: t.balance || 0,
-    network: t.networkId || (t.chain === 'bitcoin' ? 'Bitcoin' : t.chain === 'ethereum' ? 'Ethereum' : undefined),
+    network:
+      t.networkId ||
+      (t.chain === 'bitcoin' ? 'Bitcoin' : t.chain === 'ethereum' ? 'Ethereum' : undefined),
   }));
 
-  const bridgeTargetChain: BridgeChain | null = outToken ? {
-    id: outToken.networkId || outToken.chain || 'unknown',
-    name: getChainDisplayName(outToken.chain),
-    symbol: outToken.symbol,
-    logo: outToken.logo,
-  } : null;
+  const bridgeTargetChain: BridgeChain | null = outToken
+    ? {
+        id: outToken.networkId || outToken.chain || 'unknown',
+        name: getChainDisplayName(outToken.chain),
+        symbol: outToken.symbol,
+        logo: outToken.logo,
+      }
+    : null;
 
-  const bridgeInToken: BridgeToken | null = inToken ? {
-    symbol: inToken.symbol,
-    name: inToken.name || inToken.symbol,
-    logo: inToken.logo,
-    network: inToken.networkId,
-    balance: inTokenLive?.balance ?? inToken.balance,
-    usdPrice: inToken.usdPrice,
-  } : null;
+  const bridgeInToken: BridgeToken | null = inToken
+    ? {
+        symbol: inToken.symbol,
+        name: inToken.name || inToken.symbol,
+        logo: inToken.logo,
+        network: inToken.networkId,
+        balance: inTokenLive?.balance ?? inToken.balance,
+        usdPrice: inToken.usdPrice,
+      }
+    : null;
 
-  const bridgeOutToken: BridgeToken | null = outToken ? {
-    symbol: outToken.symbol,
-    name: outToken.name || outToken.symbol,
-    logo: outToken.logo,
-    network: outToken.networkId,
-  } : null;
+  const bridgeOutToken: BridgeToken | null = outToken
+    ? {
+        symbol: outToken.symbol,
+        name: outToken.name || outToken.symbol,
+        logo: outToken.logo,
+        network: outToken.networkId,
+      }
+    : null;
 
-  const bridgeEstimateForReview: BridgeEstimate | null = bridgeEstimate ? {
-    estimatedAmount: bridgeEstimate.estimatedAmount,
-    minAmount: bridgeEstimate.minAmount,
-    symbolIn: bridgeEstimate.symbolIn,
-    symbolOut: bridgeEstimate.symbolOut,
-  } : null;
+  const bridgeEstimateForReview: BridgeEstimate | null = bridgeEstimate
+    ? {
+        estimatedAmount: bridgeEstimate.estimatedAmount,
+        minAmount: bridgeEstimate.minAmount,
+        symbolIn: bridgeEstimate.symbolIn,
+        symbolOut: bridgeEstimate.symbolOut,
+      }
+    : null;
 
   // ── Return ─────────────────────────────────────────────────────────────
 

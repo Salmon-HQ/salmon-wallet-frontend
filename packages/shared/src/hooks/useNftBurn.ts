@@ -92,7 +92,7 @@ export function useNftBurn({
         throw err;
       }
     },
-    [account, activeAccountId, onBurnSuccess, settleUntilChanged],
+    [account, activeAccountId, onBurnSuccess, settleUntilChanged]
   );
 
   return { burnNft, status, settling, error, isError: error !== null, reset };

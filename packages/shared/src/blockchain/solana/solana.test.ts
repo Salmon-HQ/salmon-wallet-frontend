@@ -12,9 +12,7 @@ import { PublicKey } from '@solana/web3.js';
 import { getSolanaDerivationPath, createSolanaAccount } from './factory';
 
 // Transfer utilities
-import {
-  SOL_ADDRESS,
-} from './transfer';
+import { SOL_ADDRESS } from './transfer';
 import { applyDecimals, removeDecimals } from '../../utils/decimals';
 import { isNativeSol } from '../../utils/tokens';
 
@@ -46,7 +44,8 @@ import { SOLANA_NETWORKS } from './factory';
  * Standard BIP39 test mnemonic (12 words)
  * Used for deterministic key derivation testing
  */
-const TEST_MNEMONIC = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+const TEST_MNEMONIC =
+  'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 
 /**
  * Expected addresses for the test mnemonic at various derivation indices
@@ -62,7 +61,9 @@ const EXPECTED_ADDRESSES = {
 const mockSolanaApiFunctions = {
   fetchBalance: vi.fn().mockResolvedValue([]),
   fetchPrices: vi.fn().mockResolvedValue(null),
-  fetchTransactions: vi.fn().mockResolvedValue({ transactions: [], oldestSignature: null, hasMore: false }),
+  fetchTransactions: vi
+    .fn()
+    .mockResolvedValue({ transactions: [], oldestSignature: null, hasMore: false }),
   fetchNfts: vi.fn().mockResolvedValue([]),
 };
 
@@ -331,7 +332,7 @@ describe('getCollections', () => {
   });
 
   it('should return empty array for NFTs without collections', () => {
-    const nftsWithoutCollection = mockNfts.filter(nft => !nft.collection);
+    const nftsWithoutCollection = mockNfts.filter((nft) => !nft.collection);
     const collections = getCollections(nftsWithoutCollection);
     expect(collections).toEqual([]);
   });
@@ -511,7 +512,7 @@ describe('getNftsWithoutCollection', () => {
   });
 
   it('should return empty array when all NFTs have collections', () => {
-    const nftsWithCollections = mockNfts.filter(nft => nft.collection?.name);
+    const nftsWithCollections = mockNfts.filter((nft) => nft.collection?.name);
     const withoutCollection = getNftsWithoutCollection(nftsWithCollections);
 
     expect(withoutCollection).toEqual([]);
@@ -880,7 +881,7 @@ describe('getPriceImpact', () => {
   it('should handle zero price impact', () => {
     const quote = createMockQuote('0.00');
     const impact = getPriceImpact(quote);
-    expect(impact).toBe(0.00);
+    expect(impact).toBe(0.0);
   });
 
   it('should handle high price impact', () => {

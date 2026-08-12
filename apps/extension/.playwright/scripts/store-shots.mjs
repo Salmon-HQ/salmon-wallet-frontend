@@ -2,7 +2,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  launch, sleep, unlockOrRecover, waitHome, waitForButtonEnabled, repoRoot,
+  launch,
+  sleep,
+  unlockOrRecover,
+  waitHome,
+  waitForButtonEnabled,
+  repoRoot,
 } from './lib.mjs';
 
 const outDir = path.join(repoRoot, 'store-assets/chrome-web-store/screenshots');
@@ -38,7 +43,11 @@ async function shot(name) {
 }
 
 async function step(name, fn) {
-  try { await fn(); } catch (e) { console.log('SKIP ' + name + ': ' + e.message.split('\n')[0]); }
+  try {
+    await fn();
+  } catch (e) {
+    console.log('SKIP ' + name + ': ' + e.message.split('\n')[0]);
+  }
 }
 
 // 01 home
@@ -60,7 +69,10 @@ await step('swap', async () => {
     if (await usdc.count()) {
       await usdc.click({ timeout: 8000 });
     } else {
-      await page.getByRole('button', { name: /USD Coin/i }).first().click({ timeout: 8000 });
+      await page
+        .getByRole('button', { name: /USD Coin/i })
+        .first()
+        .click({ timeout: 8000 });
     }
     await sleep(3000);
   }

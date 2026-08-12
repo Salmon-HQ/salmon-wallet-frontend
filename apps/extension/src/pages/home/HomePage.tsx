@@ -127,13 +127,7 @@ const isActiveTab = (value: unknown): value is ActiveTab =>
 /**
  * Available page views within HomePage
  */
-type PageView =
-  | 'home'
-  | 'tokenDetail'
-  | 'nftDetail'
-  | 'nftSeeAll'
-  | 'activity'
-  | 'send';
+type PageView = 'home' | 'tokenDetail' | 'nftDetail' | 'nftSeeAll' | 'activity' | 'send';
 
 // Network ID → BlockchainId mapping for carousel theming
 const NETWORK_TO_BLOCKCHAIN: Record<string, BlockchainId> = {
@@ -293,17 +287,12 @@ function PlaceholderPage({
           borderBottom: `1px solid ${colors.border.default}`,
         }}
       >
-        <IconButton
-          onClick={onBack}
-          sx={{ color: colors.text.secondary, mr: 1 }}
-        >
+        <IconButton onClick={onBack} sx={{ color: colors.text.secondary, mr: 1 }}>
           <Box component="span" sx={{ fontSize: fontSize.xl }}>
             &#8592;
           </Box>
         </IconButton>
-        <Typography
-          sx={{ fontSize: fontSize.lg, fontWeight: 600, color: colors.text.primary }}
-        >
+        <Typography sx={{ fontSize: fontSize.lg, fontWeight: 600, color: colors.text.primary }}>
           {title}
         </Typography>
       </Box>
@@ -336,7 +325,16 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
   const [{ currency }, { changeCurrency }] = useCurrencyContext();
-  const { ready, activeAccount, activeBlockchainAccount, networkId, accounts, accountId, activeTrustedApps, switchingNetwork } = state;
+  const {
+    ready,
+    activeAccount,
+    activeBlockchainAccount,
+    networkId,
+    accounts,
+    accountId,
+    activeTrustedApps,
+    switchingNetwork,
+  } = state;
 
   // User configuration (developer networks toggle, explorer selection)
   // Note: useUserConfig requires activeBlockchainAccount parameter with specific structure
@@ -359,10 +357,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // Anonymous usage-analytics consent (opt-in). The first-run prompt now lives
   // in onboarding (analytics-consent step); here we only bind the Settings toggle.
-  const {
-    consent: analyticsConsent,
-    setConsent: setAnalyticsConsent,
-  } = useAnalyticsConsent();
+  const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
 
   // Language selection
   const { currentLanguage, supportedLanguages, setLanguage } = useLanguage();
@@ -385,14 +380,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   useEffect(() => {
     let cancelled = false;
-    sessionArea.get(ACTIVE_TAB_STORAGE_KEY).then((stored) => {
-      if (cancelled) return;
-      const value = stored?.[ACTIVE_TAB_STORAGE_KEY];
-      if (isActiveTab(value)) {
-        setActiveTabState(value);
-      }
-    }).catch(() => {});
-    return () => { cancelled = true; };
+    sessionArea
+      .get(ACTIVE_TAB_STORAGE_KEY)
+      .then((stored) => {
+        if (cancelled) return;
+        const value = stored?.[ACTIVE_TAB_STORAGE_KEY];
+        if (isActiveTab(value)) {
+          setActiveTabState(value);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const setActiveTab = useCallback((tab: ActiveTab) => {
@@ -412,7 +412,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   // Settings panel stack state (for deep-linking from WalletSwitcher)
-  const [settingsInitialPanels, setSettingsInitialPanels] = useState<SettingsPanelEntry[] | undefined>(undefined);
+  const [settingsInitialPanels, setSettingsInitialPanels] = useState<
+    SettingsPanelEntry[] | undefined
+  >(undefined);
 
   // Edit account navigation state
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
@@ -425,35 +427,52 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const [editingContact, setEditingContact] = useState<AddressBookItem | null>(null);
 
   // Build NetworkAdapter from available networks for address book
-  const addressBookNetworkAdapter: NetworkAdapter = useMemo(() => ({
-    getNetwork: async (id: string): Promise<AddressBookNetwork | undefined> => {
-      const found = availableNetworks.find((n) => n.id === id);
-      if (!found) return undefined;
-      return { id: found.id, name: found.name, blockchain: found.id.split('-')[0] as BlockchainType };
-    },
-    getNetworks: async (): Promise<AddressBookNetwork[]> =>
-      availableNetworks.map((n) => ({ id: n.id, name: n.name, blockchain: n.id.split('-')[0] as BlockchainType })),
-  }), [availableNetworks]);
+  const addressBookNetworkAdapter: NetworkAdapter = useMemo(
+    () => ({
+      getNetwork: async (id: string): Promise<AddressBookNetwork | undefined> => {
+        const found = availableNetworks.find((n) => n.id === id);
+        if (!found) return undefined;
+        return {
+          id: found.id,
+          name: found.name,
+          blockchain: found.id.split('-')[0] as BlockchainType,
+        };
+      },
+      getNetworks: async (): Promise<AddressBookNetwork[]> =>
+        availableNetworks.map((n) => ({
+          id: n.id,
+          name: n.name,
+          blockchain: n.id.split('-')[0] as BlockchainType,
+        })),
+    }),
+    [availableNetworks]
+  );
 
-  const [{ contacts: addressBookContacts, error: addressBookError }, { addContact, editContact: editAddressBookContact, removeContact, reload: reloadAddressBook }] = useAddressbook({ networkAdapter: addressBookNetworkAdapter });
+  const [
+    { contacts: addressBookContacts, error: addressBookError },
+    { addContact, editContact: editAddressBookContact, removeContact, reload: reloadAddressBook },
+  ] = useAddressbook({ networkAdapter: addressBookNetworkAdapter });
   // Inline error for address-book writes (translation key, rendered by the open panel)
   const [addressBookWriteErrorKey, setAddressBookWriteErrorKey] = useState<string | null>(null);
 
   const addressBookItems: AddressBookItem[] = useMemo(
-    () => addressBookContacts.map((c) => ({
-      name: c.name,
-      address: c.address,
-      networkId: c.network.id,
-      networkName: c.network.name,
-      domain: c.domain,
-    })),
-    [addressBookContacts],
+    () =>
+      addressBookContacts.map((c) => ({
+        name: c.name,
+        address: c.address,
+        networkId: c.network.id,
+        networkName: c.network.name,
+        domain: c.domain,
+      })),
+    [addressBookContacts]
   );
 
   // NFT action dialog state
   const [nftSendDialogVisible, setNftSendDialogVisible] = useState(false);
   const [burnStep, setBurnStep] = useState<'idle' | 'review' | 'success'>('idle');
-  const [burnPreview, setBurnPreview] = useState<Awaited<ReturnType<typeof createBurnTransaction>> | null>(null);
+  const [burnPreview, setBurnPreview] = useState<Awaited<
+    ReturnType<typeof createBurnTransaction>
+  > | null>(null);
   const [burnLoading, setBurnLoading] = useState(false);
   const [burnError, setBurnError] = useState<string | null>(null);
 
@@ -487,7 +506,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   }, [activeAccount]);
 
   // NFT see-all page state
-  const [seeAllData, setSeeAllData] = useState<{ title: string; blockchain: NftBlockchain; nfts: NftData[] } | null>(null);
+  const [seeAllData, setSeeAllData] = useState<{
+    title: string;
+    blockchain: NftBlockchain;
+    nfts: NftData[];
+  } | null>(null);
   const settleAfterTx = useSettleAfterTx();
   const nftBurn = useNftBurn({
     account: collectibleSolanaAccount ?? null,
@@ -501,7 +524,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const allNetworks = useMemo(() => {
     if (!activeAccount?.networksAccounts) return availableNetworks;
     const userNetworkIds = Object.keys(activeAccount.networksAccounts);
-    return availableNetworks.filter(network => userNetworkIds.includes(network.id));
+    return availableNetworks.filter((network) => userNetworkIds.includes(network.id));
   }, [availableNetworks, activeAccount?.networksAccounts]);
 
   // Reset carousel index when network list changes (e.g. toggling dev mode off)
@@ -633,10 +656,13 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     [actions]
   );
 
-  const handleSelectAccount = useCallback((targetAccountId: string) => {
-    actions.changeAccount(targetAccountId);
-    setWalletSwitcherVisible(false);
-  }, [actions]);
+  const handleSelectAccount = useCallback(
+    (targetAccountId: string) => {
+      actions.changeAccount(targetAccountId);
+      setWalletSwitcherVisible(false);
+    },
+    [actions]
+  );
 
   const handleAddAccount = useCallback(() => {
     setWalletSwitcherVisible(false);
@@ -647,19 +673,25 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const handleEditAccount = useCallback((targetAccountId: string) => {
     setEditingAccountId(targetAccountId);
     setWalletSwitcherVisible(false);
-    setSettingsInitialPanels([{ screen: 'accounts' }, { screen: 'account-edit', props: { accountId: targetAccountId } }]);
+    setSettingsInitialPanels([
+      { screen: 'accounts' },
+      { screen: 'account-edit', props: { accountId: targetAccountId } },
+    ]);
     setSettingsVisible(true);
   }, []);
 
-  const handleDeleteAccount = useCallback(async (targetAccountId: string) => {
-    // The WalletSwitcherSheet already shows a confirmation dialog
-    // and only calls this after user confirms, so we can directly remove
-    await actions.removeAccount(targetAccountId);
+  const handleDeleteAccount = useCallback(
+    async (targetAccountId: string) => {
+      // The WalletSwitcherSheet already shows a confirmation dialog
+      // and only calls this after user confirms, so we can directly remove
+      await actions.removeAccount(targetAccountId);
 
-    // If we deleted the active account, the hook will auto-switch
-    // Close the wallet switcher sheet
-    setWalletSwitcherVisible(false);
-  }, [actions]);
+      // If we deleted the active account, the hook will auto-switch
+      // Close the wallet switcher sheet
+      setWalletSwitcherVisible(false);
+    },
+    [actions]
+  );
 
   const handleSendPress = useCallback(() => {
     setCurrentPage('send');
@@ -774,7 +806,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   }, []);
 
   const confirmBurnNft = useCallback(async () => {
-    if (!selectedNft || !isSolanaNft(selectedNft) || !collectibleSolanaAccount || !burnPreview) return;
+    if (!selectedNft || !isSolanaNft(selectedNft) || !collectibleSolanaAccount || !burnPreview)
+      return;
 
     setBurnLoading(true);
     try {
@@ -837,7 +870,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           loading: showSkeleton || (loading && usdTotal === undefined),
         };
       } else {
-        balanceData = { usdTotal: undefined, changePercent: undefined, changeAmount: undefined, loading: false };
+        balanceData = {
+          usdTotal: undefined,
+          changePercent: undefined,
+          changeAmount: undefined,
+          loading: false,
+        };
       }
 
       return {
@@ -846,18 +884,27 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       };
     });
   }, [
-    allNetworks, networkId, switchingNetwork, refreshing,
-    usdTotal, changePercent, changeAmount, loading,
+    allNetworks,
+    networkId,
+    switchingNetwork,
+    refreshing,
+    usdTotal,
+    changePercent,
+    changeAmount,
+    loading,
   ]);
 
   // Handle blockchain change from carousel arrows
-  const handleBlockchainChange = useCallback((_blockchain: BlockchainId, index: number) => {
-    setActiveBlockchainIndex(index);
-    const selectedBalance = blockchainBalances[index];
-    if (selectedBalance) {
-      actions.changeNetwork(selectedBalance.network.id);
-    }
-  }, [blockchainBalances, actions]);
+  const handleBlockchainChange = useCallback(
+    (_blockchain: BlockchainId, index: number) => {
+      setActiveBlockchainIndex(index);
+      const selectedBalance = blockchainBalances[index];
+      if (selectedBalance) {
+        actions.changeNetwork(selectedBalance.network.id);
+      }
+    },
+    [blockchainBalances, actions]
+  );
 
   // Current blockchain for filtering logic
   const currentBlockchain = useMemo(() => {
@@ -877,9 +924,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       price: token.price,
       uiAmount: token.uiAmount,
       usdBalance: token.usdBalance,
-      last24HoursChange: token.priceChange24h !== undefined
-        ? { perc: token.priceChange24h }
-        : undefined,
+      last24HoursChange:
+        token.priceChange24h !== undefined ? { perc: token.priceChange24h } : undefined,
       tags: token.tags,
       coingeckoId: token.coingeckoId,
       decimals: token.decimals,
@@ -887,9 +933,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   }, [tokens]);
 
   // Bitcoin coin info + chart via shared React Query hook
-  const bitcoinCoinId = currentBlockchain === 'bitcoin'
-    ? BLOCKCHAIN_TO_COINGECKO[currentBlockchain]
-    : undefined;
+  const bitcoinCoinId =
+    currentBlockchain === 'bitcoin' ? BLOCKCHAIN_TO_COINGECKO[currentBlockchain] : undefined;
   const {
     coinInfo: bitcoinCoinInfo,
     chartData: bitcoinChartDataRaw,
@@ -951,210 +996,225 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const selectedTokenChartData: PriceDataPoint[] = selectedTokenChartDataRaw ?? [];
   const selectedTokenMarketData: MarketData | undefined = useMemo(
     () => (selectedTokenCoinInfo ? coinInfoToMarketData(selectedTokenCoinInfo) : undefined),
-    [selectedTokenCoinInfo],
+    [selectedTokenCoinInfo]
   );
 
   const accountName = activeAccount?.name || t('home.unnamed_account', 'Account');
 
   // Build panel registry for SettingsPanelStack
-  const panelRegistry: PanelRegistry = useMemo(() => ({
-    avatar: ({ onBack }) => <AccountAvatarPanel onBack={onBack} />,
-    backup: ({ onBack }) => <BackupPanel onBack={onBack} />,
-    privateKey: ({ onBack }) => <PrivateKeyPanel onBack={onBack} />,
-    currency: ({ onBack }) => {
-      const currencyItems: CurrencySelectorItem[] = SUPPORTED_CURRENCIES.map(
-        (code) => ({
+  const panelRegistry: PanelRegistry = useMemo(
+    () => ({
+      avatar: ({ onBack }) => <AccountAvatarPanel onBack={onBack} />,
+      backup: ({ onBack }) => <BackupPanel onBack={onBack} />,
+      privateKey: ({ onBack }) => <PrivateKeyPanel onBack={onBack} />,
+      currency: ({ onBack }) => {
+        const currencyItems: CurrencySelectorItem[] = SUPPORTED_CURRENCIES.map((code) => ({
           code,
           name: CURRENCY_MAP[code].name,
           symbol: CURRENCY_MAP[code].symbol,
-        })
-      );
-      return (
-        <CurrencySelector
-          currencies={currencyItems}
-          activeCurrencyCode={currency}
-          onSelectCurrency={(code) => {
-            changeCurrency(code as CurrencyCode);
-          }}
+        }));
+        return (
+          <CurrencySelector
+            currencies={currencyItems}
+            activeCurrencyCode={currency}
+            onSelectCurrency={(code) => {
+              changeCurrency(code as CurrencyCode);
+            }}
+            onBack={onBack}
+          />
+        );
+      },
+      about: ({ onBack }) => <AboutPanel onBack={onBack} />,
+      support: ({ onBack }) => (
+        <SupportSelector
+          options={SUPPORT_OPTIONS}
+          onOpenLink={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
           onBack={onBack}
         />
-      );
-    },
-    about: ({ onBack }) => <AboutPanel onBack={onBack} />,
-    support: ({ onBack }) => (
-      <SupportSelector
-        options={SUPPORT_OPTIONS}
-        onOpenLink={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
-        onBack={onBack}
-      />
-    ),
-    language: ({ onBack }) => {
-      const languageItems: LanguageSelectorItem[] = supportedLanguages.map(
-        (lang) => ({
+      ),
+      language: ({ onBack }) => {
+        const languageItems: LanguageSelectorItem[] = supportedLanguages.map((lang) => ({
           code: lang,
           nativeName: LANGUAGE_NAMES[lang as LanguageCode] || lang,
-        })
-      );
-      return (
-        <LanguageSelector
-          languages={languageItems}
-          activeLanguageCode={currentLanguage}
-          onSelectLanguage={(code) => {
-            setLanguage(code as LanguageCode);
-          }}
-          onBack={onBack}
-        />
-      );
-    },
-    explorer: ({ onBack }) => {
-      const explorerItems: ExplorerSelectorItem[] = explorers.map((e) => ({
-        key: e.key,
-        name: e.name,
-      }));
-      return (
-        <ExplorerSelector
-          explorers={explorerItems}
-          activeExplorerName={explorer?.name || ''}
-          onSelectExplorer={(key) => {
-            changeExplorer(key);
-          }}
-          onBack={onBack}
-          loading={explorerLoading}
-        />
-      );
-    },
-    addressBook: ({ onBack, onNavigate }) => (
-      <AddressBookPanel
-        contacts={addressBookItems}
-        activeNetworkId={networkId || 'solana-mainnet'}
-        onAddContact={() => {
-          setAddressBookWriteErrorKey(null);
-          onNavigate('address-book-add');
-        }}
-        onEditContact={(contact) => {
-          setAddressBookWriteErrorKey(null);
-          setEditingContact(contact);
-          onNavigate('address-book-edit');
-        }}
-        onRemoveContact={async (address) => {
-          await removeContact(address);
-        }}
-        onBack={onBack}
-        error={addressBookError}
-        onRetry={reloadAddressBook}
-      />
-    ),
-    'address-book-add': ({ onBack }) => {
-      const activeNet = allNetworks.find((n) => n.id === networkId) || allNetworks[0];
-      const blockchain = (networkId || 'solana-mainnet').split('-')[0];
-      return (
-        <AddressAddPanel
-          activeNetworkId={activeNet?.id || 'solana-mainnet'}
-          activeNetworkName={activeNet?.name || 'Solana Mainnet'}
-          activeBlockchain={blockchain}
-          onSave={async (input: AddressInput) => {
+        }));
+        return (
+          <LanguageSelector
+            languages={languageItems}
+            activeLanguageCode={currentLanguage}
+            onSelectLanguage={(code) => {
+              setLanguage(code as LanguageCode);
+            }}
+            onBack={onBack}
+          />
+        );
+      },
+      explorer: ({ onBack }) => {
+        const explorerItems: ExplorerSelectorItem[] = explorers.map((e) => ({
+          key: e.key,
+          name: e.name,
+        }));
+        return (
+          <ExplorerSelector
+            explorers={explorerItems}
+            activeExplorerName={explorer?.name || ''}
+            onSelectExplorer={(key) => {
+              changeExplorer(key);
+            }}
+            onBack={onBack}
+            loading={explorerLoading}
+          />
+        );
+      },
+      addressBook: ({ onBack, onNavigate }) => (
+        <AddressBookPanel
+          contacts={addressBookItems}
+          activeNetworkId={networkId || 'solana-mainnet'}
+          onAddContact={() => {
             setAddressBookWriteErrorKey(null);
-            try {
-              await addContact(input);
-            } catch (err) {
-              setAddressBookWriteErrorKey(
-                err instanceof AddressbookError && err.kind === 'resolve'
-                  ? 'settings.addressbook.resolve_failed'
-                  : 'settings.addressbook.save_failed',
-              );
-            }
+            onNavigate('address-book-add');
           }}
-          onBack={onBack}
-          errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
-        />
-      );
-    },
-    'address-book-edit': ({ onBack }) => {
-      if (!editingContact) return null;
-      const blockchain = (editingContact.networkId || 'solana-mainnet').split('-')[0];
-      return (
-        <AddressEditPanel
-          contact={editingContact}
-          activeBlockchain={blockchain}
-          onSave={async (originalAddress: string, input: AddressInput) => {
+          onEditContact={(contact) => {
             setAddressBookWriteErrorKey(null);
-            try {
-              await editAddressBookContact(originalAddress, input);
-              setEditingContact(null);
-            } catch (err) {
-              setAddressBookWriteErrorKey(
-                err instanceof AddressbookError && err.kind === 'resolve'
-                  ? 'settings.addressbook.resolve_failed'
-                  : 'settings.addressbook.save_failed',
-              );
-            }
+            setEditingContact(contact);
+            onNavigate('address-book-edit');
+          }}
+          onRemoveContact={async (address) => {
+            await removeContact(address);
           }}
           onBack={onBack}
-          errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
+          error={addressBookError}
+          onRetry={reloadAddressBook}
         />
-      );
-    },
-    trustedApps: ({ onBack }) => {
-      const trustedAppItems: TrustedAppItem[] = Object.entries(
-        activeTrustedApps || {}
-      ).map(([domain, app]) => ({
-        domain,
-        name: app.name,
-        icon: app.icon,
-      }));
-      return (
-        <TrustedAppsSelector
-          apps={trustedAppItems}
-          onRevokeApp={(domain) => {
-            actions.removeTrustedApp(domain);
+      ),
+      'address-book-add': ({ onBack }) => {
+        const activeNet = allNetworks.find((n) => n.id === networkId) || allNetworks[0];
+        const blockchain = (networkId || 'solana-mainnet').split('-')[0];
+        return (
+          <AddressAddPanel
+            activeNetworkId={activeNet?.id || 'solana-mainnet'}
+            activeNetworkName={activeNet?.name || 'Solana Mainnet'}
+            activeBlockchain={blockchain}
+            onSave={async (input: AddressInput) => {
+              setAddressBookWriteErrorKey(null);
+              try {
+                await addContact(input);
+              } catch (err) {
+                setAddressBookWriteErrorKey(
+                  err instanceof AddressbookError && err.kind === 'resolve'
+                    ? 'settings.addressbook.resolve_failed'
+                    : 'settings.addressbook.save_failed'
+                );
+              }
+            }}
+            onBack={onBack}
+            errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
+          />
+        );
+      },
+      'address-book-edit': ({ onBack }) => {
+        if (!editingContact) return null;
+        const blockchain = (editingContact.networkId || 'solana-mainnet').split('-')[0];
+        return (
+          <AddressEditPanel
+            contact={editingContact}
+            activeBlockchain={blockchain}
+            onSave={async (originalAddress: string, input: AddressInput) => {
+              setAddressBookWriteErrorKey(null);
+              try {
+                await editAddressBookContact(originalAddress, input);
+                setEditingContact(null);
+              } catch (err) {
+                setAddressBookWriteErrorKey(
+                  err instanceof AddressbookError && err.kind === 'resolve'
+                    ? 'settings.addressbook.resolve_failed'
+                    : 'settings.addressbook.save_failed'
+                );
+              }
+            }}
+            onBack={onBack}
+            errorText={addressBookWriteErrorKey ? t(addressBookWriteErrorKey) : undefined}
+          />
+        );
+      },
+      trustedApps: ({ onBack }) => {
+        const trustedAppItems: TrustedAppItem[] = Object.entries(activeTrustedApps || {}).map(
+          ([domain, app]) => ({
+            domain,
+            name: app.name,
+            icon: app.icon,
+          })
+        );
+        return (
+          <TrustedAppsSelector
+            apps={trustedAppItems}
+            onRevokeApp={(domain) => {
+              actions.removeTrustedApp(domain);
+            }}
+            onBack={onBack}
+          />
+        );
+      },
+      security: ({ onBack }) => (
+        <SecurityPanel onBack={onBack} onPasswordChanged={clearSessionKey} />
+      ),
+      accounts: ({ onBack, onNavigate }) => (
+        <AccountsPanel
+          onBack={onBack}
+          onEditAccount={(id) => {
+            setEditingAccountId(id);
+            onNavigate('account-edit', { accountId: id });
           }}
+          onAddAccount={() => onNavigate('account-add')}
+        />
+      ),
+      'account-edit': ({ onBack, onNavigate, ...props }) => (
+        <AccountEditPanel
+          accountId={(props.accountId as string) || editingAccountId || accountId || ''}
+          onEditName={(id) => {
+            setEditingAccountId(id);
+            onNavigate('account-name', { accountId: id });
+          }}
+          onEditAvatar={() => onNavigate('avatar')}
+          onBackupSeed={() => onNavigate('backup')}
+          onExportPrivateKey={() => onNavigate('privateKey')}
           onBack={onBack}
         />
-      );
-    },
-    security: ({ onBack }) => <SecurityPanel onBack={onBack} onPasswordChanged={clearSessionKey} />,
-    accounts: ({ onBack, onNavigate }) => (
-      <AccountsPanel
-        onBack={onBack}
-        onEditAccount={(id) => {
-          setEditingAccountId(id);
-          onNavigate('account-edit', { accountId: id });
-        }}
-        onAddAccount={() => onNavigate('account-add')}
-      />
-    ),
-    'account-edit': ({ onBack, onNavigate, ...props }) => (
-      <AccountEditPanel
-        accountId={(props.accountId as string) || editingAccountId || accountId || ''}
-        onEditName={(id) => {
-          setEditingAccountId(id);
-          onNavigate('account-name', { accountId: id });
-        }}
-        onEditAvatar={() => onNavigate('avatar')}
-        onBackupSeed={() => onNavigate('backup')}
-        onExportPrivateKey={() => onNavigate('privateKey')}
-        onBack={onBack}
-      />
-    ),
-    'account-name': ({ onBack, ...props }) => (
-      <AccountNamePanel
-        accountId={(props.accountId as string) || editingAccountId || accountId || ''}
-        onBack={onBack}
-      />
-    ),
-    'account-add': ({ onBack }) => (
-      <AccountAddPanel
-        onComplete={onBack}
-        onBack={onBack}
-      />
-    ),
-  }), [
-    currency, changeCurrency, supportedLanguages, currentLanguage, setLanguage,
-    explorers, explorer, changeExplorer, explorerLoading, addressBookItems,
-    networkId, allNetworks, addContact, editAddressBookContact, removeContact,
-    addressBookError, reloadAddressBook, addressBookWriteErrorKey, t,
-    editingContact, activeTrustedApps, actions, editingAccountId, accountId,
-  ]);
+      ),
+      'account-name': ({ onBack, ...props }) => (
+        <AccountNamePanel
+          accountId={(props.accountId as string) || editingAccountId || accountId || ''}
+          onBack={onBack}
+        />
+      ),
+      'account-add': ({ onBack }) => <AccountAddPanel onComplete={onBack} onBack={onBack} />,
+    }),
+    [
+      currency,
+      changeCurrency,
+      supportedLanguages,
+      currentLanguage,
+      setLanguage,
+      explorers,
+      explorer,
+      changeExplorer,
+      explorerLoading,
+      addressBookItems,
+      networkId,
+      allNetworks,
+      addContact,
+      editAddressBookContact,
+      removeContact,
+      addressBookError,
+      reloadAddressBook,
+      addressBookWriteErrorKey,
+      t,
+      editingContact,
+      activeTrustedApps,
+      actions,
+      editingAccountId,
+      accountId,
+    ]
+  );
 
   // Reset initialPanels after settings closes
   const handleSettingsClose = useCallback(() => {
@@ -1182,7 +1242,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             />
           );
         }
-        return <PlaceholderPage title={t('token.detail.title', 'Token Information')} onBack={handleBack} />;
+        return (
+          <PlaceholderPage
+            title={t('token.detail.title', 'Token Information')}
+            onBack={handleBack}
+          />
+        );
       case 'nftDetail':
         if (selectedNft) {
           return (
@@ -1238,7 +1303,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             />
           );
         }
-        return <PlaceholderPage title={t('wallet.my_nfts', 'My Collectibles')} onBack={handleBack} />;
+        return (
+          <PlaceholderPage title={t('wallet.my_nfts', 'My Collectibles')} onBack={handleBack} />
+        );
       case 'send':
         if (!activeBlockchainAccount) {
           return <PlaceholderPage title={t('token.action.send', 'Send')} onBack={handleSendBack} />;
@@ -1298,13 +1365,25 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
       {/* Tab Bar */}
       <TabBar>
-        <TabButton active={activeTab === 'home'} onClick={() => setActiveTab('home')} data-testid="tab-home">
+        <TabButton
+          active={activeTab === 'home'}
+          onClick={() => setActiveTab('home')}
+          data-testid="tab-home"
+        >
           {t('tabs.home', 'Home')}
         </TabButton>
-        <TabButton active={activeTab === 'collectibles'} onClick={() => setActiveTab('collectibles')} data-testid="tab-collectibles">
+        <TabButton
+          active={activeTab === 'collectibles'}
+          onClick={() => setActiveTab('collectibles')}
+          data-testid="tab-collectibles"
+        >
           {t('tabs.collectibles', 'Collectibles')}
         </TabButton>
-        <TabButton active={activeTab === 'swap'} onClick={() => setActiveTab('swap')} data-testid="tab-swap">
+        <TabButton
+          active={activeTab === 'swap'}
+          onClick={() => setActiveTab('swap')}
+          data-testid="tab-swap"
+        >
           {t('tabs.swap', 'Swap')}
         </TabButton>
       </TabBar>
@@ -1338,10 +1417,16 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               {/* Partial-load failure: keep whatever data loaded visible;
                   retry is the header refresh button. */}
               {balanceError && !switchingNetwork && (
-                <Box sx={{ padding: `0 ${spacing.lg}px`, marginBottom: `${spacing.md}px` }} data-testid="balance-load-error">
+                <Box
+                  sx={{ padding: `0 ${spacing.lg}px`, marginBottom: `${spacing.md}px` }}
+                  data-testid="balance-load-error"
+                >
                   <WarningNotice
                     tone="warning"
-                    title={t('wallet.partial_load_error', "Some balances couldn't be loaded. Shown data may be incomplete.")}
+                    title={t(
+                      'wallet.partial_load_error',
+                      "Some balances couldn't be loaded. Shown data may be incomplete."
+                    )}
                   />
                 </Box>
               )}
@@ -1360,14 +1445,16 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       height={180}
                       style={{ marginLeft: -spacing.lg, marginRight: -spacing.lg }}
                     />
-                    {(switchingNetwork || refreshing) ? (
+                    {switchingNetwork || refreshing ? (
                       <TokenListSkeleton count={1} />
-                    ) : bitcoinToken && (
-                      <TokenListItem
-                        token={bitcoinToken}
-                        hiddenBalance={hiddenBalance}
-                        blockchain="bitcoin"
-                      />
+                    ) : (
+                      bitcoinToken && (
+                        <TokenListItem
+                          token={bitcoinToken}
+                          hiddenBalance={hiddenBalance}
+                          blockchain="bitcoin"
+                        />
+                      )
                     )}
                     <TokenMarketData
                       data={bitcoinMarketData}
@@ -1386,19 +1473,24 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                   <TokenSection onScroll={handleTokenListScroll}>
                     {formattedTokens.length > 0 || loading || switchingNetwork || refreshing ? (
                       <TokenList
-                        tokens={(switchingNetwork || refreshing) ? [] : formattedTokens}
-                        loading={(switchingNetwork || refreshing) || (loading && formattedTokens.length === 0)}
+                        tokens={switchingNetwork || refreshing ? [] : formattedTokens}
+                        loading={
+                          switchingNetwork ||
+                          refreshing ||
+                          (loading && formattedTokens.length === 0)
+                        }
                         onTokenPress={handleTokenPress}
                         hiddenBalance={hiddenBalance}
                         blockchain={getBlockchainFromNetworkId(currentBlockchain)}
                       />
                     ) : (
                       <EmptyState>
-                        <EmptyStateText>
-                          {t('home.no_tokens', 'No tokens found')}
-                        </EmptyStateText>
+                        <EmptyStateText>{t('home.no_tokens', 'No tokens found')}</EmptyStateText>
                         <EmptyStateSubtext>
-                          {t('home.no_tokens_hint', 'Your tokens will appear here once you receive some')}
+                          {t(
+                            'home.no_tokens_hint',
+                            'Your tokens will appear here once you receive some'
+                          )}
                         </EmptyStateSubtext>
                       </EmptyState>
                     )}
@@ -1493,7 +1585,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         transaction={selectedTransaction}
         developerMode={developerNetworks}
       />
-
     </Container>
   );
 }

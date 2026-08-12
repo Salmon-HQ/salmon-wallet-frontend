@@ -36,17 +36,21 @@ vi.mock('./providers/DAppSettlementBridge', () => ({
 vi.mock('@salmon/shared', async () => {
   const { QueryClient, QueryClientProvider } = await import('@tanstack/react-query');
   return {
-    useAccountsContext: () => [{
-      ready: true,
-      locked: false,
-      accounts: [{ id: 'account-1' }],
-    }, {
-      lockAccounts: mockLockAccounts,
-    }],
+    useAccountsContext: () => [
+      {
+        ready: true,
+        locked: false,
+        accounts: [{ id: 'account-1' }],
+      },
+      {
+        lockAccounts: mockLockAccounts,
+      },
+    ],
     useInactivityTimeout: (config: unknown) => mockUseInactivityTimeout(config),
-    createQueryClient: () => new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-    }),
+    createQueryClient: () =>
+      new QueryClient({
+        defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      }),
     QueryClientProvider,
     BridgeSettlementProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
   };
@@ -84,7 +88,8 @@ describe('Web inactivity lock', () => {
   it('clears session cache and locks accounts on inactivity timeout', async () => {
     render(<App />);
 
-    const onTimeout = mockUseInactivityTimeout.mock.calls[0]?.[0]?.onTimeout as (() => void) | undefined;
+    const onTimeout = mockUseInactivityTimeout.mock.calls[0]?.[0]?.onTimeout as
+      (() => void) | undefined;
 
     expect(onTimeout).toBeTypeOf('function');
     onTimeout?.();

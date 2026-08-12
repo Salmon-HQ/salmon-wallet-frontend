@@ -27,7 +27,4 @@ export {
 
 // Legacy local blockchain config helpers.
 // Backend `/v1/networks` is the runtime source of truth for enablement.
-export {
-  ENABLED_BLOCKCHAINS,
-  isBlockchainEnabled,
-} from './blockchains';
+export { ENABLED_BLOCKCHAINS, isBlockchainEnabled } from './blockchains';

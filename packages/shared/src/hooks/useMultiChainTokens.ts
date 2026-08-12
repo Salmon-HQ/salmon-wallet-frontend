@@ -116,9 +116,7 @@ function toUnifiedTokens(
  * const { tokens, loading, getSwapType } = useMultiChainTokens({ activeAccount });
  * ```
  */
-export function useMultiChainTokens(
-  params: UseMultiChainTokensParams
-): UseMultiChainTokensResult {
+export function useMultiChainTokens(params: UseMultiChainTokensParams): UseMultiChainTokensResult {
   const { activeAccount, skip = false } = params;
 
   // Resolve per-chain blockchain accounts
@@ -175,15 +173,13 @@ export function useMultiChainTokens(
 
   // Combined token list (filtered + sorted)
   const tokens = useMemo(() => {
-    const allTokens: UnifiedToken[] = [
-      ...solanaTokens,
-      ...bitcoinTokens,
-      ...ethereumTokens,
-    ].filter((token) => {
-      const hasName = !!token.name && token.name !== 'Unknown Token';
-      const hasSymbol = !!token.symbol && token.symbol !== 'UNKNOWN';
-      return hasName || hasSymbol;
-    });
+    const allTokens: UnifiedToken[] = [...solanaTokens, ...bitcoinTokens, ...ethereumTokens].filter(
+      (token) => {
+        const hasName = !!token.name && token.name !== 'Unknown Token';
+        const hasSymbol = !!token.symbol && token.symbol !== 'UNKNOWN';
+        return hasName || hasSymbol;
+      }
+    );
 
     return allTokens.sort((a, b) => (b.usdBalance || 0) - (a.usdBalance || 0));
   }, [solanaTokens, bitcoinTokens, ethereumTokens]);
@@ -198,8 +194,7 @@ export function useMultiChainTokens(
   );
 
   // Loading = any chain is in initial pending state
-  const loading =
-    solanaBalance.loading || bitcoinBalance.loading || ethereumBalance.loading;
+  const loading = solanaBalance.loading || bitcoinBalance.loading || ethereumBalance.loading;
   // Refreshing = any chain currently refetching in the background
   const refreshing =
     solanaBalance.refreshing || bitcoinBalance.refreshing || ethereumBalance.refreshing;

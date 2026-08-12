@@ -24,13 +24,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
 import { ScalesBackground } from '../ScalesBackground';
 import { ShimmerRect } from '../ShimmerRect';
@@ -127,7 +121,6 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   const labelType = getLabelValue(changePercent);
   const changeColor = colors.change[labelType];
 
-
   // Format display values
   const displayPercentage = showPercentage(changePercent);
   const displayAbsChange = formatChange(changeAmount);
@@ -137,7 +130,9 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   const scalesColor = getScalesColorForBlockchain(blockchain);
 
   // Get network label — in developer mode, always show (including "Mainnet")
-  const networkLabel = showNetworkLabel ? (getNetworkLabel(blockchain) ?? t('general.network_mainnet', 'Mainnet')) : null;
+  const networkLabel = showNetworkLabel
+    ? (getNetworkLabel(blockchain) ?? t('general.network_mainnet', 'Mainnet'))
+    : null;
 
   // Determine if change is positive
   const isPositive = changePercent >= 0;
@@ -159,11 +154,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
             accessibilityRole="button"
             accessibilityLabel={t('accessibility.show_balance', 'Show balance')}
           >
-            <Ionicons
-              name="eye-off"
-              size={ms(componentSizes.eyeIcon)}
-              color={colors.text.muted}
-            />
+            <Ionicons name="eye-off" size={ms(componentSizes.eyeIcon)} color={colors.text.muted} />
           </TouchableOpacity>
         </View>
       );
@@ -177,9 +168,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
         <View style={styles.balanceTextGroup}>
           <Text style={styles.balanceDollars}>{parts[0]}</Text>
           {parts[1] && (
-            <Text style={[styles.balanceDollars, styles.balanceDecimals]}>
-              .{parts[1]}
-            </Text>
+            <Text style={[styles.balanceDollars, styles.balanceDecimals]}>.{parts[1]}</Text>
           )}
         </View>
         <TouchableOpacity
@@ -211,9 +200,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
 
     return (
       <View style={styles.changeRow}>
-        <Text style={[styles.changeText, { color: changeColor }]}>
-          {displayPercentage}
-        </Text>
+        <Text style={[styles.changeText, { color: changeColor }]}>{displayPercentage}</Text>
         <Ionicons
           name={isPositive ? 'chevron-up' : 'chevron-down'}
           size={ms(componentSizes.changeArrowIcon)}
@@ -221,9 +208,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
           style={styles.trendingIcon}
         />
         {displayAbsChange && (
-          <Text style={[styles.changeText, { color: changeColor }]}>
-            ({displayAbsChange})
-          </Text>
+          <Text style={[styles.changeText, { color: changeColor }]}>({displayAbsChange})</Text>
         )}
       </View>
     );
@@ -246,9 +231,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
       />
       {/* Group 1: Logo + Network tag */}
       <View style={styles.contentGroup}>
-        <View style={styles.logoContainer}>
-          {renderBlockchainLogo(blockchain)}
-        </View>
+        <View style={styles.logoContainer}>{renderBlockchainLogo(blockchain)}</View>
         {networkLabel && (
           <View style={styles.networkLabelContainer}>
             <Text style={styles.networkLabelText}>{networkLabel}</Text>
@@ -261,7 +244,10 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
         <View style={styles.balanceContainer}>
           {loading ? (
             <View style={styles.balanceRow}>
-              <ShimmerRect width={ms(componentSizes.buttonMinWidthLg)} height={ms(fontSize.balance)} />
+              <ShimmerRect
+                width={ms(componentSizes.buttonMinWidthLg)}
+                height={ms(fontSize.balance)}
+              />
             </View>
           ) : (
             renderBalance()
@@ -282,10 +268,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
           {Array.from({ length: totalCount }).map((_, index) => (
             <View
               key={index}
-              style={[
-                styles.paginationDot,
-                index === currentIndex && styles.paginationDotActive,
-              ]}
+              style={[styles.paginationDot, index === currentIndex && styles.paginationDotActive]}
             />
           ))}
         </View>

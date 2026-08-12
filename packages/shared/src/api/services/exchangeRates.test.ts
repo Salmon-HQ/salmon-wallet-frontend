@@ -92,18 +92,16 @@ describe('exchange rates service', () => {
   });
 
   it('forces a fresh fetch after clearing the cache', async () => {
-    mockApiClientGet
-      .mockResolvedValueOnce({ data: MOCK_RATES })
-      .mockResolvedValueOnce({
-        data: {
-          ...MOCK_RATES,
-          timestamp: 1710000300,
-          rates: {
-            ...MOCK_RATES.rates,
-            eur: 0.95,
-          },
-        } satisfies ExchangeRates,
-      });
+    mockApiClientGet.mockResolvedValueOnce({ data: MOCK_RATES }).mockResolvedValueOnce({
+      data: {
+        ...MOCK_RATES,
+        timestamp: 1710000300,
+        rates: {
+          ...MOCK_RATES.rates,
+          eur: 0.95,
+        },
+      } satisfies ExchangeRates,
+    });
 
     const first = await getExchangeRates();
     clearExchangeRateCache();

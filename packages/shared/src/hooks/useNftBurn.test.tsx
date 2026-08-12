@@ -52,7 +52,7 @@ describe('useNftBurn', () => {
         useQuery({ queryKey: balanceKey, queryFn: fetchBalance, staleTime: 15_000 });
         return useNftBurn({ account: mockAccount, activeAccountId: 'wallet-1' });
       },
-      { wrapper: makeWrapper(client) },
+      { wrapper: makeWrapper(client) }
     );
 
     await waitFor(() => expect(fetchBalance).toHaveBeenCalledTimes(1));
@@ -94,9 +94,9 @@ describe('useNftBurn', () => {
     });
 
     await act(async () => {
-      await expect(
-        result.current.burnNft({ transaction: 'prepared' } as never),
-      ).rejects.toThrow('boom');
+      await expect(result.current.burnNft({ transaction: 'prepared' } as never)).rejects.toThrow(
+        'boom'
+      );
     });
 
     await waitFor(() => expect(result.current.status).toBe('failed'));

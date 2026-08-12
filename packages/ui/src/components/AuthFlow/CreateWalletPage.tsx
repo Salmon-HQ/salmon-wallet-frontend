@@ -205,10 +205,7 @@ function SeedPhraseStep({
 
   return (
     <Container $contained={contained}>
-      <ScreenHeader
-        onBack={onBack}
-        stepIndicator={{ totalSteps: 3, currentStep: 1 }}
-      />
+      <ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 3, currentStep: 1 }} />
       <ScrollContent>
         <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
         <Title>{t('wallet.create.your_seed_phrase')}</Title>
@@ -261,7 +258,7 @@ function ValidateStep({
         position,
         expectedWord: words[position - 1],
         userInput: '',
-      })),
+      }))
     );
   }, [words]);
 
@@ -270,15 +267,15 @@ function ValidateStep({
     return validateMnemonicWords(
       mnemonic,
       validationWords.map((word) => word.position),
-      validationWords.map((word) => word.userInput),
+      validationWords.map((word) => word.userInput)
     );
   }, [mnemonic, validationWords]);
 
   const handleInputChange = useCallback((index: number, value: string) => {
     setValidationWords((prev) =>
-      prev.map((word, currentIndex) => (
+      prev.map((word, currentIndex) =>
         currentIndex === index ? { ...word, userInput: value } : word
-      )),
+      )
     );
   }, []);
 
@@ -290,15 +287,12 @@ function ValidateStep({
       if (!result) return 'idle';
       return result.isCorrect ? 'correct' : 'incorrect';
     },
-    [validationResult, validationWords],
+    [validationResult, validationWords]
   );
 
   return (
     <Container $contained={contained}>
-      <ScreenHeader
-        onBack={onBack}
-        stepIndicator={{ totalSteps: 3, currentStep: 2 }}
-      />
+      <ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 3, currentStep: 2 }} />
       <Content>
         <FormArea>
           <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />

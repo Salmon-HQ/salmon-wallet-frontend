@@ -89,9 +89,7 @@ function MarketDataRow({
   return (
     <Row>
       <RowLabel>{label}</RowLabel>
-      <RowValue sx={valueColor ? { color: valueColor } : undefined}>
-        {value}
-      </RowValue>
+      <RowValue sx={valueColor ? { color: valueColor } : undefined}>{value}</RowValue>
     </Row>
   );
 }
@@ -222,7 +220,10 @@ export function TokenMarketData({
 
           {/* Market Cap Rank */}
           {data.marketCapRank !== undefined && data.marketCapRank !== null && (
-            <MarketDataRow label={t('token.marketData.rank', 'Rank')} value={`#${data.marketCapRank}`} />
+            <MarketDataRow
+              label={t('token.marketData.rank', 'Rank')}
+              value={`#${data.marketCapRank}`}
+            />
           )}
 
           {/* 24h Volume */}
@@ -235,12 +236,18 @@ export function TokenMarketData({
 
           {/* 24h High */}
           {data.high24h !== undefined && (
-            <MarketDataRow label={t('token.marketData.high24h', '24h High')} value={formatLarge(data.high24h)} />
+            <MarketDataRow
+              label={t('token.marketData.high24h', '24h High')}
+              value={formatLarge(data.high24h)}
+            />
           )}
 
           {/* 24h Low */}
           {data.low24h !== undefined && (
-            <MarketDataRow label={t('token.marketData.low24h', '24h Low')} value={formatLarge(data.low24h)} />
+            <MarketDataRow
+              label={t('token.marketData.low24h', '24h Low')}
+              value={formatLarge(data.low24h)}
+            />
           )}
 
           {/* Circulating Supply */}
@@ -269,7 +276,10 @@ export function TokenMarketData({
 
           {/* All-Time High */}
           {data.ath !== undefined && (
-            <MarketDataRow label={t('token.marketData.allTimeHigh', 'All-Time High')} value={formatLarge(data.ath)} />
+            <MarketDataRow
+              label={t('token.marketData.allTimeHigh', 'All-Time High')}
+              value={formatLarge(data.ath)}
+            />
           )}
 
           {/* ATH Change */}
@@ -283,12 +293,18 @@ export function TokenMarketData({
 
           {/* ATH Date */}
           {data.athDate !== undefined && (
-            <MarketDataRow label={t('token.marketData.athDate', 'ATH Date')} value={formatDateString(data.athDate)} />
+            <MarketDataRow
+              label={t('token.marketData.athDate', 'ATH Date')}
+              value={formatDateString(data.athDate)}
+            />
           )}
 
           {/* All-Time Low */}
           {data.atl !== undefined && (
-            <MarketDataRow label={t('token.marketData.allTimeLow', 'All-Time Low')} value={formatLarge(data.atl)} />
+            <MarketDataRow
+              label={t('token.marketData.allTimeLow', 'All-Time Low')}
+              value={formatLarge(data.atl)}
+            />
           )}
 
           {/* ATL Change */}
@@ -302,11 +318,13 @@ export function TokenMarketData({
 
           {/* ATL Date */}
           {data.atlDate !== undefined && (
-            <MarketDataRow label={t('token.marketData.atlDate', 'ATL Date')} value={formatDateString(data.atlDate)} />
+            <MarketDataRow
+              label={t('token.marketData.atlDate', 'ATL Date')}
+              value={formatDateString(data.atlDate)}
+            />
           )}
         </RowsContainer>
       </ContentContainer>
     </BlurContainer>
   );
 }
-

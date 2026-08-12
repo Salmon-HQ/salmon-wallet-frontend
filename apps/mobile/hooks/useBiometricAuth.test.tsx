@@ -24,7 +24,8 @@ jest.mock('expo-local-authentication', () => ({
   },
   hasHardwareAsync: (...args: unknown[]) => mockHasHardwareAsync(...args),
   isEnrolledAsync: (...args: unknown[]) => mockIsEnrolledAsync(...args),
-  supportedAuthenticationTypesAsync: (...args: unknown[]) => mockSupportedAuthenticationTypesAsync(...args),
+  supportedAuthenticationTypesAsync: (...args: unknown[]) =>
+    mockSupportedAuthenticationTypesAsync(...args),
   authenticateAsync: (...args: unknown[]) => mockAuthenticateAsync(...args),
 }));
 
@@ -61,12 +62,12 @@ describe('useBiometricAuth', () => {
       });
 
       expect(mockAuthenticateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({ disableDeviceFallback: true }),
+        expect.objectContaining({ disableDeviceFallback: true })
       );
       expect(mockSetItemAsync).toHaveBeenCalledWith(
         'salmon_biometric_key',
         '{"key":"value"}',
-        expect.objectContaining({ requireAuthentication: true }),
+        expect.objectContaining({ requireAuthentication: true })
       );
     });
 

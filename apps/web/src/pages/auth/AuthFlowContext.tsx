@@ -39,9 +39,7 @@ export function AuthFlowProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthFlowContext.Provider
-      value={{ ...state, setMnemonic, setFlowType, setJustCreated, reset }}
-    >
+    <AuthFlowContext.Provider value={{ ...state, setMnemonic, setFlowType, setJustCreated, reset }}>
       {children}
     </AuthFlowContext.Provider>
   );

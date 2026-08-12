@@ -58,9 +58,7 @@ export type ExecuteSwapApiFn = (
   requestId: string
 ) => Promise<ApiSwapExecuteResponse>;
 
-export type GetTokenListFn = (
-  networkId: SolanaNetworkId
-) => Promise<TokenMetadata[]>;
+export type GetTokenListFn = (networkId: SolanaNetworkId) => Promise<TokenMetadata[]>;
 
 /**
  * Kit clients used for the optional on-chain confirmation once the API has
@@ -169,8 +167,17 @@ export async function getSwapQuote(
   // next refactor.
   _fetchTokenList: GetTokenListFn = () => Promise.resolve([])
 ): Promise<SwapQuote> {
-  const networkId = typeof network === 'string' ? network : network.id as SwapNetworkId;
-  const { inputMint, outputMint, amount, publicKey, slippageBps, swapMode, dynamicSlippage, priorityLevel } = params;
+  const networkId = typeof network === 'string' ? network : (network.id as SwapNetworkId);
+  const {
+    inputMint,
+    outputMint,
+    amount,
+    publicKey,
+    slippageBps,
+    swapMode,
+    dynamicSlippage,
+    priorityLevel,
+  } = params;
 
   // Normalize addresses (handle case where publicKey is passed instead of SOL_ADDRESS)
   const normalizedInputMint = normalizeTokenAddress(inputMint, publicKey);
@@ -253,11 +260,7 @@ export async function executeSwap(
 
     // Submit to the API
     const requestId = quote.custom?.requestId || '';
-    const response = await submitSwap(
-      quote.networkId,
-      signedTransactionBase64,
-      requestId
-    );
+    const response = await submitSwap(quote.networkId, signedTransactionBase64, requestId);
 
     // Handle API response
     if (response.status === 'Success' && response.signature) {
@@ -293,7 +296,8 @@ export async function executeSwap(
       error: response.error || 'Swap execution failed',
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error during swap execution';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error during swap execution';
     return {
       txId: null,
       status: 'fail',
@@ -355,7 +359,7 @@ export async function swap(
 export function getExpectedOutput(quote: SwapQuote, outputDecimals?: number): number {
   const decimals = outputDecimals ?? quote.output?.decimals ?? 9;
   const amount = quote.output?.amount || '0';
-  return Number(amount) / (10 ** decimals);
+  return Number(amount) / 10 ** decimals;
 }
 
 /**
@@ -368,7 +372,7 @@ export function getExpectedOutput(quote: SwapQuote, outputDecimals?: number): nu
 export function getMinimumOutput(quote: SwapQuote, outputDecimals?: number): number {
   const decimals = outputDecimals ?? quote.output?.decimals ?? 9;
   const threshold = quote.custom?.otherAmountThreshold || '0';
-  return Number(threshold) / (10 ** decimals);
+  return Number(threshold) / 10 ** decimals;
 }
 
 /**
@@ -392,18 +396,22 @@ export function parseQuoteInfo(quote: SwapQuote): import('../../types/swap').Par
     expectedOutput: getExpectedOutput(quote, outputDecimals),
     minimumOutput: getMinimumOutput(quote, outputDecimals),
     priceImpact: getPriceImpact(quote),
-    inputToken: quote.input ? {
-      symbol: quote.input.symbol,
-      name: quote.input.name || '',
-      decimals: quote.input.decimals,
-      logo: quote.input.logo || undefined,
-    } : undefined,
-    outputToken: quote.output ? {
-      symbol: quote.output.symbol,
-      name: quote.output.name || '',
-      decimals: quote.output.decimals,
-      logo: quote.output.logo || undefined,
-    } : undefined,
+    inputToken: quote.input
+      ? {
+          symbol: quote.input.symbol,
+          name: quote.input.name || '',
+          decimals: quote.input.decimals,
+          logo: quote.input.logo || undefined,
+        }
+      : undefined,
+    outputToken: quote.output
+      ? {
+          symbol: quote.output.symbol,
+          name: quote.output.name || '',
+          decimals: quote.output.decimals,
+          logo: quote.output.logo || undefined,
+        }
+      : undefined,
     route: {
       slippageBps: quote.custom?.slippageBps || 50,
       swapMode: (quote.custom?.swapMode || 'ExactIn') as 'ExactIn' | 'ExactOut',

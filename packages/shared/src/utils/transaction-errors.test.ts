@@ -4,7 +4,7 @@ import { classifyTransactionError } from './transaction-errors';
 describe('classifyTransactionError', () => {
   it('maps a broke fee payer to the SOL-fee message', () => {
     const err = new Error(
-      'Transaction simulation failed: Attempt to debit an account but found no record of a prior credit.',
+      'Transaction simulation failed: Attempt to debit an account but found no record of a prior credit.'
     );
     expect(classifyTransactionError(err)).toBe('transaction.errors.insufficientFeeSol');
   });
@@ -24,26 +24,28 @@ describe('classifyTransactionError', () => {
   });
 
   it('maps insufficient lamports to the balance message', () => {
-    expect(classifyTransactionError(new Error('Transfer: insufficient lamports 100, need 2039280'))).toBe(
-      'transaction.errors.insufficientFunds',
-    );
+    expect(
+      classifyTransactionError(new Error('Transfer: insufficient lamports 100, need 2039280'))
+    ).toBe('transaction.errors.insufficientFunds');
   });
 
   it('maps an expired blockhash to the retry message', () => {
-    expect(classifyTransactionError(new Error('TransactionExpiredBlockheightExceededError: block height exceeded'))).toBe(
-      'transaction.errors.expired',
-    );
+    expect(
+      classifyTransactionError(
+        new Error('TransactionExpiredBlockheightExceededError: block height exceeded')
+      )
+    ).toBe('transaction.errors.expired');
   });
 
   it('maps a Jupiter slippage failure to the slippage message', () => {
     expect(classifyTransactionError(new Error('Swap failed: Slippage tolerance exceeded'))).toBe(
-      'transaction.errors.slippage',
+      'transaction.errors.slippage'
     );
     expect(classifyTransactionError(new Error('{"InstructionError":[0,{"Custom":6001}]}'))).toBe(
-      'transaction.errors.slippage',
+      'transaction.errors.slippage'
     );
     expect(classifyTransactionError(new Error('custom program error: 0x1771'))).toBe(
-      'transaction.errors.slippage',
+      'transaction.errors.slippage'
     );
   });
 
@@ -56,19 +58,23 @@ describe('classifyTransactionError', () => {
 
   it('maps a missing route to the no-route message', () => {
     expect(classifyTransactionError(new Error('Failed to get swap quote: No route found'))).toBe(
-      'transaction.errors.noRoute',
+      'transaction.errors.noRoute'
     );
-    expect(classifyTransactionError(new Error('ROUTE_NOT_FOUND'))).toBe('transaction.errors.noRoute');
+    expect(classifyTransactionError(new Error('ROUTE_NOT_FOUND'))).toBe(
+      'transaction.errors.noRoute'
+    );
   });
 
   it('maps an expired quote to the re-review message', () => {
     expect(classifyTransactionError(new Error('Quote expired: the quote has changed'))).toBe(
-      'transaction.errors.quoteExpired',
+      'transaction.errors.quoteExpired'
     );
   });
 
   it('falls back to the generic message for anything else', () => {
-    expect(classifyTransactionError(new Error('something unexpected'))).toBe('transaction.errors.generic');
+    expect(classifyTransactionError(new Error('something unexpected'))).toBe(
+      'transaction.errors.generic'
+    );
     expect(classifyTransactionError('raw string failure')).toBe('transaction.errors.generic');
     expect(classifyTransactionError(undefined)).toBe('transaction.errors.generic');
   });

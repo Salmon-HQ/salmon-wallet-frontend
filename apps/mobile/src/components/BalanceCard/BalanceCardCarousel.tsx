@@ -59,7 +59,6 @@ const BLOCKCHAIN_GRADIENTS: Record<BlockchainId, readonly [string, string, strin
   'ethereum-sepolia': gradients.balanceCardEthereumSepolia.colors,
 };
 
-
 /**
  * BalanceCardCarousel - Fixed container carousel with sliding content
  *
@@ -131,65 +130,45 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
       if (shouldSwipeLeft) {
         // Swipe left → animate current content OFF to the left
         isAnimating.value = true;
-        translateX.value = withTiming(
-          -SCREEN_WIDTH,
-          { duration: 200 },
-          (finished) => {
-            if (finished) {
-              // Update index (loads new content)
-              runOnJS(updateIndex)(activeIndex + 1);
-              // Position new content OFF to the right
-              translateX.value = SCREEN_WIDTH;
-              // Animate new content IN from the right
-              translateX.value = withTiming(
-                0,
-                SMOOTH_TIMING_CONFIG,
-                (timingFinished) => {
-                  if (timingFinished) {
-                    isAnimating.value = false;
-                  }
-                }
-              );
-            }
+        translateX.value = withTiming(-SCREEN_WIDTH, { duration: 200 }, (finished) => {
+          if (finished) {
+            // Update index (loads new content)
+            runOnJS(updateIndex)(activeIndex + 1);
+            // Position new content OFF to the right
+            translateX.value = SCREEN_WIDTH;
+            // Animate new content IN from the right
+            translateX.value = withTiming(0, SMOOTH_TIMING_CONFIG, (timingFinished) => {
+              if (timingFinished) {
+                isAnimating.value = false;
+              }
+            });
           }
-        );
+        });
       } else if (shouldSwipeRight) {
         // Swipe right → animate current content OFF to the right
         isAnimating.value = true;
-        translateX.value = withTiming(
-          SCREEN_WIDTH,
-          { duration: 200 },
-          (finished) => {
-            if (finished) {
-              // Update index (loads new content)
-              runOnJS(updateIndex)(activeIndex - 1);
-              // Position new content OFF to the left
-              translateX.value = -SCREEN_WIDTH;
-              // Animate new content IN from the left
-              translateX.value = withTiming(
-                0,
-                SMOOTH_TIMING_CONFIG,
-                (timingFinished) => {
-                  if (timingFinished) {
-                    isAnimating.value = false;
-                  }
-                }
-              );
-            }
+        translateX.value = withTiming(SCREEN_WIDTH, { duration: 200 }, (finished) => {
+          if (finished) {
+            // Update index (loads new content)
+            runOnJS(updateIndex)(activeIndex - 1);
+            // Position new content OFF to the left
+            translateX.value = -SCREEN_WIDTH;
+            // Animate new content IN from the left
+            translateX.value = withTiming(0, SMOOTH_TIMING_CONFIG, (timingFinished) => {
+              if (timingFinished) {
+                isAnimating.value = false;
+              }
+            });
           }
-        );
+        });
       } else {
         // Not enough swipe distance → smooth return to center (no bounce)
         isAnimating.value = true;
-        translateX.value = withTiming(
-          0,
-          SMOOTH_TIMING_CONFIG,
-          (finished) => {
-            if (finished) {
-              isAnimating.value = false;
-            }
+        translateX.value = withTiming(0, SMOOTH_TIMING_CONFIG, (finished) => {
+          if (finished) {
+            isAnimating.value = false;
           }
-        );
+        });
       }
     });
 
@@ -226,7 +205,9 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
   };
 
   // Get network label — in developer mode, always show (including "Mainnet")
-  const networkLabel = showNetworkLabel ? (getNetworkLabel(currentBlockchainId) ?? t('general.network_mainnet', 'Mainnet')) : null;
+  const networkLabel = showNetworkLabel
+    ? (getNetworkLabel(currentBlockchainId) ?? t('general.network_mainnet', 'Mainnet'))
+    : null;
 
   // Render balance with decimal opacity
   const renderBalance = () => {
@@ -249,7 +230,10 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
   };
 
   return (
-    <GestureHandlerRootView style={[styles.container, { marginTop: cardMarginTop }, style]} testID={testID}>
+    <GestureHandlerRootView
+      style={[styles.container, { marginTop: cardMarginTop }, style]}
+      testID={testID}
+    >
       <LinearGradient
         colors={[...currentGradient]}
         start={{ x: 0.5, y: 0 }}
@@ -306,7 +290,6 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
                 </View>
               )}
             </View>
-
           </Animated.View>
         </GestureDetector>
 

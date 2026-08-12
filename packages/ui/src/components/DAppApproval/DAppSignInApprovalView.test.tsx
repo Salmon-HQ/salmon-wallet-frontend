@@ -83,9 +83,7 @@ describe('DAppSignInApprovalView', () => {
   });
 
   it('shows the mismatch banner and blocks approval when the dApp claimed another domain', () => {
-    render(
-      <DAppSignInApprovalView {...baseProps} domainMismatch requestedDomain="evil.example" />,
-    );
+    render(<DAppSignInApprovalView {...baseProps} domainMismatch requestedDomain="evil.example" />);
 
     expect(screen.getByText('Domain mismatch')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'SIGN IN' })).toBeDisabled();
@@ -96,7 +94,7 @@ describe('DAppSignInApprovalView', () => {
     render(<DAppSignInApprovalView {...baseProps} siws={null} />);
 
     expect(
-      screen.getByText('This sign-in request is invalid and cannot be signed.'),
+      screen.getByText('This sign-in request is invalid and cannot be signed.')
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'SIGN IN' })).toBeDisabled();
   });
@@ -105,7 +103,7 @@ describe('DAppSignInApprovalView', () => {
     render(<DAppSignInApprovalView {...baseProps} isOffchainMessage />);
 
     expect(
-      screen.getByText('This message will be signed as a Solana off-chain message (OCMS).'),
+      screen.getByText('This message will be signed as a Solana off-chain message (OCMS).')
     ).toBeInTheDocument();
   });
 });

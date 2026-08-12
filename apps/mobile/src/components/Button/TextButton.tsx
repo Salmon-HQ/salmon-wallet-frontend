@@ -3,14 +3,15 @@
  *
  * Used for tertiary actions or links.
  */
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  ViewStyle,
-} from 'react-native';
-import { colors, componentSizes, fontFamilyNative, spacing, fontSize, letterSpacing, } from '@salmon/shared';
+  colors,
+  componentSizes,
+  fontFamilyNative,
+  spacing,
+  fontSize,
+  letterSpacing,
+} from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 
 interface TextButtonProps extends Testable {
@@ -47,9 +48,7 @@ export function TextButton({
       {loading ? (
         <ActivityIndicator color={color || colors.text.primary} />
       ) : (
-        <Text style={[styles.text, color ? { color } : undefined]}>
-          {children}
-        </Text>
+        <Text style={[styles.text, color ? { color } : undefined]}>{children}</Text>
       )}
     </TouchableOpacity>
   );

@@ -124,30 +124,18 @@ export const EthereumSvgIcon: React.FC<SvgIconProps> = ({
         d="M16.9969 0L16.6255 1.2306V36.9366L16.9969 37.2981L33.9895 27.501L16.9969 0Z"
         fill={color}
       />
-      <Path
-        d="M16.993 0L0 27.501L16.993 37.2981V19.9674V0Z"
-        fill={color}
-        fillOpacity={0.6}
-      />
+      <Path d="M16.993 0L0 27.501L16.993 37.2981V19.9674V0Z" fill={color} fillOpacity={0.6} />
       <Path
         d="M16.9969 40.436L16.7876 40.685V53.404L16.9969 54.0001L33.9999 30.644L16.9969 40.436Z"
         fill={color}
       />
-      <Path
-        d="M16.993 54.0001V40.436L0 30.644L16.993 54.0001Z"
-        fill={color}
-        fillOpacity={0.6}
-      />
+      <Path d="M16.993 54.0001V40.436L0 30.644L16.993 54.0001Z" fill={color} fillOpacity={0.6} />
       <Path
         d="M16.9907 37.2975L33.9833 27.5005L16.9907 19.9668V37.2975Z"
         fill={color}
         fillOpacity={0.2}
       />
-      <Path
-        d="M0 27.5005L16.993 37.2975V19.9668L0 27.5005Z"
-        fill={color}
-        fillOpacity={0.6}
-      />
+      <Path d="M0 27.5005L16.993 37.2975V19.9668L0 27.5005Z" fill={color} fillOpacity={0.6} />
     </Svg>
   );
 };
@@ -174,10 +162,7 @@ export const GridViewSvgIcon: React.FC<SvgIconProps> = ({
  * Home icon for home tab
  * Used in bottom navigation for home/wallet section
  */
-export const HomeSvgIcon: React.FC<SvgIconProps> = ({
-  size = 24,
-  color = colors.text.primary,
-}) => {
+export const HomeSvgIcon: React.FC<SvgIconProps> = ({ size = 24, color = colors.text.primary }) => {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
@@ -192,10 +177,7 @@ export const HomeSvgIcon: React.FC<SvgIconProps> = ({
  * Swap icon for swap tab
  * Used in bottom navigation for token swap section
  */
-export const SwapSvgIcon: React.FC<SvgIconProps> = ({
-  size = 24,
-  color = colors.text.primary,
-}) => {
+export const SwapSvgIcon: React.FC<SvgIconProps> = ({ size = 24, color = colors.text.primary }) => {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path

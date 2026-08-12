@@ -8,7 +8,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createApiClient } from '../../api/client';
 import { getReachableBackendBaseUrl } from '../../api/test-backend';
-import { VersionedTransaction, PublicKey, TransactionMessage, TransactionInstruction, SystemProgram } from '@solana/web3.js';
+import {
+  VersionedTransaction,
+  PublicKey,
+  TransactionMessage,
+  TransactionInstruction,
+  SystemProgram,
+} from '@solana/web3.js';
 import { createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
 import nacl from 'tweetnacl';
 import {
@@ -166,7 +172,13 @@ describe('getSwapQuote', () => {
       slippageBps: 50,
     };
 
-    const quote = await getSwapQuote('solana-mainnet', params, {}, mockGetSwapOrder, mockGetTokenList);
+    const quote = await getSwapQuote(
+      'solana-mainnet',
+      params,
+      {},
+      mockGetSwapOrder,
+      mockGetTokenList
+    );
 
     expect(quote).toBeDefined();
     expect(quote.networkId).toBe('solana-mainnet');
@@ -212,7 +224,13 @@ describe('getSwapQuote', () => {
       publicKey: TEST_PUBLIC_KEY,
     };
 
-    await getSwapQuote('solana-mainnet', params, { inputDecimals: 9 }, mockGetSwapOrder, mockGetTokenList);
+    await getSwapQuote(
+      'solana-mainnet',
+      params,
+      { inputDecimals: 9 },
+      mockGetSwapOrder,
+      mockGetTokenList
+    );
 
     expect(mockGetTokenList).not.toHaveBeenCalled();
     expect(mockGetSwapOrder).toHaveBeenCalledWith(
@@ -307,9 +325,9 @@ describe('getSwapQuote', () => {
       publicKey: TEST_PUBLIC_KEY,
     };
 
-    await expect(getSwapQuote('solana-mainnet', params, {}, mockGetSwapOrder, mockGetTokenList)).rejects.toThrow(
-      'Failed to get swap quote: No route found'
-    );
+    await expect(
+      getSwapQuote('solana-mainnet', params, {}, mockGetSwapOrder, mockGetTokenList)
+    ).rejects.toThrow('Failed to get swap quote: No route found');
   });
 
   it('forwards uiAmount for unknown mints — BE owns the catalog lookup', async () => {
@@ -345,10 +363,7 @@ describe('getSwapQuote', () => {
     const networkObj = { id: 'solana-mainnet', name: 'Mainnet', config: {} };
     await getSwapQuote(networkObj, params, {}, mockGetSwapOrder, mockGetTokenList);
 
-    expect(mockGetSwapOrder).toHaveBeenCalledWith(
-      'solana-mainnet',
-      expect.any(Object)
-    );
+    expect(mockGetSwapOrder).toHaveBeenCalledWith('solana-mainnet', expect.any(Object));
   });
 });
 
@@ -368,7 +383,9 @@ describe('executeSwap', () => {
     };
 
     if (!quote.custom) quote.custom = {} as any;
-    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
+    quote.custom.transaction = createMockVersionedTransactionBase64(
+      new PublicKey(TEST_SIGNER.address)
+    );
 
     const result = await executeSwap(quote, TEST_SIGNER, undefined, mockExecuteSwapApi);
 
@@ -387,7 +404,9 @@ describe('executeSwap', () => {
     };
 
     if (!quote.custom) quote.custom = {} as any;
-    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
+    quote.custom.transaction = createMockVersionedTransactionBase64(
+      new PublicKey(TEST_SIGNER.address)
+    );
 
     const result = await executeSwap(quote, TEST_SIGNER, undefined, mockExecuteSwapApi);
 
@@ -405,7 +424,9 @@ describe('executeSwap', () => {
     };
 
     if (!quote.custom) quote.custom = {} as any;
-    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
+    quote.custom.transaction = createMockVersionedTransactionBase64(
+      new PublicKey(TEST_SIGNER.address)
+    );
 
     const result = await executeSwap(quote, TEST_SIGNER, undefined, mockExecuteSwapApi);
 
@@ -421,7 +442,9 @@ describe('executeSwap', () => {
     };
 
     if (!quote.custom) quote.custom = {} as any;
-    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
+    quote.custom.transaction = createMockVersionedTransactionBase64(
+      new PublicKey(TEST_SIGNER.address)
+    );
 
     await executeSwap(quote, TEST_SIGNER, undefined, mockExecuteSwapApi);
 
@@ -450,7 +473,9 @@ describe('executeSwap', () => {
 
     const quote: SwapQuote = { ...MOCK_SWAP_ORDER, networkId: 'solana-mainnet' };
     if (!quote.custom) quote.custom = {} as any;
-    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
+    quote.custom.transaction = createMockVersionedTransactionBase64(
+      new PublicKey(TEST_SIGNER.address)
+    );
 
     const result = await executeSwap(quote, TEST_SIGNER, undefined, mockExecuteSwapApi);
 
@@ -481,7 +506,9 @@ describe('executeSwap', () => {
 
     const quote: SwapQuote = { ...MOCK_SWAP_ORDER, networkId: 'solana-mainnet' };
     if (!quote.custom) quote.custom = {} as any;
-    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
+    quote.custom.transaction = createMockVersionedTransactionBase64(
+      new PublicKey(TEST_SIGNER.address)
+    );
 
     const result = await executeSwap(quote, TEST_SIGNER, rpcClients as never, mockExecuteSwapApi);
 
@@ -493,7 +520,9 @@ describe('executeSwap', () => {
     const rpcClients = {
       rpc: {
         getSignatureStatuses: () => ({
-          send: async () => ({ value: [{ err: { InstructionError: [0, 'SlippageToleranceExceeded'] } }] }),
+          send: async () => ({
+            value: [{ err: { InstructionError: [0, 'SlippageToleranceExceeded'] } }],
+          }),
         }),
       },
       rpcSubscriptions: {
@@ -508,7 +537,9 @@ describe('executeSwap', () => {
 
     const quote: SwapQuote = { ...MOCK_SWAP_ORDER, networkId: 'solana-mainnet' };
     if (!quote.custom) quote.custom = {} as any;
-    quote.custom.transaction = createMockVersionedTransactionBase64(new PublicKey(TEST_SIGNER.address));
+    quote.custom.transaction = createMockVersionedTransactionBase64(
+      new PublicKey(TEST_SIGNER.address)
+    );
 
     const result = await executeSwap(quote, TEST_SIGNER, rpcClients as never, mockExecuteSwapApi);
 
@@ -566,7 +597,15 @@ describe('swap', () => {
     };
     mockGetSwapOrder.mockResolvedValue(mockSwapOrder);
 
-    const result = await swap('solana-mainnet', params, TEST_SIGNER, undefined, mockGetSwapOrder, mockExecuteSwapApi, mockGetTokenList);
+    const result = await swap(
+      'solana-mainnet',
+      params,
+      TEST_SIGNER,
+      undefined,
+      mockGetSwapOrder,
+      mockExecuteSwapApi,
+      mockGetTokenList
+    );
 
     expect(result.status).toBe('success');
     expect(result.txId).toBe(MOCK_SIGNATURE);
@@ -585,9 +624,17 @@ describe('swap', () => {
       publicKey: TEST_PUBLIC_KEY,
     };
 
-    await expect(swap('solana-mainnet', params, TEST_SIGNER, undefined, mockGetSwapOrder, mockExecuteSwapApi, mockGetTokenList)).rejects.toThrow(
-      'Failed to get swap quote'
-    );
+    await expect(
+      swap(
+        'solana-mainnet',
+        params,
+        TEST_SIGNER,
+        undefined,
+        mockGetSwapOrder,
+        mockExecuteSwapApi,
+        mockGetTokenList
+      )
+    ).rejects.toThrow('Failed to get swap quote');
   });
 
   it('should propagate execution errors', async () => {
@@ -608,7 +655,15 @@ describe('swap', () => {
       publicKey: TEST_PUBLIC_KEY,
     };
 
-    const result = await swap('solana-mainnet', params, TEST_SIGNER, undefined, mockGetSwapOrder, mockExecuteSwapApi, mockGetTokenList);
+    const result = await swap(
+      'solana-mainnet',
+      params,
+      TEST_SIGNER,
+      undefined,
+      mockGetSwapOrder,
+      mockExecuteSwapApi,
+      mockGetTokenList
+    );
 
     expect(result.status).toBe('fail');
     expect(result.error).toBeDefined();
@@ -690,7 +745,7 @@ describe('getPriceImpact', () => {
   it('should handle zero price impact', () => {
     const quote = createMockQuote('0.00');
     const impact = getPriceImpact(quote);
-    expect(impact).toBe(0.00);
+    expect(impact).toBe(0.0);
   });
 
   it('should handle high price impact', () => {
@@ -716,7 +771,7 @@ describe('Integration: Swap with Backend', () => {
       console.log('Skipping live swap backend: SALMON_TEST_LIVE_WALLET not set');
       return;
     }
-    const liveBackendBaseUrl = backendBaseUrl ?? await getReachableBackendBaseUrl();
+    const liveBackendBaseUrl = backendBaseUrl ?? (await getReachableBackendBaseUrl());
     if (!liveBackendBaseUrl) {
       console.log('Skipping live swap backend assertions: backend not reachable');
       return;
@@ -732,7 +787,7 @@ describe('Integration: Swap with Backend', () => {
         try {
           const { data } = await liveClient.get<SwapOrderResponse>(
             `/v1/${networkId}/ft/swap/order`,
-            { params: requestParams },
+            { params: requestParams }
           );
           return data;
         } catch (error: unknown) {

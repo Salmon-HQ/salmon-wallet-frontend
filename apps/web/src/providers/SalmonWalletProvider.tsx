@@ -87,7 +87,7 @@ function createSalmonWallet() {
 
     async signOffchainMessage(
       origin: string,
-      input: { messageVersion: number; message: string; requiredSigners: Uint8Array[] },
+      input: { messageVersion: number; message: string; requiredSigners: Uint8Array[] }
     ): Promise<{
       signedOffchainMessage: Uint8Array;
       signature: Uint8Array;
@@ -131,7 +131,7 @@ function createSalmonWallet() {
      */
     async signIn(
       origin: string,
-      input: SolanaSignInInputFields = {},
+      input: SolanaSignInInputFields = {}
     ): Promise<{
       account: { address: string; publicKey: Uint8Array };
       signedMessage: Uint8Array;
@@ -190,13 +190,13 @@ function createSalmonWallet() {
       return serializeSignedTransactionFromApproval(
         encodedMessage,
         payload.publicKey,
-        payload.signature,
+        payload.signature
       );
     },
 
     async signAllTransactions(
       origin: string,
-      transactions: Uint8Array[],
+      transactions: Uint8Array[]
     ): Promise<Uint8Array[] | null> {
       const requestId = generateRequestId();
       const encodedMessages = transactions.map((transaction) => bs58.encode(transaction));
@@ -218,14 +218,14 @@ function createSalmonWallet() {
       return serializeSignedTransactionsFromApproval(
         encodedMessages,
         payload.publicKey,
-        payload.signatures,
+        payload.signatures
       );
     },
 
     async signAndSendTransaction(
       origin: string,
       transaction: Uint8Array,
-      options?: Record<string, unknown>,
+      options?: Record<string, unknown>
     ): Promise<string | null> {
       const requestId = generateRequestId();
       const request: BridgeRequest = {
@@ -263,7 +263,7 @@ function registerSalmonWallet(): () => void {
       detail: callback,
       bubbles: false,
       cancelable: false,
-    }),
+    })
   );
 
   const appReadyHandler = (event: Event) => {

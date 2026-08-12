@@ -13,15 +13,19 @@
 
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { View, TextInput, Text, StyleSheet, ActivityIndicator, type ViewStyle } from 'react-native';
 import {
-  View,
-  TextInput,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  type ViewStyle,
-} from 'react-native';
-import { borderWidth, colors, useAddressValidation, useAccountsContext, type ValidationState, spacing, borderRadius, fontSize, fontWeight, fontFamilyNative, } from '@salmon/shared';
+  borderWidth,
+  colors,
+  useAddressValidation,
+  useAccountsContext,
+  type ValidationState,
+  spacing,
+  borderRadius,
+  fontSize,
+  fontWeight,
+  fontFamilyNative,
+} from '@salmon/shared';
 import type { InputAddressProps } from './types';
 
 // ============================================================================
@@ -48,19 +52,28 @@ function ValidationIndicator({ state }: ValidationIndicatorProps) {
       );
     case 'valid':
       return (
-        <Text style={[styles.validationIcon, { color: colors.status.success, fontSize: 18 }]} testID="input-address-valid">
+        <Text
+          style={[styles.validationIcon, { color: colors.status.success, fontSize: 18 }]}
+          testID="input-address-valid"
+        >
           {'\u2713'}
         </Text>
       );
     case 'invalid':
       return (
-        <Text style={[styles.validationIcon, { color: colors.status.error, fontSize: 18 }]} testID="input-address-invalid">
+        <Text
+          style={[styles.validationIcon, { color: colors.status.error, fontSize: 18 }]}
+          testID="input-address-invalid"
+        >
           {'\u2715'}
         </Text>
       );
     case 'warning':
       return (
-        <Text style={[styles.validationIcon, { color: colors.status.warning, fontSize: 18 }]} testID="input-address-warning">
+        <Text
+          style={[styles.validationIcon, { color: colors.status.warning, fontSize: 18 }]}
+          testID="input-address-warning"
+        >
           {'\u26A0'}
         </Text>
       );
@@ -111,17 +124,11 @@ export function InputAddress({
   const { activeBlockchainAccount } = state;
 
   // Use validation hook — account owns its own connection/provider
-  const {
-    validationState,
-    isValidating,
-    message,
-    messageType,
-    resolvedAddress,
-    isDomain,
-  } = useAddressValidation(address, activeBlockchainAccount, {
-    debounceMs: 500,
-    onValidation,
-  });
+  const { validationState, isValidating, message, messageType, resolvedAddress, isDomain } =
+    useAddressValidation(address, activeBlockchainAccount, {
+      debounceMs: 500,
+      onValidation,
+    });
 
   // Handle text change
   const handleChangeText = useCallback(
@@ -190,9 +197,7 @@ export function InputAddress({
         />
 
         {/* Validation Indicator */}
-        {address.length > 0 && (
-          <ValidationIndicator state={validationState} />
-        )}
+        {address.length > 0 && <ValidationIndicator state={validationState} />}
       </View>
 
       {/* Validation Message */}

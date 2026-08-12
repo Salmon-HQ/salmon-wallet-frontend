@@ -44,16 +44,15 @@ describe('useAvatarNfts (react-query)', () => {
   });
 
   it('fetches NFTs on mount when enabled', async () => {
-    const getAllNfts = vi.fn().mockResolvedValue([
-      { mint: { address: 'mint-1' }, name: 'Cool', media: 'https://img/1.png' },
-    ]);
+    const getAllNfts = vi
+      .fn()
+      .mockResolvedValue([
+        { mint: { address: 'mint-1' }, name: 'Cool', media: 'https://img/1.png' },
+      ]);
     const account = makeAccount('a-1', getAllNfts);
 
     const { wrapper } = makeWrapper();
-    const { result } = renderHook(
-      () => useAvatarNfts({ account, enabled: true }),
-      { wrapper }
-    );
+    const { result } = renderHook(() => useAvatarNfts({ account, enabled: true }), { wrapper });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -73,10 +72,7 @@ describe('useAvatarNfts (react-query)', () => {
     const account = makeAccount('a-2', getAllNfts);
 
     const { wrapper } = makeWrapper();
-    const { result } = renderHook(
-      () => useAvatarNfts({ account, enabled: false }),
-      { wrapper }
-    );
+    const { result } = renderHook(() => useAvatarNfts({ account, enabled: false }), { wrapper });
 
     // Give react-query a tick — query should remain idle
     await act(async () => {
@@ -101,10 +97,7 @@ describe('useAvatarNfts (react-query)', () => {
     const account = makeAccount('a-3', getAllNfts);
 
     const { wrapper } = makeWrapper();
-    const { result } = renderHook(
-      () => useAvatarNfts({ account, enabled: true }),
-      { wrapper }
-    );
+    const { result } = renderHook(() => useAvatarNfts({ account, enabled: true }), { wrapper });
 
     await waitFor(() => {
       expect(result.current.nfts).toHaveLength(1);
@@ -129,10 +122,7 @@ describe('useAvatarNfts (react-query)', () => {
     const account = makeAccount('a-4', getAllNfts);
 
     const { wrapper } = makeWrapper();
-    const { result } = renderHook(
-      () => useAvatarNfts({ account, enabled: true }),
-      { wrapper }
-    );
+    const { result } = renderHook(() => useAvatarNfts({ account, enabled: true }), { wrapper });
 
     await waitFor(() => {
       expect(result.current.nfts).toHaveLength(1);
@@ -146,10 +136,7 @@ describe('useAvatarNfts (react-query)', () => {
     const account = makeAccount('a-5', getAllNfts);
 
     const { wrapper } = makeWrapper();
-    const { result } = renderHook(
-      () => useAvatarNfts({ account, enabled: true }),
-      { wrapper }
-    );
+    const { result } = renderHook(() => useAvatarNfts({ account, enabled: true }), { wrapper });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);

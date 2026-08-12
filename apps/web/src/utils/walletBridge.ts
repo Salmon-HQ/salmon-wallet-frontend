@@ -57,7 +57,7 @@ export function sendSettlementRequest(request: BridgeSettlementRequest): void {
 export function sendRequestAndWait(
   request: BridgeRequest,
   timeoutMs = 120_000,
-  resendIntervalMs = 300,
+  resendIntervalMs = 300
 ): Promise<BridgeResponse> {
   return new Promise((resolve, reject) => {
     const channelRef = getChannel();
@@ -69,7 +69,10 @@ export function sendRequestAndWait(
     };
 
     function handler(event: MessageEvent<BridgeResponse>) {
-      if (event.data?.requestId === request.requestId && typeof event.data?.approved === 'boolean') {
+      if (
+        event.data?.requestId === request.requestId &&
+        typeof event.data?.approved === 'boolean'
+      ) {
         cleanup();
         resolve(event.data);
       }
@@ -100,7 +103,7 @@ export function onRequest(callback: (request: BridgeRequest) => void): () => voi
 }
 
 export function onSettlementRequest(
-  callback: (request: BridgeSettlementRequest) => void,
+  callback: (request: BridgeSettlementRequest) => void
 ): () => void {
   const channelRef = getChannel();
 

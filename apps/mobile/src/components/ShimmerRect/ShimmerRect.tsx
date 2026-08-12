@@ -1,9 +1,4 @@
-import {
-  borderRadius,
-  componentSizes,
-  durationMs,
-  ms,
-} from '@salmon/shared';
+import { borderRadius, componentSizes, durationMs, ms } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -43,7 +38,7 @@ export const ShimmerRect: React.FC<ShimmerRectProps> = ({
         duration: durationMs.shimmer,
         easing: Easing.inOut(Easing.ease),
       }),
-      -1,
+      -1
     );
   }, [translateX]);
 
@@ -52,12 +47,7 @@ export const ShimmerRect: React.FC<ShimmerRectProps> = ({
   }));
 
   return (
-    <View
-      style={[
-        styles.container,
-        { width, height, borderRadius: radius },
-      ]}
-    >
+    <View style={[styles.container, { width, height, borderRadius: radius }]}>
       <AnimatedLinearGradient
         colors={[...GRADIENT_COLORS]}
         start={{ x: 0, y: 0.5 }}

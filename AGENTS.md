@@ -15,13 +15,13 @@ ownership boundaries are the core discipline of this codebase.
 
 ## Ownership model
 
-| Location | Owns | Why |
-|---|---|---|
-| `packages/shared` | Cross-platform logic and contracts: API services, blockchain logic, hooks, semantic types, storage, config, crypto, utils, i18n locales, theme tokens | One implementation serves mobile, web, and extension; a bug fixed here is fixed everywhere |
-| `packages/ui` | Shared React DOM components used by web and extension | DOM code cannot run in React Native, so it must not live in `packages/shared` |
-| `apps/mobile` | React Native / Expo app, mobile-only flows, native integrations | RN code cannot run in browsers; keeping it app-local prevents platform leaks into shared packages |
-| `apps/web` | Web app shell, routing, providers, browser-specific wiring | App-shell concerns are not reusable; keeping them local keeps shared packages runtime-agnostic |
-| `apps/extension` | Extension entrypoints (background/content/injected), pages, sheets, browser-extension APIs | Extension runtime constraints (MV3, WXT) must not constrain the other apps |
+| Location          | Owns                                                                                                                                                  | Why                                                                                               |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `packages/shared` | Cross-platform logic and contracts: API services, blockchain logic, hooks, semantic types, storage, config, crypto, utils, i18n locales, theme tokens | One implementation serves mobile, web, and extension; a bug fixed here is fixed everywhere        |
+| `packages/ui`     | Shared React DOM components used by web and extension                                                                                                 | DOM code cannot run in React Native, so it must not live in `packages/shared`                     |
+| `apps/mobile`     | React Native / Expo app, mobile-only flows, native integrations                                                                                       | RN code cannot run in browsers; keeping it app-local prevents platform leaks into shared packages |
+| `apps/web`        | Web app shell, routing, providers, browser-specific wiring                                                                                            | App-shell concerns are not reusable; keeping them local keeps shared packages runtime-agnostic    |
+| `apps/extension`  | Extension entrypoints (background/content/injected), pages, sheets, browser-extension APIs                                                            | Extension runtime constraints (MV3, WXT) must not constrain the other apps                        |
 
 ## Placement rules
 
@@ -152,11 +152,11 @@ Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
 E2E suites live next to the app they exercise. Do not create a top-level
 `.playwright/` or `.maestro/`.
 
-| App | Suite | Tool |
-|---|---|---|
-| `apps/extension` | `apps/extension/.playwright/` | Playwright (chromium + extension load) |
-| `apps/web` | `apps/web/.playwright/` | Playwright (chromium against the web dev server) |
-| `apps/mobile` | `apps/mobile/.maestro/` | Maestro (iOS Simulator / Android emulator) |
+| App              | Suite                         | Tool                                             |
+| ---------------- | ----------------------------- | ------------------------------------------------ |
+| `apps/extension` | `apps/extension/.playwright/` | Playwright (chromium + extension load)           |
+| `apps/web`       | `apps/web/.playwright/`       | Playwright (chromium against the web dev server) |
+| `apps/mobile`    | `apps/mobile/.maestro/`       | Maestro (iOS Simulator / Android emulator)       |
 
 Each suite has its own `README.md` (setup) and `AGENTS.md` (conventions,
 known failure modes) — read those before extending a suite. Secrets stay in
@@ -184,17 +184,17 @@ not duplicate. The canonical body of each skill is
 `.claude/skills/` and `.codex/skills/`). When a task matches a skill's
 scope, open its `SKILL.md` and follow it.
 
-| Skill | Use for |
-|---|---|
-| `salmon-repo-rules` | Placement, ownership, boundary, export, and audit decisions (detailed matrices in its `references/`) |
-| `api-service-authoring` | Shared API services in `packages/shared/src/api/services` (caching, DI adapters, client selection) |
-| `shared-test-authoring` | Vitest tests for `packages/shared` (hooks, services, blockchain, crypto, config) |
-| `ui-component-scaffold` | Shared DOM components in `packages/ui`, incl. cross-platform contract flow |
-| `ui-test-authoring` | Tests for `packages/ui` components |
-| `mobile-component-scaffold` | React Native components in `apps/mobile`, incl. contract + mobile implementation |
-| `mobile-test-authoring` | Jest tests for `apps/mobile` |
-| `e2e-test-labels` | Stable `testID` / `data-testid` / a11y labels so Maestro and Playwright can select elements |
-| `i18n-authoring` | Adding, changing, or auditing user-facing copy and translation keys |
+| Skill                       | Use for                                                                                              |
+| --------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `salmon-repo-rules`         | Placement, ownership, boundary, export, and audit decisions (detailed matrices in its `references/`) |
+| `api-service-authoring`     | Shared API services in `packages/shared/src/api/services` (caching, DI adapters, client selection)   |
+| `shared-test-authoring`     | Vitest tests for `packages/shared` (hooks, services, blockchain, crypto, config)                     |
+| `ui-component-scaffold`     | Shared DOM components in `packages/ui`, incl. cross-platform contract flow                           |
+| `ui-test-authoring`         | Tests for `packages/ui` components                                                                   |
+| `mobile-component-scaffold` | React Native components in `apps/mobile`, incl. contract + mobile implementation                     |
+| `mobile-test-authoring`     | Jest tests for `apps/mobile`                                                                         |
+| `e2e-test-labels`           | Stable `testID` / `data-testid` / a11y labels so Maestro and Playwright can select elements          |
+| `i18n-authoring`            | Adding, changing, or auditing user-facing copy and translation keys                                  |
 
 Usage: load only what the task needs (read the relevant `SKILL.md` and only
 the reference files it points to); if several skills apply, state which and

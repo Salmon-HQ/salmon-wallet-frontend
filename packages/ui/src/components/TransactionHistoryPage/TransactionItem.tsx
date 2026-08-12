@@ -27,7 +27,22 @@ import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
-import { borderRadius, borderWidth, colors, componentSizes, fontWeight, formatRawAmount, formatRelativeTimeCompact, getTransactionDescription, fontSize, letterSpacing, opacity, spacing, duration, easing } from '@salmon/shared';
+import {
+  borderRadius,
+  borderWidth,
+  colors,
+  componentSizes,
+  fontWeight,
+  formatRawAmount,
+  formatRelativeTimeCompact,
+  getTransactionDescription,
+  fontSize,
+  letterSpacing,
+  opacity,
+  spacing,
+  duration,
+  easing,
+} from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
@@ -112,7 +127,9 @@ const TYPE_LABEL_KEYS: Record<TransactionType, string> = {
   unknown: 'transactions.detail.unknown',
 };
 
-function getTypeConfig(type: TransactionType): TypeConfig & { icon: React.ReactNode; badgeIcon: React.ReactNode } {
+function getTypeConfig(
+  type: TransactionType
+): TypeConfig & { icon: React.ReactNode; badgeIcon: React.ReactNode } {
   const config = TYPE_CONFIGS[type] || TYPE_CONFIGS.unknown;
   const { IconComponent } = config;
 
@@ -246,7 +263,7 @@ const SourceBadge = styled(Chip)({
   textTransform: 'uppercase',
   letterSpacing: letterSpacing.semiWide,
   '& .MuiChip-label': {
-    padding: `0 ${spacing.sm}px`
+    padding: `0 ${spacing.sm}px`,
   },
 });
 
@@ -434,14 +451,12 @@ export function TransactionItem({
           <SwapLogoOverlap>
             <TokenLogo uri={inputs[0].logo} size={34} />
           </SwapLogoOverlap>
-          <TypeBadge sx={{ backgroundColor: config.color }}>
-            {config.badgeIcon}
-          </TypeBadge>
+          <TypeBadge sx={{ backgroundColor: config.color }}>{config.badgeIcon}</TypeBadge>
         </SwapLogosContainer>
       );
     }
 
-    const primaryToken = type === 'receive' ? inputs[0] : (outputs[0] || inputs[0]);
+    const primaryToken = type === 'receive' ? inputs[0] : outputs[0] || inputs[0];
     if (primaryToken?.logo) {
       return (
         <LogoWithBadgeContainer>
@@ -463,12 +478,7 @@ export function TransactionItem({
   // Helper to render token amounts
   const renderTokenAmounts = (tokens: TransactionTokenAmount[], sign: '+' | '-') => {
     return tokens.map((token, i) => (
-      <AmountDisplay
-        key={`${sign}-${i}`}
-        token={token}
-        sign={sign}
-        hidden={hiddenBalance}
-      />
+      <AmountDisplay key={`${sign}-${i}`} token={token} sign={sign} hidden={hiddenBalance} />
     ));
   };
 
@@ -500,12 +510,8 @@ export function TransactionItem({
 
       return (
         <AmountsContainer>
-          {firstOutput && (
-            <AmountDisplay token={firstOutput} sign="-" hidden={hiddenBalance} />
-          )}
-          {firstInput && (
-            <AmountDisplay token={firstInput} sign="+" hidden={hiddenBalance} />
-          )}
+          {firstOutput && <AmountDisplay token={firstOutput} sign="-" hidden={hiddenBalance} />}
+          {firstInput && <AmountDisplay token={firstInput} sign="+" hidden={hiddenBalance} />}
         </AmountsContainer>
       );
     }
@@ -531,7 +537,10 @@ export function TransactionItem({
         <ItemButton
           onClick={handleClick}
           onDoubleClick={handleDoubleClick}
-          aria-label={t('accessibility.transaction_row', '{{type}} transaction, {{description}}', { type: t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label), description: descriptionText })}
+          aria-label={t('accessibility.transaction_row', '{{type}} transaction, {{description}}', {
+            type: t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label),
+            description: descriptionText,
+          })}
           data-testid="activity-tx-row"
         >
           {/* Left: Logo/Icon */}
@@ -540,7 +549,9 @@ export function TransactionItem({
           {/* Center: Type and description */}
           <InfoSection>
             <TypeRow>
-              <TypeText>{t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label)}</TypeText>
+              <TypeText>
+                {t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label)}
+              </TypeText>
               {source && <SourceBadge label={source} size="small" />}
             </TypeRow>
             <DescriptionText>{descriptionText}</DescriptionText>
@@ -562,7 +573,9 @@ export function TransactionItem({
                 }}
               >
                 <ExpandText>
-                  {expanded ? t('transactions.showLess', 'show less') : t('transactions.showMore', 'show more')}
+                  {expanded
+                    ? t('transactions.showLess', 'show less')
+                    : t('transactions.showMore', 'show more')}
                 </ExpandText>
                 {expanded ? (
                   <ExpandLessIcon sx={{ fontSize: fontSize.sm, color: colors.palette.amber }} />
@@ -576,13 +589,9 @@ export function TransactionItem({
 
         {/* Expandable route visualization for swaps */}
         {type === 'swap' && (
-          <SwapRouteVisualization
-            transaction={transaction}
-            expanded={expanded}
-          />
+          <SwapRouteVisualization transaction={transaction} expanded={expanded} />
         )}
       </BlurContainer>
     </ItemWrapper>
   );
 }
-

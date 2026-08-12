@@ -52,14 +52,16 @@ function getEnvVar(name: string): string | undefined {
   // Each value is inlined at compile time in Expo/Metro builds.
   // In Vite builds these resolve to undefined (no EXPO_PUBLIC_ vars), falling through below.
   // In tests (Node.js) these read from the real process.env object at call time.
-  const expoValue = ({
-    SALMON_ENV: process.env.EXPO_PUBLIC_SALMON_ENV,
-    API_HOST: process.env.EXPO_PUBLIC_API_HOST,
-    API_PORT: process.env.EXPO_PUBLIC_API_PORT,
-    API_URL: process.env.EXPO_PUBLIC_API_URL,
-    STATIC_API_URL: process.env.EXPO_PUBLIC_STATIC_API_URL,
-    ANALYTICS_URL: process.env.EXPO_PUBLIC_ANALYTICS_URL,
-  } as Record<string, string | undefined>)[name];
+  const expoValue = (
+    {
+      SALMON_ENV: process.env.EXPO_PUBLIC_SALMON_ENV,
+      API_HOST: process.env.EXPO_PUBLIC_API_HOST,
+      API_PORT: process.env.EXPO_PUBLIC_API_PORT,
+      API_URL: process.env.EXPO_PUBLIC_API_URL,
+      STATIC_API_URL: process.env.EXPO_PUBLIC_STATIC_API_URL,
+      ANALYTICS_URL: process.env.EXPO_PUBLIC_ANALYTICS_URL,
+    } as Record<string, string | undefined>
+  )[name];
 
   if (expoValue) return expoValue;
 
@@ -67,14 +69,16 @@ function getEnvVar(name: string): string | undefined {
   // its `define`. A DYNAMIC `process.env[`VITE_${name}`]` is NOT statically
   // replaced — and the `process` shim leaves its env empty — so the web build
   // silently fell back to prod. The static map below is required for Vite.
-  const viteValue = ({
-    SALMON_ENV: process.env.VITE_SALMON_ENV,
-    API_HOST: process.env.VITE_API_HOST,
-    API_PORT: process.env.VITE_API_PORT,
-    API_URL: process.env.VITE_API_URL,
-    STATIC_API_URL: process.env.VITE_STATIC_API_URL,
-    ANALYTICS_URL: process.env.VITE_ANALYTICS_URL,
-  } as Record<string, string | undefined>)[name];
+  const viteValue = (
+    {
+      SALMON_ENV: process.env.VITE_SALMON_ENV,
+      API_HOST: process.env.VITE_API_HOST,
+      API_PORT: process.env.VITE_API_PORT,
+      API_URL: process.env.VITE_API_URL,
+      STATIC_API_URL: process.env.VITE_STATIC_API_URL,
+      ANALYTICS_URL: process.env.VITE_ANALYTICS_URL,
+    } as Record<string, string | undefined>
+  )[name];
 
   if (viteValue) return viteValue;
 
@@ -116,10 +120,7 @@ export function getLocalApiUrl(host?: string, port?: number): string {
   // Note: process.env.EXPO_OS (without optional chaining) is required for
   // babel-preset-expo to inline it at build time.
   const expoOS = typeof process !== 'undefined' && process.env ? process.env.EXPO_OS : undefined;
-  if (
-    (finalHost === 'localhost' || finalHost === '127.0.0.1') &&
-    expoOS === 'android'
-  ) {
+  if ((finalHost === 'localhost' || finalHost === '127.0.0.1') && expoOS === 'android') {
     finalHost = '10.0.2.2';
   }
 

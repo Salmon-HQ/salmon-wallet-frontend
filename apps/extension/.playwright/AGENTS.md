@@ -1,7 +1,7 @@
 # AGENTS.md instructions for `.playwright`
 
-> Companion to `README.md`. README explains *what* exists and *how to run
-> it*. This file documents conventions, traps, and decision rules an
+> Companion to `README.md`. README explains _what_ exists and _how to run
+> it_. This file documents conventions, traps, and decision rules an
 > autonomous agent needs when extending the suite.
 
 ## Mental model
@@ -31,7 +31,7 @@ Select by the shared **`data-testid` contract** first — `Testable` in
 break when the app is localized.
 
 Priority: `getByTestId` → `getByRole` (role + accessible name) → text. Never
-make CSS, `input[type=...]`, or positional `.nth()`/index the *primary*
+make CSS, `input[type=...]`, or positional `.nth()`/index the _primary_
 selector when a stable id can be added to the component instead. If a screen
 you need is unlabeled, prefer adding the id (per the skill) over writing a
 fragile selector.
@@ -56,13 +56,13 @@ fragile selector.
 
 The extension uses MUI components throughout. Common gotchas:
 
-| Gotcha | Fix |
-|---|---|
-| `getByRole('button', { name: /^Burn$/i })` returns 0 | The Burn button has `aria-label="Burn NFT"`. Anchored regexes never match accessible names with extra words. Drop the anchors or query by `aria-label` directly. |
-| `popup.locator('input').first()` matches an MUI `<Switch>` checkbox | Use `getByRole('textbox')` for text inputs; switches are excluded automatically. |
-| Save/Send buttons render but stay disabled | Salmon validates asynchronously (RPC). Use `waitForButtonEnabled(page, name, timeoutMs)` from `lib.mjs` instead of clicking eagerly. |
-| Settings sub-panel screenshot shows the wrong panel | Drawer animation is in flight when you capture. Either sleep ≥ 1500 ms after click or use `settings-panels.mjs` which opens a fresh popup per panel. |
-| `popup.goto(popupUrl)` does not reset the SPA route | The popup retains state via `localStorage`. To start clean, open a new page or `rm -rf` the profile. |
+| Gotcha                                                              | Fix                                                                                                                                                              |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getByRole('button', { name: /^Burn$/i })` returns 0                | The Burn button has `aria-label="Burn NFT"`. Anchored regexes never match accessible names with extra words. Drop the anchors or query by `aria-label` directly. |
+| `popup.locator('input').first()` matches an MUI `<Switch>` checkbox | Use `getByRole('textbox')` for text inputs; switches are excluded automatically.                                                                                 |
+| Save/Send buttons render but stay disabled                          | Salmon validates asynchronously (RPC). Use `waitForButtonEnabled(page, name, timeoutMs)` from `lib.mjs` instead of clicking eagerly.                             |
+| Settings sub-panel screenshot shows the wrong panel                 | Drawer animation is in flight when you capture. Either sleep ≥ 1500 ms after click or use `settings-panels.mjs` which opens a fresh popup per panel.             |
+| `popup.goto(popupUrl)` does not reset the SPA route                 | The popup retains state via `localStorage`. To start clean, open a new page or `rm -rf` the profile.                                                             |
 
 ## Headless mode (CI)
 
@@ -75,7 +75,7 @@ Known instability (2026-08-12, reproduced twice): the seed-gated
 `analytics-coverage.spec.ts` catalog test times out headless on an
 "element is not stable / detached" click against
 `account-add-method-import` (MUI list animation). It does not affect CI —
-that spec skips there (no backend, no seed) — but a headless *local*
+that spec skips there (no backend, no seed) — but a headless _local_
 full-depth run may hit it; prefer headed for the pre-release full-depth
 pass until the click is stabilized.
 
@@ -86,12 +86,12 @@ it — `state-check.mjs`, a quick RPC query, or the popup itself. Do not
 assume Wallet A still has SOL or Wallet B still holds the target NFT; both
 drain across runs (Send moves real SOL, burn/transfer moves real NFTs).
 
-| Flow | Needs |
-|---|---|
-| Lock/unlock, connect, sign, dApp provider inspection | nothing |
-| Send / Address Book save | Wallet A: SOL for fee + amount |
-| NFT transfer | Wallet A: an NFT to send |
-| Burn cNFT | Wallet B: the target scam cNFT |
+| Flow                                                 | Needs                          |
+| ---------------------------------------------------- | ------------------------------ |
+| Lock/unlock, connect, sign, dApp provider inspection | nothing                        |
+| Send / Address Book save                             | Wallet A: SOL for fee + amount |
+| NFT transfer                                         | Wallet A: an NFT to send       |
+| Burn cNFT                                            | Wallet B: the target scam cNFT |
 
 Missing prerequisite → skip with a clear message (same policy as the
 backend-down case in the README). Backend up but behaving wrong → fail,

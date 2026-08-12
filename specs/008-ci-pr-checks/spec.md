@@ -8,7 +8,7 @@
 
 **Input**: The repo is public and receives external PRs that are reviewed in part by AI agents. Every quality gate (`turbo run typecheck lint test`, `check:i18n`) exists and is green, but nothing runs them automatically: the only workflows are a manual extension build and a tag-triggered web deploy. CONTRIBUTING.md promises checks that no machine enforces. Everything that can be resolved deterministically must be resolved before a reviewer — human or AI — spends attention on a PR.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - External contributor gets a verdict from machines, not from review latency (Priority: P1)
 
@@ -49,7 +49,7 @@ Any PR that touches `.github/workflows/` is statically analyzed (zizmor) for tem
 
 1. **Given** a PR introducing a workflow with an unpinned action or an injectable `${{ }}` expansion into `run:`, **When** CI runs, **Then** the zizmor job reports it.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 - **FR-001**: A `ci.yml` workflow MUST run on `pull_request` and on `push` to `main`, and MUST NOT use `pull_request_target`.
 - **FR-002**: Top-level `permissions: {}`; each job grants itself only what it needs (`contents: read`; the title job `pull-requests: read`).
@@ -61,7 +61,7 @@ Any PR that touches `.github/workflows/` is statically analyzed (zizmor) for tem
 - **FR-008**: No PR size limit (decision: maintainer prefers no cap for now).
 - **FR-009**: E2E suites are explicitly OUT of this workflow (separate nightly/manual workflow, later batch).
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - **SC-001**: A fork PR with a deliberate type error fails CI without maintainer action.
 - **SC-002**: A run on this very branch passes end to end in under 10 minutes.

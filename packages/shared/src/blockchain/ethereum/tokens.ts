@@ -297,9 +297,7 @@ export function getFeaturedTokenBySymbol(
   symbol: string
 ): EthereumToken | undefined {
   const tokens = getFeaturedTokens(networkId);
-  return tokens.find(
-    (t) => t.symbol.toLowerCase() === symbol.toLowerCase()
-  );
+  return tokens.find((t) => t.symbol.toLowerCase() === symbol.toLowerCase());
 }
 
 /**
@@ -314,9 +312,7 @@ export function getFeaturedTokenByAddress(
   address: string
 ): EthereumToken | undefined {
   const tokens = getFeaturedTokens(networkId);
-  return tokens.find(
-    (t) => t.address.toLowerCase() === address.toLowerCase()
-  );
+  return tokens.find((t) => t.address.toLowerCase() === address.toLowerCase());
 }
 
 // ============================================================================
@@ -333,10 +329,7 @@ export function getFeaturedTokenByAddress(
  * @param address - Address to check
  * @returns True if the address is a valid ERC-20 token
  */
-export async function isErc20Token(
-  provider: Provider,
-  address: string
-): Promise<boolean> {
+export async function isErc20Token(provider: Provider, address: string): Promise<boolean> {
   try {
     const contract = new Contract(address, ERC20_ABI, provider);
     await contract.symbol();
@@ -393,7 +386,8 @@ export async function detectAllTokens(
   provider: Provider,
   address: string,
   networkId: string = 'ethereum-mainnet',
-  fetchTokenBalances: (address: string, networkId: string) => Promise<DetectedERC20Token[]> = () => Promise.resolve([])
+  fetchTokenBalances: (address: string, networkId: string) => Promise<DetectedERC20Token[]> = () =>
+    Promise.resolve([])
 ): Promise<TokenDetectionResult> {
   let detectedTokens: EthereumTokenBalance[] = [];
   let usedAutomaticDetection = false;
@@ -425,11 +419,7 @@ export async function detectAllTokens(
 
   if (featuredTokens.length > 0) {
     try {
-      featuredWithBalances = await getTokensByOwner(
-        provider,
-        address,
-        featuredTokens
-      );
+      featuredWithBalances = await getTokensByOwner(provider, address, featuredTokens);
     } catch (error) {
       console.warn('[tokens] Featured token balance fetch failed:', error);
     }
@@ -461,9 +451,7 @@ export async function detectAllTokens(
   });
 
   // Convert map to array and filter for non-zero balances
-  const allTokens = Array.from(tokenMap.values()).filter(
-    (token) => token.balance > 0n
-  );
+  const allTokens = Array.from(tokenMap.values()).filter((token) => token.balance > 0n);
 
   return {
     detectedTokens,

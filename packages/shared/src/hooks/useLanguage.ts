@@ -106,9 +106,7 @@ export function useLanguage(): UseLanguageResult {
 
       try {
         const storage = getStorage();
-        const savedLanguage = await storage.getItem<LanguageCode>(
-          STORAGE_KEYS.LANGUAGE
-        );
+        const savedLanguage = await storage.getItem<LanguageCode>(STORAGE_KEYS.LANGUAGE);
 
         if (savedLanguage && AVAILABLE_LANGUAGES.includes(savedLanguage)) {
           setLanguage(savedLanguage);
@@ -133,27 +131,24 @@ export function useLanguage(): UseLanguageResult {
   /**
    * Changes the current language and persists to storage.
    */
-  const changeLanguage = useCallback(
-    async (languageCode: LanguageCode): Promise<void> => {
-      if (!AVAILABLE_LANGUAGES.includes(languageCode)) {
-        console.error(`Invalid language code: ${languageCode}`);
-        return;
-      }
+  const changeLanguage = useCallback(async (languageCode: LanguageCode): Promise<void> => {
+    if (!AVAILABLE_LANGUAGES.includes(languageCode)) {
+      console.error(`Invalid language code: ${languageCode}`);
+      return;
+    }
 
-      // Update local state + i18next
-      setLanguage(languageCode);
-      await i18n.changeLanguage(languageCode);
+    // Update local state + i18next
+    setLanguage(languageCode);
+    await i18n.changeLanguage(languageCode);
 
-      // Persist to storage
-      try {
-        const storage = getStorage();
-        await storage.setItem(STORAGE_KEYS.LANGUAGE, languageCode);
-      } catch (error) {
-        console.error('Failed to save language preference:', error);
-      }
-    },
-    []
-  );
+    // Persist to storage
+    try {
+      const storage = getStorage();
+      await storage.setItem(STORAGE_KEYS.LANGUAGE, languageCode);
+    } catch (error) {
+      console.error('Failed to save language preference:', error);
+    }
+  }, []);
 
   return {
     language,
@@ -164,4 +159,3 @@ export function useLanguage(): UseLanguageResult {
     isLoading,
   };
 }
-

@@ -19,10 +19,7 @@ export function LanguageSelector({
   );
 
   return (
-    <SettingsPanelContent
-      title={t('settings.languages.title', 'Language')}
-      onBack={onBack}
-    >
+    <SettingsPanelContent title={t('settings.languages.title', 'Language')} onBack={onBack}>
       <SettingsSelectorList
         items={languages}
         getKey={(item) => item.code}

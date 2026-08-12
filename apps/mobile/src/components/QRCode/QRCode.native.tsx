@@ -7,13 +7,6 @@ const QRCode: React.FC<QRCodeProps> = ({
   size,
   backgroundColor = '#FFFFFF',
   color = '#000000',
-}) => (
-  <QRCodeSVG
-    value={value}
-    size={size}
-    backgroundColor={backgroundColor}
-    color={color}
-  />
-);
+}) => <QRCodeSVG value={value} size={size} backgroundColor={backgroundColor} color={color} />;
 
 export default QRCode;

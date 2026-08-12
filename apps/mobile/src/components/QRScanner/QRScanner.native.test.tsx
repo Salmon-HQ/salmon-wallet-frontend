@@ -54,12 +54,7 @@ describe('QRScanner.native', () => {
 
   it('renders nothing when hidden', () => {
     render(
-      <QRScanner
-        visible={false}
-        blockchain="solana"
-        onScan={jest.fn()}
-        onClose={jest.fn()}
-      />
+      <QRScanner visible={false} blockchain="solana" onScan={jest.fn()} onClose={jest.fn()} />
     );
 
     expect(screen.queryByTestId('qr-scanner-close-button')).toBeNull();
@@ -69,14 +64,7 @@ describe('QRScanner.native', () => {
   it('requests permission when opened and not yet granted', () => {
     mockPermission = { granted: false, canAskAgain: true };
 
-    render(
-      <QRScanner
-        visible
-        blockchain="solana"
-        onScan={jest.fn()}
-        onClose={jest.fn()}
-      />
-    );
+    render(<QRScanner visible blockchain="solana" onScan={jest.fn()} onClose={jest.fn()} />);
 
     expect(mockRequestPermission).toHaveBeenCalled();
     expect(CameraView).not.toHaveBeenCalled();
@@ -84,18 +72,9 @@ describe('QRScanner.native', () => {
 
   it('shows the permission-denied state with a route to Settings', () => {
     mockPermission = { granted: false, canAskAgain: false };
-    const openSettings = jest
-      .spyOn(Linking, 'openSettings')
-      .mockResolvedValue(undefined);
+    const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined);
 
-    render(
-      <QRScanner
-        visible
-        blockchain="solana"
-        onScan={jest.fn()}
-        onClose={jest.fn()}
-      />
-    );
+    render(<QRScanner visible blockchain="solana" onScan={jest.fn()} onClose={jest.fn()} />);
 
     expect(screen.getByTestId('qr-scanner-permission-denied')).toBeTruthy();
     expect(mockRequestPermission).not.toHaveBeenCalled();
@@ -108,21 +87,12 @@ describe('QRScanner.native', () => {
     const onScan = jest.fn();
     mockClassify.mockReturnValueOnce({ kind: 'notAddress' });
 
-    render(
-      <QRScanner
-        visible
-        blockchain="solana"
-        onScan={onScan}
-        onClose={jest.fn()}
-      />
-    );
+    render(<QRScanner visible blockchain="solana" onScan={onScan} onClose={jest.fn()} />);
 
     scanFrame('https://example.com');
 
     expect(onScan).not.toHaveBeenCalled();
-    expect(
-      screen.getByText('This code is not a valid address')
-    ).toBeTruthy();
+    expect(screen.getByText('This code is not a valid address')).toBeTruthy();
 
     mockClassify.mockReturnValueOnce({
       kind: 'valid',
@@ -141,34 +111,18 @@ describe('QRScanner.native', () => {
   it('distinguishes a wrong-chain address in the rejection message', () => {
     mockClassify.mockReturnValue({ kind: 'wrongChain' });
 
-    render(
-      <QRScanner
-        visible
-        blockchain="solana"
-        onScan={jest.fn()}
-        onClose={jest.fn()}
-      />
-    );
+    render(<QRScanner visible blockchain="solana" onScan={jest.fn()} onClose={jest.fn()} />);
 
     scanFrame('bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq');
 
-    expect(
-      screen.getByText('This address belongs to a different network')
-    ).toBeTruthy();
+    expect(screen.getByText('This address belongs to a different network')).toBeTruthy();
   });
 
   it('handles a successful decode exactly once per scan session', () => {
     const onScan = jest.fn();
     mockClassify.mockReturnValue({ kind: 'valid', address: 'ValidAddress' });
 
-    render(
-      <QRScanner
-        visible
-        blockchain="solana"
-        onScan={onScan}
-        onClose={jest.fn()}
-      />
-    );
+    render(<QRScanner visible blockchain="solana" onScan={onScan} onClose={jest.fn()} />);
 
     scanFrame('ValidAddress');
     scanFrame('ValidAddress');
@@ -180,14 +134,7 @@ describe('QRScanner.native', () => {
   it('calls onClose from the close button', () => {
     const onClose = jest.fn();
 
-    render(
-      <QRScanner
-        visible
-        blockchain="solana"
-        onScan={jest.fn()}
-        onClose={onClose}
-      />
-    );
+    render(<QRScanner visible blockchain="solana" onScan={jest.fn()} onClose={onClose} />);
 
     fireEvent.press(screen.getByTestId('qr-scanner-close-button'));
     expect(onClose).toHaveBeenCalledTimes(1);

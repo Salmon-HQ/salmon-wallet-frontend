@@ -32,16 +32,9 @@ const NO_ROUTE_PATTERNS = [
   'route_not_found',
 ];
 
-const QUOTE_EXPIRED_PATTERNS = [
-  'quote expired',
-  'quote has changed',
-];
+const QUOTE_EXPIRED_PATTERNS = ['quote expired', 'quote has changed'];
 
-const EXPIRED_PATTERNS = [
-  'block height exceeded',
-  'blockhash not found',
-  'transaction expired',
-];
+const EXPIRED_PATTERNS = ['block height exceeded', 'blockhash not found', 'transaction expired'];
 
 interface SolanaErrorLike {
   context?: {

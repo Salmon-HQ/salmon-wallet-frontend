@@ -34,13 +34,13 @@ describe('scanDerivedAccounts', () => {
 
   it('returns index-1 accounts and no failed networks on a clean scan', async () => {
     mockDerive.mockImplementation(async (_m, networkId, index) =>
-      makeAccount(networkId, index ?? 0),
+      makeAccount(networkId, index ?? 0)
     );
 
     const result = await scanDerivedAccounts(
       MNEMONIC,
       ['solana-mainnet', 'bitcoin-mainnet'],
-      async () => 0,
+      async () => 0
     );
 
     expect(result.failedNetworks).toEqual([]);
@@ -57,7 +57,7 @@ describe('scanDerivedAccounts', () => {
     const result = await scanDerivedAccounts(
       MNEMONIC,
       ['solana-mainnet', 'bitcoin-mainnet'],
-      async () => 0,
+      async () => 0
     );
 
     expect(result.accounts).toEqual([]);
@@ -74,12 +74,10 @@ describe('scanDerivedAccounts', () => {
     const result = await scanDerivedAccounts(
       MNEMONIC,
       ['solana-mainnet', 'bitcoin-mainnet'],
-      async () => 0,
+      async () => 0
     );
 
     expect(result.failedNetworks).toEqual(['bitcoin-mainnet']);
-    expect(result.accounts.map((a) => `${a.networkId}-${a.index}`)).toEqual([
-      'solana-mainnet-1',
-    ]);
+    expect(result.accounts.map((a) => `${a.networkId}-${a.index}`)).toEqual(['solana-mainnet-1']);
   });
 });

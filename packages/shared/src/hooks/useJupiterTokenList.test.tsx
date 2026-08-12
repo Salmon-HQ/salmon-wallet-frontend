@@ -12,7 +12,10 @@ vi.mock('../api/services', () => ({
 }));
 vi.mock('../utils/swap', async () => {
   const actual: any = await vi.importActual('../utils/swap');
-  return { ...actual, mapToSwapToken: (t: any) => ({ address: t.address, symbol: t.symbol, name: t.name } as any) };
+  return {
+    ...actual,
+    mapToSwapToken: (t: any) => ({ address: t.address, symbol: t.symbol, name: t.name }) as any,
+  };
 });
 
 import { getTokenList } from '../api/services';
@@ -30,10 +33,9 @@ describe('useJupiterTokenList', () => {
     ]);
 
     const client = createTestQueryClient();
-    const { result } = renderHook(
-      () => useJupiterTokenList({ networkId: 'solana-mainnet' }),
-      { wrapper: ({ children }) => <QueryWrapper client={client}>{children}</QueryWrapper> },
-    );
+    const { result } = renderHook(() => useJupiterTokenList({ networkId: 'solana-mainnet' }), {
+      wrapper: ({ children }) => <QueryWrapper client={client}>{children}</QueryWrapper>,
+    });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(mockGetTokenList).toHaveBeenCalledWith('solana-mainnet');
@@ -42,10 +44,9 @@ describe('useJupiterTokenList', () => {
 
   it('skips when networkId is undefined', () => {
     const client = createTestQueryClient();
-    const { result } = renderHook(
-      () => useJupiterTokenList({ networkId: undefined }),
-      { wrapper: ({ children }) => <QueryWrapper client={client}>{children}</QueryWrapper> },
-    );
+    const { result } = renderHook(() => useJupiterTokenList({ networkId: undefined }), {
+      wrapper: ({ children }) => <QueryWrapper client={client}>{children}</QueryWrapper>,
+    });
     expect(mockGetTokenList).not.toHaveBeenCalled();
     expect(result.current.tokens).toEqual([]);
     expect(result.current.loading).toBe(false);

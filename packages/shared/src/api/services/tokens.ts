@@ -36,7 +36,6 @@ interface BackendToken {
   id?: string;
 }
 
-
 // ============================================================================
 // In-memory cache
 // ============================================================================
@@ -101,8 +100,7 @@ export async function getTokenList(
     const existingTags = existing?.tags ?? [];
     const isVerified = tokenTags.includes('verified') || tokenTags.includes('strict');
     const isCommunity = tokenTags.includes('community');
-    const existingIsVerified =
-      existingTags.includes('verified') || existingTags.includes('strict');
+    const existingIsVerified = existingTags.includes('verified') || existingTags.includes('strict');
     const existingIsCommunity = existingTags.includes('community');
 
     if (!existing) {
@@ -141,10 +139,9 @@ export async function searchTokens(
   }
 
   try {
-    const { data } = await apiClient.get<BackendToken[]>(
-      `/v1/${networkId}/ft/search`,
-      { params: { query } }
-    );
+    const { data } = await apiClient.get<BackendToken[]>(`/v1/${networkId}/ft/search`, {
+      params: { query },
+    });
     return normalizeBackendTokens(data);
   } catch (error) {
     console.warn('[TokenService] Search endpoint unavailable:', error);

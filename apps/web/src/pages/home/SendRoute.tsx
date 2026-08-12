@@ -53,9 +53,8 @@ export function SendRoute(): React.ReactElement {
       price: token.price,
       uiAmount: token.uiAmount,
       usdBalance: token.usdBalance,
-      last24HoursChange: token.priceChange24h !== undefined
-        ? { perc: token.priceChange24h }
-        : undefined,
+      last24HoursChange:
+        token.priceChange24h !== undefined ? { perc: token.priceChange24h } : undefined,
       tags: token.tags,
       coingeckoId: token.coingeckoId,
       decimals: token.decimals,
@@ -67,20 +66,24 @@ export function SendRoute(): React.ReactElement {
 
   if (!activeBlockchainAccount) {
     return (
-      <Box sx={{
-        minHeight: '100vh',
-        backgroundColor: colors.background.primary,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: spacing['2xl'],
-      }}>
-        <Typography sx={{
-          color: colors.text.secondary,
-          fontFamily: fontFamily.sans,
-          fontSize: fontSize.lg,
-          textAlign: 'center',
-        }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          backgroundColor: colors.background.primary,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: spacing['2xl'],
+        }}
+      >
+        <Typography
+          sx={{
+            color: colors.text.secondary,
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.lg,
+            textAlign: 'center',
+          }}
+        >
           No account available
         </Typography>
       </Box>

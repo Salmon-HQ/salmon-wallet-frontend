@@ -127,8 +127,8 @@ const MessageText = styled(Typography)<{
     $messageType === 'error'
       ? colors.status.error
       : $messageType === 'warning'
-      ? colors.status.warning
-      : colors.text.secondary,
+        ? colors.status.warning
+        : colors.text.secondary,
 }));
 
 const DomainInfo = styled(Box)({
@@ -170,10 +170,7 @@ function ValidationIndicator({ state }: ValidationIndicatorProps) {
     case 'loading':
       return (
         <ValidationIcon data-testid="input-address-loading">
-          <CircularProgress
-            size={20}
-            sx={{ color: colors.palette.indigo }}
-          />
+          <CircularProgress size={20} sx={{ color: colors.palette.indigo }} />
         </ValidationIcon>
       );
     case 'valid':
@@ -243,17 +240,11 @@ export function InputAddress({
   const { activeBlockchainAccount } = state;
 
   // Use validation hook — account owns its own connection/provider
-  const {
-    validationState,
-    isValidating,
-    message,
-    messageType,
-    resolvedAddress,
-    isDomain,
-  } = useAddressValidation(address, activeBlockchainAccount, {
-    debounceMs: durationMs.debounce,
-    onValidation,
-  });
+  const { validationState, isValidating, message, messageType, resolvedAddress, isDomain } =
+    useAddressValidation(address, activeBlockchainAccount, {
+      debounceMs: durationMs.debounce,
+      onValidation,
+    });
 
   // Handle text change
   const handleChange = useCallback(
@@ -285,23 +276,12 @@ export function InputAddress({
   const displayMessageType = errorMessage ? 'error' : messageType;
 
   return (
-    <Container
-      data-testid={testID}
-      className={className}
-      style={style}
-    >
+    <Container data-testid={testID} className={className} style={style}>
       {/* Label */}
-      {label && (
-        <Label data-testid={`${testID}-label`}>
-          {label}
-        </Label>
-      )}
+      {label && <Label data-testid={`${testID}-label`}>{label}</Label>}
 
       {/* Input Container */}
-      <InputWrapper
-        $borderColor={getBorderColor()}
-        $isDisabled={disabled}
-      >
+      <InputWrapper $borderColor={getBorderColor()} $isDisabled={disabled}>
         <StyledInput
           value={address}
           onChange={handleChange}
@@ -322,17 +302,13 @@ export function InputAddress({
         />
 
         {/* Validation Indicator */}
-        {address.length > 0 && (
-          <ValidationIndicator state={validationState} />
-        )}
+        {address.length > 0 && <ValidationIndicator state={validationState} />}
       </InputWrapper>
 
       {/* Validation Message */}
       {displayMessage && (
         <MessageContainer data-testid={`${testID}-message`}>
-          <MessageText $messageType={displayMessageType}>
-            {t(displayMessage)}
-          </MessageText>
+          <MessageText $messageType={displayMessageType}>{t(displayMessage)}</MessageText>
         </MessageContainer>
       )}
 
@@ -340,12 +316,9 @@ export function InputAddress({
       {isDomain && resolvedAddress && (
         <DomainInfo data-testid={`${testID}-domain-info`}>
           <DomainLabel>{t('send.resolved_address')}</DomainLabel>
-          <DomainValue title={resolvedAddress}>
-            {resolvedAddress}
-          </DomainValue>
+          <DomainValue title={resolvedAddress}>{resolvedAddress}</DomainValue>
         </DomainInfo>
       )}
     </Container>
   );
 }
-

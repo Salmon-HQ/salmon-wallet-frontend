@@ -6,13 +6,7 @@
  */
 
 import React, { useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   colors,
@@ -84,7 +78,9 @@ export function SettingsSelectorList<T>({
           <View style={styles.info}>
             {renderLeadingElement?.(item)}
             <View style={[styles.textContainer, renderLeadingElement && styles.textWithLeading]}>
-              <Text style={styles.primaryText} numberOfLines={1} ellipsizeMode="tail">{getPrimaryText(item)}</Text>
+              <Text style={styles.primaryText} numberOfLines={1} ellipsizeMode="tail">
+                {getPrimaryText(item)}
+              </Text>
               {getSecondaryText && (
                 <Text style={styles.secondaryText} numberOfLines={1} ellipsizeMode="tail">
                   {getSecondaryText(item)}
@@ -93,17 +89,19 @@ export function SettingsSelectorList<T>({
             </View>
           </View>
 
-          {selected && (
-            <Ionicons
-              name="checkmark-circle"
-              size={24}
-              color={colors.accent.primary}
-            />
-          )}
+          {selected && <Ionicons name="checkmark-circle" size={24} color={colors.accent.primary} />}
         </TouchableOpacity>
       );
     },
-    [isSelected, getKey, onSelect, getPrimaryText, getSecondaryText, renderLeadingElement, testIdPrefix],
+    [
+      isSelected,
+      getKey,
+      onSelect,
+      getPrimaryText,
+      getSecondaryText,
+      renderLeadingElement,
+      testIdPrefix,
+    ]
   );
 
   if (loading) {

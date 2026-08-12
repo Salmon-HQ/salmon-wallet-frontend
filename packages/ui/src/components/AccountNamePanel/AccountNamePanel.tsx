@@ -71,13 +71,11 @@ const SaveButton = styled(Button)({
 // Component
 // ============================================================================
 
-export function AccountNamePanel({
-  accountId,
-  onBack,
-}: AccountNamePanelProps): React.ReactElement {
+export function AccountNamePanel({ accountId, onBack }: AccountNamePanelProps): React.ReactElement {
   const { t } = useTranslation();
   const [accountState, accountActions] = useAccountsContext();
-  const account = accountState.accounts.find((a: Account) => a.id === accountId) || accountState.activeAccount;
+  const account =
+    accountState.accounts.find((a: Account) => a.id === accountId) || accountState.activeAccount;
 
   const [name, setName] = useState(account?.name || '');
   const [error, setError] = useState('');
@@ -94,10 +92,7 @@ export function AccountNamePanel({
   }, [name, accountId, accountActions, onBack, t]);
 
   return (
-    <SettingsPanelContent
-      title={t('settings.account_edit.name_section')}
-      onBack={onBack}
-    >
+    <SettingsPanelContent title={t('settings.account_edit.name_section')} onBack={onBack}>
       <Box sx={{ padding: `0 ${spacing.lg}px` }}>
         <StyledTextField
           fullWidth

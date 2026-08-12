@@ -74,7 +74,9 @@ export default defineBackground(() => {
   // open (MV3 keep-alive).
   browser.runtime.onConnect.addListener((port) => {
     if (port.name === 'salmon_sidepanel') {
-      port.onDisconnect.addListener(() => { /* no-op */ });
+      port.onDisconnect.addListener(() => {
+        /* no-op */
+      });
     }
   });
 
@@ -228,9 +230,11 @@ export default defineBackground(() => {
     sender: chrome.runtime.MessageSender,
     sendResponse: ResponseHandler
   ): Promise<void> => {
-    const result = await browser.storage.local.get(
-      [STORAGE_KEYS.CONNECTION, STORAGE_KEYS.NETWORK_ID, STORAGE_KEYS.TRUSTED_APPS]
-    );
+    const result = await browser.storage.local.get([
+      STORAGE_KEYS.CONNECTION,
+      STORAGE_KEYS.NETWORK_ID,
+      STORAGE_KEYS.TRUSTED_APPS,
+    ]);
     const tabId = await getActiveTabId();
 
     const callback: ResponseHandler = async (data, id) => {
@@ -287,7 +291,10 @@ export default defineBackground(() => {
     } else if (message.data.method === 'set') {
       if (message.data.key) {
         stashedValues.set(message.data.key, message.data.value);
-        if (message.data.key === STASH_KEYS.DERIVED_KEY || message.data.key === STASH_KEYS.LAST_ACTIVITY) {
+        if (
+          message.data.key === STASH_KEYS.DERIVED_KEY ||
+          message.data.key === STASH_KEYS.LAST_ACTIVITY
+        ) {
           browser.alarms.create('salmon_lock_alarm', { delayInMinutes: 5 });
         }
       }
@@ -370,7 +377,9 @@ export default defineBackground(() => {
         const approvalWindowId = approvalWindows.get(msg.data.id);
         if (approvalWindowId != null) {
           approvalWindows.delete(msg.data.id);
-          browser.windows.remove(approvalWindowId).catch(() => { /* already closed */ });
+          browser.windows.remove(approvalWindowId).catch(() => {
+            /* already closed */
+          });
         }
       } else if (message.channel === 'salmon_extension_stash_channel') {
         return handleStashOperation(message as StashMessage, sender, sendResponse);
@@ -382,7 +391,9 @@ export default defineBackground(() => {
   browser.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'salmon_lock_alarm') {
       stashedValues.delete(STASH_KEYS.DERIVED_KEY);
-      sessionArea.remove(SESSION_KEY_STORAGE_KEY).catch(() => { /* ignore */ });
+      sessionArea.remove(SESSION_KEY_STORAGE_KEY).catch(() => {
+        /* ignore */
+      });
     }
   });
 

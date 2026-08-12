@@ -10,7 +10,21 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fontFamilyNative, fontSize, fontWeight, borderRadius, borderWidth, gradients, shadows, componentSizes, ms, s, vs, spacing, } from '@salmon/shared';
+import {
+  colors,
+  fontFamilyNative,
+  fontSize,
+  fontWeight,
+  borderRadius,
+  borderWidth,
+  gradients,
+  shadows,
+  componentSizes,
+  ms,
+  s,
+  vs,
+  spacing,
+} from '@salmon/shared';
 import { SolanaSvgIcon, BitcoinSvgIcon } from '../Icon';
 import { BlurContainer } from '../BlurContainer';
 import type { NftCarouselSectionProps, NftBlockchain } from './types';
@@ -215,11 +229,7 @@ export const NftCarouselSection: React.FC<NftCarouselSectionProps> = ({
         contentContainerStyle={styles.scrollContent}
       >
         {nfts.map((nft) => (
-          <MiniNftCard
-            key={nft.mint}
-            nft={nft}
-            onPress={() => handleNftPress(nft)}
-          />
+          <MiniNftCard key={nft.mint} nft={nft} onPress={() => handleNftPress(nft)} />
         ))}
       </ScrollView>
     </View>

@@ -11,7 +11,14 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import { colors, formatConversionRate, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
+import {
+  colors,
+  formatConversionRate,
+  fontSize,
+  fontWeight,
+  lineHeight,
+  spacing,
+} from '@salmon/shared';
 import type { ConversionRateDisplayProps } from './types';
 
 // ============================================================================
@@ -57,7 +64,9 @@ export function ConversionRateDisplay({
   if (isSmall) {
     return (
       <Container className={className}>
-        <SwapHorizIcon sx={{ fontSize: fontSize.sm, color: colors.text.secondary, mr: `${spacing.xs}px` }} />
+        <SwapHorizIcon
+          sx={{ fontSize: fontSize.sm, color: colors.text.secondary, mr: `${spacing.xs}px` }}
+        />
         <CompactText>1:{formattedRate}</CompactText>
       </Container>
     );
@@ -65,14 +74,14 @@ export function ConversionRateDisplay({
 
   return (
     <Container className={className}>
-      <SwapHorizIcon sx={{ fontSize: fontSize.base, color: colors.text.secondary, mr: `${spacing.sm}px` }} />
+      <SwapHorizIcon
+        sx={{ fontSize: fontSize.base, color: colors.text.secondary, mr: `${spacing.sm}px` }}
+      />
       <RateText>
         <SymbolText>1 {fromSymbol}</SymbolText>
         {' = '}
-        {formattedRate}{' '}
-        <SymbolText>{toSymbol}</SymbolText>
+        {formattedRate} <SymbolText>{toSymbol}</SymbolText>
       </RateText>
     </Container>
   );
 }
-

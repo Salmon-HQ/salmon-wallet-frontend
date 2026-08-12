@@ -55,14 +55,14 @@ export function SendPage({
   const skipTokenSelect = blockchain === 'bitcoin';
 
   // Step management
-  const [step, setStep] = useState<SendStep>(
-    skipTokenSelect ? 'address-amount' : 'token-select'
-  );
+  const [step, setStep] = useState<SendStep>(skipTokenSelect ? 'address-amount' : 'token-select');
   const [selectedToken, setSelectedToken] = useState<SendToken | null>(
     skipTokenSelect && tokens.length > 0 ? tokens[0] : null
   );
   const [recipientAddress, setRecipientAddress] = useState('');
-  const [resolvedRecipientAddress, setResolvedRecipientAddress] = useState<string | undefined>(undefined);
+  const [resolvedRecipientAddress, setResolvedRecipientAddress] = useState<string | undefined>(
+    undefined
+  );
   const [amount, setAmount] = useState('');
   const [successTxId, setSuccessTxId] = useState<string | null>(null);
 
@@ -153,7 +153,14 @@ export function SendPage({
       // token-select step: go back to home
       handleExit();
     }
-  }, [step, skipTokenSelect, handleSuccessContinue, handleBackToAddressAmount, handleBackToTokenSelect, handleExit]);
+  }, [
+    step,
+    skipTokenSelect,
+    handleSuccessContinue,
+    handleBackToAddressAmount,
+    handleBackToTokenSelect,
+    handleExit,
+  ]);
 
   return (
     <PageShell
@@ -210,7 +217,8 @@ export function SendPage({
             summary={`${amount} ${selectedToken.symbol} to ${getShortAddress(recipientAddress) ?? recipientAddress}`}
             explorerUrl={getTransactionUrl(
               blockchain.toUpperCase() as Blockchain,
-              (account as { network: { networkId: string } }).network.networkId as NetworkEnvironment,
+              (account as { network: { networkId: string } }).network
+                .networkId as NetworkEnvironment,
               getDefaultExplorer(blockchain.toUpperCase() as Blockchain),
               successTxId
             )}

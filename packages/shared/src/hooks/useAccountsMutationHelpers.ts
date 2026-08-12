@@ -7,27 +7,22 @@ export function buildMnemonicMap(accounts: Account[]): Record<string, string> {
       mnemonics[id] = mnemonic;
       return mnemonics;
     },
-    {} as Record<string, string>,
+    {} as Record<string, string>
   );
 }
 
-export function getPreferredNetworkId(
-  account: Account,
-  currentNetworkId: string | null,
-): string {
+export function getPreferredNetworkId(account: Account, currentNetworkId: string | null): string {
   if (currentNetworkId) {
     return currentNetworkId;
   }
 
   const availableNetworks = Object.keys(account.networksAccounts);
-  return availableNetworks.includes('solana-mainnet')
-    ? 'solana-mainnet'
-    : availableNetworks[0];
+  return availableNetworks.includes('solana-mainnet') ? 'solana-mainnet' : availableNetworks[0];
 }
 
 export async function persistAccounts(
   accounts: Account[],
-  formatAccountForStorage: (account: Account) => StoredAccount,
+  formatAccountForStorage: (account: Account) => StoredAccount
 ): Promise<void> {
   await setStorageItem(STORAGE_KEYS.ACCOUNTS, accounts.map(formatAccountForStorage));
 }
@@ -35,7 +30,7 @@ export async function persistAccounts(
 export async function persistActiveSelection(
   accountId: string,
   pathIndex: number,
-  networkId?: string,
+  networkId?: string
 ): Promise<void> {
   await setStorageItem(STORAGE_KEYS.ACCOUNT_ID, accountId);
   await setStorageItem(STORAGE_KEYS.PATH_INDEX, pathIndex);

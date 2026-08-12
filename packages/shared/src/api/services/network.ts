@@ -40,9 +40,7 @@ export async function getNetworks(): Promise<NetworkCatalogEntry[]> {
     return networksPromise;
   }
 
-  networksPromise = apiClient
-    .get<NetworkCatalogEntry[]>('/v1/networks')
-    .then(({ data }) => data);
+  networksPromise = apiClient.get<NetworkCatalogEntry[]>('/v1/networks').then(({ data }) => data);
 
   try {
     return await networksPromise;
@@ -66,14 +64,10 @@ export async function getNetwork(id: string): Promise<NetworkCatalogEntry | unde
 
 export async function getEnabledNetworkIds(): Promise<string[]> {
   const networks = await getNetworks();
-  return networks
-    .filter((network) => network.enabled)
-    .map((network) => network.id);
+  return networks.filter((network) => network.enabled).map((network) => network.id);
 }
 
-export async function isBackendNetworkEnabled(
-  networkId: string
-): Promise<boolean> {
+export async function isBackendNetworkEnabled(networkId: string): Promise<boolean> {
   const network = await getNetwork(networkId);
   return network?.enabled ?? false;
 }

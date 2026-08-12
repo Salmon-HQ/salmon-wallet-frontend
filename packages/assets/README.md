@@ -46,11 +46,13 @@ const fontFamily = Fonts.DMSans.Bold;
 ### Using Images
 
 Individual exports:
+
 ```typescript
 import { IconHome, IconWallet, AppLogo } from '@salmon/assets';
 ```
 
 Organized by category:
+
 ```typescript
 import { Images } from '@salmon/assets';
 
@@ -86,7 +88,7 @@ Assets are organized into the following categories:
   - Bold
   - Medium
   - Regular
-  
+
 - **Space Mono**: Monospace font for addresses and technical text
   - Regular
 

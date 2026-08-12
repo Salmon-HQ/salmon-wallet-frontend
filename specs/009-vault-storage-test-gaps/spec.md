@@ -8,7 +8,7 @@
 
 **Input**: The 2026-08-12 audit found that the two modules a wallet can least afford to break are the least tested: `packages/shared/src/storage/` (where the encrypted vault persists and session timeout is decided) has zero test files, and the hot key-cache unlock path in `packages/shared/src/crypto/encryption.ts` (`unlockAndGetKey`, `unlockWithKey`, `lockWithKey`) appears only as mocks in other tests. There is also no test proving that a tampered vault fails closed, and no golden vector freezing the KDF parameters — an accidental change to `DEFAULT_ITERATIONS` or the hash would silently break every existing user's vault. This batch adds ONLY tests; production behavior in these paths must not change.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - A stored vault keeps opening after refactors (Priority: P1)
 
@@ -61,7 +61,7 @@ The cached-key fast path (`unlockAndGetKey`, `unlockWithKey`, `lockWithKey`) is 
 3. **Given** `generateValidationPositions`, **Then** positions are within range, unique, and of the requested count.
 4. **Given** `deriveChildFromPath` with a fixed seed and path, **Then** the derived key matches a pinned expected value (replacing the current `toBeDefined`-only test).
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 - **FR-001**: Tests only. No file under `packages/shared/src/{crypto,storage}` other than `*.test.ts` may change. If a test reveals a real bug, STOP and report — do not fix production code in this batch (AGENTS.md security-sensitive rule).
 - **FR-002**: Golden fixtures are committed constants with a comment explaining how they were generated. Test mnemonics must be well-known BIP39 test vectors (e.g. `abandon … about`), never anything resembling a real secret.
@@ -69,7 +69,7 @@ The cached-key fast path (`unlockAndGetKey`, `unlockWithKey`, `lockWithKey`) is 
 - **FR-004**: Follow `shared-test-authoring` skill conventions (Vitest, existing mocking patterns in the sibling test files).
 - **FR-005**: The web-crypto fallback path already tested in `encryption.test.ts` must not be duplicated — extend the existing files where a file exists, create new files only for `storage/`.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - **SC-001**: `packages/shared/src/storage/` has direct tests for `stash.ts` and `storage.ts`.
 - **SC-002**: `unlockAndGetKey`/`unlockWithKey`/`lockWithKey` execute for real (not as mocks) in at least one test each.

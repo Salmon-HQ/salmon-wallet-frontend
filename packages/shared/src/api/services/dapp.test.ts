@@ -69,7 +69,7 @@ describe('dapp service', () => {
 
   it('returns null when the backend metadata lookup fails', async () => {
     mockApiClientGet.mockRejectedValueOnce(
-      new ApiError('Network error: Unable to reach the server', 0, 'NETWORK_ERROR'),
+      new ApiError('Network error: Unable to reach the server', 0, 'NETWORK_ERROR')
     );
 
     const result = await getMetadata('https://raydium.io');
@@ -79,44 +79,40 @@ describe('dapp service', () => {
 });
 
 describe('dapp service integration', () => {
-  it(
-    'reads live dapp metadata from salmon-api',
-    async () => {
-      const liveBackendBaseUrl = backendBaseUrl ?? await getReachableBackendBaseUrl();
-      if (!liveBackendBaseUrl) {
-        console.log('Skipping live dapp integration assertions: backend not reachable');
-        return;
+  it('reads live dapp metadata from salmon-api', async () => {
+    const liveBackendBaseUrl = backendBaseUrl ?? (await getReachableBackendBaseUrl());
+    if (!liveBackendBaseUrl) {
+      console.log('Skipping live dapp integration assertions: backend not reachable');
+      return;
+    }
+
+    mockApiClientGet.mockImplementation(async (path, config) => {
+      const url = new URL(`${liveBackendBaseUrl}${path as string}`);
+      const params = config?.params as Record<string, string | number> | undefined;
+      if (params) {
+        for (const [key, value] of Object.entries(params)) {
+          url.searchParams.set(key, String(value));
+        }
       }
 
-      mockApiClientGet.mockImplementation(async (path, config) => {
-        const url = new URL(`${liveBackendBaseUrl}${path as string}`);
-        const params = config?.params as Record<string, string | number> | undefined;
-        if (params) {
-          for (const [key, value] of Object.entries(params)) {
-            url.searchParams.set(key, String(value));
-          }
-        }
+      const response = await fetchWithRetry(url.toString());
 
-        const response = await fetchWithRetry(url.toString());
+      if (!response.ok) {
+        throw new ApiError(`HTTP ${response.status}`, response.status);
+      }
 
-        if (!response.ok) {
-          throw new ApiError(`HTTP ${response.status}`, response.status);
-        }
+      return {
+        data: await response.json(),
+      } as { data: DappMetadata };
+    });
 
-        return {
-          data: await response.json(),
-        } as { data: DappMetadata };
-      });
+    const result = await getMetadata('https://raydium.io');
 
-      const result = await getMetadata('https://raydium.io');
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          name: expect.any(String),
-          icon: expect.any(String),
-        }),
-      );
-    },
-    20000,
-  );
+    expect(result).toEqual(
+      expect.objectContaining({
+        name: expect.any(String),
+        icon: expect.any(String),
+      })
+    );
+  }, 20000);
 });

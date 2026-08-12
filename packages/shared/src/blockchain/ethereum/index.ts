@@ -1,10 +1,7 @@
 // Ethereum Account
 export { EthereumAccount } from './EthereumAccount';
 // Note: WEI_PER_ETH removed — use WEI_PER_ETH_BIGINT from utils/decimals
-export type {
-  EthereumAccountOptions,
-  EthereumBalance,
-} from './EthereumAccount';
+export type { EthereumAccountOptions, EthereumBalance } from './EthereumAccount';
 
 // Factory functions and utilities
 export {
@@ -16,10 +13,7 @@ export {
   ETHEREUM_COIN_TYPE,
   ETHEREUM_NETWORKS,
 } from './factory';
-export type {
-  CreateEthereumAccountOptions,
-  DeriveEthereumAccountsOptions,
-} from './factory';
+export type { CreateEthereumAccountOptions, DeriveEthereumAccountsOptions } from './factory';
 
 // Balance functions
 export {

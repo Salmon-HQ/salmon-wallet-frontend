@@ -6,13 +6,7 @@
  */
 
 import React, { useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
@@ -24,7 +18,8 @@ import {
   getShortAddress,
   type AddressBookSelectorBaseProps,
   type AddressBookItem,
-fontSize, } from '@salmon/shared';
+  fontSize,
+} from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 
 // ============================================================================
@@ -57,22 +52,22 @@ export function AddressBookPanel({
             style: 'destructive',
             onPress: () => onRemoveContact(contact.address),
           },
-        ],
+        ]
       );
     },
-    [t, onRemoveContact],
+    [t, onRemoveContact]
   );
 
   const renderContactItem = useCallback(
     (contact: AddressBookItem) => (
-      <View key={contact.address} style={styles.contactItem} testID={`address-book-contact-${contact.address}`}>
+      <View
+        key={contact.address}
+        style={styles.contactItem}
+        testID={`address-book-contact-${contact.address}`}
+      >
         <View style={styles.contactInfo}>
           <View style={styles.contactIconPlaceholder}>
-            <Ionicons
-              name="person-outline"
-              size={20}
-              color={colors.text.secondary}
-            />
+            <Ionicons name="person-outline" size={20} color={colors.text.secondary} />
           </View>
           <View style={styles.contactText}>
             <Text style={styles.contactName} numberOfLines={1}>
@@ -82,7 +77,8 @@ export function AddressBookPanel({
               {contact.domain || getShortAddress(contact.address, 6)}
             </Text>
             <Text style={styles.contactNetwork} numberOfLines={1}>
-              {contact.networkId.split('-')[0].charAt(0).toUpperCase() + contact.networkId.split('-')[0].slice(1)}
+              {contact.networkId.split('-')[0].charAt(0).toUpperCase() +
+                contact.networkId.split('-')[0].slice(1)}
             </Text>
           </View>
         </View>
@@ -96,11 +92,7 @@ export function AddressBookPanel({
             accessibilityRole="button"
             accessibilityLabel={t('actions.edit', 'Edit')}
           >
-            <Ionicons
-              name="create-outline"
-              size={18}
-              color={colors.text.secondary}
-            />
+            <Ionicons name="create-outline" size={18} color={colors.text.secondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
@@ -110,23 +102,16 @@ export function AddressBookPanel({
             accessibilityRole="button"
             accessibilityLabel={t('actions.remove', 'Remove')}
           >
-            <Ionicons
-              name="trash-outline"
-              size={18}
-              color={colors.status.error}
-            />
+            <Ionicons name="trash-outline" size={18} color={colors.status.error} />
           </TouchableOpacity>
         </View>
       </View>
     ),
-    [onEditContact, handleRemove, t],
+    [onEditContact, handleRemove, t]
   );
 
   return (
-    <SettingsScreenLayout
-      title={t('settings.address_book', 'Address Book')}
-      onBack={onBack}
-    >
+    <SettingsScreenLayout title={t('settings.address_book', 'Address Book')} onBack={onBack}>
       {error ? (
         <View style={styles.emptyContainer} testID="address-book-error">
           <Text style={styles.emptyText}>
@@ -163,7 +148,10 @@ export function AddressBookPanel({
       ) : (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
-            {t('settings.addressbook.empty', 'Looks empty in here.\nAdd your first contact clicking the button.')}
+            {t(
+              'settings.addressbook.empty',
+              'Looks empty in here.\nAdd your first contact clicking the button.'
+            )}
           </Text>
           <TouchableOpacity
             style={styles.addButton}

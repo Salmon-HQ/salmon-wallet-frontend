@@ -3,11 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  EXPLORERS,
-  DEFAULT_EXPLORERS,
-  getTransactionUrl,
-} from './explorers';
+import { EXPLORERS, DEFAULT_EXPLORERS, getTransactionUrl } from './explorers';
 
 // ============================================================================
 // Explorer Configuration Structure Tests

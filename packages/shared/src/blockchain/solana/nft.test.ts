@@ -70,9 +70,9 @@ const buildMockNft = (overrides: Partial<Nft> = {}): Nft => ({
 
 describe('getAll', () => {
   it('forwards networkId, publicKey and noCache to the backend fetcher', async () => {
-    const fetcher = vi.fn(
-      async (_id, _pk, _noCache) => [buildMockNft({ name: 'A' })]
-    ) as unknown as FetchNftsFromBackendFn;
+    const fetcher = vi.fn(async (_id, _pk, _noCache) => [
+      buildMockNft({ name: 'A' }),
+    ]) as unknown as FetchNftsFromBackendFn;
 
     const result = await getAll(network, owner, true, fetcher);
 
@@ -135,7 +135,12 @@ describe('getAllGroupedByCollection', () => {
       collection: null,
     });
 
-    const fetcher = vi.fn(async () => [a1, a2, b1, standalone]) as unknown as FetchNftsFromBackendFn;
+    const fetcher = vi.fn(async () => [
+      a1,
+      a2,
+      b1,
+      standalone,
+    ]) as unknown as FetchNftsFromBackendFn;
     const result = await getAllGroupedByCollection(network, owner, fetcher);
 
     // Sorted descending by length: Alpha (2), Beta (1), then standalone NFT

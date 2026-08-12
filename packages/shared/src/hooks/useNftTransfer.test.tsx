@@ -61,10 +61,11 @@ describe('useNftTransfer', () => {
   });
 
   it('transfers a Solana nft via a backend-built Metaplex transaction', async () => {
-    const { result } = renderHook(() =>
-      useNftTransfer({
-        account: account as any,
-      }),
+    const { result } = renderHook(
+      () =>
+        useNftTransfer({
+          account: account as any,
+        }),
       { wrapper: makeWrapper() }
     );
 
@@ -90,10 +91,11 @@ describe('useNftTransfer', () => {
   });
 
   it('throws immediately when no account is available', async () => {
-    const { result } = renderHook(() =>
-      useNftTransfer({
-        account: undefined,
-      }),
+    const { result } = renderHook(
+      () =>
+        useNftTransfer({
+          account: undefined,
+        }),
       { wrapper: makeWrapper() }
     );
 
@@ -103,17 +105,18 @@ describe('useNftTransfer', () => {
   });
 
   it('rejects unsupported ordinal transfers without building a transaction', async () => {
-    const { result } = renderHook(() =>
-      useNftTransfer({
-        account: account as any,
-      }),
+    const { result } = renderHook(
+      () =>
+        useNftTransfer({
+          account: account as any,
+        }),
       { wrapper: makeWrapper() }
     );
 
     await act(async () => {
-      await expect(
-        result.current.sendNft(BITCOIN_NFT, 'recipient-address')
-      ).rejects.toThrow('Ordinal transfers are not yet supported');
+      await expect(result.current.sendNft(BITCOIN_NFT, 'recipient-address')).rejects.toThrow(
+        'Ordinal transfers are not yet supported'
+      );
     });
 
     expect(mockCreateTransferTransaction).not.toHaveBeenCalled();
@@ -123,17 +126,18 @@ describe('useNftTransfer', () => {
   it('surfaces transfer failures and allows reset', async () => {
     mockSignAndSend.mockRejectedValueOnce(new Error('simulation failed'));
 
-    const { result } = renderHook(() =>
-      useNftTransfer({
-        account: account as any,
-      }),
+    const { result } = renderHook(
+      () =>
+        useNftTransfer({
+          account: account as any,
+        }),
       { wrapper: makeWrapper() }
     );
 
     await act(async () => {
-      await expect(
-        result.current.sendNft(SOLANA_NFT, 'recipient-address')
-      ).rejects.toThrow('simulation failed');
+      await expect(result.current.sendNft(SOLANA_NFT, 'recipient-address')).rejects.toThrow(
+        'simulation failed'
+      );
     });
 
     expect(result.current.status).toBe('failed');

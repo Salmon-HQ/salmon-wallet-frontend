@@ -46,7 +46,7 @@ export function DAppConnectApprovalView({
 }: DAppConnectApprovalViewProps): React.ReactElement {
   const { t } = useTranslation();
   const displayOrigin = formatOrigin(origin);
-  const shortAddress = address ? getShortAddress(address, 4) ?? '' : '';
+  const shortAddress = address ? (getShortAddress(address, 4) ?? '') : '';
   const hasIdentity = !!appName || !!appIcon;
 
   return (
@@ -84,7 +84,7 @@ export function DAppConnectApprovalView({
               <FooterNote>
                 {t(
                   'dapp.connect_permissions_hint',
-                  'The site will be able to view your public address and request signatures.',
+                  'The site will be able to view your public address and request signatures.'
                 )}
               </FooterNote>
             </HintRow>

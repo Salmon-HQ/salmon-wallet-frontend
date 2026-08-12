@@ -51,7 +51,10 @@ export function getSwapMode(
  * so we also check the symbol to correctly identify the chain.
  * Returns null for tokens on unsupported chains.
  */
-export function getChainFromNetwork(network?: string | null, symbol?: string): SwapChainType | null {
+export function getChainFromNetwork(
+  network?: string | null,
+  symbol?: string
+): SwapChainType | null {
   // Try symbol first — StealthEX mainnet tokens have network: null
   if (symbol) {
     const s = symbol.toLowerCase();
@@ -97,7 +100,11 @@ export function toStealthExNetwork(chainOrNetworkId?: string): string | undefine
  * Converts a TokenMetadata to a SwapToken.
  * Defaults to solana-mainnet since search results are Solana tokens.
  */
-export function mapToSwapToken(token: TokenMetadata, balance?: number, usdPrice?: number): SwapToken {
+export function mapToSwapToken(
+  token: TokenMetadata,
+  balance?: number,
+  usdPrice?: number
+): SwapToken {
   return {
     address: token.address,
     symbol: token.symbol,
@@ -155,5 +162,8 @@ export function validateAddress(
     return { valid: isValid, error: isValid ? null : 'swap.errors.invalidBitcoinAddress' };
   }
 
-  return { valid: address.length > 10, error: address.length <= 10 ? 'swap.errors.addressTooShort' : null };
+  return {
+    valid: address.length > 10,
+    error: address.length <= 10 ? 'swap.errors.addressTooShort' : null,
+  };
 }

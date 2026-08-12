@@ -85,17 +85,21 @@ import {
 import { useDeveloperMode } from '../../../src/contexts/DeveloperModeContext';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 
-
 // Map blockchain to logo URL (outside component to avoid recreation)
 const BLOCKCHAIN_LOGOS: Record<BlockchainId, string> = {
-  'solana': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-  'solana-devnet': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-  'bitcoin': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
-  'bitcoin-testnet': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
-  'ethereum': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
-  'ethereum-sepolia': 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
+  solana:
+    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
+  'solana-devnet':
+    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
+  bitcoin:
+    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
+  'bitcoin-testnet':
+    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
+  ethereum:
+    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
+  'ethereum-sepolia':
+    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
 };
-
 
 /**
  * Maps context networkId to transaction API networkId format.
@@ -109,20 +113,18 @@ function getTransactionNetworkId(networkId: string | null): string {
 /**
  * Convert TokenBalanceWithPrice to Token for TokenList
  */
-function mapBalanceToToken(
-  item: {
-    address: string;
-    symbol: string;
-    name: string;
-    logo?: string;
-    uiAmount: number;
-    usdBalance?: number;
-    price?: number;
-    priceChange24h?: number;
-    tags?: string[];
-    coingeckoId?: string;
-  }
-): Token {
+function mapBalanceToToken(item: {
+  address: string;
+  symbol: string;
+  name: string;
+  logo?: string;
+  uiAmount: number;
+  usdBalance?: number;
+  price?: number;
+  priceChange24h?: number;
+  tags?: string[];
+  coingeckoId?: string;
+}): Token {
   // Check if token has 'verified' tag
   const isVerified = item.tags?.includes('verified') ?? false;
 
@@ -142,9 +144,8 @@ function mapBalanceToToken(
     price: item.price,
     uiAmount: item.uiAmount,
     usdBalance: item.usdBalance ?? null,
-    last24HoursChange: item.priceChange24h !== undefined
-      ? { perc: item.priceChange24h, abs: absoluteChange }
-      : null,
+    last24HoursChange:
+      item.priceChange24h !== undefined ? { perc: item.priceChange24h, abs: absoluteChange } : null,
     tags: item.tags,
     isVerified,
     coingeckoId: item.coingeckoId,
@@ -164,7 +165,9 @@ export default function HomeScreen() {
 
   // Sub-account switching state (for showing skeleton during switch)
   const [switchingSubAccount, setSwitchingSubAccount] = useState(false);
-  const [pendingSubAccountIndex, setPendingSubAccountIndex] = useState<number | undefined>(undefined);
+  const [pendingSubAccountIndex, setPendingSubAccountIndex] = useState<number | undefined>(
+    undefined
+  );
 
   // Bitcoin-specific data states
   const [bitcoinChartData, setBitcoinChartData] = useState<PriceDataPoint[]>([]);
@@ -179,7 +182,9 @@ export default function HomeScreen() {
   const [selectedTokenChartData, setSelectedTokenChartData] = useState<PriceDataPoint[]>([]);
   const [selectedTokenCoinInfo, setSelectedTokenCoinInfo] = useState<CoinInfo | null>(null);
   const [selectedTokenChartPeriod, setSelectedTokenChartPeriod] = useState<PriceChartPeriod>('1M');
-  const [selectedTokenMarketData, setSelectedTokenMarketData] = useState<MarketData | undefined>(undefined);
+  const [selectedTokenMarketData, setSelectedTokenMarketData] = useState<MarketData | undefined>(
+    undefined
+  );
   const [selectedTokenLoading, setSelectedTokenLoading] = useState(false);
   const [selectedTokenChartError, setSelectedTokenChartError] = useState(false);
 
@@ -198,14 +203,8 @@ export default function HomeScreen() {
 
   // Get account state and actions from shared context
   const [accountState, accountActions] = useAccountsContext();
-  const {
-    ready,
-    activeAccount,
-    activeBlockchainAccount,
-    networkId,
-    pathIndex,
-    switchingNetwork,
-  } = accountState;
+  const { ready, activeAccount, activeBlockchainAccount, networkId, pathIndex, switchingNetwork } =
+    accountState;
 
   useEffect(() => {
     if (!accountState.locked) return;
@@ -224,17 +223,17 @@ export default function HomeScreen() {
   // User config account for available networks
   const userConfigAccount = activeBlockchainAccount
     ? {
-      network: {
-        environment: (networkId || 'solana-mainnet') as 'solana-mainnet' | 'solana-devnet',
-        blockchain: 'solana',
-      },
-    }
+        network: {
+          environment: (networkId || 'solana-mainnet') as 'solana-mainnet' | 'solana-devnet',
+          blockchain: 'solana',
+        },
+      }
     : {
-      network: {
-        environment: 'solana-mainnet' as const,
-        blockchain: 'solana',
-      },
-    };
+        network: {
+          environment: 'solana-mainnet' as const,
+          blockchain: 'solana',
+        },
+      };
 
   // Get available networks filtered by developer mode
   const { allNetworks: availableNetworks } = useAvailableNetworks({
@@ -249,7 +248,7 @@ export default function HomeScreen() {
     if (!activeAccount?.networksAccounts) return availableNetworks;
 
     const userNetworkIds = Object.keys(activeAccount.networksAccounts);
-    return availableNetworks.filter(network => userNetworkIds.includes(network.id));
+    return availableNetworks.filter((network) => userNetworkIds.includes(network.id));
   }, [availableNetworks, activeAccount?.networksAccounts]);
 
   // Sync carousel index with persisted networkId on mount / network change
@@ -378,32 +377,37 @@ export default function HomeScreen() {
     const networkAccounts = activeAccount.networksAccounts[networkId];
     if (!networkAccounts) return [];
     return networkAccounts
-      .map((acc, idx) => acc ? { index: idx, address: getShortAddress(acc.getReceiveAddress(), 4) ?? '' } : null)
+      .map((acc, idx) =>
+        acc ? { index: idx, address: getShortAddress(acc.getReceiveAddress(), 4) ?? '' } : null
+      )
       .filter((item): item is SubAccount => item !== null);
   }, [activeAccount, networkId]);
 
   // Debounce timer ref to prevent rapid sub-account switching from spamming API
   const subAccountChangeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleSubAccountChange = useCallback((index: number) => {
-    // Don't do anything if already on this account
-    if (index === pathIndex) return;
+  const handleSubAccountChange = useCallback(
+    (index: number) => {
+      // Don't do anything if already on this account
+      if (index === pathIndex) return;
 
-    // Clear any pending change
-    if (subAccountChangeTimerRef.current) {
-      clearTimeout(subAccountChangeTimerRef.current);
-    }
+      // Clear any pending change
+      if (subAccountChangeTimerRef.current) {
+        clearTimeout(subAccountChangeTimerRef.current);
+      }
 
-    // Immediately show switching state (activate skeletons)
-    setSwitchingSubAccount(true);
-    setPendingSubAccountIndex(index);
+      // Immediately show switching state (activate skeletons)
+      setSwitchingSubAccount(true);
+      setPendingSubAccountIndex(index);
 
-    // Debounce the change by 300ms to prevent API spam on rapid taps
-    subAccountChangeTimerRef.current = setTimeout(() => {
-      accountActions.changePathIndex(index);
-      subAccountChangeTimerRef.current = null;
-    }, 300);
-  }, [accountActions, pathIndex]);
+      // Debounce the change by 300ms to prevent API spam on rapid taps
+      subAccountChangeTimerRef.current = setTimeout(() => {
+        accountActions.changePathIndex(index);
+        subAccountChangeTimerRef.current = null;
+      }, 300);
+    },
+    [accountActions, pathIndex]
+  );
 
   // Clear switching state when loading completes
   useEffect(() => {
@@ -583,10 +587,13 @@ export default function HomeScreen() {
     setSendSheetVisible(false);
   }, []);
 
-  const handleSendSuccess = useCallback((_txId: string) => {
-    setSendSheetVisible(false);
-    refresh();
-  }, [refresh]);
+  const handleSendSuccess = useCallback(
+    (_txId: string) => {
+      setSendSheetVisible(false);
+      refresh();
+    },
+    [refresh]
+  );
 
   const handleReceiveSheetCopy = useCallback(async () => {
     if (!activeBlockchainAccount) return false;
@@ -648,98 +655,122 @@ export default function HomeScreen() {
   }, []);
 
   // Handler to view transaction in explorer (from detail modal)
-  const handleViewExplorer = useCallback((transaction: Transaction) => {
-    const explorerUrl = networkId === 'solana-devnet'
-      ? `https://solscan.io/tx/${transaction.id}?cluster=devnet`
-      : `https://solscan.io/tx/${transaction.id}`;
-    Linking.openURL(explorerUrl);
-    handleDetailModalClose();
-  }, [networkId, handleDetailModalClose]);
+  const handleViewExplorer = useCallback(
+    (transaction: Transaction) => {
+      const explorerUrl =
+        networkId === 'solana-devnet'
+          ? `https://solscan.io/tx/${transaction.id}?cluster=devnet`
+          : `https://solscan.io/tx/${transaction.id}`;
+      Linking.openURL(explorerUrl);
+      handleDetailModalClose();
+    },
+    [networkId, handleDetailModalClose]
+  );
 
   // Handler to share transaction (from detail modal)
-  const handleShareTransaction = useCallback(async (transaction: Transaction) => {
-    const explorerUrl = networkId === 'solana-devnet'
-      ? `https://solscan.io/tx/${transaction.id}?cluster=devnet`
-      : `https://solscan.io/tx/${transaction.id}`;
-    try {
-      await Share.share({
-        message: t('transactions.share_message', 'Check out this transaction: {{url}}', { url: explorerUrl }),
-        url: explorerUrl,
-      });
-    } catch (error) {
-      console.error('Failed to share transaction:', error);
-    }
-  }, [networkId, t]);
+  const handleShareTransaction = useCallback(
+    async (transaction: Transaction) => {
+      const explorerUrl =
+        networkId === 'solana-devnet'
+          ? `https://solscan.io/tx/${transaction.id}?cluster=devnet`
+          : `https://solscan.io/tx/${transaction.id}`;
+      try {
+        await Share.share({
+          message: t('transactions.share_message', 'Check out this transaction: {{url}}', {
+            url: explorerUrl,
+          }),
+          url: explorerUrl,
+        });
+      } catch (error) {
+        console.error('Failed to share transaction:', error);
+      }
+    },
+    [networkId, t]
+  );
 
   const handleSelectedTokenChartPeriodChange = useCallback((period: PriceChartPeriod) => {
     setSelectedTokenChartPeriod(period);
   }, []);
 
-  const handleBlockchainChange = useCallback((_blockchain: BlockchainId, index: number) => {
-    setActiveBlockchainIndex(index);
-    // Switch to the selected network
-    const selectedBalance = blockchainBalances[index];
-    if (selectedBalance) {
-      const newNetworkId = selectedBalance.network.id;
-      accountActions.changeNetwork(newNetworkId);
-    }
-  }, [blockchainBalances, accountActions]);
+  const handleBlockchainChange = useCallback(
+    (_blockchain: BlockchainId, index: number) => {
+      setActiveBlockchainIndex(index);
+      // Switch to the selected network
+      const selectedBalance = blockchainBalances[index];
+      if (selectedBalance) {
+        const newNetworkId = selectedBalance.network.id;
+        accountActions.changeNetwork(newNetworkId);
+      }
+    },
+    [blockchainBalances, accountActions]
+  );
 
   // Handle scroll to show/hide top fade gradient dynamically
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    // Fade in when scrolled down, fade out when at top
-    const opacity = Math.min(offsetY / 30, 1); // Fully visible after 30px scroll
-    topFadeOpacity.setValue(opacity);
-  }, [topFadeOpacity]);
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = event.nativeEvent.contentOffset.y;
+      // Fade in when scrolled down, fade out when at top
+      const opacity = Math.min(offsetY / 30, 1); // Fully visible after 30px scroll
+      topFadeOpacity.setValue(opacity);
+    },
+    [topFadeOpacity]
+  );
 
   // Memoize the fixed header component (Balance Card + Action Buttons)
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
-  const FixedHeaderComponent = useMemo(() => (
-    <View style={styles.fixedHeader}>
-      {/* Balance Card Carousel */}
-      <BalanceCardCarousel
-        blockchains={blockchainBalances}
-        hiddenBalance={hiddenBalance}
-        onToggleVisibility={toggleHidden}
-        onBlockchainChange={handleBlockchainChange}
-        activeIndex={activeBlockchainIndex}
-        showNetworkLabel={developerNetworks}
-        style={styles.balanceCard}
-      />
+  const FixedHeaderComponent = useMemo(
+    () => (
+      <View style={styles.fixedHeader}>
+        {/* Balance Card Carousel */}
+        <BalanceCardCarousel
+          blockchains={blockchainBalances}
+          hiddenBalance={hiddenBalance}
+          onToggleVisibility={toggleHidden}
+          onBlockchainChange={handleBlockchainChange}
+          activeIndex={activeBlockchainIndex}
+          showNetworkLabel={developerNetworks}
+          style={styles.balanceCard}
+        />
 
-      {/* Action Buttons with 24px vertical spacing */}
-      <ActionButtonRow
-        onSendPress={handleSendPress}
-        onReceivePress={handleReceivePress}
-        onActivityPress={handleActivityPress}
-        style={styles.actionRow}
-      />
-    </View>
-  ), [
-    blockchainBalances,
-    hiddenBalance,
-    toggleHidden,
-    handleBlockchainChange,
-    activeBlockchainIndex,
-    developerNetworks,
-    handleSendPress,
-    handleReceivePress,
-    handleActivityPress,
-  ]);
+        {/* Action Buttons with 24px vertical spacing */}
+        <ActionButtonRow
+          onSendPress={handleSendPress}
+          onReceivePress={handleReceivePress}
+          onActivityPress={handleActivityPress}
+          style={styles.actionRow}
+        />
+      </View>
+    ),
+    [
+      blockchainBalances,
+      hiddenBalance,
+      toggleHidden,
+      handleBlockchainChange,
+      activeBlockchainIndex,
+      developerNetworks,
+      handleSendPress,
+      handleReceivePress,
+      handleActivityPress,
+    ]
+  );
 
   // Memoize the empty component
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
-  const ListEmptyComponent = useMemo(() => (
-    <View style={styles.emptyState}>
-      <Text style={styles.emptyStateText}>
-        {loading ? t('wallet.loading_tokens', 'Loading tokens...') : t('wallet.no_tokens_found', 'No tokens found')}
-      </Text>
-      <Text style={styles.emptyStateSubtext}>
-        {t('wallet.tokens_empty_subtitle', 'Your tokens will appear here once you receive some')}
-      </Text>
-    </View>
-  ), [loading, t]);
+  const ListEmptyComponent = useMemo(
+    () => (
+      <View style={styles.emptyState}>
+        <Text style={styles.emptyStateText}>
+          {loading
+            ? t('wallet.loading_tokens', 'Loading tokens...')
+            : t('wallet.no_tokens_found', 'No tokens found')}
+        </Text>
+        <Text style={styles.emptyStateSubtext}>
+          {t('wallet.tokens_empty_subtitle', 'Your tokens will appear here once you receive some')}
+        </Text>
+      </View>
+    ),
+    [loading, t]
+  );
 
   // Loading state - wait for hook to be ready
   // Note: If we're on this screen, the GateContainer lock state has been
@@ -784,7 +815,10 @@ export default function HomeScreen() {
         <View style={styles.balanceErrorBanner} testID="balance-load-error">
           <WarningNotice
             tone="warning"
-            title={t('wallet.partial_load_error', "Some balances couldn't be loaded. Shown data may be incomplete.")}
+            title={t(
+              'wallet.partial_load_error',
+              "Some balances couldn't be loaded. Shown data may be incomplete."
+            )}
           />
         </View>
       )}
@@ -811,14 +845,16 @@ export default function HomeScreen() {
             </View>
 
             {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
-            {(switchingNetwork || refreshing) ? (
+            {switchingNetwork || refreshing ? (
               <TokenListSkeleton count={1} />
-            ) : bitcoinToken && (
-              <TokenListItem
-                token={bitcoinToken}
-                hiddenBalance={hiddenBalance}
-                blockchain="bitcoin"
-              />
+            ) : (
+              bitcoinToken && (
+                <TokenListItem
+                  token={bitcoinToken}
+                  hiddenBalance={hiddenBalance}
+                  blockchain="bitcoin"
+                />
+              )
             )}
 
             {/* Market Data */}
@@ -841,8 +877,13 @@ export default function HomeScreen() {
         ) : (
           // Normal token list for Solana/Ethereum
           <TokenList
-            tokens={(switchingSubAccount || switchingNetwork || refreshing) ? [] : tokenListItems}
-            loading={(switchingSubAccount || switchingNetwork || refreshing) || (loading && tokenListItems.length === 0)}
+            tokens={switchingSubAccount || switchingNetwork || refreshing ? [] : tokenListItems}
+            loading={
+              switchingSubAccount ||
+              switchingNetwork ||
+              refreshing ||
+              (loading && tokenListItems.length === 0)
+            }
             onTokenPress={handleTokenPress}
             hiddenBalance={hiddenBalance}
             ListEmptyComponent={ListEmptyComponent}

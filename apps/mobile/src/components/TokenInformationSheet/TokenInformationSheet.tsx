@@ -110,15 +110,16 @@ export const TokenInformationSheet: React.FC<TokenInformationSheetProps> = ({
   }, []);
 
   // Handle scroll to show/hide top fade gradient dynamically
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    const opacity = Math.min(offsetY / 30, 1);
-    topFadeOpacity.setValue(opacity);
-  }, [topFadeOpacity]);
-
-  const title = (
-    <Text style={styles.title}>{t('token.detail.title', 'Token Information')}</Text>
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = event.nativeEvent.contentOffset.y;
+      const opacity = Math.min(offsetY / 30, 1);
+      topFadeOpacity.setValue(opacity);
+    },
+    [topFadeOpacity]
   );
+
+  const title = <Text style={styles.title}>{t('token.detail.title', 'Token Information')}</Text>;
 
   return (
     <BottomSheetContainer
@@ -177,11 +178,7 @@ export const TokenInformationSheet: React.FC<TokenInformationSheetProps> = ({
         />
 
         {/* TokenBadgesSection - Before About */}
-        <TokenBadgesSection
-          tags={token.tags}
-          loading={loading}
-          style={{ marginHorizontal: 0 }}
-        />
+        <TokenBadgesSection tags={token.tags} loading={loading} style={{ marginHorizontal: 0 }} />
 
         {/* TokenAbout - At the bottom */}
         <TokenAbout

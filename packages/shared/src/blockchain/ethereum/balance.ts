@@ -14,10 +14,7 @@
  */
 
 import { Contract, formatUnits, type Provider } from 'ethers';
-import {
-  ETH_CONSTANTS,
-  ERC20_ABI,
-} from '../../utils/tokens';
+import { ETH_CONSTANTS, ERC20_ABI } from '../../utils/tokens';
 import { formatBalance } from '../../utils/formatting';
 import type {
   EthereumOnChainTokenBalance,
@@ -27,7 +24,12 @@ import type {
 } from '../../types/balance';
 
 // Re-export canonical types from types/balance
-export type { EthereumOnChainTokenBalance, EthereumOnChainWalletBalance, BalanceLookupToken, EthereumTokenBalanceResult };
+export type {
+  EthereumOnChainTokenBalance,
+  EthereumOnChainWalletBalance,
+  BalanceLookupToken,
+  EthereumTokenBalanceResult,
+};
 
 /** @deprecated Use `EthereumOnChainWalletBalance` from `types/balance` instead. */
 export type EthereumWalletBalance = EthereumOnChainWalletBalance;
@@ -270,4 +272,3 @@ export function formatBalanceDisplay(
   const numValue = parseFloat(formatUnits(balance, decimals));
   return formatBalance(numValue, displayDecimals);
 }
-

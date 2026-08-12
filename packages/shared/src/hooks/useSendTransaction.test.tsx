@@ -65,11 +65,12 @@ describe('useSendTransaction', () => {
   });
 
   it('uses the resolved recipient address for fee estimation when provided', async () => {
-    const { result } = renderHook(() =>
-      useSendTransaction({
-        account: mockAccount as any,
-        blockchain: 'solana',
-      }),
+    const { result } = renderHook(
+      () =>
+        useSendTransaction({
+          account: mockAccount as any,
+          blockchain: 'solana',
+        }),
       { wrapper: makeWrapper() }
     );
 
@@ -97,11 +98,12 @@ describe('useSendTransaction', () => {
   });
 
   it('uses the resolved recipient address for transfer execution when provided', async () => {
-    const { result } = renderHook(() =>
-      useSendTransaction({
-        account: mockAccount as any,
-        blockchain: 'solana',
-      }),
+    const { result } = renderHook(
+      () =>
+        useSendTransaction({
+          account: mockAccount as any,
+          blockchain: 'solana',
+        }),
       { wrapper: makeWrapper() }
     );
 
@@ -121,12 +123,10 @@ describe('useSendTransaction', () => {
     });
 
     expect(txResult).toEqual(TX_RESULT);
-    expect(mockAccount.transfer).toHaveBeenCalledWith(
-      RESOLVED_RECIPIENT,
-      TOKEN_ADDRESS,
-      AMOUNT,
-      { decimals: 6, symbol: 'USDC' }
-    );
+    expect(mockAccount.transfer).toHaveBeenCalledWith(RESOLVED_RECIPIENT, TOKEN_ADDRESS, AMOUNT, {
+      decimals: 6,
+      symbol: 'USDC',
+    });
     expect(result.current.status).toBe('success');
     expect(result.current.error).toBeNull();
   });
@@ -201,20 +201,21 @@ describe('useSendTransaction', () => {
     await waitFor(() => {
       expect(result.current.send.settling).toBe(false);
     });
-    expect((client.getQueryData(balanceKey) as { items: Array<{ amount: string }> }).items[0].amount).toBe(
-      '989995000',
-    );
+    expect(
+      (client.getQueryData(balanceKey) as { items: Array<{ amount: string }> }).items[0].amount
+    ).toBe('989995000');
   });
 
   it('flags feeEstimateFailed when estimation throws and clears it on the next success', async () => {
     mockAccount.estimateTransferFee.mockRejectedValueOnce(new Error('rpc down'));
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    const { result } = renderHook(() =>
-      useSendTransaction({
-        account: mockAccount as any,
-        blockchain: 'solana',
-      }),
+    const { result } = renderHook(
+      () =>
+        useSendTransaction({
+          account: mockAccount as any,
+          blockchain: 'solana',
+        }),
       { wrapper: makeWrapper() }
     );
 
@@ -249,11 +250,12 @@ describe('useSendTransaction', () => {
     mockAccount.estimateTransferFee.mockRejectedValueOnce(new Error('rpc down'));
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    const { result } = renderHook(() =>
-      useSendTransaction({
-        account: mockAccount as any,
-        blockchain: 'solana',
-      }),
+    const { result } = renderHook(
+      () =>
+        useSendTransaction({
+          account: mockAccount as any,
+          blockchain: 'solana',
+        }),
       { wrapper: makeWrapper() }
     );
 
@@ -273,11 +275,12 @@ describe('useSendTransaction', () => {
   });
 
   it('returns null for fee estimation when account is missing', async () => {
-    const { result } = renderHook(() =>
-      useSendTransaction({
-        account: undefined,
-        blockchain: 'solana',
-      }),
+    const { result } = renderHook(
+      () =>
+        useSendTransaction({
+          account: undefined,
+          blockchain: 'solana',
+        }),
       { wrapper: makeWrapper() }
     );
 
@@ -300,11 +303,12 @@ describe('useSendTransaction', () => {
   });
 
   it('throws when sending without an account', async () => {
-    const { result } = renderHook(() =>
-      useSendTransaction({
-        account: undefined,
-        blockchain: 'solana',
-      }),
+    const { result } = renderHook(
+      () =>
+        useSendTransaction({
+          account: undefined,
+          blockchain: 'solana',
+        }),
       { wrapper: makeWrapper() }
     );
 
@@ -324,11 +328,12 @@ describe('useSendTransaction', () => {
   it('sets failed state and preserves error message when transfer fails', async () => {
     mockAccount.transfer.mockRejectedValueOnce(new Error('insufficient funds'));
 
-    const { result } = renderHook(() =>
-      useSendTransaction({
-        account: mockAccount as any,
-        blockchain: 'solana',
-      }),
+    const { result } = renderHook(
+      () =>
+        useSendTransaction({
+          account: mockAccount as any,
+          blockchain: 'solana',
+        }),
       { wrapper: makeWrapper() }
     );
 
@@ -354,11 +359,12 @@ describe('useSendTransaction', () => {
   it('resets state after an error', async () => {
     mockAccount.transfer.mockRejectedValueOnce(new Error('boom'));
 
-    const { result } = renderHook(() =>
-      useSendTransaction({
-        account: mockAccount as any,
-        blockchain: 'solana',
-      }),
+    const { result } = renderHook(
+      () =>
+        useSendTransaction({
+          account: mockAccount as any,
+          blockchain: 'solana',
+        }),
       { wrapper: makeWrapper() }
     );
 

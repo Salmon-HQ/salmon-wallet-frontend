@@ -4,12 +4,7 @@ import type { NetworkInfo } from '../ui';
  * Supported blockchain types for the carousel
  */
 export type BlockchainId =
-  | 'solana'
-  | 'solana-devnet'
-  | 'bitcoin'
-  | 'bitcoin-testnet'
-  | 'ethereum'
-  | 'ethereum-sepolia';
+  'solana' | 'solana-devnet' | 'bitcoin' | 'bitcoin-testnet' | 'ethereum' | 'ethereum-sepolia';
 
 /**
  * Extended network info with blockchain type

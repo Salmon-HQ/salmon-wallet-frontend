@@ -31,20 +31,14 @@ export function ActivityRoute(): React.ReactElement {
     skip: !ready || !activeBlockchainAccount,
   });
 
-  const {
-    transactions,
-    loading,
-    loadingMore,
-    error,
-    hasMore,
-    loadMore,
-    refresh,
-  } = useTransactions({
-    address: accountAddress,
-    networkId: (networkId || 'solana-mainnet') as NetworkId,
-    skip: !ready || !activeBlockchainAccount,
-    account: activeBlockchainAccount,
-  });
+  const { transactions, loading, loadingMore, error, hasMore, loadMore, refresh } = useTransactions(
+    {
+      address: accountAddress,
+      networkId: (networkId || 'solana-mainnet') as NetworkId,
+      skip: !ready || !activeBlockchainAccount,
+      account: activeBlockchainAccount,
+    }
+  );
 
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 

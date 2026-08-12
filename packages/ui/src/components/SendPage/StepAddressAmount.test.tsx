@@ -53,7 +53,10 @@ vi.mock('@salmon/shared', () => ({
   shadowsCSS: { button: 'none' },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, base: 10 },
   useAddressValidation: (...args: unknown[]) => mockUseAddressValidation(...args),
-  useCurrencyContext: () => [{ currency: 'usd' }, { formatPrecise: (value: number) => value.toFixed(2) }],
+  useCurrencyContext: () => [
+    { currency: 'usd' },
+    { formatPrecise: (value: number) => value.toFixed(2) },
+  ],
   useSendContacts: (...args: unknown[]) => mockUseSendContacts(...args),
 }));
 
@@ -86,7 +89,9 @@ describe('StepAddressAmount', () => {
     vi.clearAllMocks();
 
     mockUseSendContacts.mockReturnValue({
-      contacts: [{ name: 'Alice', address: 'Alice11111111111111111111111111111', blockchain: 'solana' }],
+      contacts: [
+        { name: 'Alice', address: 'Alice11111111111111111111111111111', blockchain: 'solana' },
+      ],
       ownWallets: [{ accountName: 'Vault', address: 'Vault11111111111111111111111111111' }],
     });
 
@@ -201,6 +206,9 @@ describe('StepAddressAmount', () => {
     });
 
     expect(screen.getByText('Invalid recipient')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'token.send.reviewAndSend' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'token.send.reviewAndSend' })).toHaveProperty(
+      'disabled',
+      true
+    );
   });
 });

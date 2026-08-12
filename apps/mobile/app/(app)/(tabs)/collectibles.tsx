@@ -75,9 +75,7 @@ import { useTabChrome } from '../../../hooks/useTabChrome';
 /**
  * Extended blockchain key that includes network suffix for devnet/testnet
  */
-type NftSectionKey =
-  | 'solana'
-  | 'solana-devnet';
+type NftSectionKey = 'solana' | 'solana-devnet';
 
 interface NftSection {
   nfts: NftData[];
@@ -100,11 +98,14 @@ interface NftSection {
 const SECTION_TO_NETWORK = SHARED_SECTION_TO_NETWORK;
 
 const INITIAL_SECTION_INDEXES: Record<NftSectionKey, number> = {
-  'solana': 0,
+  solana: 0,
   'solana-devnet': 0,
 };
 
-const SECTION_META: Record<NftSectionKey, { blockchain: NftBlockchain; isTestnet: boolean; networkLabel?: string }> = {
+const SECTION_META: Record<
+  NftSectionKey,
+  { blockchain: NftBlockchain; isTestnet: boolean; networkLabel?: string }
+> = {
   solana: { blockchain: 'solana', isTestnet: false },
   'solana-devnet': { blockchain: 'solana', isTestnet: true },
 };
@@ -135,14 +136,17 @@ export default function CollectiblesScreen() {
     nft: null,
     sectionKey: null,
   });
-  const [burnPreview, setBurnPreview] = useState<Awaited<ReturnType<typeof createBurnTransaction>> | null>(null);
+  const [burnPreview, setBurnPreview] = useState<Awaited<
+    ReturnType<typeof createBurnTransaction>
+  > | null>(null);
   const [burnPreparing, setBurnPreparing] = useState(false);
   const [burnExecuting, setBurnExecuting] = useState(false);
   const [burnSuccessTxId, setBurnSuccessTxId] = useState<string | null>(null);
   const [burnError, setBurnError] = useState<string | null>(null);
 
   // Per-section sub-account index (each blockchain section can pick its own derived account)
-  const [sectionIndexes, setSectionIndexes] = useState<Record<NftSectionKey, number>>(INITIAL_SECTION_INDEXES);
+  const [sectionIndexes, setSectionIndexes] =
+    useState<Record<NftSectionKey, number>>(INITIAL_SECTION_INDEXES);
 
   // Get account context
   const [accountState] = useAccountsContext();
@@ -170,10 +174,14 @@ export default function CollectiblesScreen() {
     for (const [sectionKey, networkId] of Object.entries(SECTION_TO_NETWORK)) {
       const accounts = activeAccount.networksAccounts?.[networkId] ?? [];
       result[sectionKey as NftSectionKey] = accounts
-        .map((acc, idx) => acc ? {
-          index: idx,
-          address: getShortAddress(acc.getReceiveAddress(), 4) ?? '',
-        } : null)
+        .map((acc, idx) =>
+          acc
+            ? {
+                index: idx,
+                address: getShortAddress(acc.getReceiveAddress(), 4) ?? '',
+              }
+            : null
+        )
         .filter((item): item is SubAccount => item !== null);
     }
     return result;
@@ -191,7 +199,8 @@ export default function CollectiblesScreen() {
   }, [activeAccount, sectionIndexes]);
 
   const solanaDevnetAddress = useMemo(() => {
-    const acc = activeAccount?.networksAccounts?.['solana-devnet']?.[sectionIndexes['solana-devnet']];
+    const acc =
+      activeAccount?.networksAccounts?.['solana-devnet']?.[sectionIndexes['solana-devnet']];
     return acc?.getReceiveAddress();
   }, [activeAccount, sectionIndexes]);
 
@@ -232,7 +241,14 @@ export default function CollectiblesScreen() {
         networkLabel: t('general.network_devnet', 'Devnet'),
       },
     };
-  }, [mainnetQuery.nfts, mainnetQuery.loading, devnetQuery.nfts, devnetQuery.loading, developerNetworks, t]);
+  }, [
+    mainnetQuery.nfts,
+    mainnetQuery.loading,
+    devnetQuery.nfts,
+    devnetQuery.loading,
+    developerNetworks,
+    t,
+  ]);
 
   // Pull-to-refresh — refetches both queries. Local boolean drives the
   // RefreshControl spinner since the hook only exposes initial-load state.
@@ -256,9 +272,7 @@ export default function CollectiblesScreen() {
       let detailData: NftDetailData | null = null;
 
       if (section.blockchain === 'solana') {
-        const rawNft = (section.raw as Nft[]).find(
-          (n) => n.mint.address === nftData.mint
-        );
+        const rawNft = (section.raw as Nft[]).find((n) => n.mint.address === nftData.mint);
         if (rawNft) {
           detailData = canonicalNftToSolanaNftData(rawNft);
         }
@@ -304,26 +318,31 @@ export default function CollectiblesScreen() {
     activeAccountId: activeAccount?.id,
   });
 
-  const handleSendSuccess = useCallback((txId: string) => {
-    Alert.alert(
-      t('nft.send.successTitle', 'NFT Sent'),
-      t('nft.send.successSummary', 'Transaction submitted successfully.\n\nTx: {{tx}}', { tx: `${txId.slice(0, 20)}...` }),
-      [{ text: t('general.ok', 'OK') }]
-    );
-    if (nftAccount) {
-      settleAfterTx({
-        accountId: nftAccount.getReceiveAddress(),
-        avatarAccountId: activeAccount?.id,
-        networkId: nftAccount.getNetworkId(),
-        kinds: ['balance', 'transactions', 'nfts', 'avatar-nfts'],
-        removedNftMintAddresses: detailSheet.nft?.mint ? [detailSheet.nft.mint] : undefined,
-      }).catch((err) => {
-        console.warn('[collectibles] settleAfterTx failed:', err);
-      });
-    } else {
-      void handleRefresh();
-    }
-  }, [activeAccount?.id, detailSheet.nft, handleRefresh, nftAccount, settleAfterTx, t]);
+  const handleSendSuccess = useCallback(
+    (txId: string) => {
+      Alert.alert(
+        t('nft.send.successTitle', 'NFT Sent'),
+        t('nft.send.successSummary', 'Transaction submitted successfully.\n\nTx: {{tx}}', {
+          tx: `${txId.slice(0, 20)}...`,
+        }),
+        [{ text: t('general.ok', 'OK') }]
+      );
+      if (nftAccount) {
+        settleAfterTx({
+          accountId: nftAccount.getReceiveAddress(),
+          avatarAccountId: activeAccount?.id,
+          networkId: nftAccount.getNetworkId(),
+          kinds: ['balance', 'transactions', 'nfts', 'avatar-nfts'],
+          removedNftMintAddresses: detailSheet.nft?.mint ? [detailSheet.nft.mint] : undefined,
+        }).catch((err) => {
+          console.warn('[collectibles] settleAfterTx failed:', err);
+        });
+      } else {
+        void handleRefresh();
+      }
+    },
+    [activeAccount?.id, detailSheet.nft, handleRefresh, nftAccount, settleAfterTx, t]
+  );
 
   const resetBurnPreview = useCallback(() => {
     setBurnPreview(null);
@@ -341,7 +360,9 @@ export default function CollectiblesScreen() {
     if (blockchain !== 'solana') {
       Alert.alert(
         t('general.not_supported', 'Not Supported'),
-        t('nft.burn.notSupported', 'Burning {{blockchain}} NFTs is not yet supported.', { blockchain })
+        t('nft.burn.notSupported', 'Burning {{blockchain}} NFTs is not yet supported.', {
+          blockchain,
+        })
       );
       return;
     }
@@ -362,7 +383,7 @@ export default function CollectiblesScreen() {
       const networkId = sectionKey ? SECTION_TO_NETWORK[sectionKey] : 'solana-mainnet';
       const txResponse = await createBurnTransaction(
         { mintAddress: nft.mint, ownerAddress },
-        networkId as SolanaNetworkId,
+        networkId as SolanaNetworkId
       );
       setBurnPreview(txResponse);
 
@@ -397,9 +418,12 @@ export default function CollectiblesScreen() {
     }
   }, [burnPreview, detailSheet.nft, nftAccount, nftBurn]);
 
-  const handleBurnSuccess = useCallback((_txId: string) => {
-    handleDetailSheetClose();
-  }, [handleDetailSheetClose]);
+  const handleBurnSuccess = useCallback(
+    (_txId: string) => {
+      handleDetailSheetClose();
+    },
+    [handleDetailSheetClose]
+  );
 
   // Get ordered section keys to display (Solana only)
   const visibleSectionKeys = useMemo<NftSectionKey[]>(() => {
@@ -419,9 +443,7 @@ export default function CollectiblesScreen() {
   // Check if all visible sections are empty (after loading)
   const isEmpty = useMemo(() => {
     if (isLoading) return false;
-    return visibleSectionKeys.every(
-      (key) => nftsBySections[key].nfts.length === 0
-    );
+    return visibleSectionKeys.every((key) => nftsBySections[key].nfts.length === 0);
   }, [isLoading, visibleSectionKeys, nftsBySections]);
 
   // // Get NFTs for current see all sheet
@@ -488,7 +510,10 @@ export default function CollectiblesScreen() {
           <View style={styles.loadErrorBanner} testID="collectibles-load-error">
             <WarningNotice
               tone="warning"
-              title={t('collectibles.load_error', "Your collectibles couldn't be loaded right now.")}
+              title={t(
+                'collectibles.load_error',
+                "Your collectibles couldn't be loaded right now."
+              )}
             />
           </View>
         )}
@@ -498,7 +523,10 @@ export default function CollectiblesScreen() {
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>{t('nft.emptyTitle', 'No Collectibles')}</Text>
             <Text style={styles.emptySubtext}>
-              {t('nft.emptySubtitle', 'Your NFTs and Ordinals will appear here once you receive some')}
+              {t(
+                'nft.emptySubtitle',
+                'Your NFTs and Ordinals will appear here once you receive some'
+              )}
             </Text>
           </View>
         )}
@@ -550,22 +578,24 @@ export default function CollectiblesScreen() {
                 </View>
               ) : (
                 <View style={styles.gridContainer}>
-                  {section.nfts.reduce<NftData[][]>((rows, nft, i) => {
-                    if (i % 2 === 0) rows.push([nft]);
-                    else rows[rows.length - 1].push(nft);
-                    return rows;
-                  }, []).map((pair, rowIndex) => (
-                    <View key={rowIndex} style={styles.gridRow}>
-                      {pair.map((nft) => (
-                        <NftCard
-                          key={nft.mint}
-                          nft={nft}
-                          onPress={() => handleNftPress(nft, sectionKey)}
-                          style={styles.gridCard}
-                        />
-                      ))}
-                    </View>
-                  ))}
+                  {section.nfts
+                    .reduce<NftData[][]>((rows, nft, i) => {
+                      if (i % 2 === 0) rows.push([nft]);
+                      else rows[rows.length - 1].push(nft);
+                      return rows;
+                    }, [])
+                    .map((pair, rowIndex) => (
+                      <View key={rowIndex} style={styles.gridRow}>
+                        {pair.map((nft) => (
+                          <NftCard
+                            key={nft.mint}
+                            nft={nft}
+                            onPress={() => handleNftPress(nft, sectionKey)}
+                            style={styles.gridCard}
+                          />
+                        ))}
+                      </View>
+                    ))}
                 </View>
               )}
             </View>

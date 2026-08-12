@@ -13,14 +13,14 @@ appId: io.salmonwallet.app
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-settings.yaml
 - tapOn:
-    id: "settings-item-security"
+    id: 'settings-item-security'
 - extendedWaitUntil:
     visible:
-      id: "security-biometric-toggle"
+      id: 'security-biometric-toggle'
     timeout: 10000
 - takeScreenshot: screenshots/actions/security/biometric-off
 - tapOn:
-    id: "security-biometric-toggle"
+    id: 'security-biometric-toggle'
 - waitForAnimationToEnd:
     timeout: 5000
 - takeScreenshot: screenshots/actions/security/biometric-on

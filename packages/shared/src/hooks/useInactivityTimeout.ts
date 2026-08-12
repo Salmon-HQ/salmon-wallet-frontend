@@ -13,11 +13,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  updateLastActivity,
-  getLastActivity,
-  isSessionTimedOut,
-} from '../storage/stash';
+import { updateLastActivity, getLastActivity, isSessionTimedOut } from '../storage/stash';
 import { isWebEnvironment } from '../utils/platform';
 
 // ============================================================================
@@ -182,17 +178,11 @@ export interface UseInactivityTimeoutResult {
 export function useInactivityTimeout(
   options: UseInactivityTimeoutParams = {}
 ): UseInactivityTimeoutResult {
-  const {
-    timeoutMs = DEFAULT_TIMEOUT_MS,
-    onTimeout,
-    enabled = true,
-  } = options;
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, onTimeout, enabled = true } = options;
 
   // State
   const [isActive, setIsActive] = useState<boolean>(true);
-  const [lastActivity, setLastActivity] = useState<number | undefined>(
-    undefined
-  );
+  const [lastActivity, setLastActivity] = useState<number | undefined>(undefined);
 
   // Refs for stable callbacks and debouncing
   const onTimeoutRef = useRef(onTimeout);
@@ -354,4 +344,3 @@ export function useInactivityTimeout(
     lastActivity,
   };
 }
-

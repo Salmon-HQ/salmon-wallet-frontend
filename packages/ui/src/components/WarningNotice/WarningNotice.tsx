@@ -35,7 +35,9 @@ export function WarningNotice({
 
   return (
     <WarningBannerRoot sx={{ backgroundColor: background, borderColor: accent }}>
-      <WarningAmberRoundedIcon sx={{ fontSize: 20, color: accent, flexShrink: 0, marginTop: '1px' }} />
+      <WarningAmberRoundedIcon
+        sx={{ fontSize: 20, color: accent, flexShrink: 0, marginTop: '1px' }}
+      />
       <Box sx={{ minWidth: 0 }}>
         <Typography
           sx={{

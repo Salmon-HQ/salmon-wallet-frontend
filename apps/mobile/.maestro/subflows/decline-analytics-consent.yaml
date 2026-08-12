@@ -15,16 +15,16 @@ appId: io.salmonwallet.app
 # outlast it.
 - extendedWaitUntil:
     visible:
-      id: "analytics-consent-screen"
+      id: 'analytics-consent-screen'
     timeout: 90000
 - tapOn:
-    id: "analytics-consent-decline"
+    id: 'analytics-consent-decline'
 - runFlow:
     when:
-      visible: "Fast refresh"
+      visible: 'Fast refresh'
     commands:
-      - tapOn: "Close"
+      - tapOn: 'Close'
       - waitForAnimationToEnd:
           timeout: 2000
       - tapOn:
-          id: "analytics-consent-decline"
+          id: 'analytics-consent-decline'

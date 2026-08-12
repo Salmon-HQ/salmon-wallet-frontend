@@ -29,7 +29,7 @@ test('first-run consent screen appears in onboarding and opts in', async ({ popu
 
   // Stub analytics ingest — opting in starts the flush timer.
   await popup.route('**/v1/events', (route) =>
-    route.fulfill({ status: 202, contentType: 'application/json', body: '{"accepted":1}' }),
+    route.fulfill({ status: 202, contentType: 'application/json', body: '{"accepted":1}' })
   );
 
   // The consent screen only shows during onboarding. The suite shares one
@@ -41,7 +41,10 @@ test('first-run consent screen appears in onboarding and opts in', async ({ popu
     .waitFor({ state: 'visible', timeout: 4000 })
     .then(() => true)
     .catch(() => false);
-  test.skip(alreadyOnboarded, 'wallet already onboarded in this profile — consent screen only shows on fresh onboarding');
+  test.skip(
+    alreadyOnboarded,
+    'wallet already onboarded in this profile — consent screen only shows on fresh onboarding'
+  );
 
   // Fresh profile → onboarding. Recover up to the consent screen.
   await popup.getByTestId('select-recover-button').click({ timeout: 20_000 });

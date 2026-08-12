@@ -285,14 +285,20 @@ export function BalanceCard({
   const gradientCSS = getGradientCSSForBlockchain(blockchain);
   const scalesColor = getScalesColorForBlockchain(blockchain);
   // In developer mode, always show network label (including "Mainnet")
-  const networkLabel = showNetworkLabel ? (getNetworkLabel(blockchain) ?? t('general.network_mainnet', 'Mainnet')) : null;
+  const networkLabel = showNetworkLabel
+    ? (getNetworkLabel(blockchain) ?? t('general.network_mainnet', 'Mainnet'))
+    : null;
 
   const renderBalance = () => {
     if (hiddenBalance) {
       return (
         <BalanceRow>
           <BalanceDollars>{hiddenValue}</BalanceDollars>
-          <EyeButton onClick={handleToggleVisibility} aria-label={t('accessibility.show_balance', 'Show balance')} data-testid="balance-eye-toggle">
+          <EyeButton
+            onClick={handleToggleVisibility}
+            aria-label={t('accessibility.show_balance', 'Show balance')}
+            data-testid="balance-eye-toggle"
+          >
             <EyeOffIcon sx={{ fontSize: ms(componentSizes.eyeIcon) }} />
           </EyeButton>
         </BalanceRow>
@@ -308,7 +314,11 @@ export function BalanceCard({
           <BalanceDollars>{parts[0]}</BalanceDollars>
           {parts[1] && <BalanceDecimals>.{parts[1]}</BalanceDecimals>}
         </Box>
-        <EyeButton onClick={handleToggleVisibility} aria-label={t('accessibility.hide_balance', 'Hide balance')} data-testid="balance-eye-toggle">
+        <EyeButton
+          onClick={handleToggleVisibility}
+          aria-label={t('accessibility.hide_balance', 'Hide balance')}
+          data-testid="balance-eye-toggle"
+        >
           <EyeIcon sx={{ fontSize: ms(componentSizes.eyeIcon) }} />
         </EyeButton>
       </BalanceRow>
@@ -334,18 +344,13 @@ export function BalanceCard({
             color={changeColor}
           />
         </TrendingIconWrapper>
-        {displayAbsChange && (
-          <ChangeText $color={changeColor}>({displayAbsChange})</ChangeText>
-        )}
+        {displayAbsChange && <ChangeText $color={changeColor}>({displayAbsChange})</ChangeText>}
       </ChangeRow>
     );
   };
 
   return (
-    <Container
-      style={{ ...style, background: gradientCSS }}
-      className={className}
-    >
+    <Container style={{ ...style, background: gradientCSS }} className={className}>
       {/* Scales pattern overlay */}
       <ScalesBackground
         strokeColor={scalesColor}
@@ -366,14 +371,26 @@ export function BalanceCard({
       <ContentGroup>
         {loading ? (
           <BalanceRow>
-            <SkeletonRect sx={{ width: ms(componentSizes.buttonMinWidthLg), height: ms(fontSize.balance), borderRadius: `${ms(borderRadius.sm)}px` }} />
+            <SkeletonRect
+              sx={{
+                width: ms(componentSizes.buttonMinWidthLg),
+                height: ms(fontSize.balance),
+                borderRadius: `${ms(borderRadius.sm)}px`,
+              }}
+            />
           </BalanceRow>
         ) : (
           renderBalance()
         )}
         {loading ? (
           <ChangeRow>
-            <SkeletonRect sx={{ width: ms(componentSizes.buttonMinWidth), height: ms(fontSize.sm * 1.3), borderRadius: `${ms(borderRadius.sm)}px` }} />
+            <SkeletonRect
+              sx={{
+                width: ms(componentSizes.buttonMinWidth),
+                height: ms(fontSize.sm * 1.3),
+                borderRadius: `${ms(borderRadius.sm)}px`,
+              }}
+            />
           </ChangeRow>
         ) : (
           renderChange()

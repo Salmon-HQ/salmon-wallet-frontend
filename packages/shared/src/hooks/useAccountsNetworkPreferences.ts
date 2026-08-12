@@ -30,12 +30,12 @@ export function useAccountsNetworkPreferences({
   setTokens,
 }: UseAccountsNetworkPreferencesParams): UseAccountsNetworkPreferencesResult {
   const activeTrustedApps = useMemo(
-    (): Record<string, TrustedApp> => (networkId ? trustedApps[networkId] ?? {} : {}),
+    (): Record<string, TrustedApp> => (networkId ? (trustedApps[networkId] ?? {}) : {}),
     [trustedApps, networkId]
   );
 
   const activeTokens = useMemo(
-    (): Record<string, TokenInfo> => (networkId ? tokens[networkId] ?? {} : {}),
+    (): Record<string, TokenInfo> => (networkId ? (tokens[networkId] ?? {}) : {}),
     [tokens, networkId]
   );
 
@@ -43,7 +43,7 @@ export function useAccountsNetworkPreferences({
     async (
       domain: string,
       { name, icon }: TrustedApp = {},
-      targetNetworkId?: string,
+      targetNetworkId?: string
     ): Promise<void> => {
       const resolvedNetworkId = targetNetworkId ?? networkId;
       if (!resolvedNetworkId) return;

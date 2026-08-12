@@ -265,11 +265,7 @@ describe('Solana Transaction History Service', () => {
 
       expect(result.data).toEqual([MOCK_SEND_TX, MOCK_RECEIVE_TX]);
       expect(result.pageToken).toBe('oldest-sig');
-      expect(mockGetSolanaTransactions).toHaveBeenCalledWith(
-        'solana-mainnet',
-        TEST_ADDRESS,
-        {}
-      );
+      expect(mockGetSolanaTransactions).toHaveBeenCalledWith('solana-mainnet', TEST_ADDRESS, {});
     });
 
     it('should fetch transactions with paging parameters', async () => {
@@ -293,11 +289,10 @@ describe('Solana Transaction History Service', () => {
 
       expect(result.data).toEqual([MOCK_SWAP_TX]);
       expect(result.pageToken).toBeUndefined();
-      expect(mockGetSolanaTransactions).toHaveBeenCalledWith(
-        'solana-mainnet',
-        TEST_ADDRESS,
-        { before: 'page-token-123', limit: 20 }
-      );
+      expect(mockGetSolanaTransactions).toHaveBeenCalledWith('solana-mainnet', TEST_ADDRESS, {
+        before: 'page-token-123',
+        limit: 20,
+      });
     });
   });
 

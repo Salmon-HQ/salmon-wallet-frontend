@@ -40,7 +40,8 @@ const getDimensions = (): { width: number; height: number } => {
 export const scale = (size: number): number => (getDimensions().width / DESIGN_WIDTH) * size;
 export const s = scale;
 
-export const verticalScale = (size: number): number => (getDimensions().height / DESIGN_HEIGHT) * size;
+export const verticalScale = (size: number): number =>
+  (getDimensions().height / DESIGN_HEIGHT) * size;
 export const vs = verticalScale;
 
 export const moderateScale = (size: number, factor = 0.5): number =>

@@ -147,8 +147,10 @@ export function CollectiblesPage({
   const { t } = useTranslation();
 
   // Resolve owner addresses per section
-  const solanaMainnetAddress = activeAccount?.networksAccounts?.['solana-mainnet']?.[0]?.getReceiveAddress();
-  const solanaDevnetAddress = activeAccount?.networksAccounts?.['solana-devnet']?.[0]?.getReceiveAddress();
+  const solanaMainnetAddress =
+    activeAccount?.networksAccounts?.['solana-mainnet']?.[0]?.getReceiveAddress();
+  const solanaDevnetAddress =
+    activeAccount?.networksAccounts?.['solana-devnet']?.[0]?.getReceiveAddress();
   const includeSpam = !!developerNetworks;
 
   const mainnetQuery = useSolanaNfts({
@@ -181,12 +183,19 @@ export function CollectiblesPage({
         networkLabel: t('general.network_devnet', 'Devnet'),
       } as NftSection,
     };
-  }, [mainnetQuery.nfts, mainnetQuery.loading, devnetQuery.nfts, devnetQuery.loading, developerNetworks, t]);
+  }, [
+    mainnetQuery.nfts,
+    mainnetQuery.loading,
+    devnetQuery.nfts,
+    devnetQuery.loading,
+    developerNetworks,
+    t,
+  ]);
 
   // Derived state (Solana only)
   const visibleKeys = useMemo<NftSectionKey[]>(
-    () => developerNetworks ? ['solana', 'solana-devnet'] : ['solana'],
-    [developerNetworks],
+    () => (developerNetworks ? ['solana', 'solana-devnet'] : ['solana']),
+    [developerNetworks]
   );
 
   const isLoading = visibleKeys.some((key) => nftsBySections[key].loading);
@@ -197,9 +206,12 @@ export function CollectiblesPage({
     mainnetQuery.error !== null || (developerNetworks && devnetQuery.error !== null);
 
   // Handlers
-  const handleNftPress = useCallback((nft: NftData) => {
-    onNftDetailPress?.(nft);
-  }, [onNftDetailPress]);
+  const handleNftPress = useCallback(
+    (nft: NftData) => {
+      onNftDetailPress?.(nft);
+    },
+    [onNftDetailPress]
+  );
 
   // const handleSeeAllPress = useCallback((sectionKey: NftSectionKey) => {
   //   const section = nftsBySections[sectionKey];
@@ -226,9 +238,7 @@ export function CollectiblesPage({
       {/* Empty state */}
       {isEmpty && (
         <EmptyState data-testid="collectibles-empty">
-          <EmptyStateText>
-            {t('collectibles.empty', 'No collectibles found')}
-          </EmptyStateText>
+          <EmptyStateText>{t('collectibles.empty', 'No collectibles found')}</EmptyStateText>
           <EmptyStateSubtext>
             {t('collectibles.empty_hint', 'Your NFTs and collectibles will appear here')}
           </EmptyStateSubtext>
@@ -243,7 +253,13 @@ export function CollectiblesPage({
           <Box key={key} sx={{ display: 'flex', flexDirection: 'column', gap: `${spacing.md}px` }}>
             {/* Section header */}
             <SectionHeaderRow>
-              <SolanaSvgIcon sx={{ width: componentSizes.iconSizeMedium, height: componentSizes.iconSizeMedium, color: colors.text.primary }} />
+              <SolanaSvgIcon
+                sx={{
+                  width: componentSizes.iconSizeMedium,
+                  height: componentSizes.iconSizeMedium,
+                  color: colors.text.primary,
+                }}
+              />
               <SectionTitleText>{getNftSectionTitle(key, section)}</SectionTitleText>
               <SectionCount>({section.nfts.length})</SectionCount>
             </SectionHeaderRow>
@@ -287,7 +303,6 @@ export function CollectiblesPage({
         );
       })}
       */}
-
     </Container>
   );
 }

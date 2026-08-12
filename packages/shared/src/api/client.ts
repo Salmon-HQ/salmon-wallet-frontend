@@ -207,7 +207,8 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
   // with jitter so a backend hiccup does not turn every client into a
   // synchronized retry storm.
   client.interceptors.response.use(undefined, async (error: AxiosError<ApiErrorResponse>) => {
-    const config = error.config as (InternalAxiosRequestConfig & { _retryCount?: number }) | undefined;
+    const config = error.config as
+      (InternalAxiosRequestConfig & { _retryCount?: number }) | undefined;
     const method = config?.method?.toLowerCase();
     const status = error.response?.status ?? 0;
     const retryable = method === 'get' && (status === 0 || status >= 500);
@@ -270,7 +271,8 @@ function transformError(error: AxiosError<ApiErrorResponse>): ApiError {
   if (error.response) {
     // Server responded with an error status
     const { status, data } = error.response;
-    const message = data?.message || data?.error_description || error.message || 'An error occurred';
+    const message =
+      data?.message || data?.error_description || error.message || 'An error occurred';
     const code = data?.code || data?.error;
     const details = data?.details;
 
@@ -286,7 +288,13 @@ function transformError(error: AxiosError<ApiErrorResponse>): ApiError {
     );
   } else {
     // Error setting up the request
-    return new ApiError(error.message || 'Request configuration error', 0, 'REQUEST_ERROR', undefined, error);
+    return new ApiError(
+      error.message || 'Request configuration error',
+      0,
+      'REQUEST_ERROR',
+      undefined,
+      error
+    );
   }
 }
 
@@ -315,10 +323,7 @@ export const staticApiClient = createApiClient({
 /**
  * Make a typed GET request
  */
-export async function get<T>(
-  url: string,
-  config?: AxiosRequestConfig
-): Promise<T> {
+export async function get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
   const response = await apiClient.get<T>(url, config);
   return response.data;
 }
@@ -362,10 +367,7 @@ export async function patch<T, D = unknown>(
 /**
  * Make a typed DELETE request
  */
-export async function del<T>(
-  url: string,
-  config?: AxiosRequestConfig
-): Promise<T> {
+export async function del<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
   const response = await apiClient.delete<T>(url, config);
   return response.data;
 }

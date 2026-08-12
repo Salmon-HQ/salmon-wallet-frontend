@@ -30,7 +30,9 @@ export function NftDetailRoute(): React.ReactElement {
 
   const [nftSendVisible, setNftSendVisible] = useState(false);
   const [burnStep, setBurnStep] = useState<'idle' | 'review' | 'success'>('idle');
-  const [burnPreview, setBurnPreview] = useState<Awaited<ReturnType<typeof createBurnTransaction>> | null>(null);
+  const [burnPreview, setBurnPreview] = useState<Awaited<
+    ReturnType<typeof createBurnTransaction>
+  > | null>(null);
   const [burnPreparing, setBurnPreparing] = useState(false);
   const [burnError, setBurnError] = useState<string | null>(null);
 
@@ -144,22 +146,26 @@ export function NftDetailRoute(): React.ReactElement {
   // Deep link fallback — no NFT data in location state
   if (!nft) {
     return (
-      <Box sx={{
-        minHeight: '100vh',
-        backgroundColor: colors.background.primary,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: spacing['2xl'],
-      }}>
-        <Typography sx={{
-          color: colors.text.secondary,
-          fontFamily: fontFamily.sans,
-          fontSize: fontSize.lg,
-          textAlign: 'center',
-          marginBottom: spacing.md,
-        }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          backgroundColor: colors.background.primary,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: spacing['2xl'],
+        }}
+      >
+        <Typography
+          sx={{
+            color: colors.text.secondary,
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.lg,
+            textAlign: 'center',
+            marginBottom: spacing.md,
+          }}
+        >
           {t('nft.notFound', 'NFT not found. Please navigate from your collection.')}
         </Typography>
         <Typography

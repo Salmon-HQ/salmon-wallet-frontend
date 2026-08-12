@@ -6,11 +6,7 @@
  */
 
 import type React from 'react';
-import type {
-  Blockchain,
-  NetworkEnvironment,
-  Transaction,
-} from '@salmon/shared';
+import type { Blockchain, NetworkEnvironment, Transaction } from '@salmon/shared';
 
 // Re-export shared types for convenience
 export type {

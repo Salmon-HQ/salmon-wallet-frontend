@@ -3,7 +3,7 @@ appId: io.salmonwallet.app
 # Assumes Home. Navigates Settings → Profile Picture panel.
 - runFlow: ./open-settings.yaml
 - tapOn:
-    id: "settings-item-profile-picture"
+    id: 'settings-item-profile-picture'
 - extendedWaitUntil:
-    visible: "Avatars"
+    visible: 'Avatars'
     timeout: 5000

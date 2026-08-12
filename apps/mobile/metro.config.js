@@ -55,10 +55,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   // See: https://github.com/solana-labs/solana-web3.js/issues/1981
   if (moduleName === 'rpc-websockets') {
     // Find rpc-websockets in pnpm's node_modules structure (version-agnostic)
-    const rpcWebsocketsBrowserPath = findPackage(
-      'rpc-websockets',
-      'dist/index.browser.cjs'
-    );
+    const rpcWebsocketsBrowserPath = findPackage('rpc-websockets', 'dist/index.browser.cjs');
     if (rpcWebsocketsBrowserPath && fs.existsSync(rpcWebsocketsBrowserPath)) {
       return {
         filePath: rpcWebsocketsBrowserPath,
@@ -93,10 +90,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   // Use the CJS build which exists at the correct path.
   if (moduleName === '@bonfida/spl-name-service') {
     // Find @bonfida/spl-name-service in pnpm's node_modules structure (version-agnostic)
-    const bonfidaPath = findPackage(
-      '@bonfida/spl-name-service',
-      'dist/cjs/index.js'
-    );
+    const bonfidaPath = findPackage('@bonfida/spl-name-service', 'dist/cjs/index.js');
     if (bonfidaPath && fs.existsSync(bonfidaPath)) {
       return {
         filePath: bonfidaPath,

@@ -69,24 +69,21 @@ describe('useInvalidateAfterTx', () => {
     await result.current({ accountId: ACCOUNT_A, kinds: ['balance'] });
 
     expect(
-      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_A, networkId: NETWORK_SOL })),
+      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }))
     ).toBe(true);
     expect(
-      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_A, networkId: NETWORK_BTC })),
+      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_A, networkId: NETWORK_BTC }))
     ).toBe(true);
     // nfts not requested -> not invalidated
     expect(
-      isInvalidated(
-        client,
-        queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }),
-      ),
+      isInvalidated(client, queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }))
     ).toBe(false);
     expect(isInvalidated(client, queryKeys.avatarNfts({ accountId: ACCOUNT_A }))).toBe(false);
     expect(
       isInvalidated(
         client,
-        queryKeys.transactions({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }),
-      ),
+        queryKeys.transactions({ accountId: ACCOUNT_A, networkId: NETWORK_SOL })
+      )
     ).toBe(false);
   });
 
@@ -108,7 +105,7 @@ describe('useInvalidateAfterTx', () => {
         });
         return useSettleAfterTx();
       },
-      { wrapper: makeWrapper(client) },
+      { wrapper: makeWrapper(client) }
     );
 
     await waitFor(() => {
@@ -156,7 +153,7 @@ describe('useInvalidateAfterTx', () => {
         useQuery({ queryKey: balanceKey, queryFn: fetchBalance, staleTime: 15_000 });
         return useSettleAfterTx();
       },
-      { wrapper: makeWrapper(client) },
+      { wrapper: makeWrapper(client) }
     );
 
     await waitFor(() => {
@@ -202,12 +199,12 @@ describe('useInvalidateAfterTx', () => {
     await result.current({ accountId: ACCOUNT_A, kinds: ['balance', 'avatar-nfts'] });
 
     expect(
-      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_A, networkId: NETWORK_SOL })),
+      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }))
     ).toBe(true);
     expect(isInvalidated(client, queryKeys.avatarNfts({ accountId: ACCOUNT_A }))).toBe(true);
     // account B untouched
     expect(
-      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_B, networkId: NETWORK_SOL })),
+      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_B, networkId: NETWORK_SOL }))
     ).toBe(false);
     expect(isInvalidated(client, queryKeys.avatarNfts({ accountId: ACCOUNT_B }))).toBe(false);
   });
@@ -225,10 +222,10 @@ describe('useInvalidateAfterTx', () => {
     });
 
     expect(
-      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_A, networkId: NETWORK_SOL })),
+      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }))
     ).toBe(true);
     expect(
-      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_A, networkId: NETWORK_BTC })),
+      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_A, networkId: NETWORK_BTC }))
     ).toBe(false);
   });
 
@@ -266,19 +263,16 @@ describe('useInvalidateAfterTx', () => {
 
     expect(spy).toHaveBeenCalledTimes(4);
     expect(
-      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_A, networkId: NETWORK_SOL })),
+      isInvalidated(client, queryKeys.balance({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }))
     ).toBe(true);
     expect(
       isInvalidated(
         client,
-        queryKeys.transactions({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }),
-      ),
+        queryKeys.transactions({ accountId: ACCOUNT_A, networkId: NETWORK_SOL })
+      )
     ).toBe(true);
     expect(
-      isInvalidated(
-        client,
-        queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }),
-      ),
+      isInvalidated(client, queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }))
     ).toBe(true);
     expect(isInvalidated(client, queryKeys.avatarNfts({ accountId: ACCOUNT_A }))).toBe(true);
   });
@@ -289,33 +283,32 @@ describe('useInvalidateAfterTx', () => {
 
     function seedNfts(client: QueryClient) {
       const nft = (mintAddress: string) => ({ mint: { address: mintAddress } });
-      client.setQueryData(
-        queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }),
-        [nft(MINT_KEEP), nft(MINT_BURN)],
-      );
+      client.setQueryData(queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }), [
+        nft(MINT_KEEP),
+        nft(MINT_BURN),
+      ]);
       client.setQueryData(queryKeys.avatarNfts({ accountId: ACCOUNT_A }), [
         nft(MINT_BURN),
         nft(MINT_KEEP),
       ]);
-      client.setQueryData(
-        queryKeys.solanaNfts({ accountId: ACCOUNT_B, networkId: NETWORK_SOL }),
-        [nft(MINT_BURN)],
-      );
+      client.setQueryData(queryKeys.solanaNfts({ accountId: ACCOUNT_B, networkId: NETWORK_SOL }), [
+        nft(MINT_BURN),
+      ]);
       client.setQueryData(
         queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL_DEV }),
-        [nft(MINT_BURN)],
+        [nft(MINT_BURN)]
       );
       client.setQueryData(
         queryKeys.solanaNftDetail({ mintAddress: MINT_BURN, networkId: NETWORK_SOL }),
-        nft(MINT_BURN),
+        nft(MINT_BURN)
       );
       client.setQueryData(
         queryKeys.solanaNftDetail({ mintAddress: MINT_BURN, networkId: NETWORK_SOL_DEV }),
-        nft(MINT_BURN),
+        nft(MINT_BURN)
       );
       client.setQueryData(
         queryKeys.solanaNftDetail({ mintAddress: MINT_KEEP, networkId: NETWORK_SOL }),
-        nft(MINT_KEEP),
+        nft(MINT_KEEP)
       );
     }
 
@@ -333,18 +326,20 @@ describe('useInvalidateAfterTx', () => {
       });
 
       const aSolList = client.getQueryData(
-        queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }),
+        queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL })
       ) as Array<{ mint: { address: string } }>;
       expect(aSolList.map((n) => n.mint.address)).toEqual([MINT_KEEP]);
 
-      const aAvatarList = client.getQueryData(queryKeys.avatarNfts({ accountId: ACCOUNT_A })) as Array<{
+      const aAvatarList = client.getQueryData(
+        queryKeys.avatarNfts({ accountId: ACCOUNT_A })
+      ) as Array<{
         mint: { address: string };
       }>;
       expect(aAvatarList.map((n) => n.mint.address)).toEqual([MINT_KEEP]);
 
       // Other account's cache is untouched
       const bSolList = client.getQueryData(
-        queryKeys.solanaNfts({ accountId: ACCOUNT_B, networkId: NETWORK_SOL }),
+        queryKeys.solanaNfts({ accountId: ACCOUNT_B, networkId: NETWORK_SOL })
       ) as Array<{ mint: { address: string } }>;
       expect(bSolList.map((n) => n.mint.address)).toEqual([MINT_BURN]);
     });
@@ -364,18 +359,18 @@ describe('useInvalidateAfterTx', () => {
 
       expect(
         client.getQueryData(
-          queryKeys.solanaNftDetail({ mintAddress: MINT_BURN, networkId: NETWORK_SOL }),
-        ),
+          queryKeys.solanaNftDetail({ mintAddress: MINT_BURN, networkId: NETWORK_SOL })
+        )
       ).toBeUndefined();
       expect(
         client.getQueryData(
-          queryKeys.solanaNftDetail({ mintAddress: MINT_BURN, networkId: NETWORK_SOL_DEV }),
-        ),
+          queryKeys.solanaNftDetail({ mintAddress: MINT_BURN, networkId: NETWORK_SOL_DEV })
+        )
       ).toBeUndefined();
       expect(
         client.getQueryData(
-          queryKeys.solanaNftDetail({ mintAddress: MINT_KEEP, networkId: NETWORK_SOL }),
-        ),
+          queryKeys.solanaNftDetail({ mintAddress: MINT_KEEP, networkId: NETWORK_SOL })
+        )
       ).toBeDefined();
     });
 
@@ -394,13 +389,13 @@ describe('useInvalidateAfterTx', () => {
       });
 
       const devnetList = client.getQueryData(
-        queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL_DEV }),
+        queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL_DEV })
       ) as Array<{ mint: { address: string } }>;
       expect(devnetList.map((n) => n.mint.address)).toEqual([MINT_BURN]);
       expect(
         client.getQueryData(
-          queryKeys.solanaNftDetail({ mintAddress: MINT_BURN, networkId: NETWORK_SOL_DEV }),
-        ),
+          queryKeys.solanaNftDetail({ mintAddress: MINT_BURN, networkId: NETWORK_SOL_DEV })
+        )
       ).toBeDefined();
     });
 
@@ -414,7 +409,7 @@ describe('useInvalidateAfterTx', () => {
       await result.current({ accountId: ACCOUNT_A, kinds: ['nfts'] });
 
       const aSolList = client.getQueryData(
-        queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL }),
+        queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL })
       ) as Array<{ mint: { address: string } }>;
       expect(aSolList.map((n) => n.mint.address)).toEqual([MINT_KEEP, MINT_BURN]);
     });
@@ -423,14 +418,10 @@ describe('useInvalidateAfterTx', () => {
       const client = makeClient();
       const solanaKey = queryKeys.solanaNfts({ accountId: ACCOUNT_A, networkId: NETWORK_SOL });
       const avatarKey = queryKeys.avatarNfts({ accountId: ACCOUNT_A });
-      const fetchSolanaNfts = vi.fn().mockResolvedValue([
-        { mint: { address: MINT_KEEP } },
-        { mint: { address: MINT_BURN } },
-      ]);
-      const fetchAvatarNfts = vi.fn().mockResolvedValue([
-        { mint: MINT_BURN },
-        { mint: MINT_KEEP },
-      ]);
+      const fetchSolanaNfts = vi
+        .fn()
+        .mockResolvedValue([{ mint: { address: MINT_KEEP } }, { mint: { address: MINT_BURN } }]);
+      const fetchAvatarNfts = vi.fn().mockResolvedValue([{ mint: MINT_BURN }, { mint: MINT_KEEP }]);
 
       const { result } = renderHook(
         () => {
@@ -444,7 +435,7 @@ describe('useInvalidateAfterTx', () => {
           });
           return useSettleAfterTx();
         },
-        { wrapper: makeWrapper(client) },
+        { wrapper: makeWrapper(client) }
       );
 
       await waitFor(() => {
@@ -466,12 +457,12 @@ describe('useInvalidateAfterTx', () => {
       });
 
       expect(
-        (
-          client.getQueryData(solanaKey) as Array<{ mint: { address: string } }>
-        ).map((n) => n.mint.address),
+        (client.getQueryData(solanaKey) as Array<{ mint: { address: string } }>).map(
+          (n) => n.mint.address
+        )
       ).toEqual([MINT_KEEP]);
       expect(
-        (client.getQueryData(avatarKey) as Array<{ mint: string }>).map((n) => n.mint),
+        (client.getQueryData(avatarKey) as Array<{ mint: string }>).map((n) => n.mint)
       ).toEqual([MINT_KEEP]);
 
       await act(async () => {
@@ -482,12 +473,12 @@ describe('useInvalidateAfterTx', () => {
       expect(fetchSolanaNfts).toHaveBeenCalledTimes(3);
       expect(fetchAvatarNfts).toHaveBeenCalledTimes(3);
       expect(
-        (
-          client.getQueryData(solanaKey) as Array<{ mint: { address: string } }>
-        ).map((n) => n.mint.address),
+        (client.getQueryData(solanaKey) as Array<{ mint: { address: string } }>).map(
+          (n) => n.mint.address
+        )
       ).toEqual([MINT_KEEP]);
       expect(
-        (client.getQueryData(avatarKey) as Array<{ mint: string }>).map((n) => n.mint),
+        (client.getQueryData(avatarKey) as Array<{ mint: string }>).map((n) => n.mint)
       ).toEqual([MINT_KEEP]);
     });
   });
@@ -511,7 +502,7 @@ describe('useSettleUntilChanged', () => {
         useQuery({ queryKey: balanceKey, queryFn: fetchBalance, staleTime: 15_000 });
         return useSettleUntilChanged();
       },
-      { wrapper: makeWrapper(makeClient()) },
+      { wrapper: makeWrapper(makeClient()) }
     );
     return { ...view, fetchBalance };
   }

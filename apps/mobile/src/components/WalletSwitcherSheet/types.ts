@@ -1,7 +1,4 @@
-import type {
-  WalletSwitcherSheetPropsBase,
-  AccountListItemPropsBase,
-} from '@salmon/shared';
+import type { WalletSwitcherSheetPropsBase, AccountListItemPropsBase } from '@salmon/shared';
 
 // Re-export Account for consumers
 export type { Account } from '@salmon/shared';

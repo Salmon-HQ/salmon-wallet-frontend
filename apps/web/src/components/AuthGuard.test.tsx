@@ -31,12 +31,14 @@ vi.mock('react-router-dom', () => ({
   Outlet: () => <div data-testid="outlet" />,
 }));
 
-function setContext(state: Partial<{
-  ready: boolean;
-  locked: boolean;
-  error: string | null;
-  accounts: unknown[];
-}>) {
+function setContext(
+  state: Partial<{
+    ready: boolean;
+    locked: boolean;
+    error: string | null;
+    accounts: unknown[];
+  }>
+) {
   mockUseAccountsContext.mockReturnValue([
     { ready: true, locked: false, error: null, accounts: [], ...state },
     { retryInit: mockRetryInit },

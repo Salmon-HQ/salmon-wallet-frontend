@@ -42,9 +42,12 @@ test('home has no horizontal overflow across breakpoints', async ({ page }, test
     await expect(page.getByTestId('home-screen'), `home hidden at ${bp.name}`).toBeVisible();
 
     const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - window.innerWidth,
+      () => document.documentElement.scrollWidth - window.innerWidth
     );
-    expect(overflow, `horizontal overflow at ${bp.name} (${bp.width}px): ${overflow}px`).toBeLessThanOrEqual(1);
+    expect(
+      overflow,
+      `horizontal overflow at ${bp.name} (${bp.width}px): ${overflow}px`
+    ).toBeLessThanOrEqual(1);
 
     await testInfo.attach(`home-${bp.name}-${bp.width}.png`, {
       body: await page.screenshot(),

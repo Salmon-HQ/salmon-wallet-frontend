@@ -124,15 +124,11 @@ describe('solana service', () => {
       },
     });
 
-    const result = await getSolanaTransactions(
-      'solana-mainnet',
-      'wallet-1',
-      {
-        pageToken: 'cursor-0',
-        pageSize: 5,
-        type: 'UNKNOWN',
-      },
-    );
+    const result = await getSolanaTransactions('solana-mainnet', 'wallet-1', {
+      pageToken: 'cursor-0',
+      pageSize: 5,
+      type: 'UNKNOWN',
+    });
 
     expect(mockApiClientGet).toHaveBeenCalledWith(
       '/v1/solana-mainnet/account/wallet-1/transactions',
@@ -142,7 +138,7 @@ describe('solana service', () => {
           pageSize: 5,
           type: 'UNKNOWN',
         },
-      },
+      }
     );
     expect(result).toEqual({
       transactions: [MOCK_SOLANA_TRANSACTION],
@@ -170,7 +166,7 @@ describe('solana service', () => {
           pageToken: 'legacy-cursor',
           pageSize: 3,
         },
-      },
+      }
     );
   });
 
@@ -233,19 +229,16 @@ describe('solana service', () => {
 
     const result = await executeSwapApi('solana-mainnet', 'signed-transaction', 'request-1');
 
-    expect(mockApiClientPost).toHaveBeenCalledWith(
-      '/v1/solana-mainnet/ft/swap/execute',
-      {
-        signedTransaction: 'signed-transaction',
-        requestId: 'request-1',
-      },
-    );
+    expect(mockApiClientPost).toHaveBeenCalledWith('/v1/solana-mainnet/ft/swap/execute', {
+      signedTransaction: 'signed-transaction',
+      requestId: 'request-1',
+    });
     expect(result).toEqual(MOCK_SWAP_EXECUTE_RESPONSE);
   });
 
   it('returns failed execute responses for api errors', async () => {
     mockApiClientPost.mockRejectedValueOnce(
-      new ApiError('swap execution failed', 400, 'swap_failed'),
+      new ApiError('swap execution failed', 400, 'swap_failed')
     );
 
     const result = await executeSwapApi('solana-mainnet', 'signed-transaction', 'request-1');
@@ -280,10 +273,9 @@ describe('solana service', () => {
 
     const result = await fetchSolanaAccountBalance('solana-mainnet', 'wallet-1');
 
-    expect(mockGet).toHaveBeenCalledWith(
-      '/v1/solana-mainnet/account/wallet-1/balance',
-      { params: { include: 'logo' } },
-    );
+    expect(mockGet).toHaveBeenCalledWith('/v1/solana-mainnet/account/wallet-1/balance', {
+      params: { include: 'logo' },
+    });
     expect(result).toEqual([
       expect.objectContaining({
         symbol: 'SOL',
@@ -306,17 +298,16 @@ describe('solana service', () => {
 
     await fetchSolanaAccountBalance('solana-mainnet', 'wallet-1', { includeSpam: true });
 
-    expect(mockGet).toHaveBeenCalledWith(
-      '/v1/solana-mainnet/account/wallet-1/balance',
-      { params: { include: 'logo', includeSpam: 'true' } },
-    );
+    expect(mockGet).toHaveBeenCalledWith('/v1/solana-mainnet/account/wallet-1/balance', {
+      params: { include: 'logo', includeSpam: 'true' },
+    });
   });
 
   it('wires solana api functions to the expected dependencies', async () => {
     mockGetSolanaNfts.mockResolvedValueOnce([{ mint: { address: 'nft-1' } }] as never);
 
     await expect(
-      solanaApiFunctions.fetchNfts('solana-mainnet', 'wallet-1', false),
+      solanaApiFunctions.fetchNfts('solana-mainnet', 'wallet-1', false)
     ).resolves.toEqual([{ mint: { address: 'nft-1' } }]);
 
     expect(mockGetSolanaNfts).toHaveBeenCalledWith('solana-mainnet', 'wallet-1', false);
@@ -328,164 +319,152 @@ describe('solana service integration', () => {
   // with on-chain balance/history. Tests skip when unset.
   const walletAddress = process.env.SALMON_TEST_LIVE_WALLET ?? '';
 
-  it(
-    'reads live solana balance data from salmon-api and preserves adapter invariants',
-    async () => {
-      if (!walletAddress) {
-        console.log('Skipping live solana balance integration: SALMON_TEST_LIVE_WALLET not set');
-        return;
-      }
-      const liveBackendBaseUrl = backendBaseUrl ?? await getReachableBackendBaseUrl();
-      if (!liveBackendBaseUrl) {
-        console.log('Skipping live solana balance integration assertions: backend not reachable');
-        return;
-      }
+  it('reads live solana balance data from salmon-api and preserves adapter invariants', async () => {
+    if (!walletAddress) {
+      console.log('Skipping live solana balance integration: SALMON_TEST_LIVE_WALLET not set');
+      return;
+    }
+    const liveBackendBaseUrl = backendBaseUrl ?? (await getReachableBackendBaseUrl());
+    if (!liveBackendBaseUrl) {
+      console.log('Skipping live solana balance integration assertions: backend not reachable');
+      return;
+    }
 
-      mockGet.mockImplementation(async (path, config) => {
-        const url = new URL(`${liveBackendBaseUrl}${path as string}`);
-        const params = config?.params as Record<string, string | number> | undefined;
-        if (params) {
-          for (const [key, value] of Object.entries(params)) {
-            url.searchParams.set(key, String(value));
-          }
+    mockGet.mockImplementation(async (path, config) => {
+      const url = new URL(`${liveBackendBaseUrl}${path as string}`);
+      const params = config?.params as Record<string, string | number> | undefined;
+      if (params) {
+        for (const [key, value] of Object.entries(params)) {
+          url.searchParams.set(key, String(value));
         }
+      }
 
-        const response = await fetchWithRetry(url.toString());
+      const response = await fetchWithRetry(url.toString());
 
-        if (!response.ok) {
-          throw new ApiError(`HTTP ${response.status}`, response.status);
+      if (!response.ok) {
+        throw new ApiError(`HTTP ${response.status}`, response.status);
+      }
+
+      return (await response.json()) as SolanaBalanceItem[];
+    });
+
+    const result = await fetchSolanaAccountBalance('solana-mainnet', walletAddress);
+
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBeGreaterThan(0);
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        amount: expect.anything(),
+        decimals: expect.any(Number),
+        symbol: expect.any(String),
+        uiAmount: expect.any(Number),
+      })
+    );
+
+    const nativeSol = result.find((item) => !item.mint);
+    expect(nativeSol).toEqual(
+      expect.objectContaining({
+        symbol: 'SOL',
+        coingeckoId: 'solana',
+      })
+    );
+  }, 20000);
+
+  it('reads live solana transaction history from salmon-api', async () => {
+    if (!walletAddress) {
+      console.log('Skipping live solana transaction integration: SALMON_TEST_LIVE_WALLET not set');
+      return;
+    }
+    const liveBackendBaseUrl = backendBaseUrl ?? (await getReachableBackendBaseUrl());
+    if (!liveBackendBaseUrl) {
+      console.log('Skipping live solana transaction integration assertions: backend not reachable');
+      return;
+    }
+
+    mockApiClientGet.mockImplementation(async (path, config) => {
+      const url = new URL(`${liveBackendBaseUrl}${path as string}`);
+      const params = config?.params as Record<string, string | number> | undefined;
+      if (params) {
+        for (const [key, value] of Object.entries(params)) {
+          url.searchParams.set(key, String(value));
         }
+      }
 
-        return await response.json() as SolanaBalanceItem[];
-      });
+      const response = await fetchWithRetry(url.toString());
 
-      const result = await fetchSolanaAccountBalance('solana-mainnet', walletAddress);
+      if (!response.ok) {
+        throw new ApiError(`HTTP ${response.status}`, response.status);
+      }
 
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
-      expect(result[0]).toEqual(
-        expect.objectContaining({
-          amount: expect.anything(),
-          decimals: expect.any(Number),
-          symbol: expect.any(String),
-          uiAmount: expect.any(Number),
+      return {
+        data: await response.json(),
+      } as { data: { data: SolanaTransaction[]; meta?: { nextPageToken?: string } } };
+    });
+
+    const result = await getSolanaTransactions('solana-mainnet', walletAddress, { pageSize: 1 });
+
+    expect(Array.isArray(result.transactions)).toBe(true);
+    expect(result.transactions.length).toBeGreaterThan(0);
+    expect(result.transactions[0]).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        signature: expect.any(String),
+        timestamp: expect.any(Number),
+        status: expect.any(String),
+        inputs: expect.any(Array),
+        outputs: expect.any(Array),
+      })
+    );
+  }, 20000);
+
+  it('reads a live solana swap quote from salmon-api', async () => {
+    if (!walletAddress) {
+      console.log('Skipping live solana swap quote integration: SALMON_TEST_LIVE_WALLET not set');
+      return;
+    }
+    const liveBackendBaseUrl = backendBaseUrl ?? (await getReachableBackendBaseUrl());
+    if (!liveBackendBaseUrl) {
+      console.log('Skipping live solana swap quote assertions: backend not reachable');
+      return;
+    }
+
+    mockApiClientGet.mockImplementation(async (path, config) => {
+      const url = new URL(`${liveBackendBaseUrl}${path as string}`);
+      const params = config?.params as Record<string, string | number | boolean> | undefined;
+      if (params) {
+        for (const [key, value] of Object.entries(params)) {
+          url.searchParams.set(key, String(value));
+        }
+      }
+
+      const response = await fetchWithRetry(url.toString());
+
+      if (!response.ok) {
+        throw new ApiError(`HTTP ${response.status}`, response.status);
+      }
+
+      return {
+        data: await response.json(),
+      } as { data: SwapOrderResponse };
+    });
+
+    const result = await getSwapOrder('solana-mainnet', {
+      inputMint: 'So11111111111111111111111111111111111111112',
+      outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+      amount: '1000000',
+      publicKey: walletAddress,
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        output: expect.objectContaining({
+          amount: expect.any(String),
         }),
-      );
-
-      const nativeSol = result.find((item) => !item.mint);
-      expect(nativeSol).toEqual(
-        expect.objectContaining({
-          symbol: 'SOL',
-          coingeckoId: 'solana',
+        custom: expect.objectContaining({
+          transaction: expect.any(String),
+          requestId: expect.any(String),
         }),
-      );
-    },
-    20000,
-  );
-
-  it(
-    'reads live solana transaction history from salmon-api',
-    async () => {
-      if (!walletAddress) {
-        console.log('Skipping live solana transaction integration: SALMON_TEST_LIVE_WALLET not set');
-        return;
-      }
-      const liveBackendBaseUrl = backendBaseUrl ?? await getReachableBackendBaseUrl();
-      if (!liveBackendBaseUrl) {
-        console.log('Skipping live solana transaction integration assertions: backend not reachable');
-        return;
-      }
-
-      mockApiClientGet.mockImplementation(async (path, config) => {
-        const url = new URL(`${liveBackendBaseUrl}${path as string}`);
-        const params = config?.params as Record<string, string | number> | undefined;
-        if (params) {
-          for (const [key, value] of Object.entries(params)) {
-            url.searchParams.set(key, String(value));
-          }
-        }
-
-        const response = await fetchWithRetry(url.toString());
-
-        if (!response.ok) {
-          throw new ApiError(`HTTP ${response.status}`, response.status);
-        }
-
-        return {
-          data: await response.json(),
-        } as { data: { data: SolanaTransaction[]; meta?: { nextPageToken?: string } } };
-      });
-
-      const result = await getSolanaTransactions('solana-mainnet', walletAddress, { pageSize: 1 });
-
-      expect(Array.isArray(result.transactions)).toBe(true);
-      expect(result.transactions.length).toBeGreaterThan(0);
-      expect(result.transactions[0]).toEqual(
-        expect.objectContaining({
-          id: expect.any(String),
-          signature: expect.any(String),
-          timestamp: expect.any(Number),
-          status: expect.any(String),
-          inputs: expect.any(Array),
-          outputs: expect.any(Array),
-        }),
-      );
-    },
-    20000,
-  );
-
-  it(
-    'reads a live solana swap quote from salmon-api',
-    async () => {
-      if (!walletAddress) {
-        console.log('Skipping live solana swap quote integration: SALMON_TEST_LIVE_WALLET not set');
-        return;
-      }
-      const liveBackendBaseUrl = backendBaseUrl ?? await getReachableBackendBaseUrl();
-      if (!liveBackendBaseUrl) {
-        console.log('Skipping live solana swap quote assertions: backend not reachable');
-        return;
-      }
-
-      mockApiClientGet.mockImplementation(async (path, config) => {
-        const url = new URL(`${liveBackendBaseUrl}${path as string}`);
-        const params = config?.params as Record<string, string | number | boolean> | undefined;
-        if (params) {
-          for (const [key, value] of Object.entries(params)) {
-            url.searchParams.set(key, String(value));
-          }
-        }
-
-        const response = await fetchWithRetry(url.toString());
-
-        if (!response.ok) {
-          throw new ApiError(`HTTP ${response.status}`, response.status);
-        }
-
-        return {
-          data: await response.json(),
-        } as { data: SwapOrderResponse };
-      });
-
-      const result = await getSwapOrder('solana-mainnet', {
-        inputMint: 'So11111111111111111111111111111111111111112',
-        outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-        amount: '1000000',
-        publicKey: walletAddress,
-      });
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          output: expect.objectContaining({
-            amount: expect.any(String),
-          }),
-          custom: expect.objectContaining({
-            transaction: expect.any(String),
-            requestId: expect.any(String),
-          }),
-        }),
-      );
-    },
-    20000,
-  );
+      })
+    );
+  }, 20000);
 });

@@ -31,11 +31,7 @@ import { isSolanaAccount, isBitcoinAccount, isEthereumAccount } from '../utils/a
 import { removeDecimals } from '../utils/decimals';
 import { queryKeys } from '../query/keys';
 
-import {
-  type WalletBalance,
-  type TokenBalanceWithPrice,
-  SOL_CONSTANTS,
-} from '../utils/balance';
+import { type WalletBalance, type TokenBalanceWithPrice, SOL_CONSTANTS } from '../utils/balance';
 import { getStorageItem, setStorageItem, STORAGE_KEYS } from '../storage';
 
 // ============================================================================
@@ -103,11 +99,9 @@ async function fetchSolanaBalance(
       solanaWalletBalance.last24HoursChange !== undefined &&
       solanaWalletBalance.usdTotal > 0
     ) {
-      const previousTotal =
-        solanaWalletBalance.usdTotal - solanaWalletBalance.last24HoursChange;
+      const previousTotal = solanaWalletBalance.usdTotal - solanaWalletBalance.last24HoursChange;
       if (previousTotal > 0) {
-        last24HoursChangePercent =
-          (solanaWalletBalance.last24HoursChange / previousTotal) * 100;
+        last24HoursChangePercent = (solanaWalletBalance.last24HoursChange / previousTotal) * 100;
       }
     }
 
@@ -151,11 +145,9 @@ async function fetchBitcoinBalance(bitcoinAccount: BitcoinAccount): Promise<Wall
       bitcoinWalletBalance.last24HoursChange !== undefined &&
       bitcoinWalletBalance.usdTotal > 0
     ) {
-      const previousTotal =
-        bitcoinWalletBalance.usdTotal - bitcoinWalletBalance.last24HoursChange;
+      const previousTotal = bitcoinWalletBalance.usdTotal - bitcoinWalletBalance.last24HoursChange;
       if (previousTotal > 0) {
-        last24HoursChangePercent =
-          (bitcoinWalletBalance.last24HoursChange / previousTotal) * 100;
+        last24HoursChangePercent = (bitcoinWalletBalance.last24HoursChange / previousTotal) * 100;
       }
     }
 
@@ -200,8 +192,7 @@ async function fetchEthereumBalance(ethereumAccount: EthereumAccount): Promise<W
       const previousTotal =
         ethereumWalletBalance.usdTotal - ethereumWalletBalance.last24HoursChange;
       if (previousTotal > 0) {
-        last24HoursChangePercent =
-          (ethereumWalletBalance.last24HoursChange / previousTotal) * 100;
+        last24HoursChangePercent = (ethereumWalletBalance.last24HoursChange / previousTotal) * 100;
       }
     }
 

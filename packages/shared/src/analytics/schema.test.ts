@@ -4,7 +4,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { validateEvent, safeValidateEvent, isAddressLike, AnalyticsValidationError } from './schema';
+import {
+  validateEvent,
+  safeValidateEvent,
+  isAddressLike,
+  AnalyticsValidationError,
+} from './schema';
 
 describe('isAddressLike', () => {
   it('flags a base58 Solana address', () => {
@@ -53,9 +58,9 @@ describe('validateEvent', () => {
   });
 
   it('rejects a raw numeric value (magnitudes must be bucketed strings)', () => {
-    expect(() =>
-      validateEvent('send_completed', { amount_bucket: 42 as never })
-    ).toThrow(/string or boolean/);
+    expect(() => validateEvent('send_completed', { amount_bucket: 42 as never })).toThrow(
+      /string or boolean/
+    );
   });
 
   it('rejects a value outside a closed enum', () => {

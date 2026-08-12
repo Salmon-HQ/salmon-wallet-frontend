@@ -1,11 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -170,18 +164,13 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
             {t('token.send.networkFee', 'Network Fee')}: ~{estimatedFee}
           </Text>
         ) : sendHook.feeEstimateFailed ? (
-          <Text
-            style={[styles.feeText, styles.errorText]}
-            testID="send-fee-estimate-failed"
-          >
+          <Text style={[styles.feeText, styles.errorText]} testID="send-fee-estimate-failed">
             {t('send.fee_estimate_failed', 'Fee could not be estimated')}
           </Text>
         ) : null}
 
         {/* Error Message */}
-        {isFailed && sendHook.error && (
-          <Text style={styles.errorText}>{t(sendHook.error)}</Text>
-        )}
+        {isFailed && sendHook.error && <Text style={styles.errorText}>{t(sendHook.error)}</Text>}
       </View>
 
       {/* Bottom Buttons */}
@@ -193,7 +182,12 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
           activeOpacity={0.7}
           disabled={isSending}
         >
-          <Text style={styles.cancelButtonText} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={fontScaleCap.chrome}>
+          <Text
+            style={styles.cancelButtonText}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            maxFontSizeMultiplier={fontScaleCap.chrome}
+          >
             {t('actions.cancel', 'CANCEL').toUpperCase()}
           </Text>
         </TouchableOpacity>
@@ -214,11 +208,25 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
             {isSending ? (
               <View style={styles.sendingRow}>
                 <ActivityIndicator size="small" color={colors.text.primary} />
-                <Text style={styles.confirmButtonText} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={fontScaleCap.chrome}>{t('token.send.sending', 'Sending...')}</Text>
+                <Text
+                  style={styles.confirmButtonText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  maxFontSizeMultiplier={fontScaleCap.chrome}
+                >
+                  {t('token.send.sending', 'Sending...')}
+                </Text>
               </View>
             ) : (
-              <Text style={styles.confirmButtonText} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={fontScaleCap.chrome}>
-                {isFailed ? t('actions.retry', 'RETRY').toUpperCase() : t('actions.confirm', 'CONFIRM').toUpperCase()}
+              <Text
+                style={styles.confirmButtonText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                maxFontSizeMultiplier={fontScaleCap.chrome}
+              >
+                {isFailed
+                  ? t('actions.retry', 'RETRY').toUpperCase()
+                  : t('actions.confirm', 'CONFIRM').toUpperCase()}
               </Text>
             )}
           </LinearGradient>

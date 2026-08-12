@@ -48,11 +48,7 @@ import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { InputAddress } from '../InputAddress';
 import { BlurContainer } from '../BlurContainer';
 import { BottomSheetContainer } from '../BottomSheetContainer';
-import {
-  BitcoinSvgIcon,
-  CallMadeSvgIcon,
-  SolanaSvgIcon,
-} from '../Icon/SvgIcons';
+import { BitcoinSvgIcon, CallMadeSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
 
 export interface NftSendSheetProps {
   visible: boolean;
@@ -136,11 +132,7 @@ export function NftSendSheet({
         {nft.name}
       </Text>
       <View style={styles.blockchainBadgeContainer}>
-        <BlurContainer
-          blurIntensity={10}
-          blurTint="dark"
-          style={styles.blockchainBadge}
-        >
+        <BlurContainer blurIntensity={10} blurTint="dark" style={styles.blockchainBadge}>
           <View style={styles.blockchainBadgeContent}>
             {getBlockchainIcon()}
             <Text style={styles.blockchainLabel}>{getNftBlockchainLabel(nft)}</Text>
@@ -181,11 +173,7 @@ export function NftSendSheet({
             />
           </View>
 
-          <BlurContainer
-            blurIntensity={10}
-            blurTint="dark"
-            style={styles.sectionContainer}
-          >
+          <BlurContainer blurIntensity={10} blurTint="dark" style={styles.sectionContainer}>
             <View style={styles.sectionContent}>
               <Text style={styles.sectionTitle}>{t('nft.send.title', 'Send NFT')}</Text>
               {nft.collectionName && (
@@ -223,12 +211,15 @@ export function NftSendSheet({
         </ScrollView>
 
         <View style={[styles.actions, { paddingBottom: actionRowBottomPadding }]}>
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={handleClose}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.cancelButtonText} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={fontScaleCap.chrome}>{t('actions.cancel', 'Cancel')}</Text>
+          <TouchableOpacity style={styles.cancelButton} onPress={handleClose} activeOpacity={0.7}>
+            <Text
+              style={styles.cancelButtonText}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              maxFontSizeMultiplier={fontScaleCap.chrome}
+            >
+              {t('actions.cancel', 'Cancel')}
+            </Text>
           </TouchableOpacity>
 
           {!isBitcoin && (
@@ -240,7 +231,14 @@ export function NftSendSheet({
               activeOpacity={0.8}
             >
               <CallMadeSvgIcon size={ms(15)} color={colors.text.balance} />
-              <Text style={styles.buttonText} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={fontScaleCap.chrome}>{t('actions.send', 'Send')}</Text>
+              <Text
+                style={styles.buttonText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                maxFontSizeMultiplier={fontScaleCap.chrome}
+              >
+                {t('actions.send', 'Send')}
+              </Text>
             </TouchableOpacity>
           )}
         </View>

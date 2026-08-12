@@ -1,7 +1,15 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, ms, s, spacing, fontSize, formatConversionRate, fontFamilyNative } from '@salmon/shared';
+import {
+  colors,
+  ms,
+  s,
+  spacing,
+  fontSize,
+  formatConversionRate,
+  fontFamilyNative,
+} from '@salmon/shared';
 
 // ============================================================================
 // Constants
@@ -67,9 +75,7 @@ export const ConversionRateDisplay: React.FC<ConversionRateDisplayProps> = ({
           color={colors.text.secondary}
           style={styles.iconSmall}
         />
-        <Text style={styles.compactText}>
-          1:{formattedRate}
-        </Text>
+        <Text style={styles.compactText}>1:{formattedRate}</Text>
       </View>
     );
   }

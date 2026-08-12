@@ -135,4 +135,3 @@ export function useTokenSearch(
     isError: error !== null,
   };
 }
-

@@ -56,7 +56,8 @@ jest.mock('@salmon/shared', () => ({
   createBurnTransaction: (...args: unknown[]) => mockCreateBurnTransaction(...args),
   fontFamilyNative: { semiBold: 'System', medium: 'System' },
   fontSize: { md: 16, sm: 14, xl: 20 },
-  signAndSendPreparedSolanaTransactions: (...args: unknown[]) => mockSignAndSendPreparedSolanaTransactions(...args),
+  signAndSendPreparedSolanaTransactions: (...args: unknown[]) =>
+    mockSignAndSendPreparedSolanaTransactions(...args),
   letterSpacing: { wide: 0, wider: 0 },
   spacing: { sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, headerPadding: 16 },
   getNftSectionTitle: () => 'Solana',
@@ -98,16 +99,17 @@ jest.mock('../src/components', () => {
       visible: boolean;
       onBurnPress: () => void;
       onBurnConfirm: () => void;
-    }) => (visible ? (
-      <View>
-        <Pressable accessibilityRole="button" onPress={onBurnPress}>
-          <Text>Prepare Burn</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" onPress={onBurnConfirm}>
-          <Text>Confirm Burn</Text>
-        </Pressable>
-      </View>
-    ) : null),
+    }) =>
+      visible ? (
+        <View>
+          <Pressable accessibilityRole="button" onPress={onBurnPress}>
+            <Text>Prepare Burn</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={onBurnConfirm}>
+            <Text>Confirm Burn</Text>
+          </Pressable>
+        </View>
+      ) : null,
     SolanaSvgIcon: () => <View />,
     SubAccountSelector: () => <View />,
   };
@@ -176,7 +178,7 @@ describe('Collectibles burn reconciliation', () => {
     await waitFor(() => {
       expect(mockCreateBurnTransaction).toHaveBeenCalledWith(
         { mintAddress: 'Mint111', ownerAddress: 'Owner111' },
-        'solana-mainnet',
+        'solana-mainnet'
       );
     });
 
@@ -187,7 +189,7 @@ describe('Collectibles burn reconciliation', () => {
       // The screen hands the prepared transaction from the preview straight to burnNft.
       expect(mockSignAndSendPreparedSolanaTransactions).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ transaction: 'burn-transaction' }),
+        expect.objectContaining({ transaction: 'burn-transaction' })
       );
     });
   });

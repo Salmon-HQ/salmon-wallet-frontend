@@ -72,7 +72,13 @@ export interface UseBridgeResult {
 
   // Estimate operations
   /** Get bridge estimate and minimum amount */
-  getEstimate: (symbolIn: string, symbolOut: string, amount: number, networkIn?: string, networkOut?: string) => Promise<BridgeEstimate | null>;
+  getEstimate: (
+    symbolIn: string,
+    symbolOut: string,
+    amount: number,
+    networkIn?: string,
+    networkOut?: string
+  ) => Promise<BridgeEstimate | null>;
 
   // Exchange operations
   /** Create a bridge exchange. Rejects with the provider error on failure. */
@@ -205,7 +211,13 @@ export function useBridge(_params?: UseBridgeParams): UseBridgeResult {
    * can catch and display the user-friendly message.
    */
   const getEstimate = useCallback(
-    async (symbolIn: string, symbolOut: string, amount: number, networkIn?: string, networkOut?: string): Promise<BridgeEstimate | null> => {
+    async (
+      symbolIn: string,
+      symbolOut: string,
+      amount: number,
+      networkIn?: string,
+      networkOut?: string
+    ): Promise<BridgeEstimate | null> => {
       setStatus('getting-estimate');
       setError(null);
       setEstimate(null);
@@ -231,9 +243,12 @@ export function useBridge(_params?: UseBridgeParams): UseBridgeResult {
         } else if (maxAmount !== null && amount > maxAmount) {
           errorMessage = 'bridge.errors.aboveMaximum';
         } else {
-          const rawReason = estimateResult.status === 'rejected'
-            ? (estimateResult.reason instanceof Error ? estimateResult.reason.message : String(estimateResult.reason))
-            : 'Bridge estimate unavailable';
+          const rawReason =
+            estimateResult.status === 'rejected'
+              ? estimateResult.reason instanceof Error
+                ? estimateResult.reason.message
+                : String(estimateResult.reason)
+              : 'Bridge estimate unavailable';
           errorMessage = parseBridgeErrorMessage(rawReason);
         }
 
@@ -277,10 +292,19 @@ export function useBridge(_params?: UseBridgeParams): UseBridgeResult {
       setExchange(null);
 
       try {
-        const result = await createBridgeExchange(symbolIn, symbolOut, amount, addressTo, networkIn, networkOut);
+        const result = await createBridgeExchange(
+          symbolIn,
+          symbolOut,
+          amount,
+          addressTo,
+          networkIn,
+          networkOut
+        );
 
         if (!result) {
-          throw new Error('Bridge exchange returned empty data: no exchange details received from server');
+          throw new Error(
+            'Bridge exchange returned empty data: no exchange details received from server'
+          );
         }
 
         setExchange(result);
@@ -288,7 +312,8 @@ export function useBridge(_params?: UseBridgeParams): UseBridgeResult {
         return result;
       } catch (err) {
         console.error('[useBridge] Failed to create exchange:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to create bridge exchange';
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to create bridge exchange';
         setError(errorMessage);
         setStatus('failed');
         // Rethrown so the caller can classify the provider message; swallowing
@@ -311,7 +336,9 @@ export function useBridge(_params?: UseBridgeParams): UseBridgeResult {
         const tx = await getBridgeTransaction(id);
 
         if (!tx) {
-          throw new Error('Bridge transaction returned empty data: transaction not found or unavailable');
+          throw new Error(
+            'Bridge transaction returned empty data: transaction not found or unavailable'
+          );
         }
 
         setTransaction(tx);
@@ -332,7 +359,8 @@ export function useBridge(_params?: UseBridgeParams): UseBridgeResult {
         return tx;
       } catch (err) {
         console.error('[useBridge] Failed to get transaction status:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to get transaction status';
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to get transaction status';
         setError(errorMessage);
         setStatus('failed');
         return null;

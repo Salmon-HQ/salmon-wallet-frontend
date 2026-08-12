@@ -92,7 +92,10 @@ export default function WelcomeScreen() {
 
           {/* Access Existing Account Button (only if accounts exist) */}
           {hasAccounts && (
-            <SecondaryButton onPress={handleAccessExistingAccount} testID="select-access-existing-button">
+            <SecondaryButton
+              onPress={handleAccessExistingAccount}
+              testID="select-access-existing-button"
+            >
               {t('wallet.access_existing_account').toUpperCase()}
             </SecondaryButton>
           )}

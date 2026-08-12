@@ -1,6 +1,6 @@
-import { configDefaults, defineConfig } from 'vitest/config'
-import { WxtVitest } from 'wxt/testing/vitest-plugin'
-import path from 'path'
+import { configDefaults, defineConfig } from 'vitest/config';
+import { WxtVitest } from 'wxt/testing/vitest-plugin';
+import path from 'path';
 
 export default defineConfig({
   plugins: [WxtVitest()],
@@ -26,4 +26,4 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
     },
   },
-})
+});

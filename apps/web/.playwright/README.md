@@ -11,11 +11,11 @@ shared `data-testid` contract (`Testable` in `packages/shared`, see the
 
 ## Layout
 
-| Path | Purpose |
-|---|---|
+| Path                   | Purpose                                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `playwright.config.ts` | `@playwright/test` config — `testIdAttribute: data-testid`, `webServer` auto-starts the Vite dev server, `baseURL` |
-| `env.ts` | Suite-local `.env.test` loader + `isBackendUp()` |
-| `tests/` | Specs (`*.spec.ts`) |
+| `env.ts`               | Suite-local `.env.test` loader + `isBackendUp()`                                                                   |
+| `tests/`               | Specs (`*.spec.ts`)                                                                                                |
 
 ## Prerequisites
 
@@ -38,12 +38,12 @@ environment / `.env.test` to point at and which flows are safe to run.
 
 Per-flow prerequisites:
 
-| Flow | Needs |
-|---|---|
-| Send | SOL for fee + amount |
-| Swap | balance of the input token |
-| NFT / burn | an NFT owned by the test wallet |
-| Sign / connect / SIWS | nothing — no funds required |
+| Flow                  | Needs                           |
+| --------------------- | ------------------------------- |
+| Send                  | SOL for fee + amount            |
+| Swap                  | balance of the input token      |
+| NFT / burn            | an NFT owned by the test wallet |
+| Sign / connect / SIWS | nothing — no funds required     |
 
 Repo policy: a spec that finds its prerequisite missing skips with a clear
 message (`test.skip(..., reason)`), never a cryptic failure. A spec where

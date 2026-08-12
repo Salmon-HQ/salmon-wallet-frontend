@@ -99,10 +99,7 @@ export interface UseSwapResult {
 // Hook Implementation
 // ============================================================================
 
-export function useSwap({
-  account,
-  networkId,
-}: UseSwapParams): UseSwapResult {
+export function useSwap({ account, networkId }: UseSwapParams): UseSwapResult {
   const [status, setStatus] = useState<SwapStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [quote, setQuote] = useState<SwapQuote | null>(null);
@@ -283,4 +280,3 @@ export function useSwap({
     clearQuote,
   };
 }
-

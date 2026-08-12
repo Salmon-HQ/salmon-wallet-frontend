@@ -197,19 +197,20 @@ export function useAvailableNetworks(
 
   useEffect(() => {
     let cancelled = false;
-    fetchAndMergeNetworkConfigs()
-      .then(async (success) => {
-        if (success) {
-          const networks = await getNetworks();
-          if (!cancelled) {
-            setApiNetworks(networks);
-          }
-        }
+    fetchAndMergeNetworkConfigs().then(async (success) => {
+      if (success) {
+        const networks = await getNetworks();
         if (!cancelled) {
-          setApiMerged(true);
+          setApiNetworks(networks);
         }
-      });
-    return () => { cancelled = true; };
+      }
+      if (!cancelled) {
+        setApiMerged(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const networks = useMemo<NetworksByBlockchain>(() => {
@@ -256,11 +257,7 @@ export function useAvailableNetworks(
   }, [developerNetworks, apiMerged, apiNetworks]);
 
   const allNetworks = useMemo<AnyNetwork[]>(() => {
-    return [
-      ...networks.solana,
-      ...networks.bitcoin,
-      ...networks.ethereum,
-    ];
+    return [...networks.solana, ...networks.bitcoin, ...networks.ethereum];
   }, [networks]);
 
   return {

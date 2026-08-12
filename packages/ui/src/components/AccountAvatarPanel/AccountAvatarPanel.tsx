@@ -231,7 +231,10 @@ export function AccountAvatarPanel({ onBack }: AccountAvatarPanelProps): React.R
           </PresetGrid>
         ) : nftsLoading ? (
           <LoadingState>
-            <CircularProgress size={componentSizes.iconSizeLarge} sx={{ color: colors.accent.primary }} />
+            <CircularProgress
+              size={componentSizes.iconSizeLarge}
+              sx={{ color: colors.accent.primary }}
+            />
           </LoadingState>
         ) : nfts.length === 0 ? (
           <EmptyState>

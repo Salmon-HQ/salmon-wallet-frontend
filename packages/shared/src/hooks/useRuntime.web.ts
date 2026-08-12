@@ -52,10 +52,7 @@ const isExtension = (): boolean => {
 // This hook is synchronous with no mutable actions — the tuple pattern would add
 // unnecessary complexity for a read-only, always-ready data source.
 const useRuntime = (): RuntimeInfo => {
-  const context = useMemo(
-    () => new URLSearchParams(window.location.hash.slice(1)),
-    []
-  );
+  const context = useMemo(() => new URLSearchParams(window.location.hash.slice(1)), []);
 
   const opener = useMemo(() => window.opener as Window | null, []);
 

@@ -44,16 +44,16 @@ export function AccountNamePanel({
     onSave(trimmed);
   }, [name, onSave, t]);
 
-  const handleChangeText = useCallback((text: string) => {
-    setName(text);
-    if (error) setError('');
-  }, [error]);
+  const handleChangeText = useCallback(
+    (text: string) => {
+      setName(text);
+      if (error) setError('');
+    },
+    [error]
+  );
 
   return (
-    <SettingsScreenLayout
-      title={t('settings.account_edit.name_section')}
-      onBack={onBack}
-    >
+    <SettingsScreenLayout title={t('settings.account_edit.name_section')} onBack={onBack}>
       <View style={styles.inputContainer}>
         <TextInput
           testID="account-name-input"
@@ -70,9 +70,7 @@ export function AccountNamePanel({
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
       </View>
 
-      <Text style={styles.disclaimer}>
-        {t('settings.wallets.edit_name_disclaimer')}
-      </Text>
+      <Text style={styles.disclaimer}>{t('settings.wallets.edit_name_disclaimer')}</Text>
 
       <View style={styles.buttonContainer}>
         <PrimaryButton testID="account-name-save-button" onPress={handleSave}>

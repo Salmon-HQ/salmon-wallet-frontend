@@ -94,7 +94,9 @@ describe('SecurityPanel', () => {
       target: { value: 'new-password-123' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'settings.security.change_password_button' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'settings.security.change_password_button' })
+    );
 
     await waitFor(() => {
       expect(mockChangePassword).toHaveBeenCalledWith('old-password', 'new-password-123');

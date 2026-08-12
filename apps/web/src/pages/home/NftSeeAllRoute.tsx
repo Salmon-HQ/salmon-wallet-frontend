@@ -27,30 +27,40 @@ export function NftSeeAllRoute(): React.ReactElement {
 
   const handleBack = useCallback(() => navigate(-1), [navigate]);
 
-  const handleNftPress = useCallback((nft: NftData) => {
-    navigate(`/nft/${nft.mint}`, { state: nft });
-  }, [navigate]);
+  const handleNftPress = useCallback(
+    (nft: NftData) => {
+      navigate(`/nft/${nft.mint}`, { state: nft });
+    },
+    [navigate]
+  );
 
   // Deep link fallback — no data in location state
   if (!state) {
     return (
-      <Box sx={{
-        minHeight: '100vh',
-        backgroundColor: colors.background.primary,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: spacing['2xl'],
-      }}>
-        <Typography sx={{
-          color: colors.text.secondary,
-          fontFamily: fontFamily.sans,
-          fontSize: fontSize.lg,
-          textAlign: 'center',
-          marginBottom: spacing.md,
-        }}>
-          {t('nft.noCollectionData', 'No collection data available. Please navigate from your collection.')}
+      <Box
+        sx={{
+          minHeight: '100vh',
+          backgroundColor: colors.background.primary,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: spacing['2xl'],
+        }}
+      >
+        <Typography
+          sx={{
+            color: colors.text.secondary,
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.lg,
+            textAlign: 'center',
+            marginBottom: spacing.md,
+          }}
+        >
+          {t(
+            'nft.noCollectionData',
+            'No collection data available. Please navigate from your collection.'
+          )}
         </Typography>
         <Typography
           component="a"

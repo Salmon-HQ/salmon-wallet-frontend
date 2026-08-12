@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  DAppConnectApprovalView,
-} from '@salmon/ui';
+import { DAppConnectApprovalView } from '@salmon/ui';
 import {
   isSecureOrigin,
   useDAppMetadata,
@@ -33,12 +31,13 @@ export function ConnectApprovalPage(): React.ReactElement {
   }, [requestId]);
 
   const solanaAccount = useMemo(
-    () => getActiveSolanaApprovalAccount(
-      state.activeAccount,
-      state.activeBlockchainAccount,
-      state.pathIndex,
-    ),
-    [state.activeAccount, state.activeBlockchainAccount, state.pathIndex],
+    () =>
+      getActiveSolanaApprovalAccount(
+        state.activeAccount,
+        state.activeBlockchainAccount,
+        state.pathIndex
+      ),
+    [state.activeAccount, state.activeBlockchainAccount, state.pathIndex]
   );
 
   const handleApprove = useCallback(async () => {

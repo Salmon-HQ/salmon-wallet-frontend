@@ -8,7 +8,24 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, borderRadius, fontSize, letterSpacing, lineHeight, shadows, ms, vs, s, formatTokenBalance, sanitizeDecimalInput, useCurrencyContext, fontFamilyNative, opacity, componentSizes } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  fontSize,
+  letterSpacing,
+  lineHeight,
+  shadows,
+  ms,
+  vs,
+  s,
+  formatTokenBalance,
+  sanitizeDecimalInput,
+  useCurrencyContext,
+  fontFamilyNative,
+  opacity,
+  componentSizes,
+} from '@salmon/shared';
 import { TokenLogo } from '../TokenLogo';
 import { BlurContainer } from '../BlurContainer';
 import type { SwapAmountInputProps } from './types';
@@ -102,7 +119,10 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
       {(usdValue !== undefined || availableBalance !== undefined) && (
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
-            <Text style={styles.usdValue}>{formatPrecise(usdValue !== undefined ? Math.floor(usdValue * 100) / 100 : undefined)} {currency.toUpperCase()}</Text>
+            <Text style={styles.usdValue}>
+              {formatPrecise(usdValue !== undefined ? Math.floor(usdValue * 100) / 100 : undefined)}{' '}
+              {currency.toUpperCase()}
+            </Text>
             {showQuickFill ? (
               <View style={styles.quickFillButtons}>
                 {QUICK_FILL_OPTIONS.map((option) => (
@@ -112,7 +132,9 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
                     onPress={() => handleQuickFill(option.value)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.quickFillText}>{option.value === 1 ? t('general.max') : option.label}</Text>
+                    <Text style={styles.quickFillText}>
+                      {option.value === 1 ? t('general.max') : option.label}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>

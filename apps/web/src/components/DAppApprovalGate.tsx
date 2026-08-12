@@ -120,7 +120,7 @@ export function DAppApprovalGate(): React.ReactElement {
         setUnlocking(false);
       }
     },
-    [password, actions, t],
+    [password, actions, t]
   );
 
   if (!state.ready) {
@@ -134,7 +134,10 @@ export function DAppApprovalGate(): React.ReactElement {
           <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
           <Title>{t('dapp.no_wallet_title', 'No wallet found')}</Title>
           <Subtitle>
-            {t('dapp.no_wallet_subtitle', 'Open Salmon Wallet and set up an account, then try again.')}
+            {t(
+              'dapp.no_wallet_subtitle',
+              'Open Salmon Wallet and set up an account, then try again.'
+            )}
           </Subtitle>
         </Content>
       </Container>

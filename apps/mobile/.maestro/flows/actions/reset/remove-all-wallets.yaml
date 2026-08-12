@@ -8,23 +8,23 @@ appId: io.salmonwallet.app
 - swipe:
     direction: UP
     from:
-      text: "Address Book"
+      text: 'Address Book'
 - waitForAnimationToEnd:
     timeout: 1500
 # UI label is "Remove All Accounts" (translation settings.wallets.remove_all_wallets);
 # Alert title still uses the legacy "Remove All Wallets?" key.
-- assertVisible: "Remove All Accounts"
+- assertVisible: 'Remove All Accounts'
 - takeScreenshot: screenshots/actions/reset/danger-zone
 - tapOn:
-    id: "settings-item-remove-all"
+    id: 'settings-item-remove-all'
 - extendedWaitUntil:
-    visible: "Remove All Wallets?"
+    visible: 'Remove All Wallets?'
     timeout: 5000
 - takeScreenshot: screenshots/actions/reset/confirm-alert
-- tapOn: "Yes, remove all"
+- tapOn: 'Yes, remove all'
 - extendedWaitUntil:
-    visible: "Welcome"
+    visible: 'Welcome'
     timeout: 30000
 - assertVisible:
-    id: "select-recover-button"
+    id: 'select-recover-button'
 - takeScreenshot: screenshots/actions/reset/post-wipe-welcome

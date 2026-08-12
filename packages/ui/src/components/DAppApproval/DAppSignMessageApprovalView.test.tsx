@@ -81,7 +81,7 @@ describe('DAppSignMessageApprovalView', () => {
         {...baseProps}
         data={[1, 2, 3]}
         requiredSigners={['Fg6PaFpoAXY1WYzMFyBQ2GfKcVxVfpJTUAFEEeUMKzXf']}
-      />,
+      />
     );
 
     // Assert
@@ -91,7 +91,7 @@ describe('DAppSignMessageApprovalView', () => {
     expect(screen.getByText('Fg6PaFpoAXY1WYzMFyBQ2GfKcVxVfpJTUAFEEeUMKzXf')).toBeInTheDocument();
     expect(mockedParseOffchainMessageForApproval).toHaveBeenCalledWith(
       [1, 2, 3],
-      ['Fg6PaFpoAXY1WYzMFyBQ2GfKcVxVfpJTUAFEEeUMKzXf'],
+      ['Fg6PaFpoAXY1WYzMFyBQ2GfKcVxVfpJTUAFEEeUMKzXf']
     );
   });
 
@@ -108,7 +108,7 @@ describe('DAppSignMessageApprovalView', () => {
         messageText="raw fallback text"
         data={[1, 2, 3]}
         requiredSigners={['Fg6PaFpoAXY1WYzMFyBQ2GfKcVxVfpJTUAFEEeUMKzXf']}
-      />,
+      />
     );
 
     // Assert

@@ -8,7 +8,7 @@
 
 **Input**: An audit of every place the product name appears found the name written four different ways across surfaces, several user-facing strings hardcoded in components instead of going through i18n, and one string that looks like copy but is actually a public integration contract.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Read a consistent brand on the screens where trust is decided (Priority: P1)
 
@@ -62,7 +62,7 @@ A user installing the web app sees the same name on the install prompt and under
 - A string that reads like brand copy is in fact an integration identifier — see the constraint below.
 - Screen-reader alternative text uses a different variant of the name than the visible copy on the same screen.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -79,7 +79,7 @@ A user installing the web app sees the same name on the install prompt and under
 
 - **Locked identifiers**: the bundle identifier and Android package, the Expo slug and EAS project id, the `salmonwallet://` scheme, the Firefox add-on id, and the Wallet Standard name advertised by both the extension and the web wallet. These are contracts with stores, operating systems and third-party dApps. Renaming any of them is a migration, not an edit.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

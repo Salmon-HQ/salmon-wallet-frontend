@@ -34,8 +34,15 @@ jest.mock('@salmon/shared', () => ({
   colors: { text: { muted: '#999' } },
   fontSize: { md: 18 },
   getTokenList: jest.fn().mockResolvedValue([{ address: 'mint-sol', symbol: 'SOL', decimals: 9 }]),
-  useJupiterTokenList: () => ({ tokens: [{ address: 'mint-sol', symbol: 'SOL', decimals: 9 }], loading: false, error: null, refresh: jest.fn() }),
-  searchTokens: jest.fn().mockResolvedValue([{ address: 'mint-search', symbol: 'SEARCH', decimals: 6 }]),
+  useJupiterTokenList: () => ({
+    tokens: [{ address: 'mint-sol', symbol: 'SOL', decimals: 9 }],
+    loading: false,
+    error: null,
+    refresh: jest.fn(),
+  }),
+  searchTokens: jest
+    .fn()
+    .mockResolvedValue([{ address: 'mint-search', symbol: 'SEARCH', decimals: 6 }]),
   spacing: { lg: 16 },
   useAccountsContext: jest.fn(),
   useBridge: () => ({
@@ -46,10 +53,26 @@ jest.mock('@salmon/shared', () => ({
   }),
   useMultiChainTokens: () => ({
     tokens: [
-      { symbol: 'SOL', name: 'Solana', address: 'mint-sol', decimals: 9, chain: 'solana', balance: 1, usdPrice: 100 },
+      {
+        symbol: 'SOL',
+        name: 'Solana',
+        address: 'mint-sol',
+        decimals: 9,
+        chain: 'solana',
+        balance: 1,
+        usdPrice: 100,
+      },
     ],
     featuredTokens: [
-      { symbol: 'BTC', name: 'Bitcoin', address: 'mint-btc', decimals: 8, chain: 'bitcoin', balance: 0.1, usdPrice: 50000 },
+      {
+        symbol: 'BTC',
+        name: 'Bitcoin',
+        address: 'mint-btc',
+        decimals: 8,
+        chain: 'bitcoin',
+        balance: 0.1,
+        usdPrice: 50000,
+      },
     ],
     loading: false,
     refresh: mockRefreshBalances,
@@ -137,7 +160,12 @@ describe('SwapScreenPage', () => {
 
   it('renders fallback when there is no active account', async () => {
     useAccountsContext.mockReturnValue([
-      { ready: false, activeAccount: null, activeBlockchainAccount: null, networkId: 'solana-mainnet' },
+      {
+        ready: false,
+        activeAccount: null,
+        activeBlockchainAccount: null,
+        networkId: 'solana-mainnet',
+      },
     ]);
 
     render(<SwapScreenPage />);

@@ -95,9 +95,7 @@ export interface SolanaAccountBalance {
  * Union of all chain-specific native account balances.
  */
 export type NativeAccountBalance =
-  | BitcoinAccountBalance
-  | EthereumAccountBalance
-  | SolanaAccountBalance;
+  BitcoinAccountBalance | EthereumAccountBalance | SolanaAccountBalance;
 
 // ============================================================================
 // Ethereum on-chain balance types (from ethereum/balance.ts)

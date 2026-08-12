@@ -6,7 +6,9 @@
 export function isValidOrigin(origin: string): boolean {
   try {
     const url = new URL(origin);
-    return url.protocol === 'https:' || url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+    return (
+      url.protocol === 'https:' || url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+    );
   } catch {
     return false;
   }
@@ -18,7 +20,7 @@ export function isValidOrigin(origin: string): boolean {
  */
 export function isTrustedOrigin(
   origin: string,
-  trustedApps: Record<string, { name: string; icon?: string }> | null | undefined,
+  trustedApps: Record<string, { name: string; icon?: string }> | null | undefined
 ): boolean {
   if (!trustedApps) return false;
   try {

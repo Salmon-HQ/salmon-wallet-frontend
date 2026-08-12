@@ -4,27 +4,27 @@ appId: io.salmonwallet.app
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - runFlow: ../../../subflows/open-settings.yaml
 - tapOn:
-    id: "settings-item-private-key"
+    id: 'settings-item-private-key'
 - waitForAnimationToEnd:
     timeout: 4000
-- assertVisible: "Select Network"
+- assertVisible: 'Select Network'
 # Tap Solana Mainnet row by coord (network id is account-specific, so no stable
 # per-row id is available to hardcode here; the row uses private-key-network-option-<id>).
 - tapOn:
-    point: "50%,23%"
+    point: '50%,23%'
 - waitForAnimationToEnd:
     timeout: 4000
-- assertVisible: "Private Key"
-- assertVisible: "DERIVATION PATH"
+- assertVisible: 'Private Key'
+- assertVisible: 'DERIVATION PATH'
 # Reveal the first key via its labeled overlay.
 - tapOn:
-    id: "private-key-reveal-overlay-0"
+    id: 'private-key-reveal-overlay-0'
 - waitForAnimationToEnd:
     timeout: 4000
 # Do NOT screenshot revealed PK. Verify reveal by absence of "Tap to Reveal".
-- assertNotVisible: "Tap to Reveal"
+- assertNotVisible: 'Tap to Reveal'
 - tapOn:
-    id: "private-key-done-button"
+    id: 'private-key-done-button'
 - waitForAnimationToEnd:
     timeout: 2000
-- assertVisible: "Settings"
+- assertVisible: 'Settings'

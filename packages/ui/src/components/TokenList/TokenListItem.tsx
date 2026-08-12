@@ -232,11 +232,7 @@ export function TokenListItem({
   const labelType = getLabelValue(percentageChange);
   const changeColor = colors.change[labelType];
 
-  const displayPrice = hiddenBalance
-    ? hiddenValue
-    : price != null
-    ? formatValue(price)
-    : null;
+  const displayPrice = hiddenBalance ? hiddenValue : price != null ? formatValue(price) : null;
 
   const displayPercentage = last24HoursChange ? showPercentage(percentageChange) : null;
   const displayAbsChange = absoluteChange != null ? formatChange(absoluteChange) : null;
@@ -244,8 +240,8 @@ export function TokenListItem({
   const displayUsdValue = hiddenBalance
     ? hiddenValue
     : usdBalance != null
-    ? formatValue(usdBalance)
-    : null;
+      ? formatValue(usdBalance)
+      : null;
 
   const displayTokenAmount = hiddenBalance ? hiddenValue : `${uiAmount} ${symbol || ''}`;
 
@@ -259,40 +255,46 @@ export function TokenListItem({
   if (blockchain === 'bitcoin') {
     return (
       <BlurContainer borderWidth={borderWidth.tokenListItem} style={blurContainerStyle}>
-      <BitcoinContainer
-        style={style}
-        className={className}
-        aria-label={t('accessibility.token_balance', '{{name}} token, balance {{amount}} {{symbol}}', { name, amount: uiAmount, symbol })}
-        data-testid={`token-row-${symbol}`}
-      >
-        {logo ? (
-          <BitcoinLogo src={logo} alt={name} onError={(e) => {
-            (e.target as HTMLImageElement).src = DEFAULT_TOKEN_LOGO;
-          }} />
-        ) : (
-          <TokenLogoPlaceholder>{symbol?.[0] || '?'}</TokenLogoPlaceholder>
-        )}
+        <BitcoinContainer
+          style={style}
+          className={className}
+          aria-label={t(
+            'accessibility.token_balance',
+            '{{name}} token, balance {{amount}} {{symbol}}',
+            { name, amount: uiAmount, symbol }
+          )}
+          data-testid={`token-row-${symbol}`}
+        >
+          {logo ? (
+            <BitcoinLogo
+              src={logo}
+              alt={name}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = DEFAULT_TOKEN_LOGO;
+              }}
+            />
+          ) : (
+            <TokenLogoPlaceholder>{symbol?.[0] || '?'}</TokenLogoPlaceholder>
+          )}
 
-        <BitcoinInfoContainer>
-          {displayPrice && <BitcoinPrice>{displayPrice}</BitcoinPrice>}
-          <BitcoinChangeRow>
-            {displayPercentage && (
-              <BitcoinChangeText $changeColor={changeColor}>
-                {displayPercentage}
-              </BitcoinChangeText>
-            )}
-            {displayAbsChange && (
-              <BitcoinChangeText $changeColor={changeColor}>
-                {displayAbsChange}
-              </BitcoinChangeText>
-            )}
-          </BitcoinChangeRow>
-        </BitcoinInfoContainer>
+          <BitcoinInfoContainer>
+            {displayPrice && <BitcoinPrice>{displayPrice}</BitcoinPrice>}
+            <BitcoinChangeRow>
+              {displayPercentage && (
+                <BitcoinChangeText $changeColor={changeColor}>
+                  {displayPercentage}
+                </BitcoinChangeText>
+              )}
+              {displayAbsChange && (
+                <BitcoinChangeText $changeColor={changeColor}>{displayAbsChange}</BitcoinChangeText>
+              )}
+            </BitcoinChangeRow>
+          </BitcoinInfoContainer>
 
-        <BitcoinAmountContainer>
-          <BitcoinAmount>{displayTokenAmount}</BitcoinAmount>
-        </BitcoinAmountContainer>
-      </BitcoinContainer>
+          <BitcoinAmountContainer>
+            <BitcoinAmount>{displayTokenAmount}</BitcoinAmount>
+          </BitcoinAmountContainer>
+        </BitcoinContainer>
       </BlurContainer>
     );
   }
@@ -300,46 +302,54 @@ export function TokenListItem({
   // Default Solana/Ethereum layout
   return (
     <BlurContainer borderWidth={borderWidth.tokenListItem} style={blurContainerStyle}>
-    <Container
-      onClick={handlePress}
-      style={style}
-      className={className}
-      role="button"
-      aria-label={t('accessibility.token_balance', '{{name}} token, balance {{amount}} {{symbol}}', { name, amount: uiAmount, symbol })}
-      data-testid={`token-row-${symbol}`}
-    >
-      {logo ? (
-        <TokenLogo src={logo} alt={name} onError={(e) => {
-          (e.target as HTMLImageElement).src = DEFAULT_TOKEN_LOGO;
-        }} />
-      ) : (
-        <TokenLogoPlaceholder>{symbol?.[0] || '?'}</TokenLogoPlaceholder>
-      )}
+      <Container
+        onClick={handlePress}
+        style={style}
+        className={className}
+        role="button"
+        aria-label={t(
+          'accessibility.token_balance',
+          '{{name}} token, balance {{amount}} {{symbol}}',
+          { name, amount: uiAmount, symbol }
+        )}
+        data-testid={`token-row-${symbol}`}
+      >
+        {logo ? (
+          <TokenLogo
+            src={logo}
+            alt={name}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = DEFAULT_TOKEN_LOGO;
+            }}
+          />
+        ) : (
+          <TokenLogoPlaceholder>{symbol?.[0] || '?'}</TokenLogoPlaceholder>
+        )}
 
-      <InfoContainer>
-        <NameRow>
-          <TokenName>{name}</TokenName>
-          <TokenBadges tags={tags} />
-        </NameRow>
-        <PriceRow>
-          {displayPrice && <Price>{displayPrice}</Price>}
-          {displayPercentage && (
-            <>
-              <BulletSeparator>{'\u2022'}</BulletSeparator>
-              <ChangeText $changeColor={changeColor}>
-                {displayPercentage}
-                {displayAbsChange && ` (${displayAbsChange})`}
-              </ChangeText>
-            </>
-          )}
-        </PriceRow>
-      </InfoContainer>
+        <InfoContainer>
+          <NameRow>
+            <TokenName>{name}</TokenName>
+            <TokenBadges tags={tags} />
+          </NameRow>
+          <PriceRow>
+            {displayPrice && <Price>{displayPrice}</Price>}
+            {displayPercentage && (
+              <>
+                <BulletSeparator>{'\u2022'}</BulletSeparator>
+                <ChangeText $changeColor={changeColor}>
+                  {displayPercentage}
+                  {displayAbsChange && ` (${displayAbsChange})`}
+                </ChangeText>
+              </>
+            )}
+          </PriceRow>
+        </InfoContainer>
 
-      <ValueContainer>
-        {displayUsdValue && <UsdValue>{displayUsdValue}</UsdValue>}
-        <TokenAmount>{displayTokenAmount}</TokenAmount>
-      </ValueContainer>
-    </Container>
+        <ValueContainer>
+          {displayUsdValue && <UsdValue>{displayUsdValue}</UsdValue>}
+          <TokenAmount>{displayTokenAmount}</TokenAmount>
+        </ValueContainer>
+      </Container>
     </BlurContainer>
   );
 }

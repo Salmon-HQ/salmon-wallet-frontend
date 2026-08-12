@@ -157,10 +157,7 @@ export function formatFiatPrecise(
  *
  * @example formatFiatIntl(1234.56, 'eur') // '€1,234.56'
  */
-export function formatFiatIntl(
-  amount: number,
-  code: CurrencyCode
-): string {
+export function formatFiatIntl(amount: number, code: CurrencyCode): string {
   const decimals = getDecimals(code);
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

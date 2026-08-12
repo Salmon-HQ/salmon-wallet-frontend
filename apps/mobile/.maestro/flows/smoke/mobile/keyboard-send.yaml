@@ -3,14 +3,14 @@ appId: io.salmonwallet.app
 # Probe KeyboardAvoidingView on Send form. Open Send → Solana → screenshot.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - tapOn:
-    id: "home-send-button"
-- assertVisible: "Select Token"
+    id: 'home-send-button'
+- assertVisible: 'Select Token'
 - tapOn:
-    id: "send-token-row-SOL"
+    id: 'send-token-row-SOL'
 - waitForAnimationToEnd:
     timeout: 5000
 - takeScreenshot: screenshots/smoke/mobile/send-step-address-amount
 - runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
 - runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
 - assertVisible:
-    id: "wallet-header-account-switcher"
+    id: 'wallet-header-account-switcher'

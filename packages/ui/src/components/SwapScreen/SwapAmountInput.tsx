@@ -250,48 +250,57 @@ export function SwapAmountInput({
         borderColor={value ? colors.accent.primary : undefined}
         style={{ borderRadius: borderRadius.md }}
       >
-      <InputContainer>
-        {isLoading ? (
-          <LoadingContainer>
-            <CircularProgress size={20} sx={{ color: colors.text.secondary }} />
-          </LoadingContainer>
-        ) : (
-          <StyledInput
-            value={value}
-            onChange={handleChangeText}
-            placeholder={placeholder ?? t('swap.enter_amount')}
-            disabled={!editable}
-            inputProps={{
-              inputMode: 'decimal',
-              pattern: '[0-9.]*',
-              'data-testid': testID ? `${testID}-amount` : undefined,
-            }}
-          />
-        )}
-
-        {/* Token Dropdown */}
-        <TokenDropdown onClick={onTokenPress} aria-label={t('accessibility.select_token', 'Select {{name}}', { name: token?.symbol || t('wallet.select_token', 'Select') })} data-testid={testID ? `${testID}-token` : undefined}>
-          {token?.logo ? (
-            <TokenIcon
-              src={token.logo}
-              alt={token.symbol}
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
+        <InputContainer>
+          {isLoading ? (
+            <LoadingContainer>
+              <CircularProgress size={20} sx={{ color: colors.text.secondary }} />
+            </LoadingContainer>
+          ) : (
+            <StyledInput
+              value={value}
+              onChange={handleChangeText}
+              placeholder={placeholder ?? t('swap.enter_amount')}
+              disabled={!editable}
+              inputProps={{
+                inputMode: 'decimal',
+                pattern: '[0-9.]*',
+                'data-testid': testID ? `${testID}-amount` : undefined,
               }}
             />
-          ) : (
-            <TokenIconPlaceholder />
           )}
-          <TokenSymbol>{token?.symbol || t('wallet.select_token', 'Select')}</TokenSymbol>
-        </TokenDropdown>
-      </InputContainer>
+
+          {/* Token Dropdown */}
+          <TokenDropdown
+            onClick={onTokenPress}
+            aria-label={t('accessibility.select_token', 'Select {{name}}', {
+              name: token?.symbol || t('wallet.select_token', 'Select'),
+            })}
+            data-testid={testID ? `${testID}-token` : undefined}
+          >
+            {token?.logo ? (
+              <TokenIcon
+                src={token.logo}
+                alt={token.symbol}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              <TokenIconPlaceholder />
+            )}
+            <TokenSymbol>{token?.symbol || t('wallet.select_token', 'Select')}</TokenSymbol>
+          </TokenDropdown>
+        </InputContainer>
       </BlurContainer>
 
       {/* USD Value and Balance Row */}
       {(usdValue !== undefined || availableBalance !== undefined) && (
         <InfoSection>
           <InfoRow>
-            <UsdValue>{formatPrecise(usdValue !== undefined ? Math.floor(usdValue * 100) / 100 : undefined)} {currency.toUpperCase()}</UsdValue>
+            <UsdValue>
+              {formatPrecise(usdValue !== undefined ? Math.floor(usdValue * 100) / 100 : undefined)}{' '}
+              {currency.toUpperCase()}
+            </UsdValue>
             {showQuickFill ? (
               <QuickFillButtons>
                 {QUICK_FILL_OPTIONS.map((option) => (
@@ -300,7 +309,9 @@ export function SwapAmountInput({
                     onClick={() => handleQuickFill(option.value)}
                     data-testid={testID ? `${testID}-quickfill-${option.label}` : undefined}
                   >
-                    <QuickFillText>{option.value === 1 ? t('general.max') : option.label}</QuickFillText>
+                    <QuickFillText>
+                      {option.value === 1 ? t('general.max') : option.label}
+                    </QuickFillText>
                   </QuickFillButton>
                 ))}
               </QuickFillButtons>

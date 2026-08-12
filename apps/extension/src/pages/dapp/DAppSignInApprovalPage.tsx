@@ -1,7 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import {
-  DAppSignInApprovalView,
-} from '@salmon/ui';
+import { DAppSignInApprovalView } from '@salmon/ui';
 import {
   approveSolanaSignIn,
   prepareSignInMessage,
@@ -45,17 +43,20 @@ export function DAppSignInApprovalPage({
     }
   }, [account, input, origin]);
 
-  const sendToBackground = useCallback((data: Record<string, unknown>) => {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.sendMessage({
-        channel: 'salmon_extension_background_channel',
-        data: {
-          ...data,
-          id: request.id,
-        },
-      });
-    }
-  }, [request.id]);
+  const sendToBackground = useCallback(
+    (data: Record<string, unknown>) => {
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.sendMessage({
+          channel: 'salmon_extension_background_channel',
+          data: {
+            ...data,
+            id: request.id,
+          },
+        });
+      }
+    },
+    [request.id]
+  );
 
   const handleReject = useCallback(() => {
     sendToBackground({ error: 'User rejected the request' });

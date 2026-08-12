@@ -35,7 +35,9 @@ await sleep(3000);
 await popup.getByTestId('tab-collectibles').first().click();
 await sleep(4000);
 await capture(popup, 'walletB-nfts', '01-off');
-const offNfts = await popup.$$eval('img[alt]', (els) => els.map((e) => e.alt).filter((a) => /NFT image/i.test(a)));
+const offNfts = await popup.$$eval('img[alt]', (els) =>
+  els.map((e) => e.alt).filter((a) => /NFT image/i.test(a))
+);
 console.log('▶ Wallet B NFTs (dev OFF): ' + JSON.stringify(offNfts));
 const offText = await popup.locator('body').innerText();
 const empty1 = /No collectibles found/i.test(offText);
@@ -52,7 +54,11 @@ if (!checked) {
   await sw.click({ force: true });
   await sleep(2000);
 }
-await popup.getByTestId('settings-close-button').first().click().catch(() => {});
+await popup
+  .getByTestId('settings-close-button')
+  .first()
+  .click()
+  .catch(() => {});
 await sleep(1500);
 
 // Collectibles ON
@@ -64,7 +70,9 @@ if (await refresh.count()) {
   await sleep(5000);
 }
 await capture(popup, 'walletB-nfts', '02-on');
-const onNfts = await popup.$$eval('img[alt]', (els) => els.map((e) => e.alt).filter((a) => /NFT image/i.test(a)));
+const onNfts = await popup.$$eval('img[alt]', (els) =>
+  els.map((e) => e.alt).filter((a) => /NFT image/i.test(a))
+);
 console.log('▶ Wallet B NFTs (dev ON): ' + JSON.stringify(onNfts));
 const onText = await popup.locator('body').innerText();
 const empty2 = /No collectibles found/i.test(onText);

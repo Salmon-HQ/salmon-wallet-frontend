@@ -20,10 +20,7 @@ export function NetworkSelector({
   );
 
   return (
-    <SettingsPanelContent
-      title={t('settings.change_network', 'Network')}
-      onBack={onBack}
-    >
+    <SettingsPanelContent title={t('settings.change_network', 'Network')} onBack={onBack}>
       <SettingsSelectorList
         items={networks}
         getKey={(item) => item.id}

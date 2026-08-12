@@ -8,7 +8,16 @@ import React from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
-import { useSwapScreenLogic, getTransactionUrl, getDefaultExplorer, useBridgeSettlement, colors, fontSize, fontWeight, spacing } from '@salmon/shared';
+import {
+  useSwapScreenLogic,
+  getTransactionUrl,
+  getDefaultExplorer,
+  useBridgeSettlement,
+  colors,
+  fontSize,
+  fontWeight,
+  spacing,
+} from '@salmon/shared';
 import type { Blockchain, NetworkEnvironment, NetworkId } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 import { SwapInputScreen } from './SwapInputScreen';
@@ -59,14 +68,17 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
   const successOutLabel = summary
     ? `${summary.outAmount} ${summary.outSymbol}`
     : `${logic.outAmount} ${logic.outToken?.symbol ?? ''}`;
-  const successOutSymbol = summary ? summary.outSymbol : logic.outToken?.symbol ?? '';
+  const successOutSymbol = summary ? summary.outSymbol : (logic.outToken?.symbol ?? '');
   const successChain = summary ? summary.chain : logic.inToken?.chain;
   const successNetworkId = summary ? summary.networkId : logic.inToken?.networkId;
 
   return (
     <Container style={style}>
       {isStalled && (
-        <Box sx={{ padding: `${spacing.md}px ${spacing.lg}px 0` }} data-testid="bridge-stalled-banner">
+        <Box
+          sx={{ padding: `${spacing.md}px ${spacing.lg}px 0` }}
+          data-testid="bridge-stalled-banner"
+        >
           <WarningNotice
             tone="warning"
             title={t('bridge.settlement_stalled_title', "Can't check your bridge status")}
@@ -85,7 +97,10 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
               </ButtonBase>
             }
           >
-            {t('bridge.settlement_stalled_body', "Your funds are on the way, but we can't reach the status service. We'll keep trying.")}
+            {t(
+              'bridge.settlement_stalled_body',
+              "Your funds are on the way, but we can't reach the status service. We'll keep trying."
+            )}
           </WarningNotice>
         </Box>
       )}
@@ -107,19 +122,23 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
         />
       )}
 
-      {logic.step === 'review' && logic.swapMode === 'jupiter' && logic.quote && logic.inToken && logic.outToken && (
-        <SwapReviewScreen
-          quote={logic.quote}
-          inToken={logic.inToken}
-          outToken={logic.outToken}
-          inAmount={logic.inAmount}
-          outAmount={logic.outAmount}
-          onBack={logic.handleBackFromReview}
-          onConfirm={logic.handleConfirmOrRefresh}
-          isConfirming={logic.isConfirming}
-          confirmLabel={logic.swapConfirmLabel}
-        />
-      )}
+      {logic.step === 'review' &&
+        logic.swapMode === 'jupiter' &&
+        logic.quote &&
+        logic.inToken &&
+        logic.outToken && (
+          <SwapReviewScreen
+            quote={logic.quote}
+            inToken={logic.inToken}
+            outToken={logic.outToken}
+            inAmount={logic.inAmount}
+            outAmount={logic.outAmount}
+            onBack={logic.handleBackFromReview}
+            onConfirm={logic.handleConfirmOrRefresh}
+            isConfirming={logic.isConfirming}
+            confirmLabel={logic.swapConfirmLabel}
+          />
+        )}
 
       {logic.step === 'recipient' && logic.swapMode === 'stealthex' && (
         <BridgeRecipientScreen
@@ -133,40 +152,52 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
         />
       )}
 
-      {logic.step === 'review' && logic.swapMode === 'stealthex' && logic.bridgeInToken && logic.bridgeOutToken && (
-        <BridgeReviewScreen
-          inToken={logic.bridgeInToken}
-          outToken={logic.bridgeOutToken}
-          inAmount={logic.inAmount}
-          outAmount={logic.outAmount}
-          recipientAddress={logic.recipientAddress}
-          estimate={logic.bridgeEstimateForReview}
-          onBack={logic.handleBackFromReview}
-          onConfirm={logic.handleConfirmOrRefresh}
-          isConfirming={logic.isConfirming}
-          confirmLabel={logic.swapConfirmLabel}
-        />
-      )}
+      {logic.step === 'review' &&
+        logic.swapMode === 'stealthex' &&
+        logic.bridgeInToken &&
+        logic.bridgeOutToken && (
+          <BridgeReviewScreen
+            inToken={logic.bridgeInToken}
+            outToken={logic.bridgeOutToken}
+            inAmount={logic.inAmount}
+            outAmount={logic.outAmount}
+            recipientAddress={logic.recipientAddress}
+            estimate={logic.bridgeEstimateForReview}
+            onBack={logic.handleBackFromReview}
+            onConfirm={logic.handleConfirmOrRefresh}
+            isConfirming={logic.isConfirming}
+            confirmLabel={logic.swapConfirmLabel}
+          />
+        )}
 
       {logic.step === 'success' && (
         <TransactionSuccessScreen
-          title={logic.successExchange ? t('bridge.initiated', 'Bridge Initiated') : t('transaction.swapComplete')}
+          title={
+            logic.successExchange
+              ? t('bridge.initiated', 'Bridge Initiated')
+              : t('transaction.swapComplete')
+          }
           pendingTitle={t('transaction.pendingSwap')}
           summary={`${successInLabel} → ${successOutLabel}`}
-          explorerUrl={logic.successTxId && successChain
-            ? getTransactionUrl(
-                successChain.toUpperCase() as Blockchain,
-                (successNetworkId ?? 'mainnet') as NetworkEnvironment,
-                getDefaultExplorer(successChain.toUpperCase() as Blockchain),
-                logic.successTxId
-              )
-            : null
+          explorerUrl={
+            logic.successTxId && successChain
+              ? getTransactionUrl(
+                  successChain.toUpperCase() as Blockchain,
+                  (successNetworkId ?? 'mainnet') as NetworkEnvironment,
+                  getDefaultExplorer(successChain.toUpperCase() as Blockchain),
+                  logic.successTxId
+                )
+              : null
           }
           onContinue={logic.handleSuccessContinue}
           settling={logic.settling}
           bridgeDepositAddress={logic.successExchange?.depositAddress}
           bridgeAmountIn={logic.successExchange ? successInLabel : undefined}
-          bridgeAmountOut={logic.successExchange ? `${logic.successExchange.amountOut} ${successOutSymbol}` : undefined}
+          bridgeAmountOut={
+            logic.successExchange
+              ? `${logic.successExchange.amountOut} ${successOutSymbol}`
+              : undefined
+          }
           bridgeExchangeId={logic.successExchange?.id}
           bridgeDepositTxId={logic.depositTxId ?? undefined}
           bridgeStatus={logic.bridgeTransaction?.status ?? logic.successExchange?.status}

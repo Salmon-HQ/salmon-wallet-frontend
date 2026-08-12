@@ -2,7 +2,19 @@ import React from 'react';
 import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, borderRadius, gradients, shadows, componentSizes, fontFamilyNative, vs, s, fontSize, borderWidth, } from '@salmon/shared';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  gradients,
+  shadows,
+  componentSizes,
+  fontFamilyNative,
+  vs,
+  s,
+  fontSize,
+  borderWidth,
+} from '@salmon/shared';
 import { SwapAmountInput } from './SwapAmountInput';
 import { PrimaryButton } from '../Button';
 import { useTabChrome } from '../../../hooks/useTabChrome';
@@ -59,7 +71,13 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           </Text>
         ) : null}
 
-        {reviewWarning ? <Text style={styles.warningText}>{typeof reviewWarning === 'string' ? t(reviewWarning) : t(reviewWarning.key, reviewWarning.params)}</Text> : null}
+        {reviewWarning ? (
+          <Text style={styles.warningText}>
+            {typeof reviewWarning === 'string'
+              ? t(reviewWarning)
+              : t(reviewWarning.key, reviewWarning.params)}
+          </Text>
+        ) : null}
 
         {/* You Receive */}
         <SwapAmountInput
@@ -74,7 +92,9 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           isLoading={isLoadingQuote}
         />
 
-        <Text style={styles.disclaimerText}>{t('swap.platform_fee_disclaimer', 'Includes 0.5% platform fee')}</Text>
+        <Text style={styles.disclaimerText}>
+          {t('swap.platform_fee_disclaimer', 'Includes 0.5% platform fee')}
+        </Text>
       </View>
 
       {/* Review Button */}

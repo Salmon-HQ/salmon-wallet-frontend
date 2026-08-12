@@ -8,7 +8,7 @@
 
 **Input**: Two remaining money-path gaps from the 2026-08-12 audit. (1) Bitcoin: derivation and address validation are tested, but the functions that actually build and sign transactions (`createTransferTransaction`, `sendBitcoin`) had only `typeof === 'function'` assertions (removed as tautological in the prune batch) — nothing pins the bytes of a signed transaction the way `prepared-transactions.golden.test.ts` does for Solana. (2) The extension's `background.ts` (~380 lines) routes every dApp approval (connect, sign message, sign transaction, sign-in) between content scripts, popups and the side panel; it has no direct tests. Tests only; no production changes.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - A signed Bitcoin transaction is byte-stable (Priority: P1)
 
@@ -34,7 +34,7 @@ A dApp request (connect / signMessage / signTransaction / signIn) travels conten
 2. **Given** an unknown/malformed message type, **Then** the router rejects it without crashing and without invoking any approval flow.
 3. **Given** an approval that fails internally, **Then** the response to the origin carries only the protocol error shape (consistent with the existing page-level "never the raw error" tests).
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 - **FR-001**: Tests only. No production file changes. A revealed bug stops that test and gets reported, not fixed here.
 - **FR-002**: Bitcoin golden fixtures are committed constants generated once with the real code; document generation in a comment. Keys derive from public BIP39 test vectors only.
@@ -42,7 +42,7 @@ A dApp request (connect / signMessage / signTransaction / signIn) travels conten
 - **FR-004**: `background.ts` runs in the WXT extension context: use the existing extension test setup (`WxtVitest`, jsdom, the mocking patterns of `wallet-standard.test.ts` / `injected.test.ts`). If the entrypoint's structure makes it genuinely untestable without refactoring production code, STOP for that story and report exactly what refactor would be needed — do not do the refactor.
 - **FR-005**: `sendBitcoin`'s broadcast step is asserted via mock (that it posts the signed hex), never a real network call.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - **SC-001**: A committed golden hex pins a signed Bitcoin transfer (with change) end to end.
 - **SC-002**: Insufficient-funds building fails closed.

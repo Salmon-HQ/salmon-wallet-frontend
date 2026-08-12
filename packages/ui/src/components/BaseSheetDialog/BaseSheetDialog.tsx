@@ -36,9 +36,7 @@ const BaseSheetDialogContext = createContext<BaseSheetDialogContextValue | null>
 export function useBaseSheetDialog(): BaseSheetDialogContextValue {
   const context = useContext(BaseSheetDialogContext);
   if (!context) {
-    throw new Error(
-      'BaseSheetDialog sub-components must be used within BaseSheetDialog'
-    );
+    throw new Error('BaseSheetDialog sub-components must be used within BaseSheetDialog');
   }
   return context;
 }

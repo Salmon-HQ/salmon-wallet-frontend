@@ -10,7 +10,10 @@ await sleep(3000);
 await capture(popup, 'state-check', '01-home');
 
 // Verify Salmon Logo still there
-await popup.getByRole('button', { name: /Collectibles/i }).first().click();
+await popup
+  .getByRole('button', { name: /Collectibles/i })
+  .first()
+  .click();
 await sleep(2500);
 await capture(popup, 'state-check', '02-collectibles');
 

@@ -103,9 +103,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
     if (typeof liveBalance === 'number' && Number.isFinite(liveBalance)) {
       return liveBalance;
     }
-    return typeof token.uiAmount === 'string'
-      ? parseFloat(token.uiAmount)
-      : token.uiAmount;
+    return typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount;
   }, [liveBalance, token.uiAmount]);
 
   // Fiat conversion
@@ -151,11 +149,20 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
   const addressPlaceholder = useMemo(() => {
     switch (blockchain) {
       case 'solana':
-        return t('token.send.blockchainAddress', { blockchain: 'Solana', defaultValue: 'Solana Address' });
+        return t('token.send.blockchainAddress', {
+          blockchain: 'Solana',
+          defaultValue: 'Solana Address',
+        });
       case 'ethereum':
-        return t('token.send.blockchainAddress', { blockchain: 'Ethereum', defaultValue: 'Ethereum Address' });
+        return t('token.send.blockchainAddress', {
+          blockchain: 'Ethereum',
+          defaultValue: 'Ethereum Address',
+        });
       case 'bitcoin':
-        return t('token.send.blockchainAddress', { blockchain: 'Bitcoin', defaultValue: 'Bitcoin Address' });
+        return t('token.send.blockchainAddress', {
+          blockchain: 'Bitcoin',
+          defaultValue: 'Bitcoin Address',
+        });
       default:
         return t('token.send.recipient', 'Recipient Address');
     }
@@ -184,27 +191,34 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
           accessibilityLabel={t('accessibility.selected_token', { name: token.name })}
         >
           <BlurContainer style={styles.tokenCard}>
-          <View style={styles.tokenCardLeft}>
-            <TokenLogo uri={token.logo || undefined} symbol={token.symbol} size={ms(36)} style={{ marginRight: s(spacing.base) }} />
-            <Text style={styles.tokenCardName} numberOfLines={1}>
-              {token.symbol}
+            <View style={styles.tokenCardLeft}>
+              <TokenLogo
+                uri={token.logo || undefined}
+                symbol={token.symbol}
+                size={ms(36)}
+                style={{ marginRight: s(spacing.base) }}
+              />
+              <Text style={styles.tokenCardName} numberOfLines={1}>
+                {token.symbol}
+              </Text>
+            </View>
+            <Text style={styles.tokenCardBalance} numberOfLines={1}>
+              {balanceDisplay}
             </Text>
-          </View>
-          <Text style={styles.tokenCardBalance} numberOfLines={1}>
-            {balanceDisplay}
-          </Text>
           </BlurContainer>
         </TouchableOpacity>
 
         {/* Recipient */}
         <View style={styles.fieldGroup}>
           <Text style={styles.fieldLabel}>{t('token.send.recipient', 'Recipient')}</Text>
-          <BlurContainer style={[
-            styles.inputContainer,
-            validationState === 'invalid' && styles.inputContainerError,
-            validationState === 'warning' && styles.inputContainerWarning,
-            validationState === 'valid' && styles.inputContainerSuccess,
-          ]}>
+          <BlurContainer
+            style={[
+              styles.inputContainer,
+              validationState === 'invalid' && styles.inputContainerError,
+              validationState === 'warning' && styles.inputContainerWarning,
+              validationState === 'valid' && styles.inputContainerSuccess,
+            ]}
+          >
             <TextInput
               testID="send-recipient-input"
               style={styles.textInput}
@@ -225,11 +239,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
               style={styles.scanButton}
               activeOpacity={0.7}
             >
-              <Ionicons
-                name="qr-code-outline"
-                size={ms(20)}
-                color={colors.text.secondary}
-              />
+              <Ionicons name="qr-code-outline" size={ms(20)} color={colors.text.secondary} />
             </TouchableOpacity>
             {/* Validation indicator */}
             {address.length > 0 && isValidating && (
@@ -251,11 +261,13 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
           </BlurContainer>
           {/* Validation message */}
           {addressMessage && (
-            <Text style={[
-              styles.validationMessage,
-              addressMessageType === 'error' && styles.validationMessageError,
-              addressMessageType === 'warning' && styles.validationMessageWarning,
-            ]}>
+            <Text
+              style={[
+                styles.validationMessage,
+                addressMessageType === 'error' && styles.validationMessageError,
+                addressMessageType === 'warning' && styles.validationMessageWarning,
+              ]}
+            >
               {t(addressMessage)}
             </Text>
           )}
@@ -272,8 +284,12 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
                 onPress={() => setAddress(wallet.address)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.contactName} numberOfLines={1}>{wallet.accountName}</Text>
-                <Text style={styles.contactAddress} numberOfLines={1}>{getShortAddress(wallet.address)}</Text>
+                <Text style={styles.contactName} numberOfLines={1}>
+                  {wallet.accountName}
+                </Text>
+                <Text style={styles.contactAddress} numberOfLines={1}>
+                  {getShortAddress(wallet.address)}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -291,8 +307,12 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
                 activeOpacity={0.7}
               >
                 <View style={styles.contactInfo}>
-                  <Text style={styles.contactName} numberOfLines={1}>{contact.name}</Text>
-                  <Text style={styles.contactAddress} numberOfLines={1}>{getShortAddress(contact.address)}</Text>
+                  <Text style={styles.contactName} numberOfLines={1}>
+                    {contact.name}
+                  </Text>
+                  <Text style={styles.contactAddress} numberOfLines={1}>
+                    {getShortAddress(contact.address)}
+                  </Text>
                 </View>
                 <View style={styles.blockchainBadge}>
                   <Text style={styles.blockchainBadgeText}>
@@ -327,7 +347,9 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
                   onPress={() => handleQuickFill(option.value)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.quickFillText}>{option.value === 1 ? t('general.max') : option.label}</Text>
+                  <Text style={styles.quickFillText}>
+                    {option.value === 1 ? t('general.max') : option.label}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -346,7 +368,14 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
           onPress={onCancel}
           activeOpacity={0.7}
         >
-          <Text style={styles.cancelButtonText} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={fontScaleCap.chrome}>{t('actions.cancel', 'Cancel')}</Text>
+          <Text
+            style={styles.cancelButtonText}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            maxFontSizeMultiplier={fontScaleCap.chrome}
+          >
+            {t('actions.cancel', 'Cancel')}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -362,7 +391,14 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.4 }}
           >
-            <Text style={styles.reviewButtonText} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={fontScaleCap.chrome}>{t('token.send.reviewAndSend', 'Review & Send')}</Text>
+            <Text
+              style={styles.reviewButtonText}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              maxFontSizeMultiplier={fontScaleCap.chrome}
+            >
+              {t('token.send.reviewAndSend', 'Review & Send')}
+            </Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>

@@ -6,24 +6,24 @@ appId: io.salmonwallet.app
     stopApp: true
 - runFlow:
     when:
-      visible: "Fast refresh"
+      visible: 'Fast refresh'
     commands:
-      - tapOn: "Close"
+      - tapOn: 'Close'
 - extendedWaitUntil:
-    visible: "(?i)Welcome back|Unlock"
+    visible: '(?i)Welcome back|Unlock'
     timeout: 60000
 - tapOn:
-    id: "lock-password-input"
+    id: 'lock-password-input'
 - inputText: ${SALMON_TEST_PASSWORD}
 # inputText sometimes submits via return key on the simulator keyboard.
 # Tap Unlock only if the lock screen is still visible.
 - runFlow:
     when:
-      visible: "Unlock"
+      visible: 'Unlock'
     commands:
       - tapOn:
-          id: "lock-unlock-button"
+          id: 'lock-unlock-button'
 - extendedWaitUntil:
-    visible: "Switch wallet account"
+    visible: 'Switch wallet account'
     timeout: 30000
 - takeScreenshot: screenshots/smoke/auth/unlock-success

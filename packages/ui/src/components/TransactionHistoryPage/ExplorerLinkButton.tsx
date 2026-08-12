@@ -79,14 +79,10 @@ const StyledMenuItem = styled(MenuItem)({
 
 const BlurMenuPaper = React.forwardRef<HTMLDivElement, PaperProps>(function BlurMenuPaper(
   { children, className, style, ...props },
-  ref,
+  ref
 ) {
   return (
-    <div
-      ref={ref}
-      className={className}
-      {...props}
-    >
+    <div ref={ref} className={className} {...props}>
       <BlurContainer
         style={{
           ...(style as React.CSSProperties | undefined),
@@ -202,17 +198,18 @@ export function ExplorerLinkButton({
           }}
         >
           {availableExplorers.map((explorer) => (
-            <StyledMenuItem
-              key={explorer.key}
-              onClick={() => openExplorer(explorer)}
-            >
+            <StyledMenuItem key={explorer.key} onClick={() => openExplorer(explorer)}>
               <ListItemIcon>
                 <LanguageIcon sx={{ fontSize: fontSize.lg, color: colors.text.primary }} />
               </ListItemIcon>
               <ListItemText
                 primary={explorer.name}
                 primaryTypographyProps={{
-                  sx: { fontSize: fontSize.sm, fontWeight: fontWeight.medium, color: colors.text.primary },
+                  sx: {
+                    fontSize: fontSize.sm,
+                    fontWeight: fontWeight.medium,
+                    color: colors.text.primary,
+                  },
                 }}
               />
               <OpenInNewIcon sx={{ fontSize: fontSize.md, color: colors.text.tertiary }} />

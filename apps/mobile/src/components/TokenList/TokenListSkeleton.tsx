@@ -2,15 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { ContentLoader, Rect, Circle } from '@salmon/shared';
-import {
-  colors,
-  spacing,
-  borderRadius,
-  borderWidth,
-  componentSizes,
-  s,
-  vs,
-} from '@salmon/shared';
+import { colors, spacing, borderRadius, borderWidth, componentSizes, s, vs } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { TokenListSkeletonProps } from './types';
 

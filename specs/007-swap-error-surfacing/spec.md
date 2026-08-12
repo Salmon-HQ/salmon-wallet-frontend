@@ -8,7 +8,7 @@
 
 **Input**: The send, NFT transfer and NFT burn paths now classify transaction failures into human messages (`classifyTransactionError`). Swap and bridge kept their own error handling: on failure the swap state machine enters a step no screen renders — the user sees a blank screen for two seconds — and the actual error surfaces in a native alert carrying the raw provider message. A swap attempted with no SOL for the fee shows the same RPC dump the send path just fixed.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Understand why a swap failed (Priority: P1)
 
@@ -45,12 +45,12 @@ A user creating a cross-chain exchange reads a human message when the provider r
 ### Edge Cases
 
 - The two-second auto-return from the unrendered error step: any replacement must not strand the user on a dead screen if they don't interact.
-- A failure *after* the transaction was sent but before confirmation (expired blockhash) is not the same as a failure to send — the message must not imply funds moved when they did not, nor that nothing happened when a transaction may land.
+- A failure _after_ the transaction was sent but before confirmation (expired blockhash) is not the same as a failure to send — the message must not imply funds moved when they did not, nor that nothing happened when a transaction may land.
 - The e2e swap flow matches on visible success text with a 120s timeout; error-state changes must not introduce text that the regex `(?i)Swap Complete|Complete` could match prematurely.
 - The native alert path and the state machine path must not both fire for the same failure — one surface, not two.
 - Bridge failures happen against a third-party HTTP API, not the chain; the transaction classifier's chain heuristics must not misread provider errors (e.g. an HTTP 400 body mentioning "insufficient" is not the fee case).
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -65,7 +65,7 @@ A user creating a cross-chain exchange reads a human message when the provider r
 - **FR-009**: The classifier's new cases MUST be covered by unit tests, and the swap error state by a test at the nearest meaningful layer.
 - **FR-010**: Existing Maestro and Playwright selectors and success-text matches MUST keep working; any new error surface gets its own stable testID.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

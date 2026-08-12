@@ -123,16 +123,22 @@ function PanelSlide({
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_e: GestureResponderEvent, gestureState: PanResponderGestureState) => {
+        onMoveShouldSetPanResponder: (
+          _e: GestureResponderEvent,
+          gestureState: PanResponderGestureState
+        ) => {
           return canSwipe && gestureState.dx > 10 && Math.abs(gestureState.dy) < 30;
         },
-        onPanResponderRelease: (_e: GestureResponderEvent, gestureState: PanResponderGestureState) => {
+        onPanResponderRelease: (
+          _e: GestureResponderEvent,
+          gestureState: PanResponderGestureState
+        ) => {
           if (gestureState.dx > SWIPE_THRESHOLD && onSwipeRight) {
             onSwipeRight();
           }
         },
       }),
-    [canSwipe, onSwipeRight],
+    [canSwipe, onSwipeRight]
   );
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -141,19 +147,13 @@ function PanelSlide({
 
   return (
     <Animated.View
-      style={[
-        styles.panel,
-        { zIndex: isTop ? 2 : 1 },
-        animatedStyle,
-      ]}
+      style={[styles.panel, { zIndex: isTop ? 2 : 1 }, animatedStyle]}
       {...(canSwipe ? panResponder.panHandlers : {})}
     >
       <View style={styles.panelBackground}>
         <ScalesBackground />
       </View>
-      <View style={styles.panelContent}>
-        {children}
-      </View>
+      <View style={styles.panelContent}>{children}</View>
     </Animated.View>
   );
 }

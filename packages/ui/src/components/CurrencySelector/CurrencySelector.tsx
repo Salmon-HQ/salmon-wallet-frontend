@@ -55,10 +55,7 @@ export function CurrencySelector({
   );
 
   return (
-    <SettingsPanelContent
-      title={t('settings.currency', 'Display Currency')}
-      onBack={onBack}
-    >
+    <SettingsPanelContent title={t('settings.currency', 'Display Currency')} onBack={onBack}>
       <SettingsSelectorList
         items={currencies}
         getKey={(item) => item.code}

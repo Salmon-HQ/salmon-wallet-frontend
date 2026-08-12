@@ -39,10 +39,7 @@ import {
   opacity,
 } from '@salmon/shared';
 
-import type {
-  WalletSwitcherSheetProps,
-  AccountListItemProps,
-} from './types';
+import type { WalletSwitcherSheetProps, AccountListItemProps } from './types';
 
 // ============================================================================
 // Constants
@@ -73,13 +70,14 @@ function AccountListItem({
   return (
     <TouchableOpacity
       testID={`wallet-switcher-account-${account.id}`}
-      style={[
-        styles.accountItem,
-        isActive && styles.accountItemActive,
-      ]}
+      style={[styles.accountItem, isActive && styles.accountItemActive]}
       onPress={onPress}
       activeOpacity={0.7}
-      accessibilityLabel={isActive ? t('accessibility.active_account', '{{name}}, active', { name: account.name }) : account.name}
+      accessibilityLabel={
+        isActive
+          ? t('accessibility.active_account', '{{name}}, active', { name: account.name })
+          : account.name
+      }
       accessibilityRole="button"
       accessibilityState={{ selected: isActive }}
     >
@@ -122,11 +120,7 @@ function AccountListItem({
             accessibilityRole="button"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons
-              name="create-outline"
-              size={20}
-              color={colors.text.secondary}
-            />
+            <Ionicons name="create-outline" size={20} color={colors.text.secondary} />
           </TouchableOpacity>
         )}
 
@@ -154,11 +148,7 @@ function AccountListItem({
         {/* Active Indicator */}
         {isActive && (
           <View style={styles.checkmarkContainer}>
-            <Ionicons
-              name="checkmark-circle"
-              size={24}
-              color={colors.status.success}
-            />
+            <Ionicons name="checkmark-circle" size={24} color={colors.status.success} />
           </View>
         )}
       </View>
@@ -187,11 +177,14 @@ export function WalletSwitcherSheet({
   const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
 
   // Handle scroll to show/hide top fade gradient dynamically
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    const opacity = Math.min(offsetY / componentSizes.sheetFadeGradientHeight, 1);
-    topFadeOpacity.setValue(opacity);
-  }, [topFadeOpacity]);
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = event.nativeEvent.contentOffset.y;
+      const opacity = Math.min(offsetY / componentSizes.sheetFadeGradientHeight, 1);
+      topFadeOpacity.setValue(opacity);
+    },
+    [topFadeOpacity]
+  );
 
   // Determine if delete should be allowed (can't delete last account)
   const canDeleteAccounts = accounts.length > 1;
@@ -236,10 +229,7 @@ export function WalletSwitcherSheet({
   const handleDeleteAccount = useCallback(
     (accountId: string, accountName: string) => {
       if (!canDeleteAccounts) {
-        Alert.alert(
-          t('settings.wallets.delete_account'),
-          t('settings.wallets.cannot_delete_last')
-        );
+        Alert.alert(t('settings.wallets.delete_account'), t('settings.wallets.cannot_delete_last'));
         return;
       }
 
@@ -279,7 +269,15 @@ export function WalletSwitcherSheet({
         canDelete={canDeleteAccounts}
       />
     ),
-    [activeAccountId, handleSelectAccount, handleEditAccount, handleDeleteAccount, onEditAccount, onDeleteAccount, canDeleteAccounts]
+    [
+      activeAccountId,
+      handleSelectAccount,
+      handleEditAccount,
+      handleDeleteAccount,
+      onEditAccount,
+      onDeleteAccount,
+      canDeleteAccounts,
+    ]
   );
 
   /**
@@ -301,15 +299,9 @@ export function WalletSwitcherSheet({
         accessibilityRole="button"
       >
         <View style={styles.addAccountIcon}>
-          <Ionicons
-            name="add"
-            size={24}
-            color={colors.text.primary}
-          />
+          <Ionicons name="add" size={24} color={colors.text.primary} />
         </View>
-        <Text style={styles.addAccountText}>
-          {t('settings.wallets.add_new_wallet')}
-        </Text>
+        <Text style={styles.addAccountText}>{t('settings.wallets.add_new_wallet')}</Text>
       </TouchableOpacity>
     ),
     [handleAddAccount, t]
@@ -321,14 +313,8 @@ export function WalletSwitcherSheet({
   const ListEmpty = useMemo(
     () => (
       <View style={styles.emptyState}>
-        <Ionicons
-          name="wallet-outline"
-          size={48}
-          color={colors.text.secondary}
-        />
-        <Text style={styles.emptyStateText}>
-          {t('settings.wallets.your_wallets')}
-        </Text>
+        <Ionicons name="wallet-outline" size={48} color={colors.text.secondary} />
+        <Text style={styles.emptyStateText}>{t('settings.wallets.your_wallets')}</Text>
       </View>
     ),
     [t]
@@ -343,7 +329,10 @@ export function WalletSwitcherSheet({
         ListFooterComponent={ListFooter}
         ListEmptyComponent={ListEmpty}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.listContent, { paddingBottom: spacing.md + insets.top + componentSizes.headerHeight }]}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: spacing.md + insets.top + componentSizes.headerHeight },
+        ]}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         onScroll={handleScroll}
         scrollEventThrottle={16}

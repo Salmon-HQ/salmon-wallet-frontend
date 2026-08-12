@@ -29,8 +29,7 @@ export function useTabChrome() {
     const heroCardTopInset = Platform.OS === 'ios' ? topInset : 0;
 
     const tabBarBottomPadding =
-      Math.max(bottomInset, componentSizes.tabBarMinBottomPadding) +
-      vs(TAB_BAR_EXTRA_BOTTOM_GAP);
+      Math.max(bottomInset, componentSizes.tabBarMinBottomPadding) + vs(TAB_BAR_EXTRA_BOTTOM_GAP);
     const tabBarTotalHeight =
       vs(TAB_BAR_TOP_PADDING) + vs(TAB_BAR_CONTENT_HEIGHT) + tabBarBottomPadding;
     const floatingBottomOffset = tabBarTotalHeight + vs(FLOATING_CTA_GAP);
@@ -46,8 +45,7 @@ export function useTabChrome() {
       tabBarTotalHeight,
       floatingBottomOffset,
       stickyCtaScrollPadding:
-        floatingBottomOffset +
-        vs(componentSizes.buttonHeightCompact + STICKY_CTA_SCROLL_GAP),
+        floatingBottomOffset + vs(componentSizes.buttonHeightCompact + STICKY_CTA_SCROLL_GAP),
       scrollBottomPadding: Math.max(
         vs(componentSizes.tabBarScrollPadding),
         tabBarTotalHeight + vs(spacing['3xl'])

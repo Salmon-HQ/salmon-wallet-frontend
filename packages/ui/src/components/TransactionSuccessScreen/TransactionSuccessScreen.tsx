@@ -6,7 +6,20 @@ import Link from '@mui/material/Link';
 import { keyframes } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
-import { colors, gradients, spacing, borderRadius, fontFamily, fontSize, fontWeight, lineHeight, componentSizes, borderWidth, duration, easing } from '@salmon/shared';
+import {
+  colors,
+  gradients,
+  spacing,
+  borderRadius,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  lineHeight,
+  componentSizes,
+  borderWidth,
+  duration,
+  easing,
+} from '@salmon/shared';
 import { LoadingScreen } from '../LoadingScreen';
 import type { TransactionSuccessScreenProps } from './types';
 
@@ -188,7 +201,9 @@ export function TransactionSuccessScreen({
           )}
           {bridgeAmountOut && (
             <>
-              <BridgeLabel>{t('bridge.estimatedReceive', 'You will receive approximately')}</BridgeLabel>
+              <BridgeLabel>
+                {t('bridge.estimatedReceive', 'You will receive approximately')}
+              </BridgeLabel>
               <BridgeValue>{bridgeAmountOut}</BridgeValue>
             </>
           )}
@@ -227,7 +242,11 @@ export function TransactionSuccessScreen({
           )}
         </BridgeInfoBox>
       ) : explorerUrl ? (
-        <ExplorerLink onClick={handleExplorerClick} underline="always" data-testid="tx-success-explorer-link">
+        <ExplorerLink
+          onClick={handleExplorerClick}
+          underline="always"
+          data-testid="tx-success-explorer-link"
+        >
           {t('transaction.viewOnExplorer')}
         </ExplorerLink>
       ) : null}

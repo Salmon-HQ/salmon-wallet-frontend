@@ -89,10 +89,12 @@ function createRpcSubscriptions(notifications: SignatureNotifications = noNotifi
   };
 }
 
-async function createAccount(options: {
-  rpc?: ReturnType<typeof createRpc>;
-  rpcSubscriptions?: ReturnType<typeof createRpcSubscriptions>;
-} = {}) {
+async function createAccount(
+  options: {
+    rpc?: ReturnType<typeof createRpc>;
+    rpcSubscriptions?: ReturnType<typeof createRpcSubscriptions>;
+  } = {}
+) {
   return {
     signer: await createKeyPairSignerFromPrivateKeyBytes(new Uint8Array(32).fill(1), false),
     getRpc: () => options.rpc ?? createRpc(),

@@ -204,8 +204,7 @@ export function useBiometricAuth(): UseBiometricAuthReturn {
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
       // Get supported authentication types
-      const supportedTypes =
-        await LocalAuthentication.supportedAuthenticationTypesAsync();
+      const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
 
       // Check if we have a stored key by reading the plain flag
       // (NOT the protected key itself, which would trigger a biometric prompt)
@@ -350,9 +349,7 @@ export function useBiometricAuth(): UseBiometricAuthReturn {
       const BIOMETRIC_TIMEOUT_MS = 30_000;
       const storedKey = await Promise.race([
         SecureStore.getItemAsync(BIOMETRIC_KEY_STORAGE),
-        new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), BIOMETRIC_TIMEOUT_MS)
-        ),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), BIOMETRIC_TIMEOUT_MS)),
       ]);
 
       if (!storedKey) {
@@ -384,10 +381,7 @@ export function useBiometricAuth(): UseBiometricAuthReturn {
   const setEnableBiometric = useCallback(
     async (enabled: boolean): Promise<void> => {
       try {
-        await SecureStore.setItemAsync(
-          BIOMETRIC_ENABLED_KEY,
-          enabled ? 'true' : 'false'
-        );
+        await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, enabled ? 'true' : 'false');
         setEnableBiometricState(enabled);
 
         // If disabling, clear the stored key

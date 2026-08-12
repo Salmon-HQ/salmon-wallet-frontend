@@ -108,7 +108,9 @@ export function AnalyticsConsentPage({
       <TopSpacer />
 
       <CenterContent>
-        <InsightsIcon sx={{ fontSize: 72, color: colors.text.primary, marginBottom: `${spacing.xl}px` }} />
+        <InsightsIcon
+          sx={{ fontSize: 72, color: colors.text.primary, marginBottom: `${spacing.xl}px` }}
+        />
         <Title>{t('settings.analytics_prompt_title')}</Title>
         <Body>
           <Trans i18nKey="settings.analytics_prompt_body" components={{ bold: <Bold /> }} />

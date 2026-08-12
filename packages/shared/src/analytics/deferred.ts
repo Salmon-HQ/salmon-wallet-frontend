@@ -47,7 +47,7 @@ export async function flushDeferredOnboardingEvent(accepted: boolean): Promise<v
   try {
     const storage = getStorage();
     const pending = await storage.getItem<DeferredOnboardingEvent>(
-      STORAGE_KEYS.ANALYTICS_PENDING_ONBOARDING_EVENT,
+      STORAGE_KEYS.ANALYTICS_PENDING_ONBOARDING_EVENT
     );
     if (!pending) return;
 

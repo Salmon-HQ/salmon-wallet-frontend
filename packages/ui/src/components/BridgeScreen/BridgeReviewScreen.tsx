@@ -166,17 +166,11 @@ export function BridgeReviewScreen({
               <>
                 <SwapDetailRow
                   label={t('bridge.review.minimumAmount')}
-                  value={formatAmountWithSymbol(
-                    estimate.minAmount,
-                    inToken.symbol
-                  )}
+                  value={formatAmountWithSymbol(estimate.minAmount, inToken.symbol)}
                 />
                 <SwapDetailRow
                   label={t('bridge.review.estimatedOutput')}
-                  value={formatAmountWithSymbol(
-                    estimate.estimatedAmount,
-                    outToken.symbol
-                  )}
+                  value={formatAmountWithSymbol(estimate.estimatedAmount, outToken.symbol)}
                 />
               </>
             )}
@@ -201,4 +195,3 @@ export function BridgeReviewScreen({
     </Container>
   );
 }
-

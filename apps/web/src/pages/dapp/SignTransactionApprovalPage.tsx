@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  DAppTransactionApprovalView,
-} from '@salmon/ui';
+import { DAppTransactionApprovalView } from '@salmon/ui';
 import {
   approveSolanaTransactionRequest,
   getDAppTransactionRequestSummary,
@@ -32,11 +30,9 @@ export function SignTransactionApprovalPage(): React.ReactElement {
     const unsubscribe = onRequest((incoming) => {
       if (
         incoming.requestId === requestId &&
-        (
-          incoming.request.method === 'signTransaction' ||
+        (incoming.request.method === 'signTransaction' ||
           incoming.request.method === 'signAllTransactions' ||
-          incoming.request.method === 'signAndSendTransaction'
-        )
+          incoming.request.method === 'signAndSendTransaction')
       ) {
         setRequest(incoming.request);
       }
@@ -46,12 +42,13 @@ export function SignTransactionApprovalPage(): React.ReactElement {
   }, [requestId]);
 
   const solanaAccount = useMemo(
-    () => getActiveSolanaApprovalAccount(
-      state.activeAccount,
-      state.activeBlockchainAccount,
-      state.pathIndex,
-    ),
-    [state.activeAccount, state.activeBlockchainAccount, state.pathIndex],
+    () =>
+      getActiveSolanaApprovalAccount(
+        state.activeAccount,
+        state.activeBlockchainAccount,
+        state.pathIndex
+      ),
+    [state.activeAccount, state.activeBlockchainAccount, state.pathIndex]
   );
 
   useEffect(() => {
@@ -134,7 +131,9 @@ export function SignTransactionApprovalPage(): React.ReactElement {
       origin={origin}
       appName={metadata?.name}
       appIcon={metadata?.icon}
-      requestSummary={request ? getDAppTransactionRequestSummary(request.method) : 'signTransaction'}
+      requestSummary={
+        request ? getDAppTransactionRequestSummary(request.method) : 'signTransaction'
+      }
       feeSol={feeSol}
       instructionCount={instructionCount}
       feePayer={feePayer}
