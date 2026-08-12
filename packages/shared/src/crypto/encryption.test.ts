@@ -2,26 +2,34 @@
  * Tests for Encryption module
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 
 // Mock react-native-fast-crypto to force fallback to crypto-js
 vi.mock('react-native-fast-crypto', () => ({
   pbkdf2: null, // Force fallback to crypto-js
 }));
 
+import bs58 from 'bs58';
 import { randomBytes } from 'tweetnacl';
 import {
   deriveEncryptionKey,
   lock,
+  lockAndGetKey,
   unlock,
+  unlockAndGetKey,
+  unlockWithKey,
+  lockWithKey,
   isValidVault,
   isKeyCacheValid,
   refreshCachedKey,
   KEY_CACHE_TTL,
+  DEFAULT_ITERATIONS,
+  DEFAULT_DIGEST,
   IncorrectPasswordError,
   InvalidVaultError,
   KeyDerivationError,
   type DerivedKeyCache,
+  type LockedVault,
 } from './encryption';
 
 // ============================================================================
@@ -33,6 +41,66 @@ const TEST_DATA = { secret: 'my-secret-value', key: 12345 };
 
 // Use lower iterations for faster tests
 const TEST_OPTIONS = { iterations: 1000 };
+
+/**
+ * Well-known BIP39 test vector mnemonic — public knowledge, never a real secret.
+ */
+const VALID_MNEMONIC =
+  'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+
+/** Password used to generate the committed golden fixtures below. */
+const GOLDEN_PASSWORD = 'correct horse battery staple';
+
+/**
+ * GOLDEN VAULT FIXTURE — pins the persisted vault format.
+ *
+ * Generated once on 2026-08-12 by running the real implementation:
+ *   await lock({ mnemonics: [VALID_MNEMONIC] }, GOLDEN_PASSWORD)
+ * with production-default options (DEFAULT_ITERATIONS = 220000, sha512),
+ * then committing the result verbatim. It is NEVER regenerated at test time.
+ *
+ * If any KDF parameter, cipher, or serialization detail changes, the golden
+ * unlock test below fails — that is the point: an existing user's stored
+ * vault must keep opening after refactors.
+ */
+const GOLDEN_VAULT: LockedVault = {
+  encrypted:
+    '2ybp9KcaUm3aqMmfbNVUD15C47JoAbYpxjr4cs2bjKRGJm6Ln7GpzGaWsg72CKBoHHcX4TMhV68jAqnkfvd4u9R1dWbfEjs2uhXsMdu59tKUR4SfMqZ5XYzXUN95jmvwUbDh5ZQ3HnsYghsdbYxmWz77P7ZgXYy6fkiL4s7eRQ7HqV',
+  nonce: 'ATzfjcz3E6JyWgXZVZjCMjbfZs6BCz6M1',
+  salt: 'FBYEzJDwv76BSLWyVibgUB',
+  iterations: 220000,
+  digest: 'sha512',
+  kdf: 'pbkdf2',
+};
+
+/**
+ * FAST VAULT FIXTURE — same content and password as GOLDEN_VAULT but locked
+ * with only 1000 PBKDF2 iterations, so tamper tests (which each re-derive the
+ * key) stay fast. Generated the same way on 2026-08-12:
+ *   await lock({ mnemonics: [VALID_MNEMONIC] }, GOLDEN_PASSWORD, { iterations: 1000 })
+ */
+const FAST_VAULT: LockedVault = {
+  encrypted:
+    '6tbtZN3Z56qGsRBS84GTpRYgdF2L7EW4KRfwmGJUjjQmSbQjeLi3RekPuZ6zq5HgTBFTzJaNDzPdXSUdb8WQy3VT5ZXfCdqty1jjZEQr7TmVx1auYZ4BV3vzuVeKRSAviVnSv8LLR6TpNuNjLiZvYv6HA43QLteENRDfxyLdRu3wcx',
+  nonce: '9ZyAuatuqdWkufegnoKPpfoSquooo9YSc',
+  salt: 'TK85K8qijf11hxGG5p8bbt',
+  iterations: 1000,
+  digest: 'sha512',
+  kdf: 'pbkdf2',
+};
+
+const GOLDEN_CONTENT = { mnemonics: [VALID_MNEMONIC] };
+
+/**
+ * Returns a copy of the vault with one byte flipped inside the given
+ * base58-encoded field (decode → XOR one byte → re-encode).
+ */
+function flipByte(vault: LockedVault, field: 'encrypted' | 'nonce' | 'salt'): LockedVault {
+  const bytes = bs58.decode(vault[field]);
+  const tampered = Uint8Array.from(bytes);
+  tampered[0] ^= 0x01;
+  return { ...vault, [field]: bs58.encode(tampered) };
+}
 
 // ============================================================================
 // Tests
@@ -312,6 +380,149 @@ describe('Encryption Module', () => {
       };
       expect(isKeyCacheValid(expired)).toBe(false);
       expect(isKeyCacheValid(refreshCachedKey(expired))).toBe(true);
+    });
+  });
+
+  // ==========================================================================
+  // Golden vault — pins KDF params + persisted format (spec 009, US1)
+  // ==========================================================================
+
+  describe('golden vault fixture', () => {
+    it('pins the production KDF defaults', () => {
+      // The golden fixture was generated with these exact defaults. If either
+      // constant drifts, newly created vaults would diverge from the format
+      // this suite proves decryptable — fail loudly here.
+      expect(DEFAULT_ITERATIONS).toBe(220000);
+      expect(DEFAULT_DIGEST).toBe('sha512');
+      expect(GOLDEN_VAULT.iterations).toBe(DEFAULT_ITERATIONS);
+      expect(GOLDEN_VAULT.digest).toBe(DEFAULT_DIGEST);
+      expect(isValidVault(GOLDEN_VAULT)).toBe(true);
+    });
+
+    it('unlocks the committed golden vault to the exact expected mnemonics', async () => {
+      const data = await unlock<typeof GOLDEN_CONTENT>(GOLDEN_VAULT, GOLDEN_PASSWORD);
+      expect(data).toEqual(GOLDEN_CONTENT);
+    });
+
+    it('unlocks the committed fast fixture (1000 iterations) identically', async () => {
+      const data = await unlock<typeof GOLDEN_CONTENT>(FAST_VAULT, GOLDEN_PASSWORD);
+      expect(data).toEqual(GOLDEN_CONTENT);
+    });
+  });
+
+  // ==========================================================================
+  // Tampered vault fails closed (spec 009, US2)
+  // ==========================================================================
+
+  describe('tampered vault fails closed', () => {
+    it('throws IncorrectPasswordError when one ciphertext byte is flipped', async () => {
+      const tampered = flipByte(FAST_VAULT, 'encrypted');
+      await expect(unlock(tampered, GOLDEN_PASSWORD)).rejects.toThrow(IncorrectPasswordError);
+    });
+
+    it('throws IncorrectPasswordError when one nonce byte is flipped', async () => {
+      const tampered = flipByte(FAST_VAULT, 'nonce');
+      await expect(unlock(tampered, GOLDEN_PASSWORD)).rejects.toThrow(IncorrectPasswordError);
+    });
+
+    it('throws IncorrectPasswordError when one salt byte is flipped', async () => {
+      const tampered = flipByte(FAST_VAULT, 'salt');
+      await expect(unlock(tampered, GOLDEN_PASSWORD)).rejects.toThrow(IncorrectPasswordError);
+    });
+
+    it('throws InvalidVaultError for structurally broken vaults', async () => {
+      await expect(
+        unlock({ ...FAST_VAULT, encrypted: undefined } as unknown as LockedVault, GOLDEN_PASSWORD)
+      ).rejects.toThrow(InvalidVaultError);
+      await expect(
+        unlock({ ...FAST_VAULT, digest: 'md5' } as unknown as LockedVault, GOLDEN_PASSWORD)
+      ).rejects.toThrow(InvalidVaultError);
+    });
+  });
+
+  // ==========================================================================
+  // Key-cache unlock path, executed for real (spec 009, US3)
+  // ==========================================================================
+
+  describe('key-cache path (unlockAndGetKey / unlockWithKey / lockWithKey)', () => {
+    // Derive once and reuse — these tests only read the vault/keyCache.
+    let vault: LockedVault;
+    let keyCache: DerivedKeyCache;
+
+    beforeAll(async () => {
+      vault = await lock(TEST_DATA, TEST_PASSWORD, TEST_OPTIONS);
+      const result = await unlockAndGetKey<typeof TEST_DATA>(vault, TEST_PASSWORD);
+      keyCache = result.keyCache;
+    });
+
+    it('unlockAndGetKey returns the data and a key cache matching the vault', async () => {
+      const before = Date.now();
+      const { data, keyCache: fresh } = await unlockAndGetKey<typeof TEST_DATA>(
+        vault,
+        TEST_PASSWORD
+      );
+
+      expect(data).toEqual(TEST_DATA);
+      expect(fresh.salt).toBe(vault.salt);
+      expect(fresh.iterations).toBe(vault.iterations);
+      expect(fresh.digest).toBe(vault.digest);
+      expect(fresh.key).toHaveLength(32);
+      expect(fresh.expiresAt).toBeGreaterThanOrEqual(before + KEY_CACHE_TTL);
+    });
+
+    it('unlockAndGetKey throws IncorrectPasswordError for a wrong password', async () => {
+      await expect(unlockAndGetKey(vault, 'wrongPassword')).rejects.toThrow(
+        IncorrectPasswordError
+      );
+    });
+
+    it('unlockWithKey decrypts the vault using the cached key, no password needed', () => {
+      const data = unlockWithKey<typeof TEST_DATA>(vault, keyCache);
+      expect(data).toEqual(TEST_DATA);
+    });
+
+    it('unlockWithKey throws when the key comes from a different vault (salt mismatch)', async () => {
+      const { keyCache: otherKey } = await lockAndGetKey(TEST_DATA, TEST_PASSWORD, TEST_OPTIONS);
+      expect(otherKey.salt).not.toBe(vault.salt);
+      expect(() => unlockWithKey(vault, otherKey)).toThrow(IncorrectPasswordError);
+    });
+
+    it('unlockWithKey throws when key bytes are wrong even with a matching salt', () => {
+      const wrongKey: DerivedKeyCache = {
+        ...keyCache,
+        key: keyCache.key.map((b) => b ^ 0xff),
+      };
+      expect(() => unlockWithKey(vault, wrongKey)).toThrow(IncorrectPasswordError);
+    });
+
+    it('unlockWithKey throws InvalidVaultError for a structurally broken vault', () => {
+      expect(() =>
+        unlockWithKey({ ...vault, nonce: 42 } as unknown as LockedVault, keyCache)
+      ).toThrow(InvalidVaultError);
+    });
+
+    it('lockWithKey re-encrypts with a fresh nonce and round-trips via the password', async () => {
+      const newData = { secret: 'rotated-value', key: 999 };
+      const relocked = lockWithKey(newData, keyCache);
+
+      expect(relocked.salt).toBe(keyCache.salt);
+      expect(relocked.iterations).toBe(keyCache.iterations);
+      expect(relocked.digest).toBe(keyCache.digest);
+      expect(relocked.nonce).not.toBe(vault.nonce); // CRITICAL: nonce must be fresh
+
+      const viaPassword = await unlock<typeof newData>(relocked, TEST_PASSWORD);
+      expect(viaPassword).toEqual(newData);
+      // And the cached key still opens it (same salt, same derived key)
+      expect(unlockWithKey<typeof newData>(relocked, keyCache)).toEqual(newData);
+    });
+
+    it('lockAndGetKey returns a vault/keyCache pair that unlockWithKey accepts', async () => {
+      const { vault: freshVault, keyCache: freshKey } = await lockAndGetKey(
+        TEST_DATA,
+        TEST_PASSWORD,
+        TEST_OPTIONS
+      );
+      expect(unlockWithKey<typeof TEST_DATA>(freshVault, freshKey)).toEqual(TEST_DATA);
     });
   });
 });
