@@ -4,8 +4,8 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import InsightsIcon from '@mui/icons-material/Insights';
-import { useTranslation } from 'react-i18next';
-import { colors, fontFamily, spacing } from '@salmon/shared';
+import { Trans, useTranslation } from 'react-i18next';
+import { colors, fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
 import { styled } from '../../utils/styled';
 import { PrimaryButton } from '../Button';
 import { getAuthContainerStyles } from './common';
@@ -16,9 +16,9 @@ import type { AnalyticsConsentPageProps } from './types';
  * before the wallet home (web + extension). Presentational only: the caller
  * wires accept/decline to `useAnalyticsConsent().resolveConsentPrompt` and then
  * advances the flow. Onboarding layout (themed icon + centered heading, like
- * SuccessPage); the include/exclude points read as a left-aligned bullet list.
- * Declining is the standard close affordance: an X in the top-right (same
- * idiom as BaseSheetDialog's StandardHeader).
+ * SuccessPage); the body is one centered paragraph with bolded key phrases,
+ * plus a Settings footnote. Declining is the standard close affordance: an X
+ * in the top-right (same idiom as BaseSheetDialog's StandardHeader).
  */
 const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
   display: 'flex',
@@ -52,54 +52,32 @@ const CenterContent = styled(Box)({
 const Title = styled(Typography)({
   color: colors.text.primary,
   fontFamily: fontFamily.sans,
-  fontWeight: 700,
-  fontSize: 32,
-  lineHeight: '40px',
+  fontWeight: fontWeight.bold,
+  fontSize: fontSize['4xl'],
+  lineHeight: lineHeight.tight,
   marginBottom: spacing.md,
   textAlign: 'center',
 });
 
 const Body = styled(Typography)({
-  color: colors.text.secondary,
+  color: colors.text.primary,
   fontFamily: fontFamily.sans,
-  fontSize: 16,
-  lineHeight: '24px',
+  fontSize: fontSize.lg,
+  lineHeight: lineHeight.relaxed,
   textAlign: 'center',
 });
 
-const Details = styled(Box)({
-  width: '100%',
-  marginTop: spacing.xl,
-});
-
-const BulletRow = styled(Box)({
-  display: 'flex',
-  marginBottom: spacing.sm,
-});
-
-const BulletMark = styled('span')({
-  width: 20,
-  flexShrink: 0,
-  color: colors.text.secondary,
-  fontFamily: fontFamily.sans,
-  fontSize: 15,
-  lineHeight: '22px',
-});
-
-const BulletText = styled(Typography)({
-  color: colors.text.secondary,
-  fontFamily: fontFamily.sans,
-  fontSize: 15,
-  lineHeight: '22px',
+const Bold = styled('strong')({
+  fontWeight: fontWeight.bold,
 });
 
 const Footnote = styled(Typography)({
   color: colors.text.secondary,
   fontFamily: fontFamily.sans,
-  fontSize: 13,
-  lineHeight: '20px',
-  opacity: 0.8,
-  marginTop: spacing.md,
+  fontSize: fontSize.base,
+  lineHeight: lineHeight.normal,
+  marginTop: spacing.xl,
+  textAlign: 'center',
 });
 
 const ButtonsContainer = styled(Box)({
@@ -132,19 +110,12 @@ export function AnalyticsConsentPage({
       <CenterContent>
         <InsightsIcon sx={{ fontSize: 72, color: colors.text.primary, marginBottom: `${spacing.xl}px` }} />
         <Title>{t('settings.analytics_prompt_title')}</Title>
-        <Body>{t('settings.analytics_prompt_body')}</Body>
-
-        <Details>
-          <BulletRow>
-            <BulletMark>✓</BulletMark>
-            <BulletText>{t('settings.analytics_prompt_include')}</BulletText>
-          </BulletRow>
-          <BulletRow>
-            <BulletMark>✕</BulletMark>
-            <BulletText>{t('settings.analytics_prompt_exclude')}</BulletText>
-          </BulletRow>
-          <Footnote>{t('settings.analytics_prompt_footnote')}</Footnote>
-        </Details>
+        <Body>
+          <Trans i18nKey="settings.analytics_prompt_body" components={{ bold: <Bold /> }} />
+        </Body>
+        <Footnote>
+          <Trans i18nKey="settings.analytics_prompt_footnote" components={{ bold: <Bold /> }} />
+        </Footnote>
       </CenterContent>
 
       <ButtonsContainer>

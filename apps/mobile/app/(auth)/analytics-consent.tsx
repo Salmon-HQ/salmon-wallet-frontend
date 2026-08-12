@@ -7,8 +7,8 @@
  * close affordance: an X in the top-right (same idiom as sheet close buttons).
  *
  * Design: onboarding layout (themed icon + centered heading, like
- * biometric-setup.tsx / success.tsx). The include/exclude points read as a
- * left-aligned bullet list with a hanging indent; the accept button is pinned
+ * biometric-setup.tsx / success.tsx). The body is one centered paragraph with
+ * bolded key phrases, plus a Settings footnote; the accept button is pinned
  * to the bottom.
  */
 
@@ -16,6 +16,8 @@ import {
   colors,
   contentPadding,
   fontFamilyNative,
+  fontSize,
+  lineHeight,
   spacing,
   useAnalyticsConsent,
 } from '@salmon/shared';
@@ -23,7 +25,7 @@ import { PrimaryButton } from '../../src/components';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -66,19 +68,18 @@ export default function AnalyticsConsentScreen() {
           </View>
 
           <Text style={styles.title}>{t('settings.analytics_prompt_title')}</Text>
-          <Text style={styles.body}>{t('settings.analytics_prompt_body')}</Text>
-
-          <View style={styles.details}>
-            <View style={styles.bulletRow}>
-              <Text style={styles.bulletMark}>✓</Text>
-              <Text style={styles.bulletText}>{t('settings.analytics_prompt_include')}</Text>
-            </View>
-            <View style={styles.bulletRow}>
-              <Text style={styles.bulletMark}>✕</Text>
-              <Text style={styles.bulletText}>{t('settings.analytics_prompt_exclude')}</Text>
-            </View>
-            <Text style={styles.foot}>{t('settings.analytics_prompt_footnote')}</Text>
-          </View>
+          <Text style={styles.body}>
+            <Trans
+              i18nKey="settings.analytics_prompt_body"
+              components={{ bold: <Text style={styles.bold} /> }}
+            />
+          </Text>
+          <Text style={styles.foot}>
+            <Trans
+              i18nKey="settings.analytics_prompt_footnote"
+              components={{ bold: <Text style={styles.bold} /> }}
+            />
+          </Text>
         </View>
 
         <View style={styles.buttonsContainer}>
@@ -119,47 +120,28 @@ const styles = StyleSheet.create({
   title: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: 32,
-    lineHeight: 40,
+    fontSize: fontSize['4xl'],
+    lineHeight: fontSize['4xl'] * lineHeight.tight,
     marginBottom: spacing.md,
     textAlign: 'center',
   },
   body: {
-    color: colors.text.secondary,
+    color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: fontSize.lg,
+    lineHeight: fontSize.lg * lineHeight.relaxed,
     textAlign: 'center',
   },
-  details: {
-    alignSelf: 'stretch',
-    marginTop: spacing.xl,
-  },
-  bulletRow: {
-    flexDirection: 'row',
-    marginBottom: spacing.sm,
-  },
-  bulletMark: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    width: 20,
-  },
-  bulletText: {
-    flex: 1,
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 15,
-    lineHeight: 22,
+  bold: {
+    fontFamily: fontFamilyNative.bold,
   },
   foot: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
-    lineHeight: 20,
-    opacity: 0.8,
-    marginTop: spacing.md,
+    fontSize: fontSize.base,
+    lineHeight: fontSize.base * lineHeight.normal,
+    marginTop: spacing.xl,
+    textAlign: 'center',
   },
   buttonsContainer: {
     marginTop: 'auto',
