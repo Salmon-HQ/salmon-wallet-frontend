@@ -19,13 +19,13 @@
     "@salmon/shared": "workspace:*",
     "keen-slider": "^6.8.6",
     "qrcode.react": "^4.2.0",
-    "recharts": "^3.5.1"
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
-    "@types/react": "~19.1.0",
-    "@types/react-dom": "~19.1.0",
+    "@types/react": "~19.2.18",
+    "@types/react-dom": "~19.2.4",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.10"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
