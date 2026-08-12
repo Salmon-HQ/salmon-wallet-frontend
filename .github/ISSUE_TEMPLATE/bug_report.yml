@@ -1,0 +1,39 @@
+name: Bug report
+description: Something broken in the wallet (web, mobile, or extension)
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never post seed phrases, private keys, or passwords here.**
+        Security vulnerabilities go to [private reporting](https://github.com/Salmon-HQ/salmon-wallet-frontend/security/advisories/new), not public issues.
+  - type: dropdown
+    id: app
+    attributes:
+      label: App
+      options:
+        - Web
+        - Mobile (iOS)
+        - Mobile (Android)
+        - Browser extension (Chrome)
+        - Browser extension (Firefox)
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you do, what did you expect, what happened instead?
+      placeholder: Steps to reproduce, expected vs actual.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: App version (Settings → About) or extension version.
+  - type: textarea
+    id: context
+    attributes:
+      label: Extra context
+      description: Screenshots (without sensitive data), network (mainnet/devnet), language (en/es).
