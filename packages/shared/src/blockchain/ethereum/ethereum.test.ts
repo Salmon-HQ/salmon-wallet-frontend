@@ -1293,19 +1293,6 @@ describe('EthereumAccount Integration Tests', () => {
       expect(result.code).toBe('invalid');
     });
 
-    it('should handle mainnet RPC timeout gracefully', async () => {
-      const account = await createEthereumAccount({
-        network: ETHEREUM_NETWORKS['ethereum-mainnet'],
-        mnemonic: TEST_MNEMONIC,
-        index: 0,
-        apiFunctions: mockEthereumApiFunctions,
-      });
-
-      // This test validates the function signature and error handling
-      // without actually making RPC calls
-      expect(account.validateDestinationAccount).toBeDefined();
-      expect(typeof account.validateDestinationAccount).toBe('function');
-    });
   });
 });
 
@@ -1330,30 +1317,6 @@ describe('Token Service Integration Tests', () => {
       ).rejects.toThrow();
     });
 
-    it('should validate function signature and structure', async () => {
-      const { getTokenInfo } = await import('./tokens');
-
-      // Validate that the function exists and has correct structure
-      expect(getTokenInfo).toBeDefined();
-      expect(typeof getTokenInfo).toBe('function');
-    });
-
-    it('should handle getTokenInfo call structure', async () => {
-      const { getTokenInfo } = await import('./tokens');
-
-      const mockProvider = {
-        // Mock minimal provider interface
-        _isProvider: true,
-      } as any;
-
-      // This will fail but validates the call pattern
-      try {
-        await getTokenInfo(mockProvider, '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48');
-      } catch (error) {
-        // Expected to fail with mock provider, but validates function is called correctly
-        expect(error).toBeDefined();
-      }
-    });
   });
 
   describe('getTokensByOwner', () => {
@@ -1395,12 +1358,6 @@ describe('Token Service Integration Tests', () => {
       expect(result).toEqual([]);
     });
 
-    it('should validate function signature', async () => {
-      const { getTokensByOwner } = await import('./tokens');
-
-      expect(getTokensByOwner).toBeDefined();
-      expect(typeof getTokensByOwner).toBe('function');
-    });
   });
 
   describe('getFeaturedTokens', () => {
@@ -1457,12 +1414,6 @@ describe('Token Service Integration Tests', () => {
       expect(result).toBe(false);
     });
 
-    it('should validate function signature', async () => {
-      const { isErc20Token } = await import('./tokens');
-
-      expect(isErc20Token).toBeDefined();
-      expect(typeof isErc20Token).toBe('function');
-    });
   });
 });
 

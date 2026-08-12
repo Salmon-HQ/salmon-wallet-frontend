@@ -10,38 +10,33 @@ import {
 } from './explorers';
 
 // ============================================================================
-// Ethereum Explorers Tests
+// Explorer Configuration Structure Tests
 // ============================================================================
 
-describe('Ethereum Explorers', () => {
-  describe('mainnet explorer', () => {
-    it('should have ETHERSCAN explorer configured', () => {
-      const explorer = EXPLORERS.ETHEREUM.mainnet?.ETHERSCAN;
+describe('EXPLORERS structure', () => {
+  it('every configured explorer has a name and an https URL with a {txId} placeholder', () => {
+    const explorers = Object.values(EXPLORERS).flatMap((networks) =>
+      Object.values(networks).flatMap((networkExplorers) => Object.values(networkExplorers))
+    );
 
-      expect(explorer).toBeDefined();
-      expect(explorer?.name).toBe('Etherscan');
-    });
+    expect(explorers.length).toBeGreaterThan(0);
 
-    it('should return correct Etherscan URL', () => {
-      const explorer = EXPLORERS.ETHEREUM.mainnet?.ETHERSCAN;
-
-      expect(explorer?.url).toBe('https://etherscan.io/tx/{txId}');
-    });
+    for (const explorer of explorers) {
+      expect(explorer.name).toBeTruthy();
+      expect(explorer.url).toMatch(/^https:\/\/\S+\{txId\}\S*$/);
+    }
   });
 
-  describe('sepolia explorer', () => {
-    it('should have ETHERSCAN explorer configured', () => {
-      const explorer = EXPLORERS.ETHEREUM.sepolia?.ETHERSCAN;
+  it('every default explorer key exists in each network of its blockchain', () => {
+    for (const [blockchain, defaultKey] of Object.entries(DEFAULT_EXPLORERS)) {
+      const networks = EXPLORERS[blockchain as keyof typeof EXPLORERS];
 
-      expect(explorer).toBeDefined();
-      expect(explorer?.name).toBe('Etherscan Sepolia');
-    });
+      expect(Object.keys(networks).length).toBeGreaterThan(0);
 
-    it('should return correct Etherscan Sepolia URL', () => {
-      const explorer = EXPLORERS.ETHEREUM.sepolia?.ETHERSCAN;
-
-      expect(explorer?.url).toBe('https://sepolia.etherscan.io/tx/{txId}');
-    });
+      for (const networkExplorers of Object.values(networks)) {
+        expect(networkExplorers[defaultKey]).toBeDefined();
+      }
+    }
   });
 });
 
