@@ -185,6 +185,19 @@ describe('RootLayout mobile lock lifecycle', () => {
     expect(mockLockAccounts).not.toHaveBeenCalled();
   });
 
+  it('keeps the user on onboarding auth screens after an unlock instead of yanking to home', async () => {
+    // Regression: a mid-onboarding inactivity lock used to skip the
+    // analytics-consent screen (and everything after it) on unlock because
+    // the screen was missing from the post-creation allowlist.
+    const { router, useSegments } = require('expo-router');
+    (useSegments as jest.Mock).mockReturnValue(['(auth)', 'analytics-consent']);
+
+    render(<RootLayout />);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(router.replace).not.toHaveBeenCalledWith('/(app)/(tabs)');
+  });
+
   it('blocks with the init-error screen when init failed and no accounts loaded', async () => {
     const { router } = jest.requireMock('expo-router');
     mockUseAccountsContext.mockReturnValue([
