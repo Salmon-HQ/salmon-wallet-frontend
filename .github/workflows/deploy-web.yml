@@ -49,7 +49,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4 # zizmor: ignore[cache-poisoning] -- v4 does not cache unless `cache:` is set, and it is not
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0 # zizmor: ignore[cache-poisoning] -- setup-node does not cache unless `cache:` is set, and it is not
         with:
           node-version-file: .nvmrc
           # No dependency cache on purpose: this workflow publishes to prod,
