@@ -185,9 +185,12 @@ describe('deriveBitcoinKeypair', () => {
   it('should derive a valid Bitcoin BIP32 node from mnemonic', async () => {
     const { node, path } = await deriveBitcoinKeypair(VALID_MNEMONIC);
 
-    expect(node).toBeDefined();
-    expect(node.publicKey).toBeDefined();
-    expect(node.privateKey).toBeDefined();
+    // Pinned on 2026-08-12 by running this exact call against the well-known
+    // BIP39 "abandon … about" test vector (a widely published public vector).
+    // A change in seed derivation or BIP32 path handling must fail here.
+    expect(Buffer.from(node.publicKey).toString('hex')).toBe(
+      '03aaeb52dd7494c361049de67cc680e83ebcbbbdbeb13637d92cd845f70308af5e'
+    );
     expect(node.publicKey.length).toBe(33); // Compressed public key
     expect(node.privateKey?.length).toBe(32);
     expect(path).toBe("m/44'/0'/0'/0/0");

@@ -86,35 +86,40 @@ beforeEach(() => {
 });
 
 describe('approval routing', () => {
-  it.each(['connect', 'sign', 'signTransaction', 'signIn'])(
-    'routes a %s request to an approval popup carrying the payload and origin',
-    async (method) => {
-      const { route, windowsCreate } = startBackground();
-      const sendResponse = vi.fn();
+  it.each([
+    'connect',
+    'sign',
+    'signTransaction',
+    'signIn',
+    'signOffchain',
+    'signAllTransactions',
+    'signAndSendTransaction',
+  ])('routes a %s request to an approval popup carrying the payload and origin', async (method) => {
+    const { route, windowsCreate } = startBackground();
+    const sendResponse = vi.fn();
 
-      const keepAlive = route(
-        dappRequest(method, `req-${method}`, { network: 'mainnet-beta' }),
-        ownSender(),
-        sendResponse
-      );
+    const keepAlive = route(
+      dappRequest(method, `req-${method}`, { network: 'mainnet-beta' }),
+      ownSender(),
+      sendResponse
+    );
 
-      // The router must keep the response channel open for the async answer.
-      expect(keepAlive).toBe(true);
-      await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
+    // The router must keep the response channel open for the async answer.
+    expect(keepAlive).toBe(true);
+    await vi.waitFor(() => expect(windowsCreate).toHaveBeenCalledTimes(1));
 
-      const params = parsePopupUrl(windowsCreate);
-      expect(params.get('origin')).toBe(DAPP_ORIGIN);
-      expect(params.get('network')).toBe('mainnet-beta');
-      const request = JSON.parse(params.get('request') ?? 'null');
-      expect(request).toEqual({
-        id: `req-${method}`,
-        method,
-        params: { network: 'mainnet-beta' },
-      });
-      // Nothing is answered to the origin until the approval UI responds.
-      expect(sendResponse).not.toHaveBeenCalled();
-    }
-  );
+    const params = parsePopupUrl(windowsCreate);
+    expect(params.get('origin')).toBe(DAPP_ORIGIN);
+    expect(params.get('network')).toBe('mainnet-beta');
+    const request = JSON.parse(params.get('request') ?? 'null');
+    expect(request).toEqual({
+      id: `req-${method}`,
+      method,
+      params: { network: 'mainnet-beta' },
+    });
+    // Nothing is answered to the origin until the approval UI responds.
+    expect(sendResponse).not.toHaveBeenCalled();
+  });
 
   it('answers a trusted origin connect from storage without opening any approval UI', async () => {
     await fakeBrowser.storage.local.set({
