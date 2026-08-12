@@ -58,9 +58,13 @@ export const test = base.extend<ExtensionOptions & ExtensionFixtures>({
     }
     fs.mkdirSync(profileDir, { recursive: true });
 
-    // Extensions require a headed (non-headless-shell) Chromium.
+    // Extensions cannot run in the legacy headless-shell, but Playwright's
+    // bundled `chromium` channel (new headless mode) does support them —
+    // that is what lets this suite run on a display-less CI runner.
+    // Local runs stay headed by default; CI sets SALMON_E2E_HEADLESS=1.
     const context = await chromium.launchPersistentContext(profileDir, {
-      headless: false,
+      channel: 'chromium',
+      headless: process.env.SALMON_E2E_HEADLESS === '1',
       viewport: { width: 1280, height: 900 },
       args: [
         `--disable-extensions-except=${extDist}`,
