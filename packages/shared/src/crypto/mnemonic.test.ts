@@ -11,6 +11,9 @@ import {
   deriveSolanaKeypair,
   deriveBitcoinKeypair,
   deriveChildFromPath,
+  normalizeMnemonic,
+  validateMnemonicWords,
+  generateValidationPositions,
   SOLANA_PATH,
   BITCOIN_PATH,
   COIN_TYPES,
@@ -207,13 +210,17 @@ describe('deriveBitcoinKeypair', () => {
 // ============================================================================
 
 describe('deriveChildFromPath', () => {
-  it('should derive a BIP32 node from a valid path', async () => {
+  it('should derive the pinned BIP32 node from a valid path', async () => {
     const path = "m/44'/60'/0'/0/0"; // Ethereum path
     const node = await deriveChildFromPath(VALID_MNEMONIC, path);
 
-    expect(node).toBeDefined();
-    expect(node.publicKey).toBeDefined();
-    expect(node.privateKey).toBeDefined();
+    // Pinned on 2026-08-12 by running this exact call against the well-known
+    // BIP39 "abandon … about" test vector (a widely published public vector).
+    // A change in seed derivation or BIP32 path handling must fail here.
+    expect(Buffer.from(node.publicKey).toString('hex')).toBe(
+      '0237b0bb7a8288d38ed49a524b5dc98cff3eb5ca824c9f9dc0dfdb3d9cd600f299'
+    );
+    expect(node.privateKey?.length).toBe(32);
   });
 
   it('should throw an error for an invalid path', async () => {
@@ -278,5 +285,117 @@ describe('COIN_TYPES', () => {
     expect(COIN_TYPES.BTC).toBe(0);
     expect(COIN_TYPES.TESTNET).toBe(1);
     expect(COIN_TYPES.SOL).toBe(501);
+  });
+});
+
+// ============================================================================
+// normalizeMnemonic Tests (spec 009, US5 — recover-flow input hygiene)
+// ============================================================================
+
+describe('normalizeMnemonic', () => {
+  it('normalizes mixed case, extra spaces, and newlines to the canonical form', () => {
+    const messy =
+      '  Abandon ABANDON\tabandon\n abandon  abandon abandon\nabandon abandon   abandon abandon abandon ABOUT \n';
+
+    const normalized = normalizeMnemonic(messy);
+
+    expect(normalized).toBe(VALID_MNEMONIC);
+    expect(validateMnemonic(normalized)).toBe(true);
+  });
+
+  it('leaves an already-canonical mnemonic unchanged', () => {
+    expect(normalizeMnemonic(VALID_MNEMONIC)).toBe(VALID_MNEMONIC);
+  });
+
+  it('collapses internal runs of whitespace to single spaces', () => {
+    expect(normalizeMnemonic('apple   banana \t cherry')).toBe('apple banana cherry');
+  });
+});
+
+// ============================================================================
+// validateMnemonicWords Tests (spec 009, US5)
+// ============================================================================
+
+describe('validateMnemonicWords', () => {
+  it('returns isValid true when all entered words match', () => {
+    const result = validateMnemonicWords(VALID_MNEMONIC, [1, 6, 12], [
+      'abandon',
+      'abandon',
+      'about',
+    ]);
+
+    expect(result.isValid).toBe(true);
+    expect(result.results).toHaveLength(3);
+    expect(result.results.every((r) => r.isCorrect)).toBe(true);
+  });
+
+  it('identifies exactly which position holds the wrong word', () => {
+    const result = validateMnemonicWords(VALID_MNEMONIC, [1, 6, 12], [
+      'abandon',
+      'banana', // wrong
+      'about',
+    ]);
+
+    expect(result.isValid).toBe(false);
+    const wrong = result.results.filter((r) => !r.isCorrect);
+    expect(wrong).toHaveLength(1);
+    expect(wrong[0]).toEqual({
+      position: 6,
+      expected: 'abandon',
+      entered: 'banana',
+      isCorrect: false,
+    });
+  });
+
+  it('tolerates case and surrounding whitespace in entered words', () => {
+    const result = validateMnemonicWords(VALID_MNEMONIC, [12], ['  ABOUT ']);
+    expect(result.isValid).toBe(true);
+  });
+
+  it('treats missing entries as incorrect, not as a crash', () => {
+    const result = validateMnemonicWords(VALID_MNEMONIC, [1, 12], ['abandon']);
+    expect(result.isValid).toBe(false);
+    expect(result.results[1]).toMatchObject({ entered: '', isCorrect: false });
+  });
+});
+
+// ============================================================================
+// generateValidationPositions Tests (spec 009, US5)
+// ============================================================================
+
+describe('generateValidationPositions', () => {
+  it('returns unique, in-range, strictly increasing positions spread across sections', () => {
+    // Randomized output — run repeatedly to cover the range without real sleeps.
+    for (let run = 0; run < 50; run++) {
+      const positions = generateValidationPositions(12, 3);
+
+      expect(positions).toHaveLength(3);
+      expect(new Set(positions).size).toBe(3);
+      positions.forEach((pos, i) => {
+        // One position per third: section i covers [i*4 + 1, (i+1)*4]
+        expect(pos).toBeGreaterThanOrEqual(i * 4 + 1);
+        expect(pos).toBeLessThanOrEqual((i + 1) * 4);
+      });
+    }
+  });
+
+  it('supports 24-word mnemonics', () => {
+    for (let run = 0; run < 50; run++) {
+      const positions = generateValidationPositions(24, 3);
+      expect(positions).toHaveLength(3);
+      expect(new Set(positions).size).toBe(3);
+      positions.forEach((pos, i) => {
+        expect(pos).toBeGreaterThanOrEqual(i * 8 + 1);
+        expect(pos).toBeLessThanOrEqual((i + 1) * 8);
+      });
+    }
+  });
+
+  it('defaults to 3 positions', () => {
+    expect(generateValidationPositions(12)).toHaveLength(3);
+  });
+
+  it('throws when count exceeds word count', () => {
+    expect(() => generateValidationPositions(3, 4)).toThrow('Count cannot exceed word count');
   });
 });
