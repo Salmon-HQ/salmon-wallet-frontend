@@ -17,6 +17,27 @@ import type {
   } from '../../types/price';
 
 // ============================================================================
+// Resolved coin-id cache
+// ============================================================================
+
+/**
+ * mint -> resolved CoinGecko coin id, learned from contract coin-info
+ * responses (they always include the resolved `id`). Once a mint is
+ * resolved, both dispatchers route subsequent calls through the classic
+ * coin-id endpoints.
+ *
+ * ponytail: module-local Map, session-lifetime only — the mapping is
+ * immutable, so no TTL/storage layer; persist it if cold-start lookups
+ * ever matter.
+ */
+const resolvedCoinIds = new Map<string, string>();
+
+/** Test hook: reset the mint -> coin id cache. */
+export function clearResolvedCoinIdCache(): void {
+  resolvedCoinIds.clear();
+}
+
+// ============================================================================
 // Price Service Functions
 // ============================================================================
 
@@ -101,8 +122,9 @@ export async function getTokenMarketChart(
   days: 1 | 7 | 30 | 90 | 365 = 7,
   currency: string = 'usd'
 ): Promise<MarketChartData | null> {
-  if (token.coingeckoId) {
-    return getMarketChart(token.coingeckoId, days, currency);
+  const coinId = token.coingeckoId ?? (token.address && resolvedCoinIds.get(token.address));
+  if (coinId) {
+    return getMarketChart(coinId, days, currency);
   }
   if (token.address) {
     // ponytail: platform hardcoded to 'solana' — only SPL tokens lack a
@@ -143,6 +165,9 @@ export async function getContractCoinInfo(
       `/v1/coin/${platform}/contract/${address}`,
       { params: { currency } }
     );
+    if (data?.id) {
+      resolvedCoinIds.set(address, data.id);
+    }
     return data;
   } catch (error) {
     if (error instanceof ApiError && error.isNotFound()) {
@@ -168,8 +193,9 @@ export async function getTokenCoinInfo(
   token: { coingeckoId?: string; address?: string },
   currency: string = 'usd'
 ): Promise<CoinInfo | null> {
-  if (token.coingeckoId) {
-    return getCoinInfo(token.coingeckoId, currency);
+  const coinId = token.coingeckoId ?? (token.address && resolvedCoinIds.get(token.address));
+  if (coinId) {
+    return getCoinInfo(coinId, currency);
   }
   if (token.address) {
     // ponytail: platform hardcoded to 'solana', same ceiling as getTokenMarketChart.

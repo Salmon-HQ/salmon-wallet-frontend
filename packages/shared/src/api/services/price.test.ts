@@ -66,6 +66,7 @@ import {
   getCoinInfo,
   getContractCoinInfo,
   getTokenCoinInfo,
+  clearResolvedCoinIdCache,
 } from './price';
 import type {
   MarketChartData,
@@ -176,6 +177,7 @@ async function fetchBackendJson<T>(path: string): Promise<T> {
 describe('Price Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearResolvedCoinIdCache();
   });
 
   // ==========================================================================
@@ -539,6 +541,51 @@ describe('Price Service', () => {
   });
 
   // ==========================================================================
+  // Resolved coin-id cache Tests
+  // ==========================================================================
+
+  describe('resolved coin-id cache', () => {
+    const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+    it('routes subsequent calls through the classic endpoints once the contract info resolved the coin id', async () => {
+      // First info call: no coingeckoId -> contract endpoint, which returns
+      // the resolved id.
+      mockApiClientGet.mockResolvedValueOnce({ data: { ...MOCK_COIN_INFO, id: 'usd-coin' } });
+      await getTokenCoinInfo({ address: USDC_MINT });
+      expect(mockApiClientGet).toHaveBeenLastCalledWith(
+        `/v1/coin/solana/contract/${USDC_MINT}`,
+        { params: { currency: 'usd' } }
+      );
+
+      // Chart for the same mint now goes classic by the cached id.
+      mockApiClientGet.mockResolvedValueOnce({ data: MOCK_MARKET_CHART });
+      await getTokenMarketChart({ address: USDC_MINT }, 30);
+      expect(mockApiClientGet).toHaveBeenLastCalledWith('/v1/chart/usd-coin', {
+        params: { days: 30, currency: 'usd' },
+      });
+
+      // Info for the same mint also goes classic.
+      mockApiClientGet.mockResolvedValueOnce({ data: MOCK_COIN_INFO });
+      await getTokenCoinInfo({ address: USDC_MINT });
+      expect(mockApiClientGet).toHaveBeenLastCalledWith('/v1/coin/usd-coin', {
+        params: { currency: 'usd' },
+      });
+    });
+
+    it('does not cache anything when the contract info 404s', async () => {
+      mockApiClientGet.mockRejectedValueOnce(new ApiError('not found', 404, 'info_not_found'));
+      await getTokenCoinInfo({ address: USDC_MINT });
+
+      mockApiClientGet.mockResolvedValueOnce({ data: MOCK_MARKET_CHART });
+      await getTokenMarketChart({ address: USDC_MINT });
+      expect(mockApiClientGet).toHaveBeenLastCalledWith(
+        `/v1/chart/solana/contract/${USDC_MINT}`,
+        { params: { days: 7, currency: 'usd' } }
+      );
+    });
+  });
+
+  // ==========================================================================
   // Cache Management Tests
   // ==========================================================================
 
@@ -606,10 +653,69 @@ describe('Price Service', () => {
       10000
     );
 
-    // TODO: add a live integration test for getContractCoinInfo (USDC mint)
-    // once the backend ships GET /v1/coin/{platform}/contract/{address} —
-    // against the current backend the route 404s by design (deploy-order
-    // safety), so a live test would only ever assert null.
+    it(
+      'should fetch real contract coin info for USDC from backend (arms itself when the route ships)',
+      async () => {
+        if (!backendBaseUrl) {
+          console.log('Skipping backend integration test - backend not available');
+          return;
+        }
+
+        const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+        const BOGUS_MINT = '11111111111111111111111111111111';
+
+        // Probe: a live backend that predates salmon-api PR #15 has no
+        // /v1/coin/{platform}/contract/{address} route — express answers a
+        // route-level 404 ("Cannot GET", no info_not_found shape). That is a
+        // deploy-order gap, not a contract break: skip with a clear message.
+        // Once the route exists, USDC must resolve (it is listed), so any
+        // 404 shape for it falls through and fails the assertions below.
+        const probe = await fetch(
+          `${backendBaseUrl}/v1/coin/solana/contract/${USDC_MINT}?currency=usd`,
+          { signal: AbortSignal.timeout(5000) }
+        );
+        if (probe.status === 404) {
+          const body = await probe.json().catch(() => null);
+          if (body?.error !== 'info_not_found') {
+            console.log('Skipping - backend predates /v1/coin contract route (salmon-api PR #15)');
+            return;
+          }
+        }
+
+        // Proxy the mocked apiClient to the live backend, mapping non-2xx to
+        // ApiError so the 404 -> null semantics are exercised end to end.
+        mockApiClientGet.mockImplementation(async (path, config) => {
+          const params = (config as { params?: Record<string, string | number> } | undefined)?.params ?? {};
+          const qs = new URLSearchParams(
+            Object.entries(params).map(([k, v]) => [k, String(v)])
+          ).toString();
+          const response = await fetch(`${backendBaseUrl}${path}${qs ? `?${qs}` : ''}`, {
+            signal: AbortSignal.timeout(5000),
+          });
+          if (!response.ok) {
+            const body = (await response.json().catch(() => null)) as
+              | { error?: string; error_description?: string }
+              | null;
+            throw new ApiError(
+              body?.error_description ?? `Backend request failed: ${response.status}`,
+              response.status,
+              body?.error
+            );
+          }
+          return { data: await response.json() };
+        });
+
+        const info = await getContractCoinInfo('solana', USDC_MINT);
+        expect(info).not.toBeNull();
+        expect(info!.id).toBeTruthy();
+        expect(info!.marketData).toBeDefined();
+        expect(info!.description).toBeTruthy();
+
+        const bogus = await getContractCoinInfo('solana', BOGUS_MINT);
+        expect(bogus).toBeNull();
+      },
+      15000
+    );
   });
 
   // ==========================================================================
