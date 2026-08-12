@@ -5,6 +5,7 @@
   "types": "./src/index.ts",
   "private": true,
   "scripts": {
+    "postinstall": "wxt prepare",
     "dev": "wxt",
     "build": "wxt build",
     "build:staging": "wxt build --mode staging",
