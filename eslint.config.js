@@ -149,14 +149,44 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
-  // @solana/web3.js is gone from every production path in this repo. This warns
-  // when one comes back, rather than failing the build.
+  // @salmon/ui is DOM-only and must never enter the React Native bundle
+  // (AGENTS.md ownership rule). Until now this was prose plus the accident
+  // that apps/mobile/tsconfig.json has no path mapping for @salmon/ui; this
+  // makes the boundary explicit and lint-enforced.
+  // Core no-restricted-imports (not the @typescript-eslint one) on purpose:
+  // the block below configures @typescript-eslint/no-restricted-imports for
+  // every file, and flat config replaces same-named rules wholesale — a
+  // second config of that rule here would clobber one restriction or the
+  // other for mobile files.
+  {
+    files: ['apps/mobile/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@salmon/ui', '@salmon/ui/*'],
+              message:
+                '@salmon/ui is DOM-only and breaks the native bundle. Use apps/mobile components or the cross-platform contracts in @salmon/shared/types/ui.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // @solana/web3.js is gone from every production path in this repo. This
+  // errors when one comes back, instead of drifting back in one import at a
+  // time.
   //
-  // Deliberately a warning: kit is younger than web3.js and does not cover
-  // everything it does. Reaching back for a v1 API is a legitimate answer to a
-  // gap, and the person doing it knows more about their case than this rule
-  // does. What the warning buys is that it happens on purpose and shows up in
-  // review, instead of drifting back in one import at a time.
+  // Escape hatch on purpose: kit is younger than web3.js and does not cover
+  // everything it does. Reaching back for a v1 API is a legitimate answer to
+  // a gap, and the person doing it knows more about their case than this rule
+  // does. When that happens, add an inline eslint-disable with a one-line
+  // justification — it happens on purpose and shows up in review.
+  // (These were warnings until lint gained --max-warnings 0, which made
+  // "warning" mean "broken build" anyway; error + disable-comment keeps the
+  // original intent under that regime.)
   //
   // Tests are exempt entirely: the kit code is verified against web3.js
   // fixtures (the OCMS/SIWS/dApp-approval golden vectors are produced by web3.js
@@ -175,11 +205,11 @@ export default [
     plugins: { '@typescript-eslint': typescript },
     rules: {
       '@typescript-eslint/no-restricted-imports': [
-        'warn',
+        'error',
         { patterns: ['@solana/web3.js'] },
       ],
       'no-restricted-syntax': [
-        'warn',
+        'error',
         {
           selector: 'TSImportType[source.value="@solana/web3.js"]',
           message: "'@solana/web3.js' import is restricted from being used by a pattern.",

@@ -5,7 +5,7 @@
   "types": "./src/index.ts",
   "private": true,
   "scripts": {
-    "lint": "eslint src --ext .ts,.tsx --ignore-pattern 'src/blockchain/solana/nft-image-overrides.ts'",
+    "lint": "eslint src --ext .ts,.tsx --ignore-pattern 'src/blockchain/solana/nft-image-overrides.ts' --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "i18n:check": "node scripts/check-i18n-keys.mjs",
     "test": "node --no-warnings ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
