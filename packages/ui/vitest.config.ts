@@ -11,4 +11,10 @@ export default defineConfig({
       '@salmon/shared/utils/': fileURLToPath(new URL('../shared/src/utils/', import.meta.url)),
     },
   },
+  test: {
+    // First render of the MUI-heavy component trees takes >5s on cold 2-core
+    // CI runners; the default 5s timeout flakes there while meaning nothing
+    // locally.
+    testTimeout: 20000,
+  },
 });
