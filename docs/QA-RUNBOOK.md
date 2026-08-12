@@ -12,28 +12,78 @@ Scope: the monorepo's three runtimes — `apps/web` (React + MUI), `apps/extensi
 
 ---
 
-## TL;DR — pre-release gate
+## TL;DR — per-change gate
 
-Run from the repo root. All of these must be green before merging:
+CI runs this on every PR (`.github/workflows/ci.yml`); the same command works
+locally from the repo root:
 
 ```bash
-# 1. Types (all packages)
-pnpm turbo run typecheck --filter=@salmon/shared --filter=@salmon/ui \
-  --filter=@salmon/web --filter=@salmon/extension --filter=@salmon/mobile
-
-# 2. Unit / component tests
-pnpm --filter @salmon/shared test          # vitest
-pnpm --filter @salmon/ui test              # vitest
-pnpm --filter @salmon/mobile test          # jest
-
-# 3. i18n key parity (en/es in sync)
-pnpm --filter @salmon/shared i18n:check
+pnpm turbo run typecheck lint test   # all 5 packages, zero warnings enforced
+node scripts/check-i18n.mjs          # en/es key parity + orphans
 ```
 
 The e2e suites and Lighthouse below need the backend up and are run per-surface
 (see each section). They **skip** when `../salmon-api` is unreachable, so they
 never fail a machine that simply doesn't have the backend running — but a
 reachable backend with wrong behaviour **does** fail them.
+
+---
+
+## Pre-release circuit
+
+The complete gate before tagging a release (`web/v*` tag, store submission,
+or extension zip). Ordered so the cheap layers fail first. Steps 1–2 are
+machine-run; 3–5 are local because they need things CI does not have (the
+Docker backend, funded test wallets, an iOS simulator).
+
+**1. PR checks already green** — every merged PR passed
+`typecheck + lint + test + check:i18n` (ci.yml). Nothing to re-run.
+
+**2. E2E workflow** — `.github/workflows/e2e.yml` runs the web and extension
+Playwright suites headless every night and on demand
+(`gh workflow run e2e.yml`). Check the latest run is green:
+`gh run list --workflow E2E --limit 1`. In CI these suites run **without**
+backend or seeded wallets, so backend/seed-gated specs skip — full depth
+comes from step 3. A PR can opt into this workflow with the `e2e` label.
+
+**3. Playwright suites at full depth (local)** — with `../salmon-api` running
+in Docker and real `.env.test` files (copied from `.env.test.example`, filled
+with the funded test seeds):
+
+```bash
+pnpm --filter @salmon/web e2e          # all 3 browser projects
+pnpm --filter @salmon/extension e2e    # headed by default
+```
+
+Expected: green, with only the on-chain specs skipped (they are gated by
+`SALMON_E2E_ONCHAIN=1` because they spend real SOL — run them only when the
+release touches send/burn paths, and expect a small balance drain).
+
+**4. Maestro (mobile, local — needs a booted iOS simulator or Android
+emulator with the Expo dev build installed)**:
+
+```bash
+cd apps/mobile/.maestro
+./run.sh suites/smoke.yaml     # read-only, always
+./run.sh suites/actions.yaml   # mutates state / sends real dust txs — release-blocking flows only
+```
+
+`run.sh` must be invoked from `.maestro/` (cwd-relative screenshots) and
+gates on the backend being reachable. See `.maestro/README.md` for the
+one-time setup and `.maestro/AGENTS.md` for known failure modes.
+
+**5. Backend-live integration tests (local)** — the `packages/shared` API
+tests marked with the skipIf-backend pattern only exercise the real contract
+when `../salmon-api` answers on `http://127.0.0.1:3001`:
+
+```bash
+pnpm --filter @salmon/shared test      # with the backend up: live blocks run instead of skipping
+```
+
+**Go / no-go**: steps 1–2 green + step 3 green + step 4 smoke green (+
+actions for release-blocking flows) + step 5 green with backend up. Any red
+that cannot be explained as environment (simulator missing, backend down) is
+a stop.
 
 ---
 
