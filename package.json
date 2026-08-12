@@ -1,9 +1,17 @@
 {
-  "name": "salmon-wallet-v3",
+  "name": "salmon-wallet-frontend",
   "version": "0.9.1",
   "type": "module",
   "private": true,
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Salmon-HQ/salmon-wallet-frontend.git"
+  },
+  "homepage": "https://github.com/Salmon-HQ/salmon-wallet-frontend#readme",
+  "bugs": {
+    "url": "https://github.com/Salmon-HQ/salmon-wallet-frontend/issues"
+  },
   "scripts": {
     "preinstall": "node scripts/check-build-env.cjs",
     "dev": "turbo run dev",

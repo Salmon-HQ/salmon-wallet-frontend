@@ -1,16 +1,41 @@
-# Review requirements for security-sensitive paths.
-# These areas can lose user funds if broken — changes require owner approval.
+# Review requirements. Order matters: the LAST matching pattern wins, so the
+# catch-all goes first and the security-sensitive paths at the bottom always
+# take precedence.
+#
+# Note: these rules only block merges once branch protection enables
+# "Require review from Code Owners" (see docs/REPO-SETTINGS.md).
 
-# Key material, seed encryption, persistence
+# Everything defaults to the maintainer.
+*  @Luquish
+
+# Root manifests and tooling — supply-chain surface.
+/package.json      @Luquish
+/pnpm-lock.yaml    @Luquish
+/pnpm-workspace.yaml  @Luquish
+/turbo.json        @Luquish
+/patches/          @Luquish
+/scripts/          @Luquish
+
+# Apps and shared packages.
+/apps/web/       @Luquish
+/apps/mobile/    @Luquish
+/apps/extension/ @Luquish
+/packages/ui/    @Luquish
+
+# Frontend contract with salmon-api — changes here must track the backend.
+/packages/shared/src/api/  @Luquish
+
+# CI/CD and deploy configuration.
+/.github/  @Luquish
+
+# Security-sensitive paths — these areas can lose user funds if broken.
+# Key material, seed encryption, persistence.
 /packages/shared/src/crypto/   @Luquish
 /packages/shared/src/storage/  @Luquish
 
-# Transaction building and signing
+# Transaction building and signing.
 /packages/shared/src/blockchain/  @Luquish
 
-# Wallet Standard surface and dApp approval flows
+# Wallet Standard surface and dApp approval flows.
 /apps/extension/src/wallet-standard/  @Luquish
 /apps/extension/src/entrypoints/      @Luquish
-
-# CI/CD and deploy configuration
-/.github/  @Luquish

@@ -1,0 +1,24 @@
+# Weekly, grouped: one PR per ecosystem per week instead of a PR per package.
+# Security updates are not limited by these groups — GitHub raises them as
+# soon as an advisory lands.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+    # Majors need a human decision in a wallet; they arrive as separate PRs.
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ['*']
