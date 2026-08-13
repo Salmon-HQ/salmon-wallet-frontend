@@ -66,7 +66,9 @@ Before running `suites/actions.yaml` or any single action flow, check what
 Wallet A / Wallet B actually hold — a quick RPC query against
 `SALMON_TEST_WALLET_A_ADDR` / `SALMON_TEST_WALLET_B_ADDR`
 (`solana balance <addr>`, `getTokenAccountsByOwner`) or opening the app
-and checking Home/Collectibles. These are real mainnet wallets.
+and checking Home/Collectibles. These are real mainnet wallets that you
+create and fund yourself in your gitignored `.env.test` — runs spend real
+SOL from them.
 
 Per-flow prerequisites:
 
