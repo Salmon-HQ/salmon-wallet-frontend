@@ -190,10 +190,6 @@ describe('solana service', () => {
       outputMint: 'mint-out',
       amount: '1000000',
       publicKey: 'wallet-1',
-      slippageBps: 50,
-      swapMode: 'ExactIn',
-      dynamicSlippage: true,
-      priorityLevel: 'high',
     });
 
     expect(mockApiClientGet).toHaveBeenCalledWith('/v1/solana-mainnet/ft/swap/order', {
@@ -202,10 +198,6 @@ describe('solana service', () => {
         outputMint: 'mint-out',
         amount: '1000000',
         publicKey: 'wallet-1',
-        slippageBps: 50,
-        swapMode: 'ExactIn',
-        dynamicSlippage: true,
-        priorityLevel: 'high',
       },
     });
     expect(result).toEqual(MOCK_SWAP_ORDER);

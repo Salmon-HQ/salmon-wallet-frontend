@@ -138,19 +138,6 @@ export async function getSwapOrder(
       queryParams.uiAmount = params.uiAmount;
     }
 
-    if (params.slippageBps !== undefined) {
-      queryParams.slippageBps = params.slippageBps;
-    }
-    if (params.swapMode) {
-      queryParams.swapMode = params.swapMode;
-    }
-    if (params.dynamicSlippage !== undefined) {
-      queryParams.dynamicSlippage = params.dynamicSlippage;
-    }
-    if (params.priorityLevel) {
-      queryParams.priorityLevel = params.priorityLevel;
-    }
-
     const { data } = await apiClient.get<SwapOrderResponse>(`/v1/${networkId}/ft/swap/order`, {
       params: queryParams,
     });

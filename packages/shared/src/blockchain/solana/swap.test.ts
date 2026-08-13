@@ -169,7 +169,6 @@ describe('getSwapQuote', () => {
       outputMint: USDC_MINT,
       amount: 1.0,
       publicKey: TEST_PUBLIC_KEY,
-      slippageBps: 50,
     };
 
     const quote = await getSwapQuote(
@@ -190,7 +189,6 @@ describe('getSwapQuote', () => {
         outputMint: USDC_MINT,
         uiAmount: '1',
         publicKey: TEST_PUBLIC_KEY,
-        slippageBps: 50,
       })
     );
     expect(mockGetSwapOrder.mock.calls[0]![1]).not.toHaveProperty('amount');
@@ -258,61 +256,21 @@ describe('getSwapQuote', () => {
     );
   });
 
-  it('should handle swap mode parameter', async () => {
+  it('does not send slippage/swap-mode/priority params the backend ignores', async () => {
     const params: SwapQuoteParams = {
       inputMint: SOL_ADDRESS,
       outputMint: USDC_MINT,
       amount: 1.0,
       publicKey: TEST_PUBLIC_KEY,
-      swapMode: 'ExactOut',
     };
 
     await getSwapQuote('solana-mainnet', params, {}, mockGetSwapOrder, mockGetTokenList);
 
-    expect(mockGetSwapOrder).toHaveBeenCalledWith(
-      'solana-mainnet',
-      expect.objectContaining({
-        swapMode: 'ExactOut',
-      })
-    );
-  });
-
-  it('should handle priority level parameter', async () => {
-    const params: SwapQuoteParams = {
-      inputMint: SOL_ADDRESS,
-      outputMint: USDC_MINT,
-      amount: 1.0,
-      publicKey: TEST_PUBLIC_KEY,
-      priorityLevel: 'high',
-    };
-
-    await getSwapQuote('solana-mainnet', params, {}, mockGetSwapOrder, mockGetTokenList);
-
-    expect(mockGetSwapOrder).toHaveBeenCalledWith(
-      'solana-mainnet',
-      expect.objectContaining({
-        priorityLevel: 'high',
-      })
-    );
-  });
-
-  it('should handle dynamic slippage parameter', async () => {
-    const params: SwapQuoteParams = {
-      inputMint: SOL_ADDRESS,
-      outputMint: USDC_MINT,
-      amount: 1.0,
-      publicKey: TEST_PUBLIC_KEY,
-      dynamicSlippage: true,
-    };
-
-    await getSwapQuote('solana-mainnet', params, {}, mockGetSwapOrder, mockGetTokenList);
-
-    expect(mockGetSwapOrder).toHaveBeenCalledWith(
-      'solana-mainnet',
-      expect.objectContaining({
-        dynamicSlippage: true,
-      })
-    );
+    const sent = mockGetSwapOrder.mock.calls[0]![1];
+    expect(sent).not.toHaveProperty('slippageBps');
+    expect(sent).not.toHaveProperty('swapMode');
+    expect(sent).not.toHaveProperty('dynamicSlippage');
+    expect(sent).not.toHaveProperty('priorityLevel');
   });
 
   it('should throw error when no route found', async () => {

@@ -155,10 +155,6 @@ export function useSwap({ account, networkId }: UseSwapParams): UseSwapResult {
           outputMint: params.outputMint,
           amount: params.amount,
           publicKey,
-          slippageBps: params.slippageBps ?? 50,
-          swapMode: params.swapMode,
-          dynamicSlippage: params.dynamicSlippage,
-          priorityLevel: params.priorityLevel,
         };
 
         const options: GetSwapQuoteOptions = {};

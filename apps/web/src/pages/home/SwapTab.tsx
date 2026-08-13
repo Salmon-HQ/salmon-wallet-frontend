@@ -139,7 +139,6 @@ export function SwapTab({ onNavigateHome }: SwapTabProps): React.ReactElement {
         outputMint: outToken.address,
         amount: parseFloat(amount),
         inputDecimals: inToken.decimals,
-        slippageBps: 50,
       });
       currentSharedQuoteRef.current = quote;
       return quote as unknown as SwapQuote;
