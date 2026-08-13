@@ -43,10 +43,24 @@ jobs:
           pnpm --filter @salmon/extension build:prod
           pnpm --filter @salmon/extension zip
 
-      - name: Build + zip Firefox (MV2)
+      - name: Build Firefox (MV2)
+        run: pnpm --filter @salmon/extension build:firefox:prod
+
+      # Mozilla's source review rebuilds the extension on Ubuntu and compares
+      # byte-for-byte against the submitted zip. Rebuild and diff hashes here
+      # so any nondeterminism fails this workflow instead of the AMO review.
+      - name: Verify Firefox build is deterministic
         run: |
+          (cd apps/extension/dist/firefox-mv2 && find . -type f -exec sha256sum {} \; | sort) > /tmp/ff-1.sha256
           pnpm --filter @salmon/extension build:firefox:prod
-          pnpm --filter @salmon/extension zip:firefox
+          (cd apps/extension/dist/firefox-mv2 && find . -type f -exec sha256sum {} \; | sort) > /tmp/ff-2.sha256
+          if ! diff /tmp/ff-1.sha256 /tmp/ff-2.sha256; then
+            echo "::error::Firefox build is not deterministic — AMO source review would fail"
+            exit 1
+          fi
+
+      - name: Zip Firefox (MV2)
+        run: pnpm --filter @salmon/extension zip:firefox
 
       # The wxt-generated *-sources.zip only contains apps/extension and is NOT
       # buildable for this pnpm monorepo (wxt-dev/wxt#2075). Use the full-repo
