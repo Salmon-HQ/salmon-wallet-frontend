@@ -109,3 +109,6 @@ CLAUDE.local.md
 docs/plans/
 docs/app-store/
 docs/research/
+
+# Generated AMO source archive (pnpm pack:sources)
+salmon-wallet-source.zip
