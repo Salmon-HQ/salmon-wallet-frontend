@@ -1,7 +1,9 @@
 name: Build Extension
 
-# Mode A (manual): builds the Chrome + Firefox extension packages and the
-# full-repo source archive, then uploads them as downloadable artifacts.
+# Builds the Chrome + Firefox extension packages and the full-repo source
+# archive, then uploads them as downloadable artifacts. Triggered by pushing
+# an `extension/v*` release tag (the normal path — the tag must match
+# apps/extension/package.json), or manually via workflow_dispatch.
 # It does NOT publish to any store — a human downloads the artifacts and
 # uploads them to the Chrome Web Store / AMO. No store secrets required.
 #
@@ -11,6 +13,9 @@ name: Build Extension
 
 on:
   workflow_dispatch: {}
+  push:
+    tags:
+      - 'extension/v*'
 
 permissions:
   contents: read
@@ -23,16 +28,31 @@ jobs:
         with:
           persist-credentials: false
 
+      # On tag-triggered runs, refuse to build if the tag does not match the
+      # extension's package.json version — a mismatched tag means the wrong
+      # commit was tagged, and the zips would carry a misleading version.
+      - name: Check tag matches extension version
+        if: startsWith(github.ref, 'refs/tags/extension/v')
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#extension/v}"
+          PKG_VERSION="$(jq -r .version apps/extension/package.json)"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag extension/v${TAG_VERSION} does not match apps/extension/package.json version ${PKG_VERSION}"
+            exit 1
+          fi
+
       # pnpm/action-setup reads the pinned version from package.json#packageManager
       # and avoids `corepack enable`, whose bundled keys fail signature
       # verification on Node 22.12.0 in CI.
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      # No dependency cache: this workflow builds release artifacts, and a
+      # poisoned cache written by an untrusted run must not feed a release
+      # (same policy as deploy-web.yml).
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0 # zizmor: ignore[cache-poisoning] -- setup-node does not cache unless `cache:` is set, and it is not
         with:
           node-version-file: .nvmrc
-          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
