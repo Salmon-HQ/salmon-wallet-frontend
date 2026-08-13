@@ -24,5 +24,5 @@ Out of scope: the backend API (separate repository — report there), third-part
 
 ## Notes for maintainers
 
-- Private vulnerability reporting is a GitHub feature for **public** repositories. While this repository is private it cannot be enabled; when the repository goes public, an admin must turn it on once under **Settings → Advanced Security → Private vulnerability reporting**.
+- Private vulnerability reporting must be enabled once by an admin under **Settings → Advanced Security → Private vulnerability reporting** so reports can be filed through GitHub.
 - Never commit seed phrases, private keys, or real wallet credentials — including in tests and fixtures. Test secrets live in gitignored `.env.test` files (see `CONTRIBUTING.md`).
