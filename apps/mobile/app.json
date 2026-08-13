@@ -12,9 +12,6 @@
     "androidStatusBar": {
       "barStyle": "light-content"
     },
-    "splash": {
-      "backgroundColor": "#10131c"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "io.salmonwallet.app",
@@ -71,7 +68,15 @@
       "expo-font",
       "expo-localization",
       "expo-web-browser",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#10131c",
+          "image": "./assets/images/splash-blank.png",
+          "imageWidth": 200
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
