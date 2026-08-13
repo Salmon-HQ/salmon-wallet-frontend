@@ -15,7 +15,7 @@ on:
   workflow_dispatch: {}
   push:
     tags:
-      - "extension/v*"
+      - 'extension/v*'
 
 permissions:
   contents: read
