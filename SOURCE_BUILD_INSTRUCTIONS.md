@@ -17,11 +17,11 @@ source package, in a clean environment.
 
 ## 1. Prerequisites
 
-| Tool    | Exact version                 | Notes                                                                               |
-| ------- | ----------------------------- | ----------------------------------------------------------------------------------- |
-| Node.js | **22.12.0** (any 22.12.x LTS) | Pinned in `.nvmrc`. Node 20.19+ also works; **Node 24 is not supported.**           |
-| pnpm    | **9.x**                       | The only supported package manager. Provided via Corepack — do not use npm or yarn. |
-| OS      | Linux / macOS                 | A POSIX shell.                                                                      |
+| Tool    | Exact version                 | Notes                                                                                         |
+| ------- | ----------------------------- | --------------------------------------------------------------------------------------------- |
+| Node.js | **22.12.0** (any 22.12.x LTS) | Pinned in `.nvmrc`. Node 20.19+ also works; **Node 24 is not supported.**                     |
+| pnpm    | **9.x**                       | The only supported package manager. Install with `npm install -g pnpm@9` — not yarn, not npm. |
+| OS      | Linux / macOS                 | A POSIX shell.                                                                                |
 
 > **Why pnpm only:** this is a pnpm-workspace monorepo. The extension depends on
 > `packages/shared` and `packages/ui` through the `workspace:*` protocol, which
@@ -36,9 +36,16 @@ source package, in a clean environment.
 nvm install
 nvm use
 
-# Enable Corepack so the repo-pinned pnpm@9 is used automatically
-corepack enable
+# Install pnpm 9 (the pinned package-manager major)
+npm install -g pnpm@9
 ```
+
+> **Do not use `corepack enable` to provision pnpm.** The Corepack version
+> bundled with Node 22.12.0 ships outdated npm-registry signing keys and fails
+> to download pnpm with `Error: Cannot find matching keyid: ...`. Installing
+> pnpm via `npm install -g pnpm@9` avoids Corepack entirely and produces the
+> same pinned dependency tree (the tree is fixed by `pnpm-lock.yaml`, not by
+> the pnpm patch version).
 
 ## 2. Install dependencies
 
