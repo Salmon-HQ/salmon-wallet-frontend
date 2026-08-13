@@ -34,6 +34,10 @@ export type SwapStatus =
 
 /**
  * Parameters for getting a swap quote.
+ *
+ * Slippage, swap mode, and priority fees are not accepted: Jupiter Ultra
+ * decides them server-side and reports the outcome back on the quote
+ * (`SwapOrderResponse.custom`).
  */
 export interface GetQuoteParams {
   /** Input token mint address */
@@ -42,16 +46,8 @@ export interface GetQuoteParams {
   outputMint: string;
   /** Amount in human-readable format (e.g., 1.5 for 1.5 SOL) */
   amount: number;
-  /** Slippage tolerance in basis points (default: 50 = 0.5%) */
-  slippageBps?: number;
   /** Input token decimals (optional, fetched if not provided) */
   inputDecimals?: number;
-  /** Swap mode (default: 'ExactIn') */
-  swapMode?: 'ExactIn' | 'ExactOut';
-  /** Use dynamic slippage */
-  dynamicSlippage?: boolean;
-  /** Priority fee level */
-  priorityLevel?: 'none' | 'low' | 'medium' | 'high' | 'veryHigh';
 }
 
 /**
@@ -106,14 +102,6 @@ export interface SwapQuoteParams {
   amount: number;
   /** Public key of the wallet performing the swap */
   publicKey: string;
-  /** Slippage tolerance in basis points (optional, default: 50 = 0.5%) */
-  slippageBps?: number;
-  /** Swap mode (optional, default: 'ExactIn') */
-  swapMode?: 'ExactIn' | 'ExactOut';
-  /** Use dynamic slippage (optional) */
-  dynamicSlippage?: boolean;
-  /** Priority fee level (optional) */
-  priorityLevel?: 'none' | 'low' | 'medium' | 'high' | 'veryHigh';
 }
 
 /**
@@ -244,14 +232,6 @@ export interface SwapOrderParams {
   uiAmount?: string;
   /** User's public key */
   publicKey: string;
-  /** Slippage tolerance in basis points (optional, default: 50 = 0.5%) */
-  slippageBps?: number;
-  /** Swap mode (optional, default: 'ExactIn') */
-  swapMode?: 'ExactIn' | 'ExactOut';
-  /** Use dynamic slippage (optional) */
-  dynamicSlippage?: boolean;
-  /** Priority fee level (optional) */
-  priorityLevel?: 'none' | 'low' | 'medium' | 'high' | 'veryHigh';
 }
 
 /**

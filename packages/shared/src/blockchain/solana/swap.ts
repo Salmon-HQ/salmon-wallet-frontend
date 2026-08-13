@@ -150,7 +150,6 @@ function normalizeTokenAddress(address: string, userPublicKey: string): string {
  *     outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
  *     amount: 1.5, // human-readable
  *     publicKey: 'YourPublicKey...',
- *     slippageBps: 50, // 0.5%
  *   },
  *   {},
  *   fetchSwapOrder,
@@ -168,16 +167,7 @@ export async function getSwapQuote(
   _fetchTokenList: GetTokenListFn = () => Promise.resolve([])
 ): Promise<SwapQuote> {
   const networkId = typeof network === 'string' ? network : (network.id as SwapNetworkId);
-  const {
-    inputMint,
-    outputMint,
-    amount,
-    publicKey,
-    slippageBps,
-    swapMode,
-    dynamicSlippage,
-    priorityLevel,
-  } = params;
+  const { inputMint, outputMint, amount, publicKey } = params;
 
   // Normalize addresses (handle case where publicKey is passed instead of SOL_ADDRESS)
   const normalizedInputMint = normalizeTokenAddress(inputMint, publicKey);
@@ -187,10 +177,6 @@ export async function getSwapQuote(
     inputMint: normalizedInputMint,
     outputMint: normalizedOutputMint,
     publicKey,
-    slippageBps,
-    swapMode,
-    dynamicSlippage,
-    priorityLevel,
   };
 
   if (options.inputDecimals !== undefined) {

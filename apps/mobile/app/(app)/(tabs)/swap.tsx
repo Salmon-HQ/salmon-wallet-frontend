@@ -149,7 +149,6 @@ export default function SwapScreenPage() {
         outputMint: outToken.address,
         amount: inputAmount,
         inputDecimals: inToken.decimals,
-        slippageBps: 50, // 0.5% default slippage
       });
 
       if (!quote) {

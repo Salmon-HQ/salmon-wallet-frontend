@@ -140,7 +140,6 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
         outputMint: outToken.address,
         amount: inputAmount,
         inputDecimals: inToken.decimals,
-        slippageBps: 50,
       });
 
       if (!quote) throw new Error(swapError || 'swap.errors.quoteFailed');
