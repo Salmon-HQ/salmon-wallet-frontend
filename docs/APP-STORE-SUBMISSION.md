@@ -32,11 +32,13 @@ the version page.
 ## 2. Version page — copy to paste
 
 **Promotional Text** (170 max, editable without review):
+
 ```
 Self-custodial Solana & Bitcoin wallet. Your keys, your coins. Send, receive, swap, and track tokens — open source and non-custodial.
 ```
 
 **Description** (4000 max):
+
 ```
 Salmon is an open-source, self-custodial crypto wallet for Solana and Bitcoin. You hold your own keys — Salmon never has access to your funds or your seed phrase.
 
@@ -58,6 +60,7 @@ Salmon is non-custodial software. You are responsible for safeguarding your reco
 ```
 
 **Keywords** (100 max, comma-separated, no spaces):
+
 ```
 crypto,wallet,solana,bitcoin,web3,self-custody,swap,SPL,defi,blockchain,seed,token
 ```
@@ -104,6 +107,7 @@ to control the go-live moment.
 ## 5. Left-sidebar sections that must be green before "Add for Review"
 
 ### App Information (General)
+
 - **Privacy Policy URL** (required): needs a reachable privacy policy. If
   `https://salmonwallet.io/privacy` exists, use it. If not, publish one first —
   ASC will not let you submit without it.
@@ -112,7 +116,9 @@ to control the go-live moment.
   this app, "No, it does not contain, show, or access third-party content."
 
 ### App Privacy (Trust & Safety) — declare honestly
+
 Analytics is opt-in and anonymous. Declare:
+
 - **Usage Data → Product Interaction**: **Collected**.
   - Linked to the user? **No** (install id is a random UUID, not tied to
     identity, seed, or address).
@@ -125,11 +131,13 @@ If asked "Do you collect data?": **Yes** (because of optional analytics), then
 only the Product Interaction toggle above.
 
 ### Age Rating (App Information → Age Rating)
+
 Answer the questionnaire honestly. Crypto wallet with no gambling/violence
 → typically **17+** because of "Unrestricted Web Access" / financial nature;
 follow Apple's questions, don't force a number.
 
 ### Pricing and Availability
+
 Price = **Free**. Availability = all territories (or restrict if you have
 legal reasons to exclude any).
 
@@ -182,6 +190,7 @@ readable by anyone with account access and are not a secret store.
 
 The app uses encryption (wallet crypto + HTTPS). At submit you'll be asked
 about encryption:
+
 - It uses standard crypto (key derivation, signing) — most wallets qualify for
   the exemption for apps that only use encryption for authentication / standard
   algorithms and don't implement proprietary crypto.
