@@ -104,6 +104,12 @@ find . -type f -exec sha256sum {} \; | sort
 The build is deterministic: repeating steps 2–3 in the same environment yields
 byte-identical output.
 
+> **OS matters for byte-identity.** The published artifact is built on
+> **Linux** (Node 22.12.0). Building this source package on Linux reproduces
+> it byte-for-byte. Building on macOS yields a functionally identical bundle
+> whose main chunk differs slightly (platform-specific minifier output), so
+> hashes will not match — always compare against a Linux build.
+
 ## 5. Determinism guarantees
 
 This source package is reproducible because:
