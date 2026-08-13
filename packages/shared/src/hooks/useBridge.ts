@@ -81,14 +81,19 @@ export interface UseBridgeResult {
   ) => Promise<BridgeEstimate | null>;
 
   // Exchange operations
-  /** Create a bridge exchange. Rejects with the provider error on failure. */
+  /**
+   * Create a bridge exchange. Rejects with the provider error on failure.
+   * `refundAddress` is the wallet's own address on the source chain; it is
+   * optional and only used by the provider when the exchange fails.
+   */
   createExchange: (
     symbolIn: string,
     symbolOut: string,
     amount: number,
     addressTo: string,
     networkIn?: string,
-    networkOut?: string
+    networkOut?: string,
+    refundAddress?: string
   ) => Promise<BridgeExchange | null>;
 
   // Status tracking
@@ -285,7 +290,8 @@ export function useBridge(_params?: UseBridgeParams): UseBridgeResult {
       amount: number,
       addressTo: string,
       networkIn?: string,
-      networkOut?: string
+      networkOut?: string,
+      refundAddress?: string
     ): Promise<BridgeExchange | null> => {
       setStatus('creating-exchange');
       setError(null);
@@ -298,7 +304,8 @@ export function useBridge(_params?: UseBridgeParams): UseBridgeResult {
           amount,
           addressTo,
           networkIn,
-          networkOut
+          networkOut,
+          refundAddress
         );
 
         if (!result) {

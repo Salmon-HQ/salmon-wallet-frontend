@@ -273,7 +273,10 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
         amount,
         addressTo,
         networkIn,
-        networkOut
+        networkOut,
+        // Refund address: the deposit is sent from the active account
+        // (see onSendDeposit), so a failed exchange must come back there.
+        activeBlockchainAccount?.getReceiveAddress()
       );
       if (!exchange) return null;
       return {
@@ -287,7 +290,7 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
         status: exchange.status,
       };
     },
-    [createBridgeExchange]
+    [createBridgeExchange, activeBlockchainAccount]
   );
 
   const handleGetBridgeTransactionStatus = useCallback(

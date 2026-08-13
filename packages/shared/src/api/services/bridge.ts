@@ -148,6 +148,9 @@ export async function getBridgeMinimalAmount(
  * @param symbolOut - Output token symbol
  * @param amount - Amount to exchange
  * @param addressTo - Destination address to receive the output tokens
+ * @param refundAddress - The wallet's own address on the `symbolIn` chain.
+ *   Optional; forwarded to StealthEX as `refund_address` so a failed
+ *   exchange refunds to the user instead of falling back to StealthEX policy.
  * @returns Bridge exchange details or null if creation failed
  */
 export async function createBridgeExchange(
@@ -156,7 +159,8 @@ export async function createBridgeExchange(
   amount: number,
   addressTo: string,
   networkIn?: string,
-  networkOut?: string
+  networkOut?: string,
+  refundAddress?: string
 ): Promise<BridgeExchange | null> {
   try {
     const body: Record<string, string | number> = {
@@ -167,6 +171,7 @@ export async function createBridgeExchange(
     };
     if (networkIn) body.networkIn = networkIn;
     if (networkOut) body.networkOut = networkOut;
+    if (refundAddress) body.refundAddress = refundAddress;
     const { data } = await apiClient.post<BridgeExchange>('/v1/bridge/exchange', body);
     return data ?? null;
   } catch (error) {

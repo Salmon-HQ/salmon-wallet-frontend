@@ -204,6 +204,33 @@ describe('bridge service', () => {
     expect(result).toEqual(MOCK_EXCHANGE);
   });
 
+  it('forwards a refund address when the caller supplies one', async () => {
+    mockApiClientPost.mockResolvedValueOnce({ data: MOCK_EXCHANGE });
+
+    await createBridgeExchange(
+      'SOL',
+      'BTC',
+      1.5,
+      'destination-address',
+      'SOLANA',
+      'BITCOIN',
+      'source-chain-address'
+    );
+
+    expect(mockApiClientPost).toHaveBeenCalledWith(
+      '/v1/bridge/exchange',
+      expect.objectContaining({ refundAddress: 'source-chain-address' })
+    );
+  });
+
+  it('omits refundAddress when the caller has no source address', async () => {
+    mockApiClientPost.mockResolvedValueOnce({ data: MOCK_EXCHANGE });
+
+    await createBridgeExchange('SOL', 'BTC', 1.5, 'destination-address');
+
+    expect(mockApiClientPost.mock.calls[0][1]).not.toHaveProperty('refundAddress');
+  });
+
   it('fetches a bridge transaction by id', async () => {
     mockApiClientGet.mockResolvedValueOnce({ data: MOCK_TRANSACTION });
 
