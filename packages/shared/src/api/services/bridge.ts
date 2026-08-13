@@ -8,7 +8,7 @@
  * - GET /v1/bridge/available - Get available tokens to bridge to from a given symbol
  * - GET /v1/bridge/estimate - Get estimated output amount for a bridge swap
  * - GET /v1/bridge/minimal - Get minimum amount required for a bridge swap
- * - GET /v1/bridge/exchange - Create a new bridge exchange transaction
+ * - POST /v1/bridge/exchange - Create a new bridge exchange transaction
  * - GET /v1/bridge/transaction - Get the status of a bridge transaction
  */
 
@@ -138,7 +138,11 @@ export async function getBridgeMinimalAmount(
 /**
  * Create a new bridge exchange transaction
  *
- * Endpoint: GET /v1/bridge/exchange
+ * Endpoint: POST /v1/bridge/exchange
+ *
+ * POST, not GET: creation is a side effect and the shared client retries
+ * failed GETs, so a lost response could create a second upstream order.
+ * The backend still serves the legacy GET route for already-shipped builds.
  *
  * @param symbolIn - Input token symbol
  * @param symbolOut - Output token symbol
@@ -155,17 +159,15 @@ export async function createBridgeExchange(
   networkOut?: string
 ): Promise<BridgeExchange | null> {
   try {
-    const params: Record<string, string | number> = {
+    const body: Record<string, string | number> = {
       symbolIn: symbolIn.toLowerCase(),
       symbolOut: symbolOut.toLowerCase(),
       amount,
       addressTo,
     };
-    if (networkIn) params.networkIn = networkIn;
-    if (networkOut) params.networkOut = networkOut;
-    const { data } = await apiClient.get<BridgeExchange>('/v1/bridge/exchange', {
-      params,
-    });
+    if (networkIn) body.networkIn = networkIn;
+    if (networkOut) body.networkOut = networkOut;
+    const { data } = await apiClient.post<BridgeExchange>('/v1/bridge/exchange', body);
     return data ?? null;
   } catch (error) {
     console.error('[BridgeService] Failed to create bridge exchange:', error);

@@ -23,6 +23,7 @@ import {
 } from './bridge';
 
 const mockApiClientGet = vi.mocked(apiClient.get);
+const mockApiClientPost = vi.mocked(apiClient.post);
 const DEFAULT_LOCAL_HOST = 'localhost';
 
 function getBackendBaseUrlCandidates(): string[] {
@@ -179,8 +180,8 @@ describe('bridge service', () => {
     expect(result).toEqual({ min: null, max: null });
   });
 
-  it('lowercases symbols and forwards destination data when creating an exchange', async () => {
-    mockApiClientGet.mockResolvedValueOnce({ data: MOCK_EXCHANGE });
+  it('creates an exchange over POST so a retried request cannot duplicate the order', async () => {
+    mockApiClientPost.mockResolvedValueOnce({ data: MOCK_EXCHANGE });
 
     const result = await createBridgeExchange(
       'SOL',
@@ -191,16 +192,15 @@ describe('bridge service', () => {
       'BITCOIN'
     );
 
-    expect(mockApiClientGet).toHaveBeenCalledWith('/v1/bridge/exchange', {
-      params: {
-        symbolIn: 'sol',
-        symbolOut: 'btc',
-        amount: 1.5,
-        addressTo: 'destination-address',
-        networkIn: 'SOLANA',
-        networkOut: 'BITCOIN',
-      },
+    expect(mockApiClientPost).toHaveBeenCalledWith('/v1/bridge/exchange', {
+      symbolIn: 'sol',
+      symbolOut: 'btc',
+      amount: 1.5,
+      addressTo: 'destination-address',
+      networkIn: 'SOLANA',
+      networkOut: 'BITCOIN',
     });
+    expect(mockApiClientGet).not.toHaveBeenCalled();
     expect(result).toEqual(MOCK_EXCHANGE);
   });
 
@@ -216,7 +216,7 @@ describe('bridge service', () => {
   });
 
   it('wraps exchange creation failures with bridge-specific context', async () => {
-    mockApiClientGet.mockRejectedValueOnce(new Error('exchange down'));
+    mockApiClientPost.mockRejectedValueOnce(new Error('exchange down'));
 
     await expect(createBridgeExchange('SOL', 'BTC', 1.5, 'destination-address')).rejects.toThrow(
       'Bridge create exchange failed: exchange down'
@@ -266,15 +266,13 @@ describe('bridge service integration', () => {
 
     const safeAmount = Number((minAmount * 1.5).toFixed(8));
 
-    const exchangeResponse = await client.get<BridgeExchange>('/v1/bridge/exchange', {
-      params: {
-        symbolIn: 'sol',
-        symbolOut: 'btc',
-        amount: safeAmount,
-        addressTo: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-        networkIn: 'SOLANA',
-        networkOut: 'BITCOIN',
-      },
+    const exchangeResponse = await client.post<BridgeExchange>('/v1/bridge/exchange', {
+      symbolIn: 'sol',
+      symbolOut: 'btc',
+      amount: safeAmount,
+      addressTo: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+      networkIn: 'SOLANA',
+      networkOut: 'BITCOIN',
     });
 
     expect(exchangeResponse.status).toBe(200);
