@@ -227,7 +227,10 @@ export function SwapTab({ onNavigateHome }: SwapTabProps): React.ReactElement {
         amount,
         addressTo,
         networkIn,
-        networkOut
+        networkOut,
+        // Refund address: the deposit is sent from the active account
+        // (see onSendDeposit), so a failed exchange must come back there.
+        activeBlockchainAccount?.getReceiveAddress()
       );
       if (!result) return null;
       return {
@@ -241,7 +244,7 @@ export function SwapTab({ onNavigateHome }: SwapTabProps): React.ReactElement {
         status: result.status,
       };
     },
-    [createBridgeExchange]
+    [createBridgeExchange, activeBlockchainAccount]
   );
 
   const handleGetBridgeTransactionStatus = useCallback(
