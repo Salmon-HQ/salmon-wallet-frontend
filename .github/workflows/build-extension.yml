@@ -50,7 +50,7 @@ jobs:
       # No dependency cache: this workflow builds release artifacts, and a
       # poisoned cache written by an untrusted run must not feed a release
       # (same policy as deploy-web.yml).
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0 # zizmor: ignore[cache-poisoning] -- setup-node does not cache unless `cache:` is set, and it is not
         with:
           node-version-file: .nvmrc
 
