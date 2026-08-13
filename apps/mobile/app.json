@@ -3,7 +3,7 @@
     "name": "Salmon Wallet",
     "slug": "salmon-wallet",
     "owner": "salmon-wallet",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/ios-icon.png",
     "scheme": "salmonwallet",

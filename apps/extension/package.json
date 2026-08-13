@@ -5,7 +5,7 @@
   "types": "./src/index.ts",
   "private": true,
   "scripts": {
-    "postinstall": "wxt prepare",
+    "postinstall": "node -e \"try{require.resolve('wxt')}catch{process.exit(0)};require('child_process').execSync('wxt prepare',{stdio:'inherit'})\"",
     "dev": "wxt",
     "build": "wxt build",
     "build:staging": "wxt build --mode staging",
