@@ -10,11 +10,17 @@ import { validateDestinationAccount } from './validation';
 
 const mockGetPublicKeyFromDomain = vi.mocked(getPublicKeyFromDomain);
 
-/** Builds a minimal rpc stub whose getAccountInfo(...).send() resolves to `value`. */
-function mockRpc(value: { lamports: bigint } | null) {
+/**
+ * Builds a minimal rpc stub whose getAccountInfo(...).send() resolves to `value`
+ * and whose getTokenAccountsByOwner(...).send() resolves to `tokenAccounts`.
+ */
+function mockRpc(value: { lamports: bigint } | null, tokenAccounts: unknown[] = []) {
   return {
     getAccountInfo: vi.fn().mockReturnValue({
       send: vi.fn().mockResolvedValue({ value }),
+    }),
+    getTokenAccountsByOwner: vi.fn().mockReturnValue({
+      send: vi.fn().mockResolvedValue({ value: tokenAccounts }),
     }),
   } as any;
 }
@@ -55,7 +61,7 @@ describe('solana validation', () => {
     expect(rpc.getAccountInfo).toHaveBeenCalledWith(addr, { encoding: 'base64' });
   });
 
-  it('returns warning for on-curve addresses with no account info', async () => {
+  it('returns warning for on-curve addresses with no account info and no token accounts', async () => {
     const rpc = mockRpc(null);
 
     await expect(
@@ -64,6 +70,64 @@ describe('solana validation', () => {
       type: 'WARNING',
       code: 'no_info',
     });
+    // Both classic SPL and Token-2022 programs are checked before warning
+    expect(rpc.getTokenAccountsByOwner).toHaveBeenCalledTimes(2);
+  });
+
+  it('validates active wallets whose system account was deallocated but own token accounts', async () => {
+    const rpc = mockRpc(null, [{ pubkey: 'someTokenAccount' }]);
+
+    await expect(
+      validateDestinationAccount(rpc, 'HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk')
+    ).resolves.toEqual({
+      type: 'SUCCESS',
+      code: 'valid',
+      addressType: 'PUBLIC_KEY',
+    });
+  });
+
+  it('validates active wallets funded only via Token-2022 accounts', async () => {
+    const rpc = mockRpc(null);
+    rpc.getTokenAccountsByOwner
+      .mockReturnValueOnce({ send: vi.fn().mockResolvedValue({ value: [] }) })
+      .mockReturnValueOnce({
+        send: vi.fn().mockResolvedValue({ value: [{ pubkey: 'token2022Account' }] }),
+      });
+
+    await expect(
+      validateDestinationAccount(rpc, 'HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk')
+    ).resolves.toEqual({
+      type: 'SUCCESS',
+      code: 'valid',
+      addressType: 'PUBLIC_KEY',
+    });
+  });
+
+  it('falls back to the warning when the token account lookup fails', async () => {
+    const rpc = mockRpc(null);
+    rpc.getTokenAccountsByOwner.mockReturnValue({
+      send: vi.fn().mockRejectedValue(new Error('rpc down')),
+    });
+
+    await expect(
+      validateDestinationAccount(rpc, 'HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk')
+    ).resolves.toEqual({
+      type: 'WARNING',
+      code: 'no_info',
+    });
+  });
+
+  it('does not query token accounts for funded on-curve wallets', async () => {
+    const rpc = mockRpc({ lamports: 1_000_000n });
+
+    await expect(
+      validateDestinationAccount(rpc, 'HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk')
+    ).resolves.toEqual({
+      type: 'SUCCESS',
+      code: 'valid',
+      addressType: 'PUBLIC_KEY',
+    });
+    expect(rpc.getTokenAccountsByOwner).not.toHaveBeenCalled();
   });
 
   it('distinguishes off-curve addresses with and without funds', async () => {
