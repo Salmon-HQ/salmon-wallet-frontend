@@ -14,7 +14,8 @@
  * - Comprehensive validation result codes
  */
 
-import { isAddress, isOffCurveAddress } from '@solana/addresses';
+import { isAddress, isOffCurveAddress, address as toAddress } from '@solana/addresses';
+import { TOKEN_2022_PROGRAM_ADDRESS } from '@solana-program/token-2022';
 import { getPublicKeyFromDomain } from './domains';
 import type { SolanaRpc } from './networks';
 import type {
@@ -57,6 +58,42 @@ const OFF_CURVE_HAS_FUNDS: ValidationResult = {
 // ============================================================================
 // Internal Helper Functions
 // ============================================================================
+
+// @solana-program/token does not load against @solana/kit@7 (see transfer.ts),
+// so the classic SPL Token program id is declared locally.
+const TOKEN_PROGRAM_ADDRESS = toAddress('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+
+/**
+ * Checks whether a wallet owns at least one SPL token account.
+ *
+ * A wallet whose system account was deallocated (all SOL spent) can still be
+ * an active wallet: its token accounts carry their own rent and survive.
+ * Without this check such wallets are reported as "does not exist on-chain".
+ *
+ * @param rpc - Kit RPC client
+ * @param owner - Wallet address to check
+ * @returns True if the wallet owns any token account (classic or Token-2022)
+ */
+async function hasTokenAccounts(rpc: SolanaRpc, owner: string): Promise<boolean> {
+  try {
+    const ownerAddress = toAddress(owner);
+    const results = await Promise.all(
+      [TOKEN_PROGRAM_ADDRESS, TOKEN_2022_PROGRAM_ADDRESS].map((programId) =>
+        rpc
+          .getTokenAccountsByOwner(
+            ownerAddress,
+            { programId },
+            { encoding: 'base64', dataSlice: { offset: 0, length: 0 } }
+          )
+          .send()
+      )
+    );
+    return results.some((response) => response.value.length > 0);
+  } catch {
+    // Conservative fallback: keep the pre-existing NO_INFO warning path.
+    return false;
+  }
+}
 
 /**
  * Checks if a string is a valid Solana address
@@ -109,11 +146,10 @@ async function validatePublicKey(rpc: SolanaRpc, address: string): Promise<Valid
 
   if (isOnCurve) {
     // Regular on-curve address
-    if (accountInfo === null) {
-      return NO_INFO;
-    }
-    if (accountInfo.lamports === 0n) {
-      return NO_INFO;
+    if (accountInfo === null || accountInfo.lamports === 0n) {
+      // No system account, but the wallet may still be active: token accounts
+      // survive when all SOL is spent and the system account is deallocated.
+      return (await hasTokenAccounts(rpc, address)) ? VALID_ACCOUNT : NO_INFO;
     }
     return VALID_ACCOUNT;
   } else {
