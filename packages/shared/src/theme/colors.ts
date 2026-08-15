@@ -4,7 +4,7 @@
  */
 
 import type { BlockchainId } from '../types/ui/balance-card';
-import { danger, neutral, salmon, success } from './palette';
+import { danger, neutral, salmon, success, warning } from './palette';
 import { scales } from './semantic';
 
 export const colors = {
@@ -39,10 +39,17 @@ export const colors = {
     tint: 'rgba(255, 92, 69, 0.1)',
     tintHover: 'rgba(255, 92, 69, 0.15)',
   },
+  /**
+   * Status ink. The stock Tailwind hexes (`#10B981`, `#EF4444`, `#F59E0B`)
+   * are retired — the migration `change` already made onto the semantic ramps,
+   * finished here so all ~215 `colors.status.*` call sites land on the real
+   * palette at once instead of one surface at a time. These are ink values:
+   * text, icons, and thin strokes, never a saturated filled disc.
+   */
   status: {
-    success: '#10B981',
-    error: '#EF4444',
-    warning: '#F59E0B',
+    success: success[500],
+    error: danger[500],
+    warning: warning[500],
     successBackground: 'rgba(76, 175, 80, 0.1)',
     errorBackground: 'rgba(239, 68, 68, 0.1)',
     warningBackground: 'rgba(255, 171, 0, 0.1)',
