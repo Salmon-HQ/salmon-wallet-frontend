@@ -211,6 +211,9 @@ export function TokenSelectorModal({
       transparent
       onRequestClose={handleClose}
       statusBarTranslucent
+      // See BottomSheetContainer: an RN Modal is its own window and does not
+      // inherit the activity's mandatory edge-to-edge layout.
+      navigationBarTranslucent
     >
       <GestureHandlerRootView style={styles.modalRoot}>
         <TouchableWithoutFeedback onPress={handleClose}>

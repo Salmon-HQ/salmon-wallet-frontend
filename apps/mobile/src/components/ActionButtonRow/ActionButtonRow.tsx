@@ -26,11 +26,13 @@ const ACTION_BUTTON_TEXT_SIZE = fontSize.md;
  *
  * Displays three main action buttons:
  * - Send: Primary orange gradient button
- * - Receive: Secondary glass effect button
- * - Activity: Secondary glass effect button
+ * - Receive: Secondary blurred button
+ * - Activity: Secondary blurred button
  *
- * iOS 26+: Uses native Liquid Glass effect via expo-glass-effect
- * iOS < 26 / Android: Falls back to BlurView with enhanced glass simulation
+ * These pills are content, not chrome: they scroll with the page rather than
+ * floating over it, so per DESIGN.md's "Content Is Never Glass" rule they are
+ * deliberately not a P3 membrane and do not use `expo-glass-effect`. The
+ * canonical membrane is the tab bar (see `Membrane`).
  *
  * @example
  * ```tsx

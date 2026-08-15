@@ -46,6 +46,13 @@ export default function AuthLayout() {
           }}
         />
 
+        {/*
+          `recover` and `create` inherit `gestureEnabled: true`. That is
+          correct: backing out of either returns to the welcome screen with no
+          key material written yet, and both screens already run their own
+          in-screen back button through the same path.
+        */}
+
         {/* Recover wallet with seed phrase */}
         <Stack.Screen name="recover" />
 
@@ -56,11 +63,20 @@ export default function AuthLayout() {
         <Stack.Screen
           name="password"
           options={{
-            // Don't allow back gesture during password setup
-            // to prevent accidentally losing progress
+            // Deliberate, and load-bearing: `create` calls `generateMnemonic()`
+            // fresh every time its start button is pressed. Swiping back here
+            // and forward again would hand the user a second seed phrase while
+            // the first one is already stashed for the vault write — a wallet
+            // whose recovery phrase was never shown. Do not enable.
             gestureEnabled: false,
           }}
         />
+
+        {/*
+          Everything below runs *after* the vault has been written. Going back
+          would land the user on password entry for a wallet that already
+          exists, so the gesture stays off on all four.
+        */}
 
         {/* Biometric setup prompt */}
         <Stack.Screen
@@ -82,7 +98,6 @@ export default function AuthLayout() {
         <Stack.Screen
           name="success"
           options={{
-            // Can't go back from success
             gestureEnabled: false,
           }}
         />
@@ -91,7 +106,6 @@ export default function AuthLayout() {
         <Stack.Screen
           name="derived-accounts"
           options={{
-            // Can't go back from derived accounts
             gestureEnabled: false,
           }}
         />

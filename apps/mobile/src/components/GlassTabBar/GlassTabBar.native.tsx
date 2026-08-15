@@ -10,13 +10,14 @@ import {
   vs,
   borderWidth,
   gradients,
+  semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { BlurContainer } from '../BlurContainer';
+import { Membrane } from '../Membrane';
 import { GridViewSvgIcon, HomeSvgIcon, SwapSvgIcon } from '../Icon';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import type { TabConfig } from './types';
@@ -117,17 +118,20 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
       ]}
     >
       <View style={styles.glassContainer}>
-        <BlurContainer
+        {/*
+          The tab bar is the app's canonical P3 membrane: chrome that floats
+          over scrolling content. `scrim` is `membraneThick` rather than
+          `membraneThin` because the tab labels are 11px — below the 15px /
+          weight-500 floor `membraneThin` guarantees.
+        */}
+        <Membrane
           style={styles.glassBackgroundLayer}
           blurIntensity={24}
-          backgroundColor={colors.background.glass}
+          blurBackgroundColor={colors.background.glass}
           borderColor={colors.border.subtle}
           borderWidth={borderWidth.thin}
-          useGradientBorder
-          pointerEvents="none"
-        >
-          <></>
-        </BlurContainer>
+          scrim={semantic.surface.membraneThick}
+        />
         <View style={styles.bar}>
           {visibleRoutes.map((route) => {
             const isFocused = state.routes[state.index]?.name === route.name;

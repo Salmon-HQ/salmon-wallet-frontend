@@ -266,6 +266,10 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
+      // targetSdk 36 makes edge-to-edge mandatory, but an RN Modal is its own
+      // window and does not inherit it: without this the sheet is inset by the
+      // navigation bar and its backdrop stops short of the bottom edge.
+      navigationBarTranslucent
       testID={testID}
     >
       <GestureHandlerRootView style={styles.gestureRoot}>

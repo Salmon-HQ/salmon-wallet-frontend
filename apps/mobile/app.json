@@ -35,7 +35,7 @@
         "backgroundColor": "#FF6F5B"
       },
       "backgroundColor": "#10131c",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": true
     },
     "web": {
       "bundler": "metro",
