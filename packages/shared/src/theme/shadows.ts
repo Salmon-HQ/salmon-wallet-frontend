@@ -104,6 +104,17 @@ export const shadowsCSS = {
   header: '0 10px 20px rgba(0, 0, 0, 0.9)',
   /** Balance card shadow */
   card: '0 12px 16px rgba(0, 0, 0, 0.8)',
+  /**
+   * Elevation E2 — the ambient a raised card casts on the plane below it.
+   * A real offset and a real blur, rather than a bigger version of `card`:
+   * depth here is material and edge, and the ambient only says "this object
+   * is off the ground".
+   */
+  cardAmbient: '0 8px 24px -8px rgba(3, 6, 12, 0.45)',
+  /** The lit rim. Every membrane and every raised card gets it. */
+  rimHighlight: 'inset 0 1px 0 rgba(226, 236, 255, 0.14)',
+  /** The underside, opposite the rim. */
+  rimShade: 'inset 0 -1px 0 rgba(3, 6, 12, 0.50)',
   /** Button / floating CTA shadow */
   button: '0 0 12px rgba(0, 0, 0, 0.64)',
 } as const;

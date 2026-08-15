@@ -15,3 +15,4 @@ export { salmonTheme } from './theme';
 
 // Utilities
 export { styled } from './utils/styled';
+export { visuallyHidden } from './utils/visuallyHidden';

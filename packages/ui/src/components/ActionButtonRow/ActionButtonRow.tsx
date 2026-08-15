@@ -25,8 +25,10 @@ import {
   opacity,
   duration,
   easing,
+  palette,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
+import { ScalesBackground } from '../ScalesBackground';
 import { SendIcon, ReceiveIcon, ActivityIcon } from '../Icon';
 import type { ActionButtonRowProps } from './types';
 
@@ -51,15 +53,19 @@ const ButtonWrapper = styled(Box)<{ $disabled?: boolean }>(({ $disabled }) => ({
 }));
 
 /**
- * Send. Neutral on purpose.
+ * Send. The screen's one living thing.
  *
- * The One Living Thing Rule: salmon appears once per screen, and on the home
- * screen it is spent on the active tab item — which is exactly why the action
- * pills are neutral. This one used to be a salmon-to-oxblood gradient with a
- * white label, so the home screen shipped three competing salmon objects and
- * a 3.06:1 label on the loudest of them.
+ * The One Living Thing Rule says salmon appears once per screen; it does not
+ * say where. It was spent on the active tab underline — the brand's single
+ * warm element sitting on "you are on Home" while the action that moves money
+ * looked identical to the two beside it. It is spent here now: a `accent.fill`
+ * pill with `accent.onFill` ink at 6.50:1 — never white, which is 3.06:1 and
+ * banned — and the scales at their true 1.0x scale pressed into the fill, the
+ * same body the `PrimaryButton` has. The tab underline went neutral in return.
  */
 const PrimaryButton = styled(Button)({
+  position: 'relative',
+  overflow: 'hidden',
   width: '100%',
   height: '100%',
   display: 'flex',
@@ -67,18 +73,21 @@ const PrimaryButton = styled(Button)({
   alignItems: 'center',
   justifyContent: 'center',
   gap: s(spacing.sm),
-  backgroundColor: semantic.surface.raised,
-  border: `${borderWidth.thin}px solid ${semantic.border.raised}`,
+  backgroundColor: semantic.accent.fill,
+  border: `${borderWidth.thin}px solid ${semantic.accent.fill}`,
   borderRadius: ms(componentSizes.actionButtonRadius),
   textTransform: 'none',
   minWidth: 0,
   padding: 0,
   '&:hover': {
-    backgroundColor: semantic.surface.crest,
-    borderColor: semantic.border.strong,
+    backgroundColor: palette.salmon[600],
+    borderColor: palette.salmon[600],
   },
+  // Disabled is `surface.crest` with disabled ink: the salmon never dims,
+  // it is either alive or absent — and so is the fish inside it.
   '&.Mui-disabled': {
-    backgroundColor: semantic.surface.raised,
+    backgroundColor: semantic.surface.crest,
+    borderColor: semantic.border.raised,
     color: semantic.text.disabled,
   },
 });
@@ -112,6 +121,17 @@ const ButtonText = styled(Typography)<{ $disabled?: boolean }>(({ $disabled }) =
   fontFamily: fontFamily.sans,
   color: $disabled ? colors.button.disabledText : colors.text.balance,
 }));
+
+/** Sits above the fish, never under it. Decoration is never a hit target. */
+const OnFillContent = styled(Box)({
+  position: 'relative',
+  zIndex: 1,
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: s(spacing.sm),
+});
 
 export function ActionButtonRow({
   onSendPress,
@@ -155,8 +175,22 @@ export function ActionButtonRow({
           aria-label={t('accessibility.send_tokens', 'Send tokens')}
           data-testid="home-send-button"
         >
-          <SendIcon sx={{ fontSize: iconSize, color: colors.text.balance }} />
-          <ButtonText>{t('actions.send', 'Send')}</ButtonText>
+          {/* The fish: the scales at 1.0x, pressed into the salmon fill and
+              nowhere else on this screen. Absent when the fill is absent. */}
+          {!sendDisabled && <ScalesBackground variant="fish" />}
+          <OnFillContent>
+            <SendIcon
+              sx={{
+                fontSize: iconSize,
+                color: sendDisabled ? semantic.text.disabled : semantic.accent.onFill,
+              }}
+            />
+            <ButtonText
+              sx={{ color: sendDisabled ? semantic.text.disabled : semantic.accent.onFill }}
+            >
+              {t('actions.send', 'Send')}
+            </ButtonText>
+          </OnFillContent>
         </PrimaryButton>
       </ButtonWrapper>
 

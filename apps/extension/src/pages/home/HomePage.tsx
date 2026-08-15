@@ -14,6 +14,7 @@ import {
   AddressbookError,
   useCoinMarketData,
   colors,
+  semantic,
   spacing,
   fontSize,
   borderRadius,
@@ -252,7 +253,12 @@ const TabButton = styled('button', {
   padding: `${spacing.md}px 0`,
   background: 'none',
   border: 'none',
-  borderBottom: active ? `2px solid ${colors.accent.primary}` : '2px solid transparent',
+  // Neutral by rule. The screen's one living element is the Send pill, not
+  // "you are on Home", so the active underline is `text.primary`
+  // (`neutral-50`, 16.37:1 on the app ground) — a stronger, not weaker,
+  // affordance than the salmon it replaced, and it is still carried by three
+  // channels: the rule, the label color, and weight 600.
+  borderBottom: active ? `2px solid ${semantic.text.primary}` : '2px solid transparent',
   color: active ? colors.text.primary : colors.text.secondary,
   fontFamily: fontFamily.sans,
   fontWeight: active ? 600 : 400,

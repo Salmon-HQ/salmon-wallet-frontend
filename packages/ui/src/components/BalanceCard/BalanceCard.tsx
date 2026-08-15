@@ -42,6 +42,7 @@ import {
 } from '@salmon/shared';
 import type { BlockchainId } from '@salmon/shared';
 import { EyeIcon, EyeOffIcon, Icon, SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from '../Icon';
+import { ScalesBackground } from '../ScalesBackground';
 import type { BalanceCardProps } from './types';
 
 /**
@@ -93,6 +94,18 @@ const renderBlockchainLogo = (blockchain: BlockchainId) => {
 
 // --- Styled components ---
 
+/**
+ * The card is full-bleed on purpose: flush to the header, spanning the panel,
+ * radius closed only where it leaves the header. In a narrow side panel a
+ * hero that touches both edges carries more authority than an inset one, and
+ * an inset card with its own 1px edge would put a bordered card inside a
+ * column of bordered token rows — cards within cards.
+ *
+ * So the plane is separated by material, not by an outline: the E2 trio does
+ * the work. `rimHighlight` is the lit top edge that now reads the header/card
+ * seam on its own, `rimShade` is the underside, and `cardAmbient` is a real
+ * offset shadow that puts the card off the ground. No hue, no border.
+ */
 const Container = styled(Box)({
   borderRadius: `0 0 ${ms(borderRadius.card)}px ${ms(borderRadius.card)}px`,
   paddingTop: vs(spacing['2xl']),
@@ -101,7 +114,7 @@ const Container = styled(Box)({
   paddingRight: s(spacing['2xl']),
   position: 'relative',
   overflow: 'hidden',
-  boxShadow: shadowsCSS.card,
+  boxShadow: `${shadowsCSS.cardAmbient}, ${shadowsCSS.rimHighlight}, ${shadowsCSS.rimShade}`,
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
@@ -115,6 +128,22 @@ const ContentGroup = styled(Box)({
   flexDirection: 'column',
   alignItems: 'center',
   gap: vs(spacing.xs),
+});
+
+/**
+ * Group 1, and the only place on this card the scales are allowed.
+ *
+ * It stretches to the card's full width so the motif reads as a band rather
+ * than a patch, and it is the *structural* guarantee behind the exclusion
+ * rule: the field is a child of this group at `height: 100%`, so it can only
+ * ever occupy the logo/badge region. The card's `gap` then puts clear space
+ * between this group's bottom edge — where the fade mask has already reached
+ * alpha 0 — and the balance figure below. If the logo ever resizes, the band
+ * resizes with it; there is no measured constant to fall out of date.
+ */
+const LogoGroup = styled(ContentGroup)({
+  alignSelf: 'stretch',
+  position: 'relative',
 });
 
 const LogoContainer = styled(Box)({
@@ -356,17 +385,21 @@ export function BalanceCard({
 
   return (
     <Container style={{ ...style, background: gradientCSS }} className={className}>
-      {/* No scales here: this card carries the balance, and the motif never
-          sits behind a number. The deep field lives on the page ground
-          instead, where the card occludes it. */}
-
-      {/* Group 1: Logo + Network tag — where chain identity now lives */}
-      <ContentGroup>
+      {/* Group 1: Logo + Network tag — where chain identity now lives, and
+          the card's upper region, which is the only band the deep field may
+          occupy. The exclusion rule still holds where it was written to hold:
+          it protects character-level accuracy — an address, a seed word, a
+          hash, where one wrong glyph loses funds. A total read as a single
+          quantity is not that, and at ~1.1:1 the stroke cannot interfere with
+          a glyph anyway. The field is scoped to this group so it is
+          structurally incapable of reaching the figure below. */}
+      <LogoGroup>
+        <ScalesBackground variant="deepField" style={{ height: '100%' }} />
         <LogoContainer>{renderBlockchainLogo(blockchain)}</LogoContainer>
         <NetworkLabel $visible={!!networkLabel}>
           <NetworkLabelText>{networkLabel ?? '\u00A0'}</NetworkLabelText>
         </NetworkLabel>
-      </ContentGroup>
+      </LogoGroup>
 
       {/* Group 2: Balance + Change */}
       <ContentGroup>
