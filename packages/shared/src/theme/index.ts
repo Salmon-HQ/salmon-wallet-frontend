@@ -36,6 +36,18 @@ import { duration, durationMs, easing } from './durations';
 export { colors, gradients, getScalesColorForBlockchain } from './colors';
 export type { Colors, Gradients } from './colors';
 
+// Primitive ramps and the semantic layer built on them. Additive: `colors`
+// above remains the token source most components read today, and moves over
+// surface by surface rather than in one sweep.
+// Exposed as two objects rather than a dozen loose names: `semantic.text`,
+// `semantic.border`, `palette.salmon`. Names like `state`, `status`, `change`
+// and `surface` are far too generic to sit in a barrel that also carries API
+// services and hooks.
+export { palette } from './palette';
+export type { Neutral, Salmon, Palette } from './palette';
+export { semantic } from './semantic';
+export type { Semantic } from './semantic';
+
 // Re-export all tokens from spacing
 export {
   spacing,
