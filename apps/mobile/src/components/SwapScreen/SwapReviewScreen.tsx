@@ -15,6 +15,7 @@ import {
   spacing,
   useCurrencyContext,
   vs,
+  semantic,
 } from '@salmon/shared';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -223,7 +224,7 @@ const styles = StyleSheet.create({
   warningTitle: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.semiBold,
-    color: colors.status.warning,
+    color: semantic.status.warning,
     marginBottom: vs(spacing.xs),
     letterSpacing: letterSpacing.normal,
   },

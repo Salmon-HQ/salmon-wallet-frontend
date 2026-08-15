@@ -16,6 +16,7 @@ import {
   fontFamilyNative,
   useAccountsContext,
   fontSize,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -75,7 +76,7 @@ export function BackupPanel({
   return (
     <SettingsScreenLayout title={t('general.seed_phrase')} onBack={onBack}>
       <View style={styles.warningContainer}>
-        <Ionicons name="warning-outline" size={20} color={colors.status.warning} />
+        <Ionicons name="warning-outline" size={20} color={semantic.status.warning} />
         <Text style={styles.warningText}>{t('wallet.create.messageBody')}</Text>
       </View>
 

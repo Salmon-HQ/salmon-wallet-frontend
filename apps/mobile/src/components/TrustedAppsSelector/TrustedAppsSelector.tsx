@@ -75,7 +75,7 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
             disabled={isRevoking}
             activeOpacity={0.7}
           >
-            <Ionicons name="trash-outline" size={18} color={colors.status.error} />
+            <Ionicons name="trash-outline" size={18} color={semantic.status.danger} />
           </TouchableOpacity>
         </View>
       );

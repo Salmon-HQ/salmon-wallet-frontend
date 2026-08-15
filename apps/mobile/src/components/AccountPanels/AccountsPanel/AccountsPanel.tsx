@@ -120,13 +120,13 @@ function AccountListItem({
             accessibilityRole="button"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="trash-outline" size={20} color={colors.status.error} />
+            <Ionicons name="trash-outline" size={20} color={semantic.status.danger} />
           </TouchableOpacity>
         )}
 
         {isActive && (
           <View style={styles.checkmarkContainer}>
-            <Ionicons name="checkmark-circle" size={24} color={colors.status.success} />
+            <Ionicons name="checkmark-circle" size={24} color={semantic.status.success} />
           </View>
         )}
       </View>

@@ -25,6 +25,7 @@ import {
   fontSize,
   fontWeight,
   fontFamilyNative,
+  semantic,
 } from '@salmon/shared';
 import type { InputAddressProps } from './types';
 
@@ -53,7 +54,7 @@ function ValidationIndicator({ state }: ValidationIndicatorProps) {
     case 'valid':
       return (
         <Text
-          style={[styles.validationIcon, { color: colors.status.success, fontSize: 18 }]}
+          style={[styles.validationIcon, { color: semantic.status.success, fontSize: 18 }]}
           testID="input-address-valid"
         >
           {'\u2713'}
@@ -62,7 +63,7 @@ function ValidationIndicator({ state }: ValidationIndicatorProps) {
     case 'invalid':
       return (
         <Text
-          style={[styles.validationIcon, { color: colors.status.error, fontSize: 18 }]}
+          style={[styles.validationIcon, { color: semantic.status.danger, fontSize: 18 }]}
           testID="input-address-invalid"
         >
           {'\u2715'}
@@ -71,7 +72,7 @@ function ValidationIndicator({ state }: ValidationIndicatorProps) {
     case 'warning':
       return (
         <Text
-          style={[styles.validationIcon, { color: colors.status.warning, fontSize: 18 }]}
+          style={[styles.validationIcon, { color: semantic.status.warning, fontSize: 18 }]}
           testID="input-address-warning"
         >
           {'\u26A0'}
@@ -254,13 +255,13 @@ const styles = StyleSheet.create({
     minHeight: 56,
   },
   inputContainerValid: {
-    borderColor: colors.status.success,
+    borderColor: semantic.status.success,
   },
   inputContainerInvalid: {
-    borderColor: colors.status.error,
+    borderColor: semantic.status.danger,
   },
   inputContainerWarning: {
-    borderColor: colors.status.warning,
+    borderColor: semantic.status.warning,
   },
   inputContainerDisabled: {
     opacity: colors.button.disabledOpacity,
@@ -285,10 +286,10 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   messageError: {
-    color: colors.status.error,
+    color: semantic.status.danger,
   },
   messageWarning: {
-    color: colors.status.warning,
+    color: semantic.status.warning,
   },
   domainInfo: {
     marginTop: spacing.sm,

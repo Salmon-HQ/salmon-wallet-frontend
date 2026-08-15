@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  colors,
   ms,
   vs,
   s,
@@ -12,6 +11,7 @@ import {
   fontFamilyNative,
   getPriceImpactSeverity,
   type PriceImpactSeverity,
+  semantic,
 } from '@salmon/shared';
 
 // ============================================================================
@@ -58,9 +58,9 @@ const SEVERITY_ICONS: Record<PriceImpactSeverity, keyof typeof Ionicons.glyphMap
  * Color mapping for each severity level
  */
 const SEVERITY_COLORS: Record<PriceImpactSeverity, string> = {
-  safe: colors.status.success,
-  warning: colors.status.warning,
-  high: colors.status.error,
+  safe: semantic.status.success,
+  warning: semantic.status.warning,
+  high: semantic.status.danger,
 };
 
 /**

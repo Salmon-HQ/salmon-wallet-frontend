@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.bold,
-    color: colors.status.warning,
+    color: semantic.status.warning,
     marginBottom: vs(spacing.xs),
     letterSpacing: letterSpacing.normal,
   },

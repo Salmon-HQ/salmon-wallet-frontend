@@ -1,13 +1,14 @@
-import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import React, { useCallback } from 'react';
+import { Modal, View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useSwapScreenLogic,
   getTransactionUrl,
   getDefaultExplorer,
   useBridgeSettlement,
-  colors,
   fontFamilyNative,
   fontSize,
+  semantic,
   spacing,
 } from '@salmon/shared';
 import type { Blockchain, NetworkEnvironment, NetworkId } from '@salmon/shared';
@@ -31,6 +32,7 @@ import type { SwapScreenProps } from './types';
 export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   const { style } = props;
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const { trackBridgeExchange, isStalled, retryNow } = useBridgeSettlement();
 
@@ -63,9 +65,31 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   const successChain = summary ? summary.chain : logic.inToken?.chain;
   const successNetworkId = summary ? summary.networkId : logic.inToken?.networkId;
 
-  return (
-    <View style={[styles.container, style]}>
-      {isStalled && (
+  // Review, in-flight and outcome are a *task*, not a tab destination. They
+  // used to render as tab content with the account header above and the tab
+  // bar below, so a user could wander to Collectibles after signing — and the
+  // screen reporting the outcome is the only one that will ever report it.
+  // An RN Modal is its own window: it covers the gate header and the tab bar,
+  // the same way Send and Receive already do on this platform.
+  const isTaskStep = logic.step === 'review' || logic.step === 'success';
+  // Committed: signed and in flight, or settling. No exit at all.
+  const isCommitted = logic.isConfirming || logic.settling;
+
+  const handleTaskDismiss = useCallback(() => {
+    if (isCommitted) return;
+    if (logic.step === 'review') {
+      // Back out of review is safe — nothing has been signed.
+      logic.handleBackFromReview();
+      return;
+    }
+    logic.handleSuccessContinue();
+  }, [isCommitted, logic]);
+
+  // The review screens reserve room for the tab bar they used to sit under.
+  // Inside the task window there is no tab bar, only the home indicator.
+  const taskScreenStyle = { paddingBottom: insets.bottom + spacing.lg };
+
+  const stalledBanner = isStalled ? (
         <View style={styles.stalledBanner} testID="bridge-stalled-banner">
           <WarningNotice
             tone="warning"
@@ -84,7 +108,11 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
             )}
           </WarningNotice>
         </View>
-      )}
+  ) : null;
+
+  return (
+    <View style={[styles.container, style]}>
+      {!isTaskStep && stalledBanner}
       {logic.step === 'input' && (
         <SwapInputScreen
           inToken={logic.inToken}
@@ -99,6 +127,14 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
           canReview={logic.canReview}
           reviewWarning={logic.reviewWarning}
           swapError={logic.swapError}
+          bridgeReference={
+            logic.lastBridgeExchange
+              ? {
+                  id: logic.lastBridgeExchange.id,
+                  depositAddress: logic.lastBridgeExchange.depositAddress,
+                }
+              : null
+          }
           onReview={logic.handleReview}
         />
       )}
@@ -115,7 +151,17 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
         />
       )}
 
-      {logic.step === 'review' &&
+      <Modal
+        visible={isTaskStep}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={handleTaskDismiss}
+        testID="swap-task-modal"
+      >
+        <View style={[styles.taskSurface, { paddingTop: insets.top }]}>
+          {stalledBanner}
+
+          {logic.step === 'review' &&
         logic.swapMode === 'jupiter' &&
         logic.quote &&
         logic.inToken &&
@@ -130,6 +176,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
             onConfirm={logic.handleConfirmOrRefresh}
             isConfirming={logic.isConfirming}
             confirmLabel={logic.swapConfirmLabel}
+            style={taskScreenStyle}
           />
         )}
 
@@ -148,6 +195,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
             onConfirm={logic.handleConfirmOrRefresh}
             isConfirming={logic.isConfirming}
             confirmLabel={logic.swapConfirmLabel}
+            style={taskScreenStyle}
           />
         )}
 
@@ -182,7 +230,9 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
           bridgeExchangeId={logic.successExchange?.id}
           bridgeDepositTxId={logic.depositTxId ?? undefined}
         />
-      )}
+          )}
+        </View>
+      </Modal>
 
       <TokenSelectorModal
         visible={logic.showInTokenModal}
@@ -213,12 +263,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
+  // The task window is its own surface: opaque, because it no longer sits on
+  // the tab shell's ground, and `fullScreen` so iOS cannot swipe it away.
+  taskSurface: {
+    flex: 1,
+    backgroundColor: semantic.depth.column,
+  },
   stalledBanner: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
   },
   stalledRetryText: {
-    color: colors.status.warning,
+    color: semantic.status.warning,
     fontFamily: fontFamilyNative.semiBold,
     fontSize: fontSize.sm,
     textDecorationLine: 'underline',

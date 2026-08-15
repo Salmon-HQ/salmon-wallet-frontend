@@ -18,6 +18,7 @@ import {
   type SupportSelectorBaseProps,
   type SupportOptionItem,
   fontSize,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 
@@ -72,7 +73,7 @@ export function SupportSelector({ options, onOpenLink, onBack }: SupportSelector
       {options.map(renderOption)}
 
       <View style={styles.securityNotice}>
-        <Ionicons name="shield-checkmark-outline" size={20} color={colors.status.warning} />
+        <Ionicons name="shield-checkmark-outline" size={20} color={semantic.status.warning} />
         <Text style={styles.securityText}>
           {t(
             'settings.security_notice',

@@ -18,6 +18,7 @@ import {
   getStashItem,
   spacing,
   STASH_KEYS,
+  semantic,
 } from '@salmon/shared';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   errorText: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
     fontSize: 14,
     lineHeight: 20,

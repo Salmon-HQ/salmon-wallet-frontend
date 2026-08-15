@@ -148,6 +148,8 @@ export function NftSendSheet({
     <BottomSheetContainer
       visible={visible}
       onClose={handleClose}
+      // A one-of-one transfer is in flight; there is nothing to come back to.
+      dismissible={!loading}
       headerContent={headerContent}
       showTextureOverlay
       style={styles.sheetContainer}
@@ -213,7 +215,12 @@ export function NftSendSheet({
         </ScrollView>
 
         <View style={[styles.actions, { paddingBottom: actionRowBottomPadding }]}>
-          <TouchableOpacity style={styles.cancelButton} onPress={handleClose} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.cancelButton, loading && styles.cancelButtonDisabled]}
+            onPress={handleClose}
+            disabled={loading}
+            activeOpacity={0.7}
+          >
             <Text
               style={styles.cancelButtonText}
               numberOfLines={1}
@@ -341,7 +348,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.regular,
-    color: colors.status.error,
+    color: semantic.status.danger,
   },
   loadingContainer: {
     alignItems: 'center',
@@ -366,6 +373,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cancelButtonDisabled: {
+    opacity: colors.button.disabledOpacity,
   },
   cancelButtonText: {
     fontSize: ms(fontSize.md),

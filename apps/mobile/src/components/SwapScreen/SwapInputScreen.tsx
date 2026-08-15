@@ -39,6 +39,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
   canReview,
   reviewWarning,
   swapError,
+  bridgeReference,
   onReview,
   style,
 }) => {
@@ -89,6 +90,33 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           </Text>
         ) : null}
 
+        {/* A bridge that failed after its exchange was created leaves the user
+            with an order they cannot see and no way to name it. This is the
+            only reference that exists — a reference number, not debug output. */}
+        {bridgeReference && (swapError || reviewWarning) ? (
+          <View style={styles.referenceBox} testID="bridge-failure-reference">
+            <Text style={styles.referenceTitle}>
+              {t('bridge.reference_title', 'Keep this reference')}
+            </Text>
+            <Text style={styles.referenceBody}>
+              {t(
+                'bridge.reference_body',
+                'This bridge did not complete, but the exchange was already created. Save these details — they are what support needs to look it up.'
+              )}
+            </Text>
+            <Text style={styles.referenceLabel}>{t('bridge.exchangeId', 'Exchange ID')}</Text>
+            <Text style={styles.referenceValue} selectable>
+              {bridgeReference.id}
+            </Text>
+            <Text style={styles.referenceLabel}>
+              {t('bridge.depositAddressLabel', 'Deposit address')}
+            </Text>
+            <Text style={styles.referenceValue} selectable>
+              {bridgeReference.depositAddress}
+            </Text>
+          </View>
+        ) : null}
+
         {/* You Receive */}
         <SwapAmountInput
           testID="swap-to"
@@ -122,7 +150,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
               style={styles.button}
               testID="swap-review-button"
             >
-              {t('swap.review.reviewAndSwap', 'Review & Swap')}
+              {t('swap.review.reviewAndSwap', 'Review')}
             </PrimaryButton>
           </LinearGradient>
         ) : (
@@ -133,7 +161,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
               style={styles.button}
               testID="swap-review-button"
             >
-              {t('swap.review.reviewAndSwap', 'Review & Swap')}
+              {t('swap.review.reviewAndSwap', 'Review')}
             </PrimaryButton>
           </View>
         )}
@@ -160,16 +188,48 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: fontSize.sm,
     fontFamily: fontFamilyNative.medium,
-    color: colors.status.error,
+    color: semantic.status.danger,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   warningText: {
     fontSize: fontSize.sm,
     fontFamily: fontFamilyNative.medium,
-    color: colors.status.warning,
+    color: semantic.status.warning,
     textAlign: 'center',
     marginBottom: spacing.sm,
+  },
+  referenceBox: {
+    backgroundColor: semantic.surface.raised,
+    borderRadius: borderRadius.md,
+    borderWidth: borderWidth.thin,
+    borderColor: semantic.border.raised,
+    padding: spacing.base,
+    marginBottom: spacing.sm,
+  },
+  referenceTitle: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamilyNative.bold,
+    color: semantic.status.warning,
+    marginBottom: spacing.xs,
+  },
+  referenceBody: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamilyNative.regular,
+    color: semantic.text.secondary,
+    marginBottom: spacing.sm,
+  },
+  referenceLabel: {
+    fontSize: fontSize.micro,
+    fontFamily: fontFamilyNative.semiBold,
+    color: semantic.text.tertiary,
+    textTransform: 'uppercase',
+  },
+  referenceValue: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamilyNative.medium,
+    color: semantic.text.primary,
+    marginBottom: spacing.xs,
   },
   disclaimerText: {
     fontSize: 11,

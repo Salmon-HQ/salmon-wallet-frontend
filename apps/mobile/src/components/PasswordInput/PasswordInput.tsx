@@ -12,6 +12,7 @@ import {
   borderWidth,
   fontSize,
   fontFamilyNative,
+  semantic,
 } from '@salmon/shared';
 
 interface PasswordInputProps {
@@ -40,7 +41,7 @@ export function PasswordInput({
   const [isFocused, setIsFocused] = useState(false);
 
   const getBorderColor = () => {
-    if (error) return colors.status.error;
+    if (error) return semantic.status.danger;
     if (isFocused) return colors.accent.primary;
     return colors.input.border;
   };
@@ -110,7 +111,7 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
   errorText: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.sm,
     marginTop: spacing.xs,

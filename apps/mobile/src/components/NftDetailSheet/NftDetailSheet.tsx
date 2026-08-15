@@ -1090,7 +1090,7 @@ const styles = StyleSheet.create({
     marginTop: vs(spacing.sm),
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.medium,
-    color: colors.status.error,
+    color: semantic.status.danger,
   },
   loadingContainer: {
     alignItems: 'center',

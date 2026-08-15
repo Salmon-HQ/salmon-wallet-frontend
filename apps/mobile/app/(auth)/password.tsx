@@ -51,6 +51,7 @@ import {
   useAccountsContext,
   validatePassword,
   getPasswordIssue,
+  semantic,
 } from '@salmon/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -502,7 +503,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
   },
   generalError: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
     fontSize: 12,
     lineHeight: 16,

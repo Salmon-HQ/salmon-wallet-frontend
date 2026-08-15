@@ -141,7 +141,7 @@ function AccountListItem({
             <Ionicons
               name="trash-outline"
               size={20}
-              color={canDelete ? colors.status.error : semantic.text.disabled}
+              color={canDelete ? semantic.status.danger : semantic.text.disabled}
             />
           </TouchableOpacity>
         )}
@@ -149,7 +149,7 @@ function AccountListItem({
         {/* Active Indicator */}
         {isActive && (
           <View style={styles.checkmarkContainer}>
-            <Ionicons name="checkmark-circle" size={24} color={colors.status.success} />
+            <Ionicons name="checkmark-circle" size={24} color={semantic.status.success} />
           </View>
         )}
       </View>

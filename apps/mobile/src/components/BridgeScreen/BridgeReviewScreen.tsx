@@ -15,6 +15,7 @@ import {
   fontFamilyNative,
   formatAmountWithSymbol,
   getShortAddress,
+  semantic,
 } from '@salmon/shared';
 import { SwapDetailRow } from '../SwapScreen/SwapDetailRow';
 import { SwapReviewCard } from '../SwapScreen/SwapReviewCard';
@@ -46,7 +47,7 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
   return (
     <View style={[styles.container, { paddingBottom: floatingBottomOffset }, style]}>
       {/* Title */}
-      <Text style={styles.title}>{t('bridge.review.title', 'Swap Review')}</Text>
+      <Text style={styles.title}>{t('bridge.review.title', 'Bridge Review')}</Text>
 
       {/* Scrollable Content */}
       <ScrollView
@@ -95,6 +96,22 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
           <SwapDetailRow label={t('bridge.review.provider', 'Provider')} value="StealthEX" />
         </View>
 
+        {/* The swap warns about irreversibility on the flow that settles in
+            thirteen seconds; the bridge, which genuinely cannot be stopped,
+            warned only about duration. This is the commit point, so the thing
+            that cannot be undone is stated here. */}
+        <View style={styles.dangerBox} testID="bridge-irreversible-notice">
+          <Text style={styles.dangerTitle}>
+            {t('bridge.review.irreversible', 'This cannot be undone')}
+          </Text>
+          <Text style={styles.warningText}>
+            {t(
+              'bridge.review.irreversibleText',
+              'Confirming sends your funds to StealthEX, which holds them until the cross-chain transfer completes. Once confirmed there is no cancel and no way to reverse or recover the transfer — not by Salmon and not by you.'
+            )}
+          </Text>
+        </View>
+
         {/* Warning Box */}
         <View style={styles.warningBox}>
           <Text style={styles.warningTitle}>{t('bridge.review.pleaseNote', 'Please Note')}</Text>
@@ -112,7 +129,7 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
         onBack={onBack}
         onConfirm={onConfirm}
         isConfirming={isConfirming}
-        confirmLabel={confirmLabel ?? t('bridge.review.confirmSwap', 'Confirm Swap')}
+        confirmLabel={confirmLabel ?? t('bridge.review.confirmSwap', 'Confirm Bridge')}
       />
     </View>
   );
@@ -147,6 +164,21 @@ const styles = StyleSheet.create({
     gap: vs(spacing.md - 3),
     marginBottom: vs(spacing['2xl']),
   },
+  dangerBox: {
+    backgroundColor: colors.status.errorBackground,
+    borderRadius: borderRadius.md,
+    borderWidth: borderWidth.thin,
+    borderColor: semantic.status.danger,
+    padding: s(spacing.base),
+    marginBottom: vs(spacing.md),
+  },
+  dangerTitle: {
+    fontSize: ms(fontSize.sm),
+    fontFamily: fontFamilyNative.bold,
+    color: semantic.status.danger,
+    marginBottom: vs(spacing.xs),
+    letterSpacing: letterSpacing.normal,
+  },
   warningBox: {
     backgroundColor: colors.status.warningBackground,
     borderRadius: borderRadius.md,
@@ -158,7 +190,7 @@ const styles = StyleSheet.create({
   warningTitle: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.bold,
-    color: colors.status.warning,
+    color: semantic.status.warning,
     marginBottom: vs(spacing.xs),
     letterSpacing: letterSpacing.normal,
   },

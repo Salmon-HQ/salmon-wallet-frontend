@@ -25,6 +25,7 @@ import {
   spacing,
   STASH_KEYS,
   validateMnemonicWords,
+  semantic,
 } from '@salmon/shared';
 import {
   PrimaryButton,
@@ -75,7 +76,7 @@ function Toast({ message, visible }: ToastProps) {
   return (
     <View style={styles.toastContainer}>
       <View style={styles.toast}>
-        <Ionicons name="checkmark-circle" size={20} color={colors.status.success} />
+        <Ionicons name="checkmark-circle" size={20} color={semantic.status.success} />
         <Text style={styles.toastText}>{message}</Text>
       </View>
     </View>

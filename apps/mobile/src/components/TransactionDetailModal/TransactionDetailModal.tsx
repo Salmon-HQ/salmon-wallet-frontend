@@ -28,6 +28,7 @@ import {
   formatRawAmount,
   truncateHash,
   getShortAddress,
+  semantic,
 } from '@salmon/shared';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -110,17 +111,17 @@ const TRANSACTION_TYPE_CONFIG: Record<
 const STATUS_CONFIG = {
   completed: {
     label: 'Completed',
-    color: colors.status.success,
+    color: semantic.status.success,
     icon: 'checkmark-circle' as keyof typeof Ionicons.glyphMap,
   },
   failed: {
     label: 'Failed',
-    color: colors.status.error,
+    color: semantic.status.danger,
     icon: 'close-circle' as keyof typeof Ionicons.glyphMap,
   },
   pending: {
     label: 'Pending',
-    color: colors.status.warning,
+    color: semantic.status.warning,
     icon: 'time-outline' as keyof typeof Ionicons.glyphMap,
   },
 };
@@ -129,9 +130,9 @@ const STATUS_CONFIG = {
  * Confirmation status display configuration
  */
 const CONFIRMATION_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  processed: { label: 'Processed', color: colors.status.warning },
+  processed: { label: 'Processed', color: semantic.status.warning },
   confirmed: { label: 'Confirmed', color: colors.palette.blue },
-  finalized: { label: 'Finalized', color: colors.status.success },
+  finalized: { label: 'Finalized', color: semantic.status.success },
 };
 
 /** Translation key maps — resolved via t() inside the component */
@@ -279,7 +280,7 @@ const NftMetadataSection: React.FC<{
               <Ionicons
                 name="checkmark-circle"
                 size={16}
-                color={colors.status.success}
+                color={semantic.status.success}
                 style={styles.verifiedIcon}
               />
             )}

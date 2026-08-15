@@ -16,6 +16,7 @@ import {
   borderWidth,
   fontSize,
   fontFamilyNative,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { PrimaryButton } from '../../Button';
@@ -101,10 +102,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
   },
   inputError: {
-    borderColor: colors.status.error,
+    borderColor: semantic.status.danger,
   },
   errorText: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.sm,
     marginTop: spacing.xs,

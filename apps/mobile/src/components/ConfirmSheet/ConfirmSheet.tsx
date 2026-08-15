@@ -8,7 +8,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, fontSize, fontFamilyNative, vs } from '@salmon/shared';
+import { colors, spacing, fontSize, fontFamilyNative, vs, semantic } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { PrimaryButton } from '../Button/PrimaryButton';
@@ -205,6 +205,6 @@ const styles = StyleSheet.create({
     gap: vs(spacing.sm),
   },
   dangerButton: {
-    backgroundColor: colors.status.error,
+    backgroundColor: semantic.status.danger,
   },
 });

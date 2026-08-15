@@ -16,6 +16,7 @@ import {
   fontFamilyNative,
   spacing,
   letterSpacing,
+  semantic,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { TokenLogo } from '../TokenLogo';
@@ -285,7 +286,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     if (status === 'failed') {
       return (
         <View style={styles.failedBadge}>
-          <Ionicons name="close-circle" size={16} color={colors.status.error} />
+          <Ionicons name="close-circle" size={16} color={semantic.status.danger} />
           <Text style={styles.failedText}>{t('transactions.detail.failed', 'Failed')}</Text>
         </View>
       );
@@ -294,7 +295,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     if (status === 'pending') {
       return (
         <View style={styles.pendingBadge}>
-          <Ionicons name="time-outline" size={14} color={colors.status.warning} />
+          <Ionicons name="time-outline" size={14} color={semantic.status.warning} />
           <Text style={styles.pendingText}>{t('transactions.detail.pending', 'Pending')}</Text>
         </View>
       );
@@ -526,7 +527,7 @@ const styles = StyleSheet.create({
   failedText: {
     fontSize: ms(fontSize.base),
     fontFamily: fontFamilyNative.medium,
-    color: colors.status.error,
+    color: semantic.status.danger,
   },
   pendingBadge: {
     flexDirection: 'row',
@@ -534,13 +535,13 @@ const styles = StyleSheet.create({
     gap: s(spacing.xs),
     paddingHorizontal: s(spacing.sm),
     paddingVertical: vs(spacing.xs),
-    backgroundColor: `${colors.status.warning}15`,
+    backgroundColor: `${semantic.status.warning}15`,
     borderRadius: borderRadius.sm,
   },
   pendingText: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.medium,
-    color: colors.status.warning,
+    color: semantic.status.warning,
   },
   expandBadge: {
     flexDirection: 'row',

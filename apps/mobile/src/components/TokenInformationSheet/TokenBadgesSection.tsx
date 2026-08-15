@@ -9,6 +9,7 @@ import {
   spacing,
   vs,
   borderRadius,
+  semantic,
 } from '@salmon/shared';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -182,7 +183,7 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
   },
   deprecated: {
     icon: 'warning',
-    color: colors.status.error,
+    color: semantic.status.danger,
     label: 'Deprecated',
     labelKey: 'token.badges.deprecated',
   },

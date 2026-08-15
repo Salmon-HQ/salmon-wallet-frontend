@@ -48,6 +48,7 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
   onBack,
   onCancel,
   onSuccess,
+  onSendingChange,
 }) => {
   const { t } = useTranslation();
   const { actionRowBottomPadding } = useBottomSheetChrome();
@@ -121,6 +122,11 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
   const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
   const isFailed = sendHook.status === 'failed';
 
+  // Tell the sheet above us, which owns backdrop/swipe/back dismissal.
+  useEffect(() => {
+    onSendingChange?.(isSending);
+  }, [isSending, onSendingChange]);
+
   // Truncate address for display
   const truncatedAddress = useMemo(() => {
     if (recipientAddress.length <= 20) return recipientAddress;
@@ -152,7 +158,7 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
               {truncatedAddress}
             </Text>
             {copied ? (
-              <Ionicons name="checkmark" size={ms(20)} color={colors.status.success} />
+              <Ionicons name="checkmark" size={ms(20)} color={semantic.status.success} />
             ) : (
               <ContentCopySvgIcon size={ms(20)} color={colors.text.secondary} />
             )}
@@ -300,7 +306,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.medium,
-    color: colors.status.error,
+    color: semantic.status.danger,
     marginTop: vs(spacing.md),
     textAlign: 'center',
   },

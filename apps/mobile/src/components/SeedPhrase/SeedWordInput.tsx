@@ -10,6 +10,7 @@ import {
   fontSize,
   borderWidth,
   fontFamilyNative,
+  semantic,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
@@ -48,9 +49,9 @@ export function SeedWordInput({
   const getBorderColor = () => {
     switch (validationState) {
       case 'correct':
-        return colors.status.success;
+        return semantic.status.success;
       case 'incorrect':
-        return colors.status.error;
+        return semantic.status.danger;
       default:
         return colors.input.border;
     }

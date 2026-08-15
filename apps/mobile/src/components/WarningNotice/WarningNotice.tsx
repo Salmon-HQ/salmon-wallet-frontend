@@ -9,7 +9,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { borderRadius, colors, fontFamilyNative, fontSize, spacing } from '@salmon/shared';
+import { borderRadius, colors, fontFamilyNative, fontSize, spacing, semantic } from '@salmon/shared';
 import type { WarningNoticeProps } from './types';
 
 export function WarningNotice({
@@ -19,7 +19,7 @@ export function WarningNotice({
   action,
   style,
 }: WarningNoticeProps): React.ReactElement {
-  const accent = tone === 'warning' ? colors.status.warning : colors.status.error;
+  const accent = tone === 'warning' ? semantic.status.warning : semantic.status.danger;
   const background =
     tone === 'warning' ? colors.status.warningBackground : colors.status.errorBackground;
 

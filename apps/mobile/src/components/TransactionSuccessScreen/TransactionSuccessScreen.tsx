@@ -3,7 +3,6 @@ import { StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withDelay,
   withTiming,
   Easing,
@@ -12,7 +11,6 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import {
-  colors,
   spacing,
   borderRadius,
   fontSize,
@@ -20,17 +18,24 @@ import {
   gradients,
   shadows,
   componentSizes,
+  letterSpacing,
+  lineHeight,
   ms,
   vs,
   s,
   fontFamilyNative,
   borderWidth,
   semantic,
+  tabularNums,
 } from '@salmon/shared';
 import type { TransactionSuccessScreenProps } from '@salmon/shared';
 import { PrimaryButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+
+// `tabularNums.native` types its array as readonly; RN's TextStyle wants a
+// mutable one.
+const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 
 // ============================================================================
 // Component
@@ -53,9 +58,14 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   const { t } = useTranslation();
   const { floatingBottomOffset } = useTabChrome();
 
-  const circleScale = useSharedValue(0);
-  const checkOpacity = useSharedValue(0);
-  const textOpacity = useSharedValue(0);
+  const statusOpacity = useSharedValue(0);
+  // The amount is the hero, so it owns its own node and its own value. The
+  // Surfacing (DESIGN.md §The Surfacing) lands here: a `tide`-long timeline
+  // clears the material, travels a caustic band up to this node, and settles
+  // it with translateY +6 → 0 on `settle`. Only the fade is built; the node,
+  // its isolation from the status line, and its locked tabular width are the
+  // parts that had to exist first.
+  const amountOpacity = useSharedValue(0);
   const linkOpacity = useSharedValue(0);
   const buttonOpacity = useSharedValue(0);
 
@@ -64,35 +74,28 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    circleScale.value = withSpring(1, { damping: 12, stiffness: 180, mass: 0.8 });
-    checkOpacity.value = withDelay(
-      200,
-      withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) })
-    );
-    textOpacity.value = withDelay(
-      400,
+    // Status first and small, then the value it is reporting on.
+    statusOpacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
+    amountOpacity.value = withDelay(
+      120,
       withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) })
     );
     linkOpacity.value = withDelay(
-      500,
+      320,
       withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) })
     );
     buttonOpacity.value = withDelay(
-      600,
+      420,
       withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) })
     );
-  }, [settling, circleScale, checkOpacity, textOpacity, linkOpacity, buttonOpacity]);
+  }, [settling, statusOpacity, amountOpacity, linkOpacity, buttonOpacity]);
 
-  const circleStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: circleScale.value }],
+  const statusStyle = useAnimatedStyle(() => ({
+    opacity: statusOpacity.value,
   }));
 
-  const checkStyle = useAnimatedStyle(() => ({
-    opacity: checkOpacity.value,
-  }));
-
-  const textStyle = useAnimatedStyle(() => ({
-    opacity: textOpacity.value,
+  const amountStyle = useAnimatedStyle(() => ({
+    opacity: amountOpacity.value,
   }));
 
   const linkStyle = useAnimatedStyle(() => ({
@@ -124,13 +127,23 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
 
   return (
     <View style={[styles.container, { paddingBottom: floatingBottomOffset }]}>
-      <Animated.View style={[styles.circleOuter, circleStyle]}>
-        <Animated.Text style={[styles.checkmark, checkStyle]}>✓</Animated.Text>
+      {/* Status is a line of ink, not a 96px disc: `status.success` is
+          specified as ink (9.99:1), and the outcome the user came for is the
+          amount below it. Three channels are kept — colour, the ✓ glyph, and
+          the label — so the state never rides on hue alone. */}
+      <Animated.View style={[styles.statusRow, statusStyle]}>
+        <Text style={styles.statusGlyph}>✓</Text>
+        <Text style={styles.statusLabel} testID="tx-success-title">
+          {title}
+        </Text>
       </Animated.View>
 
-      <Animated.View style={[styles.textContainer, textStyle]}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.summary}>{summary}</Text>
+      {/* The hero. Isolated node, tabular digits, nothing between it and the
+          bottom of the screen for a caustic band to travel through. */}
+      <Animated.View style={[styles.amountContainer, amountStyle]}>
+        <Text style={styles.amount} testID="tx-success-summary">
+          {summary}
+        </Text>
       </Animated.View>
 
       {isBridge ? (
@@ -162,7 +175,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
                 <Text
                   style={[
                     styles.bridgeValue,
-                    { color: colors.accent.primary, textDecorationLine: 'underline' },
+                    { color: semantic.text.accent, textDecorationLine: 'underline' },
                   ]}
                 >
                   {bridgeDepositTxId.slice(0, 8)}...{bridgeDepositTxId.slice(-8)}
@@ -202,7 +215,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
             disabled={settling}
             testID="tx-success-continue-button"
           >
-            {t('transaction.continue')}
+            {t('transaction.continue', 'Back to wallet')}
           </PrimaryButton>
         </LinearGradient>
       </Animated.View>
@@ -221,41 +234,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: s(spacing.headerPadding),
   },
-  circleOuter: {
-    width: vs(componentSizes.successCircleSize),
-    height: vs(componentSizes.successCircleSize),
-    borderRadius: vs(48),
-    backgroundColor: colors.status.success,
+  statusRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: vs(spacing['3xl']),
+    gap: s(spacing.sm),
+    marginBottom: vs(spacing.md),
   },
-  checkmark: {
-    fontSize: ms(fontSize['5xl']),
-    color: colors.text.primary,
+  statusGlyph: {
+    fontSize: ms(fontSize.body),
+    color: semantic.status.success,
     fontFamily: fontFamilyNative.bold,
     fontWeight: fontWeight.bold,
   },
-  textContainer: {
-    alignItems: 'center',
-    marginBottom: vs(spacing.lg),
-  },
-  title: {
-    fontSize: ms(fontSize['2xl']),
+  statusLabel: {
+    fontSize: ms(fontSize.micro),
     fontFamily: fontFamilyNative.semiBold,
-    color: colors.text.primary,
-    textAlign: 'center',
-    marginBottom: vs(spacing.sm),
+    color: semantic.status.success,
+    letterSpacing: letterSpacing.wide,
+    textTransform: 'uppercase',
   },
-  summary: {
-    fontSize: ms(fontSize.md),
-    fontFamily: fontFamilyNative.regular,
-    color: colors.text.secondary,
+  amountContainer: {
+    alignItems: 'center',
+    marginBottom: vs(spacing['2xl']),
+  },
+  amount: {
+    ...TABULAR,
+    fontSize: ms(fontSize.display),
+    fontFamily: fontFamilyNative.bold,
+    color: semantic.text.primary,
     textAlign: 'center',
+    lineHeight: ms(fontSize.display * lineHeight.condensed),
   },
   bridgeInfoBox: {
     width: '100%',
-    backgroundColor: colors.background.tertiary,
+    backgroundColor: semantic.surface.raised,
     borderRadius: borderRadius.card,
     padding: s(spacing.lg),
     marginBottom: vs(spacing.xl),
@@ -263,13 +275,14 @@ const styles = StyleSheet.create({
   bridgeLabel: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.regular,
-    color: colors.text.tertiary,
+    color: semantic.text.tertiary,
     marginBottom: vs(spacing.xs),
   },
   bridgeValue: {
+    ...TABULAR,
     fontSize: ms(fontSize.base),
     fontFamily: fontFamilyNative.medium,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     marginBottom: vs(spacing.md),
   },
   linkContainer: {
@@ -279,7 +292,7 @@ const styles = StyleSheet.create({
   explorerLink: {
     fontSize: ms(fontSize.base),
     fontFamily: fontFamilyNative.medium,
-    color: colors.accent.primary,
+    color: semantic.text.accent,
     textAlign: 'center',
     textDecorationLine: 'underline',
   },

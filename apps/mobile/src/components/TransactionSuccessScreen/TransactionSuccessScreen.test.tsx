@@ -48,6 +48,8 @@ jest.mock('expo-linear-gradient', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  letterSpacing: { normal: 0, wide: 0.3 },
+  tabularNums: { native: { fontVariant: ['tabular-nums'] }, css: {} },
   semantic: {
     accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45', tint: 'rgba(255,92,69,0.1)' },
     text: {
@@ -82,7 +84,7 @@ jest.mock('@salmon/shared', () => ({
   s: (value: number) => value,
   fontFamilyNative: { bold: 'System', medium: 'System', regular: 'System' },
   borderWidth: { accent: 1 },
-  lineHeight: { none: 1 },
+  lineHeight: { none: 1, condensed: 1.25, normal: 1.5 },
 }));
 
 jest.mock('../../../hooks/useTabChrome', () => ({

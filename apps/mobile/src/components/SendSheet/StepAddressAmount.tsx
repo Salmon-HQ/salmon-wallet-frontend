@@ -476,15 +476,15 @@ const styles = StyleSheet.create({
   },
   inputContainerError: {
     borderWidth: borderWidth.thin,
-    borderColor: colors.status.error,
+    borderColor: semantic.status.danger,
   },
   inputContainerWarning: {
     borderWidth: borderWidth.thin,
-    borderColor: colors.status.warning,
+    borderColor: semantic.status.warning,
   },
   inputContainerSuccess: {
     borderWidth: borderWidth.thin,
-    borderColor: colors.status.success,
+    borderColor: semantic.status.success,
   },
   textInput: {
     flex: 1,
@@ -502,15 +502,15 @@ const styles = StyleSheet.create({
   },
   validIcon: {
     fontSize: ms(fontSize.md),
-    color: colors.status.success,
+    color: semantic.status.success,
   },
   invalidIcon: {
     fontSize: ms(fontSize.md),
-    color: colors.status.error,
+    color: semantic.status.danger,
   },
   warningIcon: {
     fontSize: ms(fontSize.md),
-    color: colors.status.warning,
+    color: semantic.status.warning,
   },
   validationMessage: {
     fontSize: ms(fontSize.sm),
@@ -519,10 +519,10 @@ const styles = StyleSheet.create({
     marginTop: vs(spacing.xs),
   },
   validationMessageError: {
-    color: colors.status.error,
+    color: semantic.status.danger,
   },
   validationMessageWarning: {
-    color: colors.status.warning,
+    color: semantic.status.warning,
   },
   // Contact / Wallet sections
   contactSection: {
@@ -597,9 +597,11 @@ const styles = StyleSheet.create({
     paddingVertical: vs(spacing.xs),
   },
   quickFillText: {
+    // A shortcut you can act on, so it takes salmon ink at 6.07:1. The amount
+    // it fills stays neutral.
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
+    color: semantic.text.accent,
     textTransform: 'uppercase',
   },
   // USD

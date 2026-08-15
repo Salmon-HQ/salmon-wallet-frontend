@@ -17,6 +17,7 @@ import {
   getStashItem,
   spacing,
   type DerivedKeyCache,
+  semantic,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../../src/components';
 import { useBiometricAuth } from '../../hooks/useBiometricAuth';
@@ -210,7 +211,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   error: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
     fontSize: 14,
     lineHeight: 20,

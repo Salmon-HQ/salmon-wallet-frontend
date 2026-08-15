@@ -22,6 +22,7 @@ import {
   getPasswordIssue,
   PASSWORD_CONSTRAINTS,
   letterSpacing,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   errorText: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.sm,
     marginTop: spacing.xs,

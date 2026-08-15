@@ -35,6 +35,7 @@ import {
   type SettingsScreen,
   type SettingsPanelEntry,
   letterSpacing,
+  semantic,
 } from '@salmon/shared';
 
 import type { SettingsSheetProps, SettingsOption, SettingsSection } from './types';
@@ -45,7 +46,7 @@ import type { MobilePanelRegistry } from '../SettingsPanelStack';
 // ============================================================================
 
 const DANGER_COLORS = {
-  text: colors.status.error,
+  text: semantic.status.danger,
   background: colors.status.errorBackground,
   iconBackground: colors.status.errorBackground,
 } as const;

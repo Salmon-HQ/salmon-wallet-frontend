@@ -52,6 +52,9 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   );
   const [amount, setAmount] = useState('');
   const [successTxId, setSuccessTxId] = useState<string | null>(null);
+  // Raised by StepConfirmation while the transfer is in flight. The sheet owns
+  // every dismissal path, so it is the level that has to know.
+  const [isSending, setIsSending] = useState(false);
   const previousVisibleRef = useRef(visible);
 
   const { t } = useTranslation();
@@ -82,6 +85,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     setResolvedRecipientAddress(undefined);
     setAmount('');
     setSuccessTxId(null);
+    setIsSending(false);
     sendHook.reset();
   }, [sendHook, skipTokenSelect, tokens]);
 
@@ -118,6 +122,11 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     if (Platform.OS !== 'android' || !visible) return;
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      // Signing is under way: there is no safe step to go back to, and the
+      // screen reporting the outcome is this one.
+      if (isSending) {
+        return true;
+      }
       if (step === 'success') {
         handleSuccessContinue();
       } else if (step === 'confirmation') {
@@ -131,7 +140,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     });
 
     return () => backHandler.remove();
-  }, [visible, step, skipTokenSelect, handleClose, handleSuccessContinue]);
+  }, [visible, step, skipTokenSelect, handleClose, handleSuccessContinue, isSending]);
 
   // Step navigation handlers
   const handleSelectToken = useCallback((token: SendToken) => {
@@ -162,6 +171,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
 
   // Back button handler for the header
   const handleBackPress = useCallback(() => {
+    if (isSending) return;
     if (step === 'confirmation') {
       handleBackToAddressAmount();
     } else if (step === 'address-amount') {
@@ -171,9 +181,16 @@ export const SendSheet: React.FC<SendSheetProps> = ({
         handleBackToTokenSelect();
       }
     }
-  }, [step, skipTokenSelect, handleBackToAddressAmount, handleBackToTokenSelect, handleClose]);
+  }, [
+    step,
+    skipTokenSelect,
+    handleBackToAddressAmount,
+    handleBackToTokenSelect,
+    handleClose,
+    isSending,
+  ]);
 
-  const showBackButton = step !== 'token-select' || skipTokenSelect;
+  const showBackButton = (step !== 'token-select' || skipTokenSelect) && !isSending;
   const showHeader = step !== 'success';
 
   const headerContent = (
@@ -188,6 +205,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     <BottomSheetContainer
       visible={visible}
       onClose={handleClose}
+      dismissible={!isSending}
       headerContent={showHeader ? headerContent : undefined}
       style={style}
     >
@@ -225,6 +243,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
             onBack={handleBackToAddressAmount}
             onCancel={handleClose}
             onSuccess={handleSuccess}
+            onSendingChange={setIsSending}
           />
         )}
 

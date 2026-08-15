@@ -95,6 +95,18 @@ export interface BottomSheetContainerProps {
   style?: StyleProp<ViewStyle>;
   /** Additional style for the drag area */
   dragAreaStyle?: StyleProp<ViewStyle>;
+  /**
+   * Whether the sheet may be dismissed by backdrop tap, swipe-down, or the
+   * Android hardware back button. Defaults to `true`.
+   *
+   * Set it to `false` while an irreversible operation is in flight. The
+   * sheet's own Cancel/Confirm controls already disable themselves, but the
+   * three dismissal paths live here and knew nothing about that state — so a
+   * backdrop tap during signing unmounted the only screen that would ever
+   * report whether the money moved. One guard here covers every sheet in the
+   * app instead of each caller re-deriving it.
+   */
+  dismissible?: boolean;
   /** For testing */
   testID?: string;
 }
@@ -141,6 +153,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   showTextureOverlay = false,
   style,
   dragAreaStyle,
+  dismissible = true,
   testID,
 }) => {
   const blurTargetRef = useRef<View>(null);
@@ -202,15 +215,17 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     if (Platform.OS !== 'android' || !visible) return;
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      onClose();
+      if (dismissible) onClose();
+      // Swallow the event either way: while non-dismissible the sheet stays.
       return true;
     });
 
     return () => backHandler.remove();
-  }, [visible, onClose]);
+  }, [visible, onClose, dismissible]);
 
   // Pan gesture – drag handle area only
   const panGesture = Gesture.Pan()
+    .enabled(dismissible)
     .onStart(() => {
       isDragging.value = true;
     })
@@ -241,8 +256,14 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     });
 
   const handleBackdropPress = useCallback(() => {
+    if (!dismissible) return;
     onClose();
-  }, [onClose]);
+  }, [onClose, dismissible]);
+
+  const handleRequestClose = useCallback(() => {
+    if (!dismissible) return;
+    onClose();
+  }, [onClose, dismissible]);
 
   // Animated styles
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
@@ -262,7 +283,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       visible={isRendered}
       transparent
       animationType="none"
-      onRequestClose={onClose}
+      onRequestClose={handleRequestClose}
       statusBarTranslucent
       // targetSdk 36 makes edge-to-edge mandatory, but an RN Modal is its own
       // window and does not inherit it: without this the sheet is inset by the

@@ -202,7 +202,7 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
               <Ionicons
                 name={copied ? 'checkmark' : 'copy-outline'}
                 size={18}
-                color={copied ? colors.status.success : semantic.text.secondary}
+                color={copied ? semantic.status.success : semantic.text.secondary}
               />
             </View>
           </TouchableOpacity>

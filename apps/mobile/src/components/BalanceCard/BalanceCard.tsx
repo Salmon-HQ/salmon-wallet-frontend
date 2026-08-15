@@ -435,7 +435,9 @@ const styles = StyleSheet.create({
     marginHorizontal: s(spacing.xxs + 1),
   },
   paginationDotActive: {
-    backgroundColor: colors.text.primary,
+    // Which chain you are looking at is a selected state, so the active dot is
+    // salmon ink (6.07:1) against inactive neutral — a 4px mark, not a fill.
+    backgroundColor: semantic.accent.ink,
   },
 });
 

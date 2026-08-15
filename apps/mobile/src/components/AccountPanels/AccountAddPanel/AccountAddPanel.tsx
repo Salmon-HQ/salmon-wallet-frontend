@@ -39,6 +39,7 @@ import {
   trackEvent,
   type AccountAddStep,
   type DerivedAccountInfo,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { useSettingsHeaderOverride } from '../../SettingsHeaderContext';
@@ -447,7 +448,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   errorText: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.sm,
     marginTop: spacing.xs,

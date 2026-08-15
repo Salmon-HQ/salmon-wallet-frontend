@@ -103,7 +103,7 @@ export function AddressBookPanel({
             accessibilityRole="button"
             accessibilityLabel={t('actions.remove', 'Remove')}
           >
-            <Ionicons name="trash-outline" size={18} color={colors.status.error} />
+            <Ionicons name="trash-outline" size={18} color={semantic.status.danger} />
           </TouchableOpacity>
         </View>
       </View>

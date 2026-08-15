@@ -64,12 +64,11 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
     return null;
   }
 
-  // The One Living Thing Rule: the accent is spent on Send, not on "you are
-  // on Home". `text.primary` is 16.37:1 against the tab bar where salmon was
-  // 6.26:1, so the affordance got stronger as the brand moved to the control
-  // that moves money. Inactive drops pure white for `text.tertiary`.
-  const iconColor = isFocused ? semantic.text.primary : semantic.text.tertiary;
-  const labelColor = isFocused ? semantic.text.primary : semantic.text.tertiary;
+  // The one-fill rule governs fills, not ink, so which tab you are on can be
+  // salmon again: `accent.ink` at 6.07:1 on the bar, against `text.tertiary`
+  // for the rest. The Send pill keeps the screen's only salmon fill.
+  const iconColor = isFocused ? semantic.accent.ink : semantic.text.tertiary;
+  const labelColor = isFocused ? semantic.accent.ink : semantic.text.tertiary;
   const IconComponent = config.icon;
 
   return (

@@ -24,6 +24,15 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  semantic: {
+    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+    text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', accent: '#FF5C45' },
+    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
+    depth: { column: '#0B0F19', abyss: '#070911' },
+    accent: { fill: '#FF5C45', ink: '#FF5C45', tint: 'rgba(255,92,69,0.10)' },
+    border: { default: '#58637B', raised: '#6F7B95' },
+  },
+  tabularNums: { native: { fontVariant: ['tabular-nums'] }, css: {} },
   colors: {
     status: { error: '#f00', errorBackground: '#300' },
     background: { card: '#111', secondary: '#000' },

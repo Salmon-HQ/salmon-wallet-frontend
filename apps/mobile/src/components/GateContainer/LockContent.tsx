@@ -288,7 +288,7 @@ export function LockContent({
   }, [onRemoveAllAccounts, t]);
 
   const getInputBorderColor = () => {
-    if (error) return colors.status.error;
+    if (error) return semantic.status.danger;
     if (isFocused) return colors.accent.primary;
     return colors.input.border;
   };
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.lg),
   },
   errorText: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
     fontSize: ms(fontSize.sm),
     lineHeight: ms(fontSize.sm * lineHeight.normal),

@@ -25,6 +25,7 @@ import {
   truncateHash,
   fontFamilyNative,
   letterSpacing,
+  semantic,
 } from '@salmon/shared';
 import type { Transaction, SwapRouteHop } from './types';
 import { TokenLogo } from '../TokenLogo';
@@ -89,7 +90,7 @@ const HashCopyRow: React.FC<{
         <Ionicons
           name={copied ? 'checkmark' : 'copy-outline'}
           size={12}
-          color={copied ? colors.status.success : colors.text.tertiary}
+          color={copied ? semantic.status.success : colors.text.tertiary}
           style={styles.copyIcon}
         />
       </TouchableOpacity>
@@ -698,7 +699,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   summaryValueWarning: {
-    color: colors.status.warning,
+    color: semantic.status.warning,
   },
 
   // Hash copy row styles

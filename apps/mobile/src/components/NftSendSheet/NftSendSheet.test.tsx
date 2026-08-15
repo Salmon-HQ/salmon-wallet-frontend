@@ -17,6 +17,7 @@ jest.mock('expo-image', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  tabularNums: { native: { fontVariant: ['tabular-nums'] }, css: {} },
   // "Deep Water" semantic tokens. Components read these directly now; the
   // legacy `colors` map below still covers everything not yet migrated.
   semantic: {
@@ -36,6 +37,7 @@ jest.mock('@salmon/shared', () => ({
     state: { hover: 'rgba(199,211,232,0.06)', press: 'rgba(199,211,232,0.10)' },
   },
   colors: {
+    button: { disabledOpacity: 0.5 },
     text: { primary: '#fff', secondary: '#aaa', balance: '#fff' },
     accent: { primary: '#0f0' },
     border: { default: '#333' },

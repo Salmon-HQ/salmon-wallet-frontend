@@ -24,8 +24,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
  * Default colors for positive/negative performance
  */
 const CHART_COLORS = {
-  positive: colors.status.success,
-  negative: colors.status.error,
+  positive: semantic.status.success,
+  negative: semantic.status.danger,
 } as const;
 
 /**
@@ -318,7 +318,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   periodButtonSelected: {
-    backgroundColor: colors.accent.primary,
+    // A selected period is a state, not an action: `accent.tint` is a tinted
+    // ground under salmon ink (5.29:1 composite), not a fill, so the chart no
+    // longer spends the screen's one salmon fill on a 35px puck.
+    backgroundColor: semantic.accent.tint,
   },
   periodButtonText: {
     fontSize: 13,
@@ -328,9 +331,9 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.bold,
   },
   periodButtonTextSelected: {
-    // Full opacity: `opacity.soft` here would drag the ink below the 6.50:1
-    // this token exists to guarantee on a salmon fill.
-    color: semantic.accent.onFill,
+    // Full opacity: `opacity.soft` here would drag the ink below the 5.29:1
+    // salmon measures on the tint composite.
+    color: semantic.text.accent,
     opacity: 1,
   },
   emptyState: {

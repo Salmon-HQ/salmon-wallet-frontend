@@ -128,7 +128,7 @@ export function HeaderContent({
           >
             {/* 23 not 30: the copy glyph fills ~77% of its 24px viewBox vs the
                 settings glyph's ~60%, so it renders larger at the same size. */}
-            <ContentCopySvgIcon size={s(23)} color={colors.text.primary} />
+            <ContentCopySvgIcon size={s(23)} color={semantic.text.accent} />
           </TouchableOpacity>
         </View>
       </View>

@@ -70,7 +70,16 @@ export interface SwapReviewScreenProps extends SwapReviewScreenPropsBase<ViewSty
 /**
  * Props for SwapInputScreen sub-component (React Native)
  */
-export interface SwapInputScreenProps extends SwapInputScreenPropsBase<ViewStyle> {}
+export interface SwapInputScreenProps extends SwapInputScreenPropsBase<ViewStyle> {
+  /**
+   * The exchange a failed bridge left behind. The shared layer now registers
+   * the exchange the moment it is created, before the deposit that can fail,
+   * so a failure has an id and a deposit address the user can quote to
+   * support. Rendering it is the app's job; it belongs beside the error the
+   * failure produced, because that is where the user is looking.
+   */
+  bridgeReference?: { id: string; depositAddress: string } | null;
+}
 
 /**
  * Props for main SwapScreen component (React Native)

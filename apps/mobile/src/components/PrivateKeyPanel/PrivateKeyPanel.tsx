@@ -24,6 +24,7 @@ import {
   type AccountKeyInfo,
   fontSize,
   letterSpacing,
+  semantic,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
@@ -195,7 +196,7 @@ export function PrivateKeyPanel({
     <SettingsScreenLayout title={t('settings.private_key')} onBack={currentBackAction}>
       {/* Warning */}
       <View style={styles.warningContainer}>
-        <Ionicons name="warning-outline" size={20} color={colors.status.warning} />
+        <Ionicons name="warning-outline" size={20} color={semantic.status.warning} />
         <Text style={styles.warningText}>{t('settings.private_key_warning')}</Text>
       </View>
 
@@ -393,7 +394,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   copyFailedText: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.sm,
     marginTop: spacing.sm,

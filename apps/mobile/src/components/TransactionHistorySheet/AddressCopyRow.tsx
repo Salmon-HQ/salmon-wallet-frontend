@@ -15,6 +15,7 @@ import {
   borderRadius,
   getShortAddress,
   spacing,
+  semantic,
 } from '@salmon/shared';
 
 // ============================================================================
@@ -143,7 +144,9 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
           <Ionicons
             name={copied ? 'checkmark' : 'copy-outline'}
             size={16}
-            color={copied ? colors.status.success : colors.text.secondary}
+            // The copy control is the affordance in this row; the address beside it
+            // is data to read and stays neutral mono.
+            color={copied ? semantic.status.success : semantic.text.accent}
           />
         </TouchableOpacity>
       </View>
@@ -195,7 +198,7 @@ const styles = StyleSheet.create({
     backgroundColor: `${colors.background.card}80`,
   },
   copyButtonCopied: {
-    backgroundColor: `${colors.status.success}20`,
+    backgroundColor: `${semantic.status.success}20`,
   },
 });
 

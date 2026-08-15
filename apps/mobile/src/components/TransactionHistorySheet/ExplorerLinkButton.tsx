@@ -18,6 +18,8 @@ import {
   type NetworkEnvironment,
   fontFamilyNative,
   type ExplorerWithKey,
+
+  semantic,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 
@@ -149,7 +151,7 @@ export function ExplorerLinkButton({
 
   return (
     <>
-      <BlurContainer borderColor={colors.palette.amber} style={[styles.blurWrapper, style]}>
+      <BlurContainer borderColor={semantic.text.accent} style={[styles.blurWrapper, style]}>
         <TouchableOpacity
           testID="tx-detail-explorer-link"
           style={styles.button}
@@ -162,7 +164,7 @@ export function ExplorerLinkButton({
           <Ionicons
             name="open-outline"
             size={16}
-            color={colors.palette.amber}
+            color={semantic.text.accent}
             style={styles.icon}
           />
           <Text style={styles.buttonText}>{buttonText}</Text>
@@ -170,7 +172,7 @@ export function ExplorerLinkButton({
             <Ionicons
               name="chevron-down"
               size={14}
-              color={colors.palette.amber}
+              color={semantic.text.accent}
               style={styles.chevron}
             />
           )}
@@ -233,10 +235,16 @@ const styles = StyleSheet.create({
   icon: {
     marginRight: s(spacing.sm),
   },
+  /**
+   * A link off to an explorer. It was reading `palette.amber` — a decorative
+   * badge hue with no semantic meaning, close enough to salmon to be mistaken
+   * for it and not close enough to be it. Links are the textbook case for
+   * accent ink: `text.accent`, 6.07:1.
+   */
   buttonText: {
     fontSize: ms(fontSize.base),
     fontFamily: fontFamilyNative.medium,
-    color: colors.palette.amber,
+    color: semantic.text.accent,
   },
   chevron: {
     marginLeft: s(spacing.xs),

@@ -269,6 +269,7 @@ export default function HomeScreen() {
     changeAmount,
     loading,
     refreshing,
+    hasData,
     refresh,
     error: balanceError,
     hiddenBalance,
@@ -323,13 +324,16 @@ export default function HomeScreen() {
       };
 
       if (isActiveNetwork) {
-        const isSwitching = switchingSubAccount || switchingNetwork;
-        const showSkeleton = isSwitching || refreshing;
+        // A skeleton means "there is nothing to show", never "a request is in
+        // flight". `hasData` is true for cached data too, so returning to a
+        // chain visited earlier in the session paints its last-known balance
+        // immediately; `refreshing` gets the quiet affordance instead.
+        const showSkeleton = !hasData;
         balanceData = {
           usdTotal: showSkeleton ? undefined : usdTotal,
           changePercent: showSkeleton ? undefined : changePercent,
           changeAmount: showSkeleton ? undefined : changeAmount,
-          loading: showSkeleton || (loading && !refreshing),
+          loading: showSkeleton,
         };
       } else {
         balanceData = {
@@ -350,17 +354,7 @@ export default function HomeScreen() {
         ...balanceData,
       };
     });
-  }, [
-    allNetworks,
-    networkId,
-    switchingSubAccount,
-    switchingNetwork,
-    usdTotal,
-    changePercent,
-    changeAmount,
-    loading,
-    refreshing,
-  ]);
+  }, [allNetworks, networkId, usdTotal, changePercent, changeAmount, hasData]);
 
   // Get current blockchain type for TokenList styling
   const currentBlockchain = useMemo(() => {
@@ -846,7 +840,7 @@ export default function HomeScreen() {
             </View>
 
             {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
-            {switchingNetwork || refreshing ? (
+            {!hasData ? (
               <TokenListSkeleton count={1} />
             ) : (
               bitcoinToken && (
@@ -878,13 +872,8 @@ export default function HomeScreen() {
         ) : (
           // Normal token list for Solana/Ethereum
           <TokenList
-            tokens={switchingSubAccount || switchingNetwork || refreshing ? [] : tokenListItems}
-            loading={
-              switchingSubAccount ||
-              switchingNetwork ||
-              refreshing ||
-              (loading && tokenListItems.length === 0)
-            }
+            tokens={tokenListItems}
+            loading={!hasData}
             onTokenPress={handleTokenPress}
             hiddenBalance={hiddenBalance}
             ListEmptyComponent={ListEmptyComponent}
