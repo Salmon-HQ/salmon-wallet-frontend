@@ -19,14 +19,14 @@ This package is part of the Salmon Wallet monorepo and is automatically availabl
 ### Importing All Assets
 
 ```typescript
-import { DMSansBold, IconHome, Images } from '@salmon/assets';
+import { GeistBold, IconHome, Images } from '@salmon/assets';
 ```
 
 ### Importing Specific Categories
 
 ```typescript
 // Fonts only
-import { DMSansBold, DMSansMedium, Fonts } from '@salmon/assets/fonts';
+import { GeistBold, GeistMedium, Fonts } from '@salmon/assets/fonts';
 
 // Images only
 import { IconHome, IconWallet, Images } from '@salmon/assets/images';
@@ -35,12 +35,12 @@ import { IconHome, IconWallet, Images } from '@salmon/assets/images';
 ### Using Fonts
 
 ```typescript
-import { DMSansBold, DMSansMedium, DMSansRegular, SpaceMonoRegular } from '@salmon/assets';
+import { GeistBold, GeistMedium, GeistRegular, GeistMonoRegular } from '@salmon/assets';
 
 // Or use the Fonts object
 import { Fonts } from '@salmon/assets';
 
-const fontFamily = Fonts.DMSans.Bold;
+const fontFamily = Fonts.Geist.Bold;
 ```
 
 ### Using Images
@@ -84,13 +84,14 @@ Assets are organized into the following categories:
 
 ## Fonts Included
 
-- **DM Sans**: Primary font family
-  - Bold
-  - Medium
-  - Regular
+- **Geist**: Primary interface font family
+  - Regular (400)
+  - Medium (500)
+  - SemiBold (600)
+  - Bold (700)
 
-- **Space Mono**: Monospace font for addresses and technical text
-  - Regular
+- **Geist Mono**: Monospace font for addresses, hashes, keys, and seed phrases
+  - Regular (400)
 
 ## File Structure
 

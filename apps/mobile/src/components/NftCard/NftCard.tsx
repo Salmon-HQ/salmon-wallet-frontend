@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   nameText: {
-    // DM Sans SemiBold, ~13px, color #e0e0e0
+    // Geist SemiBold, ~13px, color #e0e0e0
     fontFamily: fontFamilyNative.semiBold,
     fontSize: ms(fontSize.sm),
     fontWeight: fontWeight.semibold,

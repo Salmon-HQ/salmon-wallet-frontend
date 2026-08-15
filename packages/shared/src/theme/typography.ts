@@ -1,6 +1,6 @@
 /**
  * Typography tokens for Salmon Wallet
- * Uses DM Sans as the primary font family
+ * Uses Geist as the primary font family
  * Works for both React Native (Expo) and Web (WXT+Vite extension)
  */
 
@@ -101,7 +101,7 @@ export const lineHeight = {
 } as const;
 
 /**
- * Font weights (maps to DM Sans variants)
+ * Font weights (maps to Geist variants)
  */
 export const fontWeight = {
   /** 300 */

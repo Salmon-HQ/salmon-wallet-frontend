@@ -117,10 +117,6 @@ export type { WalletInitErrorScreenProps } from './WalletInitErrorScreen';
 export { ScalesBackground } from './ScalesBackground';
 export type { ScalesBackgroundProps } from './ScalesBackground';
 
-// TexturedBackground - Tiled fish-scale texture pattern background
-export { TexturedBackground } from './TexturedBackground';
-export type { TexturedBackgroundProps } from './TexturedBackground';
-
 // PasswordInput - Secure password input with visibility toggle and strength indicator
 export { PasswordInput, PasswordStrengthBar } from './PasswordInput';
 export type { PasswordInputProps, PasswordStrengthBarProps } from './PasswordInput';
