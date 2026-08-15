@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   },
   wordText: {
     color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
+    fontFamily: fontFamilyNative.mono,
     fontSize: fontSize.base,
   },
 });

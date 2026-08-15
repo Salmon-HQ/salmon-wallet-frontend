@@ -7,8 +7,16 @@
 export const fontFamily = {
   /** Primary font - DM Sans */
   sans: 'DM Sans',
-  /** Legacy alias kept for compatibility; resolves to DM Sans */
-  mono: 'DM Sans',
+  /**
+   * Monospace font - Geist Mono.
+   *
+   * Required for any value the user must read character by character:
+   * addresses, transaction hashes, private keys, and seed phrases. Geist Mono
+   * ships a slashed zero as the default glyph (no `zero`/`ss` feature needed,
+   * which React Native's `fontVariant` cannot enable) and a fixed 600/1000
+   * advance for every digit, so amounts do not reflow as values update.
+   */
+  mono: 'Geist Mono',
 } as const;
 
 /**
@@ -30,6 +38,8 @@ export const fontFamilyNative = {
   extraBold: 'DMSansExtraBold',
   /** DM Sans Black (900) */
   black: 'DMSansBlack',
+  /** Geist Mono Regular (400) - addresses, hashes, keys, seed phrases */
+  mono: 'GeistMonoRegular',
 } as const;
 
 /**

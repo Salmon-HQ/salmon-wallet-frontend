@@ -46,6 +46,7 @@ export default function RootLayout() {
     DMSansBold: require('@salmon/assets/src/fonts/DMSans-Bold.ttf'),
     DMSansExtraBold: require('@salmon/assets/src/fonts/DMSans-ExtraBold.ttf'),
     DMSansBlack: require('@salmon/assets/src/fonts/DMSans-Black.ttf'),
+    GeistMonoRegular: require('@salmon/assets/src/fonts/GeistMono-Regular.ttf'),
     ...FontAwesome.font,
   });
 

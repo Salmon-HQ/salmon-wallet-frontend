@@ -60,3 +60,17 @@
   font-style: normal;
   font-display: swap;
 }
+
+/*
+ * Geist Mono — used for addresses, transaction hashes, private keys, and seed
+ * phrases. Its default zero is slashed, so 0/O stay distinguishable without a
+ * font-feature-settings opt-in, and all digits share a 600/1000 advance so
+ * amounts do not reflow while they update.
+ */
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
