@@ -39,6 +39,7 @@ import {
   opacity,
   durationMs,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import type { BlockchainId } from '@salmon/shared';
 import { EyeIcon, EyeOffIcon, Icon, SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from '../Icon';
@@ -196,6 +197,7 @@ const BalanceRow = styled(Box)({
 });
 
 const BalanceDollars = styled(Typography)({
+  ...tabularNums.css,
   fontSize: ms(fontSize.balance),
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
@@ -205,6 +207,7 @@ const BalanceDollars = styled(Typography)({
 });
 
 const BalanceDecimals = styled(Typography)({
+  ...tabularNums.css,
   fontSize: ms(fontSize.balance),
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
@@ -244,6 +247,7 @@ const ChangeRow = styled(Box)({
 });
 
 const ChangeText = styled(Typography)<{ $color?: string }>(({ $color }) => ({
+  ...tabularNums.css,
   fontSize: ms(fontSize.sm),
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
@@ -272,7 +276,9 @@ const PaginationDot = styled(Box)<{ $active?: boolean }>(({ $active }) => ({
   width: s(spacing.xs),
   height: s(spacing.xs),
   borderRadius: s(spacing.xxs),
-  backgroundColor: $active ? colors.text.primary : colors.step.inactive,
+  // Which chain you are looking at is a selected state, so the active dot is
+  // salmon ink (6.07:1) against inactive neutral — a 4px mark, not a fill.
+  backgroundColor: $active ? semantic.accent.ink : colors.step.inactive,
   margin: `0 ${s(spacing.xxs + 1)}px`,
 }));
 

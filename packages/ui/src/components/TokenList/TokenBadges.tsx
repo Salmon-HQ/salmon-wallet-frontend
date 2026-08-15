@@ -60,6 +60,7 @@ import {
   vs,
   ms,
   fontSize,
+  tabularNums,
 } from '@salmon/shared';
 import { styled } from '../../utils/styled';
 import type { TokenBadgesProps } from './types';
@@ -161,6 +162,7 @@ const OverflowBox = styled(Box)({
 });
 
 const OverflowText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: ms(fontSize.xs),
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,

@@ -17,6 +17,7 @@ import {
   letterSpacing,
   lineHeight,
   componentSizes,
+  tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { SwapDetailRowProps } from './types';
@@ -44,6 +45,7 @@ const Label = styled(Typography)({
 });
 
 const Value = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.md,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,

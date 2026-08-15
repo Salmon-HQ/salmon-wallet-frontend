@@ -24,6 +24,7 @@ import {
   duration,
   durationMs,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import CheckIcon from '@mui/icons-material/Check';
 import { CopyIcon } from '../Icon';
@@ -77,6 +78,7 @@ const StatLabel = styled(Typography)({
 });
 
 const StatValue = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.md,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,

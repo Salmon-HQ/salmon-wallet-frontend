@@ -39,6 +39,7 @@ import {
   opacity,
   duration,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 
 import { useTokenSearch } from '@salmon/shared';
@@ -201,6 +202,7 @@ const NetworkChipText = styled(Typography)({
 });
 
 const TokenBalance = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.base,
   fontFamily: fontFamily.sans,
   color: colors.text.secondary,

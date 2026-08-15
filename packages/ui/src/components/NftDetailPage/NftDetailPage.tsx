@@ -40,6 +40,7 @@ import {
   blur,
   borderWidth,
   trackEvent,
+  tabularNums,
 } from '@salmon/shared';
 
 import { BlurContainer } from '../BlurContainer';
@@ -125,6 +126,7 @@ const AttributeName = styled(Typography)({
 });
 
 const AttributeValue = styled(Typography)({
+  ...tabularNums.css,
   fontFamily: fontFamily.sans,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.regular,
@@ -152,6 +154,7 @@ const DetailLabel = styled(Typography)({
 });
 
 const DetailValue = styled(Typography)({
+  ...tabularNums.css,
   fontFamily: fontFamily.sans,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
@@ -566,9 +569,7 @@ export function NftDetailPage({
                   aria-label={t('nft.send.title', 'Send NFT')}
                   data-testid="nft-detail-send-button"
                 >
-                  <CallMadeIcon
-                    sx={{ fontSize: fontSize.md, color: colors.button.primaryText }}
-                  />
+                  <CallMadeIcon sx={{ fontSize: fontSize.md, color: colors.button.primaryText }} />
                   <ButtonText $onAccent>{t('actions.send', 'Send')}</ButtonText>
                 </PrimaryButtonBase>
 

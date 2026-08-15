@@ -14,6 +14,7 @@ import {
   fontSize,
   fontWeight,
   componentSizes,
+  tabularNums,
 } from '@salmon/shared';
 import { NftCard } from '../NftCard';
 import { SolanaSvgIcon, BitcoinSvgIcon } from '../Icon';
@@ -55,6 +56,7 @@ const Title = styled('h2')({
 });
 
 const Count = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   color: colors.text.secondary,

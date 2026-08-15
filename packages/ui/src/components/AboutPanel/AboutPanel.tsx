@@ -36,6 +36,7 @@ import {
   letterSpacing,
   opacity,
   componentSizes,
+  tabularNums,
 } from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import type { AboutPanelProps } from './types';
@@ -129,6 +130,7 @@ const AppName = styled(Typography)({
 });
 
 const VersionText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   color: colors.text.secondary,
 });

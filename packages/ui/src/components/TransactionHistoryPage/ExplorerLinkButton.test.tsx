@@ -22,6 +22,11 @@ vi.mock('../../utils/styled', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
+  tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
+  semantic: {
+    text: { accent: '#FF5C45' },
+    accent: { ink: '#FF5C45', tint: 'rgba(255,92,69,0.10)', tintHover: 'rgba(255,92,69,0.15)' },
+  },
   colors: {
     palette: { amber: '#fc0' },
     border: { default: '#333' },

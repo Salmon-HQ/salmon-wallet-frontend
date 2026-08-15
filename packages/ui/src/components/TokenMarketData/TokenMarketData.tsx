@@ -20,6 +20,7 @@ import {
   formatPercentageCompact,
   formatDateString,
   useCurrencyContext,
+  tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { TokenMarketDataProps } from './types';
@@ -58,6 +59,7 @@ const RowLabel = styled(Typography)({
 });
 
 const RowValue = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,

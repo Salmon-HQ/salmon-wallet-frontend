@@ -28,6 +28,7 @@ vi.mock('../../utils/styled', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
+  tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
   colors: {
     text: { primary: '#fff', secondary: '#aaa', disabled: '#666' },
     background: { card: '#111' },

@@ -17,6 +17,7 @@ import {
   letterSpacing,
   lineHeight,
   componentSizes,
+  tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { SwapReviewCardProps } from './types';
@@ -43,6 +44,7 @@ const Label = styled(Typography)({
 });
 
 const Amount = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize['2xl'],
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
@@ -53,6 +55,7 @@ const Amount = styled(Typography)({
 });
 
 const UsdValue = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,

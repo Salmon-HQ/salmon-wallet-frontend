@@ -25,6 +25,8 @@ import {
   duration,
   easing,
   sanitizeDecimalInput,
+  tabularNums,
+  semantic,
 } from '@salmon/shared';
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -74,6 +76,7 @@ const LoadingContainer = styled(Box)({
 });
 
 const StyledInput = styled(InputBase)({
+  ...tabularNums.css,
   flex: 1,
   fontSize: fontSize.md,
   fontWeight: fontWeight.bold,
@@ -151,6 +154,7 @@ const InfoSection = styled(Box)({
 });
 
 const UsdValue = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
@@ -160,6 +164,7 @@ const UsdValue = styled(Typography)({
 });
 
 const AvailableBalance = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.light,
   fontFamily: fontFamily.sans,
@@ -188,11 +193,17 @@ const QuickFillButton = styled(ButtonBase)({
   },
 });
 
+/**
+ * 25% / 50% / MAX are shortcuts, not labels — the only interactive things in
+ * this block that were rendering as plain white text. Salmon ink at 6.07:1 on
+ * the neutral chip says "press me" without spending a fill.
+ */
 const QuickFillText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
-  color: colors.text.primary,
+  color: semantic.text.accent,
   textTransform: 'uppercase',
 });
 

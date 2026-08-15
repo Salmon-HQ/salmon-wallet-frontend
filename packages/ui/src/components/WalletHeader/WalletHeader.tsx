@@ -24,6 +24,7 @@ import {
   opacity,
   componentSizes,
   durationMs,
+  semantic,
 } from '@salmon/shared';
 import { CopyIcon, RefreshIcon, SettingsIcon } from '../Icon';
 import type { WalletHeaderProps } from './types';
@@ -81,10 +82,15 @@ const Address = styled(Typography)({
   whiteSpace: 'nowrap',
 });
 
+/**
+ * The copy affordance, not the address. Salmon ink at 6.07:1 on the header
+ * ground marks the one thing in this block you can act on; the address itself
+ * stays neutral mono because it is data to read, not a control.
+ */
 const CopyIconStyled = styled(CopyIcon)({
   marginLeft: spacing.sm,
   fontSize: fontSize.base,
-  color: colors.text.muted,
+  color: semantic.text.accent,
 });
 
 const ActionButtons = styled(Box)({

@@ -23,6 +23,8 @@ import {
   fontSize,
   shadowsCSS,
   durationMs,
+  tabularNums,
+  semantic,
 } from '@salmon/shared';
 import { useCallback, useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -74,17 +76,22 @@ const PeriodContainer = styled(Box)({
 });
 
 const PeriodButton = styled(Button)<{ $selected?: boolean }>(({ $selected }) => ({
+  ...tabularNums.css,
   minWidth: componentSizes.backButtonSize,
   padding: `${spacing.sm}px ${spacing.md}px`,
   borderRadius: borderRadius.full,
-  backgroundColor: $selected ? colors.text.primary : 'transparent',
-  color: $selected ? colors.background.primary : colors.text.secondary,
+  // The selected period is a *state*, so it takes warm ink on the accent tint
+  // rather than a hard white puck. `accent.tint` is a tinted ground that sits
+  // under salmon ink (5.29:1 composite), not a salmon fill — the one-fill rule
+  // is untouched and the chart keeps its own fill budget free.
+  backgroundColor: $selected ? semantic.accent.tint : 'transparent',
+  color: $selected ? semantic.text.accent : colors.text.secondary,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   textTransform: 'none',
   '&:hover': {
-    backgroundColor: $selected ? colors.text.primary : colors.card.border,
+    backgroundColor: $selected ? semantic.accent.tintHover : colors.card.border,
   },
 }));
 
@@ -118,6 +125,7 @@ const TooltipContainer = styled(Box)({
 });
 
 const TooltipPrice = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.base,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
@@ -126,6 +134,7 @@ const TooltipPrice = styled(Typography)({
 });
 
 const TooltipDate = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontFamily: fontFamily.sans,
   color: colors.text.secondary,

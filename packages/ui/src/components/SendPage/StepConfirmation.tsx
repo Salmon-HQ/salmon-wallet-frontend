@@ -37,6 +37,7 @@ import {
   duration,
   durationMs,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { StepConfirmationProps } from './types';
@@ -101,6 +102,7 @@ const TokenIconFallbackText = styled(Typography)({
 
 // Amount
 const AmountText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.title,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
@@ -142,6 +144,7 @@ const AddressText = styled(Typography)({
 
 // Fee
 const FeeText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontFamily: fontFamily.sans,
   color: colors.text.secondary,

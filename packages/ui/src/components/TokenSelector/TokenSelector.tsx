@@ -28,6 +28,7 @@ import {
   componentSizes,
   duration,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 
 import { focusRingNone, focusRingOnWrapper } from '../../theme';
@@ -58,6 +59,7 @@ const InputContainer = styled(Box)({
 });
 
 const AmountInput = styled(InputBase)({
+  ...tabularNums.css,
   width: '100%',
   fontSize: fontSize['2xl'],
   fontWeight: fontWeight.semibold,

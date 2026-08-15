@@ -305,9 +305,20 @@ The translucent tiers `surface.membraneThin` and `surface.membraneThick` are
 
 ### Named Rules
 
-**The One Living Thing Rule.** Salmon appears once per screen. On the home
-screen it is spent on the active tab item, which is why the four action pills
-are neutral. If two salmon elements are on screen, one of them is wrong.
+**The One Living Thing Rule.** Salmon appears as a **fill** once per screen —
+and the rule governs fills only. Four salmon fills on one screen means no fill
+is primary, and that is the failure this rule exists to prevent. On the home
+screen the one fill is the Send pill.
+
+Salmon as **ink** has no such problem and is not rationed: at 6.07:1 on dark
+ground it out-measures several text roles already shipping, and the ramp has
+lighter inks nothing has spent yet (`salmon-400` at 7.30:1, `salmon-300` at
+9.29:1). Ink is spent where warmth is meaningful — the value a row is actually
+about, active and selected states, interactive affordances, an action's
+iconography, links — and withheld from genuinely secondary text.
+`accent.tint` / `tintHover` are tinted grounds that sit *under* salmon ink
+(5.29:1 composite); they are not fills and do not consume the fill budget.
+The goal is warmth and hierarchy, not a salmon screen.
 
 **The Salmon Physics Rule.** Salmon is a light source seen from below. On dark
 ground it is ink; when it is a fill, the type on it is `neutral-1000` at 6.50:1
@@ -827,7 +838,8 @@ not travel.
 - **Do** keep the approval sheet and every seed view on `surface.bedrock`,
   opaque, with a hard scrim behind them.
 - **Do** paint the scrim before the blur, on every rung of the ladder.
-- **Do** spend salmon once per screen, and let the rest of the screen be cold.
+- **Do** spend salmon *fills* once per screen; salmon ink is not rationed, but
+  it is aimed — values, states, affordances, links — never sprayed.
 - **Do** add a new token when a value is missing, rather than a literal at the
   call site — `packages/ui/src/theme` invents no colors, sizes or durations, and
   that property is worth protecting.

@@ -19,6 +19,7 @@ import {
   borderWidth,
   duration,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import { LoadingScreen } from '../LoadingScreen';
 import type { TransactionSuccessScreenProps } from './types';
@@ -121,6 +122,7 @@ const BridgeLabel = styled(Typography)({
 });
 
 const BridgeValue = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.base,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,

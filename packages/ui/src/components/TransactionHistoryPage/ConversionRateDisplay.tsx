@@ -18,6 +18,7 @@ import {
   fontWeight,
   lineHeight,
   spacing,
+  tabularNums,
 } from '@salmon/shared';
 import type { ConversionRateDisplayProps } from './types';
 
@@ -32,6 +33,7 @@ const Container = styled(Box)({
 });
 
 const RateText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   color: colors.text.secondary,
   lineHeight: lineHeight.condensed,
@@ -42,6 +44,7 @@ const SymbolText = styled('span')({
 });
 
 const CompactText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.xs,
   color: colors.text.secondary,
   lineHeight: lineHeight.condensed,

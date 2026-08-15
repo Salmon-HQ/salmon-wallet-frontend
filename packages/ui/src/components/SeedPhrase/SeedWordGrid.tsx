@@ -15,6 +15,7 @@ import {
   fontSize,
   fontWeight,
   componentSizes,
+  tabularNums,
 } from '@salmon/shared';
 import type { SeedWordGridProps } from './types';
 
@@ -40,6 +41,7 @@ const WordCard = styled(Box)({
 });
 
 const WordIndex = styled(Typography)({
+  ...tabularNums.css,
   color: colors.accent.primary,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.bold,

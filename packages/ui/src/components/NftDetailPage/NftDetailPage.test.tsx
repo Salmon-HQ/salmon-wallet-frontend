@@ -38,6 +38,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
+  tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
   semantic: {
     surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
     text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
@@ -50,7 +51,10 @@ vi.mock('@salmon/shared', () => ({
       fishScale: 1,
     },
   },
-  palette: { salmon: { 500: '#FF5C45', 600: '#E64A34' }, neutral: { 0: '#FFFFFF', 1000: '#070911' } },
+  palette: {
+    salmon: { 500: '#FF5C45', 600: '#E64A34' },
+    neutral: { 0: '#FFFFFF', 1000: '#070911' },
+  },
   blur: { md: 12, xs: 4 },
   borderRadius: { md: 12, sm: 8, button: 16, iconContainer: 18 },
   borderWidth: { thin: 1, actionButton: 1 },

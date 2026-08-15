@@ -30,6 +30,7 @@ import {
   opacity,
   duration,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { StepTokenSelectProps, SendToken } from './types';
@@ -179,6 +180,7 @@ const TokenName = styled(Typography)({
 });
 
 const TokenBalance = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.base,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,

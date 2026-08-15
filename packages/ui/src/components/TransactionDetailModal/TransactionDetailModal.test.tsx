@@ -26,6 +26,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
+  tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
   borderRadius: {
     xs: 4,
     sm: 8,

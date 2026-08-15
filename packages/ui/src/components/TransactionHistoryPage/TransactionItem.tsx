@@ -42,6 +42,7 @@ import {
   spacing,
   duration,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -290,6 +291,7 @@ const AmountsContainer = styled(Box)({
 });
 
 const AmountText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   marginBottom: spacing.xxs,
@@ -304,6 +306,7 @@ const TimeRow = styled(Box)({
 });
 
 const TimeText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.xs,
   color: colors.text.tertiary,
 });

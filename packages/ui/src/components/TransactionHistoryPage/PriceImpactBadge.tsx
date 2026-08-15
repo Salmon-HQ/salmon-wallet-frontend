@@ -26,6 +26,7 @@ import {
   fontWeight,
   lineHeight,
   componentSizes,
+  tabularNums,
 } from '@salmon/shared';
 import type { PriceImpactBadgeProps } from './types';
 
@@ -116,6 +117,7 @@ export function PriceImpactBadge({
       <Typography
         component="span"
         sx={{
+          ...tabularNums.css,
           fontSize: sizeConfig.fontSize,
           fontWeight: fontWeight.medium,
           color: 'inherit',

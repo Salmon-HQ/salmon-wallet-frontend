@@ -32,6 +32,7 @@ import {
   duration,
   durationMs,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -77,6 +78,7 @@ const RouteHeader = styled(Box)({
 });
 
 const RouteHeaderText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   color: colors.text.secondary,
@@ -111,6 +113,7 @@ const RouteTokenRow = styled(Box)({
 });
 
 const RouteTokenText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   color: colors.text.primary,
   flex: 1,
@@ -126,6 +129,7 @@ const RouteArrowColumn = styled(Box)({
 });
 
 const MoreText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.xs,
   color: colors.text.tertiary,
   marginTop: spacing.xxs,
@@ -151,6 +155,7 @@ const SummaryLabel = styled(Typography)({
 });
 
 const SummaryValue = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   color: colors.text.secondary,
@@ -187,6 +192,7 @@ const HopToken = styled(Box)({
 });
 
 const HopAmount = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   color: colors.text.primary,
   flex: 1,
@@ -220,6 +226,7 @@ const DexText = styled(Typography)({
 });
 
 const PercentText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.xs,
   color: colors.text.tertiary,
 });

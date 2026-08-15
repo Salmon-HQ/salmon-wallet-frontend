@@ -28,6 +28,7 @@ import {
   opacity,
   duration,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { TokenBadges } from './TokenBadges';
@@ -69,6 +70,7 @@ const BitcoinInfoContainer = styled(Box)({
 });
 
 const BitcoinPrice = styled(Typography)({
+  ...tabularNums.css,
   fontSize: ms(fontSize.tokenNamePrice),
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
@@ -84,6 +86,7 @@ const BitcoinChangeRow = styled(Box)({
 });
 
 const BitcoinChangeText = styled(Typography)<{ $changeColor?: string }>(({ $changeColor }) => ({
+  ...tabularNums.css,
   fontSize: ms(fontSize.tokenChange),
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
@@ -98,9 +101,11 @@ const BitcoinAmountContainer = styled(Box)({
 });
 
 const BitcoinAmount = styled(Typography)({
+  ...tabularNums.css,
   fontSize: ms(fontSize.lg),
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
+  // Neutral for the same reason as `TokenAmount` above.
   color: colors.text.primary,
 });
 
@@ -172,6 +177,7 @@ const PriceRow = styled(Box)({
 });
 
 const Price = styled(Typography)({
+  ...tabularNums.css,
   fontSize: ms(fontSize.tokenNamePrice),
   fontFamily: fontFamily.sans,
   color: colors.text.muted,
@@ -183,6 +189,7 @@ const BulletSeparator = styled(Typography)({
 });
 
 const ChangeText = styled(Typography)<{ $changeColor?: string }>(({ $changeColor }) => ({
+  ...tabularNums.css,
   fontSize: ms(fontSize.tokenChange),
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
@@ -198,6 +205,7 @@ const ValueContainer = styled(Box)({
 });
 
 const UsdValue = styled(Typography)({
+  ...tabularNums.css,
   fontSize: ms(fontSize.lg),
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
@@ -205,7 +213,16 @@ const UsdValue = styled(Typography)({
   marginBottom: vs(spacing.xxs),
 });
 
+/**
+ * Deliberately neutral. This was tried in salmon ink — it is the quantity you
+ * actually hold, so it looked like the row's subject — and it failed on screen:
+ * it lands one column away from the 24h change, which is `danger-500` rose
+ * whenever the token is down, and two warm reds on one 44px row is exactly the
+ * collision the ramps were hue-separated to avoid. The row already carries
+ * colour, and it belongs to price movement.
+ */
 const TokenAmount = styled(Typography)({
+  ...tabularNums.css,
   fontSize: ms(fontSize.sm),
   fontFamily: fontFamily.sans,
   color: colors.text.muted,

@@ -72,6 +72,7 @@ import {
   duration,
   durationMs,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -346,12 +347,14 @@ const SectionLabel = styled(Typography)({
 });
 
 const SectionValue = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.base,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
 });
 
 const HashValue = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   color: colors.text.primary,
@@ -416,6 +419,7 @@ const TokenName = styled(Typography)({
 });
 
 const TokenAmount = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.md,
   fontWeight: fontWeight.bold,
   flexShrink: 0,
@@ -455,6 +459,7 @@ const SwapLogoPlaceholder = styled(Box)({
 });
 
 const SwapAmount = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.md,
   fontWeight: fontWeight.bold,
   color: colors.text.primary,
@@ -543,6 +548,7 @@ const NftAttributeType = styled(Typography)({
 });
 
 const NftAttributeValue = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
@@ -641,6 +647,7 @@ const HopTokenText = styled(Typography)({
 });
 
 const HopPercent = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.xs,
   fontWeight: fontWeight.medium,
   color: colors.text.tertiary,
@@ -701,6 +708,7 @@ const DevMonoText = styled(Typography)({
 });
 
 const DevSecondaryText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.xs,
   fontWeight: fontWeight.regular,
   color: colors.text.tertiary,

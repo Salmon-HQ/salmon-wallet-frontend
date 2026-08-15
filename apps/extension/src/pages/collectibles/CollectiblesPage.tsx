@@ -24,6 +24,7 @@ import {
   type NftData,
   type NftSectionKey,
   type NftSection,
+  tabularNums,
 } from '@salmon/shared';
 import {
   // NftCarouselSection,
@@ -103,6 +104,7 @@ const SectionTitleText = styled('h2')({
 });
 
 const SectionCount = styled(Typography)({
+  ...tabularNums.css,
   fontSize: 13,
   fontWeight: 500,
   color: colors.text.secondary,

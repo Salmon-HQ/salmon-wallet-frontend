@@ -233,12 +233,13 @@ const TabButton = styled('button', {
   padding: `${spacing.md}px 0`,
   background: 'none',
   border: 'none',
-  // Neutral by rule. The screen's one living element is the Send pill, not
-  // "you are on Home", so the active underline is `text.primary`
-  // (`neutral-50`, 16.37:1 on the app ground) — a stronger, not weaker,
-  // affordance than the salmon it replaced, and it is still carried by three
-  // channels: the rule, the label color, and weight 600.
-  borderBottom: active ? `2px solid ${semantic.text.primary}` : '2px solid transparent',
+  // The scarcity rule governs *fills*, not ink: four salmon fills on a screen
+  // means no fill is primary, which is the failure it exists to prevent. A 2px
+  // rule is ink, so the active underline is salmon again (`accent.ink`,
+  // 6.07:1 on the app ground) while the label stays `text.primary` at
+  // 16.37:1 — the affordance keeps the contrast it gained and gets the warmth
+  // back. Send keeps the screen's one and only salmon fill.
+  borderBottom: active ? `2px solid ${semantic.accent.ink}` : '2px solid transparent',
   color: active ? colors.text.primary : colors.text.secondary,
   fontFamily: fontFamily.sans,
   fontWeight: active ? 600 : 400,

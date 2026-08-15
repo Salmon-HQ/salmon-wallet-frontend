@@ -1,6 +1,14 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { borderRadius, colors, fontFamily, fontSize, fontWeight, spacing } from '@salmon/shared';
+import {
+  borderRadius,
+  colors,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  spacing,
+  tabularNums,
+} from '@salmon/shared';
 import { styled } from '../../utils/styled';
 
 export const Container = styled(Box)({
@@ -202,6 +210,7 @@ export const SummaryLabel = styled(Typography)({
 });
 
 export const SummaryValue = styled(Typography)({
+  ...tabularNums.css,
   minWidth: 0,
   fontSize: fontSize.base,
   color: colors.text.primary,

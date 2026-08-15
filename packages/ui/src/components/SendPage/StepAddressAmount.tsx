@@ -40,6 +40,7 @@ import {
   durationMs,
   easing,
   sanitizeDecimalInput,
+  tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { StepAddressAmountProps } from './types';
@@ -155,6 +156,7 @@ const TokenCardName = styled(Typography)({
 });
 
 const TokenCardBalance = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.md,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
@@ -177,6 +179,7 @@ const FieldLabel = styled(Typography)({
 });
 
 const StyledInput = styled(InputBase)({
+  ...tabularNums.css,
   width: '100%',
   color: colors.text.primary,
   fontSize: fontSize.md,
@@ -246,16 +249,19 @@ const QuickFillButton = styled(ButtonBase)({
   },
 });
 
+/** Same shortcut affordance as Swap's quick-fill; same salmon ink, 6.07:1. */
 const QuickFillText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
-  color: colors.text.primary,
+  color: semantic.text.accent,
   textTransform: 'uppercase',
 });
 
 // USD Conversion
 const UsdConversion = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.xl,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
@@ -695,7 +701,9 @@ export function StepAddressAmount({
 
         <ReviewButton onClick={handleReview} disabled={!isValid} data-testid="send-review-button">
           <ReviewButtonGradient $isDisabled={!isValid}>
-            <ReviewButtonText $isDisabled={!isValid}>{t('token.send.reviewAndSend')}</ReviewButtonText>
+            <ReviewButtonText $isDisabled={!isValid}>
+              {t('token.send.reviewAndSend')}
+            </ReviewButtonText>
           </ReviewButtonGradient>
         </ReviewButton>
       </BottomButtons>

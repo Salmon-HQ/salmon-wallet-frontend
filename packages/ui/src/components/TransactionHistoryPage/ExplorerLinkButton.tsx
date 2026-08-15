@@ -35,6 +35,7 @@ import {
   spacing,
   duration,
   easing,
+  semantic,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { ExplorerLinkButtonProps } from './types';
@@ -57,10 +58,16 @@ const StyledButton = styled(ButtonBase)({
   },
 });
 
+/**
+ * A link off to an explorer. It was reading `palette.amber` — a decorative
+ * badge hue with no semantic meaning, close enough to salmon to be mistaken
+ * for it and not close enough to be it. Links are the textbook case for
+ * accent ink: `text.accent`, 6.07:1.
+ */
 const ButtonText = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
-  color: colors.palette.amber,
+  color: semantic.text.accent,
 });
 
 const StyledMenu = styled(Menu)({

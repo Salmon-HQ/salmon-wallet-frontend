@@ -19,6 +19,7 @@ import {
   fontSize,
   duration,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import { SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from '../Icon';
 import type { DerivedAccountCardProps } from './types';
@@ -92,6 +93,7 @@ const NetworkRow = styled(Box)({
 });
 
 const PathText = styled(Typography)({
+  ...tabularNums.css,
   color: colors.text.tertiary,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.medium,
@@ -105,6 +107,7 @@ const BalanceContainer = styled(Box)({
 });
 
 const Balance = styled(Typography)<{ $dimmed: boolean }>(({ $dimmed }) => ({
+  ...tabularNums.css,
   color: colors.text.primary,
   fontFamily: fontFamily.sans,
   fontSize: fontSize.base,
