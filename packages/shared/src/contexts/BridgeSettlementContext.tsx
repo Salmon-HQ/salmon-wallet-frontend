@@ -12,9 +12,15 @@
  * completion it settles the destination balance; on failure/refund it settles
  * the source.
  *
- * In-memory only: a bridge that outlives the session is not resumed after an
- * app restart (a persistence layer would be a follow-up). The user can still
- * see the result via refetch-on-focus / manual refresh once they reopen.
+ * Persisted: the pending list is hydrated from and written to
+ * `STORAGE_KEYS.PENDING_BRIDGES`, so a bridge that outlives the session IS
+ * resumed and re-polled after an app restart or an extension side-panel close.
+ *
+ * Exchanges are registered the moment StealthEX creates them — before the
+ * deposit transfer is attempted — so an order that exists at the provider is
+ * never lost to a mid-sequence failure. That makes this list the durable record
+ * of every exchange id the wallet has ever created but not yet seen settle,
+ * which is also the reference number a user needs for support.
  *
  * @module contexts/BridgeSettlementContext
  */

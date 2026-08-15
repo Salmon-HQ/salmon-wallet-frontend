@@ -783,6 +783,78 @@ describe('useSwapScreenLogic', () => {
     });
   });
 
+  it('retains and registers the exchange id when the deposit fails after creation', async () => {
+    vi.useFakeTimers();
+
+    const onBridgeExchangeCreated = vi.fn();
+    const props = createProps({
+      initialInToken: SOL,
+      tokens: [SOL],
+      featuredTokens: [SOL],
+      jupiterTokens: [SOL, USDC],
+      onGetAvailableTokens: vi.fn().mockResolvedValue(BRIDGE_AVAILABLE_TOKENS),
+      // The exchange is created at StealthEX, then the deposit transfer throws.
+      onSendDeposit: vi.fn().mockRejectedValue(new Error('deposit broadcast failed')),
+      onBridgeExchangeCreated,
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.handleOutTokenSelect(BTC);
+      result.current.setInAmount('1');
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.handleReview();
+      result.current.setRecipientAddress('bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh');
+    });
+    act(() => {
+      result.current.handleContinueToReview();
+    });
+
+    await act(async () => {
+      await result.current.handleConfirmBridge();
+    });
+
+    // The order exists at the provider, so it must have been handed to the
+    // background poller BEFORE the deposit was attempted.
+    expect(onBridgeExchangeCreated).toHaveBeenCalledTimes(1);
+    expect(onBridgeExchangeCreated).toHaveBeenCalledWith(BRIDGE_EXCHANGE, {
+      sourceNetworkId: 'solana-mainnet',
+      destNetworkId: 'bitcoin-mainnet',
+      destinationAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    });
+    expect(props.onSendDeposit).toHaveBeenCalled();
+
+    // The failure still returns the user to input, but the reference number
+    // survives so it can be shown alongside the error.
+    expect(result.current.step).toBe('input');
+    expect(result.current.swapError).toBeTruthy();
+    expect(result.current.lastBridgeExchange).toBe(BRIDGE_EXCHANGE);
+    expect(result.current.lastBridgeExchange?.id).toBe('bridge-1');
+    expect(result.current.successExchange).toBeNull();
+
+    // Only leaving the flow clears it.
+    act(() => {
+      result.current.handleSuccessContinue();
+    });
+    expect(result.current.lastBridgeExchange).toBeNull();
+  });
+
   it('surfaces the pair minimum from the estimate when the bridge rejects the amount', async () => {
     vi.useFakeTimers();
 

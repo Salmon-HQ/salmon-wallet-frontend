@@ -57,8 +57,15 @@ export interface UseTransactionsParams {
 export interface UseTransactionsResult {
   /** Processed transactions */
   transactions: Transaction[];
-  /** Whether initial data is loading */
+  /** True only while there is nothing to show yet (no cached pages for this key). */
   loading: boolean;
+  /**
+   * True when this hook holds transaction pages for the current account+network —
+   * cached or fresh. Render the rows whenever this is true; use `refreshing` for a
+   * quiet in-flight affordance. Skeletons belong to `!hasData`, never to
+   * `refreshing`.
+   */
+  hasData: boolean;
   /** Whether more data is being loaded */
   loadingMore: boolean;
   /** Whether a refresh is in progress */
@@ -218,6 +225,7 @@ export function useTransactions({
   return {
     transactions,
     loading,
+    hasData: query.data !== undefined,
     loadingMore: query.isFetchingNextPage,
     refreshing,
     error: errorMessage,

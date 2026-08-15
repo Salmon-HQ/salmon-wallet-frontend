@@ -229,6 +229,15 @@ export interface UseSwapScreenLogicResult {
   successTxId: string | null;
   successExchange: BridgeExchangeSimple | null;
   /**
+   * The most recently created StealthEX exchange, set the instant the provider
+   * returns it and NOT cleared when a later step (deposit, status) fails. The
+   * order exists at the provider from that moment on, so this is the reference
+   * number the user must be able to quote to support after a failed bridge —
+   * render it (id + deposit address) alongside `swapError`. Cleared only by
+   * `handleSuccessContinue`, once the user leaves the flow.
+   */
+  lastBridgeExchange: BridgeExchangeSimple | null;
+  /**
    * Snapshot of the confirmed pair, captured right before entering the
    * success step (both Jupiter and StealthEX paths). Success screens must
    * render from this instead of live inToken/outToken/amount state, which
@@ -342,6 +351,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
   const [isConfirming, setIsConfirming] = useState(false);
   const [successTxId, setSuccessTxId] = useState<string | null>(null);
   const [successExchange, setSuccessExchange] = useState<BridgeExchangeSimple | null>(null);
+  const [lastBridgeExchange, setLastBridgeExchange] = useState<BridgeExchangeSimple | null>(null);
   const [successSummary, setSuccessSummary] = useState<SwapSuccessSummary | null>(null);
   const [depositTxId, setDepositTxId] = useState<string | null>(null);
   const [bridgeTransaction, setBridgeTransaction] = useState<BridgeTransactionSimple | null>(null);
@@ -718,6 +728,18 @@ export function useSwapScreenLogic<StyleType = unknown>({
       );
 
       if (exchange) {
+        // Register the exchange with the background poller BEFORE anything that
+        // can throw. Once StealthEX has created it the order exists on their
+        // side whether or not our deposit succeeds, so the id must be persisted
+        // (BridgeSettlementProvider writes STORAGE_KEYS.PENDING_BRIDGES) the
+        // moment it exists — otherwise a failed deposit orphans a live order and
+        // leaves the user with no reference number for support.
+        setLastBridgeExchange(exchange);
+        onBridgeExchangeCreated?.(exchange, {
+          sourceNetworkId: inToken?.networkId,
+          destNetworkId: outToken?.networkId,
+          destinationAddress: recipientAddress,
+        });
         // Send deposit to the exchange's deposit address
         if (onSendDeposit && exchange.depositAddress) {
           const { txId } = await onSendDeposit(
@@ -744,11 +766,6 @@ export function useSwapScreenLogic<StyleType = unknown>({
           kinds: ['balance', 'transactions'],
         }).catch((err) => {
           console.warn('[useSwapScreenLogic] settleAfterTx failed:', err);
-        });
-        onBridgeExchangeCreated?.(exchange, {
-          sourceNetworkId: inToken?.networkId,
-          destNetworkId: outToken?.networkId,
-          destinationAddress: recipientAddress,
         });
         onBridgeSuccess?.(exchange);
       } else {
@@ -860,6 +877,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     setBridgeEstimate(null);
     setSuccessTxId(null);
     setSuccessExchange(null);
+    setLastBridgeExchange(null);
     setSuccessSummary(null);
     setDepositTxId(null);
     setBridgeTransaction(null);
@@ -1062,6 +1080,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
     tokensLoading: loading,
     successTxId,
     successExchange,
+    lastBridgeExchange,
     successSummary,
     depositTxId,
     bridgeTransaction,

@@ -51,8 +51,16 @@ export interface UseBalanceResult {
   usdTotal: number | undefined;
   changePercent: number | undefined;
   changeAmount: number | undefined;
+  /** True only while there is nothing to show yet (no cached balance for this key). */
   loading: boolean;
+  /** True while a fetch is in flight *and* cached data is already on screen. */
   refreshing: boolean;
+  /**
+   * True when this hook holds a balance for the current account+network — cached
+   * or fresh. Render the data whenever this is true; use `refreshing` for a quiet
+   * in-flight affordance. Skeletons belong to `!hasData`, never to `refreshing`.
+   */
+  hasData: boolean;
   error: string | null;
   isError: boolean;
   refresh: () => Promise<void>;
@@ -298,6 +306,7 @@ export function useBalance({
     changeAmount: data?.last24HoursChange,
     loading: query.isPending && enabled,
     refreshing: query.isFetching && !query.isPending,
+    hasData: data !== undefined,
     error: query.error?.message ?? null,
     isError: query.isError,
     refresh,
