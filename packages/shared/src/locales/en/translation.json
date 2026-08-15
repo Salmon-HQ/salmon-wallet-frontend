@@ -658,7 +658,7 @@
       "pleaseNote": "Please Note",
       "pleaseNoteText": "Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed.",
       "confirmSwap": "Confirm",
-      "reviewAndSwap": "Review & Swap"
+      "reviewAndSwap": "Review"
     },
     "available_balance": "Available: {{balance}} {{symbol}}",
     "errors": {
@@ -705,7 +705,7 @@
       "helper": "Enter the {{chain}} address where you want to receive your {{symbol}}"
     },
     "review": {
-      "title": "Swap Review",
+      "title": "Bridge Review",
       "youReceiveEstimated": "You Receive (estimated)",
       "recipient": "Recipient",
       "fromNetwork": "From Network",
@@ -715,7 +715,9 @@
       "provider": "Provider",
       "pleaseNote": "Please Note",
       "pleaseNoteText": "Cross-chain swaps typically take 10-30 minutes to complete. You will receive a deposit address after confirmation.",
-      "confirmSwap": "Confirm Swap"
+      "irreversible": "This cannot be undone",
+      "irreversibleText": "Confirming sends your funds to StealthEX, which holds them until the cross-chain transfer completes. Once confirmed there is no cancel and no way to reverse or recover the transfer — not by Salmon and not by you.",
+      "confirmSwap": "Confirm Bridge"
     },
     "amountToSend": "Amount to send",
     "currentStatus": "Current status",
@@ -723,6 +725,9 @@
     "depositTxId": "Deposit Transaction",
     "estimatedReceive": "You will receive approximately",
     "exchangeId": "Exchange ID",
+    "depositAddressLabel": "Deposit address",
+    "reference_title": "Keep this reference",
+    "reference_body": "This bridge did not complete, but the exchange was already created. Save these details — they are what support needs to look it up.",
     "initiated": "Bridge Initiated",
     "payoutTxId": "Payout Transaction",
     "settlement_stalled_title": "Can't check your bridge status",
@@ -744,7 +749,7 @@
       "generic": "The transaction failed. Please try again."
     },
     "viewOnExplorer": "View on Explorer",
-    "continue": "Continue"
+    "continue": "Back to wallet"
   },
   "qrScanner": {
     "title": "Scan QR Code",
