@@ -43,61 +43,112 @@ export const fontFamilyNative = {
 } as const;
 
 /**
- * Font sizes in pixels
+ * Font sizes in pixels.
+ *
+ * An eight-step modular scale plus one hero size, replacing the flat list of
+ * Figma-derived one-offs (11.375 / 13.65 / 14.5) that used to live here.
+ *
+ * **Ratio.** Nominally a major second (1.125) off a 16px base, snapped to even
+ * integers so no step ever lands on a fractional pixel — fractional sizes are
+ * what made 11.375 unreasonable in the first place, and they render blurry at
+ * 1x. Snapping makes the realised ratio decay across the ramp
+ * (1.2 → 1.167 → 1.143 → 1.125 → 1.111 → 1.2 → 1.5), which is deliberate: a
+ * dense wallet needs fine gradation at the bottom, where a primary and a
+ * secondary line must be distinguishable inside one 44px list row on a phone
+ * and inside a 360px-wide side panel, and coarse jumps at the top, where the
+ * only job is to read as hierarchy at a glance. A constant 1.25 from 10 would
+ * give 12.5 / 15.6 / 19.5 — no 16, and fractional pixels throughout.
+ *
+ * Legacy keys are kept and re-pointed at their nearest step so every existing
+ * call site snaps onto the scale without being edited. Component-named keys
+ * are deprecated; use the role-named step named in each tag.
  */
 export const fontSize = {
-  /** 10px */
-  xs: 10,
-  /** 11.375px - TokenListItem change text */
-  tokenChange: 11.375,
-  /** 12px */
-  sm: 12,
-  /** 13.65px - TokenListItem name and price */
-  tokenNamePrice: 13.65,
-  /** 14px */
-  base: 14,
-  /** 14.5px - Action button text */
-  actionButton: 14.5,
-  /** 16px */
-  md: 16,
-  /** 18px */
-  lg: 18,
-  /** 20px */
-  xl: 20,
-  /** 22px - Titles, confirmation amounts */
-  title: 22,
-  /** 24px */
-  '2xl': 24,
-  /** 28px - Medium icon size */
-  iconMd: 28,
-  /** 30px */
-  '3xl': 30,
-  /** 36px */
-  '4xl': 36,
-  /** 40px - Large icon size */
-  iconLg: 40,
-  /** 48px */
-  '5xl': 48,
-  /** 60px - Balance card amount */
+  // ---------------------------------------------------------------------
+  // The scale
+  // ---------------------------------------------------------------------
+  /** 10px - uppercase labels, badges, plane markers, "TESTNET" */
+  micro: 10,
+  /** 12px - dense secondary text: list sublines, metadata, deltas */
+  caption: 12,
+  /** 14px - default UI text: rows, controls, button labels */
+  body: 14,
+  /** 16px - reading text and primary values in a row */
+  bodyLg: 16,
+  /** 18px - minor section headings */
+  heading: 18,
+  /** 20px - card and sheet titles, confirmation amounts */
+  title: 20,
+  /** 24px - screen headers, sheet headlines */
+  headline: 24,
+  /** 36px - the largest heading role */
+  display: 36,
+  /** 60px - the total balance, and nothing else (off-ramp hero size) */
   balance: 60,
+
+  // ---------------------------------------------------------------------
+  // Legacy aliases — re-pointed at the scale, kept so consumers keep working
+  // ---------------------------------------------------------------------
+  /** 10px @deprecated use `micro` */
+  xs: 10,
+  /** 12px @deprecated use `caption` */
+  sm: 12,
+  /** 14px @deprecated use `body` */
+  base: 14,
+  /** 16px @deprecated use `bodyLg` */
+  md: 16,
+  /** 18px @deprecated use `heading` */
+  lg: 18,
+  /** 20px @deprecated use `title` */
+  xl: 20,
+  /** 24px @deprecated use `headline` */
+  '2xl': 24,
+  /** 36px @deprecated use `display` */
+  '3xl': 36,
+  /** 36px @deprecated use `display` */
+  '4xl': 36,
+  /** 36px @deprecated use `display` */
+  '5xl': 36,
+  /** 12px @deprecated component-named; use `caption` (was 11.375) */
+  tokenChange: 12,
+  /** 14px @deprecated component-named; use `body` (was 13.65) */
+  tokenNamePrice: 14,
+  /** 14px @deprecated component-named; use `body` (was 14.5) */
+  actionButton: 14,
+
+  // ---------------------------------------------------------------------
+  // Icon glyph sizes — not text, deliberately off the type scale
+  // ---------------------------------------------------------------------
+  /** 28px - medium icon glyph size (MUI `fontSize` on an icon) */
+  iconMd: 28,
+  /** 40px - large icon glyph size (MUI `fontSize` on an icon) */
+  iconLg: 40,
 } as const;
 
 /**
- * Line heights (multipliers)
+ * Line heights (multipliers).
+ *
+ * Four steps, from six. A multiplier rather than a pixel value so one token
+ * serves 10px labels and 36px headings alike, and so mobile's `ms()` scaling
+ * stays correct. `snug` serves dense rows (the leading a token or transaction
+ * row can actually afford); `normal` serves reading text.
  */
 export const lineHeight = {
-  /** 1.0 */
+  /** 1.0 - single-line text in a fixed-height box; no leading at all */
   none: 1,
-  /** 1.25 */
+  /** 1.25 - display and headings, where leading would open the block up */
   tight: 1.25,
-  /** 1.3 */
-  condensed: 1.3,
-  /** 1.4 - TokenListItem */
-  tokenListItem: 1.4,
-  /** 1.5 */
+  /** 1.4 - dense rows: token lists, transaction lists, metadata pairs */
+  snug: 1.4,
+  /** 1.5 - reading text: paragraphs, descriptions, warnings */
   normal: 1.5,
-  /** 1.625 */
-  relaxed: 1.625,
+
+  /** 1.25 @deprecated use `tight` (was 1.3) */
+  condensed: 1.25,
+  /** 1.4 @deprecated component-named; use `snug` */
+  tokenListItem: 1.4,
+  /** 1.5 @deprecated use `normal` (was 1.625) */
+  relaxed: 1.5,
 } as const;
 
 /**
@@ -121,29 +172,44 @@ export const fontWeight = {
 } as const;
 
 /**
- * Letter spacing in pixels
+ * Letter spacing in pixels.
+ *
+ * Six steps, from ten. Tracking is a correction, not a decoration: negative
+ * tracking only exists because large type sets too loose at its default
+ * fitting, so it applies from `title` upward and nowhere else. Positive
+ * tracking only exists because uppercase and very small type set too tight,
+ * so it applies to labels and micro copy. Body-sized text is left at `normal`
+ * — the old `slight` (-0.07), `header` (+0.12) and `change` (+0.13) were
+ * sub-perceptual at 12-16px and only made the token set unchoosable.
  */
 export const letterSpacing = {
-  /** -0.245px - Balance amount */
-  balance: -0.245,
-  /** -0.12px - Titles, headings in sheets */
+  /** -0.25px - display sizes and the balance; the only genuinely tight step */
+  tight: -0.25,
+  /** -0.12px - titles and headlines (20-24px) */
   snug: -0.12,
-  /** -0.07px - Subtle negative for labels, badges */
-  slight: -0.07,
-  /** 0px */
+  /** 0px - body-sized text; the default */
   normal: 0,
-  /** 0.12px - Header text */
-  header: 0.12,
-  /** 0.13px - Change text */
-  change: 0.13,
-  /** 0.25px */
-  wide: 0.25,
-  /** 0.3px - Source badges, uppercase labels */
-  semiWide: 0.3,
-  /** 0.5px */
-  wider: 0.5,
-  /** 1px */
+  /** 0.3px - uppercase labels, badges, micro copy */
+  label: 0.3,
+  /** 0.5px - wide uppercase chrome */
+  loose: 0.5,
+  /** 1px - maximum tracking; letter-spaced display lockups */
   widest: 1,
+
+  /** -0.25px @deprecated component-named; use `tight` (was -0.245) */
+  balance: -0.25,
+  /** 0px @deprecated sub-perceptual; use `normal` (was -0.07) */
+  slight: 0,
+  /** 0px @deprecated sub-perceptual; use `normal` (was 0.12) */
+  header: 0,
+  /** 0px @deprecated sub-perceptual; use `normal` (was 0.13) */
+  change: 0,
+  /** 0.3px @deprecated use `label` (was 0.25) */
+  wide: 0.3,
+  /** 0.3px @deprecated use `label` */
+  semiWide: 0.3,
+  /** 0.5px @deprecated use `loose` */
+  wider: 0.5,
 } as const;
 
 /**
