@@ -16,7 +16,7 @@ import React, { useCallback } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { BlurContainer } from '../BlurContainer';
-import { ScalesBackground } from '../ScalesBackground';
+import { FleshBackground } from '../FleshBackground';
 import { CallMadeSvgIcon, QrCodeScannerSvgIcon, ReceiptLongSvgIcon } from '../Icon/SvgIcons';
 import type { ActionButtonRowProps } from './types';
 
@@ -28,7 +28,7 @@ const ACTION_BUTTON_TEXT_SIZE = fontSize.md;
  *
  * Displays three main action buttons:
  * - Send: the screen's one living thing — a salmon fill with `accent.onFill`
- *   ink at 6.50:1 and the scales at their true 1.0x pressed into the body
+ *   ink at 6.50:1 and the flesh's myoseptal bands pressed into the body
  * - Receive: neutral blurred button
  * - Activity: neutral blurred button
  *
@@ -101,9 +101,10 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
           end={gradients.primaryButton.end}
           style={[styles.primaryButton, sendDisabled && styles.primaryButtonDisabled]}
         >
-          {/* The fish: the scales at 1.0x, pressed into the salmon fill and
-              nowhere else on this screen. Absent when the fill is absent. */}
-          {!sendDisabled && <ScalesBackground variant="fish" />}
+          {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+              fill and nowhere else on this screen. Absent when the fill is
+              absent. */}
+          {!sendDisabled && <FleshBackground />}
           <CallMadeSvgIcon
             size={ms(ACTION_BUTTON_ICON_SIZE)}
             color={sendDisabled ? semantic.text.disabled : semantic.accent.onFill}
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
     borderRadius: ms(componentSizes.actionButtonRadius), // 14px
     borderWidth: borderWidth.actionButton, // 0.5px
     borderColor: semantic.accent.fill,
-    // The fish is drawn at absolute-fill; clip it to the pill's own radius.
+    // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
     overflow: 'hidden',
   },
   primaryButtonDisabled: {

@@ -117,6 +117,10 @@ export type { WalletInitErrorScreenProps } from './WalletInitErrorScreen';
 export { ScalesBackground } from './ScalesBackground';
 export type { ScalesBackgroundProps, ScalesVariant } from './ScalesBackground';
 
+// FleshBackground - the myoseptal texture inside a salmon fill
+export { FleshBackground } from './FleshBackground';
+export type { FleshBackgroundProps } from './FleshBackground';
+
 // PasswordInput - Secure password input with visibility toggle and strength indicator
 export { PasswordInput, PasswordStrengthBar } from './PasswordInput';
 export type { PasswordInputProps, PasswordStrengthBarProps } from './PasswordInput';

@@ -43,7 +43,11 @@ jest.mock('@salmon/shared', () => ({
     surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
     status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
     state: { hover: 'rgba(199,211,232,0.06)', press: 'rgba(199,211,232,0.10)' },
+    flesh: { band: '#FFF1EE' },
   },
+  fleshTile: { width: 380, height: 40 },
+  fleshFades: [],
+  fleshTiledStrokes: [],
   colors: {
     text: { primary: '#fff', secondary: '#aaa', balance: '#fff' },
     accent: { primary: '#0f0', border: '#0c0' },

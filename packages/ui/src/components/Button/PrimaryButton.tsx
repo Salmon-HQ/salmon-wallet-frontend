@@ -4,8 +4,8 @@
  * It used to be a white fill with black text. In "Deep Water" it is the one
  * living thing on the screen: a `salmon-500` fill carrying `neutral-1000` ink
  * at 6.50:1 — never white, which measures 3.06:1 and is banned outright — with
- * the scales pressed into the fill at their true 1.0x scale, so the control
- * reads as a warm body rather than a colored rectangle.
+ * the flesh's myoseptal bands pressed into the fill, so the control reads as a
+ * warm body rather than a colored rectangle.
  *
  * Disabled drops to `surface.crest` with disabled ink. The salmon never dims:
  * it is either alive or absent.
@@ -28,7 +28,7 @@ import {
   duration,
   easing,
 } from '@salmon/shared';
-import { ScalesBackground } from '../ScalesBackground';
+import { FleshBackground } from '../FleshBackground';
 import type { PrimaryButtonProps } from './types';
 
 const StyledButton = styled(Button)<{ fullWidth?: boolean }>(({ fullWidth }) => ({
@@ -100,10 +100,12 @@ export function PrimaryButton({
       disableRipple={false}
       data-testid={testID}
     >
-      {/* The fish: the scales at their true 1.0x scale, pressed into the
-          salmon fill and nowhere else. It shifts the 6.50:1 ink composite by
-          under 0.1 of a ratio point. Absent when the fill is absent. */}
-      {!isDisabled && <ScalesBackground variant="fish" />}
+      {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+          fill. A filled button is mass, not surface, so the material it shows
+          is the inside of the fish rather than its skin. Every band is paler
+          than the fill, so the 6.50:1 ink composite is a floor here, not a
+          budget. Absent when the fill is absent. */}
+      {!isDisabled && <FleshBackground />}
       <Label>
         {loading ? (
           <LoaderWrapper>

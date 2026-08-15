@@ -27,6 +27,7 @@ import { useTranslation } from 'react-i18next';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { BottomSheetContainer } from '../BottomSheetContainer';
+import { FleshBackground } from '../FleshBackground';
 import { ContentCopySvgIcon } from '../Icon/SvgIcons';
 import QRCode from '../QRCode';
 import type { ReceiveSheetProps } from './types';
@@ -129,6 +130,10 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
           accessibilityRole="button"
           accessibilityLabel={copied ? t('actions.copied') : t('token.receive.copyAddress')}
         >
+          {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+              fill. Every band is paler than the fill, so it can only raise the
+              luminance under the label. */}
+          <FleshBackground />
           {copied ? (
             <Animated.View style={{ transform: [{ scale: tickScale }] }}>
               <Ionicons name="checkmark" size={ms(23)} color={semantic.accent.onFill} />
@@ -181,6 +186,8 @@ const styles = StyleSheet.create({
   },
   copyButton: {
     flexDirection: 'row',
+    // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.button.primaryBackground,

@@ -48,6 +48,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FleshBackground } from '../FleshBackground';
 import { LoadingScreen } from '../LoadingScreen';
 import type { BiometricConfig } from './types';
 
@@ -365,6 +366,12 @@ export function LockContent({
                       start={gradients.primary.start}
                       end={gradients.primary.end}
                     >
+                      {/* The flesh: the myosepta of a cut fillet, pressed into
+                          the salmon fill. Every band is paler than the fill,
+                          so it can only raise the luminance under the label —
+                          6.50:1 is a floor here, not a budget. Absent when the
+                          fill is absent. */}
+                      {!unlockDisabled && <FleshBackground />}
                       {isLoading ? (
                         <ActivityIndicator color={semantic.text.disabled} />
                       ) : (
@@ -491,6 +498,8 @@ const styles = StyleSheet.create({
     minHeight: vs(componentSizes.iconSize4XL),
     paddingVertical: vs(spacing.sm),
     borderRadius: borderRadius.xl,
+    // The flesh is drawn at absolute-fill; clip it to the button's own radius.
+    overflow: 'hidden',
     borderWidth: borderWidth.thin,
     borderColor: semantic.accent.fill,
     alignItems: 'center',

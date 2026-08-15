@@ -12,6 +12,7 @@
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { FleshBackground } from '../FleshBackground';
 import { useTranslation } from 'react-i18next';
 import {
   borderRadius,
@@ -65,6 +66,10 @@ export function WalletInitErrorScreen({ onRetry }: WalletInitErrorScreenProps): 
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.4 }}
         >
+          {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+              fill. Every band is paler than the fill, so it can only raise the
+              luminance under the label. */}
+          <FleshBackground />
           {retrying ? (
             <ActivityIndicator size="small" color={semantic.accent.onFill} />
           ) : (

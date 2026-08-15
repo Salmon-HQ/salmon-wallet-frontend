@@ -36,6 +36,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { QRCode } from '../QRCode';
 import { BaseSheetDialog } from '../BaseSheetDialog';
+import { FleshBackground } from '../FleshBackground';
 import type { ReceiveSheetProps } from './types';
 
 // ============================================================================
@@ -88,6 +89,8 @@ const CopyButton = styled(ButtonBase)({
   justifyContent: 'center',
   backgroundColor: colors.button.primaryBackground,
   borderRadius: borderRadius.lg,
+  // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
+  overflow: 'hidden',
   width: componentSizes.copyButtonWidth,
   height: componentSizes.buttonHeightCompact,
   gap: spacing.xs,
@@ -98,6 +101,17 @@ const CopyButton = styled(ButtonBase)({
   '&:active': {
     opacity: opacity.medium,
   },
+});
+
+/** Sits above the flesh, never under it. Decoration is never a hit target. */
+const OnFillContent = styled('span')({
+  position: 'relative',
+  zIndex: 1,
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: spacing.xs,
 });
 
 const CopyButtonText = styled(Typography)({
@@ -211,14 +225,20 @@ export function ReceiveSheet({
             aria-label={t('token.receive.copyAddress')}
             data-testid="receive-copy-button"
           >
-            {copied ? (
-              <CheckIcon sx={{ fontSize: fontSize.xl, color: colors.button.primaryText }} />
-            ) : (
-              <ContentCopyIcon sx={{ fontSize: fontSize.xl, color: colors.button.primaryText }} />
-            )}
-            <CopyButtonText>
-              {copied ? t('token.receive.copied') : t('token.receive.copyAddress')}
-            </CopyButtonText>
+            {/* The flesh: the myosepta of a cut fillet, pressed into the
+                salmon fill. Every band is paler than the fill, so it can only
+                raise the luminance under the label. */}
+            <FleshBackground />
+            <OnFillContent>
+              {copied ? (
+                <CheckIcon sx={{ fontSize: fontSize.xl, color: colors.button.primaryText }} />
+              ) : (
+                <ContentCopyIcon sx={{ fontSize: fontSize.xl, color: colors.button.primaryText }} />
+              )}
+              <CopyButtonText>
+                {copied ? t('token.receive.copied') : t('token.receive.copyAddress')}
+              </CopyButtonText>
+            </OnFillContent>
           </CopyButton>
         </ContentWrapper>
       </BaseSheetDialog.Content>

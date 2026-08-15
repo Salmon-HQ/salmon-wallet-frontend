@@ -156,13 +156,37 @@ export const scales = {
   deepFieldScale: 3.2,
   /** The band the field lives in; it dissolves before it reaches a row. */
   deepFieldHeight: 180,
-  /** The fish itself — inside the primary CTA's salmon fill, and only there. */
+  /**
+   * @deprecated The `fish` variant no longer has a call site: salmon fills now
+   * carry the flesh texture (`FleshBackground`, `theme/flesh.ts`), because a
+   * filled button is mass rather than surface and because the seigaiha tile is
+   * taller than a pill, so it reads as a stamp applied on top. Kept because
+   * `ScalesVariant` is a public export of `@salmon/ui` with three apps behind
+   * it; removing it is a contract change that needs a human's sign-off.
+   */
   fishStroke: 'rgba(7, 9, 17, 0.10)',
   fishScale: 1,
   /** Refraction strip — a band clipped to the top edge of any membrane. */
   refractionScale: 0.5,
   refractionOpacity: 0.08,
   refractionHeight: 24,
+} as const;
+
+/**
+ * The flesh motif — the myoseptal texture inside a salmon fill.
+ *
+ * Scales are skin and belong on grounds and planes; a filled button is mass,
+ * so what it shows is the cut surface. The one rule that makes this safe to
+ * paint under a label: **the band is always lighter than the fill**, so the
+ * texture can only raise luminance and the worst case under `accent.onFill`
+ * stays exactly the flat fill's 6.50:1. A darker band, at any opacity, would
+ * turn a free guarantee into a contrast budget.
+ *
+ * Geometry lives in `theme/flesh.ts`; this is only the ink.
+ */
+export const flesh = {
+  /** The pale myoseptal band — the lightest step of the brand ramp. */
+  band: salmon[50],
 } as const;
 
 export const semantic = {
@@ -175,6 +199,7 @@ export const semantic = {
   state,
   accent,
   scales,
+  flesh,
 } as const;
 
 export type Semantic = typeof semantic;

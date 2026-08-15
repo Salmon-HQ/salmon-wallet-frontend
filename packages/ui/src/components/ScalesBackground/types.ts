@@ -10,7 +10,13 @@ import type { CSSProperties } from 'react';
 export type ScalesVariant =
   /** On `depth.column`, behind the balance header only. 3.2x, dissolving. */
   | 'deepField'
-  /** Inside the primary CTA's salmon fill, and only there. 1.0x. */
+  /**
+   * @deprecated No call site remains. Salmon fills carry `FleshBackground`
+   * instead — a filled button is mass, not surface, and the seigaiha tile is
+   * taller than a pill, so it read as a stamp applied on top rather than as
+   * the button's own material. Kept because this union is a public export
+   * with three apps behind it.
+   */
   | 'fish';
 
 export interface ScalesBackgroundProps {

@@ -53,6 +53,7 @@ import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { CallMadeSvgIcon } from '../Icon/SvgIcons';
 import { BlurContainer } from '../BlurContainer';
 import { BottomSheetContainer } from '../BottomSheetContainer';
+import { FleshBackground } from '../FleshBackground';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
 import { InputAddress } from '../InputAddress';
 import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
@@ -516,6 +517,10 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             end={gradients.primaryButton.end}
             style={styles.primaryButton}
           >
+            {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+                fill. Every band is paler than the fill, so it can only raise
+                the luminance under the label. */}
+            <FleshBackground />
             <CallMadeSvgIcon size={ms(15)} color={semantic.accent.onFill} />
             <Text style={styles.primaryButtonText}>{t('actions.send', 'Send')}</Text>
           </LinearGradient>
@@ -631,6 +636,10 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
                 end={gradients.primaryButton.end}
                 style={[styles.primaryButton, !canConfirmSend && styles.primaryButtonDisabled]}
               >
+                {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+                fill. Every band is paler than the fill, so it can only raise
+                the luminance under the label. */}
+                {canConfirmSend && <FleshBackground />}
                 <CallMadeSvgIcon size={ms(15)} color={semantic.accent.onFill} />
                 <Text style={styles.primaryButtonText}>{t('actions.send', 'Send')}</Text>
               </LinearGradient>
@@ -754,6 +763,10 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             end={gradients.primaryButton.end}
             style={[styles.primaryButton, !canConfirmBurn && styles.primaryButtonDisabled]}
           >
+            {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+                fill. Every band is paler than the fill, so it can only raise
+                the luminance under the label. */}
+            {canConfirmBurn && <FleshBackground />}
             <MaterialIcons
               name="local-fire-department"
               size={ms(18)}
@@ -1027,6 +1040,8 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     minHeight: vs(componentSizes.buttonHeight),
+    // The flesh is drawn at absolute-fill; clip it to the button's own radius.
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

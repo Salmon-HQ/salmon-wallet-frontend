@@ -65,6 +65,10 @@ export {
   markToSvg,
 } from './brand';
 
+// Flesh geometry — the myoseptal texture as path data both platforms draw.
+export { fleshTile, fleshFades, fleshStrokes, fleshTiledStrokes } from './flesh';
+export type { FleshFadeStop, FleshStroke } from './flesh';
+
 // Re-export all tokens from spacing
 export {
   spacing,

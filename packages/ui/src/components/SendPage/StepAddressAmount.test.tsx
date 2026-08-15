@@ -35,7 +35,11 @@ vi.mock('@salmon/shared', () => ({
       fishStroke: 'rgba(7, 9, 17, 0.10)',
       fishScale: 1,
     },
+    flesh: { band: '#FFF1EE' },
   },
+  fleshTile: { width: 380, height: 40 },
+  fleshFades: [],
+  fleshTiledStrokes: [],
   palette: {
     salmon: { 500: '#FF5C45', 600: '#E64A34' },
     neutral: { 0: '#FFFFFF', 1000: '#070911' },

@@ -5,7 +5,7 @@
  * on a salmon fill. Disabled swaps the whole object to `surface.crest` with
  * disabled ink rather than dimming the fill: at 50% opacity the near-black
  * ink sat on a muddy red and read as neither alive nor disabled. The salmon
- * is either alive or absent.
+ * is either alive or absent — and so is the flesh inside it.
  */
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import {
@@ -17,6 +17,7 @@ import {
   semantic,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
+import { FleshBackground } from '../FleshBackground';
 
 interface PrimaryButtonProps extends Testable {
   onPress: () => void;
@@ -47,6 +48,12 @@ export function PrimaryButton({
       activeOpacity={0.8}
       style={[styles.button, isDisabled && styles.disabled, style]}
     >
+      {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+          fill. A filled button is mass, not surface, so the material it shows
+          is the inside of the fish rather than its skin. Every band is paler
+          than the fill, so the 6.50:1 ink composite is a floor here, not a
+          budget. Absent when the fill is absent. */}
+      {!isDisabled && <FleshBackground />}
       {loading ? (
         <ActivityIndicator
           color={isDisabled ? semantic.text.disabled : colors.button.primaryText}
@@ -72,6 +79,8 @@ const styles = StyleSheet.create({
     borderRadius: componentSizes.buttonRadius,
     alignItems: 'center',
     justifyContent: 'center',
+    // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
+    overflow: 'hidden',
   },
   disabled: {
     backgroundColor: semantic.surface.crest,

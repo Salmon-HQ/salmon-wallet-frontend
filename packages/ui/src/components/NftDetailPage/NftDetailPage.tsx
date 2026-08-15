@@ -44,6 +44,7 @@ import {
 } from '@salmon/shared';
 
 import { BlurContainer } from '../BlurContainer';
+import { FleshBackground } from '../FleshBackground';
 import { PageShell } from '../PageShell';
 import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
 import type { NftDetailPageProps, NftAttribute } from './types';
@@ -182,6 +183,17 @@ const ActionButtonsContainer = styled(Box)({
   justifyContent: 'center',
   gap: spacing.lg,
   marginTop: spacing.lg,
+});
+
+/** Sits above the flesh, never under it. Decoration is never a hit target. */
+const OnFillContent = styled('span')({
+  position: 'relative',
+  zIndex: 1,
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: spacing.base,
 });
 
 const PrimaryButtonBase = styled(ButtonBase)({
@@ -555,10 +567,16 @@ export function NftDetailPage({
                       opacity: burnPreparing || !burnPreview || !!burnError ? opacity.medium : 1,
                     }}
                   >
-                    <LocalFireDepartmentIcon
-                      sx={{ fontSize: fontSize.md, color: colors.text.balance }}
-                    />
-                    <ButtonText>{t('nft.burn_nft', 'Burn')}</ButtonText>
+                    {/* The flesh: the myosepta of a cut fillet, pressed into the
+                        salmon fill. Every band is paler than the fill, so it
+                        can only raise the luminance under the label. */}
+                    <FleshBackground />
+                    <OnFillContent>
+                      <LocalFireDepartmentIcon
+                        sx={{ fontSize: fontSize.md, color: colors.text.balance }}
+                      />
+                      <ButtonText>{t('nft.burn_nft', 'Burn')}</ButtonText>
+                    </OnFillContent>
                   </PrimaryButtonBase>
                 </ActionButtonsContainer>
               </>
@@ -569,8 +587,16 @@ export function NftDetailPage({
                   aria-label={t('nft.send.title', 'Send NFT')}
                   data-testid="nft-detail-send-button"
                 >
-                  <CallMadeIcon sx={{ fontSize: fontSize.md, color: colors.button.primaryText }} />
-                  <ButtonText $onAccent>{t('actions.send', 'Send')}</ButtonText>
+                  {/* The flesh: the myosepta of a cut fillet, pressed into the
+                      salmon fill. Every band is paler than the fill, so it can
+                      only raise the luminance under the label. */}
+                  <FleshBackground />
+                  <OnFillContent>
+                    <CallMadeIcon
+                      sx={{ fontSize: fontSize.md, color: colors.button.primaryText }}
+                    />
+                    <ButtonText $onAccent>{t('actions.send', 'Send')}</ButtonText>
+                  </OnFillContent>
                 </PrimaryButtonBase>
 
                 <BlurContainer

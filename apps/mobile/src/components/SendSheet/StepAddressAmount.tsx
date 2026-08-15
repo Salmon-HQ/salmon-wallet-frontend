@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { FleshBackground } from '../FleshBackground';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -392,6 +393,9 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.4 }}
           >
+            {/* The flesh: only while the fill is salmon. The salmon is either
+                alive or absent, and so is the flesh inside it. */}
+            {isValid && <FleshBackground />}
             <Text
               style={[styles.reviewButtonText, !isValid && styles.reviewButtonTextDisabled]}
               numberOfLines={1}

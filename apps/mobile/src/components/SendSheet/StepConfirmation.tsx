@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { FleshBackground } from '../FleshBackground';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -206,6 +207,10 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.4 }}
           >
+            {/* The flesh: the myosepta of a cut fillet, pressed into the
+                salmon fill. Every band is paler than the fill, so it can only
+                raise the luminance under the label. */}
+            <FleshBackground />
             {isSending ? (
               <View style={styles.sendingRow}>
                 <ActivityIndicator size="small" color={semantic.accent.onFill} />

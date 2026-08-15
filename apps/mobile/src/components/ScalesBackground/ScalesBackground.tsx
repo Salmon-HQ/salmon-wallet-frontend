@@ -22,7 +22,10 @@ export type ScalesVariant = 'deepField' | 'fish';
 const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boolean }> = {
   /** The far water, in the balance card's upper region. Dissolves downward. */
   deepField: { stroke: scales.deepFieldStroke, scale: scales.deepFieldScale, fade: true },
-  /** The fish itself — inside the primary CTA's salmon fill, and only there. */
+  /**
+   * @deprecated No call site remains. Salmon fills carry `FleshBackground`
+   * instead; see `packages/shared/src/theme/flesh.ts`.
+   */
   fish: { stroke: scales.fishStroke, scale: scales.fishScale, fade: false },
 };
 

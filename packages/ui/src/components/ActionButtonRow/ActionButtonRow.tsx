@@ -28,7 +28,7 @@ import {
   palette,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
-import { ScalesBackground } from '../ScalesBackground';
+import { FleshBackground } from '../FleshBackground';
 import { SendIcon, ReceiveIcon, ActivityIcon } from '../Icon';
 import type { ActionButtonRowProps } from './types';
 
@@ -60,8 +60,8 @@ const ButtonWrapper = styled(Box)<{ $disabled?: boolean }>(({ $disabled }) => ({
  * warm element sitting on "you are on Home" while the action that moves money
  * looked identical to the two beside it. It is spent here now: a `accent.fill`
  * pill with `accent.onFill` ink at 6.50:1 — never white, which is 3.06:1 and
- * banned — and the scales at their true 1.0x scale pressed into the fill, the
- * same body the `PrimaryButton` has. The tab underline went neutral in return.
+ * banned — and the flesh's myoseptal bands pressed into the fill, the same
+ * body the `PrimaryButton` has. The tab underline went neutral in return.
  */
 const PrimaryButton = styled(Button)({
   position: 'relative',
@@ -84,7 +84,7 @@ const PrimaryButton = styled(Button)({
     borderColor: palette.salmon[600],
   },
   // Disabled is `surface.crest` with disabled ink: the salmon never dims,
-  // it is either alive or absent — and so is the fish inside it.
+  // it is either alive or absent — and so is the flesh inside it.
   '&.Mui-disabled': {
     backgroundColor: semantic.surface.crest,
     borderColor: semantic.border.raised,
@@ -122,7 +122,7 @@ const ButtonText = styled(Typography)<{ $disabled?: boolean }>(({ $disabled }) =
   color: $disabled ? colors.button.disabledText : colors.text.balance,
 }));
 
-/** Sits above the fish, never under it. Decoration is never a hit target. */
+/** Sits above the flesh, never under it. Decoration is never a hit target. */
 const OnFillContent = styled(Box)({
   position: 'relative',
   zIndex: 1,
@@ -175,9 +175,10 @@ export function ActionButtonRow({
           aria-label={t('accessibility.send_tokens', 'Send tokens')}
           data-testid="home-send-button"
         >
-          {/* The fish: the scales at 1.0x, pressed into the salmon fill and
-              nowhere else on this screen. Absent when the fill is absent. */}
-          {!sendDisabled && <ScalesBackground variant="fish" />}
+          {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+              fill and nowhere else on this screen. Absent when the fill is
+              absent. */}
+          {!sendDisabled && <FleshBackground />}
           <OnFillContent>
             <SendIcon
               sx={{

@@ -49,6 +49,7 @@ import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { InputAddress } from '../InputAddress';
 import { BlurContainer } from '../BlurContainer';
 import { BottomSheetContainer } from '../BottomSheetContainer';
+import { FleshBackground } from '../FleshBackground';
 import { BitcoinSvgIcon, CallMadeSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
 
 export interface NftSendSheetProps {
@@ -231,6 +232,10 @@ export function NftSendSheet({
               disabled={!canConfirm}
               activeOpacity={0.8}
             >
+              {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+                fill. Every band is paler than the fill, so it can only raise
+                the luminance under the label. */}
+              {canConfirm && <FleshBackground />}
               <CallMadeSvgIcon size={ms(15)} color={semantic.accent.onFill} />
               <Text
                 style={styles.buttonText}
@@ -371,6 +376,8 @@ const styles = StyleSheet.create({
   primaryButton: {
     flex: 1,
     minHeight: vs(componentSizes.buttonHeightMedium),
+    // The flesh is drawn at absolute-fill; clip it to the button's own radius.
+    overflow: 'hidden',
     borderRadius: ms(borderRadius.button),
     flexDirection: 'row',
     alignItems: 'center',
