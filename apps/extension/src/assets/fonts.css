@@ -1,72 +1,51 @@
 /**
- * Font Face Declarations for DM Sans
+ * Font Face Declarations
  *
- * Import this file in your main CSS/SCSS or in your component to use the DM Sans fonts.
- * Example: import '@/assets/fonts.css';
+ * Geist for the interface, Geist Mono for values the user reads character by
+ * character — addresses, transaction hashes, private keys, seed phrases.
+ *
+ * Four weights ship, not seven: 400/500/600/700 cover every call site in the
+ * codebase. The previous family shipped a 900 with no usages at all.
+ *
+ * Numbers additionally need `font-variant-numeric: tabular-nums` (the
+ * `tabularNums` token). Geist's default digits are proportional, so balances
+ * reflow on every repoll without it.
+ *
+ * Import from the entry point: `import '@/assets/fonts.css';`
  */
 
 @font-face {
-  font-family: 'DM Sans';
-  src: url('/fonts/DMSans-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'DM Sans';
-  src: url('/fonts/DMSans-Regular.ttf') format('truetype');
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'DM Sans';
-  src: url('/fonts/DMSans-Medium.ttf') format('truetype');
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Medium.ttf') format('truetype');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'DM Sans';
-  src: url('/fonts/DMSans-SemiBold.ttf') format('truetype');
+  font-family: 'Geist';
+  src: url('/fonts/Geist-SemiBold.ttf') format('truetype');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'DM Sans';
-  src: url('/fonts/DMSans-Bold.ttf') format('truetype');
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Bold.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
-@font-face {
-  font-family: 'DM Sans';
-  src: url('/fonts/DMSans-ExtraBold.ttf') format('truetype');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'DM Sans';
-  src: url('/fonts/DMSans-Black.ttf') format('truetype');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-/*
- * Geist Mono — used for addresses, transaction hashes, private keys, and seed
- * phrases. Its default zero is slashed, so 0/O stay distinguishable without a
- * font-feature-settings opt-in, and all digits share a 600/1000 advance so
- * amounts do not reflow while they update.
- */
 @font-face {
   font-family: 'Geist Mono';
   src: url('/fonts/GeistMono-Regular.ttf') format('truetype');

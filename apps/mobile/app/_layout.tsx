@@ -39,13 +39,10 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [queryClient] = useState(() => createQueryClient());
   const [loaded, error] = useFonts({
-    DMSansLight: require('@salmon/assets/src/fonts/DMSans-Light.ttf'),
-    DMSansRegular: require('@salmon/assets/src/fonts/DMSans-Regular.ttf'),
-    DMSansMedium: require('@salmon/assets/src/fonts/DMSans-Medium.ttf'),
-    DMSansSemiBold: require('@salmon/assets/src/fonts/DMSans-SemiBold.ttf'),
-    DMSansBold: require('@salmon/assets/src/fonts/DMSans-Bold.ttf'),
-    DMSansExtraBold: require('@salmon/assets/src/fonts/DMSans-ExtraBold.ttf'),
-    DMSansBlack: require('@salmon/assets/src/fonts/DMSans-Black.ttf'),
+    GeistRegular: require('@salmon/assets/src/fonts/Geist-Regular.ttf'),
+    GeistMedium: require('@salmon/assets/src/fonts/Geist-Medium.ttf'),
+    GeistSemiBold: require('@salmon/assets/src/fonts/Geist-SemiBold.ttf'),
+    GeistBold: require('@salmon/assets/src/fonts/Geist-Bold.ttf'),
     GeistMonoRegular: require('@salmon/assets/src/fonts/GeistMono-Regular.ttf'),
     ...FontAwesome.font,
   });

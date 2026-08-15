@@ -86,6 +86,7 @@ export {
   fontWeight,
   letterSpacing,
   fontScaleCap,
+  tabularNums,
 } from './typography';
 export type {
   FontFamily,
@@ -95,6 +96,7 @@ export type {
   FontWeight,
   LetterSpacing,
   FontScaleCap,
+  TabularNums,
 } from './typography';
 
 // Re-export all tokens from shadows

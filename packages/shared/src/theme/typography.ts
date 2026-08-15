@@ -5,8 +5,8 @@
  */
 
 export const fontFamily = {
-  /** Primary font - DM Sans */
-  sans: 'DM Sans',
+  /** Primary font - Geist */
+  sans: 'Geist',
   /**
    * Monospace font - Geist Mono.
    *
@@ -24,20 +24,20 @@ export const fontFamily = {
  * Actual font family names loaded in Expo
  */
 export const fontFamilyNative = {
-  /** DM Sans Light (300) */
-  light: 'DMSansLight',
-  /** DM Sans Regular (400) */
-  regular: 'DMSansRegular',
-  /** DM Sans Medium (500) */
-  medium: 'DMSansMedium',
-  /** DM Sans SemiBold (600) */
-  semiBold: 'DMSansSemiBold',
-  /** DM Sans Bold (700) */
-  bold: 'DMSansBold',
-  /** DM Sans ExtraBold (800) */
-  extraBold: 'DMSansExtraBold',
-  /** DM Sans Black (900) */
-  black: 'DMSansBlack',
+  /** Geist Regular (400) — `light` maps here; the ramp ships four weights */
+  light: 'GeistRegular',
+  /** Geist Regular (400) */
+  regular: 'GeistRegular',
+  /** Geist Medium (500) */
+  medium: 'GeistMedium',
+  /** Geist SemiBold (600) */
+  semiBold: 'GeistSemiBold',
+  /** Geist Bold (700) */
+  bold: 'GeistBold',
+  /** Geist Bold (700) — `extraBold` maps here */
+  extraBold: 'GeistBold',
+  /** Geist Bold (700) — `black` maps here; it had no call sites */
+  black: 'GeistBold',
   /** Geist Mono Regular (400) - addresses, hashes, keys, seed phrases */
   mono: 'GeistMonoRegular',
 } as const;
@@ -161,6 +161,26 @@ export const fontScaleCap = {
 } as const;
 
 export type FontScaleCap = typeof fontScaleCap;
+
+/**
+ * Tabular figures. Apply to every rendered number: balances, token amounts,
+ * prices, percentages, fees, dates, and countdowns.
+ *
+ * Geist's default digits are proportional — `1` is 384 units wide against
+ * `0` at 663 — so a balance visibly reflows every time it repolls. The font
+ * ships a `tnum` feature that maps all ten digits to 600-unit variants, but
+ * it is opt-in, so switching typeface alone does not fix the jitter; this
+ * does. `tabular-nums` is one of the few features React Native's `fontVariant`
+ * enum can actually enable, which is why the fix works on all three surfaces.
+ */
+export const tabularNums = {
+  /** Web and extension — spread into a style object or `sx`. */
+  css: { fontVariantNumeric: 'tabular-nums' },
+  /** React Native — spread into a `Text` style. */
+  native: { fontVariant: ['tabular-nums'] },
+} as const;
+
+export type TabularNums = typeof tabularNums;
 
 export type FontFamily = typeof fontFamily;
 export type FontFamilyNative = typeof fontFamilyNative;
