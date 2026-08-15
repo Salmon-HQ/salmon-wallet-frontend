@@ -48,6 +48,15 @@ export type { Neutral, Salmon, Palette } from './palette';
 export { semantic } from './semantic';
 export type { Semantic } from './semantic';
 
+// Brand geometry — the mark as path data every platform can draw.
+export {
+  markViewBox,
+  markViewBoxAttr,
+  markAspectRatio,
+  markPaths,
+  markToSvg,
+} from './brand';
+
 // Re-export all tokens from spacing
 export {
   spacing,
