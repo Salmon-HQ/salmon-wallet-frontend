@@ -10,6 +10,7 @@ import {
   borderWidth,
   fontFamilyNative,
 } from '@salmon/shared';
+import { useSecretScreen } from '../../../hooks/useSecretScreen';
 
 interface SeedWordGridProps {
   /** Array of mnemonic words */
@@ -19,6 +20,10 @@ interface SeedWordGridProps {
 }
 
 export function SeedWordGrid({ words, columns = 3 }: SeedWordGridProps) {
+  // Rendering a mnemonic is by definition a secret surface, so protection
+  // rides on this primitive rather than on each screen that uses it.
+  useSecretScreen('seed-word-grid');
+
   return (
     <View style={styles.container}>
       {words.map((word, index) => (

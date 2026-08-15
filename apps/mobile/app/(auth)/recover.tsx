@@ -23,6 +23,7 @@ import {
   validateMnemonic,
 } from '@salmon/shared';
 import { PrimaryButton, ScreenHeader, SecondaryButton } from '../../src/components';
+import { useSecretScreen } from '../../hooks/useSecretScreen';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -48,6 +49,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function RecoverWalletScreen() {
   // Hooks
   const { t } = useTranslation();
+
+  // The phrase is typed into one bulk TextInput here rather than the
+  // SeedWordInput primitive, so this screen opts in explicitly.
+  useSecretScreen('recover-wallet');
 
   // State
   const [seedPhrase, setSeedPhrase] = useState('');

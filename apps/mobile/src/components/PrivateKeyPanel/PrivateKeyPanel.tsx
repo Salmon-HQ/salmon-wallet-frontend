@@ -28,6 +28,7 @@ import {
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { useSettingsHeaderOverride } from '../SettingsHeaderContext';
+import { useSecretScreen } from '../../../hooks/useSecretScreen';
 
 // ============================================================================
 // Types
@@ -59,6 +60,10 @@ export function PrivateKeyPanel({
   authenticateWithBiometric,
 }: PrivateKeyPanelProps): React.ReactElement | null {
   const { t } = useTranslation();
+
+  // A private key is a full spending credential; protect the panel from the
+  // network picker onward so backgrounding mid-flow is never a gap.
+  useSecretScreen('private-key-panel');
 
   // Step management: 'selectNetwork' or 'displayKeys'
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(

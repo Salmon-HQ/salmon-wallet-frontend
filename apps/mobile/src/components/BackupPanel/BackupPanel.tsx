@@ -20,6 +20,7 @@ import {
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { WarningNotice } from '../WarningNotice';
+import { useSecretScreen } from '../../../hooks/useSecretScreen';
 
 interface BackupPanelProps {
   onBack: () => void;
@@ -33,6 +34,12 @@ export function BackupPanel({
   authenticateWithBiometric,
 }: BackupPanelProps) {
   const { t } = useTranslation();
+
+  // This panel renders its own word grid rather than SeedWordGrid, so it has
+  // to opt in explicitly. Protection covers the whole panel, not just the
+  // revealed state — the mnemonic is in memory and one tap away throughout.
+  useSecretScreen('backup-panel');
+
   const [accountState] = useAccountsContext();
   const { activeAccount } = accountState;
 

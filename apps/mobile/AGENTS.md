@@ -18,6 +18,26 @@ Refines the repo-root `AGENTS.md` (canonical rules) for this app.
 - Do not import DOM-only UI from `packages/ui` — it cannot run in React
   Native.
 
+## Screen-capture protection for key material
+
+Any component that renders or accepts secret material (mnemonic, private
+key, recovery phrase) must call `useSecretScreen(label)` from
+`apps/mobile/hooks/useSecretScreen.ts`. It blocks screenshots and screen
+recording, and keeps the screen out of the OS app-switcher thumbnail — the
+snapshot the OS takes before JS can react, which lock-on-background cannot
+prevent.
+
+The `SeedWordGrid` and `SeedWordInput` primitives already call it, so any
+screen built from them inherits protection with no extra step. Build seed UI
+from those primitives. Only a screen that renders key material with bespoke
+markup (as `BackupPanel`, `PrivateKeyPanel`, and `app/(auth)/recover.tsx`
+do) needs to call the hook itself.
+
+Protect the whole component, not just the revealed state — the secret is in
+memory and one tap away for the panel's entire lifetime. Do not extend this
+to balances, addresses, or receipts: users legitimately screenshot those for
+support, and blanket protection trains people to work around it.
+
 ## Testing
 
 - Add or update mobile tests when RN behavior or mobile-only flows change.

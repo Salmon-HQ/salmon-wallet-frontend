@@ -12,6 +12,7 @@ import {
   fontFamilyNative,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
+import { useSecretScreen } from '../../../hooks/useSecretScreen';
 
 type ValidationState = 'idle' | 'correct' | 'incorrect';
 
@@ -40,6 +41,10 @@ export function SeedWordInput({
   testID,
 }: SeedWordInputProps) {
   const { t } = useTranslation();
+
+  // A typed recovery word is worth as much as a displayed one.
+  useSecretScreen('seed-word-input');
+
   const getBorderColor = () => {
     switch (validationState) {
       case 'correct':
