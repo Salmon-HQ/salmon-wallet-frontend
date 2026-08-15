@@ -19,6 +19,8 @@ import {
   ScrollView,
   View,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -74,58 +76,71 @@ export function SettingsScreenLayout({
   const { t } = useTranslation();
   return (
     <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-        {showHeader && (
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={onBack}
-              style={styles.backButton}
-              accessibilityLabel={t('accessibility.go_back', 'Go back')}
-              accessibilityRole="button"
-            >
-              <Ionicons
-                name="chevron-back"
-                size={componentSizes.iconSizeMedium}
-                color={colors.text.primary}
-              />
-            </TouchableOpacity>
-            <Text style={styles.title} numberOfLines={2}>
-              {title}
+      {/*
+        Settings panels host the label, address, seed and password fields.
+        iOS floats the keyboard over the app, so the fields and their save
+        buttons need padding pushed in from below; Android already shrinks the
+        window via `windowSoftInputMode="adjustResize"`, so it opts out.
+      */}
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoider}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+          {showHeader && (
+            <View style={styles.header}>
+              <TouchableOpacity
+                onPress={onBack}
+                style={styles.backButton}
+                accessibilityLabel={t('accessibility.go_back', 'Go back')}
+                accessibilityRole="button"
+              >
+                <Ionicons
+                  name="chevron-back"
+                  size={componentSizes.iconSizeMedium}
+                  color={colors.text.primary}
+                />
+              </TouchableOpacity>
+              <Text style={styles.title} numberOfLines={2}>
+                {title}
+              </Text>
+            </View>
+          )}
+
+          {subtitle && (
+            <Text style={[styles.subtitle, !showHeader && styles.subtitleStandalone]}>
+              {subtitle}
             </Text>
-          </View>
-        )}
+          )}
 
-        {subtitle && (
-          <Text style={[styles.subtitle, !showHeader && styles.subtitleStandalone]}>
-            {subtitle}
-          </Text>
-        )}
-
-        {scrollable ? (
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={[
-              styles.scrollContent,
-              !showHeader && styles.scrollContentHeaderless,
-              contentContainerStyle,
-            ]}
-            showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-          >
-            {children}
-          </ScrollView>
-        ) : (
-          <View
-            style={[
-              styles.staticContent,
-              styles.scrollContent,
-              !showHeader && styles.scrollContentHeaderless,
-              contentContainerStyle,
-            ]}
-          >
-            {children}
-          </View>
-        )}
-      </SafeAreaView>
+          {scrollable ? (
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={[
+                styles.scrollContent,
+                !showHeader && styles.scrollContentHeaderless,
+                contentContainerStyle,
+              ]}
+              showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+            >
+              {children}
+            </ScrollView>
+          ) : (
+            <View
+              style={[
+                styles.staticContent,
+                styles.scrollContent,
+                !showHeader && styles.scrollContentHeaderless,
+                contentContainerStyle,
+              ]}
+            >
+              {children}
+            </View>
+          )}
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -136,6 +151,9 @@ export function SettingsScreenLayout({
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  keyboardAvoider: {
     flex: 1,
   },
   safeArea: {

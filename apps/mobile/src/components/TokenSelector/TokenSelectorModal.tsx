@@ -284,6 +284,7 @@ export function TokenSelectorModal({
                   // holds focus is spent dismissing the keyboard instead of
                   // selecting the token, so searching always costs two taps.
                   keyboardShouldPersistTaps="handled"
+                  keyboardDismissMode="on-drag"
                   style={styles.list}
                 />
               )}

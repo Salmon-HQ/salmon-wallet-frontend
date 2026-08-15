@@ -6,7 +6,7 @@
  */
 
 import React, { useCallback, useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors, spacing, fontSize, fontFamilyNative, vs } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
@@ -128,37 +128,44 @@ export function ConfirmSheet({
       title={<Text style={styles.title}>{title}</Text>}
       style={styles.sheet}
     >
-      <View style={[styles.content, { paddingBottom: compactContentBottomPadding }]}>
-        <Text style={styles.message}>{message}</Text>
+      {/*
+        The password field autofocuses, so on iOS the keyboard opens over the
+        bottom-anchored sheet and hides the Confirm button. Padding grows the
+        sheet upward instead. Android resizes the window itself.
+      */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={[styles.content, { paddingBottom: compactContentBottomPadding }]}>
+          <Text style={styles.message}>{message}</Text>
 
-        {requirePassword && (
-          <View style={styles.passwordSection}>
-            <PasswordInput
-              value={password}
-              onChangeText={handlePasswordChange}
-              placeholder={t('general.password', 'Password')}
-              error={passwordError}
-              editable={!loading}
-              autoFocus
-              onSubmitEditing={handleConfirm}
-            />
+          {requirePassword && (
+            <View style={styles.passwordSection}>
+              <PasswordInput
+                value={password}
+                onChangeText={handlePasswordChange}
+                placeholder={t('general.password', 'Password')}
+                error={passwordError}
+                editable={!loading}
+                autoFocus
+                onSubmitEditing={handleConfirm}
+              />
+            </View>
+          )}
+
+          <View style={styles.actions}>
+            <SecondaryButton onPress={onClose} disabled={loading}>
+              {cancelText || t('actions.cancel', 'Cancel')}
+            </SecondaryButton>
+            <PrimaryButton
+              onPress={handleConfirm}
+              disabled={!canConfirm}
+              loading={loading}
+              style={isDanger ? styles.dangerButton : undefined}
+            >
+              {confirmText || t('actions.confirm', 'Confirm')}
+            </PrimaryButton>
           </View>
-        )}
-
-        <View style={styles.actions}>
-          <SecondaryButton onPress={onClose} disabled={loading}>
-            {cancelText || t('actions.cancel', 'Cancel')}
-          </SecondaryButton>
-          <PrimaryButton
-            onPress={handleConfirm}
-            disabled={!canConfirm}
-            loading={loading}
-            style={isDanger ? styles.dangerButton : undefined}
-          >
-            {confirmText || t('actions.confirm', 'Confirm')}
-          </PrimaryButton>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </BottomSheetContainer>
   );
 }

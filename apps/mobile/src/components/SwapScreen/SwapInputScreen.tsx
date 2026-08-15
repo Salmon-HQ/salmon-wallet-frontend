@@ -18,6 +18,7 @@ import {
 import { SwapAmountInput } from './SwapAmountInput';
 import { PrimaryButton } from '../Button';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 import type { SwapInputScreenProps } from './types';
 
 /**
@@ -42,6 +43,14 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
 }) => {
   const { t } = useTranslation();
   const { floatingBottomOffset, stickyCtaScrollPadding } = useTabChrome();
+  const keyboardHeight = useKeyboardHeight();
+
+  // The review CTA is absolutely positioned, so KeyboardAvoidingView cannot
+  // reach it. While the amount keyboard is open, anchor it just above the
+  // keyboard instead of above the tab bar so the user can still act on the
+  // amount they just typed.
+  const ctaBottomOffset =
+    keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
 
   return (
     <Pressable
@@ -98,7 +107,7 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
       </View>
 
       {/* Review Button */}
-      <View style={[styles.buttonContainer, { bottom: floatingBottomOffset }]}>
+      <View style={[styles.buttonContainer, { bottom: ctaBottomOffset }]}>
         {canReview ? (
           <LinearGradient
             colors={gradients.primaryButton.colors}

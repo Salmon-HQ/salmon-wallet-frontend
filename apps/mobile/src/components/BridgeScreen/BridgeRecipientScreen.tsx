@@ -21,6 +21,7 @@ import {
 import { RecipientAddressInput } from './RecipientAddressInput';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 import type { BridgeRecipientScreenProps } from './types';
 
 /**
@@ -39,13 +40,25 @@ export const BridgeRecipientScreen: React.FC<BridgeRecipientScreenProps> = ({
 }) => {
   const { t } = useTranslation();
   const { floatingBottomOffset, stickyCtaScrollPadding } = useTabChrome();
+  const keyboardHeight = useKeyboardHeight();
   const canContinue = isValidAddress && recipientAddress.length > 0;
+
+  // Back/Review live in an absolutely-positioned bar, out of layout flow and
+  // therefore out of reach of KeyboardAvoidingView. Lift the bar above the
+  // keyboard and grow the scroll padding by the same amount so the address
+  // field and the button that acts on it stay reachable together.
+  const ctaBottomOffset =
+    keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
 
   return (
     <View style={[styles.container, style]}>
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: stickyCtaScrollPadding }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: stickyCtaScrollPadding + keyboardHeight },
+        ]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
@@ -85,7 +98,7 @@ export const BridgeRecipientScreen: React.FC<BridgeRecipientScreenProps> = ({
       </ScrollView>
 
       {/* Buttons */}
-      <View style={[styles.buttonsContainer, { bottom: floatingBottomOffset }]}>
+      <View style={[styles.buttonsContainer, { bottom: ctaBottomOffset }]}>
         <SecondaryButton onPress={onBack} style={styles.backButton}>
           {t('actions.back', 'Back')}
         </SecondaryButton>
