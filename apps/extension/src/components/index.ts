@@ -44,6 +44,7 @@ export {
   WalletSwitcherSheet,
   WarningNotice,
   SettingsPanelStack,
+  visuallyHidden,
 } from '@salmon/ui';
 
 export type {

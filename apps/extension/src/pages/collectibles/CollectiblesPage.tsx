@@ -32,6 +32,7 @@ import {
   NftCardSkeleton,
   SolanaSvgIcon,
   WarningNotice,
+  visuallyHidden,
 } from '@/components';
 
 // ============================================================================
@@ -59,15 +60,6 @@ const Container = styled(Box)({
   paddingBottom: spacing.lg,
   overflowY: 'auto',
   gap: spacing.lg,
-});
-
-const SectionTitle = styled(Typography)({
-  fontSize: fontSize.lg,
-  fontWeight: 600,
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  paddingLeft: spacing.lg,
-  paddingRight: spacing.lg,
 });
 
 const EmptyState = styled(Box)({
@@ -101,7 +93,8 @@ const SectionHeaderRow = styled(Box)({
   paddingRight: spacing.lg,
 });
 
-const SectionTitleText = styled(Typography)({
+const SectionTitleText = styled('h2')({
+  margin: 0,
   fontSize: fontSize.md,
   fontWeight: 600,
   color: colors.text.primary,
@@ -198,6 +191,17 @@ export function CollectiblesPage({
     [developerNetworks]
   );
 
+  // Sections that actually render. Mainnet and devnet count as distinct
+  // chains: same base chain, different networks and different assets.
+  const renderedKeys = useMemo(
+    () =>
+      visibleKeys.filter(
+        (key) => nftsBySections[key].loading || nftsBySections[key].nfts.length > 0
+      ),
+    [visibleKeys, nftsBySections]
+  );
+  const showChainLabel = renderedKeys.length > 1;
+
   const isLoading = visibleKeys.some((key) => nftsBySections[key].loading);
 
   const isEmpty = !isLoading && visibleKeys.every((key) => nftsBySections[key].nfts.length === 0);
@@ -221,7 +225,11 @@ export function CollectiblesPage({
 
   return (
     <Container>
-      <SectionTitle>{t('collectibles.title', 'Collectibles')}</SectionTitle>
+      {/* Visually hidden: the tab bar carries the visible label, but screen
+          reader users still need a heading to orient by. */}
+      <Typography component="h1" sx={visuallyHidden}>
+        {t('collectibles.title', 'Collectibles')}
+      </Typography>
 
       {loadError && (
         <Box
@@ -246,23 +254,24 @@ export function CollectiblesPage({
       )}
 
       {/* NFT sections — Solana only, grid layout */}
-      {visibleKeys.map((key) => {
+      {renderedKeys.map((key) => {
         const section = nftsBySections[key];
-        if (section.nfts.length === 0 && !section.loading) return null;
         return (
           <Box key={key} sx={{ display: 'flex', flexDirection: 'column', gap: `${spacing.md}px` }}>
-            {/* Section header */}
-            <SectionHeaderRow>
-              <SolanaSvgIcon
-                sx={{
-                  width: componentSizes.iconSizeMedium,
-                  height: componentSizes.iconSizeMedium,
-                  color: colors.text.primary,
-                }}
-              />
-              <SectionTitleText>{getNftSectionTitle(key, section)}</SectionTitleText>
-              <SectionCount>({section.nfts.length})</SectionCount>
-            </SectionHeaderRow>
+            {/* Section header — only when the chain label distinguishes something */}
+            {showChainLabel && (
+              <SectionHeaderRow>
+                <SolanaSvgIcon
+                  sx={{
+                    width: componentSizes.iconSizeMedium,
+                    height: componentSizes.iconSizeMedium,
+                    color: colors.text.primary,
+                  }}
+                />
+                <SectionTitleText>{getNftSectionTitle(key, section)}</SectionTitleText>
+                <SectionCount>({section.nfts.length})</SectionCount>
+              </SectionHeaderRow>
+            )}
 
             {/* Grid or Skeleton */}
             {section.loading ? (

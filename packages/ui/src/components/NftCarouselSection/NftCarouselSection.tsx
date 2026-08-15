@@ -44,7 +44,8 @@ const HeaderRow = styled(Box)({
   paddingRight: spacing.lg,
 });
 
-const Title = styled(Typography)({
+const Title = styled('h2')({
+  margin: 0,
   fontSize: fontSize.md,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
@@ -102,6 +103,7 @@ export function NftCarouselSection({
   blockchain,
   nfts,
   loading,
+  showChainLabel = true,
   onNftPress,
   style,
   className,
@@ -114,12 +116,14 @@ export function NftCarouselSection({
 
   return (
     <Container style={style} className={className}>
-      {/* Header */}
-      <HeaderRow>
-        {getBlockchainIcon(blockchain)}
-        <Title>{title}</Title>
-        <Count>({nfts.length})</Count>
-      </HeaderRow>
+      {/* Header — only when the chain label distinguishes something */}
+      {showChainLabel && (
+        <HeaderRow>
+          {getBlockchainIcon(blockchain)}
+          <Title>{title}</Title>
+          <Count>({nfts.length})</Count>
+        </HeaderRow>
+      )}
 
       {/* Grid */}
       <Grid>

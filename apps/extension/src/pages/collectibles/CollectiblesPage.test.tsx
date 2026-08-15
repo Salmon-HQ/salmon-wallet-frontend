@@ -38,7 +38,7 @@ vi.mock('@salmon/shared', () => ({
   fontFamily: { sans: 'sans-serif' },
   componentSizes: {},
   canonicalNftToSolanaNftData: (...args: unknown[]) => mockCanonicalNftToSolanaNftData(...args),
-  getNftSectionTitle: () => 'Solana',
+  getNftSectionTitle: (key: string) => (key === 'solana-devnet' ? 'Solana Devnet' : 'Solana'),
   useSolanaNfts: (...args: unknown[]) => mockUseSolanaNfts(...args),
 }));
 
@@ -46,6 +46,8 @@ vi.mock('@/components', () => ({
   NftCard: ({ nft }: { nft: { name: string } }) => <div>{nft.name}</div>,
   NftCardSkeleton: () => <div>Loading...</div>,
   SolanaSvgIcon: () => <div />,
+  WarningNotice: () => <div />,
+  visuallyHidden: {},
 }));
 
 const mockRawNft = {
@@ -60,6 +62,11 @@ const mockAccount = {
     'solana-mainnet': [
       {
         getReceiveAddress: () => 'Owner111',
+      },
+    ],
+    'solana-devnet': [
+      {
+        getReceiveAddress: () => 'Owner222',
       },
     ],
   },
@@ -87,5 +94,28 @@ describe('CollectiblesPage', () => {
     render(<CollectiblesPage activeAccount={mockAccount as any} developerNetworks={false} />);
 
     expect(await screen.findByText('Burned NFT')).toBeTruthy();
+  });
+
+  it('hides the chain label when only one chain has collectibles', async () => {
+    render(<CollectiblesPage activeAccount={mockAccount as any} developerNetworks={false} />);
+
+    await screen.findByText('Burned NFT');
+    expect(screen.queryByText('Solana')).toBeNull();
+    expect(screen.queryByText('(1)')).toBeNull();
+  });
+
+  it('shows the chain label for each chain when more than one has collectibles', async () => {
+    mockUseSolanaNfts.mockImplementation(() => ({
+      nfts: [mockRawNft],
+      loading: false,
+      error: null,
+      isError: false,
+      refresh: vi.fn(),
+    }));
+
+    render(<CollectiblesPage activeAccount={mockAccount as any} developerNetworks={true} />);
+
+    expect(await screen.findByText('Solana')).toBeTruthy();
+    expect(screen.getByText('Solana Devnet')).toBeTruthy();
   });
 });
