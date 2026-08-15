@@ -30,7 +30,15 @@ import {
   letterSpacing,
 } from './typography';
 import { shadows, shadowsCSS } from './shadows';
-import { duration, durationMs, easing } from './durations';
+import {
+  duration,
+  durationMs,
+  easing,
+  motionDuration,
+  motionEasing,
+  motionMs,
+  reducedMotion,
+} from './durations';
 
 // Re-export all tokens from colors
 export { colors, gradients, getScalesColorForBlockchain } from './colors';
@@ -103,9 +111,30 @@ export type {
 export { shadows, shadowsCSS } from './shadows';
 export type { Shadows, ShadowsCSS } from './shadows';
 
-// Re-export all tokens from durations
-export { duration, durationMs, easing } from './durations';
-export type { Duration, DurationMs, Easing } from './durations';
+// Re-export all tokens from durations.
+// `motionMs` / `motionDuration` / `motionEasing` are the vocabulary; the
+// `duration` / `durationMs` / `easing` trio is kept and deprecated so the three
+// apps keep compiling while call sites move over.
+export {
+  motionMs,
+  motionDuration,
+  motionEasing,
+  reducedMotion,
+  resolveMotionMs,
+  resolveMotionDuration,
+  duration,
+  durationMs,
+  easing,
+} from './durations';
+export type {
+  MotionMs,
+  MotionDuration,
+  MotionEasing,
+  ReducedMotion,
+  Duration,
+  DurationMs,
+  Easing,
+} from './durations';
 
 /**
  * Complete theme object combining all tokens
@@ -129,6 +158,10 @@ export const theme = {
   blur,
   shadows,
   shadowsCSS,
+  motionMs,
+  motionDuration,
+  motionEasing,
+  reducedMotion,
   duration,
   durationMs,
   easing,
