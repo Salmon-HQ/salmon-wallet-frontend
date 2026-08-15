@@ -11,6 +11,19 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
+  semantic: {
+    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
+    text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
+    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
+    scales: {
+      deepFieldStroke: 'rgba(199, 211, 232, 0.06)',
+      deepFieldScale: 3.2,
+      deepFieldHeight: 180,
+      fishStroke: 'rgba(7, 9, 17, 0.10)',
+      fishScale: 1,
+    },
+  },
+  palette: { salmon: { 500: '#FF5C45', 600: '#E64A34' }, neutral: { 0: '#FFFFFF', 1000: '#070911' } },
   borderRadius: { full: 999, md: 8, lg: 12, xl: 16 },
   colors: {
     background: { primary: '#000', secondary: '#111', card: '#050505' },

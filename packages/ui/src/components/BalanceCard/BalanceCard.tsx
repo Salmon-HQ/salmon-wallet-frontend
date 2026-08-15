@@ -3,7 +3,6 @@
  *
  * Web version matching mobile's visual structure:
  * - Dynamic gradient per blockchain
- * - ScalesBackground overlay
  * - Centered blockchain SVG icon
  * - Balance with decimal opacity split
  * - Trending arrow + change colors from tokens
@@ -19,6 +18,7 @@ import Typography from '@mui/material/Typography';
 import {
   colors,
   gradients,
+  semantic,
   spacing,
   borderRadius,
   fontSize,
@@ -36,14 +36,12 @@ import {
   hiddenValue,
   useCurrencyContext,
   getNetworkLabel,
-  getScalesColorForBlockchain,
   opacity,
   durationMs,
   easing,
 } from '@salmon/shared';
 import type { BlockchainId } from '@salmon/shared';
 import { EyeIcon, EyeOffIcon, Icon, SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from '../Icon';
-import { ScalesBackground } from '../ScalesBackground';
 import type { BalanceCardProps } from './types';
 
 /**
@@ -129,10 +127,18 @@ const LogoContainer = styled(Box)({
   justifyContent: 'center',
 });
 
+/**
+ * The network badge. Now that the card's background carries no chain hue,
+ * this is one of the two places chain identity lives (the other is the logo
+ * above it) — so it is an *opaque* badge with a real border rather than a
+ * 30%-black wash, which is a channel that survives a colorblind user, a
+ * narrow column, and a screenshot.
+ */
 const NetworkLabel = styled(Box)<{ $visible?: boolean }>(({ $visible = true }) => ({
   position: 'relative' as const,
   zIndex: 1,
-  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  backgroundColor: semantic.surface.crest,
+  border: `1px solid ${semantic.border.raised}`,
   paddingLeft: s(spacing.sm),
   paddingRight: s(spacing.sm),
   paddingTop: vs(spacing.xxs),
@@ -145,7 +151,7 @@ const NetworkLabelText = styled(Typography)({
   fontSize: ms(fontSize.xs),
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
-  color: colors.text.primary,
+  color: semantic.text.secondary,
   textTransform: 'uppercase',
   letterSpacing: letterSpacing.wide,
 });
@@ -283,7 +289,6 @@ export function BalanceCard({
   const displayAbsChange = formatChange(changeAmount);
 
   const gradientCSS = getGradientCSSForBlockchain(blockchain);
-  const scalesColor = getScalesColorForBlockchain(blockchain);
   // In developer mode, always show network label (including "Mainnet")
   const networkLabel = showNetworkLabel
     ? (getNetworkLabel(blockchain) ?? t('general.network_mainnet', 'Mainnet'))
@@ -351,15 +356,11 @@ export function BalanceCard({
 
   return (
     <Container style={{ ...style, background: gradientCSS }} className={className}>
-      {/* Scales pattern overlay */}
-      <ScalesBackground
-        strokeColor={scalesColor}
-        strokeWidth={1}
-        patternHeight={26}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}
-      />
+      {/* No scales here: this card carries the balance, and the motif never
+          sits behind a number. The deep field lives on the page ground
+          instead, where the card occludes it. */}
 
-      {/* Group 1: Logo + Network tag */}
+      {/* Group 1: Logo + Network tag — where chain identity now lives */}
       <ContentGroup>
         <LogoContainer>{renderBlockchainLogo(blockchain)}</LogoContainer>
         <NetworkLabel $visible={!!networkLabel}>

@@ -166,7 +166,6 @@ export function SendPage({
     <PageShell
       title={t('token.action.send')}
       onBack={handleBackPress}
-      showScalesBackground
       scalesBackgroundProps={{
         strokeColor: 'rgba(255, 255, 255, 0.03)',
         strokeWidth: 1,

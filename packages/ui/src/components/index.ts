@@ -115,7 +115,7 @@ export type { WalletInitErrorScreenProps } from './WalletInitErrorScreen';
 
 // ScalesBackground - Repeating fish scales pattern background
 export { ScalesBackground } from './ScalesBackground';
-export type { ScalesBackgroundProps } from './ScalesBackground';
+export type { ScalesBackgroundProps, ScalesVariant } from './ScalesBackground';
 
 // PasswordInput - Secure password input with visibility toggle and strength indicator
 export { PasswordInput, PasswordStrengthBar } from './PasswordInput';

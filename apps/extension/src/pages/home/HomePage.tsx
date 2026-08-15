@@ -1390,7 +1390,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
       <Main>
         {/* Background layers — shared across all three tabs */}
-        <ScalesBackground style={{ zIndex: 0 }} />
+        <ScalesBackground variant="deepField" style={{ zIndex: 0 }} />
         <BottomFadeGradient />
 
         <TabContent>

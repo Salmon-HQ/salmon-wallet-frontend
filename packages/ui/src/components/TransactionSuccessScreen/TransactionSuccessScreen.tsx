@@ -134,7 +134,8 @@ const ContinueButton = styled(Button)({
   borderRadius: borderRadius.lg,
   background: gradients.primaryCSS,
   border: `${borderWidth.accent}px solid ${colors.accent.border}`,
-  color: colors.text.primary,
+  // The only legal ink on a salmon fill: white is 3.06:1.
+  color: colors.button.primaryText,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.semibold,
   fontSize: fontSize.md,

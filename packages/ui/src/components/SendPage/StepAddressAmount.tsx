@@ -23,6 +23,7 @@ import {
   spacing,
   componentSizes,
   gradients,
+  semantic,
   fontFamily,
   fontWeight,
   useAddressValidation,
@@ -278,7 +279,7 @@ const CancelButton = styled(ButtonBase)({
   flex: 1,
   height: componentSizes.buttonHeightMedium,
   borderRadius: borderRadius.lg,
-  border: `${borderWidth.thin}px solid ${colors.accent.border}`,
+  border: `${borderWidth.thin}px solid ${semantic.border.raised}`,
   backgroundColor: colors.button.cancelBackground,
   display: 'flex',
   alignItems: 'center',
@@ -323,12 +324,14 @@ const ReviewButtonGradient = styled(Box)<{ $isDisabled?: boolean }>(({ $isDisabl
   background: $isDisabled ? gradients.disabledCSS : gradients.primaryCSS,
 }));
 
-const ReviewButtonText = styled(Typography)({
+const ReviewButtonText = styled(Typography)<{ $isDisabled?: boolean }>(({ $isDisabled }) => ({
   fontSize: fontSize.md,
   fontWeight: fontWeight.extraBold,
   fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-});
+  // Salmon fill takes `neutral-1000` ink at 6.50:1 and nothing else; the
+  // disabled fill is `surface.crest`, which takes the disabled ink instead.
+  color: $isDisabled ? semantic.text.disabled : colors.button.primaryText,
+}));
 
 // Contact / Wallet sections
 const ContactSection = styled(Box)({
@@ -692,7 +695,7 @@ export function StepAddressAmount({
 
         <ReviewButton onClick={handleReview} disabled={!isValid} data-testid="send-review-button">
           <ReviewButtonGradient $isDisabled={!isValid}>
-            <ReviewButtonText>{t('token.send.reviewAndSend')}</ReviewButtonText>
+            <ReviewButtonText $isDisabled={!isValid}>{t('token.send.reviewAndSend')}</ReviewButtonText>
           </ReviewButtonGradient>
         </ReviewButton>
       </BottomButtons>

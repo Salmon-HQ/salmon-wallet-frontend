@@ -19,6 +19,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import {
   colors,
+  palette,
   spacing,
   borderRadius,
   componentSizes,
@@ -59,7 +60,7 @@ const ContentWrapper = styled(Box)({
 
 const QRContainer = styled(Box)({
   borderRadius: borderRadius.xl,
-  border: `${componentSizes.qrBorderWidth}px solid ${colors.button.primaryBackground}`,
+  border: `${componentSizes.qrBorderWidth}px solid ${palette.neutral[0]}`,
   overflow: 'hidden',
   display: 'inline-flex',
   alignItems: 'center',
@@ -180,7 +181,6 @@ export function ReceiveSheet({
       onClose={onClose}
       size="small"
       colorScheme="dialog"
-      showScalesBackground={true}
       ariaLabelledBy="receive-sheet-title"
       className={className}
       style={style}
@@ -197,8 +197,8 @@ export function ReceiveSheet({
             <QRCode
               value={address}
               size={qrSize}
-              backgroundColor={colors.button.primaryBackground}
-              color={colors.button.primaryText}
+              backgroundColor={palette.neutral[0]}
+              color={palette.neutral[1000]}
             />
           </QRContainer>
 

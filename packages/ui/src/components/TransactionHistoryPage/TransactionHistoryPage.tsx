@@ -262,7 +262,6 @@ export function TransactionHistoryPage({
     <PageShell
       title={t('transactions.historyTitle')}
       onBack={onBack}
-      showScalesBackground
       scrollContentStyle={{
         padding: `${spacing.md}px ${spacing.lg}px ${spacing.xl}px`,
       }}

@@ -212,13 +212,15 @@ const SecondaryButtonInner = styled(ButtonBase)({
   '&:active': { opacity: opacity.medium },
 });
 
-const ButtonText = styled(Typography)({
+const ButtonText = styled(Typography)<{ $onAccent?: boolean }>(({ $onAccent }) => ({
   fontFamily: fontFamily.sans,
   fontSize: fontSize.md,
   fontWeight: fontWeight.medium,
-  color: colors.text.balance,
+  // On the salmon fill the only legal ink is `neutral-1000` (6.50:1). The
+  // outlined sibling keeps the light label it already had.
+  color: $onAccent ? colors.button.primaryText : colors.text.balance,
   lineHeight: lineHeight.normal,
-});
+}));
 
 // ============================================================================
 // NftDetailPage Component
@@ -368,7 +370,6 @@ export function NftDetailPage({
       onBack={
         isBurnReviewStep ? handleBurnBack : isBurnSuccessStep ? handleBurnSuccessContinue : onBack
       }
-      showScalesBackground
       style={style}
       className={className}
     >
@@ -565,8 +566,10 @@ export function NftDetailPage({
                   aria-label={t('nft.send.title', 'Send NFT')}
                   data-testid="nft-detail-send-button"
                 >
-                  <CallMadeIcon sx={{ fontSize: fontSize.md, color: colors.text.balance }} />
-                  <ButtonText>{t('actions.send', 'Send')}</ButtonText>
+                  <CallMadeIcon
+                    sx={{ fontSize: fontSize.md, color: colors.button.primaryText }}
+                  />
+                  <ButtonText $onAccent>{t('actions.send', 'Send')}</ButtonText>
                 </PrimaryButtonBase>
 
                 <BlurContainer

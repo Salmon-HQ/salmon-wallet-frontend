@@ -72,7 +72,7 @@ const RetryButtonText = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
-  color: colors.text.primary,
+  color: colors.button.primaryText,
 });
 
 export function WalletInitErrorScreen({ onRetry }: WalletInitErrorScreenProps): React.ReactElement {

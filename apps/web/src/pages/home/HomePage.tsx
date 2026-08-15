@@ -914,7 +914,7 @@ export function HomePage(): React.ReactElement {
       </TabBar>
 
       <Main>
-        <ScalesBackground style={{ zIndex: 0 }} />
+        <ScalesBackground variant="deepField" style={{ zIndex: 0 }} />
         <BottomFadeGradient />
 
         <TabContent>

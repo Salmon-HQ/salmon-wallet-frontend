@@ -44,7 +44,6 @@ export function NftSeeAllPage({
     <PageShell
       title={title}
       onBack={onBack}
-      showScalesBackground
       style={style}
       className={className}
     >

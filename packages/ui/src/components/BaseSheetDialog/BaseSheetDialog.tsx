@@ -54,7 +54,7 @@ export function BaseSheetDialog({
   children,
   size = 'medium',
   colorScheme = 'dialog',
-  showScalesBackground = true,
+  showScalesBackground = false,
   className,
   style,
   ariaLabelledBy,

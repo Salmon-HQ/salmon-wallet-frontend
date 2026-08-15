@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import {
   colors,
-  gradients,
+  semantic,
   fontFamily,
   fontWeight,
   borderRadius,
@@ -29,10 +29,14 @@ import { BlurContainer } from '../BlurContainer';
 import type { NftCardProps } from './types';
 
 /**
- * Orange gradient colors for fallback background
- * Gradient: linear-gradient(91.6deg, rgb(255, 92, 69) 12%, rgba(161, 42, 42, 0.9) 83%)
+ * Fallback background for an NFT with no image.
+ *
+ * It used to be the salmon primary fill, which put a grid of living salmon
+ * rectangles on the collectibles screen and broke the One Living Thing Rule
+ * every time art failed to load. A missing image is an empty surface, not an
+ * accent, so it takes the raised plane instead.
  */
-const FALLBACK_GRADIENT = gradients.primaryCSS;
+const FALLBACK_GRADIENT = semantic.surface.raised;
 
 /** Card dimensions */
 const CARD_BORDER_RADIUS = borderRadius.iconContainer;

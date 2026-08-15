@@ -78,7 +78,6 @@ import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 
 import { BlurContainer } from '../BlurContainer';
-import { ScalesBackground } from '../ScalesBackground';
 import { AddressCopyRow } from '../TransactionHistoryPage/AddressCopyRow';
 import { ConversionRateDisplay } from '../TransactionHistoryPage/ConversionRateDisplay';
 import { ExplorerLinkButton } from '../TransactionHistoryPage/ExplorerLinkButton';
@@ -223,17 +222,6 @@ const StyledDialog = styled(Dialog)({
     display: 'flex',
     flexDirection: 'column',
   },
-});
-
-const BackgroundWrapper = styled(Box)({
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  overflow: 'hidden',
-  zIndex: 0,
-  pointerEvents: 'none',
 });
 
 const HeaderContainer = styled(Box)({
@@ -957,11 +945,6 @@ export function TransactionDetailModal({
       PaperProps={{ style }}
       disableEnforceFocus
     >
-      {/* Decorative background */}
-      <BackgroundWrapper>
-        <ScalesBackground />
-      </BackgroundWrapper>
-
       {/* Header */}
       <HeaderContainer>
         <HeaderRow>

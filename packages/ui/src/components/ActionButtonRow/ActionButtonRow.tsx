@@ -14,7 +14,7 @@ import {
   colors,
   spacing,
   borderWidth,
-  gradients,
+  semantic,
   fontFamily,
   fontSize,
   componentSizes,
@@ -50,6 +50,15 @@ const ButtonWrapper = styled(Box)<{ $disabled?: boolean }>(({ $disabled }) => ({
   transition: `opacity ${duration.normal} ${easing.ease}`,
 }));
 
+/**
+ * Send. Neutral on purpose.
+ *
+ * The One Living Thing Rule: salmon appears once per screen, and on the home
+ * screen it is spent on the active tab item — which is exactly why the action
+ * pills are neutral. This one used to be a salmon-to-oxblood gradient with a
+ * white label, so the home screen shipped three competing salmon objects and
+ * a 3.06:1 label on the loudest of them.
+ */
 const PrimaryButton = styled(Button)({
   width: '100%',
   height: '100%',
@@ -58,18 +67,19 @@ const PrimaryButton = styled(Button)({
   alignItems: 'center',
   justifyContent: 'center',
   gap: s(spacing.sm),
-  background: gradients.primaryCSS,
+  backgroundColor: semantic.surface.raised,
+  border: `${borderWidth.thin}px solid ${semantic.border.raised}`,
   borderRadius: ms(componentSizes.actionButtonRadius),
   textTransform: 'none',
   minWidth: 0,
   padding: 0,
   '&:hover': {
-    background: gradients.primaryCSS,
-    opacity: opacity.soft,
+    backgroundColor: semantic.surface.crest,
+    borderColor: semantic.border.strong,
   },
   '&.Mui-disabled': {
-    background: gradients.disabledCSS,
-    color: colors.text.primary,
+    backgroundColor: semantic.surface.raised,
+    color: semantic.text.disabled,
   },
 });
 
@@ -153,7 +163,7 @@ export function ActionButtonRow({
       {/* Receive Button - Secondary with BlurContainer */}
       <ButtonWrapper $disabled={receiveDisabled}>
         <BlurContainer
-          borderColor={colors.accent.primary}
+          borderColor={semantic.border.raised}
           borderWidth={borderWidth.actionButton}
           style={{ borderRadius: ms(componentSizes.actionButtonRadius), height: '100%' }}
         >
@@ -177,7 +187,7 @@ export function ActionButtonRow({
       {/* Activity Button - Secondary with BlurContainer */}
       <ButtonWrapper $disabled={activityDisabled}>
         <BlurContainer
-          borderColor={colors.accent.primary}
+          borderColor={semantic.border.raised}
           borderWidth={borderWidth.actionButton}
           style={{ borderRadius: ms(componentSizes.actionButtonRadius), height: '100%' }}
         >

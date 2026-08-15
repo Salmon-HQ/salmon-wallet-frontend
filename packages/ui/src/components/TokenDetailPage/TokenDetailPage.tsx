@@ -112,7 +112,6 @@ export function TokenDetailPage({
     <PageShell
       title={t('token.detail.title', 'Token Information')}
       onBack={onBack}
-      showScalesBackground
       style={style}
       className={className}
     >

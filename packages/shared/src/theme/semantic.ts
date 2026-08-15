@@ -135,6 +135,36 @@ export const accent = {
   onFill: neutral[1000],
 } as const;
 
+/**
+ * The scales motif — three appearances, three scales, three jobs.
+ *
+ * In this world the scales are the water column's texture and their *density
+ * is a depth cue*: they say how far down you are looking, the way particulate
+ * density does in real water. They are not wallpaper, not a chain indicator,
+ * and not a brand stamp, so there are exactly three sanctioned uses and no
+ * free-form fourth.
+ *
+ * Every stroke here is deliberately below the 1.4:1 luminance ceiling for a
+ * non-informational stroke, which is what keeps the motif decoration rather
+ * than a data channel — and what makes it safe to paint behind type.
+ *
+ * `patternHeight` is a multiplier on the drawing's native 26px tile.
+ */
+export const scales = {
+  /** Deep field — on `depth.column`, behind the balance header only. */
+  deepFieldStroke: 'rgba(199, 211, 232, 0.06)',
+  deepFieldScale: 3.2,
+  /** The band the field lives in; it dissolves before it reaches a row. */
+  deepFieldHeight: 180,
+  /** The fish itself — inside the primary CTA's salmon fill, and only there. */
+  fishStroke: 'rgba(7, 9, 17, 0.10)',
+  fishScale: 1,
+  /** Refraction strip — a band clipped to the top edge of any membrane. */
+  refractionScale: 0.5,
+  refractionOpacity: 0.08,
+  refractionHeight: 24,
+} as const;
+
 export const semantic = {
   depth,
   surface,
@@ -144,6 +174,7 @@ export const semantic = {
   change,
   state,
   accent,
+  scales,
 } as const;
 
 export type Semantic = typeof semantic;

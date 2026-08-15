@@ -223,7 +223,7 @@ const ConfirmButtonText = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
-  color: colors.text.primary,
+  color: colors.button.primaryText,
 });
 
 const SendingRow = styled(Box)({

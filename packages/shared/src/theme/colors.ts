@@ -4,6 +4,8 @@
  */
 
 import type { BlockchainId } from '../types/ui/balance-card';
+import { danger, neutral, salmon, success } from './palette';
+import { scales } from './semantic';
 
 export const colors = {
   background: {
@@ -15,15 +17,19 @@ export const colors = {
     tokenItem: 'rgba(56, 63, 82, 0.1)', // blur-backed list items
   },
   text: {
-    primary: '#FFFFFF',
-    secondary: '#8A8D98',
-    tertiary: '#6B6E7B', // also used as placeholder color
+    // Deep water has no pure white in it — `neutral-50` is the whitest thing
+    // in the app. The retired values here (#FFFFFF, #8A8D98, #6B6E7B at
+    // 3.66:1) are named in DESIGN.md as values not to reintroduce.
+    primary: neutral[50],
+    secondary: neutral[300],
+    tertiary: neutral[400], // also used as placeholder color
     muted: 'rgba(255, 255, 255, 0.7)',
-    balance: '#e0e0e0', // subdued white for amounts and token names
+    balance: neutral[100], // subdued white for amounts and token names
     disabled: 'rgba(255, 255, 255, 0.4)',
   },
   border: {
-    default: '#404962',
+    // #404962 measured 2.07:1 and is retired; `neutral-600` is 3.08:1.
+    default: neutral[600],
     light: 'rgba(255, 255, 255, 0.8)',
     subtle: 'rgba(255, 255, 255, 0.15)',
   },
@@ -42,19 +48,24 @@ export const colors = {
     warningBackground: 'rgba(255, 171, 0, 0.1)',
     warningBorder: 'rgba(255, 171, 0, 0.3)',
   },
-  /** Price change indicators (keyed by LabelType) */
+  /**
+   * Price change indicators (keyed by LabelType).
+   * The lime `#80ff54` is retired — the most generic "crypto app" value in the
+   * old palette. Status ramps are hue-separated from salmon on purpose.
+   */
   change: {
-    positive: '#80ff54',
-    negative: '#FF5252',
-    neutral: '#9E9E9E',
+    positive: success[500],
+    negative: danger[500],
+    neutral: neutral[400],
   },
   input: {
     background: 'rgba(64, 73, 98, 0.2)',
-    border: '#404962',
+    border: neutral[600],
   },
   button: {
-    primaryBackground: '#FFFFFF',
-    primaryText: '#000000',
+    /** Salmon fill; the only legal ink on it is `primaryText` at 6.50:1. */
+    primaryBackground: salmon[500],
+    primaryText: neutral[1000],
     secondaryBackground: '#2a3441',
     secondaryText: '#FFFFFF',
     cancelBackground: '#1f232f',
@@ -127,58 +138,77 @@ export const colors = {
  * - `colors` + `start`/`end` → React Native LinearGradient
  * - CSS strings → web linear-gradient()
  */
+/**
+ * The balance card is water, not a chain logo.
+ *
+ * Every `balanceCard*` key below used to carry a per-chain brand hue — a
+ * cosmic purple for Solana, Bitcoin orange, Ethereum periwinkle — which made
+ * the hero element of the home screen someone else's brand. In "Deep Water"
+ * the only thing that varies between cards is **depth**: a mainnet card is a
+ * deep pane of the column, a testnet card sits nearer the surface. Chain
+ * identity is carried by the card's own logo, its name, and its network badge
+ * — channels that survive a colorblind user, a narrow column, and a
+ * screenshot, which a background hue does not.
+ *
+ * The keys are preserved because three apps read them.
+ */
+const DEEP_PANE = [neutral[850], neutral[900], neutral[950]] as const;
+const SHALLOW_PANE = [neutral[800], neutral[850], neutral[900]] as const;
+const VERTICAL = { start: { x: 0.5, y: 0 }, end: { x: 0.5, y: 1 } } as const;
+const DEEP_PANE_CSS = `linear-gradient(180deg, ${neutral[850]} 0%, ${neutral[900]} 50%, ${neutral[950]} 100%)`;
+const SHALLOW_PANE_CSS = `linear-gradient(180deg, ${neutral[800]} 0%, ${neutral[850]} 50%, ${neutral[900]} 100%)`;
+
 export const gradients = {
+  /**
+   * The primary fill. Flat `salmon-500`, not a gradient into a muddy red:
+   * the ink on a salmon fill is `neutral-1000` at 6.50:1, and that ratio only
+   * holds if the fill does not darken under the label.
+   */
   primary: {
-    colors: ['#FF5C45', 'rgba(161, 42, 42, 0.9)'] as const,
+    colors: [salmon[500], salmon[500]] as const,
     start: { x: 0, y: 0 },
     end: { x: 1, y: 0 },
   },
-  /** Primary action button (slight downward angle ~93.8deg) */
+  /** Primary action button */
   primaryButton: {
-    colors: ['#FF5C45', 'rgba(161, 42, 42, 0.9)'] as const,
+    colors: [salmon[500], salmon[500]] as const,
     start: { x: 0, y: 0 },
     end: { x: 1, y: 0.04 },
   },
-  /** Balance card default (diagonal, cosmic purple) */
+  /** Balance card default (diagonal descent through the column) */
   balanceCard: {
-    colors: ['#4A1A8C', '#2D1052', '#1A0A33'] as const,
+    colors: DEEP_PANE,
     start: { x: 0, y: 0 },
     end: { x: 1, y: 1 },
   },
   /** Balance card Solana (vertical) */
   balanceCardSolana: {
-    colors: ['#4A1A8C', '#2D1052', '#1A0A33'] as const,
-    start: { x: 0.5, y: 0 },
-    end: { x: 0.5, y: 1 },
+    colors: DEEP_PANE,
+    ...VERTICAL,
   },
   balanceCardSolanaDevnet: {
-    colors: ['#00FFA3', '#00B377', '#00664D'] as const,
-    start: { x: 0.5, y: 0 },
-    end: { x: 0.5, y: 1 },
+    colors: SHALLOW_PANE,
+    ...VERTICAL,
   },
   balanceCardBitcoin: {
-    colors: ['#F7931A', '#8B5A00', '#3D2800'] as const,
-    start: { x: 0.5, y: 0 },
-    end: { x: 0.5, y: 1 },
+    colors: DEEP_PANE,
+    ...VERTICAL,
   },
   balanceCardBitcoinTestnet: {
-    colors: ['#FF9500', '#B36D00', '#663D00'] as const,
-    start: { x: 0.5, y: 0 },
-    end: { x: 0.5, y: 1 },
+    colors: SHALLOW_PANE,
+    ...VERTICAL,
   },
   balanceCardEthereum: {
-    colors: ['#627EEA', '#3A4A8C', '#1A1F33'] as const,
-    start: { x: 0.5, y: 0 },
-    end: { x: 0.5, y: 1 },
+    colors: DEEP_PANE,
+    ...VERTICAL,
   },
   balanceCardEthereumSepolia: {
-    colors: ['#4CAF50', '#2E7D32', '#1B5E20'] as const,
-    start: { x: 0.5, y: 0 },
-    end: { x: 0.5, y: 1 },
+    colors: SHALLOW_PANE,
+    ...VERTICAL,
   },
-  /** Disabled state gradient */
+  /** Disabled state gradient — `surface.crest`. The salmon never dims. */
   disabled: {
-    colors: ['#666666', '#444444'] as const,
+    colors: [neutral[925], neutral[925]] as const,
     start: { x: 0, y: 0 },
     end: { x: 1, y: 0 },
   },
@@ -195,39 +225,27 @@ export const gradients = {
     end: { x: 0.5, y: 0 },
   },
   // CSS versions for web
-  primaryCSS: 'linear-gradient(101deg, rgb(255, 92, 69) 12%, rgba(161, 42, 42, 0.9) 83%)',
-  primaryButtonCSS: 'linear-gradient(90deg, #ff5c45 0%, #ff3d2e 100%)',
-  disabledCSS: 'linear-gradient(90deg, #666666 0%, #444444 100%)',
-  balanceCardSolanaCSS: 'linear-gradient(180deg, #4A1A8C 0%, #2D1052 50%, #1A0A33 100%)',
-  balanceCardSolanaDevnetCSS: 'linear-gradient(180deg, #00FFA3 0%, #00B377 50%, #00664D 100%)',
-  balanceCardBitcoinCSS: 'linear-gradient(180deg, #F7931A 0%, #8B5A00 50%, #3D2800 100%)',
-  balanceCardBitcoinTestnetCSS: 'linear-gradient(180deg, #FF9500 0%, #B36D00 50%, #663D00 100%)',
-  balanceCardEthereumCSS: 'linear-gradient(180deg, #627EEA 0%, #3A4A8C 50%, #1A1F33 100%)',
-  balanceCardEthereumSepoliaCSS: 'linear-gradient(180deg, #4CAF50 0%, #2E7D32 50%, #1B5E20 100%)',
+  primaryCSS: `linear-gradient(180deg, ${salmon[500]} 0%, ${salmon[500]} 100%)`,
+  primaryButtonCSS: `linear-gradient(180deg, ${salmon[500]} 0%, ${salmon[500]} 100%)`,
+  disabledCSS: `linear-gradient(180deg, ${neutral[925]} 0%, ${neutral[925]} 100%)`,
+  balanceCardSolanaCSS: DEEP_PANE_CSS,
+  balanceCardSolanaDevnetCSS: SHALLOW_PANE_CSS,
+  balanceCardBitcoinCSS: DEEP_PANE_CSS,
+  balanceCardBitcoinTestnetCSS: SHALLOW_PANE_CSS,
+  balanceCardEthereumCSS: DEEP_PANE_CSS,
+  balanceCardEthereumSepoliaCSS: SHALLOW_PANE_CSS,
 } as const;
 
 export type Colors = typeof colors;
 export type Gradients = typeof gradients;
 
 /**
- * Returns an rgba overlay color (15% opacity) for a blockchain.
- * Used for balance card scale/shimmer effects.
+ * The scales stroke. One value, for every chain.
+ *
+ * Chain tinting is removed: a 6%-opacity pattern cannot be a data channel —
+ * it survives neither a colorblind user nor a screenshot, and it was the last
+ * place a chain's brand hue leaked into the water. The signature is kept
+ * because three apps call it; only what it returns changed.
  */
-export const getScalesColorForBlockchain = (blockchain: BlockchainId): string => {
-  switch (blockchain) {
-    case 'solana':
-      return 'rgba(153, 69, 255, 0.15)';
-    case 'solana-devnet':
-      return 'rgba(0, 255, 163, 0.15)';
-    case 'bitcoin':
-      return 'rgba(247, 147, 26, 0.15)';
-    case 'bitcoin-testnet':
-      return 'rgba(255, 149, 0, 0.15)';
-    case 'ethereum':
-      return 'rgba(98, 126, 234, 0.15)';
-    case 'ethereum-sepolia':
-      return 'rgba(76, 175, 80, 0.15)';
-    default:
-      return 'rgba(153, 69, 255, 0.15)';
-  }
-};
+export const getScalesColorForBlockchain = (_blockchain: BlockchainId): string =>
+  scales.deepFieldStroke;
