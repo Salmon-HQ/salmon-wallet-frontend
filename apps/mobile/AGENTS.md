@@ -58,6 +58,25 @@ Agent guardrails:
   `eas credentials` autonomously — losing a published keystore permanently
   removes the ability to update the Play Store listing. Ask the human first.
 
+## OTA updates cannot carry native modules
+
+`runtimeVersion.policy` is `appVersion`, so an OTA reaches every installed
+binary sharing that version string. A JS bundle that imports a native module
+the installed binary does not contain **hard-crashes the app at launch**, for
+every user on that version, with no way back in — the update ships, the app
+dies, and the user cannot receive the fix that follows.
+
+`expo-screen-capture` is the live example: `useSecretScreen` is reached from
+`_layout.tsx` through a barrel, so publishing it as an update to binaries
+built before it was added bricks them.
+
+Before publishing any OTA, check whether the diff adds or newly reaches a
+native module. If it does, it is a **binary release with a bumped version**,
+not an update. Adding a silent fallback to make such a module optional is
+usually the wrong answer where the module enforces a security property: a
+no-op ships the protection turned off, which is worse than a crash in
+testing.
+
 Pre-build checklist — run in order before `eas build --profile production`:
 
 1. **Tests green**: from repo root run
