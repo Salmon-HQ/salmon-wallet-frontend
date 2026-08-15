@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, Alert } from 'react-native';
 import { BlurTargetView } from 'expo-blur';
 import { Tabs, useRouter } from 'expo-router';
@@ -199,6 +199,17 @@ export default function TabLayout() {
     clearBiometricKey,
     refreshState: refreshBiometricState,
   } = useBiometricAuth();
+
+  // Locking discards any open panel. `locked` already wins over them in
+  // `gateState`, but leaving the flags set means SettingsSheet keeps its panel
+  // stack across the lock and unlock drops the user back into whatever screen
+  // was open (Private Key, Backup Seed Phrase) instead of the wallet.
+  useEffect(() => {
+    if (!accountState.locked) return;
+    setSettingsVisible(false);
+    setSettingsInitialPanels(undefined);
+    setWalletSwitcherVisible(false);
+  }, [accountState.locked]);
 
   // Compute gate state
   const gateState: GateState = accountState.locked

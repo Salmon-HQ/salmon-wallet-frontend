@@ -94,6 +94,11 @@ export function GateContainer({
 
     switch (state) {
       case 'locked':
+        // Drop the close-animation snapshot: locking is not a close, so no
+        // expanded panel may survive it. Without this the settings/wallets
+        // subtree stays mounted next to the lock content — visible, and fully
+        // touchable, behind the password prompt.
+        setLastExpandedContent(null);
         // Instant — no animation
         translateY.value = 0;
         backdropOpacity.value = 0;
@@ -196,8 +201,11 @@ export function GateContainer({
       : activeExpandedType === 'wallets'
         ? walletsContent
         : null;
-  const showExpanded = isExpanded || lastExpandedContent !== null;
-  const showBackdrop = isExpanded || lastExpandedContent !== null;
+  // `locked` covers the whole screen and must be the only thing rendered:
+  // the snapshot is cleared on lock, but this guard also closes the commit
+  // between the state change and that effect, when the snapshot is still set.
+  const showExpanded = state !== 'locked' && (isExpanded || lastExpandedContent !== null);
+  const showBackdrop = showExpanded;
   // Use current header if expanded, or snapshot header during close animation
   const activeExpandedHeader = isExpanded ? expandedHeader : lastExpandedHeaderRef.current;
 
