@@ -43,17 +43,16 @@ jest.mock('@expo/vector-icons/FontAwesome', () => ({
   },
 }));
 
-jest.mock('@salmon/assets/src/fonts/DMSans-Light.ttf', () => 'DMSansLight', { virtual: true });
-jest.mock('@salmon/assets/src/fonts/DMSans-Regular.ttf', () => 'DMSansRegular', { virtual: true });
-jest.mock('@salmon/assets/src/fonts/DMSans-Medium.ttf', () => 'DMSansMedium', { virtual: true });
-jest.mock('@salmon/assets/src/fonts/DMSans-SemiBold.ttf', () => 'DMSansSemiBold', {
+// Font binaries are not resolvable under this Jest config, so every face the
+// layout loads needs a virtual mock here. Adding a weight to `_layout.tsx`
+// without adding it below fails the whole suite with MODULE_NOT_FOUND.
+jest.mock('@salmon/assets/src/fonts/Geist-Regular.ttf', () => 'GeistRegular', { virtual: true });
+jest.mock('@salmon/assets/src/fonts/Geist-Medium.ttf', () => 'GeistMedium', { virtual: true });
+jest.mock('@salmon/assets/src/fonts/Geist-SemiBold.ttf', () => 'GeistSemiBold', { virtual: true });
+jest.mock('@salmon/assets/src/fonts/Geist-Bold.ttf', () => 'GeistBold', { virtual: true });
+jest.mock('@salmon/assets/src/fonts/GeistMono-Regular.ttf', () => 'GeistMonoRegular', {
   virtual: true,
 });
-jest.mock('@salmon/assets/src/fonts/DMSans-Bold.ttf', () => 'DMSansBold', { virtual: true });
-jest.mock('@salmon/assets/src/fonts/DMSans-ExtraBold.ttf', () => 'DMSansExtraBold', {
-  virtual: true,
-});
-jest.mock('@salmon/assets/src/fonts/DMSans-Black.ttf', () => 'DMSansBlack', { virtual: true });
 
 jest.mock('../src/components/WalletInitErrorScreen', () => {
   const React = require('react');
