@@ -10,6 +10,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import { colors } from '@salmon/shared';
+import { focusRingNone, focusRingOnWrapper } from '../../theme';
 import type { BlurContainerProps } from './types';
 
 const WEB_DEFAULT_BG = 'rgba(56, 63, 82, 0.10)';
@@ -96,6 +97,17 @@ const BlurBox = styled(Box)<{
   backgroundColor: $backgroundColor,
   overflow: 'hidden',
   position: 'relative',
+  // When a text field inside this container takes focus, *this* is the
+  // field's visible boundary — the `InputBase` in Send, Swap and the token
+  // search is a bare flex child with no border, fill or radius of its own.
+  // Ring the container so the ring follows the rounded blurred surface the
+  // user actually sees, and stand the theme's input ring down inside it so
+  // the field is never outlined twice. The ring is inset, so the
+  // `overflow: hidden` above cannot clip it.
+  '&:has(.MuiInputBase-root:focus-within)': {
+    ...focusRingOnWrapper,
+    '& .MuiInputBase-root.MuiInputBase-root': focusRingNone,
+  },
   ...(!$useGradientBorder && {
     borderColor: $borderColor,
     borderWidth: $borderWidth,

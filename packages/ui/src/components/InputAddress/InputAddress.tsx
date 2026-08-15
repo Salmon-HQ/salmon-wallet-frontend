@@ -36,6 +36,7 @@ import {
   durationMs,
   easing,
 } from '@salmon/shared';
+import { focusRingNone, focusRingOnWrapper } from '../../theme';
 import type { InputAddressProps } from './types';
 import type { ValidationState } from '@salmon/shared';
 
@@ -70,6 +71,10 @@ const InputWrapper = styled(Box)<{
   minHeight: componentSizes.inputHeight,
   transition: `border-color ${duration.normal} ${easing.ease}`,
   opacity: $isDisabled ? colors.button.disabledOpacity : 1,
+  '&:has(:focus-visible)': {
+    ...focusRingOnWrapper,
+    '& .MuiInputBase-root.MuiInputBase-root': focusRingNone,
+  },
 }));
 
 const StyledInput = styled(InputBase)<{

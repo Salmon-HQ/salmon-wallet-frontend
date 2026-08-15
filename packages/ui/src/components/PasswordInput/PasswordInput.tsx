@@ -22,6 +22,7 @@ import {
   duration,
   easing,
 } from '@salmon/shared';
+import { focusRingNone, focusRingOnWrapper } from '../../theme';
 import { EyeIcon, EyeOffIcon } from '../Icon';
 import type { PasswordInputProps } from './types';
 
@@ -29,6 +30,8 @@ const Container = styled(Box)({
   width: '100%',
 });
 
+// This wrapper — not the InputBase inside it — is the field's visual
+// boundary, so it is what carries the keyboard focus ring.
 const InputWrapper = styled(Box)<{
   $borderColor: string;
 }>(({ $borderColor }) => ({
@@ -42,8 +45,14 @@ const InputWrapper = styled(Box)<{
   paddingLeft: spacing.lg,
   paddingRight: spacing.lg,
   transition: `border-color ${duration.normal} ${easing.ease}`,
+  '&:has(:focus-visible)': {
+    ...focusRingOnWrapper,
+    '& .MuiInputBase-root.MuiInputBase-root': focusRingNone,
+  },
 }));
 
+// Bare flex child: no border, no radius. Ringing it is what drew the
+// hard-cornered rectangle inside the rounded wrapper. InputWrapper rings it.
 const StyledInput = styled(InputBase)({
   flex: 1,
   color: colors.text.primary,

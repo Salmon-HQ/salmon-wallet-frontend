@@ -78,14 +78,10 @@ const AddressInput = styled('input')({
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.medium,
   letterSpacing: letterSpacing.normal,
-  outline: 'none',
   boxSizing: 'border-box',
   transition: `border-color ${duration.normal} ${easing.ease}`,
   '&::placeholder': {
     color: colors.text.tertiary,
-  },
-  '&:focus': {
-    borderColor: 'rgba(255, 92, 69, 0.6)',
   },
 });
 

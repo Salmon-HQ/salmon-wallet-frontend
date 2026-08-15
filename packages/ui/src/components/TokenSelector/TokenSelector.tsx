@@ -30,6 +30,7 @@ import {
   easing,
 } from '@salmon/shared';
 
+import { focusRingNone, focusRingOnWrapper } from '../../theme';
 import { TokenSelectorModal } from './TokenSelectorModal';
 import type { TokenSelectorToken, TokenSelectorProps } from './types';
 
@@ -45,6 +46,10 @@ const Container = styled(Box)({
   borderRadius: borderRadius.xl,
   padding: spacing.sm,
   border: `${borderWidth.thin}px solid ${colors.border.default}`,
+  '&:has(:focus-visible)': {
+    ...focusRingOnWrapper,
+    '& .MuiInputBase-root.MuiInputBase-root': focusRingNone,
+  },
 });
 
 const InputContainer = styled(Box)({

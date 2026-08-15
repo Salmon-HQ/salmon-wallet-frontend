@@ -35,21 +35,47 @@ const { accent, border, depth, state, status, surface, text } = semantic;
 const ms = (value: string): number => Number.parseInt(value, 10);
 
 /**
- * The focus ring: a 2px salmon outline held off the control by a 2px gap, with
- * that gap filled by `depth.abyss` so the ring keeps its contrast on any
- * surface, light fill or dark. Never replaced by `outline: none`.
+ * The focus ring, drawn *inside* the control's border box.
+ *
+ * It used to be drawn outside — a salmon outline held off by a 2px gap filled
+ * with `depth.abyss`. Two things were wrong with that. Almost every focusable
+ * surface in this app sits inside a clipping ancestor (`BlurContainer`, a
+ * scroll container, a sheet, `ActionButtonRow`), so anything painted outside
+ * the border box was cut off; and MUI's own `ButtonBase`/`InputBase` ship
+ * `outline: 0`, which quietly won against the old single-class selector and
+ * left only the `box-shadow` behind — the black rectangle.
+ *
+ * Inset fixes both: an outline pulled inward is never clipped by an ancestor,
+ * and it inherits the control's own `border-radius`, so a pill gets a pill.
+ *
+ * The `depth.abyss` band beneath the salmon is a separator, not a gap filler.
+ * `state.focusVisible` measures 9.29:1 on `surface.shelf` but only 1.53:1 on a
+ * salmon `accent.fill` button; `depth.abyss` measures 6.50:1 on that same
+ * fill. Whichever surface the ring lands on, one of the two bands clears the
+ * 3:1 that WCAG 2.2 1.4.11 asks of a focus indicator.
+ *
+ * Never replaced by a bare `outline: none`.
  */
 const focusRing = {
   outline: `${state.focusRingWidth}px solid ${state.focusVisible}`,
-  outlineOffset: `${state.focusRingOffset}px`,
-  boxShadow: `0 0 0 ${state.focusRingOffset}px ${depth.abyss}`,
+  outlineOffset: `-${state.focusRingWidth}px`,
+  boxShadow: `inset 0 0 0 ${state.focusRingWidth + state.focusRingOffset}px ${depth.abyss}`,
 } as const;
 
-/** Same ring, drawn inward — for elements clipped by a scroll container. */
-const focusRingInset = {
-  outline: `${state.focusRingWidth}px solid ${state.focusVisible}`,
-  outlineOffset: `-${state.focusRingWidth}px`,
+/**
+ * Opt-out for a field whose visual boundary is an outer wrapper rather than
+ * the input itself. Ringing the input there would draw a hard-cornered
+ * rectangle inside the wrapper's rounded border — the original bug. Pair it
+ * with either `focusRing` on the wrapper or a focus indicator the wrapper
+ * already owns.
+ */
+export const focusRingNone = {
+  outline: 'none',
+  boxShadow: 'none',
 } as const;
+
+/** The ring, for a wrapper that owns a field's shape. See `focusRingNone`. */
+export const focusRingOnWrapper = focusRing;
 
 /**
  * The application MUI theme. Pair with `<CssBaseline />` — the global
@@ -201,12 +227,38 @@ export const salmonTheme: Theme = createTheme({
           backgroundColor: depth.column,
           color: text.primary,
         },
-        // The global ring. Attached to the bare selector so plain DOM nodes —
-        // `<a>`, `<input>`, `<summary>`, anything with `tabIndex` — get it too,
-        // not only MUI components. `.Mui-focusVisible` is listed alongside
-        // because MUI sets that class on ButtonBase from its own focus
-        // heuristics, which can fire where the CSS pseudo-class does not.
-        '*:focus-visible, .Mui-focusVisible': focusRing,
+        // The global ring. Still reaches plain DOM nodes — `<a>`, `<button>`,
+        // `<summary>`, anything with `tabIndex` — and `.Mui-focusVisible` is
+        // listed alongside because MUI sets that class on ButtonBase from its
+        // own focus heuristics, which can fire where the pseudo-class does not.
+        //
+        // The selectors are repeated to buy specificity 0-3-0, because MUI
+        // resets both halves of the ring from its own rules and all of them
+        // are injected after `CssBaseline`. `.MuiButtonBase-root` and
+        // `.MuiInputBase-input` ship `outline: 0` at 0-1-0 — that is what
+        // left a `ListItemButton` measuring `outline: none` with only the
+        // box-shadow painting. `.MuiButton-root.MuiButton-disableElevation`
+        // ships `box-shadow: none` at 0-2-0, which ate the ring's dark
+        // separator band on every primary button. 0-3-0 clears both without
+        // an `!important`.
+        ':focus-visible:focus-visible:focus-visible, .Mui-focusVisible.Mui-focusVisible.Mui-focusVisible':
+          focusRing,
+
+        // Nodes that are structurally never a control's visual boundary, so
+        // the ring must not land on them. The inner `<input>` of a MUI field
+        // always sits inside something that owns the field's shape, and the
+        // `<input>` inside a ButtonBase (Switch, Checkbox, Radio) is visually
+        // hidden while the ButtonBase draws the control. Both are ringed by
+        // the rules around this one instead.
+        '.MuiInputBase-input:focus-visible:focus-visible, .MuiButtonBase-root input:focus-visible:focus-visible':
+          focusRingNone,
+
+        // A field's actual boundary. `.MuiInputBase-root` is the element that
+        // carries the border, radius and fill for every self-bounded input in
+        // the repo (`SeedWordInput`, the address panels, the lock screens,
+        // every `TextField` via `MuiOutlinedInput`). Fields whose boundary is
+        // an outer wrapper opt out with `focusRingNone` and ring the wrapper.
+        '.MuiInputBase-root:has(:focus-visible):has(:focus-visible)': focusRing,
         // Pointer focus keeps no visible outline, which is only acceptable
         // because the keyboard ring above is unconditional.
         ':focus:not(:focus-visible)': {
@@ -243,7 +295,6 @@ export const salmonTheme: Theme = createTheme({
         root: {
           borderRadius: borderRadius.button,
           textTransform: 'none',
-          '&.Mui-focusVisible': focusRing,
           '&.Mui-disabled': { opacity: state.disabledOpacity },
         },
         contained: {
@@ -268,7 +319,6 @@ export const salmonTheme: Theme = createTheme({
         root: {
           color: text.secondary,
           '&:hover': { backgroundColor: state.hover },
-          '&.Mui-focusVisible': focusRing,
           '&.Mui-disabled': { color: text.disabled },
         },
       },
@@ -315,7 +365,6 @@ export const salmonTheme: Theme = createTheme({
       styleOverrides: {
         switchBase: {
           color: palette.neutral[200],
-          '&.Mui-focusVisible': focusRing,
           '&.Mui-checked': { color: accent.fill },
           '&.Mui-checked + .MuiSwitch-track': { backgroundColor: accent.fill, opacity: 0.5 },
         },
@@ -395,8 +444,6 @@ export const salmonTheme: Theme = createTheme({
         root: {
           color: text.primary,
           '&:hover': { backgroundColor: state.hover },
-          // Menus clip their own overflow, so the offset ring would be cut.
-          '&.Mui-focusVisible': focusRingInset,
           '&.Mui-selected': {
             backgroundColor: state.selectedFill,
             '&:hover': { backgroundColor: accent.tintHover },
@@ -420,7 +467,6 @@ export const salmonTheme: Theme = createTheme({
       styleOverrides: {
         root: {
           color: text.accent,
-          '&:focus-visible': focusRing,
         },
       },
     },
@@ -430,7 +476,6 @@ export const salmonTheme: Theme = createTheme({
         root: {
           color: border.strong,
           '&.Mui-checked': { color: accent.ink },
-          '&.Mui-focusVisible': focusRing,
         },
       },
     },
@@ -440,7 +485,6 @@ export const salmonTheme: Theme = createTheme({
         root: {
           color: border.strong,
           '&.Mui-checked': { color: accent.ink },
-          '&.Mui-focusVisible': focusRing,
         },
       },
     },
