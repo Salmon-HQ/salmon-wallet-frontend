@@ -10,5 +10,8 @@ export * from './components';
 // Layouts
 export * from './layouts';
 
+// Theme
+export { salmonTheme } from './theme';
+
 // Utilities
 export { styled } from './utils/styled';

@@ -5,6 +5,10 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import '../../assets/fonts.css';
 
+// Theme — MUI needs an explicit dark theme; its default is light.
+import { CssBaseline, ThemeProvider } from '@mui/material';
+import { salmonTheme } from '@salmon/ui';
+
 // Initialize i18n configuration - must be imported before App
 import i18n from '../../i18n/config';
 import { I18nextProvider } from 'react-i18next';
@@ -35,17 +39,20 @@ function Root() {
   const [queryClient] = React.useState(() => createQueryClient());
   return (
     <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <BridgeSettlementProvider>
-          <I18nextProvider i18n={i18n}>
-            <AccountsProvider>
-              <CurrencyProvider>
-                <App />
-              </CurrencyProvider>
-            </AccountsProvider>
-          </I18nextProvider>
-        </BridgeSettlementProvider>
-      </QueryClientProvider>
+      <ThemeProvider theme={salmonTheme}>
+        <CssBaseline />
+        <QueryClientProvider client={queryClient}>
+          <BridgeSettlementProvider>
+            <I18nextProvider i18n={i18n}>
+              <AccountsProvider>
+                <CurrencyProvider>
+                  <App />
+                </CurrencyProvider>
+              </AccountsProvider>
+            </I18nextProvider>
+          </BridgeSettlementProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
     </React.StrictMode>
   );
 }
