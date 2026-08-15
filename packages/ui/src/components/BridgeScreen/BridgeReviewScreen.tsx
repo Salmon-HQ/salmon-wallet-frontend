@@ -88,6 +88,23 @@ const WarningBox = styled(Box)({
   marginBottom: spacing.lg,
 });
 
+const IrreversibleBox = styled(Box)({
+  backgroundColor: colors.status.errorBackground,
+  borderRadius: borderRadius.md,
+  border: `${borderWidth.thin}px solid ${colors.status.error}`,
+  padding: spacing.base,
+  marginBottom: spacing.md,
+});
+
+const IrreversibleTitle = styled(Typography)({
+  fontSize: fontSize.sm,
+  fontWeight: fontWeight.semibold,
+  fontFamily: fontFamily.sans,
+  color: colors.status.error,
+  marginBottom: spacing.xs,
+  letterSpacing: letterSpacing.normal,
+});
+
 const WarningTitle = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.semibold,
@@ -176,6 +193,14 @@ export function BridgeReviewScreen({
             )}
             <SwapDetailRow label={t('bridge.review.provider')} value="StealthEX" />
           </DetailsContainer>
+
+          {/* The commit point. Duration is a convenience note; the custody
+              and no-recovery facts are the ones that cost money, so they get
+              their own box in danger ink directly above the confirm button. */}
+          <IrreversibleBox>
+            <IrreversibleTitle>{t('bridge.review.irreversible')}</IrreversibleTitle>
+            <WarningText>{t('bridge.review.irreversibleText')}</WarningText>
+          </IrreversibleBox>
 
           {/* Warning Box */}
           <WarningBox>

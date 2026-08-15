@@ -247,6 +247,10 @@ const TabButton = styled('button', {
   textAlign: 'center',
   cursor: 'pointer',
   transition: 'all 0.2s ease',
+  '&:disabled': {
+    cursor: 'default',
+    color: colors.text.disabled,
+  },
   '&:hover': {
     color: colors.text.primary,
   },
@@ -269,7 +273,6 @@ export function HomePage(): React.ReactElement {
     networkId,
     accounts,
     accountId,
-    switchingNetwork,
     activeTrustedApps,
   } = state;
 
@@ -346,10 +349,18 @@ export function HomePage(): React.ReactElement {
   // restores the user's tab when returning from /nft/:mint or /token/:address.
   const [activeTab, setActiveTabState] = useState<ActiveTab>(() => tabFromHash(location.hash));
 
+  // True from the moment a swap or bridge is signed until its outcome has been
+  // acknowledged. Before signing this stays false — leaving a review is free.
+  const [flowLocked, setFlowLocked] = useState(false);
+
   useEffect(() => {
+    // Browser back/forward drives the tab through the hash, which is another
+    // dismissal path the in-page controls cannot see. Ignore it while a signed
+    // transaction is still being reported.
+    if (flowLocked) return;
     const next = tabFromHash(location.hash);
     setActiveTabState((prev) => (prev === next ? prev : next));
-  }, [location.hash]);
+  }, [location.hash, flowLocked]);
 
   const setActiveTab = useCallback(
     (tab: ActiveTab) => {
@@ -415,8 +426,8 @@ export function HomePage(): React.ReactElement {
     usdTotal,
     changePercent,
     changeAmount,
-    loading,
     refreshing,
+    hasData,
     refresh,
     error: balanceError,
     hiddenBalance,
@@ -431,13 +442,6 @@ export function HomePage(): React.ReactElement {
 
   // RQ handles refetch-on-focus via QueryClient defaults (refetchOnWindowFocus).
 
-  // Clear switching network flag once loaded
-  useEffect(() => {
-    if (!loading && switchingNetwork) {
-      actions.clearSwitchingNetwork();
-    }
-  }, [loading, switchingNetwork, actions]);
-
   // Build blockchain balances for carousel
   const blockchainBalances: BlockchainBalance[] = useMemo(() => {
     return allNetworks.map((network) => {
@@ -445,13 +449,15 @@ export function HomePage(): React.ReactElement {
       const isActiveNetwork = network.id === networkId;
 
       if (isActiveNetwork) {
-        const showSkeleton = switchingNetwork || refreshing;
+        // Skeletons belong to the absence of data, never to a fetch in
+        // flight. `refreshing` used to blank the hero on every focus and
+        // every return to Home while the cache held the numbers throughout.
         return {
           network: { id: network.id, name: network.name, blockchain },
-          usdTotal: showSkeleton ? undefined : usdTotal,
-          changePercent: showSkeleton ? undefined : changePercent,
-          changeAmount: showSkeleton ? undefined : changeAmount,
-          loading: showSkeleton || (loading && usdTotal === undefined),
+          usdTotal,
+          changePercent,
+          changeAmount,
+          loading: !hasData,
         };
       }
       return {
@@ -462,16 +468,7 @@ export function HomePage(): React.ReactElement {
         loading: false,
       };
     });
-  }, [
-    allNetworks,
-    networkId,
-    switchingNetwork,
-    refreshing,
-    usdTotal,
-    changePercent,
-    changeAmount,
-    loading,
-  ]);
+  }, [allNetworks, networkId, hasData, usdTotal, changePercent, changeAmount]);
 
   const handleBlockchainChange = useCallback(
     (_blockchain: BlockchainId, index: number) => {
@@ -895,11 +892,13 @@ export function HomePage(): React.ReactElement {
         accountId={activeAccount?.id}
       />
 
-      {/* Tab Bar */}
+      {/* Tab Bar — inert while a signed transaction is being reported, since a
+          stray tab click is the cheapest way to lose the only outcome report. */}
       <TabBar>
         <TabButton
           active={activeTab === 'home'}
           onClick={() => setActiveTab('home')}
+          disabled={flowLocked}
           data-testid="tab-home"
         >
           {t('tabs.home', 'Home')}
@@ -907,6 +906,7 @@ export function HomePage(): React.ReactElement {
         <TabButton
           active={activeTab === 'collectibles'}
           onClick={() => setActiveTab('collectibles')}
+          disabled={flowLocked}
           data-testid="tab-collectibles"
         >
           {t('tabs.collectibles', 'Collectibles')}
@@ -914,6 +914,7 @@ export function HomePage(): React.ReactElement {
         <TabButton
           active={activeTab === 'swap'}
           onClick={() => setActiveTab('swap')}
+          disabled={flowLocked}
           data-testid="tab-swap"
         >
           {t('tabs.swap', 'Swap')}
@@ -945,7 +946,7 @@ export function HomePage(): React.ReactElement {
 
               {/* Partial-load failure: keep whatever data loaded visible;
                   retry is the header refresh button. */}
-              {balanceError && !switchingNetwork && (
+              {balanceError && hasData && (
                 <Box
                   sx={{ padding: `0 ${spacing.lg}px`, marginBottom: `${spacing.md}px` }}
                   data-testid="balance-load-error"
@@ -973,7 +974,7 @@ export function HomePage(): React.ReactElement {
                       height={180}
                       style={{ marginLeft: -spacing.lg, marginRight: -spacing.lg }}
                     />
-                    {switchingNetwork || refreshing ? (
+                    {!hasData ? (
                       <TokenListSkeleton count={1} />
                     ) : (
                       bitcoinToken && (
@@ -999,14 +1000,10 @@ export function HomePage(): React.ReactElement {
                   </TokenSection>
                 ) : (
                   <TokenSection onScroll={handleTokenListScroll}>
-                    {formattedTokens.length > 0 || loading || switchingNetwork || refreshing ? (
+                    {formattedTokens.length > 0 || !hasData ? (
                       <TokenList
-                        tokens={switchingNetwork || refreshing ? [] : formattedTokens}
-                        loading={
-                          switchingNetwork ||
-                          refreshing ||
-                          (loading && formattedTokens.length === 0)
-                        }
+                        tokens={formattedTokens}
+                        loading={!hasData}
                         onTokenPress={handleTokenPress}
                         hiddenBalance={hiddenBalance}
                         blockchain={getBlockchainFromNetworkId(currentBlockchain)}
@@ -1044,6 +1041,7 @@ export function HomePage(): React.ReactElement {
                 setActiveTab('home');
                 refresh();
               }}
+              onFlowLockChange={setFlowLocked}
             />
           )}
         </TabContent>

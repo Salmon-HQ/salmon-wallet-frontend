@@ -136,7 +136,7 @@ export function NftSendDialog({
   const canConfirm = addressValid && !loading && !isBitcoin;
 
   return (
-    <BaseDialog visible={visible} onClose={onClose}>
+    <BaseDialog visible={visible} onClose={onClose} dismissible={!loading}>
       <BaseDialog.Header title={t('nft.send_nft', 'Send NFT')} />
 
       <BaseDialog.Content>
@@ -183,7 +183,11 @@ export function NftSendDialog({
       </BaseDialog.Content>
 
       <BaseDialog.Actions>
-        <BaseDialog.CancelButton onClick={onClose} testID="nft-send-cancel-button">
+        <BaseDialog.CancelButton
+          onClick={onClose}
+          disabled={loading}
+          testID="nft-send-cancel-button"
+        >
           {t('actions.cancel', 'Cancel')}
         </BaseDialog.CancelButton>
         {!isBitcoin && (
@@ -192,7 +196,7 @@ export function NftSendDialog({
             disabled={!canConfirm}
             testID="nft-send-confirm-button"
           >
-            {loading ? t('actions.sending', 'Sending...') : t('actions.confirm', 'Confirm')}
+            {loading ? t('actions.sending', 'Sending...') : t('actions.send', 'Send')}
           </BaseDialog.ActionButton>
         )}
       </BaseDialog.Actions>

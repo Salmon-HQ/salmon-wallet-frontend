@@ -13,6 +13,12 @@ export interface BaseDialogProps {
   visible: boolean;
   /** Callback when the dialog should close */
   onClose: () => void;
+  /**
+   * Whether backdrop clicks and Escape may dismiss the dialog. Set to false
+   * while an irreversible action is in flight — explicit controls still work.
+   * Defaults to true.
+   */
+  dismissible?: boolean;
   /** Dialog content (use BaseDialog sub-components) */
   children: ReactNode;
   /** Optional aria-labelledby for accessibility */

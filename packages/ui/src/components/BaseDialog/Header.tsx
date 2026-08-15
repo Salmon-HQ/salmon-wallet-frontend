@@ -20,7 +20,11 @@ export function Header({ title, showWarning = false, onClose }: HeaderProps): Re
         {showWarning && <WarningIcon />}
         <TitleText>{title}</TitleText>
       </TitleContainer>
-      <CloseButton onClick={handleClose} aria-label={t('general.close', 'Close')}>
+      <CloseButton
+        onClick={handleClose}
+        disabled={!context.dismissible}
+        aria-label={t('general.close', 'Close')}
+      >
         <CloseIcon />
       </CloseButton>
     </StyledDialogTitle>

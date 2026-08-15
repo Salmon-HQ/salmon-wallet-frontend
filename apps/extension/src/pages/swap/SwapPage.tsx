@@ -67,9 +67,11 @@ const LoadingText = styled(Typography)({
 
 interface SwapPageProps {
   onNavigateHome?: () => void;
+  /** Reports when the flow owns the screen (post-signature). */
+  onFlowLockChange?: (locked: boolean) => void;
 }
 
-export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
+export function SwapPage({ onNavigateHome, onFlowLockChange }: SwapPageProps = {}) {
   const { t } = useTranslation();
   const currentSharedQuoteRef = useRef<SharedSwapQuote | null>(null);
 
@@ -367,6 +369,7 @@ export function SwapPage({ onNavigateHome }: SwapPageProps = {}) {
         onBridgeSuccess={handleBridgeSuccess}
         onBridgeError={handleBridgeError}
         onNavigateHome={onNavigateHome}
+        onFlowLockChange={onFlowLockChange}
       />
     </Container>
   );

@@ -86,4 +86,11 @@ export interface SwapInputScreenProps extends SwapInputScreenPropsBase<CSSProper
 /**
  * Props for main SwapScreen component (Web)
  */
-export interface SwapScreenProps extends SwapScreenPropsBase<CSSProperties> {}
+export interface SwapScreenProps extends SwapScreenPropsBase<CSSProperties> {
+  /**
+   * Reports whether the flow currently owns the screen: true from the moment
+   * the swap or bridge is signed until its outcome has been acknowledged.
+   * Hosts use it to disable navigation that would discard that report.
+   */
+  onFlowLockChange?: (locked: boolean) => void;
+}

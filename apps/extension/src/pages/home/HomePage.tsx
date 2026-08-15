@@ -270,6 +270,10 @@ const TabButton = styled('button', {
   '&:hover': {
     color: colors.text.primary,
   },
+  '&:disabled': {
+    cursor: 'default',
+    color: colors.text.disabled,
+  },
 }));
 
 /**
@@ -340,7 +344,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     accounts,
     accountId,
     activeTrustedApps,
-    switchingNetwork,
   } = state;
 
   // User configuration (developer networks toggle, explorer selection)
@@ -384,6 +387,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // closing/reopening between an NFT detail tap and the back arrow does
   // not silently snap the user back to Home.
   const [activeTab, setActiveTabState] = useState<ActiveTab>('home');
+
+  // True from the moment a send/swap/bridge is signed until its outcome has
+  // been acknowledged. Before signing this stays false — backing out of a
+  // review costs nothing and must stay easy.
+  const [flowLocked, setFlowLocked] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -557,8 +565,8 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     usdTotal,
     changePercent,
     changeAmount,
-    loading,
     refreshing,
+    hasData,
     refresh,
     error: balanceError,
     hiddenBalance,
@@ -573,13 +581,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   // RQ handles refetch-on-focus via QueryClient defaults (refetchOnWindowFocus).
   // dApp approval settlement is fired in App.tsx.
-
-  // Clear switching network flag once new data has loaded
-  useEffect(() => {
-    if (!loading && switchingNetwork) {
-      actions.clearSwitchingNetwork();
-    }
-  }, [loading, switchingNetwork, actions]);
 
   // Fetch transaction history (only when on activity page)
   const accountAddress = activeBlockchainAccount?.getReceiveAddress() || '';
@@ -869,12 +870,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       };
 
       if (isActiveNetwork) {
-        const showSkeleton = switchingNetwork || refreshing;
+        // Skeletons belong to the absence of data, never to a fetch in flight.
+        // `refreshing` used to blank the hero on every focus and every return
+        // to Home; the cache held the numbers the whole time.
         balanceData = {
-          usdTotal: showSkeleton ? undefined : usdTotal,
-          changePercent: showSkeleton ? undefined : changePercent,
-          changeAmount: showSkeleton ? undefined : changeAmount,
-          loading: showSkeleton || (loading && usdTotal === undefined),
+          usdTotal,
+          changePercent,
+          changeAmount,
+          loading: !hasData,
         };
       } else {
         balanceData = {
@@ -890,16 +893,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         ...balanceData,
       };
     });
-  }, [
-    allNetworks,
-    networkId,
-    switchingNetwork,
-    refreshing,
-    usdTotal,
-    changePercent,
-    changeAmount,
-    loading,
-  ]);
+  }, [allNetworks, networkId, hasData, usdTotal, changePercent, changeAmount]);
 
   // Handle blockchain change from carousel arrows
   const handleBlockchainChange = useCallback(
@@ -1324,6 +1318,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             account={activeBlockchainAccount}
             onBack={handleSendBack}
             onSuccess={handleSendSuccess}
+            onFlowLockChange={setFlowLocked}
           />
         );
       case 'activity':
@@ -1357,24 +1352,28 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   return (
     <Container data-testid="home-screen">
-      {/* Header */}
+      {/* Header. Settings and the wallet switcher can change the account or
+          the network, which remounts the flow — both are withheld while a
+          signed transaction is still being reported. */}
       <WalletHeader
         accountName={accountName}
         address={accountAddress}
         onCopyAddress={handleCopyAddress}
-        onSettingsPress={handleSettingsPress}
+        onSettingsPress={flowLocked ? undefined : handleSettingsPress}
         onRefreshPress={refresh}
         refreshing={refreshing}
-        onWalletPress={handleWalletPress}
+        onWalletPress={flowLocked ? undefined : handleWalletPress}
         avatarUrl={activeAccount?.avatar}
         accountId={activeAccount?.id}
       />
 
-      {/* Tab Bar */}
+      {/* Tab Bar — inert while a signed transaction is being reported, since a
+          stray tab tap is the cheapest way to lose the only outcome report. */}
       <TabBar>
         <TabButton
           active={activeTab === 'home'}
           onClick={() => setActiveTab('home')}
+          disabled={flowLocked}
           data-testid="tab-home"
         >
           {t('tabs.home', 'Home')}
@@ -1382,6 +1381,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         <TabButton
           active={activeTab === 'collectibles'}
           onClick={() => setActiveTab('collectibles')}
+          disabled={flowLocked}
           data-testid="tab-collectibles"
         >
           {t('tabs.collectibles', 'Collectibles')}
@@ -1389,6 +1389,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         <TabButton
           active={activeTab === 'swap'}
           onClick={() => setActiveTab('swap')}
+          disabled={flowLocked}
           data-testid="tab-swap"
         >
           {t('tabs.swap', 'Swap')}
@@ -1423,7 +1424,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
               {/* Partial-load failure: keep whatever data loaded visible;
                   retry is the header refresh button. */}
-              {balanceError && !switchingNetwork && (
+              {balanceError && hasData && (
                 <Box
                   sx={{ padding: `0 ${spacing.lg}px`, marginBottom: `${spacing.md}px` }}
                   data-testid="balance-load-error"
@@ -1452,7 +1453,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                       height={180}
                       style={{ marginLeft: -spacing.lg, marginRight: -spacing.lg }}
                     />
-                    {switchingNetwork || refreshing ? (
+                    {!hasData ? (
                       <TokenListSkeleton count={1} />
                     ) : (
                       bitcoinToken && (
@@ -1478,14 +1479,10 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                   </TokenSection>
                 ) : (
                   <TokenSection onScroll={handleTokenListScroll}>
-                    {formattedTokens.length > 0 || loading || switchingNetwork || refreshing ? (
+                    {formattedTokens.length > 0 || !hasData ? (
                       <TokenList
-                        tokens={switchingNetwork || refreshing ? [] : formattedTokens}
-                        loading={
-                          switchingNetwork ||
-                          refreshing ||
-                          (loading && formattedTokens.length === 0)
-                        }
+                        tokens={formattedTokens}
+                        loading={!hasData}
                         onTokenPress={handleTokenPress}
                         hiddenBalance={hiddenBalance}
                         blockchain={getBlockchainFromNetworkId(currentBlockchain)}
@@ -1518,7 +1515,12 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             />
           )}
 
-          {activeTab === 'swap' && <SwapPage onNavigateHome={() => setActiveTab('home')} />}
+          {activeTab === 'swap' && (
+            <SwapPage
+              onNavigateHome={() => setActiveTab('home')}
+              onFlowLockChange={setFlowLocked}
+            />
+          )}
         </TabContent>
       </Main>
 

@@ -28,12 +28,6 @@ import type { TransactionSuccessScreenProps } from './types';
 // Keyframes
 // ============================================================================
 
-const scaleIn = keyframes`
-  0% { transform: scale(0); }
-  70% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-`;
-
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -53,42 +47,60 @@ const Container = styled(Box)({
   padding: spacing.xl,
 });
 
-const Circle = styled(Box)({
-  width: componentSizes.logoSizeSmall,
-  height: componentSizes.logoSizeSmall,
-  borderRadius: borderRadius.full,
-  backgroundColor: colors.status.success,
+/**
+ * Status line. `status.success` is ink, not a fill — a checkmark glyph and a
+ * label, sized to report rather than to celebrate. The 96px saturated disc it
+ * replaces outweighed the amount by 6x on the one screen whose whole job is to
+ * report a number.
+ */
+const StatusRow = styled(Box)({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
-  marginBottom: spacing['3xl'],
-  animation: `${scaleIn} ${duration.slower} ${easing.bounce} forwards`,
+  gap: spacing.xs,
+  marginBottom: spacing.sm,
+  opacity: 0,
+  animation: `${fadeIn} ${duration.slow} ${easing.easeOut} forwards`,
 });
 
-const Checkmark = styled(Typography)({
-  fontSize: fontSize['4xl'],
-  color: colors.text.primary,
+const StatusGlyph = styled(Typography)({
+  fontSize: fontSize.base,
+  color: colors.status.success,
   fontWeight: fontWeight.bold,
   lineHeight: lineHeight.none,
 });
 
-const Title = styled(Typography)({
-  fontSize: fontSize.title,
+const StatusLabel = styled(Typography)({
+  fontSize: fontSize.base,
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.medium,
+  color: colors.text.secondary,
+  textAlign: 'center',
+});
+
+/**
+ * The stage The Surfacing will play on (DESIGN.md, specified/not built). It is
+ * a positioned, full-width band so the caustic light shape can be mounted
+ * behind the amount and travel up to it without reflowing anything, and the
+ * amount is already tabular so its digits will not shift when it settles.
+ * Nothing here animates beyond the existing fade — the motion work is in flight
+ * elsewhere.
+ */
+const AmountStage = styled(Box)({
+  position: 'relative',
+  width: '100%',
+  display: 'flex',
+  justifyContent: 'center',
+  marginBottom: spacing.lg,
+});
+
+const Amount = styled(Typography)({
+  fontSize: fontSize.display,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
   textAlign: 'center',
-  marginBottom: spacing.sm,
-  opacity: 0,
-  animation: `${fadeIn} ${duration.slow} ${easing.easeOut} ${duration.slow} forwards`,
-});
-
-const Summary = styled(Typography)({
-  fontSize: fontSize.md,
-  fontFamily: fontFamily.sans,
-  color: colors.text.secondary,
-  textAlign: 'center',
-  marginBottom: spacing.lg,
+  lineHeight: lineHeight.tight,
+  ...tabularNums.css,
   opacity: 0,
   animation: `${fadeIn} ${duration.slow} ${easing.easeOut} ${duration.stagger1} forwards`,
 });
@@ -187,11 +199,13 @@ export function TransactionSuccessScreen({
 
   return (
     <Container>
-      <Circle>
-        <Checkmark>✓</Checkmark>
-      </Circle>
-      <Title>{title}</Title>
-      <Summary>{summary}</Summary>
+      <StatusRow data-testid="tx-success-status">
+        <StatusGlyph aria-hidden>✓</StatusGlyph>
+        <StatusLabel>{title}</StatusLabel>
+      </StatusRow>
+      <AmountStage>
+        <Amount data-testid="tx-success-amount">{summary}</Amount>
+      </AmountStage>
       {isBridge ? (
         <BridgeInfoBox>
           <BridgeLabel>{t('bridge.depositAddress', 'Send funds to')}</BridgeLabel>

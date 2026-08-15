@@ -50,6 +50,7 @@ export function SendPage({
   onSuccess,
   showUnverifiedTokens,
   loading,
+  onFlowLockChange,
 }: SendPageProps) {
   // Bitcoin has only one token (BTC), so skip token selection
   const skipTokenSelect = blockchain === 'bitcoin';
@@ -81,6 +82,18 @@ export function SendPage({
 
   // Send hook
   const sendHook = useSendTransaction({ account, blockchain });
+
+  // Two phases, two rules. Before signing, leaving costs nothing and stays
+  // easy. Once signed, this screen is the only place the user learns whether
+  // their money moved, so ambient navigation must not discard it.
+  const isSigning = sendHook.status === 'creating' || sendHook.status === 'sending';
+  const isSettling = isSigning || sendHook.settling;
+  const ownsScreen = isSettling || step === 'success';
+
+  useEffect(() => {
+    onFlowLockChange?.(ownsScreen);
+    return () => onFlowLockChange?.(false);
+  }, [ownsScreen, onFlowLockChange]);
 
   // Reset state on mount
   useEffect(() => {
@@ -166,6 +179,7 @@ export function SendPage({
     <PageShell
       title={t('token.action.send')}
       onBack={handleBackPress}
+      backDisabled={isSettling}
       scalesBackgroundProps={{
         strokeColor: 'rgba(255, 255, 255, 0.03)',
         strokeWidth: 1,

@@ -84,6 +84,7 @@ export const ScrollContent = styled(Box)({
 export function PageShell({
   title,
   onBack,
+  backDisabled = false,
   children,
   backgroundColor = 'secondary',
   fullHeight = true,
@@ -116,6 +117,7 @@ export function PageShell({
       <Header>
         <BackButton
           onClick={onBack}
+          disabled={backDisabled}
           aria-label={t('general.back', 'Back')}
           data-testid="screen-header-back-button"
         >

@@ -14,6 +14,7 @@ import {
   getDefaultExplorer,
   useBridgeSettlement,
   colors,
+  fontFamily,
   fontSize,
   fontWeight,
   spacing,
@@ -29,6 +30,21 @@ import { TokenSelectorModal } from '../TokenSelector';
 import { WarningNotice } from '../WarningNotice';
 import type { SwapScreenProps } from './types';
 
+const ReferenceLabel = styled(Box)({
+  fontSize: fontSize.xs,
+  fontWeight: fontWeight.semibold,
+  color: colors.text.tertiary,
+});
+
+const ReferenceValue = styled(Box)({
+  fontFamily: fontFamily.mono,
+  fontSize: fontSize.sm,
+  color: colors.text.primary,
+  wordBreak: 'break-all',
+  marginBottom: spacing.sm,
+  userSelect: 'text',
+});
+
 const Container = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
@@ -38,7 +54,7 @@ const Container = styled(Box)({
 });
 
 export function SwapScreen(props: SwapScreenProps): React.ReactElement {
-  const { style } = props;
+  const { style, onFlowLockChange } = props;
   const { t } = useTranslation();
 
   const { trackBridgeExchange, isStalled, retryNow } = useBridgeSettlement();
@@ -56,6 +72,17 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
       });
     },
   });
+
+  // Two phases, two rules. Up to and including review nothing has been
+  // signed, so leaving is free. From confirm onward this screen is the only
+  // report of whether the funds moved — a bridge in particular cannot be
+  // cancelled or recovered — so ambient navigation must not discard it.
+  const ownsScreen = logic.isConfirming || logic.settling || logic.step === 'success';
+
+  React.useEffect(() => {
+    onFlowLockChange?.(ownsScreen);
+    return () => onFlowLockChange?.(false);
+  }, [ownsScreen, onFlowLockChange]);
 
   // Success renders from the confirm-time snapshot: post-swap balance
   // refreshes can drop the spent input token from the list and mutate the
@@ -104,6 +131,32 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
           </WarningNotice>
         </Box>
       )}
+      {/* A bridge that failed after its exchange was created leaves the user
+          with an open order and, until now, nothing to quote. The id and
+          deposit address are the only handles support has, so they are shown
+          beside the error on the screen the failure drops the user onto —
+          as a reference to keep, not as debug output. */}
+      {logic.step === 'input' && logic.swapError && logic.lastBridgeExchange && (
+        <Box sx={{ padding: `${spacing.md}px ${spacing.lg}px 0` }} data-testid="bridge-reference">
+          <WarningNotice tone="warning" title={t('bridge.reference_title', 'Keep this reference')}>
+            <Box sx={{ marginBottom: `${spacing.sm}px` }}>
+              {t(
+                'bridge.reference_body',
+                'This bridge did not complete, but the exchange was already created. Save these details — they are what support needs to look it up.'
+              )}
+            </Box>
+            <ReferenceLabel>{t('bridge.exchangeId', 'Exchange ID')}</ReferenceLabel>
+            <ReferenceValue data-testid="bridge-reference-exchange-id">
+              {logic.lastBridgeExchange.id}
+            </ReferenceValue>
+            <ReferenceLabel>{t('bridge.depositAddressLabel', 'Deposit address')}</ReferenceLabel>
+            <ReferenceValue data-testid="bridge-reference-deposit-address">
+              {logic.lastBridgeExchange.depositAddress}
+            </ReferenceValue>
+          </WarningNotice>
+        </Box>
+      )}
+
       {logic.step === 'input' && (
         <SwapInputScreen
           inToken={logic.inToken}

@@ -29,6 +29,7 @@ import type { BaseDialogProps } from './types';
 
 interface BaseDialogContextValue {
   onClose: () => void;
+  dismissible: boolean;
 }
 
 const BaseDialogContext = createContext<BaseDialogContextValue | null>(null);
@@ -54,16 +55,25 @@ export function useBaseDialog(): BaseDialogContextValue {
 export function BaseDialog({
   visible,
   onClose,
+  dismissible = true,
   children,
   ariaLabelledBy,
 }: BaseDialogProps): React.ReactElement {
-  const contextValue: BaseDialogContextValue = { onClose };
+  const contextValue: BaseDialogContextValue = { onClose, dismissible };
+
+  // MUI fires onClose for backdrop clicks and Escape as well as explicit
+  // controls. While an irreversible action is in flight those two paths must
+  // not unmount the dialog — the user would lose the only report of it.
+  const handleClose = (_event: object, reason: string): void => {
+    if (!dismissible && (reason === 'backdropClick' || reason === 'escapeKeyDown')) return;
+    onClose();
+  };
 
   return (
     <BaseDialogContext.Provider value={contextValue}>
       <StyledDialog
         open={visible}
-        onClose={onClose}
+        onClose={handleClose}
         aria-labelledby={ariaLabelledBy}
         disableEnforceFocus
       >

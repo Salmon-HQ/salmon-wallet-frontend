@@ -29,6 +29,8 @@ import {
 
 interface SwapTabProps {
   onNavigateHome?: () => void;
+  /** Reports when the flow owns the screen (post-signature). */
+  onFlowLockChange?: (locked: boolean) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -47,7 +49,7 @@ const Container = styled(Box)({
 // Component
 // ---------------------------------------------------------------------------
 
-export function SwapTab({ onNavigateHome }: SwapTabProps): React.ReactElement {
+export function SwapTab({ onNavigateHome, onFlowLockChange }: SwapTabProps): React.ReactElement {
   const currentSharedQuoteRef = useRef<SharedSwapQuote | null>(null);
   const [accountState] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId } = accountState;
@@ -134,27 +136,50 @@ export function SwapTab({ onNavigateHome }: SwapTabProps): React.ReactElement {
 
   const handleGetQuote = useCallback(
     async (inToken: SwapToken, outToken: SwapToken, amount: string): Promise<SwapQuote> => {
+      // Same guard rails mobile and the extension already had. Web was
+      // quoting with no account and no amount validation.
+      if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
+
+      const inputAmount = parseFloat(amount);
+      if (isNaN(inputAmount) || inputAmount <= 0) throw new Error('swap.errors.invalidAmount');
+
       const quote = await getSwapQuote({
         inputMint: inToken.address,
         outputMint: outToken.address,
-        amount: parseFloat(amount),
+        amount: inputAmount,
         inputDecimals: inToken.decimals,
       });
+
+      if (!quote) throw new Error(_swapError || 'swap.errors.quoteFailed');
+
       currentSharedQuoteRef.current = quote;
       return quote as unknown as SwapQuote;
     },
-    [getSwapQuote]
+    [activeBlockchainAccount, getSwapQuote, _swapError]
   );
 
   const handleSwap = useCallback(
     async (_quote: SwapQuote): Promise<{ txId: string }> => {
-      if (!swapQuote || !currentSharedQuoteRef.current) {
+      if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
+      if (!currentSharedQuoteRef.current) throw new Error('swap.errors.noQuote');
+
+      // Race guard: the hook's internal quote must be the quote the user is
+      // looking at, not merely some quote. Web checked only truthiness and
+      // could sign against a mismatched quote.
+      if (
+        !swapQuote ||
+        swapQuote.custom?.requestId !== currentSharedQuoteRef.current.custom?.requestId
+      ) {
         throw new Error('transaction.errors.quoteExpired');
       }
+
       const result = await executeSwapHook();
+      if (result.status === 'fail') throw new Error(result.error || 'transaction.errors.generic');
+
+      currentSharedQuoteRef.current = null;
       return { txId: result.txId || '' };
     },
-    [swapQuote, executeSwapHook]
+    [activeBlockchainAccount, swapQuote, executeSwapHook]
   );
 
   const handleSwapSuccess = useCallback(() => resetSwap(), [resetSwap]);
@@ -304,6 +329,7 @@ export function SwapTab({ onNavigateHome }: SwapTabProps): React.ReactElement {
         onBridgeSuccess={handleBridgeSuccess}
         onBridgeError={handleBridgeError}
         onNavigateHome={onNavigateHome}
+        onFlowLockChange={onFlowLockChange}
       />
     </Container>
   );
