@@ -10,6 +10,7 @@ import {
   vs,
   borderWidth,
   gradients,
+  semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
@@ -63,8 +64,12 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
     return null;
   }
 
-  const iconColor = isFocused ? colors.tabBar.active : colors.tabBar.inactive;
-  const labelColor = isFocused ? colors.tabBar.active : colors.tabBar.inactive;
+  // The One Living Thing Rule: the accent is spent on Send, not on "you are
+  // on Home". `text.primary` is 16.37:1 against the tab bar where salmon was
+  // 6.26:1, so the affordance got stronger as the brand moved to the control
+  // that moves money. Inactive drops pure white for `text.tertiary`.
+  const iconColor = isFocused ? semantic.text.primary : semantic.text.tertiary;
+  const labelColor = isFocused ? semantic.text.primary : semantic.text.tertiary;
   const IconComponent = config.icon;
 
   return (
@@ -214,10 +219,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tabLabelActive: {
-    color: colors.tabBar.active,
+    color: semantic.text.primary,
   },
   tabLabelInactive: {
-    color: colors.tabBar.inactive,
+    color: semantic.text.tertiary,
   },
 });
 

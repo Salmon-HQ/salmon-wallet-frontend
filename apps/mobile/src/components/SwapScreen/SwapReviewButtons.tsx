@@ -12,6 +12,7 @@ import {
   s,
   borderWidth,
   componentSizes,
+  semantic,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: vs(componentSizes.buttonHeightCompact),
     borderWidth: borderWidth.accent,
-    borderColor: colors.accent.border,
+    borderColor: semantic.border.raised,
     borderRadius: borderRadius.lg,
     backgroundColor: colors.button.cancelBackground,
   },
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: borderRadius.lg,
     borderWidth: borderWidth.accent,
-    borderColor: colors.accent.border,
+    borderColor: semantic.accent.fill,
     // The row stretches this gradient to match the taller Back button
     // (SecondaryButton has minHeight: buttonHeight); center the inner
     // PrimaryButton so its label sits in the vertical middle instead of the top.

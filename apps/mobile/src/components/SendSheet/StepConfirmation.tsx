@@ -19,6 +19,7 @@ import {
   spacing,
   opacity,
   componentSizes,
+  semantic,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { ContentCopySvgIcon } from '../Icon/SvgIcons';
@@ -207,7 +208,7 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
           >
             {isSending ? (
               <View style={styles.sendingRow}>
-                <ActivityIndicator size="small" color={colors.text.primary} />
+                <ActivityIndicator size="small" color={semantic.accent.onFill} />
                 <Text
                   style={styles.confirmButtonText}
                   numberOfLines={1}
@@ -310,7 +311,7 @@ const styles = StyleSheet.create({
     minHeight: vs(componentSizes.buttonHeightMedium),
     borderRadius: ms(borderRadius.lg),
     borderWidth: borderWidth.thin,
-    borderColor: colors.accent.border,
+    borderColor: semantic.border.raised,
     backgroundColor: colors.button.cancelBackground,
     alignItems: 'center',
     justifyContent: 'center',
@@ -326,7 +327,7 @@ const styles = StyleSheet.create({
     minHeight: vs(componentSizes.buttonHeightMedium),
     borderRadius: ms(borderRadius.lg),
     borderWidth: borderWidth.thin,
-    borderColor: colors.accent.border,
+    borderColor: semantic.accent.fill,
     overflow: 'hidden',
     ...BUTTON_SHADOW,
   },
@@ -341,7 +342,7 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
+    color: semantic.accent.onFill,
   },
   sendingRow: {
     flexDirection: 'row',

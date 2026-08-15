@@ -31,6 +31,21 @@ jest.mock('../../hooks/useTabChrome', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  semantic: {
+    accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45' },
+    text: {
+      primary: '#F6F8FB',
+      secondary: '#A7B1C4',
+      tertiary: '#8B96AD',
+      disabled: '#6F7B95',
+      accent: '#FF5C45',
+      onAccent: '#070911',
+    },
+    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
+    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
+    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+    state: { hover: 'rgba(199,211,232,0.06)', selectedEdge: '#FF5C45' },
+  },
   colors: { text: { muted: '#999' } },
   fontSize: { md: 18 },
   getTokenList: jest.fn().mockResolvedValue([{ address: 'mint-sol', symbol: 'SOL', decimals: 9 }]),

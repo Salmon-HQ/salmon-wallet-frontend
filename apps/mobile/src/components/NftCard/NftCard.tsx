@@ -12,6 +12,7 @@ import {
   s,
   vs,
   spacing,
+  semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useState } from 'react';
@@ -113,7 +114,7 @@ export const NftCard: React.FC<NftCardProps> = ({ nft, onPress, style, testID })
               end={FALLBACK_GRADIENT.end}
               style={styles.fallbackGradient}
             />
-            <ActivityIndicator size="small" color={colors.text.primary} style={styles.loader} />
+            <ActivityIndicator size="small" color={semantic.accent.onFill} style={styles.loader} />
           </View>
         )}
       </>
@@ -132,7 +133,7 @@ export const NftCard: React.FC<NftCardProps> = ({ nft, onPress, style, testID })
           style={styles.nameBadge}
           blurIntensity={6}
           backgroundColor={colors.overlay.darkHover}
-          borderColor={colors.accent.border}
+          borderColor={semantic.border.raised}
           borderWidth={borderWidth.actionButton}
         >
           <Text style={styles.nameText} numberOfLines={1} ellipsizeMode="tail">

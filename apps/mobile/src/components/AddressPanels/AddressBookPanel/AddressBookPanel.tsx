@@ -19,6 +19,7 @@ import {
   type AddressBookSelectorBaseProps,
   type AddressBookItem,
   fontSize,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   contactNetwork: {
-    color: colors.text.disabled,
+    color: semantic.text.disabled,
     fontFamily: fontFamilyNative.regular,
     fontSize: 11,
   },

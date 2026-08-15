@@ -20,6 +20,7 @@ import {
   getShortAddress,
   getAvatarColor,
   getInitials,
+  semantic,
 } from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -75,7 +76,7 @@ export function HeaderContent({
   const displayText = `${accountName} (${truncatedAddress})`;
 
   const avatarColor = useMemo(
-    () => (accountId ? getAvatarColor(accountId) : colors.text.muted),
+    () => (accountId ? getAvatarColor(accountId) : semantic.text.secondary),
     [accountId]
   );
   const initials = useMemo(() => getInitials(accountName), [accountName]);
@@ -104,7 +105,7 @@ export function HeaderContent({
               <Text style={styles.headerAvatarText}>{initials}</Text>
             </View>
           ) : (
-            <WalletSvgIcon size={s(28)} color={colors.text.muted} />
+            <WalletSvgIcon size={s(28)} color={semantic.text.secondary} />
           )}
         </TouchableOpacity>
 
@@ -141,7 +142,7 @@ export function HeaderContent({
         accessibilityRole="button"
         accessibilityLabel={t('accessibility.open_settings')}
       >
-        <SettingsSvgIcon size={s(30)} color={colors.text.muted} />
+        <SettingsSvgIcon size={s(30)} color={semantic.text.secondary} />
       </TouchableOpacity>
     </View>
   );

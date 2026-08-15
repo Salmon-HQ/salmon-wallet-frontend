@@ -31,7 +31,6 @@ import {
   fontWeight,
 } from '@salmon/shared';
 import { BlurContainer, BlurTargetProvider } from '../BlurContainer';
-import { ScalesBackground } from '../ScalesBackground';
 import { TokenLogo } from '../TokenLogo';
 import type { TokenSelectorToken, TokenSelectorModalProps } from './types';
 
@@ -221,8 +220,9 @@ export function TokenSelectorModal({
         </TouchableWithoutFeedback>
 
         <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
+          {/* No scales: this modal is a searchable list of token rows over
+              an input. The exclusion rule keeps the motif off both. */}
           <View style={styles.backgroundBase} />
-          <ScalesBackground />
         </BlurTargetView>
 
         <BlurTargetProvider value={blurTargetRef}>

@@ -24,6 +24,7 @@ import {
   s,
   vs,
   spacing,
+  semantic,
 } from '@salmon/shared';
 import { SolanaSvgIcon, BitcoinSvgIcon } from '../Icon';
 import { BlurContainer } from '../BlurContainer';
@@ -125,7 +126,7 @@ const MiniNftCard: React.FC<MiniNftCardProps> = ({ nft, onPress }) => {
                 end={FALLBACK_GRADIENT.end}
                 style={styles.cardBackground}
               />
-              <ActivityIndicator size="small" color={colors.text.primary} />
+              <ActivityIndicator size="small" color={semantic.accent.onFill} />
             </View>
           )}
         </>
@@ -137,7 +138,7 @@ const MiniNftCard: React.FC<MiniNftCardProps> = ({ nft, onPress }) => {
           style={styles.nameBadge}
           blurIntensity={6}
           backgroundColor={colors.overlay.darkHover}
-          borderColor={colors.accent.border}
+          borderColor={semantic.border.raised}
           borderWidth={borderWidth.actionButton}
         >
           <Text style={styles.nameText} numberOfLines={1} ellipsizeMode="tail">

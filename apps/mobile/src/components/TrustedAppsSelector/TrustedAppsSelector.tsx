@@ -19,6 +19,7 @@ import {
   type TrustedAppItem,
   fontSize,
   opacity,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 
@@ -169,7 +170,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptySubtext: {
-    color: colors.text.disabled,
+    color: semantic.text.disabled,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.sm,
     textAlign: 'center',

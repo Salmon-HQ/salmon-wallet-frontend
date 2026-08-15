@@ -59,6 +59,7 @@ import {
   type PriceChartPeriod,
   type PriceDataPoint,
   type Token,
+  semantic,
 } from '@salmon/shared';
 import {
   ActionButtonRow,
@@ -983,7 +984,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingText: {
-    color: colors.text.muted,
+    color: semantic.text.secondary,
     fontSize: fontSize.md,
     marginTop: spacing.lg,
   },
@@ -1034,7 +1035,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontFamily: fontFamilyNative.medium,
     fontWeight: '500',
-    color: colors.text.muted,
+    color: semantic.text.secondary,
     marginBottom: spacing.sm,
     textAlign: 'center',
   },

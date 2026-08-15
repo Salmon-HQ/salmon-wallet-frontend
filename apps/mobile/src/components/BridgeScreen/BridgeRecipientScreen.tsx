@@ -17,6 +17,7 @@ import {
   s,
   fontFamilyNative,
   borderWidth,
+  semantic,
 } from '@salmon/shared';
 import { RecipientAddressInput } from './RecipientAddressInput';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: vs(componentSizes.buttonHeightCompact),
     borderWidth: borderWidth.accent,
-    borderColor: colors.accent.border,
+    borderColor: semantic.border.raised,
     borderRadius: borderRadius.lg,
     backgroundColor: colors.button.cancelBackground,
   },
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     ...shadows.button,
   },
   continueButtonGradientActive: {
-    borderColor: colors.accent.border,
+    borderColor: semantic.accent.fill,
   },
   continueButton: {
     minHeight: vs(componentSizes.buttonHeightCompact),

@@ -25,6 +25,7 @@ import {
   getInitials,
   getAccountAddress,
   type Account,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import type { AccountsPanelProps } from './types';
@@ -228,7 +229,7 @@ const styles = StyleSheet.create({
   },
   accountItemActive: {
     borderWidth: borderWidth.thin,
-    borderColor: colors.accent.primary,
+    borderColor: semantic.state.selectedEdge,
   },
   avatar: {
     width: 44,

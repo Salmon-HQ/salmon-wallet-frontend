@@ -24,7 +24,6 @@ import {
   classifyTransactionError,
   fontFamilyNative,
   fontSize,
-  letterSpacing,
   spacing,
   getNftSectionTitle,
   getShortAddress,
@@ -38,6 +37,7 @@ import {
   type BlockchainAccount,
   type Nft,
   type SolanaNetworkId,
+  semantic,
 } from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -433,6 +433,24 @@ export default function CollectiblesScreen() {
     return ['solana'];
   }, [developerNetworks]);
 
+  // Sections that actually paint. Mainnet and devnet count as two distinct
+  // chains: same base chain, different networks and different assets, and a
+  // devnet NFT is worthless — collapsing the label there would present the
+  // two as interchangeable, which is the confusion the label exists to
+  // prevent. Devnet only appears once Developer Networks is on, so that user
+  // has already opted into the distinction.
+  //
+  // Derived from data the screen already holds; no hook, service or network
+  // call is involved.
+  const renderedSectionKeys = useMemo(
+    () =>
+      visibleSectionKeys.filter(
+        (key) => nftsBySections[key].loading || nftsBySections[key].nfts.length > 0
+      ),
+    [visibleSectionKeys, nftsBySections]
+  );
+  const showChainLabel = renderedSectionKeys.length > 1;
+
   // Check if Solana section is loading
   const isLoading = nftsBySections.solana.loading;
 
@@ -493,8 +511,22 @@ export default function CollectiblesScreen() {
           />
         }
       >
-        {/* Page Title */}
-        <Text style={styles.pageTitle}>{t('wallet.my_nfts', 'My Collectibles')}</Text>
+        {/* The visible "My Collectibles" heading sat directly under the
+            Collectibles tab, repeating a label the user had just tapped. It is
+            not deleted, only unpainted: React Native has no DOM and therefore
+            no `visuallyHidden` clip rectangle, so the platform equivalent is a
+            1x1 transparent node that stays in the accessibility tree with
+            `accessibilityRole="header"`. Screen-reader users keep a heading to
+            orient by; the eye gets ~78px of vertical chrome back. Zero width
+            or `display: none` would drop it from the tree on Android, which is
+            why the box is 1x1 rather than 0x0. */}
+        <Text
+          style={styles.assistiveHeading}
+          accessibilityRole="header"
+          importantForAccessibility="yes"
+        >
+          {t('wallet.my_nfts', 'My Collectibles')}
+        </Text>
 
         {/* Developer Mode Banner */}
         {developerNetworks && (
@@ -532,25 +564,22 @@ export default function CollectiblesScreen() {
         )}
 
         {/* Render visible sections — Solana only, grid layout */}
-        {visibleSectionKeys.map((sectionKey) => {
+        {renderedSectionKeys.map((sectionKey) => {
           const section = nftsBySections[sectionKey];
-
-          // Skip if not loading and empty
-          if (!section.loading && section.nfts.length === 0) {
-            return null;
-          }
-
           const title = getNftSectionTitle(sectionKey, section);
           const subAccounts = sectionSubAccounts[sectionKey] ?? [];
 
           return (
             <View key={sectionKey} style={styles.sectionContainer}>
-              {/* Section header */}
-              <View style={styles.sectionHeader}>
-                <SolanaSvgIcon size={ms(24)} color={colors.text.primary} />
-                <Text style={styles.sectionHeaderTitle}>{title}</Text>
-                <Text style={styles.sectionHeaderCount}>({section.nfts.length})</Text>
-              </View>
+              {/* Section header — only when the chain label distinguishes
+                  something. One chain painting means it distinguishes nothing. */}
+              {showChainLabel && (
+                <View style={styles.sectionHeader}>
+                  <SolanaSvgIcon size={ms(24)} color={colors.text.primary} />
+                  <Text style={styles.sectionHeaderTitle}>{title}</Text>
+                  <Text style={styles.sectionHeaderCount}>({section.nfts.length})</Text>
+                </View>
+              )}
 
               {/* Sub-account selector */}
               <SubAccountSelector
@@ -688,7 +717,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingText: {
-    color: colors.text.muted,
+    color: semantic.text.secondary,
     fontSize: ms(fontSize.md),
     marginTop: vs(spacing.lg),
   },
@@ -698,14 +727,12 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   scrollContent: {},
-  pageTitle: {
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(fontSize.xl),
-    fontWeight: '600',
-    color: colors.text.primary,
-    textAlign: 'center',
-    letterSpacing: letterSpacing.wide,
-    marginBottom: vs(spacing['2xl']),
+  /** Present to assistive tech, absent to the eye. See the render comment. */
+  assistiveHeading: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 0,
   },
   devModeBanner: {
     backgroundColor: colors.accent.tint,
@@ -735,7 +762,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.semiBold,
     fontSize: ms(fontSize.lg),
     fontWeight: '600',
-    color: colors.text.muted,
+    color: semantic.text.secondary,
     marginBottom: vs(spacing.sm),
     textAlign: 'center',
   },

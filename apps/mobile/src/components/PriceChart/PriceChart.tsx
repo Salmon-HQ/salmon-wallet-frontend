@@ -13,6 +13,7 @@ import {
   PRICE_CHART_PERIODS,
   fontSize,
   opacity,
+  semantic,
 } from '@salmon/shared';
 import type { PriceChartPeriod, PriceDataPoint } from '@salmon/shared';
 import type { PriceChartProps } from './types';
@@ -327,8 +328,10 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.bold,
   },
   periodButtonTextSelected: {
-    color: colors.text.primary,
-    opacity: opacity.soft,
+    // Full opacity: `opacity.soft` here would drag the ink below the 6.50:1
+    // this token exists to guarantee on a salmon fill.
+    color: semantic.accent.onFill,
+    opacity: 1,
   },
   emptyState: {
     flex: 1,

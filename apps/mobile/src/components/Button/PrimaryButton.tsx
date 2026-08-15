@@ -1,10 +1,21 @@
 /**
  * PrimaryButton - Main call-to-action button
  *
- * White background with dark text, used for primary actions.
+ * A salmon fill carrying `accent.onFill` ink at 6.50:1 — the only legal ink
+ * on a salmon fill. Disabled swaps the whole object to `surface.crest` with
+ * disabled ink rather than dimming the fill: at 50% opacity the near-black
+ * ink sat on a muddy red and read as neither alive nor disabled. The salmon
+ * is either alive or absent.
  */
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
-import { colors, componentSizes, fontFamilyNative, fontSize, letterSpacing } from '@salmon/shared';
+import {
+  colors,
+  componentSizes,
+  fontFamilyNative,
+  fontSize,
+  letterSpacing,
+  semantic,
+} from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 
 interface PrimaryButtonProps extends Testable {
@@ -37,9 +48,15 @@ export function PrimaryButton({
       style={[styles.button, isDisabled && styles.disabled, style]}
     >
       {loading ? (
-        <ActivityIndicator color={colors.button.primaryText} />
+        <ActivityIndicator
+          color={isDisabled ? semantic.text.disabled : colors.button.primaryText}
+        />
       ) : (
-        <Text style={styles.text} numberOfLines={1} adjustsFontSizeToFit>
+        <Text
+          style={[styles.text, isDisabled && styles.textDisabled]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
           {children}
         </Text>
       )}
@@ -57,7 +74,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   disabled: {
-    opacity: colors.button.disabledOpacity,
+    backgroundColor: semantic.surface.crest,
+  },
+  textDisabled: {
+    color: semantic.text.disabled,
   },
   text: {
     color: colors.button.primaryText,

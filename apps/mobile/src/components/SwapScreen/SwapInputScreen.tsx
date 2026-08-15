@@ -14,6 +14,7 @@ import {
   s,
   fontSize,
   borderWidth,
+  semantic,
 } from '@salmon/shared';
 import { SwapAmountInput } from './SwapAmountInput';
 import { PrimaryButton } from '../Button';
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     ...shadows.button,
   },
   buttonGradientActive: {
-    borderColor: colors.accent.border,
+    borderColor: semantic.accent.fill,
   },
   buttonGradientInactive: {
     backgroundColor: colors.button.inactiveBackground,

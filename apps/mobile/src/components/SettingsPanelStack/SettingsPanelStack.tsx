@@ -22,7 +22,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { colors } from '@salmon/shared';
-import { ScalesBackground } from '../ScalesBackground';
 
 import type { MobileSettingsPanelStackProps } from './types';
 
@@ -150,9 +149,9 @@ function PanelSlide({
       style={[styles.panel, { zIndex: isTop ? 2 : 1 }, animatedStyle]}
       {...(canSwipe ? panResponder.panHandlers : {})}
     >
-      <View style={styles.panelBackground}>
-        <ScalesBackground />
-      </View>
+      {/* No scales: settings panels are rows of labels, inputs and the
+          private-key and seed-phrase surfaces. */}
+      <View style={styles.panelBackground} />
       <View style={styles.panelContent}>{children}</View>
     </Animated.View>
   );

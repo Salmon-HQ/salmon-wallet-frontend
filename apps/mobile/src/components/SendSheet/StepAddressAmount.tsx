@@ -33,6 +33,7 @@ import {
   opacity,
   componentSizes,
   sanitizeDecimalInput,
+  semantic,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BlurContainer } from '../BlurContainer';
@@ -392,7 +393,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
             end={{ x: 1, y: 0.4 }}
           >
             <Text
-              style={styles.reviewButtonText}
+              style={[styles.reviewButtonText, !isValid && styles.reviewButtonTextDisabled]}
               numberOfLines={1}
               adjustsFontSizeToFit
               maxFontSizeMultiplier={fontScaleCap.chrome}
@@ -617,7 +618,7 @@ const styles = StyleSheet.create({
     minHeight: vs(componentSizes.buttonHeightMedium),
     borderRadius: ms(borderRadius.lg),
     borderWidth: borderWidth.thin,
-    borderColor: colors.accent.border,
+    borderColor: semantic.border.raised,
     backgroundColor: colors.button.cancelBackground,
     alignItems: 'center',
     justifyContent: 'center',
@@ -634,7 +635,7 @@ const styles = StyleSheet.create({
     borderRadius: ms(borderRadius.lg),
     overflow: 'hidden',
     borderWidth: borderWidth.thin,
-    borderColor: colors.accent.border,
+    borderColor: semantic.accent.fill,
     ...shadows.button,
   },
   reviewButtonDisabled: {
@@ -650,7 +651,12 @@ const styles = StyleSheet.create({
   reviewButtonText: {
     fontSize: ms(fontSize.md),
     fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
+    color: semantic.accent.onFill,
+  },
+  // The fill swaps to `gradients.disabled` (neutral-925) when the form is
+  // invalid, so the ink has to swap with it.
+  reviewButtonTextDisabled: {
+    color: semantic.text.disabled,
   },
 });
 

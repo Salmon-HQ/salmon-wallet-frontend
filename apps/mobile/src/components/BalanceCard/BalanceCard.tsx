@@ -16,10 +16,10 @@ import {
   spacing,
   useCurrencyContext,
   vs,
-  getScalesColorForBlockchain,
   getNetworkLabel,
   fontWeight,
   opacity,
+  semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback } from 'react';
@@ -125,9 +125,8 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   const displayPercentage = showPercentage(changePercent);
   const displayAbsChange = formatChange(changeAmount);
 
-  // Get gradient and scales color for current blockchain
+  // Get gradient for current blockchain
   const gradient = getGradientForBlockchain(blockchain);
-  const scalesColor = getScalesColorForBlockchain(blockchain);
 
   // Get network label — in developer mode, always show (including "Mainnet")
   const networkLabel = showNetworkLabel
@@ -154,7 +153,11 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
             accessibilityRole="button"
             accessibilityLabel={t('accessibility.show_balance', 'Show balance')}
           >
-            <Ionicons name="eye-off" size={ms(componentSizes.eyeIcon)} color={colors.text.muted} />
+            <Ionicons
+              name="eye-off"
+              size={ms(componentSizes.eyeIcon)}
+              color={semantic.text.secondary}
+            />
           </TouchableOpacity>
         </View>
       );
@@ -179,7 +182,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
           accessibilityRole="button"
           accessibilityLabel={t('accessibility.hide_balance', 'Hide balance')}
         >
-          <Ionicons name="eye" size={ms(componentSizes.eyeIcon)} color={colors.text.muted} />
+          <Ionicons name="eye" size={ms(componentSizes.eyeIcon)} color={semantic.text.secondary} />
         </TouchableOpacity>
       </View>
     );
@@ -221,16 +224,19 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
       start={gradient.start}
       end={gradient.end}
       style={[styles.container, style]}
+      testID="balance-card-root"
     >
-      {/* Scales pattern overlay - color based on blockchain */}
-      <ScalesBackground
-        strokeColor={scalesColor}
-        strokeWidth={1}
-        patternHeight={26}
-        style={styles.scalesOverlay}
-      />
-      {/* Group 1: Logo + Network tag */}
-      <View style={styles.contentGroup}>
+      {/* Group 1: Logo + Network tag — and the only place on this card the
+          scales are allowed. The field is a *child* of this group at
+          absolute-fill, which is the structural guarantee behind the
+          exclusion rule: it can only ever occupy the logo/badge band, and
+          the card's own `gap` then puts clear space between this group's
+          bottom edge — where the fade mask has already reached alpha 0 —
+          and the balance figure below. If the logo resizes, the band
+          resizes with it; there is no measured constant to fall out of
+          date. Asserted in BalanceCard.scales.test.tsx. */}
+      <View style={styles.logoGroup} testID="balance-card-logo-group">
+        <ScalesBackground variant="deepField" />
         <View style={styles.logoContainer}>{renderBlockchainLogo(blockchain)}</View>
         {networkLabel && (
           <View style={styles.networkLabelContainer}>
@@ -278,14 +284,6 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  scalesOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: ms(borderRadius.card),
-  },
   container: {
     borderRadius: ms(borderRadius.card),
     paddingTop: vs(spacing['2xl']),
@@ -309,6 +307,17 @@ const styles = StyleSheet.create({
   contentGroup: {
     alignItems: 'center',
     gap: vs(spacing.xs),
+  },
+  /**
+   * Stretches to the card's full width so the motif reads as a band rather
+   * than a patch, and clips it to this group's own box.
+   */
+  logoGroup: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: vs(spacing.xs),
+    position: 'relative',
+    overflow: 'hidden',
   },
   logoContainer: {
     width: s(componentSizes.logoContainer),
@@ -410,7 +419,7 @@ const styles = StyleSheet.create({
   },
   changeHidden: {
     fontSize: ms(fontSize.sm),
-    color: colors.text.muted,
+    color: semantic.text.secondary,
   },
   pagination: {
     flexDirection: 'row',

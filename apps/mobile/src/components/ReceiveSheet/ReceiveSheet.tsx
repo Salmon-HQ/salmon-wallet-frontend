@@ -10,6 +10,7 @@ import {
   s,
   vs,
   lineHeight,
+  semantic,
 } from '@salmon/shared';
 import React, { useCallback, useEffect } from 'react';
 import {
@@ -102,11 +103,15 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
       <View style={[styles.content, { paddingBottom: spaciousContentBottomPadding }]}>
         {/* QR Code Container */}
         <View style={styles.qrContainer} testID="receive-qr-code">
+          {/* The QR is data, not an accent. Painting it salmon put two warm
+              objects on one sheet — the code and the copy button — and the
+              accent belongs on the control that acts. Neutral also maximises
+              module contrast for a scanner: 16.37:1 instead of 6.50:1. */}
           <QRCode
             value={address}
             size={qrSize}
-            backgroundColor={colors.button.primaryBackground}
-            color={colors.button.primaryText}
+            backgroundColor={semantic.text.primary}
+            color={semantic.depth.abyss}
           />
         </View>
 
@@ -126,10 +131,10 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
         >
           {copied ? (
             <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-              <Ionicons name="checkmark" size={ms(23)} color={colors.accent.primary} />
+              <Ionicons name="checkmark" size={ms(23)} color={semantic.accent.onFill} />
             </Animated.View>
           ) : (
-            <ContentCopySvgIcon size={ms(23)} color={colors.button.primaryText} />
+            <ContentCopySvgIcon size={ms(23)} color={semantic.accent.onFill} />
           )}
           <Text style={styles.copyButtonText} numberOfLines={1} ellipsizeMode="tail">
             {copied ? t('token.receive.copied') : t('token.receive.copyAddress')}

@@ -6,7 +6,7 @@
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, componentSizes, contentPadding } from '@salmon/shared';
+import { colors, componentSizes, contentPadding, semantic } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 import { StepIndicator } from '../StepIndicator';
 
@@ -39,7 +39,7 @@ export function ScreenHeader({ onBack, stepIndicator, backDisabled, testID }: Sc
           <Ionicons
             name="chevron-back"
             size={componentSizes.iconSizeMedium}
-            color={backDisabled ? colors.text.muted : colors.text.primary}
+            color={backDisabled ? semantic.text.secondary : colors.text.primary}
           />
         )}
       </TouchableOpacity>

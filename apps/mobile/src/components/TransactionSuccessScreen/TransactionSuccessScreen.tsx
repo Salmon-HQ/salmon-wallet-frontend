@@ -25,6 +25,7 @@ import {
   s,
   fontFamilyNative,
   borderWidth,
+  semantic,
 } from '@salmon/shared';
 import type { TransactionSuccessScreenProps } from '@salmon/shared';
 import { PrimaryButton } from '../Button';
@@ -288,7 +289,7 @@ const styles = StyleSheet.create({
   buttonGradient: {
     borderRadius: borderRadius.lg,
     borderWidth: borderWidth.accent,
-    borderColor: colors.accent.border,
+    borderColor: semantic.accent.fill,
     ...shadows.button,
   },
   button: {

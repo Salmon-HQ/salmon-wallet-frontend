@@ -10,6 +10,7 @@ import {
   ms,
   s,
   fontFamilyNative,
+  semantic,
 } from '@salmon/shared';
 import type { SwapTabSelectorProps, SwapTab } from './types';
 
@@ -101,7 +102,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   tabTextInactive: {
-    color: colors.text.disabled,
+    color: semantic.text.disabled,
   },
   tabIndicator: {
     width: '100%',

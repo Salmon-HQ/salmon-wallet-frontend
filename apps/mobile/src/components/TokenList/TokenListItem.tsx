@@ -15,6 +15,7 @@ import {
   spacing,
   useCurrencyContext,
   vs,
+  semantic,
 } from '@salmon/shared';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -299,7 +300,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: ms(fontSize.tokenNamePrice),
     fontFamily: fontFamilyNative.semiBold,
-    color: colors.text.muted,
+    color: semantic.text.secondary,
     lineHeight: ms(fontSize.tokenNamePrice) * lineHeight.tokenListItem,
     letterSpacing: ms(-0.07, 0.3),
     flexShrink: 0,
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
   bitcoinAmount: {
     fontSize: ms(fontSize.xl),
     fontFamily: fontFamilyNative.semiBold,
-    color: colors.text.muted,
+    color: semantic.text.secondary,
     letterSpacing: ms(-0.095, 0.3),
   },
 });

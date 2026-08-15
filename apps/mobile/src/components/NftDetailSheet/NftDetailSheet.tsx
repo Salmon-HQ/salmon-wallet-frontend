@@ -47,6 +47,7 @@ import {
   type Blockchain,
   type NetworkEnvironment,
   type ValidationCallbackResult,
+  semantic,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { CallMadeSvgIcon } from '../Icon/SvgIcons';
@@ -515,8 +516,8 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             end={gradients.primaryButton.end}
             style={styles.primaryButton}
           >
-            <CallMadeSvgIcon size={ms(15)} color={colors.text.balance} />
-            <Text style={styles.buttonText}>{t('actions.send', 'Send')}</Text>
+            <CallMadeSvgIcon size={ms(15)} color={semantic.accent.onFill} />
+            <Text style={styles.primaryButtonText}>{t('actions.send', 'Send')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -524,7 +525,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           style={styles.secondaryButtonWrapper}
           blurIntensity={2.5}
           backgroundColor={colors.interactive.surface}
-          borderColor={colors.accent.border}
+          borderColor={semantic.border.raised}
           borderWidth={borderWidth.actionButton}
         >
           <TouchableOpacity
@@ -600,7 +601,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             style={styles.secondaryButtonWrapper}
             blurIntensity={2.5}
             backgroundColor={colors.interactive.surface}
-            borderColor={colors.accent.border}
+            borderColor={semantic.border.raised}
             borderWidth={borderWidth.actionButton}
           >
             <TouchableOpacity
@@ -630,8 +631,8 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
                 end={gradients.primaryButton.end}
                 style={[styles.primaryButton, !canConfirmSend && styles.primaryButtonDisabled]}
               >
-                <CallMadeSvgIcon size={ms(15)} color={colors.text.balance} />
-                <Text style={styles.buttonText}>{t('actions.send', 'Send')}</Text>
+                <CallMadeSvgIcon size={ms(15)} color={semantic.accent.onFill} />
+                <Text style={styles.primaryButtonText}>{t('actions.send', 'Send')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           )}
@@ -724,7 +725,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           style={styles.secondaryButtonWrapper}
           blurIntensity={2.5}
           backgroundColor={colors.interactive.surface}
-          borderColor={colors.accent.border}
+          borderColor={semantic.border.raised}
           borderWidth={borderWidth.actionButton}
         >
           <TouchableOpacity
@@ -753,8 +754,12 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             end={gradients.primaryButton.end}
             style={[styles.primaryButton, !canConfirmBurn && styles.primaryButtonDisabled]}
           >
-            <MaterialIcons name="local-fire-department" size={ms(18)} color={colors.text.balance} />
-            <Text style={styles.buttonText}>{t('nft.burn_nft', 'Burn')}</Text>
+            <MaterialIcons
+              name="local-fire-department"
+              size={ms(18)}
+              color={semantic.accent.onFill}
+            />
+            <Text style={styles.primaryButtonText}>{t('nft.burn_nft', 'Burn')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -1051,6 +1056,14 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
     color: colors.text.balance,
+  },
+  // Same type as `buttonText`, but for the labels that sit on the salmon fill:
+  // only `accent.onFill` clears AA there.
+  primaryButtonText: {
+    fontSize: ms(fontSize.base),
+    fontFamily: fontFamilyNative.semiBold,
+    fontWeight: fontWeight.semibold,
+    color: semantic.accent.onFill,
   },
   messageText: {
     fontSize: ms(fontSize.sm),

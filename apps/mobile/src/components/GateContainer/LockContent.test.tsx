@@ -24,6 +24,24 @@ jest.mock('expo-status-bar', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // "Deep Water" semantic tokens. Components read these directly now; the
+  // legacy `colors` map below still covers everything not yet migrated.
+  semantic: {
+    accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45', tint: 'rgba(255,92,69,0.1)' },
+    text: {
+      primary: '#F6F8FB',
+      secondary: '#A7B1C4',
+      tertiary: '#8B96AD',
+      disabled: '#6F7B95',
+      accent: '#FF5C45',
+      onAccent: '#070911',
+      onGlass: '#F6F8FB',
+    },
+    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
+    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
+    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+    state: { hover: 'rgba(199,211,232,0.06)', press: 'rgba(199,211,232,0.10)' },
+  },
   borderRadius: { badge: 12, xl: 20 },
   borderWidth: { sheet: 1, thin: 1 },
   colors: {
@@ -36,7 +54,10 @@ jest.mock('@salmon/shared', () => ({
   componentSizes: { lockScreenLogoSize: 120, iconSize5XL: 56, iconSize4XL: 48 },
   fontFamilyNative: { bold: 'System', medium: 'System', regular: 'System' },
   fontSize: { sm: 14, md: 18, lg: 20, '2xl': 28 },
-  gradients: { primary: { colors: ['#0f0', '#0c0'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } },
+  gradients: {
+    primary: { colors: ['#0f0', '#0c0'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } },
+    disabled: { colors: ['#1B2233', '#1B2233'], start: { x: 0, y: 0 }, end: { x: 1, y: 0 } },
+  },
   letterSpacing: { balance: 1 },
   lineHeight: { normal: 1.4 },
   shadows: { button: {} },

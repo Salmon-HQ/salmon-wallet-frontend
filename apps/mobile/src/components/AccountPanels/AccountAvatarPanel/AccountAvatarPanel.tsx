@@ -32,7 +32,7 @@ import {
   useAvatarNfts,
   type NftAvatarItem,
   type AvatarPickerPropsBase,
-  opacity,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 
@@ -280,8 +280,12 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     backgroundColor: colors.background.card,
   },
+  // The panel's one accent is spent on Save. An active tab is chrome, and a
+  // salmon tab beside a salmon Save put two of them on one panel.
   tabActive: {
-    backgroundColor: colors.accent.primary,
+    backgroundColor: semantic.surface.crest,
+    borderWidth: borderWidth.thin,
+    borderColor: semantic.border.raised,
   },
   tabText: {
     fontFamily: fontFamilyNative.medium,
@@ -289,7 +293,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   tabTextActive: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
   },
   gridContent: {
     paddingBottom: spacing.lg,
@@ -304,7 +308,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   presetItemSelected: {
-    borderColor: colors.accent.primary,
+    borderColor: semantic.state.selectedEdge,
   },
   presetImage: {
     width: '100%',
@@ -317,7 +321,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   nftItemSelected: {
-    borderColor: colors.accent.primary,
+    borderColor: semantic.state.selectedEdge,
   },
   nftImage: {
     width: '100%',
@@ -348,16 +352,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.md,
   },
+  // The salmon never dims: a disabled save drops the fill to `surface.crest`
+  // rather than fading the accent to a washed-out orange.
   saveButtonDisabled: {
-    opacity: opacity.faint,
+    backgroundColor: semantic.surface.crest,
   },
   saveButtonText: {
     fontFamily: fontFamilyNative.bold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: semantic.accent.onFill,
   },
   saveButtonTextDisabled: {
-    color: colors.text.secondary,
+    color: semantic.text.disabled,
   },
 });
 

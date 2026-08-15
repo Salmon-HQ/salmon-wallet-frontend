@@ -8,6 +8,7 @@ import {
   fontSize,
   fontFamilyNative,
   opacity,
+  semantic,
 } from '@salmon/shared';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -50,7 +51,7 @@ const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
     >
       {/* Checkbox */}
       <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
-        {selected && <Ionicons name="checkmark" size={16} color={colors.text.primary} />}
+        {selected && <Ionicons name="checkmark" size={16} color={semantic.accent.onFill} />}
       </View>
 
       {/* Account Info */}
@@ -86,7 +87,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   cardSelected: {
-    borderColor: colors.card.borderActive,
+    borderColor: semantic.state.selectedEdge,
   },
   checkbox: {
     width: componentSizes.checkboxSize,

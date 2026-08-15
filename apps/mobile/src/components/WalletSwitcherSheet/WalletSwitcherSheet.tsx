@@ -37,6 +37,7 @@ import {
   fontFamilyNative,
   borderWidth,
   opacity,
+  semantic,
 } from '@salmon/shared';
 
 import type { WalletSwitcherSheetProps, AccountListItemProps } from './types';
@@ -140,7 +141,7 @@ function AccountListItem({
             <Ionicons
               name="trash-outline"
               size={20}
-              color={canDelete ? colors.status.error : colors.text.disabled}
+              color={canDelete ? colors.status.error : semantic.text.disabled}
             />
           </TouchableOpacity>
         )}

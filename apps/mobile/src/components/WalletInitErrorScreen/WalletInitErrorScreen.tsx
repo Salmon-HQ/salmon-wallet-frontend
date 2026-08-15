@@ -25,6 +25,7 @@ import {
   s,
   spacing,
   vs,
+  semantic,
 } from '@salmon/shared';
 
 export interface WalletInitErrorScreenProps {
@@ -65,7 +66,7 @@ export function WalletInitErrorScreen({ onRetry }: WalletInitErrorScreenProps): 
           end={{ x: 1, y: 0.4 }}
         >
           {retrying ? (
-            <ActivityIndicator size="small" color={colors.text.primary} />
+            <ActivityIndicator size="small" color={semantic.accent.onFill} />
           ) : (
             <Text style={styles.retryButtonText}>{t('actions.retry', 'Retry').toUpperCase()}</Text>
           )}
@@ -102,7 +103,7 @@ const styles = StyleSheet.create({
     minHeight: vs(componentSizes.buttonHeightMedium),
     borderRadius: ms(borderRadius.lg),
     borderWidth: borderWidth.thin,
-    borderColor: colors.accent.border,
+    borderColor: semantic.accent.fill,
     overflow: 'hidden',
   },
   retryButtonGradient: {
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
   retryButtonText: {
     fontFamily: fontFamilyNative.bold,
     fontSize: ms(fontSize.sm),
-    color: colors.text.primary,
+    color: semantic.accent.onFill,
   },
 });
 

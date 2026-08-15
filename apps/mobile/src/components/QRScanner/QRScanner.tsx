@@ -15,6 +15,7 @@ import {
   fontFamilyNative,
   fontSize,
   fontWeight,
+  semantic,
 } from '@salmon/shared';
 import type { QRScannerProps } from './types';
 
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
-    color: colors.scanner.text,
+    color: semantic.text.primary,
   },
   closeButton: {
     padding: spacing.sm,
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xl,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
-    color: colors.scanner.text,
+    color: semantic.text.primary,
     marginBottom: spacing.md,
     textAlign: 'center',
   },
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: colors.scanner.text,
+    color: semantic.text.primary,
     fontSize: fontSize.md,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,

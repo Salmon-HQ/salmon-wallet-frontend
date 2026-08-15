@@ -15,6 +15,7 @@ import {
   borderWidth,
   fontFamilyNative,
   fontSize,
+  semantic,
 } from '@salmon/shared';
 
 // ============================================================================
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
   },
   optionSelected: {
     borderWidth: borderWidth.thin,
-    borderColor: colors.accent.primary,
+    borderColor: semantic.state.selectedEdge,
   },
   info: {
     flexDirection: 'row',

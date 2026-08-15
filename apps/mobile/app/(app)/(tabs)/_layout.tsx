@@ -40,7 +40,6 @@ import {
   GlassTabBar,
   SettingsSheet,
   WalletSwitcherSheet,
-  ScalesBackground,
   LanguageSelector,
   CurrencySelector,
   ExplorerSelector,
@@ -81,7 +80,7 @@ import { useTabChrome } from '../../../hooks/useTabChrome';
 export default function TabLayout() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { headerChromeHeight, topInset } = useTabChrome();
+  const { topInset } = useTabChrome();
   const openLink = useOpenLink();
   const blurTargetRef = useRef<View>(null);
 
@@ -737,15 +736,21 @@ export default function TabLayout() {
         {/* Layer 1: Solid background for status bar area and entire screen */}
         <View style={styles.solidBackground} />
 
-        {/* Layer 2: Bottom fade gradient - rendered before scales so it's underneath */}
+        {/* Layer 2: Bottom fade gradient */}
         <LinearGradient
           colors={['transparent', colors.background.primary]}
           style={styles.bottomFadeGradient}
           pointerEvents="none"
         />
 
-        {/* Layer 3: Scales pattern background - starts below header */}
-        <ScalesBackground topOffset={headerChromeHeight} />
+        {/* No layer 3. The scales used to tile from the header to the bottom
+            of every tab, which put the motif behind the token rows, the
+            amounts, the collectibles grid and — below a short list — an
+            entire screen of texture standing in for content. The ground is
+            now just the column: unbroken `background.primary`, and the empty
+            space under a three-row list reads as depth rather than as a
+            pattern the eye has to keep filtering. The motif keeps its two
+            jobs: the balance card's logo band and the Send fill. */}
       </BlurTargetView>
 
       {/* Tab screens fill the remaining space */}

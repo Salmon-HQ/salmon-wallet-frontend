@@ -10,6 +10,7 @@ import {
   fontSize,
   letterSpacing,
   opacity,
+  semantic,
 } from '@salmon/shared';
 import type { SubAccountSelectorProps } from './types';
 
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
   chipActive: {
     backgroundColor: colors.background.card,
     borderWidth: borderWidth.thin,
-    borderColor: colors.card.borderActive,
+    borderColor: semantic.state.selectedEdge,
   },
   chipInactive: {
     backgroundColor: colors.card.background,

@@ -17,6 +17,7 @@ import {
   type BlockchainType,
   fontSize,
   opacity,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { InputAddress } from '../../InputAddress';
@@ -181,7 +182,7 @@ const styles = StyleSheet.create({
     opacity: opacity.faint,
   },
   saveButtonText: {
-    color: colors.text.primary,
+    color: semantic.accent.onFill,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.md,
   },

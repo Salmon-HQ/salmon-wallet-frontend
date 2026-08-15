@@ -11,6 +11,7 @@ import {
   fontSize,
   letterSpacing,
   spacing,
+  semantic,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 
@@ -44,7 +45,7 @@ export function SecondaryButton({
       style={[styles.button, isDisabled && styles.disabled, style]}
     >
       {loading ? (
-        <ActivityIndicator color={colors.button.secondaryText} />
+        <ActivityIndicator color={semantic.text.primary} />
       ) : (
         <Text style={styles.text}>{children}</Text>
       )}
@@ -67,7 +68,7 @@ const styles = StyleSheet.create({
     opacity: colors.button.disabledOpacity,
   },
   text: {
-    color: colors.button.secondaryText,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.bold,
     fontSize: fontSize.md,
     letterSpacing: letterSpacing.widest,

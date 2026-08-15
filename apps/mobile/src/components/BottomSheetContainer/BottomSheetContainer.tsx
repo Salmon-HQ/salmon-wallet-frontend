@@ -35,7 +35,6 @@ import {
   opacity,
 } from '@salmon/shared';
 import { BlurTargetProvider } from '../BlurContainer';
-import { ScalesBackground } from '../ScalesBackground';
 
 // ============================================================================
 // Constants
@@ -116,7 +115,6 @@ export interface BottomSheetContainerProps {
  *  - Optional title / custom header content
  *  - Optional top fade gradient (for scrollable content)
  *  - Optional fish scale texture overlay (NFT sheets)
- *  - ScalesBackground fish scale pattern
  *
  * @example
  * ```tsx
@@ -285,8 +283,10 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
           {/* Sheet */}
           <Reanimated.View style={[styles.sheetContainer, sheetAnimatedStyle, style]}>
             <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
-              {/* Fish scale background */}
-              <ScalesBackground />
+              {/* No scales. Every sheet in the app mounts through here —
+                  send, receive, seed backup, approval, settings — so this one
+                  call site was painting the motif behind addresses, seed
+                  words, inputs and amounts at once. */}
 
               {/* Optional texture overlay (NFT sheets) */}
               {showTextureOverlay && <View style={styles.textureOverlay} />}

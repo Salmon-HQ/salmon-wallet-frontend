@@ -8,6 +8,7 @@ import {
   gradients,
   ms,
   s,
+  semantic,
   spacing,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,6 +16,7 @@ import React, { useCallback } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { BlurContainer } from '../BlurContainer';
+import { ScalesBackground } from '../ScalesBackground';
 import { CallMadeSvgIcon, QrCodeScannerSvgIcon, ReceiptLongSvgIcon } from '../Icon/SvgIcons';
 import type { ActionButtonRowProps } from './types';
 
@@ -25,9 +27,17 @@ const ACTION_BUTTON_TEXT_SIZE = fontSize.md;
  * ActionButtonRow component for primary wallet actions
  *
  * Displays three main action buttons:
- * - Send: Primary orange gradient button
- * - Receive: Secondary blurred button
- * - Activity: Secondary blurred button
+ * - Send: the screen's one living thing — a salmon fill with `accent.onFill`
+ *   ink at 6.50:1 and the scales at their true 1.0x pressed into the body
+ * - Receive: neutral blurred button
+ * - Activity: neutral blurred button
+ *
+ * The One Living Thing Rule says salmon appears once per screen; it does not
+ * say where. All three pills used to carry a salmon border and the Send label
+ * was `neutral-100` on the salmon fill at 3.06:1 — three competing warm
+ * objects, and a failing label on the loudest of them. The accent is now spent
+ * on the single control that moves money; Receive and Activity take
+ * `border.raised`, and the tab bar's active item went neutral in return.
  *
  * These pills are content, not chrome: they scroll with the page rather than
  * floating over it, so per DESIGN.md's "Content Is Never Glass" rule they are
@@ -89,11 +99,17 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
           colors={sendDisabled ? gradients.disabled.colors : gradients.primaryButton.colors}
           start={gradients.primaryButton.start}
           end={gradients.primaryButton.end}
-          style={styles.primaryButton}
+          style={[styles.primaryButton, sendDisabled && styles.primaryButtonDisabled]}
         >
-          <CallMadeSvgIcon size={ms(ACTION_BUTTON_ICON_SIZE)} color={colors.text.balance} />
+          {/* The fish: the scales at 1.0x, pressed into the salmon fill and
+              nowhere else on this screen. Absent when the fill is absent. */}
+          {!sendDisabled && <ScalesBackground variant="fish" />}
+          <CallMadeSvgIcon
+            size={ms(ACTION_BUTTON_ICON_SIZE)}
+            color={sendDisabled ? semantic.text.disabled : semantic.accent.onFill}
+          />
           <Text
-            style={styles.primaryButtonText}
+            style={[styles.primaryButtonText, sendDisabled && styles.textDisabled]}
             numberOfLines={1}
             ellipsizeMode="tail"
             maxFontSizeMultiplier={fontScaleCap.chrome}
@@ -107,7 +123,7 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
       <View style={[styles.buttonWrapper, receiveDisabled && styles.buttonDisabled]}>
         <BlurContainer
           style={styles.secondaryButton}
-          borderColor={colors.accent.primary}
+          borderColor={semantic.border.raised}
           borderWidth={borderWidth.actionButton}
         >
           <TouchableOpacity
@@ -121,7 +137,7 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
           >
             <QrCodeScannerSvgIcon
               size={ms(ACTION_BUTTON_ICON_SIZE)}
-              color={receiveDisabled ? colors.button.disabledText : colors.text.balance}
+              color={receiveDisabled ? semantic.text.disabled : colors.text.balance}
             />
             <Text
               style={[styles.secondaryButtonText, receiveDisabled && styles.textDisabled]}
@@ -139,7 +155,7 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
       <View style={[styles.buttonWrapper, activityDisabled && styles.buttonDisabled]}>
         <BlurContainer
           style={styles.secondaryButton}
-          borderColor={colors.accent.primary}
+          borderColor={semantic.border.raised}
           borderWidth={borderWidth.actionButton}
         >
           <TouchableOpacity
@@ -153,7 +169,7 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
           >
             <ReceiptLongSvgIcon
               size={ms(ACTION_BUTTON_ICON_SIZE)}
-              color={activityDisabled ? colors.button.disabledText : colors.text.balance}
+              color={activityDisabled ? semantic.text.disabled : colors.text.balance}
             />
             <Text
               style={[styles.secondaryButtonText, activityDisabled && styles.textDisabled]}
@@ -201,13 +217,21 @@ const styles = StyleSheet.create({
     gap: s(spacing.sm), // 8px
     borderRadius: ms(componentSizes.actionButtonRadius), // 14px
     borderWidth: borderWidth.actionButton, // 0.5px
-    borderColor: colors.accent.border,
+    borderColor: semantic.accent.fill,
+    // The fish is drawn at absolute-fill; clip it to the pill's own radius.
+    overflow: 'hidden',
+  },
+  primaryButtonDisabled: {
+    // Disabled is `surface.crest` with disabled ink; the salmon edge goes with
+    // the fill rather than outlining a neutral pill.
+    borderColor: semantic.border.raised,
   },
   primaryButtonText: {
     flexShrink: 1,
     fontSize: ms(ACTION_BUTTON_TEXT_SIZE),
     fontFamily: fontFamilyNative.regular,
-    color: colors.text.balance,
+    // The only legal ink on a salmon fill. Never `text.primary` (3.06:1).
+    color: semantic.accent.onFill,
     lineHeight: ms(ACTION_BUTTON_TEXT_SIZE * 1.35),
   },
   secondaryButton: {
@@ -229,7 +253,7 @@ const styles = StyleSheet.create({
     lineHeight: ms(ACTION_BUTTON_TEXT_SIZE * 1.35),
   },
   textDisabled: {
-    color: colors.button.disabledText,
+    color: semantic.text.disabled,
   },
 });
 

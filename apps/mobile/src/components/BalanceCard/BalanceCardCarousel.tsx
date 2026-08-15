@@ -16,9 +16,9 @@ import {
   useCurrencyContext,
   vs,
   getNetworkLabel,
-  getScalesColorForBlockchain,
   fontWeight,
   opacity,
+  semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback } from 'react';
@@ -181,8 +181,6 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
   const currentBlockchain = blockchains[activeIndex];
   const currentBlockchainId = currentBlockchain?.network.blockchain || 'solana';
   const currentGradient = BLOCKCHAIN_GRADIENTS[currentBlockchainId];
-  const currentScalesColor = getScalesColorForBlockchain(currentBlockchainId);
-
   // Format values
   const { usdTotal, changePercent = 0, changeAmount = 0 } = currentBlockchain || {};
   const labelType = getLabelValue(changePercent);
@@ -240,17 +238,16 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
         end={{ x: 0.5, y: 1.3 }}
         style={[styles.gradient, { paddingTop: contentPaddingTop }]}
       >
-        {/* Scales pattern overlay - color based on current blockchain */}
-        <ScalesBackground
-          strokeColor={currentScalesColor}
-          strokeWidth={1}
-          patternHeight={26}
-          style={styles.scalesOverlay}
-        />
         <GestureDetector gesture={panGesture}>
           <Animated.View style={[styles.content, animatedContentStyle]}>
-            {/* Group 1: Logo + Network tag */}
-            <View style={styles.contentGroup}>
+            {/* Group 1: Logo + Network tag — and the only band on this card
+                the deep field may occupy. The field is a child of this group,
+                so it is structurally incapable of reaching the balance figure
+                below; the content stack's own `gap` supplies the clearance
+                and the fade mask has already reached alpha 0 by then.
+                Asserted in BalanceCard.scales.test.tsx. */}
+            <View style={styles.logoGroup} testID="balance-carousel-logo-group">
+              <ScalesBackground variant="deepField" />
               <View style={styles.logoContainer}>
                 {renderLogo(currentBlockchain?.network.blockchain || 'solana')}
               </View>
@@ -269,7 +266,7 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
                   <Ionicons
                     name={hiddenBalance ? 'eye-off' : 'eye'}
                     size={ms(componentSizes.eyeIcon)}
-                    color={colors.text.muted}
+                    color={semantic.text.secondary}
                   />
                 </TouchableOpacity>
               </View>
@@ -336,6 +333,14 @@ const styles = StyleSheet.create({
   contentGroup: {
     alignItems: 'center',
     gap: vs(spacing.xs),
+  },
+  /** Group 1. Stretches so the motif reads as a band, and clips it. */
+  logoGroup: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: vs(spacing.xs),
+    position: 'relative',
+    overflow: 'hidden',
   },
   logoContainer: {
     width: s(componentSizes.logoContainer),
@@ -447,14 +452,6 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     backgroundColor: colors.text.primary,
-  },
-  scalesOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: ms(borderRadius.card),
   },
 });
 

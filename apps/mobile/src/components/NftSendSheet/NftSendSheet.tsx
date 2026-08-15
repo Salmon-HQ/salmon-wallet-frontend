@@ -43,6 +43,7 @@ import {
   lineHeight,
   gradients,
   shadows,
+  semantic,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { InputAddress } from '../InputAddress';
@@ -230,7 +231,7 @@ export function NftSendSheet({
               disabled={!canConfirm}
               activeOpacity={0.8}
             >
-              <CallMadeSvgIcon size={ms(15)} color={colors.text.balance} />
+              <CallMadeSvgIcon size={ms(15)} color={semantic.accent.onFill} />
               <Text
                 style={styles.buttonText}
                 numberOfLines={1}
@@ -377,7 +378,7 @@ const styles = StyleSheet.create({
     gap: s(spacing.base),
     backgroundColor: colors.accent.primary,
     borderWidth: borderWidth.actionButton,
-    borderColor: colors.accent.border,
+    borderColor: semantic.accent.fill,
   },
   primaryButtonDisabled: {
     backgroundColor: gradients.primaryButton.colors[0],
@@ -387,7 +388,7 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.md),
     fontFamily: fontFamilyNative.medium,
     fontWeight: fontWeight.medium,
-    color: colors.text.balance,
+    color: semantic.accent.onFill,
   },
 });
 

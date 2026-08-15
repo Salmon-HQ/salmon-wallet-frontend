@@ -25,6 +25,7 @@ import {
   fontFamilyNative,
   opacity,
   componentSizes,
+  semantic,
 } from '@salmon/shared';
 import { TokenLogo } from '../TokenLogo';
 import { BlurContainer } from '../BlurContainer';
@@ -83,7 +84,7 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
 
       {/* Input Row */}
       <BlurContainer
-        borderColor={value ? colors.accent.primary : undefined}
+        borderColor={value ? semantic.border.raised : undefined}
         style={styles.inputContainer}
       >
         {isLoading ? (

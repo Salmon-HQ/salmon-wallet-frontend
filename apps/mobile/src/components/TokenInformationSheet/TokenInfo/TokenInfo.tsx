@@ -11,6 +11,7 @@ import {
   formatLargeNumber,
   getShortAddress,
   useCurrencyContext,
+  semantic,
 } from '@salmon/shared';
 import * as Clipboard from 'expo-clipboard';
 import React, { useCallback, useState } from 'react';
@@ -201,7 +202,7 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
               <Ionicons
                 name={copied ? 'checkmark' : 'copy-outline'}
                 size={18}
-                color={copied ? colors.status.success : colors.text.muted}
+                color={copied ? colors.status.success : semantic.text.secondary}
               />
             </View>
           </TouchableOpacity>
@@ -253,7 +254,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontFamily: fontFamilyNative.regular,
     fontWeight: fontWeight.regular as '400',
-    color: colors.text.muted,
+    color: semantic.text.secondary,
     lineHeight: fontSize.base * 1.5,
   },
   statsGrid: {
@@ -290,7 +291,7 @@ const styles = StyleSheet.create({
   contractAddress: {
     fontSize: fontSize.base,
     fontWeight: fontWeight.regular as '400',
-    color: colors.text.muted,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
   },
   copyButton: {

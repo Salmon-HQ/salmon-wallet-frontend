@@ -25,6 +25,7 @@ import {
   borderWidth,
   borderRadius,
   componentSizes,
+  semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -227,6 +228,9 @@ export function LockContent({
   }, [locked, biometricReady]);
 
   // Password unlock
+  /** Same condition the button, its a11y state and its fill all read. */
+  const unlockDisabled = isLoading || !password.trim();
+
   const handleUnlock = useCallback(async () => {
     if (!password.trim()) {
       setError(t('lock.enter_password_error'));
@@ -338,27 +342,37 @@ export function LockContent({
                     accessibilityRole="button"
                     accessibilityLabel={t('lock.unlock')}
                     accessibilityState={{
-                      disabled: isLoading || !password.trim(),
+                      disabled: unlockDisabled,
                       busy: isLoading,
                     }}
                     onPress={handleUnlock}
-                    disabled={isLoading || !password.trim()}
+                    disabled={unlockDisabled}
                     activeOpacity={0.8}
                     style={styles.buttonContainer}
                   >
+                    {/* The salmon never dims: it is either alive or absent.
+                        Dimming the fill by opacity left near-black `onFill`
+                        ink on a muddy red, which is neither the live 6.50:1
+                        nor a legible disabled state. Disabled swaps the whole
+                        object to `surface.crest` with disabled ink instead. */}
                     <LinearGradient
-                      colors={[...gradients.primary.colors]}
-                      style={[
-                        styles.button,
-                        (isLoading || !password.trim()) && styles.buttonDisabled,
-                      ]}
+                      colors={
+                        unlockDisabled
+                          ? [...gradients.disabled.colors]
+                          : [...gradients.primary.colors]
+                      }
+                      style={[styles.button, unlockDisabled && styles.buttonDisabled]}
                       start={gradients.primary.start}
                       end={gradients.primary.end}
                     >
                       {isLoading ? (
-                        <ActivityIndicator color={colors.text.primary} />
+                        <ActivityIndicator color={semantic.text.disabled} />
                       ) : (
-                        <Text style={styles.buttonText}>{t('lock.unlock')}</Text>
+                        <Text
+                          style={[styles.buttonText, unlockDisabled && styles.buttonTextDisabled]}
+                        >
+                          {t('lock.unlock')}
+                        </Text>
                       )}
                     </LinearGradient>
                   </TouchableOpacity>
@@ -478,16 +492,19 @@ const styles = StyleSheet.create({
     paddingVertical: vs(spacing.sm),
     borderRadius: borderRadius.xl,
     borderWidth: borderWidth.thin,
-    borderColor: colors.accent.border,
+    borderColor: semantic.accent.fill,
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.button,
   },
   buttonDisabled: {
-    opacity: colors.button.disabledOpacity,
+    borderColor: semantic.border.raised,
+  },
+  buttonTextDisabled: {
+    color: semantic.text.disabled,
   },
   buttonText: {
-    color: colors.text.primary,
+    color: semantic.accent.onFill,
     fontFamily: fontFamilyNative.bold,
     fontSize: ms(fontSize.md),
     lineHeight: ms(16 * lineHeight.normal),

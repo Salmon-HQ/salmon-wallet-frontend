@@ -21,6 +21,7 @@ import {
   fontSize,
   fontFamilyNative,
   borderRadius,
+  semantic,
 } from '@salmon/shared';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
   retryText: {
     fontSize: ms(fontSize.md),
     fontFamily: fontFamilyNative.medium,
-    color: colors.text.primary,
+    color: semantic.accent.onFill,
   },
   // Loading more
   loadingMoreContainer: {

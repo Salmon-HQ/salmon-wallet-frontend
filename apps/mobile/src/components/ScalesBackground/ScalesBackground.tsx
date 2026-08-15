@@ -1,65 +1,114 @@
-import React from 'react';
+import { semantic } from '@salmon/shared';
+import React, { useId } from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
-import Svg, { Defs, Pattern, Path, Rect } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Mask, Pattern, Path, Rect, Stop } from 'react-native-svg';
+
+const { scales } = semantic;
+
+/** The drawing's native tile height. Every variant is a multiple of it. */
+const NATIVE_TILE = 26;
+
+/**
+ * The motif's three sanctioned appearances, two of which this platform draws.
+ *
+ * The old component had one look — a near-black stroke measured at 1.068:1
+ * against its own ground — tiled edge to edge as wallpaper behind whole
+ * screens, sheets and settings stacks. At that opacity it reads as
+ * compression noise rather than as water. Each variant now has a job, a
+ * distance, and a stroke actually visible at that distance.
+ */
+export type ScalesVariant = 'deepField' | 'fish';
+
+const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boolean }> = {
+  /** The far water, in the balance card's upper region. Dissolves downward. */
+  deepField: { stroke: scales.deepFieldStroke, scale: scales.deepFieldScale, fade: true },
+  /** The fish itself — inside the primary CTA's salmon fill, and only there. */
+  fish: { stroke: scales.fishStroke, scale: scales.fishScale, fade: false },
+};
 
 export interface ScalesBackgroundProps {
   /**
-   * Stroke color for the scales pattern
-   * @default "rgba(0, 0, 0, 0.5)"
+   * Which of the sanctioned appearances to draw.
+   * @default "deepField"
    */
-  strokeColor?: string;
+  variant?: ScalesVariant;
   /**
-   * Stroke width for the scales
-   * @default 1
-   */
-  strokeWidth?: number;
-  /**
-   * Pattern height (controls vertical spacing/overlap)
-   * Use values < 27 for overlap (e.g., 26 = -1 gap)
-   * @default 26
-   */
-  patternHeight?: number;
-  /**
-   * Top offset to start the pattern below a header
-   * @default 0
-   */
-  topOffset?: number;
-  /**
-   * Additional styles for the container
+   * Additional styles for the container. The container fills its parent, so
+   * *where* the motif may appear is decided by which parent you mount it in —
+   * that is deliberate, see the exclusion rule below.
    */
   style?: ViewStyle;
 }
 
 /**
- * ScalesBackground - Repeating fish scales pattern background
+ * ScalesBackground — the seigaiha fish-scale motif, at one of its scales.
  *
- * Uses SVG pattern to tile scales across the entire container.
- * The pattern is optimized for dark backgrounds with subtle stroke visibility.
+ * Density is a depth cue: `deepField` is the far water in the balance card's
+ * logo band, `fish` is the material of the primary call-to-action's own body.
+ *
+ * **The Scales Exclusion Rule.** The motif is never wallpaper. It goes behind
+ * no address, no seed phrase, no input, no list row, no approval sheet, and
+ * no numeric value. On this platform that is enforced structurally rather
+ * than by convention: the component absolutely fills whatever view it is
+ * mounted in, so mounting it in a small, bounded group is what keeps it off
+ * everything else. It has exactly two call sites.
  *
  * @example
  * ```tsx
- * <ScalesBackground style={StyleSheet.absoluteFill} />
+ * // The far water, bound to the balance card's logo group
+ * <View style={styles.logoGroup}>
+ *   <ScalesBackground variant="deepField" />
+ *   ...
+ * </View>
+ *
+ * // The material inside a salmon fill
+ * <ScalesBackground variant="fish" />
  * ```
  */
 export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
-  strokeColor = 'rgba(0, 0, 0, 0.5)',
-  strokeWidth = 1,
-  patternHeight = 26,
-  topOffset = 0,
+  variant = 'deepField',
   style,
 }) => {
+  // Unique per instance. Two ScalesBackgrounds sharing a hardcoded `id` both
+  // resolve to whichever pattern mounted first, so a `fish` inside a button
+  // would silently inherit the deep field. `useId` yields ":r1:"-style values;
+  // the colons are stripped because they are not valid in an SVG fragment id.
+  const rawId = useId();
+  const uid = rawId.replace(/[^a-zA-Z0-9]/g, '');
+  const patternId = `scales-${uid}`;
+  const fadeId = `scalesFade-${uid}`;
+  const maskId = `scalesMask-${uid}`;
+
+  const config = VARIANTS[variant];
+  // The paths are drawn at the native tile size, so a scale is a
+  // `patternTransform` — stretching the tile height alone would shear the
+  // drawing instead of moving it away from the eye. 1px is the only stroke
+  // weight for a boundary in this system, and the transform would otherwise
+  // multiply it into a graphic rather than water.
+  const strokeColor = config.stroke;
+  const strokeWidth = 1 / config.scale;
+
   return (
-    <View
-      style={[styles.container, topOffset > 0 && { top: topOffset }, style]}
-      pointerEvents="none"
-    >
+    <View style={[styles.container, style]} pointerEvents="none">
       <Svg width="100%" height="100%">
         <Defs>
+          {config.fade && (
+            <>
+              <LinearGradient id={fadeId} x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor="#fff" stopOpacity="1" />
+                <Stop offset="1" stopColor="#fff" stopOpacity="0" />
+              </LinearGradient>
+              <Mask id={maskId}>
+                <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${fadeId})`} />
+              </Mask>
+            </>
+          )}
           <Pattern
-            id="scalesPattern"
+            id={patternId}
             patternUnits="userSpaceOnUse"
             width={822}
-            height={patternHeight}
+            height={NATIVE_TILE}
+            patternTransform={`scale(${config.scale})`}
           >
             {/* Row 1 - Left half */}
             <Path
@@ -91,7 +140,12 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
             />
           </Pattern>
         </Defs>
-        <Rect width="100%" height="100%" fill="url(#scalesPattern)" />
+        <Rect
+          width="100%"
+          height="100%"
+          fill={`url(#${patternId})`}
+          mask={config.fade ? `url(#${maskId})` : undefined}
+        />
       </Svg>
     </View>
   );
