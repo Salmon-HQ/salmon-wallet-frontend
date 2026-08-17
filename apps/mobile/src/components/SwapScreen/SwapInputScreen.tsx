@@ -219,8 +219,14 @@ const styles = StyleSheet.create({
   // salmon outline and a glow, with the button's own fill forced transparent —
   // a second, squarer shape behind the pill that read as two stacked buttons.
   button: {
+    // The button sizes to its label, not to the screen. It used to be held in
+    // by a shrink-wrapping gradient wrapper; with the wrapper gone, the
+    // button's own `width: '100%'` stretched it edge to edge inside a row that
+    // spans the viewport. `auto` is what the wrapper was doing implicitly.
+    width: 'auto',
     minWidth: s(componentSizes.copyButtonWidth),
     height: vs(componentSizes.buttonHeightCompact),
+    paddingHorizontal: s(spacing['2xl']),
   },
 });
 
