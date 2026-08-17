@@ -3,11 +3,7 @@ import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
 import { removeStashItem } from '../storage';
 import { migrateLegacyWallets } from '../utils/legacy-migration';
-import {
-  clearUnlockPenalty,
-  getUnlockPenalty,
-  recordFailedUnlock,
-} from '../utils/unlock-throttle';
+import { clearUnlockPenalty, getUnlockPenalty, recordFailedUnlock } from '../utils/unlock-throttle';
 import type { Account, StoredAccount } from '../types/account';
 import {
   getStoredMnemonics,

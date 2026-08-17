@@ -9,14 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import {
-  colors,
-  spacing,
-  fontFamily,
-  fontWeight,
-  fontSize,
-  componentSizes,
-} from '@salmon/shared';
+import { colors, spacing, fontFamily, fontWeight, fontSize, componentSizes } from '@salmon/shared';
 import { SwapAmountInput } from './SwapAmountInput';
 import { PrimaryButton } from '../Button';
 import type { SwapInputScreenProps } from './types';

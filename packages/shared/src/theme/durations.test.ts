@@ -14,9 +14,7 @@ import {
 
 describe('motion vocabulary', () => {
   it('keeps the CSS strings and the millisecond values in step', () => {
-    for (const key of Object.keys(motionDuration) as Array<
-      keyof typeof motionDuration
-    >) {
+    for (const key of Object.keys(motionDuration) as Array<keyof typeof motionDuration>) {
       expect(motionDuration[key]).toBe(`${motionMs[key]}ms`);
     }
   });
@@ -44,16 +42,12 @@ describe('motion vocabulary', () => {
 describe('resolveMotionMs / resolveMotionDuration', () => {
   it('passes travel through untouched when reduce motion is off', () => {
     expect(resolveMotionMs(motionMs.rise, false)).toBe(motionMs.rise);
-    expect(resolveMotionDuration(motionDuration.rise, false)).toBe(
-      motionDuration.rise,
-    );
+    expect(resolveMotionDuration(motionDuration.rise, false)).toBe(motionDuration.rise);
   });
 
   it('drops travel when reduce motion is on', () => {
     expect(resolveMotionMs(motionMs.rise, true)).toBe(reducedMotion.ms);
-    expect(resolveMotionDuration(motionDuration.rise, true)).toBe(
-      reducedMotion.css,
-    );
+    expect(resolveMotionDuration(motionDuration.rise, true)).toBe(reducedMotion.css);
   });
 
   it('substitutes a non-zero CSS duration so transitionend still fires', () => {
@@ -92,15 +86,7 @@ describe('legacy tokens', () => {
       'feedbackLong',
       'spinSlow',
     ];
-    const easingKeys = [
-      'ease',
-      'easeOut',
-      'easeIn',
-      'easeInOut',
-      'standard',
-      'slide',
-      'bounce',
-    ];
+    const easingKeys = ['ease', 'easeOut', 'easeIn', 'easeInOut', 'standard', 'slide', 'bounce'];
 
     expect(Object.keys(duration)).toEqual(durationKeys);
     expect(Object.keys(durationMs)).toEqual(durationMsKeys);

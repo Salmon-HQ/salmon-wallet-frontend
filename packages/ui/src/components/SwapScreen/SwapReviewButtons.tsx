@@ -2,13 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
-import {
-  colors,
-  spacing,
-  borderRadius,
-  componentSizes,
-  borderWidth,
-} from '@salmon/shared';
+import { colors, spacing, borderRadius, componentSizes, borderWidth } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import type { SwapReviewButtonsProps } from './types';
 

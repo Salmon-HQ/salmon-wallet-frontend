@@ -16,11 +16,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
 import { useAccountsSecurity } from './useAccountsSecurity';
-import {
-  getUnlockPenalty,
-  unlockDelayMs,
-  UNLOCK_FREE_ATTEMPTS,
-} from '../utils/unlock-throttle';
+import { getUnlockPenalty, unlockDelayMs, UNLOCK_FREE_ATTEMPTS } from '../utils/unlock-throttle';
 import * as encryption from '../crypto/encryption';
 
 // ---------------------------------------------------------------------------

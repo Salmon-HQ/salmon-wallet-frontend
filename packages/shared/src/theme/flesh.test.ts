@@ -92,8 +92,7 @@ const exit = (d: string) => {
 };
 
 /** Positions in the tile are the same position when they are a tile apart. */
-const wrapX = (x: number): number =>
-  ((x % fleshTile.width) + fleshTile.width) % fleshTile.width;
+const wrapX = (x: number): number => ((x % fleshTile.width) + fleshTile.width) % fleshTile.width;
 
 describe('flesh: the pale-only property', () => {
   it('draws the band lighter than the salmon fill it sits on', () => {

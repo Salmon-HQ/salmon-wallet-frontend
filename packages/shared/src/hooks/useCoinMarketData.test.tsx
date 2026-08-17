@@ -109,9 +109,7 @@ describe('useCoinMarketData', () => {
       totalVolumes: [],
     });
 
-    await waitFor(() =>
-      expect(result.current.chartData).toEqual([{ timestamp: 9, price: 900 }])
-    );
+    await waitFor(() => expect(result.current.chartData).toEqual([{ timestamp: 9, price: 900 }]));
     expect(result.current.chartPending).toBe(false);
   });
 

@@ -13,9 +13,7 @@ const effects = (overrides: Partial<Extract<TransactionEffects, { kind: 'effects
     kind: 'effects',
     account: ACCOUNT,
     sol: { lamports: -5_000n, feeLamports: 5_000n },
-    tokens: [
-      { tokenAccount: TOKEN_ACCOUNT, mint: MINT, amount: -1n, decimals: 6, symbol: null },
-    ],
+    tokens: [{ tokenAccount: TOKEN_ACCOUNT, mint: MINT, amount: -1n, decimals: 6, symbol: null }],
     approvals: [],
     ...overrides,
   }) as TransactionEffects;
