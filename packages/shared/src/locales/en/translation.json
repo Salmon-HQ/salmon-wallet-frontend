@@ -733,9 +733,10 @@
       "toNetwork": "To Network",
       "minimumAmount": "Minimum Amount",
       "estimatedOutput": "Estimated Output",
+      "salmonFee": "Salmon fee",
       "provider": "Provider",
       "pleaseNote": "Please Note",
-      "pleaseNoteText": "Cross-chain swaps typically take 10-30 minutes to complete. You will receive a deposit address after confirmation.",
+      "pleaseNoteText": "Cross-chain swaps typically take 10-30 minutes to complete. You will receive a deposit address after confirmation. The estimated amount above already has the Salmon fee deducted.",
       "irreversible": "This cannot be undone",
       "irreversibleText": "Confirming sends your funds to StealthEX, which holds them until the cross-chain transfer completes. Once confirmed there is no cancel and no way to reverse or recover the transfer — not by Salmon and not by you.",
       "confirmSwap": "Confirm Bridge"

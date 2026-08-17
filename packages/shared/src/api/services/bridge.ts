@@ -22,6 +22,27 @@ import type {
   BridgeTransaction,
 } from '../../types/bridge';
 
+/**
+ * Salmon's partner fee on every StealthEX bridge, as a percentage.
+ *
+ * Mirrors `STEALTHEX_PARTNER_FEE = '0.4'` in salmon-api
+ * (`src/services/shared/bridge-service.js`), which sends it as the
+ * `partner_fee` query/body parameter on estimate, minimal, and exchange
+ * creation. StealthEX applies it upstream and returns only the net
+ * `estimated_amount`, so nothing on the wire carries the fee back: neither
+ * `GET /v1/bridge/estimate` (`BridgeEstimateResponse`) nor the created
+ * exchange exposes a fee field, and the frontend performs no fee arithmetic
+ * of its own.
+ *
+ * This constant therefore exists only to disclose the *rate*. To disclose the
+ * fee *amount* in the output token, the backend would have to return it — by
+ * echoing `partner_fee` and the gross estimate on `/v1/bridge/estimate`, or by
+ * adding an explicit fee field to `BridgeEstimateResponse`. Until it does,
+ * do not compute an amount here: any client-side figure would be a guess
+ * presented as a number.
+ */
+export const BRIDGE_PARTNER_FEE_PERCENT = 0.4;
+
 /** Coerce a wire decimal string to a finite number, or null when absent/unparsable. */
 function toFiniteNumber(value: string | number | undefined | null): number | null {
   if (value == null) return null;

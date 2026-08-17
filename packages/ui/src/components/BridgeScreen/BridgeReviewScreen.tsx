@@ -18,7 +18,9 @@ import {
   fontFamily,
   fontWeight,
   formatAmountWithSymbol,
+  formatPercent,
   getShortAddress,
+  BRIDGE_PARTNER_FEE_PERCENT,
   fontSize,
   letterSpacing,
   lineHeight,
@@ -191,6 +193,12 @@ export function BridgeReviewScreen({
                 />
               </>
             )}
+            {/* The swap names its cut ("Salmon fee"); the bridge netted 0.4%
+                into the estimate above and said nothing. Same cut, same row. */}
+            <SwapDetailRow
+              label={t('bridge.review.salmonFee')}
+              value={formatPercent(BRIDGE_PARTNER_FEE_PERCENT)}
+            />
             <SwapDetailRow label={t('bridge.review.provider')} value="StealthEX" />
           </DetailsContainer>
 

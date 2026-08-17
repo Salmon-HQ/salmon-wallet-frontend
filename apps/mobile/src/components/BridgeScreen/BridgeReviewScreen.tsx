@@ -14,8 +14,10 @@ import {
   s,
   fontFamilyNative,
   formatAmountWithSymbol,
+  formatPercent,
   getShortAddress,
   semantic,
+  BRIDGE_PARTNER_FEE_PERCENT,
 } from '@salmon/shared';
 import { SwapDetailRow } from '../SwapScreen/SwapDetailRow';
 import { SwapReviewCard } from '../SwapScreen/SwapReviewCard';
@@ -93,6 +95,12 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
               />
             </>
           )}
+          {/* The swap names its cut ("Salmon fee"); the bridge netted 0.4%
+              into the estimate above and said nothing. Same cut, same row. */}
+          <SwapDetailRow
+            label={t('bridge.review.salmonFee', 'Salmon fee')}
+            value={formatPercent(BRIDGE_PARTNER_FEE_PERCENT)}
+          />
           <SwapDetailRow label={t('bridge.review.provider', 'Provider')} value="StealthEX" />
         </View>
 
@@ -118,7 +126,7 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
           <Text style={styles.warningText}>
             {t(
               'bridge.review.pleaseNoteText',
-              'Cross-chain swaps typically take 10-30 minutes to complete. You will receive a deposit address after confirmation.'
+              'Cross-chain swaps typically take 10-30 minutes to complete. You will receive a deposit address after confirmation. The estimated amount above already has the Salmon fee deducted.'
             )}
           </Text>
         </View>

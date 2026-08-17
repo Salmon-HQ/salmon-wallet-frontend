@@ -733,9 +733,10 @@
       "toNetwork": "Red de Destino",
       "minimumAmount": "Monto Mínimo",
       "estimatedOutput": "Salida Estimada",
+      "salmonFee": "Comisión Salmon",
       "provider": "Proveedor",
       "pleaseNote": "Nota Importante",
-      "pleaseNoteText": "Los swaps entre cadenas típicamente tardan de 10 a 30 minutos en completarse. Vas a recibir una dirección de depósito después de la confirmación.",
+      "pleaseNoteText": "Los swaps entre cadenas típicamente tardan de 10 a 30 minutos en completarse. Vas a recibir una dirección de depósito después de la confirmación. El monto estimado de arriba ya tiene descontada la comisión de Salmon.",
       "irreversible": "Esto no se puede deshacer",
       "irreversibleText": "Al confirmar, tus fondos van a StealthEX, que los retiene hasta que se complete la transferencia entre cadenas. Una vez confirmada no hay cancelación ni forma de revertirla o recuperarla: ni por parte de Salmon ni por la tuya.",
       "confirmSwap": "Confirmar Bridge"
