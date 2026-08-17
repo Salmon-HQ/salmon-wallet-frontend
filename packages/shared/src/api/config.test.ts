@@ -47,6 +47,24 @@ describe('API Config Module', () => {
       expect(url).toBe('http://localhost:3000/local');
     });
 
+    it('rewrites the default host to the emulator alias on Android', () => {
+      process.env.EXPO_OS = 'android';
+
+      expect(getLocalApiUrl()).toBe('http://10.0.2.2:3000/local');
+    });
+
+    it('keeps a host that was configured on purpose, even on Android', () => {
+      // A physical Android device reports the same EXPO_OS as the emulator,
+      // but 10.0.2.2 resolves to nothing there, while 127.0.0.1 works because
+      // `adb reverse` forwards it. Rewriting a host someone set on purpose is
+      // how a device build ends up unable to reach a backend that runs fine.
+      process.env.EXPO_OS = 'android';
+      process.env.EXPO_PUBLIC_API_HOST = '127.0.0.1';
+
+      expect(getLocalApiUrl()).toBe('http://127.0.0.1:3000/local');
+      expect(getLocalApiUrl('192.168.1.100')).toBe('http://192.168.1.100:3000/local');
+    });
+
     it('should use provided host parameter', () => {
       const url = getLocalApiUrl('192.168.1.100');
       expect(url).toBe('http://192.168.1.100:3000/local');
