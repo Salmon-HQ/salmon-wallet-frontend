@@ -223,9 +223,15 @@ export const StyledActionButton: React.ComponentType<ButtonProps & { $isDanger?:
           }
         : null),
     },
+    // DESIGN.md's disabled rule, which both branches now follow: the fill
+    // drops to `surface.crest` and the label to `text.disabled`. Dimming the
+    // fill instead leaves a desaturated maroon carrying a greyed label — the
+    // one low-contrast element left in the dialog after the rest was fixed.
+    // The colour is either alive or absent; it is never half-lit.
     '&:disabled': {
-      backgroundColor: $isDanger ? semantic.status.dangerFill : colors.accent.primary,
-      color: $isDanger ? semantic.text.primary : semantic.text.onAccent,
+      backgroundColor: semantic.surface.crest,
+      backgroundImage: 'none',
+      color: semantic.text.disabled,
       opacity: semantic.state.disabledOpacity,
     },
   }));
