@@ -135,18 +135,31 @@ export interface LoadingScreenBaseProps {
   /** Custom spinner size (default: 140) */
   spinnerSize?: number;
   /**
-   * Emit the wave — three pulses that cross the screen's contents from top to
-   * bottom, each element displaced by a delay proportional to its distance from
-   * the origin (default: `false`).
+   * Emit the wave — the mark pulses, every pulse launches a front, and the
+   * screen's contents are displaced as the front reaches them, each with a
+   * delay proportional to its distance from the mark (default: `false`).
    *
    * Reserved for **waiting on a transaction**: the moment money is in the air
    * and the user can do nothing. A key derivation or an app boot has nothing in
    * the air, so a choreography there is decoration, and repeating it on every
-   * launch spends it. Three emissions and the water goes still — a thirty
-   * second wait cannot be a thirty second show, or it takes weight from The
-   * Surfacing, which is the only climax this system has.
+   * launch spends it.
+   *
+   * It **loops for as long as the wait lasts** and stops on a closing wave that
+   * carries the screen off — see `onExited`. Nothing accumulates across the
+   * loop: the emission is one compositor animation per element (`infinite` on
+   * the DOM, `withRepeat(-1)` on the UI thread in React Native), not a timer.
    */
   waves?: boolean;
+  /**
+   * Called once the closing wave has left the screen, `wavefrontExitMs()` after
+   * `visible` goes false. This is the handoff: a caller that must not show the
+   * next screen until the water is empty keeps this one mounted until it fires.
+   *
+   * The duration is fixed and does not wait out the pulse in flight — a wallet
+   * may not put a whole `pulseCycle` between a decision and its receipt — and
+   * under reduce motion it collapses to `ebb`.
+   */
+  onExited?: () => void;
 }
 
 /**

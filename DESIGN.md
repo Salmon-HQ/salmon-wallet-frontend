@@ -2,161 +2,161 @@
 name: Salmon Wallet
 description: A cold blue-black water column with one living salmon-colored element per screen.
 colors:
-  neutral-0: "#FFFFFF"
-  neutral-25: "#F6F8FB"
-  neutral-50: "#EDF1F7"
-  neutral-100: "#DDE3ED"
-  neutral-200: "#C3CBDA"
-  neutral-300: "#A7B1C4"
-  neutral-400: "#8B96AD"
-  neutral-500: "#6F7B95"
-  neutral-600: "#58637B"
-  neutral-700: "#414B61"
-  neutral-800: "#2C3547"
-  neutral-850: "#212938"
-  neutral-900: "#161C2D"
-  neutral-925: "#1B2233"
-  neutral-950: "#10131C"
-  neutral-975: "#0B0F19"
-  neutral-1000: "#070911"
-  salmon-50: "#FFF1EE"
-  salmon-100: "#FFDDD6"
-  salmon-200: "#FFBFB2"
-  salmon-300: "#FF9E8B"
-  salmon-400: "#FF7B63"
-  salmon-500: "#FF5C45"
-  salmon-600: "#E64A34"
-  salmon-700: "#BF3A28"
-  salmon-800: "#8F2B1E"
-  salmon-900: "#5C1B13"
-  success-300: "#7BEFCB"
-  success-500: "#33D6A6"
-  success-700: "#14795C"
-  danger-300: "#FF9FAF"
-  danger-500: "#FF6B85"
-  danger-700: "#A32036"
-  warning-300: "#FFD37A"
-  warning-500: "#FFB020"
-  warning-700: "#7A5205"
-  membrane-thin: "rgba(11, 15, 25, 0.62)"
-  membrane-thick: "rgba(11, 15, 25, 0.80)"
-  border-hairline: "rgba(199, 211, 232, 0.10)"
-  state-hover: "rgba(199, 211, 232, 0.06)"
-  state-press: "rgba(199, 211, 232, 0.10)"
-  selected-fill: "rgba(255, 92, 69, 0.12)"
-  accent-tint: "rgba(255, 92, 69, 0.10)"
-  accent-tint-hover: "rgba(255, 92, 69, 0.15)"
+  neutral-0: '#FFFFFF'
+  neutral-25: '#F6F8FB'
+  neutral-50: '#EDF1F7'
+  neutral-100: '#DDE3ED'
+  neutral-200: '#C3CBDA'
+  neutral-300: '#A7B1C4'
+  neutral-400: '#8B96AD'
+  neutral-500: '#6F7B95'
+  neutral-600: '#58637B'
+  neutral-700: '#414B61'
+  neutral-800: '#2C3547'
+  neutral-850: '#212938'
+  neutral-900: '#161C2D'
+  neutral-925: '#1B2233'
+  neutral-950: '#10131C'
+  neutral-975: '#0B0F19'
+  neutral-1000: '#070911'
+  salmon-50: '#FFF1EE'
+  salmon-100: '#FFDDD6'
+  salmon-200: '#FFBFB2'
+  salmon-300: '#FF9E8B'
+  salmon-400: '#FF7B63'
+  salmon-500: '#FF5C45'
+  salmon-600: '#E64A34'
+  salmon-700: '#BF3A28'
+  salmon-800: '#8F2B1E'
+  salmon-900: '#5C1B13'
+  success-300: '#7BEFCB'
+  success-500: '#33D6A6'
+  success-700: '#14795C'
+  danger-300: '#FF9FAF'
+  danger-500: '#FF6B85'
+  danger-700: '#A32036'
+  warning-300: '#FFD37A'
+  warning-500: '#FFB020'
+  warning-700: '#7A5205'
+  membrane-thin: 'rgba(11, 15, 25, 0.62)'
+  membrane-thick: 'rgba(11, 15, 25, 0.80)'
+  border-hairline: 'rgba(199, 211, 232, 0.10)'
+  state-hover: 'rgba(199, 211, 232, 0.06)'
+  state-press: 'rgba(199, 211, 232, 0.10)'
+  selected-fill: 'rgba(255, 92, 69, 0.12)'
+  accent-tint: 'rgba(255, 92, 69, 0.10)'
+  accent-tint-hover: 'rgba(255, 92, 69, 0.15)'
 typography:
   balance:
-    fontFamily: "Geist, system-ui, -apple-system, sans-serif"
-    fontSize: "60px"
+    fontFamily: 'Geist, system-ui, -apple-system, sans-serif'
+    fontSize: '60px'
     fontWeight: 700
     lineHeight: 1.25
-    letterSpacing: "-0.245px"
-    fontVariantNumeric: "tabular-nums"
+    letterSpacing: '-0.245px'
+    fontVariantNumeric: 'tabular-nums'
   display:
-    fontFamily: "Geist, system-ui, -apple-system, sans-serif"
-    fontSize: "36px"
+    fontFamily: 'Geist, system-ui, -apple-system, sans-serif'
+    fontSize: '36px'
     fontWeight: 700
     lineHeight: 1.25
-    letterSpacing: "normal"
+    letterSpacing: 'normal'
   headline:
-    fontFamily: "Geist, system-ui, -apple-system, sans-serif"
-    fontSize: "24px"
+    fontFamily: 'Geist, system-ui, -apple-system, sans-serif'
+    fontSize: '24px'
     fontWeight: 600
     lineHeight: 1.3
-    letterSpacing: "-0.12px"
+    letterSpacing: '-0.12px'
   title:
-    fontFamily: "Geist, system-ui, -apple-system, sans-serif"
-    fontSize: "20px"
+    fontFamily: 'Geist, system-ui, -apple-system, sans-serif'
+    fontSize: '20px'
     fontWeight: 600
     lineHeight: 1.3
-    letterSpacing: "-0.12px"
+    letterSpacing: '-0.12px'
   body:
-    fontFamily: "Geist, system-ui, -apple-system, sans-serif"
-    fontSize: "16px"
+    fontFamily: 'Geist, system-ui, -apple-system, sans-serif'
+    fontSize: '16px'
     fontWeight: 400
     lineHeight: 1.5
-    letterSpacing: "normal"
+    letterSpacing: 'normal'
   button:
-    fontFamily: "Geist, system-ui, -apple-system, sans-serif"
-    fontSize: "14.5px"
+    fontFamily: 'Geist, system-ui, -apple-system, sans-serif'
+    fontSize: '14.5px'
     fontWeight: 600
     lineHeight: 1.25
-    letterSpacing: "0"
+    letterSpacing: '0'
   label:
-    fontFamily: "Geist, system-ui, -apple-system, sans-serif"
-    fontSize: "10px"
+    fontFamily: 'Geist, system-ui, -apple-system, sans-serif'
+    fontSize: '10px'
     fontWeight: 600
     lineHeight: 1.5
-    letterSpacing: "0.3px"
+    letterSpacing: '0.3px'
   mono:
-    fontFamily: "Geist Mono, ui-monospace, monospace"
-    fontSize: "13px"
+    fontFamily: 'Geist Mono, ui-monospace, monospace'
+    fontSize: '13px'
     fontWeight: 400
     lineHeight: 1.4
-    fontVariantNumeric: "tabular-nums"
+    fontVariantNumeric: 'tabular-nums'
 rounded:
-  sm: "4px"
-  md: "8px"
-  lg: "12px"
-  button: "14px"
-  xl: "16px"
-  2xl: "24px"
-  card: "26px"
-  full: "9999px"
+  sm: '4px'
+  md: '8px'
+  lg: '12px'
+  button: '14px'
+  xl: '16px'
+  2xl: '24px'
+  card: '26px'
+  full: '9999px'
 spacing:
-  xs: "4px"
-  sm: "8px"
-  md: "12px"
-  lg: "16px"
-  xl: "20px"
-  2xl: "24px"
-  3xl: "32px"
-  5xl: "48px"
+  xs: '4px'
+  sm: '8px'
+  md: '12px'
+  lg: '16px'
+  xl: '20px'
+  2xl: '24px'
+  3xl: '32px'
+  5xl: '48px'
 components:
   button-primary:
-    backgroundColor: "{colors.salmon-500}"
-    textColor: "{colors.neutral-1000}"
-    typography: "{typography.button}"
-    rounded: "{rounded.button}"
-    height: "56px"
+    backgroundColor: '{colors.salmon-500}'
+    textColor: '{colors.neutral-1000}'
+    typography: '{typography.button}'
+    rounded: '{rounded.button}'
+    height: '56px'
   button-primary-hover:
-    backgroundColor: "{colors.salmon-600}"
-    textColor: "{colors.neutral-1000}"
+    backgroundColor: '{colors.salmon-600}'
+    textColor: '{colors.neutral-1000}'
   button-outlined:
-    backgroundColor: "transparent"
-    textColor: "{colors.neutral-50}"
-    typography: "{typography.button}"
-    rounded: "{rounded.button}"
-    height: "56px"
+    backgroundColor: 'transparent'
+    textColor: '{colors.neutral-50}'
+    typography: '{typography.button}'
+    rounded: '{rounded.button}'
+    height: '56px'
   button-text:
-    backgroundColor: "transparent"
-    textColor: "{colors.salmon-500}"
-    typography: "{typography.button}"
-    rounded: "{rounded.button}"
+    backgroundColor: 'transparent'
+    textColor: '{colors.salmon-500}'
+    typography: '{typography.button}'
+    rounded: '{rounded.button}'
   button-text-hover:
-    backgroundColor: "{colors.accent-tint}"
-    textColor: "{colors.salmon-500}"
+    backgroundColor: '{colors.accent-tint}'
+    textColor: '{colors.salmon-500}'
   card:
-    backgroundColor: "{colors.neutral-950}"
-    textColor: "{colors.neutral-50}"
-    rounded: "{rounded.card}"
-    padding: "20px"
+    backgroundColor: '{colors.neutral-950}'
+    textColor: '{colors.neutral-50}'
+    rounded: '{rounded.card}'
+    padding: '20px'
   input:
-    backgroundColor: "{colors.neutral-950}"
-    textColor: "{colors.neutral-50}"
-    typography: "{typography.body}"
-    rounded: "{rounded.lg}"
-    height: "56px"
+    backgroundColor: '{colors.neutral-950}'
+    textColor: '{colors.neutral-50}'
+    typography: '{typography.body}'
+    rounded: '{rounded.lg}'
+    height: '56px'
   menu:
-    backgroundColor: "{colors.neutral-925}"
-    textColor: "{colors.neutral-50}"
-    rounded: "{rounded.md}"
+    backgroundColor: '{colors.neutral-925}'
+    textColor: '{colors.neutral-50}'
+    rounded: '{rounded.md}'
   dialog:
-    backgroundColor: "{colors.neutral-925}"
-    textColor: "{colors.neutral-50}"
-    rounded: "{rounded.xl}"
+    backgroundColor: '{colors.neutral-925}'
+    textColor: '{colors.neutral-50}'
+    rounded: '{rounded.xl}'
 ---
 
 # Design System: Salmon Wallet
@@ -173,8 +173,8 @@ depths, light that behaves like light — and one salmon-colored element per
 screen that is alive. Depth here is never decoration; it is the information
 architecture. What is nearer is what you can act on. What is deeper is context.
 The user's money sits on the nearest plane, lit, and everything else recedes.
-The sentence a user should be able to say: *"It feels like my money is somewhere
-deep and quiet, and I'm the only one who can reach it."*
+The sentence a user should be able to say: _"It feels like my money is somewhere
+deep and quiet, and I'm the only one who can reach it."_
 
 **Depth and transformation, reconciled.** This world is built on stillness,
 while the brand's only recorded metaphor is about change — the fish was chosen
@@ -183,7 +183,7 @@ feature, Powerups, is explicitly about modularity. Those pull in opposite
 directions and the tension is real, so state how it resolves rather than paper
 over it: **the water is constant, what moves through it is not.** Depth,
 temperature and material are the invariants — they never change per feature, per
-chain, or per module. Everything that transforms does so *inside* that column:
+chain, or per module. Everything that transforms does so _inside_ that column:
 the planes a surface can occupy, the salmon element that relocates screen to
 screen, and later the Powerups that install, enable, and disappear without ever
 altering the ground they sit on. A module changes the contents of a plane; it
@@ -200,12 +200,26 @@ feel deep are both refused here on purpose, not by omission. **No sand, no
 seabed, no floor of any kind**: sand is warm and light, so it would put a
 second source of warmth on screen against the one salmon fill, and it would
 invert the depth order by making the farthest thing the brightest.
-**No ambient light shafts, no god rays, no caustics at rest**: this system has
-exactly one light event, The Surfacing, and permanent ambient light is what
-would make that event stop meaning anything. What carries depth instead is
-suspended matter and a ramp — see §The water column. Neither refusal is an
-oversight to be corrected later; both are the reason the column reads as one
-temperature with one warm thing in it.
+**No ambient light shafts, no god rays, no caustics at rest**: permanent ambient
+light is what would make a light _event_ stop meaning anything. What carries
+depth instead is suspended matter and a ramp — see §The water column. Neither
+refusal is an oversight to be corrected later; both are the reason the column
+reads as one temperature with one warm thing in it.
+
+**Two light events, and the older rule that said one** (amended 2026-08). This
+document used to say the system had _exactly one_ light event, The Surfacing.
+It now has two, and the second is the wave's ring on the wait screen — see
+§The wait. The reason is not that the rule was wrong but that it cost more than
+it was worth in one specific place: the wavefront drawn as an unlit hairline was
+not legible as a wavefront, and a wave the user cannot see is not a cheaper
+wave, it is no wave. The rule that survives is the one that was actually doing
+the work — **light is an event, never a state**. Both events are bounded, both
+are earned, and they are kept apart on every axis available: The Surfacing is
+cyan, travels _up_, and fires once when money has arrived; the wait's ring is
+salmon ink at low alpha, travels _outward and down_, exists only while money is
+still in the air, and is gone before the receipt mounts. Nothing rests lit. What
+is still refused without exception is light as a _hierarchy device_ — a glow
+that says "this is important" rather than "this just happened".
 
 **Three materials, and what each one is made of.** The system owns exactly
 three textures, and the rule that assigns them is anatomical rather than
@@ -229,8 +243,8 @@ field, because a field behind a membrane is a field showing through content.
 a hierarchy device, no color emitted by rectangles. No mesh-gradient orbs behind
 the balance. No iridescence that carries meaning — oil-slick hue shift is a
 contrast trap, so it is confined to non-informational strokes below 1.4:1
-luminance contrast, and every piece of state is carried by opaque color *plus*
-an icon *plus* a label. No glass where glass is free (it is not free in MV3),
+luminance contrast, and every piece of state is carried by opaque color _plus_
+an icon _plus_ a label. No glass where glass is free (it is not free in MV3),
 and no glass on the approval screen at any price. No white text on a salmon fill
 — that pairing is 3.06:1 and is banned outright. No crypto sublime: no
 starfields, no wireframe globes, no chart as wallpaper.
@@ -240,37 +254,38 @@ starfields, no wireframe globes, no chart as wallpaper.
 A reader must be able to tell these apart at a glance. Every section below
 marks its parts.
 
-| Layer | Status | Where |
-| --- | --- | --- |
-| Primitive ramps (neutral, salmon, success, danger, warning) | **Shipped** | `packages/shared/src/theme/palette.ts` |
-| Semantic layer (depth, surface, text, border, status, change, state, accent) | **Shipped** | `packages/shared/src/theme/semantic.ts` |
-| Contrast assertions in CI | **Shipped** | `packages/shared/src/theme/contrast.test.ts` |
-| Geist + Geist Mono, tabular-nums token, font-scale caps | **Shipped** | `packages/shared/src/theme/typography.ts`, `packages/assets/src/fonts` |
-| Brand mark as tintable vector paths | **Shipped** | `packages/shared/src/theme/brand.ts` |
-| Wordmark as vector paths, generated from the typeface | **Shipped** | `scripts/wordmark.py` → `packages/shared/src/theme/wordmark.generated.ts`, re-exported from `brand.ts` |
-| MUI theme + unconditional focus ring (web, extension) | **Shipped** | `packages/ui/src/theme/index.ts` |
-| The water column: depth ramp + marine snow field (`semantic.water`, geometry, both renderers) | **Shipped**, full column height | `packages/shared/src/theme/depthField.ts`, `packages/ui/src/components/DepthBackground`, `apps/mobile/src/components/DepthBackground` |
-| Opaque list rows (plane P2), so the motif is occluded rather than cropped | **Shipped** | `packages/shared/src/theme/colors.ts` (`background.tokenItem`), both `BlurContainer`s |
-| The water column mounted on the app ground | **Shipped** app-wide: home, onboarding/auth, lock, and every stacked page in all three apps | `packages/ui/src/components/WaterColumn` and `PageShell` / `AuthFlow` / both `LockPage`s, `apps/mobile/app/(app)/(tabs)/_layout.tsx` and `app/(auth)/_layout.tsx`, `apps/web` and `apps/extension` `pages/home/HomePage.tsx` |
-| The flesh texture inside salmon fills (`lean` variant, 138×88 tile, bands raked 32°) | **Shipped** | `scripts/flesh.py` → `packages/shared/src/theme/flesh.ts`, `semantic.flesh`, both `FleshBackground` renderers |
-| Scales motif rework — reduced to the deep field and the caustic band | **Shipped** | `ScalesBackground` `deepField` / `caustic`; the `fish` variant is retired in favour of flesh and kept only as an export |
-| Bezel on filled controls (`shadowsCSS.bezel`, same literal on DOM and RN) | **Shipped** | `packages/shared/src/theme/shadows.ts` |
-| Motion vocabulary (`flick`…`tide`, `current`/`settle`/`sink`/`swellIn`) | **Shipped**, and applied in `apps/mobile` with no loose durations left | `packages/shared/src/theme/durations.ts`, `apps/mobile/src/utils/motion.ts`, `apps/mobile/hooks/usePressMotion.ts` |
-| The Surfacing | **Shipped**, minus two parts deliberately left out — see §The Surfacing | `apps/mobile/src/components/TransactionSuccessScreen/surfacing.ts`, `SurfacingLayers.tsx` |
-| Icon consolidation onto Phosphor | **Shipped** on the DOM, with two declared exceptions | `packages/ui/src/icons.ts` |
-| dApp approval: transaction effect preview + press-and-hold to approve | **Shipped** | `packages/ui/src/components/DAppApproval/TransactionEffectsCard.tsx`, `HoldToApproveButton.tsx` |
-| Sand / seabed, ambient light shafts | **Refused by design** — see §Overview and §The water column | — |
-| Marine snow drift + scroll parallax, both reduced-motion gated | **Shipped** | `packages/shared/src/theme/depthField.ts` (`depthDrift`), both `DepthBackground`s |
-| Light theme (index-flip resolver) | **Specified, not built** | — |
-| Material/membrane model and the five-rung degradation ladder | **Specified, not built** | — |
-| Icons on mobile (`phosphor-react-native`) | **Specified, not built** | only `@phosphor-icons/react` is installed, in `packages/ui` |
-| Type scale (`display`…`monoLg`), radius scale (`r0`…`r6`), spacing rhythm | **Specified, not built** | `typography.ts` and `spacing.ts` still carry the Figma-derived one-offs |
+| Layer                                                                                         | Status                                                                                      | Where                                                                                                                                                                                                                        |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Primitive ramps (neutral, salmon, success, danger, warning)                                   | **Shipped**                                                                                 | `packages/shared/src/theme/palette.ts`                                                                                                                                                                                       |
+| Semantic layer (depth, surface, text, border, status, change, state, accent)                  | **Shipped**                                                                                 | `packages/shared/src/theme/semantic.ts`                                                                                                                                                                                      |
+| Contrast assertions in CI                                                                     | **Shipped**                                                                                 | `packages/shared/src/theme/contrast.test.ts`                                                                                                                                                                                 |
+| Geist + Geist Mono, tabular-nums token, font-scale caps                                       | **Shipped**                                                                                 | `packages/shared/src/theme/typography.ts`, `packages/assets/src/fonts`                                                                                                                                                       |
+| Brand mark as tintable vector paths                                                           | **Shipped**                                                                                 | `packages/shared/src/theme/brand.ts`                                                                                                                                                                                         |
+| Wordmark as vector paths, generated from the typeface                                         | **Shipped**                                                                                 | `scripts/wordmark.py` → `packages/shared/src/theme/wordmark.generated.ts`, re-exported from `brand.ts`                                                                                                                       |
+| MUI theme + unconditional focus ring (web, extension)                                         | **Shipped**                                                                                 | `packages/ui/src/theme/index.ts`                                                                                                                                                                                             |
+| The water column: depth ramp + marine snow field (`semantic.water`, geometry, both renderers) | **Shipped**, full column height                                                             | `packages/shared/src/theme/depthField.ts`, `packages/ui/src/components/DepthBackground`, `apps/mobile/src/components/DepthBackground`                                                                                        |
+| Opaque list rows (plane P2), so the motif is occluded rather than cropped                     | **Shipped**                                                                                 | `packages/shared/src/theme/colors.ts` (`background.tokenItem`), both `BlurContainer`s                                                                                                                                        |
+| The water column mounted on the app ground                                                    | **Shipped** app-wide: home, onboarding/auth, lock, and every stacked page in all three apps | `packages/ui/src/components/WaterColumn` and `PageShell` / `AuthFlow` / both `LockPage`s, `apps/mobile/app/(app)/(tabs)/_layout.tsx` and `app/(auth)/_layout.tsx`, `apps/web` and `apps/extension` `pages/home/HomePage.tsx` |
+| The flesh texture inside salmon fills (`lean` variant, 138×88 tile, bands raked 32°)          | **Shipped**                                                                                 | `scripts/flesh.py` → `packages/shared/src/theme/flesh.ts`, `semantic.flesh`, both `FleshBackground` renderers                                                                                                                |
+| Scales motif rework — reduced to the deep field and the caustic band                          | **Shipped**                                                                                 | `ScalesBackground` `deepField` / `caustic`; the `fish` variant is retired in favour of flesh and kept only as an export                                                                                                      |
+| Bezel on filled controls (`shadowsCSS.bezel`, same literal on DOM and RN)                     | **Shipped**                                                                                 | `packages/shared/src/theme/shadows.ts`                                                                                                                                                                                       |
+| Motion vocabulary (`flick`…`tide`, `current`/`settle`/`sink`/`swellIn`)                       | **Shipped**, and applied in `apps/mobile` with no loose durations left                      | `packages/shared/src/theme/durations.ts`, `apps/mobile/src/utils/motion.ts`, `apps/mobile/hooks/usePressMotion.ts`                                                                                                           |
+| The Surfacing                                                                                 | **Shipped**, minus two parts deliberately left out — see §The Surfacing                     | `apps/mobile/src/components/TransactionSuccessScreen/surfacing.ts`, `SurfacingLayers.tsx`                                                                                                                                    |
+| The wait: descent, pulsing mark, radial wavefront, luminous ring, wave-driven exit            | **Shipped** on all three apps; the timing is one shared pure function — see §The wait       | `packages/shared/src/motion/wavefront.ts`, both `LoadingScreen`s                                                                                                                                                             |
+| Icon consolidation onto Phosphor                                                              | **Shipped** on the DOM, with two declared exceptions                                        | `packages/ui/src/icons.ts`                                                                                                                                                                                                   |
+| dApp approval: transaction effect preview + press-and-hold to approve                         | **Shipped**                                                                                 | `packages/ui/src/components/DAppApproval/TransactionEffectsCard.tsx`, `HoldToApproveButton.tsx`                                                                                                                              |
+| Sand / seabed, ambient light shafts                                                           | **Refused by design** — see §Overview and §The water column                                 | —                                                                                                                                                                                                                            |
+| Marine snow drift + scroll parallax, both reduced-motion gated                                | **Shipped**                                                                                 | `packages/shared/src/theme/depthField.ts` (`depthDrift`), both `DepthBackground`s                                                                                                                                            |
+| Light theme (index-flip resolver)                                                             | **Specified, not built**                                                                    | —                                                                                                                                                                                                                            |
+| Material/membrane model and the five-rung degradation ladder                                  | **Specified, not built**                                                                    | —                                                                                                                                                                                                                            |
+| Icons on mobile (`phosphor-react-native`)                                                     | **Specified, not built**                                                                    | only `@phosphor-icons/react` is installed, in `packages/ui`                                                                                                                                                                  |
+| Type scale (`display`…`monoLg`), radius scale (`r0`…`r6`), spacing rhythm                     | **Specified, not built**                                                                    | `typography.ts` and `spacing.ts` still carry the Figma-derived one-offs                                                                                                                                                      |
 
 **Key Characteristics:**
 
 - Cold neutrals with a fixed blue bias (hue ≈ 222°), one warm brand ramp.
 - Salmon is scarce: at most one living element per screen.
-- Depth is expressed as *material and edge*, never as a bigger shadow.
+- Depth is expressed as _material and edge_, never as a bigger shadow.
 - Content is opaque by default; translucency is a privilege of floating chrome.
 - Every number is tabular; every address is monospace.
 - The approval screen is the one place the water is completely still.
@@ -320,21 +335,21 @@ it was the single most generic "crypto app" value in the palette.
 The column, ordered by depth. Semantic names are depth names because depth is
 the system, and each points at a ramp step rather than a literal.
 
-| Semantic | Ramp step | Role |
-| --- | --- | --- |
-| `depth.abyss` | `neutral-1000` | Window/root behind everything; no content sits directly on it |
-| `depth.column` | `neutral-975` | App ground; hosts the scales field |
-| `surface.shelf` | `neutral-950` | Default opaque card |
-| `surface.raised` | `neutral-900` | Opaque card above a card |
-| `surface.crest` | `neutral-925` | Opaque top elevation — menus, opaque sheets |
-| `surface.bedrock` | `neutral-975` | Opaque by rule: approval and seed screens |
-| `text.primary` | `neutral-50` | Balances, headings, body (16.37:1) |
-| `text.secondary` | `neutral-300` | Labels, supporting rows (8.59:1) |
-| `text.tertiary` | `neutral-400` | Timestamps, address middles, placeholders (6.24:1) |
-| `text.disabled` | `neutral-500` | Disabled controls (4.37:1 — exempt, passes anyway) |
-| `border.default` | `neutral-600` | 3.08:1 on `surface.shelf` only |
-| `border.raised` | `neutral-500` | 3.99:1 on `surface.raised`, 3.74:1 on `surface.crest` |
-| `border.strong` | `neutral-400` | Emphasis and focus targets |
+| Semantic          | Ramp step      | Role                                                          |
+| ----------------- | -------------- | ------------------------------------------------------------- |
+| `depth.abyss`     | `neutral-1000` | Window/root behind everything; no content sits directly on it |
+| `depth.column`    | `neutral-975`  | App ground; hosts the scales field                            |
+| `surface.shelf`   | `neutral-950`  | Default opaque card                                           |
+| `surface.raised`  | `neutral-900`  | Opaque card above a card                                      |
+| `surface.crest`   | `neutral-925`  | Opaque top elevation — menus, opaque sheets                   |
+| `surface.bedrock` | `neutral-975`  | Opaque by rule: approval and seed screens                     |
+| `text.primary`    | `neutral-50`   | Balances, headings, body (16.37:1)                            |
+| `text.secondary`  | `neutral-300`  | Labels, supporting rows (8.59:1)                              |
+| `text.tertiary`   | `neutral-400`  | Timestamps, address middles, placeholders (6.24:1)            |
+| `text.disabled`   | `neutral-500`  | Disabled controls (4.37:1 — exempt, passes anyway)            |
+| `border.default`  | `neutral-600`  | 3.08:1 on `surface.shelf` only                                |
+| `border.raised`   | `neutral-500`  | 3.99:1 on `surface.raised`, 3.74:1 on `surface.crest`         |
+| `border.strong`   | `neutral-400`  | Emphasis and focus targets                                    |
 
 Pure `#FFFFFF` is not a text token. Deep water has no pure white in it;
 `neutral-50` is the whitest thing in the app and reads warmer and calmer at
@@ -358,7 +373,7 @@ lighter inks nothing has spent yet (`salmon-400` at 7.30:1, `salmon-300` at
 9.29:1). Ink is spent where warmth is meaningful — the value a row is actually
 about, active and selected states, interactive affordances, an action's
 iconography, links — and withheld from genuinely secondary text.
-`accent.tint` / `tintHover` are tinted grounds that sit *under* salmon ink
+`accent.tint` / `tintHover` are tinted grounds that sit _under_ salmon ink
 (5.29:1 composite); they are not fills and do not consume the fill budget.
 The goal is warmth and hierarchy, not a salmon screen.
 
@@ -375,7 +390,7 @@ the border sits on, so the token is per-plane. `border.default` is legal on
 that carries meaning may depend on seeing it.
 
 **The Three-Channel State Rule.** Every piece of state is carried by opaque
-color *plus* an icon *plus* a label. Color alone is never the signal — not for
+color _plus_ an icon _plus_ a label. Color alone is never the signal — not for
 danger, not for success, not for a price move. The `+`/`−` on an amount is a
 glyph, not a hue.
 
@@ -433,7 +448,7 @@ token like any other ink.
 
 **Character:** one family for the whole system. At a narrow column width a
 display face that disagrees with the UI face costs more than it earns, and a
-wallet is an *operate* surface — the drama comes from the material, not the
+wallet is an _operate_ surface — the drama comes from the material, not the
 letterforms. Geist at weight 600 with tight negative tracking is a cold,
 engineered display voice that belongs in this water, and one family means one
 font pipeline for three apps.
@@ -511,7 +526,7 @@ six-value rhythm as the rule for new work and the one-offs as debt.
 **Column widths.** The narrow column is the governing case. The extension opens
 as a **side panel**, not a popup — full viewport height, user-resizable width
 in roughly the 320–400px range — so one layout must serve a resizable narrow
-column, and vertical space is *not* the constraint an extension popup would
+column, and vertical space is _not_ the constraint an extension popup would
 impose. Phone content maxes at 430px (`componentSizes.webContainerMaxWidth`) and
 centers above that. Gutters: 16px in the narrow column, 20px on phone, single
 column throughout, 12px row gap.
@@ -532,13 +547,13 @@ something else.
 
 ### The five planes — specified, not built
 
-| Plane | Name | Content | Material |
-| --- | --- | --- | --- |
-| P0 | Abyss (`depth.abyss`) | Nothing — the void behind the app frame | Opaque |
-| P1 | Column (`depth.column`) | App ground, the scales field | Opaque |
-| P2 | Shelf / Raised / Crest | All lists, cards, inputs, content | **Opaque — the default** |
-| P3 | Membrane | Chrome that floats over scrolling content: tab bar, sticky header, sheets, toasts | **Translucent — the only translucent plane** |
-| P4 | Caustic | Transient light: focus ring, press specular, the surfacing sweep | Additive, non-blocking, no pointer events |
+| Plane | Name                    | Content                                                                           | Material                                     |
+| ----- | ----------------------- | --------------------------------------------------------------------------------- | -------------------------------------------- |
+| P0    | Abyss (`depth.abyss`)   | Nothing — the void behind the app frame                                           | Opaque                                       |
+| P1    | Column (`depth.column`) | App ground, the scales field                                                      | Opaque                                       |
+| P2    | Shelf / Raised / Crest  | All lists, cards, inputs, content                                                 | **Opaque — the default**                     |
+| P3    | Membrane                | Chrome that floats over scrolling content: tab bar, sticky header, sheets, toasts | **Translucent — the only translucent plane** |
+| P4    | Caustic                 | Transient light: focus ring, press specular, the surfacing sweep                  | Additive, non-blocking, no pointer events    |
 
 The colour values for P0–P2 and both membrane tiers are **shipped** in
 `semantic.ts`. The material system that consumes them — the blur, the scrim, the
@@ -551,11 +566,11 @@ happens to be behind the text, and in a wallet that can be a white NFT
 thumbnail. So each tier is defined as tint + alpha + blur radius, with the alpha
 derived from a pure-white worst-case backdrop.
 
-| Tier | Value | Blur | Worst-case composite | Guarantees |
-| --- | --- | --- | --- | --- |
-| `membraneThin` | `rgba(11, 15, 25, 0.62)` | 20px | `#686A70` | `text.primary` at 4.77:1, and nothing else |
-| `membraneThick` | `rgba(11, 15, 25, 0.80)` | 32px | `#3C3F47` | `text.primary` 9.29, `text.secondary` 4.88 |
-| `bedrock` | `neutral-975`, opaque | none | `#0B0F19` | Everything, including `text.accent` at 6.26 |
+| Tier            | Value                    | Blur | Worst-case composite | Guarantees                                  |
+| --------------- | ------------------------ | ---- | -------------------- | ------------------------------------------- |
+| `membraneThin`  | `rgba(11, 15, 25, 0.62)` | 20px | `#686A70`            | `text.primary` at 4.77:1, and nothing else  |
+| `membraneThick` | `rgba(11, 15, 25, 0.80)` | 32px | `#3C3F47`            | `text.primary` 9.29, `text.secondary` 4.88  |
+| `bedrock`       | `neutral-975`, opaque    | none | `#0B0F19`            | Everything, including `text.accent` at 6.26 |
 
 Rules that follow directly from the table: `membraneThin` may only carry
 `text.primary` at ≥15px and weight ≥500 — tab bar labels, a sticky header title,
@@ -606,7 +621,7 @@ users and every low-end Android will see.
 - **The bezel** (**shipped**, `shadowsCSS.bezel`): both rims at once — what a
   filled control wears so it reads as a body with a top and an underside rather
   than a flat rectangle. It is deliberately 1px each way: a heavier inset reads
-  as *pressed*, and a primary button that looks pressed at rest has spent the
+  as _pressed_, and a primary button that looks pressed at rest has spent the
   affordance it needs and leaves the real press with nothing left to say.
   The same literal string is used on both platforms — React Native 0.83 parses
   this CSS `box-shadow` with `inset` in `processBoxShadow` and clips it to the
@@ -635,7 +650,7 @@ casserole.
 **The Bedrock Rule.** The dApp approval sheet and every seed-phrase view are
 `surface.bedrock`, α 1.00, no blur, no scales, no caustic, no iridescence. This
 is a security decision, not a taste one: a translucent approval sheet shows the
-requesting page *through* the material it is asking you to trust, teaching the
+requesting page _through_ the material it is asking you to trust, teaching the
 user that page content and wallet chrome share a visual plane — exactly the
 confusion a phishing overlay wants. The backdrop behind it is a hard scrim
 (`rgba(3,6,12,0.86)`), so the page underneath is dimmed out, not stylishly
@@ -653,8 +668,7 @@ contrast bug, and in a wallet a contrast bug on an amount is a fund-loss vector.
 and `full` 9999 (avatars, toggles). **Shipped**: `spacing.ts` still exposes the
 legacy set — 4, 8, 12, 14 (`button`), 16, 20, 22, 24, 26 (`card`), plus 2, 9 and
 18 one-offs — and the frontmatter records those, because they are what renders.
-The consolidation (`card` 26 and `button` 14 collapsing into `r6` 28 and `r3`
-12) is specified, not built.
+The consolidation (`card` 26 and `button` 14 collapsing into `r6` 28 and `r3` 12) is specified, not built.
 
 **The concentric rule: inner radius = outer radius − padding.** 28 − 6 = 22 is
 the canonical pair, and it is what makes a double bezel look machined rather
@@ -669,8 +683,7 @@ in a narrow column at 100% zoom. 2px exists only for the focus ring. No colored
 `shadowsCSS.bezel`, which is the 1px two-rim edge on a filled control and does
 ship. This one is a construction, not a shadow. On the balance card and the
 approval sheet: an outer shell filled `rgba(199, 211, 232, 0.06)` with a 1px
-hairline, 6px of padding, radius 28; the inner core is its own surface at radius
-22.
+hairline, 6px of padding, radius 28; the inner core is its own surface at radius 22.
 
 ### The scales motif
 
@@ -706,7 +719,7 @@ the content.
 **The fish appearance is retired.** The motif used to have a third resting
 appearance — the drawing at 1.0× pressed into the primary CTA's salmon fill —
 and it is gone, replaced by the flesh texture below. Two reasons, both
-material: a filled button is *mass*, not surface, so skin is the wrong tissue
+material: a filled button is _mass_, not surface, so skin is the wrong tissue
 for it; and the seigaiha tile is taller than a 56px pill, so it read as a stamp
 applied on top of the button rather than as the button's own material. The
 `fish` variant and its `fishStroke` / `fishScale` tokens survive as deprecated
@@ -721,7 +734,7 @@ channel.
 
 Rationale, stated honestly: the knowledge base never mentions fish scales, so
 this reading is assigned here rather than recovered. It is chosen because it
-gives the asset a *job* (depth encoding) instead of a decoration, and because a
+gives the asset a _job_ (depth encoding) instead of a decoration, and because a
 motif with two or three sanctioned appearances at known scales becomes
 recognizable where the same motif at 5% everywhere is either invisible or noise
 the eye must filter out.
@@ -735,7 +748,7 @@ one-geometry-two-renderers ownership the scales and the snow use.
 
 **Why flesh and not scales.** Scales are skin: the outside of the animal, and
 the right texture for a ground or a plane. A filled button is mass — it is the
-*inside* of the thing — so the honest material for it is what you see when the
+_inside_ of the thing — so the honest material for it is what you see when the
 fish is cut open: the myosepta, pale sheets of collagen and lipid separating
 the muscle blocks. This is the whole of the material rule in one object.
 
@@ -744,9 +757,9 @@ accident:
 
 - **Bands run across the fillet, raked 32° off vertical.** Myosepta angle back
   along the fish; bands running with the long axis read as wood grain
-  (van Leeuwen, *JEB* 202:3405).
+  (van Leeuwen, _JEB_ 202:3405).
 - **Bands are pale, never dark.** The pale stripe is collagen plus the fat that
-  concentrates in the myocommata; dark slits mean *gaping*, which is a defect,
+  concentrates in the myocommata; dark slits mean _gaping_, which is a defect,
   not healthy flesh. This is also what makes the texture free of contrast risk:
   every band is lighter than the fill it sits on, so it can only raise the
   luminance under a label. Worst-case ink contrast on a salmon fill is exactly
@@ -762,7 +775,7 @@ edge, which sounds like the safe assertion and is the opposite: pinning every
 envelope to zero at the same boundary switches all the bands off at once, and
 an untextured column down the seam does not hide the repeat, it advertises it.
 The test now checks what actually makes a tile seamless — continuity of
-position *and* slope across the crossing.
+position _and_ slope across the crossing.
 
 **Scale.** `componentSizes.buttonFleshScale` is **1**: the bands render at the
 size they were authored. 0.55 was tried and rejected — at that scale the
@@ -778,9 +791,9 @@ belong to the **plane behind everything**. A content surface — a card, a sheet
 a list row, a page shell — carries **no motif at all**.
 
 The third clause is the one that gets broken. A textured card looks richer in
-isolation and costs the system its depth order: the motif exists to say *this
-is far away*, and putting it on a surface the user is meant to read as *near
-and lit* says the opposite in the same breath. Content earns its presence by
+isolation and costs the system its depth order: the motif exists to say _this
+is far away_, and putting it on a surface the user is meant to read as _near
+and lit_ says the opposite in the same breath. Content earns its presence by
 being opaque and covering the water, not by joining it. This is also what makes
 The Scales Exclusion Rule enforceable by construction rather than by cropping —
 see §The water column.
@@ -817,7 +830,7 @@ everything above 0.5 mm, ranging to a few centimetres — porous, off-white, hel
 together by zooplankton mucus, sinking at roughly 10–100 m/day. It is what the
 pelagic column at forty metres is actually full of, which is why it is the one
 addition that does not argue with the north star. (Alldredge & Silver 1988 via
-NOAA Ocean Exploration; Giering et al., *Front. Mar. Sci.* 2020.)
+NOAA Ocean Exploration; Giering et al., _Front. Mar. Sci._ 2020.)
 
 **What it does perceptually**, and the three properties the data encodes:
 
@@ -826,15 +839,15 @@ NOAA Ocean Exploration; Giering et al., *Front. Mar. Sci.* 2020.)
    the falloff is measured in metres rather than kilometres. Encoded as three
    bands: near flocs larger and brighter, far flocs smaller and dimmer.
 2. **Texture gradient** — elements of assumed-uniform size project smaller and
-   *denser* the farther they are (Gibson 1955). Encoded by pushing the far band
+   _denser_ the farther they are (Gibson 1955). Encoded by pushing the far band
    deeper into the field and holding the near band high. This is the honest
-   name for "denser toward the bottom": it is density with *distance*, not a
+   name for "denser toward the bottom": it is density with _distance_, not a
    bathymetric profile. Real marine-snow concentration peaks in the upper
    100–200 m and thins below it; the document should not pretend otherwise.
 3. **Interposition** — a floc that overlaps the scales is unambiguously nearer,
    which fixes depth order; order plus the contrast gradient is what turns
    "far" into a distance, and distance plus retinal angle is what finally reads
-   as a *size*. Held et al., "Using Blur to Affect Perceived Distance and Size"
+   as a _size_. Held et al., "Using Blur to Affect Perceived Distance and Size"
    (ACM TOG 29(2), 2010) runs the same argument backwards: flatten the gradient
    and a real city reads as a model.
 
@@ -863,7 +876,7 @@ frame, cut off at the chest.
 
 The band existed for a real reason. The token rows were
 `rgba(56, 63, 82, 0.10)`, so a full-height field would have been legible
-*through* a balance. But that translucency was itself off-system: this document
+_through_ a balance. But that translucency was itself off-system: this document
 says content is opaque by default and translucency is a privilege of floating
 chrome, and plane P2 — "all lists, cards, inputs, content" — is marked "Opaque
 — the default". A list row is content, not chrome. So the rows became opaque
@@ -871,7 +884,7 @@ chrome, and plane P2 — "all lists, cards, inputs, content" — is marked "Opaq
 height of the column.
 
 The rule is unchanged and now enforced the way it was written to be: snow and
-scales never appear *readably* behind a number, a row, an address, an input, a
+scales never appear _readably_ behind a number, a row, an address, an input, a
 seed phrase, or an approval surface, because the content on those surfaces
 covers them. Depth is carried by the brightness ramp baked into every floc and
 by the size/density gradient between the bands, not by a crop —
@@ -879,11 +892,11 @@ by the size/density gradient between the bands, not by a crop —
 on the way, and that the top half is brighter than the bottom;
 `contrast.test.ts` asserts that the row fill is opaque and distinct from every
 stop of the ground ramp. The ramp itself is exempt from the rule because it is
-a background *colour*, not a motif — a ground that darkens behind an amount is
+a background _colour_, not a motif — a ground that darkens behind an amount is
 still a ground.
 
 `surface.raised` rather than `surface.shelf` for the rows, because the ground
-is a ramp and `shelf` *is* the ramp's top stop: a row painted in it would
+is a ramp and `shelf` _is_ the ramp's top stop: a row painted in it would
 disappear into the ground at the top of the column.
 
 **The deep field follows.** The scales' `deepField` variant no longer occupies
@@ -913,7 +926,7 @@ water up for as long as it is on the glass, and the water keeps sinking when it
 is not. The argument that kept the field static was that real marine snow sinks
 at about 0.6 mm/s and therefore does not visibly fall, which is true of a single
 floc and beside the point for a field — what a drifting field buys is not the
-appearance of falling but the proof that the ground is a *volume* rather than an
+appearance of falling but the proof that the ground is a _volume_ rather than an
 image, and parallax against scroll is the strongest depth cue available to a
 flat screen. The one-light-event argument does not apply either: drift is not
 light, and it carries no meaning The Surfacing would have to share.
@@ -933,7 +946,7 @@ desktop window; the cycle length is derived from it, not authored.
 **Why the loop cannot jump.** One tile of travel is the only displacement at
 which the field lands back on a copy of itself, so that is the loop, and the
 wrap shows the pixels it left. This is what changed about the field's tiling: it
-now repeats *vertically*, at a period of one full column height, so at most one
+now repeats _vertically_, at a period of one full column height, so at most one
 seam is ever in frame. It still does not repeat horizontally, which is the axis
 on which a particle field reads as wallpaper — the eye finds a seam by comparing
 two points at the same height.
@@ -959,7 +972,7 @@ did when it was static however many copies a screen needs, and both offsets are
 read on the UI thread by Reanimated — React never re-renders for either.
 
 **Reduced motion and battery.** `prefers-reduced-motion: reduce` and
-`useReducedMotion()` each stop the drift *and* the parallax, and what is left is
+`useReducedMotion()` each stop the drift _and_ the parallax, and what is left is
 exactly the field as it first shipped: still water — a parallel mapping, not a
 hole. Nothing runs unseen either: the DOM pauses the animation on
 `visibilitychange`, and mobile freezes it when `AppState` leaves the foreground
@@ -969,9 +982,10 @@ and resumes it from where it stopped.
 which would add a second source of warmth against the single salmon fill and
 would invert the depth order by making the farthest plane the brightest — and
 the north star is the middle water, "not the surface, not the seabed". No
-ambient light shafts or resting caustics: one light event, and it is The
-Surfacing. Both absences are decisions recorded here so no future reader files
-them as gaps.
+ambient light shafts or resting caustics: light is an _event_, never a state.
+There are exactly two events — The Surfacing and the wave's ring on the wait
+screen (§The wait) — and neither of them rests. Both absences are decisions
+recorded here so no future reader files them as gaps.
 
 ### Named Rules
 
@@ -981,7 +995,7 @@ inside a list row, on a swap review card, anywhere on the approval sheet, behind
 a seed phrase, on any surface where a live backdrop shows through, or in a
 scrolling container in the extension.
 
-The rule is about *readability*, not about leaving ground blank. Both fields
+The rule is about _readability_, not about leaving ground blank. Both fields
 run the full height of the ground; what keeps them off a number is that the
 surface carrying the number is opaque and covers them. A crop is not an
 acceptable substitute, and neither is a translucent row: a row that lets the
@@ -1035,7 +1049,7 @@ thing that glows.
   not built; today the separation is carried by surface color alone.
 - **Internal padding**: 20px on content cards, 16px in the narrow column.
 - **The balance card does not remount when the chain changes** (**shipped**).
-  Switching chains crossfades only what is *printed* on the card — logo, network
+  Switching chains crossfades only what is _printed_ on the card — logo, network
   badge, balance, variation — over `swell` (180ms), spent as `flick` out and
   `flick` in with the swap at the midpoint where nothing is visible. The
   container, its background and the pagination dots never take part. This is the
@@ -1057,7 +1071,7 @@ Disabled drops to 0.45 opacity. The floating label is `text.secondary`, turning
 ### Focus ring — a signature component
 
 **Shipped**, and the most load-bearing detail in `packages/ui/src/theme`. Two
-concentric bands drawn *inside* the control's border box: a 2px
+concentric bands drawn _inside_ the control's border box: a 2px
 `state.focusVisible` (`salmon-300`) outline at `outlineOffset: -2px`, over a 4px
 `inset` box-shadow in `depth.abyss`.
 
@@ -1086,7 +1100,7 @@ a fund-safety problem rather than a cosmetic one.
 
 ### The approval screen
 
-**Shipped.** The screen now shows what a transaction would *do* before it asks
+**Shipped.** The screen now shows what a transaction would _do_ before it asks
 for a signature: a `TransactionEffectsCard` with the balance deltas and, when
 one is present, the spending permission being granted — named, with the spender
 address in mono, and with "unlimited" said out loud when that is what it is.
@@ -1162,25 +1176,25 @@ and applied throughout `apps/mobile` — there are **no loose durations left in
 the mobile app**; every animation reads a token. The legacy
 100/150/200/250/300/400ms set and `easing.bounce` at 1.56 are retired. The MUI
 baseline still carries its `prefers-reduced-motion` block, which collapses
-animation and transition durations to 0.01ms while explicitly *keeping* the
+animation and transition durations to 0.01ms while explicitly _keeping_ the
 focus ring, drawn with outline and box-shadow and never animated.
 
 The vocabulary — "Current". Water has mass: nothing snaps, and nothing bounces
-like rubber. Things displace and settle. Every token is named for the *job* it
+like rubber. Things displace and settle. Every token is named for the _job_ it
 does rather than for its number, because a number cannot be chosen correctly:
 `slower` gave no way to know whether a sheet or a toast belonged in it, which
 is how the repo ended up with copy confirmation at 1500ms in two files and
 2000ms in a third.
 
-| Token | ms | For |
-| --- | --- | --- |
-| `flick` | 90 | Press down and release, specular |
-| `swell` | 180 | Hover, color, state change, toast in |
-| `ebb` | 180 | Element exit — dismiss, collapse-away, toast out |
-| `drift` | 280 | Expand/collapse, list enter, list reorder, tab change |
-| `rise` | 420 | Sheet present, modal |
+| Token   | ms  | For                                                      |
+| ------- | --- | -------------------------------------------------------- |
+| `flick` | 90  | Press down and release, specular                         |
+| `swell` | 180 | Hover, color, state change, toast in                     |
+| `ebb`   | 180 | Element exit — dismiss, collapse-away, toast out         |
+| `drift` | 280 | Expand/collapse, list enter, list reorder, tab change    |
+| `rise`  | 420 | Sheet present, modal                                     |
 | `route` | 420 | Route transition — the same window as `rise`, on purpose |
-| `tide` | 720 | The signature moment only |
+| `tide`  | 720 | The signature moment only                                |
 
 **Exit is faster than enter** (`ebb` 180 against `drift` 280). An entrance
 introduces content the user has not read yet, so it has to be slow enough to be
@@ -1194,11 +1208,11 @@ Two values in the file are **holds, not transitions**: `feedbackHold` (1500ms,
 how long a "Copied" chip stays readable) and `debounce` (500ms). Reduced motion
 must not shorten either, which is what `resolveMotionMs` is for.
 
-| Easing | Curve | Character |
-| --- | --- | --- |
-| `current` | `cubic-bezier(0.32, 0.72, 0, 1)` | Heavy exponential out — the default for anything entering |
-| `settle` | `cubic-bezier(0.22, 1.00, 0.36, 1)` | Slower tail, for an amount landing |
-| `sink` | `cubic-bezier(0.40, 0.00, 1.00, 1.00)` | Accelerating out — exits only |
+| Easing    | Curve                                  | Character                                                                                   |
+| --------- | -------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `current` | `cubic-bezier(0.32, 0.72, 0, 1)`       | Heavy exponential out — the default for anything entering                                   |
+| `settle`  | `cubic-bezier(0.22, 1.00, 0.36, 1)`    | Slower tail, for an amount landing                                                          |
+| `sink`    | `cubic-bezier(0.40, 0.00, 1.00, 1.00)` | Accelerating out — exits only                                                               |
 | `swellIn` | `cubic-bezier(0.34, 1.14, 0.64, 1.00)` | ~4% overshoot, success only. Replaces `bounce` at 1.56, which is too rubbery for this world |
 
 Mapping: press → `scale(0.985)` plus specular at `flick`/`current` with a light
@@ -1215,7 +1229,7 @@ the backdrop goes straight to its final scrim, and haptics are kept.
 
 #### Loading in place: the container never becomes a skeleton
 
-A skeleton says *this screen is being built*. Once a card, a row or a panel is
+A skeleton says _this screen is being built_. Once a card, a row or a panel is
 already on screen, that sentence is a lie: the screen exists, and what is
 happening is that a number inside it is being replaced. So the rule is:
 
@@ -1245,11 +1259,95 @@ The control that started the work is part of the report: while the request is in
 flight, the button that fired it says so and stops accepting a second press on
 top of the first.
 
+### The wait — the water the logo disturbs, built
+
+**Shipped**, twice: `packages/ui/src/components/LoadingScreen` (web and
+extension) and `apps/mobile/src/components/LoadingScreen`. The timing is one
+pure function shared by both — `packages/shared/src/motion/wavefront.ts` — so
+the two platforms cannot drift and the choreography is testable without a frame
+clock. Same split as `surfacing.ts`.
+
+The wait goes **down** while the success comes **up**. That single opposition is
+what keeps a wait from competing with the only climax the system has.
+
+1. **The descent** — always on. A 2px hairline track with a 44px segment of
+   salmon _ink_ running down it once per `shimmerCycle`, decelerating into the
+   end of every pass. It replaced a constant-speed spinning ring: Harrison, Yeo
+   & Hudson (CHI 2010) measured a decelerating augmentation making a 5s wait
+   read ~12% shorter, and a constant-speed rotation as the worst of the options
+   they tested.
+2. **The wave** — opt-in (`waves`), and reserved for **waiting on a
+   transaction**: money in the air, nothing the user can do. A boot or a key
+   derivation has nothing in the air, so a choreography there is decoration.
+   - **The mark pulses**, 2% on `swell`, once per `pulseCycle`. It is the
+     emitter. _(Reversal, 2026-08: the pulsing logo had been removed with the
+     spinning ring. It is back because a radial front with no visible source
+     reads as unrelated elements twitching, not as one wave. It returns as ink,
+     not as a fill — it does not spend the one living salmon element a screen is
+     allowed, because the descent below it is that same element seen twice.)_
+   - **Every pulse launches a front.** A ring leaves the mark and reaches the
+     farthest corner of the surface in `rise` (420ms) — a _time_, not a speed in
+     px/s, so the gesture reads the same in a 360px extension popup and on a
+     393×852 phone. The snow is measured in px/s because it is ambient; the wave
+     is measured in time because it is an event.
+   - **The elements ride it.** Title, subtitle and the descent are each
+     displaced `waveAmplitude` (3px) upward with a 2% swell as the front reaches
+     them — delayed in proportion to their _measured_ distance from the mark,
+     and attenuated as 1/√d, which is how a circular wave loses amplitude when
+     it spreads its energy over a growing perimeter. Attenuation is not a
+     flourish: it is the difference between reading as one wave and reading as
+     four things moving.
+   - **It loops** for as long as the wait lasts. _(Reversal, 2026-08: the cap
+     was three emissions, then stillness.)_ What keeps a thirty-second wait from
+     being a thirty-second show is the duty cycle, not a counter — the front
+     occupies 420ms of a 1200ms period and the rest is still water. Nothing
+     accumulates: one compositor animation per element (`infinite` on the DOM,
+     `withRepeat(-1)` on the UI thread in React Native), no JS timer behind it,
+     and every value is cancelled on unmount.
+3. **The exit is the wave, not a timer.** When the work resolves, the pending
+   emissions are cancelled, a closing wave goes out _immediately_, and each
+   element leaves as the front reaches it and does not come back. The ground
+   holds for one crossing and then ebbs. The handoff to the receipt is at
+   `rise + ebb` = **600ms**, fixed. It deliberately does _not_ wait out the
+   emission in flight: that would put up to a whole `pulseCycle` between a
+   decision and its receipt, against this system's own rule that exit is faster
+   than enter. A hard timer backs the animation callback so a dropped completion
+   cannot strand a caller on the wait screen.
+
+**The ring is luminous** — a bright hairline crest in `accent.ink` with a wider,
+dimmer halo in `accent.tint` trailing it by one `flick`. This is a light event
+during a wait, which §Overview used to forbid. That rule is amended there rather
+than quietly broken here; the short version is that the unlit version was not
+legible, and the light stays bounded, salmon rather than cyan, outward-and-down
+rather than up, and dead before the receipt mounts. On React Native the halo is
+a second ring rather than a shadow, because `shadowRadius` is iOS-only and
+`elevation` cannot be coloured; two rings read identically on both platforms and
+both stay on the compositor.
+
+**Reduced motion** is a parallel mapping, not a hole: no pulse, no ring, no
+displacement — the descent's segment rests at mid-track (a still indicator reads
+as a hung process, so the state moves into the words) — **and no wave-driven
+exit**. A user who cannot see the wave is not made to wait one out; the wait
+leaves in one `ebb` step and the receipt arrives 420ms sooner.
+
+**The Bedrock Rule still wins.** The dApp approval flow's wait (`bedrock`) gets
+no mark, no ring and no wave, for the same reason it gets no water column.
+
+**Not built, and refused for now:** distortion. A text that ripples _over
+itself_ needs a shader. On mobile that is `@shopify/react-native-skia` — a
+native module, therefore a store release rather than an OTA, and it would not
+even solve it, because Skia distorts pixels inside its own canvas and does not
+move real views. `react-native-svg` is not an alternative: `FeTurbulence` and
+`FeDisplacementMap` both return `null` and warn. On the DOM `feTurbulence` is
+notoriously unaccelerated and displaces pixels rather than elements. What ships
+is a physically correct front of rigid bodies floating, which is the part the
+eye actually reads.
+
 ### The Surfacing — the signature moment, built
 
 **Shipped on mobile**, in `apps/mobile/src/components/TransactionSuccessScreen`:
 the timeline lives in `surfacing.ts` as a pure function of the reduce-motion
-flag, so the *timing* is testable without a renderer or a frame clock, and
+flag, so the _timing_ is testable without a renderer or a frame clock, and
 `SurfacingLayers.tsx` draws the two things that move. Exactly one screen owns
 it: the confirmation of a completed send or swap. Over `tide` (720ms), three
 things happen on one timeline.
@@ -1257,7 +1355,7 @@ things happen on one timeline.
 1. The sheet's membrane **clears**: tint α animates 0.80 → 0.55 and blur 32px →
    12px, so the water above the transaction thins out. On iOS this is the one
    call in the app that uses `GlassView`'s animated `clear` style.
-2. A **caustic band** — a 140px-tall soft light shape, masked by the *scales*
+2. A **caustic band** — a 140px-tall soft light shape, masked by the _scales_
    geometry at 0.5×, filled `#9FE0EF` at 10%, blurred 24px, `screen` blend —
    travels from the bottom of the sheet up to the amount over 560ms on
    `current`, and dissipates. It is the shaft of light hitting the fish.
@@ -1265,8 +1363,8 @@ things happen on one timeline.
    the band passes it, digits already at tabular width so nothing reflows.
 
 Then everything is still. No looping particles, no confetti, no repeat. A single
-physical event, under a second, saying *this transaction came up out of the deep
-and it is done*.
+physical event, under a second, saying _this transaction came up out of the deep
+and it is done_.
 
 Reduced motion: the membrane clears in one 180ms opacity step, the caustic band
 renders once as a static 10% highlight across the amount for 400ms and fades,
@@ -1287,7 +1385,7 @@ marked as such in the code rather than left to be discovered:
 2. **The band's 24px Gaussian.** `react-native-svg` does implement
    `FeGaussianBlur` natively, so this one was tried: at 24px it erased the
    scales geometry that masks the band, which is the only thing that makes the
-   light read as *this* system's light rather than a generic glow. The band
+   light read as _this_ system's light rather than a generic glow. The band
    ships sharp.
 
 ## Do's and Don'ts
@@ -1306,7 +1404,7 @@ marked as such in the code rather than left to be discovered:
 - **Do** keep the approval sheet and every seed view on `surface.bedrock`,
   opaque, with a hard scrim behind them.
 - **Do** paint the scrim before the blur, on every rung of the ladder.
-- **Do** spend salmon *fills* once per screen; salmon ink is not rationed, but
+- **Do** spend salmon _fills_ once per screen; salmon ink is not rationed, but
   it is aimed — values, states, affordances, links — never sprayed.
 - **Do** add a new token when a value is missing, rather than a literal at the
   call site — `packages/ui/src/theme` invents no colors, sizes or durations, and
@@ -1342,7 +1440,7 @@ marked as such in the code rather than left to be discovered:
   number. Each sanctioned appearance is a distance from the eye; a fourth use is
   a bug.
 - **Don't** put a motif on a content surface — not a card, not a sheet, not a
-  row, not a page shell. Content is the lit opaque plane in *front* of the
+  row, not a page shell. Content is the lit opaque plane in _front_ of the
   water, and texturing it inverts the depth order the motif exists to encode.
 - **Don't** press the scales into a salmon fill. A filled control is mass and
   takes the flesh texture; the `fish` variant is deprecated and has no call
@@ -1353,7 +1451,7 @@ marked as such in the code rather than left to be discovered:
 - **Don't** make a tiling texture fade to zero at the tile edge to hide the
   seam. It does the opposite — it switches every band off along the same line
   and advertises the repeat as an untextured column. Seamlessness is continuity
-  of position *and* slope across the crossing.
+  of position _and_ slope across the crossing.
 - **Don't** reintroduce the retired values: the `#80ff54` lime, the `#404962`
   border (2.07:1), the `#6B6E7B` placeholder (3.66:1), sub-pixel border widths,
   or `easing.bounce` at 1.56.
@@ -1361,10 +1459,14 @@ marked as such in the code rather than left to be discovered:
   typeface, or material. Modules change the contents of a plane; the water is
   invariant.
 - **Don't** add a glow, a mesh gradient, a starfield, or a chart-as-wallpaper.
-  Depth comes from material and edge, never from emitted light.
+  Depth comes from material and edge, never from emitted light. The two
+  sanctioned light events (The Surfacing, the wave's ring) are events, not
+  hierarchy: neither of them makes something look _important_, they both say
+  something _just happened_, and neither of them rests.
 - **Don't** add sand, a seabed, a horizon, or ambient light shafts to the
-  ground. The column is the middle water and it has exactly one light event.
-  Their absence is recorded in §The water column as a decision, not a gap.
+  ground. The column is the middle water and its light is always an event with
+  a beginning and an end. Their absence is recorded in §The water column as a
+  decision, not a gap.
 - **Don't** ship the marine snow's drift without measuring it on a low-end
   Android and in the side panel first, and without gating it on both
   reduced-motion signals. Drift is decided; a repaint of the field, rather than

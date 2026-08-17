@@ -50,6 +50,9 @@ vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual('../../../../shared/src/theme')),
   ...(await vi.importActual('../../../../shared/src/utils/scaling')),
   ...(await vi.importActual('../../../../shared/src/types/ui')),
+  // The wave's arithmetic, pulled in whole for the same reason as the tokens:
+  // it is runtime-agnostic and the LoadingScreen this page mounts reads it.
+  ...(await vi.importActual('../../../../shared/src/motion')),
   PASSWORD_CONSTRAINTS: { MIN_LENGTH: 12, MAX_LENGTH: 128 },
   ApiError: MockApiError,
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),

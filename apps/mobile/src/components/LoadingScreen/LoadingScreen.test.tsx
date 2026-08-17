@@ -1,9 +1,15 @@
 /**
- * The wait, after the choreography: no ring, no pulsing logo, no tips, and a
- * descent that exists under reduced motion too — a parallel mapping, not a hole.
+ * The wait, after the choreography: no spinning ring, no tips, and a descent
+ * that exists under reduced motion too — a parallel mapping, not a hole.
+ *
+ * The pulsing mark is back (product decision, 2026-08) as the wave's emitter,
+ * and it is opt-in with the wave: a wait with nothing in the air does not get
+ * one. What is asserted here is the contract, not the pixels — that the emitter
+ * appears only where it was asked for, and that the exit hands off at a fixed
+ * time. The wave's arithmetic is tested in `@salmon/shared`.
  */
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 
 let mockReduceMotion = false;
 
@@ -19,6 +25,7 @@ jest.mock('@salmon/shared', () => ({
   semantic: {
     text: { accent: '#FF5C45' },
     border: { hairline: 'rgba(199,211,232,0.10)' },
+    accent: { ink: '#FF5C45', tint: 'rgba(255, 92, 69, 0.10)' },
   },
   componentSizes: {
     descentTrackWidth: 2,
@@ -29,7 +36,28 @@ jest.mock('@salmon/shared', () => ({
   fontFamilyNative: { regular: 'Geist', bold: 'Geist-Bold' },
   fontSize: { sm: 12, base: 14, md: 16, '2xl': 24 },
   letterSpacing: { widest: 1 },
-  motionMs: { swell: 180, ebb: 180, drift: 280, stagger: 24, shimmerCycle: 1400, pulseCycle: 1200 },
+  motionMs: {
+    flick: 90,
+    swell: 180,
+    ebb: 180,
+    drift: 280,
+    rise: 420,
+    stagger: 24,
+    shimmerCycle: 1400,
+    pulseCycle: 1200,
+  },
+  markPaths: ['M0 0h1v1H0z'],
+  markViewBoxAttr: '0 0 253 236',
+  WAVEFRONT_CROSS_MS: 420,
+  WAVEFRONT_PERIOD_MS: 1200,
+  wavefrontRadius: () => 500,
+  planWavefront: (
+    _rider: unknown,
+    _origin: unknown,
+    _bounds: unknown,
+    isReduceMotionEnabled: boolean
+  ) => (isReduceMotionEnabled ? null : { delayMs: 100, amplitude: 2, durationMs: 180 }),
+  wavefrontExitMs: (isReduceMotionEnabled: boolean) => (isReduceMotionEnabled ? 180 : 600),
   motionEasing: {
     current: { native: [0.32, 0.72, 0, 1] },
     settle: { native: [0.22, 1, 0.36, 1] },
@@ -58,6 +86,8 @@ jest.mock('react-native-reanimated', () => {
     useSharedValue: (value: number) => ({ value }),
     useAnimatedStyle: (fn: () => unknown) => fn(),
     useReducedMotion: () => mockReduceMotion,
+    cancelAnimation: () => {},
+    interpolate: (value: number) => value,
     withRepeat: (animation: unknown) => animation,
     withSequence: (animation: unknown) => animation,
     withDelay: (_delay: number, animation: unknown) => animation,
@@ -94,5 +124,72 @@ describe('LoadingScreen', () => {
     render(<LoadingScreen visible title="Processing swap" waves />);
 
     expect(screen.getByTestId('loading-descent')).toBeTruthy();
+  });
+
+  it('gives the wave a visible source — the mark that emits it', () => {
+    render(<LoadingScreen visible title="Processing swap" waves />);
+
+    // Hidden from assistive technology on purpose — the overlay already
+    // announces the wait, and a second narrated thing is noise.
+    expect(screen.getByTestId('loading-emitter', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('leaves a wait with nothing in the air unemitting', () => {
+    render(<LoadingScreen visible title="Unlocking" />);
+
+    expect(screen.queryByTestId('loading-emitter', { includeHiddenElements: true })).toBeNull();
+  });
+
+  describe('the handoff', () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    it('hands off at a fixed 600ms rather than whenever an animation finishes', () => {
+      const onExited = jest.fn();
+      const { rerender } = render(
+        <LoadingScreen visible title="Processing swap" waves onExited={onExited} />
+      );
+
+      rerender(<LoadingScreen visible={false} title="Processing swap" waves onExited={onExited} />);
+
+      act(() => {
+        jest.advanceTimersByTime(599);
+      });
+      expect(onExited).not.toHaveBeenCalled();
+
+      act(() => {
+        jest.advanceTimersByTime(1);
+      });
+      expect(onExited).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not make a reduce-motion user wait out a wave they cannot see', () => {
+      mockReduceMotion = true;
+      const onExited = jest.fn();
+      const { rerender } = render(
+        <LoadingScreen visible title="Processing swap" waves onExited={onExited} />
+      );
+
+      rerender(<LoadingScreen visible={false} title="Processing swap" waves onExited={onExited} />);
+
+      act(() => {
+        jest.advanceTimersByTime(180);
+      });
+      expect(onExited).toHaveBeenCalledTimes(1);
+    });
+
+    it('hands off exactly once, however many clocks reach the end first', () => {
+      const onExited = jest.fn();
+      const { rerender } = render(
+        <LoadingScreen visible title="Processing swap" waves onExited={onExited} />
+      );
+
+      rerender(<LoadingScreen visible={false} title="Processing swap" waves onExited={onExited} />);
+
+      act(() => {
+        jest.advanceTimersByTime(5000);
+      });
+      expect(onExited).toHaveBeenCalledTimes(1);
+    });
   });
 });
