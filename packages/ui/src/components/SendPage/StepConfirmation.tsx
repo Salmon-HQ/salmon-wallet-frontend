@@ -20,6 +20,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
+  chunkAddress,
   colors,
   spacing,
   componentSizes,
@@ -130,15 +131,30 @@ const AddressContent = styled(Box)({
   maxWidth: '100%',
 });
 
-const AddressText = styled(Typography)({
+const AddressColumn = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: '2px',
   flex: 1,
+  minWidth: 0,
+});
+
+const AddressText = styled(Typography)({
   fontSize: fontSize.sm,
-  fontWeight: fontWeight.bold,
-  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.regular,
+  fontFamily: fontFamily.mono,
   color: colors.text.primary,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
+  textAlign: 'left',
+  overflowWrap: 'anywhere',
+});
+
+const ResolvedFromText = styled(Typography)({
+  fontSize: fontSize.xs,
+  fontFamily: fontFamily.sans,
+  color: colors.text.secondary,
+  textAlign: 'left',
+  overflowWrap: 'anywhere',
 });
 
 // Fee
@@ -255,6 +271,16 @@ export function StepConfirmation({
   const [copied, setCopied] = useState(false);
 
   const sendHook = useSendTransaction({ account, blockchain });
+
+  // What the transfer will actually pay. When a `.sol` domain was typed, the
+  // resolved address is the destination — showing the domain here would ask
+  // the user to sign for something this screen never displayed.
+  const destinationAddress = resolvedRecipientAddress || recipientAddress;
+  const resolvedFromDomain =
+    resolvedRecipientAddress && resolvedRecipientAddress !== recipientAddress
+      ? recipientAddress
+      : null;
+
   // Amount display
   const amountDisplay = useMemo(() => {
     const numAmount = parseFloat(amount);
@@ -301,14 +327,15 @@ export function StepConfirmation({
     }
   }, [sendHook, token, recipientAddress, resolvedRecipientAddress, amount, onSuccess]);
 
-  // Handle copy address
+  // Handle copy address — copies the address the transfer will actually pay,
+  // not the domain that was typed.
   const handleCopy = useCallback(async () => {
-    const success = await copyToClipboard(recipientAddress);
+    const success = await copyToClipboard(destinationAddress);
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION);
     }
-  }, [recipientAddress]);
+  }, [destinationAddress]);
 
   // Handle retry
   const handleRetry = useCallback(() => {
@@ -352,7 +379,18 @@ export function StepConfirmation({
         >
           <BlurContainer style={{ borderRadius: borderRadius.md }}>
             <AddressContent>
-              <AddressText title={recipientAddress}>{recipientAddress}</AddressText>
+              <AddressColumn>
+                {/* Mono in 4-character chunks: fixed-width chunks are what let
+                    the eye compare a prefix and suffix positionally. */}
+                <AddressText title={destinationAddress} data-testid="send-confirm-address">
+                  {chunkAddress(destinationAddress)}
+                </AddressText>
+                {resolvedFromDomain !== null && (
+                  <ResolvedFromText data-testid="send-confirm-resolved-from">
+                    {t('token.send.resolvedFrom', { domain: resolvedFromDomain })}
+                  </ResolvedFromText>
+                )}
+              </AddressColumn>
               {copied ? (
                 <CheckIcon
                   size={iconSize.md}

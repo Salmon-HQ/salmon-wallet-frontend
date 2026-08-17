@@ -49,7 +49,7 @@ export {
 } from './avatar';
 
 // Address utilities
-export { getShortAddress, truncateHash } from './address';
+export { chunkAddress, getShortAddress, truncateHash } from './address';
 export { classifyTransactionError } from './transaction-errors';
 export { classifyBridgeError } from './bridge-errors';
 export { sanitizeDecimalInput } from './decimal-input';
@@ -264,6 +264,17 @@ export {
   SECTION_TO_NETWORK,
   INITIAL_NFT_SECTIONS,
 } from './nft';
+
+// Unlock throttling (failed-password backoff)
+export {
+  getUnlockPenalty,
+  recordFailedUnlock,
+  clearUnlockPenalty,
+  unlockDelayMs,
+  UNLOCK_FREE_ATTEMPTS,
+  UNLOCK_DELAY_SCHEDULE_MS,
+} from './unlock-throttle';
+export type { UnlockPenalty } from './unlock-throttle';
 
 // Legacy migration (v2 -> v3)
 export { migrateLegacyWallets } from './legacy-migration';

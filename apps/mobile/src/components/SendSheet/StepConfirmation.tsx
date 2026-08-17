@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import {
   borderRadius,
   borderWidth,
+  chunkAddress,
   colors,
   componentSizes,
   fontFamilyNative,
@@ -57,6 +58,16 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
   const [copied, setCopied] = useState(false);
 
   const sendHook = useSendTransaction({ account, blockchain });
+
+  // What the transfer will actually pay. When a `.sol` domain was typed, the
+  // resolved address is the destination — showing the domain here would ask
+  // the user to sign for something this screen never displayed.
+  const destinationAddress = resolvedRecipientAddress || recipientAddress;
+  const resolvedFromDomain =
+    resolvedRecipientAddress && resolvedRecipientAddress !== recipientAddress
+      ? recipientAddress
+      : null;
+
   // Amount display
   const amountDisplay = useMemo(() => {
     const numAmount = parseFloat(amount);
@@ -103,17 +114,18 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
     }
   }, [sendHook, token, recipientAddress, resolvedRecipientAddress, amount, onSuccess]);
 
-  // Handle copy address
+  // Handle copy address — copies the address the transfer will actually pay,
+  // not the domain that was typed.
   const handleCopy = useCallback(async () => {
     try {
       const Clipboard = await import('expo-clipboard');
-      await Clipboard.setStringAsync(recipientAddress);
+      await Clipboard.setStringAsync(destinationAddress);
       setCopied(true);
       setTimeout(() => setCopied(false), motionMs.feedbackHold);
     } catch {
       // Clipboard not available
     }
-  }, [recipientAddress]);
+  }, [destinationAddress]);
 
   // Handle retry
   const handleRetry = useCallback(() => {
@@ -128,11 +140,6 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
     onSendingChange?.(isSending);
   }, [isSending, onSendingChange]);
 
-  // Truncate address for display
-  const truncatedAddress = useMemo(() => {
-    if (recipientAddress.length <= 20) return recipientAddress;
-    return recipientAddress;
-  }, [recipientAddress]);
 
   return (
     <View style={styles.container}>
@@ -155,9 +162,18 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
           accessibilityLabel={t('token.send.copyRecipientAddress')}
         >
           <BlurContainer style={styles.addressContainer}>
-            <Text style={styles.addressText} numberOfLines={1} ellipsizeMode="middle">
-              {truncatedAddress}
-            </Text>
+            <View style={styles.addressColumn}>
+              {/* Mono in 4-character chunks: fixed-width chunks are what let
+                  the eye compare a prefix and suffix positionally. */}
+              <Text style={styles.addressText} testID="send-confirm-address">
+                {chunkAddress(destinationAddress)}
+              </Text>
+              {resolvedFromDomain !== null && (
+                <Text style={styles.resolvedFromText} testID="send-confirm-resolved-from">
+                  {t('token.send.resolvedFrom', { domain: resolvedFromDomain })}
+                </Text>
+              )}
+            </View>
             {copied ? (
               <Ionicons name="checkmark" size={ms(20)} color={semantic.status.success} />
             ) : (
@@ -289,11 +305,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(spacing.lg),
     gap: s(spacing.base),
   },
-  addressText: {
+  addressColumn: {
     flex: 1,
+    minWidth: 0,
+    gap: vs(spacing.xs),
+  },
+  addressText: {
     fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.bold,
+    fontFamily: fontFamilyNative.mono,
     color: colors.text.primary,
+  },
+  resolvedFromText: {
+    fontSize: ms(fontSize.xs),
+    fontFamily: fontFamilyNative.regular,
+    color: colors.text.secondary,
   },
   // Fee
   feeText: {
