@@ -14,6 +14,10 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('@salmon/shared', () => ({
   tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
+  // The real gate is `useWaitGate` and it is tested where it lives
+  // (packages/shared). Here it is transparent, so these cases stay about what
+  // the screen renders in each state rather than about timing.
+  useWaitGate: (active: boolean) => active,
   semantic: {
     surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
     text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
@@ -107,6 +111,15 @@ describe('TransactionSuccessScreen', () => {
       expect(screen.getByTestId('tx-success-continue-button').hasAttribute('disabled')).toBe(false);
       expect(screen.getByTestId('tx-success-explorer-link')).toBeTruthy();
       expect(screen.queryByTestId('loading-screen')).toBeNull();
+    });
+
+    it('keeps the amount on one line — a receipt prints an amount, not a sentence', () => {
+      render(<TransactionSuccessScreen {...baseProps} summary="0.0512345 SOL → 8.1234567 USDC" />);
+
+      const amount = screen.getByTestId('tx-success-amount');
+      const { whiteSpace, maxWidth } = getComputedStyle(amount);
+      expect(whiteSpace).toBe('nowrap');
+      expect(maxWidth).toBe('100%');
     });
 
     it('keeps the bridge deposit instructions', () => {

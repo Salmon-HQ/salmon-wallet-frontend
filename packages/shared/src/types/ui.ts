@@ -118,12 +118,35 @@ export interface LoadingScreenBaseProps {
   tips?: string[];
   /** Interval in ms to change tips (default: 4000) */
   tipInterval?: number;
-  /** Whether to show tips (default: true) */
+  /**
+   * Whether to cycle wallet tips at the bottom (default: **false**).
+   *
+   * The default used to be `true`, which put "always check the transaction
+   * details before signing" on the screen that follows signing. A caution for a
+   * moment that has already passed is not filler — it teaches the user to skip
+   * security copy, and this product needs the approval and look-alike warnings
+   * read. Tips are opt-in now, and the screens that opt in are the ones where
+   * the advice still applies to a decision the user can still make: unlock, and
+   * wallet creation/recovery.
+   */
   showTips?: boolean;
   /** Custom logo size (default: 100) */
   logoSize?: number;
   /** Custom spinner size (default: 140) */
   spinnerSize?: number;
+  /**
+   * Emit the wave — three pulses that cross the screen's contents from top to
+   * bottom, each element displaced by a delay proportional to its distance from
+   * the origin (default: `false`).
+   *
+   * Reserved for **waiting on a transaction**: the moment money is in the air
+   * and the user can do nothing. A key derivation or an app boot has nothing in
+   * the air, so a choreography there is decoration, and repeating it on every
+   * launch spends it. Three emissions and the water goes still — a thirty
+   * second wait cannot be a thirty second show, or it takes weight from The
+   * Surfacing, which is the only climax this system has.
+   */
+  waves?: boolean;
 }
 
 /**

@@ -95,4 +95,17 @@ export interface SwapScreenProps extends SwapScreenPropsBase<CSSProperties> {
    * Hosts use it to disable navigation that would discard that report.
    */
   onFlowLockChange?: (locked: boolean) => void;
+  /**
+   * Reports when the flow becomes a **task** rather than tab content — review
+   * onward. A task has one way out (its own back arrow, which knows the step
+   * the user is on); the app chrome around it offers exits that do not, so the
+   * host hides the header and tab bar while this is true. Mobile has always
+   * done this by presenting review and success in a `Modal`; the DOM apps had
+   * no equivalent, which is finding #3 of the flow audit.
+   *
+   * Separate from `onFlowLockChange`, which starts later (at signature) and
+   * governs whether ambient navigation is *allowed*. Hiding chrome must not be
+   * mistaken for a guard: the in-flight state still owns the back button.
+   */
+  onTaskChange?: (isTask: boolean) => void;
 }

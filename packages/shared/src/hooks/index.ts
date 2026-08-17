@@ -50,6 +50,11 @@ export type { UsePrefetchBalancesParams } from './usePrefetchBalances';
 export { useTransactions } from './useTransactions';
 export type { UseTransactionsParams, UseTransactionsResult } from './useTransactions';
 
+// Wait-screen gate — 400ms before a wait screen may mount, 600ms minimum once
+// it has. Keeps a short wait from flickering a screen at the user.
+export { useWaitGate } from './useWaitGate';
+export type { UseWaitGateOptions } from './useWaitGate';
+
 // Send transaction hook
 export { usePendingActivity } from './usePendingActivity';
 export type {

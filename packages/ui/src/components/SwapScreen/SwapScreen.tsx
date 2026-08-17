@@ -54,7 +54,7 @@ const Container = styled(Box)({
 });
 
 export function SwapScreen(props: SwapScreenProps): React.ReactElement {
-  const { style, onFlowLockChange } = props;
+  const { style, onFlowLockChange, onTaskChange } = props;
   const { t } = useTranslation();
 
   const { trackBridgeExchange, isStalled, retryNow } = useBridgeSettlement();
@@ -83,6 +83,17 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
     onFlowLockChange?.(ownsScreen);
     return () => onFlowLockChange?.(false);
   }, [ownsScreen, onFlowLockChange]);
+
+  // A task, not a tab. From review onward the screen has a point of no return
+  // ahead of it and its own back arrow behind it; the header and the tab bar
+  // are a second way out that knows nothing about either. Same boundary mobile
+  // already draws with its `Modal`.
+  const isTaskStep = logic.step === 'review' || logic.step === 'success';
+
+  React.useEffect(() => {
+    onTaskChange?.(isTaskStep);
+    return () => onTaskChange?.(false);
+  }, [isTaskStep, onTaskChange]);
 
   // Success renders from the confirm-time snapshot: post-swap balance
   // refreshes can drop the spent input token from the list and mutate the

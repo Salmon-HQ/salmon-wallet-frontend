@@ -20,6 +20,7 @@ import {
   duration,
   easing,
   tabularNums,
+  useWaitGate,
 } from '@salmon/shared';
 import { LoadingScreen } from '../LoadingScreen';
 import type { TransactionSuccessScreenProps } from './types';
@@ -94,13 +95,20 @@ const AmountStage = styled(Box)({
 });
 
 const Amount = styled(Typography)({
-  fontSize: fontSize.display,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
   textAlign: 'center',
   lineHeight: lineHeight.tight,
   ...tabularNums.css,
+  // One line, always. The receipt used to print the whole operation as one
+  // 36px title ("0.0512345 SOL → 8.1234567 USDC") in a ~360px column, and it
+  // broke over three lines: an amount that wraps stops being an amount and
+  // becomes a sentence. It shrinks to fit rather than wrapping or ellipsing —
+  // truncating a number on a wallet receipt is not an option.
+  whiteSpace: 'nowrap',
+  maxWidth: '100%',
+  fontSize: `clamp(${fontSize.lg}px, 9vw, ${fontSize.display}px)`,
   opacity: 0,
   animation: `${fadeIn} ${duration.slow} ${easing.easeOut} ${duration.stagger1} forwards`,
 });
@@ -189,10 +197,17 @@ export function TransactionSuccessScreen({
     }
   };
 
-  if (settling) {
+  // The wait is gated, not merely rendered: below `motionMs.waitDelay` the
+  // screen never mounts and the user goes from the decision straight to the
+  // receipt, and once mounted it holds for `motionMs.waitMinVisible` so a wait
+  // that resolves just over the threshold does not flash. The gate delays a
+  // *screen*, never the work.
+  const showWait = useWaitGate(settling);
+
+  if (showWait) {
     return (
       <Container>
-        <LoadingScreen visible title={pendingTitle ?? title} subtitle={summary} />
+        <LoadingScreen visible waves title={pendingTitle ?? title} subtitle={summary} />
       </Container>
     );
   }

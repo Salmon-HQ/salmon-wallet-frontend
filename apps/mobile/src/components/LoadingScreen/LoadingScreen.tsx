@@ -1,36 +1,50 @@
 /**
- * LoadingScreen - Animated loading overlay with pulsing logo and rotating spinner
+ * LoadingScreen — the wait, on the app's own ground. Native twin of
+ * `packages/ui/src/components/LoadingScreen`; read that file's header for the
+ * argument, which is one sentence: **the wait goes down and the success comes
+ * up.** The Surfacing is the only climax this system has, so the wait is given
+ * the opposite direction rather than a competing one.
  *
- * Features:
- * - Pulsing logo animation (breathing effect)
- * - Rotating spinner around the logo
- * - Cycling tips/advice at the bottom
- * - Smooth fade in/out transitions
+ * - **The descent** replaces the spinning ring and the pulsing logo: a hairline
+ *   track with a segment of salmon *ink* running down it on `shimmerCycle`,
+ *   decelerating into the end of every pass.
+ * - **The wave** (opt-in, `waves`) is a distance-based stagger — each element
+ *   displaced `waveAmplitude` with a delay proportional to its rank down the
+ *   column. Three emissions, then still. It is deliberately *not* a distortion:
+ *   `react-native-svg` implements neither `FeTurbulence` nor `FeDisplacementMap`
+ *   (they are listed under "not supported yet" in its USAGE.md), and the only
+ *   way to a real ripple shader is `@shopify/react-native-skia` — a native
+ *   module, ~4–6 MB of download, and therefore a store release rather than an
+ *   OTA. Not worth 3px of displacement.
+ * - **Tips are off by default** — see `LoadingScreenBaseProps.showTips`.
  *
- * Uses react-native-reanimated for 60fps animations
+ * Uses react-native-reanimated for 60fps animations, all on the UI thread.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   useReducedMotion,
+  withDelay,
   withRepeat,
   withTiming,
   withSequence,
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
-import { Logo } from '@salmon/assets';
 import {
   colors,
+  componentSizes,
   DEFAULT_WALLET_TIP_KEYS,
   fontFamilyNative,
   letterSpacing,
+  motionEasing,
   motionMs,
+  semantic,
   spacing,
   fontSize,
 } from '@salmon/shared';
@@ -39,6 +53,28 @@ import { LoadingScreenProps } from './types';
 import { curve, timing } from '../../utils/motion';
 import { DepthBackground } from '../DepthBackground';
 import { ScalesBackground } from '../ScalesBackground';
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+/** Three emissions, then the water is still. See the header. */
+const WAVE_EMISSIONS = 3;
+/** 2% — the wave's swell, the quiet half of `swellIn`'s overshoot. */
+const WAVE_SCALE = 0.02;
+
+const curveCurrent = motionEasing.current.native as [number, number, number, number];
+
+/**
+ * One wave passing one element: a small displacement upward and a 2% swell.
+ * Shared by every rider so the front cannot drift apart between them.
+ */
+function waveTransform(v: number) {
+  'worklet';
+  return {
+    transform: [{ translateY: -v * componentSizes.waveAmplitude }, { scale: 1 + v * WAVE_SCALE }],
+  };
+}
 
 // ============================================================================
 // Component
@@ -50,9 +86,8 @@ export function LoadingScreen({
   subtitle,
   tips = DEFAULT_WALLET_TIP_KEYS as unknown as string[],
   tipInterval = 4000,
-  showTips = true,
-  logoSize = 100,
-  spinnerSize = 140,
+  showTips = false,
+  waves = false,
   bottomOffset = 0,
 }: LoadingScreenProps) {
   const { t } = useTranslation();
@@ -65,8 +100,13 @@ export function LoadingScreen({
   const [isVisible, setIsVisible] = useState(visible);
 
   // Animation values
-  const pulseScale = useSharedValue(1);
-  const spinRotation = useSharedValue(0);
+  const descent = useSharedValue(0);
+  // One rider per rank down the column: the delay is proportional to the
+  // element's distance from the top, which is what makes the eye read a front
+  // crossing the screen rather than three things twitching at once.
+  const wave0 = useSharedValue(0);
+  const wave1 = useSharedValue(0);
+  const wave2 = useSharedValue(0);
   const tipOpacity = useSharedValue(1);
   const overlayOpacity = useSharedValue(visible ? 1 : 0);
 
@@ -84,33 +124,53 @@ export function LoadingScreen({
       setIsVisible(true);
       overlayOpacity.value = withTiming(1, overlayIn);
 
-      if (isReduceMotionEnabled) return;
+      // Loops are cycles, not transitions: their `*Cycle` lengths are never
+      // resolved to 0, and under reduce motion they are not started at all
+      // rather than run infinitely fast. The descent's resting position under
+      // reduce motion is mid-track — a still indicator reads as a hung process,
+      // so the state moves into the words instead.
+      if (isReduceMotionEnabled) {
+        descent.value = 0.5;
+        return;
+      }
 
-      // Pulse animation - breathing effect
-      pulseScale.value = withRepeat(
-        withSequence(
-          withTiming(1.08, {
-            duration: motionMs.pulseCycle / 2,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          withTiming(1, {
-            duration: motionMs.pulseCycle / 2,
-            easing: Easing.inOut(Easing.ease),
-          })
-        ),
-        -1, // infinite
+      // The descent: one pass down the track per `shimmerCycle`, decelerating
+      // into the end of it on `current`. A pass with rhythm reads as shorter
+      // than a constant-speed rotation of the same length (Harrison, Yeo &
+      // Hudson, CHI 2010) — the ring this replaced was the worst case measured.
+      descent.value = 0;
+      descent.value = withRepeat(
+        withTiming(1, { duration: motionMs.shimmerCycle, easing: Easing.bezier(...curveCurrent) }),
+        -1,
         false
       );
 
-      // Spin animation - continuous rotation
-      spinRotation.value = withRepeat(
-        withTiming(360, {
-          duration: motionMs.spinCycle,
-          easing: Easing.linear,
-        }),
-        -1, // infinite
-        false
-      );
+      // The wave: `WAVE_EMISSIONS` passes and then the water is still. A wait of
+      // thirty seconds cannot be a show of thirty seconds, or it takes weight
+      // from the one moment that is supposed to have it.
+      if (waves) {
+        [wave0, wave1, wave2].forEach((rider, rank) => {
+          rider.value = 0;
+          rider.value = withDelay(
+            rank * motionMs.stagger,
+            withRepeat(
+              withSequence(
+                withTiming(1, {
+                  duration: motionMs.swell / 2,
+                  easing: Easing.bezier(...curveCurrent),
+                }),
+                withTiming(0, {
+                  duration: motionMs.swell / 2,
+                  easing: Easing.bezier(...curveCurrent),
+                }),
+                withTiming(0, { duration: motionMs.pulseCycle - motionMs.swell })
+              ),
+              WAVE_EMISSIONS,
+              false
+            )
+          );
+        });
+      }
     } else {
       overlayOpacity.value = withTiming(0, overlayOut, (finished) => {
         if (finished) {
@@ -119,7 +179,7 @@ export function LoadingScreen({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, overlayOpacity, pulseScale, spinRotation, isReduceMotionEnabled]);
+  }, [visible, waves, overlayOpacity, descent, wave0, wave1, wave2, isReduceMotionEnabled]);
 
   // Helper function to advance to next tip
   const advanceToNextTip = useCallback(() => {
@@ -161,13 +221,19 @@ export function LoadingScreen({
   ]);
 
   // Animated styles
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseScale.value }],
+  const descentStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateY:
+          -componentSizes.descentSegmentHeight +
+          descent.value * (componentSizes.descentTrackHeight + componentSizes.descentSegmentHeight),
+      },
+    ],
   }));
 
-  const spinStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${spinRotation.value}deg` }],
-  }));
+  const titleWave = useAnimatedStyle(() => waveTransform(wave0.value));
+  const subtitleWave = useAnimatedStyle(() => waveTransform(wave1.value));
+  const descentWave = useAnimatedStyle(() => waveTransform(wave2.value));
 
   const tipStyle = useAnimatedStyle(() => ({
     opacity: tipOpacity.value,
@@ -179,8 +245,6 @@ export function LoadingScreen({
 
   // Don't render if not visible
   if (!isVisible) return null;
-
-  const spinnerStrokeWidth = 3;
 
   return (
     <Animated.View style={[styles.overlay, overlayStyle]}>
@@ -199,27 +263,25 @@ export function LoadingScreen({
 
         <View style={styles.content}>
           {/* Title */}
-          {title && <Text style={styles.title}>{title}</Text>}
+          {title && (
+            <Animated.View style={titleWave}>
+              <Text style={styles.title}>{title}</Text>
+            </Animated.View>
+          )}
 
           {/* Subtitle */}
-          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-
-          {/* Logo + Spinner Container */}
-          <View style={[styles.logoSpinnerContainer, { width: spinnerSize, height: spinnerSize }]}>
-            {/* Rotating Spinner */}
-            <Animated.View style={[styles.spinnerContainer, spinStyle]}>
-              <SpinnerArc size={spinnerSize} strokeWidth={spinnerStrokeWidth} />
+          {subtitle && (
+            <Animated.View style={subtitleWave}>
+              <Text style={styles.subtitle}>{subtitle}</Text>
             </Animated.View>
+          )}
 
-            {/* Pulsing Logo */}
-            <Animated.View style={[styles.logoContainer, pulseStyle]}>
-              <Image
-                source={Logo}
-                style={[styles.logo, { width: logoSize, height: logoSize }]}
-                resizeMode="contain"
-              />
-            </Animated.View>
-          </View>
+          {/* The descent. Salmon as ink, running down — the opposite direction
+              to The Surfacing, which is what keeps the wait from reading as a
+              second climax. */}
+          <Animated.View style={[styles.descentTrack, descentWave]} testID="loading-descent">
+            <Animated.View style={[styles.descentSegment, descentStyle]} />
+          </Animated.View>
 
           {/* Tips Section */}
           {showTips && resolvedTips.length > 0 && (
@@ -233,37 +295,6 @@ export function LoadingScreen({
         </View>
       </LinearGradient>
     </Animated.View>
-  );
-}
-
-// ============================================================================
-// Spinner Arc Component (SVG-like arc using View borders)
-// ============================================================================
-
-interface SpinnerArcProps {
-  size: number;
-  strokeWidth: number;
-}
-
-function SpinnerArc({ size, strokeWidth }: SpinnerArcProps) {
-  // Create a partial arc using border styling
-  // This creates a ~270 degree arc by having 3 sides with color and 1 transparent
-  return (
-    <View
-      style={[
-        styles.spinnerArc,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          borderWidth: strokeWidth,
-          borderTopColor: colors.accent.primary,
-          borderRightColor: colors.accent.primary,
-          borderBottomColor: colors.accent.primary,
-          borderLeftColor: 'transparent',
-        },
-      ]}
-    />
   );
 }
 
@@ -305,25 +336,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing['3xl'],
   },
-  logoSpinnerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  descentTrack: {
+    width: componentSizes.descentTrackWidth,
+    height: componentSizes.descentTrackHeight,
+    borderRadius: componentSizes.descentTrackWidth,
+    backgroundColor: semantic.border.hairline,
+    overflow: 'hidden',
     marginBottom: spacing['5xl'],
   },
-  spinnerContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  spinnerArc: {
-    // Styles applied inline for dynamic sizing
-  },
-  logoContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logo: {
-    // Size applied inline
+  descentSegment: {
+    width: '100%',
+    height: componentSizes.descentSegmentHeight,
+    borderRadius: componentSizes.descentTrackWidth,
+    // Salmon as *ink*, which DESIGN.md does not ration — not a fill, which is
+    // rationed to one living element per screen and must not be spent here.
+    backgroundColor: semantic.text.accent,
   },
   tipsContainer: {
     position: 'absolute',

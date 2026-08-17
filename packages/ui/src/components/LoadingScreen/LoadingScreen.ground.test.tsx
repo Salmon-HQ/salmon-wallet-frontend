@@ -43,6 +43,20 @@ vi.mock('@salmon/shared', () => ({
   duration: { slower: '0.4s' },
   durationMs: { slow: 300, slower: 400, spinSlow: 1200, pulse: 2000 },
   easing: { easeInOut: 'ease-in-out' },
+  componentSizes: {
+    descentTrackWidth: 2,
+    descentTrackHeight: 120,
+    descentSegmentHeight: 44,
+    waveAmplitude: 3,
+  },
+  motionMs: { swell: 180, stagger: 24, shimmerCycle: 1400, pulseCycle: 1200 },
+  motionDuration: { tide: '720ms' },
+  motionEasing: { current: { css: 'cubic-bezier(0.32, 0.72, 0, 1)' } },
+  reducedMotion: { query: '(prefers-reduced-motion: reduce)' },
+  semantic: {
+    text: { accent: '#FF5C45' },
+    border: { hairline: 'rgba(199, 211, 232, 0.10)' },
+  },
 }));
 
 import { LoadingScreen } from './LoadingScreen';

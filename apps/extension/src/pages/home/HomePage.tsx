@@ -392,6 +392,11 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // been acknowledged. Before signing this stays false — backing out of a
   // review costs nothing and must stay easy.
   const [flowLocked, setFlowLocked] = useState(false);
+  // True while swap is a *task* (review onward). The chrome around it offers
+  // exits that do not know what step the user is on, so it stands down and the
+  // flow's own back arrow is the only way out. This is presentation, not a
+  // guard: `flowLocked` above still governs what is allowed once signed.
+  const [flowIsTask, setFlowIsTask] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -1368,46 +1373,50 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       {/* Header. Settings and the wallet switcher can change the account or
           the network, which remounts the flow — both are withheld while a
           signed transaction is still being reported. */}
-      <WalletHeader
-        accountName={accountName}
-        address={accountAddress}
-        onCopyAddress={handleCopyAddress}
-        onSettingsPress={flowLocked ? undefined : handleSettingsPress}
-        onRefreshPress={refresh}
-        refreshing={refreshing}
-        onWalletPress={flowLocked ? undefined : handleWalletPress}
-        avatarUrl={activeAccount?.avatar}
-        accountId={activeAccount?.id}
-      />
+      {!flowIsTask && (
+        <WalletHeader
+          accountName={accountName}
+          address={accountAddress}
+          onCopyAddress={handleCopyAddress}
+          onSettingsPress={flowLocked ? undefined : handleSettingsPress}
+          onRefreshPress={refresh}
+          refreshing={refreshing}
+          onWalletPress={flowLocked ? undefined : handleWalletPress}
+          avatarUrl={activeAccount?.avatar}
+          accountId={activeAccount?.id}
+        />
+      )}
 
       {/* Tab Bar — inert while a signed transaction is being reported, since a
           stray tab tap is the cheapest way to lose the only outcome report. */}
-      <TabBar>
-        <TabButton
-          active={activeTab === 'home'}
-          onClick={() => setActiveTab('home')}
-          disabled={flowLocked}
-          data-testid="tab-home"
-        >
-          {t('tabs.home', 'Home')}
-        </TabButton>
-        <TabButton
-          active={activeTab === 'collectibles'}
-          onClick={() => setActiveTab('collectibles')}
-          disabled={flowLocked}
-          data-testid="tab-collectibles"
-        >
-          {t('tabs.collectibles', 'Collectibles')}
-        </TabButton>
-        <TabButton
-          active={activeTab === 'swap'}
-          onClick={() => setActiveTab('swap')}
-          disabled={flowLocked}
-          data-testid="tab-swap"
-        >
-          {t('tabs.swap', 'Swap')}
-        </TabButton>
-      </TabBar>
+      {!flowIsTask && (
+        <TabBar>
+          <TabButton
+            active={activeTab === 'home'}
+            onClick={() => setActiveTab('home')}
+            disabled={flowLocked}
+            data-testid="tab-home"
+          >
+            {t('tabs.home', 'Home')}
+          </TabButton>
+          <TabButton
+            active={activeTab === 'collectibles'}
+            onClick={() => setActiveTab('collectibles')}
+            disabled={flowLocked}
+            data-testid="tab-collectibles"
+          >
+            {t('tabs.collectibles', 'Collectibles')}
+          </TabButton>
+          <TabButton
+            active={activeTab === 'swap'}
+            onClick={() => setActiveTab('swap')}
+            disabled={flowLocked}
+            data-testid="tab-swap"
+          >
+            {t('tabs.swap', 'Swap')}
+          </TabButton>
+        </TabBar>
+      )}
 
       <Main>
         {/* Background layers — shared across all three tabs */}
@@ -1523,6 +1532,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             <SwapPage
               onNavigateHome={() => setActiveTab('home')}
               onFlowLockChange={setFlowLocked}
+              onTaskChange={setFlowIsTask}
             />
           )}
         </TabContent>

@@ -242,6 +242,20 @@ export const componentSizes = {
   buttonMinWidth: 120,
   buttonMinWidthLg: 160,
 
+  // The descent — the wait indicator that replaced the spinning ring. A track
+  // and a segment of salmon *ink* that runs down it: it travels downward, which
+  // is the opposite direction to The Surfacing, so a wait and a success can
+  // never be confused for each other; and being ink rather than a fill it does
+  // not spend the one living salmon element a screen is allowed.
+  /** 2px — the track is a hairline, not a bar. */
+  descentTrackWidth: 2,
+  /** 120px — one full pass, long enough for the deceleration to be legible. */
+  descentTrackHeight: 120,
+  /** 44px — the moving segment; a bit over a third of the track. */
+  descentSegmentHeight: 44,
+  /** 3px — wave displacement. Perceptible if you look, invisible if you don't. */
+  waveAmplitude: 3,
+
   // Swap
   swapSelectorMinWidth: 100,
   swapReviewCardMinHeight: 75,

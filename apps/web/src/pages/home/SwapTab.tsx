@@ -31,6 +31,8 @@ interface SwapTabProps {
   onNavigateHome?: () => void;
   /** Reports when the flow owns the screen (post-signature). */
   onFlowLockChange?: (locked: boolean) => void;
+  /** Reports when the flow becomes a task (review onward) — see SwapScreen. */
+  onTaskChange?: (isTask: boolean) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -49,7 +51,11 @@ const Container = styled(Box)({
 // Component
 // ---------------------------------------------------------------------------
 
-export function SwapTab({ onNavigateHome, onFlowLockChange }: SwapTabProps): React.ReactElement {
+export function SwapTab({
+  onNavigateHome,
+  onFlowLockChange,
+  onTaskChange,
+}: SwapTabProps): React.ReactElement {
   const currentSharedQuoteRef = useRef<SharedSwapQuote | null>(null);
   const [accountState] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId } = accountState;
@@ -330,6 +336,7 @@ export function SwapTab({ onNavigateHome, onFlowLockChange }: SwapTabProps): Rea
         onBridgeError={handleBridgeError}
         onNavigateHome={onNavigateHome}
         onFlowLockChange={onFlowLockChange}
+        onTaskChange={onTaskChange}
       />
     </Container>
   );

@@ -352,6 +352,11 @@ export function HomePage(): React.ReactElement {
   // True from the moment a swap or bridge is signed until its outcome has been
   // acknowledged. Before signing this stays false — leaving a review is free.
   const [flowLocked, setFlowLocked] = useState(false);
+  // True while swap is a *task* (review onward). The chrome around it offers
+  // exits that do not know what step the user is on, so it stands down and the
+  // flow's own back arrow is the only way out. Presentation, not a guard:
+  // `flowLocked` above still governs what is allowed once signed.
+  const [flowIsTask, setFlowIsTask] = useState(false);
 
   useEffect(() => {
     // Browser back/forward drives the tab through the hash, which is another
@@ -892,47 +897,51 @@ export function HomePage(): React.ReactElement {
 
   return (
     <Container data-testid="home-screen">
-      {/* Header */}
-      <WalletHeader
-        accountName={accountName}
-        address={accountAddress}
-        onCopyAddress={handleCopyAddress}
-        onSettingsPress={() => setSettingsVisible(true)}
-        onRefreshPress={refresh}
-        refreshing={refreshing}
-        onWalletPress={() => setWalletSwitcherVisible(true)}
-        avatarUrl={activeAccount?.avatar}
-        accountId={activeAccount?.id}
-      />
+      {/* Header — withheld while the flow is a task; see `flowIsTask`. */}
+      {!flowIsTask && (
+        <WalletHeader
+          accountName={accountName}
+          address={accountAddress}
+          onCopyAddress={handleCopyAddress}
+          onSettingsPress={() => setSettingsVisible(true)}
+          onRefreshPress={refresh}
+          refreshing={refreshing}
+          onWalletPress={() => setWalletSwitcherVisible(true)}
+          avatarUrl={activeAccount?.avatar}
+          accountId={activeAccount?.id}
+        />
+      )}
 
       {/* Tab Bar — inert while a signed transaction is being reported, since a
           stray tab click is the cheapest way to lose the only outcome report. */}
-      <TabBar>
-        <TabButton
-          active={activeTab === 'home'}
-          onClick={() => setActiveTab('home')}
-          disabled={flowLocked}
-          data-testid="tab-home"
-        >
-          {t('tabs.home', 'Home')}
-        </TabButton>
-        <TabButton
-          active={activeTab === 'collectibles'}
-          onClick={() => setActiveTab('collectibles')}
-          disabled={flowLocked}
-          data-testid="tab-collectibles"
-        >
-          {t('tabs.collectibles', 'Collectibles')}
-        </TabButton>
-        <TabButton
-          active={activeTab === 'swap'}
-          onClick={() => setActiveTab('swap')}
-          disabled={flowLocked}
-          data-testid="tab-swap"
-        >
-          {t('tabs.swap', 'Swap')}
-        </TabButton>
-      </TabBar>
+      {!flowIsTask && (
+        <TabBar>
+          <TabButton
+            active={activeTab === 'home'}
+            onClick={() => setActiveTab('home')}
+            disabled={flowLocked}
+            data-testid="tab-home"
+          >
+            {t('tabs.home', 'Home')}
+          </TabButton>
+          <TabButton
+            active={activeTab === 'collectibles'}
+            onClick={() => setActiveTab('collectibles')}
+            disabled={flowLocked}
+            data-testid="tab-collectibles"
+          >
+            {t('tabs.collectibles', 'Collectibles')}
+          </TabButton>
+          <TabButton
+            active={activeTab === 'swap'}
+            onClick={() => setActiveTab('swap')}
+            disabled={flowLocked}
+            data-testid="tab-swap"
+          >
+            {t('tabs.swap', 'Swap')}
+          </TabButton>
+        </TabBar>
+      )}
 
       <Main>
         {/* The water column: a depth ramp darkening toward the abyss, plus the
@@ -1046,6 +1055,7 @@ export function HomePage(): React.ReactElement {
                 refresh();
               }}
               onFlowLockChange={setFlowLocked}
+              onTaskChange={setFlowIsTask}
             />
           )}
         </TabContent>

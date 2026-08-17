@@ -69,9 +69,11 @@ interface SwapPageProps {
   onNavigateHome?: () => void;
   /** Reports when the flow owns the screen (post-signature). */
   onFlowLockChange?: (locked: boolean) => void;
+  /** Reports when the flow becomes a task (review onward) — see SwapScreen. */
+  onTaskChange?: (isTask: boolean) => void;
 }
 
-export function SwapPage({ onNavigateHome, onFlowLockChange }: SwapPageProps = {}) {
+export function SwapPage({ onNavigateHome, onFlowLockChange, onTaskChange }: SwapPageProps = {}) {
   const { t } = useTranslation();
   const currentSharedQuoteRef = useRef<SharedSwapQuote | null>(null);
 
@@ -370,6 +372,7 @@ export function SwapPage({ onNavigateHome, onFlowLockChange }: SwapPageProps = {
         onBridgeError={handleBridgeError}
         onNavigateHome={onNavigateHome}
         onFlowLockChange={onFlowLockChange}
+        onTaskChange={onTaskChange}
       />
     </Container>
   );

@@ -18,6 +18,34 @@
  * both would be an `if` on every line. What *is* shared is the surface:
  * `usePendingActivity` merges both lists into the one banner the user sees.
  *
+ * ## What "done" means, once, for the whole app
+ *
+ * Two different signals used to both claim to mean "finished", and they
+ * disagreed for up to twenty seconds:
+ *
+ * 1. **Chain confirmation** — `getSignatureStatuses`, polled here, typically
+ *    1–3s. This is the **verdict**: the transaction either landed or it did
+ *    not, and nothing after this can change that answer.
+ * 2. **Indexer settlement** — `settleUntilChanged`, polled by the screen that
+ *    signed, ceiling 20s. This is *not* a verdict; it is how long the balance
+ *    the user is about to look at takes to catch up.
+ *
+ * **The chain is the answer. The indexer is a stage.** So `status` here flips
+ * on the chain's word, and a screen that is still waiting on the indexer is
+ * showing the *last stage of the same report*, not a competing one.
+ *
+ * Which leaves the coherence rule, and it is a rule about *surfaces*, not about
+ * either signal: **one signature is reported by one surface at a time.** While
+ * a screen in the foreground is reporting a signature, it claims it through
+ * `claimForegroundReport`, and `usePendingActivity` withholds that row from the
+ * banner. When the screen releases — because it settled, or because the user
+ * left — the banner takes the report over. It is never possible for the app to
+ * say "processing" and "confirmed" about one signature at the same time.
+ *
+ * The claim lives here, and the guard lives in `usePendingActivity`, because
+ * the same split produced the same bug on three flows (swap, send, NFT send).
+ * A guard inside any one screen's hook fixes one of them.
+ *
  * Scope: Solana only. Bitcoin and Ethereum sends are not tracked here because
  * there is no cross-chain status lookup in this package yet, and a pending row
  * that can never resolve is worse than no row. Non-Solana entries are dropped
@@ -76,6 +104,18 @@ interface PendingTransactionsContextValue {
   trackPendingTransaction: (tx: Omit<PendingTransaction, 'status'>) => void;
   /** Remove an entry the user acknowledged. */
   dismissPendingTransaction: (signature: string) => void;
+  /**
+   * Signatures a foreground screen is currently reporting itself. The banner
+   * withholds these rows so the app never reports one signature twice, in two
+   * states, at once. See the module doc.
+   */
+  foregroundReported: readonly string[];
+  /**
+   * Claim a signature for the screen in the foreground. Returns the release —
+   * call it when the screen stops reporting (settled, errored, or unmounted).
+   * Idempotent per signature; releasing twice is safe.
+   */
+  claimForegroundReport: (signature: string) => () => void;
 }
 
 const PendingTransactionsContext = createContext<PendingTransactionsContextValue | null>(null);
@@ -134,6 +174,19 @@ export function PendingTransactionsProvider({
         ? prev
         : [...prev, { ...tx, status: 'pending' }]
     );
+  }, []);
+
+  const [foregroundReported, setForegroundReported] = useState<string[]>([]);
+
+  const claimForegroundReport = useCallback((signature: string) => {
+    if (!signature) return () => undefined;
+    setForegroundReported((prev) => (prev.includes(signature) ? prev : [...prev, signature]));
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      setForegroundReported((prev) => prev.filter((s) => s !== signature));
+    };
   }, []);
 
   const dismissPendingTransaction = useCallback((signature: string) => {
@@ -250,8 +303,20 @@ export function PendingTransactionsProvider({
   }, [resolvedKey]);
 
   const value = useMemo(
-    () => ({ pendingTransactions, trackPendingTransaction, dismissPendingTransaction }),
-    [pendingTransactions, trackPendingTransaction, dismissPendingTransaction]
+    () => ({
+      pendingTransactions,
+      trackPendingTransaction,
+      dismissPendingTransaction,
+      foregroundReported,
+      claimForegroundReport,
+    }),
+    [
+      pendingTransactions,
+      trackPendingTransaction,
+      dismissPendingTransaction,
+      foregroundReported,
+      claimForegroundReport,
+    ]
   );
 
   return (

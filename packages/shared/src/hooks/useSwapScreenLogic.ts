@@ -701,6 +701,10 @@ export function useSwapScreenLogic<StyleType = unknown>({
       });
       captureSuccessSummary();
       setStep('success');
+      // This screen is now the one surface reporting this signature. The banner
+      // withholds it until the release below, so the app cannot report
+      // "processing" here and "confirmed" there at the same time.
+      const releaseReport = pendingTransactions?.claimForegroundReport(String(result.txId));
       // Jupiter is same-chain: settle until the indexer reflects both token
       // balances so the success screen can dwell and return the user to fresh
       // numbers. `settling` drives the success-screen "Done" gate.
@@ -714,6 +718,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
         })
         .finally(() => {
           setSettling(false);
+          releaseReport?.();
         });
       onSuccess?.(result.txId);
     } catch (error) {

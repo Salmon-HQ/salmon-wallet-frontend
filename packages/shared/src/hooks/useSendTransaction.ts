@@ -187,6 +187,10 @@ export function useSendTransaction({
           submittedAt: Date.now(),
           summary: `${params.amount} ${params.token.symbol}`,
         });
+        // This screen is now the one surface reporting this signature; the
+        // banner withholds it until the release below. Same guard as swap —
+        // see PendingTransactionsContext's module doc.
+        const releaseReport = pendingTransactions?.claimForegroundReport(String(result.txId));
         setSettling(true);
         settleUntilChanged({
           accountId,
@@ -198,6 +202,7 @@ export function useSendTransaction({
           })
           .finally(() => {
             setSettling(false);
+            releaseReport?.();
           });
         return result;
       } catch (err) {

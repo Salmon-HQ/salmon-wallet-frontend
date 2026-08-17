@@ -1,13 +1,25 @@
 /**
- * LoadingScreen - Animated loading overlay for browser extension
+ * LoadingScreen — the wait, on the app's own ground.
  *
  * Uses Emotion keyframes + styled() for consistency with the rest of @salmon/ui.
  *
- * Features:
- * - Pulsing logo animation (breathing effect)
- * - Rotating spinner around the logo
- * - Cycling tips/advice at the bottom
- * - Smooth fade in/out transitions
+ * The choreography, and the one idea it is built on: **the wait goes down and
+ * the success comes up.** The Surfacing is the only climax this system has, so
+ * a wait may not compete with it — it is given the opposite *direction*
+ * instead, which costs nothing and makes the two screens read as one sequence.
+ *
+ * - **The descent** replaces the spinning ring and the pulsing logo. A hairline
+ *   track with a segment of salmon ink running *down* it on `shimmerCycle`,
+ *   easing out at the end of every pass. A pass with rhythm and deceleration is
+ *   the one thing here with measured evidence behind it: Harrison, Yeo & Hudson
+ *   (CHI 2010) found a decelerating augmentation made a 5s wait read ~12%
+ *   shorter than an unaugmented one, and a constant-speed rotation — exactly
+ *   what stood here before — the worst of the options they measured.
+ * - **The wave** (opt-in, `waves`) is a distance-based stagger, not a
+ *   distortion: each element is displaced 3px with a delay proportional to its
+ *   distance from the top of the column, so something reads as crossing the
+ *   screen. Three emissions and it stops.
+ * - **Tips are off by default** — see `LoadingScreenBaseProps.showTips`.
  */
 import { memo, useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,10 +33,14 @@ import {
   lineHeight,
   DEFAULT_WALLET_TIP_KEYS,
   spacing,
-  borderWidth,
   duration,
   durationMs,
   easing,
+  componentSizes,
+  motionMs,
+  motionEasing,
+  reducedMotion,
+  semantic,
 } from '@salmon/shared';
 import { WaterColumn, waterColumnHost } from '../WaterColumn';
 import type { LoadingScreenProps } from './types';
@@ -33,14 +49,29 @@ import type { LoadingScreenProps } from './types';
 // Keyframes
 // ============================================================================
 
-const pulseKeyframes = keyframes`
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
+/**
+ * The descent: the segment enters above the track and leaves below it, so the
+ * pass reads as continuous rather than as a shuttle. `current` decelerates it
+ * into the bottom of every pass.
+ */
+const descentKeyframes = keyframes`
+  from { transform: translateY(-${componentSizes.descentSegmentHeight}px); }
+  to { transform: translateY(${componentSizes.descentTrackHeight}px); }
 `;
 
-const spinKeyframes = keyframes`
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/**
+ * One wave passing one element. The displacement occupies `swell` out of the
+ * `pulseCycle`; the rest of the cycle is stillness, which is what keeps a wait
+ * from becoming a show.
+ */
+const waveKeyframes = keyframes`
+  0% { transform: translateY(0) scale(1); }
+  ${(motionMs.swell / 2 / motionMs.pulseCycle) * 100}% {
+    transform: translateY(-${componentSizes.waveAmplitude}px) scale(1.02);
+  }
+  ${(motionMs.swell / motionMs.pulseCycle) * 100}%, 100% {
+    transform: translateY(0) scale(1);
+  }
 `;
 
 const fadeInKeyframes = keyframes`
@@ -103,38 +134,59 @@ const Subtitle = styled('div')({
   marginBottom: spacing['3xl'],
 });
 
-const LogoSpinnerContainer = styled('div')<{ $size: number }>(({ $size }) => ({
+/**
+ * Three emissions, then the water is still. A thirty-second wait cannot be a
+ * thirty-second show — the loop is what would turn the wait into a spectacle
+ * and take weight from The Surfacing.
+ */
+const WAVE_EMISSIONS = 3;
+
+/**
+ * A wave rider. `$rank` is the element's distance from the top of the column,
+ * in items: the delay is proportional to it, which is what makes the eye read a
+ * front crossing the screen rather than four things twitching at once.
+ */
+const WaveRider = styled('div')<{ $rank: number; $waves: boolean }>(({ $rank, $waves }) => ({
+  animation: $waves
+    ? `${waveKeyframes} ${motionMs.pulseCycle}ms ${motionEasing.current.css} ${$rank * motionMs.stagger}ms ${WAVE_EMISSIONS}`
+    : 'none',
+  [`@media ${reducedMotion.query}`]: {
+    animation: 'none',
+  },
+}));
+
+const DescentTrack = styled('div')({
   position: 'relative',
-  width: $size,
-  height: $size,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  width: componentSizes.descentTrackWidth,
+  height: componentSizes.descentTrackHeight,
+  borderRadius: componentSizes.descentTrackWidth,
+  backgroundColor: semantic.border.hairline,
+  overflow: 'hidden',
   marginBottom: spacing['5xl'],
-}));
-
-const Spinner = styled('div')<{ $size: number }>(({ $size }) => ({
-  position: 'absolute',
-  width: $size,
-  height: $size,
-  borderRadius: '50%',
-  border: `${borderWidth.heavy}px solid transparent`,
-  borderTopColor: colors.accent.primary,
-  borderRightColor: colors.accent.primary,
-  borderBottomColor: colors.accent.primary,
-  animation: `${spinKeyframes} ${durationMs.spinSlow}ms linear infinite`,
-  boxSizing: 'border-box',
-}));
-
-const LogoContainer = styled('div')({
-  animation: `${pulseKeyframes} ${durationMs.pulse}ms ${easing.easeInOut} infinite`,
 });
 
-const Logo = styled('img')<{ $size: number }>(({ $size }) => ({
-  width: $size,
-  height: $size,
-  objectFit: 'contain',
-}));
+/**
+ * Salmon as *ink*, which DESIGN.md does not ration — not a fill, which is
+ * rationed to one living element per screen and must not be spent on the least
+ * important thing on it.
+ */
+const DescentSegment = styled('div')({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: componentSizes.descentSegmentHeight,
+  borderRadius: componentSizes.descentTrackWidth,
+  backgroundColor: semantic.text.accent,
+  animation: `${descentKeyframes} ${motionMs.shimmerCycle}ms ${motionEasing.current.css} infinite`,
+  [`@media ${reducedMotion.query}`]: {
+    // A still indicator reads as a hung process, so reduced motion does not get
+    // an empty track: the segment rests at mid-track and the *words* carry the
+    // state instead. A parallel mapping, not an off switch.
+    animation: 'none',
+    transform: `translateY(${(componentSizes.descentTrackHeight - componentSizes.descentSegmentHeight) / 2}px)`,
+  },
+});
 
 const TipsContainer = styled('div')({
   position: 'absolute',
@@ -181,7 +233,7 @@ const TipText = styled('div')<{ $fading: boolean }>(({ $fading }) => ({
  *   visible={isLoading}
  *   title="Loading Wallet"
  *   subtitle="Please wait..."
- *   showTips={true}
+
  * />
  * ```
  */
@@ -191,9 +243,8 @@ export const LoadingScreen = memo(function LoadingScreen({
   subtitle,
   tips = DEFAULT_WALLET_TIP_KEYS as unknown as string[],
   tipInterval = 4000,
-  showTips = true,
-  logoSize = 100,
-  spinnerSize = 140,
+  showTips = false,
+  waves = false,
   bedrock = false,
 }: LoadingScreenProps) {
   const { t } = useTranslation();
@@ -241,7 +292,7 @@ export const LoadingScreen = memo(function LoadingScreen({
   if (!isVisible) return null;
 
   return (
-    <Overlay $isFadingOut={isFadingOut}>
+    <Overlay $isFadingOut={isFadingOut} role="status" aria-busy="true">
       {/* A wait is a screen like any other, and a screen is water. This one is
           the seam the ground has to close: the wait before a swap confirms is
           followed immediately by the receipt, which stands in the column, and
@@ -251,15 +302,22 @@ export const LoadingScreen = memo(function LoadingScreen({
       {!bedrock && <WaterColumn />}
 
       <Content>
-        {title && <Title>{title}</Title>}
-        {subtitle && <Subtitle>{subtitle}</Subtitle>}
+        {title && (
+          <WaveRider $rank={0} $waves={waves}>
+            <Title>{title}</Title>
+          </WaveRider>
+        )}
+        {subtitle && (
+          <WaveRider $rank={1} $waves={waves}>
+            <Subtitle>{subtitle}</Subtitle>
+          </WaveRider>
+        )}
 
-        <LogoSpinnerContainer $size={spinnerSize}>
-          <Spinner $size={spinnerSize} />
-          <LogoContainer>
-            <Logo src="/images/Logo.png" alt="Salmon Wallet" $size={logoSize} />
-          </LogoContainer>
-        </LogoSpinnerContainer>
+        <WaveRider $rank={2} $waves={waves}>
+          <DescentTrack aria-hidden="true" data-testid="loading-descent">
+            <DescentSegment />
+          </DescentTrack>
+        </WaveRider>
       </Content>
 
       {showTips && resolvedTips.length > 0 && (

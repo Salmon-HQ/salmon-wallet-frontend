@@ -69,7 +69,14 @@ jest.mock('@salmon/shared', () => ({
   // that the Surfacing's durations come out of `motionMs`, and a stubbed
   // `motionMs` would assert nothing.
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
+  // The caustic band is the scales motif, and the motif's geometry is data:
+  // a stub would only assert that a stub renders.
+  ...jest.requireActual('@salmon/shared/src/theme/scales'),
   letterSpacing: { normal: 0, wide: 0.3 },
+  // The real gate is `useWaitGate` and it is tested where it lives
+  // (packages/shared). Transparent here, so these cases stay about what the
+  // screen renders in each state rather than about timing.
+  useWaitGate: (active: boolean) => active,
   tabularNums: { native: { fontVariant: ['tabular-nums'] }, css: {} },
   semantic: {
     accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45', tint: 'rgba(255,92,69,0.1)' },
@@ -90,7 +97,13 @@ jest.mock('@salmon/shared', () => ({
       bedrock: '#0B0F19',
       membraneThick: 'rgba(11, 15, 25, 0.80)',
     },
-    scales: { refractionScale: 0.5, deepFieldStroke: 'rgba(199,211,232,0.06)', deepFieldScale: 3.2, fishStroke: 'rgba(7,9,17,0.10)', fishScale: 1 },
+    scales: {
+      refractionScale: 0.5,
+      deepFieldStroke: 'rgba(199,211,232,0.06)',
+      deepFieldScale: 3.2,
+      fishStroke: 'rgba(7,9,17,0.10)',
+      fishScale: 1,
+    },
     status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
     state: { hover: 'rgba(199,211,232,0.06)', press: 'rgba(199,211,232,0.10)' },
   },
@@ -138,7 +151,6 @@ import {
 } from './surfacing';
 
 const { motionMs } = jest.requireActual('@salmon/shared/src/theme/durations');
-
 
 const baseProps = {
   title: 'Swap Complete',
@@ -226,6 +238,14 @@ describe('TransactionSuccessScreen', () => {
       expect(screen.getByText('bc1qdeposit')).toBeTruthy();
       expect(screen.getByText('33 USDC')).toBeTruthy();
     });
+  });
+
+  it('keeps the amount on one line — a receipt prints an amount, not a sentence', () => {
+    render(<TransactionSuccessScreen {...baseProps} summary="0.0512345 SOL → 8.1234567 USDC" />);
+
+    const amount = screen.getByTestId('tx-success-summary');
+    expect(amount.props.numberOfLines).toBe(1);
+    expect(amount.props.adjustsFontSizeToFit).toBe(true);
   });
 
   describe('The Surfacing', () => {

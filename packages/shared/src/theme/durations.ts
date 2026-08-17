@@ -85,6 +85,23 @@ export const motionMs = {
   stagger: 24,
 
   /**
+   * 400ms — how long a wait must last before a waiting *screen* is allowed to
+   * mount at all. Below this the operation still feels instantaneous (the
+   * Doherty threshold), and a loader that appears and leaves inside it reads as
+   * a flicker rather than as information. This is a *gate*, not a transition:
+   * reduced motion must not collapse it.
+   */
+  waitDelay: 400,
+  /**
+   * 600ms — once a waiting screen has mounted, the shortest time it may stay.
+   * `waitDelay` alone does not stop the flicker: a 410ms operation would show
+   * the loader for 10ms. 400 + 600 lands on the 1s ceiling for "the user's
+   * flow of thought stays uninterrupted". A *failure* is exempt — an error is
+   * shown the moment it is known.
+   */
+  waitMinVisible: 600,
+
+  /**
    * Continuous loops. These are cycle lengths, not transitions: they describe
    * how long one revolution takes, so they are never resolved to 0. Under
    * reduced motion the loop is not sped up, it is not started at all.
@@ -228,10 +245,7 @@ export const reducedMotion = {
  * @param isReduceMotionEnabled Platform signal — `matchMedia(reducedMotion.query).matches`
  *   on web, `AccessibilityInfo.isReduceMotionEnabled()` on React Native.
  */
-export function resolveMotionMs(
-  ms: number,
-  isReduceMotionEnabled: boolean,
-): number {
+export function resolveMotionMs(ms: number, isReduceMotionEnabled: boolean): number {
   return isReduceMotionEnabled ? reducedMotion.ms : ms;
 }
 
@@ -239,10 +253,7 @@ export function resolveMotionMs(
  * CSS-string counterpart of `resolveMotionMs`, for a `transition` shorthand
  * built in JS (MUI `sx`, styled objects). Same caveats: travel only.
  */
-export function resolveMotionDuration(
-  cssDuration: string,
-  isReduceMotionEnabled: boolean,
-): string {
+export function resolveMotionDuration(cssDuration: string, isReduceMotionEnabled: boolean): string {
   return isReduceMotionEnabled ? reducedMotion.css : cssDuration;
 }
 

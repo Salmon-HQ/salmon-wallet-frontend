@@ -47,18 +47,28 @@ export function usePendingActivity(): UsePendingActivityResult {
   const bridge = useContext(BridgeSettlementContext);
 
   const transactions = pendingTx?.pendingTransactions;
+  const foregroundReported = pendingTx?.foregroundReported;
   const exchanges = bridge?.pendingExchanges;
   const dismissPendingTransaction = pendingTx?.dismissPendingTransaction;
 
   return useMemo(() => {
     const items: PendingActivityItem[] = [
-      ...(transactions ?? []).map((tx) => ({
-        id: tx.signature,
-        kind: tx.kind as PendingActivityKind,
-        status: tx.status,
-        detail: tx.summary,
-        dismissible: true,
-      })),
+      // The coherence guard, and the only place it exists. A signature a
+      // foreground screen is currently reporting is withheld here, so the app
+      // can never say "processing" on the screen and "confirmed" in the banner
+      // about the same transaction. See PendingTransactionsContext's module doc
+      // for which of the two signals is the verdict and which is a stage. This
+      // guard sits in the merge rather than in any screen's hook because the
+      // same split produced the same bug on swap, send and NFT send.
+      ...(transactions ?? [])
+        .filter((tx) => !(foregroundReported ?? []).includes(tx.signature))
+        .map((tx) => ({
+          id: tx.signature,
+          kind: tx.kind as PendingActivityKind,
+          status: tx.status,
+          detail: tx.summary,
+          dismissible: true,
+        })),
       // A bridge is only ever listed while it is unresolved: the settlement
       // provider removes it the moment StealthEX reports an outcome, and drops
       // it once it has gone a day without reaching one — an order whose deposit
@@ -78,5 +88,5 @@ export function usePendingActivity(): UsePendingActivityResult {
       items,
       dismiss: (id: string) => dismissPendingTransaction?.(id),
     };
-  }, [transactions, exchanges, dismissPendingTransaction]);
+  }, [transactions, exchanges, foregroundReported, dismissPendingTransaction]);
 }

@@ -34,6 +34,7 @@ import {
   borderWidth,
   semantic,
   tabularNums,
+  useWaitGate,
 } from '@salmon/shared';
 import type { TransactionSuccessScreenProps } from '@salmon/shared';
 import { PrimaryButton } from '../Button';
@@ -46,6 +47,9 @@ import { BAND_HEIGHT, MEMBRANE_OPACITY_TO, surfacingTimeline } from './surfacing
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a
 // mutable one.
 const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
+
+/** The floor `adjustsFontSizeToFit` may shrink the amount to before it stops. */
+const MIN_AMOUNT_SCALE = 0.6;
 
 // ============================================================================
 // Component
@@ -73,10 +77,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   // `surfacingTimeline` — a pure function, so the timing is testable without a
   // frame clock.
   const isReduceMotionEnabled = useReducedMotion();
-  const timeline = useMemo(
-    () => surfacingTimeline(isReduceMotionEnabled),
-    [isReduceMotionEnabled]
-  );
+  const timeline = useMemo(() => surfacingTimeline(isReduceMotionEnabled), [isReduceMotionEnabled]);
 
   const statusOpacity = useSharedValue(0);
   // The amount is the hero, so it owns its own node and its own value: the
@@ -100,13 +101,17 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
     setScreenHeight(event.nativeEvent.layout.height);
   }, []);
 
+  const showWait = useWaitGate(settling);
+
   const handleAmountLayout = useCallback((event: LayoutChangeEvent) => {
     const { y, height } = event.nativeEvent.layout;
     setAmountCenterY(y + height / 2);
   }, []);
 
   useEffect(() => {
-    if (settling) return;
+    // Keyed on the wait *screen*, not on `settling`: the gate can hold the wait
+    // a moment past the settle, and The Surfacing must not play behind it.
+    if (showWait) return;
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -142,7 +147,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
       withTiming(1, { duration: timeline.chrome.durationMs, easing: curve.current })
     );
   }, [
-    settling,
+    showWait,
     timeline,
     statusOpacity,
     amountOpacity,
@@ -155,7 +160,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   // 2. The caustic band. Held back until the corridor has been measured — a
   //    band that travels to the wrong place is worse than one frame of nothing.
   useEffect(() => {
-    if (settling || screenHeight <= 0 || amountCenterY <= 0) return;
+    if (showWait || screenHeight <= 0 || amountCenterY <= 0) return;
 
     const restingY = amountCenterY - BAND_HEIGHT / 2;
 
@@ -181,7 +186,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
       timeline.band.durationMs,
       withTiming(0, { duration: timeline.band.fadeMs, easing: curve.sink })
     );
-  }, [settling, timeline, screenHeight, amountCenterY, bandOpacity, bandTranslateY]);
+  }, [showWait, timeline, screenHeight, amountCenterY, bandOpacity, bandTranslateY]);
 
   const statusStyle = useAnimatedStyle(() => ({
     opacity: statusOpacity.value,
@@ -206,11 +211,16 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
     }
   };
 
-  if (settling) {
+  // The wait is gated, not merely rendered: below `motionMs.waitDelay` it never
+  // mounts and the user goes from the decision straight to the receipt; once
+  // mounted it holds for `motionMs.waitMinVisible` so a wait that resolves just
+  // over the threshold does not flash. The gate delays a *screen*, never work.
+  if (showWait) {
     return (
       <View style={styles.container}>
         <LoadingScreen
           visible
+          waves
           title={pendingTitle ?? title}
           subtitle={summary}
           bottomOffset={floatingBottomOffset}
@@ -247,7 +257,18 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
         onLayout={handleAmountLayout}
         testID="tx-success-amount"
       >
-        <Text style={styles.amount} testID="tx-success-summary">
+        {/* One line, always. The receipt used to print the whole operation as
+            one 36px title and it broke over three lines — an amount that wraps
+            stops being an amount and becomes a sentence. It shrinks rather than
+            wrapping or truncating: a number on a wallet receipt may not be
+            elided. */}
+        <Text
+          style={styles.amount}
+          testID="tx-success-summary"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={MIN_AMOUNT_SCALE}
+        >
           {summary}
         </Text>
       </Animated.View>
