@@ -156,7 +156,9 @@
     "effects_reason_batch": "This request contains several transactions that run in sequence, and each one depends on the one before it.",
     "effects_approval_title": "Spending permission",
     "effects_approval_unlimited": "an unlimited amount of",
-    "effects_approval_body": "{{spender}} would be able to move {{amount}} {{token}} out of your wallet, now and in the future, until you revoke it."
+    "effects_approval_body": "{{spender}} would be able to move {{amount}} {{token}} out of your wallet, now and in the future, until you revoke it.",
+    "hold_to_approve": "Hold to Approve",
+    "hold_to_approve_hint": "This request needs a deliberate approval. Hold the button to sign it."
   },
   "settings": {
     "title": "Settings",

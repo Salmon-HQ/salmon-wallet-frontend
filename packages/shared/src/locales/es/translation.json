@@ -156,7 +156,9 @@
     "effects_reason_batch": "Esta solicitud contiene varias transacciones que se ejecutan en secuencia, y cada una depende de la anterior.",
     "effects_approval_title": "Permiso de gasto",
     "effects_approval_unlimited": "una cantidad ilimitada de",
-    "effects_approval_body": "{{spender}} podría mover {{amount}} {{token}} de tu billetera, ahora y en el futuro, hasta que lo revoques."
+    "effects_approval_body": "{{spender}} podría mover {{amount}} {{token}} de tu billetera, ahora y en el futuro, hasta que lo revoques.",
+    "hold_to_approve": "Mantené para aprobar",
+    "hold_to_approve_hint": "Esta solicitud necesita una aprobación deliberada. Mantené presionado el botón para firmarla."
   },
   "settings": {
     "title": "Configuración",

@@ -19,9 +19,11 @@ import {
   previewSolanaApprovalEffects,
 } from '../utils/dapp-approval';
 import type { SolanaTransactionApprovalDetails } from '../utils/dapp-approval';
+import { useJupiterTokenList } from './useJupiterTokenList';
 import type { ResolveSymbolFn, TransactionEffects } from '../blockchain/solana';
 import type { SolanaAccount } from '../blockchain/solana';
 import type { DAppTransactionRequest } from '../types/dapp-approval';
+import type { SwapNetworkId } from '../types/swap';
 
 const LAMPORTS_PER_SOL = 1_000_000_000;
 
@@ -41,6 +43,34 @@ export interface UseSolanaTransactionApprovalResult {
   /** `null` only while the preview is still running. */
   effects: TransactionEffects | null;
   effectsLoading: boolean;
+}
+
+/**
+ * Fills in the tickers a preview could not resolve on its own.
+ *
+ * Applied to the finished result rather than passed into the simulation, so a
+ * token list that arrives after the preview still names the tokens — and a
+ * token list that never arrives leaves the mint addresses in place instead of
+ * holding the preview back.
+ *
+ * @param effects - The preview, or `null` while it is still running.
+ * @param resolveSymbol - Ticker lookup. Unresolved mints keep `symbol: null`.
+ */
+export function applySymbols(
+  effects: TransactionEffects | null,
+  resolveSymbol: ResolveSymbolFn
+): TransactionEffects | null {
+  if (effects?.kind !== 'effects') return effects;
+
+  return {
+    ...effects,
+    tokens: effects.tokens.map((token) =>
+      token.symbol ? token : { ...token, symbol: resolveSymbol(token.mint) ?? null }
+    ),
+    approvals: effects.approvals.map((grant) =>
+      grant.symbol ? grant : { ...grant, symbol: resolveSymbol(grant.mint) ?? null }
+    ),
+  };
 }
 
 /** The message this request is about — the identity a preview is cached under. */
@@ -90,6 +120,19 @@ export function useSolanaTransactionApproval({
     staleTime: Infinity,
   });
 
+  // The catalog the swap screens already hold: cached, shared, and free here.
+  // A preview never waits for it, and never fails because of it.
+  const { tokens } = useJupiterTokenList({
+    networkId: account?.network?.id as SwapNetworkId | undefined,
+    enabled: isEnabled,
+  });
+
+  const namedEffects = useMemo(() => {
+    if (resolveSymbol) return applySymbols(effects.data ?? null, resolveSymbol);
+    const catalog = new Map(tokens.map((token) => [token.address, token.symbol]));
+    return applySymbols(effects.data ?? null, (mint) => catalog.get(mint));
+  }, [effects.data, resolveSymbol, tokens]);
+
   const feeSol = useMemo(() => {
     const feeLamports = details.data?.feeLamports;
     if (feeLamports == null) return null;
@@ -100,7 +143,7 @@ export function useSolanaTransactionApproval({
     details: details.data ?? null,
     feeSol,
     parsingError: details.isError ? 'Failed to decode transaction' : null,
-    effects: effects.data ?? null,
+    effects: namedEffects,
     effectsLoading: isEnabled && effects.isPending,
   };
 }

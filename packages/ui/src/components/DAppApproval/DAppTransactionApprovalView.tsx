@@ -27,6 +27,7 @@ import {
   Title,
   Value,
 } from './common';
+import { HoldToApproveButton } from './HoldToApproveButton';
 import { TransactionEffectsCard } from './TransactionEffectsCard';
 import type { DAppTransactionApprovalViewProps } from './types';
 
@@ -50,6 +51,16 @@ export function DAppTransactionApprovalView({
   const { t } = useTranslation();
   const displayOrigin = formatOrigin(origin);
   const hasIdentity = !!appName || !!appIcon;
+
+  // A delegation, a failing transaction and an unreadable one are the three
+  // things a reflex tap should not be able to sign. A plain send that the
+  // preview understood keeps the ordinary button — friction everywhere is
+  // friction nowhere.
+  const requiresHold =
+    effects != null &&
+    (effects.kind === 'undetermined' ||
+      effects.kind === 'transaction-would-fail' ||
+      (effects.kind === 'effects' && effects.approvals.length > 0));
 
   return (
     <Container>
@@ -169,13 +180,28 @@ export function DAppTransactionApprovalView({
         </ScrollArea>
 
         <ButtonsContainer>
-          <PrimaryButton
-            onClick={onApprove}
-            loading={loading}
-            disabled={disabled || loading || !!parsingError}
-          >
-            {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
-          </PrimaryButton>
+          {requiresHold ? (
+            <>
+              <FooterNote sx={{ marginBottom: 1 }}>
+                {t('dapp.hold_to_approve_hint', 'Hold the button to approve this request.')}
+              </FooterNote>
+              <HoldToApproveButton
+                onApprove={onApprove}
+                loading={loading}
+                disabled={disabled || loading || !!parsingError}
+              >
+                {t('dapp.hold_to_approve', 'Hold to Approve').toUpperCase()}
+              </HoldToApproveButton>
+            </>
+          ) : (
+            <PrimaryButton
+              onClick={onApprove}
+              loading={loading}
+              disabled={disabled || loading || !!parsingError}
+            >
+              {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
+            </PrimaryButton>
+          )}
           <SecondaryButton onClick={onReject} disabled={loading}>
             {t('dapp.reject', 'Reject').toUpperCase()}
           </SecondaryButton>
