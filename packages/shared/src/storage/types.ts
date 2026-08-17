@@ -194,6 +194,8 @@ export const STORAGE_KEYS = {
   CUSTOM_TOKENS: 'salmon_custom_tokens',
   /** Active connection info for external apps */
   CONNECTION: 'salmon_connection',
+  /** Consecutive failed unlock attempts and when the last one happened */
+  UNLOCK_ATTEMPTS: 'salmon_unlock_attempts',
 
   // -- User preferences --
   /** User settings and preferences (useUserConfig) */

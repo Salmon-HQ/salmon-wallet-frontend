@@ -26,6 +26,7 @@ import {
   borderRadius,
   componentSizes,
   semantic,
+  useUnlockThrottle,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -50,6 +51,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FleshBackground } from '../FleshBackground';
 import { LoadingScreen } from '../LoadingScreen';
+import { WarningNotice } from '../WarningNotice';
 import type { BiometricConfig } from './types';
 
 // ============================================================================
@@ -102,6 +104,15 @@ export function LockContent({
 
   // Whether biometric state has been determined
   const [biometricReady, setBiometricReady] = useState(false);
+
+  // Failed attempts cost time. The wait is shown, never silent — an input that
+  // stops answering with no explanation reads as a broken wallet.
+  const {
+    remainingMs: throttleRemainingMs,
+    remainingSeconds: throttleRemainingSeconds,
+    refresh: refreshThrottle,
+  } = useUnlockThrottle(locked);
+  const throttled = throttleRemainingMs > 0;
 
   // Track if we've already auto-prompted biometric for this lock session
   const hasAutoPromptedBiometric = useRef(false);
@@ -230,7 +241,7 @@ export function LockContent({
 
   // Password unlock
   /** Same condition the button, its a11y state and its fill all read. */
-  const unlockDisabled = isLoading || !password.trim();
+  const unlockDisabled = isLoading || throttled || !password.trim();
 
   const handleUnlock = useCallback(async () => {
     if (!password.trim()) {
@@ -245,6 +256,7 @@ export function LockContent({
     try {
       const success = await onUnlock(password);
       if (!success) {
+        refreshThrottle();
         setError(t('lock.wrong_password'));
         setPassword('');
         setShowLoadingScreen(false);
@@ -257,7 +269,7 @@ export function LockContent({
     } finally {
       setIsLoading(false);
     }
-  }, [password, onUnlock, t]);
+  }, [password, onUnlock, t, refreshThrottle]);
 
   // Forgot password
   const handleForgotPassword = useCallback(() => {
@@ -309,6 +321,16 @@ export function LockContent({
                 </View>
                 <Text style={styles.welcomeText}>{t('lock.welcome_back')}</Text>
 
+                {showPasswordFallback && throttled && (
+                  <WarningNotice
+                    tone="warning"
+                    title={t('lock.throttled_title')}
+                    style={styles.throttleNotice}
+                  >
+                    {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
+                  </WarningNotice>
+                )}
+
                 {showPasswordFallback && (
                   <View style={styles.inputContainer}>
                     <TextInput
@@ -326,7 +348,7 @@ export function LockContent({
                       onFocus={() => setIsFocused(true)}
                       onBlur={() => setIsFocused(false)}
                       onSubmitEditing={handleUnlock}
-                      editable={!isLoading}
+                      editable={!isLoading && !throttled}
                       autoCapitalize="none"
                       autoCorrect={false}
                       returnKeyType="done"
@@ -465,6 +487,9 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     width: '100%',
+  },
+  throttleNotice: {
+    marginBottom: vs(spacing.sm),
   },
   input: {
     width: '100%',

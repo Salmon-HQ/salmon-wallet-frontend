@@ -12,7 +12,7 @@ import { styled } from '@salmon/ui';
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
-import { PrimaryButton, ConfirmDialog, LoadingScreen } from '@salmon/ui';
+import { PrimaryButton, ConfirmDialog, LoadingScreen, WarningNotice } from '@salmon/ui';
 import {
   colors,
   fontFamily,
@@ -24,6 +24,7 @@ import {
   type DerivedKeyCache,
   getStashItem,
   STASH_KEYS,
+  useUnlockThrottle,
 } from '@salmon/shared';
 import { storeSessionKey, clearSessionKey } from '../../utils/sessionKeyCache';
 
@@ -97,6 +98,10 @@ const ErrorText = styled(Typography)({
   marginLeft: spacing.xs,
 });
 
+const ThrottleNotice = styled(Box)({
+  marginBottom: spacing.lg,
+});
+
 const ForgotPasswordButton = styled('button')({
   marginTop: spacing.lg,
   padding: spacing.sm,
@@ -124,6 +129,14 @@ export function LockPage(): React.ReactElement {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const sessionKeyClearRef = useRef(false);
+  // Failed attempts cost time. Show the cost instead of a prompt that has
+  // quietly stopped answering.
+  const {
+    remainingMs: throttleRemainingMs,
+    remainingSeconds: throttleRemainingSeconds,
+    refresh: refreshThrottle,
+  } = useUnlockThrottle();
+  const throttled = throttleRemainingMs > 0;
 
   useEffect(() => {
     if (sessionKeyClearRef.current) return;
@@ -155,6 +168,7 @@ export function LockPage(): React.ReactElement {
       try {
         const success = await actions.unlockAccounts(password);
         if (!success) {
+          refreshThrottle();
           setError(t('lock.error.invalid_password', 'Invalid password'));
           setPassword('');
           setShowLoadingScreen(false);
@@ -174,7 +188,7 @@ export function LockPage(): React.ReactElement {
         setIsUnlocking(false);
       }
     },
-    [password, actions, t, navigate]
+    [password, actions, t, navigate, refreshThrottle]
   );
 
   const handleFinalConfirm = useCallback(async () => {
@@ -195,6 +209,14 @@ export function LockPage(): React.ReactElement {
           <Subtitle>{t('lock.subtitle', 'Enter your password to unlock your wallet')}</Subtitle>
 
           <Form onSubmit={handleSubmit}>
+            {throttled && (
+              <ThrottleNotice data-testid="lock-throttle-notice">
+                <WarningNotice tone="warning" title={t('lock.throttled_title')}>
+                  {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
+                </WarningNotice>
+              </ThrottleNotice>
+            )}
+
             <InputContainer>
               <StyledInput
                 type="password"
@@ -202,7 +224,7 @@ export function LockPage(): React.ReactElement {
                 onChange={handlePasswordChange}
                 placeholder={t('lock.password_placeholder', 'Password')}
                 $hasError={!!error}
-                disabled={isUnlocking}
+                disabled={isUnlocking || throttled}
                 autoFocus
                 fullWidth
                 inputProps={{
@@ -214,7 +236,7 @@ export function LockPage(): React.ReactElement {
             </InputContainer>
             <PrimaryButton
               type="submit"
-              disabled={!password.trim()}
+              disabled={!password.trim() || throttled}
               loading={isUnlocking}
               fullWidth
               testID="lock-unlock-button"

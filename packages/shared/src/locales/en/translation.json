@@ -403,6 +403,8 @@
     "enter_password": "Enter Your Password",
     "unlock": "Unlock",
     "wrong_password": "Incorrect password. Please try again.",
+    "throttled_title": "Too many failed attempts",
+    "throttled_body": "Wait {{seconds}}s before trying again. Each wrong password makes the next wait longer. Your wallet is untouched.",
     "enter_password_error": "Please enter your password",
     "unlock_failed": "Failed to unlock wallet. Please try again.",
     "reset_failed": "Failed to reset wallet. Please try again.",

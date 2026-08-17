@@ -13,6 +13,9 @@ const mockGetSessionKey = vi.fn();
 const mockStoreSessionKey = vi.fn();
 const mockClearSessionKey = vi.fn();
 const mockGetStashItem = vi.fn();
+
+// Mutable so a test can put the page into its throttled state.
+const mockThrottle = { failedAttempts: 0, remainingMs: 0, remainingSeconds: 0, refresh: vi.fn() };
 const mockNavigate = vi.fn();
 const mockUnlockWithCachedKey = vi.fn();
 const mockUnlockAccounts = vi.fn();
@@ -32,7 +35,9 @@ function sanitizeDomProps(props: Record<string, unknown>) {
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (_key: string, fallback?: string) => fallback ?? _key,
+    // Second arg is a fallback string on most calls and an interpolation
+    // options object on a few; only a string may be rendered.
+    t: (_key: string, fallback?: unknown) => (typeof fallback === 'string' ? fallback : _key),
   }),
 }));
 
@@ -51,6 +56,12 @@ vi.mock('@salmon/ui', () => ({
   ),
   ConfirmDialog: () => null,
   LoadingScreen: () => null,
+  WarningNotice: ({ title, children }: PropsWithChildren<{ title?: string }>) => (
+    <div role="alert">
+      <span>{title}</span>
+      <span>{children}</span>
+    </div>
+  ),
 }));
 
 vi.mock('../../utils/sessionKeyCache', () => ({
@@ -77,6 +88,7 @@ vi.mock('@salmon/shared', () => {
     componentSizes: { inputRadius: 8 },
     STASH_KEYS: { DERIVED_KEY: 'derivedKey' },
     getStashItem: (...args: unknown[]) => mockGetStashItem(...args),
+    useUnlockThrottle: () => mockThrottle,
     useAccountsContext: () => [
       null,
       {
@@ -102,6 +114,21 @@ describe('Web LockPage', () => {
     mockUnlockWithCachedKey.mockResolvedValue(true);
     mockUnlockAccounts.mockResolvedValue(true);
     mockRemoveAllAccounts.mockResolvedValue(undefined);
+    mockThrottle.failedAttempts = 0;
+    mockThrottle.remainingMs = 0;
+    mockThrottle.remainingSeconds = 0;
+  });
+
+  it('says why the prompt stopped accepting attempts, instead of going quiet', async () => {
+    mockThrottle.failedAttempts = 4;
+    mockThrottle.remainingMs = 5000;
+    mockThrottle.remainingSeconds = 5;
+
+    render(<LockPage />);
+
+    // Label, not a dead form.
+    expect(await screen.findByTestId('lock-throttle-notice')).toBeTruthy();
+    expect(screen.getByTestId('lock-password-input')).toHaveProperty('disabled', true);
   });
 
   it('requires explicit re-authentication on the lock screen even if a session key exists', async () => {

@@ -32,6 +32,10 @@ export type {
   UseInactivityTimeoutResult,
 } from './useInactivityTimeout';
 
+// Unlock throttling (failed-password backoff, for the lock screens)
+export { useUnlockThrottle } from './useUnlockThrottle';
+export type { UseUnlockThrottleResult } from './useUnlockThrottle';
+
 // Available networks hook
 export { useAvailableNetworks, fetchAndMergeNetworkConfigs } from './useAvailableNetworks';
 export type { UseAvailableNetworksResult } from './useAvailableNetworks';

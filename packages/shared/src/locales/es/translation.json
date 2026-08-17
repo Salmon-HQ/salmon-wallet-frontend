@@ -403,6 +403,8 @@
     "enter_password": "Ingresá tu contraseña",
     "unlock": "Desbloquear",
     "wrong_password": "Contraseña incorrecta. Por favor, intentalo de nuevo.",
+    "throttled_title": "Demasiados intentos fallidos",
+    "throttled_body": "Esperá {{seconds}} s antes de volver a intentar. Cada contraseña incorrecta alarga la espera siguiente. Tu billetera no se toca.",
     "enter_password_error": "Por favor ingresá tu contraseña",
     "unlock_failed": "Error al desbloquear la billetera. Por favor, intentalo de nuevo.",
     "reset_failed": "Error al restablecer la billetera. Por favor, intentalo de nuevo.",

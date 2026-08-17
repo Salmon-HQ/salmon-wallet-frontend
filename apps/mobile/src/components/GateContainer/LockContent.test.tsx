@@ -5,6 +5,9 @@ import { Alert, AppState } from 'react-native';
 const mockAlert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 const mockAddEventListener = jest.fn();
 
+// Mutable so a test can put the screen into its throttled state.
+const mockThrottle = { failedAttempts: 0, remainingMs: 0, remainingSeconds: 0, refresh: jest.fn() };
+
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
@@ -44,9 +47,10 @@ jest.mock('@salmon/shared', () => ({
   },
   borderRadius: { badge: 12, xl: 20 },
   borderWidth: { sheet: 1, thin: 1 },
+  useUnlockThrottle: () => mockThrottle,
   colors: {
     text: { primary: '#fff', secondary: '#999' },
-    status: { error: '#f00' },
+    status: { error: '#f00', warningBackground: '#332200', errorBackground: '#330000' },
     accent: { primary: '#0f0', border: '#0f0' },
     input: { border: '#444', background: '#111' },
     button: { disabledOpacity: 0.5 },
@@ -64,6 +68,7 @@ jest.mock('@salmon/shared', () => ({
   ms: (value: number) => value,
   s: (value: number) => value,
   spacing: {
+    xs: 4,
     sm: 8,
     md: 12,
     lg: 16,
@@ -94,6 +99,9 @@ describe('LockContent', () => {
       value: 'active',
       writable: true,
     });
+    mockThrottle.failedAttempts = 0;
+    mockThrottle.remainingMs = 0;
+    mockThrottle.remainingSeconds = 0;
     mockAddEventListener.mockReturnValue({ remove: jest.fn() });
     AppState.addEventListener = mockAddEventListener as any;
   });
@@ -192,6 +200,36 @@ describe('LockContent', () => {
     await secondAlertActions?.[1]?.onPress?.();
 
     expect(onRemoveAllAccounts).toHaveBeenCalledTimes(1);
+  });
+
+  it('says why the password field stopped accepting attempts', async () => {
+    mockThrottle.failedAttempts = 4;
+    mockThrottle.remainingMs = 5000;
+    mockThrottle.remainingSeconds = 5;
+
+    render(
+      <LockContent
+        locked
+        onUnlock={jest.fn().mockResolvedValue(false)}
+        onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
+        biometric={{
+          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
+          authenticateWithBiometric: jest.fn(),
+          storeKeyForBiometric: jest.fn(),
+          enableBiometric: false,
+          refreshState: jest.fn().mockResolvedValue(undefined),
+        }}
+      />
+    );
+
+    await act(async () => {});
+
+    // Label, not just a dead control.
+    await waitFor(() => {
+      expect(screen.getByText('lock.throttled_title')).toBeTruthy();
+    });
+    expect(screen.getByTestId('lock-password-input').props.editable).toBe(false);
+    expect(screen.getByTestId('lock-unlock-button').props.accessibilityState.disabled).toBe(true);
   });
 
   // Regression guard for the e2e test-label contract (Maestro `id` selectors).

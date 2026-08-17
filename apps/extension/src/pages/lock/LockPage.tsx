@@ -11,7 +11,7 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import InputBase from '@mui/material/InputBase';
-import { PrimaryButton, ConfirmDialog, LoadingScreen } from '../../components';
+import { PrimaryButton, ConfirmDialog, LoadingScreen, WarningNotice } from '../../components';
 import {
   colors,
   fontFamily,
@@ -22,6 +22,7 @@ import {
   DerivedKeyCache,
   getStashItem,
   STASH_KEYS,
+  useUnlockThrottle,
 } from '@salmon/shared';
 import { storeSessionKey, clearSessionKey } from '../../utils/sessionKeyCache';
 
@@ -107,6 +108,10 @@ const StyledInput = styled(InputBase)<{
   },
 }));
 
+const ThrottleNotice = styled(Box)({
+  marginBottom: spacing.lg,
+});
+
 const ErrorText = styled(Typography)({
   color: colors.status.error,
   fontSize: fontSize.xs,
@@ -149,6 +154,14 @@ export function LockPage({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const sessionKeyClearRef = useRef(false);
+  // Failed attempts cost time. Show the cost instead of a prompt that has
+  // quietly stopped answering.
+  const {
+    remainingMs: throttleRemainingMs,
+    remainingSeconds: throttleRemainingSeconds,
+    refresh: refreshThrottle,
+  } = useUnlockThrottle();
+  const throttled = throttleRemainingMs > 0;
 
   useEffect(() => {
     if (sessionKeyClearRef.current) return;
@@ -181,6 +194,7 @@ export function LockPage({
       try {
         const success = await onUnlock(password);
         if (!success) {
+          refreshThrottle();
           setError(t('lock.error.invalid_password', 'Invalid password'));
           setPassword('');
           setShowLoadingScreen(false);
@@ -201,7 +215,7 @@ export function LockPage({
         setIsUnlocking(false);
       }
     },
-    [password, onUnlock, t]
+    [password, onUnlock, t, refreshThrottle]
   );
 
   const handleForgotPassword = useCallback(() => {
@@ -233,6 +247,14 @@ export function LockPage({
           <Subtitle>{t('lock.subtitle', 'Enter your password to unlock your wallet')}</Subtitle>
 
           <Form onSubmit={handleSubmit}>
+            {throttled && (
+              <ThrottleNotice data-testid="lock-throttle-notice">
+                <WarningNotice tone="warning" title={t('lock.throttled_title')}>
+                  {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
+                </WarningNotice>
+              </ThrottleNotice>
+            )}
+
             <InputContainer>
               <StyledInput
                 type="password"
@@ -240,7 +262,7 @@ export function LockPage({
                 onChange={handlePasswordChange}
                 placeholder={t('lock.password_placeholder', 'Password')}
                 $hasError={!!error}
-                disabled={isUnlocking}
+                disabled={isUnlocking || throttled}
                 autoFocus
                 fullWidth
                 inputProps={{
@@ -253,7 +275,7 @@ export function LockPage({
 
             <PrimaryButton
               type="submit"
-              disabled={!password.trim()}
+              disabled={!password.trim() || throttled}
               loading={isUnlocking}
               fullWidth
               testID="lock-unlock-button"
