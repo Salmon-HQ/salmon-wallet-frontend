@@ -20,9 +20,28 @@ export type {
 } from './CurrencyContext';
 
 // Bridge settlement context (background cross-chain settlement)
-export { BridgeSettlementProvider, useBridgeSettlement } from './BridgeSettlementContext';
+export {
+  BridgeSettlementContext,
+  BridgeSettlementProvider,
+  useBridgeSettlement,
+} from './BridgeSettlementContext';
 
 export type {
   PendingBridgeExchange,
   BridgeSettlementProviderProps,
 } from './BridgeSettlementContext';
+
+// Pending transactions context (global in-flight state for signed on-chain txs)
+export {
+  PendingTransactionsContext,
+  PendingTransactionsProvider,
+  usePendingTransactions,
+  usePendingTransactionsOptional,
+} from './PendingTransactionsContext';
+
+export type {
+  PendingTransaction,
+  PendingTransactionKind,
+  PendingTransactionStatus,
+  PendingTransactionsProviderProps,
+} from './PendingTransactionsContext';

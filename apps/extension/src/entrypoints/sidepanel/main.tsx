@@ -12,6 +12,7 @@ import { CssBaseline, ThemeProvider } from '@mui/material';
 
 // Initialize i18n configuration - must be imported before App
 import i18n from '../../i18n/config';
+import { PendingActivityLayer } from '../../components/PendingActivityLayer';
 import { I18nextProvider } from 'react-i18next';
 
 // Initialize storage and stash for extension platform
@@ -72,7 +73,9 @@ const waitForLayout = (): Promise<void> =>
               <I18nextProvider i18n={i18n}>
                 <AccountsProvider>
                   <CurrencyProvider>
-                    <App />
+                    <PendingActivityLayer>
+                      <App />
+                    </PendingActivityLayer>
                   </CurrencyProvider>
                 </AccountsProvider>
               </I18nextProvider>

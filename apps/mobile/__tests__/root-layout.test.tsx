@@ -75,6 +75,18 @@ jest.mock('@salmon/shared', () => ({
   createQueryClient: () => ({}),
   QueryClientProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
   BridgeSettlementProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  PendingTransactionsProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  usePendingActivity: () => ({ items: [], dismiss: jest.fn() }),
+  semantic: {
+    text: { secondary: '#A7B1C4', tertiary: '#8B96AD' },
+    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+    surface: { crest: '#1B2233' },
+    border: { raised: '#6F7B95' },
+  },
+  borderRadius: { lg: 16 },
+  fontSize: { xs: 10, sm: 12 },
+  fontWeight: { semibold: '600' },
+  spacing: { xs: 4, sm: 8, md: 12 },
 }));
 
 describe('RootLayout mobile lock lifecycle', () => {

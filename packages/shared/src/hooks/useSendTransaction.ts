@@ -32,6 +32,7 @@ import type {
   SendTransactionStatus,
 } from '../types/send';
 import { useSettleUntilChanged } from '../query/invalidation';
+import { usePendingTransactionsOptional } from '../contexts/PendingTransactionsContext';
 import { trackEvent, trackFirstTime } from '../analytics';
 import { STORAGE_KEYS } from '../storage';
 import { classifyTransactionError } from '../utils/transaction-errors';
@@ -93,6 +94,7 @@ export function useSendTransaction({
   const [error, setError] = useState<string | null>(null);
   const [feeEstimateFailed, setFeeEstimateFailed] = useState(false);
   const settleUntilChanged = useSettleUntilChanged();
+  const pendingTransactions = usePendingTransactionsOptional();
 
   const reset = useCallback(() => {
     setStatus('idle');
@@ -175,6 +177,16 @@ export function useSendTransaction({
         // success screen dwell until the user can return to a fresh balance.
         const accountId = account.getReceiveAddress();
         const networkId = account.getNetworkId();
+        // Record the signature globally before anything screen-owned runs, so
+        // the outcome survives the user leaving, locking, or killing the app.
+        pendingTransactions?.trackPendingTransaction({
+          signature: String(result.txId),
+          kind: 'send',
+          networkId,
+          accountId,
+          submittedAt: Date.now(),
+          summary: `${params.amount} ${params.token.symbol}`,
+        });
         setSettling(true);
         settleUntilChanged({
           accountId,
@@ -203,7 +215,7 @@ export function useSendTransaction({
         throw err;
       }
     },
-    [account, settleUntilChanged]
+    [account, settleUntilChanged, pendingTransactions]
   );
 
   return {

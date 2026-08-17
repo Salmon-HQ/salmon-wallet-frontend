@@ -867,5 +867,24 @@
     "addAccount": "Agregar Nueva Cuenta",
     "deleteConfirmTitle": "¿Eliminar Cuenta?",
     "deleteConfirmMessage": "¿Estás seguro de que querés eliminar \"{{name}}\"? Esta acción no se puede deshacer."
+  },
+  "pending": {
+    "send": {
+      "pending": "Envío en curso",
+      "confirmed": "Envío confirmado",
+      "failed": "El envío falló",
+      "expired": "El envío venció"
+    },
+    "swap": {
+      "pending": "Swap en curso",
+      "confirmed": "Swap confirmado",
+      "failed": "El swap falló",
+      "expired": "El swap venció"
+    },
+    "bridge": {
+      "pending": "Bridge en curso"
+    },
+    "expiredHint": "Nunca llegó a la red. No salió nada de tu billetera.",
+    "dismiss": "Descartar"
   }
 }

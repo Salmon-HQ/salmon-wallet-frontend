@@ -169,3 +169,11 @@ export type {
   UndeterminedEffects,
   UndeterminedReason,
 } from './simulation';
+
+// Cold-start-safe signature status lookup (background pending-transaction poller)
+export { getSolanaSignatureOutcomes, BLOCKHASH_EXPIRY_CEILING_MS } from './signature-status';
+export type {
+  SignatureOutcome,
+  SignatureOutcomeLookup,
+  SignatureOutcomeQuery,
+} from './signature-status';

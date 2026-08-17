@@ -867,5 +867,24 @@
     "addAccount": "Add New Account",
     "deleteConfirmTitle": "Delete Account?",
     "deleteConfirmMessage": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+  },
+  "pending": {
+    "send": {
+      "pending": "Send in progress",
+      "confirmed": "Send confirmed",
+      "failed": "Send failed",
+      "expired": "Send expired"
+    },
+    "swap": {
+      "pending": "Swap in progress",
+      "confirmed": "Swap confirmed",
+      "failed": "Swap failed",
+      "expired": "Swap expired"
+    },
+    "bridge": {
+      "pending": "Bridge in progress"
+    },
+    "expiredHint": "It never reached the network. Nothing left your wallet.",
+    "dismiss": "Dismiss"
   }
 }

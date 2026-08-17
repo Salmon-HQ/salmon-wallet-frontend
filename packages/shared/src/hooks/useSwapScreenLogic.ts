@@ -32,6 +32,7 @@ import { getChainDisplayName } from '../utils/account';
 import { KNOWN_DECIMALS, NATIVE_TOKEN_LOGOS } from '../utils/tokens';
 import { getEnabledNetworkIds } from '../api/services/network';
 import { useSettleAfterTx, useSettleUntilChanged } from '../query/invalidation';
+import { usePendingTransactionsOptional } from '../contexts/PendingTransactionsContext';
 
 // ============================================================================
 // Constants
@@ -331,6 +332,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
 }: UseSwapScreenLogicParams<StyleType>): UseSwapScreenLogicResult {
   const settleAfterTx = useSettleAfterTx();
   const settleUntilChanged = useSettleUntilChanged();
+  const pendingTransactions = usePendingTransactionsOptional();
   // ── State ──────────────────────────────────────────────────────────────
 
   const [step, setStep] = useState<SwapScreenStep>('input');
@@ -685,6 +687,18 @@ export function useSwapScreenLogic<StyleType = unknown>({
     try {
       const result = await onSwap(quote);
       setSuccessTxId(result.txId);
+      // Hand the signature to the global pending store before any screen-owned
+      // state moves. `step` and the settle await below both die with this
+      // component; the pending entry is what reports the outcome to a user who
+      // navigates away, locks, or kills the app mid-flight.
+      pendingTransactions?.trackPendingTransaction({
+        signature: String(result.txId),
+        kind: 'swap',
+        networkId: quote.networkId as NetworkId,
+        submittedAt: Date.now(),
+        summary:
+          `${inAmount} ${inToken?.symbol ?? ''} \u2192 ${outAmount} ${outToken?.symbol ?? ''}`.trim(),
+      });
       captureSuccessSummary();
       setStep('success');
       // Jupiter is same-chain: settle until the indexer reflects both token
@@ -710,7 +724,19 @@ export function useSwapScreenLogic<StyleType = unknown>({
     } finally {
       setIsConfirming(false);
     }
-  }, [onError, onSuccess, onSwap, quote, settleUntilChanged, captureSuccessSummary]);
+  }, [
+    onError,
+    onSuccess,
+    onSwap,
+    quote,
+    settleUntilChanged,
+    captureSuccessSummary,
+    pendingTransactions,
+    inAmount,
+    outAmount,
+    inToken,
+    outToken,
+  ]);
 
   const handleConfirmBridge = useCallback(async () => {
     if (!inToken || !outToken || !inAmount || !recipientAddress || !onCreateBridgeExchange) return;

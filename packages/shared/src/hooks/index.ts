@@ -45,6 +45,13 @@ export { useTransactions } from './useTransactions';
 export type { UseTransactionsParams, UseTransactionsResult } from './useTransactions';
 
 // Send transaction hook
+export { usePendingActivity } from './usePendingActivity';
+export type {
+  PendingActivityItem,
+  PendingActivityKind,
+  UsePendingActivityResult,
+} from './usePendingActivity';
+
 export { useSendTransaction } from './useSendTransaction';
 export type { UseSendTransactionParams, UseSendTransactionResult } from './useSendTransaction';
 

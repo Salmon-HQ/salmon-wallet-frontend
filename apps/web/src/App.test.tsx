@@ -15,6 +15,7 @@ const eventListeners = new Map<string, EventListener>();
 
 vi.mock('@salmon/ui', () => ({
   WalletLayout: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  PendingActivityBanner: () => null,
 }));
 
 vi.mock('react-router-dom', () => ({
@@ -53,6 +54,8 @@ vi.mock('@salmon/shared', async () => {
       }),
     QueryClientProvider,
     BridgeSettlementProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    PendingTransactionsProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    usePendingActivity: () => ({ items: [], dismiss: vi.fn() }),
   };
 });
 

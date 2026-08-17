@@ -222,6 +222,8 @@ export const STORAGE_KEYS = {
   // -- Cross-chain settlement --
   /** Pending StealthEX bridge exchanges awaiting completion (BridgeSettlement) */
   PENDING_BRIDGES: 'salmon_pending_bridges',
+  /** Submitted on-chain signatures still awaiting a verdict (PendingTransactions) */
+  PENDING_TRANSACTIONS: 'salmon_pending_transactions',
 
   // -- Legacy keys (v2 → v3 migration, removed after upgrade) --
   /** @deprecated Legacy wallet list */

@@ -105,6 +105,10 @@ export type { GradientBackgroundProps } from './GradientBackground';
 export { BlurContainer } from './BlurContainer';
 export type { BlurContainerProps, BlurTint } from './BlurContainer';
 
+// PendingActivityBanner - Global in-flight transaction surface
+export { PendingActivityBanner } from './PendingActivityBanner';
+export type { PendingActivityBannerProps } from './PendingActivityBanner';
+
 // WarningNotice - Icon-led alert banner for security/failure states
 export { WarningNotice } from './WarningNotice';
 export type { WarningNoticeProps, WarningNoticeTone } from './WarningNotice';

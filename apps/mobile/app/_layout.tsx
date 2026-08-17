@@ -10,9 +10,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, AppState, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { I18nProvider } from '../src/i18n';
 import { WalletInitErrorScreen } from '../src/components/WalletInitErrorScreen';
+import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
 import {
   AccountsProvider,
   CurrencyProvider,
@@ -21,6 +23,8 @@ import {
   createQueryClient,
   QueryClientProvider,
   BridgeSettlementProvider,
+  PendingTransactionsProvider,
+  usePendingActivity,
 } from '@salmon/shared';
 
 export {
@@ -65,11 +69,13 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <BridgeSettlementProvider>
-        <AccountsProvider>
-          <CurrencyProvider>
-            <RootLayoutNav />
-          </CurrencyProvider>
-        </AccountsProvider>
+        <PendingTransactionsProvider>
+          <AccountsProvider>
+            <CurrencyProvider>
+              <RootLayoutNav />
+            </CurrencyProvider>
+          </AccountsProvider>
+        </PendingTransactionsProvider>
       </BridgeSettlementProvider>
     </QueryClientProvider>
   );
@@ -230,30 +236,43 @@ function RootLayoutNav() {
   return (
     <I18nProvider>
       <ThemeProvider value={CustomDarkTheme}>
-        <View style={styles.container}>
-          <Stack screenOptions={{ headerShown: false }}>
-            {/* Auth flow - onboarding screens */}
-            <Stack.Screen
-              name="(auth)"
-              options={{
-                // Prevent going back to auth after completing onboarding
-                gestureEnabled: false,
-              }}
-            />
+        <SafeAreaProvider>
+          <View style={styles.container}>
+            <Stack screenOptions={{ headerShown: false }}>
+              {/* Auth flow - onboarding screens */}
+              <Stack.Screen
+                name="(auth)"
+                options={{
+                  // Prevent going back to auth after completing onboarding
+                  gestureEnabled: false,
+                }}
+              />
 
-            {/* Main app - tabs and other screens */}
-            <Stack.Screen
-              name="(app)"
-              options={{
-                // Prevent going back
-                gestureEnabled: false,
-              }}
-            />
-          </Stack>
-        </View>
+              {/* Main app - tabs and other screens */}
+              <Stack.Screen
+                name="(app)"
+                options={{
+                  // Prevent going back
+                  gestureEnabled: false,
+                }}
+              />
+            </Stack>
+            <PendingActivity />
+          </View>
+        </SafeAreaProvider>
       </ThemeProvider>
     </I18nProvider>
   );
+}
+
+/**
+ * Global in-flight surface, mounted as a sibling of the navigator so it
+ * outlives every screen transition — including the lock that fires the moment
+ * the app is backgrounded.
+ */
+function PendingActivity() {
+  const { items, dismiss } = usePendingActivity();
+  return <PendingActivityBanner items={items} onDismiss={dismiss} />;
 }
 
 const styles = StyleSheet.create({

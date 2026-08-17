@@ -152,3 +152,6 @@ export type {
 
 // About Panel
 export type { AboutPanelPropsBase } from './about-panel';
+
+// Pending Activity Banner
+export type { PendingActivityBannerPropsBase } from './pending-activity-banner';

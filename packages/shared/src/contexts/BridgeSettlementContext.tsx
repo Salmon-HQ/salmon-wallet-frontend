@@ -268,6 +268,8 @@ export function BridgeSettlementProvider({
   );
 }
 
+export { BridgeSettlementContext };
+
 export function useBridgeSettlement(): BridgeSettlementContextValue {
   const ctx = useContext(BridgeSettlementContext);
   if (!ctx) {

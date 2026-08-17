@@ -336,3 +336,6 @@ export type { PrivateKeyPanelProps } from './PrivateKeyPanel';
 
 export { BackupPanel } from './BackupPanel';
 export { AboutPanel } from './AboutPanel';
+
+export { PendingActivityBanner } from './PendingActivityBanner';
+export type { PendingActivityBannerProps } from './PendingActivityBanner';

@@ -12,6 +12,7 @@ import { salmonTheme } from '@salmon/ui';
 // Initialize i18n configuration - must be imported before App
 import i18n from '../../i18n/config';
 import { I18nextProvider } from 'react-i18next';
+import { PendingActivityLayer } from '../../components/PendingActivityLayer';
 
 // Initialize storage and stash for extension platform
 import {
@@ -46,7 +47,9 @@ function Root() {
             <I18nextProvider i18n={i18n}>
               <AccountsProvider>
                 <CurrencyProvider>
-                  <App />
+                  <PendingActivityLayer>
+                    <App />
+                  </PendingActivityLayer>
                 </CurrencyProvider>
               </AccountsProvider>
             </I18nextProvider>
