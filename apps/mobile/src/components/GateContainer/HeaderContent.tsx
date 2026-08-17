@@ -24,8 +24,10 @@ import {
 } from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
+import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { ContentCopySvgIcon, SettingsSvgIcon, WalletSvgIcon } from '../Icon';
 
 // ============================================================================
@@ -59,10 +61,12 @@ export function HeaderContent({
 }: HeaderContentProps) {
   const { t } = useTranslation();
   const [imgError, setImgError] = useState(false);
+  const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
 
   const handleCopyPress = useCallback(() => {
     onCopyAddress?.();
-  }, [onCopyAddress]);
+    showCopied();
+  }, [onCopyAddress, showCopied]);
 
   const handleSettingsPress = useCallback(() => {
     onSettingsPress?.();
@@ -123,12 +127,22 @@ export function HeaderContent({
             onPress={handleCopyPress}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel={t('accessibility.copy_address', { address: truncatedAddress })}
+            accessibilityLabel={
+              copied
+                ? t('actions.copied')
+                : t('accessibility.copy_address', { address: truncatedAddress })
+            }
             style={styles.copyButton}
           >
             {/* 23 not 30: the copy glyph fills ~77% of its 24px viewBox vs the
                 settings glyph's ~60%, so it renders larger at the same size. */}
-            <ContentCopySvgIcon size={s(23)} color={semantic.text.accent} />
+            {copied ? (
+              <Animated.View style={{ transform: [{ scale: tickScale }] }}>
+                <Ionicons name="checkmark" size={s(23)} color={semantic.status.success} />
+              </Animated.View>
+            ) : (
+              <ContentCopySvgIcon size={s(23)} color={semantic.text.accent} />
+            )}
           </TouchableOpacity>
         </View>
       </View>
