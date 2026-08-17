@@ -271,7 +271,7 @@ marks its parts.
 | Bezel on filled controls (`shadowsCSS.bezel`, same literal on DOM and RN)                     | **Shipped**                                                                                 | `packages/shared/src/theme/shadows.ts`                                                                                                                                                                                       |
 | Motion vocabulary (`flick`…`tide`, `current`/`settle`/`sink`/`swellIn`)                       | **Shipped**, and applied in `apps/mobile` with no loose durations left                      | `packages/shared/src/theme/durations.ts`, `apps/mobile/src/utils/motion.ts`, `apps/mobile/hooks/usePressMotion.ts`                                                                                                           |
 | The Surfacing                                                                                 | **Shipped**, minus two parts deliberately left out — see §The Surfacing                     | `apps/mobile/src/components/TransactionSuccessScreen/surfacing.ts`, `SurfacingLayers.tsx`                                                                                                                                    |
-| The wait: descent, pulsing mark, radial wavefront, luminous ring, wave-driven exit            | **Shipped** on all three apps; the timing is one shared pure function — see §The wait       | `packages/shared/src/motion/wavefront.ts`, both `LoadingScreen`s                                                                                                                                                             |
+| The wait: centred pulsing mark, radial wavefront, refraction crest, wave-driven exit          | **Shipped** on all three apps; the timing is one shared pure function — see §The wait       | `packages/shared/src/motion/wavefront.ts`, `crest.ts`, both `LoadingScreen`s                                                                                                                                                 |
 | Icon consolidation onto Phosphor                                                              | **Shipped** on the DOM, with two declared exceptions                                        | `packages/ui/src/icons.ts`                                                                                                                                                                                                   |
 | dApp approval: transaction effect preview + press-and-hold to approve                         | **Shipped**                                                                                 | `packages/ui/src/components/DAppApproval/TransactionEffectsCard.tsx`, `HoldToApproveButton.tsx`                                                                                                                              |
 | Sand / seabed, ambient light shafts                                                           | **Refused by design** — see §Overview and §The water column                                 | —                                                                                                                                                                                                                            |
@@ -1285,28 +1285,43 @@ clock. Same split as `surfacing.ts`.
 The wait goes **down** while the success comes **up**. That single opposition is
 what keeps a wait from competing with the only climax the system has.
 
-1. **The descent** — always on. A 2px hairline track with a 44px segment of
-   salmon _ink_ running down it once per `shimmerCycle`, decelerating into the
-   end of every pass. It replaced a constant-speed spinning ring: Harrison, Yeo
-   & Hudson (CHI 2010) measured a decelerating augmentation making a 5s wait
-   read ~12% shorter, and a constant-speed rotation as the worst of the options
-   they tested.
-2. **The wave** — opt-in (`waves`), and reserved for **waiting on a
-   transaction**: money in the air, nothing the user can do. A boot or a key
-   derivation has nothing in the air, so a choreography there is decoration.
+1. **The descent — removed** (product, 2026-08). It was a 2px × 120px vertical
+   hairline track with a 44px segment of salmon _ink_ running down it once per
+   `shimmerCycle`. Two things killed it. It read as a **vertical progress bar**,
+   and this component has never had a `progress` prop and no caller has ever
+   passed one — so it claimed a completion percentage it did not have, and a
+   pending on-chain transaction has no percentage to claim. And it was the one
+   element on the screen that would not ride the wave, which put a second motion
+   vocabulary next to the front. The Harrison, Yeo & Hudson (CHI 2010) argument
+   it carried — a decelerating augmentation makes a 5s wait read ~12% shorter,
+   and a constant-speed rotation is the worst option — is now carried by the
+   front, which crosses once per `pulseCycle` and then rests.
+2. **The wave** — **on by default**, on every wait. _(Reversal, 2026-08: it was
+   opt-in and reserved for waiting on a transaction, on the argument that a boot
+   or a key derivation has nothing in the air. Product hit the account-recovery
+   wait and found it bare — a title over an empty screen while the app does the
+   most consequential thing it will ever do with the user's keys. Every wait is
+   water. The `bedrock` opt-out still wins.)_
+   - **The mark is nailed to the centre** of whatever the wait occupies — not of
+     the viewport, so a wait rendered into a panel gets its own centre with no
+     special case — and it is 96px rather than 56px. The origin of a radial
+     front is the one thing on the screen that may not be off-centre; the title
+     and subtitle hang _below_ the centre point rather than being centred with
+     it. _(Product, 2026-08: "lo más importante es que ocurra en el centro del
+     celular.")_
    - **The mark pulses**, 2% on `swell`, once per `pulseCycle`. It is the
      emitter. _(Reversal, 2026-08: the pulsing logo had been removed with the
      spinning ring. It is back because a radial front with no visible source
      reads as unrelated elements twitching, not as one wave. It returns as ink,
-     not as a fill — it does not spend the one living salmon element a screen is
-     allowed, because the descent below it is that same element seen twice.)_
+     not as a fill — the crest it throws is light returning off water, not a
+     second filled element.)_
    - **Every pulse launches a front.** A ring leaves the mark and reaches the
      farthest corner of the surface in `rise` (420ms) — a _time_, not a speed in
      px/s, so the gesture reads the same in a 360px extension popup and on a
      393×852 phone. The snow is measured in px/s because it is ambient; the wave
      is measured in time because it is an event.
-   - **The elements ride it.** Title, subtitle and the descent are each
-     displaced `waveAmplitude` (3px) upward with a 2% swell as the front reaches
+   - **The elements ride it.** Title, subtitle and — where a surface shows them
+     — the tips are each displaced `waveAmplitude` (3px) upward with a 2% swell as the front reaches
      them — delayed in proportion to their _measured_ distance from the mark,
      and attenuated as 1/√d, which is how a circular wave loses amplitude when
      it spreads its energy over a growing perimeter. Attenuation is not a
@@ -1329,20 +1344,50 @@ what keeps a wait from competing with the only climax the system has.
    than enter. A hard timer backs the animation callback so a dropped completion
    cannot strand a caller on the wait screen.
 
-**The ring is luminous** — a bright hairline crest in `accent.ink` with a wider,
-dimmer halo in `accent.tint` trailing it by one `flick`. This is a light event
-during a wait, which §Overview used to forbid. That rule is amended there rather
-than quietly broken here; the short version is that the unlit version was not
-legible, and the light stays bounded, salmon rather than cyan, outward-and-down
-rather than up, and dead before the receipt mounts. On React Native the halo is
-a second ring rather than a shadow, because `shadowRadius` is iOS-only and
-`elevation` cannot be coloured; two rings read identically on both platforms and
-both stay on the compositor.
+**The front is a refraction crest, not an outline.** Across the _thickness_ of
+the band the inner face returns light and the outer face falls into shadow —
+what a raised ridge of water looks like from directly overhead. That is the
+standard height-field result: the light term follows the _derivative_ of the
+height field, not its height, so the inward and outward slopes of one bump catch
+light with opposite sign (GPU Gems ch. 1, "Effective Water Simulation from
+Physical Models", eqs. 4b/5b; the same finite-difference shading is the whole of
+Hugo Elias's classic 2D water article). Rotated into a radial band it is a
+**bevel/emboss** — lit rim over shaded underside — which is the bezel this
+system already puts on a filled button, and what a two-sided CSS `ridge` border
+is. A flat stroke reads as an _outline_ because there is no luminance gradient
+for shape-from-shading to integrate; a ramp across a band reads as _relief_
+(Ramachandran, _Nature_ 331:163, the light-from-above prior).
 
-**Reduced motion** is a parallel mapping, not a hole: no pulse, no ring, no
-displacement — the descent's segment rests at mid-track (a still indicator reads
-as a hung process, so the state moves into the words) — **and no wave-driven
-exit**. A user who cannot see the wave is not made to wait one out; the wait
+The shape lives in `packages/shared/src/motion/crest.ts` as named constants and
+is drawn from the same numbers on both platforms — a `radial-gradient` on the
+DOM, a `RadialGradient`-stroked `Circle` in `react-native-svg` on mobile. Four
+stops: transparent at the inner foot, the lit peak, the shaded peak,
+transparent at the outer foot. Two crests are alive at once, the second at 45%
+alpha one sixth of a crossing behind, which is what makes it read as water
+rather than as one expanding shape. **The gradient is never animated** — the
+band is painted once at the front's final diameter and moved by
+`transform: scale()` alone, so the compositor scales a rasterised layer and a
+band costs what the hairline cost.
+
+Two numbers were set by measuring rendered frames rather than by taste. Against
+the `#10131c` ground (luminance 17), the shipped crest measures its lit face
+**+72** and its shaded face **−11** at mid-crossing. A wide soft variant was
+drawn and rejected on the measurement: its shaded face came out _above_ the
+ground, because a falloff that wide smears the light across the shadow, and what
+is left is a glow. And the crest now **holds full alpha until 75% of the
+crossing** instead of fading across the whole of it — fading throughout had
+scrubbed the shaded face to 2.6 levels below ground by halfway, and the half of
+the effect with the least contrast to spend is the half that vanishes first.
+
+This is a light event during a wait, which §Overview used to forbid. That rule is
+amended there rather than quietly broken here; the light stays bounded, salmon
+rather than cyan, outward-and-down rather than up, and dead before the receipt
+mounts.
+
+**Reduced motion** is a parallel mapping, not a hole: no pulse, no crest, no
+displacement — the mark is still there, and the _words_ carry the state, which
+is the job the descent's mid-track resting position used to do — **and no
+wave-driven exit**. A user who cannot see the wave is not made to wait one out; the wait
 leaves in one `ebb` step and the receipt arrives 420ms sooner.
 
 **The Bedrock Rule still wins.** The dApp approval flow's wait (`bedrock`) gets

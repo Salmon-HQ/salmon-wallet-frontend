@@ -66,6 +66,10 @@ jest.mock('@salmon/shared', () => ({
   },
   resolveMotionMs: (ms: number, reduced: boolean) => (reduced ? 0 : ms),
   spacing: { sm: 8, lg: 16, '2xl': 24, '3xl': 32, '5xl': 48 },
+  // The crest's shape is real, not stubbed: it is pure arithmetic over theme
+  // tokens with nothing under it to transform, and a fake here would let the
+  // two platforms draw two different waves without a test noticing.
+  ...jest.requireActual('@salmon/shared/src/motion/crest'),
 }));
 
 jest.mock('expo-linear-gradient', () => {
@@ -104,10 +108,20 @@ describe('LoadingScreen', () => {
     mockReduceMotion = false;
   });
 
-  it('waits on a descent, not on a spinning ring', () => {
+  it('treats every wait as water, not just the one that opted in', () => {
+    // `waves` used to default to false, so the account-recovery wait showed a
+    // bare title over an empty screen. The treatment is the wait now.
+    render(<LoadingScreen visible title="Recovering Account" />);
+
+    expect(screen.getByTestId('loading-emitter', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('shows no progress track — this screen has never known a percentage', () => {
+    // The descent read as a progress bar and there has never been a `progress`
+    // prop to fill it. A bar that cannot be right must not be drawn.
     render(<LoadingScreen visible title="Processing swap" />);
 
-    expect(screen.getByTestId('loading-descent')).toBeTruthy();
+    expect(screen.queryByTestId('loading-descent')).toBeNull();
   });
 
   it('keeps its wait screens free of the tip carousel by default', () => {
@@ -119,11 +133,14 @@ describe('LoadingScreen', () => {
     expect(screen.queryByText('general.tips.1')).toBeNull();
   });
 
-  it('still draws the descent under reduced motion — a parallel, not a hole', () => {
+  it('leaves the words to carry the state under reduced motion', () => {
+    // A parallel mapping, not a hole: nothing moves, and the title is what says
+    // the wait is still going.
     mockReduceMotion = true;
     render(<LoadingScreen visible title="Processing swap" waves />);
 
-    expect(screen.getByTestId('loading-descent')).toBeTruthy();
+    expect(screen.getByText('Processing swap')).toBeTruthy();
+    expect(screen.queryByTestId('loading-descent')).toBeNull();
   });
 
   it('gives the wave a visible source — the mark that emits it', () => {
@@ -134,8 +151,8 @@ describe('LoadingScreen', () => {
     expect(screen.getByTestId('loading-emitter', { includeHiddenElements: true })).toBeTruthy();
   });
 
-  it('leaves a wait with nothing in the air unemitting', () => {
-    render(<LoadingScreen visible title="Unlocking" />);
+  it('still lets a surface opt out of showing anything living through itself', () => {
+    render(<LoadingScreen visible title="Unlocking" waves={false} />);
 
     expect(screen.queryByTestId('loading-emitter', { includeHiddenElements: true })).toBeNull();
   });

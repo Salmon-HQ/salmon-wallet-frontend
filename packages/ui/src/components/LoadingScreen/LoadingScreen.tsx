@@ -8,17 +8,21 @@
  * a wait may not compete with it — it is given the opposite *direction*
  * instead, which costs nothing and makes the two screens read as one sequence.
  *
- * - **The descent** replaces the spinning ring. A hairline
- *   track with a segment of salmon ink running *down* it on `shimmerCycle`,
- *   easing out at the end of every pass. A pass with rhythm and deceleration is
- *   the one thing here with measured evidence behind it: Harrison, Yeo & Hudson
- *   (CHI 2010) found a decelerating augmentation made a 5s wait read ~12%
- *   shorter than an unaugmented one, and a constant-speed rotation — exactly
- *   what stood here before — the worst of the options they measured. The
- *   *pulsing logo* was removed with the ring and has been brought back
- *   deliberately (product decision, 2026-08): it is the emitter, and a wave
- *   with no visible source is four things twitching.
- * - **The wave** (opt-in, `waves`) is the disturbed water. The mark pulses; every
+ * - **The mark is the emitter**, and it is pinned to the centre of whatever this
+ *   overlay occupies, at `MARK_SIZE`. A wave with no visible source is four
+ *   things twitching, and a radial front whose origin is off-centre reads as a
+ *   wave from somewhere else.
+ * - **The descent was removed** (product, 2026-08). It was a 2px × 120px
+ *   vertical track with a salmon segment running down it, and it read as a
+ *   *progress bar* — but no caller has ever passed progress and this component
+ *   has never had a `progress` prop, so it claimed a completion percentage it
+ *   did not have. On a pending on-chain transaction there is no percentage to
+ *   claim. It was also the one element that would not ride the wave, so it put a
+ *   second motion vocabulary on the same screen as the front. The Harrison, Yeo
+ *   & Hudson (CHI 2010) argument it carried — that a decelerating augmentation
+ *   makes a wait read shorter — is now carried by the front itself, which
+ *   crosses once per `pulseCycle` and then rests.
+ * - **The wave** (`waves`, on by default) is the disturbed water. The mark pulses; every
  *   pulse launches a front; each element is displaced as the front reaches it,
  *   with a delay proportional to its *measured distance* from the mark and an
  *   amplitude attenuated as 1/√d. That is `f(t − d/c)` — d'Alembert — so it is a
@@ -46,6 +50,9 @@ import {
   durationMs,
   easing,
   componentSizes,
+  CREST_FADE_FROM,
+  crestGradientCSS,
+  crestTrain,
   markPaths,
   markViewBoxAttr,
   motionMs,
@@ -64,16 +71,6 @@ import type { LoadingScreenProps } from './types';
 // ============================================================================
 // Keyframes
 // ============================================================================
-
-/**
- * The descent: the segment enters above the track and leaves below it, so the
- * pass reads as continuous rather than as a shuttle. `current` decelerates it
- * into the bottom of every pass.
- */
-const descentKeyframes = keyframes`
-  from { transform: translateY(-${componentSizes.descentSegmentHeight}px); }
-  to { transform: translateY(${componentSizes.descentTrackHeight}px); }
-`;
 
 /**
  * One wave passing one element. The displacement occupies `swell` out of the
@@ -120,13 +117,22 @@ const pulseKeyframes = keyframes`
 `;
 
 /**
- * The front itself, made visible: a ring leaving the mark and crossing the
+ * The front itself, made visible: a crest leaving the mark and crossing the
  * screen in `WAVEFRONT_CROSS_MS`, reaching the farthest corner exactly as the
  * last rider is displaced.
+ *
+ * Only `transform` and `opacity` are keyframed. The crest's light/dark ramp is
+ * painted once into the layer as a static `radial-gradient` and never touched
+ * again, which is the whole reason a band costs the same as the hairline it
+ * replaces: the compositor scales a rasterised layer, it does not re-run a
+ * gradient per frame.
  */
-const ringKeyframes = keyframes`
+const crestKeyframes = keyframes`
   0% { transform: translate(-50%, -50%) scale(0.02); opacity: 0; }
   4% { opacity: 1; }
+  ${((CREST_FADE_FROM * WAVEFRONT_CROSS_MS) / motionMs.pulseCycle) * 100}% {
+    opacity: 1;
+  }
   ${(WAVEFRONT_CROSS_MS / motionMs.pulseCycle) * 100}% {
     transform: translate(-50%, -50%) scale(1);
     opacity: 0;
@@ -175,13 +181,30 @@ const Overlay = styled('div')<{ $isFadingOut: boolean; $waveOut: boolean }>(
   })
 );
 
-const Content = styled('div')({
+/** Diameter of the mark that emits the wave, px. */
+const MARK_SIZE = 96;
+
+/** Clear space between the mark's edge and the first word under it. */
+const MARK_TO_WORDS = spacing['3xl'];
+
+/**
+ * The words, and only the words. Pinned to start *below* the centre point
+ * rather than being centred themselves, because the centre belongs to the mark:
+ * the origin of the front is the middle of the surface, and everything else is
+ * arranged around it. Product, 2026-08 — "lo más importante es que ocurra en el
+ * centro del celular."
+ */
+const Words = styled('div')({
+  position: 'absolute',
+  top: '50%',
+  left: 0,
+  right: 0,
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  justifyContent: 'center',
-  padding: spacing['2xl'],
+  padding: `${MARK_SIZE / 2 + MARK_TO_WORDS}px ${spacing['2xl']}px 0`,
   textAlign: 'center',
+  pointerEvents: 'none',
 });
 
 const Title = styled('div')({
@@ -199,11 +222,7 @@ const Subtitle = styled('div')({
   fontWeight: fontWeight.regular,
   fontSize: fontSize.md,
   lineHeight: `${fontSize.md * lineHeight.normal}px`,
-  marginBottom: spacing['3xl'],
 });
-
-/** Diameter of the mark that emits the wave, px. */
-const MARK_SIZE = 56;
 
 /**
  * A wave rider. Its delay and amplitude arrive as `--wave-delay` / `--wave-amp`,
@@ -238,10 +257,16 @@ const WaveRider = styled('div')<{ $rank: number; $waves: boolean; $closing: bool
  * filled, so it does not spend the one living fill a screen is allowed.
  */
 const Emitter = styled('div')<{ $waves: boolean; $closing: boolean }>(({ $waves, $closing }) => ({
-  position: 'relative',
+  // The true centre of whatever the wait occupies — not of the viewport. The
+  // overlay is the surface, so its middle is the origin, and a wait rendered in
+  // a smaller box gets its own centre with no special case.
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  marginTop: -MARK_SIZE / 2,
+  marginLeft: -MARK_SIZE / 2,
   width: MARK_SIZE,
   height: MARK_SIZE,
-  marginBottom: spacing['3xl'],
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -256,49 +281,55 @@ const Emitter = styled('div')<{ $waves: boolean; $closing: boolean }>(({ $waves,
 }));
 
 /**
- * The front, drawn. Two concentric rings scaled from the mark: a bright hairline
- * and a wider, dimmer halo behind it. The halo is what makes the ring *luminous*
- * rather than a hairline circle, and it is drawn as a second ring plus a box
- * shadow rather than as a filter, so both rings stay on the compositor.
+ * The front, drawn — a **refraction crest**, not an outline.
+ *
+ * Across the thickness of the band the inner face returns light and the outer
+ * face falls into shadow, which is what a raised ridge of water looks like from
+ * above: the light term follows the *derivative* of the height field, so the two
+ * slopes of one bump catch light with opposite sign. It is the bezel this system
+ * already puts on a filled button — lit rim, shaded underside — rotated into a
+ * radial band. The shape lives in `@salmon/shared` `motion/crest` so mobile and
+ * the DOM cannot draw two different waves.
+ *
+ * The construction is a **static** `radial-gradient` on a box laid out at the
+ * front's final diameter, moved only by `transform: scale()`. Nothing about the
+ * paint is animated: the layer is rasterised once and the compositor scales it,
+ * which is why a band costs what the hairline cost.
  *
  * This is a light event during a wait, which §Overview used to forbid outright
  * ("one light event, and it is The Surfacing"). That rule has been amended in
- * DESIGN.md rather than quietly broken here: the unlit hairline was not legible
- * as a wavefront, and a wave nobody can see is not a cheaper wave, it is none.
- * The light is still rationed — it is salmon ink at low alpha, it lives only
- * while the wait does, and it travels outward and down while The Surfacing
- * travels up.
+ * DESIGN.md rather than quietly broken here. The light is still rationed — it is
+ * salmon ink at partial alpha, it lives only while the wait does, and it travels
+ * outward and down while The Surfacing travels up.
  */
-const Ring = styled('div')<{ $halo: boolean; $waves: boolean; $closing: boolean }>(
-  ({ $halo, $waves, $closing }) => ({
+const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean; $closing: boolean }>(
+  ({ $alpha, $lagMs, $waves, $closing }) => ({
     position: 'absolute',
     top: '50%',
     left: '50%',
     // Diameter is `--wave-ring`, written by the measurement pass as twice the
-    // distance from the mark to the farthest corner. The ring is scaled *down*
-    // from its final size rather than up from a small one, so the stroke never
-    // has to be animated — only `transform` and `opacity` ever change.
+    // distance from the mark to the farthest corner. The crest is scaled *down*
+    // from its final size rather than up from a small one, so the band never has
+    // to be repainted — only `transform` and `opacity` ever change.
     width: 'var(--wave-ring, 0px)',
     height: 'var(--wave-ring, 0px)',
     borderRadius: '50%',
-    borderStyle: 'solid',
-    borderWidth: $halo ? 6 : 1.5,
-    borderColor: $halo ? semantic.accent.tint : semantic.accent.ink,
-    boxShadow: $halo ? 'none' : `0 0 12px 1px ${semantic.accent.tint}`,
+    background: crestGradientCSS($alpha),
     opacity: 0,
     pointerEvents: 'none',
     transform: 'translate(-50%, -50%) scale(0)',
-    // The crest leads, the glow trails it by one `flick`. On close the ring is
+    // A wave train: each crest runs one `CREST_SPACING` of the crossing behind
+    // the one ahead of it, at a fraction of its alpha. On close the train is
     // emitted exactly once — that emission *is* the exit.
     //
     // `linear`, and it is the one place in this system that gets it. The riders'
     // delays are linear in distance, so the front's position is linear in time —
-    // that is what `d = c·t` means. Easing the ring on `current` was measured
-    // doing the wrong thing: the front covered 90% of the screen in the first
-    // 20% of the crossing and then waited off-screen for the riders it had
-    // already passed. This is a front's velocity, not an element arriving.
+    // that is what `d = c·t` means. Easing the front on `current` was measured
+    // doing the wrong thing: it covered 90% of the screen in the first 20% of
+    // the crossing and then waited off-screen for riders it had already passed.
+    // This is a front's velocity, not an element arriving.
     animation: $waves
-      ? `${ringKeyframes} ${motionMs.pulseCycle}ms linear ${$halo ? motionMs.flick : 0}ms ${$closing ? 1 : 'infinite'}`
+      ? `${crestKeyframes} ${motionMs.pulseCycle}ms linear ${$lagMs}ms ${$closing ? 1 : 'infinite'}`
       : 'none',
     [`@media ${reducedMotion.query}`]: {
       animation: 'none',
@@ -313,44 +344,20 @@ const Mark = styled('svg')({
   display: 'block',
 });
 
-const DescentTrack = styled('div')({
-  position: 'relative',
-  width: componentSizes.descentTrackWidth,
-  height: componentSizes.descentTrackHeight,
-  borderRadius: componentSizes.descentTrackWidth,
-  backgroundColor: semantic.border.hairline,
-  overflow: 'hidden',
-  marginBottom: spacing['5xl'],
-});
-
 /**
- * Salmon as *ink*, which DESIGN.md does not ration — not a fill, which is
- * rationed to one living element per screen and must not be spent on the least
- * important thing on it.
+ * The tips. Absolutely placed on the *rider* rather than on this box, so the
+ * thing the measurement pass sizes is the thing that actually sits at the
+ * bottom of the surface — a wrapper collapsed to zero height would be planned as
+ * if it were at the origin.
  */
-const DescentSegment = styled('div')({
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  width: '100%',
-  height: componentSizes.descentSegmentHeight,
-  borderRadius: componentSizes.descentTrackWidth,
-  backgroundColor: semantic.text.accent,
-  animation: `${descentKeyframes} ${motionMs.shimmerCycle}ms ${motionEasing.current.css} infinite`,
-  [`@media ${reducedMotion.query}`]: {
-    // A still indicator reads as a hung process, so reduced motion does not get
-    // an empty track: the segment rests at mid-track and the *words* carry the
-    // state instead. A parallel mapping, not an off switch.
-    animation: 'none',
-    transform: `translateY(${(componentSizes.descentTrackHeight - componentSizes.descentSegmentHeight) / 2}px)`,
-  },
-});
-
-const TipsContainer = styled('div')({
+const tipsAnchor = {
   position: 'absolute',
   bottom: spacing['7xl'],
   left: spacing['2xl'],
   right: spacing['2xl'],
+} as const;
+
+const TipsContainer = styled('div')({
   textAlign: 'center',
 });
 
@@ -402,7 +409,12 @@ export const LoadingScreen = memo(function LoadingScreen({
   tips = DEFAULT_WALLET_TIP_KEYS as unknown as string[],
   tipInterval = 4000,
   showTips = false,
-  waves = false,
+  // Every wait is water. `waves` used to default to `false` and be passed only
+  // by the transaction wait; product hit the account-recovery wait (2026-08) and
+  // found it bare. The treatment is the wait now, not a decoration one screen
+  // opts into. The prop survives so `bedrock` — and any future surface that must
+  // show nothing living through itself — can still opt out.
+  waves = true,
   bedrock = false,
   onExited,
 }: LoadingScreenProps) {
@@ -487,16 +499,27 @@ export const LoadingScreen = memo(function LoadingScreen({
       const mark = originRef.current;
       if (!root || !mark) return;
 
+      // The surface is *this overlay*, not the viewport. A wait rendered into a
+      // panel rather than over the whole window gets its own centre and its own
+      // corner distance out of the same three lines — there is no full-screen
+      // special case to keep in step.
+      const surface = root.getBoundingClientRect();
       const markBox = mark.getBoundingClientRect();
-      const origin = { x: markBox.left + markBox.width / 2, y: markBox.top + markBox.height / 2 };
-      const bounds = { width: window.innerWidth, height: window.innerHeight };
+      const origin = {
+        x: markBox.left + markBox.width / 2 - surface.left,
+        y: markBox.top + markBox.height / 2 - surface.top,
+      };
+      const bounds = { width: surface.width, height: surface.height };
 
       mark.style.setProperty('--wave-ring', `${2 * wavefrontRadius(origin, bounds)}px`);
 
       root.querySelectorAll<HTMLElement>('[data-wave-rider]').forEach((node) => {
         const box = node.getBoundingClientRect();
         const plan = planWavefront(
-          { x: box.left + box.width / 2, y: box.top + box.height / 2 },
+          {
+            x: box.left + box.width / 2 - surface.left,
+            y: box.top + box.height / 2 - surface.top,
+          },
           origin,
           bounds,
           isReduceMotionEnabled
@@ -531,7 +554,13 @@ export const LoadingScreen = memo(function LoadingScreen({
   if (!isVisible) return null;
 
   return (
-    <Overlay $isFadingOut={isFadingOut} $waveOut={isClosing} role="status" aria-busy="true">
+    <Overlay
+      ref={contentRef}
+      $isFadingOut={isFadingOut}
+      $waveOut={isClosing}
+      role="status"
+      aria-busy="true"
+    >
       {/* A wait is a screen like any other, and a screen is water. This one is
           the seam the ground has to close: the wait before a swap confirms is
           followed immediately by the receipt, which stands in the column, and
@@ -540,28 +569,37 @@ export const LoadingScreen = memo(function LoadingScreen({
           are exactly what they were; only what they stand in has changed. */}
       {!bedrock && <WaterColumn />}
 
-      <Content ref={contentRef}>
-        {/* The emitter and the front it launches. Decorative and announced by
-            the overlay's own `role="status"`, so it is hidden from assistive
-            technology rather than narrated as a second thing happening. */}
-        {riding && (
-          <Emitter
-            ref={originRef}
-            $waves={riding}
-            $closing={isClosing}
-            aria-hidden="true"
-            data-testid="loading-emitter"
-          >
-            <Ring $halo $waves={riding} $closing={isClosing} />
-            <Ring $halo={false} $waves={riding} $closing={isClosing} />
-            <Mark viewBox={markViewBoxAttr} fill="currentColor" focusable="false">
-              {markPaths.map((d) => (
-                <path key={d} d={d} />
-              ))}
-            </Mark>
-          </Emitter>
-        )}
+      {/* The emitter and the front it launches. Decorative and announced by
+          the overlay's own `role="status"`, so it is hidden from assistive
+          technology rather than narrated as a second thing happening. It is
+          pinned to the middle of the surface: the origin of a radial front is
+          the one thing on this screen that may not be off-centre. */}
+      {riding && (
+        <Emitter
+          ref={originRef}
+          $waves={riding}
+          $closing={isClosing}
+          aria-hidden="true"
+          data-testid="loading-emitter"
+        >
+          {crestTrain().map(({ lag, alpha }) => (
+            <Crest
+              key={lag}
+              $alpha={alpha}
+              $lagMs={Math.round(lag * WAVEFRONT_CROSS_MS)}
+              $waves={riding}
+              $closing={isClosing}
+            />
+          ))}
+          <Mark viewBox={markViewBoxAttr} fill="currentColor" focusable="false">
+            {markPaths.map((d) => (
+              <path key={d} d={d} />
+            ))}
+          </Mark>
+        </Emitter>
+      )}
 
+      <Words>
         {title && (
           <WaveRider $rank={0} $waves={riding} $closing={isClosing} data-wave-rider>
             <Title>{title}</Title>
@@ -572,19 +610,23 @@ export const LoadingScreen = memo(function LoadingScreen({
             <Subtitle>{subtitle}</Subtitle>
           </WaveRider>
         )}
+      </Words>
 
-        <WaveRider $rank={2} $waves={riding} $closing={isClosing} data-wave-rider>
-          <DescentTrack aria-hidden="true" data-testid="loading-descent">
-            <DescentSegment />
-          </DescentTrack>
-        </WaveRider>
-      </Content>
-
+      {/* The tips ride too, and they are the far-field passenger — the one that
+          shows the front takes real time to get there. */}
       {showTips && resolvedTips.length > 0 && (
-        <TipsContainer>
-          <TipLabel>{t('general.tip', 'Tip')}</TipLabel>
-          <TipText $fading={tipFading}>{resolvedTips[currentTipIndex]}</TipText>
-        </TipsContainer>
+        <WaveRider
+          $rank={2}
+          $waves={riding}
+          $closing={isClosing}
+          style={tipsAnchor}
+          data-wave-rider
+        >
+          <TipsContainer>
+            <TipLabel>{t('general.tip', 'Tip')}</TipLabel>
+            <TipText $fading={tipFading}>{resolvedTips[currentTipIndex]}</TipText>
+          </TipsContainer>
+        </WaveRider>
       )}
     </Overlay>
   );

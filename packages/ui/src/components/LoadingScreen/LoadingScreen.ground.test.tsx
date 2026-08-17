@@ -27,7 +27,11 @@ vi.mock('../WaterColumn', () => ({
   waterColumnHost: { position: 'relative', isolation: 'isolate' },
 }));
 
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async () => ({
+  // The crest's shape is real, not stubbed: it is pure arithmetic over theme
+  // tokens, and a fake here would let the two platforms draw two different
+  // waves without a test noticing.
+  ...(await vi.importActual<Record<string, unknown>>('@salmon/shared/src/motion/crest')),
   DEFAULT_WALLET_TIP_KEYS: ['tips.one'],
   colors: {
     background: { primary: '#10131C', secondary: '#070911' },
@@ -146,10 +150,26 @@ describe('the wave', () => {
     expect(screen.getByTestId('loading-emitter')).toBeTruthy();
   });
 
-  it('leaves the wait unemitting when the wave was not asked for', () => {
-    render(<LoadingScreen visible title="Loading wallet" />);
+  it('treats every wait as water, not just the one that opted in', () => {
+    // `waves` used to default to false, so the account-recovery wait showed a
+    // bare title over an empty screen. The treatment is the wait now.
+    render(<LoadingScreen visible title="Recovering Account" />);
+
+    expect(screen.getByTestId('loading-emitter')).toBeTruthy();
+  });
+
+  it('still lets a surface opt out of showing anything living through itself', () => {
+    render(<LoadingScreen visible title="Loading wallet" waves={false} />);
 
     expect(screen.queryByTestId('loading-emitter')).toBeNull();
+  });
+
+  it('shows no progress track — this screen has never known a percentage', () => {
+    // The descent read as a progress bar and there has never been a `progress`
+    // prop to fill it. A bar that cannot be right must not be drawn.
+    render(<LoadingScreen visible title="Processing swap" />);
+
+    expect(screen.queryByTestId('loading-descent')).toBeNull();
   });
 
   it('keeps the pulsing mark out of the dApp approval flow — the Bedrock Rule wins', () => {
@@ -194,10 +214,11 @@ describe('the wave', () => {
     expect(onExited).toHaveBeenCalledTimes(1);
   });
 
-  it('still draws the descent under reduced motion — a parallel, not a hole', () => {
+  it('leaves the words to carry the state under reduced motion', () => {
     setReducedMotion(true);
     render(<LoadingScreen visible waves title="Processing swap" />);
 
-    expect(screen.getByTestId('loading-descent')).toBeTruthy();
+    expect(screen.getByText('Processing swap')).toBeTruthy();
+    expect(screen.queryByTestId('loading-descent')).toBeNull();
   });
 });

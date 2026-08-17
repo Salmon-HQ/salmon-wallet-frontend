@@ -132,3 +132,73 @@ describe('wavefrontExitMs', () => {
     expect(wavefrontExitMs(false)).toBeLessThanOrEqual(1000);
   });
 });
+
+/**
+ * The recentring, checked as arithmetic rather than by eye.
+ *
+ * The origin moved from roughly a third of the way down the screen to its exact
+ * centre (product, 2026-08). That changes every number the front is built from,
+ * so the property the choreography actually rests on is re-asserted at the new
+ * geometry: further away must never mean earlier.
+ */
+describe('planWavefront — the emitter at the centre of the surface', () => {
+  // iPhone 17 logical points, and the emitter dead centre of them.
+  const phone = { width: 402, height: 874 };
+  const centre = { x: phone.width / 2, y: phone.height / 2 };
+
+  /** The riders, in the order they now sit under the mark. */
+  const riders = [
+    { name: 'title', point: { x: centre.x, y: centre.y + 92 } },
+    { name: 'subtitle', point: { x: centre.x, y: centre.y + 128 } },
+    { name: 'tips', point: { x: centre.x, y: phone.height - 96 } },
+  ];
+
+  it('delays every rider monotonically in its distance from the centre', () => {
+    const planned = riders.map(({ name, point }) => ({
+      name,
+      distance: Math.hypot(point.x - centre.x, point.y - centre.y),
+      plan: planWavefront(point, centre, phone, false),
+    }));
+
+    // The riders are listed in increasing distance, and the delays must agree.
+    for (let index = 1; index < planned.length; index += 1) {
+      expect(planned[index].distance).toBeGreaterThan(planned[index - 1].distance);
+      expect(planned[index].plan!.delayMs).toBeGreaterThan(planned[index - 1].plan!.delayMs);
+      // And the amplitude goes the other way: further is smaller.
+      expect(planned[index].plan!.amplitude).toBeLessThan(planned[index - 1].plan!.amplitude);
+    }
+  });
+
+  it('reaches all four corners at the same moment, which only a centred origin does', () => {
+    const corners = [
+      { x: 0, y: 0 },
+      { x: phone.width, y: 0 },
+      { x: 0, y: phone.height },
+      { x: phone.width, y: phone.height },
+    ];
+
+    const delays = corners.map((corner) => planWavefront(corner, centre, phone, false)!.delayMs);
+
+    expect(new Set(delays).size).toBe(1);
+    expect(delays[0]).toBe(WAVEFRONT_CROSS_MS);
+  });
+
+  it('never delays a nearer rider longer than a farther one, anywhere on the surface', () => {
+    // A grid sweep rather than three hand-picked points: monotonicity is the
+    // claim, so it is checked as one.
+    const sampled = [];
+    for (let x = 0; x <= phone.width; x += 33) {
+      for (let y = 0; y <= phone.height; y += 33) {
+        sampled.push({
+          distance: Math.hypot(x - centre.x, y - centre.y),
+          delayMs: planWavefront({ x, y }, centre, phone, false)!.delayMs,
+        });
+      }
+    }
+    sampled.sort((a, b) => a.distance - b.distance);
+
+    for (let index = 1; index < sampled.length; index += 1) {
+      expect(sampled[index].delayMs).toBeGreaterThanOrEqual(sampled[index - 1].delayMs);
+    }
+  });
+});

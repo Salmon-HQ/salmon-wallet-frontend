@@ -5,13 +5,20 @@
  * up.** The Surfacing is the only climax this system has, so the wait is given
  * the opposite direction rather than a competing one.
  *
- * - **The descent** replaces the spinning ring: a hairline track with a segment
- *   of salmon *ink* running down it on `shimmerCycle`, decelerating into the end
- *   of every pass. The *pulsing logo* was removed with the ring and is back by
- *   decision (product, 2026-08): it is the emitter, and a front with no visible
- *   source reads as unrelated elements twitching.
- * - **The wave** (opt-in, `waves`) is the disturbed water. Each pulse launches a
- *   front; every element is displaced as the front reaches it, delayed in
+ * - **The mark is the emitter**, and it is nailed to the centre of whatever the
+ *   wait occupies, at `MARK_SIZE`. A front with no visible source reads as
+ *   unrelated elements twitching, and a radial front whose origin is off-centre
+ *   reads as a wave from somewhere else.
+ * - **The descent was removed** (product, 2026-08). It was a 2px × 120px
+ *   vertical track with a salmon segment running down it, and it read as a
+ *   *progress bar* — but no caller has ever passed progress and this component
+ *   has never had a `progress` prop, so it claimed a completion percentage it
+ *   did not have. On a pending on-chain transaction there is no percentage to
+ *   claim. It was also the one element that would not ride the wave, so it put
+ *   a second motion vocabulary on the same screen as the front.
+ * - **The wave** (`waves`, now on by default) is the disturbed water. Each pulse
+ *   launches a front; every element is displaced as the front reaches it,
+ *   delayed in
  *   proportion to its *measured distance* from the mark and attenuated as 1/√d.
  *   That is `f(t − d/c)` — d'Alembert — so it is a physically correct radial
  *   front, which needs a delay and not a shader. It loops for as long as the
@@ -34,7 +41,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
 import Animated, {
   cancelAnimation,
   interpolate,
@@ -51,6 +58,9 @@ import Animated, {
 import {
   colors,
   componentSizes,
+  CREST_FADE_FROM,
+  crestStops,
+  crestTrain,
   DEFAULT_WALLET_TIP_KEYS,
   fontFamilyNative,
   letterSpacing,
@@ -81,12 +91,37 @@ import { ScalesBackground } from '../ScalesBackground';
 
 /** 2% — the wave's swell, the quiet half of `swellIn`'s overshoot. */
 const WAVE_SCALE = 0.02;
-/** Diameter of the mark that emits the wave, px. */
-const MARK_SIZE = 56;
-/** Three riders: title, subtitle, descent. */
+/**
+ * Diameter of the mark that emits the wave, px. It was 56 and sat a third of
+ * the way down the screen; product, 2026-08, wants the emitter *nailed in the
+ * middle of the phone and bigger*, because the origin of a radial front is the
+ * one thing on a wait screen that may not be off-centre.
+ */
+const MARK_SIZE = 96;
+/** Clear space between the mark's edge and the first word under it. */
+const MARK_TO_WORDS = spacing['3xl'];
+/** Three riders: title, subtitle, tips. */
 const RIDER_COUNT = 3;
 
 const curveCurrent = motionEasing.current.native as [number, number, number, number];
+
+/** The crests alive at once, resolved once at module load. */
+const CRESTS = crestTrain();
+
+/**
+ * Side of the box each crest is *rasterised* into, pt.
+ *
+ * The DOM twin can lay the crest out at the front's full final diameter because
+ * a browser composites a gradient layer with a shader. `react-native-svg` does
+ * not: `RNSVGSvgView` is a UIView that draws into a backing store the size of
+ * its bounds, so a crest laid out at the screen diagonal would allocate roughly
+ * `(1000pt × 3)² × 4B ≈ 36MB` — per crest, on every wait, on every screen. The
+ * crest is drawn into a fixed 512pt box instead and the scale is multiplied by
+ * `ringSize / CREST_RASTER` to reach the same final size, which costs ~9MB and
+ * looks identical: the sharpest feature in the band is the light-to-shadow ramp,
+ * and a smooth ramp upscaled by a compositor is still a smooth ramp.
+ */
+const CREST_RASTER = 512;
 
 /**
  * One wave passing one element: a displacement upward and a 2% swell. Shared by
@@ -101,15 +136,64 @@ function waveTransform(v: number, amplitude: number) {
   };
 }
 
-/** The ring's box: laid out at its final size, centred on the origin. */
-function ringBox(origin: WavefrontPoint, size: number) {
+/** The crest's box: a fixed raster, centred on the origin. */
+function crestBox(origin: WavefrontPoint) {
   return {
-    width: size,
-    height: size,
-    borderRadius: size / 2,
-    left: origin.x - size / 2,
-    top: origin.y - size / 2,
+    width: CREST_RASTER,
+    height: CREST_RASTER,
+    left: origin.x - CREST_RASTER / 2,
+    top: origin.y - CREST_RASTER / 2,
   };
+}
+
+/**
+ * One crest of the front, drawn as a **refraction crest** rather than an
+ * outline: across the thickness of the band the inner face returns light and the
+ * outer face falls into shadow — a raised ridge of water seen from above, which
+ * is the bezel this system puts on a filled button rotated into a radial band.
+ * The shape lives in `@salmon/shared` `motion/crest`, shared with the DOM twin.
+ *
+ * `react-native-svg` has no `FeTurbulence` and no `FeDisplacementMap` (both
+ * return `null` and warn) but `RadialGradient` is fully implemented, and a
+ * gradient is all this needs: the ramp is what makes the band read as *relief*
+ * where a hairline reads as an *outline*.
+ *
+ * Drawn once into a fixed `CREST_RASTER` box inside a `100×100` viewBox and
+ * never redrawn — the parent `Animated.View` scales it to the front's real size,
+ * so the vector work happens on mount and every frame after that is a layer
+ * transform on the compositor. The
+ * band is a *stroke* rather than a fill so the rasterised area is the band and
+ * not the whole disc, and `userSpaceOnUse` makes a gradient offset and a
+ * fraction of the front's radius the same number on both platforms.
+ */
+function CrestArc({ id, alpha }: { id: string; alpha: number }) {
+  const stops = crestStops(alpha);
+  const inner = stops[0].offset;
+  const outer = stops[stops.length - 1].offset;
+  return (
+    <Svg width="100%" height="100%" viewBox="0 0 100 100">
+      <Defs>
+        <RadialGradient id={id} gradientUnits="userSpaceOnUse" cx="50" cy="50" r="50">
+          {stops.map((stop) => (
+            <Stop
+              key={stop.offset}
+              offset={stop.offset}
+              stopColor={stop.color}
+              stopOpacity={stop.opacity}
+            />
+          ))}
+        </RadialGradient>
+      </Defs>
+      <Circle
+        cx="50"
+        cy="50"
+        r={((inner + outer) / 2) * 50}
+        fill="none"
+        stroke={`url(#${id})`}
+        strokeWidth={(outer - inner) * 50}
+      />
+    </Svg>
+  );
 }
 
 /** Centre of a laid-out box, in its parent's coordinates plus an offset. */
@@ -131,7 +215,12 @@ export function LoadingScreen({
   tips = DEFAULT_WALLET_TIP_KEYS as unknown as string[],
   tipInterval = 4000,
   showTips = false,
-  waves = false,
+  // Every wait is water. `waves` used to default to `false` and be passed only
+  // by the transaction wait; product hit the account-recovery wait (2026-08)
+  // and found it bare. The treatment is the wait now, not a decoration one
+  // screen opts into. The prop survives so a surface that must show nothing
+  // living through itself can still opt out.
+  waves = true,
   bottomOffset = 0,
   onExited,
 }: LoadingScreenProps) {
@@ -158,7 +247,6 @@ export function LoadingScreen({
   }>({ frame: { width: 0, height: 0 }, contentOffset: { x: 0, y: 0 }, origin: null, riders: {} });
 
   // Animation values
-  const descent = useSharedValue(0);
   // One rider per element the front passes over.
   const wave0 = useSharedValue(0);
   const wave1 = useSharedValue(0);
@@ -270,24 +358,11 @@ export function LoadingScreen({
 
       // Loops are cycles, not transitions: their `*Cycle` lengths are never
       // resolved to 0, and under reduce motion they are not started at all
-      // rather than run infinitely fast. The descent's resting position under
-      // reduce motion is mid-track — a still indicator reads as a hung process,
-      // so the state moves into the words instead.
-      if (isReduceMotionEnabled) {
-        descent.value = 0.5;
-        return;
-      }
-
-      // The descent: one pass down the track per `shimmerCycle`, decelerating
-      // into the end of it on `current`. A pass with rhythm reads as shorter
-      // than a constant-speed rotation of the same length (Harrison, Yeo &
-      // Hudson, CHI 2010) — the ring this replaced was the worst case measured.
-      descent.value = 0;
-      descent.value = withRepeat(
-        withTiming(1, { duration: motionMs.shimmerCycle, easing: Easing.bezier(...curveCurrent) }),
-        -1,
-        false
-      );
+      // rather than run infinitely fast. Under reduce motion this screen is
+      // simply still, and the *words* carry the state — a parallel mapping,
+      // which is what the descent used to be here for before it was removed
+      // for claiming a progress it never had.
+      if (isReduceMotionEnabled) return;
 
       // The wave, looping for as long as the wait lasts. It costs nothing that
       // accumulates: `withRepeat(-1)` runs on the UI thread, there is no JS
@@ -401,17 +476,15 @@ export function LoadingScreen({
     const fallback = setTimeout(finishExit, wavefrontExitMs(false));
     return () => clearTimeout(fallback);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, waves, plans, overlayOpacity, descent, wave0, wave1, wave2, isReduceMotionEnabled]);
+  }, [visible, waves, plans, overlayOpacity, wave0, wave1, wave2, isReduceMotionEnabled]);
 
   // Nothing may outlive the screen: an unmounted wait that left a repeating
   // value running is a loop with no way to stop it.
   useEffect(
     () => () => {
-      [descent, wave0, wave1, wave2, pulse, ring, overlayOpacity, tipOpacity].forEach(
-        cancelAnimation
-      );
+      [wave0, wave1, wave2, pulse, ring, overlayOpacity, tipOpacity].forEach(cancelAnimation);
     },
-    [descent, wave0, wave1, wave2, pulse, ring, overlayOpacity, tipOpacity]
+    [wave0, wave1, wave2, pulse, ring, overlayOpacity, tipOpacity]
   );
 
   // Helper function to advance to next tip
@@ -454,16 +527,6 @@ export function LoadingScreen({
   ]);
 
   // Animated styles
-  const descentStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateY:
-          -componentSizes.descentSegmentHeight +
-          descent.value * (componentSizes.descentTrackHeight + componentSizes.descentSegmentHeight),
-      },
-    ],
-  }));
-
   // The amplitude a rider was planned with, or the token value before the
   // layout pass has run. `isClosing` is read as a value rather than a prop so
   // the fade on exit belongs to the same worklet as the displacement.
@@ -478,7 +541,7 @@ export function LoadingScreen({
     ...waveTransform(wave1.value, amplitudes[1]),
     opacity: leaving ? 1 - wave1.value : 1,
   }));
-  const descentWave = useAnimatedStyle(() => ({
+  const tipsWave = useAnimatedStyle(() => ({
     ...waveTransform(wave2.value, amplitudes[2]),
     opacity: leaving ? 1 - wave2.value : 1,
   }));
@@ -489,24 +552,33 @@ export function LoadingScreen({
   }));
 
   /**
-   * The front, drawn. The ring is laid out at its *final* size and scaled down
-   * to nothing, so the stroke never has to animate — only `transform` and
+   * The front, drawn. Each crest is laid out at its *final* size and scaled down
+   * to nothing, so the band never has to be repainted — only `transform` and
    * `opacity` ever change, and both stay on the compositor.
+   *
+   * A wave train, not one pulse: crest *n* runs `lag` of the crossing behind the
+   * leading one, taken off the same shared value rather than driven by a second
+   * animation, so the crests cannot drift out of step with each other.
    */
-  const ringStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(ring.value, [0, 0.06, 1], [0, 1, 0], 'clamp'),
-    transform: [{ scale: Math.max(ring.value, 0.001) }],
-  }));
-
-  const haloStyle = useAnimatedStyle(() => {
-    // The glow trails the crest by one `flick`, expressed as a fraction of the
-    // crossing rather than as a second animation to keep in step.
-    const trailed = Math.max(0, ring.value - motionMs.flick / WAVEFRONT_CROSS_MS);
+  // How much the fixed raster has to grow to become the full-size front.
+  const crestScale = ringSize / CREST_RASTER;
+  const crest0 = useAnimatedStyle(() => {
+    const value = Math.max(0, ring.value - CRESTS[0].lag);
     return {
-      opacity: interpolate(trailed, [0, 0.06, 1], [0, 1, 0], 'clamp'),
-      transform: [{ scale: Math.max(trailed, 0.001) }],
+      opacity: interpolate(value, [0, 0.06, CREST_FADE_FROM, 1], [0, 1, 1, 0], 'clamp'),
+      transform: [{ scale: Math.max(value * crestScale, 0.001) }],
     };
   });
+  const crest1 = useAnimatedStyle(() => {
+    const value = Math.max(0, ring.value - (CRESTS[1]?.lag ?? 0));
+    return {
+      opacity: CRESTS[1]
+        ? interpolate(value, [0, 0.06, CREST_FADE_FROM, 1], [0, 1, 1, 0], 'clamp')
+        : 0,
+      transform: [{ scale: Math.max(value * crestScale, 0.001) }],
+    };
+  });
+  const crestStyles = [crest0, crest1];
 
   const tipStyle = useAnimatedStyle(() => ({
     opacity: tipOpacity.value,
@@ -536,28 +608,35 @@ export function LoadingScreen({
         <ScalesBackground variant="deepField" />
 
         {/* The front, drawn. Deliberately a sibling of the content rather than
-            a child of the mark: the ring is an order of magnitude larger than
-            the 56px box that emits it, and a child that far outside its parent
-            is the case Android clips inconsistently. It is anchored to the
+            a child of the mark: a crest is an order of magnitude larger than
+            the box that emits it, and a child that far outside its parent is
+            the case Android clips inconsistently. It is anchored to the
             measured origin instead, which costs one subtraction. */}
         {waves && geometry.origin && ringSize > 0 && (
           <>
-            <Animated.View
-              pointerEvents="none"
-              style={[styles.ring, styles.ringHalo, ringBox(geometry.origin, ringSize), haloStyle]}
-            />
-            <Animated.View
-              pointerEvents="none"
-              style={[styles.ring, styles.ringCrest, ringBox(geometry.origin, ringSize), ringStyle]}
-            />
+            {CRESTS.map(({ lag, alpha }, index) => (
+              <Animated.View
+                key={lag}
+                pointerEvents="none"
+                style={[
+                  styles.crest,
+                  crestBox(geometry.origin as WavefrontPoint),
+                  crestStyles[index],
+                ]}
+              >
+                <CrestArc id={`crest-${index}`} alpha={alpha} />
+              </Animated.View>
+            ))}
           </>
         )}
 
         <View style={styles.content} onLayout={measureContent}>
-          {/* The emitter and the front it launches. The mark is salmon as
-              *ink*, tinted and never filled, so it does not spend the one
-              living fill a screen is allowed — the descent below already holds
-              it, and they are the same element seen twice. */}
+          {/* The emitter, nailed to the middle of whatever the wait occupies.
+              A radial front whose origin is off-centre reads as a wave from
+              somewhere else, so this is the one element on the screen that is
+              positioned rather than laid out. The mark is salmon as *ink*,
+              tinted and never filled, so it does not spend the one living fill
+              a screen is allowed. */}
           {waves && (
             <Animated.View
               style={[styles.emitter, pulseStyle]}
@@ -574,39 +653,34 @@ export function LoadingScreen({
             </Animated.View>
           )}
 
-          {/* Title */}
-          {title && (
-            <Animated.View style={titleWave} onLayout={riderLayoutHandlers[0]}>
-              <Text style={styles.title}>{title}</Text>
-            </Animated.View>
-          )}
+          {/* The words, arranged *below* the centre rather than centred
+              themselves — the centre belongs to the emitter. */}
+          <View style={styles.words} pointerEvents="none">
+            {title && (
+              <Animated.View style={titleWave} onLayout={riderLayoutHandlers[0]}>
+                <Text style={styles.title}>{title}</Text>
+              </Animated.View>
+            )}
 
-          {/* Subtitle */}
-          {subtitle && (
-            <Animated.View style={subtitleWave} onLayout={riderLayoutHandlers[1]}>
-              <Text style={styles.subtitle}>{subtitle}</Text>
-            </Animated.View>
-          )}
+            {subtitle && (
+              <Animated.View style={subtitleWave} onLayout={riderLayoutHandlers[1]}>
+                <Text style={styles.subtitle}>{subtitle}</Text>
+              </Animated.View>
+            )}
+          </View>
 
-          {/* The descent. Salmon as ink, running down — the opposite direction
-              to The Surfacing, which is what keeps the wait from reading as a
-              second climax. */}
-          <Animated.View
-            style={[styles.descentTrack, descentWave]}
-            onLayout={riderLayoutHandlers[2]}
-            testID="loading-descent"
-          >
-            <Animated.View style={[styles.descentSegment, descentStyle]} />
-          </Animated.View>
-
-          {/* Tips Section */}
+          {/* The tips ride too, and they are the far-field passenger — the one
+              that shows the front takes real time to get there. */}
           {showTips && resolvedTips.length > 0 && (
-            <View style={styles.tipsContainer}>
+            <Animated.View
+              style={[styles.tipsContainer, tipsWave]}
+              onLayout={riderLayoutHandlers[2]}
+            >
               <Text style={styles.tipLabel}>{t('general.tip', 'Tip')}</Text>
               <Animated.Text style={[styles.tipText, tipStyle]}>
                 {resolvedTips[currentTipIndex]}
               </Animated.Text>
-            </View>
+            </Animated.View>
           )}
         </View>
       </LinearGradient>
@@ -636,6 +710,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing['2xl'],
   },
+  /**
+   * Pinned to start below the surface's centre point. `top: '50%'` plus the
+   * mark's half-height is the whole recentring: the emitter owns the middle and
+   * the words hang off it, so the origin of the front is the middle of the
+   * phone whatever the words happen to be.
+   */
+  words: {
+    position: 'absolute',
+    top: '50%',
+    left: spacing['2xl'],
+    right: spacing['2xl'],
+    marginTop: MARK_SIZE / 2 + MARK_TO_WORDS,
+    alignItems: 'center',
+  },
   title: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.bold,
@@ -652,55 +740,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing['3xl'],
   },
+  /** The emitter, dead centre of the surface — see `styles.words`. */
   emitter: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginTop: -MARK_SIZE / 2,
+    marginLeft: -MARK_SIZE / 2,
     width: MARK_SIZE,
     height: MARK_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing['3xl'],
   },
   /**
-   * The front, drawn. Two concentric rings — a bright hairline crest and a
-   * wider, dimmer halo behind it. The halo is what makes the ring *luminous*
-   * rather than a hairline circle, and it is a second ring rather than a shadow
-   * because `shadowRadius` is iOS-only and `elevation` cannot be coloured: two
-   * views read identically on both platforms and both stay on the compositor.
-   *
-   * This is a light event during a wait, which DESIGN.md used to forbid
-   * outright ("one light event, and it is The Surfacing"). The rule has been
-   * amended in that document rather than quietly broken here — an unlit
-   * hairline was not legible as a wavefront, and a wave nobody can see is not a
-   * cheaper wave, it is none. It stays rationed: salmon ink at low alpha, alive
-   * only while the wait is, travelling outward and down while The Surfacing
-   * travels up.
+   * The front, drawn — see `CrestArc` for what is inside it and why. The box is
+   * a fixed `CREST_RASTER` square scaled up to the front's real size; this style
+   * carries nothing but position, because everything that changes per frame has
+   * to stay a transform.
    */
-  ring: {
+  crest: {
     position: 'absolute',
-    borderStyle: 'solid',
-  },
-  ringCrest: {
-    borderWidth: 1.5,
-    borderColor: semantic.accent.ink,
-  },
-  ringHalo: {
-    borderWidth: 6,
-    borderColor: semantic.accent.tint,
-  },
-  descentTrack: {
-    width: componentSizes.descentTrackWidth,
-    height: componentSizes.descentTrackHeight,
-    borderRadius: componentSizes.descentTrackWidth,
-    backgroundColor: semantic.border.hairline,
-    overflow: 'hidden',
-    marginBottom: spacing['5xl'],
-  },
-  descentSegment: {
-    width: '100%',
-    height: componentSizes.descentSegmentHeight,
-    borderRadius: componentSizes.descentTrackWidth,
-    // Salmon as *ink*, which DESIGN.md does not ration — not a fill, which is
-    // rationed to one living element per screen and must not be spent here.
-    backgroundColor: semantic.text.accent,
   },
   tipsContainer: {
     position: 'absolute',

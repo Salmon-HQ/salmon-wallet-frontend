@@ -137,12 +137,20 @@ export interface LoadingScreenBaseProps {
   /**
    * Emit the wave — the mark pulses, every pulse launches a front, and the
    * screen's contents are displaced as the front reaches them, each with a
-   * delay proportional to its distance from the mark (default: `false`).
+   * delay proportional to its distance from the mark (default: **`true`**).
    *
-   * Reserved for **waiting on a transaction**: the moment money is in the air
-   * and the user can do nothing. A key derivation or an app boot has nothing in
-   * the air, so a choreography there is decoration, and repeating it on every
-   * launch spends it.
+   * _Reversal, 2026-08._ This was `false`, and the transaction wait was the only
+   * caller that passed it, on the argument that a boot or a key derivation has
+   * nothing in the air and so deserves no choreography. Product then hit the
+   * account-recovery wait and found it bare — a title over an empty screen while
+   * the app does the single most consequential thing it will ever do with the
+   * user's keys. Every wait is water now; the prop survives so a surface that
+   * must show nothing living through itself can still opt out, which on the DOM
+   * is what `bedrock` does.
+   *
+   * The origin is the centre of **whatever the wait occupies**, measured, not
+   * the centre of the viewport — a wait rendered into a panel gets its own
+   * centre with no special case.
    *
    * It **loops for as long as the wait lasts** and stops on a closing wave that
    * carries the screen off — see `onExited`. Nothing accumulates across the
