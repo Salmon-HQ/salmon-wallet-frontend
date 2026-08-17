@@ -43,6 +43,8 @@ export type { UseAvailableNetworksResult } from './useAvailableNetworks';
 // Balance hook
 export { useBalance } from './useBalance';
 export type { UseBalanceParams, UseBalanceResult } from './useBalance';
+export { usePrefetchBalances } from './usePrefetchBalances';
+export type { UsePrefetchBalancesParams } from './usePrefetchBalances';
 
 // Transactions hook
 export { useTransactions } from './useTransactions';

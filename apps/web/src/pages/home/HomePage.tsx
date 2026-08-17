@@ -8,6 +8,7 @@ import {
   useAccountsContext,
   useAvailableNetworks,
   useBalance,
+  usePrefetchBalances,
   useUserConfig,
   useAnalyticsConsent,
   useCurrencyContext,
@@ -440,6 +441,17 @@ export function HomePage(): React.ReactElement {
     networkId: networkId as NetworkId | undefined,
     skip: !ready || !activeBlockchainAccount || !networksReady,
     // BE filters unknown-only-tagged SPL tokens by default; opt in via developer mode.
+    includeSpam: !!developerNetworks,
+  });
+
+  // Warm the chains the user is not looking at, so the first switch of the
+  // session lands on a number instead of a skeleton. One request per inactive
+  // chain per app load — see the hook for why it is not per switch.
+  usePrefetchBalances({
+    account: activeAccount,
+    networkIds: allNetworks.map((network) => network.id as NetworkId),
+    activeNetworkId: networkId as NetworkId | undefined,
+    pathIndex: state.pathIndex,
     includeSpam: !!developerNetworks,
   });
 

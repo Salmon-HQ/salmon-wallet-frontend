@@ -47,6 +47,7 @@ import {
   useAccountsContext,
   useAvailableNetworks,
   useBalance,
+  usePrefetchBalances,
   useCurrencyContext,
   useTransactions,
   vs,
@@ -280,6 +281,17 @@ export default function HomeScreen() {
     skip: !ready || !activeBlockchainAccount,
     // Surface unverified tokens only in developer mode; BE filters
     // unknown-only-tagged SPL entries by default.
+    includeSpam: developerNetworks,
+  });
+
+  // Warm the chains the user is not looking at, so the first swipe of the
+  // session lands on a number instead of a skeleton. One request per inactive
+  // chain per app load — see the hook for why it is not per switch.
+  usePrefetchBalances({
+    account: activeAccount,
+    networkIds: allNetworks.map((network) => network.id as NetworkId),
+    activeNetworkId: (networkId ?? undefined) as NetworkId | undefined,
+    pathIndex,
     includeSpam: developerNetworks,
   });
 

@@ -9,7 +9,7 @@
  *
  * Uses responsive scaling (s, vs, ms) from shared to match mobile proportions.
  */
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { keyframes } from '@mui/material/styles';
 import { styled } from '../../utils/styled';
@@ -39,11 +39,16 @@ import {
   opacity,
   durationMs,
   easing,
+  motionMs,
+  motionDuration,
+  motionEasing,
+  resolveMotionMs,
   tabularNums,
 } from '@salmon/shared';
 import type { BlockchainId } from '@salmon/shared';
 import { EyeIcon, EyeOffIcon, Icon, SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from '../Icon';
 import { ScalesBackground } from '../ScalesBackground';
+import { useReducedMotion } from '../../utils/useReducedMotion';
 import type { BalanceCardProps } from './types';
 
 /**
@@ -130,6 +135,23 @@ const ContentGroup = styled(Box)({
   alignItems: 'center',
   gap: vs(spacing.xs),
 });
+
+/**
+ * The printed face of the card: everything that belongs to one chain, and the
+ * only thing that transitions when the chain changes. It reproduces the
+ * container's own column so wrapping the groups changes no spacing.
+ */
+const ChainFace = styled(Box)<{ $visible: boolean }>(({ $visible }) => ({
+  alignSelf: 'stretch',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: vs(spacing.sm),
+  opacity: $visible ? 1 : 0,
+  transition: `opacity ${motionDuration.flick} ${
+    $visible ? motionEasing.current.css : motionEasing.sink.css
+  }`,
+}));
 
 /**
  * Group 1, and the only place on this card the scales are allowed.
@@ -294,23 +316,92 @@ const SkeletonRect = styled(Box)({
   animation: `${shimmer} ${durationMs.shimmer}ms ${easing.easeInOut} infinite`,
 });
 
+/**
+ * Everything on the card that belongs to one chain. Switching chains replaces
+ * this whole payload at once; a balance refresh on the *same* chain replaces it
+ * in place, with no fade — a number landing is not a state change.
+ */
+interface ChainContent {
+  blockchain: BlockchainId;
+  usdTotal: number | undefined;
+  changePercent: number;
+  changeAmount: number;
+  loading: boolean;
+}
+
+/**
+ * Crossfade the card's *contents* when the chain changes, leaving the card
+ * itself where it is.
+ *
+ * Switching chains with the carousel arrows is a state change in place, so it
+ * gets `swell` (180ms) — spent as `flick` out and `flick` in, with the swap at
+ * the midpoint where nothing is visible. The card container, its background and
+ * its pagination dots never take part: the plane stays, only what is printed on
+ * it changes.
+ *
+ * Under reduce-motion the swap timer collapses with the CSS transition (the
+ * global `prefers-reduced-motion` block already flattens that), so the content
+ * steps to its new value instead of leaving a 90ms gap of nothing.
+ */
+function useChainCrossfade(next: ChainContent): { shown: ChainContent; visible: boolean } {
+  const isReduceMotionEnabled = useReducedMotion();
+  const [shown, setShown] = useState<ChainContent>(next);
+  const [visible, setVisible] = useState(true);
+  const { blockchain, usdTotal, changePercent, changeAmount, loading } = next;
+
+  useEffect(() => {
+    if (shown.blockchain === blockchain) {
+      if (
+        shown.usdTotal !== usdTotal ||
+        shown.changePercent !== changePercent ||
+        shown.changeAmount !== changeAmount ||
+        shown.loading !== loading
+      ) {
+        setShown({ blockchain, usdTotal, changePercent, changeAmount, loading });
+      }
+      return;
+    }
+
+    setVisible(false);
+    const swapAt = setTimeout(
+      () => {
+        setShown({ blockchain, usdTotal, changePercent, changeAmount, loading });
+        setVisible(true);
+      },
+      resolveMotionMs(motionMs.flick, isReduceMotionEnabled)
+    );
+    return () => clearTimeout(swapAt);
+  }, [shown, blockchain, usdTotal, changePercent, changeAmount, loading, isReduceMotionEnabled]);
+
+  return { shown, visible };
+}
+
 export function BalanceCard({
   network: _network,
   blockchain = 'solana',
-  usdTotal,
-  changePercent = 0,
-  changeAmount = 0,
+  usdTotal: nextUsdTotal,
+  changePercent: nextChangePercent = 0,
+  changeAmount: nextChangeAmount = 0,
   hiddenBalance = false,
   onToggleVisibility,
   currentIndex = 0,
   totalCount = 1,
-  loading = false,
+  loading: nextLoading = false,
   showNetworkLabel = false,
   style,
   className,
 }: BalanceCardProps) {
   const { t } = useTranslation();
   const [, { formatValue, formatChange }] = useCurrencyContext();
+
+  const { shown, visible } = useChainCrossfade({
+    blockchain,
+    usdTotal: nextUsdTotal,
+    changePercent: nextChangePercent,
+    changeAmount: nextChangeAmount,
+    loading: nextLoading,
+  });
+  const { blockchain: shownBlockchain, usdTotal, changePercent, changeAmount, loading } = shown;
 
   const handleToggleVisibility = useCallback(() => {
     onToggleVisibility?.();
@@ -323,10 +414,10 @@ export function BalanceCard({
   const displayPercentage = showPercentage(changePercent);
   const displayAbsChange = formatChange(changeAmount);
 
-  const gradientCSS = getGradientCSSForBlockchain(blockchain);
+  const gradientCSS = getGradientCSSForBlockchain(shownBlockchain);
   // In developer mode, always show network label (including "Mainnet")
   const networkLabel = showNetworkLabel
-    ? (getNetworkLabel(blockchain) ?? t('general.network_mainnet', 'Mainnet'))
+    ? (getNetworkLabel(shownBlockchain) ?? t('general.network_mainnet', 'Mainnet'))
     : null;
 
   const renderBalance = () => {
@@ -399,45 +490,49 @@ export function BalanceCard({
           quantity is not that, and at ~1.1:1 the stroke cannot interfere with
           a glyph anyway. The field is scoped to this group so it is
           structurally incapable of reaching the figure below. */}
-      <LogoGroup>
-        <ScalesBackground variant="deepField" style={{ height: '100%' }} />
-        <LogoContainer>{renderBlockchainLogo(blockchain)}</LogoContainer>
-        <NetworkLabel $visible={!!networkLabel}>
-          <NetworkLabelText>{networkLabel ?? '\u00A0'}</NetworkLabelText>
-        </NetworkLabel>
-      </LogoGroup>
+      <ChainFace $visible={visible} data-testid="balance-card-chain-face">
+        <LogoGroup>
+          <ScalesBackground variant="deepField" style={{ height: '100%' }} />
+          <LogoContainer>{renderBlockchainLogo(shownBlockchain)}</LogoContainer>
+          <NetworkLabel $visible={!!networkLabel}>
+            <NetworkLabelText>{networkLabel ?? '\u00A0'}</NetworkLabelText>
+          </NetworkLabel>
+        </LogoGroup>
 
-      {/* Group 2: Balance + Change */}
-      <ContentGroup>
-        {loading ? (
-          <BalanceRow>
-            <SkeletonRect
-              sx={{
-                width: ms(componentSizes.buttonMinWidthLg),
-                height: ms(fontSize.balance),
-                borderRadius: `${ms(borderRadius.sm)}px`,
-              }}
-            />
-          </BalanceRow>
-        ) : (
-          renderBalance()
-        )}
-        {loading ? (
-          <ChangeRow>
-            <SkeletonRect
-              sx={{
-                width: ms(componentSizes.buttonMinWidth),
-                height: ms(fontSize.sm * 1.3),
-                borderRadius: `${ms(borderRadius.sm)}px`,
-              }}
-            />
-          </ChangeRow>
-        ) : (
-          renderChange()
-        )}
-      </ContentGroup>
+        {/* Group 2: Balance + Change */}
+        <ContentGroup>
+          {loading ? (
+            <BalanceRow>
+              <SkeletonRect
+                sx={{
+                  width: ms(componentSizes.buttonMinWidthLg),
+                  height: ms(fontSize.balance),
+                  borderRadius: `${ms(borderRadius.sm)}px`,
+                }}
+              />
+            </BalanceRow>
+          ) : (
+            renderBalance()
+          )}
+          {loading ? (
+            <ChangeRow>
+              <SkeletonRect
+                sx={{
+                  width: ms(componentSizes.buttonMinWidth),
+                  height: ms(fontSize.sm * 1.3),
+                  borderRadius: `${ms(borderRadius.sm)}px`,
+                }}
+              />
+            </ChangeRow>
+          ) : (
+            renderChange()
+          )}
+        </ContentGroup>
+      </ChainFace>
 
-      {/* Group 3: Pagination dots */}
+      {/* Group 3: Pagination dots — outside the face on purpose. Which chain
+          you are on is selection feedback, and feedback is preserved: the dot
+          moves the instant the arrow is pressed, before the face has faded. */}
       {totalCount > 1 && (
         <Pagination>
           {Array.from({ length: totalCount }).map((_, index) => (
