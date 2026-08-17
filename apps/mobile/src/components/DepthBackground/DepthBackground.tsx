@@ -53,7 +53,7 @@ import {
   depthFieldCycleMs,
   depthFieldTile,
   depthFieldTileHeight,
-  marineSnow,
+  marineSnowTiled,
   semantic,
 } from '@salmon/shared';
 import React, { useEffect } from 'react';
@@ -70,7 +70,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, { Defs, Ellipse, G, Use } from 'react-native-svg';
+import Svg, { ClipPath, Defs, Ellipse, G, Rect, Use } from 'react-native-svg';
 
 const { water } = semantic;
 
@@ -83,6 +83,9 @@ const HEADROOM_TILES = 1;
 
 /** The `<Defs>` id the stacked copies reference. */
 const SNOW_TILE_ID = 'salmon-marine-snow';
+
+/** The tile's own bounds, so each stacked copy carries only its own flocs. */
+const SNOW_CLIP_ID = 'salmon-marine-snow-tile';
 
 /**
  * The scroll offset the field parallaxes against.
@@ -197,8 +200,23 @@ export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, s
             pointerEvents="none"
           >
             <Defs>
-              <G id={SNOW_TILE_ID}>
-                {marineSnow.map(([cx, cy, rx, ry, opacity], i) => (
+              {/* One tile, clipped to itself. `marineSnowTiled` carries a copy
+                  of every floc that hangs over an edge, entered from the
+                  opposite one — so a floc crossing a seam is drawn as two
+                  halves in two neighbouring tiles, exactly as the DOM's
+                  repeated background image draws it. Without the clip both
+                  halves *and* the whole floc would land on the same pixels
+                  and that floc would sit at double opacity. */}
+              <ClipPath id={SNOW_CLIP_ID}>
+                <Rect
+                  x="0"
+                  y="0"
+                  width={depthFieldTile.width}
+                  height={depthFieldTile.height}
+                />
+              </ClipPath>
+              <G id={SNOW_TILE_ID} clipPath={`url(#${SNOW_CLIP_ID})`}>
+                {marineSnowTiled.map(([cx, cy, rx, ry, opacity], i) => (
                   <Ellipse
                     key={i}
                     cx={cx}

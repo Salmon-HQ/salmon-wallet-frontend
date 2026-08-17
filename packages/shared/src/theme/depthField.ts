@@ -391,6 +391,42 @@ export const marineSnow: ReadonlyArray<SnowFloc> = [
   [427.86, 959.63, 1.74, 1.5, 0.11],
 ];
 
+/** Does the floc's ink reach past the tile's top or bottom edge? */
+const crossesTop = ([, cy, , ry]: SnowFloc): boolean => cy - ry < 0;
+const crossesBottom = ([, cy, , ry]: SnowFloc): boolean => cy + ry > depthFieldTile.height;
+
+/** The same floc, a whole tile up or down. */
+const wrapFloc = ([cx, cy, rx, ry, opacity]: SnowFloc, dy: number): SnowFloc => [
+  cx,
+  cy + dy,
+  rx,
+  ry,
+  opacity,
+];
+
+/**
+ * The flocs a renderer actually draws: the field, plus the exact continuation
+ * of every floc that hangs over an edge, entered from the opposite one.
+ *
+ * Both renderers clip the field to the tile — the DOM because the drawing is a
+ * `viewBox`'d document repeated as a background image, mobile because a
+ * `react-native-svg` `Pattern` cell is a `CGPatternCreate` bounds rect on iOS
+ * and a shader bitmap on Android. A floc is a closed shape, so clipping one
+ * does not thin it, it *bisects* it: a circle with a straight edge, which
+ * reads as a deliberate half-moon rather than as a particle. Four flocs sit
+ * astride the horizontal edges, and now that the field repeats and drifts they
+ * would parade that cut down the screen once per cycle.
+ *
+ * Vertical only, because the field repeats vertically only: the left and right
+ * edges are the column's own edges, where a floc has nowhere to re-enter from.
+ * `depthField.test.ts` asserts that no floc crosses those.
+ */
+export const marineSnowTiled: ReadonlyArray<SnowFloc> = [
+  ...marineSnow,
+  ...marineSnow.filter(crossesTop).map((floc) => wrapFloc(floc, depthFieldTile.height)),
+  ...marineSnow.filter(crossesBottom).map((floc) => wrapFloc(floc, -depthFieldTile.height)),
+];
+
 /**
  * The field as a standalone SVG document.
  *
@@ -410,7 +446,7 @@ export const marineSnow: ReadonlyArray<SnowFloc> = [
  */
 export const marineSnowSvg = (color: string): string =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="${depthFieldTile.width}" height="${depthFieldTile.height}" viewBox="0 0 ${depthFieldTile.width} ${depthFieldTile.height}">` +
-  marineSnow
+  marineSnowTiled
     .map(
       ([cx, cy, rx, ry, opacity]) =>
         `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${color}" fill-opacity="${opacity}"/>`

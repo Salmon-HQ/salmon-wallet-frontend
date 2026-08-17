@@ -6,6 +6,7 @@ import {
   depthFieldTile,
   depthFieldTileHeight,
   marineSnow,
+  marineSnowTiled,
   marineSnowSvg,
   wrapDepthOffset,
 } from './depthField';
@@ -117,10 +118,55 @@ describe('marine snow: aerial perspective is in the data', () => {
   });
 });
 
+describe('marine snow: no floc is left astride a tile edge', () => {
+  // A floc is a closed shape, so a tile edge does not thin it, it bisects it:
+  // a circle with a straight edge, which reads as a deliberate half-moon and
+  // — now that the field repeats and drifts — parades that cut down the
+  // screen once per cycle. Either the floc fits, or its exact continuation is
+  // drawn a tile over, where it re-enters.
+  const { width: W, height: H } = depthFieldTile;
+  const has = (floc: readonly number[]) =>
+    marineSnowTiled.some((c) => c.every((v, i) => Math.abs(v - floc[i]) < 1e-9));
+
+  it('gives every floc that crosses the top or bottom edge its twin', () => {
+    const orphans = marineSnowTiled.filter(([cx, cy, rx, ry, opacity]) => {
+      if (cy - ry >= 0 && cy + ry <= H) return false;
+      const dy = cy - ry < 0 ? H : -H;
+      return !has([cx, cy + dy, rx, ry, opacity]);
+    });
+    expect(orphans).toEqual([]);
+  });
+
+  it('keeps every floc clear of the left and right edges', () => {
+    // The field repeats vertically only, so a floc crossing a side edge has
+    // nowhere to re-enter from — it can only be moved.
+    const cut = marineSnowTiled.filter(([cx, , rx]) => cx - rx < 0 || cx + rx > W);
+    expect(cut).toEqual([]);
+  });
+
+  it('adds nothing but wrapped copies', () => {
+    expect(marineSnowTiled.length).toBeGreaterThan(marineSnow.length);
+    for (const floc of marineSnowTiled) {
+      const [cx, cy, rx, ry, opacity] = floc;
+      const authored =
+        marineSnow.includes(floc as never) ||
+        marineSnow.some(
+          (a) =>
+            a[0] === cx &&
+            a[2] === rx &&
+            a[3] === ry &&
+            a[4] === opacity &&
+            Math.abs(Math.abs(a[1] - cy) - H) < 1e-9
+        );
+      expect(authored).toBe(true);
+    }
+  });
+});
+
 describe('marine snow: the serialised field', () => {
   it('renders every floc, and only in the token colour', () => {
     const svg = marineSnowSvg(water.snow);
-    expect(svg.match(/<ellipse/g)).toHaveLength(marineSnow.length);
+    expect(svg.match(/<ellipse/g)).toHaveLength(marineSnowTiled.length);
     expect(svg).toContain(`fill="${water.snow}"`);
   });
 

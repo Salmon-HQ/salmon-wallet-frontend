@@ -23,6 +23,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 // pinned by `contrast.test.ts` and `depthField.test.ts` in @salmon/shared.
 vi.mock('@salmon/shared', () => ({
   marineSnowSvg: () => '<svg xmlns="http://www.w3.org/2000/svg"/>',
+  // The seigaiha geometry is data, not a token: stubbing it would assert that
+  // a stub tiles. Its own invariants live in `scales.test.ts` in @salmon/shared.
+  seigaihaTile: { width: 805.589, height: 25.0918 },
+  seigaihaTiledPaths: ['M0 0C1 1 2 2 3 3'],
   semantic: {
     water: { gradient: ['#10131C', '#070911'], snow: 'rgba(199, 211, 232, 0.12)' },
     scales: {

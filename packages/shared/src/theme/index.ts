@@ -80,6 +80,7 @@ export {
   depthFieldTile,
   depthFieldTileHeight,
   marineSnow,
+  marineSnowTiled,
   marineSnowSvg,
   wrapDepthOffset,
 } from './depthField';
@@ -88,6 +89,9 @@ export type { SnowFloc } from './depthField';
 // Flesh geometry — the myoseptal texture as path data both platforms draw.
 export { fleshTile, fleshFades, fleshStrokes, fleshTiledStrokes } from './flesh';
 export type { FleshFadeStop, FleshStroke } from './flesh';
+
+// Seigaiha geometry — the scales motif as path data both platforms draw.
+export { seigaihaTile, seigaihaPaths, seigaihaTiledPaths, shiftSeigaiha } from './scales';
 
 // Re-export all tokens from spacing
 export {
