@@ -1,14 +1,12 @@
 import React from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
 import { keyframes } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import {
   colors,
-  gradients,
   spacing,
   borderRadius,
   fontFamily,
@@ -16,13 +14,13 @@ import {
   fontWeight,
   lineHeight,
   componentSizes,
-  borderWidth,
   duration,
   easing,
   tabularNums,
   useWaitGate,
 } from '@salmon/shared';
 import { LoadingScreen } from '../LoadingScreen';
+import { PrimaryButton } from '../Button';
 import type { TransactionSuccessScreenProps } from './types';
 
 // ============================================================================
@@ -119,9 +117,9 @@ const ExplorerLink = styled(Link)({
   color: colors.accent.primary,
   textAlign: 'center',
   cursor: 'pointer',
-  marginBottom: spacing['4xl'],
+  marginTop: spacing.xl,
   opacity: 0,
-  animation: `${fadeIn} ${duration.slow} ${easing.easeOut} ${duration.stagger2} forwards`,
+  animation: `${fadeIn} ${duration.slow} ${easing.easeOut} ${duration.stagger3} forwards`,
 });
 
 const BridgeInfoBox = styled(Box)({
@@ -150,23 +148,16 @@ const BridgeValue = styled(Typography)({
   marginBottom: spacing.md,
 });
 
-const ContinueButton = styled(Button)({
-  minWidth: componentSizes.buttonMinWidthLg,
-  height: componentSizes.buttonHeightCompact,
-  borderRadius: borderRadius.lg,
-  background: gradients.primaryCSS,
-  border: `${borderWidth.accent}px solid ${colors.accent.border}`,
-  // The only legal ink on a salmon fill: white is 3.06:1.
-  color: colors.button.primaryText,
-  fontFamily: fontFamily.sans,
-  fontWeight: fontWeight.semibold,
-  fontSize: fontSize.md,
-  textTransform: 'none',
+/**
+ * The receipt's continue action is the same primary control every other screen
+ * commits with — it used to be a hand-rolled MUI button carrying a gradient, a
+ * salmon outline and a 12px radius, which made the one button on this screen
+ * the only button in the app without the flesh in it. Only the entrance
+ * animation is local; fill, radius, bezel and material come from the button.
+ */
+const ContinueButtonWrapper = styled('div')({
   opacity: 0,
-  animation: `${fadeIn} ${duration.slow} ${easing.easeOut} ${duration.stagger3} forwards`,
-  '&:hover': {
-    background: gradients.primaryCSS,
-  },
+  animation: `${fadeIn} ${duration.slow} ${easing.easeOut} ${duration.stagger2} forwards`,
 });
 
 // ============================================================================
@@ -247,7 +238,7 @@ export function TransactionSuccessScreen({
                   href={`https://solscan.io/tx/${bridgeDepositTxId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ marginBottom: 0, animation: 'none', opacity: 1 }}
+                  style={{ marginTop: 0, animation: 'none', opacity: 1 }}
                 >
                   {bridgeDepositTxId.slice(0, 8)}...{bridgeDepositTxId.slice(-8)}
                 </ExplorerLink>
@@ -273,7 +264,24 @@ export function TransactionSuccessScreen({
             </>
           )}
         </BridgeInfoBox>
-      ) : explorerUrl ? (
+      ) : null}
+      {/* Continue first, explorer second. The receipt's own action outranks a
+          link that leaves the wallet for a block explorer, and reading order
+          has to match that ranking. */}
+      <ContinueButtonWrapper>
+        <PrimaryButton
+          onClick={onContinue}
+          fullWidth={false}
+          testID="tx-success-continue-button"
+          style={{
+            minWidth: componentSizes.buttonMinWidthLg,
+            height: componentSizes.buttonHeightCompact,
+          }}
+        >
+          {t('transaction.continue')}
+        </PrimaryButton>
+      </ContinueButtonWrapper>
+      {!isBridge && explorerUrl ? (
         <ExplorerLink
           onClick={handleExplorerClick}
           underline="always"
@@ -282,9 +290,6 @@ export function TransactionSuccessScreen({
           {t('transaction.viewOnExplorer')}
         </ExplorerLink>
       ) : null}
-      <ContinueButton onClick={onContinue} data-testid="tx-success-continue-button">
-        {t('transaction.continue')}
-      </ContinueButton>
     </Container>
   );
 }

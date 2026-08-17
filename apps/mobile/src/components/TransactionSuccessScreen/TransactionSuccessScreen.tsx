@@ -15,15 +15,12 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import {
   spacing,
   borderRadius,
   fontSize,
   fontWeight,
-  gradients,
-  shadows,
   componentSizes,
   letterSpacing,
   lineHeight,
@@ -31,7 +28,6 @@ import {
   vs,
   s,
   fontFamilyNative,
-  borderWidth,
   semantic,
   tabularNums,
   useWaitGate,
@@ -330,21 +326,14 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
       ) : null}
 
       <Animated.View style={[styles.buttonContainer, buttonStyle]}>
-        <LinearGradient
-          colors={gradients.primaryButton.colors}
-          start={gradients.primaryButton.start}
-          end={gradients.primaryButton.end}
-          style={styles.buttonGradient}
+        <PrimaryButton
+          onPress={onContinue}
+          style={styles.button}
+          disabled={settling}
+          testID="tx-success-continue-button"
         >
-          <PrimaryButton
-            onPress={onContinue}
-            style={styles.button}
-            disabled={settling}
-            testID="tx-success-continue-button"
-          >
-            {t('transaction.continue', 'Back to wallet')}
-          </PrimaryButton>
-        </LinearGradient>
+          {t('transaction.continue', 'Back to wallet')}
+        </PrimaryButton>
       </Animated.View>
 
       {/* The shaft of light, last so it passes over the amount rather than
@@ -435,15 +424,12 @@ const styles = StyleSheet.create({
   buttonContainer: {
     alignItems: 'center',
   },
-  buttonGradient: {
-    borderRadius: borderRadius.lg,
-    borderWidth: borderWidth.accent,
-    borderColor: semantic.accent.fill,
-    ...shadows.button,
-  },
+  // Width and height only. The gradient wrapper that used to sit around this
+  // button forced the fill transparent, which cancelled the flesh — the one
+  // material a filled control is supposed to show.
   button: {
+    width: 'auto',
     minWidth: s(componentSizes.copyButtonWidth),
-    minHeight: vs(componentSizes.buttonHeightCompact),
-    backgroundColor: 'transparent',
+    height: vs(componentSizes.buttonHeightCompact),
   },
 });

@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   colors,
   fontSize,
@@ -9,8 +8,6 @@ import {
   lineHeight,
   spacing,
   borderRadius,
-  gradients,
-  shadows,
   componentSizes,
   ms,
   vs,
@@ -103,19 +100,9 @@ export const BridgeRecipientScreen: React.FC<BridgeRecipientScreenProps> = ({
         <SecondaryButton onPress={onBack} style={styles.backButton}>
           {t('actions.back', 'Back')}
         </SecondaryButton>
-        <LinearGradient
-          colors={canContinue ? gradients.primaryButton.colors : gradients.disabled.colors}
-          start={gradients.primaryButton.start}
-          end={gradients.primaryButton.end}
-          style={[
-            styles.continueButtonGradient,
-            canContinue && styles.continueButtonGradientActive,
-          ]}
-        >
-          <PrimaryButton onPress={onContinue} disabled={!canContinue} style={styles.continueButton}>
-            {t('bridge.recipient.review', 'Review')}
-          </PrimaryButton>
-        </LinearGradient>
+        <PrimaryButton onPress={onContinue} disabled={!canContinue} style={styles.continueButton}>
+          {t('bridge.recipient.review', 'Review')}
+        </PrimaryButton>
       </View>
     </View>
   );
@@ -180,27 +167,16 @@ const styles = StyleSheet.create({
     left: s(spacing.headerPadding),
     right: s(spacing.headerPadding),
   },
+  // Height only: radius, fill, border and material belong to the button.
   backButton: {
     flex: 1,
     minHeight: vs(componentSizes.buttonHeightCompact),
-    borderWidth: borderWidth.accent,
-    borderColor: semantic.border.raised,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.button.cancelBackground,
-  },
-  continueButtonGradient: {
-    flex: 1,
-    borderRadius: borderRadius.lg,
-    borderWidth: borderWidth.accent,
-    borderColor: 'transparent',
-    ...shadows.button,
-  },
-  continueButtonGradientActive: {
-    borderColor: semantic.accent.fill,
+    height: vs(componentSizes.buttonHeightCompact),
   },
   continueButton: {
+    flex: 1,
     minHeight: vs(componentSizes.buttonHeightCompact),
-    backgroundColor: 'transparent',
+    height: vs(componentSizes.buttonHeightCompact),
   },
 });
 

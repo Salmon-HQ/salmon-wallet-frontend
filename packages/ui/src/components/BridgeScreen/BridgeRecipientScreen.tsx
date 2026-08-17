@@ -191,12 +191,8 @@ export function BridgeRecipientScreen({
         <BackButtonWrapper>
           <SecondaryButton
             onClick={onBack}
-            style={{
-              height: componentSizes.buttonHeightCompact,
-              border: `${borderWidth.accent}px solid ${colors.accent.border}`,
-              borderRadius: borderRadius.lg,
-              backgroundColor: colors.button.cancelBackground,
-            }}
+            // Height only — radius, fill and border belong to the button.
+            style={{ height: componentSizes.buttonHeightCompact }}
           >
             {t('general.back')}
           </SecondaryButton>

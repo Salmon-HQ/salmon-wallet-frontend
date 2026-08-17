@@ -52,7 +52,19 @@ vi.mock('@salmon/shared', () => ({
   fontSize: { sm: 14, base: 16, md: 18, title: 22, '4xl': 36 },
   fontWeight: { semibold: 600, bold: 700 },
   lineHeight: { none: 1 },
-  componentSizes: { logoSizeSmall: 80, buttonHeightCompact: 48, buttonMinWidthLg: 200 },
+  // The continue action is the shared PrimaryButton now, so this mock has to
+  // cover the tokens that button reads too.
+  componentSizes: {
+    logoSizeSmall: 80,
+    buttonHeightCompact: 48,
+    buttonMinWidthLg: 200,
+    buttonMinWidth: 120,
+    buttonHeight: 56,
+    buttonRadius: 28,
+    buttonFleshScale: 1,
+  },
+  letterSpacing: { widest: '0.02em' },
+  shadowsCSS: { bezel: 'none' },
   gradients: { primaryCSS: 'linear-gradient(#0f0, #0c0)' },
   duration: {
     slow: '300ms',

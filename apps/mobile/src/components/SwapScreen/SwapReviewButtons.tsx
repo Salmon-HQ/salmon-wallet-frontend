@@ -1,19 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import {
-  colors,
-  spacing,
-  borderRadius,
-  gradients,
-  shadows,
-  vs,
-  s,
-  borderWidth,
-  componentSizes,
-  semantic,
-} from '@salmon/shared';
+import { spacing, vs, s, componentSizes } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 
 export interface SwapReviewButtonsProps {
@@ -52,22 +40,15 @@ export const SwapReviewButtons: React.FC<SwapReviewButtonsProps> = ({
       >
         {t('general.back')}
       </SecondaryButton>
-      <LinearGradient
-        colors={gradients.primaryButton.colors}
-        start={gradients.primaryButton.start}
-        end={gradients.primaryButton.end}
-        style={styles.confirmButtonGradient}
+      <PrimaryButton
+        onPress={onConfirm}
+        loading={isBusy}
+        disabled={isBusy}
+        style={styles.confirmButton}
+        testID="swap-confirm-button"
       >
-        <PrimaryButton
-          onPress={onConfirm}
-          loading={isBusy}
-          disabled={isBusy}
-          style={styles.confirmButton}
-          testID="swap-confirm-button"
-        >
-          {confirmLabel ?? t('general.confirm')}
-        </PrimaryButton>
-      </LinearGradient>
+        {confirmLabel ?? t('general.confirm')}
+      </PrimaryButton>
     </View>
   );
 };
@@ -77,27 +58,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: s(spacing.md),
   },
+  // Height is the only legal override on either button. Radius, fill, border
+  // and material belong to the button itself: the pair used to carry a local
+  // 12px radius and a salmon outline on Back, and a gradient wrapper that made
+  // Confirm transparent — which cancelled the flesh the fill is supposed to
+  // show. They differ by material now, not by shape.
   backButton: {
     flex: 1,
+    minHeight: vs(componentSizes.buttonHeightCompact),
     height: vs(componentSizes.buttonHeightCompact),
-    borderWidth: borderWidth.accent,
-    borderColor: semantic.border.raised,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.button.cancelBackground,
-  },
-  confirmButtonGradient: {
-    flex: 1,
-    borderRadius: borderRadius.lg,
-    borderWidth: borderWidth.accent,
-    borderColor: semantic.accent.fill,
-    // The row stretches this gradient to match the taller Back button
-    // (SecondaryButton has minHeight: buttonHeight); center the inner
-    // PrimaryButton so its label sits in the vertical middle instead of the top.
-    justifyContent: 'center',
-    ...shadows.button,
   },
   confirmButton: {
+    flex: 1,
+    minHeight: vs(componentSizes.buttonHeightCompact),
     height: vs(componentSizes.buttonHeightCompact),
-    backgroundColor: 'transparent',
   },
 });

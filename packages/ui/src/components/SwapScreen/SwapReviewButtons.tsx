@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
-import { colors, spacing, borderRadius, componentSizes, borderWidth } from '@salmon/shared';
+import { spacing, componentSizes } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import type { SwapReviewButtonsProps } from './types';
 
@@ -55,12 +55,11 @@ export function SwapReviewButtons({
           onClick={onBack}
           disabled={isBusy}
           testID="swap-back-button"
-          style={{
-            height: componentSizes.buttonHeightCompact,
-            border: `${borderWidth.accent}px solid ${colors.accent.border}`,
-            borderRadius: borderRadius.lg,
-            backgroundColor: colors.button.cancelBackground,
-          }}
+          // Height is the only legal override: the compact row is shorter than
+          // a screen's committing action. Radius, fill and border belong to the
+          // button, not to the screen — a local salmon outline at a different
+          // radius made this pair read as two unrelated controls.
+          style={{ height: componentSizes.buttonHeightCompact }}
         >
           {t('general.back')}
         </SecondaryButton>
