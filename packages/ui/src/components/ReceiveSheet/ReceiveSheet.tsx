@@ -6,7 +6,6 @@
  * - QR code for wallet address
  * - Full address display (selectable)
  * - Copy address button
- * - ScalesBackground decorative pattern
  * - Responsive QR code sizing
  */
 

@@ -251,7 +251,7 @@ marks its parts.
 | MUI theme + unconditional focus ring (web, extension) | **Shipped** | `packages/ui/src/theme/index.ts` |
 | The water column: depth ramp + marine snow field (`semantic.water`, geometry, both renderers) | **Shipped**, full column height | `packages/shared/src/theme/depthField.ts`, `packages/ui/src/components/DepthBackground`, `apps/mobile/src/components/DepthBackground` |
 | Opaque list rows (plane P2), so the motif is occluded rather than cropped | **Shipped** | `packages/shared/src/theme/colors.ts` (`background.tokenItem`), both `BlurContainer`s |
-| The water column mounted on the app ground | **Shipped** on the home ground of all three apps; **in progress** on the rest | `apps/mobile/app/(app)/(tabs)/_layout.tsx` and `app/(auth)/_layout.tsx`, `apps/web` and `apps/extension` `pages/home/HomePage.tsx`, `packages/ui/src/components/WaterColumn` |
+| The water column mounted on the app ground | **Shipped** app-wide: home, onboarding/auth, lock, and every stacked page in all three apps | `packages/ui/src/components/WaterColumn` and `PageShell` / `AuthFlow` / both `LockPage`s, `apps/mobile/app/(app)/(tabs)/_layout.tsx` and `app/(auth)/_layout.tsx`, `apps/web` and `apps/extension` `pages/home/HomePage.tsx` |
 | The flesh texture inside salmon fills (`lean` variant, 138×88 tile, bands raked 32°) | **Shipped** | `scripts/flesh.py` → `packages/shared/src/theme/flesh.ts`, `semantic.flesh`, both `FleshBackground` renderers |
 | Scales motif rework — reduced to the deep field and the caustic band | **Shipped** | `ScalesBackground` `deepField` / `caustic`; the `fish` variant is retired in favour of flesh and kept only as an export |
 | Bezel on filled controls (`shadowsCSS.bezel`, same literal on DOM and RN) | **Shipped** | `packages/shared/src/theme/shadows.ts` |
@@ -680,7 +680,10 @@ particulate density does in real water. Not wallpaper, not a chain indicator,
 not a brand stamp. The rework is **shipped**: the motif was hauled off the
 sheets, page shells, receive sheet and detail pages it used to tile edge to
 edge at `rgba(0, 0, 0, 0.5)` — black on black on a near-black canvas, invisible
-and decorative at once — and reduced to the appearances below.
+and decorative at once — and off the balance card, which had kept a band of it
+above the total, and reduced to the appearances below. No content surface
+carries it: the motif belongs to the water, and the water is the ground behind
+the content.
 
 1. **The deep field** (**shipped**) — on the app ground, the full height of
    whatever it is mounted in. Pattern scale 3.2× (`patternHeight` 26 → 83),

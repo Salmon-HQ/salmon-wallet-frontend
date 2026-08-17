@@ -7,6 +7,7 @@ import { styled } from '../../utils/styled';
 import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
 import { BaseDialog } from '../BaseDialog';
 import { getAuthContainerStyles } from './common';
+import { WaterColumn } from '../WaterColumn';
 import type { SuccessPageProps } from './types';
 
 const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
@@ -73,6 +74,7 @@ export function SuccessPage({
 
   return (
     <Container $contained={contained}>
+      <WaterColumn />
       <TopSpacer />
 
       <CenterContent>

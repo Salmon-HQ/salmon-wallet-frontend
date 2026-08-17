@@ -27,6 +27,7 @@ import { LoadingScreen } from '../LoadingScreen';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
 import { ScreenHeader } from '../ScreenHeader';
 import { getAuthContainerStyles } from './common';
+import { WaterColumn } from '../WaterColumn';
 import type { PasswordPageProps } from './types';
 
 const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
@@ -262,6 +263,7 @@ export function PasswordPage({
   return (
     <>
       <Container $contained={contained}>
+        <WaterColumn />
         <ScreenHeader
           onBack={onBack}
           stepIndicator={{ totalSteps: 2, currentStep: 2 }}

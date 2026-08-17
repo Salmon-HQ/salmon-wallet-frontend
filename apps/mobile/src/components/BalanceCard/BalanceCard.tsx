@@ -26,7 +26,6 @@ import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
-import { ScalesBackground } from '../ScalesBackground';
 import { ShimmerRect } from '../ShimmerRect';
 import type { BalanceCardProps, BlockchainId } from './types';
 
@@ -226,17 +225,14 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
       style={[styles.container, style]}
       testID="balance-card-root"
     >
-      {/* Group 1: Logo + Network tag — and the only place on this card the
-          scales are allowed. The field is a *child* of this group at
-          absolute-fill, which is the structural guarantee behind the
-          exclusion rule: it can only ever occupy the logo/badge band, and
-          the card's own `gap` then puts clear space between this group's
-          bottom edge — where the fade mask has already reached alpha 0 —
-          and the balance figure below. If the logo resizes, the band
-          resizes with it; there is no measured constant to fall out of
-          date. Asserted in BalanceCard.scales.test.tsx. */}
+      {/* Group 1: Logo + Network tag. No motif: the motif belongs to the
+          water, and this card is content — it carries the balance figure, and
+          the scales never go behind a numeric value. Confining the field to
+          this band was how the card kept the rule while the ground had no
+          field of its own; the ground now runs the whole column, so a field
+          inside the card would be wallpaper. Asserted in
+          BalanceCard.scales.test.tsx. */}
       <View style={styles.logoGroup} testID="balance-card-logo-group">
-        <ScalesBackground variant="deepField" />
         <View style={styles.logoContainer}>{renderBlockchainLogo(blockchain)}</View>
         {networkLabel && (
           <View style={styles.networkLabelContainer}>

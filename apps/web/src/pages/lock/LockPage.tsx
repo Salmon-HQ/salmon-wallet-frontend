@@ -12,7 +12,14 @@ import { styled } from '@salmon/ui';
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
-import { PrimaryButton, ConfirmDialog, LoadingScreen, WarningNotice } from '@salmon/ui';
+import {
+  PrimaryButton,
+  ConfirmDialog,
+  LoadingScreen,
+  WarningNotice,
+  WaterColumn,
+  waterColumnHost,
+} from '@salmon/ui';
 import {
   colors,
   fontFamily,
@@ -28,6 +35,14 @@ import {
 } from '@salmon/shared';
 import { storeSessionKey, clearSessionKey } from '../../utils/sessionKeyCache';
 
+/**
+ * The lock screen stands in the same water as everything else: the ground is
+ * the app's, not a per-screen gradient. The two-stop gradient this replaces
+ * was a screen-local invention; the depth ramp is the token that says the same
+ * thing, and the marine snow and deep field are what make it water rather than
+ * a fade. The password field is opaque, so it occludes the motif where the
+ * secret is typed.
+ */
 const Container = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
@@ -36,7 +51,8 @@ const Container = styled(Box)({
   height: '100vh',
   overflow: 'hidden',
   padding: spacing['2xl'],
-  background: `linear-gradient(180deg, ${colors.background.primary} 0%, ${colors.background.secondary} 100%)`,
+  backgroundColor: colors.background.primary,
+  ...waterColumnHost,
 });
 
 const Content = styled(Box)({
@@ -203,6 +219,7 @@ export function LockPage(): React.ReactElement {
   return (
     <>
       <Container>
+        <WaterColumn />
         <Content>
           <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
           <Title>{t('lock.title', 'Welcome Back')}</Title>

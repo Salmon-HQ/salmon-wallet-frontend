@@ -39,6 +39,7 @@ import {
 } from '@salmon/shared';
 import {
   DepthBackground,
+  ScalesBackground,
   GlassTabBar,
   SettingsSheet,
   WalletSwitcherSheet,
@@ -753,22 +754,23 @@ export default function TabLayout() {
             it on the right side of The Scales Exclusion Rule. */}
         <DepthBackground />
 
-        {/* Layer 2: Bottom fade gradient. Ends on the ramp's own floor rather
+        {/* Layer 2: the deep field. It belongs here and only here — on the
+            ground, in the same plane as the ramp and the snow. It used to
+            tile behind whole tabs *and* live inside the balance card; the
+            card is content and has lost it, because the motif belongs to the
+            water and content stays plain. Here it is safe for the reason the
+            snow is: everything that carries a value — rows, cards, inputs —
+            is opaque and covers it. The snow is what gives the 3.2× scale
+            something to be large against rather than merely near. */}
+        <ScalesBackground variant="deepField" />
+
+        {/* Layer 3: Bottom fade gradient. Ends on the ramp's own floor rather
             than the old flat ground, which would have lightened the abyss. */}
         <LinearGradient
           colors={['transparent', semantic.water.gradient[1]]}
           style={styles.bottomFadeGradient}
           pointerEvents="none"
         />
-
-        {/* No layer 3. The scales used to tile from the header to the bottom
-            of every tab, which put the motif behind the token rows, the
-            amounts, the collectibles grid and — below a short list — an
-            entire screen of texture standing in for content. The motif keeps
-            its two jobs: the balance card's logo band and the Send fill. The
-            snow above is not a third job for it; it is the space the scales
-            are seen through, which is what makes a 3.2× scale read as large
-            rather than as near. */}
       </BlurTargetView>
 
       {/* Tab screens fill the remaining space */}

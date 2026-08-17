@@ -369,7 +369,6 @@ export function WalletSwitcherSheet({
         onClose={onClose}
         size="small"
         colorScheme="dialog"
-        showScalesBackground={false}
         ariaLabelledBy="wallet-switcher-title"
       >
         <BaseSheetDialog.StandardHeader title={t('walletSwitcher.title', 'Your Wallets')} />

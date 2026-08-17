@@ -7,7 +7,7 @@
  *   NftSeeAllPage, SendPage, and SettingsPanelContent.
  *
  * Usage:
- *   <PageShell title="Token Information" onBack={onBack} showScalesBackground>
+ *   <PageShell title="Token Information" onBack={onBack}>
  *     {/* page-specific content *\/}
  *   </PageShell>
  */
@@ -21,7 +21,7 @@ import { ArrowLeftIcon } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import { colors, spacing, fontFamily, fontWeight, fontSize } from '@salmon/shared';
-import { ScalesBackground } from '../ScalesBackground';
+import { WaterColumn, waterColumnHost } from '../WaterColumn';
 import type { PageShellProps } from './types';
 
 // ============================================================================
@@ -37,7 +37,9 @@ export const Container = styled(Box)<{
   flexDirection: 'column',
   ...($fullHeight ? { height: '100vh' } : { minHeight: '100vh' }),
   backgroundColor: $backgroundColor,
-  position: 'relative',
+  // A stacking context, so the water column's negative layer stays above this
+  // background and below the header and the scrolling content.
+  ...waterColumnHost,
   ...($maxWidth != null && { maxWidth: $maxWidth, margin: '0 auto', width: '100%' }),
 }));
 
@@ -88,8 +90,6 @@ export function PageShell({
   children,
   backgroundColor = 'secondary',
   fullHeight = true,
-  showScalesBackground = false,
-  scalesBackgroundProps,
   headerRight,
   scrollContentStyle,
   scrollContentProps,
@@ -110,9 +110,11 @@ export function PageShell({
       className={className}
       style={style}
     >
-      {showScalesBackground && (
-        <ScalesBackground style={{ zIndex: 0 }} {...scalesBackgroundProps} />
-      )}
+      {/* A stacked page is still a screen in the same water. The ground is the
+          app's, not the home screen's; what changes here is only what rests on
+          top of it. Everything that carries a value — rows, cards, inputs — is
+          opaque, so the motif is occluded exactly where it must not be read. */}
+      <WaterColumn />
 
       <Header>
         <BackButton

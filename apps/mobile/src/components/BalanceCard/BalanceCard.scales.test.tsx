@@ -1,16 +1,18 @@
 /**
  * The Scales Exclusion Rule, asserted rather than eyeballed.
  *
- * The motif used to tile across whole tabs and, on this card, across the
- * whole card — including behind the balance figure. It is now bound to the
- * logo group *by layout*: the field is a child of that group, so it is
- * structurally incapable of reaching the figure below no matter how the logo
- * or the type scale changes. These tests fail if someone reparents it back to
- * the card, or removes the gap that supplies the clearance.
+ * The motif used to tile across whole tabs and, on this card, across the whole
+ * card — including behind the balance figure. Then it was confined to the logo
+ * band, which kept the rule but kept the motif on a content surface. It is now
+ * off this card entirely: the motif belongs to the water, and the water is the
+ * ground behind the card. The card is an opaque lit plane over it, which is
+ * what makes the 60px figure safe by occlusion rather than by clearance.
+ *
+ * These assertions are inverted rather than deleted, so an edit that puts a
+ * field back inside the card — at any scale, in any band — fails here.
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
 
 // The real module pulls in @solana/kit, which jest-expo will not transform.
 // Only the tokens this card reads are needed; `spacing.sm` is the value that
@@ -112,55 +114,26 @@ function renderCard() {
   );
 }
 
-describe('BalanceCard — the scales stay in the logo band', () => {
-  it('draws exactly one field, at the deepField scale', () => {
+describe('BalanceCard — the motif belongs to the water, not to this card', () => {
+  it('draws no field at all, at any scale', () => {
     const { queryAllByTestId } = renderCard();
 
-    expect(queryAllByTestId('scales-deepField')).toHaveLength(1);
-    // The fish belongs to the primary CTA's salmon fill, never to a card.
+    // The deep field is the ground's, behind this card. The fish belongs to
+    // the primary CTA's salmon fill. Neither is a property of content.
+    expect(queryAllByTestId('scales-deepField')).toHaveLength(0);
     expect(queryAllByTestId('scales-fish')).toHaveLength(0);
   });
 
-  it('mounts the field inside the logo group, not on the card', () => {
+  it('keeps the logo band a plain band', () => {
     const { getByTestId } = renderCard();
     const group = getByTestId(LOGO_GROUP);
 
-    // Descendant of the group => its box is the group's box. This is the
-    // whole guarantee; there is no measured constant to fall out of date.
-    expect(group.findByProps({ testID: 'scales-deepField' })).toBeTruthy();
+    expect(group.findAllByProps({ testID: 'scales-deepField' })).toHaveLength(0);
   });
 
-  it('keeps the balance figure outside the field s box', () => {
-    const { getByTestId, getByText } = renderCard();
-    const group = getByTestId(LOGO_GROUP);
-    const balance = getByText('$1,234');
+  it('still renders the balance figure it exists to carry', () => {
+    const { getByText } = renderCard();
 
-    const groupIsAncestorOfBalance = (() => {
-      let node = balance.parent;
-      while (node) {
-        if (node === group) return true;
-        node = node.parent;
-      }
-      return false;
-    })();
-
-    expect(groupIsAncestorOfBalance).toBe(false);
-  });
-
-  it('clips the field to the logo group and clears the figure by the card gap', () => {
-    const { getByTestId } = renderCard();
-    const groupStyle = StyleSheet.flatten(getByTestId(LOGO_GROUP).props.style);
-
-    // Even before the fade mask, the box cannot bleed past the band.
-    expect(groupStyle.overflow).toBe('hidden');
-    // ...and the band is the card's full width, so the motif reads as a band.
-    expect(groupStyle.alignSelf).toBe('stretch');
-
-    // The measured clearance between the field's bottom edge — where the fade
-    // mask has already reached alpha 0 — and the top of the balance row is the
-    // card's own gap between content groups. Read off the rendered card, not
-    // recomputed, so shrinking the gap to zero fails here.
-    const cardStyle = StyleSheet.flatten(getByTestId('balance-card-root').props.style);
-    expect(cardStyle.gap).toBeGreaterThan(0);
+    expect(getByText('$1,234')).toBeTruthy();
   });
 });

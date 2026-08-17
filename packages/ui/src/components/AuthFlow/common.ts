@@ -1,14 +1,17 @@
 import { borderRadius, colors } from '@salmon/shared';
+import { waterColumnHost } from '../WaterColumn';
 
 export function getAuthContainerStyles(contained = false) {
   if (!contained) {
     return {
       minHeight: '100vh',
       width: '100%',
+      ...waterColumnHost,
     };
   }
 
   return {
+    ...waterColumnHost,
     width: 'min(100%, 380px)',
     height: 'min(760px, calc(100vh - 48px))',
     margin: '24px auto',

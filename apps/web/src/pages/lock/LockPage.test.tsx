@@ -62,6 +62,8 @@ vi.mock('@salmon/ui', () => ({
       <span>{children}</span>
     </div>
   ),
+  WaterColumn: () => null,
+  waterColumnHost: { position: 'relative', isolation: 'isolate' },
 }));
 
 vi.mock('../../utils/sessionKeyCache', () => ({

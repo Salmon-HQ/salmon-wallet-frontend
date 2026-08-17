@@ -9,7 +9,6 @@
  * - Scrollable transaction list with infinite scroll
  * - Loading skeletons
  * - Empty and error states
- * - ScalesBackground decorative pattern
  */
 
 import React, { useCallback, useRef } from 'react';

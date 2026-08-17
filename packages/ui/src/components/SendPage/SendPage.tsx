@@ -180,12 +180,6 @@ export function SendPage({
       title={t('token.action.send')}
       onBack={handleBackPress}
       backDisabled={isSettling}
-      scalesBackgroundProps={{
-        strokeColor: 'rgba(255, 255, 255, 0.03)',
-        strokeWidth: 1,
-        patternHeight: 26,
-        style: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 },
-      }}
     >
       <ContentArea>
         {step === 'token-select' && (

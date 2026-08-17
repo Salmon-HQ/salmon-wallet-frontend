@@ -13,18 +13,27 @@
 
 import { Stack } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { gradients } from '@salmon/shared';
+import { DepthBackground } from '../../src/components/DepthBackground';
+import { ScalesBackground } from '../../src/components/ScalesBackground';
 
 export default function AuthLayout() {
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={gradients.onboarding.colors}
-        start={gradients.onboarding.start}
-        end={gradients.onboarding.end}
-        style={StyleSheet.absoluteFill}
-      />
+      {/*
+        The same water the rest of the app stands in, mounted once for the
+        whole flow rather than screen by screen — the diagonal onboarding
+        gradient this replaces was a ground only onboarding had, which is
+        exactly the seam the column exists to remove. One static Svg for every
+        screen in the stack, not one per screen.
+
+        `create` and `recover` opt out by painting themselves opaque in
+        `surface.bedrock`: they carry the recovery phrase, and the Bedrock Rule
+        allows no motif behind a seed. Every other screen here — welcome,
+        password, biometric, consent, success, derived accounts — is content on
+        an opaque surface over an open column.
+      */}
+      <DepthBackground />
+      <ScalesBackground variant="deepField" />
       <Stack
         screenOptions={{
           // Hide headers - we handle our own back buttons

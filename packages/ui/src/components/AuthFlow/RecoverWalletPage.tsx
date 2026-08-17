@@ -10,6 +10,7 @@ import {
   ms,
   normalizeMnemonic,
   s,
+  semantic,
   spacing,
   validateMnemonic,
   vs,
@@ -21,10 +22,18 @@ import { getAuthContainerStyles } from './common';
 import { focusRingNone } from '../../theme';
 import type { RecoverWalletPageProps } from './types';
 
+/**
+ * Bedrock, and no water. This screen carries the recovery phrase, and the
+ * Bedrock Rule fixes every seed view at `surface.bedrock`, opaque: no scales,
+ * no caustic, no iridescence, nothing alive moving behind the one secret that
+ * cannot be reissued. The rest of the onboarding flow stands in the column;
+ * this screen is the floor under it. That is a security decision, not a
+ * stylistic one, so the ground here is a flat opaque fill by rule.
+ */
 const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
   display: 'flex',
   flexDirection: 'column',
-  backgroundColor: colors.background.primary,
+  backgroundColor: semantic.surface.bedrock,
   ...getAuthContainerStyles($contained),
 }));
 

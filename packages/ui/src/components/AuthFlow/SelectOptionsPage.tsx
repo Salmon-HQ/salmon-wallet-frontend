@@ -16,6 +16,7 @@ import {
 import { styled } from '../../utils/styled';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { getAuthContainerStyles } from './common';
+import { WaterColumn } from '../WaterColumn';
 import type { SelectOptionsPageProps } from './types';
 import { ScreenHeader } from '../ScreenHeader';
 
@@ -87,6 +88,7 @@ export function SelectOptionsPage({
 
   return (
     <Container $contained={contained}>
+      <WaterColumn />
       <ScreenHeader />
       <Content>
         <CenterContent>

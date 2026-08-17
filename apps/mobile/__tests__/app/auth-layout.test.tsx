@@ -9,15 +9,18 @@ jest.mock('expo-router', () => ({
   }),
 }));
 
-jest.mock('expo-linear-gradient', () => ({
-  LinearGradient: () => null,
-}));
+// Both ground layers reach @salmon/shared, which pulls @solana/kit into a
+// transform jest-expo will not run. Neither drawing is what this file is
+// about; that they are mounted here at all is asserted below.
+jest.mock('../../src/components/DepthBackground', () => {
+  const { View } = jest.requireActual('react-native');
+  return { DepthBackground: () => <View testID="ground-depth" /> };
+});
 
-jest.mock('@salmon/shared', () => ({
-  gradients: {
-    onboarding: { colors: ['#000', '#111'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } },
-  },
-}));
+jest.mock('../../src/components/ScalesBackground', () => {
+  const { View } = jest.requireActual('react-native');
+  return { ScalesBackground: () => <View testID="ground-scales" /> };
+});
 
 import AuthLayout from '../../app/(auth)/_layout';
 
@@ -28,9 +31,20 @@ const optionsFor = (name: string): Record<string, unknown> => {
 };
 
 describe('AuthLayout', () => {
+  let view: ReturnType<typeof render>;
+
   beforeEach(() => {
     jest.clearAllMocks();
-    render(<AuthLayout />);
+    view = render(<AuthLayout />);
+  });
+
+  it('stands the whole onboarding flow in the app ground, once for the stack', () => {
+    // The motif belongs to the water, and onboarding is in the same water as
+    // everything else — it used to carry a gradient only it had. Mounted on
+    // the layout rather than per screen, so the next screen added to this
+    // stack cannot be born without a ground.
+    expect(view.getAllByTestId('ground-depth')).toHaveLength(1);
+    expect(view.getAllByTestId('ground-scales')).toHaveLength(1);
   });
 
   it.each([

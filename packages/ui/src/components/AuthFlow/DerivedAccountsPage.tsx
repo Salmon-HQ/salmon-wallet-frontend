@@ -24,6 +24,7 @@ import { DerivedAccountCard, DerivedAccountCardSkeleton } from '../DerivedAccoun
 import { WarningNotice } from '../WarningNotice';
 import { ScreenHeader } from '../ScreenHeader';
 import { getAuthContainerStyles } from './common';
+import { WaterColumn } from '../WaterColumn';
 import type { DerivedAccountsPageProps } from './types';
 
 const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
@@ -324,6 +325,7 @@ export function DerivedAccountsPage({
 
   return (
     <Container $contained={contained}>
+      <WaterColumn />
       <ScreenHeader />
       <Content>
         <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />

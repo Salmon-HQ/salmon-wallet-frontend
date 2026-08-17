@@ -40,7 +40,6 @@ import type { BalanceCardCarouselProps, BlockchainId } from './types';
 // Import the SVG icons from Icon component
 import { Ionicons } from '@expo/vector-icons';
 import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
-import { ScalesBackground } from '../ScalesBackground';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
@@ -243,14 +242,11 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
       >
         <GestureDetector gesture={panGesture}>
           <Animated.View style={[styles.content, animatedContentStyle]}>
-            {/* Group 1: Logo + Network tag — and the only band on this card
-                the deep field may occupy. The field is a child of this group,
-                so it is structurally incapable of reaching the balance figure
-                below; the content stack's own `gap` supplies the clearance
-                and the fade mask has already reached alpha 0 by then.
-                Asserted in BalanceCard.scales.test.tsx. */}
+            {/* Group 1: Logo + Network tag. No motif here — it belongs to
+                the water behind this card, not to the card, which is content
+                and carries the balance figure. Asserted in
+                BalanceCard.scales.test.tsx. */}
             <View style={styles.logoGroup} testID="balance-carousel-logo-group">
-              <ScalesBackground variant="deepField" />
               <View style={styles.logoContainer}>
                 {renderLogo(currentBlockchain?.network.blockchain || 'solana')}
               </View>

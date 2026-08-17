@@ -8,6 +8,7 @@ import { colors, fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@
 import { styled } from '../../utils/styled';
 import { PrimaryButton } from '../Button';
 import { getAuthContainerStyles } from './common';
+import { WaterColumn } from '../WaterColumn';
 import type { AnalyticsConsentPageProps } from './types';
 
 /**
@@ -22,7 +23,6 @@ import type { AnalyticsConsentPageProps } from './types';
 const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
   display: 'flex',
   flexDirection: 'column',
-  position: 'relative',
   backgroundColor: colors.background.primary,
   padding: `0 ${spacing['2xl']}px`,
   ...getAuthContainerStyles($contained),
@@ -97,6 +97,7 @@ export function AnalyticsConsentPage({
 
   return (
     <Container $contained={contained} data-testid="analytics-consent-screen">
+      <WaterColumn />
       <CloseButton
         onClick={onDecline}
         aria-label={t('general.close', 'Close')}

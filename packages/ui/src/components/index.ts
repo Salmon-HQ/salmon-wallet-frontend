@@ -125,6 +125,9 @@ export type { ScalesBackgroundProps, ScalesVariant } from './ScalesBackground';
 export { DepthBackground } from './DepthBackground';
 export type { DepthBackgroundProps } from './DepthBackground';
 
+// WaterColumn - the ground the whole app stands in: ramp, snow, deep field
+export { WaterColumn, waterColumnHost } from './WaterColumn';
+
 // FleshBackground - the myoseptal texture inside a salmon fill
 export { FleshBackground } from './FleshBackground';
 export type { FleshBackgroundProps } from './FleshBackground';
@@ -177,8 +180,12 @@ export type {
 } from './TokenSelector';
 
 // TokenDetailPage - Full-page token detail view with chart, market data, badges
-export { TokenBadgesSection, TokenDetailPage } from './TokenDetailPage';
-export type { TokenBadgesSectionProps, TokenDetailPageProps } from './TokenDetailPage';
+export { TokenBadgesSection, TokenDetailContent, TokenDetailPage } from './TokenDetailPage';
+export type {
+  TokenBadgesSectionProps,
+  TokenDetailContentProps,
+  TokenDetailPageProps,
+} from './TokenDetailPage';
 
 // ReceiveSheet - Receive address dialog with QR code
 export { ReceiveSheet } from './ReceiveSheet';

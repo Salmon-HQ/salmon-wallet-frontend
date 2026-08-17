@@ -47,7 +47,6 @@ import {
 } from '@salmon/shared';
 import type { BlockchainId } from '@salmon/shared';
 import { EyeIcon, EyeOffIcon, Icon, SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from '../Icon';
-import { ScalesBackground } from '../ScalesBackground';
 import { useReducedMotion } from '../../utils/useReducedMotion';
 import type { BalanceCardProps } from './types';
 
@@ -482,17 +481,16 @@ export function BalanceCard({
 
   return (
     <Container style={{ ...style, background: gradientCSS }} className={className}>
-      {/* Group 1: Logo + Network tag — where chain identity now lives, and
-          the card's upper region, which is the only band the deep field may
-          occupy. The exclusion rule still holds where it was written to hold:
-          it protects character-level accuracy — an address, a seed word, a
-          hash, where one wrong glyph loses funds. A total read as a single
-          quantity is not that, and at ~1.1:1 the stroke cannot interfere with
-          a glyph anyway. The field is scoped to this group so it is
-          structurally incapable of reaching the figure below. */}
+      {/* Group 1: Logo + Network tag — where chain identity lives. No motif
+          here: the motif belongs to the water, and this card is content. It
+          carries the 60px total, and the hardest rule the scales have is that
+          they never sit behind a numeric value. Scoping the field to the band
+          above the figure was a way of surviving that rule; now that the
+          column runs the full height of the ground behind this card, a second
+          field inside the card is the wallpaper use DESIGN.md refuses. The
+          card is a lit opaque plane over the water, and that is its job. */}
       <ChainFace $visible={visible} data-testid="balance-card-chain-face">
         <LogoGroup>
-          <ScalesBackground variant="deepField" style={{ height: '100%' }} />
           <LogoContainer>{renderBlockchainLogo(shownBlockchain)}</LogoContainer>
           <NetworkLabel $visible={!!networkLabel}>
             <NetworkLabelText>{networkLabel ?? '\u00A0'}</NetworkLabelText>

@@ -44,6 +44,8 @@ export {
   WalletHeader,
   WalletSwitcherSheet,
   WarningNotice,
+  WaterColumn,
+  waterColumnHost,
   SettingsPanelStack,
   visuallyHidden,
 } from '@salmon/ui';

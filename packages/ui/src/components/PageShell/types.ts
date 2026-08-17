@@ -1,5 +1,4 @@
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from 'react';
-import type { ScalesBackgroundProps } from '../ScalesBackground';
 
 type ScrollContentProps = Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'style'>;
 
@@ -14,8 +13,6 @@ export interface PageShellProps {
   children: ReactNode;
   backgroundColor?: 'primary' | 'secondary';
   fullHeight?: boolean;
-  showScalesBackground?: boolean;
-  scalesBackgroundProps?: ScalesBackgroundProps;
   headerRight?: ReactNode;
   scrollContentStyle?: CSSProperties;
   scrollContentProps?: ScrollContentProps;

@@ -20,8 +20,6 @@ export interface BaseSheetDialogProps {
   size?: 'small' | 'medium' | 'large';
   /** Color scheme for background and border */
   colorScheme?: 'dialog' | 'secondary';
-  /** Whether to show ScalesBackground decorative pattern */
-  showScalesBackground?: boolean;
   /** Optional additional className */
   className?: string;
   /** Optional inline styles for paper */

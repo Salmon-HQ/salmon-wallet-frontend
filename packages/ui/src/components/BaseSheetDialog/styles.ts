@@ -4,7 +4,6 @@
 
 import { styled } from '../../utils/styled';
 import Dialog, { type DialogProps } from '@mui/material/Dialog';
-import Box, { type BoxProps } from '@mui/material/Box';
 import { colors, borderRadius } from '@salmon/shared';
 import { SIZE_PRESETS } from './types';
 import type { ComponentType } from 'react';
@@ -50,17 +49,3 @@ export const StyledDialog: ComponentType<
   },
 }));
 
-/**
- * BackgroundWrapper - Container for ScalesBackground
- */
-export const BackgroundWrapper: ComponentType<BoxProps> = styled(Box)({
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  zIndex: 0,
-  pointerEvents: 'none',
-  overflow: 'hidden',
-  borderRadius: `${borderRadius.xl}px`,
-});

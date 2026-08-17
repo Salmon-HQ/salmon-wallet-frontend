@@ -16,8 +16,7 @@
  */
 
 import React, { createContext, useContext } from 'react';
-import { StyledDialog, BackgroundWrapper } from './styles';
-import { ScalesBackground } from '../ScalesBackground';
+import { StyledDialog } from './styles';
 import type { BaseSheetDialogProps } from './types';
 
 // ============================================================================
@@ -54,7 +53,6 @@ export function BaseSheetDialog({
   children,
   size = 'medium',
   colorScheme = 'dialog',
-  showScalesBackground = false,
   className,
   style,
   ariaLabelledBy,
@@ -73,12 +71,12 @@ export function BaseSheetDialog({
         $size={size}
         disableEnforceFocus
       >
-        {/* Decorative background (optional) */}
-        {showScalesBackground && (
-          <BackgroundWrapper>
-            <ScalesBackground />
-          </BackgroundWrapper>
-        )}
+        {/* No decorative field. A sheet is a membrane — the one translucent
+            plane in the system — and the motif never goes where a live
+            backdrop shows through, because that is the one place it cannot be
+            kept off the content behind it. What a membrane is entitled to is
+            the 24px refraction strip along its own top edge, which is a
+            different appearance at a different scale and is not built yet. */}
 
         {/* Content */}
         {children}

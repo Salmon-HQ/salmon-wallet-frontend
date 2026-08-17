@@ -17,6 +17,7 @@ import {
   contentPadding,
   fontFamilyNative,
   normalizeMnemonic,
+  semantic,
   setStashItem,
   spacing,
   STASH_KEYS,
@@ -186,8 +187,17 @@ export default function RecoverWalletScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
+  /**
+   * Opaque bedrock, and it has to be. This screen carries the recovery
+   * phrase, and the Bedrock Rule fixes every seed view at `surface.bedrock`:
+   * no scales, no marine snow, no caustic, no iridescence. The auth stack
+   * behind it now paints the water column for the whole flow, so an opaque
+   * ground here is what keeps the motif off the one secret that cannot be
+   * reissued — the exception is expressed as a fill, not as a missing mount.
+   */
   safeArea: {
     flex: 1,
+    backgroundColor: semantic.surface.bedrock,
   },
   keyboardView: {
     flex: 1,

@@ -11,7 +11,14 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import InputBase from '@mui/material/InputBase';
-import { PrimaryButton, ConfirmDialog, LoadingScreen, WarningNotice } from '../../components';
+import {
+  PrimaryButton,
+  ConfirmDialog,
+  LoadingScreen,
+  WarningNotice,
+  WaterColumn,
+  waterColumnHost,
+} from '../../components';
 import {
   colors,
   fontFamily,
@@ -40,6 +47,14 @@ interface LockPageProps {
 // Styled Components
 // ============================================================================
 
+/**
+ * The lock screen stands in the same water as everything else: the ground is
+ * the app's, not a per-screen gradient. The two-stop gradient this replaces
+ * was a screen-local invention; the depth ramp is the token that says the same
+ * thing, and the marine snow and deep field are what make it water rather than
+ * a fade. The password field is opaque, so it occludes the motif where the
+ * secret is typed.
+ */
 const Container = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
@@ -47,8 +62,9 @@ const Container = styled(Box)({
   justifyContent: 'center',
   minHeight: '100vh',
   padding: spacing['2xl'],
-  background: `linear-gradient(180deg, ${colors.background.primary} 0%, ${colors.background.secondary} 100%)`,
+  backgroundColor: colors.background.primary,
   fontFamily: fontFamily.sans,
+  ...waterColumnHost,
 });
 
 const Content = styled(Box)({
@@ -239,6 +255,7 @@ export function LockPage({
   return (
     <>
       <Container>
+        <WaterColumn />
         <Content>
           <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
 
