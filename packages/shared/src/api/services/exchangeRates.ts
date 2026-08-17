@@ -23,7 +23,12 @@ const RATE_CACHE_KEY = 'exchange-rates';
 // Fallback
 // ============================================================================
 
-const FALLBACK_RATES: ExchangeRates = {
+/**
+ * Rates returned when the backend is unreachable or answers without rates.
+ * Exported so consumers can tell "converted with real rates" from "showing
+ * USD numbers under another currency's symbol" and warn the user.
+ */
+export const FALLBACK_RATES: ExchangeRates = {
   base: 'usd',
   timestamp: 0,
   rates: { usd: 1 } as ExchangeRates['rates'],
@@ -54,7 +59,11 @@ export async function getExchangeRates(): Promise<ExchangeRates> {
 
     return FALLBACK_RATES;
   } catch (error) {
-    console.error('[ExchangeRatesService] Failed to fetch rates:', error);
+    // Expected, handled degradation — an unreachable backend is a normal
+    // condition for a wallet, and the caller gets FALLBACK_RATES. Logged at
+    // warn so it stays diagnosable without React Native's LogBox throwing a
+    // full-screen error overlay over the app in development.
+    console.warn('[ExchangeRatesService] Failed to fetch rates, using fallback:', error);
     return FALLBACK_RATES;
   }
 }

@@ -59,7 +59,9 @@ export async function getMarketChart(
     });
     return data;
   } catch (error) {
-    console.error(`[PriceService] Failed to fetch chart for ${coinId}:`, error);
+    // Handled degradation: the caller gets null and renders a chart-less
+    // state. Warn, not error — see exchangeRates.ts for the rationale.
+    console.warn(`[PriceService] Failed to fetch chart for ${coinId}:`, error);
     return null;
   }
 }
@@ -225,7 +227,9 @@ export async function getCoinInfo(
     });
     return data;
   } catch (error) {
-    console.error(`[PriceService] Failed to fetch coin info for ${coinId}:`, error);
+    // Handled degradation: resolves to null, caller renders without market
+    // data. Warn, not error — see exchangeRates.ts for the rationale.
+    console.warn(`[PriceService] Failed to fetch coin info for ${coinId}:`, error);
     return null;
   }
 }

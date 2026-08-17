@@ -91,6 +91,23 @@ describe('exchange rates service', () => {
     expect(result).toEqual(FALLBACK_RATES);
   });
 
+  it('reports an unreachable backend as a warning, not a console error', async () => {
+    // An unreachable backend is handled (the caller gets FALLBACK_RATES), so it
+    // must not reach console.error — React Native's LogBox turns that into a
+    // full-screen red overlay on top of whatever the user is looking at.
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockApiClientGet.mockRejectedValueOnce(new Error('backend unavailable'));
+
+    await getExchangeRates();
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+    errorSpy.mockRestore();
+  });
+
   it('forces a fresh fetch after clearing the cache', async () => {
     mockApiClientGet.mockResolvedValueOnce({ data: MOCK_RATES }).mockResolvedValueOnce({
       data: {
