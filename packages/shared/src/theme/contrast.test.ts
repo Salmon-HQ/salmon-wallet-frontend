@@ -68,6 +68,53 @@ describe('contrast: the salmon fill rule', () => {
   });
 });
 
+/**
+ * The status-fill rule — the general form of the salmon rule above.
+ *
+ * A `*-500` step is *ink*: it is chosen to be readable on the deep neutrals, so
+ * it is light, so it cannot also be a fill under light ink. The destructive
+ * button in every confirmation dialog was filled `danger-500` and labelled
+ * `text.primary`: **2.50:1**, worse than the white-on-salmon pairing DESIGN.md
+ * bans outright at 3.06:1, on the one control in the app that deletes a wallet.
+ *
+ * The fills are the `*-700` steps, and `text.primary` is what they carry.
+ */
+describe('contrast: the status fill rule', () => {
+  const fills = [
+    ['success', status.successFill],
+    ['danger', status.dangerFill],
+    ['warning', status.warningFill],
+  ] as const;
+
+  for (const [name, fill] of fills) {
+    it(`text.primary meets AA on the ${name} fill`, () => {
+      expect(contrast(text.primary, fill)).toBeGreaterThanOrEqual(AA_TEXT);
+    });
+  }
+
+  for (const [name, ink] of [
+    ['success', status.success],
+    ['danger', status.danger],
+    ['warning', status.warning],
+  ] as const) {
+    it(`rejects light ink on the ${name} *ink* step used as a fill`, () => {
+      // Both the ink this system has and plain white fail here. A status ink is
+      // never a fill; reach for `status.${name}Fill` instead.
+      expect(contrast(text.primary, ink)).toBeLessThan(AA_TEXT);
+      expect(contrast(neutral[0], ink)).toBeLessThan(AA_TEXT);
+    });
+  }
+
+  it('the destructive fill is at least as legible as the primary CTA', () => {
+    // The safe path wears the salmon fill on a danger dialog, so the two labels
+    // are read side by side. The destructive one must not be the fainter of the
+    // pair — quieter in weight is the point, quieter in legibility is a bug.
+    expect(contrast(text.primary, status.dangerFill)).toBeGreaterThanOrEqual(
+      contrast(text.onAccent, salmon[500])
+    );
+  });
+});
+
 describe('contrast: borders are per-plane', () => {
   it('border.default carries meaning on surface.shelf', () => {
     expect(contrast(border.default, surface.shelf)).toBeGreaterThanOrEqual(AA_NON_TEXT);
