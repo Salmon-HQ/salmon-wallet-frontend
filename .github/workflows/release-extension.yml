@@ -1,0 +1,130 @@
+name: Release Extension
+
+# Mode B: on a version tag (ext-v*), build the extension, publish a GitHub
+# Release with the binaries (permanent versioning), then submit to the Chrome
+# Web Store and Firefox AMO — but only after a manual approval through the
+# `production-extension` GitHub Environment (the human gate, sane for a wallet).
+#
+# One-time setup before first use:
+#   1. Environment `production-extension` with a required reviewer
+#      (already created; confirm in Settings → Environments).
+#   2. Repo secrets:
+#        Chrome:  CHROME_EXTENSION_ID, CHROME_CLIENT_ID, CHROME_CLIENT_SECRET, CHROME_REFRESH_TOKEN
+#        Firefox: FIREFOX_EXTENSION_ID, FIREFOX_JWT_ISSUER, FIREFOX_JWT_SECRET
+#   3. Bump apps/extension/package.json, then tag + push:
+#        git tag ext-v0.9.6 && git push origin ext-v0.9.6
+#
+# This workflow never runs on normal pushes — only on an `ext-v*` tag or a
+# manual dispatch — and never publishes until the gate is approved.
+
+on:
+  push:
+    tags: ['ext-v*']
+  workflow_dispatch: {}
+
+permissions:
+  contents: write # create the GitHub Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build + zip Chrome (MV3)
+        run: |
+          pnpm --filter @salmon/extension build:prod
+          pnpm --filter @salmon/extension zip
+
+      - name: Build + zip Firefox (MV2)
+        run: |
+          pnpm --filter @salmon/extension build:firefox:prod
+          pnpm --filter @salmon/extension zip:firefox
+
+      # The wxt sources zip is incomplete for this monorepo (wxt-dev/wxt#2075);
+      # use the full-repo archive for AMO source review.
+      - name: Pack full-repo source (for AMO)
+        run: pnpm pack:sources
+
+      - name: Upload build artifacts for the submit job
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-zips
+          path: |
+            apps/extension/dist/*-chrome.zip
+            apps/extension/dist/*-firefox.zip
+            salmon-wallet-source.zip
+          if-no-files-found: error
+          retention-days: 7
+
+      # Permanent, versioned binaries attached to the git tag.
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            apps/extension/dist/*-chrome.zip \
+            apps/extension/dist/*-firefox.zip \
+            salmon-wallet-source.zip \
+            --title "Extension ${GITHUB_REF_NAME}" \
+            --generate-notes
+
+  submit:
+    needs: build
+    runs-on: ubuntu-latest
+    # The approval gate: this job pauses until a required reviewer approves.
+    environment: production-extension
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-zips
+          path: artifacts
+
+      # wxt submit reads store credentials from env. Submitting each store in
+      # its own step keeps them independent (e.g. ship Chrome before AMO is set
+      # up). Source zip points at the full-repo archive, not the wxt one.
+      - name: Submit to Chrome Web Store
+        working-directory: apps/extension
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: pnpm exec wxt submit --chrome-zip ../../artifacts/*-chrome.zip
+
+      - name: Submit to Firefox AMO
+        working-directory: apps/extension
+        env:
+          FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
+          FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+          FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
+        run: |
+          pnpm exec wxt submit \
+            --firefox-zip ../../artifacts/*-firefox.zip \
+            --firefox-sources-zip ../../artifacts/salmon-wallet-source.zip
