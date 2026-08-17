@@ -1,13 +1,10 @@
 import React from 'react';
 import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   colors,
   spacing,
   borderRadius,
-  gradients,
-  shadows,
   componentSizes,
   fontFamilyNative,
   vs,
@@ -137,34 +134,14 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
 
       {/* Review Button */}
       <View style={[styles.buttonContainer, { bottom: ctaBottomOffset }]}>
-        {canReview ? (
-          <LinearGradient
-            colors={gradients.primaryButton.colors}
-            start={gradients.primaryButton.start}
-            end={gradients.primaryButton.end}
-            style={[styles.buttonGradient, styles.buttonGradientActive]}
-          >
-            <PrimaryButton
-              onPress={onReview}
-              disabled={false}
-              style={styles.button}
-              testID="swap-review-button"
-            >
-              {t('swap.review.reviewAndSwap', 'Review')}
-            </PrimaryButton>
-          </LinearGradient>
-        ) : (
-          <View style={[styles.buttonGradient, styles.buttonGradientInactive]}>
-            <PrimaryButton
-              onPress={onReview}
-              disabled={true}
-              style={styles.button}
-              testID="swap-review-button"
-            >
-              {t('swap.review.reviewAndSwap', 'Review')}
-            </PrimaryButton>
-          </View>
-        )}
+        <PrimaryButton
+          onPress={onReview}
+          disabled={!canReview}
+          style={styles.button}
+          testID="swap-review-button"
+        >
+          {t('swap.review.reviewAndSwap', 'Review')}
+        </PrimaryButton>
       </View>
     </Pressable>
   );
@@ -237,23 +214,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xs,
   },
-  buttonGradient: {
-    borderRadius: borderRadius.lg,
-    borderWidth: borderWidth.accent,
-    borderColor: 'transparent',
-    ...shadows.button,
-  },
-  buttonGradientActive: {
-    borderColor: semantic.accent.fill,
-  },
-  buttonGradientInactive: {
-    backgroundColor: colors.button.inactiveBackground,
-    borderColor: 'transparent',
-  },
+  // Size only. Radius, fill, border, bezel and material belong to the button:
+  // this CTA used to sit inside a gradient wrapper carrying a 12px radius, a
+  // salmon outline and a glow, with the button's own fill forced transparent —
+  // a second, squarer shape behind the pill that read as two stacked buttons.
   button: {
     minWidth: s(componentSizes.copyButtonWidth),
     height: vs(componentSizes.buttonHeightCompact),
-    backgroundColor: 'transparent',
   },
 });
 
