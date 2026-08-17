@@ -6,12 +6,13 @@ import {
   fontFamilyNative,
   fontSize,
   fontWeight,
-  Rect,
-  spacing,
   formatLargeNumber,
   getShortAddress,
-  useCurrencyContext,
+  motionMs,
+  Rect,
   semantic,
+  spacing,
+  useCurrencyContext,
 } from '@salmon/shared';
 import * as Clipboard from 'expo-clipboard';
 import React, { useCallback, useState } from 'react';
@@ -62,7 +63,7 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
     if (contractAddress) {
       await Clipboard.setStringAsync(contractAddress);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), motionMs.feedbackHold);
     }
   }, [contractAddress]);
 

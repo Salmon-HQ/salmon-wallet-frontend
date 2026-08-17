@@ -5,22 +5,23 @@ import { FleshBackground } from '../FleshBackground';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import {
-  colors,
-  gradients,
-  shadows,
-  fontFamilyNative,
-  fontScaleCap,
-  ms,
-  vs,
-  s,
-  useSendTransaction,
-  fontSize,
   borderRadius,
   borderWidth,
-  spacing,
-  opacity,
+  colors,
   componentSizes,
+  fontFamilyNative,
+  fontScaleCap,
+  fontSize,
+  gradients,
+  motionMs,
+  ms,
+  opacity,
+  s,
   semantic,
+  shadows,
+  spacing,
+  useSendTransaction,
+  vs,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { ContentCopySvgIcon } from '../Icon/SvgIcons';
@@ -108,7 +109,7 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
       const Clipboard = await import('expo-clipboard');
       await Clipboard.setStringAsync(recipientAddress);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), motionMs.feedbackHold);
     } catch {
       // Clipboard not available
     }

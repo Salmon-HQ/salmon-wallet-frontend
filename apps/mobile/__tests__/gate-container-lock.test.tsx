@@ -29,8 +29,14 @@ jest.mock('react-native-reanimated', () => {
     default: { View },
     useSharedValue: (initial: number) => ({ value: initial }),
     useAnimatedStyle: () => ({}),
+    useReducedMotion: () => false,
     withTiming: (target: number) => target,
-    Easing: { in: (fn: unknown) => fn, out: (fn: unknown) => fn, cubic: (t: number) => t },
+    Easing: {
+      in: (fn: unknown) => fn,
+      out: (fn: unknown) => fn,
+      cubic: (t: number) => t,
+      bezier: (...args: number[]) => args,
+    },
     runOnJS: (fn: unknown) => fn,
   };
 });
@@ -38,6 +44,7 @@ jest.mock('react-native-reanimated', () => {
 // The real barrel pulls @solana/kit, which Jest cannot parse. Only design
 // tokens are needed here.
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/theme/durations'),
   colors: {
     background: { primary: '#000', card: '#111' },
     text: { primary: '#fff' },

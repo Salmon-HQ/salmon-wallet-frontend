@@ -15,9 +15,9 @@ import { BlurTargetView } from 'expo-blur';
 import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
+  useReducedMotion,
   withTiming,
   withSpring,
-  Easing,
   runOnJS,
   interpolate,
 } from 'react-native-reanimated';
@@ -29,12 +29,14 @@ import {
   borderRadius,
   borderWidth,
   componentSizes,
+  motionMs,
   vs,
   s,
   spacing,
   opacity,
 } from '@salmon/shared';
 import { BlurTargetProvider } from '../BlurContainer';
+import { curve, timing } from '../../utils/motion';
 
 // ============================================================================
 // Constants
@@ -42,7 +44,6 @@ import { BlurTargetProvider } from '../BlurContainer';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const ANIMATION_DURATION = 300;
 const BACKDROP_OPACITY = 0.8;
 const DRAG_THRESHOLD = 150;
 const SPRING_CONFIG = {
@@ -165,6 +166,15 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const dragY = useSharedValue(0);
   const isDragging = useSharedValue(false);
 
+  // A sheet is a `rise`; its dismissal is an `ebb`, deliberately shorter,
+  // because an exit is latency between a decision and its result. Under
+  // reduce motion both resolve to 0 and the sheet is simply there or gone —
+  // and the backdrop goes straight to its final scrim rather than sliding to
+  // it, which is the parallel mapping, not a hole.
+  const isReduceMotionEnabled = useReducedMotion();
+  const enter = timing(motionMs.rise, isReduceMotionEnabled);
+  const exit = timing(motionMs.ebb, isReduceMotionEnabled, curve.sink);
+
   // Worklet-safe close reference
   const closeSheet = useCallback(() => {
     onClose();
@@ -181,31 +191,15 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     if (visible) {
       setIsRendered(true);
       dragY.value = 0;
-      translateY.value = withTiming(0, {
-        duration: ANIMATION_DURATION,
-        easing: Easing.out(Easing.cubic),
-      });
-      backdropOpacity.value = withTiming(BACKDROP_OPACITY, {
-        duration: ANIMATION_DURATION,
-        easing: Easing.out(Easing.cubic),
-      });
+      translateY.value = withTiming(0, enter);
+      backdropOpacity.value = withTiming(BACKDROP_OPACITY, enter);
     } else if (isRendered) {
-      translateY.value = withTiming(
-        SCREEN_HEIGHT,
-        {
-          duration: ANIMATION_DURATION,
-          easing: Easing.in(Easing.cubic),
-        },
-        (finished) => {
-          if (finished) {
-            runOnJS(completeClose)();
-          }
+      translateY.value = withTiming(SCREEN_HEIGHT, exit, (finished) => {
+        if (finished) {
+          runOnJS(completeClose)();
         }
-      );
-      backdropOpacity.value = withTiming(0, {
-        duration: ANIMATION_DURATION,
-        easing: Easing.in(Easing.cubic),
       });
+      backdropOpacity.value = withTiming(0, exit);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, isRendered, completeClose]);
@@ -243,11 +237,8 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     .onEnd((event) => {
       isDragging.value = false;
       if (event.translationY > DRAG_THRESHOLD || event.velocityY > 500) {
-        translateY.value = withTiming(SCREEN_HEIGHT, {
-          duration: 200,
-          easing: Easing.out(Easing.cubic),
-        });
-        backdropOpacity.value = withTiming(0, { duration: 200 });
+        translateY.value = withTiming(SCREEN_HEIGHT, exit);
+        backdropOpacity.value = withTiming(0, exit);
         runOnJS(closeSheet)();
       } else {
         dragY.value = withSpring(0, SPRING_CONFIG);

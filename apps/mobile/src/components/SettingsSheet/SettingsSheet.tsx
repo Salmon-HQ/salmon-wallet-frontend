@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useReducedMotion } from 'react-native-reanimated';
 import { SettingsPanelStack } from '../SettingsPanelStack';
 import { SettingsHeaderContext, type SettingsHeaderState } from '../SettingsHeaderContext';
 import {
@@ -35,6 +36,8 @@ import {
   type SettingsScreen,
   type SettingsPanelEntry,
   letterSpacing,
+  motionMs,
+  resolveMotionMs,
   semantic,
 } from '@salmon/shared';
 
@@ -54,8 +57,7 @@ const DANGER_COLORS = {
 const NEUTRAL_OPTION_COLORS = {
   background: colors.background.card,
 } as const;
-const PUSH_DURATION = 300;
-const POP_DURATION = 200;
+
 
 const SCREEN_TITLE_KEYS: Partial<Record<SettingsScreen, string>> = {
   accounts: 'settings.accounts.title',
@@ -182,6 +184,14 @@ export function SettingsSheet({
   const headerOverrideBackRef = React.useRef<(() => void) | null>(null);
   const headerOverrideOwnerRef = React.useRef<symbol | null>(null);
   const [animating, setAnimating] = React.useState(false);
+
+  // These are bookkeeping timers, not animations: they clear the `animating`
+  // flag once the panel stack has finished moving. They read the same two
+  // tokens the stack animates on — `route` in, `ebb` out — so the gate cannot
+  // outlast (or undercut) the motion it is gating.
+  const isReduceMotionEnabled = useReducedMotion();
+  const pushDurationMs = resolveMotionMs(motionMs.route, isReduceMotionEnabled);
+  const popDurationMs = resolveMotionMs(motionMs.ebb, isReduceMotionEnabled);
   const [slideDirection, setSlideDirection] = React.useState<'in' | 'out' | 'idle'>('idle');
   const animationTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -199,10 +209,10 @@ export function SettingsSheet({
         setAnimating(false);
         setSlideDirection('idle');
         reset();
-      }, PUSH_DURATION);
+      }, pushDurationMs);
       return () => clearTimeout(timer);
     }
-  }, [visible, reset]);
+  }, [visible, reset, pushDurationMs]);
 
   useEffect(() => {
     return () => {
@@ -229,9 +239,9 @@ export function SettingsSheet({
       push(screen, props);
       animationTimerRef.current = setTimeout(() => {
         finishAnimation();
-      }, PUSH_DURATION);
+      }, pushDurationMs);
     },
-    [animating, finishAnimation, push]
+    [animating, finishAnimation, push, pushDurationMs]
   );
 
   const handlePop = useCallback(() => {
@@ -244,8 +254,8 @@ export function SettingsSheet({
     animationTimerRef.current = setTimeout(() => {
       pop();
       finishAnimation();
-    }, POP_DURATION);
-  }, [animating, canGoBack, finishAnimation, pop]);
+    }, popDurationMs);
+  }, [animating, canGoBack, finishAnimation, pop, popDurationMs]);
 
   // Push initial panels when drawer opens
   const initialPanelsPushedRef = React.useRef(false);

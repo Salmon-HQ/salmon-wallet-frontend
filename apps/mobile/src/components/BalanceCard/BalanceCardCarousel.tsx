@@ -8,6 +8,7 @@ import {
   gradients,
   hiddenValue,
   letterSpacing,
+  motionMs,
   ms,
   s,
   shadows,
@@ -26,12 +27,13 @@ import { useTranslation } from 'react-i18next';
 import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
-  Easing,
   runOnJS,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { curve, timing } from '../../utils/motion';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import type { BalanceCardCarouselProps, BlockchainId } from './types';
 
@@ -42,12 +44,6 @@ import { ScalesBackground } from '../ScalesBackground';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
-
-// Professional smooth timing config (like Revolut) - zero bounce
-const SMOOTH_TIMING_CONFIG = {
-  duration: 350,
-  easing: Easing.out(Easing.cubic),
-};
 
 // Gradient colors for each blockchain
 const BLOCKCHAIN_GRADIENTS: Record<BlockchainId, readonly [string, string, string]> = {
@@ -107,6 +103,13 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
   const translateX = useSharedValue(0);
   const isAnimating = useSharedValue(false);
 
+  // Swapping the card is a tab change: the incoming card arrives on `drift`,
+  // the outgoing one leaves on `ebb`. Exit is shorter than enter on purpose —
+  // the card being replaced has already been read.
+  const isReduceMotionEnabled = useReducedMotion();
+  const cardIn = timing(motionMs.drift, isReduceMotionEnabled);
+  const cardOut = timing(motionMs.ebb, isReduceMotionEnabled, curve.sink);
+
   const updateIndex = useCallback(
     (newIndex: number) => {
       setInternalIndex(newIndex);
@@ -130,14 +133,14 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
       if (shouldSwipeLeft) {
         // Swipe left → animate current content OFF to the left
         isAnimating.value = true;
-        translateX.value = withTiming(-SCREEN_WIDTH, { duration: 200 }, (finished) => {
+        translateX.value = withTiming(-SCREEN_WIDTH, cardOut, (finished) => {
           if (finished) {
             // Update index (loads new content)
             runOnJS(updateIndex)(activeIndex + 1);
             // Position new content OFF to the right
             translateX.value = SCREEN_WIDTH;
             // Animate new content IN from the right
-            translateX.value = withTiming(0, SMOOTH_TIMING_CONFIG, (timingFinished) => {
+            translateX.value = withTiming(0, cardIn, (timingFinished) => {
               if (timingFinished) {
                 isAnimating.value = false;
               }
@@ -147,14 +150,14 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
       } else if (shouldSwipeRight) {
         // Swipe right → animate current content OFF to the right
         isAnimating.value = true;
-        translateX.value = withTiming(SCREEN_WIDTH, { duration: 200 }, (finished) => {
+        translateX.value = withTiming(SCREEN_WIDTH, cardOut, (finished) => {
           if (finished) {
             // Update index (loads new content)
             runOnJS(updateIndex)(activeIndex - 1);
             // Position new content OFF to the left
             translateX.value = -SCREEN_WIDTH;
             // Animate new content IN from the left
-            translateX.value = withTiming(0, SMOOTH_TIMING_CONFIG, (timingFinished) => {
+            translateX.value = withTiming(0, cardIn, (timingFinished) => {
               if (timingFinished) {
                 isAnimating.value = false;
               }
@@ -164,7 +167,7 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
       } else {
         // Not enough swipe distance → smooth return to center (no bounce)
         isAnimating.value = true;
-        translateX.value = withTiming(0, SMOOTH_TIMING_CONFIG, (finished) => {
+        translateX.value = withTiming(0, cardIn, (finished) => {
           if (finished) {
             isAnimating.value = false;
           }

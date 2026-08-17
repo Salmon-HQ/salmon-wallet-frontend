@@ -23,7 +23,39 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 12, left: 0 }),
 }));
 
+// Reanimated pulls the Worklets native module, which does not exist under
+// Jest. The motion vocabulary itself is asserted in
+// `src/utils/motion.ts`'s consumers; here the animation layer only has to
+// exist.
+jest.mock('react-native-reanimated', () => {
+  const { View, Text } = require('react-native');
+  return {
+    __esModule: true,
+    default: { View, Text, createAnimatedComponent: (c: unknown) => c },
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: () => ({}),
+    useReducedMotion: () => false,
+    withTiming: (value: unknown) => value,
+    withDelay: (_delay: number, value: unknown) => value,
+    withSpring: (value: unknown) => value,
+    withRepeat: (value: unknown) => value,
+    withSequence: (value: unknown) => value,
+    runOnJS: (fn: unknown) => fn,
+    interpolate: () => 0,
+    Easing: {
+      in: (fn: unknown) => fn,
+      out: (fn: unknown) => fn,
+      inOut: (fn: unknown) => fn,
+      linear: (t: number) => t,
+      ease: (t: number) => t,
+      cubic: (t: number) => t,
+      bezier: (...args: number[]) => args,
+    },
+  };
+});
+
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/theme/durations'),
   semantic: {
     status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
     text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', accent: '#FF5C45' },

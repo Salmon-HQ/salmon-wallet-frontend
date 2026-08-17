@@ -1,11 +1,18 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Linking,
+  type LayoutChangeEvent,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useReducedMotion,
   withDelay,
   withTiming,
-  Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -32,6 +39,9 @@ import type { TransactionSuccessScreenProps } from '@salmon/shared';
 import { PrimaryButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+import { curve } from '../../utils/motion';
+import { CausticBand, SurfacingMembrane } from './SurfacingLayers';
+import { BAND_HEIGHT, MEMBRANE_OPACITY_TO, surfacingTimeline } from './surfacing';
 
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a
 // mutable one.
@@ -58,37 +68,120 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   const { t } = useTranslation();
   const { floatingBottomOffset } = useTabChrome();
 
+  // The Surfacing (DESIGN.md §The Surfacing). Reduced motion is a full
+  // parallel mapping rather than a switch, and the plan for both paths is
+  // `surfacingTimeline` — a pure function, so the timing is testable without a
+  // frame clock.
+  const isReduceMotionEnabled = useReducedMotion();
+  const timeline = useMemo(
+    () => surfacingTimeline(isReduceMotionEnabled),
+    [isReduceMotionEnabled]
+  );
+
   const statusOpacity = useSharedValue(0);
-  // The amount is the hero, so it owns its own node and its own value. The
-  // Surfacing (DESIGN.md §The Surfacing) lands here: a `tide`-long timeline
-  // clears the material, travels a caustic band up to this node, and settles
-  // it with translateY +6 → 0 on `settle`. Only the fade is built; the node,
-  // its isolation from the status line, and its locked tabular width are the
-  // parts that had to exist first.
+  // The amount is the hero, so it owns its own node and its own value: the
+  // caustic band travels up to it and it settles behind the band, translateY
+  // +6 → 0 on `settle`, digits already at tabular width so nothing reflows.
   const amountOpacity = useSharedValue(0);
+  const amountTranslateY = useSharedValue(0);
   const linkOpacity = useSharedValue(0);
   const buttonOpacity = useSharedValue(0);
+  const membraneOpacity = useSharedValue(1);
+  const bandOpacity = useSharedValue(0);
+  const bandTranslateY = useSharedValue(0);
+
+  // Where the band starts (below the bottom edge) and where it stops (centred
+  // on the amount). Both come from layout rather than from a guess, because
+  // the corridor's length changes with the summary's line count.
+  const [screenHeight, setScreenHeight] = useState(0);
+  const [amountCenterY, setAmountCenterY] = useState(0);
+
+  const handleScreenLayout = useCallback((event: LayoutChangeEvent) => {
+    setScreenHeight(event.nativeEvent.layout.height);
+  }, []);
+
+  const handleAmountLayout = useCallback((event: LayoutChangeEvent) => {
+    const { y, height } = event.nativeEvent.layout;
+    setAmountCenterY(y + height / 2);
+  }, []);
 
   useEffect(() => {
     if (settling) return;
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    // Status first and small, then the value it is reporting on.
-    statusOpacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
+    // 1. The membrane clears: the water above the transaction thins out.
+    membraneOpacity.value = withTiming(MEMBRANE_OPACITY_TO, {
+      duration: timeline.membrane.durationMs,
+      easing: curve.current,
+    });
+
+    // 3. The amount settles. `settle` never passes its target, so a number
+    //    never appears to have been wrong for a frame.
+    amountTranslateY.value = timeline.amount.rise;
     amountOpacity.value = withDelay(
-      120,
-      withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) })
+      timeline.amount.delayMs,
+      withTiming(1, { duration: timeline.amount.durationMs, easing: curve.settle })
     );
+    amountTranslateY.value = withDelay(
+      timeline.amount.delayMs,
+      withTiming(0, { duration: timeline.amount.durationMs, easing: curve.settle })
+    );
+
+    // Then everything else, after the moment rather than during it.
+    statusOpacity.value = withTiming(1, {
+      duration: timeline.chrome.durationMs,
+      easing: curve.current,
+    });
     linkOpacity.value = withDelay(
-      320,
-      withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) })
+      timeline.chrome.delayMs,
+      withTiming(1, { duration: timeline.chrome.durationMs, easing: curve.current })
     );
     buttonOpacity.value = withDelay(
-      420,
-      withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) })
+      timeline.chrome.delayMs + timeline.chrome.staggerMs,
+      withTiming(1, { duration: timeline.chrome.durationMs, easing: curve.current })
     );
-  }, [settling, statusOpacity, amountOpacity, linkOpacity, buttonOpacity]);
+  }, [
+    settling,
+    timeline,
+    statusOpacity,
+    amountOpacity,
+    amountTranslateY,
+    linkOpacity,
+    buttonOpacity,
+    membraneOpacity,
+  ]);
+
+  // 2. The caustic band. Held back until the corridor has been measured — a
+  //    band that travels to the wrong place is worse than one frame of nothing.
+  useEffect(() => {
+    if (settling || screenHeight <= 0 || amountCenterY <= 0) return;
+
+    const restingY = amountCenterY - BAND_HEIGHT / 2;
+
+    if (timeline.band.mode === 'static') {
+      // Reduced motion: drawn once across the amount, held, then faded. It
+      // does not travel, and it never repeats.
+      bandTranslateY.value = restingY;
+      bandOpacity.value = 1;
+      bandOpacity.value = withDelay(
+        timeline.band.durationMs,
+        withTiming(0, { duration: timeline.band.fadeMs, easing: curve.sink })
+      );
+      return;
+    }
+
+    bandTranslateY.value = screenHeight;
+    bandOpacity.value = 1;
+    bandTranslateY.value = withTiming(restingY, {
+      duration: timeline.band.durationMs,
+      easing: curve.current,
+    });
+    bandOpacity.value = withDelay(
+      timeline.band.durationMs,
+      withTiming(0, { duration: timeline.band.fadeMs, easing: curve.sink })
+    );
+  }, [settling, timeline, screenHeight, amountCenterY, bandOpacity, bandTranslateY]);
 
   const statusStyle = useAnimatedStyle(() => ({
     opacity: statusOpacity.value,
@@ -96,6 +189,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
 
   const amountStyle = useAnimatedStyle(() => ({
     opacity: amountOpacity.value,
+    transform: [{ translateY: amountTranslateY.value }],
   }));
 
   const linkStyle = useAnimatedStyle(() => ({
@@ -126,7 +220,15 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   }
 
   return (
-    <View style={[styles.container, { paddingBottom: floatingBottomOffset }]}>
+    <View
+      style={[styles.container, { paddingBottom: floatingBottomOffset }]}
+      onLayout={handleScreenLayout}
+      testID="tx-success-screen"
+    >
+      {/* The membrane this moment clears. Behind everything, and behind the
+          content it is thinning out over. */}
+      <SurfacingMembrane opacity={membraneOpacity} />
+
       {/* Status is a line of ink, not a 96px disc: `status.success` is
           specified as ink (9.99:1), and the outcome the user came for is the
           amount below it. Three channels are kept — colour, the ✓ glyph, and
@@ -140,7 +242,11 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
 
       {/* The hero. Isolated node, tabular digits, nothing between it and the
           bottom of the screen for a caustic band to travel through. */}
-      <Animated.View style={[styles.amountContainer, amountStyle]}>
+      <Animated.View
+        style={[styles.amountContainer, amountStyle]}
+        onLayout={handleAmountLayout}
+        testID="tx-success-amount"
+      >
         <Text style={styles.amount} testID="tx-success-summary">
           {summary}
         </Text>
@@ -219,6 +325,10 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           </PrimaryButton>
         </LinearGradient>
       </Animated.View>
+
+      {/* The shaft of light, last so it passes over the amount rather than
+          under it. It takes no touches and it never repeats. */}
+      <CausticBand opacity={bandOpacity} translateY={bandTranslateY} />
     </View>
   );
 };
@@ -233,6 +343,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: s(spacing.headerPadding),
+    // The caustic band blends in `screen`; without a stacking context here it
+    // would blend against whatever is behind the whole sheet.
+    isolation: 'isolate',
+    // The band travels in from below the bottom edge.
+    overflow: 'hidden',
   },
   statusRow: {
     flexDirection: 'row',

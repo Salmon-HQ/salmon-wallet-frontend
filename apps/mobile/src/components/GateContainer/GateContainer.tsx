@@ -25,8 +25,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useReducedMotion,
   withTiming,
-  Easing,
   runOnJS,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,17 +37,17 @@ import {
   spacing,
   borderRadius,
   componentSizes,
+  motionMs,
   shadows,
   s,
 } from '@salmon/shared';
 import type { GateContainerProps, GateState } from './types';
+import { curve, timing } from '../../utils/motion';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-const SLIDE_DURATION = 800;
-const HEADER_FADE_DURATION = 350;
 const BACKDROP_OPACITY = 0.5;
 
 // ============================================================================
@@ -87,6 +87,15 @@ export function GateContainer({
   const backdropOpacity = useSharedValue(0);
   const headerContentOpacity = useSharedValue(state === 'collapsed' ? 1 : 0);
 
+  // The gate is a sheet: it presents on `rise` and recedes on `ebb`. It ran at
+  // 800ms, which is longer than The Surfacing — the one thing in the app
+  // allowed to take that kind of time. The header swapping under it is a state
+  // change in place, so it crossfades on `swell`.
+  const isReduceMotionEnabled = useReducedMotion();
+  const slideIn = timing(motionMs.rise, isReduceMotionEnabled);
+  const slideOut = timing(motionMs.ebb, isReduceMotionEnabled, curve.sink);
+  const headerFade = timing(motionMs.swell, isReduceMotionEnabled);
+
   // Animate state transitions
   useEffect(() => {
     const prevState = prevStateRef.current;
@@ -108,40 +117,26 @@ export function GateContainer({
       case 'collapsed':
         if (prevState === 'locked') {
           // Unlock: slide up to header position, then fade in header
-          translateY.value = withTiming(
-            collapsedY,
-            {
-              duration: SLIDE_DURATION,
-              easing: Easing.out(Easing.cubic),
-            },
-            (finished) => {
-              if (finished) {
-                headerContentOpacity.value = withTiming(1, { duration: HEADER_FADE_DURATION });
-                if (onUnlockAnimationComplete) {
-                  runOnJS(onUnlockAnimationComplete)();
-                }
+          translateY.value = withTiming(collapsedY, slideIn, (finished) => {
+            if (finished) {
+              headerContentOpacity.value = withTiming(1, headerFade);
+              if (onUnlockAnimationComplete) {
+                runOnJS(onUnlockAnimationComplete)();
               }
             }
-          );
+          });
           backdropOpacity.value = 0;
         } else {
           // Close settings/wallets: slide up (content stays as snapshot),
           // then fade in header, then clear expanded content
-          translateY.value = withTiming(
-            collapsedY,
-            {
-              duration: SLIDE_DURATION,
-              easing: Easing.in(Easing.cubic),
-            },
-            (finished) => {
-              if (finished) {
-                headerContentOpacity.value = withTiming(1, { duration: HEADER_FADE_DURATION });
-                // Clear snapshot after slide + fade complete
-                runOnJS(setLastExpandedContent)(null);
-              }
+          translateY.value = withTiming(collapsedY, slideOut, (finished) => {
+            if (finished) {
+              headerContentOpacity.value = withTiming(1, headerFade);
+              // Clear snapshot after slide + fade complete
+              runOnJS(setLastExpandedContent)(null);
             }
-          );
-          backdropOpacity.value = withTiming(0, { duration: SLIDE_DURATION });
+          });
+          backdropOpacity.value = withTiming(0, slideOut);
         }
         break;
 
@@ -151,12 +146,9 @@ export function GateContainer({
         setLastExpandedContent(state);
         lastExpandedHeaderRef.current = expandedHeader;
         // Expand: fade out header and slide down simultaneously
-        headerContentOpacity.value = withTiming(0, { duration: HEADER_FADE_DURATION });
-        translateY.value = withTiming(0, {
-          duration: SLIDE_DURATION,
-          easing: Easing.out(Easing.cubic),
-        });
-        backdropOpacity.value = withTiming(BACKDROP_OPACITY, { duration: SLIDE_DURATION });
+        headerContentOpacity.value = withTiming(0, headerFade);
+        translateY.value = withTiming(0, slideIn);
+        backdropOpacity.value = withTiming(BACKDROP_OPACITY, slideIn);
         break;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -21,11 +21,12 @@ import {
   fontFamilyNative,
   generateMnemonic,
   generateValidationPositions,
+  motionMs,
+  semantic,
   setStashItem,
   spacing,
   STASH_KEYS,
   validateMnemonicWords,
-  semantic,
 } from '@salmon/shared';
 import {
   PrimaryButton,
@@ -146,7 +147,7 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
     try {
       await Clipboard.setStringAsync(mnemonic);
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 2000);
+      setTimeout(() => setShowToast(false), motionMs.feedbackHold);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
     }

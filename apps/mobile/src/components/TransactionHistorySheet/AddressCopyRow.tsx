@@ -5,17 +5,18 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
 import {
+  borderRadius,
   borderWidth,
   colors,
-  ms,
-  vs,
-  s,
-  fontSize,
   fontFamilyNative,
-  borderRadius,
+  fontSize,
   getShortAddress,
-  spacing,
+  motionMs,
+  ms,
+  s,
   semantic,
+  spacing,
+  vs,
 } from '@salmon/shared';
 
 // ============================================================================
@@ -43,9 +44,6 @@ const TRUNCATE_CHARS: Record<'short' | 'medium' | 'long', number> = {
   medium: 6,
   long: 8,
 };
-
-/** Duration to show the copied state (ms) */
-const COPIED_FEEDBACK_DURATION = 1500;
 
 // ============================================================================
 // Helper Functions
@@ -114,7 +112,7 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
       // Reset after duration
       setTimeout(() => {
         setCopied(false);
-      }, COPIED_FEEDBACK_DURATION);
+      }, motionMs.feedbackHold);
     } catch (error) {
       // Silently fail - clipboard might not be available in some environments
       console.warn('Failed to copy address:', error);

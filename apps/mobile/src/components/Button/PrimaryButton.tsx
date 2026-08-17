@@ -8,6 +8,7 @@
  * is either alive or absent — and so is the flesh inside it.
  */
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
+import Animated from 'react-native-reanimated';
 import {
   colors,
   componentSizes,
@@ -18,6 +19,10 @@ import {
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 import { FleshBackground } from '../FleshBackground';
+import { PressSpecular } from '../PressSpecular';
+import { usePressMotion } from '../../../hooks/usePressMotion';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 interface PrimaryButtonProps extends Testable {
   onPress: () => void;
@@ -36,9 +41,10 @@ export function PrimaryButton({
   testID,
 }: PrimaryButtonProps) {
   const isDisabled = disabled || loading;
+  const { pressStyle, pressHandlers, specular } = usePressMotion();
 
   return (
-    <TouchableOpacity
+    <AnimatedTouchable
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={children}
@@ -46,7 +52,8 @@ export function PrimaryButton({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
-      style={[styles.button, isDisabled && styles.disabled, style]}
+      {...pressHandlers}
+      style={[styles.button, isDisabled && styles.disabled, style, pressStyle]}
     >
       {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
           fill. A filled button is mass, not surface, so the material it shows
@@ -67,7 +74,10 @@ export function PrimaryButton({
           {children}
         </Text>
       )}
-    </TouchableOpacity>
+      {/* The specular is drawn last so it sits over the flesh, and the pill's
+          `overflow: 'hidden'` clips it to the control's own radius. */}
+      {!isDisabled && <PressSpecular {...specular} />}
+    </AnimatedTouchable>
   );
 }
 

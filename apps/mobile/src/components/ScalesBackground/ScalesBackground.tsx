@@ -17,7 +17,15 @@ const NATIVE_TILE = 26;
  * compression noise rather than as water. Each variant now has a job, a
  * distance, and a stroke actually visible at that distance.
  */
-export type ScalesVariant = 'deepField' | 'fish';
+export type ScalesVariant = 'deepField' | 'fish' | 'caustic';
+
+/**
+ * `#9FE0EF` at 10%. DESIGN.md §The Surfacing specifies the caustic light by
+ * value and the theme has no token for it — `scales` carries the motif's three
+ * grounded appearances, not a transient one. Kept here with the other strokes
+ * rather than at the call site so the motif's ink stays in one file.
+ */
+const CAUSTIC_STROKE = 'rgba(159, 224, 239, 0.10)';
 
 const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boolean }> = {
   /** The far water, in the balance card's upper region. Dissolves downward. */
@@ -27,6 +35,16 @@ const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boo
    * instead; see `packages/shared/src/theme/flesh.ts`.
    */
   fish: { stroke: scales.fishStroke, scale: scales.fishScale, fade: false },
+  /**
+   * The caustic band of The Surfacing — the transient one. Same 0.5× as the
+   * refraction strip, because it is the same light seen moving instead of at
+   * rest, and it fades downward so the band reads as a shaft with a leading
+   * edge rather than as a rectangle of pattern.
+   *
+   * Never mount it anywhere but the completed-transaction confirmation: it is
+   * the signature moment, and a signature used twice is a texture.
+   */
+  caustic: { stroke: CAUSTIC_STROKE, scale: scales.refractionScale, fade: true },
 };
 
 export interface ScalesBackgroundProps {

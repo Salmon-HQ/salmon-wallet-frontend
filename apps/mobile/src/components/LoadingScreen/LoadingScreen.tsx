@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useReducedMotion,
   withRepeat,
   withTiming,
   withSequence,
@@ -29,19 +30,13 @@ import {
   DEFAULT_WALLET_TIP_KEYS,
   fontFamilyNative,
   letterSpacing,
+  motionMs,
   spacing,
   fontSize,
 } from '@salmon/shared';
 
 import { LoadingScreenProps } from './types';
-
-// ============================================================================
-// Animation Constants
-// ============================================================================
-
-const PULSE_DURATION = 1200; // ms for one pulse cycle
-const SPIN_DURATION = 2000; // ms for full rotation
-const TIP_FADE_DURATION = 400; // ms for tip fade transition
+import { curve, timing } from '../../utils/motion';
 
 // ============================================================================
 // Component
@@ -73,21 +68,31 @@ export function LoadingScreen({
   const tipOpacity = useSharedValue(1);
   const overlayOpacity = useSharedValue(visible ? 1 : 0);
 
+  // The overlay is an ordinary enter/exit. The pulse and the spin are loops:
+  // their `*Cycle` lengths are revolutions, never resolved to 0, and under
+  // reduce motion they are not started at all rather than run instantly.
+  const isReduceMotionEnabled = useReducedMotion();
+  const overlayIn = timing(motionMs.drift, isReduceMotionEnabled);
+  const overlayOut = timing(motionMs.ebb, isReduceMotionEnabled, curve.sink);
+  const tipFade = timing(motionMs.drift, isReduceMotionEnabled);
+
   // Start/stop animations based on visibility
   useEffect(() => {
     if (visible) {
       setIsVisible(true);
-      overlayOpacity.value = withTiming(1, { duration: 300 });
+      overlayOpacity.value = withTiming(1, overlayIn);
+
+      if (isReduceMotionEnabled) return;
 
       // Pulse animation - breathing effect
       pulseScale.value = withRepeat(
         withSequence(
           withTiming(1.08, {
-            duration: PULSE_DURATION / 2,
+            duration: motionMs.pulseCycle / 2,
             easing: Easing.inOut(Easing.ease),
           }),
           withTiming(1, {
-            duration: PULSE_DURATION / 2,
+            duration: motionMs.pulseCycle / 2,
             easing: Easing.inOut(Easing.ease),
           })
         ),
@@ -98,20 +103,21 @@ export function LoadingScreen({
       // Spin animation - continuous rotation
       spinRotation.value = withRepeat(
         withTiming(360, {
-          duration: SPIN_DURATION,
+          duration: motionMs.spinCycle,
           easing: Easing.linear,
         }),
         -1, // infinite
         false
       );
     } else {
-      overlayOpacity.value = withTiming(0, { duration: 300 }, (finished) => {
+      overlayOpacity.value = withTiming(0, overlayOut, (finished) => {
         if (finished) {
           runOnJS(setIsVisible)(false);
         }
       });
     }
-  }, [visible, overlayOpacity, pulseScale, spinRotation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, overlayOpacity, pulseScale, spinRotation, isReduceMotionEnabled]);
 
   // Helper function to advance to next tip
   const advanceToNextTip = useCallback(() => {
@@ -121,7 +127,7 @@ export function LoadingScreen({
   // Helper function to fade tip back in
   // Note: tipOpacity is a Reanimated SharedValue which is stable and doesn't need to be in dependencies
   const fadeInTip = useCallback(() => {
-    tipOpacity.value = withTiming(1, { duration: TIP_FADE_DURATION });
+    tipOpacity.value = withTiming(1, tipFade);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -131,7 +137,7 @@ export function LoadingScreen({
 
     const interval = setInterval(() => {
       // Fade out current tip
-      tipOpacity.value = withTiming(0, { duration: TIP_FADE_DURATION }, (finished) => {
+      tipOpacity.value = withTiming(0, tipFade, (finished) => {
         if (finished) {
           // Change tip and fade in
           runOnJS(advanceToNextTip)();
@@ -149,6 +155,7 @@ export function LoadingScreen({
     tipOpacity,
     advanceToNextTip,
     fadeInTip,
+    tipFade,
   ]);
 
   // Animated styles

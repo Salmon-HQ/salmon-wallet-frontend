@@ -25,7 +25,39 @@ jest.mock('expo-linear-gradient', () => ({
   LinearGradient: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
 
+// Reanimated pulls the Worklets native module, which does not exist under
+// Jest. The motion vocabulary itself is asserted in
+// `src/utils/motion.ts`'s consumers; here the animation layer only has to
+// exist.
+jest.mock('react-native-reanimated', () => {
+  const { View, Text } = require('react-native');
+  return {
+    __esModule: true,
+    default: { View, Text, createAnimatedComponent: (c: unknown) => c },
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: () => ({}),
+    useReducedMotion: () => false,
+    withTiming: (value: unknown) => value,
+    withDelay: (_delay: number, value: unknown) => value,
+    withSpring: (value: unknown) => value,
+    withRepeat: (value: unknown) => value,
+    withSequence: (value: unknown) => value,
+    runOnJS: (fn: unknown) => fn,
+    interpolate: () => 0,
+    Easing: {
+      in: (fn: unknown) => fn,
+      out: (fn: unknown) => fn,
+      inOut: (fn: unknown) => fn,
+      linear: (t: number) => t,
+      ease: (t: number) => t,
+      cubic: (t: number) => t,
+      bezier: (...args: number[]) => args,
+    },
+  };
+});
+
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/theme/durations'),
   // "Deep Water" semantic tokens. Components read these directly now; the
   // legacy `colors` map below still covers everything not yet migrated.
   semantic: {

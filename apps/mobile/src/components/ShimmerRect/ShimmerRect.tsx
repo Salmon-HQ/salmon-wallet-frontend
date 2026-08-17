@@ -1,14 +1,16 @@
-import { borderRadius, componentSizes, durationMs, ms } from '@salmon/shared';
+import { borderRadius, componentSizes, motionMs, ms } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
-  Easing,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+
+import { curve } from '../../utils/motion';
 
 interface ShimmerRectProps {
   width: number;
@@ -31,16 +33,22 @@ export const ShimmerRect: React.FC<ShimmerRectProps> = ({
 }) => {
   const translateX = useSharedValue(-componentSizes.shimmerOffset);
   const radius = customBorderRadius ?? ms(borderRadius.sm);
+  const isReduceMotionEnabled = useReducedMotion();
 
   useEffect(() => {
+    // A cycle length is not a transition: resolving it to 0 would spin the
+    // band infinitely fast. Under reduce motion the loop is not sped up, it is
+    // not started — the placeholder simply sits at `state.hover`.
+    if (isReduceMotionEnabled) return;
+
     translateX.value = withRepeat(
       withTiming(componentSizes.shimmerOffset, {
-        duration: durationMs.shimmer,
-        easing: Easing.inOut(Easing.ease),
+        duration: motionMs.shimmerCycle,
+        easing: curve.current,
       }),
       -1
     );
-  }, [translateX]);
+  }, [translateX, isReduceMotionEnabled]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],

@@ -10,13 +10,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import {
-  colors,
-  spacing,
   borderRadius,
+  colors,
   fontFamilyNative,
-  useAccountsContext,
   fontSize,
+  motionMs,
   semantic,
+  spacing,
+  useAccountsContext,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -65,7 +66,7 @@ export function BackupPanel({
       await Clipboard.setStringAsync(mnemonic);
       setCopyFailed(false);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), motionMs.feedbackHold);
     } catch (error) {
       // A silent copy failure here means the user thinks the seed is saved.
       console.error('Failed to copy seed phrase:', error);

@@ -14,17 +14,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
 import {
-  colors,
-  spacing,
   borderRadius,
+  colors,
   fontFamilyNative,
-  getShortAddress,
+  fontSize,
   getAccountKeysForNetwork,
+  getShortAddress,
+  letterSpacing,
+  motionMs,
+  semantic,
+  spacing,
   type Account,
   type AccountKeyInfo,
-  fontSize,
-  letterSpacing,
-  semantic,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
@@ -122,7 +123,7 @@ export function PrivateKeyPanel({
         await Clipboard.setStringAsync(privateKey);
         setCopyFailedIndex(null);
         setCopiedIndex(index);
-        setTimeout(() => setCopiedIndex(null), 2000);
+        setTimeout(() => setCopiedIndex(null), motionMs.feedbackHold);
       } catch (error) {
         // Surface the failure — a silent no-op looks like a successful copy.
         console.error('Failed to copy private key:', error);

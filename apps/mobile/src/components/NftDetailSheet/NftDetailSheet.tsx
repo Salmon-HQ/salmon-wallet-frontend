@@ -18,8 +18,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useReducedMotion } from 'react-native-reanimated';
 import {
   colors,
+  motionMs,
+  resolveMotionMs,
   fontSize,
   borderRadius,
   fontFamilyNative,
@@ -173,6 +176,8 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     }
   }, [handleClose, onBurnSuccess, onSendSuccess, successKind, successTxId]);
 
+  const isReduceMotionEnabled = useReducedMotion();
+
   const startStepTransition = useCallback(
     (nextStep: 'detail' | 'send' | 'burn', direction: 1 | -1) => {
       if (step === nextStep) return;
@@ -184,7 +189,8 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
 
       Animated.timing(stepTransitionProgress, {
         toValue: 1,
-        duration: 260,
+        // A step change inside a sheet is an in-place layout change: `drift`.
+        duration: resolveMotionMs(motionMs.drift, isReduceMotionEnabled),
         useNativeDriver: true,
       }).start(({ finished }) => {
         if (!finished) return;
@@ -195,7 +201,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
         stepTransitionProgress.setValue(1);
       });
     },
-    [step, stepTransitionProgress]
+    [step, stepTransitionProgress, isReduceMotionEnabled]
   );
 
   useEffect(() => {

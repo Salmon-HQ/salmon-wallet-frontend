@@ -17,17 +17,16 @@ import {
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useReducedMotion,
   withTiming,
-  Easing,
 } from 'react-native-reanimated';
 
-import { colors } from '@salmon/shared';
+import { colors, motionMs } from '@salmon/shared';
 
 import type { MobileSettingsPanelStackProps } from './types';
+import { curve, timing } from '../../utils/motion';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const PUSH_DURATION = 300;
-const POP_DURATION = 200;
 const SWIPE_THRESHOLD = 80;
 
 export function SettingsPanelStack({
@@ -89,6 +88,13 @@ function PanelSlide({
 }: PanelSlideProps): React.ReactElement {
   const translateX = useSharedValue(direction === 'in' && animating ? SCREEN_WIDTH : 0);
 
+  // A pushed panel is a route: it arrives on `route` and leaves on `ebb`. The
+  // owning sheet clears its animating flag off the same two tokens, so the two
+  // cannot drift apart the way 300/200 in two files could.
+  const isReduceMotionEnabled = useReducedMotion();
+  const push = timing(motionMs.route, isReduceMotionEnabled);
+  const pop = timing(motionMs.ebb, isReduceMotionEnabled, curve.sink);
+
   useEffect(() => {
     if (!isTop) {
       translateX.value = 0;
@@ -98,25 +104,20 @@ function PanelSlide({
     if (animating && direction === 'in') {
       translateX.value = SCREEN_WIDTH;
       const frame = requestAnimationFrame(() => {
-        translateX.value = withTiming(0, {
-          duration: PUSH_DURATION,
-          easing: Easing.out(Easing.cubic),
-        });
+        translateX.value = withTiming(0, push);
       });
 
       return () => cancelAnimationFrame(frame);
     }
 
     if (animating && direction === 'out') {
-      translateX.value = withTiming(SCREEN_WIDTH, {
-        duration: POP_DURATION,
-        easing: Easing.in(Easing.cubic),
-      });
+      translateX.value = withTiming(SCREEN_WIDTH, pop);
       return;
     }
 
     translateX.value = 0;
-  }, [animating, isTop, direction, translateX]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animating, isTop, direction, translateX, isReduceMotionEnabled]);
 
   // Swipe-right gesture to pop — useMemo so the responder updates when deps change
   const panResponder = useMemo(

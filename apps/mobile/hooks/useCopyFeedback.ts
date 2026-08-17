@@ -1,14 +1,14 @@
+import { motionMs } from '@salmon/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated } from 'react-native';
-
-/** How long the copied tick stays visible before reverting to the copy icon */
-const COPY_FEEDBACK_DURATION = 2000;
 
 /**
  * Copied-tick feedback for copy buttons.
  *
- * `trigger()` shows the tick with a scale-in animation and auto-reverts
- * after ~2s; `reset()` hides it immediately (e.g. when a sheet closes).
+ * `trigger()` shows the tick with a scale-in animation and auto-reverts after
+ * `motionMs.feedbackHold`; `reset()` hides it immediately (e.g. when a sheet
+ * closes). The hold is reading time, not travel, so reduced motion must not
+ * shorten it.
  * Render the tick inside an `Animated.View` using `scale`.
  */
 export function useCopyFeedback() {
@@ -41,7 +41,7 @@ export function useCopyFeedback() {
     timeoutRef.current = setTimeout(() => {
       setCopied(false);
       timeoutRef.current = null;
-    }, COPY_FEEDBACK_DURATION);
+    }, motionMs.feedbackHold);
   }, [clearPendingReset, scale]);
 
   // Clear the pending reset on unmount

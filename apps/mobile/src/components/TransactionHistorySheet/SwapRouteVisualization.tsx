@@ -4,28 +4,30 @@ import { View, Text, StyleSheet, TouchableOpacity, LayoutChangeEvent } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withTiming,
-  Easing,
 } from 'react-native-reanimated';
+import { timing } from '../../utils/motion';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
 import {
-  colors,
-  ms,
-  vs,
-  s,
-  fontSize,
   borderRadius,
-  spacing,
+  colors,
+  fontFamilyNative,
+  fontSize,
   formatBlockNumber,
   formatDateTime,
-  getShortAddress,
   formatRawAmount,
-  truncateHash,
-  fontFamilyNative,
+  getShortAddress,
   letterSpacing,
+  motionMs,
+  ms,
+  s,
   semantic,
+  spacing,
+  truncateHash,
+  vs,
 } from '@salmon/shared';
 import type { Transaction, SwapRouteHop } from './types';
 import { TokenLogo } from '../TokenLogo';
@@ -36,13 +38,7 @@ import { ConversionRateDisplay } from './ConversionRateDisplay';
 // Constants
 // ============================================================================
 
-const ANIMATION_CONFIG = {
-  duration: 300,
-  easing: Easing.out(Easing.cubic),
-};
 
-/** Duration to show the copied state (ms) */
-const COPIED_FEEDBACK_DURATION = 1500;
 
 // ============================================================================
 // Helper Functions
@@ -68,7 +64,7 @@ const HashCopyRow: React.FC<{
       await Clipboard.setStringAsync(value);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setCopied(true);
-      setTimeout(() => setCopied(false), COPIED_FEEDBACK_DURATION);
+      setTimeout(() => setCopied(false), motionMs.feedbackHold);
     } catch (error) {
       console.warn('Failed to copy:', error);
     }
@@ -513,18 +509,22 @@ const SwapRouteVisualizationContent: React.FC<SwapRouteVisualizationProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- contentHeight is a stable shared value ref
   }, []);
 
+  const isReduceMotionEnabled = useReducedMotion();
+  const expandTiming = timing(motionMs.drift, isReduceMotionEnabled);
+
   // Animated styles for expand/collapse with dynamic height
   const animatedStyle = useAnimatedStyle(() => {
     const targetHeight = expanded ? contentHeight.value : 0;
-    const height = withTiming(targetHeight, ANIMATION_CONFIG);
-    const opacity = withTiming(expanded ? 1 : 0, ANIMATION_CONFIG);
+    // Expand/collapse is an in-place layout change: `drift`.
+    const height = withTiming(targetHeight, expandTiming);
+    const opacity = withTiming(expanded ? 1 : 0, expandTiming);
 
     return {
       height: measured ? height : expanded ? undefined : 0,
       opacity,
       overflow: 'hidden',
     };
-  }, [expanded, measured]);
+  }, [expanded, measured, expandTiming]);
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
