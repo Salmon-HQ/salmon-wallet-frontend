@@ -1,40 +1,28 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { FleshBackground } from '../FleshBackground';
+import { Animated, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import {
   borderRadius,
-  borderWidth,
   chunkAddress,
   colors,
   componentSizes,
   fontFamilyNative,
-  fontScaleCap,
   fontSize,
-  gradients,
-  motionMs,
   ms,
-  opacity,
   s,
   semantic,
-  shadows,
   spacing,
   useSendTransaction,
   vs,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { ContentCopySvgIcon } from '../Icon/SvgIcons';
 import { BlurContainer } from '../BlurContainer';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import { TokenLogo } from '../TokenLogo';
 import type { StepConfirmationProps } from './types';
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const BUTTON_SHADOW = shadows.button;
 
 // ============================================================================
 // Component
@@ -55,7 +43,7 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
   const { t } = useTranslation();
   const { actionRowBottomPadding } = useBottomSheetChrome();
   const [estimatedFee, setEstimatedFee] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
 
   const sendHook = useSendTransaction({ account, blockchain });
 
@@ -120,12 +108,11 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
     try {
       const Clipboard = await import('expo-clipboard');
       await Clipboard.setStringAsync(destinationAddress);
-      setCopied(true);
-      setTimeout(() => setCopied(false), motionMs.feedbackHold);
+      showCopied();
     } catch {
       // Clipboard not available
     }
-  }, [destinationAddress]);
+  }, [destinationAddress, showCopied]);
 
   // Clears the failure and re-arms the confirm button. It does not resend on its
   // own, which is why the label reads "Confirm Again" rather than "Retry".
@@ -140,7 +127,6 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
   useEffect(() => {
     onSendingChange?.(isSending);
   }, [isSending, onSendingChange]);
-
 
   return (
     <View style={styles.container}>
@@ -160,7 +146,11 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
           style={styles.addressButton}
           onPress={handleCopy}
           activeOpacity={0.7}
-          accessibilityLabel={t('token.send.copyRecipientAddress')}
+          accessibilityRole="button"
+          // The tick is the only confirmation a sighted user gets; without the
+          // label changing with it, a screen-reader user presses copy and is
+          // told nothing happened.
+          accessibilityLabel={copied ? t('actions.copied') : t('token.send.copyRecipientAddress')}
         >
           <BlurContainer style={styles.addressContainer}>
             <View style={styles.addressColumn}>
@@ -176,7 +166,9 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
               )}
             </View>
             {copied ? (
-              <Ionicons name="checkmark" size={ms(20)} color={semantic.status.success} />
+              <Animated.View style={{ transform: [{ scale: tickScale }] }}>
+                <Ionicons name="checkmark" size={ms(20)} color={semantic.status.success} />
+              </Animated.View>
             ) : (
               <ContentCopySvgIcon size={ms(20)} color={colors.text.secondary} />
             )}
@@ -201,66 +193,26 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
 
       {/* Bottom Buttons */}
       <View style={[styles.bottomButtons, { paddingBottom: actionRowBottomPadding }]}>
-        <TouchableOpacity
+        <SecondaryButton
           testID="send-confirm-cancel-button"
-          style={styles.cancelButton}
+          style={styles.rowButton}
           onPress={isFailed ? onBack : onCancel}
-          activeOpacity={0.7}
           disabled={isSending}
         >
-          <Text
-            style={styles.cancelButtonText}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            maxFontSizeMultiplier={fontScaleCap.chrome}
-          >
-            {t('actions.cancel', 'CANCEL').toUpperCase()}
-          </Text>
-        </TouchableOpacity>
+          {t('actions.cancel', 'Cancel')}
+        </SecondaryButton>
 
-        <TouchableOpacity
+        <PrimaryButton
           testID="send-confirm-button"
-          style={[styles.confirmButton, isSending && styles.confirmButtonDisabled]}
+          style={styles.rowButton}
           onPress={isFailed ? handleRetry : handleConfirm}
-          activeOpacity={0.7}
+          loading={isSending}
           disabled={isSending}
         >
-          <LinearGradient
-            colors={[...gradients.primary.colors]}
-            style={styles.confirmButtonGradient}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.4 }}
-          >
-            {/* The flesh: the myosepta of a cut fillet, pressed into the
-                salmon fill. Every band is paler than the fill, so it can only
-                raise the luminance under the label. */}
-            <FleshBackground />
-            {isSending ? (
-              <View style={styles.sendingRow}>
-                <ActivityIndicator size="small" color={semantic.accent.onFill} />
-                <Text
-                  style={styles.confirmButtonText}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  maxFontSizeMultiplier={fontScaleCap.chrome}
-                >
-                  {t('token.send.sending', 'Sending...')}
-                </Text>
-              </View>
-            ) : (
-              <Text
-                style={styles.confirmButtonText}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                maxFontSizeMultiplier={fontScaleCap.chrome}
-              >
-                {isFailed
-                  ? t('token.send.confirmAgain', 'Confirm Again').toUpperCase()
-                  : t('actions.confirm', 'CONFIRM').toUpperCase()}
-              </Text>
-            )}
-          </LinearGradient>
-        </TouchableOpacity>
+          {isFailed
+            ? t('token.send.confirmAgain', 'Confirm Again')
+            : t('actions.confirm', 'Confirm')}
+        </PrimaryButton>
       </View>
     </View>
   );
@@ -344,48 +296,14 @@ const styles = StyleSheet.create({
     paddingTop: vs(spacing.md),
     gap: s(spacing.md),
   },
-  cancelButton: {
+  // Size only. Radius, fill, border, bezel and material belong to the button:
+  // Cancel used to paint a salmon-bordered fill with an outer glow and Confirm
+  // a `gradients.primary` box at `borderRadius.lg`, so the pair that performs
+  // one decision read as two unrelated controls at the wrong radius.
+  rowButton: {
     flex: 1,
     minHeight: vs(componentSizes.buttonHeightMedium),
-    borderRadius: ms(borderRadius.lg),
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.border.raised,
-    backgroundColor: colors.button.cancelBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...BUTTON_SHADOW,
-  },
-  cancelButtonText: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
-  },
-  confirmButton: {
-    flex: 1,
-    minHeight: vs(componentSizes.buttonHeightMedium),
-    borderRadius: ms(borderRadius.lg),
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.accent.fill,
-    overflow: 'hidden',
-    ...BUTTON_SHADOW,
-  },
-  confirmButtonDisabled: {
-    opacity: opacity.medium,
-  },
-  confirmButtonGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmButtonText: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.accent.onFill,
-  },
-  sendingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
+    height: vs(componentSizes.buttonHeightMedium),
   },
 });
 

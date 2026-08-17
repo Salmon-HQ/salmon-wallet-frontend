@@ -16,7 +16,6 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import ButtonBase from '@mui/material/ButtonBase';
-import CircularProgress from '@mui/material/CircularProgress';
 import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -24,7 +23,6 @@ import {
   colors,
   spacing,
   componentSizes,
-  gradients,
   fontFamily,
   fontWeight,
   useSendTransaction,
@@ -32,7 +30,6 @@ import {
   borderRadius,
   borderWidth,
   fontSize,
-  shadowsCSS,
   opacity,
   duration,
   durationMs,
@@ -40,6 +37,7 @@ import {
   tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import type { StepConfirmationProps } from './types';
 
 // ============================================================================
@@ -188,67 +186,13 @@ const BottomButtons = styled(Box)({
   gap: spacing.md,
 });
 
-const CancelButton = styled(ButtonBase)<{ disabled?: boolean }>(({ disabled }) => ({
+// Layout only. The two controls in this row used to paint themselves: Cancel
+// carried a salmon outline, a cancel fill and an outer glow, and Confirm was a
+// `gradients.primaryCSS` box at `borderRadius.lg` — a flat rectangle where the
+// shared button draws a flesh-textured pill. They differ by material now, not
+// by shape.
+const ButtonSlot = styled('div')({
   flex: 1,
-  height: componentSizes.buttonHeightMedium,
-  borderRadius: borderRadius.lg,
-  border: `${borderWidth.thin}px solid ${colors.accent.border}`,
-  backgroundColor: colors.button.cancelBackground,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  boxShadow: shadowsCSS.button,
-  opacity: disabled ? 0.5 : 1,
-  cursor: disabled ? 'not-allowed' : 'pointer',
-  transition: `opacity ${duration.fast} ${easing.ease}`,
-  '&:hover': {
-    opacity: disabled ? 0.5 : 0.85,
-  },
-}));
-
-const CancelButtonText = styled(Typography)({
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.semibold,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-});
-
-const ConfirmButton = styled(ButtonBase)<{ disabled?: boolean }>(({ disabled }) => ({
-  flex: 1,
-  height: componentSizes.buttonHeightMedium,
-  borderRadius: borderRadius.lg,
-  overflow: 'hidden',
-  border: `${borderWidth.thin}px solid ${colors.accent.border}`,
-  opacity: disabled ? 0.7 : 1,
-  boxShadow: shadowsCSS.button,
-  cursor: disabled ? 'not-allowed' : 'pointer',
-  transition: `opacity ${duration.fast} ${easing.ease}`,
-  '&:hover': {
-    opacity: disabled ? 0.7 : 0.85,
-  },
-}));
-
-const ConfirmButtonGradient = styled(Box)({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: '100%',
-  height: '100%',
-  background: gradients.primaryCSS,
-});
-
-const ConfirmButtonText = styled(Typography)({
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.semibold,
-  fontFamily: fontFamily.sans,
-  color: colors.button.primaryText,
-});
-
-const SendingRow = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: spacing.sm,
 });
 
 // ============================================================================
@@ -375,7 +319,10 @@ export function StepConfirmation({
         {/* Recipient Address */}
         <AddressButton
           onClick={handleCopy}
-          aria-label={t('token.send.copyRecipientAddress')}
+          // The tick is the only confirmation a sighted user gets; without the
+          // label changing with it, a screen-reader user presses copy and is
+          // told nothing happened.
+          aria-label={copied ? t('actions.copied') : t('token.send.copyRecipientAddress')}
           data-testid="send-confirm-copy-address"
         >
           <BlurContainer style={{ borderRadius: borderRadius.md }}>
@@ -425,35 +372,31 @@ export function StepConfirmation({
 
       {/* Bottom Buttons */}
       <BottomButtons>
-        <CancelButton
-          onClick={isFailed ? onBack : onCancel}
-          disabled={isSending}
-          data-testid="send-confirm-cancel-button"
-        >
-          <CancelButtonText>{t('actions.cancel').toUpperCase()}</CancelButtonText>
-        </CancelButton>
+        <ButtonSlot>
+          <SecondaryButton
+            onClick={isFailed ? onBack : onCancel}
+            disabled={isSending}
+            testID="send-confirm-cancel-button"
+            // Height is the only legal override: this row is shorter than a
+            // screen's committing action. Radius, fill, border and bezel
+            // belong to the button.
+            style={{ height: componentSizes.buttonHeightMedium }}
+          >
+            {t('actions.cancel')}
+          </SecondaryButton>
+        </ButtonSlot>
 
-        <ConfirmButton
-          onClick={isFailed ? handleRetry : handleConfirm}
-          disabled={isSending}
-          data-testid="send-confirm-button"
-        >
-          <ConfirmButtonGradient>
-            {isSending ? (
-              <SendingRow>
-                <CircularProgress size={16} sx={{ color: colors.text.primary }} />
-                <ConfirmButtonText>{t('general.sending')}</ConfirmButtonText>
-              </SendingRow>
-            ) : (
-              <ConfirmButtonText>
-                {(isFailed
-                  ? t('token.send.confirmAgain')
-                  : t('actions.confirm')
-                ).toUpperCase()}
-              </ConfirmButtonText>
-            )}
-          </ConfirmButtonGradient>
-        </ConfirmButton>
+        <ButtonSlot>
+          <PrimaryButton
+            onClick={isFailed ? handleRetry : handleConfirm}
+            loading={isSending}
+            disabled={isSending}
+            testID="send-confirm-button"
+            style={{ height: componentSizes.buttonHeightMedium, whiteSpace: 'nowrap' }}
+          >
+            {isFailed ? t('token.send.confirmAgain') : t('actions.confirm')}
+          </PrimaryButton>
+        </ButtonSlot>
       </BottomButtons>
     </Container>
   );

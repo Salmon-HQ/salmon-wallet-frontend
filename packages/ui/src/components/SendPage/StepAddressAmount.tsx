@@ -22,7 +22,6 @@ import {
   colors,
   spacing,
   componentSizes,
-  gradients,
   semantic,
   fontFamily,
   fontWeight,
@@ -33,7 +32,6 @@ import {
   borderRadius,
   borderWidth,
   fontSize,
-  shadowsCSS,
   lineHeight,
   opacity,
   duration,
@@ -43,6 +41,7 @@ import {
   tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import type { StepAddressAmountProps } from './types';
 
 // ============================================================================
@@ -249,14 +248,18 @@ const QuickFillButton = styled(ButtonBase)({
   },
 });
 
-/** Same shortcut affordance as Swap's quick-fill; same salmon ink, 6.07:1. */
+/**
+ * Same shortcut affordance as Swap's quick-fill; same salmon ink, 6.07:1.
+ * No transform: these are controls, and a control label is never uppercase —
+ * Swap's identical chip prints "Max", so uppercasing here made one shortcut
+ * read as two different things.
+ */
 const QuickFillText = styled(Typography)({
   ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
   color: semantic.text.accent,
-  textTransform: 'uppercase',
 });
 
 // USD Conversion
@@ -281,63 +284,13 @@ const BottomButtons = styled(Box)({
   gap: spacing.md,
 });
 
-const CancelButton = styled(ButtonBase)({
+// Layout only. Cancel used to paint its own bordered fill with an outer glow
+// and Review its own `gradients.primaryCSS` box at `borderRadius.lg` — a flat
+// rectangle where the shared button draws a flesh-textured pill, and a second
+// disabled treatment next to the button's own.
+const ButtonSlot = styled('div')({
   flex: 1,
-  height: componentSizes.buttonHeightMedium,
-  borderRadius: borderRadius.lg,
-  border: `${borderWidth.thin}px solid ${semantic.border.raised}`,
-  backgroundColor: colors.button.cancelBackground,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  boxShadow: shadowsCSS.button,
-  transition: `opacity ${duration.fast} ${easing.ease}`,
-  '&:hover': {
-    opacity: opacity.high,
-  },
 });
-
-const CancelButtonText = styled(Typography)({
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.semibold,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-});
-
-const ReviewButton = styled(ButtonBase)<{ disabled?: boolean }>(({ disabled }) => ({
-  flex: 1,
-  height: componentSizes.buttonHeightMedium,
-  borderRadius: borderRadius.lg,
-  overflow: 'hidden',
-  border: disabled
-    ? `${borderWidth.thin}px solid ${colors.border.default}`
-    : `${borderWidth.thin}px solid ${colors.accent.border}`,
-  opacity: disabled ? 0.5 : 1,
-  boxShadow: shadowsCSS.button,
-  transition: `opacity ${duration.fast} ${easing.ease}`,
-  cursor: disabled ? 'not-allowed' : 'pointer',
-  '&:hover': {
-    opacity: disabled ? 0.5 : 0.85,
-  },
-}));
-
-const ReviewButtonGradient = styled(Box)<{ $isDisabled?: boolean }>(({ $isDisabled }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: '100%',
-  height: '100%',
-  background: $isDisabled ? gradients.disabledCSS : gradients.primaryCSS,
-}));
-
-const ReviewButtonText = styled(Typography)<{ $isDisabled?: boolean }>(({ $isDisabled }) => ({
-  fontSize: fontSize.md,
-  fontWeight: fontWeight.extraBold,
-  fontFamily: fontFamily.sans,
-  // Salmon fill takes `neutral-1000` ink at 6.50:1 and nothing else; the
-  // disabled fill is `surface.crest`, which takes the disabled ink instead.
-  color: $isDisabled ? semantic.text.disabled : colors.button.primaryText,
-}));
 
 // Contact / Wallet sections
 const ContactSection = styled(Box)({
@@ -695,17 +648,27 @@ export function StepAddressAmount({
 
       {/* Bottom Buttons */}
       <BottomButtons>
-        <CancelButton onClick={onCancel} data-testid="send-cancel-button">
-          <CancelButtonText>{t('actions.cancel')}</CancelButtonText>
-        </CancelButton>
+        <ButtonSlot>
+          <SecondaryButton
+            onClick={onCancel}
+            testID="send-cancel-button"
+            // Height is the only legal override; the rest belongs to the button.
+            style={{ height: componentSizes.buttonHeightMedium }}
+          >
+            {t('actions.cancel')}
+          </SecondaryButton>
+        </ButtonSlot>
 
-        <ReviewButton onClick={handleReview} disabled={!isValid} data-testid="send-review-button">
-          <ReviewButtonGradient $isDisabled={!isValid}>
-            <ReviewButtonText $isDisabled={!isValid}>
-              {t('token.send.reviewAndSend')}
-            </ReviewButtonText>
-          </ReviewButtonGradient>
-        </ReviewButton>
+        <ButtonSlot>
+          <PrimaryButton
+            onClick={handleReview}
+            disabled={!isValid}
+            testID="send-review-button"
+            style={{ height: componentSizes.buttonHeightMedium, whiteSpace: 'nowrap' }}
+          >
+            {t('token.send.reviewAndSend')}
+          </PrimaryButton>
+        </ButtonSlot>
       </BottomButtons>
     </Container>
   );

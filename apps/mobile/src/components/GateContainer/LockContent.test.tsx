@@ -18,6 +18,25 @@ jest.mock('@salmon/assets', () => ({
   Logo: 1,
 }));
 
+// The action row is the shared PrimaryButton / SecondaryButton now, which
+// pulls Reanimated for its press motion. Jest has no native Worklets, so stand
+// the module up with the handful of primitives those buttons touch.
+jest.mock('react-native-reanimated', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: {
+      View,
+      createAnimatedComponent: (Component: unknown) => Component,
+    },
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: (fn: () => unknown) => fn(),
+    useReducedMotion: () => false,
+    withTiming: (toValue: unknown) => toValue,
+    Easing: { bezier: () => () => 0 },
+  };
+});
+
 jest.mock('expo-linear-gradient', () => ({
   LinearGradient: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
@@ -27,6 +46,15 @@ jest.mock('expo-status-bar', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // `usePressMotion` inside the shared buttons reads the motion vocabulary.
+  motionEasing: {
+    current: { native: [0.32, 0.72, 0, 1] },
+    settle: { native: [0.22, 1, 0.36, 1] },
+    sink: { native: [0.4, 0, 1, 1] },
+    swellIn: { native: [0.34, 1.2, 0.64, 1] },
+  },
+  motionMs: { flick: 90, feedbackHold: 1600 },
+  resolveMotionMs: (ms: number) => ms,
   // "Deep Water" semantic tokens. Components read these directly now; the
   // legacy `colors` map below still covers everything not yet migrated.
   semantic: {
@@ -53,16 +81,29 @@ jest.mock('@salmon/shared', () => ({
     status: { error: '#f00', warningBackground: '#332200', errorBackground: '#330000' },
     accent: { primary: '#0f0', border: '#0f0' },
     input: { border: '#444', background: '#111' },
-    button: { disabledOpacity: 0.5 },
+    button: { disabledOpacity: 0.5, primaryBackground: '#FF5C45', primaryText: '#070911' },
   },
-  componentSizes: { lockScreenLogoSize: 120, iconSize5XL: 56, iconSize4XL: 48 },
+  // Unlock is the shared PrimaryButton now, so this mock has to cover the
+  // tokens that button reads too.
+  componentSizes: {
+    lockScreenLogoSize: 120,
+    iconSize5XL: 56,
+    iconSize4XL: 48,
+    buttonHeight: 56,
+    buttonRadius: 28,
+    buttonFleshScale: 1,
+  },
+  shadowsCSS: { bezel: 'none' },
+  fleshTile: { width: 380, height: 40 },
+  fleshFades: [],
+  fleshTiledStrokes: [],
   fontFamilyNative: { bold: 'System', medium: 'System', regular: 'System' },
   fontSize: { sm: 14, md: 18, lg: 20, '2xl': 28 },
   gradients: {
     primary: { colors: ['#0f0', '#0c0'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } },
     disabled: { colors: ['#1B2233', '#1B2233'], start: { x: 0, y: 0 }, end: { x: 1, y: 0 } },
   },
-  letterSpacing: { balance: 1 },
+  letterSpacing: { balance: 1, widest: 1 },
   lineHeight: { normal: 1.4 },
   shadows: { button: {} },
   ms: (value: number) => value,

@@ -10,24 +10,19 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { FleshBackground } from '../FleshBackground';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
-  borderRadius,
-  borderWidth,
   colors,
   componentSizes,
   fontFamilyNative,
   fontSize,
-  gradients,
   ms,
   s,
   spacing,
   vs,
-  semantic,
 } from '@salmon/shared';
+import { PrimaryButton } from '../Button';
 
 export interface WalletInitErrorScreenProps {
   /** Re-runs wallet initialization. The gate stays up until it succeeds. */
@@ -53,30 +48,20 @@ export function WalletInitErrorScreen({ onRetry }: WalletInitErrorScreenProps): 
       <Text style={styles.body}>
         {t('wallet.init_failed_body', 'Your accounts and funds are safe. Please try again.')}
       </Text>
-      <TouchableOpacity
+      {/* The one action on this screen is the screen's committing action, so
+          it is the shared button: it used to be a hand-painted
+          `gradients.primary` box at `borderRadius.lg`, which made the only
+          button here the only button in the app without the flesh in it.
+          Height is the only override. */}
+      <PrimaryButton
         style={styles.retryButton}
         onPress={handleRetry}
+        loading={retrying}
         disabled={retrying}
-        activeOpacity={0.7}
         testID="wallet-init-retry"
       >
-        <LinearGradient
-          colors={[...gradients.primary.colors]}
-          style={styles.retryButtonGradient}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.4 }}
-        >
-          {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
-              fill. Every band is paler than the fill, so it can only raise the
-              luminance under the label. */}
-          <FleshBackground />
-          {retrying ? (
-            <ActivityIndicator size="small" color={semantic.accent.onFill} />
-          ) : (
-            <Text style={styles.retryButtonText}>{t('actions.retry', 'Retry').toUpperCase()}</Text>
-          )}
-        </LinearGradient>
-      </TouchableOpacity>
+        {t('actions.retry', 'Retry')}
+      </PrimaryButton>
     </View>
   );
 }
@@ -103,23 +88,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: vs(spacing['2xl']),
   },
+  // Size only. Radius, fill, border, bezel and material belong to the button.
   retryButton: {
-    minWidth: s(200),
     minHeight: vs(componentSizes.buttonHeightMedium),
-    borderRadius: ms(borderRadius.lg),
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.accent.fill,
-    overflow: 'hidden',
-  },
-  retryButtonGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  retryButtonText: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: ms(fontSize.sm),
-    color: semantic.accent.onFill,
+    height: vs(componentSizes.buttonHeightMedium),
   },
 });
 

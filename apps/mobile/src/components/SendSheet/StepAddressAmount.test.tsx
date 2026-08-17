@@ -17,6 +17,25 @@ jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
 }));
 
+// The action row is the shared PrimaryButton / SecondaryButton now, which
+// pulls Reanimated for its press motion. Jest has no native Worklets, so stand
+// the module up with the handful of primitives those buttons touch.
+jest.mock('react-native-reanimated', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: {
+      View,
+      createAnimatedComponent: (Component: unknown) => Component,
+    },
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: (fn: () => unknown) => fn(),
+    useReducedMotion: () => false,
+    withTiming: (toValue: unknown) => toValue,
+    Easing: { bezier: () => () => 0 },
+  };
+});
+
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (
@@ -34,6 +53,15 @@ jest.mock('expo-linear-gradient', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // `usePressMotion` inside the shared buttons reads the motion vocabulary.
+  motionEasing: {
+    current: { native: [0.32, 0.72, 0, 1] },
+    settle: { native: [0.22, 1, 0.36, 1] },
+    sink: { native: [0.4, 0, 1, 1] },
+    swellIn: { native: [0.34, 1.2, 0.64, 1] },
+  },
+  motionMs: { flick: 90, feedbackHold: 1600 },
+  resolveMotionMs: (ms: number) => ms,
   // "Deep Water" semantic tokens. Components read these directly now; the
   // legacy `colors` map below still covers everything not yet migrated.
   semantic: {
@@ -64,11 +92,26 @@ jest.mock('@salmon/shared', () => ({
     accent: { border: '#0f0' },
     text: { primary: '#fff', secondary: '#999' },
     status: { error: '#f00', warning: '#fc0', success: '#0f0' },
-    button: { secondaryBackground: '#222', cancelBackground: '#111' },
+    button: {
+      secondaryBackground: '#222',
+      cancelBackground: '#111',
+      primaryBackground: '#FF5C45',
+      primaryText: '#070911',
+      disabledOpacity: 0.5,
+    },
     background: { card: '#111', tertiary: '#333' },
     border: { default: '#444' },
   },
-  componentSizes: { buttonHeightMedium: 48 },
+  // The action row is the shared PrimaryButton / SecondaryButton now, so this
+  // mock has to cover the tokens those buttons read too.
+  componentSizes: {
+    buttonHeightMedium: 48,
+    buttonHeight: 56,
+    buttonRadius: 28,
+    buttonFleshScale: 1,
+  },
+  letterSpacing: { widest: 1 },
+  shadowsCSS: { bezel: 'none' },
   fontFamilyNative: { regular: 'System', medium: 'System', bold: 'System' },
   fontScaleCap: { chrome: 1.3, dense: 1.4 },
   fontSize: { xs: 12, sm: 14, base: 16, md: 18, xl: 24 },

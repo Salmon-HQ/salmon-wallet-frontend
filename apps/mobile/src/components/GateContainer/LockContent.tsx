@@ -14,9 +14,7 @@ import {
   colors,
   fontFamilyNative,
   fontSize,
-  gradients,
   letterSpacing,
-  shadows,
   lineHeight,
   ms,
   s,
@@ -28,12 +26,10 @@ import {
   semantic,
   useUnlockThrottle,
 } from '@salmon/shared';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
   Alert,
   AppState,
   Image,
@@ -49,7 +45,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FleshBackground } from '../FleshBackground';
+import { PrimaryButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import { WarningNotice } from '../WarningNotice';
 import type { BiometricConfig } from './types';
@@ -360,51 +356,23 @@ export function LockContent({
 
               {showPasswordFallback && (
                 <View style={styles.buttonSection}>
-                  <TouchableOpacity
+                  {/* The screen's committing action, so it is the shared
+                      button. It used to hand-roll the whole control — a
+                      gradient box at `borderRadius.xl` with its own border and
+                      glow, and its own disabled fill — which drew a second,
+                      squarer shape wherever the app's other primary actions
+                      draw a flesh-textured pill. The salmon never dims: the
+                      button's own disabled state swaps to `surface.crest` with
+                      disabled ink. Height is the only override. */}
+                  <PrimaryButton
                     testID="lock-unlock-button"
-                    accessibilityRole="button"
-                    accessibilityLabel={t('lock.unlock')}
-                    accessibilityState={{
-                      disabled: unlockDisabled,
-                      busy: isLoading,
-                    }}
                     onPress={handleUnlock}
                     disabled={unlockDisabled}
-                    activeOpacity={0.8}
-                    style={styles.buttonContainer}
+                    loading={isLoading}
+                    style={styles.button}
                   >
-                    {/* The salmon never dims: it is either alive or absent.
-                        Dimming the fill by opacity left near-black `onFill`
-                        ink on a muddy red, which is neither the live 6.50:1
-                        nor a legible disabled state. Disabled swaps the whole
-                        object to `surface.crest` with disabled ink instead. */}
-                    <LinearGradient
-                      colors={
-                        unlockDisabled
-                          ? [...gradients.disabled.colors]
-                          : [...gradients.primary.colors]
-                      }
-                      style={[styles.button, unlockDisabled && styles.buttonDisabled]}
-                      start={gradients.primary.start}
-                      end={gradients.primary.end}
-                    >
-                      {/* The flesh: the myosepta of a cut fillet, pressed into
-                          the salmon fill. Every band is paler than the fill,
-                          so it can only raise the luminance under the label —
-                          6.50:1 is a floor here, not a budget. Absent when the
-                          fill is absent. */}
-                      {!unlockDisabled && <FleshBackground />}
-                      {isLoading ? (
-                        <ActivityIndicator color={semantic.text.disabled} />
-                      ) : (
-                        <Text
-                          style={[styles.buttonText, unlockDisabled && styles.buttonTextDisabled]}
-                        >
-                          {t('lock.unlock')}
-                        </Text>
-                      )}
-                    </LinearGradient>
-                  </TouchableOpacity>
+                    {t('lock.unlock')}
+                  </PrimaryButton>
 
                   {canUseBiometric && (
                     <TouchableOpacity
@@ -515,33 +483,11 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: vs(spacing.lockScreenGap),
   },
-  buttonContainer: {
-    width: '100%',
-  },
+  // Size only. Radius, fill, border, bezel, material and the disabled
+  // treatment belong to the button.
   button: {
-    width: '100%',
     minHeight: vs(componentSizes.iconSize4XL),
-    paddingVertical: vs(spacing.sm),
-    borderRadius: borderRadius.xl,
-    // The flesh is drawn at absolute-fill; clip it to the button's own radius.
-    overflow: 'hidden',
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.accent.fill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.button,
-  },
-  buttonDisabled: {
-    borderColor: semantic.border.raised,
-  },
-  buttonTextDisabled: {
-    color: semantic.text.disabled,
-  },
-  buttonText: {
-    color: semantic.accent.onFill,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: ms(fontSize.md),
-    lineHeight: ms(16 * lineHeight.normal),
+    height: vs(componentSizes.iconSize4XL),
   },
   forgotPasswordContainer: {
     padding: s(spacing.md),

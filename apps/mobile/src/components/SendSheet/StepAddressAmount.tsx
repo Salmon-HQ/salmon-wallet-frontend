@@ -10,16 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { FleshBackground } from '../FleshBackground';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
-  gradients,
-  shadows,
   fontFamilyNative,
-  fontScaleCap,
   ms,
   vs,
   s,
@@ -31,13 +26,13 @@ import {
   borderRadius,
   borderWidth,
   spacing,
-  opacity,
   componentSizes,
   sanitizeDecimalInput,
   semantic,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BlurContainer } from '../BlurContainer';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import { TokenLogo } from '../TokenLogo';
 import { QRScanner } from '../QRScanner';
 import type { QRScanResult } from '../QRScanner';
@@ -364,48 +359,18 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
 
       {/* Bottom Buttons */}
       <View style={[styles.bottomButtons, { paddingBottom: actionRowBottomPadding }]}>
-        <TouchableOpacity
-          testID="send-cancel-button"
-          style={styles.cancelButton}
-          onPress={onCancel}
-          activeOpacity={0.7}
-        >
-          <Text
-            style={styles.cancelButtonText}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            maxFontSizeMultiplier={fontScaleCap.chrome}
-          >
-            {t('actions.cancel', 'Cancel')}
-          </Text>
-        </TouchableOpacity>
+        <SecondaryButton testID="send-cancel-button" style={styles.rowButton} onPress={onCancel}>
+          {t('actions.cancel', 'Cancel')}
+        </SecondaryButton>
 
-        <TouchableOpacity
+        <PrimaryButton
           testID="send-review-button"
-          style={[styles.reviewButton, !isValid && styles.reviewButtonDisabled]}
+          style={styles.rowButton}
           onPress={handleReview}
-          activeOpacity={0.7}
           disabled={!isValid}
         >
-          <LinearGradient
-            colors={isValid ? [...gradients.primary.colors] : [...gradients.disabled.colors]}
-            style={styles.reviewButtonGradient}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.4 }}
-          >
-            {/* The flesh: only while the fill is salmon. The salmon is either
-                alive or absent, and so is the flesh inside it. */}
-            {isValid && <FleshBackground />}
-            <Text
-              style={[styles.reviewButtonText, !isValid && styles.reviewButtonTextDisabled]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              maxFontSizeMultiplier={fontScaleCap.chrome}
-            >
-              {t('token.send.reviewAndSend', 'Review & Send')}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
+          {t('token.send.reviewAndSend', 'Review & Send')}
+        </PrimaryButton>
       </View>
 
       <QRScanner
@@ -598,11 +563,11 @@ const styles = StyleSheet.create({
   },
   quickFillText: {
     // A shortcut you can act on, so it takes salmon ink at 6.07:1. The amount
-    // it fills stays neutral.
+    // it fills stays neutral. No transform: these are controls, and a control
+    // label is never uppercase — Swap's identical chip prints "Max".
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.bold,
     color: semantic.text.accent,
-    textTransform: 'uppercase',
   },
   // USD
   usdConversion: {
@@ -619,50 +584,14 @@ const styles = StyleSheet.create({
     paddingTop: vs(spacing.md),
     gap: s(spacing.md),
   },
-  cancelButton: {
+  // Size only. Radius, fill, border, bezel, material and the disabled
+  // treatment belong to the button: this row used to paint a bordered cancel
+  // fill and a `gradients.primary` box at `borderRadius.lg`, plus its own
+  // opacity-dimmed disabled state on top of the button's own.
+  rowButton: {
     flex: 1,
     minHeight: vs(componentSizes.buttonHeightMedium),
-    borderRadius: ms(borderRadius.lg),
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.border.raised,
-    backgroundColor: colors.button.cancelBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.button,
-  },
-  cancelButtonText: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
-  },
-  reviewButton: {
-    flex: 1,
-    minHeight: vs(componentSizes.buttonHeightMedium),
-    borderRadius: ms(borderRadius.lg),
-    overflow: 'hidden',
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.accent.fill,
-    ...shadows.button,
-  },
-  reviewButtonDisabled: {
-    opacity: opacity.disabled,
-    borderColor: colors.border.default,
-  },
-  reviewButtonGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: s(spacing.sm),
-  },
-  reviewButtonText: {
-    fontSize: ms(fontSize.md),
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.accent.onFill,
-  },
-  // The fill swaps to `gradients.disabled` (neutral-925) when the form is
-  // invalid, so the ink has to swap with it.
-  reviewButtonTextDisabled: {
-    color: semantic.text.disabled,
+    height: vs(componentSizes.buttonHeightMedium),
   },
 });
 
