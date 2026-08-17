@@ -63,6 +63,13 @@ export {
   markAspectRatio,
   markPaths,
   markToSvg,
+  wordmarkViewBox,
+  wordmarkViewBoxAttr,
+  wordmarkAspectRatio,
+  wordmarkPaths,
+  wordmarkText,
+  wordmarkTypeface,
+  wordmarkToSvg,
 } from './brand';
 
 // Flesh geometry — the myoseptal texture as path data both platforms draw.

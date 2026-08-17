@@ -75,23 +75,26 @@ export function HoldToApproveButton({
 
   useEffect(() => stop, [stop]);
 
-  const tick = useCallback(() => {
-    if (startedAt.current === null) return;
-    const elapsed = performance.now() - startedAt.current;
-    if (elapsed >= HOLD_MS) {
-      stop();
-      void onApprove();
-      return;
-    }
-    setProgress(elapsed / HOLD_MS);
-    frame.current = requestAnimationFrame(tick);
-  }, [onApprove, stop]);
-
   const start = useCallback(() => {
     if (disabled || loading || startedAt.current !== null) return;
-    startedAt.current = performance.now();
-    frame.current = requestAnimationFrame(tick);
-  }, [disabled, loading, tick]);
+    const began = performance.now();
+    startedAt.current = began;
+
+    // Declared inside the hold it belongs to: the loop closes over this hold's
+    // own start time, so it needs nothing from the render that scheduled it.
+    function step() {
+      const elapsed = performance.now() - began;
+      if (elapsed >= HOLD_MS) {
+        stop();
+        void onApprove();
+        return;
+      }
+      setProgress(elapsed / HOLD_MS);
+      frame.current = requestAnimationFrame(step);
+    }
+
+    frame.current = requestAnimationFrame(step);
+  }, [disabled, loading, onApprove, stop]);
 
   // A pointer click is swallowed here, in the capture phase, so it never
   // reaches the button: with a pointer the hold is the only way through. A

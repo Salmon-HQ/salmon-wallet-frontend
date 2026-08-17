@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { markAspectRatio, markPaths, markToSvg, markViewBox, markViewBoxAttr } from './brand';
+import {
+  markAspectRatio,
+  markPaths,
+  markToSvg,
+  markViewBox,
+  markViewBoxAttr,
+  wordmarkAspectRatio,
+  wordmarkPaths,
+  wordmarkText,
+  wordmarkToSvg,
+  wordmarkTypeface,
+  wordmarkViewBox,
+  wordmarkViewBoxAttr,
+} from './brand';
 
 describe('brand mark geometry', () => {
   it('keeps the authored artboard', () => {
@@ -40,5 +53,45 @@ describe('markToSvg', () => {
   it('applies the requested fill to every path', () => {
     const svg = markToSvg('#070911');
     expect(svg.match(/fill="#070911"/g)).toHaveLength(markPaths.length);
+  });
+});
+
+describe('wordmark', () => {
+  it('is the word the product is called, in the interface typeface', () => {
+    expect(wordmarkText).toBe('Salmon');
+    expect(wordmarkTypeface).toBe('Geist-Bold');
+  });
+
+  it('has one path per glyph', () => {
+    expect(wordmarkPaths).toHaveLength(wordmarkText.length);
+  });
+
+  it('carries no baked-in fill, so the logotype stays tintable', () => {
+    for (const d of wordmarkPaths) {
+      expect(d).not.toContain('#');
+    }
+  });
+
+  it('is already flipped into SVG space, so no transform has to survive', () => {
+    // Font space puts y up and SVG puts it down. The flip is baked into the
+    // path data, which is why the viewBox origin is negative and the glyph
+    // coordinates are too.
+    const [minX, minY, width, height] = wordmarkViewBoxAttr.split(' ').map(Number);
+    expect(minX).toBe(0);
+    expect(minY).toBeLessThan(0);
+    expect(width).toBe(wordmarkViewBox.width);
+    expect(height).toBe(wordmarkViewBox.height);
+  });
+
+  it('derives height from width so the logotype is never stretched', () => {
+    const svg = wordmarkToSvg('#FF5C45', 600);
+    expect(svg).toContain('width="600"');
+    expect(svg).toContain(`height="${Math.round(600 / wordmarkAspectRatio)}"`);
+    expect(svg).toContain(`viewBox="${wordmarkViewBoxAttr}"`);
+  });
+
+  it('applies the requested fill to every glyph', () => {
+    const svg = wordmarkToSvg('#EDF1F7');
+    expect(svg.match(/fill="#EDF1F7"/g)).toHaveLength(wordmarkPaths.length);
   });
 });

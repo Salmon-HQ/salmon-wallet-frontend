@@ -96,45 +96,51 @@ export const getSolanaSignatureOutcomes: SignatureOutcomeLookup = async (
     return outcomes;
   }
 
-  const batch = queries.slice(0, MAX_SIGNATURES_PER_CALL);
-  // One entry old enough to have fallen out of the recent-status cache forces
-  // the ledger search for the whole batch — the batch is tiny, and a wrong
-  // `null` is what produces a false "expired".
-  const searchTransactionHistory = batch.some(
-    (q) => now - q.submittedAt > RECENT_STATUS_CACHE_WINDOW_MS
-  );
-
   const rpc = createSolanaRpc(nodeUrl);
-  const { value } = await rpc
-    .getSignatureStatuses(
-      batch.map((q) => toSignature(q.signature)),
-      { searchTransactionHistory }
-    )
-    .send();
 
-  batch.forEach((q, index) => {
-    const status = value[index];
-    if (status) {
-      if (status.err) {
-        outcomes[q.signature] = 'failed';
-      } else if (
-        status.confirmationStatus === 'confirmed' ||
-        status.confirmationStatus === 'finalized'
-      ) {
-        outcomes[q.signature] = 'confirmed';
-      } else {
-        // 'processed' — seen by a node, not yet voted on. Still in flight.
-        outcomes[q.signature] = 'pending';
+  // Chunked rather than truncated: a signature the poller silently dropped is
+  // one the user is never told the outcome of, which is the failure this whole
+  // module exists to prevent. In practice the set is one or two entries.
+  for (let start = 0; start < queries.length; start += MAX_SIGNATURES_PER_CALL) {
+    const batch = queries.slice(start, start + MAX_SIGNATURES_PER_CALL);
+    // One entry old enough to have fallen out of the recent-status cache forces
+    // the ledger search for the whole batch — the batch is tiny, and a wrong
+    // `null` is what produces a false "expired".
+    const searchTransactionHistory = batch.some(
+      (q) => now - q.submittedAt > RECENT_STATUS_CACHE_WINDOW_MS
+    );
+
+    const { value } = await rpc
+      .getSignatureStatuses(
+        batch.map((q) => toSignature(q.signature)),
+        { searchTransactionHistory }
+      )
+      .send();
+
+    batch.forEach((q, index) => {
+      const status = value[index];
+      if (status) {
+        if (status.err) {
+          outcomes[q.signature] = 'failed';
+        } else if (
+          status.confirmationStatus === 'confirmed' ||
+          status.confirmationStatus === 'finalized'
+        ) {
+          outcomes[q.signature] = 'confirmed';
+        } else {
+          // 'processed' — seen by a node, not yet voted on. Still in flight.
+          outcomes[q.signature] = 'pending';
+        }
+        return;
       }
-      return;
-    }
-    // Unknown to the cluster. Only terminal once the blockhash window has
-    // closed *and* the ledger itself was searched.
-    outcomes[q.signature] =
-      searchTransactionHistory && now - q.submittedAt > BLOCKHASH_EXPIRY_CEILING_MS
-        ? 'expired'
-        : 'pending';
-  });
+      // Unknown to the cluster. Only terminal once the blockhash window has
+      // closed *and* the ledger itself was searched.
+      outcomes[q.signature] =
+        searchTransactionHistory && now - q.submittedAt > BLOCKHASH_EXPIRY_CEILING_MS
+          ? 'expired'
+          : 'pending';
+    });
+  }
 
   return outcomes;
 };
