@@ -60,9 +60,11 @@ export function usePendingActivity(): UsePendingActivityResult {
         dismissible: true,
       })),
       // A bridge is only ever listed while it is unresolved: the settlement
-      // provider removes it the moment StealthEX reports an outcome. The
-      // exchange id is the detail on purpose — it is the only reference number
-      // a user could ever quote to support.
+      // provider removes it the moment StealthEX reports an outcome, and drops
+      // it once it has gone a day without reaching one — an order whose deposit
+      // never left must not sit here claiming to be in flight. The exchange id
+      // is the detail on purpose — it is the only reference number a user could
+      // ever quote to support.
       ...(exchanges ?? []).map((ex) => ({
         id: ex.id,
         kind: 'bridge' as const,
