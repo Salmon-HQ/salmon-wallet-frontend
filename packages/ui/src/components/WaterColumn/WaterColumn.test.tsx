@@ -74,6 +74,19 @@ describe('the surfaces the water column must never reach', () => {
   });
 
   it.each([
+    ['a card in a grid', '../NftCard/NftCardSkeleton.tsx'],
+    ['a carousel in a page', '../NftCarouselSection/NftCarouselSectionSkeleton.tsx'],
+    ['a row in a list', '../DerivedAccountCard/DerivedAccountCardSkeleton.tsx'],
+  ])('leaves the skeleton of %s plain, because a skeleton is content', (_name, path) => {
+    // The rule that decides this is not "does it spin" but "is it the ground".
+    // A full-screen wait is a ground and takes the column; a skeleton stands
+    // *on* the ground in the shape of the thing it is waiting for, and a
+    // second field inside it would be the wallpaper use this direction
+    // refuses — the same argument that took the field out of the balance card.
+    expect(read(path)).not.toContain('WaterColumn');
+  });
+
+  it.each([
     ['the approval views', '../DAppApproval'],
     ['the sheet chrome', '../BaseSheetDialog'],
   ])('mounts no field on %s', (_name, dir) => {

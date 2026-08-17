@@ -37,6 +37,8 @@ import {
 
 import { LoadingScreenProps } from './types';
 import { curve, timing } from '../../utils/motion';
+import { DepthBackground } from '../DepthBackground';
+import { ScalesBackground } from '../ScalesBackground';
 
 // ============================================================================
 // Component
@@ -188,6 +190,13 @@ export function LoadingScreen({
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
       >
+        {/* A wait is a screen, and a screen is water — the same pair the tab
+            ground and the auth stack mount, over this overlay's own flat
+            gradient rather than instead of it, so the wait keeps the exact
+            enter and exit it had. Nothing below is redrawn. */}
+        <DepthBackground />
+        <ScalesBackground variant="deepField" />
+
         <View style={styles.content}>
           {/* Title */}
           {title && <Text style={styles.title}>{title}</Text>}

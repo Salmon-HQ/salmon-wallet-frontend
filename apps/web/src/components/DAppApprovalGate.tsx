@@ -124,7 +124,10 @@ export function DAppApprovalGate(): React.ReactElement {
   );
 
   if (!state.ready) {
-    return <LoadingScreen visible />;
+    // Every other wait in the app stands in the water; this one does not.
+    // It is the first frame of the dApp approval flow, and the Bedrock Rule
+    // covers the whole flow rather than only the screen with the button on it.
+    return <LoadingScreen visible bedrock />;
   }
 
   if (state.accounts.length === 0) {

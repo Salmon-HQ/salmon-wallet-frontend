@@ -10,7 +10,7 @@ import {
   type TrustedApp,
 } from '@salmon/shared';
 import { getActiveSolanaApprovalAccount } from '@salmon/shared/utils/account';
-import { WalletInitErrorScreen } from '@salmon/ui';
+import { WalletInitErrorScreen, WaterColumn, waterColumnHost } from '@salmon/ui';
 import { LockPage } from '../../pages/lock/LockPage';
 import { HomePage } from '../../pages/home/HomePage';
 import {
@@ -54,6 +54,12 @@ interface AuthData {
 function LoadingSpinner() {
   return (
     <div style={styles.loadingContainer}>
+      {/* The extension's very first frame. It is the one full-screen wait in
+          the app that does not go through the shared `LoadingScreen`, which is
+          why the ground has to be named here a second time rather than
+          inherited — the duplication is the bug, and it is not this change's
+          to fix. */}
+      <WaterColumn />
       <div style={styles.spinner} />
     </div>
   );
@@ -556,6 +562,7 @@ function App() {
 
 const styles: Record<string, React.CSSProperties> = {
   loadingContainer: {
+    ...waterColumnHost,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

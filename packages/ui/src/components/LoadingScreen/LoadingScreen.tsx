@@ -26,6 +26,7 @@ import {
   durationMs,
   easing,
 } from '@salmon/shared';
+import { WaterColumn, waterColumnHost } from '../WaterColumn';
 import type { LoadingScreenProps } from './types';
 
 // ============================================================================
@@ -57,6 +58,10 @@ const fadeOutKeyframes = keyframes`
 // ============================================================================
 
 const Overlay = styled('div')<{ $isFadingOut: boolean }>(({ $isFadingOut }) => ({
+  ...waterColumnHost,
+  // `fixed` rather than the host's `relative`: this overlay covers the viewport
+  // rather than its parent. It is still a containing block, and `isolation`
+  // still gives the stacking context the ground's negative layer needs.
   position: 'fixed',
   top: 0,
   left: 0,
@@ -189,6 +194,7 @@ export const LoadingScreen = memo(function LoadingScreen({
   showTips = true,
   logoSize = 100,
   spinnerSize = 140,
+  bedrock = false,
 }: LoadingScreenProps) {
   const { t } = useTranslation();
 
@@ -236,6 +242,14 @@ export const LoadingScreen = memo(function LoadingScreen({
 
   return (
     <Overlay $isFadingOut={isFadingOut}>
+      {/* A wait is a screen like any other, and a screen is water. This one is
+          the seam the ground has to close: the wait before a swap confirms is
+          followed immediately by the receipt, which stands in the column, and
+          two grounds one behind the other in the same second reads as two
+          apps. Nothing here is redrawn — the spinner, the logo and the tips
+          are exactly what they were; only what they stand in has changed. */}
+      {!bedrock && <WaterColumn />}
+
       <Content>
         {title && <Title>{title}</Title>}
         {subtitle && <Subtitle>{subtitle}</Subtitle>}
