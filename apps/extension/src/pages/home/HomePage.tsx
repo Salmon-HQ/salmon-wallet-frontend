@@ -66,11 +66,7 @@ import {
   BalanceCardCarousel,
   ActionButtonRow,
   TokenList,
-  TokenListItem,
-  TokenListSkeleton,
-  PriceChart,
-  TokenMarketData,
-  TokenAbout,
+  TokenDetailContent,
   TokenDetailPage,
   NftDetailPage,
   NftSeeAllPage,
@@ -954,7 +950,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const {
     coinInfo: bitcoinCoinInfo,
     chartData: bitcoinChartDataRaw,
-    loading: bitcoinDataLoading,
+    infoLoading: bitcoinInfoLoading,
+    chartLoading: bitcoinChartLoading,
+    chartPending: bitcoinChartPending,
     error: bitcoinDataError,
   } = useCoinMarketData({
     coinId: bitcoinCoinId,
@@ -989,10 +987,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     };
   }, [bitcoinCoinInfo]);
 
-  const handleChartPeriodChange = useCallback((period: PriceChartPeriod) => {
-    setBitcoinChartPeriod(period);
-  }, []);
-
   // Selected token chart + coin info via shared React Query hook.
   // Tokens without a coingeckoId fall back to the contract-address chart
   // endpoint via their mint (handled inside the hook/service).
@@ -1000,7 +994,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const {
     coinInfo: selectedTokenCoinInfo,
     chartData: selectedTokenChartDataRaw,
-    loading: selectedTokenLoading,
+    infoLoading: selectedTokenInfoLoading,
+    chartLoading: selectedTokenChartLoading,
+    chartPending: selectedTokenChartPending,
     error: selectedTokenError,
   } = useCoinMarketData({
     coinId: selectedTokenCoinId,
@@ -1252,7 +1248,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               onChartPeriodChange={handleSelectedTokenChartPeriodChange}
               coinInfo={selectedTokenCoinInfo}
               marketData={selectedTokenMarketData}
-              loading={selectedTokenLoading && selectedTokenChartData.length === 0}
+              chartLoading={selectedTokenChartLoading && selectedTokenChartData.length === 0}
+              chartPending={selectedTokenChartPending}
+              infoLoading={selectedTokenInfoLoading && !selectedTokenCoinInfo}
               chartError={!!selectedTokenError && selectedTokenChartData.length === 0}
               onBack={handleTokenDetailBack}
             />
@@ -1463,37 +1461,24 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                 <TopListFade ref={topFadeRef} />
                 {currentBlockchain === 'bitcoin' ? (
                   <TokenSection onScroll={handleTokenListScroll}>
-                    <PriceChart
-                      data={bitcoinChartData}
-                      selectedPeriod={bitcoinChartPeriod}
-                      onPeriodChange={handleChartPeriodChange}
-                      loading={bitcoinDataLoading && bitcoinChartData.length === 0}
-                      error={!!bitcoinDataError && bitcoinChartData.length === 0}
-                      height={180}
-                      style={{ marginLeft: -spacing.lg, marginRight: -spacing.lg }}
-                    />
-                    {!hasData ? (
-                      <TokenListSkeleton count={1} />
-                    ) : (
-                      bitcoinToken && (
-                        <TokenListItem
-                          token={bitcoinToken}
-                          hiddenBalance={hiddenBalance}
-                          blockchain="bitcoin"
-                        />
-                      )
-                    )}
-                    <TokenMarketData
-                      data={bitcoinMarketData}
-                      symbol="BTC"
-                      loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                      style={{ marginTop: spacing.md }}
-                    />
-                    <TokenAbout
-                      description={bitcoinCoinInfo?.description}
-                      loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                      maxLines={4}
-                      style={{ marginTop: spacing.md }}
+                    {/* Bitcoin's home tab *is* the token detail screen — the
+                        same composition the pushed page renders, minus the
+                        push. It shares that component so the two cannot drift
+                        into different spacing, titles or chart heights again. */}
+                    <TokenDetailContent
+                      token={hasData ? bitcoinToken : undefined}
+                      blockchain="bitcoin"
+                      hiddenBalance={hiddenBalance}
+                      chartData={bitcoinChartData}
+                      chartPeriod={bitcoinChartPeriod}
+                      onChartPeriodChange={setBitcoinChartPeriod}
+                      chartLoading={bitcoinChartLoading && bitcoinChartData.length === 0}
+                      chartPending={bitcoinChartPending}
+                      chartError={!!bitcoinDataError && bitcoinChartData.length === 0}
+                      coinInfo={bitcoinCoinInfo}
+                      marketData={bitcoinMarketData}
+                      infoLoading={bitcoinInfoLoading && !bitcoinCoinInfo}
+                      bleed={spacing.lg}
                     />
                   </TokenSection>
                 ) : (

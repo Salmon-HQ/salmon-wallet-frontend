@@ -1,4 +1,10 @@
 export { TokenDetailPage } from './TokenDetailPage';
+export { TokenDetailContent } from './TokenDetailContent';
 export { TokenBadgesSection } from './TokenBadgesSection';
 
-export type { TokenDetailPageProps, TokenBadgesSectionProps, CoinInfo } from './types';
+export type {
+  TokenDetailPageProps,
+  TokenDetailContentProps,
+  TokenBadgesSectionProps,
+  CoinInfo,
+} from './types';

@@ -132,7 +132,10 @@ export function TokenMarketData({
 }: TokenMarketDataProps) {
   const { t } = useTranslation();
   const [, { formatLarge }] = useCurrencyContext();
-  const displayTitle = title ?? t('token.marketData.marketCap', 'Info');
+  // The section holds rank, volume, highs and supply — market cap is one row
+  // in it, not its name. The fallback used to point at the `marketCap` key,
+  // which is how the Bitcoin screen ended up titled "Capitalización".
+  const displayTitle = title ?? t('token.marketData.title', 'Market data');
 
   if (loading) {
     return (

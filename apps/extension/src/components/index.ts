@@ -32,6 +32,7 @@ export {
   SupportSelector,
   SwapScreen,
   TokenAbout,
+  TokenDetailContent,
   TokenDetailPage,
   TokenList,
   TokenListItem,

@@ -54,11 +54,7 @@ import {
   BalanceCardCarousel,
   ActionButtonRow,
   TokenList,
-  TokenListItem,
-  TokenListSkeleton,
-  PriceChart,
-  TokenMarketData,
-  TokenAbout,
+  TokenDetailContent,
   DepthBackground,
   ScalesBackground,
   ReceiveSheet,
@@ -526,7 +522,9 @@ export function HomePage(): React.ReactElement {
   const {
     coinInfo: bitcoinCoinInfo,
     chartData: bitcoinChartDataRaw,
-    loading: bitcoinDataLoading,
+    infoLoading: bitcoinInfoLoading,
+    chartLoading: bitcoinChartLoading,
+    chartPending: bitcoinChartPending,
     error: bitcoinDataError,
   } = useCoinMarketData({
     coinId: bitcoinCoinId,
@@ -984,37 +982,24 @@ export function HomePage(): React.ReactElement {
                 <TopListFade ref={topFadeRef} />
                 {currentBlockchain === 'bitcoin' ? (
                   <TokenSection onScroll={handleTokenListScroll}>
-                    <PriceChart
-                      data={bitcoinChartData}
-                      selectedPeriod={bitcoinChartPeriod}
-                      onPeriodChange={setBitcoinChartPeriod}
-                      loading={bitcoinDataLoading && bitcoinChartData.length === 0}
-                      error={!!bitcoinDataError && bitcoinChartData.length === 0}
-                      height={180}
-                      style={{ marginLeft: -spacing.lg, marginRight: -spacing.lg }}
-                    />
-                    {!hasData ? (
-                      <TokenListSkeleton count={1} />
-                    ) : (
-                      bitcoinToken && (
-                        <TokenListItem
-                          token={bitcoinToken}
-                          hiddenBalance={hiddenBalance}
-                          blockchain="bitcoin"
-                        />
-                      )
-                    )}
-                    <TokenMarketData
-                      data={bitcoinMarketData}
-                      symbol="BTC"
-                      loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                      style={{ marginTop: spacing.md }}
-                    />
-                    <TokenAbout
-                      description={bitcoinCoinInfo?.description}
-                      loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                      maxLines={4}
-                      style={{ marginTop: spacing.md }}
+                    {/* Bitcoin's home tab *is* the token detail screen — the
+                        same composition the pushed page renders, minus the
+                        push. It shares that component so the two cannot drift
+                        into different spacing, titles or chart heights again. */}
+                    <TokenDetailContent
+                      token={hasData ? bitcoinToken : undefined}
+                      blockchain="bitcoin"
+                      hiddenBalance={hiddenBalance}
+                      chartData={bitcoinChartData}
+                      chartPeriod={bitcoinChartPeriod}
+                      onChartPeriodChange={setBitcoinChartPeriod}
+                      chartLoading={bitcoinChartLoading && bitcoinChartData.length === 0}
+                      chartPending={bitcoinChartPending}
+                      chartError={!!bitcoinDataError && bitcoinChartData.length === 0}
+                      coinInfo={bitcoinCoinInfo}
+                      marketData={bitcoinMarketData}
+                      infoLoading={bitcoinInfoLoading && !bitcoinCoinInfo}
+                      bleed={spacing.lg}
                     />
                   </TokenSection>
                 ) : (
