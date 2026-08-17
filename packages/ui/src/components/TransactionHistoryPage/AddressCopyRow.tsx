@@ -130,9 +130,13 @@ export function AddressCopyRow({
           <CopyButton
             onClick={handleCopy}
             size="small"
-            aria-label={t('transactions.detail.copyAddressLabel', 'Copy {{label}} address', {
-              label,
-            })}
+            aria-label={
+              copied
+                ? t('actions.copied')
+                : t('transactions.detail.copyAddressLabel', 'Copy {{label}} address', {
+                    label,
+                  })
+            }
             data-testid={`tx-detail-copy-address-${label}`}
             sx={copied ? { backgroundColor: `${colors.status.success}20` } : undefined}
           >

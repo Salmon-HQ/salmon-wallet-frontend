@@ -196,7 +196,11 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
             onPress={handleCopyAddress}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel={t('accessibility.copy_contract_address', 'Copy contract address')}
+            accessibilityLabel={
+              copied
+                ? t('actions.copied')
+                : t('accessibility.copy_contract_address', 'Copy contract address')
+            }
           >
             <Text style={styles.contractAddress}>{getShortAddress(contractAddress, 6) ?? ''}</Text>
             <View style={styles.copyButton}>

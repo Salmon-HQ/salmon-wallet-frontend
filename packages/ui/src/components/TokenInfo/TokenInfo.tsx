@@ -337,7 +337,11 @@ export function TokenInfo({
           <ContractRow
             onClick={handleCopyAddress}
             role="button"
-            aria-label={t('accessibility.copy_contract_address', 'Copy contract address')}
+            aria-label={
+              copied
+                ? t('actions.copied')
+                : t('accessibility.copy_contract_address', 'Copy contract address')
+            }
           >
             <ContractAddress>{getShortAddress(contractAddress, 6)}</ContractAddress>
             <CopyButton>

@@ -136,8 +136,12 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
           style={[styles.copyButton, copied && styles.copyButtonCopied]}
           activeOpacity={0.6}
           accessibilityRole="button"
-          accessibilityLabel={t('transactions.detail.copyAddressLabel', { label })}
-          accessibilityHint={t('transactions.detail.copyAddressHint')}
+          accessibilityLabel={
+            copied
+              ? t('actions.copied')
+              : t('transactions.detail.copyAddressLabel', { label })
+          }
+          accessibilityHint={copied ? undefined : t('transactions.detail.copyAddressHint')}
         >
           <Ionicons
             name={copied ? 'checkmark' : 'copy-outline'}

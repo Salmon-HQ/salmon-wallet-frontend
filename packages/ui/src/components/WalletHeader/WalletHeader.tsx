@@ -190,7 +190,11 @@ export function WalletHeader({
       <AccountInfo
         onClick={handleCopyPress}
         role="button"
-        aria-label={t('accessibility.copy_address', { address: truncatedAddress })}
+        aria-label={
+          copied
+            ? t('actions.copied')
+            : t('accessibility.copy_address', { address: truncatedAddress })
+        }
         data-testid="wallet-header-copy-address"
       >
         {/* Avatar */}
