@@ -12,15 +12,10 @@ import Typography from '@mui/material/Typography';
 import {
   colors,
   spacing,
-  borderRadius,
   fontFamily,
   fontWeight,
   fontSize,
-  shadowsCSS,
   componentSizes,
-  borderWidth,
-  duration,
-  easing,
 } from '@salmon/shared';
 import { SwapAmountInput } from './SwapAmountInput';
 import { PrimaryButton } from '../Button';
@@ -79,19 +74,14 @@ const DisclaimerText = styled(Typography)({
   marginTop: spacing.xs,
 });
 
-const ReviewButtonWrapper = styled('div')<{ $canReview: boolean }>(({ $canReview }) => ({
-  borderRadius: borderRadius.lg,
-  border: `${borderWidth.thick}px solid ${$canReview ? 'transparent' : 'transparent'}`,
-  boxShadow: shadowsCSS.button,
-  background: $canReview ? colors.button.primaryBackground : colors.button.inactiveBackground,
+// Layout only. It used to paint its own salmon fill behind the button, from
+// when the button was a flat colour and the two were indistinguishable. The
+// primary button now paints itself — fill, flesh and bezel — so a second fill
+// behind it showed up as a duplicate button peeking out from under the first,
+// offset by the wrapper's own border and radius.
+const ReviewButtonWrapper = styled('div')({
   minWidth: componentSizes.copyButtonWidth,
-  transition: `border-color ${duration.normal} ${easing.ease}`,
-  ...($canReview && {
-    '&:hover': {
-      borderColor: colors.accent.primary,
-    },
-  }),
-}));
+});
 
 // ============================================================================
 // SwapInputScreen Component
@@ -169,7 +159,7 @@ export function SwapInputScreen({
 
       {/* Review Button */}
       <ButtonContainer>
-        <ReviewButtonWrapper $canReview={canReview}>
+        <ReviewButtonWrapper>
           <PrimaryButton
             onClick={onReview}
             disabled={!canReview}

@@ -6,8 +6,6 @@ import {
   colors,
   spacing,
   borderRadius,
-  gradients,
-  shadowsCSS,
   componentSizes,
   borderWidth,
 } from '@salmon/shared';
@@ -29,12 +27,11 @@ const BackButtonWrapper = styled('div')({
   flex: 1,
 });
 
+// Layout only — see the note on ReviewButtonWrapper in SwapInputScreen. This
+// one painted a gradient the button was then made transparent to reveal; the
+// button owns its own fill now.
 const ConfirmButtonGradient = styled('div')({
   flex: 1,
-  borderRadius: borderRadius.lg,
-  border: `${borderWidth.accent}px solid ${colors.accent.border}`,
-  boxShadow: shadowsCSS.button,
-  background: gradients.primaryCSS,
 });
 
 // ============================================================================
@@ -78,7 +75,6 @@ export function SwapReviewButtons({
           testID="swap-confirm-button"
           style={{
             height: componentSizes.buttonHeightCompact,
-            background: 'transparent',
             whiteSpace: 'nowrap',
           }}
         >
