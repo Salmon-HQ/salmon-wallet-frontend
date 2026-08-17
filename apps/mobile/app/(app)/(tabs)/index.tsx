@@ -919,6 +919,7 @@ export default function HomeScreen() {
         visible={receiveSheetVisible}
         onClose={handleReceiveSheetClose}
         address={address}
+        blockchain={getBlockchainFromNetworkId(currentBlockchain)}
         onCopy={handleReceiveSheetCopy}
       />
 

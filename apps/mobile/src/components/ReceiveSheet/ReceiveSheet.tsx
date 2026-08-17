@@ -1,6 +1,7 @@
 import {
   colors,
   fontSize,
+  getChainDisplayName,
   letterSpacing,
   spacing,
   borderRadius,
@@ -28,6 +29,7 @@ import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { FleshBackground } from '../FleshBackground';
+import { WarningNotice } from '../WarningNotice';
 import { ContentCopySvgIcon } from '../Icon/SvgIcons';
 import QRCode from '../QRCode';
 import type { ReceiveSheetProps } from './types';
@@ -61,6 +63,7 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
   visible,
   onClose,
   address,
+  blockchain,
   onCopy,
   style,
 }) => {
@@ -92,6 +95,11 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
 
   const title = <Text style={styles.title}>{t('token.receive.title')}</Text>;
 
+  // A deposit made on the wrong chain is gone for good, so the chain is named
+  // twice: an opaque badge with a label (never a tint — DESIGN.md) and a
+  // warning that says what "wrong network" costs.
+  const chainName = getChainDisplayName(blockchain);
+
   return (
     <BottomSheetContainer
       visible={visible}
@@ -102,6 +110,14 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
     >
       {/* Content */}
       <View style={[styles.content, { paddingBottom: spaciousContentBottomPadding }]}>
+        {/* Chain badge — opaque fill and a written label, so it survives a
+            colorblind reader, a narrow column and a screenshot. */}
+        <View style={styles.chainBadge} testID="receive-chain-badge">
+          <Text style={styles.chainBadgeText}>
+            {t('token.send.blockchainAddress', { blockchain: chainName })}
+          </Text>
+        </View>
+
         {/* QR Code Container */}
         <View style={styles.qrContainer} testID="receive-qr-code">
           {/* The QR is data, not an accent. Painting it salmon put two warm
@@ -120,6 +136,15 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
         <Text style={styles.address} selectable testID="receive-address">
           {address}
         </Text>
+
+        {/* Wrong-network deposits are unrecoverable, so say so here rather
+            than leaving the chain to be inferred from the address format. */}
+        <WarningNotice
+          tone="warning"
+          title={t('token.receive.networkOnlyTitle', { chain: chainName })}
+        >
+          {t('token.receive.networkOnlyBody', { chain: chainName })}
+        </WarningNotice>
 
         {/* Copy Button */}
         <TouchableOpacity
@@ -175,6 +200,20 @@ const styles = StyleSheet.create({
     borderColor: colors.text.primary,
     overflow: 'hidden',
     marginTop: vs(spacing.headerPadding),
+  },
+  chainBadge: {
+    backgroundColor: semantic.surface.raised,
+    borderRadius: ms(borderRadius.full),
+    borderWidth: 1,
+    borderColor: semantic.border.raised,
+    paddingVertical: vs(spacing.xs),
+    paddingHorizontal: s(spacing.md),
+  },
+  chainBadgeText: {
+    fontSize: ms(fontSize.sm),
+    fontFamily: fontFamilyNative.semiBold,
+    color: semantic.text.primary,
+    letterSpacing: letterSpacing.wide,
   },
   address: {
     fontSize: ms(fontSize.base),

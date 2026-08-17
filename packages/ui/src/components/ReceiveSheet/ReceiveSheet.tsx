@@ -18,6 +18,7 @@ import ButtonBase from '@mui/material/ButtonBase';
 import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import {
   colors,
+  getChainDisplayName,
   palette,
   spacing,
   borderRadius,
@@ -36,6 +37,7 @@ import { useTranslation } from 'react-i18next';
 import { QRCode } from '../QRCode';
 import { BaseSheetDialog } from '../BaseSheetDialog';
 import { FleshBackground } from '../FleshBackground';
+import { WarningNotice } from '../WarningNotice';
 import type { ReceiveSheetProps } from './types';
 
 // ============================================================================
@@ -66,6 +68,17 @@ const QRContainer = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   flexShrink: 0,
+});
+
+const ChainBadge = styled(Typography)({
+  backgroundColor: colors.background.card,
+  border: `1px solid ${colors.border.default}`,
+  borderRadius: borderRadius.full,
+  padding: `${spacing.xs}px ${spacing.md}px`,
+  fontSize: fontSize.sm,
+  fontWeight: fontWeight.semibold,
+  color: colors.text.primary,
+  letterSpacing: letterSpacing.wide,
 });
 
 const AddressText = styled(Typography)({
@@ -142,6 +155,7 @@ export function ReceiveSheet({
   visible,
   onClose,
   address,
+  blockchain,
   onCopy,
   className,
   style,
@@ -150,6 +164,11 @@ export function ReceiveSheet({
   const [qrSize, setQrSize] = useState<number>(QR_SIZE_DEFAULT);
   const contentRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
+
+  // A deposit made on the wrong chain is gone for good, so the chain is named
+  // twice: an opaque badge with a label (never a tint — DESIGN.md) and a
+  // warning that says what "wrong network" costs.
+  const chainName = getChainDisplayName(blockchain);
 
   // Reset copied state when dialog closes
   useEffect(() => {
@@ -205,6 +224,12 @@ export function ReceiveSheet({
         style={{ paddingTop: spacing.xl, paddingBottom: spacing['2xl'], flex: 1 }}
       >
         <ContentWrapper ref={contentRef} data-testid="receive-sheet">
+          {/* Chain badge — opaque fill and a written label, so it survives a
+              colorblind reader, a narrow column and a screenshot. */}
+          <ChainBadge data-testid="receive-chain-badge">
+            {t('token.send.blockchainAddress', { blockchain: chainName })}
+          </ChainBadge>
+
           {/* QR Code */}
           <QRContainer data-testid="receive-qr-code">
             <QRCode
@@ -217,6 +242,15 @@ export function ReceiveSheet({
 
           {/* Full Address */}
           <AddressText data-testid="receive-address">{address}</AddressText>
+
+          {/* Wrong-network deposits are unrecoverable, so say so here rather
+              than leaving the chain to be inferred from the address format. */}
+          <WarningNotice
+            tone="warning"
+            title={t('token.receive.networkOnlyTitle', { chain: chainName })}
+          >
+            {t('token.receive.networkOnlyBody', { chain: chainName })}
+          </WarningNotice>
 
           {/* Copy Button */}
           <CopyButton

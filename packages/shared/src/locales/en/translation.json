@@ -310,7 +310,9 @@
     "receive": {
       "title": "Receive",
       "copyAddress": "Copy address",
-      "copied": "Copied!"
+      "copied": "Copied!",
+      "networkOnlyTitle": "{{chain}} network only",
+      "networkOnlyBody": "Only send assets on the {{chain}} network to this address. Anything sent on another network is lost and cannot be recovered."
     },
     "send": {
       "myWallets": "My Wallets",

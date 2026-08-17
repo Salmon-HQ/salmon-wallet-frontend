@@ -310,7 +310,9 @@
     "receive": {
       "title": "Recibir",
       "copyAddress": "Copiar dirección",
-      "copied": "¡Copiado!"
+      "copied": "¡Copiado!",
+      "networkOnlyTitle": "Solo red {{chain}}",
+      "networkOnlyBody": "Enviá a esta dirección solo activos de la red {{chain}}. Lo que mandes por otra red se pierde y no se puede recuperar."
     },
     "send": {
       "myWallets": "Mis Billeteras",
