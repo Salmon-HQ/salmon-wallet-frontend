@@ -25,11 +25,16 @@ import {
   durationMs,
   tabularNums,
   semantic,
+  opacity,
+  motionDuration,
+  motionEasing,
+  resolveMotionDuration,
 } from '@salmon/shared';
 import { useCallback, useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { styled } from '../../utils/styled';
+import { useReducedMotion } from '../../utils/useReducedMotion';
 import type { PriceChartProps } from './types';
 
 /**
@@ -59,13 +64,19 @@ const Container = styled(Box)({
   backgroundColor: 'transparent',
 });
 
-const ChartContainer = styled(Box)<{ $height: number }>(({ $height }) => ({
-  width: '100%',
-  height: $height,
-  marginBottom: spacing.lg,
-  borderRadius: borderRadius.md,
-  overflow: 'hidden',
-}));
+const ChartContainer = styled(Box)<{ $height: number; $pending: boolean; $motion: string }>(
+  ({ $height, $pending, $motion }) => ({
+    width: '100%',
+    height: $height,
+    marginBottom: spacing.lg,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    // A period press is a state change in place, so the old series attenuates
+    // over `swell` and the new one comes back up — it is never taken away.
+    opacity: $pending ? opacity.faint : opacity.full,
+    transition: `opacity ${$motion} ${motionEasing.current.css}`,
+  })
+);
 
 const PeriodContainer = styled(Box)({
   display: 'flex',
@@ -236,6 +247,7 @@ export function PriceChart({
   selectedPeriod,
   onPeriodChange,
   loading = false,
+  pending = false,
   error = false,
   color,
   height = componentSizes.chartHeight,
@@ -243,6 +255,7 @@ export function PriceChart({
   className,
 }: PriceChartProps) {
   const { t } = useTranslation();
+  const reduceMotion = useReducedMotion();
   // Determine chart color based on performance
   const chartColor = useMemo(() => {
     if (color) return color;
@@ -263,7 +276,12 @@ export function PriceChart({
   return (
     <Container style={style} className={className}>
       {/* Chart area */}
-      <ChartContainer $height={height}>
+      <ChartContainer
+        $height={height}
+        $pending={pending && !loading}
+        $motion={resolveMotionDuration(motionDuration.swell, reduceMotion)}
+        aria-busy={pending || loading}
+      >
         {loading ? (
           <ChartSkeleton height={height} />
         ) : data.length > 0 ? (
