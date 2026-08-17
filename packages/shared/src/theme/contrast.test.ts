@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { neutral, salmon } from './palette';
 import { accent, border, depth, scales, state, status, surface, text, water } from './semantic';
 import { colors, isOpaqueColor } from './colors';
+import { shadowsCSS } from './shadows';
+import { componentSizes } from './spacing';
+import { fontSize } from './typography';
 
 /**
  * WCAG 2.1 relative luminance and contrast ratio.
@@ -290,5 +293,66 @@ describe('contrast: values this palette replaced', () => {
 
   it('rejects the retired placeholder color', () => {
     expect(contrast('#6B6E7B', surface.shelf)).toBeLessThan(AA_TEXT);
+  });
+});
+
+/**
+ * The bezel — the 1px lit rim and 1px underside a filled control wears so it
+ * reads as a body rather than a rectangle.
+ *
+ * Two things are worth pinning, and neither is "does it look nice". The first
+ * is that the rim is decoration: it carries no meaning, so it must stay under
+ * the motif ceiling rather than competing with a real border. The second is
+ * the reason the underside must stay exactly 1px: `rgba(3, 6, 12, 0.50)` over a
+ * salmon fill composites to `#813129`, where `text.onAccent` measures 2.28:1 —
+ * well under AA. That is harmless while the shade is a single edge pixel and a
+ * label glyph is nineteen pixels above it, and it stops being harmless the
+ * moment someone "makes the inner shadow more visible" by adding blur or
+ * spread. So the geometry is asserted, not just the colour.
+ */
+describe('contrast: the bezel', () => {
+  /** `inset 0 ±1px 0 rgba(...)` — offsets and alphas, straight from the token. */
+  const insets = [...shadowsCSS.bezel.matchAll(/inset 0 (-?\d+)px (\d+) rgba\(([^)]+)\)/g)].map(
+    (match) => ({
+      offsetY: Number(match[1]),
+      blur: Number(match[2]),
+      rgba: match[3].split(',').map(Number) as [number, number, number, number],
+    })
+  );
+
+  /** Straight-alpha compositing in sRGB, which is what both renderers do. */
+  const composite = ([r, g, b, alpha]: [number, number, number, number], under: string): string => {
+    const base = [0, 2, 4].map((i) => parseInt(under.replace('#', '').slice(i, i + 2), 16));
+    return `#${[r, g, b]
+      .map((channel, i) =>
+        Math.round(channel * alpha + base[i] * (1 - alpha))
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')}`;
+  };
+
+  it('is one lit pixel above and one dark pixel below, with no blur or spread', () => {
+    expect(insets).toHaveLength(2);
+    expect(insets.map((inset) => inset.offsetY)).toEqual([1, -1]);
+    for (const inset of insets) {
+      expect(inset.blur).toBe(0);
+    }
+  });
+
+  it('keeps the lit rim decorative on a salmon fill', () => {
+    const lit = composite(insets[0].rgba, salmon[500]);
+    expect(contrast(lit, salmon[500])).toBeLessThan(MOTIF_CEILING);
+  });
+
+  it('leaves the label sitting on the fill, never on the darkened underside', () => {
+    const shaded = composite(insets[1].rgba, salmon[500]);
+    // The row the underside darkens is genuinely too dark for the ink…
+    expect(contrast(text.onAccent, shaded)).toBeLessThan(AA_TEXT);
+    // …which is fine only because a centred label never reaches it. One line of
+    // `fontSize.md` in a `buttonHeight` pill leaves this much clearance below
+    // the glyph box, and the shade is `Math.abs(offsetY)` pixels tall.
+    const clearance = (componentSizes.buttonHeight - fontSize.md) / 2;
+    expect(clearance).toBeGreaterThan(Math.abs(insets[1].offsetY));
   });
 });

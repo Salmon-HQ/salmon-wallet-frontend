@@ -115,6 +115,24 @@ export const shadowsCSS = {
   rimHighlight: 'inset 0 1px 0 rgba(226, 236, 255, 0.14)',
   /** The underside, opposite the rim. */
   rimShade: 'inset 0 -1px 0 rgba(3, 6, 12, 0.50)',
+  /**
+   * Both rims at once — the bezel an object gets so it reads as a body with a
+   * top and an underside rather than a flat rectangle.
+   *
+   * It is deliberately 1px each: what a filled control is missing is an *edge*,
+   * not an interior. A heavier inset reads as *pressed*, and a primary button
+   * that looks pressed at rest spends the affordance it needs and leaves the
+   * real press (scale + specular) with nothing left to say.
+   *
+   * Usable verbatim on both platforms: React Native (0.83) parses this CSS
+   * string in `processBoxShadow` and clips it to the view's own radius, so the
+   * rim follows a pill end the way the DOM's does. One caveat, measured in the
+   * RN source rather than assumed: Android draws inset shadows only from API 29
+   * (`MIN_INSET_BOX_SHADOW_SDK_VERSION`); below that the bezel is absent and
+   * nothing else changes.
+   */
+  bezel:
+    'inset 0 1px 0 rgba(226, 236, 255, 0.14), inset 0 -1px 0 rgba(3, 6, 12, 0.50)',
   /** Button / floating CTA shadow */
   button: '0 0 12px rgba(0, 0, 0, 0.64)',
 } as const;

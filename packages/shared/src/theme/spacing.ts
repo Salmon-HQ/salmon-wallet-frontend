@@ -98,6 +98,19 @@ export const componentSizes = {
   /** 42px - Compact action buttons (swap, bridge, receive, success) */
   buttonHeightCompact: 42,
   buttonRadius: 28,
+  /**
+   * Tile scale for the flesh texture inside a filled control.
+   *
+   * The drawing is authored on a 138×88 tile, which at 1:1 puts its bands
+   * ~13.8px apart — four or five of them across a full-width pill, each one a
+   * broad streak wider than a letter stroke. At that feature size the eye
+   * tracks individual streaks crossing the label instead of reading a material.
+   * At 0.55 the bands land ~7.6px apart and the same drawing reads as grain,
+   * which is what flesh looks like when you shrink it. Contrast is untouched
+   * either way: every band is paler than the fill, so the ink's worst case
+   * stays the flat fill's 6.50:1 (`flesh.test.ts`).
+   */
+  buttonFleshScale: 0.55,
 
   // ActionButtonRow
   actionButtonWidth: 112,

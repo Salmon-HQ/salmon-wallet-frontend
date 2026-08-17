@@ -45,11 +45,14 @@ const StyledButton = styled(Button)<{ fullWidth?: boolean }>(({ fullWidth }) => 
   letterSpacing: letterSpacing.widest,
   color: colors.button.primaryText,
   textTransform: 'none',
-  boxShadow: shadowsCSS.none,
+  // The bezel: a 1px lit rim and a 1px underside. What the fill was missing to
+  // read as a body was an edge, not a deeper interior — the flesh already does
+  // the interior. Anything heavier would read as pressed at rest.
+  boxShadow: shadowsCSS.bezel,
   transition: `background-color ${duration.normal} ${easing.ease}, transform ${duration.fastest} ${easing.ease}`,
   '&:hover': {
     backgroundColor: palette.salmon[600],
-    boxShadow: shadowsCSS.none,
+    boxShadow: shadowsCSS.bezel,
   },
   '&:active': {
     transform: 'scale(0.98)',
@@ -105,7 +108,7 @@ export function PrimaryButton({
           is the inside of the fish rather than its skin. Every band is paler
           than the fill, so the 6.50:1 ink composite is a floor here, not a
           budget. Absent when the fill is absent. */}
-      {!isDisabled && <FleshBackground />}
+      {!isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />}
       <Label>
         {loading ? (
           <LoaderWrapper>

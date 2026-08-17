@@ -16,6 +16,7 @@ import {
   fontSize,
   letterSpacing,
   semantic,
+  shadowsCSS,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 import { FleshBackground } from '../FleshBackground';
@@ -60,7 +61,7 @@ export function PrimaryButton({
           is the inside of the fish rather than its skin. Every band is paler
           than the fill, so the 6.50:1 ink composite is a floor here, not a
           budget. Absent when the fill is absent. */}
-      {!isDisabled && <FleshBackground />}
+      {!isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />}
       {loading ? (
         <ActivityIndicator
           color={isDisabled ? semantic.text.disabled : colors.button.primaryText}
@@ -91,6 +92,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
     overflow: 'hidden',
+    // The same bezel string the DOM half uses. React Native parses CSS
+    // box-shadow syntax since the new renderer and clips inset shadows to the
+    // view's border radius, so no 1px overlay views are needed and the two
+    // platforms cannot drift. Android draws inset shadows from API 29 up; below
+    // that the bezel is simply absent.
+    boxShadow: shadowsCSS.bezel,
   },
   disabled: {
     backgroundColor: semantic.surface.crest,
