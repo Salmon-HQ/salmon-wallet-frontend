@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { neutral, salmon } from './palette';
-import { accent, border, depth, state, status, surface, text } from './semantic';
+import { accent, border, depth, state, status, surface, text, water } from './semantic';
 import { colors } from './colors';
 
 /**
@@ -28,6 +28,8 @@ const contrast = (a: string, b: string): number => {
 const AA_TEXT = 4.5;
 /** WCAG 1.4.11 — non-text boundaries that carry meaning */
 const AA_NON_TEXT = 3;
+/** DESIGN.md — the ceiling for any stroke that carries no meaning at all */
+const MOTIF_CEILING = 1.4;
 
 describe('contrast: text on opaque surfaces', () => {
   const surfaces = [
@@ -149,6 +151,85 @@ describe('contrast: component-owned focus borders', () => {
   it('clears 3:1 against the fill inside the field', () => {
     expect(contrast(accentPrimary, fillOverColumn)).toBeGreaterThanOrEqual(AA_NON_TEXT);
     expect(contrast(accentPrimary, fillOverShelf)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+});
+
+/**
+ * The water column: the ground's depth ramp and the marine snow suspended in
+ * it. Two separate guarantees, and they fail in opposite directions.
+ *
+ * The **ramp** is a background colour, so the danger is that it drops text
+ * below AA somewhere along its length. It cannot: both stops are neutrals and
+ * the bottom stop is the darker of the two, so every role that clears AA at
+ * the top clears it by more at the bottom. Asserted rather than assumed,
+ * because someone will eventually want a lighter floor.
+ *
+ * The **snow** is a motif, so the danger is the opposite — that it climbs
+ * until it reads as content. DESIGN.md caps any non-informational stroke at
+ * 1.4:1, and every floc in `depthField.ts` is a multiplier ≤ 1 on this one
+ * token (asserted in `depthField.test.ts`), so pinning the token pins the
+ * whole field.
+ */
+describe('contrast: the water column', () => {
+  /** Straight alpha in sRGB — what both renderers actually do. */
+  const composite = (over: string, under: string, alpha: number): string => {
+    const rgb = (hex: string) =>
+      [0, 2, 4].map((i) => parseInt(hex.replace('#', '').slice(i, i + 2), 16));
+    const [a, b] = [rgb(over), rgb(under)];
+    return `#${a
+      .map((channel, i) =>
+        Math.round(channel * alpha + b[i] * (1 - alpha))
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')}`;
+  };
+
+  const [rampTop, rampFloor] = water.gradient;
+  /** `water.snow` is `rgba(199, 211, 232, 0.12)`. */
+  const SNOW_HEX = '#C7D3E8';
+  const SNOW_ALPHA = 0.12;
+
+  it('the ramp starts on the ground the apps already paint', () => {
+    // A different top stop would seam against every header, overlay and sheet
+    // backdrop still painting `colors.background.primary`.
+    expect(rampTop.toLowerCase()).toBe(colors.background.primary.toLowerCase());
+  });
+
+  it('the ramp only ever deepens', () => {
+    expect(luminance(rampFloor)).toBeLessThan(luminance(rampTop));
+  });
+
+  const readableRoles = [
+    ['primary', text.primary],
+    ['secondary', text.secondary],
+    ['tertiary', text.tertiary],
+    ['accent', text.accent],
+  ] as const;
+
+  for (const [roleName, roleValue] of readableRoles) {
+    it(`text.${roleName} clears AA at every point on the ramp`, () => {
+      expect(contrast(roleValue, rampTop)).toBeGreaterThanOrEqual(AA_TEXT);
+      expect(contrast(roleValue, rampFloor)).toBeGreaterThanOrEqual(AA_TEXT);
+    });
+  }
+
+  it('the brightest floc stays decoration on the lightest ground it can land on', () => {
+    const over = composite(SNOW_HEX, rampTop, SNOW_ALPHA);
+    expect(contrast(over, rampTop)).toBeLessThan(MOTIF_CEILING);
+  });
+
+  it('and on the darkest, where the ratio is highest', () => {
+    const over = composite(SNOW_HEX, rampFloor, SNOW_ALPHA);
+    expect(contrast(over, rampFloor)).toBeLessThan(MOTIF_CEILING);
+  });
+
+  it('the deep field it frames is under the same ceiling', () => {
+    // Sanity: the snow is meant to sit beside the scales, not out-read them.
+    const scalesOver = composite('#C7D3E8', depth.column, 0.06);
+    const snowOver = composite(SNOW_HEX, depth.column, SNOW_ALPHA);
+    expect(contrast(scalesOver, depth.column)).toBeLessThan(MOTIF_CEILING);
+    expect(contrast(snowOver, depth.column)).toBeLessThan(MOTIF_CEILING);
   });
 });
 

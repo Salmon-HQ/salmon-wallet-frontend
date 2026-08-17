@@ -72,6 +72,11 @@ export {
   wordmarkToSvg,
 } from './brand';
 
+// Marine snow geometry — the water column's suspended matter, as data both
+// platforms draw. The DOM serialises it; mobile draws the array directly.
+export { depthFieldTile, marineSnow, marineSnowSvg } from './depthField';
+export type { SnowFloc } from './depthField';
+
 // Flesh geometry — the myoseptal texture as path data both platforms draw.
 export { fleshTile, fleshFades, fleshStrokes, fleshTiledStrokes } from './flesh';
 export type { FleshFadeStop, FleshStroke } from './flesh';

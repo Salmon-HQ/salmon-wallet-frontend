@@ -22,6 +22,7 @@ import {
   SUPPORT_OPTIONS,
   LANGUAGE_NAMES,
   colors,
+  semantic,
   getStashItem,
   type SettingsPanelEntry,
   type AddressBookItem,
@@ -37,6 +38,7 @@ import {
   type BlockchainType,
 } from '@salmon/shared';
 import {
+  DepthBackground,
   GlassTabBar,
   SettingsSheet,
   WalletSwitcherSheet,
@@ -744,12 +746,17 @@ export default function TabLayout() {
 
       {/* Background layers wrapped in BlurTargetView for Android blur targeting */}
       <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
-        {/* Layer 1: Solid background for status bar area and entire screen */}
-        <View style={styles.solidBackground} />
+        {/* Layer 1: the water column — a depth ramp that darkens toward the
+            bottom, plus the marine snow field across the top. The ramp starts
+            at the ground the app already painted, so nothing above it seams;
+            the snow is spent before the first token row, which is what keeps
+            it on the right side of The Scales Exclusion Rule. */}
+        <DepthBackground />
 
-        {/* Layer 2: Bottom fade gradient */}
+        {/* Layer 2: Bottom fade gradient. Ends on the ramp's own floor rather
+            than the old flat ground, which would have lightened the abyss. */}
         <LinearGradient
-          colors={['transparent', colors.background.primary]}
+          colors={['transparent', semantic.water.gradient[1]]}
           style={styles.bottomFadeGradient}
           pointerEvents="none"
         />
@@ -757,11 +764,11 @@ export default function TabLayout() {
         {/* No layer 3. The scales used to tile from the header to the bottom
             of every tab, which put the motif behind the token rows, the
             amounts, the collectibles grid and — below a short list — an
-            entire screen of texture standing in for content. The ground is
-            now just the column: unbroken `background.primary`, and the empty
-            space under a three-row list reads as depth rather than as a
-            pattern the eye has to keep filtering. The motif keeps its two
-            jobs: the balance card's logo band and the Send fill. */}
+            entire screen of texture standing in for content. The motif keeps
+            its two jobs: the balance card's logo band and the Send fill. The
+            snow above is not a third job for it; it is the space the scales
+            are seen through, which is what makes a 3.2× scale read as large
+            rather than as near. */}
       </BlurTargetView>
 
       {/* Tab screens fill the remaining space */}
@@ -855,10 +862,6 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  solidBackground: {
-    ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.background.primary,
   },
   bottomFadeGradient: {

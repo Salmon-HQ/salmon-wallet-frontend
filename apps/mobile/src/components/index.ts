@@ -78,6 +78,9 @@ export type { GradientBackgroundProps } from './GradientBackground';
 export { ScalesBackground } from './ScalesBackground';
 export type { ScalesBackgroundProps } from './ScalesBackground';
 
+export { DepthBackground } from './DepthBackground';
+export type { DepthBackgroundProps } from './DepthBackground';
+
 export { FleshBackground } from './FleshBackground';
 export type { FleshBackgroundProps } from './FleshBackground';
 

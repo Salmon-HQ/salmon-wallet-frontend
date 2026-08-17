@@ -58,6 +58,7 @@ import {
   PriceChart,
   TokenMarketData,
   TokenAbout,
+  DepthBackground,
   ScalesBackground,
   ReceiveSheet,
   SettingsPanelStack,
@@ -144,7 +145,9 @@ const BottomFadeGradient = styled(Box)({
   right: 0,
   bottom: 0,
   height: 180,
-  background: `linear-gradient(to bottom, transparent 0%, ${colors.background.primary} 60%)`,
+  // Ends on the depth ramp's own floor. Fading to the old flat ground would
+  // have lightened the abyss the ramp just arrived at.
+  background: `linear-gradient(to bottom, transparent 0%, ${semantic.water.gradient[1]} 60%)`,
   pointerEvents: 'none',
   zIndex: 1,
 });
@@ -922,6 +925,10 @@ export function HomePage(): React.ReactElement {
       </TabBar>
 
       <Main>
+        {/* The water column: a depth ramp darkening toward the abyss, plus the
+            marine snow the deep field's 3.2x scales are read through. Both are
+            spent before the token list. */}
+        <DepthBackground style={{ zIndex: 0 }} />
         <ScalesBackground variant="deepField" style={{ zIndex: 0 }} />
         <BottomFadeGradient />
 
@@ -1118,6 +1125,7 @@ export function HomePage(): React.ReactElement {
         visible={receiveSheetVisible}
         onClose={() => setReceiveSheetVisible(false)}
         address={accountAddress}
+        blockchain={getBlockchainFromNetworkId(currentBlockchain)}
       />
     </Container>
   );

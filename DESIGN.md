@@ -194,6 +194,19 @@ this codebase has **no recorded rationale** — the knowledge base never mention
 fish scales — so the meaning assigned to it in §Shapes is a design decision
 made here, not a fact recovered from the brand.
 
+**What "not the seabed" costs, and why it is worth it.** The north star names
+the middle water, and the two things a designer reaches for first to make water
+feel deep are both refused here on purpose, not by omission. **No sand, no
+seabed, no floor of any kind**: sand is warm and light, so it would put a
+second source of warmth on screen against the one salmon fill, and it would
+invert the depth order by making the farthest thing the brightest.
+**No ambient light shafts, no god rays, no caustics at rest**: this system has
+exactly one light event, The Surfacing, and permanent ambient light is what
+would make that event stop meaning anything. What carries depth instead is
+suspended matter and a ramp — see §The water column. Neither refusal is an
+oversight to be corrected later; both are the reason the column reads as one
+temperature with one warm thing in it.
+
 **What this direction refuses.** No neon. No purple-to-cyan gradient, no glow as
 a hierarchy device, no color emitted by rectangles. No mesh-gradient orbs behind
 the balance. No iridescence that carries meaning — oil-slick hue shift is a
@@ -217,6 +230,10 @@ marks its parts.
 | Geist + Geist Mono, tabular-nums token, font-scale caps | **Shipped** | `packages/shared/src/theme/typography.ts`, `packages/assets/src/fonts` |
 | Brand mark as tintable vector paths | **Shipped** | `packages/shared/src/theme/brand.ts` |
 | MUI theme + unconditional focus ring (web, extension) | **Shipped** | `packages/ui/src/theme/index.ts` |
+| The water column: depth ramp + marine snow field (`semantic.water`, geometry, both renderers) | **Shipped** | `packages/shared/src/theme/depthField.ts`, `packages/ui/src/components/DepthBackground`, `apps/mobile/src/components/DepthBackground` |
+| The water column mounted on the app ground | **Shipped** on the home ground of all three apps | `apps/mobile/app/(app)/(tabs)/_layout.tsx`, `apps/web` and `apps/extension` `pages/home/HomePage.tsx` |
+| Sand / seabed, ambient light shafts | **Refused by design** — see §Overview and §The water column | — |
+| Marine snow drift | **Refused for now** — the field is static; see §The water column | — |
 | Light theme (index-flip resolver) | **Specified, not built** | — |
 | Material/membrane model and the five-rung degradation ladder | **Specified, not built** | — |
 | Motion vocabulary (`flick`…`tide`, `current`/`settle`/`sink`/`swellIn`) and The Surfacing | **Specified, not built** | `durations.ts` still ships the legacy 100–600ms set and `bounce` at 1.56 |
@@ -642,9 +659,100 @@ gives the asset a *job* (depth encoding) instead of a decoration, and because a
 motif used three times at three scales becomes recognizable where the same motif
 at 5% everywhere is either invisible or noise the eye must filter out.
 
+### The water column — marine snow and the depth ramp
+
+**Shipped**: `semantic.water` carries the ground's depth ramp and the marine
+snow's ink; `packages/shared/src/theme/depthField.ts` carries the field's
+geometry; `DepthBackground` draws it on the DOM and again in React Native, the
+same one-geometry-two-renderers ownership the flesh texture uses. It is mounted
+on the home ground of all three apps, in the same plane as the deep field
+(`depth.column`), behind everything.
+
+**Why it exists.** The deep field is drawn at 3.2× so it reads as a fish close
+enough to fill the frame. On its own it does not: a large arc with empty ground
+in front of it is exactly as readable as a small arc nearby. Scale is not a
+property of an object, it is a property of the space in front of it, and this
+world had no space in front of anything. Marine snow is that space.
+
+**What it is, physically.** Composite organic aggregates — conventionally
+everything above 0.5 mm, ranging to a few centimetres — porous, off-white, held
+together by zooplankton mucus, sinking at roughly 10–100 m/day. It is what the
+pelagic column at forty metres is actually full of, which is why it is the one
+addition that does not argue with the north star. (Alldredge & Silver 1988 via
+NOAA Ocean Exploration; Giering et al., *Front. Mar. Sci.* 2020.)
+
+**What it does perceptually**, and the three properties the data encodes:
+
+1. **Aerial perspective** — scattering lays a veiling luminance over anything
+   distant, so contrast and internal detail fall off with distance; underwater
+   the falloff is measured in metres rather than kilometres. Encoded as three
+   bands: near flocs larger and brighter, far flocs smaller and dimmer.
+2. **Texture gradient** — elements of assumed-uniform size project smaller and
+   *denser* the farther they are (Gibson 1955). Encoded by pushing the far band
+   deeper into the field and holding the near band high. This is the honest
+   name for "denser toward the bottom": it is density with *distance*, not a
+   bathymetric profile. Real marine-snow concentration peaks in the upper
+   100–200 m and thins below it; the document should not pretend otherwise.
+3. **Interposition** — a floc that overlaps the scales is unambiguously nearer,
+   which fixes depth order; order plus the contrast gradient is what turns
+   "far" into a distance, and distance plus retinal angle is what finally reads
+   as a *size*. Held et al., "Using Blur to Affect Perceived Distance and Size"
+   (ACM TOG 29(2), 2010) runs the same argument backwards: flatten the gradient
+   and a real city reads as a model.
+
+**The ramp.** A vertical gradient on the ground, `neutral-950` at the top to
+`neutral-1000` at the bottom. It suggests an abyss without drawing a floor.
+Its top stop is the ground the three apps already paint
+(`colors.background.primary`), not the `depth.column` this document names, so
+nothing beside or above the ground — a safe-area overlay, a page header, a
+sheet backdrop — seams against it; moving the ground itself is a separate
+change. Because the ramp only ever darkens, it can only raise text contrast,
+and `contrast.test.ts` asserts every text role at both stops.
+
+**Contrast.** The snow is `rgba(199, 211, 232, 0.12)` and composites to 1.27:1
+on the lightest ground it can land on — under the 1.4:1 ceiling for any
+non-informational stroke, and in the same register as the deep field's 0.06
+stroke. Every floc's authored opacity is a multiplier ≤ 1 on that one token, so
+pinning the token pins the whole field; `depthField.test.ts` asserts the
+multipliers and `contrast.test.ts` asserts the token.
+
+**Exclusion.** The Scales Exclusion Rule covers this motif too, and the field
+enforces it by shape rather than by convention: it is 360px tall, its lower
+third fades to nothing, and it draws nothing at all below 90% of its height, so
+it is spent before the first data row. Snow never reaches a number, a row, an
+address, an input, a seed phrase, or an approval surface. The ramp is exempt
+because it is a background *colour*, not a motif — a ground that darkens behind
+an amount is still a ground.
+
+**No filters.** `react-native-svg` implements `FeTurbulence` and
+`FeDisplacementMap` as no-ops, so every irregularity — position, size, squash,
+brightness — is authored into literals generated once from a seeded source and
+never randomised at render time. That constancy is also what lets the DOM
+serialise the field into a `background-image` data URI, which is how the
+extension gets an image composited once instead of a full-viewport SVG the
+browser can be asked to repaint.
+
+**The field is static, and that is a decision.** Real marine snow sinks at
+about 0.6 mm/s: it does not visibly fall. A drifting full-viewport layer would
+be a permanent compositor layer on every screen, including low-end Android and
+the MV3 side panel, in exchange for motion nobody would perceive — and it would
+spend ambient motion in a system whose only light event is The Surfacing. There
+is consequently nothing for `prefers-reduced-motion` / `useReducedMotion` to
+reduce. If drift is ever wanted, it is a transform on the snow layer alone,
+gated on both reduced-motion signals, and it needs a device measurement first.
+
+**What is deliberately absent.** No sand and no seabed: sand is warm and light,
+which would add a second source of warmth against the single salmon fill and
+would invert the depth order by making the farthest plane the brightest — and
+the north star is the middle water, "not the surface, not the seabed". No
+ambient light shafts or resting caustics: one light event, and it is The
+Surfacing. Both absences are decisions recorded here so no future reader files
+them as gaps.
+
 ### Named Rules
 
-**The Scales Exclusion Rule.** Scales never appear behind a numeric value,
+**The Scales Exclusion Rule.** Scales — and the marine snow, which is the same
+kind of object — never appear behind a numeric value,
 inside a list row, on a swap review card, anywhere on the approval sheet, behind
 a seed phrase, on any surface where a live backdrop shows through, or in a
 scrolling container in the extension. In the extension the deep field is a
@@ -869,3 +977,9 @@ not travel.
   invariant.
 - **Don't** add a glow, a mesh gradient, a starfield, or a chart-as-wallpaper.
   Depth comes from material and edge, never from emitted light.
+- **Don't** add sand, a seabed, a horizon, or ambient light shafts to the
+  ground. The column is the middle water and it has exactly one light event.
+  Their absence is recorded in §The water column as a decision, not a gap.
+- **Don't** animate the marine snow without measuring it on a low-end Android
+  and in the side panel first. Static is the shipped answer, and real marine
+  snow does not visibly fall.

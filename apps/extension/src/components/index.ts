@@ -13,6 +13,7 @@ export {
   BalanceCardCarousel,
   ConfirmDialog,
   CurrencySelector,
+  DepthBackground,
   ExplorerSelector,
   LanguageSelector,
   LoadingScreen,

@@ -121,6 +121,10 @@ export type { WalletInitErrorScreenProps } from './WalletInitErrorScreen';
 export { ScalesBackground } from './ScalesBackground';
 export type { ScalesBackgroundProps, ScalesVariant } from './ScalesBackground';
 
+// DepthBackground - the water column's ground: depth ramp plus marine snow
+export { DepthBackground } from './DepthBackground';
+export type { DepthBackgroundProps } from './DepthBackground';
+
 // FleshBackground - the myoseptal texture inside a salmon fill
 export { FleshBackground } from './FleshBackground';
 export type { FleshBackgroundProps } from './FleshBackground';

@@ -189,8 +189,44 @@ export const flesh = {
   band: salmon[50],
 } as const;
 
+/**
+ * The water itself — the ground's depth ramp and the matter suspended in it.
+ *
+ * Two parts, one job: give the column dimension so the deep field's 3.2×
+ * scales have something to be enormous *against*. A large arc with empty
+ * ground in front of it is equally readable as a small arc nearby; scale is a
+ * property of the space, not of the object.
+ *
+ * `gradient` runs top to bottom and darkens. Its top stop is the ground the
+ * three apps actually paint today (`colors.background.primary`, `neutral-950`)
+ * rather than the `depth.column` the spec names, so nothing sitting above or
+ * beside the ground — a safe-area overlay, a page header, a sheet's backdrop —
+ * grows a seam against it. The ramp deepens *from* the shipped ground; moving
+ * the ground itself is a separate change. Deeper is darker, which suggests an
+ * abyss without drawing a floor, and both stops are legal grounds: every text
+ * role that clears AA on `neutral-950` clears it by more on `neutral-1000`, so
+ * the ramp can only raise contrast.
+ *
+ * `snow` is the marine snow's brightest floc; every particle in
+ * `theme/depthField.ts` carries a multiplier ≤ 1 on it. It composites to
+ * 1.27:1 on the ramp's lightest stop, under the 1.4:1 ceiling for a
+ * non-informational stroke — the snow is context, never information, and it
+ * obeys The Scales Exclusion Rule: no numbers, rows, addresses, inputs, seed
+ * phrases, or approval surfaces behind it.
+ *
+ * What this deliberately does *not* include: no sand, no seabed, no ambient
+ * light shafts. The reasons are in DESIGN.md §The water column.
+ */
+export const water = {
+  /** Ground ramp, top → bottom. Nearer water above, abyss below. */
+  gradient: [neutral[950], neutral[1000]] as const,
+  /** Marine snow, brightest floc. Particle opacities scale this down. */
+  snow: 'rgba(199, 211, 232, 0.12)',
+} as const;
+
 export const semantic = {
   depth,
+  water,
   surface,
   text,
   border,
