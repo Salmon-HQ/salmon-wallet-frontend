@@ -103,14 +103,16 @@ export const componentSizes = {
    *
    * The drawing is authored on a 138×88 tile, which at 1:1 puts its bands
    * ~13.8px apart — four or five of them across a full-width pill, each one a
-   * broad streak wider than a letter stroke. At that feature size the eye
-   * tracks individual streaks crossing the label instead of reading a material.
-   * At 0.55 the bands land ~7.6px apart and the same drawing reads as grain,
-   * which is what flesh looks like when you shrink it. Contrast is untouched
-   * either way: every band is paler than the fill, so the ink's worst case
-   * stays the flat fill's 6.50:1 (`flesh.test.ts`).
+   * broad streak wider than a letter stroke.
+   *
+   * Shrinking to 0.55 lands the bands ~7.6px apart and reads as grain rather
+   * than as streaks. It was tried and the product owner preferred the bands at
+   * their authored size, so 1 is the shipped value. Contrast is not what
+   * decides this: every band is paler than the fill, so the ink's worst case is
+   * the flat fill's 6.50:1 either way (`flesh.test.ts`) — the choice is purely
+   * how large the material reads.
    */
-  buttonFleshScale: 0.55,
+  buttonFleshScale: 1,
 
   // ActionButtonRow
   actionButtonWidth: 112,
