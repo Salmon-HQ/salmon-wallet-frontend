@@ -13,11 +13,9 @@ import {
   colors,
   spacing,
   borderRadius,
-  gradients,
   fontFamily,
   fontWeight,
   fontSize,
-  shadowsCSS,
   letterSpacing,
   lineHeight,
   componentSizes,
@@ -132,12 +130,11 @@ const BackButtonWrapper = styled('div')({
   flex: 1,
 });
 
+// Layout only. It used to paint a gradient the button was made transparent to
+// reveal, from when the primary button was a flat colour; the button owns its
+// fill, flesh and cavity now, and a second fill behind it showed through.
 const ContinueButtonGradient = styled('div')({
   flex: 1,
-  borderRadius: borderRadius.lg,
-  border: `${borderWidth.accent}px solid ${colors.accent.border}`,
-  boxShadow: shadowsCSS.button,
-  background: gradients.primaryCSS,
 });
 
 // ============================================================================
@@ -210,7 +207,6 @@ export function BridgeRecipientScreen({
             disabled={!canContinue}
             style={{
               height: componentSizes.buttonHeightCompact,
-              background: 'transparent',
             }}
           >
             {t('bridge.recipient.review')}

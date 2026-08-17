@@ -167,8 +167,6 @@ export function SwapInputScreen({
             style={{
               minWidth: componentSizes.copyButtonWidth,
               height: componentSizes.buttonHeightCompact,
-              background: 'transparent',
-              color: canReview ? colors.button.primaryText : undefined,
             }}
           >
             {t('swap.review.reviewAndSwap')}
