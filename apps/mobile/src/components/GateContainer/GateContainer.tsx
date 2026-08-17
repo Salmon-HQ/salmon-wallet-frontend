@@ -39,7 +39,6 @@ import {
   componentSizes,
   motionMs,
   shadows,
-  s,
 } from '@salmon/shared';
 import type { GateContainerProps, GateState } from './types';
 import { curve, timing } from '../../utils/motion';
@@ -262,9 +261,20 @@ export function GateContainer({
             </View>
           )}
 
-          {/* Header content — always rendered at the bottom (the "floor"), fades in/out */}
+          {/* Header content — always rendered at the bottom (the "floor"), fades in/out.
+              Height is pinned to the same slot used for the collapse math
+              (insets.top + headerHeight) so the row starts flush at insets.top
+              instead of leaving unaccounted space above it: the row is shorter
+              than headerHeight, and without an explicit height the bottom-pinned
+              container shrinks to fit its content, pushing that slack above the
+              spacer instead of below the row. */}
           {state !== 'locked' && (
-            <View style={styles.headerContentContainer}>
+            <View
+              style={[
+                styles.headerContentContainer,
+                { height: insets.top + componentSizes.headerHeight },
+              ]}
+            >
               <View style={{ height: insets.top }} />
               <Animated.View style={[styles.headerBar, headerFadeStyle]}>
                 {headerContent}
@@ -322,7 +332,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: s(spacing.headerPadding),
+    // Horizontal padding lives in HeaderContent (its sole consumer) — this
+    // wrapper used to double-apply spacing.headerPadding on top of it,
+    // pushing the avatar/label and the icon buttons in ~2x further than
+    // intended.
     backgroundColor: colors.background.primary,
     borderBottomLeftRadius: borderRadius.header,
     borderBottomRightRadius: borderRadius.header,
