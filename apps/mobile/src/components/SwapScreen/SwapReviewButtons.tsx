@@ -32,23 +32,27 @@ export const SwapReviewButtons: React.FC<SwapReviewButtonsProps> = ({
   const isBusy = isConfirming || isRefreshing;
   return (
     <View style={[styles.buttonsContainer, style]}>
-      <SecondaryButton
-        onPress={onBack}
-        disabled={isBusy}
-        style={styles.backButton}
-        testID="swap-back-button"
-      >
-        {t('general.back')}
-      </SecondaryButton>
-      <PrimaryButton
-        onPress={onConfirm}
-        loading={isBusy}
-        disabled={isBusy}
-        style={styles.confirmButton}
-        testID="swap-confirm-button"
-      >
-        {confirmLabel ?? t('general.confirm')}
-      </PrimaryButton>
+      <View style={styles.half}>
+        <SecondaryButton
+          onPress={onBack}
+          disabled={isBusy}
+          style={styles.backButton}
+          testID="swap-back-button"
+        >
+          {t('general.back')}
+        </SecondaryButton>
+      </View>
+      <View style={styles.half}>
+        <PrimaryButton
+          onPress={onConfirm}
+          loading={isBusy}
+          disabled={isBusy}
+          style={styles.confirmButton}
+          testID="swap-confirm-button"
+        >
+          {confirmLabel ?? t('general.confirm')}
+        </PrimaryButton>
+      </View>
     </View>
   );
 };
@@ -58,18 +62,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: s(spacing.md),
   },
+  // The row is a symmetric pair: two halves of one decision, so they are the
+  // same width. `flex: 1` cannot live on the buttons themselves — Yoga floors a
+  // flex child's base size at its own horizontal padding and border
+  // (`max(flexBasis, paddingAndBorderAlongMainAxis)`), and SecondaryButton
+  // carries `paddingHorizontal: spacing.lg` while PrimaryButton carries none.
+  // Both said `flex: 1` and Back still came out `2 * spacing.lg` wider. These
+  // wrappers own the split instead: they have no padding, so the halves are
+  // exactly equal, and each button fills its half through its own `width: 100%`.
+  // They draw nothing — the same layout-only split the DOM half already uses.
+  half: {
+    flex: 1,
+  },
   // Height is the only legal override on either button. Radius, fill, border
   // and material belong to the button itself: the pair used to carry a local
   // 12px radius and a salmon outline on Back, and a gradient wrapper that made
   // Confirm transparent — which cancelled the flesh the fill is supposed to
   // show. They differ by material now, not by shape.
   backButton: {
-    flex: 1,
     minHeight: vs(componentSizes.buttonHeightCompact),
     height: vs(componentSizes.buttonHeightCompact),
   },
   confirmButton: {
-    flex: 1,
     minHeight: vs(componentSizes.buttonHeightCompact),
     height: vs(componentSizes.buttonHeightCompact),
   },
