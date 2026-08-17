@@ -34,6 +34,12 @@ export interface HeaderProps {
   title: string;
   /** Whether to show warning icon (for danger actions) */
   showWarning?: boolean;
+  /**
+   * Whether the corner close control is drawn. Danger dialogs turn it off:
+   * they already carry an explicit, prominent Cancel, and two dismissal
+   * affordances make the reader choose between two things that do the same.
+   */
+  showClose?: boolean;
   /** Optional close handler (uses context if not provided) */
   onClose?: () => void;
 }
@@ -54,6 +60,12 @@ export interface ContentProps {
 export interface ActionsProps {
   /** Action buttons */
   children: ReactNode;
+  /**
+   * Stack the buttons in one full-width column instead of splitting the row.
+   * Danger dialogs use this: it stops long destructive labels wrapping in the
+   * extension popup, and it makes the vertical order a statement of preference.
+   */
+  stacked?: boolean;
 }
 
 // ============================================================================
@@ -94,6 +106,13 @@ export interface CancelButtonProps {
   onClick: () => void;
   /** Whether button is disabled */
   disabled?: boolean;
+  /**
+   * Give this button the committing action's weight. Set on danger dialogs,
+   * where backing out is the recommended outcome.
+   */
+  prominent?: boolean;
+  /** Take the initial focus, so Enter resolves the dialog safely */
+  autoFocus?: boolean;
   /** Stable test id, forwarded to data-testid */
   testID?: string;
 }

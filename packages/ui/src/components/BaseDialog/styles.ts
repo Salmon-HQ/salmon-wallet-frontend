@@ -23,6 +23,7 @@ import { WarningIcon as WarningGlyph, iconSize } from '../../icons';
 import type { IconProps } from '../../icons';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   fontSize,
@@ -97,7 +98,10 @@ export const MessageText: React.ComponentType<TypographyProps> = styled(Typograp
   fontSize: fontSize.base,
   color: colors.text.secondary,
   lineHeight: lineHeight.relaxed,
-  textAlign: 'center',
+  // Left-aligned, not centred: a confirmation message is usually two or three
+  // lines, and a ragged left edge costs the reader a new start position on
+  // every line — the one place in the app where re-reading is the point.
+  textAlign: 'start',
 });
 
 // ============================================================================
@@ -143,38 +147,85 @@ export const StyledTextField: React.ComponentType<TextFieldProps> = styled(TextF
 // Actions Components
 // ============================================================================
 
-export const StyledDialogActions: React.ComponentType<DialogActionsProps> = styled(DialogActions)({
-  padding: `${spacing.md}px ${spacing.xl}px ${spacing.xl}px`,
-  gap: spacing.md,
-});
+/**
+ * A danger dialog stacks its buttons instead of splitting the row.
+ *
+ * Two reasons, both observed on the extension popup: side by side at 360px the
+ * destructive label ("Delete All Data", "Yes, remove all") breaks across two
+ * lines, and an equal-width pair says the two outcomes are equally ordinary.
+ * Stacked, each button gets the full column, and the order top-to-bottom is the
+ * order of preference.
+ */
+export const StyledDialogActions: React.ComponentType<DialogActionsProps & { $stacked?: boolean }> =
+  styled(DialogActions)<{ $stacked?: boolean }>(({ $stacked }) => ({
+    padding: `${spacing.md}px ${spacing.xl}px ${spacing.xl}px`,
+    gap: spacing.md,
+    ...($stacked
+      ? { flexDirection: 'column', alignItems: 'stretch', '& > :not(:first-of-type)': { margin: 0 } }
+      : null),
+  }));
 
-export const StyledCancelButton: React.ComponentType<ButtonProps> = styled(Button)({
-  flex: 1,
-  backgroundColor: colors.button.secondaryBackground,
-  color: colors.button.secondaryText,
+const controlBase = {
   textTransform: 'none',
   fontWeight: fontWeight.semibold,
   padding: `${spacing.sm}px ${spacing.lg}px`,
   borderRadius: borderRadius.md,
-  '&:hover': {
-    backgroundColor: colors.card.border,
-  },
-});
+  // A control label is a label, not a paragraph. Wrapping it turns a 40px
+  // button into a 60px one and reads as two separate lines of instruction.
+  whiteSpace: 'nowrap' as const,
+};
 
+/**
+ * The safe way out. On a danger dialog it is `$prominent`, which gives it the
+ * salmon fill the confirming action normally wears: on a dialog that destroys a
+ * wallet, not destroying it *is* the recommended action, so it should be the
+ * button the eye lands on and the thumb finds first.
+ */
+export const StyledCancelButton: React.ComponentType<ButtonProps & { $prominent?: boolean }> =
+  styled(Button)<{ $prominent?: boolean }>(({ $prominent }) => ({
+    flex: 1,
+    ...controlBase,
+    backgroundColor: $prominent ? colors.accent.primary : colors.button.secondaryBackground,
+    // `text.onAccent` (neutral-1000, 6.50:1) is the only ink allowed on a
+    // salmon fill; white on salmon is 3.06:1 and banned by DESIGN.md.
+    color: $prominent ? semantic.text.onAccent : colors.button.secondaryText,
+    '&:hover': {
+      backgroundColor: $prominent ? colors.button.dangerHover : colors.card.border,
+    },
+  }));
+
+/**
+ * The committing action.
+ *
+ * The danger fill is `status.dangerFill` (`danger-700`) with `text.primary`
+ * ink — 6.58:1. It replaces a `danger-500` fill that carried the same light ink
+ * at **2.50:1**, worse than the white-on-salmon pairing DESIGN.md bans outright
+ * at 3.06:1. `danger-700` is also, textually, the fill DESIGN.md defines for
+ * danger; `danger-500` is its *ink*, and using ink as a fill is what produced
+ * the illegal pair. The other legal exit — `neutral-1000` on `danger-500`,
+ * 7.28:1 — was rejected on hierarchy, not on contrast: a light fill with dark
+ * ink is exactly the shape of the primary CTA, and the one thing a
+ * wallet-deleting button must not look like is the button you press to proceed.
+ */
 export const StyledActionButton: React.ComponentType<ButtonProps & { $isDanger?: boolean }> =
   styled(Button)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
     flex: 1,
-    backgroundColor: $isDanger ? colors.status.error : colors.accent.primary,
-    color: colors.text.primary,
-    textTransform: 'none',
-    fontWeight: fontWeight.semibold,
-    padding: `${spacing.sm}px ${spacing.lg}px`,
-    borderRadius: borderRadius.md,
+    ...controlBase,
+    backgroundColor: $isDanger ? semantic.status.dangerFill : colors.accent.primary,
+    color: $isDanger ? semantic.text.primary : semantic.text.onAccent,
     '&:hover': {
-      backgroundColor: $isDanger ? colors.button.destructiveHover : colors.button.dangerHover,
+      backgroundColor: $isDanger ? semantic.status.dangerFill : colors.button.dangerHover,
+      // The state overlay rather than a lighter fill: every lighter step on the
+      // danger ramp drops the label below AA again.
+      ...($isDanger
+        ? {
+            backgroundImage: `linear-gradient(${semantic.state.hover}, ${semantic.state.hover})`,
+          }
+        : null),
     },
     '&:disabled': {
-      backgroundColor: $isDanger ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 92, 69, 0.3)',
-      color: 'rgba(255, 255, 255, 0.5)',
+      backgroundColor: $isDanger ? semantic.status.dangerFill : colors.accent.primary,
+      color: $isDanger ? semantic.text.primary : semantic.text.onAccent,
+      opacity: semantic.state.disabledOpacity,
     },
   }));

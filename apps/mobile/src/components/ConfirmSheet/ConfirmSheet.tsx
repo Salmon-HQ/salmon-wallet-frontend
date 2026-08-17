@@ -8,6 +8,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, fontFamilyNative, vs, semantic } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer } from '../BottomSheetContainer';
@@ -125,7 +126,15 @@ export function ConfirmSheet({
     <BottomSheetContainer
       visible={visible}
       onClose={onClose}
-      title={<Text style={styles.title}>{title}</Text>}
+      title={
+        <View style={styles.titleRow}>
+          {/* Colour is never the only channel: glyph, fill and label all say it */}
+          {isDanger && (
+            <Ionicons name="warning" size={fontSize.lg} color={semantic.status.danger} />
+          )}
+          <Text style={styles.title}>{title}</Text>
+        </View>
+      }
       style={styles.sheet}
     >
       {/*
@@ -151,18 +160,38 @@ export function ConfirmSheet({
             </View>
           )}
 
+          {/*
+            On a danger sheet the two buttons trade places. Backing out takes
+            the primary fill and comes first, because on a sheet that destroys a
+            wallet the recommended outcome is the one that changes nothing; the
+            destructive action keeps the secondary shell with the danger fill
+            painted into it, so it stays plainly a button without inviting the
+            thumb that is already travelling toward the primary.
+          */}
           <View style={styles.actions}>
-            <SecondaryButton onPress={onClose} disabled={loading}>
-              {cancelText || t('actions.cancel', 'Cancel')}
-            </SecondaryButton>
-            <PrimaryButton
-              onPress={handleConfirm}
-              disabled={!canConfirm}
-              loading={loading}
-              style={isDanger ? styles.dangerButton : undefined}
-            >
-              {confirmText || t('actions.confirm', 'Confirm')}
-            </PrimaryButton>
+            {isDanger ? (
+              <>
+                <PrimaryButton onPress={onClose} disabled={loading}>
+                  {cancelText || t('actions.cancel', 'Cancel')}
+                </PrimaryButton>
+                <SecondaryButton
+                  onPress={handleConfirm}
+                  disabled={!canConfirm || loading}
+                  style={styles.dangerButton}
+                >
+                  {confirmText || t('actions.confirm', 'Confirm')}
+                </SecondaryButton>
+              </>
+            ) : (
+              <>
+                <SecondaryButton onPress={onClose} disabled={loading}>
+                  {cancelText || t('actions.cancel', 'Cancel')}
+                </SecondaryButton>
+                <PrimaryButton onPress={handleConfirm} disabled={!canConfirm} loading={loading}>
+                  {confirmText || t('actions.confirm', 'Confirm')}
+                </PrimaryButton>
+              </>
+            )}
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -181,6 +210,12 @@ const styles = StyleSheet.create({
     minHeight: undefined,
     maxHeight: undefined,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
   title: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.bold,
@@ -195,7 +230,9 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.md,
-    textAlign: 'center',
+    // Left-aligned: the message runs to several lines, and a centred block
+    // moves the start of every line.
+    textAlign: 'left',
     marginBottom: vs(spacing.lg),
   },
   passwordSection: {
@@ -204,7 +241,14 @@ const styles = StyleSheet.create({
   actions: {
     gap: vs(spacing.sm),
   },
+  /**
+   * `status.dangerFill` (`danger-700`) under `SecondaryButton`'s own
+   * `text.primary` label: 6.58:1. It replaces a `status.danger` (`danger-500`)
+   * fill, which put the same light ink at 2.50:1 — below even the
+   * white-on-salmon pairing DESIGN.md bans at 3.06:1. `danger-500` is the
+   * system's danger *ink*; `danger-700` is its fill.
+   */
   dangerButton: {
-    backgroundColor: semantic.status.danger,
+    backgroundColor: semantic.status.dangerFill,
   },
 });

@@ -9,7 +9,12 @@ import { StyledDialogTitle, TitleContainer, TitleText, WarningIcon, CloseButton 
 import { useBaseDialog } from './BaseDialog';
 import type { HeaderProps } from './types';
 
-export function Header({ title, showWarning = false, onClose }: HeaderProps): React.ReactElement {
+export function Header({
+  title,
+  showWarning = false,
+  showClose = true,
+  onClose,
+}: HeaderProps): React.ReactElement {
   const { t } = useTranslation();
   const context = useBaseDialog();
   const handleClose = onClose || context.onClose;
@@ -20,13 +25,15 @@ export function Header({ title, showWarning = false, onClose }: HeaderProps): Re
         {showWarning && <WarningIcon />}
         <TitleText>{title}</TitleText>
       </TitleContainer>
-      <CloseButton
-        onClick={handleClose}
-        disabled={!context.dismissible}
-        aria-label={t('general.close', 'Close')}
-      >
-        <XIcon />
-      </CloseButton>
+      {showClose && (
+        <CloseButton
+          onClick={handleClose}
+          disabled={!context.dismissible}
+          aria-label={t('general.close', 'Close')}
+        >
+          <XIcon />
+        </CloseButton>
+      )}
     </StyledDialogTitle>
   );
 }
