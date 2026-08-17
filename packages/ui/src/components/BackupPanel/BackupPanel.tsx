@@ -34,6 +34,7 @@ import {
   duration,
   durationMs,
 } from '@salmon/shared';
+import { ConfirmDialog } from '../ConfirmDialog';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { WarningNotice } from '../WarningNotice';
 import type { BackupPanelProps } from './types';
@@ -162,10 +163,11 @@ const SectionLabel = styled(Typography)({
 
 export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
   const { t } = useTranslation();
-  const [state] = useAccountsContext();
+  const [state, actions] = useAccountsContext();
   const { activeAccount } = state;
 
   const [seedPhraseVisible, setSeedPhraseVisible] = useState(false);
+  const [reauthOpen, setReauthOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
 
@@ -178,7 +180,14 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
     return mnemonic.split(' ').filter((w) => w.length > 0);
   }, [mnemonic]);
 
+  // An unlocked session is not proof of identity — it only proves the phone or
+  // laptop was left open. The password is asked again before the phrase, the
+  // one secret that hands over every account forever, comes into view.
   const handleReveal = useCallback(() => {
+    setReauthOpen(true);
+  }, []);
+
+  const handleReauthenticated = useCallback(async () => {
     setSeedPhraseVisible(true);
   }, []);
 
@@ -283,6 +292,16 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
                   {seedPhraseVisible ? t('actions.hide', 'Hide') : t('actions.reveal', 'Reveal')}
                 </ActionButton>
               </ActionRow>
+              {seedPhraseVisible && (
+                <Box
+                  sx={{ marginTop: `${spacing.md}px` }}
+                  data-testid="backup-seed-clipboard-warning"
+                >
+                  <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
+                    {t('settings.clipboard_warning_description')}
+                  </WarningNotice>
+                </Box>
+              )}
               {copyFailed && (
                 <Box sx={{ marginTop: `${spacing.md}px` }} data-testid="backup-seed-copy-error">
                   <WarningNotice tone="error" title={t('settings.copy_failed')} />
@@ -292,6 +311,18 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
           </>
         )}
       </PageContent>
+
+      <ConfirmDialog
+        visible={reauthOpen}
+        onClose={() => setReauthOpen(false)}
+        title={t('settings.reveal_phrase_title')}
+        message={t('settings.reveal_phrase_message')}
+        confirmText={t('actions.reveal', 'Reveal')}
+        requirePassword
+        validatePassword={actions.checkPassword}
+        onConfirm={handleReauthenticated}
+        confirmTestID="backup-reauth-confirm"
+      />
     </SettingsPanelContent>
   );
 }

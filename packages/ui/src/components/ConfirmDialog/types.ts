@@ -9,4 +9,6 @@ export interface ConfirmDialogProps {
   requirePassword?: boolean;
   validatePassword?: (password: string) => Promise<boolean>;
   onConfirm: () => Promise<void>;
+  /** Test id for the confirm button, so e2e and unit tests can select it. */
+  confirmTestID?: string;
 }

@@ -21,6 +21,7 @@ import {
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PrimaryButton, SecondaryButton } from '../Button';
+import { ConfirmSheet } from '../ConfirmSheet';
 import { WarningNotice } from '../WarningNotice';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
 
@@ -42,23 +43,40 @@ export function BackupPanel({
   // revealed state — the mnemonic is in memory and one tap away throughout.
   useSecretScreen('backup-panel');
 
-  const [accountState] = useAccountsContext();
+  const [accountState, accountActions] = useAccountsContext();
   const { activeAccount } = accountState;
 
   const [showSeedPhrase, setShowSeedPhrase] = useState(false);
+  const [reauthVisible, setReauthVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
 
   const mnemonic = useMemo(() => activeAccount?.mnemonic || '', [activeAccount]);
   const words = useMemo(() => mnemonic.split(' ').filter(Boolean), [mnemonic]);
 
+  // An unlocked session is not proof of identity — it only proves the phone was
+  // left open. Biometrics count as the same proof as the password here, so a
+  // device with Face ID keeps its one-prompt flow; a device without one falls
+  // back to typing the password rather than to nothing at all.
   const handleReveal = useCallback(async () => {
-    if (!showSeedPhrase && biometricAvailable && authenticateWithBiometric) {
+    if (showSeedPhrase) {
+      setShowSeedPhrase(false);
+      return;
+    }
+
+    if (biometricAvailable && authenticateWithBiometric) {
       const result = await authenticateWithBiometric();
       if (result === null) return;
+      setShowSeedPhrase(true);
+      return;
     }
-    setShowSeedPhrase((prev) => !prev);
+
+    setReauthVisible(true);
   }, [showSeedPhrase, biometricAvailable, authenticateWithBiometric]);
+
+  const handleReauthenticated = useCallback(async () => {
+    setShowSeedPhrase(true);
+  }, []);
 
   const handleCopy = useCallback(async () => {
     if (!showSeedPhrase || !mnemonic) return;
@@ -104,6 +122,18 @@ export function BackupPanel({
         </View>
       </View>
 
+      {showSeedPhrase && (
+        <View testID="backup-seed-clipboard-warning">
+          <WarningNotice
+            tone="warning"
+            title={t('settings.clipboard_warning_title')}
+            style={styles.clipboardWarning}
+          >
+            {t('settings.clipboard_warning_description')}
+          </WarningNotice>
+        </View>
+      )}
+
       {copyFailed && (
         <WarningNotice
           tone="error"
@@ -124,6 +154,17 @@ export function BackupPanel({
           {t('actions.done').toUpperCase()}
         </PrimaryButton>
       </View>
+
+      <ConfirmSheet
+        visible={reauthVisible}
+        onClose={() => setReauthVisible(false)}
+        title={t('settings.reveal_phrase_title')}
+        message={t('settings.reveal_phrase_message')}
+        confirmText={t('actions.reveal')}
+        requirePassword
+        validatePassword={accountActions.checkPassword}
+        onConfirm={handleReauthenticated}
+      />
     </SettingsScreenLayout>
   );
 }
@@ -201,6 +242,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   copyFailedNotice: {
+    marginBottom: spacing.lg,
+  },
+  clipboardWarning: {
     marginBottom: spacing.lg,
   },
 });

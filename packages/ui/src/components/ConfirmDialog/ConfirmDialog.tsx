@@ -70,6 +70,7 @@ export function ConfirmDialog({
   requirePassword = false,
   validatePassword,
   onConfirm,
+  confirmTestID,
 }: ConfirmDialogProps): React.ReactElement {
   const { t } = useTranslation();
   const [password, setPassword] = useState('');
@@ -175,6 +176,7 @@ export function ConfirmDialog({
           onClick={handleConfirm}
           disabled={!canConfirm}
           loading={loading}
+          testID={confirmTestID}
         >
           {confirmText || t('actions.confirm', 'Confirm')}
         </BaseDialog.ActionButton>
