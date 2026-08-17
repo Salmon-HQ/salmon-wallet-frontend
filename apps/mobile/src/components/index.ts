@@ -34,6 +34,9 @@ export type { LoadingScreenProps } from './LoadingScreen';
 
 export { ShimmerRect } from './ShimmerRect';
 
+export { PendingValue } from './PendingValue';
+export type { PendingValueProps } from './PendingValue';
+
 export { default as QRCode } from './QRCode';
 export type { QRCodeProps } from './QRCode';
 

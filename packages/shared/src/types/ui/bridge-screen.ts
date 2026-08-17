@@ -132,6 +132,12 @@ export interface BridgeReviewScreenPropsBase<TStyle> {
   onConfirm: () => void;
   /** Whether confirm is in progress */
   isConfirming?: boolean;
+  /**
+   * Whether a fresh estimate is in flight. The screen stays exactly as it is
+   * and only the values the new estimate can change report that they are
+   * being recalculated.
+   */
+  isRefreshing?: boolean;
   /** Override label for the confirm button (e.g. countdown or refresh) */
   confirmLabel?: string;
   /** Custom style */

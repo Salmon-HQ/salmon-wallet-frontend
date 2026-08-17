@@ -143,6 +143,7 @@ export function BridgeReviewScreen({
   onBack,
   onConfirm,
   isConfirming = false,
+  isRefreshing = false,
   confirmLabel,
   style,
 }: BridgeReviewScreenProps) {
@@ -164,6 +165,7 @@ export function BridgeReviewScreen({
             <SwapReviewCard
               label={t('bridge.review.youReceiveEstimated')}
               amount={formatAmountWithSymbol(outAmount, outToken.symbol)}
+              pendingAmount={isRefreshing}
             />
           </CardsContainer>
 
@@ -186,10 +188,12 @@ export function BridgeReviewScreen({
                 <SwapDetailRow
                   label={t('bridge.review.minimumAmount')}
                   value={formatAmountWithSymbol(estimate.minAmount, inToken.symbol)}
+                  pending={isRefreshing}
                 />
                 <SwapDetailRow
                   label={t('bridge.review.estimatedOutput')}
                   value={formatAmountWithSymbol(estimate.estimatedAmount, outToken.symbol)}
+                  pending={isRefreshing}
                 />
               </>
             )}
@@ -223,6 +227,7 @@ export function BridgeReviewScreen({
         onBack={onBack}
         onConfirm={onConfirm}
         isConfirming={isConfirming}
+        isRefreshing={isRefreshing}
         confirmLabel={confirmLabel ?? t('bridge.review.confirmSwap')}
       />
     </Container>

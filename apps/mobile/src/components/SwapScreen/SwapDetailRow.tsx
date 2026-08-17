@@ -14,17 +14,25 @@ import {
   componentSizes,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
+import { PendingValue } from '../PendingValue';
 import type { SwapDetailRowProps } from './types';
 
 /**
  * SwapDetailRow - A single row in the swap details section
  * Displays label on left and value on right with glassmorphism effect
  */
-export const SwapDetailRow: React.FC<SwapDetailRowProps> = ({ label, value, style }) => {
+export const SwapDetailRow: React.FC<SwapDetailRowProps> = ({
+  label,
+  value,
+  pending = false,
+  style,
+}) => {
   return (
     <BlurContainer style={[styles.container, style]}>
       <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+      <PendingValue pending={pending}>
+        <Text style={styles.value}>{value}</Text>
+      </PendingValue>
     </BlurContainer>
   );
 };
