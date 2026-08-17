@@ -5,15 +5,19 @@
  * Renders a radial gradient border (Figma "Glassy_BORDER") by default
  * via an inline SVG overlay with <radialGradient> stroke.
  * When a custom borderColor is provided, the gradient uses that color.
+ *
+ * The blur is conditional on the fill being translucent. The default fill is
+ * `colors.background.tokenItem`, which is opaque — a list row is content, and
+ * DESIGN.md gives translucency only to floating chrome — so the common case
+ * is now an opaque surface with a glassy edge and no backdrop filter at all.
+ * Pass a translucent `backgroundColor` and the blur comes back.
  */
 import { useEffect, useId, useRef, useState } from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
-import { colors } from '@salmon/shared';
+import { colors, isOpaqueColor } from '@salmon/shared';
 import { focusRingNone, focusRingOnWrapper } from '../../theme';
 import type { BlurContainerProps } from './types';
-
-const WEB_DEFAULT_BG = 'rgba(56, 63, 82, 0.10)';
 
 /** Radial gradient stops for glassy border effect (Figma "Glassy_BORDER") */
 const GLASSY_BORDER_STOPS = [
@@ -92,8 +96,16 @@ const BlurBox = styled(Box)<{
   $borderWidth: number;
   $useGradientBorder: boolean;
 }>(({ $blurIntensity, $backgroundColor, $borderColor, $borderWidth, $useGradientBorder }) => ({
-  backdropFilter: `blur(${$blurIntensity}px)`,
-  WebkitBackdropFilter: `blur(${$blurIntensity}px)`,
+  // A backdrop blur behind an opaque fill blurs nothing and still costs a
+  // compositor layer, and DESIGN.md's degradation ladder bans `backdrop-filter`
+  // on a list row in the extension outright. Now that the default fill is
+  // opaque, most of these containers are rows and skip it.
+  ...(isOpaqueColor($backgroundColor)
+    ? {}
+    : {
+        backdropFilter: `blur(${$blurIntensity}px)`,
+        WebkitBackdropFilter: `blur(${$blurIntensity}px)`,
+      }),
   backgroundColor: $backgroundColor,
   overflow: 'hidden',
   position: 'relative',
@@ -120,7 +132,7 @@ export function BlurContainer({
   style,
   blurIntensity = 2,
   blurTint: _blurTint = 'dark',
-  backgroundColor = WEB_DEFAULT_BG,
+  backgroundColor = colors.background.tokenItem,
   borderColor = colors.border.default,
   borderWidth = 1,
   useGradientBorder = true,

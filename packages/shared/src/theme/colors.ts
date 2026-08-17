@@ -5,7 +5,7 @@
 
 import type { BlockchainId } from '../types/ui/balance-card';
 import { danger, neutral, salmon, success, warning } from './palette';
-import { scales } from './semantic';
+import { scales, surface } from './semantic';
 
 export const colors = {
   background: {
@@ -14,7 +14,24 @@ export const colors = {
     tertiary: 'rgba(255, 255, 255, 0.08)', // elevated surfaces
     card: 'rgba(255, 255, 255, 0.05)',
     glass: 'rgba(0, 0, 0, 0.4)',
-    tokenItem: 'rgba(56, 63, 82, 0.1)', // blur-backed list items
+    /**
+     * List rows and the cards that behave like them.
+     *
+     * Opaque, and it has to be. This was `rgba(56, 63, 82, 0.10)` — a 10%
+     * wash that let the ground read straight through an amount. DESIGN.md is
+     * explicit that content is opaque by default and that translucency is a
+     * privilege of floating chrome (plane P2 is "Opaque — the default"; only
+     * P3 membranes are translucent), and a token row is content. The
+     * consequence was not cosmetic: the water column's motif had to be
+     * cropped to a band above the list, because a full-height field would
+     * otherwise have been legible behind a balance.
+     *
+     * `surface.raised` rather than `surface.shelf` because the ground is a
+     * ramp now, and `shelf` *is* the ramp's top stop (`neutral-950`) — a row
+     * painted in it would vanish into the ground at the top of the column and
+     * only appear further down. `raised` clears every stop of the ramp.
+     */
+    tokenItem: surface.raised,
   },
   text: {
     // Deep water has no pure white in it — `neutral-50` is the whitest thing
@@ -256,3 +273,25 @@ export type Gradients = typeof gradients;
  */
 export const getScalesColorForBlockchain = (_blockchain: BlockchainId): string =>
   scales.deepFieldStroke;
+
+/**
+ * Whether a colour hides whatever is behind it.
+ *
+ * Both `BlurContainer`s ask this before spending a blur. A backdrop blur
+ * behind an opaque fill is a compositor layer that composites nothing, and
+ * DESIGN.md's degradation ladder bans it outright on a list row in the
+ * extension ("never on a scrolling container, never on a sheet, never on a
+ * list row"). Now that rows are opaque, that ban is free to honour.
+ *
+ * Only the two shapes the token layer actually produces are recognised —
+ * `#rgb`/`#rrggbb` hex and `rgb()`/`rgba()` — and anything unrecognised is
+ * treated as translucent, so an unknown value keeps today's behaviour rather
+ * than silently losing its blur.
+ */
+export const isOpaqueColor = (color: string): boolean => {
+  const value = color.trim();
+  if (value.startsWith('#')) return value.length === 4 || value.length === 7;
+  const alpha = /^rgba?\([^)]*?(?:,|\/)\s*([\d.]+)\s*\)$/.exec(value);
+  if (alpha) return Number(alpha[1]) >= 1;
+  return /^rgb\(/.test(value);
+};

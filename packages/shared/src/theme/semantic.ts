@@ -151,11 +151,28 @@ export const accent = {
  * `patternHeight` is a multiplier on the drawing's native 26px tile.
  */
 export const scales = {
-  /** Deep field — on `depth.column`, behind the balance header only. */
+  /** Deep field — the column's own texture, top to bottom of the ground. */
   deepFieldStroke: 'rgba(199, 211, 232, 0.06)',
   deepFieldScale: 3.2,
-  /** The band the field lives in; it dissolves before it reaches a row. */
+  /**
+   * @deprecated The field is no longer a band. It filled 180px and dissolved
+   * to nothing, which put the entire motif under the balance card and left
+   * the lower half of every screen — the empty half — bare. It is now the
+   * height of whatever it is mounted in, thinning with depth via
+   * `deepFieldFloor` instead of stopping. Kept as an export because
+   * `semantic` is read by three apps; no renderer uses it.
+   */
   deepFieldHeight: 180,
+  /**
+   * How much of the deep field survives at the bottom of its container.
+   *
+   * The field fades downward because density is the depth cue, but it fades
+   * *to* this rather than to zero: a motif that reaches zero has an end, and
+   * an end at the waterline is what made the fish read as cropped. At 0.35 of
+   * a 0.06 stroke the deepest scales measure ~1.02:1 — present, and nowhere
+   * near the 1.4:1 ceiling.
+   */
+  deepFieldFloor: 0.35,
   /**
    * @deprecated The `fish` variant no longer has a call site: salmon fills now
    * carry the flesh texture (`FleshBackground`, `theme/flesh.ts`), because a

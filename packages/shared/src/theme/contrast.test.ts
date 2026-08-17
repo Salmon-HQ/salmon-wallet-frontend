@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { neutral, salmon } from './palette';
-import { accent, border, depth, state, status, surface, text, water } from './semantic';
-import { colors } from './colors';
+import { accent, border, depth, scales, state, status, surface, text, water } from './semantic';
+import { colors, isOpaqueColor } from './colors';
 
 /**
  * WCAG 2.1 relative luminance and contrast ratio.
@@ -230,6 +230,56 @@ describe('contrast: the water column', () => {
     const snowOver = composite(SNOW_HEX, depth.column, SNOW_ALPHA);
     expect(contrast(scalesOver, depth.column)).toBeLessThan(MOTIF_CEILING);
     expect(contrast(snowOver, depth.column)).toBeLessThan(MOTIF_CEILING);
+  });
+
+  it('the deep field stays under the ceiling at the floor it fades to', () => {
+    // The scales no longer fade to nothing, they fade to `deepFieldFloor`, so
+    // the bottom of the column carries a real stroke and it has to be measured
+    // rather than assumed harmless because it is faint.
+    const alpha = 0.06 * scales.deepFieldFloor;
+    for (const ground of [rampTop, rampFloor]) {
+      expect(contrast(composite('#C7D3E8', ground, alpha), ground)).toBeLessThan(MOTIF_CEILING);
+    }
+  });
+});
+
+/**
+ * The motif runs the height of the column now, so what keeps it off a number
+ * is no longer a crop — it is that the content on top of it is opaque. That
+ * makes the opacity of a list row a *contrast* property, not a style choice,
+ * and it belongs in the file that stops someone quietly lowering one.
+ *
+ * DESIGN.md: content is opaque by default and translucency is a privilege of
+ * floating chrome; plane P2 (shelf / raised / crest — "all lists, cards,
+ * inputs, content") is marked "Opaque — the default". A translucent row would
+ * put the water column behind an amount, which The Scales Exclusion Rule
+ * forbids however faint the motif is.
+ */
+describe('contrast: content that occludes the motif', () => {
+  it('the list-row fill is opaque', () => {
+    expect(isOpaqueColor(colors.background.tokenItem)).toBe(true);
+  });
+
+  it('the list-row fill is distinct from every stop of the ground ramp', () => {
+    // `surface.shelf` would have been the system's default choice, but it is
+    // the ramp's own top stop — a row painted in it disappears into the ground
+    // at the top of the column.
+    for (const stop of water.gradient) {
+      expect(colors.background.tokenItem.toLowerCase()).not.toBe(stop.toLowerCase());
+    }
+  });
+
+  it('every text role on a list row still clears AA', () => {
+    for (const role of [text.primary, text.secondary, text.tertiary, text.accent]) {
+      expect(contrast(role, colors.background.tokenItem)).toBeGreaterThanOrEqual(AA_TEXT);
+    }
+  });
+
+  it('recognises the translucent tiers as translucent, so they keep their blur', () => {
+    expect(isOpaqueColor(surface.membraneThin)).toBe(false);
+    expect(isOpaqueColor(surface.membraneThick)).toBe(false);
+    expect(isOpaqueColor(border.hairline)).toBe(false);
+    expect(isOpaqueColor(surface.bedrock)).toBe(true);
   });
 });
 

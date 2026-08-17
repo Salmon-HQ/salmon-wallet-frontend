@@ -230,7 +230,8 @@ marks its parts.
 | Geist + Geist Mono, tabular-nums token, font-scale caps | **Shipped** | `packages/shared/src/theme/typography.ts`, `packages/assets/src/fonts` |
 | Brand mark as tintable vector paths | **Shipped** | `packages/shared/src/theme/brand.ts` |
 | MUI theme + unconditional focus ring (web, extension) | **Shipped** | `packages/ui/src/theme/index.ts` |
-| The water column: depth ramp + marine snow field (`semantic.water`, geometry, both renderers) | **Shipped** | `packages/shared/src/theme/depthField.ts`, `packages/ui/src/components/DepthBackground`, `apps/mobile/src/components/DepthBackground` |
+| The water column: depth ramp + marine snow field (`semantic.water`, geometry, both renderers) | **Shipped**, full column height | `packages/shared/src/theme/depthField.ts`, `packages/ui/src/components/DepthBackground`, `apps/mobile/src/components/DepthBackground` |
+| Opaque list rows (plane P2), so the motif is occluded rather than cropped | **Shipped** | `packages/shared/src/theme/colors.ts` (`background.tokenItem`), both `BlurContainer`s |
 | The water column mounted on the app ground | **Shipped** on the home ground of all three apps | `apps/mobile/app/(app)/(tabs)/_layout.tsx`, `apps/web` and `apps/extension` `pages/home/HomePage.tsx` |
 | Sand / seabed, ambient light shafts | **Refused by design** — see §Overview and §The water column | — |
 | Marine snow drift | **Refused for now** — the field is static; see §The water column | — |
@@ -716,13 +717,48 @@ stroke. Every floc's authored opacity is a multiplier ≤ 1 on that one token, s
 pinning the token pins the whole field; `depthField.test.ts` asserts the
 multipliers and `contrast.test.ts` asserts the token.
 
-**Exclusion.** The Scales Exclusion Rule covers this motif too, and the field
-enforces it by shape rather than by convention: it is 360px tall, its lower
-third fades to nothing, and it draws nothing at all below 90% of its height, so
-it is spent before the first data row. Snow never reaches a number, a row, an
-address, an input, a seed phrase, or an approval surface. The ramp is exempt
-because it is a background *colour*, not a motif — a ground that darkens behind
-an amount is still a ground.
+**Exclusion, and why the field is full-height.** The field first shipped as a
+360px band that faded out before the first data row, which enforced The Scales
+Exclusion Rule by shape. That was the wrong mechanism, and it produced the
+wrong picture: the motif lived exactly where the balance card covers it and
+vanished in the empty lower half of every screen — an animal that fills the
+frame, cut off at the chest.
+
+The band existed for a real reason. The token rows were
+`rgba(56, 63, 82, 0.10)`, so a full-height field would have been legible
+*through* a balance. But that translucency was itself off-system: this document
+says content is opaque by default and translucency is a privilege of floating
+chrome, and plane P2 — "all lists, cards, inputs, content" — is marked "Opaque
+— the default". A list row is content, not chrome. So the rows became opaque
+(`colors.background.tokenItem` is `surface.raised`) and the field became the
+height of the column.
+
+The rule is unchanged and now enforced the way it was written to be: snow and
+scales never appear *readably* behind a number, a row, an address, an input, a
+seed phrase, or an approval surface, because the content on those surfaces
+covers them. Depth is carried by the brightness ramp baked into every floc and
+by the size/density gradient between the bands, not by a crop —
+`depthField.test.ts` asserts coverage to the bottom of the field, no empty band
+on the way, and that the top half is brighter than the bottom;
+`contrast.test.ts` asserts that the row fill is opaque and distinct from every
+stop of the ground ramp. The ramp itself is exempt from the rule because it is
+a background *colour*, not a motif — a ground that darkens behind an amount is
+still a ground.
+
+`surface.raised` rather than `surface.shelf` for the rows, because the ground
+is a ramp and `shelf` *is* the ramp's top stop: a row painted in it would
+disappear into the ground at the top of the column.
+
+**The deep field follows.** The scales' `deepField` variant no longer occupies
+a 180px band either. It fills whatever it is mounted in and thins downward to
+`scales.deepFieldFloor` (0.35 of its stroke) rather than to nothing — a motif
+that reaches zero has an end, and an end partway down the column is what read
+as a crop. On the DOM the seigaiha tile is now serialised into a repeating
+`background-image` data URI instead of a live `<svg><pattern>`, because the
+degradation ladder below forbids the extension a full-viewport SVG the browser
+can be asked to repaint; that also retires the `<pattern id>` collision two
+live instances in one document used to risk. Opaque rows additionally drop one
+`backdrop-filter` per row, which rung 4 of the same ladder bans outright.
 
 **No filters.** `react-native-svg` implements `FeTurbulence` and
 `FeDisplacementMap` as no-ops, so every irregularity — position, size, squash,
@@ -755,8 +791,18 @@ them as gaps.
 kind of object — never appear behind a numeric value,
 inside a list row, on a swap review card, anywhere on the approval sheet, behind
 a seed phrase, on any surface where a live backdrop shows through, or in a
-scrolling container in the extension. In the extension the deep field is a
-pre-rendered 2× PNG composited once, not a full-viewport SVG repaint.
+scrolling container in the extension.
+
+The rule is about *readability*, not about leaving ground blank. Both fields
+run the full height of the ground; what keeps them off a number is that the
+surface carrying the number is opaque and covers them. A crop is not an
+acceptable substitute, and neither is a translucent row: a row that lets the
+column through is the violation, and cropping the column to compensate is the
+band-aid this document used to prescribe.
+
+In the extension the deep field is composited once as an image — a serialised
+data URI for both the snow and the seigaiha tile — never a full-viewport SVG
+the browser can be asked to repaint.
 
 **The Concentric Rule.** Inner radius = outer radius − padding, always. A
 rounded rectangle inside another rounded rectangle with the same radius is a bug.

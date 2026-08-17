@@ -8,7 +8,7 @@ import type { CSSProperties } from 'react';
  * decoration. A fourth use is a bug; see `The Scales Exclusion Rule`.
  */
 export type ScalesVariant =
-  /** On `depth.column`, behind the balance header only. 3.2x, dissolving. */
+  /** On `depth.column`, the full height of its parent. 3.2x, thinning. */
   | 'deepField'
   /**
    * @deprecated No call site remains. Salmon fills carry `FleshBackground`

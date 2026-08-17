@@ -41,7 +41,7 @@ import {
 } from './durations';
 
 // Re-export all tokens from colors
-export { colors, gradients, getScalesColorForBlockchain } from './colors';
+export { colors, gradients, getScalesColorForBlockchain, isOpaqueColor } from './colors';
 export type { Colors, Gradients } from './colors';
 
 // Primitive ramps and the semantic layer built on them. Additive: `colors`

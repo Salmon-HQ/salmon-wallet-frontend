@@ -1,4 +1,4 @@
-import { colors } from '@salmon/shared';
+import { colors, isOpaqueColor } from '@salmon/shared';
 import { BlurView } from 'expo-blur';
 import React, { useId, useState } from 'react';
 import { type LayoutChangeEvent, Platform, StyleSheet, View } from 'react-native';
@@ -108,15 +108,23 @@ export function BlurContainer({
       onLayout={useGradientBorder ? handleLayout : undefined}
       pointerEvents={pointerEvents}
     >
-      <BlurView
-        intensity={blurIntensity}
-        tint={blurTint}
-        blurTarget={blurTarget}
-        blurMethod="dimezisBlurView"
-        blurReductionFactor={Platform.OS === 'android' ? ANDROID_BLUR_REDUCTION_FACTOR : undefined}
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { backgroundColor }]}
-      />
+      {/* A blur behind an opaque fill samples pixels nobody will ever see, and
+          on Android it is a real surface per row. The default fill is opaque
+          now — a list row is content, and DESIGN.md gives translucency only to
+          floating chrome — so the common case is a plain filled View. */}
+      {isOpaqueColor(backgroundColor) ? (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor }]} />
+      ) : (
+        <BlurView
+          intensity={blurIntensity}
+          tint={blurTint}
+          blurTarget={blurTarget}
+          blurMethod="dimezisBlurView"
+          blurReductionFactor={Platform.OS === 'android' ? ANDROID_BLUR_REDUCTION_FACTOR : undefined}
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { backgroundColor }]}
+        />
+      )}
       {useGradientBorder && (
         <GradientBorderOverlay
           width={layout.width}

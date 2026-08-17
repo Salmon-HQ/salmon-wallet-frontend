@@ -12,10 +12,14 @@ import { water } from './semantic';
  * above 1 in the geometry would quietly route around that assertion, so it is
  * asserted here at the source.
  *
- * The second is the **exclusion envelope**: the field has to be spent before
- * the ground reaches a data row. That is The Scales Exclusion Rule applied to
- * this motif, and it is a property an edit that only "added a few particles
- * lower down" would destroy without any renderer noticing.
+ * The second is **coverage**: the field has to reach the bottom of the column,
+ * with no empty band on the way. It used to be the opposite assertion — the
+ * field was cropped above the first data row — because the token rows were
+ * translucent and the motif would have been legible through an amount. The
+ * rows are opaque now, which is what DESIGN.md asked for in the first place,
+ * so The Scales Exclusion Rule is enforced by occlusion instead of by a crop.
+ * The assertion is kept inverted rather than deleted because a future edit
+ * that quietly reintroduces a band is exactly the regression to catch.
  *
  * The rest pin the drawing that was judged — the field's size, the aerial
  * perspective the bands encode, and the fact that nothing is randomised.
@@ -35,28 +39,43 @@ describe('marine snow: brightness is capped by the token', () => {
   });
 });
 
-describe('marine snow: the exclusion envelope', () => {
+describe('marine snow: the field covers the whole column', () => {
   const { height } = depthFieldTile;
 
-  it('draws nothing in the bottom tenth of the field', () => {
+  it('draws all the way to the bottom of the field', () => {
+    // The field used to stop before the first data row, which put the motif
+    // exactly where the balance card covers it and left the empty lower half
+    // of every screen bare. Occlusion by opaque content is what enforces the
+    // exclusion rule now; a crop would put the fish back in a band.
     const lowest = Math.max(...marineSnow.map(([, cy, , ry]) => cy + ry));
-    expect(lowest).toBeLessThan(height * 0.9);
+    expect(lowest).toBeGreaterThan(height * 0.95);
   });
 
-  it('fades out rather than stopping at an edge', () => {
-    // Whatever survives in the lower third has to be near-invisible, or the
-    // field ends on a line instead of dissolving.
-    const deep = marineSnow.filter(([, cy]) => cy > height * 0.75);
-    expect(deep.length).toBeGreaterThan(0);
-    for (const [, , , , opacity] of deep) {
-      expect(opacity).toBeLessThanOrEqual(0.25);
+  it('leaves no empty band anywhere down the column', () => {
+    for (let i = 0; i < 10; i += 1) {
+      const band = marineSnow.filter(
+        ([, cy]) => cy >= (height * i) / 10 && cy < (height * (i + 1)) / 10
+      );
+      expect(band.length).toBeGreaterThan(0);
     }
+  });
+
+  it('dims with depth, because that is what carries depth once nothing is cropped', () => {
+    const mean = (band: typeof marineSnow) =>
+      band.reduce((sum, [, , , , o]) => sum + o, 0) / band.length;
+    const top = marineSnow.filter(([, cy]) => cy < height / 2);
+    const bottom = marineSnow.filter(([, cy]) => cy >= height / 2);
+    expect(mean(top)).toBeGreaterThan(mean(bottom));
   });
 
   it('is wider than the widest column it has to cover', () => {
     // `componentSizes.webContainerMaxWidth` is 430; a narrower field would
     // leave a bare strip at the edge of a phone-width column.
     expect(depthFieldTile.width).toBeGreaterThanOrEqual(430);
+  });
+
+  it('is taller than it is wide, so a uniform cover scale fills a phone column', () => {
+    expect(depthFieldTile.height).toBeGreaterThan(depthFieldTile.width * 1.8);
   });
 });
 

@@ -115,9 +115,18 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
         <Defs>
           {config.fade && (
             <>
+              {/* Thins downward to a floor rather than to nothing. A motif
+                  that reaches zero has an end, and an end partway down the
+                  column is what made the field read as cropped. The caustic
+                  is the exception: it is a shaft of light with a leading
+                  edge, so it does go to nothing. */}
               <LinearGradient id={fadeId} x1="0" y1="0" x2="0" y2="1">
                 <Stop offset="0" stopColor="#fff" stopOpacity="1" />
-                <Stop offset="1" stopColor="#fff" stopOpacity="0" />
+                <Stop
+                  offset="1"
+                  stopColor="#fff"
+                  stopOpacity={variant === 'caustic' ? 0 : scales.deepFieldFloor}
+                />
               </LinearGradient>
               <Mask id={maskId}>
                 <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${fadeId})`} />
