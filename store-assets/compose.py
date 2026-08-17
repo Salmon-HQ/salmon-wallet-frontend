@@ -14,12 +14,17 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent
-FONTS = ROOT / "fonts"
+# The app's own font files, not a copy: the store frames and the product must
+# never drift onto different cuts of the same typeface.
+FONTS = ROOT.parent / "packages" / "assets" / "src" / "fonts"
 SRC = ROOT / "source"
 
 CORAL_TOP, CORAL_BOT = (0xFF, 0x81, 0x70), (0xFF, 0x5C, 0x45)
 NAVY_TOP, NAVY_BOT = (0x16, 0x1C, 0x2D), (0x10, 0x13, 0x1C)
 WHITE = (0xFC, 0xFC, 0xFC)
+# White on a salmon fill measures 3.06:1 and is banned outright by DESIGN.md;
+# neutral-1000 is the only legal ink there, at 6.50:1. Navy keeps white.
+INK_ON_CORAL = (0x07, 0x09, 0x11)
 
 # Каждый frame: (capture, eyebrow, headline, background)
 DECK = [
@@ -114,19 +119,19 @@ def rounded_device(shot, width, radius_ratio=0.075):
     return canvas
 
 
-def draw_caption(im, eyebrow, headline, canvas_w, top_y):
+def draw_caption(im, eyebrow, headline, canvas_w, top_y, ink):
     d = ImageDraw.Draw(im)
     unit = canvas_w
     y = top_y
     if eyebrow:
-        f = ImageFont.truetype(str(FONTS / "DMSans-Medium.ttf"), round(unit * 0.026))
+        f = ImageFont.truetype(str(FONTS / "Geist-SemiBold.ttf"), round(unit * 0.026))
         w = d.textbbox((0, 0), eyebrow, font=f)[2]
-        d.text(((canvas_w - w) / 2, y), eyebrow, font=f, fill=WHITE + (0,) if False else WHITE)
+        d.text(((canvas_w - w) / 2, y), eyebrow, font=f, fill=ink)
         y += round(unit * 0.055)
-    f = ImageFont.truetype(str(FONTS / "DMSans-Bold.ttf"), round(unit * 0.075))
+    f = ImageFont.truetype(str(FONTS / "Geist-Bold.ttf"), round(unit * 0.075))
     for line in headline.split("\n"):
         bbox = d.textbbox((0, 0), line, font=f)
-        d.text(((canvas_w - bbox[2]) / 2, y), line, font=f, fill=WHITE)
+        d.text(((canvas_w - bbox[2]) / 2, y), line, font=f, fill=ink)
         y += round(unit * 0.088)
     return y
 
@@ -153,12 +158,12 @@ def compose_landscape(store):
         frame.alpha_composite(device, (dx, (ch - device.height) // 2))
 
         d = ImageDraw.Draw(frame)
-        f = ImageFont.truetype(str(FONTS / "DMSans-Bold.ttf"), round(cw * 0.052))
+        f = ImageFont.truetype(str(FONTS / "Geist-Bold.ttf"), round(cw * 0.052))
         lines = headline.split("\n")
         lh = round(cw * 0.062)
         y = (ch - lh * len(lines)) // 2
         for line in lines:
-            d.text((round(cw * 0.075), y), line, font=f, fill=WHITE)
+            d.text((round(cw * 0.075), y), line, font=f, fill=INK_ON_CORAL if bg == "coral" else WHITE)
             y += lh
         dest = out / f"{i:02d}-{capture.split('-', 1)[1]}.png"
         frame.convert("RGB").save(dest); made.append(dest.name)
@@ -204,7 +209,7 @@ def compose(store):
         top = caption_bottom + gap + (avail_h - device.height) // 2
         frame.alpha_composite(device, ((cw - device.width) // 2, top))
 
-        draw_caption(frame, eyebrow, headline, cw, caption_top)
+        draw_caption(frame, eyebrow, headline, cw, caption_top, INK_ON_CORAL if bg == "coral" else WHITE)
         dest = out / f"{n:02d}-{capture.split('-', 1)[1]}.png"
         frame.convert("RGB").save(dest)
         made.append(dest.name)
