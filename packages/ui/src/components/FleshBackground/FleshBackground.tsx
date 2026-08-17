@@ -49,7 +49,10 @@ export function FleshBackground({
     >
       <defs>
         {fleshFades.map((stops, i) => (
-          <linearGradient key={i} id={`${patternId}f${i}`} x1="0" y1="0" x2="1" y2="0">
+          // Down the band, not across it: the bands run across the tile, so a
+          // fade stop's offset is a height. Turning this sideways would smear
+          // each envelope across a band's width instead of along its length.
+          <linearGradient key={i} id={`${patternId}f${i}`} x1="0" y1="0" x2="0" y2="1">
             {stops.map(([offset, stopOpacity], j) => (
               <stop key={j} offset={offset} stopColor={color} stopOpacity={stopOpacity} />
             ))}

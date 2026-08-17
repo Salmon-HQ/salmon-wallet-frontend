@@ -71,7 +71,10 @@ export const FleshBackground: React.FC<FleshBackgroundProps> = ({
       <Svg width="100%" height="100%">
         <Defs>
           {fleshFades.map((stops, i) => (
-            <LinearGradient key={i} id={`${patternId}f${i}`} x1="0" y1="0" x2="1" y2="0">
+            // Down the band, not across it: the bands run across the tile, so
+            // a fade stop's offset is a height. Turning this sideways would
+            // smear each envelope across a band's width, not along its length.
+            <LinearGradient key={i} id={`${patternId}f${i}`} x1="0" y1="0" x2="0" y2="1">
               {stops.map(([offset, stopOpacity], j) => (
                 <Stop
                   key={j}
