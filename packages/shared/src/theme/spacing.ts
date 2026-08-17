@@ -65,10 +65,20 @@ export const borderRadius = {
   md: 8,
   /** 9px - NFT card badges */
   badge: 9,
-  /** 12px */
+  /**
+   * 12px — the control radius.
+   *
+   * Every interactive control in the system sits here: buttons, text inputs,
+   * action buttons, list rows, small cards. A control is not a pill.
+   */
   lg: 12,
-  /** 14px - Medium button corners */
-  button: 14,
+  /**
+   * 12px — alias of `lg`, kept because ~15 call sites across three apps import
+   * it by this name. It used to be 14; it was never a distinct step, only the
+   * legacy scale's separate value for "button". Pinned to `lg` by
+   * `controlRadius.test.ts`.
+   */
+  button: 12,
   /** 16px */
   xl: 16,
   /** 18px - Icon containers */
@@ -97,7 +107,13 @@ export const componentSizes = {
   buttonHeightSmall: 44,
   /** 42px - Compact action buttons (swap, bridge, receive, success) */
   buttonHeightCompact: 42,
-  buttonRadius: 28,
+  /**
+   * The control radius. It was 28, which on a 56px control is a pill, and the
+   * product owner does not want pills: a button must read with the same
+   * roundness as a token list row and a text input. All three now resolve to
+   * `borderRadius.lg` (12) — one number, so a call site cannot drift.
+   */
+  buttonRadius: borderRadius.lg,
   /**
    * Tile scale for the flesh texture inside a filled control.
    *
@@ -117,14 +133,16 @@ export const componentSizes = {
   // ActionButtonRow
   actionButtonWidth: 112,
   actionButtonHeight: 47,
-  actionButtonRadius: 14,
+  /** The control radius — see `buttonRadius`. Was 14. */
+  actionButtonRadius: borderRadius.lg,
   actionButtonIcon: 16,
 
   // Inputs
   inputHeight: 56,
   /** 58px - Swap amount input */
   inputHeightLg: 58,
-  inputRadius: 12,
+  /** The control radius — see `buttonRadius`. Already 12; now bound to it. */
+  inputRadius: borderRadius.lg,
   /** 14px - Input vertical padding */
   inputPaddingVertical: 14,
 

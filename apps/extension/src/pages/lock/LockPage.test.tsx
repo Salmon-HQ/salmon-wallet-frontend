@@ -85,7 +85,7 @@ vi.mock('@salmon/shared', () => {
     componentSizes: {
       lockScreenLogoSizeExtension: 80,
       inputPaddingVertical: 12,
-      inputRadius: 8,
+      inputRadius: 12,
     },
     STASH_KEYS: { DERIVED_KEY: 'derivedKey' },
     getStashItem: (...args: unknown[]) => mockGetStashItem(...args),

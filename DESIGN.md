@@ -100,7 +100,7 @@ rounded:
   sm: '4px'
   md: '8px'
   lg: '12px'
-  button: '14px'
+  button: '12px'
   xl: '16px'
   2xl: '24px'
   card: '26px'
@@ -279,7 +279,7 @@ marks its parts.
 | Light theme (index-flip resolver)                                                             | **Specified, not built**                                                                    | —                                                                                                                                                                                                                            |
 | Material/membrane model and the five-rung degradation ladder                                  | **Specified, not built**                                                                    | —                                                                                                                                                                                                                            |
 | Icons on mobile (`phosphor-react-native`)                                                     | **Specified, not built**                                                                    | only `@phosphor-icons/react` is installed, in `packages/ui`                                                                                                                                                                  |
-| Type scale (`display`…`monoLg`), radius scale (`r0`…`r6`), spacing rhythm                     | **Specified, not built**                                                                    | `typography.ts` and `spacing.ts` still carry the Figma-derived one-offs                                                                                                                                                      |
+| Type scale (`display`…`monoLg`), radius scale (`r0`…`r6`), spacing rhythm                     | **Partly built** — the radius scale's control end is shipped; the rest specified            | Every control now sits on one 12px token (§The Control Radius Rule); `typography.ts` and the container end of `spacing.ts` still carry the Figma-derived one-offs                                                            |
 
 **Key Characteristics:**
 
@@ -365,7 +365,7 @@ The translucent tiers `surface.membraneThin` and `surface.membraneThick` are
 **The One Living Thing Rule.** Salmon appears as a **fill** once per screen —
 and the rule governs fills only. Four salmon fills on one screen means no fill
 is primary, and that is the failure this rule exists to prevent. On the home
-screen the one fill is the Send pill.
+screen the one fill is the Send button.
 
 Salmon as **ink** has no such problem and is not rationed: at 6.07:1 on dark
 ground it out-measures several text roles already shipping, and the ramp has
@@ -625,7 +625,7 @@ users and every low-end Android will see.
   affordance it needs and leaves the real press with nothing left to say.
   The same literal string is used on both platforms — React Native 0.83 parses
   this CSS `box-shadow` with `inset` in `processBoxShadow` and clips it to the
-  view's own radius, so the rim follows a pill end the way the DOM's does. One
+  view's own radius, so the rim follows the corner the way the DOM's does. One
   measured caveat: Android draws inset shadows only from API 29, and below that
   the bezel is simply absent and nothing else changes.
 - **Card ambient** (`0 8px 24px -8px rgba(3,6,12,0.45)`): raised cards (E2).
@@ -663,12 +663,24 @@ contrast bug, and in a wallet a contrast bug on an amount is a fund-loss vector.
 ## Shapes
 
 **Radii.** The intended scale is seven steps: `r0` 0, `r1` 4 (chips, tags), `r2`
-8 (inner inputs, icons), `r3` 12 (list rows, small cards), `r4` 16 (cards), `r5`
-22 (the inner core of a bezel), `r6` 28 (bezel outer, sheets, the primary pill),
-and `full` 9999 (avatars, toggles). **Shipped**: `spacing.ts` still exposes the
-legacy set — 4, 8, 12, 14 (`button`), 16, 20, 22, 24, 26 (`card`), plus 2, 9 and
-18 one-offs — and the frontmatter records those, because they are what renders.
-The consolidation (`card` 26 and `button` 14 collapsing into `r6` 28 and `r3` 12) is specified, not built.
+8 (icons), `r3` 12 (**every control**, list rows, small cards), `r4` 16 (cards),
+`r5` 22 (the inner core of a bezel), `r6` 28 (bezel outer, sheets), and `full`
+9999 (avatars, toggles). **Shipped**: `spacing.ts` still exposes the legacy set
+— 4, 8, 12, 16, 20, 22, 24, 26 (`card`), plus 2, 9 and 18 one-offs — and the
+frontmatter records those, because they are what renders. The consolidation of
+the container end (`card` 26 into `r6` 28) is specified, not built.
+
+**The Control Radius Rule (shipped).** Every interactive control is 12px:
+buttons, text inputs, action buttons, the pressable token card. One number,
+`borderRadius.lg`, with `componentSizes.buttonRadius`, `inputRadius`,
+`actionButtonRadius` and the legacy `borderRadius.button` all bound to it, so a
+call site cannot drift; `controlRadius.test.ts` fails if one does. **A control
+is not a pill.** The primary button was 28 on a 56px body — a full pill — and
+the field was 8, so a button and the input above it read as two different
+shapes doing one job. 12 is the token-list row, which is the shape the user
+already sees most, and a control now belongs to the same family as the row it
+sits under. A pill is reserved for what genuinely is one: the tab bar and
+`full` (avatars, toggles).
 
 **The concentric rule: inner radius = outer radius − padding.** 28 − 6 = 22 is
 the canonical pair, and it is what makes a double bezel look machined rather
@@ -720,7 +732,7 @@ the content.
 appearance — the drawing at 1.0× pressed into the primary CTA's salmon fill —
 and it is gone, replaced by the flesh texture below. Two reasons, both
 material: a filled button is _mass_, not surface, so skin is the wrong tissue
-for it; and the seigaiha tile is taller than a 56px pill, so it read as a stamp
+for it; and the seigaiha tile is taller than a 56px button, so it read as a stamp
 applied on top of the button rather than as the button's own material. The
 `fish` variant and its `fishStroke` / `fishScale` tokens survive as deprecated
 exports with no call sites, because `ScalesVariant` is a public export of
@@ -1017,8 +1029,9 @@ Character: confident, wide, and quiet — a control is a surface you press, not 
 thing that glows.
 
 - **Primary** (**shipped**): salmon fill (`salmon-500`), `neutral-1000` label at
-  6.50:1, weight 600, no text-transform, 14px radius today (28px in the intended
-  scale), 56px tall, full-width when it is a screen's committing action. Hover
+  6.50:1, weight 600, no text-transform, **12px radius** — the control radius,
+  the same shape as a token list row and a text input; see §The Control Radius
+  Rule — 56px tall, full-width when it is a screen's committing action. Hover
   darkens the fill to `salmon-600`. Elevation is disabled — MUI's shadow does
   not belong in this system. **Disabled is `surface.crest` with `text.disabled`
   at 0.45 opacity: the salmon never dims. It is either alive or absent.**
@@ -1060,8 +1073,9 @@ thing that glows.
 
 ### Inputs / Fields
 
-**Shipped.** `surface.shelf` fill, 8px radius (`rounded.md` via
-`MuiOutlinedInput`), `text.primary` value, `text.tertiary` placeholder at full
+**Shipped.** `surface.shelf` fill, **12px radius** — the control radius, via
+`componentSizes.inputRadius` on `MuiOutlinedInput`; it was 8, which made a
+field a different shape from the button under it — `text.primary` value, `text.tertiary` placeholder at full
 opacity (6.24:1 — it replaced a 3.66:1 placeholder that failed AA). The notched
 outline is `border.default` at 1px, rising to `border.raised` on hover and to a
 2px `accent.ink` outline on focus. Error swaps the outline to `status.danger`.
@@ -1079,7 +1093,8 @@ Inset, not outset, for two reasons discovered in implementation: almost every
 focusable surface in this app sits inside a clipping ancestor (a blur container,
 a scroll container, a sheet, an action row), so anything painted outside the
 border box was cut off; and an inset outline inherits the control's own
-border-radius, so a pill gets a pill.
+border-radius, so the ring is the control's own shape: at the 12px control
+radius the two bands land at 10 and 6, still two legible concentric bands.
 
 Two bands because one is not enough anywhere. `salmon-300` measures 9.29:1 on
 `surface.shelf` but only 1.53:1 on a salmon fill; `depth.abyss` measures 6.50:1
@@ -1133,7 +1148,7 @@ The tab bar is `membraneThin` at 28px radius, floating clear of the bottom edge
 on phone and attached to the bottom edge in the extension side panel, with the
 24px refraction strip along its top edge. The active item is a filled icon in
 `salmon-500` with a label beneath in `text.primary` — and it is the screen's one
-living element, which is why the home screen's action pills are neutral.
+living element, which is why the home screen's action buttons are neutral.
 **Specified, not built** as a material; the `GlassTabBar` sizing tokens exist in
 `componentSizes`.
 

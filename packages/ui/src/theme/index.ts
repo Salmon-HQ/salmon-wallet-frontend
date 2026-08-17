@@ -18,6 +18,7 @@ import type { Theme } from '@mui/material/styles';
 import {
   borderRadius,
   borderWidth,
+  componentSizes,
   duration,
   fontFamily,
   fontSize,
@@ -46,7 +47,10 @@ const ms = (value: string): number => Number.parseInt(value, 10);
  * left only the `box-shadow` behind — the black rectangle.
  *
  * Inset fixes both: an outline pulled inward is never clipped by an ancestor,
- * and it inherits the control's own `border-radius`, so a pill gets a pill.
+ * and it inherits the control's own `border-radius`, so the ring is always the
+ * control's own shape. At the 12px control radius the two bands land at 10 and
+ * 6 — still two legible concentric bands, which was the thing to check when
+ * the controls came down off 28.
  *
  * The `depth.abyss` band beneath the salmon is a separator, not a gap filler.
  * `state.focusVisible` measures 9.29:1 on `surface.shelf` but only 1.53:1 on a
@@ -293,7 +297,7 @@ export const salmonTheme: Theme = createTheme({
       defaultProps: { disableElevation: true },
       styleOverrides: {
         root: {
-          borderRadius: borderRadius.button,
+          borderRadius: componentSizes.buttonRadius,
           textTransform: 'none',
           '&.Mui-disabled': { opacity: state.disabledOpacity },
         },
@@ -332,7 +336,9 @@ export const salmonTheme: Theme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: surface.shelf,
-          borderRadius: borderRadius.md,
+          // The control radius, not `borderRadius.md`. A field that reads 8
+          // next to a button that reads 12 is two shapes doing one job.
+          borderRadius: componentSizes.inputRadius,
           color: text.primary,
           '& .MuiOutlinedInput-notchedOutline': {
             borderColor: border.default,

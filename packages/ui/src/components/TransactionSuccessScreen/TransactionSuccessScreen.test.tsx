@@ -61,7 +61,7 @@ vi.mock('@salmon/shared', () => ({
     buttonMinWidthLg: 200,
     buttonMinWidth: 120,
     buttonHeight: 56,
-    buttonRadius: 28,
+    buttonRadius: 12,
     buttonFleshScale: 1,
   },
   shadowsCSS: { bezel: 'none' },

@@ -70,7 +70,7 @@ vi.mock('@salmon/shared', () => ({
     iconSizeXL: 40,
     scrollbarWidthSm: 6,
     buttonHeight: 56,
-    buttonRadius: 28,
+    buttonRadius: 12,
     buttonMinWidth: 120,
     buttonFleshScale: 1,
   },

@@ -90,7 +90,7 @@ jest.mock('@salmon/shared', () => ({
     iconSize5XL: 56,
     iconSize4XL: 48,
     buttonHeight: 56,
-    buttonRadius: 28,
+    buttonRadius: 12,
     buttonFleshScale: 1,
   },
   shadowsCSS: { bezel: 'none' },

@@ -107,7 +107,7 @@ jest.mock('@salmon/shared', () => ({
   componentSizes: {
     buttonHeightMedium: 48,
     buttonHeight: 56,
-    buttonRadius: 28,
+    buttonRadius: 12,
     buttonFleshScale: 1,
   },
   letterSpacing: { widest: 1 },

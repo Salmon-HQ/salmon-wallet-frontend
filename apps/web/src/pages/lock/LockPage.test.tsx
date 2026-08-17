@@ -87,7 +87,7 @@ vi.mock('@salmon/shared', () => {
     fontSize: { xs: 12, sm: 14, md: 16, '2xl': 24 },
     fontWeight: { semibold: 600 },
     spacing: { xs: 4, sm: 8, lg: 16, '2xl': 32, '3xl': 48 },
-    componentSizes: { inputRadius: 8 },
+    componentSizes: { inputRadius: 12 },
     STASH_KEYS: { DERIVED_KEY: 'derivedKey' },
     getStashItem: (...args: unknown[]) => mockGetStashItem(...args),
     useUnlockThrottle: () => mockThrottle,
