@@ -207,6 +207,24 @@ suspended matter and a ramp — see §The water column. Neither refusal is an
 oversight to be corrected later; both are the reason the column reads as one
 temperature with one warm thing in it.
 
+**Three materials, and what each one is made of.** The system owns exactly
+three textures, and the rule that assigns them is anatomical rather than
+decorative: **flesh is the inside of the fish, so it lives inside a salmon
+fill; scales are the skin and marine snow is the water, so both belong to the
+plane behind everything; and a content surface carries no motif at all.** That
+last clause is the one that does the work — a card, a sheet or a row is a lit
+opaque plane held up in front of the water, and giving it a texture of its own
+turns the motif into wallpaper and flattens the depth order it exists to
+encode. See §The material rule.
+
+**Where the motif lives.** It belongs to the **ground of the whole
+application**, not to the home screen. A world that is water on one screen and
+flat elsewhere is not a world. Three exceptions, and they are not negotiable:
+seed-phrase views and the dApp approval screen (both pinned opaque by the
+Bedrock Rule), and translucent membranes — a membrane's sanctioned share of
+the motif is the 24px refraction strip on its own top edge, never the full
+field, because a field behind a membrane is a field showing through content.
+
 **What this direction refuses.** No neon. No purple-to-cyan gradient, no glow as
 a hierarchy device, no color emitted by rectangles. No mesh-gradient orbs behind
 the balance. No iridescence that carries meaning — oil-slick hue shift is a
@@ -229,17 +247,23 @@ marks its parts.
 | Contrast assertions in CI | **Shipped** | `packages/shared/src/theme/contrast.test.ts` |
 | Geist + Geist Mono, tabular-nums token, font-scale caps | **Shipped** | `packages/shared/src/theme/typography.ts`, `packages/assets/src/fonts` |
 | Brand mark as tintable vector paths | **Shipped** | `packages/shared/src/theme/brand.ts` |
+| Wordmark as vector paths, generated from the typeface | **Shipped** | `scripts/wordmark.py` → `packages/shared/src/theme/wordmark.generated.ts`, re-exported from `brand.ts` |
 | MUI theme + unconditional focus ring (web, extension) | **Shipped** | `packages/ui/src/theme/index.ts` |
 | The water column: depth ramp + marine snow field (`semantic.water`, geometry, both renderers) | **Shipped**, full column height | `packages/shared/src/theme/depthField.ts`, `packages/ui/src/components/DepthBackground`, `apps/mobile/src/components/DepthBackground` |
 | Opaque list rows (plane P2), so the motif is occluded rather than cropped | **Shipped** | `packages/shared/src/theme/colors.ts` (`background.tokenItem`), both `BlurContainer`s |
-| The water column mounted on the app ground | **Shipped** on the home ground of all three apps | `apps/mobile/app/(app)/(tabs)/_layout.tsx`, `apps/web` and `apps/extension` `pages/home/HomePage.tsx` |
+| The water column mounted on the app ground | **Shipped** on the home ground of all three apps; **in progress** on the rest | `apps/mobile/app/(app)/(tabs)/_layout.tsx` and `app/(auth)/_layout.tsx`, `apps/web` and `apps/extension` `pages/home/HomePage.tsx`, `packages/ui/src/components/WaterColumn` |
+| The flesh texture inside salmon fills (`lean` variant, 138×88 tile, bands raked 32°) | **Shipped** | `scripts/flesh.py` → `packages/shared/src/theme/flesh.ts`, `semantic.flesh`, both `FleshBackground` renderers |
+| Scales motif rework — reduced to the deep field and the caustic band | **Shipped** | `ScalesBackground` `deepField` / `caustic`; the `fish` variant is retired in favour of flesh and kept only as an export |
+| Bezel on filled controls (`shadowsCSS.bezel`, same literal on DOM and RN) | **Shipped** | `packages/shared/src/theme/shadows.ts` |
+| Motion vocabulary (`flick`…`tide`, `current`/`settle`/`sink`/`swellIn`) | **Shipped**, and applied in `apps/mobile` with no loose durations left | `packages/shared/src/theme/durations.ts`, `apps/mobile/src/utils/motion.ts`, `apps/mobile/hooks/usePressMotion.ts` |
+| The Surfacing | **Shipped**, minus two parts deliberately left out — see §The Surfacing | `apps/mobile/src/components/TransactionSuccessScreen/surfacing.ts`, `SurfacingLayers.tsx` |
+| Icon consolidation onto Phosphor | **Shipped** on the DOM, with two declared exceptions | `packages/ui/src/icons.ts` |
+| dApp approval: transaction effect preview + press-and-hold to approve | **Shipped** | `packages/ui/src/components/DAppApproval/TransactionEffectsCard.tsx`, `HoldToApproveButton.tsx` |
 | Sand / seabed, ambient light shafts | **Refused by design** — see §Overview and §The water column | — |
-| Marine snow drift | **Refused for now** — the field is static; see §The water column | — |
+| Marine snow drift + scroll parallax | **Decided, not built** — the direction is settled, the code is still static; see §The water column | — |
 | Light theme (index-flip resolver) | **Specified, not built** | — |
 | Material/membrane model and the five-rung degradation ladder | **Specified, not built** | — |
-| Motion vocabulary (`flick`…`tide`, `current`/`settle`/`sink`/`swellIn`) and The Surfacing | **Specified, not built** | `durations.ts` still ships the legacy 100–600ms set and `bounce` at 1.56 |
-| Scales motif rework (three appearances, three scales) | **Specified, not built** | `packages/ui/src/components/ScalesBackground` still defaults to `rgba(0,0,0,0.5)` at `patternHeight` 26 and is applied broadly across sheets and pages |
-| Icon consolidation onto Phosphor | **Specified, not built** | `@mui/icons-material` is still the only icon set installed in web, extension, and `packages/ui` |
+| Icons on mobile (`phosphor-react-native`) | **Specified, not built** | only `@phosphor-icons/react` is installed, in `packages/ui` |
 | Type scale (`display`…`monoLg`), radius scale (`r0`…`r6`), spacing rhythm | **Specified, not built** | `typography.ts` and `spacing.ts` still carry the Figma-derived one-offs |
 
 **Key Characteristics:**
@@ -389,6 +413,23 @@ Note against the original direction: it called for variable WOFF2 on web and
 extension with static instances only on mobile, and for a Geist Mono Medium for
 seed words. What ships is static TTF everywhere, and there is no mono medium.
 The variable/WOFF2 pipeline is **specified, not built**.
+
+### The wordmark
+
+**Shipped.** The wordmark is now a vector, generated from the interface
+typeface itself by `scripts/wordmark.py` into
+`packages/shared/src/theme/wordmark.generated.ts` and re-exported from
+`brand.ts` alongside the mark, with the same tintable single-`fill` contract
+(`wordmarkToSvg(fill, width?)`). Before this it did not exist as a vector at
+all, which meant the product name could only be rendered as live text — and
+live text is at the mercy of whether the font loaded, of OS text scaling, and
+of a fallback face silently substituting itself in the one place the brand can
+least afford it.
+
+Generating it from the typeface rather than drawing it is the point: the
+wordmark cannot drift away from the interface face, because regenerating it is
+how it changes. It is a single colour by construction, so it takes a text
+token like any other ink.
 
 **Character:** one family for the whole system. At a narrow column width a
 display face that disagrees with the UI face costs more than it earns, and a
@@ -557,11 +598,21 @@ Verified against the packages installed in this repo: `expo-glass-effect`
 Rung 5 is a first-class look, not a fallback. It is what a large fraction of
 users and every low-end Android will see.
 
-### Shadow Vocabulary — specified, not built
+### Shadow Vocabulary — the bezel is built, the ambients are not
 
 - **Top inner highlight** (`inset 0 1px 0 rgba(226,236,255,0.14)`): the lit rim.
   Every membrane and every raised card gets it.
 - **Bottom inner shade** (`inset 0 -1px 0 rgba(3,6,12,0.50)`): the underside.
+- **The bezel** (**shipped**, `shadowsCSS.bezel`): both rims at once — what a
+  filled control wears so it reads as a body with a top and an underside rather
+  than a flat rectangle. It is deliberately 1px each way: a heavier inset reads
+  as *pressed*, and a primary button that looks pressed at rest has spent the
+  affordance it needs and leaves the real press with nothing left to say.
+  The same literal string is used on both platforms — React Native 0.83 parses
+  this CSS `box-shadow` with `inset` in `processBoxShadow` and clips it to the
+  view's own radius, so the rim follows a pill end the way the DOM's does. One
+  measured caveat: Android draws inset shadows only from API 29, and below that
+  the bezel is simply absent and nothing else changes.
 - **Card ambient** (`0 8px 24px -8px rgba(3,6,12,0.45)`): raised cards (E2).
 - **Membrane ambient** (`0 24px 48px -12px rgba(3,6,12,0.55)`): floating chrome
   (E3). Real offset, real blur.
@@ -614,40 +665,51 @@ in `borderWidth` (0.5, 0.75, 0.8) are legacy: they disappear on 1× Android and
 in a narrow column at 100% zoom. 2px exists only for the focus ring. No colored
 `border-left` accent thicker than 1px.
 
-**The double bezel** — specified, not built. On the balance card and the
+**The double bezel** — specified, not built, and not to be confused with
+`shadowsCSS.bezel`, which is the 1px two-rim edge on a filled control and does
+ship. This one is a construction, not a shadow. On the balance card and the
 approval sheet: an outer shell filled `rgba(199, 211, 232, 0.06)` with a 1px
 hairline, 6px of padding, radius 28; the inner core is its own surface at radius
 22.
 
 ### The scales motif
 
-**Shipped**: `packages/ui/src/components/ScalesBackground` is a genuine
-hand-drawn seigaiha SVG that defaults to `rgba(0, 0, 0, 0.5)` at
-`patternHeight` 26 and is applied broadly — sheets, page shells, the receive
-sheet, token and NFT detail pages. Black on black on a near-black canvas, tiled
-edge to edge: it is effectively invisible, and it is used as generic wallpaper.
+The scales are the water column's texture and their **density is a depth
+cue** — they tell you how far down you are looking, exactly the way
+particulate density does in real water. Not wallpaper, not a chain indicator,
+not a brand stamp. The rework is **shipped**: the motif was hauled off the
+sheets, page shells, receive sheet and detail pages it used to tile edge to
+edge at `rgba(0, 0, 0, 0.5)` — black on black on a near-black canvas, invisible
+and decorative at once — and reduced to the appearances below.
 
-**Specified, not built**: the rework. In this world the scales are the water
-column's texture and their **density is a depth cue** — they tell you how far
-down you are looking, exactly the way particulate density does in real water.
-Not wallpaper, not a chain indicator, not a brand stamp. Three appearances and
-nothing else:
+1. **The deep field** (**shipped**) — on the app ground, the full height of
+   whatever it is mounted in. Pattern scale 3.2× (`patternHeight` 26 → 83),
+   stroke `rgba(199, 211, 232, 0.06)`, 1px, thinning downward to
+   `scales.deepFieldFloor` rather than to nothing. It is half of the
+   `WaterColumn` pair; see §The water column.
+2. **The caustic band** (**shipped**) — the transient one, and the only moving
+   appearance: the shaft of light in The Surfacing, masked by this same
+   geometry at 0.5× in `#9FE0EF`. Same drawing, seen moving rather than at
+   rest.
+3. **The refraction strip** (**specified, not built**) — a 24px band clipped to
+   the top edge of any membrane, pattern scale 0.5×, opacity 0.08, filled with a
+   horizontal sweep from `#9FE0EF` through `salmon-300` to `success-300`. This
+   is the direction's only iridescence and it is contained: composites measure
+   1.24:1 and 1.18:1, under the 1.4:1 ceiling for any non-informational stroke.
+   No text is ever placed within that band. It waits on the membrane material,
+   which is not built either. The tokens (`refractionScale`,
+   `refractionOpacity`, `refractionHeight`) already exist.
 
-1. **The deep field** — on `depth.column`, behind the balance header only.
-   Pattern scale 3.2× (`patternHeight` 26 → 83), stroke
-   `rgba(199, 211, 232, 0.06)`, 1px, masked by a vertical gradient over the top
-   180px so it dissolves as the eye travels down. It never reaches a row.
-2. **The fish itself** — inside the primary CTA's salmon fill, and only there.
-   Pattern scale 1.0×, stroke `rgba(7, 9, 17, 0.10)`: dark scales on a warm
-   body, at the true scale of the drawing. On a 56px pill this reads as a
-   material, not a pattern, and it shifts the 6.50:1 ink composite by less than
-   0.1 of a ratio point.
-3. **The refraction strip** — a 24px band clipped to the top edge of any
-   membrane, pattern scale 0.5×, opacity 0.08, filled with a horizontal sweep
-   from `#9FE0EF` through `salmon-300` to `success-300`. This is the direction's
-   only iridescence and it is contained: composites measure 1.24:1 and 1.18:1,
-   under the 1.4:1 ceiling for any non-informational stroke. No text is ever
-   placed within that band.
+**The fish appearance is retired.** The motif used to have a third resting
+appearance — the drawing at 1.0× pressed into the primary CTA's salmon fill —
+and it is gone, replaced by the flesh texture below. Two reasons, both
+material: a filled button is *mass*, not surface, so skin is the wrong tissue
+for it; and the seigaiha tile is taller than a 56px pill, so it read as a stamp
+applied on top of the button rather than as the button's own material. The
+`fish` variant and its `fishStroke` / `fishScale` tokens survive as deprecated
+exports with no call sites, because `ScalesVariant` is a public export of
+`@salmon/ui` with three apps behind it and removing it is a contract change
+that needs a human's sign-off.
 
 **Chain tinting is removed.** Chain identity moves to the token/network chip,
 where it is an opaque badge with a label — a channel that survives colorblind
@@ -657,17 +719,89 @@ channel.
 Rationale, stated honestly: the knowledge base never mentions fish scales, so
 this reading is assigned here rather than recovered. It is chosen because it
 gives the asset a *job* (depth encoding) instead of a decoration, and because a
-motif used three times at three scales becomes recognizable where the same motif
-at 5% everywhere is either invisible or noise the eye must filter out.
+motif with two or three sanctioned appearances at known scales becomes
+recognizable where the same motif at 5% everywhere is either invisible or noise
+the eye must filter out.
+
+### The flesh texture
+
+**Shipped.** The myoseptal texture of salmon flesh, as path data, generated by
+`scripts/flesh.py` into `packages/shared/src/theme/flesh.ts`, inked from
+`semantic.flesh`, and drawn by a `FleshBackground` on each platform — the same
+one-geometry-two-renderers ownership the scales and the snow use.
+
+**Why flesh and not scales.** Scales are skin: the outside of the animal, and
+the right texture for a ground or a plane. A filled button is mass — it is the
+*inside* of the thing — so the honest material for it is what you see when the
+fish is cut open: the myosepta, pale sheets of collagen and lipid separating
+the muscle blocks. This is the whole of the material rule in one object.
+
+What the drawing commits to, because each of these is easy to undo by
+accident:
+
+- **Bands run across the fillet, raked 32° off vertical.** Myosepta angle back
+  along the fish; bands running with the long axis read as wood grain
+  (van Leeuwen, *JEB* 202:3405).
+- **Bands are pale, never dark.** The pale stripe is collagen plus the fat that
+  concentrates in the myocommata; dark slits mean *gaping*, which is a defect,
+  not healthy flesh. This is also what makes the texture free of contrast risk:
+  every band is lighter than the fill it sits on, so it can only raise the
+  luminance under a label. Worst-case ink contrast on a salmon fill is exactly
+  the flat fill's, and `flesh.test.ts` asserts that no band is ever darker.
+- **It tiles by construction.** Every band is a level set of one field whose
+  frequencies are whole numbers over the tile in both axes, and the tile height
+  (`lean`, 138×88) is chosen so a band leaving the bottom edge is exactly the
+  band two slots over entering the top — same position, same slope.
+
+That last property replaced an earlier test as well as an earlier texture. The
+old test demanded that every band's opacity envelope reach zero at the tile
+edge, which sounds like the safe assertion and is the opposite: pinning every
+envelope to zero at the same boundary switches all the bands off at once, and
+an untextured column down the seam does not hide the repeat, it advertises it.
+The test now checks what actually makes a tile seamless — continuity of
+position *and* slope across the crossing.
+
+**Scale.** `componentSizes.buttonFleshScale` is **1**: the bands render at the
+size they were authored. 0.55 was tried and rejected — at that scale the
+anatomy stops reading as anatomy and becomes grain, which is a different and
+more generic material. Contrast is unaffected either way, by the pale-band
+guarantee above, so this was a purely visual call and it went to full size.
+
+### The material rule
+
+**The Material Rule.** Flesh is the interior of the fish and lives **inside a
+salmon fill**. Scales and marine snow are the skin and the water, and they
+belong to the **plane behind everything**. A content surface — a card, a sheet,
+a list row, a page shell — carries **no motif at all**.
+
+The third clause is the one that gets broken. A textured card looks richer in
+isolation and costs the system its depth order: the motif exists to say *this
+is far away*, and putting it on a surface the user is meant to read as *near
+and lit* says the opposite in the same breath. Content earns its presence by
+being opaque and covering the water, not by joining it. This is also what makes
+The Scales Exclusion Rule enforceable by construction rather than by cropping —
+see §The water column.
 
 ### The water column — marine snow and the depth ramp
 
 **Shipped**: `semantic.water` carries the ground's depth ramp and the marine
 snow's ink; `packages/shared/src/theme/depthField.ts` carries the field's
 geometry; `DepthBackground` draws it on the DOM and again in React Native, the
-same one-geometry-two-renderers ownership the flesh texture uses. It is mounted
-on the home ground of all three apps, in the same plane as the deep field
-(`depth.column`), behind everything.
+same one-geometry-two-renderers ownership the flesh texture uses. It sits in
+the same plane as the deep field (`depth.column`), behind everything.
+
+**Where it is mounted.** The ramp-plus-snow layer and the deep field are one
+object, not two decisions, so on the DOM they are packaged as `WaterColumn`
+(with a `waterColumnHost` style a container applies so the negative layer
+stays above the host's own background). Both layers are CSS backgrounds —
+one serialised data URI each, composited once — so mounting the ground on
+another screen costs pixels in a layer that screen already has, not a
+compositor layer per screen. It shipped on the home ground of all three apps
+and on the mobile auth ground; **extending it to the remaining screens is in
+progress** at the time of writing. The rule it is being extended under is
+§Overview's: the motif belongs to the application's ground, and the only
+screens it must never reach are seed-phrase views, the dApp approval screen,
+and the inside of a membrane.
 
 **Why it exists.** The deep field is drawn at 3.2× so it reads as a fish close
 enough to fill the frame. On its own it does not: a large arc with empty ground
@@ -768,14 +902,24 @@ serialise the field into a `background-image` data URI, which is how the
 extension gets an image composited once instead of a full-viewport SVG the
 browser can be asked to repaint.
 
-**The field is static, and that is a decision.** Real marine snow sinks at
-about 0.6 mm/s: it does not visibly fall. A drifting full-viewport layer would
-be a permanent compositor layer on every screen, including low-end Android and
-the MV3 side panel, in exchange for motion nobody would perceive — and it would
-spend ambient motion in a system whose only light event is The Surfacing. There
-is consequently nothing for `prefers-reduced-motion` / `useReducedMotion` to
-reduce. If drift is ever wanted, it is a transform on the snow layer alone,
-gated on both reduced-motion signals, and it needs a device measurement first.
+**The snow moves — decided, not built.** The field ships static today, and the
+direction has since changed: the snow gets a **slow continuous drift** as its
+resting state, plus **parallax wherever there is scroll**. The argument that
+kept it static was that real marine snow sinks at about 0.6 mm/s and therefore
+does not visibly fall, which is true of a single floc and beside the point for
+a field — what a drifting field buys is not the appearance of falling but the
+proof that the ground is a *volume* rather than an image, and parallax against
+scroll is the strongest depth cue available to a flat screen. The
+one-light-event argument does not apply either: drift is not light, and it
+carries no meaning that The Surfacing would have to share.
+
+The constraints that produced the static answer stand as constraints on the
+implementation, not as objections to it. Drift is a transform on the snow layer
+alone — never a repaint of the field, whose whole cost model is *composited
+once* — it is gated on `prefers-reduced-motion` and `useReducedMotion` on both
+platforms, and it needs a device measurement on low-end Android and in the MV3
+side panel before it is enabled there. Until that lands, the shipped field is
+static and there is nothing for reduced motion to reduce.
 
 **What is deliberately absent.** No sand and no seabed: sand is warm and light,
 which would add a second source of warmth against the single salmon fill and
@@ -825,9 +969,13 @@ thing that glows.
   `state.hover` overlay.
 - **Text** (**shipped**): `text.accent` label, `accent.tint` background on
   hover. Salmon on the 12% tint composite measures 5.29:1.
-- **Specified, not built**: the scales at 1.0× pressed into the primary fill;
-  the 90ms press specular; the 500ms press-and-hold on Approve when a risk strip
-  is present, with a 1px salmon progress line filling along the bottom edge.
+- **The primary fill's material** (**shipped**): the flesh texture, at
+  `buttonFleshScale` 1, plus `shadowsCSS.bezel` for the edge. Not the scales —
+  see §The flesh texture for why a filled control shows the inside of the fish.
+- **Press specular** (**shipped on mobile**): `PressSpecular` with
+  `usePressMotion`, at `flick`.
+- **Press-and-hold on Approve** (**shipped**): see §The approval screen below.
+- **Specified, not built**: the press specular on the DOM.
 
 ### Cards / Containers
 
@@ -842,6 +990,15 @@ thing that glows.
 - **Shadow strategy**: see §Elevation & Depth. Ambient shadows are specified,
   not built; today the separation is carried by surface color alone.
 - **Internal padding**: 20px on content cards, 16px in the narrow column.
+- **The balance card does not remount when the chain changes** (**shipped**).
+  Switching chains crossfades only what is *printed* on the card — logo, network
+  badge, balance, variation — over `swell` (180ms), spent as `flick` out and
+  `flick` in with the swap at the midpoint where nothing is visible. The
+  container, its background and the pagination dots never take part. This is the
+  depth model applied to motion: the card is a plane, a plane does not blink out
+  of existence because its contents changed, and a whole card that disappears
+  and returns reads as a navigation event rather than a value update. Under
+  reduce-motion the swap steps rather than leaving a 90ms gap of nothing.
 
 ### Inputs / Fields
 
@@ -883,6 +1040,35 @@ field's visual boundary takes the ring instead, through
 cannot tell which control is focused, which on a transaction-approval screen is
 a fund-safety problem rather than a cosmetic one.
 
+### The approval screen
+
+**Shipped.** The screen now shows what a transaction would *do* before it asks
+for a signature: a `TransactionEffectsCard` with the balance deltas and, when
+one is present, the spending permission being granted — named, with the spender
+address in mono, and with "unlimited" said out loud when that is what it is.
+The screen keeps every rule it already had — `surface.bedrock`, opaque, no
+motif, hard scrim (see The Bedrock Rule) — and this is the same reasoning
+applied one layer up: a screen the user is asked to trust must not withhold the
+consequence it is asking about.
+
+**Press-and-hold to approve.** When the preview finds a spending permission, a
+transaction the network would reject, or nothing it can determine, Approve
+becomes a 500ms hold rather than a tap. Those three are exactly the cases a
+reflex tap should not be able to sign; a plain send the preview understood
+keeps the ordinary button, because friction everywhere is friction nowhere.
+
+Two details are load-bearing:
+
+- **The keyboard confirms immediately.** Enter and Space commit on the first
+  press, hold or no hold. WCAG asks that nothing be gated behind holding a key
+  down, and a keyboard user cannot be made to pay the pointer's friction. The
+  pointer path is unchanged: a click that never became a hold does nothing.
+- **The hold's progress line is `neutral-1000`, not salmon.** This is a
+  **declared deviation** from the design note, which specified a 1px salmon
+  line. The line is drawn over the button's own `salmon-500` fill, where salmon
+  on salmon is invisible; `neutral-1000` is the ink that fill already takes at
+  6.50:1. The note was written before the fill it had to sit on was decided.
+
 ### Navigation
 
 The tab bar is `membraneThin` at 28px radius, floating clear of the bottom edge
@@ -895,43 +1081,74 @@ living element, which is why the home screen's action pills are neutral.
 
 ### Iconography
 
-**Shipped**: `@mui/icons-material` — Material's filled set — in
-`packages/ui`, `apps/web`, and `apps/extension`.
+**Shipped on the DOM**: the consolidation onto **Phosphor Icons**
+(`@phosphor-icons/react`, MIT) is done. Every DOM component now pulls its
+glyphs from one module, `packages/ui/src/icons.ts`, rather than from a vendor
+directly — one icon name, one import, so the set stays small, auditable and
+swappable. Weight `regular` (Phosphor's default, so it is never passed);
+`fill` only for the active tab item and the success checkmark; `duotone`
+never. Size ramp 16 / 20 / 24 / 28 (`iconSize.sm`…`xl`) and nothing smaller,
+because a thinner box loses the stroke. Icons take a text token, never their
+own color: decorative at `text.tertiary`, actionable at `text.primary`,
+destructive at `danger-500`. An icon on a membrane is `text.primary` plus a 1px
+offset shadow so a thin stroke does not vanish when a bright logo scrolls
+beneath.
 
-**Specified, not built**: consolidation onto **Phosphor Icons**
-(`@phosphor-icons/react` for DOM, `phosphor-react-native` for mobile, both MIT,
-the latter riding `react-native-svg` which is already a dependency). Same
-drawings, same names, two renderers — the exact ownership model this monorepo
-wants: one icon name in a shared contract, two platform imports. Weight
-`regular`; `fill` only for the active tab item and the success checkmark;
-`duotone` never. Size ramp 16 / 20 / 24 / 28 and nothing smaller, because a
-thinner box loses the stroke. Icons take a text token, never their own color:
-decorative at `text.tertiary`, actionable at `text.primary`, destructive at
-`danger-500`. An icon on a membrane is `text.primary` plus a 1px offset shadow
-so a thin stroke does not vanish when a bright logo scrolls beneath.
+Imports are deep paths rather than the package root: the root module pulls all
+~1,500 icons through the bundler, which costs dev transpile time and, under a
+misconfigured build, bundle size the extension cannot spend.
 
-Filled Material icons carry a completely different density from anything else in
-this world; they are the single biggest visual leak on web and extension today.
-Because `@mui/material` stays, this is an import swap, not a framework change.
+**Declared exceptions, not oversights.** `components/DAppApproval` and
+`components/PendingActivityBanner` still import `@mui/icons-material`; they
+were owned by concurrent work and left alone deliberately, which is why the
+dependency stays in `packages/ui`'s manifest after being dropped from
+`apps/web` and `apps/extension`. The chain marks — Solana, Bitcoin, Ethereum —
+are also not Phosphor and never will be: no general icon set carries them, and
+a brand mark redrawn to match a UI set stops being the brand mark.
 
-### Motion — specified, not built
+**Specified, not built**: mobile. `phosphor-react-native` (MIT, riding
+`react-native-svg`, already a dependency) is the other half of the model this
+monorepo wants — same drawings, same names, two renderers, one icon name in a
+shared contract. It is not installed yet.
 
-**Shipped** today: `durations.ts` with the legacy 100/150/200/250/300/400ms set,
-an `easing.bounce` at 1.56, and a `prefers-reduced-motion` block in the MUI
-baseline that collapses all animation and transition durations to 0.01ms while
-explicitly *keeping* the focus ring, which is drawn with outline and box-shadow
-and never animated.
+### Motion
 
-The intended vocabulary — "Current". Water has mass: nothing snaps, and nothing
-bounces like rubber. Things displace and settle.
+**Shipped**: the vocabulary below, in `packages/shared/src/theme/durations.ts`,
+and applied throughout `apps/mobile` — there are **no loose durations left in
+the mobile app**; every animation reads a token. The legacy
+100/150/200/250/300/400ms set and `easing.bounce` at 1.56 are retired. The MUI
+baseline still carries its `prefers-reduced-motion` block, which collapses
+animation and transition durations to 0.01ms while explicitly *keeping* the
+focus ring, drawn with outline and box-shadow and never animated.
+
+The vocabulary — "Current". Water has mass: nothing snaps, and nothing bounces
+like rubber. Things displace and settle. Every token is named for the *job* it
+does rather than for its number, because a number cannot be chosen correctly:
+`slower` gave no way to know whether a sheet or a toast belonged in it, which
+is how the repo ended up with copy confirmation at 1500ms in two files and
+2000ms in a third.
 
 | Token | ms | For |
 | --- | --- | --- |
 | `flick` | 90 | Press down and release, specular |
 | `swell` | 180 | Hover, color, state change, toast in |
-| `drift` | 280 | Expand/collapse, list reorder, tab change |
-| `rise` | 420 | Sheet present, route push, modal |
+| `ebb` | 180 | Element exit — dismiss, collapse-away, toast out |
+| `drift` | 280 | Expand/collapse, list enter, list reorder, tab change |
+| `rise` | 420 | Sheet present, modal |
+| `route` | 420 | Route transition — the same window as `rise`, on purpose |
 | `tide` | 720 | The signature moment only |
+
+**Exit is faster than enter** (`ebb` 180 against `drift` 280). An entrance
+introduces content the user has not read yet, so it has to be slow enough to be
+followed; an exit removes content the user has already finished with, and every
+millisecond of it is latency between a decision and its result. `rise` and
+`route` share a window because a pushed route and a presented sheet are the
+same event to the user, and giving them different lengths only makes the app
+look inconsistent about its own depth.
+
+Two values in the file are **holds, not transitions**: `feedbackHold` (1500ms,
+how long a "Copied" chip stays readable) and `debounce` (500ms). Reduced motion
+must not shorten either, which is what `resolveMotionMs` is for.
 
 | Easing | Curve | Character |
 | --- | --- | --- |
@@ -952,10 +1169,14 @@ Reduced motion is a full parallel mapping, not a switch that turns motion off
 and leaves holes: opacity steps replace translations, the stagger disappears,
 the backdrop goes straight to its final scrim, and haptics are kept.
 
-### The Surfacing — the signature moment, specified, not built
+### The Surfacing — the signature moment, built
 
-Exactly one screen owns it: the confirmation of a completed send or swap. Over
-`tide` (720ms), three things happen on one timeline.
+**Shipped on mobile**, in `apps/mobile/src/components/TransactionSuccessScreen`:
+the timeline lives in `surfacing.ts` as a pure function of the reduce-motion
+flag, so the *timing* is testable without a renderer or a frame clock, and
+`SurfacingLayers.tsx` draws the two things that move. Exactly one screen owns
+it: the confirmation of a completed send or swap. Over `tide` (720ms), three
+things happen on one timeline.
 
 1. The sheet's membrane **clears**: tint α animates 0.80 → 0.55 and blur 32px →
    12px, so the water above the transaction thins out. On iOS this is the one
@@ -974,7 +1195,24 @@ and it is done*.
 Reduced motion: the membrane clears in one 180ms opacity step, the caustic band
 renders once as a static 10% highlight across the amount for 400ms and fades,
 and the amount does not translate. The moment stays recognizable; it just does
-not travel.
+not travel. It is a parallel mapping, not an off switch — the success haptic
+still fires.
+
+**Two parts of the specification were deliberately not built**, and both are
+marked as such in the code rather than left to be discovered:
+
+1. **The membrane's blur, 32px → 12px.** The sheet this screen mounts in is an
+   opaque `surface.shelf`, not a P3 membrane, so there is nothing behind it to
+   defocus: an `expo-blur` intensity over an opaque ground costs a full-screen
+   GPU pass and shows nothing. What ships is the tint clearing — α 0.80 → 0.55,
+   expressed as a view opacity of 1 → 0.6875 so the two halves of the statement
+   cannot drift apart. The blur is waiting on the membrane material, not on
+   effort.
+2. **The band's 24px Gaussian.** `react-native-svg` does implement
+   `FeGaussianBlur` natively, so this one was tried: at 24px it erased the
+   scales geometry that masks the band, which is the only thing that makes the
+   light read as *this* system's light rather than a generic glow. The band
+   ships sharp.
 
 ## Do's and Don'ts
 
@@ -997,8 +1235,19 @@ not travel.
 - **Do** add a new token when a value is missing, rather than a literal at the
   call site — `packages/ui/src/theme` invents no colors, sizes or durations, and
   that property is worth protecting.
+- **Do** keep the three materials in their own tissue: flesh inside a salmon
+  fill, scales and snow on the ground behind everything, no motif on a content
+  surface.
+- **Do** mount the water on the application's ground, not on one screen. A world
+  that is water on Home and flat elsewhere is not a world.
+- **Do** let the keyboard commit an action the pointer must hold for. WCAG asks
+  that nothing be gated behind holding a key down, and friction the keyboard
+  cannot escape is an accessibility bug wearing a safety costume.
 - **Do** mark new work against this file's shipped/not-built table, so the next
   reader can still tell the two apart.
+- **Do** write a deviation down where the rule is, when a spec value loses to
+  the surface it lands on — the hold progress line in `neutral-1000` rather than
+  salmon is the example to copy.
 
 ### Don't:
 
@@ -1014,7 +1263,21 @@ not travel.
   extension document, or to more than one element per screen on Android. This is
   a permanent performance constraint, not a guideline.
 - **Don't** use the scales as wallpaper, as a chain indicator, or behind any
-  number. Three appearances, three scales, three jobs.
+  number. Each sanctioned appearance is a distance from the eye; a fourth use is
+  a bug.
+- **Don't** put a motif on a content surface — not a card, not a sheet, not a
+  row, not a page shell. Content is the lit opaque plane in *front* of the
+  water, and texturing it inverts the depth order the motif exists to encode.
+- **Don't** press the scales into a salmon fill. A filled control is mass and
+  takes the flesh texture; the `fish` variant is deprecated and has no call
+  sites.
+- **Don't** darken a flesh band below the fill it sits on, at any opacity. Every
+  band being lighter is what makes ink contrast on a salmon fill exactly the
+  flat fill's, and `flesh.test.ts` asserts it.
+- **Don't** make a tiling texture fade to zero at the tile edge to hide the
+  seam. It does the opposite — it switches every band off along the same line
+  and advertises the repeat as an untextured column. Seamlessness is continuity
+  of position *and* slope across the crossing.
 - **Don't** reintroduce the retired values: the `#80ff54` lime, the `#404962`
   border (2.07:1), the `#6B6E7B` placeholder (3.66:1), sub-pixel border widths,
   or `easing.bounce` at 1.56.
@@ -1026,6 +1289,10 @@ not travel.
 - **Don't** add sand, a seabed, a horizon, or ambient light shafts to the
   ground. The column is the middle water and it has exactly one light event.
   Their absence is recorded in §The water column as a decision, not a gap.
-- **Don't** animate the marine snow without measuring it on a low-end Android
-  and in the side panel first. Static is the shipped answer, and real marine
-  snow does not visibly fall.
+- **Don't** ship the marine snow's drift without measuring it on a low-end
+  Android and in the side panel first, and without gating it on both
+  reduced-motion signals. Drift is decided; a repaint of the field, rather than
+  a transform of its layer, is not what was decided.
+- **Don't** reintroduce a motif on the dApp approval screen or a seed view, or
+  behind a membrane, while extending the ground to more screens. Those three
+  exclusions are the reason the ground is allowed everywhere else.
