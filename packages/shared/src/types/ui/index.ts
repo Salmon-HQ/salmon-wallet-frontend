@@ -28,6 +28,9 @@ export type { TokenInfoPropsBase } from './token-info';
 // Price Chart
 export type { PriceChartPropsBase } from './price-chart';
 
+// Pending Value
+export type { PendingValuePropsBase } from './pending-value';
+
 // Send Sheet
 export type {
   SendStep,

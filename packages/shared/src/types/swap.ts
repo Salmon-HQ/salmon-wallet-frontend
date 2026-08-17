@@ -471,6 +471,13 @@ export interface SwapDetailRowProps<StyleType> {
   label: string;
   /** Value on the right */
   value: string;
+  /**
+   * Whether this row's value is being recalculated. Pass it only for rows a
+   * re-quote can actually change — the row itself never becomes a skeleton,
+   * and a row whose value is fixed (router, provider, network) must show
+   * nothing.
+   */
+  pending?: boolean;
   /** Custom style */
   style?: StyleType;
 }
@@ -485,6 +492,10 @@ export interface SwapReviewCardProps<StyleType> {
   amount: string;
   /** USD equivalent (e.g., "~$84.65") */
   usdValue?: string;
+  /** Whether the amount is being recalculated (see `SwapDetailRowProps.pending`) */
+  pendingAmount?: boolean;
+  /** Whether the USD equivalent is being recalculated */
+  pendingUsdValue?: boolean;
   /** Custom style */
   style?: StyleType;
 }
@@ -509,6 +520,12 @@ export interface SwapReviewScreenProps<StyleType> {
   onConfirm: () => void;
   /** Whether confirm is in progress */
   isConfirming?: boolean;
+  /**
+   * Whether a fresh quote is in flight. The screen stays exactly as it is —
+   * same cards, same rows — and only the values the new quote can change
+   * report that they are being recalculated.
+   */
+  isRefreshing?: boolean;
   /** Override label for the confirm button (e.g. countdown or refresh) */
   confirmLabel?: string;
   /** Custom style */

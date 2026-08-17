@@ -14,6 +14,7 @@ import {
   componentSizes,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
+import { PendingValue } from '../PendingValue';
 import type { SwapReviewCardProps } from './types';
 
 /**
@@ -24,13 +25,21 @@ export const SwapReviewCard: React.FC<SwapReviewCardProps> = ({
   label,
   amount,
   usdValue,
+  pendingAmount = false,
+  pendingUsdValue = false,
   style,
 }) => {
   return (
     <BlurContainer style={[styles.container, style]}>
       <Text style={styles.label}>{label}</Text>
-      <Text style={styles.amount}>{amount}</Text>
-      {usdValue != null && <Text style={styles.usdValue}>{usdValue}</Text>}
+      <PendingValue pending={pendingAmount}>
+        <Text style={styles.amount}>{amount}</Text>
+      </PendingValue>
+      {usdValue != null && (
+        <PendingValue pending={pendingUsdValue}>
+          <Text style={styles.usdValue}>{usdValue}</Text>
+        </PendingValue>
+      )}
     </BlurContainer>
   );
 };
