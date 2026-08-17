@@ -17,12 +17,7 @@ import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import Alert from '@mui/material/Alert';
 import Tooltip from '@mui/material/Tooltip';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckIcon from '@mui/icons-material/Check';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import KeyIcon from '@mui/icons-material/Key';
+import { CheckIcon, CopyIcon, EyeIcon, EyeSlashIcon, KeyIcon, WarningIcon } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -210,7 +205,7 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
   return (
     <SettingsPanelContent title={t('settings.backup', 'Backup Wallet')} onBack={onBack}>
       <PageContent>
-        <WarningAlert severity="warning" icon={<WarningAmberIcon />}>
+        <WarningAlert severity="warning" icon={<WarningIcon />}>
           <Typography variant="body2" sx={{ fontWeight: fontWeight.medium }}>
             {t('settings.backup_warning_title', 'Never share your recovery phrase')}
           </Typography>
@@ -247,7 +242,7 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
 
                 {!seedPhraseVisible && (
                   <BlurOverlay onClick={handleReveal} data-testid="backup-seed-reveal-overlay">
-                    <KeyIcon sx={{ fontSize: fontSize.iconLg, color: colors.text.secondary }} />
+                    <KeyIcon size={fontSize.iconLg} color={colors.text.secondary} />
                     <RevealText>{t('settings.tap_to_reveal', 'Tap to reveal')}</RevealText>
                   </BlurOverlay>
                 )}
@@ -257,13 +252,7 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
                 <Tooltip title={copied ? t('actions.copied', 'Copied!') : ''} open={copied}>
                   <CopyButton
                     variant="outlined"
-                    startIcon={
-                      copied ? (
-                        <CheckIcon sx={{ color: colors.status.success }} />
-                      ) : (
-                        <ContentCopyIcon />
-                      )
-                    }
+                    startIcon={copied ? <CheckIcon color={colors.status.success} /> : <CopyIcon />}
                     onClick={handleCopy}
                     disabled={!seedPhraseVisible}
                     data-testid="backup-seed-copy-button"
@@ -273,7 +262,7 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
                 </Tooltip>
                 <ActionButton
                   variant="outlined"
-                  startIcon={seedPhraseVisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                  startIcon={seedPhraseVisible ? <EyeSlashIcon /> : <EyeIcon />}
                   onClick={seedPhraseVisible ? handleHide : handleReveal}
                   data-testid="backup-seed-reveal-button"
                   sx={{

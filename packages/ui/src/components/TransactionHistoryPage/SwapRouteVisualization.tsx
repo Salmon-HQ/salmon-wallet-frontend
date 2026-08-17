@@ -7,11 +7,14 @@
  * Shows the path a swap took through different DEXes and tokens.
  */
 
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import CheckIcon from '@mui/icons-material/Check';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  CopyIcon,
+  QuestionIcon,
+  TreeStructureIcon,
+  iconSize,
+} from '../../icons';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
@@ -256,7 +259,7 @@ const TokenIcon: React.FC<{ uri?: string | null; size?: number }> = ({
 
   return (
     <TokenIconPlaceholder style={{ width: size, height: size }}>
-      <HelpOutlineIcon sx={{ fontSize: size * 0.6, color: colors.text.tertiary }} />
+      <QuestionIcon size={size * 0.6} color={colors.text.tertiary} />
     </TokenIconPlaceholder>
   );
 };
@@ -284,9 +287,9 @@ const HashCopyRow: React.FC<{
       <HashCopyContainer onClick={handleCopy}>
         <SummaryValue>{displayValue ?? value}</SummaryValue>
         {copied ? (
-          <CheckIcon sx={{ fontSize: fontSize.sm, color: colors.status.success }} />
+          <CheckIcon size={iconSize.sm} color={colors.status.success} />
         ) : (
-          <ContentCopyIcon sx={{ fontSize: fontSize.sm, color: colors.text.tertiary }} />
+          <CopyIcon size={iconSize.sm} color={colors.text.tertiary} />
         )}
       </HashCopyContainer>
     </SummaryRow>
@@ -308,7 +311,7 @@ const RouteHop: React.FC<{ hop: SwapRouteHop; isLast: boolean }> = ({ hop, isLas
           <DexText>{hop.dex}</DexText>
           {hop.percent < 100 && <PercentText>{hop.percent}%</PercentText>}
         </DexBadge>
-        <ArrowForwardIcon sx={{ fontSize: fontSize.base, color: colors.text.secondary }} />
+        <ArrowRightIcon size={iconSize.sm} color={colors.text.secondary} />
       </HopArrow>
 
       {isLast && (
@@ -460,7 +463,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
   return (
     <RouteContainer>
       <RouteHeader>
-        <AccountTreeIcon sx={{ fontSize: fontSize.md, color: colors.text.secondary }} />
+        <TreeStructureIcon size={iconSize.sm} color={colors.text.secondary} />
         <RouteHeaderText>
           {t('transactions.detail.route')}
           {source ? ` ${t('transactions.detail.viaSource', { source })}` : ''}
@@ -484,7 +487,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
         </RouteColumn>
 
         <RouteArrowColumn>
-          <ArrowForwardIcon sx={{ fontSize: fontSize.xl, color: colors.accent.primary }} />
+          <ArrowRightIcon size={iconSize.md} color={colors.accent.primary} />
         </RouteArrowColumn>
 
         <RouteColumn>
@@ -519,7 +522,7 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
   return (
     <RouteContainer>
       <RouteHeader>
-        <AccountTreeIcon sx={{ fontSize: fontSize.md, color: colors.text.secondary }} />
+        <TreeStructureIcon size={iconSize.sm} color={colors.text.secondary} />
         <RouteHeaderText>
           {t('transactions.detail.route')}
           {source ? ` ${t('transactions.detail.viaSource', { source })}` : ''} (

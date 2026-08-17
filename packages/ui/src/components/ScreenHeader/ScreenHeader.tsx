@@ -7,7 +7,7 @@
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { ArrowLeftIcon, iconSize } from '../../icons';
 import { colors, componentSizes, contentPadding, opacity } from '@salmon/shared';
 import { StepIndicator } from '../StepIndicator';
 import type { ScreenHeaderProps } from './types';
@@ -94,11 +94,9 @@ export function ScreenHeader({
         data-testid={testID ?? 'screen-header-back-button'}
       >
         {onBack && (
-          <ArrowBackIcon
-            sx={{
-              fontSize: componentSizes.iconSizeMedium,
-              color: backDisabled ? colors.text.muted : colors.text.primary,
-            }}
+          <ArrowLeftIcon
+            size={iconSize.lg}
+            color={backDisabled ? colors.text.muted : colors.text.primary}
           />
         )}
       </BackButton>

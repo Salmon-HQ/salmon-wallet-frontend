@@ -24,7 +24,7 @@ import {
 
 // Theme — MUI needs an explicit dark theme; its default is light.
 import { CssBaseline, ThemeProvider } from '@mui/material';
-import { salmonTheme } from '@salmon/ui';
+import { IconDefaults, salmonTheme } from '@salmon/ui';
 
 // App
 import { App } from './App';
@@ -43,14 +43,16 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider theme={salmonTheme}>
       <CssBaseline />
-      <I18nextProvider i18n={i18n}>
-        <AccountsProvider>
-          <CurrencyProvider>
-            <SalmonWalletRegistrar />
-            <App />
-          </CurrencyProvider>
-        </AccountsProvider>
-      </I18nextProvider>
+      <IconDefaults>
+        <I18nextProvider i18n={i18n}>
+          <AccountsProvider>
+            <CurrencyProvider>
+              <SalmonWalletRegistrar />
+              <App />
+            </CurrencyProvider>
+          </AccountsProvider>
+        </I18nextProvider>
+      </IconDefaults>
     </ThemeProvider>
   </React.StrictMode>
 );

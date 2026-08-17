@@ -10,11 +10,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
 import ListItemButton from '@mui/material/ListItemButton';
-import TextFieldsIcon from '@mui/icons-material/TextFields';
-import PersonIcon from '@mui/icons-material/Person';
-import VpnKeyIcon from '@mui/icons-material/VpnKey';
-import LockIcon from '@mui/icons-material/Lock';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { CaretRightIcon, KeyIcon, LockIcon, TextTIcon, UserIcon } from '../../icons';
 import { styled } from '../../utils/styled';
 import {
   colors,
@@ -89,25 +85,25 @@ export function AccountEditPanel({
   const sections = [
     {
       labelKey: 'settings.account_edit.name_section',
-      icon: <TextFieldsIcon sx={{ color: colors.text.primary }} />,
+      icon: <TextTIcon color={colors.text.primary} />,
       onPress: () => onEditName(accountId),
       testId: 'account-edit-name',
     },
     {
       labelKey: 'settings.account_edit.avatar_section',
-      icon: <PersonIcon sx={{ color: colors.text.primary }} />,
+      icon: <UserIcon color={colors.text.primary} />,
       onPress: onEditAvatar,
       testId: 'account-edit-avatar',
     },
     {
       labelKey: 'settings.account_edit.backup_section',
-      icon: <VpnKeyIcon sx={{ color: colors.text.primary }} />,
+      icon: <KeyIcon color={colors.text.primary} />,
       onPress: onBackupSeed,
       testId: 'account-edit-backup',
     },
     {
       labelKey: 'settings.account_edit.private_key_section',
-      icon: <LockIcon sx={{ color: colors.text.primary }} />,
+      icon: <LockIcon color={colors.text.primary} />,
       onPress: onExportPrivateKey,
       testId: 'account-edit-private-key',
     },
@@ -173,7 +169,7 @@ export function AccountEditPanel({
               >
                 {t(item.labelKey)}
               </Typography>
-              <ChevronRightIcon sx={{ color: colors.text.secondary }} />
+              <CaretRightIcon color={colors.text.secondary} />
             </Row>
             {index < sections.length - 1 && <Divider />}
           </React.Fragment>

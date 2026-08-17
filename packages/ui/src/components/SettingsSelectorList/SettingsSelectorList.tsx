@@ -7,7 +7,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import CircularProgress from '@mui/material/CircularProgress';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, iconSize } from '../../icons';
 import { colors, spacing, fontSize, fontWeight } from '@salmon/shared';
 import type { SettingsSelectorListProps } from './types';
 
@@ -29,7 +29,8 @@ const StyledListItemButton = styled(ListItemButton)<{ $selected?: boolean }>(({ 
 
 const CheckIconStyled = styled(CheckIcon)({
   color: colors.accent.primary,
-  fontSize: fontSize.xl,
+  width: iconSize.md,
+  height: iconSize.md,
 });
 
 const LoadingContainer = styled(Box)({

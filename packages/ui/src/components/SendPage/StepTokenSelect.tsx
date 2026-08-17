@@ -17,7 +17,7 @@ import Typography from '@mui/material/Typography';
 import InputBase from '@mui/material/InputBase';
 import ButtonBase from '@mui/material/ButtonBase';
 import Skeleton from '@mui/material/Skeleton';
-import SearchIcon from '@mui/icons-material/Search';
+import { MagnifyingGlassIcon, iconSize } from '../../icons';
 import {
   colors,
   spacing,
@@ -66,10 +66,11 @@ const SearchInputStyled = styled(InputBase)({
   },
 });
 
-const SearchIconStyled = styled(SearchIcon)({
+const SearchIconStyled = styled(MagnifyingGlassIcon)({
   color: colors.text.secondary,
   marginRight: spacing.sm,
-  fontSize: fontSize.lg,
+  width: iconSize.md,
+  height: iconSize.md,
 });
 
 const SectionHeader = styled(Typography)({

@@ -21,32 +21,35 @@
  * Web version using MUI icons and @emotion/styled for browser extension.
  */
 import { useTranslation } from 'react-i18next';
-import type { SvgIconComponent } from '@mui/icons-material';
-import AnalyticsIcon from '@mui/icons-material/Analytics';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CubeIcon from '@mui/icons-material/ViewInAr';
-import DescriptionIcon from '@mui/icons-material/Description';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import ForkRightIcon from '@mui/icons-material/ForkRight';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import GroupIcon from '@mui/icons-material/Group';
-import LinkIcon from '@mui/icons-material/Link';
-import LockIcon from '@mui/icons-material/Lock';
-import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
-import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
-import NightlightIcon from '@mui/icons-material/Nightlight';
-import PanToolIcon from '@mui/icons-material/PanTool';
-import PieChartIcon from '@mui/icons-material/PieChart';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-import SchoolIcon from '@mui/icons-material/School';
-import SearchIcon from '@mui/icons-material/Search';
-import ShieldIcon from '@mui/icons-material/Shield';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import WarningIcon from '@mui/icons-material/Warning';
-import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import type { IconComponent } from '../../icons';
+import {
+  ArrowElbowUpRightIcon,
+  ChartBarIcon,
+  ChartLineIcon,
+  ChartPieIcon,
+  CheckCircleIcon,
+  CopyIcon,
+  CubeIcon,
+  CurrencyCircleDollarIcon,
+  CurrencyDollarIcon,
+  DropIcon,
+  FileTextIcon,
+  GraduationCapIcon,
+  HandPalmIcon,
+  LinkIcon,
+  LockIcon,
+  MagnifyingGlassIcon,
+  MedalIcon,
+  MoonIcon,
+  RocketLaunchIcon,
+  ShieldCheckIcon,
+  ShieldIcon,
+  TrendUpIcon,
+  TrophyIcon,
+  UsersIcon,
+  WarningIcon,
+  iconSize,
+} from '../../icons';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
@@ -78,41 +81,41 @@ const INLINE_BADGE_LIMIT = 2;
 /**
  * Mapping of token tags to MUI icon components
  */
-const TAG_ICON_MAP: Record<string, SvgIconComponent> = {
+const TAG_ICON_MAP: Record<string, IconComponent> = {
   // Verification & trust tags
   verified: CheckCircleIcon,
   strict: ShieldIcon,
-  major: EmojiEventsIcon,
-  'moonshot-verified': VerifiedUserIcon,
+  major: TrophyIcon,
+  'moonshot-verified': ShieldCheckIcon,
 
   // Community tags
-  community: GroupIcon,
-  'community-assist': PanToolIcon,
+  community: UsersIcon,
+  'community-assist': HandPalmIcon,
 
   // Token types
-  lst: WaterDropIcon,
-  'original-lst': MilitaryTechIcon,
-  stable: AttachMoneyIcon,
+  lst: DropIcon,
+  'original-lst': MedalIcon,
+  stable: CurrencyDollarIcon,
   'token-2022': CubeIcon,
-  yb: AnalyticsIcon,
+  yb: ChartLineIcon,
 
   // Launchpad & trading
   launchpad: RocketLaunchIcon,
-  moonshot: NightlightIcon,
-  'birdeye-trending': TrendingUpIcon,
-  'pumpfun-graduates': SchoolIcon,
+  moonshot: MoonIcon,
+  'birdeye-trending': TrendUpIcon,
+  'pumpfun-graduates': GraduationCapIcon,
 
   // Financial products
-  'jup-lend-earn': MonetizationOnIcon,
-  prestocks: BarChartIcon,
-  xstocks: PieChartIcon,
+  'jup-lend-earn': CurrencyCircleDollarIcon,
+  prestocks: ChartBarIcon,
+  xstocks: ChartPieIcon,
 
   // Registry & metadata
-  'old-registry': DescriptionIcon,
-  'solana-fm': SearchIcon,
+  'old-registry': FileTextIcon,
+  'solana-fm': MagnifyingGlassIcon,
   wormhole: LinkIcon,
-  deduplicated: ForkRightIcon,
-  duplicate: ContentCopyIcon,
+  deduplicated: ArrowElbowUpRightIcon,
+  duplicate: CopyIcon,
   deprecated: WarningIcon,
   internal: LockIcon,
 };
@@ -182,12 +185,11 @@ function TokenBadge({ tag, label }: { tag: string; label: string }) {
     return null;
   }
 
-  const ink =
-    meta?.weight === 'signal' && meta.tone ? TONE_INK[meta.tone] : semantic.text.tertiary;
+  const ink = meta?.weight === 'signal' && meta.tone ? TONE_INK[meta.tone] : semantic.text.tertiary;
 
   return (
     <BadgeBox role="img" aria-label={label} data-testid={`token-badge-${tag}`}>
-      <IconComponent sx={{ fontSize: ms(fontSize.xs), color: ink }} />
+      <IconComponent size={ms(iconSize.sm)} color={ink} />
     </BadgeBox>
   );
 }

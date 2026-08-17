@@ -17,7 +17,7 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { ArrowLeftIcon } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import { colors, spacing, fontFamily, fontWeight, fontSize } from '@salmon/shared';
@@ -121,7 +121,7 @@ export function PageShell({
           aria-label={t('general.back', 'Back')}
           data-testid="screen-header-back-button"
         >
-          <ArrowBackIcon />
+          <ArrowLeftIcon />
         </BackButton>
         <HeaderTitle>{title}</HeaderTitle>
         {headerRight}

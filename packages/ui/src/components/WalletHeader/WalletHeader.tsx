@@ -5,12 +5,13 @@
  */
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { keyframes } from '@emotion/react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import MuiAvatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, iconSize } from '../../icons';
 import {
   colors,
   spacing,
@@ -87,9 +88,20 @@ const Address = styled(Typography)({
  * ground marks the one thing in this block you can act on; the address itself
  * stays neutral mono because it is data to read, not a control.
  */
+const spinKeyframes = keyframes`
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+`;
+
+/** The refresh glyph turns only while a refresh is in flight. */
+const RefreshIconStyled = styled(RefreshIcon)<{ $spinning?: boolean }>(({ $spinning }) => ({
+  animation: $spinning ? `${spinKeyframes} ${durationMs.spin}ms linear infinite` : undefined,
+}));
+
 const CopyIconStyled = styled(CopyIcon)({
   marginLeft: spacing.sm,
-  fontSize: fontSize.base,
+  width: iconSize.sm,
+  height: iconSize.sm,
   color: semantic.text.accent,
 });
 
@@ -228,11 +240,9 @@ export function WalletHeader({
             <Address>{truncatedAddress}</Address>
             {copied ? (
               <CheckIcon
-                sx={{
-                  marginLeft: `${spacing.sm}px`,
-                  fontSize: fontSize.base,
-                  color: colors.status.success,
-                }}
+                size={iconSize.sm}
+                color={colors.status.success}
+                style={{ marginLeft: `${spacing.sm}px` }}
               />
             ) : (
               <CopyIconStyled />
@@ -249,18 +259,10 @@ export function WalletHeader({
             aria-label={t('accessibility.refresh_balance', 'Refresh balance')}
             data-testid="wallet-header-refresh-button"
           >
-            <RefreshIcon
-              sx={{
-                color: colors.text.primary,
-                fontSize: fontSize['2xl'],
-                ...(refreshing && {
-                  animation: `spin ${durationMs.spin}ms linear infinite`,
-                  '@keyframes spin': {
-                    from: { transform: 'rotate(0deg)' },
-                    to: { transform: 'rotate(360deg)' },
-                  },
-                }),
-              }}
+            <RefreshIconStyled
+              $spinning={refreshing}
+              size={iconSize.lg}
+              color={colors.text.primary}
             />
           </HeaderButton>
         )}
@@ -269,7 +271,7 @@ export function WalletHeader({
           aria-label={t('accessibility.open_settings')}
           data-testid="wallet-header-settings-button"
         >
-          <SettingsIcon sx={{ color: colors.text.primary, fontSize: fontSize['2xl'] }} />
+          <SettingsIcon color={colors.text.primary} size={iconSize.lg} />
         </HeaderButton>
       </ActionButtons>
     </Container>

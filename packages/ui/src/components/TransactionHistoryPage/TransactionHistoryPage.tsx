@@ -20,8 +20,7 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Skeleton from '@mui/material/Skeleton';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import { ArrowsClockwiseIcon, ReceiptIcon } from '../../icons';
 import { colors, spacing, borderRadius, fontSize, fontWeight, opacity } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { PageShell } from '../PageShell';
@@ -177,7 +176,7 @@ const EmptyState: React.FC = () => {
   const { t } = useTranslation();
   return (
     <EmptyContainer data-testid="activity-empty">
-      <ReceiptLongIcon sx={{ fontSize: fontSize['5xl'], color: colors.text.tertiary }} />
+      <ReceiptIcon size={fontSize['5xl']} color={colors.text.tertiary} />
       <EmptyTitle>{t('transactions.noTransactions')}</EmptyTitle>
       <EmptySubtitle>{t('transactions.emptySubtitle')}</EmptySubtitle>
     </EmptyContainer>
@@ -192,7 +191,7 @@ const ErrorState: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => {
       {onRetry && (
         <RetryButton
           onClick={onRetry}
-          startIcon={<RefreshIcon />}
+          startIcon={<ArrowsClockwiseIcon />}
           data-testid="activity-retry-button"
         >
           {t('transactions.tapToRetry')}

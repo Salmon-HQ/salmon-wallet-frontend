@@ -181,10 +181,8 @@ export function ActionButtonRow({
           {!sendDisabled && <FleshBackground />}
           <OnFillContent>
             <SendIcon
-              sx={{
-                fontSize: iconSize,
-                color: sendDisabled ? semantic.text.disabled : semantic.accent.onFill,
-              }}
+              size={iconSize}
+              color={sendDisabled ? semantic.text.disabled : semantic.accent.onFill}
             />
             <ButtonText
               sx={{ color: sendDisabled ? semantic.text.disabled : semantic.accent.onFill }}
@@ -209,10 +207,8 @@ export function ActionButtonRow({
             data-testid="home-receive-button"
           >
             <ReceiveIcon
-              sx={{
-                fontSize: iconSize,
-                color: receiveDisabled ? colors.button.disabledText : colors.text.balance,
-              }}
+              size={iconSize}
+              color={receiveDisabled ? colors.button.disabledText : colors.text.balance}
             />
             <ButtonText $disabled={receiveDisabled}>{t('actions.receive', 'Receive')}</ButtonText>
           </SecondaryButton>
@@ -233,10 +229,8 @@ export function ActionButtonRow({
             data-testid="home-activity-button"
           >
             <ActivityIcon
-              sx={{
-                fontSize: iconSize,
-                color: activityDisabled ? colors.button.disabledText : colors.text.balance,
-              }}
+              size={iconSize}
+              color={activityDisabled ? colors.button.disabledText : colors.text.balance}
             />
             <ButtonText $disabled={activityDisabled}>
               {t('actions.activity', 'Activity')}

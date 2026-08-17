@@ -17,8 +17,7 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import {
   colors,
   borderRadius,
@@ -138,9 +137,9 @@ export function AddressCopyRow({
             sx={copied ? { backgroundColor: `${colors.status.success}20` } : undefined}
           >
             {copied ? (
-              <CheckIcon sx={{ fontSize: fontSize.base, color: colors.status.success }} />
+              <CheckIcon size={iconSize.sm} color={colors.status.success} />
             ) : (
-              <ContentCopyIcon sx={{ fontSize: fontSize.base, color: colors.text.secondary }} />
+              <CopyIcon size={iconSize.sm} color={colors.text.secondary} />
             )}
           </CopyButton>
         </RightSection>

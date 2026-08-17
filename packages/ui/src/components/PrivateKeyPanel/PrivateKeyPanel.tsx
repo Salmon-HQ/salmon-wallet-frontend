@@ -21,14 +21,17 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckIcon from '@mui/icons-material/Check';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import KeyIcon from '@mui/icons-material/Key';
-import PublicIcon from '@mui/icons-material/Public';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import {
+  CaretRightIcon,
+  CheckIcon,
+  CopyIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  GlobeIcon,
+  KeyIcon,
+  WarningIcon,
+  iconSize,
+} from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -189,9 +192,10 @@ const NetworkListItemText = styled(ListItemText)({
   },
 });
 
-const ChevronIcon = styled(ChevronRightIcon)({
+const ChevronIcon = styled(CaretRightIcon)({
   color: colors.text.secondary,
-  fontSize: fontSize.xl,
+  width: iconSize.md,
+  height: iconSize.md,
 });
 
 // ============================================================================
@@ -286,7 +290,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                   data-testid={`private-key-network-option-${network.id}`}
                 >
                   <NetworkListItemIcon>
-                    <PublicIcon />
+                    <GlobeIcon />
                   </NetworkListItemIcon>
                   <NetworkListItemText
                     primary={network.name}
@@ -314,7 +318,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
       onBack={networks.length > 1 ? handleBackToNetworks : onBack}
     >
       <PageContent>
-        <WarningAlert severity="warning" icon={<WarningAmberIcon />}>
+        <WarningAlert severity="warning" icon={<WarningIcon />}>
           <Typography variant="body2" sx={{ fontWeight: fontWeight.medium }}>
             {t('settings.private_key_warning')}
           </Typography>
@@ -351,7 +355,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                       onClick={() => handleReveal(index)}
                       data-testid={`private-key-reveal-overlay-${index}`}
                     >
-                      <KeyIcon sx={{ fontSize: fontSize.iconLg, color: colors.text.secondary }} />
+                      <KeyIcon size={fontSize.iconLg} color={colors.text.secondary} />
                       <RevealText>{t('settings.tap_to_reveal', 'Tap to reveal')}</RevealText>
                     </BlurOverlay>
                   )}
@@ -362,11 +366,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                     <CopyButton
                       variant="outlined"
                       startIcon={
-                        isCopied ? (
-                          <CheckIcon sx={{ color: colors.status.success }} />
-                        ) : (
-                          <ContentCopyIcon />
-                        )
+                        isCopied ? <CheckIcon color={colors.status.success} /> : <CopyIcon />
                       }
                       onClick={() => handleCopy(accountKey.privateKey, index)}
                       disabled={!isRevealed}
@@ -377,7 +377,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                   </Tooltip>
                   <ActionButton
                     variant="outlined"
-                    startIcon={isRevealed ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    startIcon={isRevealed ? <EyeSlashIcon /> : <EyeIcon />}
                     onClick={() => (isRevealed ? handleHide(index) : handleReveal(index))}
                     data-testid={`private-key-reveal-button-${index}`}
                     sx={{

@@ -20,8 +20,7 @@ import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import InputBase from '@mui/material/InputBase';
 import CircularProgress from '@mui/material/CircularProgress';
-import CloseIcon from '@mui/icons-material/Close';
-import SearchIcon from '@mui/icons-material/Search';
+import { MagnifyingGlassIcon, XIcon, iconSize } from '../../icons';
 import {
   colors,
   spacing,
@@ -112,10 +111,11 @@ const SearchInput = styled(InputBase)({
   },
 });
 
-const SearchIconStyled = styled(SearchIcon)({
+const SearchIconStyled = styled(MagnifyingGlassIcon)({
   color: colors.text.secondary,
   marginRight: spacing.sm,
-  fontSize: fontSize.xl,
+  width: iconSize.md,
+  height: iconSize.md,
 });
 
 const StyledDialogContent = styled(DialogContent)({
@@ -412,7 +412,7 @@ export function TokenSelectorModal({
       <StyledDialogTitle id="token-selector-title">
         <TitleText>{t('wallet.select_token', 'Select Token')}</TitleText>
         <CloseButton onClick={handleClose} aria-label={t('general.close', 'Close')}>
-          <CloseIcon />
+          <XIcon />
         </CloseButton>
       </StyledDialogTitle>
 

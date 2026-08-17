@@ -12,10 +12,7 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../icons';
 import { styled } from '../../utils/styled';
 import {
   colors,
@@ -208,7 +205,7 @@ export function AccountsPanel({
                   data-testid={`account-edit-${account.id}`}
                   sx={{ color: colors.text.secondary }}
                 >
-                  <EditIcon fontSize="small" />
+                  <PencilSimpleIcon size={iconSize.md} />
                 </IconButton>
 
                 {canDelete && (
@@ -222,15 +219,11 @@ export function AccountsPanel({
                     data-testid={`account-remove-${account.id}`}
                     sx={{ color: colors.status.error }}
                   >
-                    <DeleteIcon fontSize="small" />
+                    <TrashIcon size={iconSize.md} />
                   </IconButton>
                 )}
 
-                {isActive && (
-                  <CheckCircleIcon
-                    sx={{ color: colors.status.success, fontSize: fontSize['2xl'] }}
-                  />
-                )}
+                {isActive && <CheckCircleIcon color={colors.status.success} size={iconSize.lg} />}
               </ActionButtons>
             </AccountItem>
           );
@@ -239,7 +232,7 @@ export function AccountsPanel({
 
       <AddAccountButton onClick={onAddAccount} data-testid="account-add-button">
         <AddAccountIcon>
-          <AddIcon sx={{ color: colors.text.primary }} />
+          <PlusIcon color={colors.text.primary} />
         </AddAccountIcon>
         <Typography
           sx={{

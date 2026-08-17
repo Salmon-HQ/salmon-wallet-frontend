@@ -17,8 +17,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import ButtonBase from '@mui/material/ButtonBase';
 import CircularProgress from '@mui/material/CircularProgress';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -356,11 +355,15 @@ export function StepConfirmation({
               <AddressText title={recipientAddress}>{recipientAddress}</AddressText>
               {copied ? (
                 <CheckIcon
-                  sx={{ fontSize: fontSize.xl, color: colors.status.success, flexShrink: 0 }}
+                  size={iconSize.md}
+                  color={colors.status.success}
+                  style={{ flexShrink: 0 }}
                 />
               ) : (
-                <ContentCopyIcon
-                  sx={{ fontSize: fontSize.xl, color: colors.text.secondary, flexShrink: 0 }}
+                <CopyIcon
+                  size={iconSize.md}
+                  color={colors.text.secondary}
+                  style={{ flexShrink: 0 }}
                 />
               )}
             </AddressContent>

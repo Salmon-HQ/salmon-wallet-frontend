@@ -2,8 +2,7 @@ import React from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
-import InsightsIcon from '@mui/icons-material/Insights';
+import { ChartLineUpIcon, XIcon } from '../../icons';
 import { Trans, useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
 import { styled } from '../../utils/styled';
@@ -103,13 +102,15 @@ export function AnalyticsConsentPage({
         aria-label={t('general.close', 'Close')}
         data-testid="analytics-consent-decline"
       >
-        <CloseIcon />
+        <XIcon />
       </CloseButton>
       <TopSpacer />
 
       <CenterContent>
-        <InsightsIcon
-          sx={{ fontSize: 72, color: colors.text.primary, marginBottom: `${spacing.xl}px` }}
+        <ChartLineUpIcon
+          size={72}
+          color={colors.text.primary}
+          style={{ marginBottom: `${spacing.xl}px` }}
         />
         <Title>{t('settings.analytics_prompt_title')}</Title>
         <Body>

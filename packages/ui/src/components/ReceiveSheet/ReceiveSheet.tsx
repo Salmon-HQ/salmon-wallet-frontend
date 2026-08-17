@@ -15,8 +15,7 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import ButtonBase from '@mui/material/ButtonBase';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import {
   colors,
   palette,
@@ -231,9 +230,9 @@ export function ReceiveSheet({
             <FleshBackground />
             <OnFillContent>
               {copied ? (
-                <CheckIcon sx={{ fontSize: fontSize.xl, color: colors.button.primaryText }} />
+                <CheckIcon size={iconSize.md} color={colors.button.primaryText} />
               ) : (
-                <ContentCopyIcon sx={{ fontSize: fontSize.xl, color: colors.button.primaryText }} />
+                <CopyIcon size={iconSize.md} color={colors.button.primaryText} />
               )}
               <CopyButtonText>
                 {copied ? t('token.receive.copied') : t('token.receive.copyAddress')}

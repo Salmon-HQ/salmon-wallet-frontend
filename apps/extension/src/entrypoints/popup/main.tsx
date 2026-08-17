@@ -7,7 +7,7 @@ import '../../assets/fonts.css';
 
 // Theme — MUI needs an explicit dark theme; its default is light.
 import { CssBaseline, ThemeProvider } from '@mui/material';
-import { salmonTheme } from '@salmon/ui';
+import { IconDefaults, salmonTheme } from '@salmon/ui';
 
 // Initialize i18n configuration - must be imported before App
 import i18n from '../../i18n/config';
@@ -42,19 +42,21 @@ function Root() {
     <React.StrictMode>
       <ThemeProvider theme={salmonTheme}>
         <CssBaseline />
-        <QueryClientProvider client={queryClient}>
-          <BridgeSettlementProvider>
-            <I18nextProvider i18n={i18n}>
-              <AccountsProvider>
-                <CurrencyProvider>
-                  <PendingActivityLayer>
-                    <App />
-                  </PendingActivityLayer>
-                </CurrencyProvider>
-              </AccountsProvider>
-            </I18nextProvider>
-          </BridgeSettlementProvider>
-        </QueryClientProvider>
+        <IconDefaults>
+          <QueryClientProvider client={queryClient}>
+            <BridgeSettlementProvider>
+              <I18nextProvider i18n={i18n}>
+                <AccountsProvider>
+                  <CurrencyProvider>
+                    <PendingActivityLayer>
+                      <App />
+                    </PendingActivityLayer>
+                  </CurrencyProvider>
+                </AccountsProvider>
+              </I18nextProvider>
+            </BridgeSettlementProvider>
+          </QueryClientProvider>
+        </IconDefaults>
       </ThemeProvider>
     </React.StrictMode>
   );

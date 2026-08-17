@@ -16,8 +16,7 @@ import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import LanguageIcon from '@mui/icons-material/Language';
+import { GlobeIcon, TrashIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -120,7 +119,7 @@ export function TrustedAppsSelector({
                   aria-label={t('settings.trusted_apps_revoke', 'Revoke')}
                   data-testid={`trusted-apps-revoke-${app.domain}`}
                 >
-                  <DeleteOutlineIcon fontSize="small" />
+                  <TrashIcon size={iconSize.md} />
                 </RevokeButton>
               }
             >
@@ -130,7 +129,7 @@ export function TrustedAppsSelector({
                     <AppAvatar src={app.icon} alt={app.name || app.domain} />
                   ) : (
                     <AppAvatar>
-                      <LanguageIcon sx={{ fontSize: fontSize.xl, color: colors.text.secondary }} />
+                      <GlobeIcon size={iconSize.md} color={colors.text.secondary} />
                     </AppAvatar>
                   )}
                 </ListItemAvatar>

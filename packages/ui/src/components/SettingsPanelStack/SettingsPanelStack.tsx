@@ -12,23 +12,26 @@ import Switch from '@mui/material/Switch';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 
-import SecurityIcon from '@mui/icons-material/Security';
-import BackupIcon from '@mui/icons-material/Key';
-import LanguageIcon from '@mui/icons-material/Language';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import ExploreIcon from '@mui/icons-material/Explore';
-import ContactsIcon from '@mui/icons-material/Contacts';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import CodeIcon from '@mui/icons-material/Code';
-import InsightsIcon from '@mui/icons-material/Insights';
-import DeleteIcon from '@mui/icons-material/Delete';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import InfoIcon from '@mui/icons-material/Info';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import VpnKeyIcon from '@mui/icons-material/VpnKey';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import CloseIcon from '@mui/icons-material/Close';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import {
+  AddressBookIcon,
+  CaretRightIcon,
+  ChartLineUpIcon,
+  CodeIcon,
+  CompassIcon,
+  CurrencyDollarIcon,
+  GlobeIcon,
+  InfoIcon,
+  KeyIcon,
+  PlugsConnectedIcon,
+  QuestionIcon,
+  ShieldCheckIcon,
+  TrashIcon,
+  TrashSimpleIcon,
+  UserCircleIcon,
+  VaultIcon,
+  XIcon,
+  iconSize,
+} from '../../icons';
 
 import {
   colors,
@@ -72,22 +75,22 @@ const PUSH_DURATION = durationMs.medium;
 const POP_DURATION = durationMs.normal;
 
 const ICON_MAP: Record<string, React.ReactNode> = {
-  avatar: <AccountCircleIcon />,
-  security: <SecurityIcon />,
-  backup: <BackupIcon />,
-  privateKey: <VpnKeyIcon />,
-  language: <LanguageIcon />,
-  currency: <AttachMoneyIcon />,
-  explorer: <ExploreIcon />,
-  addressBook: <ContactsIcon />,
-  trustedApps: <VerifiedUserIcon />,
+  avatar: <UserCircleIcon />,
+  security: <ShieldCheckIcon />,
+  backup: <VaultIcon />,
+  privateKey: <KeyIcon />,
+  language: <GlobeIcon />,
+  currency: <CurrencyDollarIcon />,
+  explorer: <CompassIcon />,
+  addressBook: <AddressBookIcon />,
+  trustedApps: <PlugsConnectedIcon />,
   developerNetworks: <CodeIcon />,
-  analytics: <InsightsIcon />,
-  removeWallet: <DeleteIcon />,
-  removeAll: <DeleteForeverIcon />,
+  analytics: <ChartLineUpIcon />,
+  removeWallet: <TrashIcon />,
+  removeAll: <TrashSimpleIcon />,
   about: <InfoIcon />,
-  support: <HelpOutlineIcon />,
-  accounts: <AccountCircleIcon />,
+  support: <QuestionIcon />,
+  accounts: <UserCircleIcon />,
 };
 
 const SETTINGS_SECTIONS: SettingsSection[] = [
@@ -241,9 +244,10 @@ const StyledDivider = styled(Divider)({
   margin: `${spacing.sm}px ${spacing.lg}px`,
 });
 
-const ChevronIcon = styled(ChevronRightIcon)({
+const ChevronIcon = styled(CaretRightIcon)({
   color: colors.text.secondary,
-  fontSize: fontSize.xl,
+  width: iconSize.md,
+  height: iconSize.md,
 });
 
 // ============================================================================
@@ -471,7 +475,7 @@ export function SettingsPanelStack({
             aria-label={t('actions.close', 'Close')}
             data-testid="settings-close-button"
           >
-            <CloseIcon />
+            <XIcon />
           </CloseButton>
         </Header>
         <MenuContent>{SETTINGS_SECTIONS.map(renderSection)}</MenuContent>

@@ -18,13 +18,16 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import LanguageIcon from '@mui/icons-material/Language';
-import SecurityIcon from '@mui/icons-material/Security';
-import PolicyIcon from '@mui/icons-material/Policy';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import TwitterIcon from '@mui/icons-material/Twitter';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
+import {
+  ArrowSquareOutIcon,
+  BookOpenIcon,
+  FileTextIcon,
+  GithubLogoIcon,
+  GlobeIcon,
+  ShieldCheckIcon,
+  XLogoIcon,
+  iconSize,
+} from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   APP_VERSION,
@@ -59,7 +62,7 @@ const GENERAL_LINKS: LinkItem[] = [
   {
     id: 'website',
     labelKey: 'settings.about_website',
-    icon: <LanguageIcon />,
+    icon: <GlobeIcon />,
     url: 'https://www.salmonwallet.io',
   },
 ];
@@ -68,13 +71,13 @@ const LEGAL_LINKS: LinkItem[] = [
   {
     id: 'terms',
     labelKey: 'settings.about_terms',
-    icon: <PolicyIcon />,
+    icon: <FileTextIcon />,
     url: 'https://www.salmonwallet.io/terms',
   },
   {
     id: 'privacy',
     labelKey: 'settings.about_privacy',
-    icon: <SecurityIcon />,
+    icon: <ShieldCheckIcon />,
     url: 'https://www.salmonwallet.io/privacy',
   },
 ];
@@ -83,19 +86,19 @@ const SOCIAL_LINKS: LinkItem[] = [
   {
     id: 'twitter',
     labelKey: 'X (Twitter)',
-    icon: <TwitterIcon />,
+    icon: <XLogoIcon />,
     url: 'https://x.com/salmonwallet',
   },
   {
     id: 'github',
     labelKey: 'GitHub',
-    icon: <GitHubIcon />,
+    icon: <GithubLogoIcon />,
     url: 'https://github.com/salmon-wallet',
   },
   {
     id: 'medium',
     labelKey: 'Medium',
-    icon: <MenuBookIcon />,
+    icon: <BookOpenIcon />,
     url: 'https://medium.com/@salmonwallet',
   },
 ];
@@ -161,9 +164,10 @@ const StyledListItemIcon = styled(ListItemIcon)({
   color: colors.text.secondary,
 });
 
-const ExternalIcon = styled(OpenInNewIcon)({
+const ExternalIcon = styled(ArrowSquareOutIcon)({
   color: colors.text.secondary,
-  fontSize: fontSize.md,
+  width: iconSize.sm,
+  height: iconSize.sm,
 });
 
 const StyledDivider = styled(Divider)({

@@ -19,8 +19,8 @@ import IconButton from '@mui/material/IconButton';
 import type { IconButtonProps } from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import type { TypographyProps } from '@mui/material/Typography';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import type { SvgIconProps } from '@mui/material/SvgIcon';
+import { WarningIcon as WarningGlyph, iconSize } from '../../icons';
+import type { IconProps } from '../../icons';
 import {
   colors,
   spacing,
@@ -71,9 +71,10 @@ export const TitleText: React.ComponentType<TypographyProps> = styled(Typography
   color: colors.text.primary,
 });
 
-export const WarningIcon: React.ComponentType<SvgIconProps> = styled(WarningAmberIcon)({
+export const WarningIcon: React.ComponentType<IconProps> = styled(WarningGlyph)({
   color: colors.status.error,
-  fontSize: fontSize['2xl'],
+  width: iconSize.lg,
+  height: iconSize.lg,
 });
 
 export const CloseButton: React.ComponentType<IconButtonProps> = styled(IconButton)({

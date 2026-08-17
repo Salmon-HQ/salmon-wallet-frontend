@@ -28,25 +28,28 @@
  * ```
  */
 
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import CancelIcon from '@mui/icons-material/Cancel';
-import CheckIcon from '@mui/icons-material/Check';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CloseIcon from '@mui/icons-material/Close';
-import CodeIcon from '@mui/icons-material/Code';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import ShareIcon from '@mui/icons-material/Share';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import VerifiedIcon from '@mui/icons-material/Verified';
-import ViewInArOutlinedIcon from '@mui/icons-material/ViewInArOutlined';
+import {
+  ArrowDownIcon,
+  ArrowRightIcon,
+  ArrowUpIcon,
+  ArrowsLeftRightIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  ClockIcon,
+  CodeIcon,
+  CopyIcon,
+  CubeIcon,
+  FireIcon,
+  LockIcon,
+  PlusCircleIcon,
+  QuestionIcon,
+  SealCheckIcon,
+  ShareNetworkIcon,
+  WalletIcon,
+  XCircleIcon,
+  XIcon,
+  iconSize,
+} from '../../icons';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Dialog from '@mui/material/Dialog';
@@ -107,47 +110,47 @@ const TRANSACTION_TYPE_CONFIG: Record<
 > = {
   send: {
     label: 'Sent',
-    icon: <ArrowUpwardIcon />,
+    icon: <ArrowUpIcon />,
     color: colors.change.negative,
   },
   receive: {
     label: 'Received',
-    icon: <ArrowDownwardIcon />,
+    icon: <ArrowDownIcon />,
     color: colors.change.positive,
   },
   swap: {
     label: 'Swapped',
-    icon: <SwapHorizIcon />,
+    icon: <ArrowsLeftRightIcon />,
     color: colors.palette.purple,
   },
   mint: {
     label: 'Minted',
-    icon: <AddCircleOutlineIcon />,
+    icon: <PlusCircleIcon />,
     color: colors.palette.cyan,
   },
   burn: {
     label: 'Burned',
-    icon: <LocalFireDepartmentIcon />,
+    icon: <FireIcon />,
     color: colors.palette.orange,
   },
   stake: {
     label: 'Staked',
-    icon: <LockOutlinedIcon />,
+    icon: <LockIcon />,
     color: colors.palette.green,
   },
   loan: {
     label: 'Loan',
-    icon: <AccountBalanceWalletOutlinedIcon />,
+    icon: <WalletIcon />,
     color: colors.palette.amber,
   },
   interaction: {
     label: 'Interaction',
-    icon: <ViewInArOutlinedIcon />,
+    icon: <CubeIcon />,
     color: colors.palette.blue,
   },
   unknown: {
     label: 'Unknown',
-    icon: <HelpOutlineIcon />,
+    icon: <QuestionIcon />,
     color: colors.text.secondary,
   },
 };
@@ -159,17 +162,17 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   completed: {
     label: 'Completed',
     color: colors.status.success,
-    icon: <CheckCircleIcon sx={{ fontSize: fontSize.md }} />,
+    icon: <CheckCircleIcon size={iconSize.sm} />,
   },
   failed: {
     label: 'Failed',
     color: colors.status.error,
-    icon: <CancelIcon sx={{ fontSize: fontSize.md }} />,
+    icon: <XCircleIcon size={iconSize.sm} />,
   },
   pending: {
     label: 'Pending',
     color: colors.status.warning,
-    icon: <AccessTimeIcon sx={{ fontSize: fontSize.md }} />,
+    icon: <ClockIcon size={iconSize.sm} />,
   },
 };
 
@@ -737,7 +740,7 @@ const TokenLogo: React.FC<{ uri?: string | null; size?: number }> = ({
 
   return (
     <TokenLogoPlaceholder sx={{ width: size, height: size, borderRadius: `${size / 2}px` }}>
-      <HelpOutlineIcon sx={{ fontSize: size * 0.6, color: colors.text.secondary }} />
+      <QuestionIcon size={size * 0.6} color={colors.text.secondary} />
     </TokenLogoPlaceholder>
   );
 };
@@ -793,21 +796,21 @@ const SwapVisualization: React.FC<{
           <SwapLogoImg src={fromToken.logo} alt={fromToken.symbol} />
         ) : (
           <SwapLogoPlaceholder>
-            <HelpOutlineIcon sx={{ fontSize: fontSize['2xl'], color: colors.text.secondary }} />
+            <QuestionIcon size={iconSize.lg} color={colors.text.secondary} />
           </SwapLogoPlaceholder>
         )}
         <SwapAmount>{formatRawAmount(fromToken.amount, fromToken.decimals)}</SwapAmount>
         <SwapSymbol>{fromToken.symbol}</SwapSymbol>
       </SwapTokenSection>
       <Box sx={{ px: `${spacing.md}px` }}>
-        <ArrowForwardIcon sx={{ fontSize: fontSize['2xl'], color: colors.text.secondary }} />
+        <ArrowRightIcon size={iconSize.lg} color={colors.text.secondary} />
       </Box>
       <SwapTokenSection>
         {toToken.logo ? (
           <SwapLogoImg src={toToken.logo} alt={toToken.symbol} />
         ) : (
           <SwapLogoPlaceholder>
-            <HelpOutlineIcon sx={{ fontSize: fontSize['2xl'], color: colors.text.secondary }} />
+            <QuestionIcon size={iconSize.lg} color={colors.text.secondary} />
           </SwapLogoPlaceholder>
         )}
         <SwapAmount>{formatRawAmount(toToken.amount, toToken.decimals)}</SwapAmount>
@@ -859,8 +862,10 @@ const NftMetadataSection: React.FC<{
           <NftCollectionInfo>
             <SectionValue>{token.nftCollection}</SectionValue>
             {token.nftCollectionVerified && (
-              <VerifiedIcon
-                sx={{ fontSize: fontSize.md, color: colors.status.success, ml: `${spacing.xs}px` }}
+              <SealCheckIcon
+                size={iconSize.sm}
+                color={colors.status.success}
+                style={{ marginLeft: spacing.xs }}
               />
             )}
           </NftCollectionInfo>
@@ -1003,7 +1008,7 @@ export function TransactionDetailModal({
             aria-label={t('general.close')}
             data-testid="tx-detail-close-button"
           >
-            <CloseIcon />
+            <XIcon />
           </CloseButton>
         </HeaderRow>
       </HeaderContainer>
@@ -1102,7 +1107,7 @@ export function TransactionDetailModal({
                   </HopBadge>
                   <HopTokens>
                     <HopTokenText>{hop.inputToken.symbol}</HopTokenText>
-                    <ArrowForwardIcon sx={{ fontSize: fontSize.sm, color: colors.text.tertiary }} />
+                    <ArrowRightIcon size={iconSize.sm} color={colors.text.tertiary} />
                     <HopTokenText>{hop.outputToken.symbol}</HopTokenText>
                   </HopTokens>
                   {hop.percent < 100 && <HopPercent>{hop.percent}%</HopPercent>}
@@ -1228,11 +1233,9 @@ export function TransactionDetailModal({
                   sx={hashCopied ? { backgroundColor: `${colors.status.success}20` } : undefined}
                 >
                   {hashCopied ? (
-                    <CheckIcon sx={{ fontSize: fontSize.base, color: colors.status.success }} />
+                    <CheckIcon size={iconSize.sm} color={colors.status.success} />
                   ) : (
-                    <ContentCopyIcon
-                      sx={{ fontSize: fontSize.base, color: colors.text.secondary }}
-                    />
+                    <CopyIcon size={iconSize.sm} color={colors.text.secondary} />
                   )}
                 </CopyIconButton>
               </Box>
@@ -1244,7 +1247,7 @@ export function TransactionDetailModal({
         {developerMode && (
           <Section>
             <DevSectionHeader>
-              <CodeIcon sx={{ fontSize: fontSize.md, color: colors.text.secondary }} />
+              <CodeIcon size={iconSize.sm} color={colors.text.secondary} />
               <SectionTitle sx={{ mb: 0 }}>
                 {t('transactions.detail.developerInfo', 'Developer Info')}
               </SectionTitle>
@@ -1337,7 +1340,7 @@ export function TransactionDetailModal({
         {onShare && (
           <ActionsContainer>
             <ActionButton onClick={handleShare} data-testid="tx-detail-share-button">
-              <ShareIcon sx={{ fontSize: fontSize.lg, color: colors.text.primary }} />
+              <ShareNetworkIcon size={iconSize.md} color={colors.text.primary} />
               <ActionButtonText>{t('transactions.detail.share', 'Share')}</ActionButtonText>
             </ActionButton>
           </ActionsContainer>

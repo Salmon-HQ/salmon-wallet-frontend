@@ -339,7 +339,7 @@ export function BalanceCard({
             aria-label={t('accessibility.show_balance', 'Show balance')}
             data-testid="balance-eye-toggle"
           >
-            <EyeOffIcon sx={{ fontSize: ms(componentSizes.eyeIcon) }} />
+            <EyeOffIcon size={ms(componentSizes.eyeIcon)} />
           </EyeButton>
         </BalanceRow>
       );
@@ -359,7 +359,7 @@ export function BalanceCard({
           aria-label={t('accessibility.hide_balance', 'Hide balance')}
           data-testid="balance-eye-toggle"
         >
-          <EyeIcon sx={{ fontSize: ms(componentSizes.eyeIcon) }} />
+          <EyeIcon size={ms(componentSizes.eyeIcon)} />
         </EyeButton>
       </BalanceRow>
     );

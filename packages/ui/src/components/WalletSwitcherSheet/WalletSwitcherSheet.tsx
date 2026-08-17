@@ -21,10 +21,7 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
-import CheckIcon from '@mui/icons-material/Check';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
+import { CheckIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../icons';
 import {
   colors,
   spacing,
@@ -261,7 +258,7 @@ function AccountListItem({ account, isActive, onSelect, onEdit, onDelete }: Acco
       />
       <ListItemSecondaryAction>
         <ActionButtonsContainer>
-          {isActive && <CheckIconStyled fontSize="small" />}
+          {isActive && <CheckIconStyled size={iconSize.md} />}
           {onEdit && (
             <ActionIconButton
               size="small"
@@ -269,7 +266,7 @@ function AccountListItem({ account, isActive, onSelect, onEdit, onDelete }: Acco
               aria-label={t('accessibility.edit_account')}
               data-testid={`wallet-switcher-edit-${account.id}`}
             >
-              <EditIcon fontSize="small" />
+              <PencilSimpleIcon size={iconSize.md} />
             </ActionIconButton>
           )}
           {onDelete && (
@@ -279,7 +276,7 @@ function AccountListItem({ account, isActive, onSelect, onEdit, onDelete }: Acco
               aria-label={t('accessibility.delete_account')}
               data-testid={`wallet-switcher-delete-${account.id}`}
             >
-              <DeleteIcon fontSize="small" />
+              <TrashIcon size={iconSize.md} />
             </DeleteIconButton>
           )}
         </ActionButtonsContainer>
@@ -394,7 +391,7 @@ export function WalletSwitcherSheet({
           <Divider sx={{ borderColor: colors.border.default }} />
 
           <AddAccountButton
-            startIcon={<AddIcon />}
+            startIcon={<PlusIcon />}
             onClick={handleAddAccount}
             data-testid="wallet-switcher-add-account"
           >

@@ -13,9 +13,7 @@ import React from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import WarningIcon from '@mui/icons-material/Warning';
-import ErrorIcon from '@mui/icons-material/Error';
+import { CheckCircleIcon, WarningCircleIcon, WarningIcon, iconSize } from '../../icons';
 import {
   colors,
   spacing,
@@ -66,14 +64,16 @@ const SIZE_CONFIG = {
 // ============================================================================
 
 function getSeverityIcon(severity: PriceImpactSeverity, size: number) {
-  const sx = { fontSize: size };
+  const glyphSize = Math.max(iconSize.sm, size);
   switch (severity) {
+    // The only filled glyph on this badge: a success state, which the design
+    // system lets fill so "safe" reads before the label does.
     case 'safe':
-      return <CheckCircleIcon sx={sx} />;
+      return <CheckCircleIcon size={glyphSize} weight="fill" />;
     case 'warning':
-      return <WarningIcon sx={sx} />;
+      return <WarningIcon size={glyphSize} />;
     case 'high':
-      return <ErrorIcon sx={sx} />;
+      return <WarningCircleIcon size={glyphSize} />;
   }
 }
 

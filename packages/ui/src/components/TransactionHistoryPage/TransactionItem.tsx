@@ -10,19 +10,23 @@
  * - Click to expand swap routes, right-click or double-click for detail view
  */
 
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import CancelIcon from '@mui/icons-material/Cancel';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
-import LockIcon from '@mui/icons-material/Lock';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import WidgetsIcon from '@mui/icons-material/Widgets';
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ArrowsLeftRightIcon,
+  CaretDownIcon,
+  CaretUpIcon,
+  ClockIcon,
+  FireIcon,
+  LockIcon,
+  PlusCircleIcon,
+  QuestionIcon,
+  SquaresFourIcon,
+  WalletIcon,
+  XCircleIcon,
+  iconSize,
+} from '../../icons';
+import type { IconComponent } from '../../icons';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Chip from '@mui/material/Chip';
@@ -64,34 +68,34 @@ const MAX_VISIBLE_AMOUNTS = 2;
 
 interface TypeConfig {
   label: string;
-  IconComponent: React.ComponentType<{ sx?: Record<string, unknown> }>;
+  IconComponent: IconComponent;
   color: string;
 }
 
 const TYPE_CONFIGS: Record<TransactionType, TypeConfig> = {
   send: {
     label: 'Sent',
-    IconComponent: ArrowUpwardIcon,
+    IconComponent: ArrowUpIcon,
     color: colors.change.negative,
   },
   receive: {
     label: 'Received',
-    IconComponent: ArrowDownwardIcon,
+    IconComponent: ArrowDownIcon,
     color: colors.change.positive,
   },
   swap: {
     label: 'Swapped',
-    IconComponent: SwapHorizIcon,
+    IconComponent: ArrowsLeftRightIcon,
     color: colors.palette.purple,
   },
   mint: {
     label: 'Minted',
-    IconComponent: AddCircleOutlineIcon,
+    IconComponent: PlusCircleIcon,
     color: colors.palette.cyan,
   },
   burn: {
     label: 'Burned',
-    IconComponent: LocalFireDepartmentIcon,
+    IconComponent: FireIcon,
     color: colors.palette.orange,
   },
   stake: {
@@ -101,17 +105,17 @@ const TYPE_CONFIGS: Record<TransactionType, TypeConfig> = {
   },
   loan: {
     label: 'Loan',
-    IconComponent: AccountBalanceWalletIcon,
+    IconComponent: WalletIcon,
     color: colors.palette.amber,
   },
   interaction: {
     label: 'Interaction',
-    IconComponent: WidgetsIcon,
+    IconComponent: SquaresFourIcon,
     color: colors.palette.blue,
   },
   unknown: {
     label: 'Unknown',
-    IconComponent: HelpOutlineIcon,
+    IconComponent: QuestionIcon,
     color: colors.text.secondary,
   },
 };
@@ -136,8 +140,8 @@ function getTypeConfig(
 
   return {
     ...config,
-    icon: <IconComponent sx={{ fontSize: fontSize.title }} />,
-    badgeIcon: <IconComponent sx={{ fontSize: fontSize.xs, color: colors.text.primary }} />,
+    icon: <IconComponent size={iconSize.md} />,
+    badgeIcon: <IconComponent size={iconSize.sm} color={colors.text.primary} />,
   };
 }
 
@@ -383,7 +387,7 @@ const TokenLogo: React.FC<{ uri?: string | null; size?: number }> = ({
 
   return (
     <TokenLogoPlaceholder style={{ width: size, height: size }}>
-      <HelpOutlineIcon sx={{ fontSize: size * 0.6, color: colors.text.secondary }} />
+      <QuestionIcon size={size * 0.6} color={colors.text.secondary} />
     </TokenLogoPlaceholder>
   );
 };
@@ -491,7 +495,7 @@ export function TransactionItem({
     if (status === 'failed') {
       return (
         <FailedBadge>
-          <CancelIcon sx={{ fontSize: fontSize.md, color: colors.status.error }} />
+          <XCircleIcon size={iconSize.sm} color={colors.status.error} />
           <FailedText>{t('transactions.detail.failed', 'Failed')}</FailedText>
         </FailedBadge>
       );
@@ -500,7 +504,7 @@ export function TransactionItem({
     if (status === 'pending') {
       return (
         <PendingBadge>
-          <AccessTimeIcon sx={{ fontSize: fontSize.base, color: colors.status.warning }} />
+          <ClockIcon size={iconSize.sm} color={colors.status.warning} />
           <PendingText>{t('transactions.detail.pending', 'Pending')}</PendingText>
         </PendingBadge>
       );
@@ -581,9 +585,9 @@ export function TransactionItem({
                     : t('transactions.showMore', 'show more')}
                 </ExpandText>
                 {expanded ? (
-                  <ExpandLessIcon sx={{ fontSize: fontSize.sm, color: colors.palette.amber }} />
+                  <CaretUpIcon size={iconSize.sm} color={colors.palette.amber} />
                 ) : (
-                  <ExpandMoreIcon sx={{ fontSize: fontSize.sm, color: colors.palette.amber }} />
+                  <CaretDownIcon size={iconSize.sm} color={colors.palette.amber} />
                 )}
               </ExpandBadge>
             )}

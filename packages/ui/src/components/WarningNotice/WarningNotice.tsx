@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import { WarningIcon, iconSize } from '../../icons';
 import { borderRadius, colors, fontSize, fontWeight, spacing } from '@salmon/shared';
 import { styled } from '../../utils/styled';
 import type { WarningNoticeProps } from './types';
@@ -35,9 +35,7 @@ export function WarningNotice({
 
   return (
     <WarningBannerRoot sx={{ backgroundColor: background, borderColor: accent }}>
-      <WarningAmberRoundedIcon
-        sx={{ fontSize: 20, color: accent, flexShrink: 0, marginTop: '1px' }}
-      />
+      <WarningIcon size={iconSize.md} color={accent} style={{ flexShrink: 0, marginTop: '1px' }} />
       <Box sx={{ minWidth: 0 }}>
         <Typography
           sx={{

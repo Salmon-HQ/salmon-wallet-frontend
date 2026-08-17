@@ -19,9 +19,7 @@ import MenuItem from '@mui/material/MenuItem';
 import type { PaperProps } from '@mui/material/Paper';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import LanguageIcon from '@mui/icons-material/Language';
+import { ArrowSquareOutIcon, CaretDownIcon, GlobeIcon, iconSize } from '../../icons';
 import {
   colors,
   borderRadius,
@@ -182,10 +180,10 @@ export function ExplorerLinkButton({
           aria-label={buttonText}
           data-testid="tx-detail-explorer-link"
         >
-          <OpenInNewIcon sx={{ fontSize: fontSize.md, color: colors.palette.amber }} />
+          <ArrowSquareOutIcon size={iconSize.sm} color={colors.palette.amber} />
           <ButtonText>{buttonText}</ButtonText>
           {showMenu && availableExplorers.length > 1 && (
-            <ExpandMoreIcon sx={{ fontSize: fontSize.base, color: colors.palette.amber }} />
+            <CaretDownIcon size={iconSize.sm} color={colors.palette.amber} />
           )}
         </StyledButton>
       </BlurContainer>
@@ -207,7 +205,7 @@ export function ExplorerLinkButton({
           {availableExplorers.map((explorer) => (
             <StyledMenuItem key={explorer.key} onClick={() => openExplorer(explorer)}>
               <ListItemIcon>
-                <LanguageIcon sx={{ fontSize: fontSize.lg, color: colors.text.primary }} />
+                <GlobeIcon size={iconSize.md} color={colors.text.primary} />
               </ListItemIcon>
               <ListItemText
                 primary={explorer.name}
@@ -219,7 +217,7 @@ export function ExplorerLinkButton({
                   },
                 }}
               />
-              <OpenInNewIcon sx={{ fontSize: fontSize.md, color: colors.text.tertiary }} />
+              <ArrowSquareOutIcon size={iconSize.sm} color={colors.text.tertiary} />
             </StyledMenuItem>
           ))}
         </StyledMenu>

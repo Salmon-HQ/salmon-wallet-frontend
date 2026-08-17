@@ -14,7 +14,7 @@ import { styled } from '../../utils/styled';
 import DialogTitle from '@mui/material/DialogTitle';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
+import { XIcon } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import { colors, spacing, fontSize, fontWeight, letterSpacing } from '@salmon/shared';
 import { useBaseSheetDialog } from './BaseSheetDialog';
@@ -69,7 +69,7 @@ export function StandardHeader({ title, onClose }: StandardHeaderProps): React.R
         aria-label={t('general.close', 'Close')}
         data-testid="sheet-close-button"
       >
-        <CloseIcon />
+        <XIcon />
       </CloseButton>
     </StyledDialogTitle>
   );

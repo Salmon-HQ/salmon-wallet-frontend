@@ -15,8 +15,7 @@ import { styled } from '../../utils/styled';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
-import CallMadeIcon from '@mui/icons-material/CallMade';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import { ArrowUpRightIcon, FireIcon, iconSize } from '../../icons';
 
 import {
   colors,
@@ -572,9 +571,7 @@ export function NftDetailPage({
                         can only raise the luminance under the label. */}
                     <FleshBackground />
                     <OnFillContent>
-                      <LocalFireDepartmentIcon
-                        sx={{ fontSize: fontSize.md, color: colors.text.balance }}
-                      />
+                      <FireIcon size={iconSize.sm} color={colors.text.balance} />
                       <ButtonText>{t('nft.burn_nft', 'Burn')}</ButtonText>
                     </OnFillContent>
                   </PrimaryButtonBase>
@@ -592,9 +589,7 @@ export function NftDetailPage({
                       only raise the luminance under the label. */}
                   <FleshBackground />
                   <OnFillContent>
-                    <CallMadeIcon
-                      sx={{ fontSize: fontSize.md, color: colors.button.primaryText }}
-                    />
+                    <ArrowUpRightIcon size={iconSize.sm} color={colors.button.primaryText} />
                     <ButtonText $onAccent>{t('actions.send', 'Send')}</ButtonText>
                   </OnFillContent>
                 </PrimaryButtonBase>
@@ -616,9 +611,7 @@ export function NftDetailPage({
                     aria-label={t('nft.burn.reviewTitle', 'Burn NFT')}
                     data-testid="nft-detail-burn-button"
                   >
-                    <LocalFireDepartmentIcon
-                      sx={{ fontSize: fontSize.md, color: colors.text.balance }}
-                    />
+                    <FireIcon size={iconSize.sm} color={colors.text.balance} />
                     <ButtonText>{t('nft.burn_nft', 'Burn')}</ButtonText>
                   </SecondaryButtonInner>
                 </BlurContainer>

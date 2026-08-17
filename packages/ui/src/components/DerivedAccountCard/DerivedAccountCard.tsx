@@ -7,7 +7,7 @@ import React from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, iconSize } from '../../icons';
 import {
   colors,
   spacing,
@@ -136,7 +136,7 @@ const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
       data-testid={testID}
     >
       <Checkbox $selected={selected}>
-        {selected && <CheckIcon sx={{ fontSize: fontSize.md, color: colors.text.primary }} />}
+        {selected && <CheckIcon size={iconSize.sm} color={colors.text.primary} />}
       </Checkbox>
 
       <Info>

@@ -14,10 +14,7 @@ import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { PencilSimpleIcon, PlusCircleIcon, TrashIcon, UserIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -154,7 +151,7 @@ export function AddressBookPanel({
                         '&:hover': { backgroundColor: colors.background.card },
                       }}
                     >
-                      <EditOutlinedIcon fontSize="small" />
+                      <PencilSimpleIcon size={iconSize.md} />
                     </IconButton>
                     <IconButton
                       edge="end"
@@ -167,7 +164,7 @@ export function AddressBookPanel({
                         '&:hover': { backgroundColor: colors.status.errorBackground },
                       }}
                     >
-                      <DeleteOutlineIcon fontSize="small" />
+                      <TrashIcon size={iconSize.md} />
                     </IconButton>
                   </Box>
                 }
@@ -178,9 +175,7 @@ export function AddressBookPanel({
                 >
                   <ListItemAvatar>
                     <ContactAvatar>
-                      <PersonOutlineIcon
-                        sx={{ fontSize: fontSize.xl, color: colors.text.secondary }}
-                      />
+                      <UserIcon size={iconSize.md} color={colors.text.secondary} />
                     </ContactAvatar>
                   </ListItemAvatar>
                   <ListItemText
@@ -219,7 +214,7 @@ export function AddressBookPanel({
           </StyledList>
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <AddButton
-              startIcon={<AddCircleOutlineIcon />}
+              startIcon={<PlusCircleIcon />}
               onClick={onAddContact}
               data-testid="address-book-add-button"
             >
@@ -236,7 +231,7 @@ export function AddressBookPanel({
             )}
           </EmptyText>
           <AddButton
-            startIcon={<AddCircleOutlineIcon />}
+            startIcon={<PlusCircleIcon />}
             onClick={onAddContact}
             data-testid="address-book-add-button"
           >

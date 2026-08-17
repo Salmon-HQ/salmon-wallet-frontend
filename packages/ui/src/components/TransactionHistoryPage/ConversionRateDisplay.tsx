@@ -10,7 +10,7 @@ import React, { useMemo } from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import { ArrowsLeftRightIcon, iconSize } from '../../icons';
 import {
   colors,
   formatConversionRate,
@@ -67,8 +67,10 @@ export function ConversionRateDisplay({
   if (isSmall) {
     return (
       <Container className={className}>
-        <SwapHorizIcon
-          sx={{ fontSize: fontSize.sm, color: colors.text.secondary, mr: `${spacing.xs}px` }}
+        <ArrowsLeftRightIcon
+          size={iconSize.sm}
+          color={colors.text.secondary}
+          style={{ marginRight: spacing.xs }}
         />
         <CompactText>1:{formattedRate}</CompactText>
       </Container>
@@ -77,8 +79,10 @@ export function ConversionRateDisplay({
 
   return (
     <Container className={className}>
-      <SwapHorizIcon
-        sx={{ fontSize: fontSize.base, color: colors.text.secondary, mr: `${spacing.sm}px` }}
+      <ArrowsLeftRightIcon
+        size={iconSize.sm}
+        color={colors.text.secondary}
+        style={{ marginRight: spacing.sm }}
       />
       <RateText>
         <SymbolText>1 {fromSymbol}</SymbolText>

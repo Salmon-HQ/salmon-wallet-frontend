@@ -14,7 +14,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import InputBase from '@mui/material/InputBase';
 import ButtonBase from '@mui/material/ButtonBase';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { CaretRightIcon, iconSize } from '../../icons';
 import {
   colors,
   spacing,
@@ -133,9 +133,10 @@ const ChevronContainer = styled(Box)({
   alignItems: 'center',
 });
 
-const StyledChevron = styled(ChevronRightIcon)({
+const StyledChevron = styled(CaretRightIcon)({
   color: colors.text.secondary,
-  fontSize: fontSize.lg,
+  width: iconSize.md,
+  height: iconSize.md,
 });
 
 // ============================================================================

@@ -16,9 +16,7 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
 import ListItemButton from '@mui/material/ListItemButton';
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import DescriptionIcon from '@mui/icons-material/Description';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { CaretRightIcon, FileTextIcon, TreeStructureIcon, iconSize } from '../../icons';
 import { styled } from '../../utils/styled';
 import {
   colors,
@@ -261,9 +259,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
             <>
               <MethodCard onClick={handleSelectDerive} data-testid="account-add-method-derive">
                 <MethodIcon>
-                  <AccountTreeIcon
-                    sx={{ color: colors.accent.primary, fontSize: fontSize.iconMd }}
-                  />
+                  <TreeStructureIcon color={colors.accent.primary} size={iconSize.xl} />
                 </MethodIcon>
                 <MethodInfo>
                   <Typography
@@ -280,14 +276,12 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                     {t('settings.account_add.create_new_description')}
                   </Typography>
                 </MethodInfo>
-                <ChevronRightIcon sx={{ color: colors.text.secondary }} />
+                <CaretRightIcon color={colors.text.secondary} />
               </MethodCard>
 
               <MethodCard onClick={handleSelectImport} data-testid="account-add-method-import">
                 <MethodIcon>
-                  <DescriptionIcon
-                    sx={{ color: colors.accent.primary, fontSize: fontSize.iconMd }}
-                  />
+                  <FileTextIcon color={colors.accent.primary} size={iconSize.xl} />
                 </MethodIcon>
                 <MethodInfo>
                   <Typography
@@ -304,7 +298,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                     {t('settings.account_add.import_seed_description')}
                   </Typography>
                 </MethodInfo>
-                <ChevronRightIcon sx={{ color: colors.text.secondary }} />
+                <CaretRightIcon color={colors.text.secondary} />
               </MethodCard>
             </>
           )}

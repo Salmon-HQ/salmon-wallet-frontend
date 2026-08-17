@@ -26,7 +26,7 @@ import {
   easing,
   tabularNums,
 } from '@salmon/shared';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, iconSize } from '../../icons';
 import { CopyIcon } from '../Icon';
 import type { TokenInfoProps } from './types';
 
@@ -342,9 +342,9 @@ export function TokenInfo({
             <ContractAddress>{getShortAddress(contractAddress, 6)}</ContractAddress>
             <CopyButton>
               {copied ? (
-                <CheckIcon sx={{ color: colors.status.success, fontSize: fontSize.lg }} />
+                <CheckIcon color={colors.status.success} size={iconSize.md} />
               ) : (
-                <CopyIcon sx={{ color: colors.text.muted, fontSize: fontSize.lg }} />
+                <CopyIcon color={colors.text.muted} size={iconSize.md} />
               )}
             </CopyButton>
           </ContractRow>

@@ -4,6 +4,7 @@
  * Web version using MUI and @emotion/styled for browser extension.
  * Provides a password field with show/hide toggle and optional error message.
  */
+import { iconSize } from '../../icons';
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
@@ -162,19 +163,9 @@ export function PasswordInput({
           tabIndex={-1}
         >
           {showPassword ? (
-            <EyeOffIcon
-              sx={{
-                fontSize: componentSizes.iconSizeMedium,
-                color: colors.text.secondary,
-              }}
-            />
+            <EyeOffIcon size={iconSize.lg} color={colors.text.secondary} />
           ) : (
-            <EyeIcon
-              sx={{
-                fontSize: componentSizes.iconSizeMedium,
-                color: colors.text.secondary,
-              }}
-            />
+            <EyeIcon size={iconSize.lg} color={colors.text.secondary} />
           )}
         </ToggleButton>
       </InputWrapper>

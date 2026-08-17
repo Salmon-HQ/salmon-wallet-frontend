@@ -19,7 +19,7 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { ArrowLeftIcon } from '../../icons';
 import {
   colors,
   spacing,
@@ -115,7 +115,7 @@ export function HandleHeader({
       <TitleRow>
         {showBackButton && onBack && (
           <BackButton onClick={onBack} aria-label={t('general.back', 'Back')}>
-            <ArrowBackIcon />
+            <ArrowLeftIcon />
           </BackButton>
         )}
         <TitleText>{title}</TitleText>

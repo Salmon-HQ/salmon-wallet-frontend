@@ -14,13 +14,16 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import DescriptionIcon from '@mui/icons-material/Description';
-import TwitterIcon from '@mui/icons-material/Twitter';
-import ForumIcon from '@mui/icons-material/Forum';
-import EmailIcon from '@mui/icons-material/Email';
-import ShieldIcon from '@mui/icons-material/Shield';
+import {
+  ArrowSquareOutIcon,
+  ChatsCircleIcon,
+  EnvelopeIcon,
+  FileTextIcon,
+  QuestionIcon,
+  ShieldIcon,
+  XLogoIcon,
+  iconSize,
+} from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -40,11 +43,11 @@ import type { SupportSelectorProps } from './types';
 // ============================================================================
 
 const ICON_MAP: Record<string, React.ReactNode> = {
-  faq: <HelpOutlineIcon />,
-  docs: <DescriptionIcon />,
-  twitter: <TwitterIcon />,
-  discord: <ForumIcon />,
-  email: <EmailIcon />,
+  faq: <QuestionIcon />,
+  docs: <FileTextIcon />,
+  twitter: <XLogoIcon />,
+  discord: <ChatsCircleIcon />,
+  email: <EnvelopeIcon />,
 };
 
 // ============================================================================
@@ -67,9 +70,10 @@ const StyledListItemIcon = styled(ListItemIcon)({
   color: colors.accent.primary,
 });
 
-const ExternalIcon = styled(OpenInNewIcon)({
+const ExternalIcon = styled(ArrowSquareOutIcon)({
   color: colors.text.secondary,
-  fontSize: fontSize.md,
+  width: iconSize.sm,
+  height: iconSize.sm,
 });
 
 const SecurityNotice = styled(Box)({
@@ -84,7 +88,8 @@ const SecurityNotice = styled(Box)({
 
 const SecurityIcon = styled(ShieldIcon)({
   color: colors.status.warning,
-  fontSize: fontSize.xl,
+  width: iconSize.md,
+  height: iconSize.md,
   marginTop: spacing.xxs,
 });
 
@@ -110,7 +115,7 @@ export function SupportSelector({
     (option: SupportOptionItem) => (
       <ListItem key={option.id} disablePadding>
         <StyledListItemButton onClick={() => onOpenLink(option.url)}>
-          <StyledListItemIcon>{ICON_MAP[option.id] || <HelpOutlineIcon />}</StyledListItemIcon>
+          <StyledListItemIcon>{ICON_MAP[option.id] || <QuestionIcon />}</StyledListItemIcon>
           <ListItemText
             primary={option.title}
             secondary={option.description}
