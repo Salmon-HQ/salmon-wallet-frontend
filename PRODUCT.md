@@ -217,23 +217,31 @@ No token or governance UI exists, and none should be designed speculatively.
   library (the Blinks proposal themes Dialect via CSS variables). Cheap to
   guarantee now.
 
-### Unresolved product tension — undisclosed fees
+### Platform fees — resolved: both rates are disclosed
 
 Salmon takes a **0.5% Jupiter swap referral** (server-side; the frontend has no
-referral logic at all) and a **0.4% StealthEX bridge partner fee** (hardcoded
-in the backend and "baked into the estimate the user sees, not shown as a
-separate line item"). Neither is attributed to Salmon anywhere in the product;
-the swap screens show only a bundled total percentage.
+referral logic at all) and a **0.4% StealthEX bridge partner fee**
+(`STEALTHEX_PARTNER_FEE` in `../salmon-api`, sent upstream as `partner_fee` and
+netted into the estimate StealthEX returns).
 
-The manifesto promises "No hidden gatekeepers. No opaque control."
+The manifesto promises "No hidden gatekeepers. No opaque control." The tension
+this section used to record — disclose the cut or keep it quiet — was **resolved
+in favour of disclosure** by the product owner. Both review screens now name the
+rate: swap shows "Salmon fee" with the percentage the backend reports, and
+bridge shows the same row against `BRIDGE_PARTNER_FEE_PERCENT`, with the
+please-note copy stating that the estimate already has the fee deducted.
 
-**[open]** Whether to disclose the platform fee as a line item is an unresolved
-values-versus-revenue question. The knowledge base never resolves it and no
-document justifies the specific rates. This is recorded here as a product
-tension, not as a design decision. Related engineering note: `calculateFee`
-mislabels non-SOL fee amounts as SOL (5×–50× off), harmless only because no
-screen renders `fee.amount` today — any design that shows a fee *amount* rather
-than a *percent* ships a wrong number until that is fixed.
+What is disclosed is the **rate**, not an amount, and that is a limitation
+rather than a choice: StealthEX returns only the net `estimated_amount`, so no
+fee amount reaches the frontend. Showing one would require the backend to echo
+`partner_fee` and the gross estimate, or to add an explicit fee field to
+`BridgeEstimateResponse`. No document justifies the specific rates; that remains
+unrecorded.
+
+Resolved engineering note: the backend's `calculateFee` used to label non-SOL
+fee amounts as SOL (5×–50× off). Fixed in salmon-api `8989ced`, which
+denominates the swap order fee in the input token. It never affected the bridge,
+which does no fee arithmetic on either side.
 
 ## Brand Commitments
 
