@@ -72,7 +72,7 @@ jest.mock('@salmon/shared', () => ({
   // The caustic band is the scales motif, and the motif's geometry is data:
   // a stub would only assert that a stub renders.
   ...jest.requireActual('@salmon/shared/src/theme/scales'),
-  letterSpacing: { normal: 0, wide: 0.3 },
+  letterSpacing: { normal: 0, wide: 0.3, snug: -0.12 },
   // The real gate is `useWaitGate` and it is tested where it lives
   // (packages/shared). Transparent here, so these cases stay about what the
   // screen renders in each state rather than about timing.
@@ -113,9 +113,9 @@ jest.mock('@salmon/shared', () => ({
     background: { tertiary: '#111' },
     status: { success: '#0f0' },
   },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, '4xl': 40 },
+  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, '4xl': 40, '5xl': 48 },
   borderRadius: { lg: 16, full: 999, card: 12 },
-  fontSize: { sm: 14, base: 16, md: 18, title: 22, '4xl': 36 },
+  fontSize: { sm: 12, base: 14, body: 14, md: 16, title: 20, headline: 24, '4xl': 36 },
   fontWeight: { semibold: '600', bold: '700' },
   gradients: { primaryButton: { colors: ['#0f0'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } },
   shadows: { imageHero: {} },
@@ -123,9 +123,9 @@ jest.mock('@salmon/shared', () => ({
   ms: (value: number) => value,
   vs: (value: number) => value,
   s: (value: number) => value,
-  fontFamilyNative: { bold: 'System', medium: 'System', regular: 'System' },
+  fontFamilyNative: { bold: 'System', semiBold: 'System', medium: 'System', regular: 'System' },
   borderWidth: { accent: 1 },
-  lineHeight: { none: 1, condensed: 1.25, normal: 1.5 },
+  lineHeight: { none: 1, tight: 1.25, condensed: 1.25, normal: 1.5 },
 }));
 
 jest.mock('../../../hooks/useTabChrome', () => ({
@@ -216,6 +216,16 @@ describe('TransactionSuccessScreen', () => {
       expect(screen.getByTestId('tx-success-continue-button')).toBeTruthy();
       expect(screen.getByTestId('tx-success-explorer-link')).toBeTruthy();
       expect(screen.queryByTestId('loading-screen')).toBeNull();
+    });
+
+    it('puts the continue action before the explorer link — the wallet outranks the block explorer', () => {
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      const tree = JSON.stringify(screen.toJSON());
+      expect(tree.indexOf('tx-success-continue-button')).toBeGreaterThan(-1);
+      expect(tree.indexOf('tx-success-continue-button')).toBeLessThan(
+        tree.indexOf('tx-success-explorer-link')
+      );
     });
 
     it('omits the explorer link when no url is available', () => {

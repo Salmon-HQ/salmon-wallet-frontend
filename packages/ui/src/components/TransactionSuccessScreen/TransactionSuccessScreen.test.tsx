@@ -45,13 +45,14 @@ vi.mock('@salmon/shared', () => ({
     background: { tertiary: '#111' },
     status: { success: '#0f0' },
   },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, '4xl': 40 },
+  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, '4xl': 40, '5xl': 48 },
   borderRadius: { lg: 16, full: '50%', card: 12 },
   borderWidth: { accent: 1 },
   fontFamily: { sans: 'Inter, sans-serif' },
-  fontSize: { sm: 14, base: 16, md: 18, title: 22, '4xl': 36 },
-  fontWeight: { semibold: 600, bold: 700 },
-  lineHeight: { none: 1 },
+  fontSize: { sm: 12, base: 14, body: 14, md: 16, title: 20, headline: 24, '4xl': 36 },
+  fontWeight: { medium: 500, semibold: 600, bold: 700 },
+  letterSpacing: { snug: -0.12, widest: 1 },
+  lineHeight: { none: 1, tight: 1.25 },
   // The continue action is the shared PrimaryButton now, so this mock has to
   // cover the tokens that button reads too.
   componentSizes: {
@@ -63,7 +64,6 @@ vi.mock('@salmon/shared', () => ({
     buttonRadius: 28,
     buttonFleshScale: 1,
   },
-  letterSpacing: { widest: '0.02em' },
   shadowsCSS: { bezel: 'none' },
   gradients: { primaryCSS: 'linear-gradient(#0f0, #0c0)' },
   duration: {
@@ -132,6 +132,25 @@ describe('TransactionSuccessScreen', () => {
       const { whiteSpace, maxWidth } = getComputedStyle(amount);
       expect(whiteSpace).toBe('nowrap');
       expect(maxWidth).toBe('100%');
+    });
+
+    it('gives the amount the one thing CSS cannot know: how long the string is', () => {
+      const summary = '0.0512345 SOL → 8.1234567 USDC';
+      render(<TransactionSuccessScreen {...baseProps} summary={summary} />);
+
+      const amount = screen.getByTestId('tx-success-amount');
+      // Without the character count the size budget falls back to a guess, and
+      // a guess is what was clipping the number in a 360px column.
+      expect(amount.style.getPropertyValue('--tx-amount-chars')).toBe(String(summary.length));
+    });
+
+    it('puts the continue action before the explorer link — the wallet outranks the block explorer', () => {
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      const button = screen.getByTestId('tx-success-continue-button');
+      const link = screen.getByTestId('tx-success-explorer-link');
+
+      expect(button.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
     it('keeps the bridge deposit instructions', () => {

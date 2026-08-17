@@ -44,8 +44,12 @@ import { BAND_HEIGHT, MEMBRANE_OPACITY_TO, surfacingTimeline } from './surfacing
 // mutable one.
 const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 
-/** The floor `adjustsFontSizeToFit` may shrink the amount to before it stops. */
-const MIN_AMOUNT_SCALE = 0.6;
+/**
+ * The floor `adjustsFontSizeToFit` may shrink the amount to before it stops —
+ * derived rather than typed, so it is exactly "down to body size" and cannot
+ * drift away from the DOM screen's floor when either token moves.
+ */
+const MIN_AMOUNT_SCALE = fontSize.body / fontSize.title;
 
 // ============================================================================
 // Component
@@ -81,8 +85,14 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   // +6 → 0 on `settle`, digits already at tabular width so nothing reflows.
   const amountOpacity = useSharedValue(0);
   const amountTranslateY = useSharedValue(0);
-  const linkOpacity = useSharedValue(0);
-  const buttonOpacity = useSharedValue(0);
+  // Two waves of chrome, named for their order rather than for one element,
+  // because the order is the point: the stagger has to agree with what sits
+  // above what. The first wave carries everything at the primary rank — the
+  // bridge details and the continue action — and the second carries the
+  // explorer link below it. Naming them `link` and `button` is what let the
+  // link fade in before the button it now sits under.
+  const chromeOpacity = useSharedValue(0);
+  const chromeTrailOpacity = useSharedValue(0);
   const membraneOpacity = useSharedValue(1);
   const bandOpacity = useSharedValue(0);
   const bandTranslateY = useSharedValue(0);
@@ -134,11 +144,11 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
       duration: timeline.chrome.durationMs,
       easing: curve.current,
     });
-    linkOpacity.value = withDelay(
+    chromeOpacity.value = withDelay(
       timeline.chrome.delayMs,
       withTiming(1, { duration: timeline.chrome.durationMs, easing: curve.current })
     );
-    buttonOpacity.value = withDelay(
+    chromeTrailOpacity.value = withDelay(
       timeline.chrome.delayMs + timeline.chrome.staggerMs,
       withTiming(1, { duration: timeline.chrome.durationMs, easing: curve.current })
     );
@@ -148,8 +158,8 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
     statusOpacity,
     amountOpacity,
     amountTranslateY,
-    linkOpacity,
-    buttonOpacity,
+    chromeOpacity,
+    chromeTrailOpacity,
     membraneOpacity,
   ]);
 
@@ -193,12 +203,12 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
     transform: [{ translateY: amountTranslateY.value }],
   }));
 
-  const linkStyle = useAnimatedStyle(() => ({
-    opacity: linkOpacity.value,
+  const chromeStyle = useAnimatedStyle(() => ({
+    opacity: chromeOpacity.value,
   }));
 
-  const buttonStyle = useAnimatedStyle(() => ({
-    opacity: buttonOpacity.value,
+  const chromeTrailStyle = useAnimatedStyle(() => ({
+    opacity: chromeTrailOpacity.value,
   }));
 
   const handleExplorerPress = () => {
@@ -227,7 +237,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
 
   return (
     <View
-      style={[styles.container, { paddingBottom: floatingBottomOffset }]}
+      style={[styles.container, styles.receipt, { paddingBottom: floatingBottomOffset }]}
       onLayout={handleScreenLayout}
       testID="tx-success-screen"
     >
@@ -270,7 +280,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
       </Animated.View>
 
       {isBridge ? (
-        <Animated.View style={[styles.bridgeInfoBox, linkStyle]}>
+        <Animated.View style={[styles.bridgeInfoBox, chromeStyle]}>
           <Text style={styles.bridgeLabel}>{t('bridge.depositAddress', 'Send funds to')}</Text>
           <Text style={styles.bridgeValue}>{bridgeDepositAddress}</Text>
           {bridgeAmountIn && (
@@ -313,28 +323,37 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
             </>
           )}
         </Animated.View>
-      ) : explorerUrl ? (
-        <Animated.View style={[styles.linkContainer, linkStyle]}>
-          <TouchableOpacity
-            testID="tx-success-explorer-link"
-            onPress={handleExplorerPress}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.explorerLink}>{t('transaction.viewOnExplorer')}</Text>
-          </TouchableOpacity>
-        </Animated.View>
       ) : null}
 
-      <Animated.View style={[styles.buttonContainer, buttonStyle]}>
-        <PrimaryButton
-          onPress={onContinue}
-          style={styles.button}
-          disabled={settling}
-          testID="tx-success-continue-button"
-        >
-          {t('transaction.continue', 'Back to wallet')}
-        </PrimaryButton>
-      </Animated.View>
+      {/* Continue first, explorer second — the same ranking the DOM receipt
+          uses. The wallet's own action outranks a link that leaves it for a
+          block explorer, and both the reading order and the stagger have to
+          say so: the continue action rides the first chrome wave, the link the
+          second. */}
+      <View style={styles.actionGroup}>
+        <Animated.View style={[styles.buttonContainer, chromeStyle]}>
+          <PrimaryButton
+            onPress={onContinue}
+            style={styles.button}
+            disabled={settling}
+            testID="tx-success-continue-button"
+          >
+            {t('transaction.continue', 'Back to wallet')}
+          </PrimaryButton>
+        </Animated.View>
+
+        {!isBridge && explorerUrl ? (
+          <Animated.View style={[styles.linkContainer, chromeTrailStyle]}>
+            <TouchableOpacity
+              testID="tx-success-explorer-link"
+              onPress={handleExplorerPress}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.explorerLink}>{t('transaction.viewOnExplorer')}</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        ) : null}
+      </View>
 
       {/* The shaft of light, last so it passes over the amount rather than
           under it. It takes no touches and it never repeats. */}
@@ -359,36 +378,51 @@ const styles = StyleSheet.create({
     // The band travels in from below the bottom edge.
     overflow: 'hidden',
   },
+  // The receipt reads from the top. A slip floating in the middle of a tall
+  // column has no reading order — the eye lands between the lines instead of on
+  // the first one — so the report sits at the top and the actions are pushed to
+  // the bottom by `actionGroup`'s auto margin. The wait keeps `container`'s
+  // centring: a loader with nothing under it is the one case for the middle.
+  receipt: {
+    justifyContent: 'flex-start',
+    paddingTop: vs(spacing['5xl']),
+  },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: s(spacing.sm),
     marginBottom: vs(spacing.md),
   },
+  // The headline. This screen's job is to report *what happened*, so the
+  // sentence that says it outranks the figures it happened to — a 10px
+  // uppercase status over a 36px amount had the ranking backwards. The state
+  // keeps all three channels: the glyph's colour, the glyph, and the label.
   statusGlyph: {
-    fontSize: ms(fontSize.body),
+    fontSize: ms(fontSize.headline),
     color: semantic.status.success,
     fontFamily: fontFamilyNative.bold,
     fontWeight: fontWeight.bold,
   },
   statusLabel: {
-    fontSize: ms(fontSize.micro),
+    fontSize: ms(fontSize.headline),
     fontFamily: fontFamilyNative.semiBold,
-    color: semantic.status.success,
-    letterSpacing: letterSpacing.wide,
-    textTransform: 'uppercase',
+    color: semantic.text.primary,
+    letterSpacing: letterSpacing.snug,
   },
   amountContainer: {
     alignItems: 'center',
     marginBottom: vs(spacing['2xl']),
   },
+  // Secondary rank: one step down from the headline in size and one in weight.
+  // It keeps `text.primary` — a number on a receipt may be smaller than the
+  // sentence above it, but never dimmer than it is legible.
   amount: {
     ...TABULAR,
-    fontSize: ms(fontSize.display),
-    fontFamily: fontFamilyNative.bold,
+    fontSize: ms(fontSize.title),
+    fontFamily: fontFamilyNative.medium,
     color: semantic.text.primary,
     textAlign: 'center',
-    lineHeight: ms(fontSize.display * lineHeight.condensed),
+    lineHeight: ms(fontSize.title * lineHeight.tight),
   },
   bridgeInfoBox: {
     width: '100%',
@@ -410,12 +444,19 @@ const styles = StyleSheet.create({
     color: semantic.text.primary,
     marginBottom: vs(spacing.md),
   },
+  // Continue and explorer, pinned to the bottom of the column. The auto margin
+  // separates the report from the actions without inventing a spacer.
+  actionGroup: {
+    marginTop: 'auto',
+    alignItems: 'center',
+    gap: vs(spacing.lg),
+    paddingTop: vs(spacing.xl),
+  },
   linkContainer: {
     alignItems: 'center',
-    marginBottom: vs(spacing['4xl']),
   },
   explorerLink: {
-    fontSize: ms(fontSize.base),
+    fontSize: ms(fontSize.body),
     fontFamily: fontFamilyNative.medium,
     color: semantic.text.accent,
     textAlign: 'center',
