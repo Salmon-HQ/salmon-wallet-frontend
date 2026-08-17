@@ -1,3 +1,5 @@
+import type { TransactionEffects } from '@salmon/shared';
+
 export interface DAppConnectApprovalViewProps {
   origin: string;
   appName?: string;
@@ -63,6 +65,9 @@ export interface DAppTransactionApprovalViewProps {
   appName?: string;
   appIcon?: string;
   requestSummary: string;
+  /** Pre-signature effect preview. `null` while it is still being simulated. */
+  effects: TransactionEffects | null;
+  effectsLoading: boolean;
   feeSol: string | null;
   instructionCount: number | null;
   feePayer: string | null;

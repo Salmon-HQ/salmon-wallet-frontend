@@ -95,7 +95,14 @@ export type UndeterminedReason =
    */
   | 'simulation-not-executed'
   /** The node executed the transaction but withheld the account states we asked for. */
-  | 'account-state-unavailable';
+  | 'account-state-unavailable'
+  /**
+   * The request carries several transactions that execute in sequence. Each one
+   * runs against the state the previous one left behind, so simulating them
+   * independently would report numbers that are wrong for every transaction but
+   * the first — worse than reporting nothing.
+   */
+  | 'batch-not-previewable';
 
 /** The signer's native SOL movement, in lamports. */
 export interface SolChange {

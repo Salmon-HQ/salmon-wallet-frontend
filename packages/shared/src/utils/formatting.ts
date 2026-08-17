@@ -70,6 +70,38 @@ export function formatAmount(amount: number, decimals: number): string {
 }
 
 /**
+ * Formats a base-unit amount exactly, with no floating point anywhere.
+ *
+ * `formatAmount` divides through a `number` and loses precision above
+ * 2^53 — a real range for u64 token amounts. On a screen where the figure is
+ * the reason the user is deciding, a rounded amount is a wrong amount, so this
+ * splits the integer digits with string arithmetic instead.
+ *
+ * The sign is dropped: the magnitude is returned, and the caller supplies the
+ * `+`/`−` glyph so direction is a channel of its own.
+ *
+ * @param amount - Amount in the mint's base units. Sign is ignored.
+ * @param decimals - The mint's decimals.
+ * @returns The magnitude, with trailing fractional zeros trimmed.
+ *
+ * @example
+ * ```typescript
+ * formatBaseUnits(1_500_000_000n, 9)  // '1.5'
+ * formatBaseUnits(-2_000_000n, 6)     // '2'
+ * formatBaseUnits(1n, 9)              // '0.000000001'
+ * ```
+ */
+export function formatBaseUnits(amount: bigint, decimals: number): string {
+  const magnitude = amount < 0n ? -amount : amount;
+  if (decimals <= 0) return magnitude.toString();
+
+  const digits = magnitude.toString().padStart(decimals + 1, '0');
+  const whole = digits.slice(0, digits.length - decimals);
+  const fraction = digits.slice(digits.length - decimals).replace(/0+$/, '');
+  return fraction ? `${whole}.${fraction}` : whole;
+}
+
+/**
  * Formats an amount as a USD dollar value
  *
  * @deprecated Use `formatFiatValue` from `currencyFormatting` for multi-currency support.

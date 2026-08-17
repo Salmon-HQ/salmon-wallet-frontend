@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { DAppTransactionApprovalView } from '@salmon/ui';
 import {
   approveSolanaTransactionRequest,
   getDAppTransactionRequestSummary,
-  loadSolanaTransactionApprovalDetails,
   useDAppMetadata,
+  useSolanaTransactionApproval,
   type BlockchainAccount,
   type DAppTransactionRequest,
 } from '@salmon/shared';
@@ -27,44 +27,14 @@ export function DAppTransactionApprovalPage({
 }: Props): React.ReactElement {
   const [loading, setLoading] = useState(false);
   const { metadata } = useDAppMetadata(origin);
-  const [parsingError, setParsingError] = useState<string | null>(null);
-  const [feeLamports, setFeeLamports] = useState<number | null>(null);
-  const [instructionCount, setInstructionCount] = useState<number | null>(null);
-  const [feePayer, setFeePayer] = useState<string | null>(null);
-  const [recentBlockhash, setRecentBlockhash] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      setParsingError(null);
-      setFeeLamports(null);
-      setInstructionCount(null);
-      setFeePayer(null);
-      setRecentBlockhash(null);
-
-      if (!account || !isSolanaAccount(account)) return;
-
-      try {
-        const details = await loadSolanaTransactionApprovalDetails(account, request);
-        if (cancelled) return;
-
-        setFeeLamports(details.feeLamports);
-        setInstructionCount(details.instructionCount);
-        setFeePayer(details.feePayer);
-        setRecentBlockhash(details.recentBlockhash);
-      } catch {
-        if (cancelled) return;
-        setParsingError('Failed to decode transaction');
-      }
-    }
-
-    void run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [account, request]);
+  const solanaAccount = useMemo(
+    () => (account && isSolanaAccount(account) ? account : null),
+    [account]
+  );
+  const { details, feeSol, parsingError, effects, effectsLoading } = useSolanaTransactionApproval({
+    account: solanaAccount,
+    request,
+  });
 
   const sendToBackground = useCallback(
     (data: Record<string, unknown>) => {
@@ -106,21 +76,18 @@ export function DAppTransactionApprovalPage({
     }
   }, [account, onDismiss, request, sendToBackground]);
 
-  const feeSol = useMemo(() => {
-    if (feeLamports == null) return null;
-    return (feeLamports / 1_000_000_000).toFixed(9).replace(/0+$/, '').replace(/\.$/, '');
-  }, [feeLamports]);
-
   return (
     <DAppTransactionApprovalView
       origin={origin}
       appName={metadata?.name}
       appIcon={metadata?.icon}
       requestSummary={getDAppTransactionRequestSummary(request.method)}
+      effects={effects}
+      effectsLoading={effectsLoading}
       feeSol={feeSol}
-      instructionCount={instructionCount}
-      feePayer={feePayer}
-      recentBlockhash={recentBlockhash}
+      instructionCount={details?.instructionCount ?? null}
+      feePayer={details?.feePayer ?? null}
+      recentBlockhash={details?.recentBlockhash ?? null}
       parsingError={parsingError}
       disabled={!account || !networkId}
       loading={loading}

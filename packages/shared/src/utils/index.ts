@@ -12,10 +12,12 @@ export {
   isTransactionLookalike,
   loadSolanaTransactionApprovalDetails,
   parseOffchainMessageForApproval,
+  previewSolanaApprovalEffects,
   serializeSignedTransactionFromApproval,
   serializeSignedTransactionsFromApproval,
   TransactionLookalikeMessageError,
 } from './dapp-approval';
+export type { SolanaTransactionApprovalDetails } from './dapp-approval';
 
 // Account utilities
 export {
@@ -78,6 +80,7 @@ export {
   hiddenValue,
   // Amount formatting
   formatAmount,
+  formatBaseUnits,
   showAmount,
   showValue,
   // Percentage utilities

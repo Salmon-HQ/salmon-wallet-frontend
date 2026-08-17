@@ -27,6 +27,7 @@ import {
   Title,
   Value,
 } from './common';
+import { TransactionEffectsCard } from './TransactionEffectsCard';
 import type { DAppTransactionApprovalViewProps } from './types';
 
 export function DAppTransactionApprovalView({
@@ -34,6 +35,8 @@ export function DAppTransactionApprovalView({
   appName,
   appIcon,
   requestSummary,
+  effects,
+  effectsLoading,
   feeSol,
   instructionCount,
   feePayer,
@@ -85,6 +88,8 @@ export function DAppTransactionApprovalView({
               )}
             </FooterNote>
           </Card>
+
+          <TransactionEffectsCard effects={effects} loading={effectsLoading} />
 
           <Card>
             <Label>{t('dapp.transaction_overview', 'Transaction overview')}</Label>

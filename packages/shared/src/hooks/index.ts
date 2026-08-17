@@ -59,6 +59,12 @@ export type { UseBridgeParams, UseBridgeResult } from './useBridge';
 export { useDAppMetadata } from './useDAppMetadata';
 export type { UseDAppMetadataResult } from './useDAppMetadata';
 
+export { useSolanaTransactionApproval } from './useSolanaTransactionApproval';
+export type {
+  UseSolanaTransactionApprovalParams,
+  UseSolanaTransactionApprovalResult,
+} from './useSolanaTransactionApproval';
+
 // Coin market data hook (BTC + selected token detail in web/extension)
 export { useCoinMarketData } from './useCoinMarketData';
 export type {
