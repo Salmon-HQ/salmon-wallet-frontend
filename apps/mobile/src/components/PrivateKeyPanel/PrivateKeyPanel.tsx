@@ -24,10 +24,13 @@ import {
   motionMs,
   semantic,
   spacing,
+  useAccountsContext,
   type Account,
   type AccountKeyInfo,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
+import { ConfirmSheet } from '../ConfirmSheet';
+import { WarningNotice } from '../WarningNotice';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { useSettingsHeaderOverride } from '../SettingsHeaderContext';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
@@ -67,6 +70,8 @@ export function PrivateKeyPanel({
   // network picker onward so backgrounding mid-flow is never a gap.
   useSecretScreen('private-key-panel');
 
+  const [, accountActions] = useAccountsContext();
+
   // Step management: 'selectNetwork' or 'displayKeys'
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(
     networks.length === 1 ? networks[0].id : null
@@ -76,6 +81,8 @@ export function PrivateKeyPanel({
   const [revealedIndexes, setRevealedIndexes] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
+  // Which key the password sheet is currently standing in front of.
+  const [reauthIndex, setReauthIndex] = useState<number | null>(null);
 
   // Get accounts for the selected network
   const accountKeys: AccountKeyInfo[] = useMemo(
@@ -91,26 +98,42 @@ export function PrivateKeyPanel({
     setRevealedIndexes(new Set());
     setCopiedIndex(null);
     setCopyFailedIndex(null);
+    setReauthIndex(null);
+  }, []);
+
+  const revealKey = useCallback((index: number) => {
+    setRevealedIndexes((prev) => {
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
   }, []);
 
   /**
-   * Handle tap-to-reveal with optional biometric gate
+   * Handle tap-to-reveal. An unlocked session is not proof of identity — it
+   * only proves the phone was left open. Biometrics count as the same proof as
+   * the password, so a device with Face ID keeps its one-prompt flow; a device
+   * without one now falls back to typing the password rather than to nothing
+   * at all. A private key is worse than the phrase: one tap copies full
+   * spending control of the account.
    */
   const handleReveal = useCallback(
     async (index: number) => {
       if (biometricAvailable) {
         const result = await authenticateWithBiometric();
         if (result === null) return; // Auth failed, don't reveal
+        revealKey(index);
+        return;
       }
 
-      setRevealedIndexes((prev) => {
-        const next = new Set(prev);
-        next.add(index);
-        return next;
-      });
+      setReauthIndex(index);
     },
-    [biometricAvailable, authenticateWithBiometric]
+    [biometricAvailable, authenticateWithBiometric, revealKey]
   );
+
+  const handleReauthenticated = useCallback(async () => {
+    if (reauthIndex !== null) revealKey(reauthIndex);
+  }, [reauthIndex, revealKey]);
 
   /**
    * Copy private key to clipboard
@@ -141,6 +164,7 @@ export function PrivateKeyPanel({
     setRevealedIndexes(new Set());
     setCopiedIndex(null);
     setCopyFailedIndex(null);
+    setReauthIndex(null);
   }, []);
   const currentTitle = selectedNetworkId ? t('settings.private_key') : t('settings.select_network');
   const currentBackAction =
@@ -229,10 +253,10 @@ export function PrivateKeyPanel({
                     accessibilityRole="button"
                   >
                     <Ionicons name="eye-outline" size={32} color={colors.text.primary} />
+                    {/* Both branches now cost a proof of identity, so the
+                        label no longer promises a free tap. */}
                     <Text style={styles.revealText}>
-                      {biometricAvailable
-                        ? t('settings.authenticate_to_reveal')
-                        : t('settings.wallets.tap_to_reveal')}
+                      {t('settings.authenticate_to_reveal')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -240,6 +264,16 @@ export function PrivateKeyPanel({
                   {isRevealed ? accountKey.privateKey : accountKey.privateKey.replace(/./g, '*')}
                 </Text>
               </View>
+
+              {/* The clipboard is not private, and the warning has to be up
+                  before the key goes into it, not as a toast afterwards. */}
+              {isRevealed && (
+                <View testID={`private-key-clipboard-warning-${index}`}>
+                  <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
+                    {t('settings.clipboard_key_warning_description')}
+                  </WarningNotice>
+                </View>
+              )}
 
               {/* Copy button */}
               <SecondaryButton
@@ -265,6 +299,17 @@ export function PrivateKeyPanel({
           {t('actions.done').toUpperCase()}
         </PrimaryButton>
       </View>
+
+      <ConfirmSheet
+        visible={reauthIndex !== null}
+        onClose={() => setReauthIndex(null)}
+        title={t('settings.reveal_private_key_title')}
+        message={t('settings.reveal_private_key_message')}
+        confirmText={t('actions.reveal')}
+        requirePassword
+        validatePassword={accountActions.checkPassword}
+        onConfirm={handleReauthenticated}
+      />
     </SettingsScreenLayout>
   );
 }

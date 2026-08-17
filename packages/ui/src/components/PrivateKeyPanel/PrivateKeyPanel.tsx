@@ -54,7 +54,9 @@ import {
   buildNetworkListFromAccount,
   getAccountKeysForNetwork,
 } from '@salmon/shared/utils/account';
+import { ConfirmDialog } from '../ConfirmDialog';
 import { SettingsPanelContent } from '../SettingsPanelContent';
+import { WarningNotice } from '../WarningNotice';
 import type { PrivateKeyPanelProps } from './types';
 
 // ============================================================================
@@ -204,13 +206,15 @@ const ChevronIcon = styled(CaretRightIcon)({
 
 export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactElement {
   const { t } = useTranslation();
-  const [state] = useAccountsContext();
+  const [state, actions] = useAccountsContext();
   const { activeAccount } = state;
 
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
   const [revealedIndexes, setRevealedIndexes] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
+  // Which key the password dialog is currently standing in front of.
+  const [reauthIndex, setReauthIndex] = useState<number | null>(null);
 
   // Build network list from the active account
   const networks = useMemo(() => buildNetworkListFromAccount(activeAccount), [activeAccount]);
@@ -229,15 +233,25 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
     setRevealedIndexes(new Set());
     setCopiedIndex(null);
     setCopyFailedIndex(null);
+    setReauthIndex(null);
   }, []);
 
+  // An unlocked session is not proof of identity — it only proves the laptop
+  // was left open. The password is asked again before a private key, which is
+  // full spending control of the account and one click away from a clipboard,
+  // comes into view.
   const handleReveal = useCallback((index: number) => {
+    setReauthIndex(index);
+  }, []);
+
+  const handleReauthenticated = useCallback(async () => {
     setRevealedIndexes((prev) => {
+      if (reauthIndex === null) return prev;
       const next = new Set(prev);
-      next.add(index);
+      next.add(reauthIndex);
       return next;
     });
-  }, []);
+  }, [reauthIndex]);
 
   const handleHide = useCallback((index: number) => {
     setRevealedIndexes((prev) => {
@@ -269,6 +283,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
     setRevealedIndexes(new Set());
     setCopiedIndex(null);
     setCopyFailedIndex(null);
+    setReauthIndex(null);
   }, []);
 
   // ========================================================================
@@ -361,6 +376,17 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                   )}
                 </PrivateKeyCard>
 
+                {isRevealed && (
+                  <Box
+                    sx={{ marginTop: `${spacing.md}px` }}
+                    data-testid={`private-key-clipboard-warning-${index}`}
+                  >
+                    <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
+                      {t('settings.clipboard_key_warning_description')}
+                    </WarningNotice>
+                  </Box>
+                )}
+
                 <ActionRow>
                   <Tooltip title={isCopied ? t('wallet.copied', 'Copied!') : ''} open={isCopied}>
                     <CopyButton
@@ -414,6 +440,18 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
           })
         )}
       </PageContent>
+
+      <ConfirmDialog
+        visible={reauthIndex !== null}
+        onClose={() => setReauthIndex(null)}
+        title={t('settings.reveal_private_key_title')}
+        message={t('settings.reveal_private_key_message')}
+        confirmText={t('actions.reveal', 'Reveal')}
+        requirePassword
+        validatePassword={actions.checkPassword}
+        onConfirm={handleReauthenticated}
+        confirmTestID="private-key-reauth-confirm"
+      />
     </SettingsPanelContent>
   );
 }
