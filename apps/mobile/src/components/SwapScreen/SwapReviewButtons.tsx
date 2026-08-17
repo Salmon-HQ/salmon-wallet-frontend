@@ -20,8 +20,6 @@ export interface SwapReviewButtonsProps {
   onBack: () => void;
   onConfirm: () => void;
   isConfirming?: boolean;
-  /** Whether a fresh quote/estimate is in flight (see SwapReviewScreenProps) */
-  isRefreshing?: boolean;
   confirmLabel?: string;
   style?: object;
 }
@@ -34,19 +32,15 @@ export const SwapReviewButtons: React.FC<SwapReviewButtonsProps> = ({
   onBack,
   onConfirm,
   isConfirming = false,
-  isRefreshing = false,
   confirmLabel,
   style,
 }) => {
   const { t } = useTranslation();
-  // A quote in flight owns the confirm button too: it says so while it works,
-  // and stops accepting a second press on top of the first.
-  const isBusy = isConfirming || isRefreshing;
   return (
     <View style={[styles.buttonsContainer, style]}>
       <SecondaryButton
         onPress={onBack}
-        disabled={isBusy}
+        disabled={isConfirming}
         style={styles.backButton}
         testID="swap-back-button"
       >
@@ -60,8 +54,8 @@ export const SwapReviewButtons: React.FC<SwapReviewButtonsProps> = ({
       >
         <PrimaryButton
           onPress={onConfirm}
-          loading={isBusy}
-          disabled={isBusy}
+          loading={isConfirming}
+          disabled={isConfirming}
           style={styles.confirmButton}
           testID="swap-confirm-button"
         >

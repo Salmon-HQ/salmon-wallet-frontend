@@ -40,7 +40,6 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
   onBack,
   onConfirm,
   isConfirming = false,
-  isRefreshing = false,
   confirmLabel,
   style,
 }) => {
@@ -86,21 +85,15 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
       >
         {/* Send/Receive Cards */}
         <View style={styles.cardsContainer}>
-          {/* The amount being sent is what the user typed: a new quote cannot
-              change it, so it never reports loading. Its dollar value can, and
-              so can everything on the receive side. */}
           <SwapReviewCard
             label={t('swap.you_send', 'You Send')}
             amount={formatAmountWithSymbol(displayInAmount, inSymbol)}
             usdValue={formatUsd(details?.inUsdValue)}
-            pendingUsdValue={isRefreshing}
           />
           <SwapReviewCard
             label={t('swap.you_receive', 'You Receive')}
             amount={formatAmountWithSymbol(displayOutAmount, outSymbol)}
             usdValue={formatUsd(details?.outUsdValue)}
-            pendingAmount={isRefreshing}
-            pendingUsdValue={isRefreshing}
           />
         </View>
 
@@ -116,11 +109,7 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
             <SwapDetailRow label={t('swap.router', 'Router')} value={details.router} />
           )}
           {routeNames && routeNames.length > 0 && (
-            <SwapDetailRow
-              label={t('swap.review.route', 'Route')}
-              value={routeNames.join(' → ')}
-              pending={isRefreshing}
-            />
+            <SwapDetailRow label={t('swap.review.route', 'Route')} value={routeNames.join(' → ')} />
           )}
           {details?.gasless && (
             <SwapDetailRow label={t('swap.gasless', 'Gasless')} value={t('swap.yes', 'Yes')} />
@@ -129,14 +118,12 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
             <SwapDetailRow
               label={t('swap.priority_fee', 'Priority Fee')}
               value={formatSolFee(details.prioritizationFeeLamports)}
-              pending={isRefreshing}
             />
           )}
           {details?.rentFeeLamports != null && (
             <SwapDetailRow
               label={t('swap.rent_fee', 'Rent Fee')}
               value={formatSolFee(details.rentFeeLamports)}
-              pending={isRefreshing}
             />
           )}
           {details?.slippageBps != null && (
@@ -152,7 +139,6 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
                 Number(details.otherAmountThreshold) / 10 ** outDecimals,
                 outSymbol
               )}
-              pending={isRefreshing}
             />
           )}
           {details?.swapMode && (
@@ -162,7 +148,6 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
             <SwapDetailRow
               label={t('swap.review.totalPriceImpact', 'Total Price Impact')}
               value={formatPercent(details.priceImpact)}
-              pending={isRefreshing}
             />
           )}
         </View>
@@ -188,7 +173,6 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
         onBack={onBack}
         onConfirm={onConfirm}
         isConfirming={isConfirming}
-        isRefreshing={isRefreshing}
         confirmLabel={confirmLabel ?? t('swap.review.confirmSwap', 'Confirm')}
       />
     </View>

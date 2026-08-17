@@ -78,6 +78,7 @@ import {
   TransactionDetailModal,
   TransactionHistorySheet,
   WarningNotice,
+  depthParallaxScroll,
   type BlockchainBalance,
   type BlockchainId,
   type MarketData,
@@ -719,6 +720,10 @@ export default function HomeScreen() {
       // Fade in when scrolled down, fade out when at top
       const opacity = Math.min(offsetY / 30, 1); // Fully visible after 30px scroll
       topFadeOpacity.setValue(opacity);
+      // The water column parallaxes against this list. Writing the shared
+      // value is the only thing that crosses to the UI thread — the field's
+      // own drift and the parallax transform both run there.
+      depthParallaxScroll.value = offsetY;
     },
     [topFadeOpacity]
   );

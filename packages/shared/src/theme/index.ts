@@ -74,7 +74,15 @@ export {
 
 // Marine snow geometry — the water column's suspended matter, as data both
 // platforms draw. The DOM serialises it; mobile draws the array directly.
-export { depthFieldTile, marineSnow, marineSnowSvg } from './depthField';
+export {
+  depthDrift,
+  depthFieldCycleMs,
+  depthFieldTile,
+  depthFieldTileHeight,
+  marineSnow,
+  marineSnowSvg,
+  wrapDepthOffset,
+} from './depthField';
 export type { SnowFloc } from './depthField';
 
 // Flesh geometry — the myoseptal texture as path data both platforms draw.

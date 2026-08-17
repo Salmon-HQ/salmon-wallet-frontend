@@ -175,7 +175,6 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
             onBack={logic.handleBackFromReview}
             onConfirm={logic.handleConfirmOrRefresh}
             isConfirming={logic.isConfirming}
-            isRefreshing={logic.isLoadingQuote}
             confirmLabel={logic.swapConfirmLabel}
             style={taskScreenStyle}
           />
@@ -195,7 +194,6 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
             onBack={logic.handleBackFromReview}
             onConfirm={logic.handleConfirmOrRefresh}
             isConfirming={logic.isConfirming}
-            isRefreshing={logic.isLoadingEstimate}
             confirmLabel={logic.swapConfirmLabel}
             style={taskScreenStyle}
           />

@@ -20,7 +20,6 @@ import {
   tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
-import { PendingValue } from '../PendingValue';
 import type { SwapReviewCardProps } from './types';
 
 // ============================================================================
@@ -78,8 +77,6 @@ export function SwapReviewCard({
   label,
   amount,
   usdValue,
-  pendingAmount = false,
-  pendingUsdValue = false,
   style,
 }: SwapReviewCardProps): React.ReactElement {
   return (
@@ -92,14 +89,8 @@ export function SwapReviewCard({
     >
       <BlurContent>
         <Label>{label}</Label>
-        <Amount>
-          <PendingValue pending={pendingAmount}>{amount}</PendingValue>
-        </Amount>
-        {usdValue != null && (
-          <UsdValue>
-            <PendingValue pending={pendingUsdValue}>{usdValue}</PendingValue>
-          </UsdValue>
-        )}
+        <Amount>{amount}</Amount>
+        {usdValue != null && <UsdValue>{usdValue}</UsdValue>}
       </BlurContent>
     </BlurContainer>
   );

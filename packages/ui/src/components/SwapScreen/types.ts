@@ -69,8 +69,6 @@ export interface SwapReviewButtonsProps {
   onBack: () => void;
   onConfirm: () => void;
   isConfirming?: boolean;
-  /** Whether a fresh quote/estimate is in flight (see SwapReviewScreenProps) */
-  isRefreshing?: boolean;
   confirmLabel?: string;
   style?: CSSProperties;
 }

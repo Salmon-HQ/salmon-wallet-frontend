@@ -46,20 +46,16 @@ export function SwapReviewButtons({
   onBack,
   onConfirm,
   isConfirming = false,
-  isRefreshing = false,
   confirmLabel,
   style,
 }: SwapReviewButtonsProps) {
   const { t } = useTranslation();
-  // A quote in flight owns the confirm button too: it says so while it works,
-  // and stops accepting a second press on top of the first.
-  const isBusy = isConfirming || isRefreshing;
   return (
     <ButtonsContainer style={style}>
       <BackButtonWrapper>
         <SecondaryButton
           onClick={onBack}
-          disabled={isBusy}
+          disabled={isConfirming}
           testID="swap-back-button"
           style={{
             height: componentSizes.buttonHeightCompact,
@@ -74,8 +70,8 @@ export function SwapReviewButtons({
       <ConfirmButtonGradient>
         <PrimaryButton
           onClick={onConfirm}
-          loading={isBusy}
-          disabled={isBusy}
+          loading={isConfirming}
+          disabled={isConfirming}
           testID="swap-confirm-button"
           style={{
             height: componentSizes.buttonHeightCompact,

@@ -137,7 +137,6 @@ export function SwapReviewScreen({
   onBack,
   onConfirm,
   isConfirming = false,
-  isRefreshing = false,
   confirmLabel,
   style,
 }: SwapReviewScreenProps): React.ReactElement {
@@ -177,21 +176,15 @@ export function SwapReviewScreen({
         <ScrollContent>
           {/* Send/Receive Cards */}
           <CardsContainer>
-            {/* The amount being sent is what the user typed: a new quote
-                cannot change it, so it never reports loading. Its dollar
-                value can, and so can everything on the receive side. */}
             <SwapReviewCard
               label={t('swap.you_send')}
               amount={formatAmountWithSymbol(displayInAmount, inSymbol)}
               usdValue={formatUsd(details?.inUsdValue)}
-              pendingUsdValue={isRefreshing}
             />
             <SwapReviewCard
               label={t('swap.you_receive')}
               amount={formatAmountWithSymbol(displayOutAmount, outSymbol)}
               usdValue={formatUsd(details?.outUsdValue)}
-              pendingAmount={isRefreshing}
-              pendingUsdValue={isRefreshing}
             />
           </CardsContainer>
 
@@ -205,25 +198,19 @@ export function SwapReviewScreen({
             )}
             {details?.router && <SwapDetailRow label={t('swap.router')} value={details.router} />}
             {routeNames && routeNames.length > 0 && (
-              <SwapDetailRow
-                label={t('swap.review.route')}
-                value={routeNames.join(' → ')}
-                pending={isRefreshing}
-              />
+              <SwapDetailRow label={t('swap.review.route')} value={routeNames.join(' → ')} />
             )}
             {details?.gasless && <SwapDetailRow label={t('swap.gasless')} value={t('swap.yes')} />}
             {details?.prioritizationFeeLamports != null && (
               <SwapDetailRow
                 label={t('swap.priority_fee')}
                 value={formatSolFee(details.prioritizationFeeLamports)}
-                pending={isRefreshing}
               />
             )}
             {details?.rentFeeLamports != null && (
               <SwapDetailRow
                 label={t('swap.rent_fee')}
                 value={formatSolFee(details.rentFeeLamports)}
-                pending={isRefreshing}
               />
             )}
             {details?.slippageBps != null && (
@@ -239,7 +226,6 @@ export function SwapReviewScreen({
                   Number(details.otherAmountThreshold) / 10 ** outDecimals,
                   outSymbol
                 )}
-                pending={isRefreshing}
               />
             )}
             {details?.swapMode && (
@@ -253,7 +239,6 @@ export function SwapReviewScreen({
               <SwapDetailRow
                 label={t('swap.review.totalPriceImpact')}
                 value={formatPercent(details.priceImpact)}
-                pending={isRefreshing}
               />
             </PriceImpactContainer>
           )}
@@ -277,7 +262,6 @@ export function SwapReviewScreen({
         onBack={onBack}
         onConfirm={onConfirm}
         isConfirming={isConfirming}
-        isRefreshing={isRefreshing}
         confirmLabel={confirmLabel}
       />
     </Container>

@@ -7,11 +7,12 @@
  * The rationale for the geometry lives beside the data in
  * `packages/shared/src/theme/depthField.ts`.
  *
- * Two layers, both painted once and never animated:
+ * Two layers:
  *
- *  - the **ramp**, a vertical gradient that darkens toward the bottom. It
- *    suggests an abyss without drawing a floor, and because it only ever
- *    darkens the shipped ground it cannot lower any text's contrast.
+ *  - the **ramp**, a vertical gradient that darkens toward the bottom. Painted
+ *    once and never moved. It suggests an abyss without drawing a floor, and
+ *    because it only ever darkens the shipped ground it cannot lower any
+ *    text's contrast.
  *  - the **snow**, a field of suspended flocs across the whole ground. It is
  *    what gives the deep field's 3.2× scales a scale to be read against, and
  *    it runs to the bottom because an animal that fills the frame is not cut
@@ -19,20 +20,33 @@
  *    the way it is meant to be: the content on top of the field is opaque, so
  *    the motif is never *readable* behind a value.
  *
- * Performance. The snow is a serialised `background-image`, not one live SVG
- * node per floc: DESIGN.md requires the extension's deep field to be
- * composited once rather than repainted as a full-viewport SVG, and an image
- * layer satisfies that on web, extension, and any future DOM target without a
- * build step. Growing the field to full height therefore costs pixels in one
- * already-existing layer, not a second layer. The geometry is a constant, so
- * the data URI is computed once at module scope, and `background-size: cover`
- * is a single uniform scale, which keeps the flocs round on any column.
+ * **Motion.** The snow sinks, continuously, at `depthDrift.pxPerSecond`, and
+ * it sinks faster for as long as a scroll is under way — see `depthDrift` for
+ * why those two numbers are what they are. Both offsets land on one layer:
+ * the drift on `transform` (a Web Animations API animation, so the whole loop
+ * lives in the compositor and never touches JS after it starts), the scroll
+ * on the separate `translate` property, which the engine composes into the
+ * same matrix. Adding them, rather than letting one replace the other, is the
+ * point: the hand speeds the water up, it does not take it over.
  *
- * Motion. There is none, deliberately. Real marine snow sinks at roughly
- * 0.6 mm/s — it does not visibly fall — and a drifting full-viewport layer
- * would be a permanent compositor layer on every screen, on low-end Android
- * and in the MV3 side panel, for an effect nobody would notice. It would also
- * spend ambient motion in a system whose only light event is The Surfacing.
+ * The loop is exactly one tile of travel, which is the only displacement that
+ * lands the field back on a copy of itself — the wrap is invisible because the
+ * pixels either side of it are the same pixels. Two spare tiles hang above the
+ * top of the column so the combined offset always has drawing behind it.
+ *
+ * Performance. The snow is one `background-image` with `repeat-y`, not one
+ * live SVG node per floc: DESIGN.md requires the extension's deep field to be
+ * composited once rather than repainted as a full-viewport SVG, and this keeps
+ * that true *while moving* — an animated `transform` re-composites a layer the
+ * browser already rasterised, where a `background-position` animation would
+ * have repainted it every frame. The geometry is a constant, so the data URI
+ * is computed once at module scope.
+ *
+ * `prefers-reduced-motion: reduce` stops both the drift and the parallax, and
+ * what is left is exactly the field as it shipped: still water. Nothing runs
+ * while the tab or side panel is hidden — `visibilitychange` pauses the
+ * animation rather than letting a background tab spend battery on water
+ * nobody is looking at.
  *
  * @example
  * ```tsx
@@ -43,9 +57,17 @@
  * </Main>
  * ```
  */
+import { useEffect, useRef } from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
-import { marineSnowSvg, semantic } from '@salmon/shared';
+import {
+  depthDrift,
+  depthFieldCycleMs,
+  depthFieldTileHeight,
+  marineSnowSvg,
+  semantic,
+  wrapDepthOffset,
+} from '@salmon/shared';
 import type { DepthBackgroundProps } from './types';
 
 const { water } = semantic;
@@ -58,26 +80,127 @@ const { water } = semantic;
  */
 const SNOW_URL = `url("data:image/svg+xml,${encodeURIComponent(marineSnowSvg(water.snow))}")`;
 
-const Ground = styled(Box)<{ $snow: boolean }>(({ $snow }) => ({
+/**
+ * Tiles of field hanging above the column. Two, because the drift and the
+ * parallax ride separate CSS properties — `transform` and `translate` — so the
+ * engine sums them after each has been wrapped into a tile of its own, and the
+ * sum can reach two. Extra headroom costs nothing here: it is more of the same
+ * repeating background, and the browser only rasterises what is on screen.
+ */
+const HEADROOM_TILES = 2;
+
+const Ground = styled(Box)({
   position: 'absolute',
   inset: 0,
   pointerEvents: 'none',
+  overflow: 'hidden',
   backgroundColor: water.gradient[0],
-  ...($snow
-    ? {
-        backgroundImage: `${SNOW_URL}, linear-gradient(to bottom, ${water.gradient.join(', ')})`,
-        backgroundRepeat: 'no-repeat, no-repeat',
-        backgroundPosition: 'top center, top left',
-        // `cover` is one uniform scale that always fills the column, so the
-        // flocs stay round whatever the window's proportion and the field
-        // reaches the bottom of every screen instead of stopping in a band.
-        backgroundSize: 'cover, 100% 100%',
-      }
-    : {
-        backgroundImage: `linear-gradient(to bottom, ${water.gradient.join(', ')})`,
-      }),
-}));
+  backgroundImage: `linear-gradient(to bottom, ${water.gradient.join(', ')})`,
+});
+
+const Snow = styled('div')({
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  bottom: 0,
+  // `top` is set from the measured tile height; until then the layer is
+  // simply flush with the column, which is where the static field sat.
+  top: 0,
+  backgroundImage: SNOW_URL,
+  backgroundRepeat: 'repeat-y',
+  // Width-driven, so one uniform scale keeps the flocs round on any column;
+  // `repeat-y` is what now guarantees the field reaches the bottom.
+  backgroundSize: '100% auto',
+  backgroundPosition: 'top center',
+  willChange: 'transform',
+});
 
 export function DepthBackground({ snow = true, style, className }: DepthBackgroundProps) {
-  return <Ground $snow={snow} aria-hidden="true" style={style} className={className} />;
+  const snowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = snowRef.current;
+    const ground = el?.parentElement;
+    if (!el || !ground) return;
+    // No motion without all three: the reduced-motion signal we must obey, the
+    // measurement the loop length is derived from, and a compositor animation.
+    // Missing any of them leaves the field exactly as it shipped — still — and
+    // still water is the correct fallback rather than a degraded animation.
+    if (
+      typeof window.matchMedia !== 'function' ||
+      typeof ResizeObserver === 'undefined' ||
+      typeof el.animate !== 'function'
+    ) {
+      return;
+    }
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let drift: Animation | null = null;
+    let tile = 0;
+    let scrollY = 0;
+    let frame = 0;
+
+    const layout = () => {
+      tile = depthFieldTileHeight(ground.clientWidth);
+      if (tile <= 0) return;
+      el.style.top = `${-HEADROOM_TILES * tile}px`;
+      drift?.cancel();
+      drift = null;
+      if (reduce.matches) {
+        el.style.translate = '';
+        return;
+      }
+      drift = el.animate(
+        [{ transform: 'translate3d(0, 0, 0)' }, { transform: `translate3d(0, ${tile}px, 0)` }],
+        { duration: depthFieldCycleMs(tile), iterations: Infinity, easing: 'linear' }
+      );
+      if (document.hidden) drift.pause();
+      applyParallax();
+    };
+
+    const applyParallax = () => {
+      frame = 0;
+      if (tile <= 0 || reduce.matches) return;
+      // Content scrolled down by `scrollY` moves up; the far plane follows it
+      // up, only a fifth as far. Wrapped into one tile so the offset always
+      // has field behind it.
+      el.style.translate = `0 ${wrapDepthOffset(-scrollY * depthDrift.parallaxFactor, tile)}px`;
+    };
+
+    // Scroll events do not bubble, but they do capture, so one listener on the
+    // document catches whichever pane is actually scrolling without the mount
+    // sites having to hand their scroller down to the background.
+    const onScroll = (event: Event) => {
+      const target = event.target;
+      scrollY = target instanceof HTMLElement ? target.scrollTop : window.scrollY;
+      if (!frame) frame = requestAnimationFrame(applyParallax);
+    };
+
+    const onVisibility = () => {
+      if (document.hidden) drift?.pause();
+      else drift?.play();
+    };
+
+    layout();
+    const resize = new ResizeObserver(layout);
+    resize.observe(ground);
+    reduce.addEventListener('change', layout);
+    document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      drift?.cancel();
+      resize.disconnect();
+      reduce.removeEventListener('change', layout);
+      document.removeEventListener('scroll', onScroll, { capture: true });
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [snow]);
+
+  return (
+    <Ground aria-hidden="true" style={style} className={className}>
+      {snow && <Snow ref={snowRef} />}
+    </Ground>
+  );
 }

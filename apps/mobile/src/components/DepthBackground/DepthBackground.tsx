@@ -7,11 +7,12 @@
  * drift. The rationale for the geometry lives beside the data in
  * `packages/shared/src/theme/depthField.ts`.
  *
- * Two layers, both painted once and never animated:
+ * Two layers:
  *
- *  - the **ramp**, a vertical gradient darkening toward the bottom. It
- *    suggests an abyss without drawing a floor, and because it only ever
- *    darkens the shipped ground it cannot lower any text's contrast.
+ *  - the **ramp**, a vertical gradient darkening toward the bottom. Painted
+ *    once and never moved. It suggests an abyss without drawing a floor, and
+ *    because it only ever darkens the shipped ground it cannot lower any
+ *    text's contrast.
  *  - the **snow**, suspended flocs across the whole ground. It is what gives
  *    the deep field's 3.2× scales something to be enormous against, and it
  *    runs to the bottom because an animal that fills the frame is not cut off
@@ -21,24 +22,88 @@
  *
  * Where the DOM serialises the field into a `background-image`, this draws the
  * array directly: an image would have meant shipping a raster and picking a
- * density for it. It is one static, non-animated `Svg`, mounted once in the
- * tab layout for all tabs rather than per screen, so the field's height costs
- * ellipses in a view that is already there and never a second layer.
+ * density for it. It is mounted once in the tab layout for all tabs rather
+ * than per screen.
  *
- * Motion: none, deliberately. Real marine snow sinks at roughly 0.6 mm/s — it
- * does not visibly fall — and a drifting full-screen layer would be a
- * permanent compositor layer on every screen including low-end Android, for an
- * effect nobody would notice. It would also spend ambient motion in a system
- * whose only light event is The Surfacing. Nothing here reacts to
- * `useReducedMotion` because nothing here moves.
+ * **Motion.** The snow sinks, continuously, at `depthDrift.pxPerSecond`, and
+ * it sinks faster while a list is being scrolled — see `depthDrift` for why
+ * those two numbers are what they are. Both offsets are added into a single
+ * `translateY` on the container: the drift is a Reanimated shared value
+ * driven by `withTiming` on the UI thread, the scroll arrives through
+ * `depthParallaxScroll`, and `useAnimatedStyle` sums them. Summed, not
+ * switched — the hand speeds the water up, it does not take it over. React
+ * never re-renders for either.
+ *
+ * The loop is exactly one tile of travel, the only displacement that lands the
+ * field back on a copy of itself, so the wrap shows the same pixels it left.
+ * The combined offset is folded into one tile, so one spare tile above the
+ * screen is all the headroom any offset can consume. The repeats are `<Use>`
+ * references to a single `<Defs>` group rather than re-listed ellipses: the
+ * field costs the same ~220 nodes it always did, however many copies the
+ * screen needs.
+ *
+ * `useReducedMotion()` stops the drift and the parallax both, leaving exactly
+ * the field as it shipped: still water. `AppState` freezes the drift when the
+ * app leaves the foreground and resumes it from where it stopped, so a
+ * backgrounded wallet is not spending battery on water nobody can see.
  */
 import { LinearGradient } from 'expo-linear-gradient';
-import { depthFieldTile, marineSnow, semantic } from '@salmon/shared';
-import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
-import Svg, { Ellipse } from 'react-native-svg';
+import {
+  depthDrift,
+  depthFieldCycleMs,
+  depthFieldTile,
+  depthFieldTileHeight,
+  marineSnow,
+  semantic,
+} from '@salmon/shared';
+import React, { useEffect } from 'react';
+import { AppState, StyleSheet, useWindowDimensions, View, ViewStyle } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  makeMutable,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import Svg, { Defs, Ellipse, G, Use } from 'react-native-svg';
 
 const { water } = semantic;
+
+/**
+ * Tiles of field stacked above the screen. One is enough: the combined
+ * drift-plus-parallax offset is wrapped into a single tile before it is
+ * applied, so it can never pull the field further down than this.
+ */
+const HEADROOM_TILES = 1;
+
+/** The `<Defs>` id the stacked copies reference. */
+const SNOW_TILE_ID = 'salmon-marine-snow';
+
+/**
+ * The scroll offset the field parallaxes against.
+ *
+ * A module-level shared value rather than a context: there is one water column
+ * mounted behind the whole app, so there is exactly one thing to tell, and a
+ * provider would have had to wrap screens that have no other reason to know
+ * the background exists. Screens opt in with `useDepthParallaxScrollHandler`,
+ * or by assigning the offset directly from a scroll callback they already run.
+ */
+export const depthParallaxScroll = makeMutable(0);
+
+/**
+ * Feed a `ScrollView`/`FlatList`'s offset to the water column, on the UI
+ * thread. Screens that already own an `onScroll` callback can skip this and
+ * assign `depthParallaxScroll.value` from it instead.
+ */
+export const useDepthParallaxScrollHandler = () =>
+  useAnimatedScrollHandler((event) => {
+    depthParallaxScroll.value = event.contentOffset.y;
+  });
 
 export interface DepthBackgroundProps {
   /**
@@ -51,30 +116,118 @@ export interface DepthBackgroundProps {
   style?: ViewStyle;
 }
 
-export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, style }) => (
-  <View style={[styles.container, style]} pointerEvents="none">
-    <LinearGradient colors={water.gradient} style={StyleSheet.absoluteFill} />
-    {snow && (
-      <Svg
-        style={StyleSheet.absoluteFill}
-        viewBox={`0 0 ${depthFieldTile.width} ${depthFieldTile.height}`}
-        // "slice" is the SVG spelling of CSS `cover`: one uniform scale that
-        // fills the screen, anchored to the top. Uniform is what keeps the
-        // flocs round — stretching the field to the screen's proportion would
-        // turn them into ovals and change the drawing device to device.
-        preserveAspectRatio="xMidYMin slice"
-        pointerEvents="none"
-      >
-        {marineSnow.map(([cx, cy, rx, ry, opacity], i) => (
-          <Ellipse key={i} cx={cx} cy={cy} rx={rx} ry={ry} fill={water.snow} fillOpacity={opacity} />
-        ))}
-      </Svg>
-    )}
-  </View>
-);
+export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, style }) => {
+  const { width, height } = useWindowDimensions();
+  const reducedMotion = useReducedMotion();
+
+  const tile = depthFieldTileHeight(width);
+  const copies = Math.ceil(height / tile) + HEADROOM_TILES;
+  const cycleMs = depthFieldCycleMs(tile);
+
+  const drift = useSharedValue(0);
+
+  useEffect(() => {
+    if (!snow || reducedMotion) {
+      cancelAnimation(drift);
+      drift.value = 0;
+      return;
+    }
+
+    // Finish the tile that is in progress at its own speed, snap back through
+    // the seam (identical pixels, so the reset is not a frame anyone sees),
+    // then loop. Resuming this way is what keeps a foreground/background
+    // round trip from teleporting the field.
+    const run = () => {
+      const from = drift.value;
+      drift.value = withSequence(
+        withTiming(tile, { duration: (1 - from / tile) * cycleMs, easing: Easing.linear }),
+        withTiming(0, { duration: 0 }),
+        withRepeat(withTiming(tile, { duration: cycleMs, easing: Easing.linear }), -1, false)
+      );
+    };
+
+    run();
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') run();
+      else cancelAnimation(drift);
+    });
+
+    return () => {
+      subscription.remove();
+      cancelAnimation(drift);
+    };
+  }, [snow, reducedMotion, tile, cycleMs, drift]);
+
+  const fieldStyle = useAnimatedStyle(() => {
+    if (reducedMotion) return { transform: [{ translateY: 0 }] };
+    // Content scrolled down by `y` moves up; the far plane follows it up, only
+    // a fifth as far. Added to the drift, then wrapped into one tile so the
+    // offset always has stacked field behind it.
+    //
+    // The wrap is spelled out rather than calling `wrapDepthOffset`: this body
+    // runs on the UI thread, which can only reach worklets, and the shared
+    // theme package must stay free of Reanimated's directives. The shared
+    // helper is still the definition of record and is what the tests assert —
+    // `depth-background.test.tsx` keeps these two from drifting apart.
+    const parallax = -depthParallaxScroll.value * depthDrift.parallaxFactor;
+    const offset = drift.value + parallax;
+    return { transform: [{ translateY: ((offset % tile) + tile) % tile }] };
+  });
+
+  return (
+    <View style={[styles.container, style]} pointerEvents="none">
+      <LinearGradient colors={water.gradient} style={StyleSheet.absoluteFill} />
+      {snow && (
+        <Animated.View
+          style={[
+            styles.field,
+            { top: -HEADROOM_TILES * tile, height: copies * tile },
+            fieldStyle,
+          ]}
+          pointerEvents="none"
+        >
+          <Svg
+            style={StyleSheet.absoluteFill}
+            viewBox={`0 0 ${depthFieldTile.width} ${depthFieldTile.height * copies}`}
+            // The box is a whole number of tiles, so it has the tile's own
+            // aspect ratio and "meet" is an exact fit rather than a
+            // compromise: one uniform scale, which keeps the flocs round
+            // instead of stretching them device to device.
+            preserveAspectRatio="xMidYMid meet"
+            pointerEvents="none"
+          >
+            <Defs>
+              <G id={SNOW_TILE_ID}>
+                {marineSnow.map(([cx, cy, rx, ry, opacity], i) => (
+                  <Ellipse
+                    key={i}
+                    cx={cx}
+                    cy={cy}
+                    rx={rx}
+                    ry={ry}
+                    fill={water.snow}
+                    fillOpacity={opacity}
+                  />
+                ))}
+              </G>
+            </Defs>
+            {Array.from({ length: copies }, (_, copy) => (
+              <Use key={copy} href={`#${SNOW_TILE_ID}`} y={copy * depthFieldTile.height} />
+            ))}
+          </Svg>
+        </Animated.View>
+      )}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
+  },
+  field: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
   },
 });

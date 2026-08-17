@@ -1,2 +1,6 @@
-export { DepthBackground } from './DepthBackground';
+export {
+  DepthBackground,
+  depthParallaxScroll,
+  useDepthParallaxScrollHandler,
+} from './DepthBackground';
 export type { DepthBackgroundProps } from './DepthBackground';

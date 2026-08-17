@@ -260,7 +260,7 @@ marks its parts.
 | Icon consolidation onto Phosphor | **Shipped** on the DOM, with two declared exceptions | `packages/ui/src/icons.ts` |
 | dApp approval: transaction effect preview + press-and-hold to approve | **Shipped** | `packages/ui/src/components/DAppApproval/TransactionEffectsCard.tsx`, `HoldToApproveButton.tsx` |
 | Sand / seabed, ambient light shafts | **Refused by design** — see §Overview and §The water column | — |
-| Marine snow drift + scroll parallax | **Decided, not built** — the direction is settled, the code is still static; see §The water column | — |
+| Marine snow drift + scroll parallax, both reduced-motion gated | **Shipped** | `packages/shared/src/theme/depthField.ts` (`depthDrift`), both `DepthBackground`s |
 | Light theme (index-flip resolver) | **Specified, not built** | — |
 | Material/membrane model and the five-rung degradation ladder | **Specified, not built** | — |
 | Icons on mobile (`phosphor-react-native`) | **Specified, not built** | only `@phosphor-icons/react` is installed, in `packages/ui` |
@@ -905,24 +905,65 @@ serialise the field into a `background-image` data URI, which is how the
 extension gets an image composited once instead of a full-viewport SVG the
 browser can be asked to repaint.
 
-**The snow moves — decided, not built.** The field ships static today, and the
-direction has since changed: the snow gets a **slow continuous drift** as its
-resting state, plus **parallax wherever there is scroll**. The argument that
-kept it static was that real marine snow sinks at about 0.6 mm/s and therefore
-does not visibly fall, which is true of a single floc and beside the point for
-a field — what a drifting field buys is not the appearance of falling but the
-proof that the ground is a *volume* rather than an image, and parallax against
-scroll is the strongest depth cue available to a flat screen. The
-one-light-event argument does not apply either: drift is not light, and it
-carries no meaning that The Surfacing would have to share.
+**The snow moves.** Marine snow is snow because it falls out of the lit water,
+so the field sinks — downward, never upward — at `depthDrift.pxPerSecond`
+(3 px/s), and a scroll adds `depthDrift.parallaxFactor` (0.2) of its own
+displacement on top. The two are summed, never switched: the hand speeds the
+water up for as long as it is on the glass, and the water keeps sinking when it
+is not. The argument that kept the field static was that real marine snow sinks
+at about 0.6 mm/s and therefore does not visibly fall, which is true of a single
+floc and beside the point for a field — what a drifting field buys is not the
+appearance of falling but the proof that the ground is a *volume* rather than an
+image, and parallax against scroll is the strongest depth cue available to a
+flat screen. The one-light-event argument does not apply either: drift is not
+light, and it carries no meaning The Surfacing would have to share.
 
-The constraints that produced the static answer stand as constraints on the
-implementation, not as objections to it. Drift is a transform on the snow layer
-alone — never a repaint of the field, whose whole cost model is *composited
-once* — it is gated on `prefers-reduced-motion` and `useReducedMotion` on both
-platforms, and it needs a device measurement on low-end Android and in the MV3
-side panel before it is enabled there. Until that lands, the shipped field is
-static and there is nothing for reduced motion to reduce.
+**Why 3 px/s.** The speed cannot be taken from the ocean, because the real one
+is invisible; it is chosen against the eye instead. At a phone's viewing
+distance 3 px/s is about 0.09°/s — a few multiples above the ~1–2 arcmin/s floor
+of fixated velocity discrimination, and roughly 1/60 of the speed at which
+smooth motion starts capturing attention on its own. Rest on one floc and it is
+unmistakably moving; glance at the screen for half a second and it has travelled
+1.5 px. That asymmetry is the whole brief: a particle field the eye catches
+unprompted stops being water and becomes a game's weather. The speed is in
+screen pixels rather than tile units, so the tile's width-driven scale does not
+turn one decision into six different speeds across a side panel, a phone, and a
+desktop window; the cycle length is derived from it, not authored.
+
+**Why the loop cannot jump.** One tile of travel is the only displacement at
+which the field lands back on a copy of itself, so that is the loop, and the
+wrap shows the pixels it left. This is what changed about the field's tiling: it
+now repeats *vertically*, at a period of one full column height, so at most one
+seam is ever in frame. It still does not repeat horizontally, which is the axis
+on which a particle field reads as wallpaper — the eye finds a seam by comparing
+two points at the same height.
+
+The honest cost is that the aerial-perspective ramp travels with the field: half
+a cycle in, the brighter near band sits low in the frame rather than high. At
+3 px/s that is over two minutes of continuous looking, and the change is
+monotonic and unmarked, so none of it is perceptible as an event. The
+alternatives were worse — a screen-locked mask over the field would have
+double-dimmed the bottom of every frame, and a shorter loop would have had to
+jump.
+
+**Cost.** The constraints that produced the static answer stand as constraints
+on the implementation, and they are met. The drift is a transform on a layer
+that was already composited — the cheap half of the degradation ladder — and
+never a repaint of the field, which is the half rung 4 forbids the extension
+outright. On the DOM the field is one `background-image` with `repeat-y` moved
+by a Web Animations API animation of `transform`, with the scroll offset on the
+separate `translate` property, so the loop lives in the compositor and JS runs
+only when a scroll event arrives. On React Native the repeats are `<Use>`
+references to a single `<Defs>` group, so the field costs the same ~220 nodes it
+did when it was static however many copies a screen needs, and both offsets are
+read on the UI thread by Reanimated — React never re-renders for either.
+
+**Reduced motion and battery.** `prefers-reduced-motion: reduce` and
+`useReducedMotion()` each stop the drift *and* the parallax, and what is left is
+exactly the field as it first shipped: still water — a parallel mapping, not a
+hole. Nothing runs unseen either: the DOM pauses the animation on
+`visibilitychange`, and mobile freezes it when `AppState` leaves the foreground
+and resumes it from where it stopped.
 
 **What is deliberately absent.** No sand and no seabed: sand is warm and light,
 which would add a second source of warmth against the single salmon fill and
@@ -1171,6 +1212,38 @@ shimmer band traveling 1400ms across `state.hover`.
 Reduced motion is a full parallel mapping, not a switch that turns motion off
 and leaves holes: opacity steps replace translations, the stagger disappears,
 the backdrop goes straight to its final scrim, and haptics are kept.
+
+#### Loading in place: the container never becomes a skeleton
+
+A skeleton says *this screen is being built*. Once a card, a row or a panel is
+already on screen, that sentence is a lie: the screen exists, and what is
+happening is that a number inside it is being replaced. So the rule is:
+
+**The container stays. The skeleton is the value that changes — and only the
+values that can change.**
+
+Practically: the card keeps its blur, its border, its label and its position;
+the value inside it reports that it is being recalculated, in place; a value the
+request cannot change (the amount the user typed, the router, the provider, the
+network) reports nothing at all, because a placeholder over something fixed
+tells the user to expect a change that will never come. Nothing is keyed on the
+value, so a request that comes back with an identical number produces no arrival
+flash — the value simply stops signalling. The vocabulary is the one above:
+`swell` to come back to rest on `settle`, `pulseCycle` for the breath while in
+flight, and under reduced motion the loop is not started at all — the value
+rests at the dimmed end instead, because a cycle length resolved to 0 spins
+infinitely fast.
+
+Where it already governs: the balance card when the chain changes (the
+container and the pagination dots hold still while only the contents crossfade),
+the price chart when the range changes, and the swap and bridge review screens
+when the quote is refreshed. The shared primitive is `PendingValue`
+(`packages/ui` for web and extension, `apps/mobile` for React Native, contract
+in `packages/shared/src/types/ui/pending-value.ts`).
+
+The control that started the work is part of the report: while the request is in
+flight, the button that fired it says so and stops accepting a second press on
+top of the first.
 
 ### The Surfacing — the signature moment, built
 

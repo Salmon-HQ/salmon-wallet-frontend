@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { depthFieldTile, marineSnow, marineSnowSvg } from './depthField';
+import {
+  depthDrift,
+  depthFieldCycleMs,
+  depthFieldTile,
+  depthFieldTileHeight,
+  marineSnow,
+  marineSnowSvg,
+  wrapDepthOffset,
+} from './depthField';
 import { water } from './semantic';
 
 /**
@@ -125,5 +133,84 @@ describe('marine snow: the serialised field', () => {
 
   it('is a constant — nothing is randomised at render time', () => {
     expect(marineSnowSvg(water.snow)).toBe(marineSnowSvg(water.snow));
+  });
+});
+
+/**
+ * The drift's safety properties.
+ *
+ * Two of these are load-bearing. **The cycle must close exactly on the tile**:
+ * one tile of travel is the only displacement at which the field lands back on
+ * a copy of itself, so any other loop length is a visible jump every time it
+ * comes round. And **the parallax must add to the drift rather than replace
+ * it**, which is what `wrapDepthOffset` is asserted on below — the hand speeds
+ * the water up, it does not take it over.
+ *
+ * The speed itself is a judgement (see `depthDrift`), so it is bounded rather
+ * than pinned: fast enough to find if you rest on it, slow enough that a
+ * glance cannot.
+ */
+describe('marine snow: the drift', () => {
+  it('is slow enough to be missed at a glance and fast enough to be found', () => {
+    // Half a second of glancing must move a floc under ~2px, and ten seconds
+    // of staring must move one well past that.
+    expect(depthDrift.pxPerSecond * 0.5).toBeLessThan(2);
+    expect(depthDrift.pxPerSecond * 10).toBeGreaterThan(20);
+  });
+
+  it('moves the far plane less than the content in front of it', () => {
+    expect(depthDrift.parallaxFactor).toBeGreaterThan(0);
+    expect(depthDrift.parallaxFactor).toBeLessThan(1);
+  });
+
+  it('scales the tile from width alone, so the flocs stay round', () => {
+    const tile = depthFieldTileHeight(440);
+    expect(tile).toBe(depthFieldTile.height);
+    expect(depthFieldTileHeight(880)).toBe(depthFieldTile.height * 2);
+  });
+
+  it('derives the cycle from the speed, at one tile of travel per loop', () => {
+    // A wider column gets a bigger tile and a proportionally longer cycle, so
+    // the apparent velocity is the same on a side panel and a desktop window.
+    const narrow = depthFieldTileHeight(400);
+    const wide = depthFieldTileHeight(1200);
+    expect(depthFieldCycleMs(narrow)).toBe((narrow / depthDrift.pxPerSecond) * 1000);
+    expect(depthFieldCycleMs(wide) / depthFieldCycleMs(narrow)).toBeCloseTo(3);
+  });
+
+  it('closes the cycle exactly on the tile, with no jump', () => {
+    const tile = depthFieldTileHeight(390);
+    // The end of one loop and the start of the next are the same offset, so
+    // the wrap shows the pixels it left.
+    // (Whole multiples land on 0 or on the tile itself depending on which side
+    // of the float the remainder falls — the same pixels either way, which is
+    // the property that matters. A sub-pixel is the tolerance.)
+    const seam = (offset: number) => {
+      const wrapped = wrapDepthOffset(offset, tile);
+      return Math.min(wrapped, tile - wrapped);
+    };
+    expect(seam(tile)).toBeLessThan(0.001);
+    expect(seam(tile * 3)).toBeLessThan(0.001);
+    expect(seam(0)).toBe(0);
+    // And nothing in between escapes the tile the renderers hang above the
+    // column, in either direction.
+    for (const offset of [-tile * 2.5, -1, 0, 0.5, tile - 0.5, tile * 7.25]) {
+      const wrapped = wrapDepthOffset(offset, tile);
+      expect(wrapped).toBeGreaterThanOrEqual(0);
+      expect(wrapped).toBeLessThan(tile);
+    }
+  });
+
+  it('adds the scroll to the drift instead of replacing it', () => {
+    const tile = depthFieldTileHeight(390);
+    const drift = tile * 0.25;
+    const parallax = -600 * depthDrift.parallaxFactor;
+    const still = wrapDepthOffset(drift, tile);
+    const scrolled = wrapDepthOffset(drift + parallax, tile);
+    // Scrolling moves the field off where the drift alone had it...
+    expect(scrolled).not.toBe(still);
+    // ...by exactly the parallax, folded into the tile — the drift's own
+    // phase is still in there, not overwritten.
+    expect(scrolled).toBeCloseTo(wrapDepthOffset(still + parallax, tile));
   });
 });

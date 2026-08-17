@@ -189,7 +189,6 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
             onBack={logic.handleBackFromReview}
             onConfirm={logic.handleConfirmOrRefresh}
             isConfirming={logic.isConfirming}
-            isRefreshing={logic.isLoadingQuote}
             confirmLabel={logic.swapConfirmLabel}
           />
         )}
@@ -220,7 +219,6 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
             onBack={logic.handleBackFromReview}
             onConfirm={logic.handleConfirmOrRefresh}
             isConfirming={logic.isConfirming}
-            isRefreshing={logic.isLoadingEstimate}
             confirmLabel={logic.swapConfirmLabel}
           />
         )}

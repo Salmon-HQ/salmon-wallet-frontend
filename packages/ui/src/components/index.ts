@@ -105,10 +105,6 @@ export type { GradientBackgroundProps } from './GradientBackground';
 export { BlurContainer } from './BlurContainer';
 export type { BlurContainerProps, BlurTint } from './BlurContainer';
 
-// PendingValue - a value being recalculated inside a container that stays put
-export { PendingValue } from './PendingValue';
-export type { PendingValueProps } from './PendingValue';
-
 // PendingActivityBanner - Global in-flight transaction surface
 export { PendingActivityBanner } from './PendingActivityBanner';
 export type { PendingActivityBannerProps } from './PendingActivityBanner';

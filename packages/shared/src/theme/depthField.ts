@@ -14,7 +14,8 @@
  * rather than dots (Alldredge & Silver 1988, via NOAA Ocean Exploration
  * "What is marine snow?"; Giering et al., Front. Mar. Sci. 2020). They sink at
  * ~10–100 m/day, on the order of 0.6 mm/s: real marine snow does not visibly
- * fall, which is half the argument for the field being static.
+ * fall, which is why the drift below is a chosen number rather than a measured
+ * one — see `depthDrift`.
  *
  * Three things the perception literature says this buys, and they are the
  * three properties the data encodes:
@@ -57,10 +58,13 @@
  *     particle can be brighter than the token; `contrast.test.ts` asserts the
  *     token, and `depthField.test.ts` asserts the multipliers.
  *
- * The field does not tile. It is one drawing, `depthFieldTile` units, scaled
- * uniformly to *cover* the column and anchored to the top of the ground —
- * repetition is the fastest way for a particle field to stop reading as space
- * and start reading as wallpaper.
+ * The field is one drawing, `depthFieldTile` units, scaled uniformly from the
+ * column's width and anchored to the top of the ground. It repeats vertically
+ * and only vertically: horizontal repetition is what makes a particle field
+ * read as wallpaper, because the eye finds the seam by comparing two points at
+ * the same height. Vertical repetition at a period of one full column height
+ * puts at most one seam in the frame at a time, and it is what makes the drift
+ * below a loop instead of a rewind.
  *
  * **The field runs the full height of the column, and that is the point.** It
  * used to stop in a 360px band that faded out before the first data row, which
@@ -85,6 +89,80 @@
  * runs out of drawing in either direction.
  */
 export const depthFieldTile = { width: 440, height: 960 } as const;
+
+/**
+ * How the field moves. Marine snow is snow because it *sinks*: it is matter
+ * falling out of the lit water, so the drift is downward and never upward.
+ *
+ * **`pxPerSecond` — why 3.** The real thing sinks at ~0.6 mm/s and is
+ * therefore invisible, so the number cannot be taken from the ocean; it has to
+ * be chosen against the eye. The brief is narrow: the drift must be
+ * *findable* if you rest on it and *absent* if you do not, because a particle
+ * field the eye catches unprompted stops being water and becomes a game's
+ * weather system.
+ *
+ * At a phone's ~35 cm viewing distance one degree of visual angle is roughly
+ * 34 px, so 3 px/s is about 0.09°/s — 5 arcmin/s. Fixated, with the static
+ * frame of the screen as a reference, human velocity discrimination bottoms
+ * out near 1–2 arcmin/s, so this sits a small multiple above the floor: stare
+ * at one floc and it is unmistakably moving. Glance at the screen for half a
+ * second and it has travelled 1.5 px, which is below the threshold for a
+ * low-contrast target with no reference nearby. It is also ~1/60 of the
+ * ~6°/s at which smooth motion starts to capture attention on its own, which
+ * is the value that matters most here: The Surfacing is the system's only
+ * light event and ambient motion must not compete with it.
+ *
+ * The speed is in **screen pixels**, not tile units, so it is the same
+ * apparent velocity on a 400 px side panel and a 1440 px window — the tile
+ * scales with the column's width, so a tile-unit speed would have run six
+ * times faster on the desktop. The cycle length is derived from it rather
+ * than authored; see `depthFieldCycleMs`.
+ *
+ * **`parallaxFactor` — why 0.2.** The field is the far plane, so it must move
+ * *less* than the content in front of it; that ratio is the whole cue. One
+ * fifth means a 600 px list scroll shifts the water 120 px — enough travel to
+ * read as a separate plane, small enough that the content still clearly owns
+ * the gesture. It is added to the drift, never substituted for it: the hand
+ * moves the water faster for a moment, and the water keeps sinking either way.
+ */
+export const depthDrift = {
+  pxPerSecond: 3,
+  parallaxFactor: 0.2,
+} as const;
+
+/**
+ * The tile's on-screen height for a column of `widthPx`.
+ *
+ * The scale is driven by width alone. It used to be CSS `cover` — the larger
+ * of the two ratios — because a single non-repeating drawing had to reach the
+ * bottom of the column on its own. Now that the field repeats vertically the
+ * height ratio has nothing left to do, and width-driven is the honest scale:
+ * it is identical to `cover` on every proportion wider than 440:960 (which is
+ * every real window and phone) and it stops cropping the sides on the ones
+ * that are narrower.
+ */
+export const depthFieldTileHeight = (widthPx: number): number =>
+  (widthPx * depthFieldTile.height) / depthFieldTile.width;
+
+/**
+ * How long one full loop takes, in milliseconds, for a tile of
+ * `tileHeightPx`. The loop is exactly one tile of travel — that is the only
+ * displacement at which the field lands back on a copy of itself, so it is the
+ * only one that can repeat without a visible jump.
+ */
+export const depthFieldCycleMs = (tileHeightPx: number): number =>
+  (tileHeightPx / depthDrift.pxPerSecond) * 1000;
+
+/**
+ * Fold a drift-plus-parallax offset back into `[0, tileHeightPx)`.
+ *
+ * The renderers hang two extra tiles of field above the top of the column, so
+ * any offset in that range is covered by drawing that already exists. Wrapping
+ * is invisible because the field at offset `tileHeightPx` is the same pixels
+ * as the field at 0.
+ */
+export const wrapDepthOffset = (offsetPx: number, tileHeightPx: number): number =>
+  ((offsetPx % tileHeightPx) + tileHeightPx) % tileHeightPx;
 
 /**
  * One floc: `[cx, cy, rx, ry, opacity]`. `opacity` is a multiplier on the

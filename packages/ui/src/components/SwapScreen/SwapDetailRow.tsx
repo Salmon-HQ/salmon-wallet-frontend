@@ -20,7 +20,6 @@ import {
   tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
-import { PendingValue } from '../PendingValue';
 import type { SwapDetailRowProps } from './types';
 
 // ============================================================================
@@ -63,12 +62,7 @@ const Value = styled(Typography)({
  * SwapDetailRow - A single row in the swap details section
  * Displays label on left and value on right with glassmorphism effect
  */
-export function SwapDetailRow({
-  label,
-  value,
-  pending = false,
-  style,
-}: SwapDetailRowProps): React.ReactElement {
+export function SwapDetailRow({ label, value, style }: SwapDetailRowProps): React.ReactElement {
   return (
     <BlurContainer
       style={{
@@ -79,9 +73,7 @@ export function SwapDetailRow({
     >
       <BlurContent>
         <Label>{label}</Label>
-        <Value>
-          <PendingValue pending={pending}>{value}</PendingValue>
-        </Value>
+        <Value>{value}</Value>
       </BlurContent>
     </BlurContainer>
   );

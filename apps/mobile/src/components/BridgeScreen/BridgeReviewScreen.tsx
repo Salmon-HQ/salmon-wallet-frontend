@@ -40,7 +40,6 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
   onBack,
   onConfirm,
   isConfirming = false,
-  isRefreshing = false,
   confirmLabel,
   style,
 }) => {
@@ -67,7 +66,6 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
           <SwapReviewCard
             label={t('bridge.review.youReceiveEstimated', 'You Receive (estimated)')}
             amount={formatAmountWithSymbol(outAmount, outToken.symbol)}
-            pendingAmount={isRefreshing}
           />
         </View>
 
@@ -90,12 +88,10 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
               <SwapDetailRow
                 label={t('bridge.review.minimumAmount', 'Minimum Amount')}
                 value={formatAmountWithSymbol(estimate.minAmount, inToken.symbol)}
-                pending={isRefreshing}
               />
               <SwapDetailRow
                 label={t('bridge.review.estimatedOutput', 'Estimated Output')}
                 value={formatAmountWithSymbol(estimate.estimatedAmount, outToken.symbol)}
-                pending={isRefreshing}
               />
             </>
           )}
@@ -141,7 +137,6 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
         onBack={onBack}
         onConfirm={onConfirm}
         isConfirming={isConfirming}
-        isRefreshing={isRefreshing}
         confirmLabel={confirmLabel ?? t('bridge.review.confirmSwap', 'Confirm Bridge')}
       />
     </View>
