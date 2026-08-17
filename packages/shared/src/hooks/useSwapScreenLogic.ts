@@ -5,6 +5,7 @@
  * so that platform components only provide JSX + platform-specific alerts.
  */
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import i18n from 'i18next';
 import type {
   SwapScreenProps,
   SwapToken,
@@ -884,10 +885,26 @@ export function useSwapScreenLogic<StyleType = unknown>({
     startCountdown();
   }, [isLoadingQuote, isLoadingEstimate, inToken, outToken, inAmount, startCountdown]);
 
+  // The commit button names the operation it is about to perform: a bridge is not
+  // a swap. The countdown is interpolated, not concatenated, so the whole label
+  // goes through translation.
   const swapConfirmLabel = useMemo(() => {
-    if (countdown <= 0) return 'Refresh Quote';
-    return `Confirm (${countdown})`;
-  }, [countdown]);
+    const isBridge = swapMode === 'stealthex';
+    if (countdown <= 0) {
+      return isBridge
+        ? i18n.t('bridge.review.refreshEstimate', { defaultValue: 'Refresh Estimate' })
+        : i18n.t('swap.review.refreshQuote', { defaultValue: 'Refresh Quote' });
+    }
+    return isBridge
+      ? i18n.t('bridge.review.confirmCountdown', {
+          seconds: countdown,
+          defaultValue: 'Confirm Bridge ({{seconds}})',
+        })
+      : i18n.t('swap.review.confirmCountdown', {
+          seconds: countdown,
+          defaultValue: 'Confirm ({{seconds}})',
+        });
+  }, [countdown, swapMode]);
 
   const handleConfirmOrRefresh = useCallback(async () => {
     if (countdown <= 0) {

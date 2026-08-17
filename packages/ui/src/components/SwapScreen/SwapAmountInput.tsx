@@ -204,7 +204,6 @@ const QuickFillText = styled(Typography)({
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
   color: semantic.text.accent,
-  textTransform: 'uppercase',
 });
 
 // ============================================================================

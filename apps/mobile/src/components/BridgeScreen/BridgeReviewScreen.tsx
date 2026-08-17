@@ -130,7 +130,7 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
           <Text style={styles.warningText}>
             {t(
               'bridge.review.pleaseNoteText',
-              'Cross-chain swaps typically take 10-30 minutes to complete. You will receive a deposit address after confirmation. The estimated amount above already has the Salmon fee deducted.'
+              'Cross-chain transfers typically take 10-30 minutes to complete. You will receive a deposit address after confirmation. The estimated amount above already has the Salmon fee deducted.'
             )}
           </Text>
         </View>

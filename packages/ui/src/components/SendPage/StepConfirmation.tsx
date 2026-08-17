@@ -337,7 +337,8 @@ export function StepConfirmation({
     }
   }, [destinationAddress]);
 
-  // Handle retry
+  // Clears the failure and re-arms the confirm button. It does not resend on its
+  // own, which is why the label reads "Confirm Again" rather than "Retry".
   const handleRetry = useCallback(() => {
     sendHook.reset();
   }, [sendHook]);
@@ -445,7 +446,10 @@ export function StepConfirmation({
               </SendingRow>
             ) : (
               <ConfirmButtonText>
-                {(isFailed ? t('actions.retry') : t('actions.confirm')).toUpperCase()}
+                {(isFailed
+                  ? t('token.send.confirmAgain')
+                  : t('actions.confirm')
+                ).toUpperCase()}
               </ConfirmButtonText>
             )}
           </ConfirmButtonGradient>

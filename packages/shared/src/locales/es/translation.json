@@ -294,7 +294,7 @@
     "about_made_with_love": "Hecho con amor por el equipo de Salmon",
     "about_social": "Seguinos",
     "backup_warning_title": "Nunca compartas tu frase de recuperación",
-    "backup_warning_description": "Cualquiera con tu frase de recuperación puede acceder a tus fondos. Guardala de forma segura y nunca la ingreses en sitios web.",
+    "backup_warning_description": "Cualquiera con tu frase de recuperación puede quedarse con tus fondos, y si la perdés nadie puede restaurar tu cuenta: ni siquiera Salmon. Guardala de forma segura y nunca la ingreses en sitios web.",
     "reveal_phrase_title": "Confirmá que sos vos",
     "reveal_phrase_message": "Ingresá tu contraseña para mostrar la frase de recuperación. Cualquiera que la vea es dueño de todas las cuentas de esta billetera, para siempre.",
     "clipboard_warning_title": "El portapapeles no es privado",
@@ -330,6 +330,7 @@
       "blockchainAddress": "Dirección {{blockchain}}",
       "networkFee": "Comisión de Red",
       "sending": "Enviando...",
+      "confirmAgain": "Confirmar de nuevo",
       "copyRecipientAddress": "Copiar la dirección del destinatario",
       "networkFeeAmount": "Comisión de Red: ~{{fee}}",
       "resolvedFrom": "Resuelta desde {{domain}}"
@@ -458,7 +459,7 @@
     "select_token": "Seleccionar Token",
     "create": {
       "messageTitle": "¡Guardá tu seed-phrase!",
-      "messageBody": "Necesitarás estas palabras para restaurar tu Cuenta si cambiás o borrás los datos de tu navegador, o si tu dispositivo se daña o se pierde. \n\n Nunca compartas tu seed-phrase (o tus claves privadas) con nadie, ni la ingreses en ningún formulario, ya que proporcionan control total de tu Cuenta. \n\n El equipo de Salmon nunca te pedirá tu seed-phrase o claves privadas.",
+      "messageBody": "Estas palabras son la única forma de restaurar tu cuenta. Si las perdés, tus fondos se pierden para siempre: nadie puede recuperarlos, ni siquiera Salmon. \n\n Cualquiera que vea estas palabras puede quedarse con tus fondos. Nunca las compartas con nadie ni las ingreses en ningún formulario. \n\n El equipo de Salmon nunca te va a pedir tu frase de recuperación ni tus claves privadas.",
       "your_seed_phrase": "Tu seed-phrase",
       "your_seed_phrase_body": "Asegurate de guardar estas palabras en un lugar seguro. Tené en cuenta que el orden en el que aparecen es importante.",
       "copy_key": "Copiar seed-phrase",
@@ -691,6 +692,8 @@
       "pleaseNote": "Nota Importante",
       "pleaseNoteText": "Las tasas de swap son estimadas. El monto real que recibirás puede variar debido al deslizamiento y las condiciones del mercado. Las transacciones son irreversibles una vez confirmadas.",
       "confirmSwap": "Confirmar",
+      "confirmCountdown": "Confirmar ({{seconds}})",
+      "refreshQuote": "Actualizar cotización",
       "reviewAndSwap": "Revisar"
     },
     "available_balance": "Disponible: {{balance}} {{symbol}}",
@@ -726,13 +729,13 @@
     "bridge": "Bridge",
     "recipient": {
       "title": "Dirección del Destinatario",
-      "description": "Ingresá la dirección donde querés recibir tus tokens intercambiados",
+      "description": "Ingresá la dirección donde querés recibir tus tokens transferidos",
       "destinationAddress": "Dirección de Destino",
       "enterRecipientAddress": "Ingresá la dirección del destinatario",
       "important": "Importante",
       "importantText": "Asegurate de que la dirección sea correcta. Las transacciones entre cadenas no se pueden revertir una vez iniciadas.",
       "review": "Revisar",
-      "descriptionWithChain": "Ingresá la dirección donde querés recibir tus tokens intercambiados en {{chain}}.",
+      "descriptionWithChain": "Ingresá la dirección donde querés recibir tus tokens transferidos en {{chain}}.",
       "enterDestinationAddress": "Ingresá la dirección de destino",
       "chainAddressHint": "(dirección de {{chain}})",
       "helper": "Ingresá la dirección de {{chain}} donde querés recibir tus {{symbol}}"
@@ -748,10 +751,12 @@
       "salmonFee": "Comisión Salmon",
       "provider": "Proveedor",
       "pleaseNote": "Nota Importante",
-      "pleaseNoteText": "Los swaps entre cadenas típicamente tardan de 10 a 30 minutos en completarse. Vas a recibir una dirección de depósito después de la confirmación. El monto estimado de arriba ya tiene descontada la comisión de Salmon.",
+      "pleaseNoteText": "Las transferencias entre cadenas típicamente tardan de 10 a 30 minutos en completarse. Vas a recibir una dirección de depósito después de la confirmación. El monto estimado de arriba ya tiene descontada la comisión de Salmon.",
       "irreversible": "Esto no se puede deshacer",
       "irreversibleText": "Al confirmar, tus fondos van a StealthEX, que los retiene hasta que se complete la transferencia entre cadenas. Una vez confirmada no hay cancelación ni forma de revertirla o recuperarla: ni por parte de Salmon ni por la tuya.",
-      "confirmSwap": "Confirmar Bridge"
+      "confirmSwap": "Confirmar Bridge",
+      "confirmCountdown": "Confirmar Bridge ({{seconds}})",
+      "refreshEstimate": "Actualizar estimación"
     },
     "amountToSend": "Monto a enviar",
     "currentStatus": "Estado actual",

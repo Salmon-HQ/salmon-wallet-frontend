@@ -259,7 +259,6 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.bold,
     color: colors.text.primary,
-    textTransform: 'uppercase',
   },
 });
 

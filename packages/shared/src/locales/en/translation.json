@@ -294,7 +294,7 @@
     "about_made_with_love": "Made with love by the Salmon team",
     "about_social": "Follow Us",
     "backup_warning_title": "Never share your recovery phrase",
-    "backup_warning_description": "Anyone with your recovery phrase can access your funds. Keep it stored securely and never enter it on websites.",
+    "backup_warning_description": "Anyone with your recovery phrase can take your funds, and if you lose it no one can restore your account — not even Salmon. Keep it stored securely and never enter it on websites.",
     "reveal_phrase_title": "Confirm it is you",
     "reveal_phrase_message": "Enter your password to show the recovery phrase. Anyone who sees it owns every account in this wallet, forever.",
     "clipboard_warning_title": "The clipboard is not private",
@@ -330,6 +330,7 @@
       "blockchainAddress": "{{blockchain}} Address",
       "networkFee": "Network Fee",
       "sending": "Sending...",
+      "confirmAgain": "Confirm Again",
       "copyRecipientAddress": "Copy recipient address",
       "networkFeeAmount": "Network Fee: ~{{fee}}",
       "resolvedFrom": "Resolved from {{domain}}"
@@ -458,7 +459,7 @@
     "select_token": "Select Token",
     "create": {
       "messageTitle": "Keep your seed phrase safe!",
-      "messageBody": "You will need these words to restore your account if your browser's storage is cleared or your device is damaged or lost. \n\n Never share your seed phrase (or your private keys) with anyone or enter it into any form, as it provides full control of your account. \n\n Salmon Team will never ask for your recovery phrase or private keys.",
+      "messageBody": "These words are the only way to restore your account. If you lose them, your funds are gone for good — no one can recover them, not even Salmon. \n\n Anyone who sees these words can take your funds. Never share them with anyone and never enter them into any form. \n\n Salmon Team will never ask for your recovery phrase or private keys.",
       "your_seed_phrase": "Your Seed Phrase",
       "your_seed_phrase_body": "Make sure you save the following words in a safe place. Also, keep in mind that the position of each word is important.",
       "copy_key": "Copy Seed Phrase",
@@ -691,6 +692,8 @@
       "pleaseNote": "Please Note",
       "pleaseNoteText": "Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed.",
       "confirmSwap": "Confirm",
+      "confirmCountdown": "Confirm ({{seconds}})",
+      "refreshQuote": "Refresh Quote",
       "reviewAndSwap": "Review"
     },
     "available_balance": "Available: {{balance}} {{symbol}}",
@@ -726,13 +729,13 @@
     "bridge": "Bridge",
     "recipient": {
       "title": "Recipient Address",
-      "description": "Enter the address where you want to receive your swapped tokens",
+      "description": "Enter the address where you want to receive your bridged tokens",
       "destinationAddress": "Destination Address",
       "enterRecipientAddress": "Enter recipient address",
       "important": "Important",
       "importantText": "Make sure the address is correct. Cross-chain transactions cannot be reversed once initiated.",
       "review": "Review",
-      "descriptionWithChain": "Enter the address where you want to receive your swapped tokens on {{chain}}.",
+      "descriptionWithChain": "Enter the address where you want to receive your bridged tokens on {{chain}}.",
       "enterDestinationAddress": "Enter destination address",
       "chainAddressHint": "({{chain}} address)",
       "helper": "Enter the {{chain}} address where you want to receive your {{symbol}}"
@@ -748,10 +751,12 @@
       "salmonFee": "Salmon fee",
       "provider": "Provider",
       "pleaseNote": "Please Note",
-      "pleaseNoteText": "Cross-chain swaps typically take 10-30 minutes to complete. You will receive a deposit address after confirmation. The estimated amount above already has the Salmon fee deducted.",
+      "pleaseNoteText": "Cross-chain transfers typically take 10-30 minutes to complete. You will receive a deposit address after confirmation. The estimated amount above already has the Salmon fee deducted.",
       "irreversible": "This cannot be undone",
       "irreversibleText": "Confirming sends your funds to StealthEX, which holds them until the cross-chain transfer completes. Once confirmed there is no cancel and no way to reverse or recover the transfer — not by Salmon and not by you.",
-      "confirmSwap": "Confirm Bridge"
+      "confirmSwap": "Confirm Bridge",
+      "confirmCountdown": "Confirm Bridge ({{seconds}})",
+      "refreshEstimate": "Refresh Estimate"
     },
     "amountToSend": "Amount to send",
     "currentStatus": "Current status",
