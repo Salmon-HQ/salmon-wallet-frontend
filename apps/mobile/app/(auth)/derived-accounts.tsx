@@ -292,6 +292,7 @@ export default function DerivedAccountsScreen() {
       <StatusBar style="light" />
       <OnboardingLayout
         testID="derived-accounts-screen"
+        variant="content"
         chrome={<ScreenHeader />}
         title={<OnboardingTitle>{t('wallet.derived.title')}</OnboardingTitle>}
         description={<OnboardingDescription>{t('wallet.derived.subtitle')}</OnboardingDescription>}

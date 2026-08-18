@@ -76,6 +76,7 @@ export default function SeedWarningScreen() {
   return (
     <OnboardingLayout
       testID="seed-warning-screen"
+      variant="content"
       chrome={
         <ScreenHeader onBack={router.back} stepIndicator={{ totalSteps: 4, currentStep: 1 }} />
       }
@@ -100,7 +101,7 @@ export default function SeedWarningScreen() {
           disabled={!read}
           testID="seed-warning-continue-button"
         >
-          {t('actions.start').toUpperCase()}
+          {t('actions.start')}
         </PrimaryButton>
       }
     />

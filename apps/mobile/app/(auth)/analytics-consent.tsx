@@ -52,6 +52,7 @@ export default function AnalyticsConsentScreen() {
   return (
     <OnboardingLayout
       testID="analytics-consent-screen"
+      variant="content"
       chrome={<ScreenHeader onBack={() => resolve(false)} testID="analytics-consent-decline" />}
       title={<OnboardingTitle>{t('settings.analytics_prompt_title')}</OnboardingTitle>}
       body={

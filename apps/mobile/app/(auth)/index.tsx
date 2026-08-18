@@ -81,12 +81,12 @@ export default function WelcomeScreen() {
       }
       secondary={
         <SecondaryButton onPress={handleRecoverAccount} testID="select-recover-button">
-          {t('wallet.recover_wallet').toUpperCase()}
+          {t('wallet.recover_wallet')}
         </SecondaryButton>
       }
       action={
         <PrimaryButton onPress={handleCreateAccount} testID="select-create-button">
-          {t('wallet.create_wallet').toUpperCase()}
+          {t('wallet.create_wallet')}
         </PrimaryButton>
       }
     />

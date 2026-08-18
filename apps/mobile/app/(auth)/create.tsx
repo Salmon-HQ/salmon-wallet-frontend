@@ -110,6 +110,7 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
     <>
       <OnboardingLayout
         testID="create-seed-screen"
+        variant="content"
         backgroundColor={semantic.surface.bedrock}
         scrollBody
         chrome={
@@ -125,12 +126,12 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
         body={<SeedWordGrid words={words} columns={3} />}
         secondary={
           <SecondaryButton onPress={handleCopy} testID="create-copy-seed-button">
-            {t('wallet.create.copy_key').toUpperCase()}
+            {t('wallet.create.copy_key')}
           </SecondaryButton>
         }
         action={
           <PrimaryButton onPress={onNext} testID="create-backed-up-button">
-            {t('wallet.create.ive_backed_up_seed_phrase').toUpperCase()}
+            {t('wallet.create.ive_backed_up_seed_phrase')}
           </PrimaryButton>
         }
       />
@@ -199,6 +200,7 @@ function ValidateStep({ mnemonic, onComplete, onBack, t }: ValidateStepProps) {
   return (
     <OnboardingLayout
       testID="create-validate-screen"
+      variant="content"
       backgroundColor={semantic.surface.bedrock}
       scrollBody
       chrome={
@@ -237,7 +239,7 @@ function ValidateStep({ mnemonic, onComplete, onBack, t }: ValidateStepProps) {
           disabled={!validationResult.isValid}
           testID="create-next-button"
         >
-          {t('actions.next').toUpperCase()}
+          {t('actions.next')}
         </PrimaryButton>
       }
     />

@@ -2,7 +2,15 @@
  * SeedWordInput - Input for validating a specific mnemonic word
  */
 import { useTranslation } from 'react-i18next';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import type { Ref } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  type NativeSyntheticEvent,
+  type TextInputKeyPressEventData,
+} from 'react-native';
 import {
   colors,
   spacing,
@@ -17,7 +25,7 @@ import { useSecretScreen } from '../../../hooks/useSecretScreen';
 
 type ValidationState = 'idle' | 'correct' | 'incorrect';
 
-interface SeedWordInputProps extends Testable {
+export interface SeedWordInputProps extends Testable {
   /** Word position (1-indexed) */
   position: number;
   /** Current input value */
@@ -30,18 +38,50 @@ interface SeedWordInputProps extends Testable {
   autoFocus?: boolean;
   /** Called when user submits */
   onSubmitEditing?: () => void;
+  /** Handle to focus this box from a grid that owns the focus order. */
+  inputRef?: Ref<TextInput>;
+  /** Raw key events — a grid uses this to move back on backspace. */
+  onKeyPress?: (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => void;
+  /**
+   * Compact: the number sits inside the box instead of on a line above it, so
+   * twelve of these fit in a grid rather than a column.
+   */
+  compact?: boolean;
+  /**
+   * Denser box, for the 24-word grid. Twenty-four boxes have to occupy the
+   * band twelve did — the grid gets tighter rather than taller, because a grid
+   * that grows would shove the layout the slot grid exists to hold still.
+   */
+  dense?: boolean;
+  /** Keyboard's return key. `next` by default. */
+  returnKeyType?: 'next' | 'done';
 }
 
 export function SeedWordInput({
   position,
   value,
-  onChangeText,
+  onChangeText: onChangeTextRaw,
   validationState = 'idle',
   autoFocus,
   onSubmitEditing,
+  inputRef,
+  onKeyPress,
+  compact = false,
+  dense = false,
+  returnKeyType = 'next',
   testID,
 }: SeedWordInputProps) {
   const { t } = useTranslation();
+
+  /**
+   * BIP-39 words are lowercase, and a capitalised one is an invalid mnemonic
+   * the user cannot see the fault in — the box looks right. The keyboard flags
+   * below turn autocapitalisation off, but a keyboard may still force a
+   * capital through (some Android IMEs ignore `autoCapitalize`, and a paste
+   * carries whatever it carried), so the value is normalised regardless. Done
+   * here rather than per caller because every caller wants it.
+   */
+  const onChangeText = (text: string) => onChangeTextRaw(text.toLowerCase());
 
   // A typed recovery word is worth as much as a displayed one.
   useSecretScreen('seed-word-input');
@@ -57,10 +97,40 @@ export function SeedWordInput({
     }
   };
 
+  if (compact) {
+    return (
+      <View
+        style={[
+          styles.compactBox,
+          dense && styles.denseBox,
+          { borderColor: getBorderColor() },
+        ]}
+      >
+        <Text style={styles.compactIndex}>{position}</Text>
+        <TextInput
+          ref={inputRef}
+          testID={testID}
+          accessibilityLabel={t('wallet.create.word_number', { position })}
+          style={styles.compactInput}
+          value={value}
+          onChangeText={onChangeText}
+          placeholderTextColor={colors.text.tertiary}
+          onKeyPress={onKeyPress}
+          autoFocus={autoFocus}
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType={returnKeyType}
+          blurOnSubmit={false}
+          {...secretInputProps}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{t('wallet.create.word_number', { position })}</Text>
       <TextInput
+        ref={inputRef}
         testID={testID}
         accessibilityLabel={t('wallet.create.word_number', { position })}
         style={[styles.input, { borderColor: getBorderColor() }]}
@@ -68,15 +138,33 @@ export function SeedWordInput({
         onChangeText={onChangeText}
         placeholder={t('wallet.create.enter_word_number', { position })}
         placeholderTextColor={colors.text.tertiary}
-        autoCapitalize="none"
-        autoCorrect={false}
+        onKeyPress={onKeyPress}
         autoFocus={autoFocus}
         onSubmitEditing={onSubmitEditing}
-        returnKeyType="next"
+        returnKeyType={returnKeyType}
+        {...secretInputProps}
       />
     </View>
   );
 }
+
+/**
+ * Everything that has to be off for a BIP-39 word.
+ *
+ * Autocorrect or autocapitalisation silently turns a valid word into an
+ * invalid mnemonic, and the user cannot see why — the box looks right.
+ * `textContentType: 'none'` and `autoComplete: 'off'` also keep the OS from
+ * offering to remember what was typed here.
+ */
+const secretInputProps = {
+  autoCapitalize: 'none',
+  autoCorrect: false,
+  autoComplete: 'off',
+  spellCheck: false,
+  textContentType: 'none',
+  importantForAutofill: 'no',
+  keyboardType: 'visible-password',
+} as const;
 
 const styles = StyleSheet.create({
   container: {
@@ -87,6 +175,36 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.sm,
     marginBottom: spacing.xs,
+  },
+  compactBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: componentSizes.buttonHeightSmall,
+    backgroundColor: colors.input.background,
+    borderWidth: borderWidth.thin,
+    borderRadius: componentSizes.inputRadius,
+    paddingHorizontal: spacing.sm,
+    gap: spacing.xs,
+  },
+  denseBox: {
+    height: componentSizes.buttonHeightCompact,
+    paddingHorizontal: spacing.xs,
+    gap: spacing.xxs,
+  },
+  compactIndex: {
+    color: colors.text.tertiary,
+    fontFamily: fontFamilyNative.medium,
+    fontSize: fontSize.sm,
+    minWidth: spacing.lg,
+    textAlign: 'right',
+  },
+  compactInput: {
+    flex: 1,
+    height: '100%',
+    color: colors.text.primary,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: fontSize.base,
+    padding: 0,
   },
   input: {
     width: '100%',

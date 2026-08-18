@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { OnboardingVariant } from '../../theme/onboardingGrid';
 import type { Testable } from './testable';
 
 /**
@@ -34,11 +35,16 @@ export interface OnboardingLayoutPropsBase extends Testable {
   /** The primary action. Bottom-most control in the stack. */
   action?: ReactNode;
   /**
-   * Unlock draws the larger mark — it is the size the `mark` band is reserved
-   * at, so every other screen's smaller mark centres inside the same band and
-   * does not move when the user arrives from unlock.
+   * Which family the screen belongs to, and therefore which reserved-height
+   * table it reads. `identity` (the default) makes the mark the hero — welcome,
+   * unlock in every state, setting a password, the biometric opt-in, success.
+   * `content` hands the middle of the screen to what fills `body` — the seed
+   * screens, the consent copy, the derived-account list.
+   *
+   * Slots are at an identical Y across every screen of one variant; between
+   * variants the mark and the body differ deliberately.
    */
-  variant?: 'onboarding' | 'unlock';
+  variant?: OnboardingVariant;
   /**
    * Lets `body` scroll internally. Off by default: most screens have a body
    * that fits, and a scroll view that never scrolls still eats touch handling.

@@ -65,7 +65,8 @@ export {
   type UseAddressValidationParams,
 } from './InputAddress';
 
-export { SeedWordGrid, SeedWordInput } from './SeedPhrase';
+export { SeedWordGrid, SeedWordInput, SeedPhraseEntry } from './SeedPhrase';
+export type { SeedPhraseEntryProps } from './SeedPhrase';
 
 export { DerivedAccountCard, DerivedAccountCardSkeleton } from './DerivedAccountCard';
 export type {

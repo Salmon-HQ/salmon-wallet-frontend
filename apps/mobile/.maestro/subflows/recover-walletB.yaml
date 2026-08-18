@@ -6,12 +6,15 @@ appId: io.salmonwallet.app
     id: 'select-recover-button'
 - tapOn:
     id: 'select-recover-button'
+# The phrase is typed one word per box now. Typing the whole phrase into the
+# first box is a paste as far as the grid is concerned: it splits on
+# whitespace and fills every box at once.
 - extendedWaitUntil:
     visible:
-      id: 'recover-seed-input'
+      id: 'recover-word-input-1'
     timeout: 30000
 - tapOn:
-    id: 'recover-seed-input'
+    id: 'recover-word-input-1'
 - inputText: ${SALMON_TEST_SEED_B}
 # Dismiss keyboard by tapping the title.
 - tapOn: 'Recover Existing Account'
