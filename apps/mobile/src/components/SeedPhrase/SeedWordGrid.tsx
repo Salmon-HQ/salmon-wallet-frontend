@@ -28,7 +28,10 @@ export function SeedWordGrid({ words, columns = 3 }: SeedWordGridProps) {
     <View style={styles.container}>
       {words.map((word, index) => (
         <View key={index} style={[styles.wordCard, { width: `${100 / columns - 2}%` }]}>
-          <Text style={styles.wordIndex}>{index + 1}</Text>
+          <Text style={styles.wordIndex} accessibilityLabel={String(index + 1)}>
+            {index + 1}
+            <Text style={styles.indexDot}>.</Text>
+          </Text>
           <Text style={styles.wordText}>{word}</Text>
         </View>
       ))}
@@ -53,6 +56,19 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     gap: spacing.xs,
+  },
+  /**
+   * The index's period. Decoration: the `accessibilityLabel` on the wrapping
+   * `Text` is the bare number, so it is never announced, and it is markup that
+   * never reaches the phrase. Nested inside the index's existing box so the
+   * word beside it does not move.
+   *
+   * On this screen the index is already `accent.primary`, so the period simply
+   * continues it — unlike the entry cell, where the number is `text.tertiary`
+   * and only the period carries the accent.
+   */
+  indexDot: {
+    color: colors.accent.primary,
   },
   wordIndex: {
     color: colors.accent.primary,

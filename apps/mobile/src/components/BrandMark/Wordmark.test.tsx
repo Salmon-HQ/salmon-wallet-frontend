@@ -13,7 +13,7 @@ jest.mock('@salmon/shared', () => ({
 
 import {
   fontSize,
-  lineHeight,
+  onboardingIdentityGridFull,
   semantic,
   spacing,
   wordmarkAspectRatio,
@@ -22,23 +22,34 @@ import {
 import { Wordmark } from './Wordmark';
 
 describe('Wordmark', () => {
-  it('fills the title band but for one gap, so it never touches the mark', () => {
-    // The band is bottom-anchored, so the subtraction surfaces as air above
-    // the wordmark. Filling the band exactly measured a 0.0dp gap on device,
-    // with the cap height flush against the mark's lower fin.
+  it('draws at the token the text it replaced was set from', () => {
+    // Locked to the flow's heading size, so the drawn name cannot drift from
+    // the typography. It was enlarged once and taken back down.
     render(<Wordmark />);
     const svg = screen.getByTestId('wordmark');
-    const titleLine = Math.round(fontSize.headline * lineHeight.tight);
-    expect(svg.props.height).toBe(2 * titleLine - spacing.md);
-    expect(svg.props.width).toBe(svg.props.height * wordmarkAspectRatio);
+    expect(svg.props.height).toBe(fontSize.headline);
+    expect(svg.props.width).toBe(fontSize.headline * wordmarkAspectRatio);
   });
 
-  it('is far larger than the title token drew it, at no cost to that token', () => {
-    // "¿Y si agrandamos Salmon?" — the name is a graphic, so the flow keeps
-    // exactly one heading size.
+  it('stays narrower than the mark it sits under', () => {
+    // A name wider than the mark stops being a lockup and starts competing.
     render(<Wordmark />);
-    const oneTitleLine = Math.round(fontSize.headline * lineHeight.tight);
-    expect(screen.getByTestId('wordmark').props.height).toBeGreaterThan(1.5 * oneTitleLine);
+    expect(screen.getByTestId('wordmark').props.width).toBeLessThan(
+      onboardingIdentityGridFull.markSize
+    );
+  });
+
+  it('centres itself and pins its own gap, whatever slot it lands in', () => {
+    // The regression this replaces: measured at x=24 on both a Pixel 9 Pro and
+    // an iPhone 17 — flush against the band's left padding, under a centred
+    // mark. A vector has no `textAlign`, so the slot could not centre it.
+    render(<Wordmark />);
+    const style = screen.getByTestId('wordmark').props.style;
+    const flat = (Array.isArray(style) ? style : [style]).flat(Infinity).filter(Boolean);
+    const merged = Object.assign({}, ...flat);
+    expect(merged.alignSelf).toBe('center');
+    expect(merged.marginTop).toBe(spacing.md);
+    expect(merged.marginBottom).toBe('auto');
   });
 
   it('is white, and still readable as the name of the screen', () => {

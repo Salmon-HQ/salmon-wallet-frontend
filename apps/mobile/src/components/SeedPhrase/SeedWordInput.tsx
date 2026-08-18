@@ -106,7 +106,10 @@ export function SeedWordInput({
           { borderColor: getBorderColor() },
         ]}
       >
-        <Text style={styles.compactIndex}>{position}</Text>
+        <Text style={styles.compactIndex} accessibilityLabel={String(position)}>
+          {position}
+          <Text style={styles.indexDot}>.</Text>
+        </Text>
         <TextInput
           ref={inputRef}
           testID={testID}
@@ -190,6 +193,25 @@ const styles = StyleSheet.create({
     height: componentSizes.buttonHeightCompact,
     paddingHorizontal: spacing.xs,
     gap: spacing.xxs,
+  },
+/**
+ * The index's period, in the brand salmon.
+ *
+ * Decoration only (product, 2026-08-18). Three things it must never do, on a
+ * screen where a stray character is a wrong seed:
+ *
+ * - **Never reach the value.** It is markup, not content: it is not in `value`,
+ *   never passes through `onChangeText`, and cannot survive into the mnemonic
+ *   that gets validated or stored.
+ * - **Never be announced.** The `accessibilityLabel` on the wrapping `Text` is
+ *   the bare number, which takes precedence over the rendered children, so a
+ *   screen reader says "1", not "one full stop".
+ * - **Never move the word.** It is nested inside the index's existing
+ *   right-aligned box rather than added beside it, so "1." (about 12dp) still
+ *   fits the box's `minWidth` and the word after it does not shift at all.
+ */
+  indexDot: {
+    color: semantic.text.accent,
   },
   compactIndex: {
     color: colors.text.tertiary,

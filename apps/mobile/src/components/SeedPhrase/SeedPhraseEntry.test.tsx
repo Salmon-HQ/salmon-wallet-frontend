@@ -141,6 +141,24 @@ describe('SeedPhraseEntry', () => {
     ).not.toThrow();
   });
 
+  it('keeps the index period out of the phrase entirely', () => {
+    // The period after the number is decoration. On a screen where a stray
+    // character is a wrong seed, it must never reach the value, the validated
+    // mnemonic, or anything copied out.
+    render(<Harness />);
+    fireEvent.changeText(box(1), 'zzalpha ');
+    fireEvent.changeText(box(2), 'zzbeta');
+    expect(boxes().map((b) => b.props.value).join(' ')).not.toContain('.');
+    expect(box(1).props.value).toBe('zzalpha');
+    expect(box(2).props.value).toBe('zzbeta');
+  });
+
+  it('announces the index as a bare number, not as punctuation', () => {
+    // "One full stop bronze" is not what a screen reader should say.
+    render(<Harness />);
+    expect(screen.getByLabelText('1')).toBeTruthy();
+  });
+
   it('normalises line breaks, tabs and doubled spaces on paste', () => {
     render(<Harness />);
     const messy = placeholder(SHORT_PHRASE).join('\n  \t');

@@ -13,21 +13,34 @@
  * mark. Drawing it makes the name a graphic, so it is sized independently of
  * the title token and the flow keeps one heading size.
  *
- * Default height is the two rendered title lines the `title` band reserves,
- * less one `spacing.md`. The band is bottom-anchored, so that subtraction
- * surfaces as air *above* the wordmark: measured on device, filling the band
- * exactly put the wordmark's cap height flush against the mark's lower fin at
- * a 0.0dp gap, which is tighter than a lockup reads. Giving the gap back as
- * `spacing.md` puts the mark and the name on the same rhythm the title and
- * description use everywhere else, and the wordmark still lands 1.6x the size
- * the title token drew it at.
+ * **Height is `fontSize.headline`** — the same token the `Text` it replaced set
+ * its size from, so the drawn name and the flow's heading stay locked together.
+ * It was briefly enlarged and then taken back down at the product owner's
+ * request ("más chico quiero el Salmon en mobile, volvamos al tamaño anterior").
  *
- * Every term comes from the tokens the grid derives that band from, so the two
- * cannot drift apart.
+ * One caveat worth knowing before anyone tunes this again: a `Text`'s box is its
+ * *line* box and a vector's box is the *glyph* bounding box, so a wordmark drawn
+ * at the token renders slightly more ink than text set at the same token — there
+ * is no leading above and below it. Matching the old ink exactly would need a
+ * cap-height factor, which is a magic number; one token that cannot drift is
+ * worth more than a few points of exactness here.
+ *
+ * **It centres itself.** An `Svg` has an intrinsic width and no `textAlign`, so
+ * in the `title` band — a column that pads its sides and does not centre its
+ * children, because the `Text` it used to hold centred its own glyphs — it sat
+ * flush against the left padding at x=24 on both platforms while the mark above
+ * it was centred. Any vector dropped into a slot has this problem, so the
+ * component owns the fix rather than the slot.
+ *
+ * **The gap over it is pinned.** The band is bottom-anchored, so `marginBottom:
+ * 'auto'` lifts the wordmark to the top of it and `marginTop` sets the distance
+ * from the mark explicitly — one `spacing.md`, the same step the title and
+ * description use. Pinning it means resizing the wordmark changes the wordmark
+ * and nothing else; leaving it to the band's spare room made the gap a
+ * side-effect of the height.
  */
 import {
   fontSize,
-  lineHeight,
   semantic,
   spacing,
   wordmarkAspectRatio,
@@ -36,13 +49,11 @@ import {
   wordmarkViewBoxAttr,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
+import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-/** One rendered line of the flow's title. The band reserves two. */
-const TITLE_LINE = Math.round(fontSize.headline * lineHeight.tight);
-
-/** The band, less the gap that keeps the mark off the wordmark's cap height. */
-const DEFAULT_HEIGHT = 2 * TITLE_LINE - spacing.md;
+/** The token the `Text` this replaced set its size from. */
+const DEFAULT_HEIGHT = fontSize.headline;
 
 export interface WordmarkProps extends Testable {
   /** Drawn height. Width follows the aspect ratio. */
@@ -59,6 +70,7 @@ export function Wordmark({
   return (
     <Svg
       testID={testID ?? 'wordmark'}
+      style={styles.wordmark}
       width={height * wordmarkAspectRatio}
       height={height}
       viewBox={wordmarkViewBoxAttr}
@@ -73,3 +85,15 @@ export function Wordmark({
     </Svg>
   );
 }
+
+const styles = StyleSheet.create({
+  wordmark: {
+    // The band pads its sides and does not centre its children; a vector has
+    // no `textAlign` to centre itself with, so it says where it goes.
+    alignSelf: 'center',
+    // Lift to the top of a bottom-anchored band, then set the distance from
+    // the mark explicitly rather than inheriting whatever room is left over.
+    marginBottom: 'auto',
+    marginTop: spacing.md,
+  },
+});
