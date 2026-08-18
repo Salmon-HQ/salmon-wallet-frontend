@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 const mockNotificationAsync = jest.fn();
@@ -230,6 +230,15 @@ describe('TransactionSuccessScreen', () => {
       expect(tree.indexOf('tx-success-continue-button')).toBeLessThan(
         tree.indexOf('tx-success-explorer-link')
       );
+    });
+
+    it('centres the report cluster in the corridor above the actions', () => {
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      const cluster = screen.getByTestId('tx-success-cluster');
+      const style = StyleSheet.flatten(cluster.props.style);
+      expect(style.flex).toBe(1);
+      expect(style.justifyContent).toBe('center');
     });
 
     it('omits the explorer link when no url is available', () => {

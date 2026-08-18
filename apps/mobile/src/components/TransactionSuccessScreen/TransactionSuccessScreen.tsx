@@ -100,12 +100,20 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
 
   // Where the band starts (below the bottom edge) and where it stops (centred
   // on the amount). Both come from layout rather than from a guess, because
-  // the corridor's length changes with the summary's line count.
+  // the corridor's length changes with the summary's line count. The amount is
+  // measured inside the centred cluster, so its screen position is the
+  // cluster's own offset plus the amount's offset within it.
   const [screenHeight, setScreenHeight] = useState(0);
-  const [amountCenterY, setAmountCenterY] = useState(0);
+  const [clusterTop, setClusterTop] = useState(0);
+  const [amountCenterInCluster, setAmountCenterInCluster] = useState(0);
+  const amountCenterY = clusterTop + amountCenterInCluster;
 
   const handleScreenLayout = useCallback((event: LayoutChangeEvent) => {
     setScreenHeight(event.nativeEvent.layout.height);
+  }, []);
+
+  const handleClusterLayout = useCallback((event: LayoutChangeEvent) => {
+    setClusterTop(event.nativeEvent.layout.y);
   }, []);
 
   const showWait = useWaitGate(settling);
@@ -118,7 +126,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
 
   const handleAmountLayout = useCallback((event: LayoutChangeEvent) => {
     const { y, height } = event.nativeEvent.layout;
-    setAmountCenterY(y + height / 2);
+    setAmountCenterInCluster(y + height / 2);
   }, []);
 
   useEffect(() => {
@@ -173,7 +181,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   // 2. The caustic band. Held back until the corridor has been measured — a
   //    band that travels to the wrong place is worse than one frame of nothing.
   useEffect(() => {
-    if (showWait || screenHeight <= 0 || amountCenterY <= 0) return;
+    if (showWait || screenHeight <= 0 || amountCenterInCluster <= 0) return;
 
     const restingY = amountCenterY - BAND_HEIGHT / 2;
 
@@ -199,7 +207,15 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
       timeline.band.durationMs,
       withTiming(0, { duration: timeline.band.fadeMs, easing: curve.sink })
     );
-  }, [showWait, timeline, screenHeight, amountCenterY, bandOpacity, bandTranslateY]);
+  }, [
+    showWait,
+    timeline,
+    screenHeight,
+    amountCenterInCluster,
+    amountCenterY,
+    bandOpacity,
+    bandTranslateY,
+  ]);
 
   const statusStyle = useAnimatedStyle(() => ({
     opacity: statusOpacity.value,
@@ -253,6 +269,12 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           content it is thinning out over. */}
       <SurfacingMembrane opacity={membraneOpacity} />
 
+      {/* The cluster — status, amount, and the bridge details when there are
+          any — is centred in the corridor between the top chrome and the
+          actions. It owns the leftover height (flex: 1), so the actions stay
+          on the bottom edge and the report sits in the middle of the water
+          rather than leaving a void under it. */}
+      <View style={styles.cluster} onLayout={handleClusterLayout} testID="tx-success-cluster">
       {/* Status is a line of ink, not a 96px disc: `status.success` is
           specified as ink (9.99:1), and the outcome the user came for is the
           amount below it. Three channels are kept — colour, the ✓ glyph, and
@@ -332,6 +354,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           )}
         </Animated.View>
       ) : null}
+      </View>
 
       {/* Continue first, explorer second — the same ranking the DOM receipt
           uses. The wallet's own action outranks a link that leaves it for a
@@ -386,14 +409,22 @@ const styles = StyleSheet.create({
     // The band travels in from below the bottom edge.
     overflow: 'hidden',
   },
-  // The receipt reads from the top. A slip floating in the middle of a tall
-  // column has no reading order — the eye lands between the lines instead of on
-  // the first one — so the report sits at the top and the actions are pushed to
-  // the bottom by `actionGroup`'s auto margin. The wait keeps `container`'s
-  // centring: a loader with nothing under it is the one case for the middle.
+  // The receipt column: actions on the bottom edge, and the cluster centred in
+  // whatever is left above them. Product 2026-08: the report belongs in the
+  // middle of the corridor, not pinned under the top chrome with a void below.
+  // The wait keeps `container`'s own centring: a loader with nothing under it
+  // is centred the same way.
   receipt: {
     justifyContent: 'flex-start',
     paddingTop: vs(spacing['5xl']),
+  },
+  // The centred report. Stretched so the amount can use the full width, and
+  // flex: 1 so it owns the corridor between the top padding and the actions.
+  cluster: {
+    flex: 1,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statusRow: {
     flexDirection: 'row',

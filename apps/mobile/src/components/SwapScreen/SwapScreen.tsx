@@ -15,6 +15,8 @@ import type { Blockchain, NetworkEnvironment, NetworkId } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 import { SwapInputScreen } from './SwapInputScreen';
 import { SwapReviewScreen } from './SwapReviewScreen';
+import { DepthBackground } from '../DepthBackground';
+import { ScalesBackground } from '../ScalesBackground';
 import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
 import { TokenSelectorModal } from '../TokenSelector';
 import { BridgeRecipientScreen } from '../BridgeScreen/BridgeRecipientScreen';
@@ -159,6 +161,13 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
         testID="swap-task-modal"
       >
         <View style={[styles.taskSurface, { paddingTop: insets.top }]}>
+          {/* Its own window, but the same water. The task modal covers the tab
+              shell — and with it the water column the shell paints — so it
+              mounts the same ground the DOM task steps sit over: the depth
+              ramp, the marine snow, and the deep-field scales. The receipt is
+              not a wall; The Surfacing needs water to surface out of. */}
+          <DepthBackground />
+          <ScalesBackground variant="deepField" />
           {stalledBanner}
 
           {logic.step === 'review' &&
