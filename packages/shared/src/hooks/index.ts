@@ -54,6 +54,8 @@ export type { UseTransactionsParams, UseTransactionsResult } from './useTransact
 // it has. Keeps a short wait from flickering a screen at the user.
 export { useWaitGate } from './useWaitGate';
 export type { UseWaitGateOptions } from './useWaitGate';
+export { useWaitExit } from './useWaitExit';
+export type { WaitExit } from './useWaitExit';
 
 // Send transaction hook
 export { usePendingActivity } from './usePendingActivity';

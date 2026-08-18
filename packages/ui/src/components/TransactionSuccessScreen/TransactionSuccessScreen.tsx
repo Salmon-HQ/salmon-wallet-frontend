@@ -19,6 +19,7 @@ import {
   easing,
   tabularNums,
   useWaitGate,
+  useWaitExit,
 } from '@salmon/shared';
 import { LoadingScreen } from '../LoadingScreen';
 import { PrimaryButton } from '../Button';
@@ -252,11 +253,23 @@ export function TransactionSuccessScreen({
   // that resolves just over the threshold does not flash. The gate delays a
   // *screen*, never the work.
   const showWait = useWaitGate(settling);
+  // And the wait is not merely unmounted when it ends: this branch swaps the
+  // instant `settling` flips, so the closing wave used to play nowhere on the
+  // one screen it matters most. `held` keeps the wait rendered — with
+  // `visible={false}`, which is what starts its exit — until the last front has
+  // left the screen and it reports back.
+  const { held: waveHeld, onExited: onWaveGone } = useWaitExit(showWait);
 
-  if (showWait) {
+  if (waveHeld) {
     return (
       <Container>
-        <LoadingScreen visible waves title={pendingTitle ?? title} subtitle={summary} />
+        <LoadingScreen
+          visible={showWait}
+          waves
+          title={pendingTitle ?? title}
+          subtitle={summary}
+          onExited={onWaveGone}
+        />
       </Container>
     );
   }

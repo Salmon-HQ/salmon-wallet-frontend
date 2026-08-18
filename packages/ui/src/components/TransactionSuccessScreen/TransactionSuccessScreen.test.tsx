@@ -18,6 +18,10 @@ vi.mock('@salmon/shared', () => ({
   // (packages/shared). Here it is transparent, so these cases stay about what
   // the screen renders in each state rather than about timing.
   useWaitGate: (active: boolean) => active,
+  // Likewise the hold that keeps the wait mounted until its closing wave has
+  // left. Transparent here: `useWaitExit` is tested in packages/shared, and
+  // these cases are about what the screen renders in each state.
+  useWaitExit: (showWait: boolean) => ({ held: showWait, onExited: () => {} }),
   semantic: {
     surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
     text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },

@@ -78,15 +78,19 @@ vi.mock('@salmon/shared', async () => ({
   markViewBoxAttr: '0 0 253 236',
   // The wave's arithmetic is `@salmon/shared`'s own and is tested there
   // (`src/motion/wavefront.test.ts`); this file only needs it to answer.
-  WAVEFRONT_CROSS_MS: 420,
+  WAVEFRONT_CROSS_MS: 1400,
+  WAVEFRONT_PASS_MS: 280,
+  WAVEFRONT_PERIOD_MS: 2000,
   wavefrontRadius: () => 500,
   planWavefront: (
     _rider: unknown,
     _origin: unknown,
     _bounds: unknown,
     isReduceMotionEnabled: boolean
-  ) => (isReduceMotionEnabled ? null : { delayMs: 100, amplitude: 2, durationMs: 180 }),
-  wavefrontExitMs: (isReduceMotionEnabled: boolean) => (isReduceMotionEnabled ? 180 : 600),
+  ) => (isReduceMotionEnabled ? null : { delayMs: 100, startMs: 0, amplitude: 2, durationMs: 280 }),
+  wavefrontExitMs: (isReduceMotionEnabled: boolean) => (isReduceMotionEnabled ? 180 : 1580),
+  planWavefrontExit: (_elapsedMs: number, isReduceMotionEnabled: boolean) =>
+    isReduceMotionEnabled ? { holdMs: 0, exitMs: 180 } : { holdMs: 1400, exitMs: 1580 },
 }));
 
 import { LoadingScreen } from './LoadingScreen';
@@ -178,7 +182,7 @@ describe('the wave', () => {
     expect(screen.queryByTestId('loading-emitter')).toBeNull();
   });
 
-  it('hands off at a fixed 600ms, not whenever the pulse in flight happens to end', () => {
+  it('holds until the front in flight has left the screen, then ebbs', () => {
     const onExited = vi.fn();
     const { rerender } = render(
       <LoadingScreen visible waves title="Processing swap" onExited={onExited} />
@@ -186,8 +190,9 @@ describe('the wave', () => {
 
     rerender(<LoadingScreen visible={false} waves title="Processing swap" onExited={onExited} />);
 
+    // One whole crossing plus an ebb: the front is not cut off, it finishes.
     act(() => {
-      vi.advanceTimersByTime(599);
+      vi.advanceTimersByTime(1579);
     });
     expect(onExited).not.toHaveBeenCalled();
 

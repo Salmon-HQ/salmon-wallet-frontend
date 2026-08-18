@@ -31,6 +31,7 @@ import {
   semantic,
   tabularNums,
   useWaitGate,
+  useWaitExit,
 } from '@salmon/shared';
 import type { TransactionSuccessScreenProps } from '@salmon/shared';
 import { PrimaryButton } from '../Button';
@@ -108,6 +109,12 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   }, []);
 
   const showWait = useWaitGate(settling);
+  // And the wait is not merely unmounted when it ends: this branch swaps the
+  // instant `settling` flips, so the closing wave used to play nowhere on the
+  // one screen it matters most. `held` keeps the wait rendered — with
+  // `visible={false}`, which is what starts its exit — until the last front has
+  // left the screen and it reports back.
+  const { held: waveHeld, onExited: onWaveGone } = useWaitExit(showWait);
 
   const handleAmountLayout = useCallback((event: LayoutChangeEvent) => {
     const { y, height } = event.nativeEvent.layout;
@@ -221,15 +228,16 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   // mounts and the user goes from the decision straight to the receipt; once
   // mounted it holds for `motionMs.waitMinVisible` so a wait that resolves just
   // over the threshold does not flash. The gate delays a *screen*, never work.
-  if (showWait) {
+  if (waveHeld) {
     return (
       <View style={styles.container}>
         <LoadingScreen
-          visible
+          visible={showWait}
           waves
           title={pendingTitle ?? title}
           subtitle={summary}
           bottomOffset={floatingBottomOffset}
+          onExited={onWaveGone}
         />
       </View>
     );

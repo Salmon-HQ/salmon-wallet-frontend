@@ -48,16 +48,18 @@ jest.mock('@salmon/shared', () => ({
   },
   markPaths: ['M0 0h1v1H0z'],
   markViewBoxAttr: '0 0 253 236',
-  WAVEFRONT_CROSS_MS: 420,
-  WAVEFRONT_PERIOD_MS: 1200,
+  WAVEFRONT_CROSS_MS: 1400,
+  WAVEFRONT_PERIOD_MS: 2000,
   wavefrontRadius: () => 500,
   planWavefront: (
     _rider: unknown,
     _origin: unknown,
     _bounds: unknown,
     isReduceMotionEnabled: boolean
-  ) => (isReduceMotionEnabled ? null : { delayMs: 100, amplitude: 2, durationMs: 180 }),
-  wavefrontExitMs: (isReduceMotionEnabled: boolean) => (isReduceMotionEnabled ? 180 : 600),
+  ) => (isReduceMotionEnabled ? null : { delayMs: 100, startMs: 0, amplitude: 2, durationMs: 280 }),
+  wavefrontExitMs: (isReduceMotionEnabled: boolean) => (isReduceMotionEnabled ? 180 : 1580),
+  planWavefrontExit: (_elapsedMs: number, isReduceMotionEnabled: boolean) =>
+    isReduceMotionEnabled ? { holdMs: 0, exitMs: 180 } : { holdMs: 1400, exitMs: 1580 },
   motionEasing: {
     current: { native: [0.32, 0.72, 0, 1] },
     settle: { native: [0.22, 1, 0.36, 1] },
@@ -161,7 +163,7 @@ describe('LoadingScreen', () => {
     beforeEach(() => jest.useFakeTimers());
     afterEach(() => jest.useRealTimers());
 
-    it('hands off at a fixed 600ms rather than whenever an animation finishes', () => {
+    it('holds until the front in flight has left the screen, then ebbs', () => {
       const onExited = jest.fn();
       const { rerender } = render(
         <LoadingScreen visible title="Processing swap" waves onExited={onExited} />
@@ -169,8 +171,11 @@ describe('LoadingScreen', () => {
 
       rerender(<LoadingScreen visible={false} title="Processing swap" waves onExited={onExited} />);
 
+      // One whole crossing plus an ebb — the worst case, and the value the
+      // hard timer is armed at so a dropped animation callback cannot strand a
+      // caller on the wait screen.
       act(() => {
-        jest.advanceTimersByTime(599);
+        jest.advanceTimersByTime(1579);
       });
       expect(onExited).not.toHaveBeenCalled();
 

@@ -58,11 +58,14 @@ import {
   motionMs,
   motionEasing,
   planWavefront,
+  planWavefrontExit,
   reducedMotion,
   semantic,
   wavefrontExitMs,
   wavefrontRadius,
   WAVEFRONT_CROSS_MS,
+  WAVEFRONT_PASS_MS,
+  WAVEFRONT_PERIOD_MS,
 } from '@salmon/shared';
 import { WaterColumn, waterColumnHost } from '../WaterColumn';
 import { useReducedMotion } from '../../utils/useReducedMotion';
@@ -85,10 +88,10 @@ import type { LoadingScreenProps } from './types';
  */
 const waveKeyframes = keyframes`
   0% { transform: translateY(0) scale(1); }
-  ${(motionMs.swell / 2 / motionMs.pulseCycle) * 100}% {
+  ${(WAVEFRONT_PASS_MS / 2 / WAVEFRONT_PERIOD_MS) * 100}% {
     transform: translateY(calc(-1 * var(--wave-amp, ${componentSizes.waveAmplitude}px))) scale(1.02);
   }
-  ${(motionMs.swell / motionMs.pulseCycle) * 100}%, 100% {
+  ${(WAVEFRONT_PASS_MS / WAVEFRONT_PERIOD_MS) * 100}%, 100% {
     transform: translateY(0) scale(1);
   }
 `;
@@ -112,8 +115,8 @@ const waveOutKeyframes = keyframes`
  */
 const pulseKeyframes = keyframes`
   0% { transform: scale(1); }
-  ${(motionMs.swell / 2 / motionMs.pulseCycle) * 100}% { transform: scale(1.02); }
-  ${(motionMs.swell / motionMs.pulseCycle) * 100}%, 100% { transform: scale(1); }
+  ${(motionMs.swell / 2 / WAVEFRONT_PERIOD_MS) * 100}% { transform: scale(1.02); }
+  ${(motionMs.swell / WAVEFRONT_PERIOD_MS) * 100}%, 100% { transform: scale(1); }
 `;
 
 /**
@@ -129,11 +132,11 @@ const pulseKeyframes = keyframes`
  */
 const crestKeyframes = keyframes`
   0% { transform: translate(-50%, -50%) scale(0.02); opacity: 0; }
-  4% { opacity: 1; }
-  ${((CREST_FADE_FROM * WAVEFRONT_CROSS_MS) / motionMs.pulseCycle) * 100}% {
+  ${(0.04 * WAVEFRONT_CROSS_MS * 100) / WAVEFRONT_PERIOD_MS}% { opacity: 1; }
+  ${((CREST_FADE_FROM * WAVEFRONT_CROSS_MS) / WAVEFRONT_PERIOD_MS) * 100}% {
     opacity: 1;
   }
-  ${(WAVEFRONT_CROSS_MS / motionMs.pulseCycle) * 100}% {
+  ${(WAVEFRONT_CROSS_MS / WAVEFRONT_PERIOD_MS) * 100}% {
     transform: translate(-50%, -50%) scale(1);
     opacity: 0;
   }
@@ -171,12 +174,13 @@ const Overlay = styled('div')<{ $isFadingOut: boolean; $waveOut: boolean }>(
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    // When the closing wave is driving the exit, the ground has to outlive the
-    // riders: it holds still for one crossing while they are carried off, then
-    // ebbs. `WAVEFRONT_CROSS_MS + ebb` is exactly `wavefrontExitMs(false)`, so
-    // what the caller is told and what the screen does cannot drift.
+    // When the wave is driving the exit, the ground has to outlive the riders:
+    // it holds for whatever the front still in flight has left to travel, then
+    // ebbs. The hold arrives as `--wave-hold`, written by the exit effect from
+    // `planWavefrontExit`, so what the caller is told and what the screen does
+    // are the same number.
     animation: $waveOut
-      ? `${fadeOutKeyframes} ${motionMs.ebb}ms ${motionEasing.sink.css} ${WAVEFRONT_CROSS_MS}ms forwards`
+      ? `${fadeOutKeyframes} ${motionMs.ebb}ms ${motionEasing.sink.css} var(--wave-hold, ${WAVEFRONT_CROSS_MS}ms) forwards`
       : `${$isFadingOut ? fadeOutKeyframes : fadeInKeyframes} 0.3s ease-out forwards`,
   })
 );
@@ -242,8 +246,8 @@ const WaveRider = styled('div')<{ $rank: number; $waves: boolean; $closing: bool
     animation: !$waves
       ? 'none'
       : $closing
-        ? `${waveOutKeyframes} ${motionMs.swell}ms ${motionEasing.sink.css} var(--wave-delay, ${fallbackDelay}) 1 forwards`
-        : `${waveKeyframes} ${motionMs.pulseCycle}ms ${motionEasing.current.css} var(--wave-delay, ${fallbackDelay}) infinite`,
+        ? `${waveOutKeyframes} ${WAVEFRONT_PASS_MS}ms ${motionEasing.sink.css} var(--wave-exit-delay, 0ms) 1 forwards`
+        : `${waveKeyframes} ${WAVEFRONT_PERIOD_MS}ms ${motionEasing.current.css} var(--wave-delay, ${fallbackDelay}) infinite`,
     [`@media ${reducedMotion.query}`]: {
       animation: 'none',
     },
@@ -256,7 +260,7 @@ const WaveRider = styled('div')<{ $rank: number; $waves: boolean; $closing: bool
  * unrelated elements twitching. Salmon as *ink* — the mark is tinted, never
  * filled, so it does not spend the one living fill a screen is allowed.
  */
-const Emitter = styled('div')<{ $waves: boolean; $closing: boolean }>(({ $waves, $closing }) => ({
+const Emitter = styled('div')<{ $waves: boolean }>(({ $waves }) => ({
   // The true centre of whatever the wait occupies — not of the viewport. The
   // overlay is the surface, so its middle is the origin, and a wait rendered in
   // a smaller box gets its own centre with no special case.
@@ -271,9 +275,10 @@ const Emitter = styled('div')<{ $waves: boolean; $closing: boolean }>(({ $waves,
   alignItems: 'center',
   justifyContent: 'center',
   color: semantic.text.accent,
-  // On close it beats once more and stops: the closing wave has a source too.
+  // Not stopped on close: the front in flight is left to finish crossing, and
+  // the ground has faded before the next emission is due.
   animation: $waves
-    ? `${pulseKeyframes} ${motionMs.pulseCycle}ms ${motionEasing.current.css} ${$closing ? 1 : 'infinite'}`
+    ? `${pulseKeyframes} ${WAVEFRONT_PERIOD_MS}ms ${motionEasing.current.css} infinite`
     : 'none',
   [`@media ${reducedMotion.query}`]: {
     animation: 'none',
@@ -302,8 +307,8 @@ const Emitter = styled('div')<{ $waves: boolean; $closing: boolean }>(({ $waves,
  * salmon ink at partial alpha, it lives only while the wait does, and it travels
  * outward and down while The Surfacing travels up.
  */
-const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean; $closing: boolean }>(
-  ({ $alpha, $lagMs, $waves, $closing }) => ({
+const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean }>(
+  ({ $alpha, $lagMs, $waves }) => ({
     position: 'absolute',
     top: '50%',
     left: '50%',
@@ -329,7 +334,7 @@ const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean; $
     // the crossing and then waited off-screen for riders it had already passed.
     // This is a front's velocity, not an element arriving.
     animation: $waves
-      ? `${crestKeyframes} ${motionMs.pulseCycle}ms linear ${$lagMs}ms ${$closing ? 1 : 'infinite'}`
+      ? `${crestKeyframes} ${WAVEFRONT_PERIOD_MS}ms linear ${$lagMs}ms infinite`
       : 'none',
     [`@media ${reducedMotion.query}`]: {
       animation: 'none',
@@ -441,6 +446,12 @@ export const LoadingScreen = memo(function LoadingScreen({
 
   const contentRef = useRef<HTMLDivElement>(null);
   const originRef = useRef<HTMLDivElement>(null);
+  /**
+   * When the loop started, so the exit can ask where the front is without
+   * reading an animation off the compositor. The phase is
+   * `(now − startedAt) % period`, which is all `planWavefrontExit` needs.
+   */
+  const startedAtRef = useRef(0);
   // Held in a ref so an inline callback cannot restart the exit timer on every
   // render — which would leave the screen up forever.
   const onExitedRef = useRef(onExited);
@@ -454,22 +465,48 @@ export const LoadingScreen = memo(function LoadingScreen({
       setIsVisible(true);
       setIsFadingOut(false);
       setIsClosing(false);
+      startedAtRef.current = Date.now();
       return undefined;
     }
     if (!isVisible) return undefined;
 
-    // The wave-driven exit. It does **not** wait out the emission in flight:
-    // that would put up to a whole `pulseCycle` between the user's decision and
-    // their receipt, and the wallet's own rule is that exit is faster than
-    // enter. The pending emissions are cancelled, the closing wave goes out
-    // now, and the handoff lands at a fixed `wavefrontExitMs()`.
-    if (riding && !isReduceMotionEnabled) {
+    // The exit, and it waits for calm water. Product, 2026-08: *"que no se pase
+    // a la siguiente screen hasta que la última onda salga de la pantalla, es
+    // decir, justo cuando el agua está calma."*
+    //
+    // Nothing is cancelled. The crest's `infinite` animation is left running
+    // exactly as it is, so a front in flight finishes crossing instead of being
+    // cut in half; the ground simply fades once it has left. Because only one
+    // front is ever in flight (`WAVEFRONT_REST_MS`), the fade always completes
+    // before the next emission is due, and a wait that resolves during the rest
+    // has nothing to wait for at all.
+    const { holdMs, exitMs } = planWavefrontExit(
+      startedAtRef.current ? Date.now() - startedAtRef.current : 0,
+      !riding || isReduceMotionEnabled
+    );
+
+    if (riding && !isReduceMotionEnabled && holdMs > 0) {
+      // How far the front has already travelled, as a time: the riders it has
+      // passed leave now, the ones ahead of it leave as it reaches them.
+      const phase = WAVEFRONT_CROSS_MS - holdMs;
+      const root = contentRef.current;
+      root?.style.setProperty('--wave-hold', `${holdMs}ms`);
+      root?.querySelectorAll<HTMLElement>('[data-wave-rider]').forEach((node) => {
+        const arrival = Number.parseFloat(node.style.getPropertyValue('--wave-arrival')) || 0;
+        node.style.setProperty('--wave-exit-delay', `${Math.max(0, arrival - phase)}ms`);
+      });
       setIsClosing(true);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setIsClosing(false);
-        onExitedRef.current?.();
-      }, wavefrontExitMs(false));
+      const timer = setTimeout(
+        () => {
+          setIsVisible(false);
+          setIsClosing(false);
+          onExitedRef.current?.();
+          // The hard bound, unchanged in job: a wallet may never be stranded on a
+          // wait. `exitMs` is what the screen is actually doing and
+          // `wavefrontExitMs` is its worst case, so the guard can only be late.
+        },
+        Math.min(exitMs, wavefrontExitMs(false))
+      );
       return () => clearTimeout(timer);
     }
 
@@ -525,7 +562,12 @@ export const LoadingScreen = memo(function LoadingScreen({
           isReduceMotionEnabled
         );
         if (!plan) return;
-        node.style.setProperty('--wave-delay', `${plan.delayMs}ms`);
+        // Two numbers, and they are different on purpose: the loop starts the
+        // rider at `startMs` — half a pass *before* the crest arrives, so the
+        // displacement peaks as it passes — while the exit needs the arrival
+        // itself to work out which riders the front has already gone by.
+        node.style.setProperty('--wave-delay', `${plan.startMs}ms`);
+        node.style.setProperty('--wave-arrival', `${plan.delayMs}ms`);
         node.style.setProperty('--wave-amp', `${plan.amplitude}px`);
       });
     };
@@ -575,20 +617,13 @@ export const LoadingScreen = memo(function LoadingScreen({
           pinned to the middle of the surface: the origin of a radial front is
           the one thing on this screen that may not be off-centre. */}
       {riding && (
-        <Emitter
-          ref={originRef}
-          $waves={riding}
-          $closing={isClosing}
-          aria-hidden="true"
-          data-testid="loading-emitter"
-        >
+        <Emitter ref={originRef} $waves={riding} aria-hidden="true" data-testid="loading-emitter">
           {crestTrain().map(({ lag, alpha }) => (
             <Crest
               key={lag}
               $alpha={alpha}
               $lagMs={Math.round(lag * WAVEFRONT_CROSS_MS)}
               $waves={riding}
-              $closing={isClosing}
             />
           ))}
           <Mark viewBox={markViewBoxAttr} fill="currentColor" focusable="false">

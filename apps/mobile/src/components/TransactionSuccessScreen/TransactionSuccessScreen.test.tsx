@@ -77,6 +77,10 @@ jest.mock('@salmon/shared', () => ({
   // (packages/shared). Transparent here, so these cases stay about what the
   // screen renders in each state rather than about timing.
   useWaitGate: (active: boolean) => active,
+  // Likewise the hold that keeps the wait mounted until its closing wave has
+  // left. Transparent here: `useWaitExit` is tested in packages/shared, and
+  // these cases are about what the screen renders in each state.
+  useWaitExit: (showWait: boolean) => ({ held: showWait, onExited: () => {} }),
   tabularNums: { native: { fontVariant: ['tabular-nums'] }, css: {} },
   semantic: {
     accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45', tint: 'rgba(255,92,69,0.1)' },

@@ -239,6 +239,21 @@ export const water = {
   gradient: [neutral[950], neutral[1000]] as const,
   /** Marine snow, brightest floc. Particle opacities scale this down. */
   snow: 'rgba(199, 211, 232, 0.12)',
+  /**
+   * Cold caustic light — what water returns when it catches a highlight.
+   *
+   * The one cold ink this system allows, and it was already in the app twice
+   * before it had a name: The Surfacing's caustic band and the press specular
+   * are both `#9FE0EF` hardcoded in `apps/mobile`. It is a token now because
+   * the wait's crest is the third use, and three copies of a colour is drift
+   * waiting to happen.
+   *
+   * It is deliberately **not** `accent.ink`. Product, 2026-08: *"las ondas
+   * siguen siendo naranjas."* Salmon on a travelling ring reads as a brand
+   * element crossing the screen; the crest is light returning off water, so it
+   * takes the colour of the material rather than of the company.
+   */
+  light: '#9FE0EF',
 } as const;
 
 export const semantic = {

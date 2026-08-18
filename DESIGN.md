@@ -1278,9 +1278,10 @@ top of the first.
 
 **Shipped**, twice: `packages/ui/src/components/LoadingScreen` (web and
 extension) and `apps/mobile/src/components/LoadingScreen`. The timing is one
-pure function shared by both — `packages/shared/src/motion/wavefront.ts` — so
-the two platforms cannot drift and the choreography is testable without a frame
-clock. Same split as `surfacing.ts`.
+pure function shared by both — `packages/shared/src/motion/wavefront.ts` — and
+the paint is another — `packages/shared/src/motion/crest.ts` — so the two
+platforms cannot drift and the choreography is testable without a frame clock.
+Same split as `surfacing.ts`.
 
 The wait goes **down** while the success comes **up**. That single opposition is
 what keeps a wait from competing with the only climax the system has.
@@ -1295,7 +1296,7 @@ what keeps a wait from competing with the only climax the system has.
    vocabulary next to the front. The Harrison, Yeo & Hudson (CHI 2010) argument
    it carried — a decelerating augmentation makes a 5s wait read ~12% shorter,
    and a constant-speed rotation is the worst option — is now carried by the
-   front, which crosses once per `pulseCycle` and then rests.
+   front, which crosses once per period and then rests.
 2. **The wave** — **on by default**, on every wait. _(Reversal, 2026-08: it was
    opt-in and reserved for waiting on a transaction, on the argument that a boot
    or a key derivation has nothing in the air. Product hit the account-recovery
@@ -1309,89 +1310,186 @@ what keeps a wait from competing with the only climax the system has.
      and subtitle hang _below_ the centre point rather than being centred with
      it. _(Product, 2026-08: "lo más importante es que ocurra en el centro del
      celular.")_
-   - **The mark pulses**, 2% on `swell`, once per `pulseCycle`. It is the
-     emitter. _(Reversal, 2026-08: the pulsing logo had been removed with the
-     spinning ring. It is back because a radial front with no visible source
-     reads as unrelated elements twitching, not as one wave. It returns as ink,
-     not as a fill — the crest it throws is light returning off water, not a
-     second filled element.)_
-   - **Every pulse launches a front.** A ring leaves the mark and reaches the
-     farthest corner of the surface in `rise` (420ms) — a _time_, not a speed in
-     px/s, so the gesture reads the same in a 360px extension popup and on a
-     393×852 phone. The snow is measured in px/s because it is ambient; the wave
-     is measured in time because it is an event.
-   - **The elements ride it.** Title, subtitle and — where a surface shows them
-     — the tips are each displaced `waveAmplitude` (3px) upward with a 2% swell as the front reaches
-     them — delayed in proportion to their _measured_ distance from the mark,
-     and attenuated as 1/√d, which is how a circular wave loses amplitude when
-     it spreads its energy over a growing perimeter. Attenuation is not a
-     flourish: it is the difference between reading as one wave and reading as
-     four things moving.
+
+     It was **off-centre on the phone for a day**, and the cause is worth
+     keeping written down because the arithmetic was never wrong. Yoga resolves
+     a percentage `left` on an absolutely-positioned child against the parent's
+     *content* width — width minus padding — but lays it out from the parent's
+     *border-box* edge. The mobile wait's content view carried
+     `paddingHorizontal: spacing['2xl']`, so `left: '50%'` landed the emitter at
+     `(W − 2·24)/2` instead of `W/2`: **24dp to the left, measured at 73px on a
+     1280px-wide 3× capture.** The words were unaffected because they set
+     explicit `left`/`right` insets rather than a percentage, which is exactly
+     why the title looked centred beside a mark that was not, and the DOM twin
+     was unaffected because its overlay has no padding. The origin is measured
+     from the mark's own layout, so the *whole front* was leaving from 24dp left
+     of centre, not just the logo. The padding is gone — every child there is
+     absolutely positioned and carries its own inset — and `bottomOffset` now
+     insets the tips instead of shortening the surface, so the transaction wait
+     centres on the screen rather than on the space above the floating chrome.
+   - **The mark pulses**, 2% on `swell`, once per period. It is the emitter.
+     _(Reversal, 2026-08: the pulsing logo had been removed with the spinning
+     ring. It is back because a radial front with no visible source reads as
+     unrelated elements twitching, not as one wave. It returns as ink, not as a
+     fill — the light it throws is a reflection off water, not a second filled
+     element.)_
+   - **Every pulse launches a front, and one front is in flight at a time.** It
+     reaches the farthest corner of the surface in **1400ms** and then the water
+     rests for **600ms** before the next emission. Still a _time_ and not a speed
+     in px/s, so the gesture reads the same in a 360px extension popup and on a
+     393×852 phone.
+
+     **1400ms is set by what the eye can follow, not by the transition
+     vocabulary.** It was `rise` (420ms), chosen because a front crossing the
+     screen is the same *size* of event as a sheet presenting; on a real phone
+     that is unwatchable, and the reason is measurable. Centre to corner on a
+     393×852pt phone is ~470pt, which at a ~30cm viewing distance subtends
+     roughly 19° of visual angle. Crossing it in 420ms is **~45°/s — above the
+     ceiling of smooth pursuit**, which tracks comfortably to about 30°/s. The
+     eye cannot follow the crest and has to saccade to where it has already
+     gone, so what is perceived is a flash and an after-image rather than a
+     travelling ridge. At 1400ms the same 19° goes by at ~13°/s, the middle of
+     the band the eye tracks smoothly. The rest is not padding either: a pulse
+     that fires the instant the previous front clears is a metronome however
+     slow it is. _(Product, 2026-08: "va tan rápido que no se puede apreciar" and
+     "no quiero que parezca un radar, quiero que sea más smooth.")_
+   - **The elements ride it, and they peak _as_ the crest passes.** Title,
+     subtitle and — where a surface shows them — the tips are each displaced
+     `waveAmplitude` (3px) upward with a 2% swell over `drift`, delayed in
+     proportion to their _measured_ distance from the mark and attenuated as
+     1/√d, which is how a circular wave loses amplitude when it spreads its
+     energy over a growing perimeter. Attenuation is not a flourish: it is the
+     difference between reading as one wave and reading as four things moving.
+
+     The displacement is **centred on the front's arrival** rather than started
+     by it — `WavefrontPlan.startMs` is `delayMs − durationMs/2`, clamped at
+     zero. Started _at_ the arrival, a rider peaks half a pass later, by which
+     time the crest is `PASS/2 · c` further out and the element reads as
+     bouncing after the wave has gone. _(Product, 2026-08: "los componentes
+     cuando rebotan no lo hacen cuando pasa la onda, sino cuando ya
+     desaparece.")_ A float on water rises as the crest approaches and settles
+     as it leaves; it does not wait for the crest to be on top of it.
    - **It loops** for as long as the wait lasts. _(Reversal, 2026-08: the cap
      was three emissions, then stillness.)_ What keeps a thirty-second wait from
      being a thirty-second show is the duty cycle, not a counter — the front
-     occupies 420ms of a 1200ms period and the rest is still water. Nothing
+     occupies 1400ms of a 2000ms period and the rest is still water. Nothing
      accumulates: one compositor animation per element (`infinite` on the DOM,
      `withRepeat(-1)` on the UI thread in React Native), no JS timer behind it,
      and every value is cancelled on unmount.
-3. **The exit is the wave, not a timer.** When the work resolves, the pending
-   emissions are cancelled, a closing wave goes out _immediately_, and each
-   element leaves as the front reaches it and does not come back. The ground
-   holds for one crossing and then ebbs. The handoff to the receipt is at
-   `rise + ebb` = **600ms**, fixed. It deliberately does _not_ wait out the
-   emission in flight: that would put up to a whole `pulseCycle` between a
-   decision and its receipt, against this system's own rule that exit is faster
-   than enter. A hard timer backs the animation callback so a dropped completion
-   cannot strand a caller on the wait screen.
+3. **The exit waits for calm water, always.** _(Product, 2026-08: "que no se
+   pase a la siguiente screen hasta que la última onda salga de la pantalla, es
+   decir, justo cuando el agua está calma. Esto aplica siempre.")_ It is
+   **derived**, not a constant — `planWavefrontExit(elapsedMs, reduceMotion)`
+   returns the hold and the total:
+   - A front **in flight finishes crossing.** Nothing is cancelled: the crest's
+     looping animation is left running exactly as it is and the ground simply
+     holds until it has left. The previous model killed the emission and started
+     a fresh closing wave, which cut the visible front in half at the moment the
+     user was most likely to be watching it. The riders switch to leaving on the
+     front's *remaining* schedule — the ones it has already passed go now, the
+     ones ahead of it go as it reaches them.
+   - **Calm water hands off immediately.** Because only one front is ever in
+     flight, a wait that resolves during the rest has nothing to wait for, and
+     inventing a closing wave would be pure latency between a decision and its
+     receipt with nothing on screen to justify it.
+   - **The hard bound survives.** `wavefrontExitMs()` — one whole crossing plus
+     an `ebb`, **1580ms worst case** — arms a timer in both implementations, and
+     whichever of the timer and the animation callback arrives first wins. A
+     wallet may never be stranded on a loading screen by an animation that
+     failed to complete. The bound is by construction the maximum of the derived
+     plan, so the guard can only ever fire late.
+   - **The callers were the other half of the promise.** A surface written as
+     `if (loading) return <LoadingScreen />` swaps branches the frame `loading`
+     flips and unmounts the wait mid-wave, so the closing wave played nowhere on
+     the screens it matters most. `useWaitExit` inverts the condition: the wait
+     stays mounted with `visible={false}` — which is what *starts* its exit —
+     until it reports back through `onExited`. Wired on both transaction success
+     screens, the web auth guard and the root redirect. The waits that are
+     rendered *alongside* their content rather than instead of it (both lock
+     screens, both account-add panels, the mobile password screen, the shared
+     auth password page) already outlived the flip and needed nothing.
 
-**The front is a refraction crest, not an outline.** Across the _thickness_ of
-the band the inner face returns light and the outer face falls into shadow —
-what a raised ridge of water looks like from directly overhead. That is the
-standard height-field result: the light term follows the _derivative_ of the
-height field, not its height, so the inward and outward slopes of one bump catch
-light with opposite sign (GPU Gems ch. 1, "Effective Water Simulation from
-Physical Models", eqs. 4b/5b; the same finite-difference shading is the whole of
-Hugo Elias's classic 2D water article). Rotated into a radial band it is a
-**bevel/emboss** — lit rim over shaded underside — which is the bezel this
-system already puts on a filled button, and what a two-sided CSS `ridge` border
-is. A flat stroke reads as an _outline_ because there is no luminance gradient
-for shape-from-shading to integrate; a ramp across a band reads as _relief_
-(Ramachandran, _Nature_ 331:163, the light-from-above prior).
+**The front is a wave train, not one crest.** Product's reference photographs of
+a droplet on dark water all show the same structure: five to a dozen thin
+concentric rings travelling together, alternating light and dark, sharp and
+strong at the inside and fading outward. It is the _train_ that reads as water.
+One expanding band, however carefully shaded, reads as a hoop — which is exactly
+what the single-crest version was called on the device.
 
-The shape lives in `packages/shared/src/motion/crest.ts` as named constants and
-is drawn from the same numbers on both platforms — a `radial-gradient` on the
-DOM, a `RadialGradient`-stroked `Circle` in `react-native-svg` on mobile. Four
-stops: transparent at the inner foot, the lit peak, the shaded peak,
-transparent at the outer foot. Two crests are alive at once, the second at 45%
-alpha one sixth of a crossing behind, which is what makes it read as water
-rather than as one expanding shape. **The gradient is never animated** — the
-band is painted once at the front's final diameter and moved by
-`transform: scale()` alone, so the compositor scales a rasterised layer and a
-band costs what the hairline cost.
+Each ring is a **refraction crest**: the crown returns light and both flanks
+fall into shadow. That is the standard height-field result — the light term
+follows the _derivative_ of the height field, not its height (GPU Gems ch. 1,
+eqs. 4b/5b; the same finite-difference shading is the whole of Hugo Elias's
+classic 2D water article) — read from directly overhead, where a ridge returns
+most along its crown and falls away on both slopes. The profile is symmetric
+because **a radial gradient is isotropic**: it varies with radius alone, so it
+has no direction to put a light source in, and an asymmetric radial profile
+silently claims the light is at the centre of the screen and gives the ring a
+wrong side as it grows. A ramp across a band reads as _relief_ (Ramachandran,
+_Nature_ 331:163, the light-from-above prior).
 
-Two numbers were set by measuring rendered frames rather than by taste. Against
-the `#10131c` ground (luminance 17), the shipped crest measures its lit face
-**+72** and its shaded face **−11** at mid-crossing. A wide soft variant was
-drawn and rejected on the measurement: its shaded face came out _above_ the
-ground, because a falloff that wide smears the light across the shadow, and what
-is left is a glow. And the crest now **holds full alpha until 75% of the
-crossing** instead of fading across the whole of it — fading throughout had
-scrubbed the shaded face to 2.6 levels below ground by halfway, and the half of
-the effect with the least contrast to spend is the half that vanishes first.
+**The ground is what decides the numbers, and it was measured rather than
+argued.** The wait stands on `#0B0F19` — luminance **16 of 255**. The light has
+~240 levels of headroom above that and a shadow has **16 below it, in total**, so
+a literally balanced light-and-shadow profile is unbuildable here: the lit side
+shouts and the dark side has nowhere to go. The first symmetric attempt measured
+its crown **+101** over the ground and its flanks **−9** — an eleven-to-one
+split, which the eye resolves as a bright teal tube with no shadow. Three
+corrections, all visible in the references:
+
+- **Alternation does the work absolute contrast cannot.** A dark ring is dark
+  _because it sits immediately against a lit one_ — simultaneous contrast, and
+  the Mach banding lateral inhibition performs on exactly that adjacency. Five
+  rings put a light beside every dark.
+- **The crown was cut to 0.22 alpha.** A captured frame now measures the crown
+  **+39** against flanks at **−14**, a ratio near 3:1, with 54 levels between
+  crown and flank — on par with the single-ridge variant that was judged
+  legible, at a fifth of the shout.
+- **A base lift under the whole train.** In every reference the water
+  immediately around the disturbance is not the value of still water far from
+  it. A 0.05-alpha lift raises the base the shadow lines descend _from_, which
+  is what gives them somewhere to go on this ground.
+
+The rings are **line-weight, not tube-weight**: a lit line is 12% of the ring
+spacing and the rest is calm lift, so most of the train's area is the tone
+between the lines. Amplitude decays 0.62 per ring outward, matching the 1/√d
+attenuation the riders already use — the paint has to decay too, or the train
+contradicts the motion it is supposed to be causing.
+
+The colour is `water.light` (`#9FE0EF`), the cold caustic ink The Surfacing's
+band and the press specular already use, promoted to a token here because this
+is its third consumer. **Not salmon** _(product, 2026-08: "las ondas siguen
+siendo naranjas")_ — a salmon ring crossing the screen reads as a brand element
+travelling; this is light returning off water, so it takes the colour of the
+material rather than of the company. The shadow stays black: shadow is an
+absence of returned light, and tinting it makes the train read as coloured rings
+instead of relief.
+
+The whole train lives in `packages/shared/src/motion/crest.ts` as named
+constants and is drawn from the same numbers on both platforms — a
+`radial-gradient` on the DOM, a `RadialGradient`-stroked `Circle` in
+`react-native-svg` on mobile. **A train is more gradient stops on the same node,
+not more nodes**, and **the gradient is never animated**: it is painted once at
+the front's final diameter and moved by `transform: scale()` alone, so the
+compositor scales a rasterised layer and five rings cost what one hairline cost.
+The rejected readings — `ridge`, `swell`, `train`, `rope` — are kept in
+`CREST_VARIANTS` with the numbers that were measured against them, so the next
+tuning pass starts from measured alternatives rather than from zero.
 
 This is a light event during a wait, which §Overview used to forbid. That rule is
-amended there rather than quietly broken here; the light stays bounded, salmon
-rather than cyan, outward-and-down rather than up, and dead before the receipt
+amended there rather than quietly broken here; the light stays bounded, cold
+rather than branded, outward-and-down rather than up, and dead before the receipt
 mounts.
 
-**Reduced motion** is a parallel mapping, not a hole: no pulse, no crest, no
+**Reduced motion** is a parallel mapping, not a hole: no pulse, no train, no
 displacement — the mark is still there, and the _words_ carry the state, which
 is the job the descent's mid-track resting position used to do — **and no
-wave-driven exit**. A user who cannot see the wave is not made to wait one out; the wait
-leaves in one `ebb` step and the receipt arrives 420ms sooner.
+wave-driven exit**. A user who cannot see the wave is not made to wait one out;
+the wait leaves in one `ebb` step, 1400ms sooner. Not up for revision.
 
 **The Bedrock Rule still wins.** The dApp approval flow's wait (`bedrock`) gets
-no mark, no ring and no wave, for the same reason it gets no water column.
+no mark, no train and no wave, for the same reason it gets no water column — and
+because it has no wave, it needs no hold before it hands off.
 
 **Not built, and refused for now:** distortion. A text that ripples _over
 itself_ needs a shader. On mobile that is `@shopify/react-native-skia` — a
@@ -1400,7 +1498,7 @@ even solve it, because Skia distorts pixels inside its own canvas and does not
 move real views. `react-native-svg` is not an alternative: `FeTurbulence` and
 `FeDisplacementMap` both return `null` and warn. On the DOM `feTurbulence` is
 notoriously unaccelerated and displaces pixels rather than elements. What ships
-is a physically correct front of rigid bodies floating, which is the part the
+is a physically correct train of rigid bodies floating, which is the part the
 eye actually reads.
 
 ### The Surfacing — the signature moment, built

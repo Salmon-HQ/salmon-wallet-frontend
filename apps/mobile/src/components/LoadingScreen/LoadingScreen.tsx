@@ -72,6 +72,7 @@ import {
   semantic,
   spacing,
   fontSize,
+  planWavefrontExit,
   wavefrontExitMs,
   wavefrontRadius,
   WAVEFRONT_CROSS_MS,
@@ -148,10 +149,11 @@ function crestBox(origin: WavefrontPoint) {
 
 /**
  * One crest of the front, drawn as a **refraction crest** rather than an
- * outline: across the thickness of the band the inner face returns light and the
- * outer face falls into shadow — a raised ridge of water seen from above, which
- * is the bezel this system puts on a filled button rotated into a radial band.
- * The shape lives in `@salmon/shared` `motion/crest`, shared with the DOM twin.
+ * outline: across the thickness of the band the crown returns light and both
+ * flanks fall into shadow — a raised ridge of water seen from directly above.
+ * The profile is symmetric because a radial gradient is isotropic and therefore
+ * cannot honestly express a light direction. The shape lives in
+ * `@salmon/shared` `motion/crest`, shared with the DOM twin.
  *
  * `react-native-svg` has no `FeTurbulence` and no `FeDisplacementMap` (both
  * return `null` and warn) but `RadialGradient` is fully implemented, and a
@@ -273,6 +275,12 @@ export function LoadingScreen({
    * gets there first wins and the other is a no-op.
    */
   const exitedRef = useRef(false);
+  /**
+   * When the loop started, so the exit can ask where the front is without
+   * reading an animation. The phase is `(now − startedAt) % period`, which is
+   * all `planWavefrontExit` needs to keep the handoff pure and testable.
+   */
+  const startedAtRef = useRef(0);
   const finishExit = useCallback(() => {
     if (exitedRef.current) return;
     exitedRef.current = true;
@@ -285,7 +293,6 @@ export function LoadingScreen({
   // reduce motion they are not started at all rather than run instantly.
   const isReduceMotionEnabled = useReducedMotion();
   const overlayIn = timing(motionMs.drift, isReduceMotionEnabled);
-  const overlayOut = timing(motionMs.ebb, isReduceMotionEnabled, curve.sink);
   const tipFade = timing(motionMs.drift, isReduceMotionEnabled);
 
   /**
@@ -354,6 +361,7 @@ export function LoadingScreen({
     if (visible) {
       setIsVisible(true);
       exitedRef.current = false;
+      startedAtRef.current = Date.now();
       overlayOpacity.value = withTiming(1, overlayIn);
 
       // Loops are cycles, not transitions: their `*Cycle` lengths are never
@@ -402,9 +410,11 @@ export function LoadingScreen({
           rider.value = 0;
           if (!plan) return;
           // The whole front, in one line: the same curve for everyone, started
-          // `delayMs` later in proportion to distance.
+          // `startMs` later in proportion to distance — half a pass *before*
+          // the crest arrives, so the displacement peaks as it passes rather
+          // than beginning there. See `WavefrontPlan.startMs`.
           rider.value = withDelay(
-            plan.delayMs,
+            plan.startMs,
             withRepeat(
               withSequence(
                 withTiming(1, {
@@ -426,54 +436,56 @@ export function LoadingScreen({
       return undefined;
     }
 
-    // The closing wave. Pending emissions are cancelled and the last front goes
-    // out *now* — waiting for the emission in flight to clear would put up to a
-    // whole `pulseCycle` between the decision and the receipt, which this
-    // system's own rule (exit faster than enter) forbids. The handoff lands at
-    // `wavefrontExitMs()`, fixed and testable.
-    const closing = waves && !isReduceMotionEnabled && plans.some(Boolean);
-    if (!closing) {
-      overlayOpacity.value = withTiming(0, overlayOut, (finished) => {
-        if (finished) {
-          runOnJS(finishExit)();
-        }
+    // The exit, and it waits for calm water. Product, 2026-08: *"que no se pase
+    // a la siguiente screen hasta que la última onda salga de la pantalla, es
+    // decir, justo cuando el agua está calma."*
+    //
+    // Nothing is cancelled. The front in flight is left running exactly as it
+    // was and simply allowed to finish crossing — the previous model killed the
+    // emission and started a fresh closing wave, which cut the visible ring in
+    // half at the moment the user was most likely to be looking at it. The
+    // ground holds for whatever that front has left to travel and then ebbs.
+    //
+    // Because only one front is ever in flight (`WAVEFRONT_REST_MS`), a wait
+    // that resolves during the rest has nothing to wait for and hands off on
+    // `ebb` alone.
+    const riding = waves && !isReduceMotionEnabled && plans.some(Boolean);
+    const { holdMs } = planWavefrontExit(
+      riding && startedAtRef.current ? Date.now() - startedAtRef.current : 0,
+      !riding
+    );
+
+    if (holdMs > 0) {
+      // How far the front has already travelled, as a time. The riders it has
+      // already passed leave now; the ones ahead of it leave as it reaches them.
+      const phase = WAVEFRONT_CROSS_MS - holdMs;
+
+      [wave0, wave1, wave2].forEach((rider, index) => {
+        const plan = plans[index];
+        cancelAnimation(rider);
+        if (!plan) return;
+        // No return trip, and no reset to 0 first: a rider caught mid-swell
+        // carries on from where it is rather than snapping back before it goes.
+        rider.value = withDelay(
+          Math.max(0, plan.delayMs - phase),
+          withTiming(1, { duration: plan.durationMs, easing: curve.sink })
+        );
       });
-      const fallback = setTimeout(finishExit, wavefrontExitMs(isReduceMotionEnabled));
-      return () => clearTimeout(fallback);
     }
 
-    cancelAnimation(pulse);
-    cancelAnimation(ring);
-    pulse.value = withSequence(
-      withTiming(1, { duration: motionMs.swell / 2, easing: Easing.bezier(...curveCurrent) }),
-      withTiming(0, { duration: motionMs.swell / 2, easing: Easing.bezier(...curveCurrent) })
-    );
-    ring.value = 0;
-    ring.value = withTiming(1, { duration: WAVEFRONT_CROSS_MS, easing: Easing.linear });
-
-    [wave0, wave1, wave2].forEach((rider, index) => {
-      const plan = plans[index];
-      cancelAnimation(rider);
-      rider.value = 0;
-      if (!plan) return;
-      // No return trip: the front reaches the element and carries it off.
-      rider.value = withDelay(
-        plan.delayMs,
-        withTiming(1, { duration: plan.durationMs, easing: curve.sink })
-      );
-    });
-
-    // The ground outlives the riders by one crossing, then ebbs.
-    // `WAVEFRONT_CROSS_MS + ebb` is exactly `wavefrontExitMs(false)`.
     overlayOpacity.value = withDelay(
-      WAVEFRONT_CROSS_MS,
+      holdMs,
       withTiming(0, { duration: motionMs.ebb, easing: curve.sink }, (finished) => {
         if (finished) {
           runOnJS(finishExit)();
         }
       })
     );
-    const fallback = setTimeout(finishExit, wavefrontExitMs(false));
+
+    // The hard bound, unchanged in job: a wallet may never be stranded on a
+    // wait by an animation callback that never arrives. It is the worst case of
+    // the plan above, so it can only ever fire *after* the animation would have.
+    const fallback = setTimeout(finishExit, wavefrontExitMs(isReduceMotionEnabled));
     return () => clearTimeout(fallback);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, waves, plans, overlayOpacity, wave0, wave1, wave2, isReduceMotionEnabled]);
@@ -595,7 +607,7 @@ export function LoadingScreen({
     <Animated.View style={[styles.overlay, overlayStyle]}>
       <LinearGradient
         colors={[colors.background.primary, colors.background.secondary]}
-        style={[styles.container, { paddingBottom: bottomOffset }]}
+        style={styles.container}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         onLayout={measureFrame}
@@ -673,7 +685,7 @@ export function LoadingScreen({
               that shows the front takes real time to get there. */}
           {showTips && resolvedTips.length > 0 && (
             <Animated.View
-              style={[styles.tipsContainer, tipsWave]}
+              style={[styles.tipsContainer, { bottom: 80 + bottomOffset }, tipsWave]}
               onLayout={riderLayoutHandlers[2]}
             >
               <Text style={styles.tipLabel}>{t('general.tip', 'Tip')}</Text>
@@ -704,11 +716,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  /**
+   * The wave's coordinate space, and it has to be **exactly the frame**.
+   *
+   * It carried `paddingHorizontal: spacing['2xl']`, and that single line was
+   * the miscentring product saw on the device: Yoga resolves a percentage
+   * `left` on an absolutely-positioned child against the parent's *content*
+   * width (width minus padding) but lays it out from the parent's *border-box*
+   * edge, so `left: '50%'` landed the emitter at `(W − 2·24)/2` instead of
+   * `W/2` — 24dp to the left, measured at 73px on a 1280px-wide 3× capture.
+   * The words and the tips were unaffected because they set explicit `left` and
+   * `right` insets rather than a percentage, which is exactly why the title
+   * looked centred next to a mark that was not.
+   *
+   * The padding was also dead weight: every child here is absolutely positioned
+   * and carries its own horizontal inset. Nothing may reintroduce it — the
+   * emitter's centre is both the visual centre of the screen and the origin the
+   * whole front is measured from.
+   */
   content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing['2xl'],
   },
   /**
    * Pinned to start below the surface's centre point. `top: '50%'` plus the
@@ -761,9 +790,15 @@ const styles = StyleSheet.create({
   crest: {
     position: 'absolute',
   },
+  /**
+   * `bottomOffset` clears the floating chrome, and it is applied *here* rather
+   * than as padding on the container. As container padding it shortened the
+   * surface the emitter centres itself in, pushing the mark up by half the
+   * offset on exactly the screen where the wave matters most — the transaction
+   * wait. The chrome only ever needed the tips out of its way.
+   */
   tipsContainer: {
     position: 'absolute',
-    bottom: 80,
     left: 24,
     right: 24,
     alignItems: 'center',

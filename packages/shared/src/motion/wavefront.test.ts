@@ -14,7 +14,11 @@ import { componentSizes } from '../theme/spacing';
 import {
   WAVEFRONT_CROSS_MS,
   WAVEFRONT_MIN_AMPLITUDE,
+  WAVEFRONT_PASS_MS,
+  WAVEFRONT_PERIOD_MS,
+  WAVEFRONT_REST_MS,
   planWavefront,
+  planWavefrontExit,
   wavefrontExitMs,
   wavefrontRadius,
 } from './wavefront';
@@ -62,12 +66,47 @@ describe('planWavefront — delay is distance', () => {
     expect(plan?.delayMs).toBe(WAVEFRONT_CROSS_MS);
   });
 
-  it('passes each element over `swell`, the same curve for everyone', () => {
+  it('passes each element over `drift`, the same curve for everyone', () => {
     const near = planWavefront({ x: 190, y: 300 }, origin, bounds, false);
     const far = planWavefront({ x: 360, y: 600 }, origin, bounds, false);
 
-    expect(near?.durationMs).toBe(motionMs.swell);
-    expect(far?.durationMs).toBe(motionMs.swell);
+    expect(near?.durationMs).toBe(motionMs.drift);
+    expect(far?.durationMs).toBe(motionMs.drift);
+  });
+});
+
+/**
+ * The synchronisation the whole effect rests on, and the one product caught by
+ * eye: *"los componentes cuando rebotan no lo hacen cuando pasa la onda, sino
+ * cuando ya desaparece."* A rider started at the moment the crest arrives peaks
+ * half a pass later, by which time the crest is `PASS/2 · c` further out. The
+ * displacement has to be *centred* on the arrival, not begun by it.
+ */
+describe('planWavefront — the rider peaks as the crest passes it', () => {
+  it('starts each rider half a pass before the front reaches it', () => {
+    const rider = { x: 360, y: 600 };
+    const plan = planWavefront(rider, origin, bounds, false)!;
+
+    expect(plan.startMs + plan.durationMs / 2).toBeCloseTo(plan.delayMs, 0);
+  });
+
+  it('never starts a rider before the emission, however close to the mark it sits', () => {
+    const plan = planWavefront(origin, origin, bounds, false)!;
+
+    expect(plan.startMs).toBe(0);
+    expect(plan.startMs).toBeLessThanOrEqual(plan.delayMs);
+  });
+
+  it('keeps the start monotonic in distance, like the arrival it is offset from', () => {
+    const rMax = wavefrontRadius(origin, bounds);
+    const starts = [0.25, 0.5, 0.75, 1].map(
+      (fraction) =>
+        planWavefront({ x: 180, y: 300 + rMax * fraction }, origin, bounds, false)!.startMs
+    );
+
+    for (let index = 1; index < starts.length; index += 1) {
+      expect(starts[index]).toBeGreaterThan(starts[index - 1]);
+    }
   });
 });
 
@@ -116,20 +155,87 @@ describe('planWavefront — reduce motion', () => {
   });
 });
 
-describe('wavefrontExitMs', () => {
-  it('holds for one crossing plus an ebb, and never for a pulse cycle', () => {
-    expect(wavefrontExitMs(false)).toBe(motionMs.rise + motionMs.ebb);
-    expect(wavefrontExitMs(false)).toBe(600);
-    expect(wavefrontExitMs(false)).toBeLessThan(motionMs.pulseCycle);
+describe('wavefrontExitMs — the hard upper bound', () => {
+  it('bounds the handoff at one whole crossing plus an ebb', () => {
+    expect(wavefrontExitMs(false)).toBe(WAVEFRONT_CROSS_MS + motionMs.ebb);
+    expect(wavefrontExitMs(false)).toBe(1580);
+  });
+
+  it('is never shorter than any exit the wave can actually plan', () => {
+    // Sweep the whole period: the timer that guards against a dropped animation
+    // callback may not fire before the animation it is guarding.
+    for (let elapsed = 0; elapsed <= WAVEFRONT_PERIOD_MS * 3; elapsed += 17) {
+      expect(planWavefrontExit(elapsed, false).exitMs).toBeLessThanOrEqual(wavefrontExitMs(false));
+    }
   });
 
   it('does not make a reduce-motion user wait out a wave they cannot see', () => {
     expect(wavefrontExitMs(true)).toBe(motionMs.ebb);
     expect(wavefrontExitMs(true)).toBeLessThan(wavefrontExitMs(false));
   });
+});
 
-  it('stays under the one-second ceiling for an uninterrupted flow of thought', () => {
-    expect(wavefrontExitMs(false)).toBeLessThanOrEqual(1000);
+/**
+ * The exit, which is now *derived from where the front is* rather than a
+ * constant. Product, 2026-08: the next screen may not appear until the last
+ * wave has left — *"justo cuando el agua está calma. Esto aplica siempre."*
+ */
+describe('planWavefrontExit — hand off on calm water', () => {
+  it('waits out the whole crossing when the work resolves on an emission', () => {
+    expect(planWavefrontExit(0, false)).toEqual({
+      holdMs: WAVEFRONT_CROSS_MS,
+      exitMs: WAVEFRONT_CROSS_MS + motionMs.ebb,
+    });
+  });
+
+  it('waits only for what the front has left to travel', () => {
+    const { holdMs } = planWavefrontExit(WAVEFRONT_CROSS_MS / 4, false);
+
+    expect(holdMs).toBe(WAVEFRONT_CROSS_MS * 0.75);
+  });
+
+  it('hands off immediately when the water is already calm', () => {
+    // Anywhere in the rest between two emissions there is nothing on screen to
+    // wait for, and inventing a closing wave would be pure latency.
+    const midRest = WAVEFRONT_CROSS_MS + WAVEFRONT_REST_MS / 2;
+
+    expect(planWavefrontExit(midRest, false)).toEqual({ holdMs: 0, exitMs: motionMs.ebb });
+  });
+
+  it('reads the same on the tenth emission as on the first', () => {
+    const first = planWavefrontExit(200, false);
+    const tenth = planWavefrontExit(WAVEFRONT_PERIOD_MS * 10 + 200, false);
+
+    expect(tenth).toEqual(first);
+  });
+
+  it('never lets the hold outlive the front it is waiting for', () => {
+    for (let elapsed = 0; elapsed <= WAVEFRONT_PERIOD_MS * 2; elapsed += 13) {
+      const { holdMs } = planWavefrontExit(elapsed, false);
+      expect(holdMs).toBeGreaterThanOrEqual(0);
+      expect(holdMs).toBeLessThanOrEqual(WAVEFRONT_CROSS_MS);
+    }
+  });
+
+  it('keeps the short path for reduce motion, at every phase', () => {
+    for (let elapsed = 0; elapsed <= WAVEFRONT_PERIOD_MS; elapsed += 37) {
+      expect(planWavefrontExit(elapsed, true)).toEqual({ holdMs: 0, exitMs: motionMs.ebb });
+    }
+  });
+
+  it('treats an unmeasured elapsed time as a fresh emission, never as a negative wait', () => {
+    expect(planWavefrontExit(-1, false).holdMs).toBe(WAVEFRONT_CROSS_MS);
+  });
+});
+
+describe('the loop keeps one front in flight at a time', () => {
+  it('leaves still water between the front leaving and the next emission', () => {
+    expect(WAVEFRONT_PERIOD_MS).toBe(WAVEFRONT_CROSS_MS + WAVEFRONT_REST_MS);
+    expect(WAVEFRONT_REST_MS).toBeGreaterThan(0);
+  });
+
+  it('gives a rider time to be carried rather than flicked', () => {
+    expect(WAVEFRONT_PASS_MS).toBeLessThan(WAVEFRONT_CROSS_MS);
   });
 });
 
