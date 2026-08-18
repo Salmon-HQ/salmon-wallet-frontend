@@ -1,23 +1,31 @@
 /**
  * Welcome — the flow's entry point, on the onboarding slot grid.
  *
- * Two things changed and both were visible from across the room. The title
- * used to render *above* the mark — the only screen in the flow that did — so
- * the drawn wordmark is the `title` slot's content now and the welcome line
- * is gone. And the primary action used to sit on top of the secondary; it is
- * bottom-most (spec 013, decision 1), which is what pins its Y for free.
+ * The brand appears once, as the mark alone — the wordmark came off this
+ * screen at the owner's request (2026-08-18: only the fish, no "Salmon"
+ * text), mirroring mobile — so the `mark` slot carries the screen's
+ * accessible name and the `title` band stays reserved and empty. The primary
+ * action is bottom-most (spec 013, decision 1), which pins its Y for free.
  *
  * The third action, offered only when accounts already exist, is a text
  * affordance in `assist`: the reserved `secondary` band holds one control, and
  * a third button would be the one place in the flow where the grid overflows.
  */
+import { wordmarkText } from '@salmon/shared';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Wordmark } from '../BrandMark';
+import { BrandMark } from '../BrandMark';
 import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { WaterColumn } from '../WaterColumn';
 import type { SelectOptionsPageProps } from './types';
+
+/**
+ * The welcome mark draws at the loading screen's size — the owner's reference
+ * is "the waiting ink" (mobile `MARK_SIZE`), declared to apply to the DOM too
+ * — and will be tuned by eye.
+ */
+const WELCOME_MARK_SIZE = 96;
 
 export function SelectOptionsPage({
   onCreateWallet,
@@ -32,13 +40,22 @@ export function SelectOptionsPage({
       testID="welcome-screen"
       background={<WaterColumn />}
       /*
-        The product's name, drawn rather than set — mirroring the mobile
-        welcome screen (product, 2026-08-18: "¿y si agrandamos Salmon y
-        sacamos el Welcome?"). No description: the wordmark says what the
-        screen is, and the band stays reserved and empty so everything below
-        it holds its Y.
+        The brand alone (product, 2026-08-18): the fish, no wordmark. The mark
+        slot centres its children itself. The heading wrapper keeps the screen
+        named — the mark is the only thing on it, so the reader announces
+        "Salmon" as the heading the eye recognises. No title, no description:
+        both bands stay reserved and empty so everything below holds its Y.
       */
-      title={<Wordmark testID="welcome-wordmark" />}
+      mark={
+        <div
+          role="heading"
+          aria-level={1}
+          aria-label={wordmarkText}
+          data-testid="welcome-brand-mark"
+        >
+          <BrandMark size={WELCOME_MARK_SIZE} />
+        </div>
+      }
       assist={
         hasAccounts && onAccessExisting ? (
           <TextButton onClick={onAccessExisting} testID="select-access-existing-button">
