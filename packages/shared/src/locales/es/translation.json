@@ -806,6 +806,7 @@
     "selected_token": "Token seleccionado: {{name}}",
     "loading_token_list": "Cargando lista de tokens",
     "go_back": "Volver",
+    "step_progress": "Paso {{current}} de {{total}}",
     "send_tokens": "Enviar tokens",
     "receive_tokens": "Recibir tokens",
     "view_activity": "Ver actividad",

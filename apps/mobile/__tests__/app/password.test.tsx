@@ -61,7 +61,14 @@ jest.mock('../../src/components', () => {
 
   const { View } = require('react-native');
 
+  // The real ReservedSlot: the reservation behavior is what the tests below
+  // assert, so it must not be stubbed away.
+  const { ReservedSlot } = jest.requireActual(
+    '../../src/components/OnboardingLayout/ReservedSlot'
+  );
+
   return {
+    ReservedSlot,
     LoadingScreen: () => null,
     OnboardingTitle: ({ children }: { children?: React.ReactNode }) =>
       React.createElement(Text, null, children),
@@ -238,5 +245,28 @@ describe('PasswordScreen', () => {
 
     expect(screen.getByText('wallet.create.invalid_password')).toBeTruthy();
     expect(mockCreateAccount).not.toHaveBeenCalled();
+  });
+
+  /**
+   * "Nothing moves under the finger": the strength meter's slot is reserved
+   * from the first frame (mounted but hidden inside ReservedSlot), so typing
+   * the first character reveals it in place instead of shoving the
+   * confirmation field down.
+   */
+  it('reserves the strength meter slot before the first keystroke', async () => {
+    render(<PasswordScreen />);
+
+    await waitFor(() => {
+      expect(mockGetStashItem).toHaveBeenCalled();
+    });
+
+    // Mounted from the first frame — hidden (out of the a11y tree), not absent.
+    expect(screen.getByText('strength:medium', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByText('strength:medium')).toBeNull();
+
+    fireEvent.changeText(screen.getByPlaceholderText('wallet.create.passwordNew'), 'a');
+
+    // The same slot, now revealed — nothing was added to the tree.
+    expect(screen.getByText('strength:medium')).toBeTruthy();
   });
 });

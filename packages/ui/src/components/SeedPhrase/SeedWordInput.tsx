@@ -45,7 +45,8 @@ const StyledInput = styled(InputBase)<{ $borderColor: string }>(({ $borderColor 
   paddingLeft: spacing.lg,
   paddingRight: spacing.lg,
   color: colors.text.primary,
-  fontFamily: fontFamily.sans,
+  // Seed Phrase Rule: the typed word renders in the mono face.
+  fontFamily: fontFamily.mono,
   fontSize: fontSize.md,
   transition: `border-color ${duration.normal} ${easing.ease}`,
   '& .MuiInputBase-input': {
@@ -113,12 +114,14 @@ const IndexDot = styled('span')({
   color: semantic.text.accent,
 });
 
+// The typed word is Geist Mono (Seed Phrase Rule) — a seed word must be
+// readable character by character, exactly like a displayed one.
 const CompactInput = styled(InputBase)({
   flex: 1,
   minWidth: 0,
   height: '100%',
   color: colors.text.primary,
-  fontFamily: fontFamily.sans,
+  fontFamily: fontFamily.mono,
   fontSize: fontSize.base,
   '& .MuiInputBase-input': {
     padding: 0,

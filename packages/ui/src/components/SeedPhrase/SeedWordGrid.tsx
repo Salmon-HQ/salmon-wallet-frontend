@@ -40,18 +40,24 @@ const WordCard = styled(Box)({
   gap: spacing.xs,
 });
 
+/**
+ * Seed Phrase Rule (DESIGN.md): cell numbers are `text.tertiary` at label
+ * size so they are never mistaken for part of the phrase — the salmon accent
+ * stays out of the numbers.
+ */
 const WordIndex = styled(Typography)({
   ...tabularNums.css,
-  color: colors.accent.primary,
+  color: colors.text.tertiary,
   fontFamily: fontFamily.sans,
-  fontWeight: fontWeight.bold,
+  fontWeight: fontWeight.medium,
   fontSize: fontSize.sm,
   minWidth: componentSizes.iconSizeSmall,
 });
 
+// Seed words are Geist Mono (Seed Phrase Rule) — read character by character.
 const WordText = styled(Typography)({
   color: colors.text.primary,
-  fontFamily: fontFamily.sans,
+  fontFamily: fontFamily.mono,
   fontSize: fontSize.base,
 });
 

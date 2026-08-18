@@ -28,6 +28,13 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../test-utils/themeTokens'),
 }));
 
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, opts?: Record<string, unknown>) =>
+      opts ? `${key}:${opts.current}/${opts.total}` : key,
+  }),
+}));
+
 import { colors, componentSizes } from '@salmon/shared';
 import { StepIndicator } from './StepIndicator';
 
@@ -83,5 +90,10 @@ describe('StepIndicator', () => {
     // not.
     const stride = componentSizes.stepDotSize + componentSizes.stepDotGap;
     expect(style.transform).toEqual([{ translateX: stride }]);
+  });
+
+  it('announces the position to screen readers — the dots alone say nothing', () => {
+    const tree = render(<StepIndicator totalSteps={4} currentStep={2} />);
+    expect(tree.getByLabelText('accessibility.step_progress:2/4')).toBeTruthy();
   });
 });

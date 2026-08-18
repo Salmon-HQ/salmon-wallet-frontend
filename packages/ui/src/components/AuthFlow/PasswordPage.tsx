@@ -25,7 +25,12 @@ import { PrimaryButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
 import { ScreenHeader } from '../ScreenHeader';
-import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
+import {
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
+  ReservedSlot,
+} from '../OnboardingLayout';
 import { WaterColumn } from '../WaterColumn';
 import { CREATE_FLOW_STEPS } from './CreateWalletPage';
 import type { PasswordPageProps } from './types';
@@ -258,10 +263,15 @@ export function PasswordPage({
                 editable={!isLoading && !isChecking}
                 onSubmitEditing={showSingleInput ? handleSubmit : undefined}
               />
-              {!showSingleInput && password.length > 0 && (
-                <StrengthContainer>
-                  <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
-                </StrengthContainer>
+              {/* Slot reserved from the first frame — typing the first
+                  character reveals the meter instead of shoving the
+                  confirmation field down. */}
+              {!showSingleInput && (
+                <ReservedSlot visible={password.length > 0}>
+                  <StrengthContainer>
+                    <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
+                  </StrengthContainer>
+                </ReservedSlot>
               )}
             </InputContainer>
 
@@ -279,7 +289,11 @@ export function PasswordPage({
               </InputContainer>
             )}
 
-            {error && <ErrorText>{error}</ErrorText>}
+            {/* Reserved for the same reason as the strength bar: a failure
+                message must not shove the layout when it lands. */}
+            <ReservedSlot visible={!!error}>
+              <ErrorText>{error ?? ' '}</ErrorText>
+            </ReservedSlot>
           </>
         }
         assist={

@@ -49,6 +49,9 @@ export function ScreenHeader({
         onPress={onBack}
         disabled={!onBack || backDisabled}
         style={styles.backButton}
+        // 40pt visual box + 2pt slop per side = the 44pt minimum target
+        // (DESIGN.md: hit-slop, never inflated visual size).
+        hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
       >
         {onBack && (
           <Ionicons

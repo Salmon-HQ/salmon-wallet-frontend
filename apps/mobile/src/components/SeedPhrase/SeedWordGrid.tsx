@@ -63,16 +63,16 @@ const styles = StyleSheet.create({
    * never reaches the phrase. Nested inside the index's existing box so the
    * word beside it does not move.
    *
-   * On this screen the index is already `accent.primary`, so the period simply
-   * continues it — unlike the entry cell, where the number is `text.tertiary`
-   * and only the period carries the accent.
+   * As in the entry cell, the number is `text.tertiary` (Seed Phrase Rule:
+   * never mistakable for part of the phrase) and only the period carries the
+   * accent.
    */
   indexDot: {
     color: colors.accent.primary,
   },
   wordIndex: {
-    color: colors.accent.primary,
-    fontFamily: fontFamilyNative.bold,
+    color: colors.text.tertiary,
+    fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.sm,
     minWidth: 20,
   },

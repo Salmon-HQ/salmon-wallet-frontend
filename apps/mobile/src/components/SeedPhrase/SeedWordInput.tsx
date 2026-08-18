@@ -220,11 +220,13 @@ const styles = StyleSheet.create({
     minWidth: spacing.lg,
     textAlign: 'right',
   },
+  // The typed word is Geist Mono (Seed Phrase Rule) — a seed word must be
+  // readable character by character, exactly like a displayed one.
   compactInput: {
     flex: 1,
     height: '100%',
     color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
+    fontFamily: fontFamilyNative.mono,
     fontSize: fontSize.base,
     padding: 0,
   },
@@ -237,7 +239,8 @@ const styles = StyleSheet.create({
     borderRadius: componentSizes.inputRadius,
     paddingHorizontal: spacing.lg,
     color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
+    // Seed Phrase Rule: the typed word renders in the mono face.
+    fontFamily: fontFamilyNative.mono,
     fontSize: fontSize.md,
   },
 });

@@ -66,6 +66,7 @@ import {
   PasswordInput,
   PasswordStrengthBar,
   PrimaryButton,
+  ReservedSlot,
   ScreenHeader,
 } from '../../src/components';
 
@@ -368,13 +369,16 @@ export default function PasswordScreen() {
               {/*
                 Feedback about the field above it, so it sits against that
                 field rather than competing with the terms line for the assist
-                band. It appears and disappears as the user types, which is
-                exactly why it belongs in `body` — the give in the grid.
+                band. Its slot is reserved from the first frame — "nothing
+                moves under the finger": typing the first character reveals
+                the meter instead of shoving the confirmation field down.
               */}
-              {!showSingleInput && password.length > 0 && (
-                <View style={styles.strengthContainer}>
-                  <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
-                </View>
+              {!showSingleInput && (
+                <ReservedSlot visible={password.length > 0}>
+                  <View style={styles.strengthContainer}>
+                    <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
+                  </View>
+                </ReservedSlot>
               )}
             </View>
 
@@ -392,7 +396,11 @@ export default function PasswordScreen() {
               </View>
             )}
 
-            {error && <Text style={styles.generalError}>{error}</Text>}
+            {/* Reserved for the same reason as the strength bar: a failure
+                message must not shove the layout when it lands. */}
+            <ReservedSlot visible={!!error}>
+              <Text style={styles.generalError}>{error ?? ' '}</Text>
+            </ReservedSlot>
           </>
         }
         assist={

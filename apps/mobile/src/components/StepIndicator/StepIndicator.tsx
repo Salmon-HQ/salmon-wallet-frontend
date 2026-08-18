@@ -12,6 +12,7 @@
  */
 import { View, StyleSheet } from 'react-native';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -26,6 +27,7 @@ import type { StepIndicatorProps } from './types';
 const stride = componentSizes.stepDotSize + componentSizes.stepDotGap;
 
 export function StepIndicator({ totalSteps, currentStep }: StepIndicatorProps) {
+  const { t } = useTranslation();
   const isReduceMotionEnabled = useReducedMotion();
   // Zero-indexed position of the salmon dot, in dots.
   const position = useSharedValue(Math.max(0, currentStep - 1));
@@ -42,7 +44,17 @@ export function StepIndicator({ totalSteps, currentStep }: StepIndicatorProps) {
   }));
 
   return (
-    <View style={styles.container}>
+    // One accessible element: the dots are decoration, the position is the
+    // content — a screen reader hears "Step 2 of 4", not four unlabeled views.
+    <View
+      style={styles.container}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={t('accessibility.step_progress', {
+        current: currentStep,
+        total: totalSteps,
+      })}
+    >
       {/* The track: every dot, inactive, and none of them ever moves. */}
       <View style={styles.track}>
         {Array.from({ length: totalSteps }, (_, index) => (

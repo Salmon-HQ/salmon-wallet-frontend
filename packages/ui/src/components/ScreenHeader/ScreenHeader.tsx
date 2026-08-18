@@ -27,6 +27,17 @@ const BackButton = styled(IconButton)({
   width: componentSizes.backButtonSize,
   height: componentSizes.backButtonSize,
   padding: 0,
+  position: 'relative',
+  // 40px visual box + 2px per side of invisible slop = the 44px minimum
+  // click target (DESIGN.md: hit-slop, never inflated visual size).
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    bottom: -2,
+    left: -2,
+  },
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-start',
