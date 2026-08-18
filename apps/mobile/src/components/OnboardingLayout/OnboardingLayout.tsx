@@ -57,7 +57,7 @@
  */
 import { resolveOnboardingGrid, spacing, contentPadding } from '@salmon/shared';
 import type { OnboardingLayoutPropsBase } from '@salmon/shared';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -71,6 +71,12 @@ export interface OnboardingLayoutProps extends OnboardingLayoutPropsBase {
    * recovery phrase — and everything else leaves the water column showing.
    */
   backgroundColor?: string;
+  /**
+   * Rendered behind the stack — the water column, on the screens that carry
+   * it. Mirrors the DOM twin's `background` prop: painted absolute-fill over
+   * `backgroundColor` and under every slot, and it never takes a touch.
+   */
+  background?: ReactNode;
 }
 
 export function OnboardingLayout({
@@ -85,6 +91,7 @@ export function OnboardingLayout({
   variant = 'identity',
   scrollBody = false,
   backgroundColor,
+  background,
   testID,
 }: OnboardingLayoutProps) {
   // Measured rather than read off `Dimensions`: the grid has to react to the
@@ -168,73 +175,87 @@ export function OnboardingLayout({
   );
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, backgroundColor ? { backgroundColor } : null]}
-      edges={['top', 'bottom']}
-      testID={testID}
-    >
-      <View style={styles.column} onLayout={onLayout} testID="onboarding-column">
-        <View style={[styles.stack, { height, marginTop: slack / 2 }]} testID="onboarding-stack">
-          <View style={[styles.slot, { height: grid.chrome }]} testID="onboarding-slot-chrome">
-            {chrome}
-          </View>
+    // The ground is painted by this outer view, not by the SafeAreaView: an
+    // absolute-fill `background` inside the SafeAreaView would be inset by the
+    // safe-area padding, leaving unpainted bars at the notch and home
+    // indicator. Out here it runs edge to edge, exactly like the DOM twin's.
+    <View style={[styles.root, backgroundColor ? { backgroundColor } : null]} testID={testID}>
+      {background != null && (
+        <View
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+          testID="onboarding-background"
+        >
+          {background}
+        </View>
+      )}
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <View style={styles.column} onLayout={onLayout} testID="onboarding-column">
+          <View style={[styles.stack, { height, marginTop: slack / 2 }]} testID="onboarding-stack">
+            <View style={[styles.slot, { height: grid.chrome }]} testID="onboarding-slot-chrome">
+              {chrome}
+            </View>
 
-          {/*
+            {/*
             Reserved empty run, never a slot. A family that needs less `body`
             than its siblings gives the difference back here rather than
             leaving it as a hole under the description — which is what drops
             the mark, title and description into the middle of the region they
             share with `body`. Zero on the families whose `body` is full.
           */}
-          {grid.lead > 0 && <View style={{ height: grid.lead }} testID="onboarding-lead" />}
+            {grid.lead > 0 && <View style={{ height: grid.lead }} testID="onboarding-lead" />}
 
-          {!dropMark && (
-            <View style={[styles.centered, { height: grid.mark }]} testID="onboarding-slot-mark">
-              {mark ?? <BrandMark size={grid.markSize} />}
-            </View>
-          )}
+            {!dropMark && (
+              <View style={[styles.centered, { height: grid.mark }]} testID="onboarding-slot-mark">
+                {mark ?? <BrandMark size={grid.markSize} />}
+              </View>
+            )}
 
-          <View
-            style={[styles.padded, styles.title, { minHeight: grid.title }]}
-            testID="onboarding-slot-title"
-          >
-            {title}
-          </View>
-
-          {!dropDescription && (
             <View
-              style={[styles.padded, styles.description, { minHeight: grid.description }]}
-              testID="onboarding-slot-description"
+              style={[styles.padded, styles.title, { minHeight: grid.title }]}
+              testID="onboarding-slot-title"
             >
-              {description}
+              {title}
             </View>
-          )}
 
-          <View style={[styles.body, { height: grid.body }]} testID="onboarding-slot-body">
-            {bodyContent}
-          </View>
+            {!dropDescription && (
+              <View
+                style={[styles.padded, styles.description, { minHeight: grid.description }]}
+                testID="onboarding-slot-description"
+              >
+                {description}
+              </View>
+            )}
 
-          <View style={[styles.padded, { height: grid.assist }]} testID="onboarding-slot-assist">
-            {assist}
-          </View>
+            <View style={[styles.body, { height: grid.body }]} testID="onboarding-slot-body">
+              {bodyContent}
+            </View>
 
-          <View
-            style={[styles.padded, { height: grid.secondary }]}
-            testID="onboarding-slot-secondary"
-          >
-            {secondary}
-          </View>
+            <View style={[styles.padded, { height: grid.assist }]} testID="onboarding-slot-assist">
+              {assist}
+            </View>
 
-          <View style={[styles.action, { height: grid.action }]} testID="onboarding-slot-action">
-            {action}
+            <View
+              style={[styles.padded, { height: grid.secondary }]}
+              testID="onboarding-slot-secondary"
+            >
+              {secondary}
+            </View>
+
+            <View style={[styles.action, { height: grid.action }]} testID="onboarding-slot-action">
+              {action}
+            </View>
           </View>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
   },

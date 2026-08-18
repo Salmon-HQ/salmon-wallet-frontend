@@ -58,7 +58,13 @@ jest.mock('@salmon/shared', () => ({
   componentSizes: { headerHeight: 56 },
   shadows: {
     topSheet: {},
-    header: { shadowColor: '#000', shadowOffset: {}, shadowOpacity: 0, shadowRadius: 0, elevation: 0 },
+    header: {
+      shadowColor: '#000',
+      shadowOffset: {},
+      shadowOpacity: 0,
+      shadowRadius: 0,
+      elevation: 0,
+    },
   },
   s: (value: number) => value,
   vs: (value: number) => value,
@@ -97,6 +103,23 @@ describe('GateContainer lock state', () => {
     // The close affordances of the dead panel must go with it.
     expect(queryByTestId('sheet-close-button')).toBeNull();
     expect(queryByTestId('header-content')).toBeNull();
+  });
+
+  it('goes transparent while locked so the lock content’s water shows, and only then', () => {
+    // The lock mounts its own ground (the water column); an opaque gate
+    // surface would paint a wall over it. The collapsed/settings/wallets
+    // states keep their opaque sheet — they sit over app content.
+    const surfaceColor = () => {
+      const style = renderGate('locked').getByTestId('gate-surface').props.style;
+      const flat = (Array.isArray(style) ? style : [style]).filter(Boolean);
+      return Object.assign({}, ...flat).backgroundColor;
+    };
+    expect(surfaceColor()).toBe('transparent');
+
+    const { getByTestId } = renderGate('collapsed');
+    const style = getByTestId('gate-surface').props.style;
+    const flat = (Array.isArray(style) ? style : [style]).filter(Boolean);
+    expect(Object.assign({}, ...flat).backgroundColor).toBe('#000');
   });
 
   it('unmounts the wallets panel when the app locks from the wallets state', () => {

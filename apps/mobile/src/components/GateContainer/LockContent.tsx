@@ -36,9 +36,10 @@ import {
 } from 'react-native';
 
 import { PrimaryButton, TextButton } from '../Button';
+import { DepthBackground } from '../DepthBackground';
 import { LoadingScreen } from '../LoadingScreen';
 import { OnboardingLayout, OnboardingTitle, ReservedSlot } from '../OnboardingLayout';
-import { WarningNotice } from '../WarningNotice';
+import { ScalesBackground } from '../ScalesBackground';
 import type { BiometricConfig } from './types';
 
 // ============================================================================
@@ -101,9 +102,10 @@ export function LockContent({
   } = useUnlockThrottle(locked);
   const throttled = throttleRemainingMs > 0;
 
-  // The throttle notice takes the unlock button's place, so a screen-reader
-  // user must not be left focused on a node that has just vanished. Focus
-  // follows the swap in both directions.
+  // The throttle notice appears in the assist band while the button goes
+  // dead. A screen-reader user is carried to the notice when it arrives and
+  // back to the button when the wait ends, so the state change is never
+  // silent.
   const throttleRef = useRef<View>(null);
   const unlockRef = useRef<View>(null);
   const wasThrottled = useRef(false);
@@ -314,6 +316,19 @@ export function LockContent({
       <OnboardingLayout
         testID="lock-screen"
         variant="credential"
+        /*
+          The lock carries the water column (DESIGN.md §the lock screen): the
+          same ground the swap task modal mounts — depth ramp, marine snow,
+          deep-field scales. The ground color sits under the ramp so nothing
+          behind the gate can ever show through while it paints.
+        */
+        backgroundColor={semantic.depth.column}
+        background={
+          <>
+            <DepthBackground />
+            <ScalesBackground variant="deepField" />
+          </>
+        }
         title={<OnboardingTitle>{t('lock.welcome_back')}</OnboardingTitle>}
         body={
           /*
@@ -323,6 +338,9 @@ export function LockContent({
             was already mildly alarmed. The bands stand either way now.
           */
           <ReservedSlot visible={showPasswordFallback}>
+            {/* Anchored to the top of the band, like the DOM twin — the band
+                is sized for two fields, and centring one field in it left it
+                floating over ~66pt of air. */}
             <View style={styles.inputContainer}>
               <TextInput
                 testID="lock-password-input"
@@ -344,20 +362,43 @@ export function LockContent({
                 autoCorrect={false}
                 returnKeyType="done"
               />
-              {/* Feedback about the field above it, so it sits against that
-                  field rather than displacing anything. */}
-              {error && <Text style={styles.errorText}>{error}</Text>}
+              {/* The escape hatch belongs to the field it escapes from, so it
+                  sits directly under it rather than in a band of its own. */}
+              <View style={styles.forgotRow}>
+                <TextButton
+                  testID="lock-forgot-password-button"
+                  onPress={handleForgotPassword}
+                  disabled={isLoading}
+                >
+                  {t('lock.forgot_password')}
+                </TextButton>
+              </View>
             </View>
           </ReservedSlot>
         }
         assist={
-          <TextButton
-            testID="lock-forgot-password-button"
-            onPress={handleForgotPassword}
-            disabled={isLoading}
-          >
-            {t('lock.forgot_password')}
-          </TextButton>
+          /*
+            The feedback band, as spec 013 FR-005 assigns it: the throttle
+            notice and the wrong-password error both land here, so neither
+            displaces the field above nor the button below. The throttle wins
+            when both hold — it is the one that explains why typing is off.
+          */
+          throttled ? (
+            <View
+              ref={throttleRef}
+              accessible
+              accessibilityLiveRegion="polite"
+              testID="lock-throttle-notice"
+            >
+              <Text style={styles.throttleText}>
+                {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
+              </Text>
+            </View>
+          ) : error ? (
+            <Text testID="lock-error" accessibilityLiveRegion="polite" style={styles.errorText}>
+              {error}
+            </Text>
+          ) : null
         }
         secondary={
           <ReservedSlot visible={!!canUseBiometric && showPasswordFallback}>
@@ -375,31 +416,22 @@ export function LockContent({
         }
         action={
           /*
-            While the wallet is throttled the button cannot be pressed anyway,
-            so the notice takes its place: nothing moves, and the user is told
-            why — and for how long — in the exact spot they were about to
-            press. Focus follows the swap in both directions.
+            The button holds its spot in every state. While throttled it is
+            disabled and the assist band above says why — and for how long —
+            so nothing moves. Focus follows the notice in both directions.
           */
-          throttled ? (
-            <View ref={throttleRef} accessible accessibilityLiveRegion="polite">
-              <WarningNotice tone="warning" title={t('lock.throttled_title')}>
-                {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
-              </WarningNotice>
+          <ReservedSlot visible={showPasswordFallback}>
+            <View ref={unlockRef}>
+              <PrimaryButton
+                testID="lock-unlock-button"
+                onPress={handleUnlock}
+                disabled={unlockDisabled}
+                loading={isLoading}
+              >
+                {t('lock.unlock')}
+              </PrimaryButton>
             </View>
-          ) : (
-            <ReservedSlot visible={showPasswordFallback}>
-              <View ref={unlockRef}>
-                <PrimaryButton
-                  testID="lock-unlock-button"
-                  onPress={handleUnlock}
-                  disabled={unlockDisabled}
-                  loading={isLoading}
-                >
-                  {t('lock.unlock')}
-                </PrimaryButton>
-              </View>
-            </ReservedSlot>
-          )
+          </ReservedSlot>
         }
       />
 
@@ -419,9 +451,11 @@ export function LockContent({
 
 const styles = StyleSheet.create({
   inputContainer: {
-    flex: 1,
     width: '100%',
-    justifyContent: 'center',
+  },
+  forgotRow: {
+    alignItems: 'center',
+    marginTop: spacing.sm,
   },
   /**
    * The system input, not a variant of it. The field used to sit at
@@ -444,8 +478,18 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.caption,
     lineHeight: fontSize.caption * lineHeight.normal,
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    textAlign: 'center',
+  },
+  /**
+   * The error's shape in the warning ink — a message, not a card. The full
+   * WarningNotice is ~94pt against the assist band's 60, and a card that
+   * overflows its band moves the very controls the grid exists to pin.
+   */
+  throttleText: {
+    color: semantic.status.warning,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: fontSize.caption,
+    lineHeight: fontSize.caption * lineHeight.normal,
     textAlign: 'center',
   },
 });

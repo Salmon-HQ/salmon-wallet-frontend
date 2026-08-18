@@ -18,7 +18,7 @@
  * where the mark is the point.
  */
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { Text, View } from 'react-native';
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -291,6 +291,26 @@ describe('OnboardingLayout', () => {
     const flat = (Array.isArray(stackStyle) ? stackStyle : [stackStyle]).filter(Boolean);
     expect(Object.assign({}, ...flat).height).toBe(COLUMN - KEYBOARD);
     expect(grid.stack).toBeGreaterThan(COLUMN - KEYBOARD);
+  });
+
+  it('paints `background` behind the stack, absolute-fill and untouchable', () => {
+    // The lock screen mounts the water column through this prop, exactly as
+    // the DOM twin does. It must fill the whole ground — outside the
+    // safe-area padding — and never swallow a touch meant for a control.
+    render(<OnboardingLayout background={<View testID="water" />} title={<Text>Salmon</Text>} />);
+
+    const host = screen.getByTestId('onboarding-background');
+    expect(within(host).getByTestId('water')).toBeTruthy();
+    expect(host.props.pointerEvents).toBe('none');
+    const flat = (Array.isArray(host.props.style) ? host.props.style : [host.props.style]).filter(
+      Boolean
+    );
+    expect(Object.assign({}, ...flat).position).toBe('absolute');
+  });
+
+  it('mounts no background host when none is passed', () => {
+    render(<OnboardingLayout />);
+    expect(screen.queryByTestId('onboarding-background')).toBeNull();
   });
 
   it('sits the mark at the bottom of its band, tight to the title', () => {

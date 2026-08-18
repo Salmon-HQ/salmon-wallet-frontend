@@ -219,10 +219,15 @@ export function GateContainer({
         style={[styles.gate, gateAnimatedStyle]}
         onLayout={(e) => setGateHeight(e.nativeEvent.layout.height)}
       >
-        {/* Shared visual surface — solid color, no scales */}
+        {/* Shared visual surface — solid color, no scales. While locked the
+            lock content mounts its own ground (the water column), so the
+            surface goes transparent rather than painting a wall over it; the
+            collapsed/settings/wallets states keep their opaque sheet. */}
         <View
+          testID="gate-surface"
           style={[
             styles.surface,
+            state === 'locked' && styles.surfaceLocked,
             DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.gateSurface },
           ]}
         >
@@ -335,6 +340,9 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: borderRadius['2xl'],
     borderBottomRightRadius: borderRadius['2xl'],
     ...shadows.topSheet,
+  },
+  surfaceLocked: {
+    backgroundColor: 'transparent',
   },
   lockContentContainer: {
     flex: 1,

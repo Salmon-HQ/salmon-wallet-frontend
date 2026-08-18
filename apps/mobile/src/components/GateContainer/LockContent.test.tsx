@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react-native';
 import { Alert, AppState } from 'react-native';
 
 const mockAlert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
@@ -66,6 +66,22 @@ jest.mock('react-native-safe-area-context', () => ({
 jest.mock('../LoadingScreen', () => ({
   LoadingScreen: () => null,
 }));
+
+// The water column's two layers lean on react-native-svg and the full
+// Reanimated runtime. What this file must prove is that the lock *mounts*
+// them — the drawing has its own tests.
+jest.mock('../DepthBackground', () => {
+  const { View } = jest.requireActual('react-native');
+  return { DepthBackground: () => <View testID="depth-background" /> };
+});
+jest.mock('../ScalesBackground', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    ScalesBackground: ({ variant }: { variant?: string }) => (
+      <View testID="scales-background" accessibilityLabel={variant} />
+    ),
+  };
+});
 
 import { LockContent } from './LockContent';
 
@@ -205,16 +221,57 @@ describe('LockContent', () => {
 
     // Label, not just a dead control.
     await waitFor(() => {
-      expect(screen.getByText('lock.throttled_title')).toBeTruthy();
+      expect(screen.getByTestId('lock-throttle-notice')).toBeTruthy();
     });
     expect(screen.getByTestId('lock-password-input').props.editable).toBe(false);
 
-    // The notice takes the button's place rather than sitting above a dead
-    // control: while the wallet is throttled the button cannot be pressed
-    // anyway, so nothing moves and the user is told why — and for how long —
-    // in the exact spot they were about to press.
-    expect(screen.queryByTestId('lock-unlock-button')).toBeNull();
-    expect(screen.getByText('lock.throttled_body')).toBeTruthy();
+    // The notice lands in the assist band — the slot spec 013 FR-005 reserves
+    // for exactly this — and the button stays put, disabled, so nothing moves.
+    const assist = within(screen.getByTestId('onboarding-slot-assist'));
+    expect(assist.getByText('lock.throttled_body')).toBeTruthy();
+    const unlockButton = screen.getByTestId('lock-unlock-button');
+    expect(unlockButton.props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('mounts the water column behind the lock, and keeps its feedback in the bands', async () => {
+    render(
+      <LockContent
+        locked
+        onUnlock={jest.fn().mockResolvedValue(false)}
+        onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
+        biometric={{
+          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
+          authenticateWithBiometric: jest.fn(),
+          storeKeyForBiometric: jest.fn(),
+          enableBiometric: false,
+          refreshState: jest.fn().mockResolvedValue(undefined),
+        }}
+      />
+    );
+
+    await act(async () => {});
+    await waitFor(() => {
+      expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    });
+
+    // The lock carries the water (DESIGN.md): both layers, behind the stack.
+    const background = within(screen.getByTestId('onboarding-background'));
+    expect(background.getByTestId('depth-background')).toBeTruthy();
+    expect(background.getByTestId('scales-background')).toBeTruthy();
+
+    // The forgot affordance sits in `body`, against the field it escapes from.
+    const body = within(screen.getByTestId('onboarding-slot-body'));
+    expect(body.getByTestId('lock-forgot-password-button')).toBeTruthy();
+
+    // The wrong-password error lands in `assist`, not against the input.
+    fireEvent.changeText(screen.getByTestId('lock-password-input'), 'nope');
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('lock-unlock-button'));
+    });
+    const assist = within(screen.getByTestId('onboarding-slot-assist'));
+    await waitFor(() => {
+      expect(assist.getByText('lock.wrong_password')).toBeTruthy();
+    });
   });
 
   // Regression guard for the e2e test-label contract (Maestro `id` selectors).

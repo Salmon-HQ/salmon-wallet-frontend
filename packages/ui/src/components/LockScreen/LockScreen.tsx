@@ -16,14 +16,14 @@
  *
  * Two behaviours worth naming:
  *
- * - **The wrong-password error sits against the field it describes**, inside
- *   `body`, rather than in a band of its own. It used to push the mark up
- *   11.5px and the action down 11.5px every time it appeared.
- * - **The throttled notice takes the action's place.** While the wallet is
- *   throttled the button cannot be pressed anyway, so the notice occupies the
- *   exact spot the user was about to press, says when the next attempt is
- *   allowed, and nothing moves. Focus follows the swap in both directions so a
- *   screen-reader user is never left on a node that vanished.
+ * - **Feedback lives in `assist`** (spec 013 FR-005): the wrong-password
+ *   error and the throttle message both land in the band reserved for them,
+ *   so neither displaces the field above nor the action below. The throttle
+ *   wins when both hold — it is the one that explains why typing is off.
+ * - **The action never moves.** While the wallet is throttled the button is
+ *   disabled in place and the assist band says when the next attempt is
+ *   allowed. Focus follows the notice in both directions so a screen-reader
+ *   user is never left wondering why the button went dead.
  */
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
@@ -51,7 +51,6 @@ import { PrimaryButton, TextButton } from '../Button';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { LoadingScreen } from '../LoadingScreen';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
-import { WarningNotice } from '../WarningNotice';
 import { WaterColumn } from '../WaterColumn';
 
 export interface LockScreenProps {
@@ -84,8 +83,25 @@ const ErrorText = styled(Typography)({
   color: semantic.status.danger,
   fontSize: fontSize.xs,
   fontFamily: fontFamily.sans,
+  textAlign: 'center',
+});
+
+/**
+ * The error's shape in the warning ink — a message, not a card. The full
+ * WarningNotice is ~94px against the assist band's 60, and a card that
+ * overflows its band moves the very controls the grid exists to pin.
+ */
+const ThrottleText = styled(Typography)({
+  color: semantic.status.warning,
+  fontSize: fontSize.xs,
+  fontFamily: fontFamily.sans,
+  textAlign: 'center',
+});
+
+const ForgotRow = styled(Box)({
+  display: 'flex',
+  justifyContent: 'center',
   marginTop: spacing.sm,
-  marginLeft: spacing.xs,
 });
 
 export function LockScreen({
@@ -195,21 +211,20 @@ export function LockScreen({
                 'aria-label': t('lock.password_placeholder'),
               }}
             />
-            {/* Feedback about the field above it, so it sits against that
-                field rather than displacing anything. */}
-            {error && <ErrorText data-testid="lock-error">{error}</ErrorText>}
+            {/* The escape hatch belongs to the field it escapes from, so it
+                sits directly under it rather than in a band of its own. */}
+            <ForgotRow>
+              <TextButton
+                onClick={() => setShowResetDialog(true)}
+                disabled={isUnlocking}
+                testID="lock-forgot-password-button"
+              >
+                {t('lock.forgot_password')}
+              </TextButton>
+            </ForgotRow>
           </Box>
         }
         assist={
-          <TextButton
-            onClick={() => setShowResetDialog(true)}
-            disabled={isUnlocking}
-            testID="lock-forgot-password-button"
-          >
-            {t('lock.forgot_password')}
-          </TextButton>
-        }
-        action={
           throttled ? (
             <Box
               ref={throttleRef}
@@ -217,23 +232,28 @@ export function LockScreen({
               aria-live="polite"
               data-testid="lock-throttle-notice"
             >
-              <WarningNotice tone="warning" title={t('lock.throttled_title')}>
+              <ThrottleText>
                 {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
-              </WarningNotice>
+              </ThrottleText>
             </Box>
-          ) : (
-            <Box ref={unlockRef} tabIndex={-1}>
-              <PrimaryButton
-                onClick={() => void handleSubmit()}
-                disabled={!password.trim()}
-                loading={isUnlocking}
-                fullWidth
-                testID="lock-unlock-button"
-              >
-                {t('lock.unlock')}
-              </PrimaryButton>
-            </Box>
-          )
+          ) : error ? (
+            <ErrorText aria-live="polite" data-testid="lock-error">
+              {error}
+            </ErrorText>
+          ) : null
+        }
+        action={
+          <Box ref={unlockRef} tabIndex={-1}>
+            <PrimaryButton
+              onClick={() => void handleSubmit()}
+              disabled={!password.trim() || throttled}
+              loading={isUnlocking}
+              fullWidth
+              testID="lock-unlock-button"
+            >
+              {t('lock.unlock')}
+            </PrimaryButton>
+          </Box>
         }
       />
 
