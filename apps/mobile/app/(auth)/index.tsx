@@ -18,9 +18,8 @@
 
 import { useAccountsContext } from '@salmon/shared';
 import {
-  OnboardingDescription,
   OnboardingLayout,
-  OnboardingTitle,
+  Wordmark,
   PrimaryButton,
   SecondaryButton,
   TextButton,
@@ -62,16 +61,23 @@ export default function WelcomeScreen() {
     router.replace('/(app)/(tabs)');
   };
 
-  // Determine the welcome line based on whether the user has accounts
-  const welcome = hasAccounts
-    ? t('wallet.onboarding.titleOnboarded')
-    : t('wallet.onboarding.titleWelcome');
-
   return (
     <OnboardingLayout
       testID="welcome-screen"
-      title={<OnboardingTitle>Salmon</OnboardingTitle>}
-      description={<OnboardingDescription>{welcome}</OnboardingDescription>}
+      /*
+        The product's name, drawn rather than set — and twice the size the
+        title token gave it (product, 2026-08-18: "¿y si agrandamos Salmon y
+        sacamos el Welcome?"). As a graphic it is sized independently of the
+        flow's one title token, so making the name bigger here does not enlarge
+        every other screen's heading.
+      */
+      title={<Wordmark testID="welcome-wordmark" />}
+      /*
+        No description on this screen, and the band stays reserved and empty —
+        the wordmark says what the screen is and a line under it only competed.
+        Passing nothing leaves the slot at its full height, which is the whole
+        point of the grid: everything below it holds its Y.
+      */
       assist={
         hasAccounts ? (
           <TextButton onPress={handleAccessExistingAccount} testID="select-access-existing-button">

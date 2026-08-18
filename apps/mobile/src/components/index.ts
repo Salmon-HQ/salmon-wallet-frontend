@@ -26,8 +26,8 @@ export { PasswordInput, PasswordStrengthBar } from './PasswordInput';
 export { StepIndicator } from './StepIndicator';
 export type { StepIndicatorProps } from './StepIndicator';
 
-export { BrandMark } from './BrandMark';
-export type { BrandMarkProps } from './BrandMark';
+export { BrandMark, Wordmark } from './BrandMark';
+export type { BrandMarkProps, WordmarkProps } from './BrandMark';
 
 export {
   OnboardingLayout,

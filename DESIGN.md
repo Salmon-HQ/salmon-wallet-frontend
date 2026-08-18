@@ -446,6 +446,10 @@ wordmark cannot drift away from the interface face, because regenerating it is
 how it changes. It is a single colour by construction, so it takes a text
 token like any other ink.
 
+**Where it is used:** the welcome screen renders it in the `title` slot in
+place of a heading — see *The onboarding grid*. It takes `semantic.text.primary`,
+the same white as the mark above it, so the lockup is one ink.
+
 **Character:** one family for the whole system. At a narrow column width a
 display face that disagrees with the UI face costs more than it earns, and a
 wallet is an _operate_ surface — the drama comes from the material, not the
@@ -521,6 +525,17 @@ Rules that hold it together:
   stack, because on the emptiest screen most of the stack is invisible.
 - **`body` is the give**: the only slot that shrinks and the only one that
   scrolls. The action never moves.
+- **The welcome screen's title slot holds the wordmark, not a heading.** The
+  product's name is drawn from `wordmarkPaths` at 1.6x the size the title token
+  gave it, and the description slot is left reserved and empty (product,
+  2026-08-18: *"¿y si agrandamos Salmon y sacamos el Welcome?"*). Because the
+  name is a graphic it is sized independently, so the flow keeps exactly one
+  title token — raising that token to enlarge the name would have enlarged every
+  heading in the flow. Its height is the title band less one `spacing.md`, which
+  surfaces as the gap over it: filling the band exactly measured 0.0dp between
+  the mark's lower fin and the wordmark's cap height, which is tighter than a
+  lockup reads. Removing the string does not remove the band — the description
+  slot keeps its 72dp and nothing below it moves.
 - **The mark anchors to the bottom of its band and the title to the bottom of
   its own; the description anchors to the top of hers.** Each band reserves two
   rendered lines for Spanish, and centring the ink left that unused allowance
