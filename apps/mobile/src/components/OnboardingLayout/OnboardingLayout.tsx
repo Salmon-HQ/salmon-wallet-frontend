@@ -129,6 +129,16 @@ export function OnboardingLayout({
    * looking at while they type. `body` still pays whatever is left, so the
    * field and the button that commits it stay put.
    *
+   * **Only while the keyboard is actually up.** Without that guard this deleted
+   * content on a device that was merely a few points short: an iPhone 17 has
+   * 781pt of layout height once the Dynamic Island and the home indicator are
+   * taken out, against a 793 stack, and that 12pt shortfall removed the whole
+   * description — so the welcome screen showed "Salmon" with no "Welcome"
+   * under it on iOS while Android, with 876dp and no shortfall at all, showed
+   * both. A 12pt difference must never cost a line of copy. Off the keyboard
+   * path `body` absorbs the shortfall and then scrolls, and nothing is ever
+   * removed.
+   *
    * Letting `body` absorb the whole shortfall first was the earlier reading and
    * it produced the defect the product owner found on a Pixel 9 Pro: with the
    * keyboard up, `body` was squeezed to 52dp and the seed grid's fourth row —
@@ -141,8 +151,8 @@ export function OnboardingLayout({
    * in step.
    */
   const shortfall = available === undefined ? 0 : Math.max(0, grid.stack - available);
-  const dropDescription = shortfall > 0;
-  const dropMark = shortfall > grid.description;
+  const dropDescription = occlusion > 0 && shortfall > 0;
+  const dropMark = occlusion > 0 && shortfall > grid.description;
 
   const bodyContent = scrollBody ? (
     <ScrollView
@@ -168,6 +178,15 @@ export function OnboardingLayout({
           <View style={[styles.slot, { height: grid.chrome }]} testID="onboarding-slot-chrome">
             {chrome}
           </View>
+
+          {/*
+            Reserved empty run, never a slot. A family that needs less `body`
+            than its siblings gives the difference back here rather than
+            leaving it as a hole under the description — which is what drops
+            the mark, title and description into the middle of the region they
+            share with `body`. Zero on the families whose `body` is full.
+          */}
+          {grid.lead > 0 && <View style={{ height: grid.lead }} testID="onboarding-lead" />}
 
           {!dropMark && (
             <View style={[styles.centered, { height: grid.mark }]} testID="onboarding-slot-mark">
@@ -234,14 +253,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   /**
-   * The mark centres inside its band. The band is the mark plus its gap, so
-   * the two move together within a family and neither is affected by anything
-   * the screen puts below it.
+   * The mark sits at the *bottom* of its band, for the same reason the title
+   * does: the band is the mark plus the gap under it, and centring the ink left
+   * half that gap hanging above the mark where it met the title's unused second
+   * line. On the welcome screen that put 48dp between the mark and the word
+   * "Salmon" — the product owner's "el icono + salmon deben ir más pegados".
+   *
+   * Anchoring it down closes 18 of those and moves no slot: the band keeps its
+   * reserved height, so everything below it is exactly where it was.
    */
   centered: {
     flexShrink: 0,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
   padded: {
     flexShrink: 0,

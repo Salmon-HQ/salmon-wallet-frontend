@@ -313,7 +313,7 @@ export function LockContent({
       <StatusBar style="light" />
       <OnboardingLayout
         testID="lock-screen"
-        variant="identity"
+        variant="credential"
         title={<OnboardingTitle>{t('lock.welcome_back')}</OnboardingTitle>}
         body={
           /*

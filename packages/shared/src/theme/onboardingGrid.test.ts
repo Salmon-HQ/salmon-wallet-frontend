@@ -19,6 +19,8 @@ import {
   onboardingCompactHeight,
   onboardingContentGridCompact,
   onboardingContentGridFull,
+  onboardingCredentialGridCompact,
+  onboardingCredentialGridFull,
   onboardingIdentityGridCompact,
   onboardingIdentityGridFull,
   onboardingSlots,
@@ -29,6 +31,7 @@ import { componentSizes, spacing } from './spacing';
 
 const reserved = (g: OnboardingGrid) => [
   g.chrome,
+  g.lead,
   g.mark,
   g.title,
   g.description,
@@ -41,6 +44,8 @@ const reserved = (g: OnboardingGrid) => [
 const grids: [string, OnboardingGrid][] = [
   ['identity/full', onboardingIdentityGridFull],
   ['identity/compact', onboardingIdentityGridCompact],
+  ['credential/full', onboardingCredentialGridFull],
+  ['credential/compact', onboardingCredentialGridCompact],
   ['content/full', onboardingContentGridFull],
   ['content/compact', onboardingContentGridCompact],
 ];
@@ -66,8 +71,13 @@ describe('the onboarding slot grid', () => {
     expect(grid.stack).toBe(reserved(grid).reduce((sum, h) => sum + h, 0));
   });
 
-  it.each(grids)('%s: no reserved slot is zero — an empty slot still occupies its band', (_n, g) => {
-    for (const height of reserved(g)) expect(height).toBeGreaterThan(0);
+  it.each(grids)('%s: no content slot is zero — an empty slot still occupies its band', (_n, g) => {
+    // `lead` is the exception and is allowed to be zero: it is not a slot, it
+    // is the space a family gives back when it needs less `body` than its
+    // siblings, and the families whose `body` is full give nothing back.
+    for (const height of reserved(g).filter((h) => h !== g.lead)) {
+      expect(height).toBeGreaterThan(0);
+    }
   });
 
   it.each(grids)('%s: the bands that hold controls are identical in both families', (_n, grid) => {
@@ -85,7 +95,7 @@ describe('the onboarding slot grid', () => {
     expect(grid.action).toBe(spacing.lg + componentSizes.buttonHeight + spacing['2xl']);
   });
 
-  it('identity draws the mark large — it is the screen, not a badge on it', () => {
+  it('the mark-led families draw it large — it is the screen, not a badge on it', () => {
     // Welcome, unlock and the password screen. The first pass drew it at 80
     // and it read as a small mark floating above an enormous void.
     expect(onboardingIdentityGridFull.markSize).toBe(componentSizes.logoSizeLarge + spacing['4xl']);
@@ -97,6 +107,9 @@ describe('the onboarding slot grid', () => {
     expect(onboardingIdentityGridFull.markSize).toBeGreaterThan(
       2 * onboardingContentGridFull.markSize
     );
+    // `credential` is the same front door with a field on it.
+    expect(onboardingCredentialGridFull.markSize).toBe(onboardingIdentityGridFull.markSize);
+    expect(onboardingCredentialGridFull.mark).toBe(onboardingIdentityGridFull.mark);
   });
 
   it('content keeps the mark subordinate and hands the middle to the words', () => {
@@ -107,32 +120,58 @@ describe('the onboarding slot grid', () => {
 
   it('the full grids reserve what their tokens say they do', () => {
     // identity's body: two fields and the strength meter under them.
-    expect(onboardingIdentityGridFull.body).toBe(
+    expect(onboardingCredentialGridFull.body).toBe(
       2 * componentSizes.inputHeight + componentSizes.buttonHeightSmall + 2 * spacing.lg
     );
+    // identity puts at most a glyph there — the biometric opt-in's icon.
+    expect(onboardingIdentityGridFull.body).toBe(componentSizes.logoSizeSmall + spacing.lg);
     expect(onboardingIdentityGridFull.description).toBe(2 * 24 + spacing['2xl']);
     expect(onboardingContentGridFull.description).toBe(2 * 24 + spacing['2xl']);
     expect(onboardingIdentityGridFull.stack).toBe(817);
   });
 
-  it('spends on body exactly what it saved on the mark, so both stacks match', () => {
+  it('spends on body or lead exactly what it saved elsewhere, so all stacks match', () => {
     // This is why the primary action, the secondary, the assist band and the
     // chrome sit at one Y across all sixteen screens even though the mark and
     // the body deliberately differ between the two families.
     expect(onboardingContentGridFull.stack).toBe(onboardingIdentityGridFull.stack);
+    expect(onboardingCredentialGridFull.stack).toBe(onboardingIdentityGridFull.stack);
     expect(onboardingContentGridCompact.stack).toBe(onboardingIdentityGridCompact.stack);
-    expect(onboardingContentGridFull.body - onboardingIdentityGridFull.body).toBe(
-      onboardingIdentityGridFull.mark - onboardingContentGridFull.mark
+    expect(onboardingCredentialGridCompact.stack).toBe(onboardingIdentityGridCompact.stack);
+    // content buys its taller body by shrinking the mark...
+    expect(onboardingContentGridFull.body - onboardingCredentialGridFull.body).toBe(
+      onboardingCredentialGridFull.mark - onboardingContentGridFull.mark
     );
+    // ...and identity, which needs no field, hands the difference back as lead.
+    expect(onboardingIdentityGridFull.lead).toBe(
+      onboardingCredentialGridFull.body - onboardingIdentityGridFull.body
+    );
+    expect(onboardingCredentialGridFull.lead).toBe(0);
+    expect(onboardingContentGridFull.lead).toBe(0);
+  });
+
+  it('lifts the visible group on identity without moving any control', () => {
+    // The welcome screen's complaint. Everything above `body` starts `lead`
+    // lower, and everything from `assist` down is untouched — because the
+    // stack is the same height, `lead` only moves what sits between.
+    const id = onboardingIdentityGridFull;
+    const cred = onboardingCredentialGridFull;
+    const above = (g: OnboardingGrid) => g.chrome + g.lead;
+    expect(above(id) - above(cred)).toBe(id.lead);
+    expect(id.lead).toBeGreaterThan(0);
+    for (const key of ['chrome', 'title', 'description', 'assist', 'secondary', 'action'] as const) {
+      expect(id[key]).toBe(cred[key]);
+    }
   });
 
   it.each([
     ['identity', onboardingIdentityGridFull, onboardingIdentityGridCompact],
+    ['credential', onboardingCredentialGridFull, onboardingCredentialGridCompact],
     ['content', onboardingContentGridFull, onboardingContentGridCompact],
   ])('%s: the compact rung reserves less, and only in the description', (_n, full, compact) => {
     expect(compact.stack).toBeLessThan(full.stack);
     expect(compact.description).toBeLessThan(full.description);
-    for (const key of ['chrome', 'mark', 'markSize', 'title', 'body', 'assist', 'secondary', 'action'] as const) {
+    for (const key of ['chrome', 'lead', 'mark', 'markSize', 'title', 'body', 'assist', 'secondary', 'action'] as const) {
       expect(compact[key]).toBe(full[key]);
     }
   });
@@ -145,9 +184,44 @@ describe('the onboarding slot grid', () => {
     expect(onboardingContentGridCompact.markSize).toBe(onboardingContentGridFull.markSize);
   });
 
+  it('keeps the rung boundary clear of every phone in use', () => {
+    // A Pixel 9 Pro has 876dp of layout height and an iPhone 17 about 781pt
+    // once the Dynamic Island and the home indicator are out. At 800 those two
+    // sat either side of the boundary and resolved to different tables from the
+    // same bundle. The boundary belongs nowhere near a shipping handset.
+    const shortestPhoneInUse = 781;
+    expect(onboardingCompactHeight).toBeLessThan(shortestPhoneInUse - 100);
+    for (const variant of ['identity', 'credential', 'content'] as const) {
+      expect(resolveOnboardingGrid(variant, 781).variant).toBe(variant);
+      expect(resolveOnboardingGrid(variant, 781)).toBe(resolveOnboardingGrid(variant, 876));
+    }
+  });
+
+  it('never removes an element between rungs — it only tightens a band', () => {
+    // Losing a whole line of copy because a device is two points shorter is not
+    // degradation, it is a defect. The compact rung reserves one description
+    // line instead of two and changes nothing else; every other band, the mark
+    // size and the lead are identical, so no element can vanish with the rung.
+    for (const [full, compact] of [
+      [onboardingIdentityGridFull, onboardingIdentityGridCompact],
+      [onboardingCredentialGridFull, onboardingCredentialGridCompact],
+      [onboardingContentGridFull, onboardingContentGridCompact],
+    ] as const) {
+      const differing = (Object.keys(full) as (keyof OnboardingGrid)[]).filter(
+        (key) => full[key] !== compact[key]
+      );
+      expect(differing.sort()).toEqual(['description', 'stack']);
+      expect(compact.description).toBeGreaterThan(0);
+    }
+  });
+
   it('picks a table by variant and available height, full before measurement', () => {
     expect(resolveOnboardingGrid('identity', undefined)).toBe(onboardingIdentityGridFull);
     expect(resolveOnboardingGrid('content', undefined)).toBe(onboardingContentGridFull);
+    expect(resolveOnboardingGrid('credential', undefined)).toBe(onboardingCredentialGridFull);
+    expect(resolveOnboardingGrid('credential', onboardingCompactHeight)).toBe(
+      onboardingCredentialGridCompact
+    );
     expect(resolveOnboardingGrid('identity', onboardingCompactHeight)).toBe(
       onboardingIdentityGridCompact
     );
@@ -161,6 +235,7 @@ describe('the onboarding slot grid', () => {
 
   it('every grid reports the variant it belongs to', () => {
     expect(onboardingIdentityGridFull.variant).toBe('identity');
+    expect(onboardingCredentialGridFull.variant).toBe('credential');
     expect(onboardingContentGridCompact.variant).toBe('content');
   });
 });

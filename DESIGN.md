@@ -453,6 +453,91 @@ letterforms. Geist at weight 600 with tight negative tracking is a cold,
 engineered display voice that belongs in this water, and one family means one
 font pipeline for three apps.
 
+### The mark
+
+**Shipped.** The salmon mark draws from `markPaths` in
+`packages/shared/src/theme/brand.ts` — a vector on a single-`fill` contract —
+everywhere it appears in onboarding and unlock. It was `Logo.png`, a 197x183
+raster asked for 360 device pixels at 120dp on a 3x phone, letterboxed into
+square boxes of 48, 60, 80, 120 and 137.
+
+**Its ink is `semantic.text.primary`, and it is white** (product, 2026-08-18:
+*"quiero que el icono deje de estar de color primary y que esté en blanco"*).
+Three things follow from that and should not drift:
+
+- **It is not the accent.** The mark drew in `semantic.text.accent` for exactly
+  as long as it took someone to look at it next to the copy above it. Salmon is
+  the ink of *action* in this system; spending it on a decorative mark competes
+  with the one control on the screen that is meant to be pressed.
+- **It is `text.primary`, not a literal `#FFF`.** The raster's near-white was a
+  hardcoded `#FCFCFC` baked into the artwork, and getting the colour out of the
+  file and into a token is the whole reason the mark became a vector. It is the
+  same ink the title directly under it already uses, and it follows the theme.
+- **Contrast** is **16.89:1** on `surface.bedrock` and 17.54:1 on
+  `surface.abyss`. Pure white would be 19.15:1; the accent it replaced was
+  6.26:1.
+
+The mark is sized by the onboarding grid, never by the screen — a vector has no
+native size to defer to, which is what let six of them coexist before.
+
+### The onboarding grid
+
+**Shipped.** Every screen in the create, recover and unlock flows composes on
+one slot grid: `chrome`, `mark`, `title`, `description`, `body`, `assist`,
+`secondary`, `action`. Reserved heights live once, in
+`packages/shared/src/theme/onboardingGrid.ts`, and both platforms read them.
+Every slot occupies its reserved height whether or not it is filled, so
+revealing an element cannot move anything else.
+
+**Three families, not one grid.** The first pass put all sixteen screens on a
+single table, which was read too literally (product, 2026-08-18: *"la idea era
+que el salmón esté en el mismo lugar según el tipo de screen"*). The invariant
+is **within a family**:
+
+| variant | the hero | screens |
+| --- | --- | --- |
+| `identity` | the mark | welcome, success, biometric opt-in |
+| `credential` | the mark, over a secret | unlock in every state, password creation |
+| `content` | what fills `body` | the seed screens, analytics consent, derived accounts |
+
+Within a variant every slot's Y is identical across its screens. Between
+variants only the **mark** and the **body** differ — and they differ by
+exactly offsetting amounts, so all three stacks are the same height and the
+`chrome`, `assist`, `secondary` and `action` bands land at one Y on all sixteen
+screens.
+
+Rules that hold it together:
+
+- **A reserved height is the union of what any screen in the variant needs**,
+  never what the screen in front of you needs.
+- **The stack has one fixed height and is centred**, so the slack splits above
+  and below instead of collecting under the action.
+- **`lead`** is a reserved empty run between `chrome` and `mark`, and is not a
+  slot. A family needing less `body` than its siblings gives the difference back
+  at the *top*, which drops the mark, title and description into the middle of
+  the region they share with `body`. Without it, `identity` wore the password
+  screen's 188dp field reservation as a hole under its description — which is
+  what "más centrado" was about, and it could not be fixed by centring the
+  stack, because on the emptiest screen most of the stack is invisible.
+- **`body` is the give**: the only slot that shrinks and the only one that
+  scrolls. The action never moves.
+- **The mark anchors to the bottom of its band and the title to the bottom of
+  its own; the description anchors to the top of hers.** Each band reserves two
+  rendered lines for Spanish, and centring the ink left that unused allowance
+  hanging *between* the elements — 48dp between the mark and the wordmark, 45dp
+  between the wordmark and the line under it. Anchoring inward collects the
+  unused line outside the pair instead: 30dp and 12dp.
+- **The keyboard moves things only when it actually covers them.** The layout
+  gives up the measured overlap between the keyboard and its own bottom edge,
+  and nothing when there is none. Under a real shortfall the description goes
+  first and the mark second — both are explanatory or decorative — and `body`
+  pays the rest.
+- **Steps do not slide.** `app/(auth)/_layout.tsx` sets `animation: 'none'`.
+  The ground is mounted once for the whole stack and every screen composes on
+  this grid, so the furniture is already in place on the next screen; sliding it
+  out and back only to redraw it at the identical Y describes something untrue,
+  and it dragged the step indicator's chevron and dots along with it.
+
 ### Hierarchy
 
 **Shipped** — what the MUI theme and the mobile token file actually render

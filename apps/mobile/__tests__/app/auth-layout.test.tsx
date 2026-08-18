@@ -2,9 +2,13 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 
 const mockScreen = jest.fn((_props: Record<string, unknown>) => null);
+const mockStack = jest.fn((_props: Record<string, unknown>) => null);
 
 jest.mock('expo-router', () => ({
-  Stack: Object.assign(({ children }: { children?: React.ReactNode }) => <>{children}</>, {
+  Stack: Object.assign((props: { children?: React.ReactNode }) => {
+    mockStack(props as Record<string, unknown>);
+    return <>{props.children}</>;
+  }, {
     Screen: (props: Record<string, unknown>) => mockScreen(props),
   }),
 }));
@@ -45,6 +49,18 @@ describe('AuthLayout', () => {
     // stack cannot be born without a ground.
     expect(view.getAllByTestId('ground-depth')).toHaveLength(1);
     expect(view.getAllByTestId('ground-scales')).toHaveLength(1);
+  });
+
+  it('steps between screens without sliding the whole screen', () => {
+    // The default `slide_from_right` took the outgoing screen out to the left
+    // and brought the next one in from the right — and because every screen
+    // renders its own chrome, the chevron and the step dots travelled with it.
+    // What that looked like was the indicator leaving and returning with the
+    // salmon dot already advanced, when the only thing that changed is which
+    // step is current. The ground is mounted once outside this navigator, and
+    // every screen composes on one slot grid, so there is nothing to slide.
+    const screenOptions = mockStack.mock.calls[0][0].screenOptions as Record<string, unknown>;
+    expect(screenOptions.animation).toBe('none');
   });
 
   it.each([

@@ -40,8 +40,30 @@ export default function AuthLayout() {
         screenOptions={{
           // Hide headers - we handle our own back buttons
           headerShown: false,
-          // Use default iOS-style animations
-          animation: 'slide_from_right',
+          /*
+            No transition between onboarding steps.
+
+            The default `slide_from_right` took the whole outgoing screen out
+            to the left and brought the next one in from the right — and since
+            every screen renders its own chrome, the chevron and the step dots
+            went with it. What the product owner saw was the entire indicator
+            leaving and returning with the salmon dot already advanced, which
+            reads as navigating somewhere else when the only thing that changed
+            is which step is current.
+
+            It also fought the flow's own composition: the water column and the
+            scales are mounted once, outside this navigator, for every screen in
+            the stack. A ground that holds still while the content over it
+            slides is two surfaces disagreeing. And every screen here composes
+            on one slot grid, so the furniture is already in the same place on
+            the next screen — sliding it out and back in only to redraw it at
+            the identical Y is motion that describes something untrue.
+
+            `none` rather than `fade`: `contentStyle` is transparent, so a
+            cross-fade shows both screens' text stacked on the shared ground for
+            the length of the fade.
+          */
+          animation: 'none',
           // Prevent gesture back on certain screens (handled per-screen)
           gestureEnabled: true,
           // Transparent background to show gradient

@@ -38,6 +38,7 @@ jest.mock('../../../hooks/useKeyboardHeight', () => ({
 import {
   onboardingContentGridFull,
   onboardingIdentityGridFull,
+  semantic,
   spacing,
   type OnboardingVariant,
 } from '@salmon/shared';
@@ -222,6 +223,27 @@ describe('OnboardingLayout', () => {
     expect(screen.getByTestId('onboarding-slot-description')).toBeTruthy();
   });
 
+  it('never drops copy for a viewport a few points short — only for a keyboard', () => {
+    // The iOS regression. An iPhone 17 has ~781pt of layout height once the
+    // Dynamic Island and the home indicator are out, against an 817 stack. That
+    // 36pt shortfall used to delete the whole description, so the welcome
+    // screen read "Salmon" with nothing under it on iOS while Android, with
+    // 876dp and no shortfall, showed both lines. `body` absorbs it instead.
+    const IPHONE_17 = 781;
+    render(
+      <OnboardingLayout
+        title={<Text>Salmon</Text>}
+        description={<Text>Welcome</Text>}
+        action={<Text>Go</Text>}
+      />
+    );
+    layout(IPHONE_17);
+
+    expect(screen.getByTestId('onboarding-slot-description')).toBeTruthy();
+    expect(screen.getByTestId('onboarding-slot-mark')).toBeTruthy();
+    expect(reservedHeights().description).toBe(onboardingIdentityGridFull.description);
+  });
+
   it('drops the description first when the keyboard costs a little room', () => {
     // Explanatory, and not what someone is reading while they type. `body`
     // keeps its whole band, so the field and the grid inside it do not move.
@@ -269,6 +291,28 @@ describe('OnboardingLayout', () => {
     const flat = (Array.isArray(stackStyle) ? stackStyle : [stackStyle]).filter(Boolean);
     expect(Object.assign({}, ...flat).height).toBe(COLUMN - KEYBOARD);
     expect(grid.stack).toBeGreaterThan(COLUMN - KEYBOARD);
+  });
+
+  it('sits the mark at the bottom of its band, tight to the title', () => {
+    // "El icono + salmon deben ir más pegados." The band is the mark plus the
+    // gap under it; centring the ink left half that gap above the mark, where
+    // it met the title's unused second line.
+    render(<OnboardingLayout title={<Text>Salmon</Text>} />);
+    const style = screen.getByTestId('onboarding-slot-mark').props.style;
+    const flat = (Array.isArray(style) ? style : [style]).filter(Boolean);
+    expect(Object.assign({}, ...flat).justifyContent).toBe('flex-end');
+  });
+
+  it('draws the mark white, not in the accent', () => {
+    // Product owner, 2026-08-18: the mark is white. `text.primary` rather than
+    // a literal, so it stays a token and follows the theme — the raster's
+    // baked-in white is exactly what going vector removed.
+    render(<OnboardingLayout />);
+    // react-native-svg serialises a fill to packed ARGB, so compare on that.
+    const argb = (hex: string) => (0xff000000 + parseInt(hex.slice(1), 16)) >>> 0;
+    const json = JSON.stringify(screen.toJSON());
+    expect(json).toContain(String(argb(semantic.text.primary)));
+    expect(json).not.toContain(String(argb(semantic.text.accent)));
   });
 
   it('anchors the title and the description inward, not each to its own centre', () => {

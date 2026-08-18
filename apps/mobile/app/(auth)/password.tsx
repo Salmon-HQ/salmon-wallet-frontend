@@ -314,6 +314,7 @@ export default function PasswordScreen() {
       <StatusBar style="light" />
       <OnboardingLayout
         testID="password-screen"
+        variant="credential"
         scrollBody
         chrome={
           <ScreenHeader
