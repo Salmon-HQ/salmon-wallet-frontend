@@ -13,6 +13,7 @@ import {
   fontWeight,
   spacing,
   componentSizes,
+  semantic,
 } from '@salmon/shared';
 
 /**
@@ -81,17 +82,17 @@ const StyledInput = styled(InputBase)<{ $hasError: boolean }>(({ $hasError }) =>
   fontSize: fontSize.md,
   fontFamily: fontFamily.sans,
   backgroundColor: colors.input.background,
-  border: `1px solid ${$hasError ? colors.status.error : colors.input.border}`,
+  border: `1px solid ${$hasError ? semantic.status.danger : colors.input.border}`,
   borderRadius: componentSizes.inputRadius,
   color: colors.text.primary,
   marginBottom: spacing.lg,
   '&.Mui-focused': {
-    borderColor: $hasError ? colors.status.error : colors.accent.primary,
+    borderColor: $hasError ? semantic.status.danger : colors.accent.primary,
   },
 }));
 
 const ErrorText = styled(Typography)({
-  color: colors.status.error,
+  color: semantic.status.danger,
   fontSize: fontSize.xs,
   fontFamily: fontFamily.sans,
   marginBottom: spacing.md,
