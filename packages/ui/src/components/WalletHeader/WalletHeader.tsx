@@ -245,7 +245,7 @@ export function WalletHeader({
             {copied ? (
               <CheckIcon
                 size={iconSize.sm}
-                color={colors.status.success}
+                color={semantic.status.success}
                 style={{ marginLeft: `${spacing.sm}px` }}
               />
             ) : (

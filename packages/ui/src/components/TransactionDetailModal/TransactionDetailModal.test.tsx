@@ -36,6 +36,7 @@ vi.mock('@salmon/shared', () => ({
     scrollbar: 8,
   },
   borderWidth: { thin: 1 },
+  semantic: { status: { success: '#0f0', danger: '#f00', warning: '#fc0' } },
   colors: {
     change: { negative: '#f44', positive: '#4f4' },
     palette: {
@@ -47,7 +48,6 @@ vi.mock('@salmon/shared', () => ({
       blue: '#09f',
     },
     text: { primary: '#fff', secondary: '#999', tertiary: '#666' },
-    status: { success: '#0f0', error: '#f00', warning: '#fc0' },
     background: { primary: '#000', card: '#111' },
     border: { default: '#333', subtle: '#222' },
     card: { border: '#222' },

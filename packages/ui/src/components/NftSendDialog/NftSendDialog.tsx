@@ -19,6 +19,7 @@ import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import {
   colors,
+  semantic,
   spacing,
   fontFamily,
   fontWeight,
@@ -174,7 +175,7 @@ export function NftSendDialog({
             />
 
             {error && (
-              <MessageText sx={{ color: colors.status.error, mt: `${spacing.sm}px` }}>
+              <MessageText sx={{ color: semantic.status.danger, mt: `${spacing.sm}px` }}>
                 {error}
               </MessageText>
             )}

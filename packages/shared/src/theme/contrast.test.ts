@@ -331,6 +331,20 @@ describe('contrast: content that occludes the motif', () => {
     expect(isOpaqueColor(border.hairline)).toBe(false);
     expect(isOpaqueColor(surface.bedrock)).toBe(true);
   });
+
+  it('the status tints stay washes, never opaque fills', () => {
+    // A tint carries no text contrast of its own — the ink on top does. What
+    // makes that safe is that the tint stays translucent over an opaque
+    // surface; an opaque value here would be a fill wearing a tint's name.
+    for (const tint of [
+      status.successTint,
+      status.dangerTint,
+      status.warningTint,
+      status.warningTintBorder,
+    ]) {
+      expect(isOpaqueColor(tint)).toBe(false);
+    }
+  });
 });
 
 describe('contrast: values this palette replaced', () => {

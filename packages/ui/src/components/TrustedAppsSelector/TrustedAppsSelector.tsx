@@ -20,6 +20,7 @@ import { GlobeIcon, TrashIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
+  semantic,
   spacing,
   type TrustedAppItem,
   fontSize,
@@ -45,9 +46,9 @@ const StyledListItemButton = styled(ListItemButton)({
 });
 
 const RevokeButton = styled(IconButton)({
-  color: colors.status.error,
+  color: semantic.status.danger,
   '&:hover': {
-    backgroundColor: colors.status.errorBackground,
+    backgroundColor: semantic.status.dangerTint,
   },
 });
 

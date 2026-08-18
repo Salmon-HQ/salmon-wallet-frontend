@@ -217,9 +217,9 @@ const ValidationMessage = styled(Typography)<{
   marginTop: spacing.xs,
   color:
     $messageType === 'error'
-      ? colors.status.error
+      ? semantic.status.danger
       : $messageType === 'warning'
-        ? colors.status.warning
+        ? semantic.status.warning
         : colors.text.secondary,
 }));
 
@@ -508,11 +508,11 @@ export function StepAddressAmount({
               borderRadius: borderRadius.lg,
               border:
                 validationState === 'invalid'
-                  ? `${borderWidth.thin}px solid ${colors.status.error}`
+                  ? `${borderWidth.thin}px solid ${semantic.status.danger}`
                   : validationState === 'warning'
-                    ? `${borderWidth.thin}px solid ${colors.status.warning}`
+                    ? `${borderWidth.thin}px solid ${semantic.status.warning}`
                     : validationState === 'valid'
-                      ? `${borderWidth.thin}px solid ${colors.status.success}`
+                      ? `${borderWidth.thin}px solid ${semantic.status.success}`
                       : undefined,
             }}
           >
@@ -538,21 +538,21 @@ export function StepAddressAmount({
               )}
               {address.length > 0 && !isValidating && validationState === 'valid' && (
                 <ValidationIndicatorBox>
-                  <span style={{ color: colors.status.success, fontSize: fontSize.md }}>
+                  <span style={{ color: semantic.status.success, fontSize: fontSize.md }}>
                     {'\u2713'}
                   </span>
                 </ValidationIndicatorBox>
               )}
               {address.length > 0 && !isValidating && validationState === 'invalid' && (
                 <ValidationIndicatorBox>
-                  <span style={{ color: colors.status.error, fontSize: fontSize.md }}>
+                  <span style={{ color: semantic.status.danger, fontSize: fontSize.md }}>
                     {'\u2715'}
                   </span>
                 </ValidationIndicatorBox>
               )}
               {address.length > 0 && !isValidating && validationState === 'warning' && (
                 <ValidationIndicatorBox>
-                  <span style={{ color: colors.status.warning, fontSize: fontSize.md }}>
+                  <span style={{ color: semantic.status.warning, fontSize: fontSize.md }}>
                     {'\u26A0'}
                   </span>
                 </ValidationIndicatorBox>

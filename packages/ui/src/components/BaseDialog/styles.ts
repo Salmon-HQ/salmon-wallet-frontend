@@ -73,7 +73,7 @@ export const TitleText: React.ComponentType<TypographyProps> = styled(Typography
 });
 
 export const WarningIcon: React.ComponentType<IconProps> = styled(WarningGlyph)({
-  color: colors.status.error,
+  color: semantic.status.danger,
   width: iconSize.lg,
   height: iconSize.lg,
 });
@@ -123,7 +123,7 @@ export const StyledTextField: React.ComponentType<TextFieldProps> = styled(TextF
       borderColor: colors.accent.primary,
     },
     '&.Mui-error fieldset': {
-      borderColor: colors.status.error,
+      borderColor: semantic.status.danger,
     },
   },
   '& .MuiInputLabel-root': {
@@ -132,14 +132,14 @@ export const StyledTextField: React.ComponentType<TextFieldProps> = styled(TextF
       color: colors.accent.primary,
     },
     '&.Mui-error': {
-      color: colors.status.error,
+      color: semantic.status.danger,
     },
   },
   '& .MuiOutlinedInput-input': {
     color: colors.text.primary,
   },
   '& .MuiFormHelperText-root': {
-    color: colors.status.error,
+    color: semantic.status.danger,
   },
 });
 

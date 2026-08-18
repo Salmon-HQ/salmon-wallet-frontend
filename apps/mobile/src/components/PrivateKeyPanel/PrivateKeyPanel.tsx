@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   warningContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: colors.status.warningBackground,
+    backgroundColor: semantic.status.warningTint,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.xl,

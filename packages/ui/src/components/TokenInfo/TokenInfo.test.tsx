@@ -31,12 +31,12 @@ vi.mock('../Icon', () => ({
 
 vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
+  semantic: { status: { success: '#0f0' } },
   colors: {
     background: { card: '#111' },
     text: { primary: '#fff', muted: '#999', secondary: '#aaa' },
     input: { background: '#222' },
     accent: { primary: '#f54' },
-    status: { success: '#0f0' },
     skeleton: { base: '#333' },
   },
   spacing: { xs: 4, xxs: 2, sm: 8, md: 12, lg: 16 },

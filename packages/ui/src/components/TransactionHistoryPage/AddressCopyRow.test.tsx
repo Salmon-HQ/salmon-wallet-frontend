@@ -34,9 +34,9 @@ vi.mock('../BlurContainer', () => ({
 
 vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
+  semantic: { status: { success: '#0f0' } },
   colors: {
     text: { secondary: '#999', primary: '#fff' },
-    status: { success: '#0f0' },
     background: { card: '#111' },
   },
   borderRadius: { md: 12 },

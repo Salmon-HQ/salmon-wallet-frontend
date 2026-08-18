@@ -23,18 +23,12 @@ vi.mock('react-i18next', () => ({
 vi.mock('@salmon/shared', () => ({
   tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
   borderRadius: { full: 999, md: 8, lg: 12, xl: 16 },
+  semantic: { status: { danger: '#f00', dangerTint: '#500', warning: '#fa0', warningTint: '#540', success: '#0f0' } },
   colors: {
     background: { primary: '#000', secondary: '#111', card: '#050505' },
     border: { subtle: '#222', default: '#333' },
     text: { primary: '#fff', secondary: '#ccc' },
     interactive: { surface: '#444' },
-    status: {
-      error: '#f00',
-      errorBackground: '#500',
-      warning: '#fa0',
-      warningBackground: '#540',
-      success: '#0f0',
-    },
   },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 },
   fontFamily: { sans: 'sans-serif', mono: 'monospace' },

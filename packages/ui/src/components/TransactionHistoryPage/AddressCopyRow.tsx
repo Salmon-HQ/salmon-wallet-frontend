@@ -25,6 +25,7 @@ import {
   fontFamily,
   getShortAddress,
   copyToClipboard,
+  semantic,
   spacing,
   fontSize,
   fontWeight,
@@ -135,10 +136,10 @@ export function AddressCopyRow({
                   })
             }
             data-testid={`tx-detail-copy-address-${label}`}
-            sx={copied ? { backgroundColor: `${colors.status.success}20` } : undefined}
+            sx={copied ? { backgroundColor: `${semantic.status.success}20` } : undefined}
           >
             {copied ? (
-              <CheckIcon size={iconSize.sm} color={colors.status.success} />
+              <CheckIcon size={iconSize.sm} color={semantic.status.success} />
             ) : (
               <CopyIcon size={iconSize.sm} color={colors.text.secondary} />
             )}

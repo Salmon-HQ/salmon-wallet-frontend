@@ -71,12 +71,12 @@ const StyledInput = styled(InputBase)<{ $hasError: boolean }>(({ $hasError }) =>
   fontSize: fontSize.md,
   fontFamily: fontFamily.sans,
   backgroundColor: colors.input.background,
-  border: `1px solid ${$hasError ? colors.status.error : colors.input.border}`,
+  border: `1px solid ${$hasError ? semantic.status.danger : colors.input.border}`,
   borderRadius: componentSizes.inputRadius,
   color: colors.text.primary,
   transition: 'border-color 0.15s ease',
   '&.Mui-focused': {
-    borderColor: $hasError ? colors.status.error : colors.accent.primary,
+    borderColor: $hasError ? semantic.status.danger : colors.accent.primary,
   },
 }));
 

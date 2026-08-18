@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { WarningIcon, iconSize } from '../../icons';
-import { borderRadius, colors, fontSize, fontWeight, spacing } from '@salmon/shared';
+import { borderRadius, colors, fontSize, fontWeight, semantic, spacing } from '@salmon/shared';
 import { styled } from '../../utils/styled';
 import type { WarningNoticeProps } from './types';
 
@@ -29,9 +29,9 @@ export function WarningNotice({
   children,
   action,
 }: WarningNoticeProps): ReactNode {
-  const accent = tone === 'warning' ? colors.status.warning : colors.status.error;
+  const accent = tone === 'warning' ? semantic.status.warning : semantic.status.danger;
   const background =
-    tone === 'warning' ? colors.status.warningBackground : colors.status.errorBackground;
+    tone === 'warning' ? semantic.status.warningTint : semantic.status.dangerTint;
 
   return (
     <WarningBannerRoot sx={{ backgroundColor: background, borderColor: accent }}>

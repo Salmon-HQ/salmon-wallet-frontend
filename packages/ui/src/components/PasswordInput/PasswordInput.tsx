@@ -15,6 +15,7 @@ import Typography from '@mui/material/Typography';
 import {
   colors,
   componentSizes,
+  semantic,
   spacing,
   fontFamily,
   fontSize as fontSizeTokens,
@@ -76,7 +77,7 @@ const ToggleButton = styled(IconButton)({
 });
 
 const ErrorText = styled(Typography)({
-  color: colors.status.error,
+  color: semantic.status.danger,
   fontFamily: fontFamily.sans,
   fontSize: fontSizeTokens.xs,
   marginTop: spacing.xs,
@@ -121,7 +122,7 @@ export function PasswordInput({
   const [isFocused, setIsFocused] = useState(false);
 
   const getBorderColor = () => {
-    if (error) return colors.status.error;
+    if (error) return semantic.status.danger;
     if (isFocused) return colors.accent.primary;
     return colors.input.border;
   };

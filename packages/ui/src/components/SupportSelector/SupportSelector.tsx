@@ -27,6 +27,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   type SupportOptionItem,
@@ -80,14 +81,14 @@ const SecurityNotice = styled(Box)({
   display: 'flex',
   alignItems: 'flex-start',
   gap: spacing.sm,
-  backgroundColor: colors.status.warningBackground,
+  backgroundColor: semantic.status.warningTint,
   borderRadius: borderRadius.md,
   padding: spacing.md,
   margin: `${spacing.lg}px ${spacing.lg}px`,
 });
 
 const SecurityIcon = styled(ShieldIcon)({
-  color: colors.status.warning,
+  color: semantic.status.warning,
   width: iconSize.md,
   height: iconSize.md,
   marginTop: spacing.xxs,

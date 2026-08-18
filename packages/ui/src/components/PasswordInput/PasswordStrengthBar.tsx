@@ -9,6 +9,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   fontFamily,
@@ -68,11 +69,11 @@ export function PasswordStrengthBar({ strength, t, className, style }: PasswordS
   const getStrengthColor = () => {
     switch (strength) {
       case 'strong':
-        return colors.status.success;
+        return semantic.status.success;
       case 'medium':
-        return colors.status.warning;
+        return semantic.status.warning;
       default:
-        return colors.status.error;
+        return semantic.status.danger;
     }
   };
 

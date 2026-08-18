@@ -325,6 +325,9 @@ error and a salmon CTA must never read as the same object.
   deliberately rosier than salmon. `danger-700` is its fill.
 - **Amber** (`warning-500`, 10.14:1): caution ink — price impact above 1%, new
   origins, non-blocking notices. `warning-700` is its fill.
+- **Status tints** (`status.successTint` / `status.dangerTint` /
+  `status.warningTint`, plus `status.warningTintBorder`): tinted notice
+  surfaces, values inherited from the retired `colors.status` layer.
 
 Price change maps onto these: positive → `success-500`, negative →
 `danger-500`, neutral → `neutral-400`. The previous lime `#80ff54` is retired;

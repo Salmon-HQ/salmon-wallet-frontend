@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import {
   chunkAddress,
   colors,
+  semantic,
   spacing,
   componentSizes,
   fontFamily,
@@ -164,7 +165,7 @@ const ErrorText = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
-  color: colors.status.error,
+  color: semantic.status.danger,
   marginTop: spacing.md,
   textAlign: 'center',
 });
@@ -335,7 +336,7 @@ export function StepConfirmation({
               {copied ? (
                 <CheckIcon
                   size={iconSize.md}
-                  color={colors.status.success}
+                  color={semantic.status.success}
                   style={{ flexShrink: 0 }}
                 />
               ) : (
@@ -354,7 +355,7 @@ export function StepConfirmation({
         {estimatedFee ? (
           <FeeText>{t('token.send.networkFeeAmount', { fee: estimatedFee })}</FeeText>
         ) : sendHook.feeEstimateFailed ? (
-          <FeeText sx={{ color: colors.status.error }} data-testid="send-fee-estimate-failed">
+          <FeeText sx={{ color: semantic.status.danger }} data-testid="send-fee-estimate-failed">
             {t('send.fee_estimate_failed', 'Fee could not be estimated')}
           </FeeText>
         ) : null}

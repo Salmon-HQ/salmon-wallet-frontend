@@ -1,7 +1,7 @@
 import React from 'react';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
-import { colors, formatOrigin, fontFamily, fontSize } from '@salmon/shared';
+import { colors, formatOrigin, fontFamily, fontSize, semantic } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import {
   AppIdentityIcon,
@@ -155,11 +155,11 @@ export function DAppTransactionApprovalView({
               {parsingError && (
                 <SummaryItem
                   sx={{
-                    backgroundColor: colors.status.errorBackground,
-                    borderColor: colors.status.error,
+                    backgroundColor: semantic.status.dangerTint,
+                    borderColor: semantic.status.danger,
                   }}
                 >
-                  <SummaryLabel sx={{ color: colors.status.error }}>
+                  <SummaryLabel sx={{ color: semantic.status.danger }}>
                     {t('dapp.error', 'Error')}
                   </SummaryLabel>
                   <Typography

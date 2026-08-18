@@ -16,6 +16,7 @@ import {
   fontWeight,
   formatBaseUnits,
   getShortAddress,
+  semantic,
   spacing,
   tabularNums,
   type ApprovalGrant,
@@ -128,7 +129,7 @@ function AmountRow({ asset, amount, decimals }: AmountRowProps): React.ReactElem
             : t('dapp.effects_in', 'Enters your wallet')}
         </EffectDirection>
       </Box>
-      <EffectAmount sx={{ color: isOutgoing ? colors.status.error : colors.status.success }}>
+      <EffectAmount sx={{ color: isOutgoing ? semantic.status.danger : semantic.status.success }}>
         {isOutgoing ? '−' : '+'}
         {formatBaseUnits(amount, decimals)}
       </EffectAmount>
@@ -176,8 +177,8 @@ function ApprovalRow({ grant }: { grant: ApprovalGrant }): React.ReactElement {
   const amount = isUnlimited
     ? t('dapp.effects_approval_unlimited', 'an unlimited amount of')
     : formatBaseUnits(grant.amount, grant.decimals);
-  const tone = isUnlimited ? colors.status.error : colors.status.warning;
-  const background = isUnlimited ? colors.status.errorBackground : colors.status.warningBackground;
+  const tone = isUnlimited ? semantic.status.danger : semantic.status.warning;
+  const background = isUnlimited ? semantic.status.dangerTint : semantic.status.warningTint;
 
   return (
     <Notice sx={{ borderColor: tone, backgroundColor: background, marginTop: `${spacing.md}px` }}>
@@ -262,9 +263,9 @@ export function TransactionEffectsCard({
 
       {effects?.kind === 'transaction-would-fail' ? (
         <Notice
-          sx={{ borderColor: colors.status.error, backgroundColor: colors.status.errorBackground }}
+          sx={{ borderColor: semantic.status.danger, backgroundColor: semantic.status.dangerTint }}
         >
-          <ErrorOutlineIcon sx={{ ...sectionIconSx, color: colors.status.error }} />
+          <ErrorOutlineIcon sx={{ ...sectionIconSx, color: semantic.status.danger }} />
           <Box sx={{ minWidth: 0 }}>
             <NoticeTitle>
               {t('dapp.effects_would_fail_title', 'This transaction would fail')}
@@ -282,11 +283,11 @@ export function TransactionEffectsCard({
       {effects?.kind === 'undetermined' ? (
         <Notice
           sx={{
-            borderColor: colors.status.warning,
-            backgroundColor: colors.status.warningBackground,
+            borderColor: semantic.status.warning,
+            backgroundColor: semantic.status.warningTint,
           }}
         >
-          <HelpOutlineIcon sx={{ ...sectionIconSx, color: colors.status.warning }} />
+          <HelpOutlineIcon sx={{ ...sectionIconSx, color: semantic.status.warning }} />
           <Box sx={{ minWidth: 0 }}>
             <NoticeTitle>
               {t('dapp.effects_undetermined_title', 'Salmon could not determine what this does')}

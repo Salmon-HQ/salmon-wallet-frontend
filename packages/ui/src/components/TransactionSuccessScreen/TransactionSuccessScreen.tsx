@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   fontFamily,
@@ -82,7 +83,7 @@ const StatusRow = styled(Box)({
 
 const StatusGlyph = styled(Typography)({
   fontSize: fontSize.headline,
-  color: colors.status.success,
+  color: semantic.status.success,
   fontWeight: fontWeight.bold,
   lineHeight: lineHeight.none,
 });

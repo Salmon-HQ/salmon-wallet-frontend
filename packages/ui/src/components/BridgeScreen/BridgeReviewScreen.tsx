@@ -12,6 +12,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   borderWidth,
@@ -83,17 +84,17 @@ const DetailsContainer = styled(Box)({
 });
 
 const WarningBox = styled(Box)({
-  backgroundColor: colors.status.warningBackground,
+  backgroundColor: semantic.status.warningTint,
   borderRadius: borderRadius.md,
-  border: `${borderWidth.thin}px solid ${colors.status.warningBorder}`,
+  border: `${borderWidth.thin}px solid ${semantic.status.warningTintBorder}`,
   padding: spacing.base,
   marginBottom: spacing.lg,
 });
 
 const IrreversibleBox = styled(Box)({
-  backgroundColor: colors.status.errorBackground,
+  backgroundColor: semantic.status.dangerTint,
   borderRadius: borderRadius.md,
-  border: `${borderWidth.thin}px solid ${colors.status.error}`,
+  border: `${borderWidth.thin}px solid ${semantic.status.danger}`,
   padding: spacing.base,
   marginBottom: spacing.md,
 });
@@ -102,7 +103,7 @@ const IrreversibleTitle = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
-  color: colors.status.error,
+  color: semantic.status.danger,
   marginBottom: spacing.xs,
   letterSpacing: letterSpacing.normal,
 });
@@ -111,7 +112,7 @@ const WarningTitle = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
-  color: colors.status.warning,
+  color: semantic.status.warning,
   marginBottom: spacing.xs,
   letterSpacing: letterSpacing.normal,
 });

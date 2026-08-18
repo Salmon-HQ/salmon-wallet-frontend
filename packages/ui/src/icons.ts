@@ -15,7 +15,7 @@
  *   not for UI chrome.
  * - Color comes from a text token (`colors.text.*`), never a literal, and
  *   never a color the icon owns: decorative reads `text.tertiary`, actionable
- *   `text.primary`, destructive `danger-500` (`colors.status.error`).
+ *   `text.primary`, destructive `danger-500` (`semantic.status.danger`).
  *
  * Imports are deep paths rather than the package root: the root module pulls
  * all ~1,500 icons through the bundler, which costs both dev transpile time

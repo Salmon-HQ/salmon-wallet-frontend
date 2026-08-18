@@ -27,7 +27,6 @@ vi.mock('@salmon/shared', async () => ({
     address ? address.replace(/(.{4})/g, '$1 ').trim() : '',
   colors: {
     text: { primary: '#fff', secondary: '#999' },
-    status: { error: '#f00', success: '#0f0' },
     accent: { border: '#0f0' },
     button: {
       cancelBackground: '#111',
@@ -52,6 +51,7 @@ vi.mock('@salmon/shared', async () => ({
     buttonFleshScale: 1,
   },
   semantic: {
+    status: { danger: '#f00', success: '#0f0' },
     surface: { crest: '#1B2233' },
     text: { primary: '#EDF1F7', disabled: '#6F7B95' },
     flesh: { band: '#FFF1EE' },

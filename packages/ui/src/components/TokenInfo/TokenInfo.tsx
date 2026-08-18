@@ -12,6 +12,7 @@ import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   fontFamily,
@@ -346,7 +347,7 @@ export function TokenInfo({
             <ContractAddress>{getShortAddress(contractAddress, 6)}</ContractAddress>
             <CopyButton>
               {copied ? (
-                <CheckIcon color={colors.status.success} size={iconSize.md} />
+                <CheckIcon color={semantic.status.success} size={iconSize.md} />
               ) : (
                 <CopyIcon color={colors.text.muted} size={iconSize.md} />
               )}

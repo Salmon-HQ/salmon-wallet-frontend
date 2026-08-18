@@ -9,6 +9,7 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import {
+  semantic,
   useSwapScreenLogic,
   getTransactionUrl,
   getDefaultExplorer,
@@ -125,7 +126,7 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
                 onClick={retryNow}
                 data-testid="bridge-stalled-retry"
                 sx={{
-                  color: colors.status.warning,
+                  color: semantic.status.warning,
                   fontSize: fontSize.sm,
                   fontWeight: fontWeight.semibold,
                   textDecoration: 'underline',

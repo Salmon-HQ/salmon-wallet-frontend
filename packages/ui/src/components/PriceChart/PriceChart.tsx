@@ -41,8 +41,8 @@ import type { PriceChartProps } from './types';
  * Default colors for positive/negative performance
  */
 const CHART_COLORS = {
-  positive: colors.status.success,
-  negative: colors.status.error,
+  positive: semantic.status.success,
+  negative: semantic.status.danger,
 } as const;
 
 // formatPrice is defined inside the component to use currency context

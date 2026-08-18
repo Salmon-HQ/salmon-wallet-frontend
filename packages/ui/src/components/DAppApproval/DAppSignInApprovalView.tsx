@@ -17,6 +17,7 @@ import {
   fontFamily,
   fontSize,
   getShortAddress,
+  semantic,
   spacing,
   useCopyFeedback,
 } from '@salmon/shared';
@@ -208,7 +209,7 @@ export function DAppSignInApprovalView({
                       {getShortAddress(siws.address)}
                       {copied ? (
                         <CheckIcon
-                          sx={{ fontSize: 14, color: colors.status.success, flexShrink: 0 }}
+                          sx={{ fontSize: 14, color: semantic.status.success, flexShrink: 0 }}
                         />
                       ) : (
                         <ContentCopyOutlinedIcon

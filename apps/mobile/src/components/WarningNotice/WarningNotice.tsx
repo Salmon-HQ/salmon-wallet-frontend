@@ -21,7 +21,7 @@ export function WarningNotice({
 }: WarningNoticeProps): React.ReactElement {
   const accent = tone === 'warning' ? semantic.status.warning : semantic.status.danger;
   const background =
-    tone === 'warning' ? colors.status.warningBackground : colors.status.errorBackground;
+    tone === 'warning' ? semantic.status.warningTint : semantic.status.dangerTint;
 
   return (
     <View

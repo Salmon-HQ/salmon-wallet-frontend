@@ -22,6 +22,7 @@ import Divider from '@mui/material/Divider';
 import { CheckIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../icons';
 import {
   colors,
+  semantic,
   spacing,
   getShortAddress,
   getAvatarColor,
@@ -98,9 +99,9 @@ const ActionIconButton = styled(IconButton)({
 
 const DeleteIconButton = styled(IconButton)({
   padding: spacing.xs,
-  color: colors.status.error,
+  color: semantic.status.danger,
   '&:hover': {
-    backgroundColor: colors.status.errorBackground,
+    backgroundColor: semantic.status.dangerTint,
   },
 });
 

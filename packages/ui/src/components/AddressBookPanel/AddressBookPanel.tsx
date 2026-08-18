@@ -18,6 +18,7 @@ import { PencilSimpleIcon, PlusCircleIcon, TrashIcon, UserIcon, iconSize } from 
 import { useTranslation } from 'react-i18next';
 import {
   colors,
+  semantic,
   spacing,
   getShortAddress,
   AddressbookError,
@@ -76,7 +77,7 @@ const AddButton = styled(Button)({
 });
 
 const WriteErrorText = styled(Typography)({
-  color: colors.status.error,
+  color: semantic.status.danger,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   textAlign: 'center',
@@ -160,8 +161,8 @@ export function AddressBookPanel({
                       aria-label={t('actions.remove', 'Remove')}
                       data-testid={`address-book-remove-${contact.address}`}
                       sx={{
-                        color: colors.status.error,
-                        '&:hover': { backgroundColor: colors.status.errorBackground },
+                        color: semantic.status.danger,
+                        '&:hover': { backgroundColor: semantic.status.dangerTint },
                       }}
                     >
                       <TrashIcon size={iconSize.md} />

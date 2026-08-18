@@ -50,8 +50,8 @@ import type { MobilePanelRegistry } from '../SettingsPanelStack';
 
 const DANGER_COLORS = {
   text: semantic.status.danger,
-  background: colors.status.errorBackground,
-  iconBackground: colors.status.errorBackground,
+  background: semantic.status.dangerTint,
+  iconBackground: semantic.status.dangerTint,
 } as const;
 
 const NEUTRAL_OPTION_COLORS = {
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
   sectionHeaderDanger: {
     marginTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.status.errorBackground,
+    borderTopColor: semantic.status.dangerTint,
     paddingTop: spacing.md,
   },
   sectionHeaderText: {

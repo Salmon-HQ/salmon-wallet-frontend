@@ -25,6 +25,7 @@ import {
   formatDateTime,
   formatRawAmount,
   getShortAddress,
+  semantic,
   spacing,
   truncateHash,
   fontSize,
@@ -280,7 +281,7 @@ const HashCopyRow: React.FC<{
       <HashCopyContainer onClick={handleCopy}>
         <SummaryValue>{displayValue ?? value}</SummaryValue>
         {copied ? (
-          <CheckIcon size={iconSize.sm} color={colors.status.success} />
+          <CheckIcon size={iconSize.sm} color={semantic.status.success} />
         ) : (
           <CopyIcon size={iconSize.sm} color={colors.text.tertiary} />
         )}

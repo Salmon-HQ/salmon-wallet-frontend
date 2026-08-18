@@ -43,6 +43,7 @@ import {
   fontSize,
   letterSpacing,
   opacity,
+  semantic,
   spacing,
   duration,
   easing,
@@ -325,7 +326,7 @@ const FailedBadge = styled(Box)({
 const FailedText = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
-  color: colors.status.error,
+  color: semantic.status.danger,
 });
 
 const PendingBadge = styled(Box)({
@@ -334,14 +335,14 @@ const PendingBadge = styled(Box)({
   alignItems: 'center',
   gap: spacing.xs,
   padding: `${spacing.xs}px ${spacing.sm}px`,
-  backgroundColor: `${colors.status.warning}15`,
+  backgroundColor: `${semantic.status.warning}15`,
   borderRadius: borderRadius.sm,
 });
 
 const PendingText = styled(Typography)({
   fontSize: fontSize.xs,
   fontWeight: fontWeight.medium,
-  color: colors.status.warning,
+  color: semantic.status.warning,
 });
 
 const ExpandBadge = styled(Box)({
@@ -495,7 +496,7 @@ export function TransactionItem({
     if (status === 'failed') {
       return (
         <FailedBadge>
-          <XCircleIcon size={iconSize.sm} color={colors.status.error} />
+          <XCircleIcon size={iconSize.sm} color={semantic.status.danger} />
           <FailedText>{t('transactions.detail.failed', 'Failed')}</FailedText>
         </FailedBadge>
       );
@@ -504,7 +505,7 @@ export function TransactionItem({
     if (status === 'pending') {
       return (
         <PendingBadge>
-          <ClockIcon size={iconSize.sm} color={colors.status.warning} />
+          <ClockIcon size={iconSize.sm} color={semantic.status.warning} />
           <PendingText>{t('transactions.detail.pending', 'Pending')}</PendingText>
         </PendingBadge>
       );

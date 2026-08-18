@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     marginBottom: vs(spacing['2xl']),
   },
   dangerBox: {
-    backgroundColor: colors.status.errorBackground,
+    backgroundColor: semantic.status.dangerTint,
     borderRadius: borderRadius.md,
     borderWidth: borderWidth.thin,
     borderColor: semantic.status.danger,
@@ -193,10 +193,10 @@ const styles = StyleSheet.create({
     letterSpacing: letterSpacing.normal,
   },
   warningBox: {
-    backgroundColor: colors.status.warningBackground,
+    backgroundColor: semantic.status.warningTint,
     borderRadius: borderRadius.md,
     borderWidth: borderWidth.thin,
-    borderColor: colors.status.warningBorder,
+    borderColor: semantic.status.warningTintBorder,
     padding: s(spacing.base),
     marginBottom: vs(spacing.lg),
   },

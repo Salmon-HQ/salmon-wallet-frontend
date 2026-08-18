@@ -16,6 +16,7 @@ import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from
 import { styled } from '../../utils/styled';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   borderWidth,
@@ -217,13 +218,13 @@ export function AccountsPanel({
                     }}
                     aria-label={t('actions.remove', 'Remove')}
                     data-testid={`account-remove-${account.id}`}
-                    sx={{ color: colors.status.error }}
+                    sx={{ color: semantic.status.danger }}
                   >
                     <TrashIcon size={iconSize.md} />
                   </IconButton>
                 )}
 
-                {isActive && <CheckCircleIcon color={colors.status.success} size={iconSize.lg} />}
+                {isActive && <CheckCircleIcon color={semantic.status.success} size={iconSize.lg} />}
               </ActionButtons>
             </AccountItem>
           );

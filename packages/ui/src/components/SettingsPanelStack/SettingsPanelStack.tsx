@@ -35,6 +35,7 @@ import {
 
 import {
   colors,
+  semantic,
   spacing,
   useSettingsPanelStack,
   getSettingsItemTestId,
@@ -190,7 +191,7 @@ const SectionTitle = styled(Typography)<{ $isDanger?: boolean }>(({ $isDanger })
   fontWeight: fontWeight.semibold,
   textTransform: 'uppercase',
   letterSpacing: letterSpacing.wider,
-  color: $isDanger ? colors.status.error : colors.text.secondary,
+  color: $isDanger ? semantic.status.danger : colors.text.secondary,
   padding: `${spacing.md}px ${spacing.lg}px ${spacing.sm}px`,
   marginTop: spacing.sm,
 }));
@@ -202,20 +203,20 @@ const StyledListItem = styled(ListItem)({
 const StyledListItemButton = styled(ListItemButton)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
   padding: `${spacing.md}px ${spacing.lg}px`,
   '&:hover': {
-    backgroundColor: $isDanger ? colors.status.errorBackground : colors.background.card,
+    backgroundColor: $isDanger ? semantic.status.dangerTint : colors.background.card,
   },
 }));
 
 const StyledListItemIcon = styled(ListItemIcon)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
   minWidth: componentSizes.backButtonSize,
-  color: $isDanger ? colors.status.error : colors.text.secondary,
+  color: $isDanger ? semantic.status.danger : colors.text.secondary,
 }));
 
 const StyledListItemText = styled(ListItemText)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
   '& .MuiListItemText-primary': {
     fontSize: fontSize.base,
     fontWeight: fontWeight.medium,
-    color: $isDanger ? colors.status.error : colors.text.primary,
+    color: $isDanger ? semantic.status.danger : colors.text.primary,
   },
   '& .MuiListItemText-secondary': {
     fontSize: fontSize.sm,

@@ -33,7 +33,6 @@ vi.mock('@salmon/shared', async () => ({
   colors: {
     background: { primary: '#000' },
     text: { primary: '#fff', muted: '#999' },
-    status: { success: '#0f0' },
     card: { border: '#222' },
     interactive: { hoverMedium: '#333' },
   },
@@ -48,7 +47,7 @@ vi.mock('@salmon/shared', async () => ({
   opacity: { medium: 0.5 },
   componentSizes: { headerButtonSize: 40 },
   durationMs: { spin: 800 },
-  semantic: { text: { accent: '#f54' } },
+  semantic: { text: { accent: '#f54' }, status: { success: '#0f0' } },
 }));
 
 import { WalletHeader } from './WalletHeader';

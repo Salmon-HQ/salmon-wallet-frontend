@@ -153,9 +153,9 @@ const secretInputProps = {
 function getBorderColor(state: ValidationState): string {
   switch (state) {
     case 'correct':
-      return colors.status.success;
+      return semantic.status.success;
     case 'incorrect':
-      return colors.status.error;
+      return semantic.status.danger;
     default:
       return colors.input.border;
   }

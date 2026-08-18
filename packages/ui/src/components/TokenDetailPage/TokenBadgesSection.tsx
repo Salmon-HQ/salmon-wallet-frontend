@@ -47,6 +47,7 @@ import {
 
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   fontSize,
@@ -221,7 +222,7 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
   },
   deprecated: {
     icon: WarningIcon,
-    color: colors.status.error,
+    color: semantic.status.danger,
     label: 'Deprecated',
     labelKey: 'token.badges.deprecated',
   },

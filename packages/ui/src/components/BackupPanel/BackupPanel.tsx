@@ -21,6 +21,7 @@ import { CheckIcon, CopyIcon, EyeIcon, EyeSlashIcon, KeyIcon, WarningIcon } from
 import { useTranslation } from 'react-i18next';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   borderWidth,
@@ -51,10 +52,10 @@ const PageContent = styled(Box)({
 });
 
 const WarningAlert = styled(Alert)({
-  backgroundColor: colors.status.warningBackground,
-  border: `${borderWidth.thin}px solid ${colors.status.warningBorder}`,
+  backgroundColor: semantic.status.warningTint,
+  border: `${borderWidth.thin}px solid ${semantic.status.warningTintBorder}`,
   '& .MuiAlert-icon': {
-    color: colors.status.warning,
+    color: semantic.status.warning,
   },
   '& .MuiAlert-message': {
     color: colors.text.primary,
@@ -260,7 +261,7 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
                 <Tooltip title={copied ? t('actions.copied', 'Copied!') : ''} open={copied}>
                   <CopyButton
                     variant="outlined"
-                    startIcon={copied ? <CheckIcon color={colors.status.success} /> : <CopyIcon />}
+                    startIcon={copied ? <CheckIcon color={semantic.status.success} /> : <CopyIcon />}
                     onClick={handleCopy}
                     disabled={!seedPhraseVisible}
                     data-testid="backup-seed-copy-button"

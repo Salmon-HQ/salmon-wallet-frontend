@@ -82,7 +82,15 @@ export const border = {
   hairline: 'rgba(199, 211, 232, 0.10)',
 } as const;
 
-/** Status ink, hue-separated from salmon so errors never read as brand. */
+/**
+ * Status ink, hue-separated from salmon so errors never read as brand.
+ *
+ * The `*Tint` values are the tinted notice surfaces — faint washes that sit
+ * *under* status ink, never carry text contrast of their own. Their values are
+ * inherited unchanged from the retired `colors.status.*Background` layer, so
+ * the migration onto these names is a rename, not a repaint.
+ * `warningTintBorder` is the one stroke the old layer shipped alongside them.
+ */
 export const status = {
   success: success[500],
   danger: danger[500],
@@ -90,6 +98,14 @@ export const status = {
   successFill: success[700],
   dangerFill: danger[700],
   warningFill: warning[700],
+  /** Tinted notice surface under success ink. */
+  successTint: 'rgba(76, 175, 80, 0.1)',
+  /** Tinted notice surface under danger ink. */
+  dangerTint: 'rgba(239, 68, 68, 0.1)',
+  /** Tinted notice surface under warning ink. */
+  warningTint: 'rgba(255, 171, 0, 0.1)',
+  /** The stroke a warning tint wears when it needs an edge. Decorative. */
+  warningTintBorder: 'rgba(255, 171, 0, 0.3)',
 } as const;
 
 /**

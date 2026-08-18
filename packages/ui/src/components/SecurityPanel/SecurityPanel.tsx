@@ -16,6 +16,7 @@ import Alert from '@mui/material/Alert';
 import { styled } from '../../utils/styled';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   fontSize,
@@ -179,8 +180,8 @@ export function SecurityPanel({
               severity="error"
               sx={{
                 marginBottom: spacing.md,
-                backgroundColor: colors.status.errorBackground,
-                color: colors.status.error,
+                backgroundColor: semantic.status.dangerTint,
+                color: semantic.status.danger,
               }}
             >
               {error}
@@ -192,8 +193,8 @@ export function SecurityPanel({
               severity="success"
               sx={{
                 marginBottom: spacing.md,
-                backgroundColor: colors.status.successBackground,
-                color: colors.status.success,
+                backgroundColor: semantic.status.successTint,
+                color: semantic.status.success,
               }}
             >
               {success}

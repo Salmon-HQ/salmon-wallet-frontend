@@ -17,6 +17,7 @@ vi.mock('@salmon/shared', () => ({
   markAspectRatio: 253 / 236,
   tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
   semantic: {
+    status: { danger: '#f00', dangerTint: '#500' },
     surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
     text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
     border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
@@ -42,7 +43,6 @@ vi.mock('@salmon/shared', () => ({
     border: { subtle: '#222', default: '#333' },
     text: { primary: '#fff', secondary: '#ccc' },
     interactive: { surface: '#444' },
-    status: { error: '#f00', errorBackground: '#500' },
     button: {
       primaryBackground: '#fff',
       primaryText: '#000',

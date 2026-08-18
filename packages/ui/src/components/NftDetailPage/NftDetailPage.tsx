@@ -19,6 +19,7 @@ import { ArrowUpRightIcon, FireIcon, iconSize } from '../../icons';
 
 import {
   colors,
+  semantic,
   spacing,
   gradients,
   fontFamily,
@@ -530,7 +531,7 @@ export function NftDetailPage({
                 {burnPreparing && <DescriptionText>{burnBusyLabel}</DescriptionText>}
 
                 {burnError && (
-                  <DescriptionText sx={{ color: colors.status.error }}>
+                  <DescriptionText sx={{ color: semantic.status.danger }}>
                     {t(burnError)}
                   </DescriptionText>
                 )}

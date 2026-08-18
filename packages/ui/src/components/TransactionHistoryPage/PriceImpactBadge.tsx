@@ -15,7 +15,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { CheckCircleIcon, WarningCircleIcon, WarningIcon, iconSize } from '../../icons';
 import {
-  colors,
+  semantic,
   spacing,
   borderRadius,
   getPriceImpactSeverity,
@@ -33,9 +33,9 @@ import type { PriceImpactBadgeProps } from './types';
 // ============================================================================
 
 const SEVERITY_COLORS: Record<PriceImpactSeverity, string> = {
-  safe: colors.status.success,
-  warning: colors.status.warning,
-  high: colors.status.error,
+  safe: semantic.status.success,
+  warning: semantic.status.warning,
+  high: semantic.status.danger,
 };
 
 const SIZE_CONFIG = {

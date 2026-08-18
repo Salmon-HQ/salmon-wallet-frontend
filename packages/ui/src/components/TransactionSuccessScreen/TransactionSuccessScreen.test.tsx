@@ -23,6 +23,7 @@ vi.mock('@salmon/shared', () => ({
   // these cases are about what the screen renders in each state.
   useWaitExit: (showWait: boolean) => ({ held: showWait, onExited: () => {} }),
   semantic: {
+    status: { success: '#0f0' },
     surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
     text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
     border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
@@ -47,7 +48,6 @@ vi.mock('@salmon/shared', () => ({
     text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
     accent: { primary: '#0f0', border: '#0c0' },
     background: { tertiary: '#111' },
-    status: { success: '#0f0' },
   },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, '4xl': 40, '5xl': 48 },
   borderRadius: { lg: 16, full: '50%', card: 12 },

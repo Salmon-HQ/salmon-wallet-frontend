@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   securityNotice: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: colors.status.warningBackground,
+    backgroundColor: semantic.status.warningTint,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginTop: spacing.lg,

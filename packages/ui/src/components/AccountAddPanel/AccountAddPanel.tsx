@@ -20,6 +20,7 @@ import { CaretRightIcon, FileTextIcon, TreeStructureIcon, iconSize } from '../..
 import { styled } from '../../utils/styled';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   fontSize,
@@ -406,7 +407,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
               />
               {seedError && (
                 <Typography
-                  sx={{ color: colors.status.error, fontSize: fontSize.sm, marginTop: spacing.xs }}
+                  sx={{ color: semantic.status.danger, fontSize: fontSize.sm, marginTop: spacing.xs }}
                 >
                   {seedError}
                 </Typography>
@@ -440,7 +441,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
               />
               {confirmError && (
                 <Typography
-                  sx={{ color: colors.status.error, fontSize: fontSize.sm, marginTop: spacing.xs }}
+                  sx={{ color: semantic.status.danger, fontSize: fontSize.sm, marginTop: spacing.xs }}
                 >
                   {confirmError}
                 </Typography>

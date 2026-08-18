@@ -11,6 +11,7 @@ import Button from '@mui/material/Button';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
+  semantic,
   spacing,
   fontFamily,
   fontWeight,
@@ -93,7 +94,7 @@ const ErrorText = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
-  color: colors.status.error,
+  color: semantic.status.danger,
   marginTop: spacing.sm,
 });
 

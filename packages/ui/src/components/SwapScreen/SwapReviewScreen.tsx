@@ -12,6 +12,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   fontFamily,
@@ -106,7 +107,7 @@ const WarningTitle = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
-  color: colors.status.warning,
+  color: semantic.status.warning,
   marginBottom: spacing.xs,
   letterSpacing: letterSpacing.normal,
 });
@@ -261,7 +262,7 @@ export function SwapReviewScreen({
           {/* Warning Box */}
           <BlurContainer
             borderColor={colors.palette.amber}
-            backgroundColor={colors.status.warningBackground}
+            backgroundColor={semantic.status.warningTint}
             style={{ borderRadius: borderRadius.md, marginBottom: spacing.lg }}
           >
             <WarningContent>

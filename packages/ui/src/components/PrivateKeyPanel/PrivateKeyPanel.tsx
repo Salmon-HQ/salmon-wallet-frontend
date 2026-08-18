@@ -35,6 +35,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   borderWidth,
@@ -71,10 +72,10 @@ const PageContent = styled(Box)({
 });
 
 const WarningAlert = styled(Alert)({
-  backgroundColor: colors.status.warningBackground,
-  border: `${borderWidth.thin}px solid ${colors.status.warningBorder}`,
+  backgroundColor: semantic.status.warningTint,
+  border: `${borderWidth.thin}px solid ${semantic.status.warningTintBorder}`,
   '& .MuiAlert-icon': {
-    color: colors.status.warning,
+    color: semantic.status.warning,
   },
   '& .MuiAlert-message': {
     color: colors.text.primary,
@@ -394,7 +395,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                     <CopyButton
                       variant="outlined"
                       startIcon={
-                        isCopied ? <CheckIcon color={colors.status.success} /> : <CopyIcon />
+                        isCopied ? <CheckIcon color={semantic.status.success} /> : <CopyIcon />
                       }
                       onClick={() => handleCopy(accountKey.privateKey, index)}
                       disabled={!isRevealed}
@@ -428,7 +429,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                   <Typography
                     data-testid={`private-key-copy-error-${index}`}
                     sx={{
-                      color: colors.status.error,
+                      color: semantic.status.danger,
                       fontSize: fontSize.sm,
                       fontWeight: fontWeight.medium,
                       marginTop: `${spacing.sm}px`,

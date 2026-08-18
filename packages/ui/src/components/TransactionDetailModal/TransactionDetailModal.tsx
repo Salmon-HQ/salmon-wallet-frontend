@@ -70,6 +70,7 @@ import {
   formatRawAmount,
   getShortAddress,
   letterSpacing,
+  semantic,
   spacing,
   truncateHash,
   duration,
@@ -161,17 +162,17 @@ const TRANSACTION_TYPE_CONFIG: Record<
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   completed: {
     label: 'Completed',
-    color: colors.status.success,
+    color: semantic.status.success,
     icon: <CheckCircleIcon size={iconSize.sm} />,
   },
   failed: {
     label: 'Failed',
-    color: colors.status.error,
+    color: semantic.status.danger,
     icon: <XCircleIcon size={iconSize.sm} />,
   },
   pending: {
     label: 'Pending',
-    color: colors.status.warning,
+    color: semantic.status.warning,
     icon: <ClockIcon size={iconSize.sm} />,
   },
 };
@@ -180,9 +181,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
  * Confirmation status display configuration
  */
 const CONFIRMATION_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  processed: { label: 'Processed', color: colors.status.warning },
+  processed: { label: 'Processed', color: semantic.status.warning },
   confirmed: { label: 'Confirmed', color: colors.palette.blue },
-  finalized: { label: 'Finalized', color: colors.status.success },
+  finalized: { label: 'Finalized', color: semantic.status.success },
 };
 
 const TYPE_LABEL_KEYS: Record<TransactionType, string> = {
@@ -864,7 +865,7 @@ const NftMetadataSection: React.FC<{
             {token.nftCollectionVerified && (
               <SealCheckIcon
                 size={iconSize.sm}
-                color={colors.status.success}
+                color={semantic.status.success}
                 style={{ marginLeft: spacing.xs }}
               />
             )}
@@ -1230,10 +1231,10 @@ export function TransactionDetailModal({
                   size="small"
                   aria-label={t('transactions.detail.copyTransactionHash')}
                   data-testid="tx-detail-copy-hash"
-                  sx={hashCopied ? { backgroundColor: `${colors.status.success}20` } : undefined}
+                  sx={hashCopied ? { backgroundColor: `${semantic.status.success}20` } : undefined}
                 >
                   {hashCopied ? (
-                    <CheckIcon size={iconSize.sm} color={colors.status.success} />
+                    <CheckIcon size={iconSize.sm} color={semantic.status.success} />
                   ) : (
                     <CopyIcon size={iconSize.sm} color={colors.text.secondary} />
                   )}

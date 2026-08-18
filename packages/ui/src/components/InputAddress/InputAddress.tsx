@@ -21,6 +21,7 @@ import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   borderWidth,
@@ -101,19 +102,19 @@ const ValidationIcon = styled(Box)({
 });
 
 const ValidText = styled('span')({
-  color: colors.status.success,
+  color: semantic.status.success,
   fontSize: fontSize.lg,
   lineHeight: lineHeight.none,
 });
 
 const InvalidText = styled('span')({
-  color: colors.status.error,
+  color: semantic.status.danger,
   fontSize: fontSize.lg,
   lineHeight: lineHeight.none,
 });
 
 const WarningText = styled('span')({
-  color: colors.status.warning,
+  color: semantic.status.warning,
   fontSize: fontSize.lg,
   lineHeight: lineHeight.none,
 });
@@ -130,9 +131,9 @@ const MessageText = styled(Typography)<{
   fontFamily: fontFamily.sans,
   color:
     $messageType === 'error'
-      ? colors.status.error
+      ? semantic.status.danger
       : $messageType === 'warning'
-        ? colors.status.warning
+        ? semantic.status.warning
         : colors.text.secondary,
 }));
 
@@ -261,16 +262,16 @@ export function InputAddress({
 
   // Determine border color based on validation state
   const getBorderColor = (): string => {
-    if (errorMessage) return colors.status.error;
+    if (errorMessage) return semantic.status.danger;
     if (isFocused) return colors.accent.primary;
 
     switch (validationState) {
       case 'valid':
-        return colors.status.success;
+        return semantic.status.success;
       case 'invalid':
-        return colors.status.error;
+        return semantic.status.danger;
       case 'warning':
-        return colors.status.warning;
+        return semantic.status.warning;
       default:
         return colors.input.border;
     }
