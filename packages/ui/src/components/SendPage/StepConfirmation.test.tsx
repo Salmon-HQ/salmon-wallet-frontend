@@ -60,7 +60,7 @@ vi.mock('@salmon/shared', () => ({
   fleshTile: { width: 380, height: 40 },
   fleshFades: [],
   fleshTiledStrokes: [],
-  fontFamily: { sans: 'Geist, sans-serif', mono: 'Geist Mono, ui-monospace, monospace' },
+  fontFamily: { sans: 'DM Sans, sans-serif', mono: 'Geist Mono, ui-monospace, monospace' },
   fontWeight: { regular: 400, medium: 500, semibold: 600, bold: 700, extraBold: 800 },
   useSendTransaction: () => ({
     status: 'idle',

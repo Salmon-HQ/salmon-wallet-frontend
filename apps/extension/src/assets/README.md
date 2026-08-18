@@ -8,7 +8,7 @@ Static assets for the Salmon Wallet extension.
 apps/extension/
 ├── public/
 │   ├── images/        # Image assets served from the extension root
-│   └── fonts/         # Font files (Geist / Geist Mono)
+│   └── fonts/         # Font files (DM Sans / Geist Mono)
 └── src/
     └── assets/
         ├── fonts.css  # Font face declarations
@@ -29,7 +29,7 @@ Then reference the family in CSS — or, preferably, use the
 
 ```css
 body {
-  font-family: 'Geist', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-weight: 400; /* Regular */
 }
 ```

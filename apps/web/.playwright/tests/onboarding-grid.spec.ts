@@ -156,7 +156,7 @@ for (const viewport of VIEWPORTS) {
           const lock = await measure(page);
 
           await page.goto('/auth/recover');
-          await page.getByTestId('recover-seed-input').fill(seed);
+          await page.getByTestId('recover-word-input-1').fill(seed);
           await page.getByTestId('recover-next-button').click();
           await page.getByTestId('password-input').waitFor({ state: 'visible' });
           const password = await measure(page);

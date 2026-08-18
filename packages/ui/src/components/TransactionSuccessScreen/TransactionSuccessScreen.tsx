@@ -120,7 +120,7 @@ const AmountStage = styled(Box)({
 
 /**
  * Widest advance per character the summary can present, in em, measured off
- * Geist SemiBold with `tabular-nums` applied (all digits at 600/1000) across
+ * DM Sans SemiBold with `tabular-nums` applied (all digits at one advance) across
  * the shapes this string actually takes — `0.014 SOL → 1.056672 USDC` is
  * 0.544em/char, a long BONK pair is 0.568em/char. 0.62 carries ~9% headroom
  * for the fallback face, so the budget below is a lower bound on what fits

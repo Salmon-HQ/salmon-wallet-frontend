@@ -54,6 +54,11 @@ export { classifyTransactionError } from './transaction-errors';
 export { classifyBridgeError } from './bridge-errors';
 export { sanitizeDecimalInput } from './decimal-input';
 
+// How a pasted recovery phrase lays out across one-word boxes. Shared so the
+// mobile grid, the DOM grid and both paste buttons cannot disagree.
+export { distributePhrase, splitPhrase, LONG_PHRASE, SHORT_PHRASE } from './seed-phrase';
+export type { DistributedPhrase } from './seed-phrase';
+
 // Clipboard utilities (web only - use expo-clipboard for native)
 export { copyToClipboard, pasteFromClipboard } from './clipboard';
 

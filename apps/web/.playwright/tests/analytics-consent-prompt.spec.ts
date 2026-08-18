@@ -32,7 +32,7 @@ test.beforeAll(async () => {
 /** Drives recovery up to (but not through) the consent screen. */
 async function recoverToConsent(page: Page): Promise<void> {
   await page.getByTestId('select-recover-button').click({ timeout: 20_000 });
-  await page.getByTestId('recover-seed-input').fill(seedA());
+  await page.getByTestId('recover-word-input-1').fill(seedA());
   await page.getByTestId('recover-next-button').click({ timeout: 30_000 });
   await page.getByTestId('password-input').fill(password());
   await page.getByTestId('password-confirm-input').fill(password());

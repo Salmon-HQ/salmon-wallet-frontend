@@ -1,32 +1,36 @@
 /**
  * Seed entry, on the onboarding slot grid.
  *
- * The one thing that had to survive the port is why this screen was already
- * the least broken in the flow: it reserved the "Next" button's space with
+ * The phrase is typed one word per box (`SeedPhraseEntry`), not into a single
+ * free-text field. The textarea this replaces hid every mistake that matters —
+ * a missing word, a transposed pair, a word the browser "corrected" — and the
+ * DOM was the last surface still showing one after mobile moved.
+ *
+ * The other thing that had to survive is why this screen was already the least
+ * broken in the flow: it reserved the "Next" button's space with
  * `visibility: hidden` instead of mounting it when the phrase became valid.
- * That is now `ReservedSlot`, used by every screen with a conditional control
- * — the mobile twin's version of this button used to move four slots by 36px
- * mid-typing because it did not do this.
+ * That is now `ReservedSlot`, used by every screen with a conditional control.
  *
  * Bedrock, and no water: this screen carries the recovery phrase, and the
  * Bedrock Rule fixes every seed view at `semantic.surface.bedrock`, opaque.
  * That is a security decision, not a stylistic one.
  */
+import Typography from '@mui/material/Typography';
 import {
-  borderRadius,
-  colors,
+  distributePhrase,
   fontFamily,
   fontSize,
+  lineHeight,
   normalizeMnemonic,
   semantic,
-  spacing,
+  SHORT_PHRASE,
   validateMnemonic,
 } from '@salmon/shared';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { focusRingNone } from '../../theme';
 import { styled } from '../../utils/styled';
 import { PrimaryButton, SecondaryButton } from '../Button';
+import { SeedPhraseEntry } from '../SeedPhrase';
 import {
   OnboardingDescription,
   OnboardingLayout,
@@ -36,62 +40,66 @@ import {
 import { ScreenHeader } from '../ScreenHeader';
 import type { RecoverWalletPageProps } from './types';
 
-const TextArea = styled('textarea')<{ $borderColor: string }>(({ $borderColor }) => ({
-  width: '100%',
-  // Relative to the band it sits in rather than a fixed 160px, so a short
-  // surface takes it out of `body` — which is the give — instead of pushing
-  // the action off the bottom.
-  height: '100%',
-  minHeight: 0,
-  backgroundColor: colors.input.background,
-  border: `1px solid ${$borderColor}`,
-  borderRadius: borderRadius.lg,
-  padding: spacing.lg,
-  color: colors.text.primary,
+const InvalidNotice = styled(Typography)({
+  color: semantic.status.danger,
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.md,
+  fontSize: fontSize.body,
+  lineHeight: `${Math.round(fontSize.body * lineHeight.snug)}px`,
   textAlign: 'center',
-  resize: 'none',
-  boxSizing: 'border-box',
-  transition: 'border-color 0.2s ease',
-  '&::placeholder': {
-    color: colors.text.tertiary,
-  },
-  // This textarea draws its own focus indicator: the 1px border switches to
-  // `colors.accent.primary`, which measures 6.26:1 against the page ground
-  // and 5.62:1 against its own fill — comfortably past the 3:1 WCAG 2.2
-  // 1.4.11 asks of a focus indicator. The theme ring stands down rather than
-  // stacking a second outline just inside that border.
-  '&:focus-visible:focus-visible:focus-visible': focusRingNone,
-}));
+});
 
 export function RecoverWalletPage({
   onComplete,
   onBack,
 }: RecoverWalletPageProps): React.ReactElement {
   const { t } = useTranslation();
-  const [seedPhrase, setSeedPhrase] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
+  // One entry per box. Twelve to begin with; a paste or a thirteenth typed
+  // word grows it to twenty-four.
+  const [words, setWords] = useState<string[]>(() => Array<string>(SHORT_PHRASE).fill(''));
+  // What was actually pasted, so the screen can say what happened rather than
+  // only that something is wrong. `null` means nothing was rejected.
+  const [pastedCount, setPastedCount] = useState<number | null>(null);
 
-  const isValidSeedPhrase = useMemo(() => {
-    const normalized = normalizeMnemonic(seedPhrase);
-    if (!normalized) return false;
-    return validateMnemonic(normalized);
-  }, [seedPhrase]);
+  const phrase = useMemo(() => normalizeMnemonic(words.join(' ')), [words]);
+  const isComplete = words.every((word) => word.length > 0);
+  const isValidSeedPhrase = isComplete && validateMnemonic(phrase);
 
+  const handleWords = useCallback((next: string[]) => {
+    setWords(next);
+    setPastedCount(null);
+  }, []);
+
+  const handleLength = useCallback((length: number) => {
+    setWords((prev) =>
+      prev.length === length ? prev : Array.from({ length }, (_, i) => prev[i] ?? '')
+    );
+  }, []);
+
+  /**
+   * Paste from the clipboard. Goes through the same `distributePhrase` the
+   * grid's own paste uses, so the button and an in-box paste cannot behave
+   * differently.
+   */
   const handlePaste = useCallback(async () => {
     try {
       const text = await navigator.clipboard.readText();
-      if (text) setSeedPhrase(text);
+      if (!text) return;
+      const { words: pasted, fits, count } = distributePhrase(text);
+      setPastedCount(fits ? null : count);
+      setWords(pasted);
     } catch {
-      // Clipboard API may not be available
+      // Clipboard API may not be available, or permission was refused.
     }
   }, []);
 
   const handleNext = useCallback(() => {
     if (!isValidSeedPhrase) return;
-    onComplete(normalizeMnemonic(seedPhrase));
-  }, [isValidSeedPhrase, onComplete, seedPhrase]);
+    onComplete(phrase);
+  }, [isValidSeedPhrase, onComplete, phrase]);
+
+  // Only once every box is filled — telling someone their phrase is invalid
+  // while they are still typing it is noise.
+  const showInvalid = pastedCount !== null || (isComplete && !isValidSeedPhrase);
 
   return (
     <OnboardingLayout
@@ -102,18 +110,21 @@ export function RecoverWalletPage({
       title={<OnboardingTitle>{t('wallet.recover.messageTitle')}</OnboardingTitle>}
       description={<OnboardingDescription>{t('wallet.recover.messageBody')}</OnboardingDescription>}
       body={
-        <TextArea
-          $borderColor={isFocused ? colors.accent.primary : colors.input.border}
-          data-testid="recover-seed-input"
-          placeholder={t('wallet.recover.placeholder')}
-          value={seedPhrase}
-          onChange={(event) => setSeedPhrase(event.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
+        <SeedPhraseEntry
+          words={words}
+          onChange={handleWords}
+          onLengthChange={handleLength}
+          onPasteRejected={setPastedCount}
         />
+      }
+      assist={
+        showInvalid ? (
+          <InvalidNotice data-testid="recover-invalid-phrase">
+            {pastedCount !== null
+              ? t('wallet.recover.pastedWordCount', { count: pastedCount })
+              : t('wallet.create.invalidSeed')}
+          </InvalidNotice>
+        ) : undefined
       }
       secondary={
         <SecondaryButton onClick={handlePaste} fullWidth testID="recover-paste-button">

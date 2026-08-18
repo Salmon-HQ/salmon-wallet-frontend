@@ -358,7 +358,7 @@ export { NftSendDialog } from './NftSendDialog';
 export type { NftSendDialogProps } from './NftSendDialog';
 
 // SeedPhrase - Seed word display grid and validation input
-export { SeedWordGrid, SeedWordInput } from './SeedPhrase';
+export { SeedPhraseEntry, SeedWordGrid, SeedWordInput } from './SeedPhrase';
 
 // NetworkSelector - Network selection for settings
 export { NetworkSelector } from './NetworkSelector';

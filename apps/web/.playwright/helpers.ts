@@ -43,7 +43,7 @@ export async function unlockOrRecover(
   const recoverButton = page.getByTestId('select-recover-button');
   if (await recoverButton.count()) {
     await recoverButton.click();
-    await page.getByTestId('recover-seed-input').fill(seedA());
+    await page.getByTestId('recover-word-input-1').fill(seedA());
     await page.getByTestId('recover-next-button').click({ timeout: 30_000 });
     await page.getByTestId('password-input').fill(password());
     await page.getByTestId('password-confirm-input').fill(password());
