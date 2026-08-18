@@ -394,6 +394,69 @@ sections above stand except where these override them.
    awake. Until that lands, treat the popup as a degraded first-click
    state, not as a target surface.
 
+### Second round of decisions (2026-08-18)
+
+4. **Canonical mark size is 80 (`logoSizeSmall`) on every screen except
+   unlock** (open question 2), which keeps its larger mark — the screen
+   is the app's front door and the mark is the point there. The `mark`
+   slot's reserved height is therefore driven by unlock, and every other
+   screen centres its 80 inside that reserved band rather than shrinking
+   the band. This is what keeps the mark from moving between the unlock
+   screen and everything that follows it.
+
+5. **The throttled-unlock notice takes the action slot** (open question
+   3). While the wallet is throttled the button cannot be pressed
+   anyway, so the notice occupies its place: nothing moves, and the user
+   is told why in the exact spot they were about to press. Two things
+   the implementation must get right — the notice must say **when the
+   next attempt is allowed**, not merely that the wallet is locked out,
+   and focus must move to the notice when it replaces the control, then
+   back to the control when it returns, so a screen-reader user is not
+   left focused on a node that vanished.
+
+6. **The password strength meter moves into `body`, directly under the
+   field it describes** (open question 5). It is feedback about that
+   input, it belongs against it, and moving it frees `assist` for the
+   helper link and the error messages.
+
+7. **The recovery-phrase warning gets its own screen, before the phrase
+   is shown** (open question 6). The product owner's reasoning, and it
+   is the right one: *"psicológicamente, si muestro una pantalla para
+   esto doy a entender que es importante."* A warning that shares a
+   screen with the thing it warns about is read as boilerplate; a
+   warning that costs its own step is read as a gate.
+
+   So `wallet.create.messageBody` is **not shortened** — the loss and
+   theft consequences rewritten today survive intact — and it is not
+   forced to fit alongside the phrase. It becomes a consequence screen
+   in its own right, which also removes the tallest block from the grid
+   and lets `body` hold the phrase alone.
+
+   Notes for implementation: this **adds a screen to the create flow**,
+   so the flow's screen list, its progress indicator, and its back
+   behaviour all change. The screen must not be skippable by reflex —
+   whatever advances it should require a deliberate act, not a button
+   parked under the thumb. It must exist on all three platforms, and its
+   copy is already written; do not rewrite it, and follow the
+   `i18n-authoring` skill for anything new. This is the flow that
+   handles key material: never log, screenshot or fixture a real phrase.
+
+8. **Biometric unlock stays mobile-only** (open question 10). Web and
+   extension collapse the slot rather than reserving it; adding
+   WebAuthn/passkey unlock there is separate work with its own
+   key-storage implications, not a layout decision.
+
+### Resolved by measurement, no decision needed
+
+- **`getAuthContainerStyles` is not dead** (open question 7): five
+  screens call it. What is never exercised is its `contained = true`
+  branch — the 380×760 card — because no caller passes it. Delete the
+  branch or give it a caller; do not delete the function.
+- **`apps/mobile/app/(auth)/biometric.tsx` is orphaned** (open question
+  8). It sits beside `biometric-setup.tsx`, and the only route in the
+  flow is `password.tsx` → `/(auth)/biometric-setup`. Nothing reaches
+  `biometric`. Confirm once more at implementation time, then delete it.
+
 ## Open questions
 
 Only where the code and `DESIGN.md` genuinely could not settle it:
