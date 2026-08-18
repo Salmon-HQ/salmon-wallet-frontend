@@ -39,9 +39,11 @@ import {
   componentSizes,
   motionMs,
   shadows,
+  vs,
 } from '@salmon/shared';
 import type { GateContainerProps, GateState } from './types';
 import { curve, timing } from '../../utils/motion';
+import { DEBUG_LAYER_COLORS, DEBUG_LAYER_COLOR } from '../../debug/layerColors';
 
 // ============================================================================
 // Constants
@@ -218,7 +220,12 @@ export function GateContainer({
         onLayout={(e) => setGateHeight(e.nativeEvent.layout.height)}
       >
         {/* Shared visual surface — solid color, no scales */}
-        <View style={styles.surface}>
+        <View
+          style={[
+            styles.surface,
+            DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.gateSurface },
+          ]}
+        >
           {/* Lock content — full screen */}
           {state === 'locked' && <View style={styles.lockContentContainer}>{lockContent}</View>}
 
@@ -275,8 +282,19 @@ export function GateContainer({
                 { height: insets.top + componentSizes.headerHeight },
               ]}
             >
-              <View style={{ height: insets.top }} />
-              <Animated.View style={[styles.headerBar, headerFadeStyle]}>
+              <View
+                style={[
+                  { height: insets.top },
+                  DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.headerTopSpacer },
+                ]}
+              />
+              <Animated.View
+                style={[
+                  styles.headerBar,
+                  headerFadeStyle,
+                  DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.headerBar },
+                ]}
+              >
                 {headerContent}
               </Animated.View>
             </View>
@@ -336,6 +354,14 @@ const styles = StyleSheet.create({
     // wrapper used to double-apply spacing.headerPadding on top of it,
     // pushing the avatar/label and the icon buttons in ~2x further than
     // intended.
+    // Explicit height, not content-sized: the row's natural height (~44,
+    // from the avatar touch target) is shorter than componentSizes.headerHeight
+    // (56) — the slot the collapse math reserves for it. Left content-sized,
+    // that 12px gap fell inside headerContentContainer, below this row,
+    // exposing `surface`'s own rounded-bottom-corner + shadow there — a
+    // second card edge stacked under this one. Filling the slot makes this
+    // row's bottom coincide with `surface`'s, so there is exactly one edge.
+    height: vs(componentSizes.headerHeight),
     backgroundColor: colors.background.primary,
     borderBottomLeftRadius: borderRadius.header,
     borderBottomRightRadius: borderRadius.header,

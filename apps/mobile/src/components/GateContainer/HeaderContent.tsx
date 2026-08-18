@@ -96,6 +96,7 @@ export function HeaderContent({
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={t('accessibility.switch_wallet')}
+          hitSlop={{ top: 2, bottom: 2, left: 8, right: 8 }}
         >
           {avatarUrl && !imgError ? (
             <Image
@@ -133,6 +134,7 @@ export function HeaderContent({
                 : t('accessibility.copy_address', { address: truncatedAddress })
             }
             style={styles.copyButton}
+            hitSlop={{ top: 9, bottom: 9, left: 9, right: 9 }}
           >
             {/* 23 not 30: the copy glyph fills ~77% of its 24px viewBox vs the
                 settings glyph's ~60%, so it renders larger at the same size. */}
@@ -155,6 +157,7 @@ export function HeaderContent({
         activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel={t('accessibility.open_settings')}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         <SettingsSvgIcon size={s(30)} color={semantic.text.secondary} />
       </TouchableOpacity>

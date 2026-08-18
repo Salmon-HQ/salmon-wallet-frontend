@@ -108,62 +108,66 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
   ).filter((route): route is (typeof state.routes)[0] => route !== undefined);
 
   return (
-    <LinearGradient
-      colors={gradients.tabBarFade.colors}
-      start={gradients.tabBarFade.start}
-      end={gradients.tabBarFade.end}
-      style={[
-        styles.container,
-        {
-          paddingBottom: tabBarBottomPadding,
-        },
-      ]}
+    // The fade only needs to cover content scrolling toward the pill, not the
+    // safe-area gap below it — that gap gets its own plain View so the real
+    // background shows through instead of the gradient's opaque bottom stop
+    // painting a flat slab under the pill.
+    <View
+      style={[styles.container, { paddingBottom: tabBarBottomPadding }]}
       pointerEvents="box-none"
     >
-      <BlurContainer
-        style={styles.glassContainer}
-        blurIntensity={24}
-        backgroundColor={colors.background.glass}
-        borderColor={colors.border.subtle}
-        borderWidth={borderWidth.thin}
-        useGradientBorder
+      <LinearGradient
+        colors={gradients.tabBarFade.colors}
+        start={gradients.tabBarFade.start}
+        end={gradients.tabBarFade.end}
+        style={styles.fade}
+        pointerEvents="box-none"
       >
-        <View style={styles.bar}>
-          {visibleRoutes.map((route) => {
-            const isFocused = state.routes[state.index]?.name === route.name;
+        <BlurContainer
+          style={styles.glassContainer}
+          blurIntensity={24}
+          backgroundColor={colors.background.glass}
+          borderColor={colors.border.subtle}
+          borderWidth={borderWidth.thin}
+          useGradientBorder
+        >
+          <View style={styles.bar}>
+            {visibleRoutes.map((route) => {
+              const isFocused = state.routes[state.index]?.name === route.name;
 
-            const onPress = () => {
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
+              const onPress = () => {
+                const event = navigation.emit({
+                  type: 'tabPress',
+                  target: route.key,
+                  canPreventDefault: true,
+                });
 
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name, route.params);
-              }
-            };
+                if (!isFocused && !event.defaultPrevented) {
+                  navigation.navigate(route.name, route.params);
+                }
+              };
 
-            const onLongPress = () => {
-              navigation.emit({
-                type: 'tabLongPress',
-                target: route.key,
-              });
-            };
+              const onLongPress = () => {
+                navigation.emit({
+                  type: 'tabLongPress',
+                  target: route.key,
+                });
+              };
 
-            return (
-              <TabItem
-                key={route.key}
-                routeName={route.name}
-                isFocused={isFocused}
-                onPress={onPress}
-                onLongPress={onLongPress}
-              />
-            );
-          })}
-        </View>
-      </BlurContainer>
-    </LinearGradient>
+              return (
+                <TabItem
+                  key={route.key}
+                  routeName={route.name}
+                  isFocused={isFocused}
+                  onPress={onPress}
+                  onLongPress={onLongPress}
+                />
+              );
+            })}
+          </View>
+        </BlurContainer>
+      </LinearGradient>
+    </View>
   );
 }
 
@@ -175,8 +179,13 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     paddingHorizontal: s(spacing.lg),
-    paddingTop: vs(spacing.lg),
     zIndex: 50,
+  },
+  // The fade's own box — deliberately excludes the safe-area gap below the
+  // pill (that's `container`'s paddingBottom).
+  fade: {
+    width: '100%',
+    paddingTop: vs(spacing.lg),
   },
   glassContainer: {
     width: '100%',

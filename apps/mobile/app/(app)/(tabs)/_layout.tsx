@@ -73,6 +73,7 @@ import { HeaderContent } from '../../../src/components/GateContainer/HeaderConte
 import type { DerivedKeyCache } from '@salmon/shared';
 import type { GateState, GateExpandedHeader } from '../../../src/components/GateContainer/types';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+import { DEBUG_LAYER_COLORS, DEBUG_LAYER_COLOR } from '../../../src/debug/layerColors';
 
 /**
  * Tab Layout for Salmon Wallet
@@ -797,7 +798,14 @@ export default function TabLayout() {
         </BlurTargetProvider>
       </DeveloperModeProvider>
 
-      <View pointerEvents="none" style={[styles.topSafeAreaOverlay, { height: topInset }]} />
+      <View
+        pointerEvents="none"
+        style={[
+          styles.topSafeAreaOverlay,
+          { height: topInset },
+          DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.topSafeAreaOverlay },
+        ]}
+      />
 
       {/* Unified Gate — lock screen, header, settings, wallet switcher */}
       <GateContainer

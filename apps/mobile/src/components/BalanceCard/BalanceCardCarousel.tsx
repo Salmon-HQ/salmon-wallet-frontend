@@ -35,6 +35,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { curve, timing } from '../../utils/motion';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+import { DEBUG_LAYER_COLORS, DEBUG_LAYER_COLOR } from '../../debug/layerColors';
 import type { BalanceCardCarouselProps, BlockchainId } from './types';
 
 // Import the SVG icons from Icon component
@@ -231,11 +232,20 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
 
   return (
     <GestureHandlerRootView
-      style={[styles.container, { marginTop: cardMarginTop }, style]}
+      style={[
+        styles.container,
+        { marginTop: cardMarginTop },
+        style,
+        DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.balanceCardOuter },
+      ]}
       testID={testID}
     >
       <LinearGradient
-        colors={[...currentGradient]}
+        colors={
+          DEBUG_LAYER_COLORS
+            ? [DEBUG_LAYER_COLOR.balanceCardGradient, DEBUG_LAYER_COLOR.balanceCardGradient]
+            : [...currentGradient]
+        }
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1.3 }}
         style={[styles.gradient, { paddingTop: contentPaddingTop }]}

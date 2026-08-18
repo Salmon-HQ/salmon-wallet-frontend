@@ -61,6 +61,7 @@ jest.mock('@salmon/shared', () => ({
     header: { shadowColor: '#000', shadowOffset: {}, shadowOpacity: 0, shadowRadius: 0, elevation: 0 },
   },
   s: (value: number) => value,
+  vs: (value: number) => value,
 }));
 
 const renderGate = (state: 'locked' | 'collapsed' | 'settings' | 'wallets') =>

@@ -109,68 +109,69 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
   ).filter((route): route is (typeof state.routes)[0] => route !== undefined);
 
   return (
-    <LinearGradient
-      colors={gradients.tabBarFade.colors}
-      start={gradients.tabBarFade.start}
-      end={gradients.tabBarFade.end}
-      style={[
-        styles.container,
-        {
-          paddingBottom: tabBarBottomPadding,
-        },
-      ]}
-    >
-      <View style={styles.glassContainer}>
-        {/*
-          The tab bar is the app's canonical P3 membrane: chrome that floats
-          over scrolling content. `scrim` is `membraneThick` rather than
-          `membraneThin` because the tab labels are 11px — below the 15px /
-          weight-500 floor `membraneThin` guarantees.
-        */}
-        <Membrane
-          style={styles.glassBackgroundLayer}
-          blurIntensity={24}
-          blurBackgroundColor={colors.background.glass}
-          borderColor={colors.border.subtle}
-          borderWidth={borderWidth.thin}
-          scrim={semantic.surface.membraneThick}
-        />
-        <View style={styles.bar}>
-          {visibleRoutes.map((route) => {
-            const isFocused = state.routes[state.index]?.name === route.name;
+    // The fade only needs to cover content scrolling toward the pill, not the
+    // safe-area gap below it — that gap gets its own plain View so the real
+    // background (with its pattern) shows through instead of the gradient's
+    // opaque bottom stop painting a flat black slab under the pill.
+    <View style={[styles.container, { paddingBottom: tabBarBottomPadding }]}>
+      <LinearGradient
+        colors={gradients.tabBarFade.colors}
+        start={gradients.tabBarFade.start}
+        end={gradients.tabBarFade.end}
+        style={styles.fade}
+      >
+        <View style={styles.glassContainer}>
+          {/*
+            The tab bar is the app's canonical P3 membrane: chrome that floats
+            over scrolling content. `scrim` is `membraneThick` rather than
+            `membraneThin` because the tab labels are 11px — below the 15px /
+            weight-500 floor `membraneThin` guarantees.
+          */}
+          <Membrane
+            style={styles.glassBackgroundLayer}
+            blurIntensity={24}
+            blurBackgroundColor={colors.background.glass}
+            borderColor={colors.border.subtle}
+            borderWidth={borderWidth.thin}
+            scrim={semantic.surface.membraneThick}
+          />
+          <View style={styles.bar}>
+            {visibleRoutes.map((route) => {
+              const isFocused = state.routes[state.index]?.name === route.name;
 
-            const onPress = () => {
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
+              const onPress = () => {
+                const event = navigation.emit({
+                  type: 'tabPress',
+                  target: route.key,
+                  canPreventDefault: true,
+                });
 
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name, route.params);
-              }
-            };
+                if (!isFocused && !event.defaultPrevented) {
+                  navigation.navigate(route.name, route.params);
+                }
+              };
 
-            const onLongPress = () => {
-              navigation.emit({
-                type: 'tabLongPress',
-                target: route.key,
-              });
-            };
+              const onLongPress = () => {
+                navigation.emit({
+                  type: 'tabLongPress',
+                  target: route.key,
+                });
+              };
 
-            return (
-              <TabItem
-                key={route.key}
-                routeName={route.name}
-                isFocused={isFocused}
-                onPress={onPress}
-                onLongPress={onLongPress}
-              />
-            );
-          })}
+              return (
+                <TabItem
+                  key={route.key}
+                  routeName={route.name}
+                  isFocused={isFocused}
+                  onPress={onPress}
+                  onLongPress={onLongPress}
+                />
+              );
+            })}
+          </View>
         </View>
-      </View>
-    </LinearGradient>
+      </LinearGradient>
+    </View>
   );
 }
 
@@ -182,9 +183,15 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     paddingHorizontal: s(spacing.lg),
-    paddingTop: vs(spacing.lg),
     zIndex: 50,
     elevation: 50,
+  },
+  // The fade's own box — deliberately excludes the safe-area gap below the
+  // pill (that's `container`'s paddingBottom) so the gradient's opaque
+  // bottom stop never paints over it.
+  fade: {
+    width: '100%',
+    paddingTop: vs(spacing.lg),
   },
   glassContainer: {
     width: '100%',
