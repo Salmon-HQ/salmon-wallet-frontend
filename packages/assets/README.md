@@ -19,14 +19,14 @@ This package is part of the Salmon Wallet monorepo and is automatically availabl
 ### Importing All Assets
 
 ```typescript
-import { GeistBold, IconHome, Images } from '@salmon/assets';
+import { DMSansBold, IconHome, Images } from '@salmon/assets';
 ```
 
 ### Importing Specific Categories
 
 ```typescript
 // Fonts only
-import { GeistBold, GeistMedium, Fonts } from '@salmon/assets/fonts';
+import { DMSansBold, DMSansMedium, Fonts } from '@salmon/assets/fonts';
 
 // Images only
 import { IconHome, IconWallet, Images } from '@salmon/assets/images';
@@ -35,12 +35,12 @@ import { IconHome, IconWallet, Images } from '@salmon/assets/images';
 ### Using Fonts
 
 ```typescript
-import { GeistBold, GeistMedium, GeistRegular, GeistMonoRegular } from '@salmon/assets';
+import { DMSansBold, DMSansMedium, DMSansRegular, GeistMonoRegular } from '@salmon/assets';
 
 // Or use the Fonts object
 import { Fonts } from '@salmon/assets';
 
-const fontFamily = Fonts.Geist.Bold;
+const fontFamily = Fonts.DMSans.Bold;
 ```
 
 ### Using Images
@@ -84,7 +84,7 @@ Assets are organized into the following categories:
 
 ## Fonts Included
 
-- **Geist**: Primary interface font family
+- **DM Sans**: Primary interface font family (modified — digit advances equalised; see `src/fonts/DMSans-README.md`)
   - Regular (400)
   - Medium (500)
   - SemiBold (600)

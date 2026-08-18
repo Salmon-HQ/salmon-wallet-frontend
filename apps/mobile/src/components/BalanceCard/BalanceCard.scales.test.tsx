@@ -51,7 +51,7 @@ jest.mock('@salmon/shared', () => ({
   },
   fontSize: { xs: 10, sm: 14, balance: 60 },
   fontWeight: { medium: '500', semibold: '600' },
-  fontFamilyNative: { medium: 'Geist', semiBold: 'Geist' },
+  fontFamilyNative: { medium: 'DMSans', semiBold: 'DMSans' },
   letterSpacing: { wide: 0.3, balance: -0.245, change: 0 },
   opacity: { faint: 0.4 },
   shadows: {
