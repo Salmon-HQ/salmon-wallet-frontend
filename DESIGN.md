@@ -462,12 +462,12 @@ raster asked for 360 device pixels at 120dp on a 3x phone, letterboxed into
 square boxes of 48, 60, 80, 120 and 137.
 
 **Its ink is `semantic.text.primary`, and it is white** (product, 2026-08-18:
-*"quiero que el icono deje de estar de color primary y que esté en blanco"*).
+_"quiero que el icono deje de estar de color primary y que esté en blanco"_).
 Three things follow from that and should not drift:
 
 - **It is not the accent.** The mark drew in `semantic.text.accent` for exactly
   as long as it took someone to look at it next to the copy above it. Salmon is
-  the ink of *action* in this system; spending it on a decorative mark competes
+  the ink of _action_ in this system; spending it on a decorative mark competes
   with the one control on the screen that is meant to be pressed.
 - **It is `text.primary`, not a literal `#FFF`.** The raster's near-white was a
   hardcoded `#FCFCFC` baked into the artwork, and getting the colour out of the
@@ -490,15 +490,15 @@ Every slot occupies its reserved height whether or not it is filled, so
 revealing an element cannot move anything else.
 
 **Three families, not one grid.** The first pass put all sixteen screens on a
-single table, which was read too literally (product, 2026-08-18: *"la idea era
-que el salmón esté en el mismo lugar según el tipo de screen"*). The invariant
+single table, which was read too literally (product, 2026-08-18: _"la idea era
+que el salmón esté en el mismo lugar según el tipo de screen"_). The invariant
 is **within a family**:
 
-| variant | the hero | screens |
-| --- | --- | --- |
-| `identity` | the mark | welcome, success, biometric opt-in |
-| `credential` | the mark, over a secret | unlock in every state, password creation |
-| `content` | what fills `body` | the seed screens, analytics consent, derived accounts |
+| variant      | the hero                | screens                                               |
+| ------------ | ----------------------- | ----------------------------------------------------- |
+| `identity`   | the mark                | welcome, success, biometric opt-in                    |
+| `credential` | the mark, over a secret | unlock in every state, password creation              |
+| `content`    | what fills `body`       | the seed screens, analytics consent, derived accounts |
 
 Within a variant every slot's Y is identical across its screens. Between
 variants only the **mark** and the **body** differ — and they differ by
@@ -514,7 +514,7 @@ Rules that hold it together:
   and below instead of collecting under the action.
 - **`lead`** is a reserved empty run between `chrome` and `mark`, and is not a
   slot. A family needing less `body` than its siblings gives the difference back
-  at the *top*, which drops the mark, title and description into the middle of
+  at the _top_, which drops the mark, title and description into the middle of
   the region they share with `body`. Without it, `identity` wore the password
   screen's 188dp field reservation as a hole under its description — which is
   what "más centrado" was about, and it could not be fixed by centring the
@@ -524,7 +524,7 @@ Rules that hold it together:
 - **The mark anchors to the bottom of its band and the title to the bottom of
   its own; the description anchors to the top of hers.** Each band reserves two
   rendered lines for Spanish, and centring the ink left that unused allowance
-  hanging *between* the elements — 48dp between the mark and the wordmark, 45dp
+  hanging _between_ the elements — 48dp between the mark and the wordmark, 45dp
   between the wordmark and the line under it. Anchoring inward collects the
   unused line outside the pair instead: 30dp and 12dp.
 - **The keyboard moves things only when it actually covers them.** The layout
@@ -1481,6 +1481,22 @@ what keeps a wait from competing with the only climax the system has.
      because a radial front with no visible source reads as unrelated elements
      twitching, not as one wave. It returns as ink, not as a fill — the light it
      throws is a reflection off water, not a second filled element.)_
+
+     **The mark is white, and deliberately not the accent.** It is
+     `semantic.text.primary` (`neutral-50`, `#EDF1F7`, 16.89:1 on
+     `surface.bedrock`) — the same ink as the title directly beneath it.
+     _(Reversal, 2026-08: it was `semantic.text.accent`. Product: "que el logo en
+     auth/onboarding sea siempre blanco además de la loading screen.")_ Two
+     reasons, and the second is the one that would have forced this anyway.
+     **Salmon is the ink of action** — it marks the thing the user can press and
+     the thing the app has committed to — and a wait contains no action: nothing
+     here is pressable, and the front is the app working, not the user acting.
+     Spending the accent on it made the wait look like the most actionable screen
+     in the app. And **the wait is not a destination but a thing screens pass
+     through**: this overlay mounts over onboarding, whose mark is now white, so
+     any other ink here would make the logo change colour as the overlay appears
+     and disappear-change back as it leaves. The two marks have to be the same
+     token, not merely similar values.
 
      **A scale-down alone does not read as a press.** The same shrink describes
      an object simply receding from the eye, and this one has to read as an

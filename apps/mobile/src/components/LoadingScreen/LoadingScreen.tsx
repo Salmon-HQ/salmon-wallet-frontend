@@ -561,9 +561,10 @@ export function LoadingScreen({
           {/* The emitter, nailed to the middle of whatever the wait occupies.
               A radial front whose origin is off-centre reads as a wave from
               somewhere else, so this is the one element on the screen that is
-              positioned rather than laid out. The mark is salmon as *ink*,
-              tinted and never filled, so it does not spend the one living fill
-              a screen is allowed. */}
+              positioned rather than laid out. The mark is **white**
+              (`semantic.text.primary`, the same ink as the title below it) and
+              deliberately not the accent: salmon is the ink of *action*, and a
+              wait has no action in it — see DESIGN.md §The wait. */}
           {waves && (
             <Animated.View
               style={[styles.emitter, sinkStyle]}
@@ -574,7 +575,7 @@ export function LoadingScreen({
             >
               <Svg width={MARK_SIZE} height={MARK_SIZE} viewBox={markViewBoxAttr}>
                 {markPaths.map((d) => (
-                  <Path key={d} d={d} fill={semantic.text.accent} />
+                  <Path key={d} d={d} fill={semantic.text.primary} />
                 ))}
               </Svg>
             </Animated.View>

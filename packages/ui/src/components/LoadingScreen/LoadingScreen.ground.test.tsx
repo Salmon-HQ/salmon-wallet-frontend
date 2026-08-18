@@ -70,7 +70,7 @@ vi.mock('@salmon/shared', async () => ({
   },
   reducedMotion: { query: '(prefers-reduced-motion: reduce)' },
   semantic: {
-    text: { accent: '#FF5C45' },
+    text: { accent: '#FF5C45', primary: '#EDF1F7' },
     border: { hairline: 'rgba(199, 211, 232, 0.10)' },
     accent: { ink: '#FF5C45', tint: 'rgba(255, 92, 69, 0.10)' },
   },

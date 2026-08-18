@@ -224,8 +224,11 @@ const Subtitle = styled('div')({
 /**
  * The emitter. The mark was removed with the spinning ring and is back by
  * decision, not by drift: without a visible source a radial front reads as
- * unrelated elements twitching. Salmon as *ink* — the mark is tinted, never
- * filled, so it does not spend the one living fill a screen is allowed.
+ * unrelated elements twitching. It is **white** — `semantic.text.primary`, the
+ * same ink as the title below it — and deliberately not the accent: salmon is
+ * the ink of *action*, and a wait has no action in it. Matching the onboarding
+ * mark exactly is the point: this overlay mounts between two onboarding screens,
+ * so a different ink here would make the mark change colour on the way past.
  *
  * It **sinks**; it does not pulse. See `sinkKeyframes`.
  */
@@ -243,7 +246,7 @@ const Emitter = styled('div')<{ $waves: boolean }>(({ $waves }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: semantic.text.accent,
+  color: semantic.text.primary,
   // Not stopped on close: the front in flight is left to finish crossing, and
   // the ground has faded before the next emission is due.
   // The per-step curves live inside the keyframes (fast in, slow out), so the
