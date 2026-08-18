@@ -8,14 +8,14 @@ import {
   fontWeight,
   formatLargeNumber,
   getShortAddress,
-  motionMs,
   Rect,
   semantic,
   spacing,
+  useCopyFeedback,
   useCurrencyContext,
 } from '@salmon/shared';
 import * as Clipboard from 'expo-clipboard';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { TokenInfoProps } from './types';
@@ -57,15 +57,14 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
 }) => {
   const { t } = useTranslation();
   const [, { formatLarge }] = useCurrencyContext();
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const handleCopyAddress = useCallback(async () => {
     if (contractAddress) {
       await Clipboard.setStringAsync(contractAddress);
-      setCopied(true);
-      setTimeout(() => setCopied(false), motionMs.feedbackHold);
+      showCopied();
     }
-  }, [contractAddress]);
+  }, [contractAddress, showCopied]);
 
   const handleOpenWebsite = useCallback(async () => {
     if (website) {

@@ -32,7 +32,7 @@ import {
   opacity,
   componentSizes,
   duration,
-  durationMs,
+  useCopyFeedback,
 } from '@salmon/shared';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { SettingsPanelContent } from '../SettingsPanelContent';
@@ -168,7 +168,7 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
 
   const [seedPhraseVisible, setSeedPhraseVisible] = useState(false);
   const [reauthOpen, setReauthOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
   const [copyFailed, setCopyFailed] = useState(false);
 
   // Get the mnemonic from the active account
@@ -200,13 +200,12 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
     try {
       await navigator.clipboard.writeText(mnemonic);
       setCopyFailed(false);
-      setCopied(true);
-      setTimeout(() => setCopied(false), durationMs.feedbackLong);
+      showCopied();
     } catch {
       // A silent copy failure here means the user thinks the seed is saved.
       setCopyFailed(true);
     }
-  }, [mnemonic]);
+  }, [mnemonic, showCopied]);
 
   // If no mnemonic (imported via private key), show message
   const hasNoMnemonic = !mnemonic || words.length === 0;

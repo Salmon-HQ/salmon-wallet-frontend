@@ -24,6 +24,7 @@ jest.mock('../../utils/haptics', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   borderRadius: { md: 12, xl: 20 },
   borderWidth: { thin: 1 },
   colors: {

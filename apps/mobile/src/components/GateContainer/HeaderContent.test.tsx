@@ -30,6 +30,7 @@ const COMPONENT_SIZES = { iconSizeLarge: 32, iconSizeMButton: 28, buttonHeightSm
 const SPACING = { headerPadding: 20, base: 12, sm: 8, xs: 4 };
 
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   colors: { text: { primary: '#fff' } },
   fontFamilyNative: { bold: 'System', semiBold: 'System' },
   fontScaleCap: { chrome: 1.2 },

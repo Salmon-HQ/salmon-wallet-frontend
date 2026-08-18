@@ -18,6 +18,7 @@ jest.mock('expo-clipboard', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   borderRadius: { lg: 16, md: 12 },
   colors: {
     background: { card: '#111' },

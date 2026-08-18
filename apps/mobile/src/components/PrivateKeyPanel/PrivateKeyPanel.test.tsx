@@ -22,6 +22,7 @@ jest.mock('@expo/vector-icons', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   borderRadius: { sm: 8, md: 12, lg: 16 },
   colors: {
     background: { card: '#111', tertiary: '#222' },

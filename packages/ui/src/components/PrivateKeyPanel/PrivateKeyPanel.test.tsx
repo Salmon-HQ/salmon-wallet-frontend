@@ -25,6 +25,7 @@ vi.mock('react-i18next', () => ({
 vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual('../../../../shared/src/theme')),
   ...(await vi.importActual('../../../../shared/src/utils/scaling')),
+  ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
   getShortAddress: (address: string) => address.slice(0, 8),
   useAccountsContext: () => [
     {

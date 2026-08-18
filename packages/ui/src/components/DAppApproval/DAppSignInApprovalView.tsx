@@ -18,6 +18,7 @@ import {
   fontSize,
   getShortAddress,
   spacing,
+  useCopyFeedback,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import {
@@ -93,7 +94,7 @@ export function DAppSignInApprovalView({
   const hasIdentity = !!appName || !!appIcon;
 
   const [showRaw, setShowRaw] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const issuedAtDisplay = useMemo(() => formatTimestamp(siws?.issuedAt), [siws]);
   const expiresDisplay = useMemo(() => formatTimestamp(siws?.expirationTime), [siws]);
@@ -101,8 +102,7 @@ export function DAppSignInApprovalView({
   const handleCopyAccount = () => {
     if (!siws?.address) return;
     void copyToClipboard(siws.address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    showCopied();
   };
 
   const canApprove = !disabled && !loading && !domainMismatch && !!siws;

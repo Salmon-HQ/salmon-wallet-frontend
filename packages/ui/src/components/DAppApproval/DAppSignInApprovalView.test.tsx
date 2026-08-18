@@ -15,7 +15,8 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async () => ({
+  ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
   // The approval header draws the mark from the vector rather than Logo.png.
   markPaths: ['M0 0H1V1H0Z'],
   markViewBoxAttr: '0 0 253 236',

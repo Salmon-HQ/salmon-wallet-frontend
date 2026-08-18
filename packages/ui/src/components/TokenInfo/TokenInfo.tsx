@@ -25,6 +25,7 @@ import {
   durationMs,
   easing,
   tabularNums,
+  useCopyFeedback,
 } from '@salmon/shared';
 import { CheckIcon, iconSize } from '../../icons';
 import { CopyIcon } from '../Icon';
@@ -203,20 +204,19 @@ export function TokenInfo({
   const { t } = useTranslation();
   const [, { formatLarge }] = useCurrencyContext();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const handleCopyAddress = useCallback(async () => {
     if (contractAddress) {
       try {
         await navigator.clipboard.writeText(contractAddress);
         setSnackbarOpen(true);
-        setCopied(true);
-        setTimeout(() => setCopied(false), durationMs.feedbackLong);
+        showCopied();
       } catch (err) {
         console.error('Failed to copy address:', err);
       }
     }
-  }, [contractAddress]);
+  }, [contractAddress, showCopied]);
 
   const handleOpenWebsite = useCallback(() => {
     if (website) {

@@ -21,7 +21,8 @@ vi.mock('react-i18next', () => ({
 // `@salmon/shared` pulls React Native through its barrel, which Vitest cannot
 // parse. Mock the tokens this step reads and keep the real `chunkAddress`
 // behaviour, which is what the assertions are about.
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async () => ({
+  ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
   chunkAddress: (address?: string | null) =>
     address ? address.replace(/(.{4})/g, '$1 ').trim() : '',
   colors: {

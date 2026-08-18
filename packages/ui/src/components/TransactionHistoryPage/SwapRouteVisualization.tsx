@@ -33,22 +33,16 @@ import {
   opacity,
   componentSizes,
   duration,
-  durationMs,
   easing,
   tabularNums,
+  useCopyFeedback,
 } from '@salmon/shared';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import { ConversionRateDisplay } from './ConversionRateDisplay';
 import { PriceImpactBadge } from './PriceImpactBadge';
 import type { SwapRouteHop, SwapRouteVisualizationProps, Transaction } from './types';
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const COPIED_FEEDBACK_DURATION = durationMs.feedbackShort;
 
 // ============================================================================
 // Styled Components
@@ -269,17 +263,16 @@ const HashCopyRow: React.FC<{
   value: string;
   displayValue?: string;
 }> = ({ label, value, displayValue }) => {
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const handleCopy = useCallback(async () => {
     try {
       await copyToClipboard(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), COPIED_FEEDBACK_DURATION);
+      showCopied();
     } catch (error) {
       console.warn('Failed to copy:', error);
     }
-  }, [value]);
+  }, [value, showCopied]);
 
   return (
     <SummaryRow>

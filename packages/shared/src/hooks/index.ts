@@ -57,6 +57,12 @@ export type { UseWaitGateOptions } from './useWaitGate';
 export { useWaitExit } from './useWaitExit';
 export type { WaitExit } from './useWaitExit';
 
+// Copied-confirmation state for copy buttons — the call site does the actual
+// clipboard write, then calls trigger(); the hook holds `copied` for
+// motionMs.feedbackHold and reverts.
+export { useCopyFeedback } from './useCopyFeedback';
+export type { CopyFeedbackKey, UseCopyFeedbackResult } from './useCopyFeedback';
+
 // Send transaction hook
 export { usePendingActivity } from './usePendingActivity';
 export type {

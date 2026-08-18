@@ -17,7 +17,8 @@ vi.mock('react-i18next', () => ({
 // parse. Same treatment as the other component suites here: mock the tokens
 // this sheet reads, and keep the one real behaviour it depends on
 // (`getChainDisplayName`).
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async () => ({
+  ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
   colors: {
     text: { primary: '#EDF1F7' },
     button: { primaryBackground: '#FF5C45', primaryText: '#070911' },

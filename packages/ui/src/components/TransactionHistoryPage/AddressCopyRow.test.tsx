@@ -32,7 +32,8 @@ vi.mock('../BlurContainer', () => ({
   BlurContainer: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
 }));
 
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async () => ({
+  ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
   colors: {
     text: { secondary: '#999', primary: '#fff' },
     status: { success: '#0f0' },

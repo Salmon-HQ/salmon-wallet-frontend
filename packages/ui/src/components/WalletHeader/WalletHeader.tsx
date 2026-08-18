@@ -26,6 +26,7 @@ import {
   componentSizes,
   durationMs,
   semantic,
+  useCopyFeedback,
 } from '@salmon/shared';
 import { CopyIcon, RefreshIcon, SettingsIcon } from '../Icon';
 import type { WalletHeaderProps } from './types';
@@ -158,13 +159,12 @@ export function WalletHeader({
   className,
 }: WalletHeaderProps) {
   const [imgError, setImgError] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const handleCopyPress = useCallback(() => {
     onCopyAddress?.();
-    setCopied(true);
-    setTimeout(() => setCopied(false), durationMs.feedbackShort);
-  }, [onCopyAddress]);
+    showCopied();
+  }, [onCopyAddress, showCopied]);
 
   const handleSettingsPress = useCallback(() => {
     onSettingsPress?.();

@@ -21,10 +21,10 @@ import {
   getAccountKeysForNetwork,
   getShortAddress,
   letterSpacing,
-  motionMs,
   semantic,
   spacing,
   useAccountsContext,
+  useCopyFeedback,
   type Account,
   type AccountKeyInfo,
 } from '@salmon/shared';
@@ -79,7 +79,7 @@ export function PrivateKeyPanel({
 
   // Track which account indexes have been revealed (by index)
   const [revealedIndexes, setRevealedIndexes] = useState<Set<number>>(new Set());
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const { copiedKey: copiedIndex, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
   const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
   // Which key the password sheet is currently standing in front of.
   const [reauthIndex, setReauthIndex] = useState<number | null>(null);
@@ -93,13 +93,16 @@ export function PrivateKeyPanel({
   /**
    * Handle network selection
    */
-  const handleSelectNetwork = useCallback((networkId: string) => {
-    setSelectedNetworkId(networkId);
-    setRevealedIndexes(new Set());
-    setCopiedIndex(null);
-    setCopyFailedIndex(null);
-    setReauthIndex(null);
-  }, []);
+  const handleSelectNetwork = useCallback(
+    (networkId: string) => {
+      setSelectedNetworkId(networkId);
+      setRevealedIndexes(new Set());
+      resetCopied();
+      setCopyFailedIndex(null);
+      setReauthIndex(null);
+    },
+    [resetCopied]
+  );
 
   const revealKey = useCallback((index: number) => {
     setRevealedIndexes((prev) => {
@@ -145,15 +148,14 @@ export function PrivateKeyPanel({
       try {
         await Clipboard.setStringAsync(privateKey);
         setCopyFailedIndex(null);
-        setCopiedIndex(index);
-        setTimeout(() => setCopiedIndex(null), motionMs.feedbackHold);
+        showCopied(index);
       } catch (error) {
         // Surface the failure — a silent no-op looks like a successful copy.
         console.error('Failed to copy private key:', error);
         setCopyFailedIndex(index);
       }
     },
-    [revealedIndexes]
+    [revealedIndexes, showCopied]
   );
 
   /**
@@ -162,10 +164,10 @@ export function PrivateKeyPanel({
   const handleBackToNetworks = useCallback(() => {
     setSelectedNetworkId(null);
     setRevealedIndexes(new Set());
-    setCopiedIndex(null);
+    resetCopied();
     setCopyFailedIndex(null);
     setReauthIndex(null);
-  }, []);
+  }, [resetCopied]);
   const currentTitle = selectedNetworkId ? t('settings.private_key') : t('settings.select_network');
   const currentBackAction =
     selectedNetworkId && networks.length > 1 ? handleBackToNetworks : onBack;

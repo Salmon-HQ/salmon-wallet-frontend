@@ -57,6 +57,7 @@ jest.mock('../src/components/Icon', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
   colors: {
     background: { primary: '#000', card: '#111' },

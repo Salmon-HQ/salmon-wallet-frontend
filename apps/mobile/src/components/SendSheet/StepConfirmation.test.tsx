@@ -42,6 +42,7 @@ jest.mock('expo-linear-gradient', () => ({
 const mockEstimateFee = jest.fn(async () => null);
 
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   // `usePressMotion` inside the shared buttons reads the motion vocabulary.
   motionEasing: {
     current: { native: [0.32, 0.72, 0, 1] },

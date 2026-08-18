@@ -27,6 +27,7 @@ import {
   semantic,
   spacing,
   truncateHash,
+  useCopyFeedback,
   vs,
 } from '@salmon/shared';
 import type { Transaction, SwapRouteHop } from './types';
@@ -57,18 +58,17 @@ const HashCopyRow: React.FC<{
   displayValue?: string;
 }> = ({ label, value, displayValue }) => {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const handleCopy = useCallback(async () => {
     try {
       await Clipboard.setStringAsync(value);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setCopied(true);
-      setTimeout(() => setCopied(false), motionMs.feedbackHold);
+      showCopied();
     } catch (error) {
       console.warn('Failed to copy:', error);
     }
-  }, [value]);
+  }, [value, showCopied]);
 
   return (
     <View style={styles.summaryRow}>

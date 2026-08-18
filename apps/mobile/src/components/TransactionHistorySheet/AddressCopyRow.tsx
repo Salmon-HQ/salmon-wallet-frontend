@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,11 +11,11 @@ import {
   fontFamilyNative,
   fontSize,
   getShortAddress,
-  motionMs,
   ms,
   s,
   semantic,
   spacing,
+  useCopyFeedback,
   vs,
 } from '@salmon/shared';
 
@@ -94,7 +94,7 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
   style,
 }) => {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const displayAddress = getTruncatedAddress(address, truncate);
 
@@ -106,18 +106,13 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
       // Trigger haptic feedback
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      // Show visual feedback
-      setCopied(true);
-
-      // Reset after duration
-      setTimeout(() => {
-        setCopied(false);
-      }, motionMs.feedbackHold);
+      // Show visual feedback (auto-reverts after motionMs.feedbackHold)
+      showCopied();
     } catch (error) {
       // Silently fail - clipboard might not be available in some environments
       console.warn('Failed to copy address:', error);
     }
-  }, [address]);
+  }, [address, showCopied]);
 
   return (
     <View style={[styles.container, style]}>

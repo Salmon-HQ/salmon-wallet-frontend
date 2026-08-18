@@ -14,10 +14,10 @@ import {
   colors,
   fontFamilyNative,
   fontSize,
-  motionMs,
   semantic,
   spacing,
   useAccountsContext,
+  useCopyFeedback,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -48,7 +48,7 @@ export function BackupPanel({
 
   const [showSeedPhrase, setShowSeedPhrase] = useState(false);
   const [reauthVisible, setReauthVisible] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
   const [copyFailed, setCopyFailed] = useState(false);
 
   const mnemonic = useMemo(() => activeAccount?.mnemonic || '', [activeAccount]);
@@ -83,14 +83,13 @@ export function BackupPanel({
     try {
       await Clipboard.setStringAsync(mnemonic);
       setCopyFailed(false);
-      setCopied(true);
-      setTimeout(() => setCopied(false), motionMs.feedbackHold);
+      showCopied();
     } catch (error) {
       // A silent copy failure here means the user thinks the seed is saved.
       console.error('Failed to copy seed phrase:', error);
       setCopyFailed(true);
     }
-  }, [showSeedPhrase, mnemonic]);
+  }, [showSeedPhrase, mnemonic, showCopied]);
 
   return (
     <SettingsScreenLayout title={t('general.seed_phrase')} onBack={onBack}>

@@ -32,19 +32,13 @@ import {
   fontSize,
   opacity,
   duration,
-  durationMs,
   easing,
   tabularNums,
+  useCopyFeedback,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import type { StepConfirmationProps } from './types';
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const COPY_FEEDBACK_DURATION = durationMs.feedbackLong;
 
 // ============================================================================
 // Styled Components
@@ -212,7 +206,7 @@ export function StepConfirmation({
 }: StepConfirmationProps) {
   const { t } = useTranslation();
   const [estimatedFee, setEstimatedFee] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const sendHook = useSendTransaction({ account, blockchain });
 
@@ -276,10 +270,9 @@ export function StepConfirmation({
   const handleCopy = useCallback(async () => {
     const success = await copyToClipboard(destinationAddress);
     if (success) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION);
+      showCopied();
     }
-  }, [destinationAddress]);
+  }, [destinationAddress, showCopied]);
 
   // Clears the failure and re-arms the confirm button. It does not resend on its
   // own, which is why the label reads "Confirm Again" rather than "Retry".

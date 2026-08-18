@@ -11,7 +11,7 @@
  * - Visual feedback (checkmark) after copying
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
@@ -28,7 +28,7 @@ import {
   spacing,
   fontSize,
   fontWeight,
-  durationMs,
+  useCopyFeedback,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { AddressCopyRowProps } from './types';
@@ -42,8 +42,6 @@ const TRUNCATE_CHARS: Record<'short' | 'medium' | 'long', number> = {
   medium: 6,
   long: 8,
 };
-
-const COPIED_FEEDBACK_DURATION = durationMs.feedbackShort;
 
 // ============================================================================
 // Styled Components
@@ -104,7 +102,7 @@ export function AddressCopyRow({
   className,
 }: AddressCopyRowProps) {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const displayAddress =
     truncate === false ? address : (getShortAddress(address, TRUNCATE_CHARS[truncate]) ?? address);
@@ -112,12 +110,11 @@ export function AddressCopyRow({
   const handleCopy = useCallback(async () => {
     try {
       await copyToClipboard(address);
-      setCopied(true);
-      setTimeout(() => setCopied(false), COPIED_FEEDBACK_DURATION);
+      showCopied();
     } catch (error) {
       console.warn('Failed to copy address:', error);
     }
-  }, [address]);
+  }, [address, showCopied]);
 
   return (
     <BlurContainer

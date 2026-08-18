@@ -40,6 +40,7 @@ jest.mock('../../utils/haptics', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   semantic: {
     status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
     text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', accent: '#FF5C45' },

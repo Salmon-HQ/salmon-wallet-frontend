@@ -29,8 +29,8 @@ import {
   lineHeight,
   opacity,
   duration,
-  durationMs,
   easing,
+  useCopyFeedback,
 } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 import { QRCode } from '../QRCode';
@@ -44,7 +44,6 @@ import type { ReceiveSheetProps } from './types';
 // ============================================================================
 
 const QR_SIZE_DEFAULT = componentSizes.qrCodeSize;
-const COPY_FEEDBACK_DURATION = durationMs.feedbackLong;
 
 // ============================================================================
 // Styled Components
@@ -159,7 +158,7 @@ export function ReceiveSheet({
   className,
   style,
 }: ReceiveSheetProps) {
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
   const [qrSize, setQrSize] = useState<number>(QR_SIZE_DEFAULT);
   const contentRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -172,9 +171,9 @@ export function ReceiveSheet({
   // Reset copied state when dialog closes
   useEffect(() => {
     if (!visible) {
-      setCopied(false);
+      resetCopied();
     }
-  }, [visible]);
+  }, [visible, resetCopied]);
 
   // Measure container width for responsive QR sizing
   useEffect(() => {
@@ -202,9 +201,8 @@ export function ReceiveSheet({
     } else {
       await copyToClipboard(address);
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION);
-  }, [onCopy, address]);
+    showCopied();
+  }, [onCopy, address, showCopied]);
 
   return (
     <BaseSheetDialog

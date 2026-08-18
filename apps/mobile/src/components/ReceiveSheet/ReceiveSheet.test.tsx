@@ -13,6 +13,7 @@ jest.mock('@expo/vector-icons', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   semantic: {
     accent: { fill: '#FF5C45', onFill: '#070911' },
     text: { primary: '#F6F8FB', secondary: '#A7B1C4' },

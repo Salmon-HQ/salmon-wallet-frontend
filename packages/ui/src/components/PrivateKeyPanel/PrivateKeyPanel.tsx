@@ -48,7 +48,7 @@ import {
   letterSpacing,
   componentSizes,
   duration,
-  durationMs,
+  useCopyFeedback,
 } from '@salmon/shared';
 import {
   buildNetworkListFromAccount,
@@ -211,7 +211,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
 
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
   const [revealedIndexes, setRevealedIndexes] = useState<Set<number>>(new Set());
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const { copiedKey: copiedIndex, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
   const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
   // Which key the password dialog is currently standing in front of.
   const [reauthIndex, setReauthIndex] = useState<number | null>(null);
@@ -228,13 +228,16 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
     [effectiveNetworkId, activeAccount]
   );
 
-  const handleSelectNetwork = useCallback((networkId: string) => {
-    setSelectedNetworkId(networkId);
-    setRevealedIndexes(new Set());
-    setCopiedIndex(null);
-    setCopyFailedIndex(null);
-    setReauthIndex(null);
-  }, []);
+  const handleSelectNetwork = useCallback(
+    (networkId: string) => {
+      setSelectedNetworkId(networkId);
+      setRevealedIndexes(new Set());
+      resetCopied();
+      setCopyFailedIndex(null);
+      setReauthIndex(null);
+    },
+    [resetCopied]
+  );
 
   // An unlocked session is not proof of identity — it only proves the laptop
   // was left open. The password is asked again before a private key, which is
@@ -268,23 +271,22 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
       try {
         await navigator.clipboard.writeText(privateKey);
         setCopyFailedIndex(null);
-        setCopiedIndex(index);
-        setTimeout(() => setCopiedIndex(null), durationMs.feedbackLong);
+        showCopied(index);
       } catch {
         // Surface the failure — a silent no-op looks like a successful copy.
         setCopyFailedIndex(index);
       }
     },
-    [revealedIndexes]
+    [revealedIndexes, showCopied]
   );
 
   const handleBackToNetworks = useCallback(() => {
     setSelectedNetworkId(null);
     setRevealedIndexes(new Set());
-    setCopiedIndex(null);
+    resetCopied();
     setCopyFailedIndex(null);
     setReauthIndex(null);
-  }, []);
+  }, [resetCopied]);
 
   // ========================================================================
   // Step 1: Network Selection

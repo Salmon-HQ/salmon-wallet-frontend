@@ -28,7 +28,8 @@ vi.mock('../Icon', () => ({
   SettingsIcon: () => null,
 }));
 
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async () => ({
+  ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
   colors: {
     background: { primary: '#000' },
     text: { primary: '#fff', muted: '#999' },

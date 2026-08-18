@@ -23,6 +23,7 @@ vi.mock('react-i18next', () => ({
 vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual('../../../../shared/src/theme')),
   ...(await vi.importActual('../../../../shared/src/utils/scaling')),
+  ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
   useAccountsContext: () => [
     { activeAccount: { mnemonic: 'alpha bravo charlie delta echo foxtrot' } },
     { checkPassword: (password: string) => Promise.resolve(password === CORRECT_PASSWORD) },
