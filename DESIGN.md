@@ -259,7 +259,7 @@ marks its parts.
 | Primitive ramps (neutral, salmon, success, danger, warning)                                   | **Shipped**                                                                                 | `packages/shared/src/theme/palette.ts`                                                                                                                                                                                       |
 | Semantic layer (depth, surface, text, border, status, change, state, accent)                  | **Shipped**                                                                                 | `packages/shared/src/theme/semantic.ts`                                                                                                                                                                                      |
 | Contrast assertions in CI                                                                     | **Shipped**                                                                                 | `packages/shared/src/theme/contrast.test.ts`                                                                                                                                                                                 |
-| Geist + Geist Mono, tabular-nums token, font-scale caps                                       | **Shipped**                                                                                 | `packages/shared/src/theme/typography.ts`, `packages/assets/src/fonts`                                                                                                                                                       |
+| DM Sans (patched) + Geist Mono, tabular-nums token, font-scale caps                           | **Shipped**                                                                                 | `packages/shared/src/theme/typography.ts`, `packages/assets/src/fonts`                                                                                                                                                       |
 | Brand mark as tintable vector paths                                                           | **Shipped**                                                                                 | `packages/shared/src/theme/brand.ts`                                                                                                                                                                                         |
 | Wordmark as vector paths, generated from the typeface                                         | **Shipped**                                                                                 | `scripts/wordmark.py` → `packages/shared/src/theme/wordmark.generated.ts`, re-exported from `brand.ts`                                                                                                                       |
 | MUI theme + unconditional focus ring (web, extension)                                         | **Shipped**                                                                                 | `packages/ui/src/theme/index.ts`                                                                                                                                                                                             |
@@ -418,6 +418,19 @@ than editing 200 call sites.
 
 **Interface font:** DM Sans (with `system-ui, -apple-system, sans-serif`)
 **Mono font:** Geist Mono (with `ui-monospace, monospace`)
+
+_(Reversal, 2026-08: the interface font went DM Sans → Geist → DM Sans, and
+each leg had a reason worth keeping. DM Sans was the original face. It was
+dropped for Geist because no released DM Sans carries `tnum` — there are no
+tabular glyphs to switch to, so balances shivered as digits changed; the
+Tabular Rule was born from that failure. It came back in 06e5434c because DM
+Sans declares no Reserved Font Name under the OFL, so the binaries could be
+patched instead of replaced: the shipped statics have their digit advances
+equalised, which is what Geist had been bought for
+(`packages/assets/src/fonts/DMSans-README.md`, `scripts/dmsans.py`), and
+`packages/shared/src/theme/tabularFigures.test.ts` reads the shipped TTFs so a
+regression cannot land silently. The mono was Geist Mono throughout — only the
+interface face travelled.)_
 
 Both are SIL OFL 1.1 and cleared for embedding in the app binaries and the
 extension. **Shipped** as five static TTFs on every surface — DM Sans Regular /
