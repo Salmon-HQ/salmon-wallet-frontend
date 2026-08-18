@@ -79,15 +79,42 @@ export interface WavefrontPlan {
  * to saccade to where it has already gone. What the viewer perceives is not a travelling
  * ridge but a flash and an after-image.
  *
- * At 1400ms the same 19° is covered at ~13°/s — the middle of the band the eye
- * tracks smoothly, so the crest is *followed* rather than caught. It is
- * deliberately far outside the `flick`…`tide` vocabulary: those are transitions
- * between states, and this is a physical event crossing a surface.
+ * At 1400ms the same 19° was covered at ~13°/s and at **2000ms it is ~9.5°/s** —
+ * both inside the band the eye tracks smoothly, so the crest is *followed*
+ * rather than caught. It is deliberately far outside the `flick`…`tide`
+ * vocabulary: those are transitions between states, and this is a physical
+ * event crossing a surface.
+ *
+ * **The dial.** Product tunes this by eye (2026-08: *"¿el ripple effect que
+ * está ahora en la loading se puede hacer más lento?"*), so it is the one number
+ * to change and everything else follows it: {@link WAVEFRONT_PERIOD_MS},
+ * {@link wavefrontCalmMs}, the ring and crest keyframes on both platforms, and
+ * {@link wavefrontExitMs}. The mark's own cadence
+ * ({@link WAVEFRONT_SINK_MS} / {@link WAVEFRONT_RECOVER_MS}) does *not* scale
+ * with it and should not: an impact is an impact whatever the water does
+ * afterwards. Two things bound how far it can go.
+ *
+ * - **The floor is ~5700ms, and it is not the motion threshold.** The eye can
+ *   see far slower movement than this (a target with a visible reference frame
+ *   is detected moving at a few arcmin/s), so nothing here is invisible. What
+ *   fails first is the *reading*: within one fixation — call it 300ms — the
+ *   front has to shift by more than the crest band's own angular thickness, or
+ *   a glance shows a ring at rest and the eye infers growth from successive
+ *   glances instead of seeing travel. 19° in 300ms of a 1400ms crossing is
+ *   4.1°; at 2000ms it is 2.9°; at ~5700ms (~3.3°/s) it is about 1°, which is
+ *   where a crossing front becomes a dilating ring. Smooth pursuit gives out
+ *   at about the same place — below ~1–2°/s the eye fixates rather than
+ *   pursues. So there is room to roughly double this again, and no more.
+ * - **The handoff is coupled to it, one for one.** The exit waits for calm
+ *   water, so the worst case is a whole crossing plus an `ebb`: **2180ms** at
+ *   2000, against 1580ms at 1400. That is dead time on a screen the user is
+ *   already waiting on, and every 100ms added here is 100ms added there. The
+ *   coupling is deliberate and stays — see {@link wavefrontExitMs}.
  *
  * Still a *time* and not a speed in px/s, so the gesture reads the same in a
  * 360px extension popup and on a phone.
  */
-export const WAVEFRONT_CROSS_MS = 1400;
+export const WAVEFRONT_CROSS_MS = 2000;
 
 /**
  * Still water between one front leaving the screen and the next being emitted.
@@ -227,7 +254,20 @@ export function planWavefront(
 
 /**
  * The hard upper bound on the handoff — how long the wait may take to leave,
- * whatever the animation does.
+ * whatever the animation does. **2180ms** at the current crossing.
+ *
+ * It is one crossing plus an `ebb` because the exit waits for calm water, and
+ * that coupling was considered and kept when the crossing was slowed (2026-08).
+ * The alternative — closing on a faster wave than the one that was emitted —
+ * buys back the difference by making the front *accelerate* at the exact moment
+ * the user is watching it, which is a cut, not a wave: `d = c·t` is the whole
+ * claim the front makes, and a front that changes speed to suit the caller
+ * stops being one. The earlier model that cancelled the emission and started a
+ * fresh closing wave was rejected for the same reason. What actually pays for
+ * the slower crossing is that this is the *worst* case and not the usual one:
+ * a wait resolving during the rest hands off on `ebb` alone, so the mean hold
+ * is `(CROSS/2)·(CROSS/PERIOD) + ebb` — about 950ms at 2000, against ~670ms at
+ * 1400.
  *
  * A wallet may never be trapped on a loading screen by an animation that failed
  * to complete, so every caller arms a timer at this value and whichever of the

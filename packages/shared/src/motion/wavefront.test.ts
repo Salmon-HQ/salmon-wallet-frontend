@@ -133,7 +133,9 @@ describe('planWavefront — reduce motion', () => {
 describe('wavefrontExitMs — the hard upper bound', () => {
   it('bounds the handoff at one whole crossing plus an ebb', () => {
     expect(wavefrontExitMs(false)).toBe(WAVEFRONT_CROSS_MS + motionMs.ebb);
-    expect(wavefrontExitMs(false)).toBe(1580);
+    // Spelled out because it is the dead time a caller pays for the crossing:
+    // slowing the front slows the receipt one for one. See WAVEFRONT_CROSS_MS.
+    expect(wavefrontExitMs(false)).toBe(2180);
   });
 
   it('is never shorter than any exit the wave can actually plan', () => {

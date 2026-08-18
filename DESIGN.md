@@ -1424,12 +1424,12 @@ what keeps a wait from competing with the only climax the system has.
      rather than measured by eye on a device.
 
    - **Every sink launches a front, and one front is in flight at a time.** It
-     reaches the farthest corner of the surface in **1400ms** and then the water
+     reaches the farthest corner of the surface in **2000ms** and then the water
      rests for **600ms** before the next emission. Still a _time_ and not a speed
      in px/s, so the gesture reads the same in a 360px extension popup and on a
      393×852 phone.
 
-     **1400ms is set by what the eye can follow, not by the transition
+     **The crossing is set by what the eye can follow, not by the transition
      vocabulary.** It was `rise` (420ms), chosen because a front crossing the
      screen is the same _size_ of event as a sheet presenting; on a real phone
      that is unwatchable, and the reason is measurable. Centre to corner on a
@@ -1438,11 +1438,43 @@ what keeps a wait from competing with the only climax the system has.
      ceiling of smooth pursuit**, which tracks comfortably to about 30°/s. The
      eye cannot follow the crest and has to saccade to where it has already
      gone, so what is perceived is a flash and an after-image rather than a
-     travelling ridge. At 1400ms the same 19° goes by at ~13°/s, the middle of
-     the band the eye tracks smoothly. The rest is not padding either: a pulse
-     that fires the instant the previous front clears is a metronome however
-     slow it is. _(Product, 2026-08: "va tan rápido que no se puede apreciar" and
-     "no quiero que parezca un radar, quiero que sea más smooth.")_
+     travelling ridge. At 1400ms the same 19° went by at ~13°/s, and it is now
+     **2000ms — ~9.5°/s** _(reversal, 2026-08: "¿el ripple effect que está ahora
+     en la loading se puede hacer más lento?")_ — both inside the band the eye
+     tracks smoothly. The rest is not padding either: a pulse that fires the
+     instant the previous front clears is a metronome however slow it is.
+     _(Product, 2026-08: "va tan rápido que no se puede apreciar" and "no quiero
+     que parezca un radar, quiero que sea más smooth.")_
+
+     **How much further it can go: to about 5700ms, and the limit is not
+     visibility.** The eye detects far slower movement than any of this — a few
+     arcmin per second against a visible reference. What gives out first is the
+     _reading_. Within one fixation, call it 300ms, the front has to shift by
+     more than the crest band's own angular thickness, or a glance shows a
+     stationary ring and the viewer infers growth from successive glances
+     instead of seeing travel. That shift is 4.1° at 1400ms, **2.9° at 2000ms**,
+     and about 1° at ~5700ms (~3.3°/s) — which is where a crossing front becomes
+     a dilating ring, and roughly where smooth pursuit gives out and the eye
+     fixates instead (~1–2°/s). So there is room to roughly double the crossing
+     again, and no more.
+
+     **It costs the handoff, one for one, and that is the real budget.** The
+     exit waits for calm water, so the worst case is a whole crossing plus an
+     `ebb`: **2180ms at 2000, against 1580ms at 1400.** That is dead time
+     between the work finishing and the receipt appearing, on a screen the user
+     is already waiting on. Two things make it payable, and neither is breaking
+     the coupling. It is the _worst_ case, not the usual one — a wait that
+     resolves during the rest hands off on `ebb` alone, so the mean hold is
+     `(CROSS/2)·(CROSS/PERIOD) + ebb`, ~950ms at 2000 against ~670ms at 1400.
+     And the obvious escape — closing on a faster wave than the one that was
+     emitted — is rejected on the same grounds as the closing wave that came
+     before it: `d = c·t` is the entire claim the front makes, so a front that
+     accelerates to suit the caller, at the exact moment the user is watching
+     it, is a cut rather than a wave. The crossing is one named constant
+     (`WAVEFRONT_CROSS_MS`) and everything else — the period, the calm, both
+     platforms' keyframes, the exit bound — is derived from it, so it is dialled
+     in one place. The mark's own cadence is deliberately _not_ derived from it:
+     an impact is an impact whatever the water does afterwards.
 
    - **Nothing rides it any more.** _(Reversal, 2026-08: the riders were the
      point of the system, and they are gone. Product: "Unlocking Wallet sigue
@@ -1484,7 +1516,7 @@ what keeps a wait from competing with the only climax the system has.
    - **It loops** for as long as the wait lasts. _(Reversal, 2026-08: the cap
      was three emissions, then stillness.)_ What keeps a thirty-second wait from
      being a thirty-second show is the duty cycle, not a counter — the front
-     occupies 1400ms of a 2000ms period and the rest is still water. Nothing
+     occupies 2000ms of a 2600ms period and the rest is still water. Nothing
      accumulates: one compositor animation per element (`infinite` on the DOM,
      `withRepeat(-1)` on the UI thread in React Native), no JS timer behind it,
      and every value is cancelled on unmount.
@@ -1512,7 +1544,7 @@ what keeps a wait from competing with the only climax the system has.
      inventing a closing wave would be pure latency between a decision and its
      receipt with nothing on screen to justify it.
    - **The hard bound survives.** `wavefrontExitMs()` — one whole crossing plus
-     an `ebb`, **1580ms worst case** — arms a timer in both implementations, and
+     an `ebb`, **2180ms worst case** — arms a timer in both implementations, and
      whichever of the timer and the animation callback arrives first wins. A
      wallet may never be stranded on a loading screen by an animation that
      failed to complete. The bound is by construction the maximum of the derived
@@ -1606,11 +1638,19 @@ mounts.
 displacement — the mark is still there, and the _words_ carry the state, which
 is the job the descent's mid-track resting position used to do — **and no
 wave-driven exit**. A user who cannot see the wave is not made to wait one out;
-the wait leaves in one `ebb` step, 1400ms sooner. Not up for revision.
+the wait leaves in one `ebb` step, one whole crossing sooner. Not up for
+revision.
 
 **The Bedrock Rule still wins.** The dApp approval flow's wait (`bedrock`) gets
 no mark, no train and no wave, for the same reason it gets no water column — and
 because it has no wave, it needs no hold before it hands off.
+
+**Ruled out: no front on a button press.** Reusing this on taps was considered
+and rejected _(product, 2026-08: "cada vez que tocás un botón perturbás el
+agua")_. It is recorded as a decision rather than left open, because it will be
+proposed again: a full-screen front means **something is in flight**, and in a
+wallet buttons are pressed constantly, so firing one per tap would spend that
+meaning on navigation. `PressSpecular` remains the press vocabulary on mobile.
 
 **Not built, and refused for now:** distortion. A text that ripples _over
 itself_ needs a shader. On mobile that is `@shopify/react-native-skia` — a
