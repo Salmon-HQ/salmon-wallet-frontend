@@ -277,8 +277,13 @@ which does no fee arithmetic on either side.
   builder-first, optimistic, direct, casual, short lines, confident but not
   corporate; emoji at the end of a line to reinforce, not to decorate. The
   website's voice is a different register entirely — austere and declarative
-  ("Decentralization without transparency is theater."). **[open]** The
-  in-product UI voice sits between the two and is defined nowhere.
+  ("Decentralization without transparency is theater."). **Resolved
+  (2026-08-18, product owner):** the in-product UI voice is **sober with dosed
+  warmth** — a calm, direct base register with no emoji anywhere in product UI;
+  austere at approval and danger moments (state consequences plainly: "this
+  cannot be undone"); warmer at onboarding and empty states. Spanish is always
+  voseo rioplatense. The Twitter register stays on social; the website register
+  stays on the website.
 - **Public promises the UI must not falsify**: "Your private keys are encrypted
   on your device and protected by your password." · "If you lose your recovery
   phrase, no one can recover it for you." · "Salmon is designed to minimize
@@ -334,6 +339,11 @@ meaning-bearing boundaries and focus indicators in
 `packages/shared/src/theme/contrast.test.ts`, and the MUI theme ships an
 unconditional focus-visible ring.
 
-**[open]** That bar was set by engineering, not by a recorded product decision.
-A human should ratify it — including whether it extends beyond colour contrast
-to screen-reader support, target sizes, and reduced-motion behaviour.
+**Resolved (2026-08-18, product owner): WCAG 2.2 AA is ratified at full
+scope** — colour contrast, screen-reader support, 44pt minimum touch targets,
+and reduced-motion behaviour. The engineering bar (contrast assertions in
+`contrast.test.ts`, the focus-visible ring, copy-button announcements, 44pt
+header targets) is now a product commitment, not an accident. Known debt the
+ratification creates: the loading screen's wave train, the marine snow, and the
+logo sink have no reduced-motion variants yet; they need calm equivalents under
+`prefers-reduced-motion` / the OS reduce-motion flag.
