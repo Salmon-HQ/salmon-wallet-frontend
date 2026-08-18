@@ -17,8 +17,11 @@ import {
   WAVEFRONT_PASS_MS,
   WAVEFRONT_PERIOD_MS,
   WAVEFRONT_REST_MS,
+  WAVEFRONT_RECOVER_MS,
+  WAVEFRONT_SINK_MS,
   planWavefront,
   planWavefrontExit,
+  wavefrontCalmMs,
   wavefrontExitMs,
   wavefrontRadius,
 } from './wavefront';
@@ -36,6 +39,13 @@ describe('wavefrontRadius', () => {
   });
 });
 
+/**
+ * `planWavefront` has no caller since the riders were removed (product,
+ * 2026-08). It is tested anyway, and on purpose: what it encodes — `d/c` and
+ * the 1/√d attenuation — is expensive to rediscover and product's own words on
+ * the removal were *"al menos por ahora"*. An untested kept function is a
+ * function that will not work when it comes back.
+ */
 describe('planWavefront — delay is distance', () => {
   it('starts the passenger at the origin immediately', () => {
     const plan = planWavefront(origin, origin, bounds, false);
@@ -72,41 +82,6 @@ describe('planWavefront — delay is distance', () => {
 
     expect(near?.durationMs).toBe(motionMs.drift);
     expect(far?.durationMs).toBe(motionMs.drift);
-  });
-});
-
-/**
- * The synchronisation the whole effect rests on, and the one product caught by
- * eye: *"los componentes cuando rebotan no lo hacen cuando pasa la onda, sino
- * cuando ya desaparece."* A rider started at the moment the crest arrives peaks
- * half a pass later, by which time the crest is `PASS/2 · c` further out. The
- * displacement has to be *centred* on the arrival, not begun by it.
- */
-describe('planWavefront — the rider peaks as the crest passes it', () => {
-  it('starts each rider half a pass before the front reaches it', () => {
-    const rider = { x: 360, y: 600 };
-    const plan = planWavefront(rider, origin, bounds, false)!;
-
-    expect(plan.startMs + plan.durationMs / 2).toBeCloseTo(plan.delayMs, 0);
-  });
-
-  it('never starts a rider before the emission, however close to the mark it sits', () => {
-    const plan = planWavefront(origin, origin, bounds, false)!;
-
-    expect(plan.startMs).toBe(0);
-    expect(plan.startMs).toBeLessThanOrEqual(plan.delayMs);
-  });
-
-  it('keeps the start monotonic in distance, like the arrival it is offset from', () => {
-    const rMax = wavefrontRadius(origin, bounds);
-    const starts = [0.25, 0.5, 0.75, 1].map(
-      (fraction) =>
-        planWavefront({ x: 180, y: 300 + rMax * fraction }, origin, bounds, false)!.startMs
-    );
-
-    for (let index = 1; index < starts.length; index += 1) {
-      expect(starts[index]).toBeGreaterThan(starts[index - 1]);
-    }
   });
 });
 
@@ -181,15 +156,24 @@ describe('wavefrontExitMs — the hard upper bound', () => {
  * wave has left — *"justo cuando el agua está calma. Esto aplica siempre."*
  */
 describe('planWavefrontExit — hand off on calm water', () => {
-  it('waits out the whole crossing when the work resolves on an emission', () => {
-    expect(planWavefrontExit(0, false)).toEqual({
+  it('waits out the whole crossing when the work resolves at the impact', () => {
+    expect(planWavefrontExit(WAVEFRONT_SINK_MS, false)).toEqual({
       holdMs: WAVEFRONT_CROSS_MS,
       exitMs: WAVEFRONT_CROSS_MS + motionMs.ebb,
     });
   });
 
+  it('hands off at once while the mark is still on its way down', () => {
+    // Before the trough there is no wave on the screen to wait out: the water
+    // is calm and the emission has not happened yet.
+    expect(planWavefrontExit(WAVEFRONT_SINK_MS - 1, false)).toEqual({
+      holdMs: 0,
+      exitMs: motionMs.ebb,
+    });
+  });
+
   it('waits only for what the front has left to travel', () => {
-    const { holdMs } = planWavefrontExit(WAVEFRONT_CROSS_MS / 4, false);
+    const { holdMs } = planWavefrontExit(WAVEFRONT_SINK_MS + WAVEFRONT_CROSS_MS / 4, false);
 
     expect(holdMs).toBe(WAVEFRONT_CROSS_MS * 0.75);
   });
@@ -197,14 +181,14 @@ describe('planWavefrontExit — hand off on calm water', () => {
   it('hands off immediately when the water is already calm', () => {
     // Anywhere in the rest between two emissions there is nothing on screen to
     // wait for, and inventing a closing wave would be pure latency.
-    const midRest = WAVEFRONT_CROSS_MS + WAVEFRONT_REST_MS / 2;
+    const midRest = WAVEFRONT_SINK_MS + WAVEFRONT_CROSS_MS + WAVEFRONT_REST_MS / 2;
 
     expect(planWavefrontExit(midRest, false)).toEqual({ holdMs: 0, exitMs: motionMs.ebb });
   });
 
   it('reads the same on the tenth emission as on the first', () => {
-    const first = planWavefrontExit(200, false);
-    const tenth = planWavefrontExit(WAVEFRONT_PERIOD_MS * 10 + 200, false);
+    const first = planWavefrontExit(300, false);
+    const tenth = planWavefrontExit(WAVEFRONT_PERIOD_MS * 10 + 300, false);
 
     expect(tenth).toEqual(first);
   });
@@ -223,8 +207,9 @@ describe('planWavefrontExit — hand off on calm water', () => {
     }
   });
 
-  it('treats an unmeasured elapsed time as a fresh emission, never as a negative wait', () => {
-    expect(planWavefrontExit(-1, false).holdMs).toBe(WAVEFRONT_CROSS_MS);
+  it('treats an unmeasured elapsed time as calm water, never as a negative wait', () => {
+    // Phase 0 is the top of the sink: the mark has not hit the water yet.
+    expect(planWavefrontExit(-1, false).holdMs).toBe(0);
   });
 });
 
@@ -234,8 +219,29 @@ describe('the loop keeps one front in flight at a time', () => {
     expect(WAVEFRONT_REST_MS).toBeGreaterThan(0);
   });
 
-  it('gives a rider time to be carried rather than flicked', () => {
+  it('gives a pass time to be carried rather than flicked', () => {
     expect(WAVEFRONT_PASS_MS).toBeLessThan(WAVEFRONT_CROSS_MS);
+  });
+});
+
+/**
+ * The rhythm product asked for by eye — *"the next sink lands as the previous
+ * wave leaves the screen"* — asserted as arithmetic, because it is already
+ * implicit in the constants and a hardcoded gap would silently stop matching
+ * the crossing the first time the crossing moved.
+ */
+describe('the mark sinks, and the front is born at the trough', () => {
+  it('leaves exactly the rest between the front clearing and the next impact', () => {
+    expect(wavefrontCalmMs()).toBe(WAVEFRONT_REST_MS);
+  });
+
+  it('keeps the impact quick and the recovery slow, with the recovery inside the period', () => {
+    expect(WAVEFRONT_SINK_MS).toBeLessThan(WAVEFRONT_RECOVER_MS);
+    expect(WAVEFRONT_SINK_MS + WAVEFRONT_RECOVER_MS).toBeLessThan(WAVEFRONT_PERIOD_MS);
+  });
+
+  it('emits inside the period, so two fronts are never in flight at once', () => {
+    expect(WAVEFRONT_SINK_MS + WAVEFRONT_CROSS_MS).toBeLessThan(WAVEFRONT_PERIOD_MS);
   });
 });
 

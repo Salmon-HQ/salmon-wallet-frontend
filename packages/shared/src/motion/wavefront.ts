@@ -16,6 +16,13 @@
  * Surfacing already uses in `surfacing.ts`. Each platform draws it twice:
  * Reanimated in `apps/mobile`, Emotion keyframes in `packages/ui`.
  *
+ * The front no longer carries passengers. Product, 2026-08: *"Unlocking Wallet
+ * sigue moviéndose y el div de tip también, cuando te dije que no debería"* —
+ * the words are stationary and the mark is the only thing that moves. What the
+ * module owns now is the *rhythm*: the mark sinks, the front is emitted at the
+ * bottom of the sink, and it clears the screen exactly `WAVEFRONT_REST_MS`
+ * before the next impact. See {@link wavefrontCalmMs}.
+ *
  * Two properties are deliberate:
  *
  * - **The speed is a time, not px/s.** The front takes `WAVEFRONT_CROSS_MS`
@@ -45,27 +52,13 @@ export interface WavefrontBounds {
   height: number;
 }
 
-/** What one passenger needs in order to ride the front. */
+/** What one passenger would need in order to ride the front. */
 export interface WavefrontPlan {
   /**
    * When the front *arrives* at this passenger, ms after the emission. This is
-   * `d/c` — the quantity the whole choreography is built on.
+   * `d/c` — the quantity a rider's whole choreography was built on.
    */
   delayMs: number;
-  /**
-   * When this passenger starts moving, ms after the emission — half a pass
-   * *before* the front arrives, so the displacement **peaks as the crest
-   * passes** rather than beginning there.
-   *
-   * Product, 2026-08: *"los componentes cuando rebotan no lo hacen cuando pasa
-   * la onda, sino cuando ya desaparece."* That was exactly this: the rider was
-   * started at `delayMs` and its curve peaked `durationMs / 2` later, so at the
-   * moment the eye read it as displaced the crest was already `PASS/2 · c`
-   * further out. A float does not wait for the crest to be on top of it before
-   * it begins to rise. Clamped at 0 for passengers so close to the emitter that
-   * the front reaches them before half a pass has elapsed.
-   */
-  startMs: number;
   /** Effective displacement, px, after cylindrical attenuation. */
   amplitude: number;
   /** How long the front takes to pass this passenger. */
@@ -115,14 +108,51 @@ export const WAVEFRONT_REST_MS = 600;
 export const WAVEFRONT_PERIOD_MS = WAVEFRONT_CROSS_MS + WAVEFRONT_REST_MS;
 
 /**
- * How long one passenger's displacement lasts.
+ * How long the front takes to pass one passenger — `drift`.
  *
- * `drift` — and it is **centred on the front's arrival**, not started by it
- * (see {@link WavefrontPlan.startMs}). A float on water rises as the crest
- * approaches and settles as it leaves; it does not begin to move at the moment
- * the crest is already on top of it.
+ * Nothing rides the front any more (product, 2026-08: the words and the tips
+ * must not move at all), so this is now only the pass duration
+ * {@link planWavefront} reports. It is kept with that function, for the same
+ * reason.
  */
 export const WAVEFRONT_PASS_MS = motionMs.drift;
+
+/**
+ * How long the mark takes to sink, and therefore **how late the front is**.
+ *
+ * The wave is not on a parallel timer: it is born at the *bottom* of the sink,
+ * at the moment of impact. So the emission is delayed by exactly the descent,
+ * and one constant keeps the two in step — a change to the sink moves the ring
+ * with it rather than desynchronising them.
+ *
+ * `flick`, the shortest token in the vocabulary, because an impact is the one
+ * gesture that may be abrupt. Product, 2026-08: *"El logo sigue saltando y
+ * bajando, no bajando y volviendo a su lugar."*
+ */
+export const WAVEFRONT_SINK_MS = motionMs.flick;
+
+/**
+ * How long the mark takes to come back up. `tide` — eight times the descent,
+ * and **monotonic**: a spring that overshoots is the jump product had just had
+ * removed from the words.
+ */
+export const WAVEFRONT_RECOVER_MS = motionMs.tide;
+
+/**
+ * Still water between the front leaving the screen and the next impact.
+ *
+ * **Derived, never typed in.** The trough is at `WAVEFRONT_SINK_MS`, the front
+ * it emits clears the corner one crossing later, and the next trough is one
+ * period after this one — so the gap is whatever `WAVEFRONT_REST_MS` is, and it
+ * stays that way when the crossing changes. That identity is the rhythm product
+ * asked for (*"the next sink lands as the previous wave leaves the screen"*),
+ * and asserting it is cheaper than re-deriving it by eye on a device.
+ */
+export function wavefrontCalmMs(): number {
+  const frontClearsAt = WAVEFRONT_SINK_MS + WAVEFRONT_CROSS_MS;
+  const nextTroughAt = WAVEFRONT_PERIOD_MS + WAVEFRONT_SINK_MS;
+  return nextTroughAt - frontClearsAt;
+}
 
 /**
  * Amplitude floor, px. Below a pixel the displacement is not rendered, and a
@@ -143,6 +173,20 @@ export function wavefrontRadius(origin: WavefrontPoint, bounds: WavefrontBounds)
 
 /**
  * Plan one passenger's ride.
+ *
+ * **Nothing calls this today.** The riders were removed in 2026-08 (product:
+ * *"Unlocking Wallet sigue moviéndose y el div de tip también, cuando te dije
+ * que no debería"* — the title, subtitle and tips are stationary now). It is
+ * kept, and kept tested, because the two things it encodes are expensive to
+ * rediscover and cheap to hold: **`d/c` — the d'Alembert delay that makes a
+ * distance-proportional stagger a physically correct radial front** — and
+ * **the 1/√d cylindrical attenuation**, which is the difference between reading
+ * as one wave and reading as four things moving. Product's own words on the
+ * removal were *"al menos por ahora"*.
+ *
+ * What was *not* kept is `startMs`, the half-a-pass centring that made a rider
+ * peak as the crest passed it: it describes a passenger's curve rather than the
+ * wave, so it has no meaning without one.
  *
  * @param rider Centre of the passenger.
  * @param origin Centre of the emitter — the logo.
@@ -176,7 +220,6 @@ export function planWavefront(
 
   return {
     delayMs,
-    startMs: Math.max(0, Math.round(delayMs - WAVEFRONT_PASS_MS / 2)),
     amplitude: Math.max(WAVEFRONT_MIN_AMPLITUDE, attenuated),
     durationMs: WAVEFRONT_PASS_MS,
   };
@@ -243,8 +286,16 @@ export function planWavefrontExit(
 ): WavefrontExitPlan {
   if (isReduceMotionEnabled) return { holdMs: 0, exitMs: motionMs.ebb };
 
+  // The front is in flight over `[SINK, SINK + CROSS)` of the period, because
+  // it is emitted at the trough of the sink rather than at the top of the
+  // period. Before the trough there is no wave on the screen yet — the water is
+  // calm and the mark is on its way down — so that phase hands off at once,
+  // which also keeps the worst case at one whole crossing.
   const phase = elapsedMs > 0 ? elapsedMs % WAVEFRONT_PERIOD_MS : 0;
-  const holdMs = Math.max(0, Math.round(WAVEFRONT_CROSS_MS - phase));
+  const holdMs =
+    phase < WAVEFRONT_SINK_MS
+      ? 0
+      : Math.max(0, Math.round(WAVEFRONT_SINK_MS + WAVEFRONT_CROSS_MS - phase));
 
   return { holdMs, exitMs: holdMs + motionMs.ebb };
 }

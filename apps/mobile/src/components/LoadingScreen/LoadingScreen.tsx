@@ -16,13 +16,18 @@
  *   did not have. On a pending on-chain transaction there is no percentage to
  *   claim. It was also the one element that would not ride the wave, so it put
  *   a second motion vocabulary on the same screen as the front.
- * - **The wave** (`waves`, now on by default) is the disturbed water. Each pulse
- *   launches a front; every element is displaced as the front reaches it,
- *   delayed in
- *   proportion to its *measured distance* from the mark and attenuated as 1/√d.
- *   That is `f(t − d/c)` — d'Alembert — so it is a physically correct radial
- *   front, which needs a delay and not a shader. It loops for as long as the
- *   wait lasts and ends on a closing wave that carries the screen off
+ * - **The mark sinks, and the front is born at the trough.** It presses *into*
+ *   the surface — quick on the way down (`flick`), slow and monotonic on the way
+ *   back (`tide`) — and the ring is emitted at the moment of impact rather than
+ *   on a parallel timer. The delay is `WAVEFRONT_SINK_MS`, so the two cannot
+ *   come apart. _(Product, 2026-08: "El logo sigue saltando y bajando, no
+ *   bajando y volviendo a su lugar.")_
+ * - **Nothing rides the front.** The title, subtitle and tips are stationary.
+ *   _(Product, 2026-08: "Unlocking Wallet sigue moviéndose y el div de tip
+ *   también, cuando te dije que no debería.")_ The wave is what moves; the words
+ *   are what is read.
+ * - **The wave** (`waves`, now on by default) is the disturbed water. It loops
+ *   for as long as the wait lasts and the exit waits for it to leave the screen
  *   (`onExited`). The arithmetic lives in `@salmon/shared` `motion/wavefront`,
  *   shared with the DOM twin, so the two cannot drift and the timing is testable
  *   without a frame clock — the same split `surfacing.ts` already uses.
@@ -57,7 +62,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import {
   colors,
-  componentSizes,
   CREST_FADE_FROM,
   crestStops,
   crestTrain,
@@ -66,9 +70,7 @@ import {
   letterSpacing,
   markPaths,
   markViewBoxAttr,
-  motionEasing,
   motionMs,
-  planWavefront,
   semantic,
   spacing,
   fontSize,
@@ -77,7 +79,8 @@ import {
   wavefrontRadius,
   WAVEFRONT_CROSS_MS,
   WAVEFRONT_PERIOD_MS,
-  type WavefrontPlan,
+  WAVEFRONT_RECOVER_MS,
+  WAVEFRONT_SINK_MS,
   type WavefrontPoint,
 } from '@salmon/shared';
 
@@ -90,8 +93,20 @@ import { ScalesBackground } from '../ScalesBackground';
 // Constants
 // ============================================================================
 
-/** 2% — the wave's swell, the quiet half of `swellIn`'s overshoot. */
-const WAVE_SCALE = 0.02;
+/**
+ * How far the mark presses into the surface, and how much light it loses down
+ * there.
+ *
+ * **A scale-down on its own does not read as an impact** — the same shrink
+ * describes an object simply moving away from the eye. Two things separate the
+ * two readings, and both are compositor-only: the mark **dims** as it goes
+ * under, because water above a thing is water that takes its light, and it goes
+ * down eight times faster than it comes back up, which is the profile of
+ * something struck rather than something travelling. The wave leaving at the
+ * bottom of it is the third.
+ */
+const MARK_SINK_SCALE = 0.05;
+const MARK_SINK_DIM = 0.12;
 /**
  * Diameter of the mark that emits the wave, px. It was 56 and sat a third of
  * the way down the screen; product, 2026-08, wants the emitter *nailed in the
@@ -101,10 +116,6 @@ const WAVE_SCALE = 0.02;
 const MARK_SIZE = 96;
 /** Clear space between the mark's edge and the first word under it. */
 const MARK_TO_WORDS = spacing['3xl'];
-/** Three riders: title, subtitle, tips. */
-const RIDER_COUNT = 3;
-
-const curveCurrent = motionEasing.current.native as [number, number, number, number];
 
 /** The crests alive at once, resolved once at module load. */
 const CRESTS = crestTrain();
@@ -123,19 +134,6 @@ const CRESTS = crestTrain();
  * and a smooth ramp upscaled by a compositor is still a smooth ramp.
  */
 const CREST_RASTER = 512;
-
-/**
- * One wave passing one element: a displacement upward and a 2% swell. Shared by
- * every rider so the front cannot drift apart between them; only the amplitude
- * differs, and it differs because the wave attenuates, not because the elements
- * were tuned separately.
- */
-function waveTransform(v: number, amplitude: number) {
-  'worklet';
-  return {
-    transform: [{ translateY: -v * amplitude }, { scale: 1 + v * WAVE_SCALE }],
-  };
-}
 
 /** The crest's box: a fixed raster, centred on the origin. */
 function crestBox(origin: WavefrontPoint) {
@@ -235,26 +233,20 @@ export function LoadingScreen({
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(visible);
   /**
-   * Everything the wave needs to know about where things are, in the frame of
-   * the screen. Filled by `onLayout` on mount and then never again — the
-   * passengers do not move and neither does the origin, which is exactly why
-   * `f(t − d/c)` collapses into a delay instead of needing a value read on
-   * every frame.
+   * Where the front leaves from and how far it has to go, in the frame of the
+   * screen. Filled by `onLayout` on mount and then never again — the origin
+   * does not move, so the ring's size is a number and not a per-frame read.
    */
   const [geometry, setGeometry] = useState<{
     frame: { width: number; height: number };
     contentOffset: WavefrontPoint;
     origin: WavefrontPoint | null;
-    riders: Record<number, WavefrontPoint>;
-  }>({ frame: { width: 0, height: 0 }, contentOffset: { x: 0, y: 0 }, origin: null, riders: {} });
+  }>({ frame: { width: 0, height: 0 }, contentOffset: { x: 0, y: 0 }, origin: null });
 
   // Animation values
-  // One rider per element the front passes over.
-  const wave0 = useSharedValue(0);
-  const wave1 = useSharedValue(0);
-  const wave2 = useSharedValue(0);
-  /** The emitter's beat and the ring it throws — 0 → 1 is one crossing. */
-  const pulse = useSharedValue(0);
+  /** How deep the mark is pressed in: 0 at rest, 1 at the trough. */
+  const sink = useSharedValue(0);
+  /** The ring the impact throws — 0 → 1 is one crossing. */
   const ring = useSharedValue(0);
   const tipOpacity = useSharedValue(1);
   const overlayOpacity = useSharedValue(visible ? 1 : 0);
@@ -295,21 +287,6 @@ export function LoadingScreen({
   const overlayIn = timing(motionMs.drift, isReduceMotionEnabled);
   const tipFade = timing(motionMs.drift, isReduceMotionEnabled);
 
-  /**
-   * One plan per rider: `null` until the layout pass has run, and `null` for
-   * good under reduce motion — nothing is started at all, rather than started
-   * at zero length.
-   */
-  const plans = useMemo<(WavefrontPlan | null)[]>(() => {
-    const { frame, origin, riders } = geometry;
-    if (!waves || !origin) return [null, null, null];
-    return Array.from({ length: RIDER_COUNT }, (_, index) => {
-      const point = riders[index];
-      if (!point) return null;
-      return planWavefront(point, origin, frame, isReduceMotionEnabled);
-    });
-  }, [waves, geometry, isReduceMotionEnabled]);
-
   /** Final diameter of the ring: twice the distance to the farthest corner. */
   const ringSize = useMemo(() => {
     const { frame, origin } = geometry;
@@ -340,22 +317,6 @@ export function LoadingScreen({
     setGeometry((previous) => ({ ...previous, origin: centreOf(box, previous.contentOffset) }));
   }, []);
 
-  const measureRider = useCallback(
-    (index: number) => (event: LayoutChangeEvent) => {
-      const box = event.nativeEvent.layout;
-      setGeometry((previous) => ({
-        ...previous,
-        riders: { ...previous.riders, [index]: centreOf(box, previous.contentOffset) },
-      }));
-    },
-    []
-  );
-
-  const riderLayoutHandlers = useMemo(
-    () => Array.from({ length: RIDER_COUNT }, (_, index) => measureRider(index)),
-    [measureRider]
-  );
-
   // Start/stop animations based on visibility
   useEffect(() => {
     if (visible) {
@@ -377,12 +338,19 @@ export function LoadingScreen({
       // timer behind it, and the cleanup below cancels every value so an
       // unmounted screen cannot leave one running.
       if (waves) {
-        pulse.value = 0;
-        pulse.value = withRepeat(
+        // The sink, and it is the *opposite* gesture to the swell it replaces:
+        // the mark presses into the surface instead of rising off it. Fast down
+        // on `sink` (accelerating — it arrives at the water at speed), slow back
+        // up on `settle` (decelerating and monotonic, so it comes to rest
+        // without the overshoot product had just had removed from the words).
+        sink.value = 0;
+        sink.value = withRepeat(
           withSequence(
-            withTiming(1, { duration: motionMs.swell / 2, easing: Easing.bezier(...curveCurrent) }),
-            withTiming(0, { duration: motionMs.swell / 2, easing: Easing.bezier(...curveCurrent) }),
-            withTiming(0, { duration: WAVEFRONT_PERIOD_MS - motionMs.swell })
+            withTiming(1, { duration: WAVEFRONT_SINK_MS, easing: curve.sink }),
+            withTiming(0, { duration: WAVEFRONT_RECOVER_MS, easing: curve.settle }),
+            withTiming(0, {
+              duration: WAVEFRONT_PERIOD_MS - WAVEFRONT_SINK_MS - WAVEFRONT_RECOVER_MS,
+            })
           ),
           -1,
           false
@@ -394,44 +362,26 @@ export function LoadingScreen({
         // front was measured covering 90% of the screen in the first 20% of the
         // crossing and then waiting off-screen for riders it had already
         // passed. This is a front's velocity, not an element arriving.
+        //
+        // The first leg is the *impact delay*: the front is thrown at the
+        // bottom of the sink, not at the top of the period, so the ring waits
+        // out exactly the descent before it starts to travel. One constant
+        // holds the two together, and the rhythm falls out of it — the front
+        // clears the corner `WAVEFRONT_REST_MS` before the next mark hits the
+        // water. See `wavefrontCalmMs`.
         ring.value = 0;
         ring.value = withRepeat(
           withSequence(
+            withTiming(0, { duration: WAVEFRONT_SINK_MS }),
             withTiming(1, { duration: WAVEFRONT_CROSS_MS, easing: Easing.linear }),
             withTiming(0, { duration: 0 }),
-            withTiming(0, { duration: WAVEFRONT_PERIOD_MS - WAVEFRONT_CROSS_MS })
+            withTiming(0, {
+              duration: WAVEFRONT_PERIOD_MS - WAVEFRONT_CROSS_MS - WAVEFRONT_SINK_MS,
+            })
           ),
           -1,
           false
         );
-
-        [wave0, wave1, wave2].forEach((rider, index) => {
-          const plan = plans[index];
-          rider.value = 0;
-          if (!plan) return;
-          // The whole front, in one line: the same curve for everyone, started
-          // `startMs` later in proportion to distance — half a pass *before*
-          // the crest arrives, so the displacement peaks as it passes rather
-          // than beginning there. See `WavefrontPlan.startMs`.
-          rider.value = withDelay(
-            plan.startMs,
-            withRepeat(
-              withSequence(
-                withTiming(1, {
-                  duration: plan.durationMs / 2,
-                  easing: Easing.bezier(...curveCurrent),
-                }),
-                withTiming(0, {
-                  duration: plan.durationMs / 2,
-                  easing: Easing.bezier(...curveCurrent),
-                }),
-                withTiming(0, { duration: WAVEFRONT_PERIOD_MS - plan.durationMs })
-              ),
-              -1,
-              false
-            )
-          );
-        });
       }
       return undefined;
     }
@@ -445,33 +395,17 @@ export function LoadingScreen({
     // emission and started a fresh closing wave, which cut the visible ring in
     // half at the moment the user was most likely to be looking at it. The
     // ground holds for whatever that front has left to travel and then ebbs.
+    // Nothing else has to be rescheduled: the words do not ride the wave, so
+    // the hold is the whole exit.
     //
     // Because only one front is ever in flight (`WAVEFRONT_REST_MS`), a wait
     // that resolves during the rest has nothing to wait for and hands off on
     // `ebb` alone.
-    const riding = waves && !isReduceMotionEnabled && plans.some(Boolean);
+    const riding = waves && !isReduceMotionEnabled && geometry.origin !== null;
     const { holdMs } = planWavefrontExit(
       riding && startedAtRef.current ? Date.now() - startedAtRef.current : 0,
       !riding
     );
-
-    if (holdMs > 0) {
-      // How far the front has already travelled, as a time. The riders it has
-      // already passed leave now; the ones ahead of it leave as it reaches them.
-      const phase = WAVEFRONT_CROSS_MS - holdMs;
-
-      [wave0, wave1, wave2].forEach((rider, index) => {
-        const plan = plans[index];
-        cancelAnimation(rider);
-        if (!plan) return;
-        // No return trip, and no reset to 0 first: a rider caught mid-swell
-        // carries on from where it is rather than snapping back before it goes.
-        rider.value = withDelay(
-          Math.max(0, plan.delayMs - phase),
-          withTiming(1, { duration: plan.durationMs, easing: curve.sink })
-        );
-      });
-    }
 
     overlayOpacity.value = withDelay(
       holdMs,
@@ -488,15 +422,15 @@ export function LoadingScreen({
     const fallback = setTimeout(finishExit, wavefrontExitMs(isReduceMotionEnabled));
     return () => clearTimeout(fallback);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, waves, plans, overlayOpacity, wave0, wave1, wave2, isReduceMotionEnabled]);
+  }, [visible, waves, geometry.origin, overlayOpacity, sink, ring, isReduceMotionEnabled]);
 
   // Nothing may outlive the screen: an unmounted wait that left a repeating
   // value running is a loop with no way to stop it.
   useEffect(
     () => () => {
-      [wave0, wave1, wave2, pulse, ring, overlayOpacity, tipOpacity].forEach(cancelAnimation);
+      [sink, ring, overlayOpacity, tipOpacity].forEach(cancelAnimation);
     },
-    [wave0, wave1, wave2, pulse, ring, overlayOpacity, tipOpacity]
+    [sink, ring, overlayOpacity, tipOpacity]
   );
 
   // Helper function to advance to next tip
@@ -538,29 +472,10 @@ export function LoadingScreen({
     tipFade,
   ]);
 
-  // Animated styles
-  // The amplitude a rider was planned with, or the token value before the
-  // layout pass has run. `isClosing` is read as a value rather than a prop so
-  // the fade on exit belongs to the same worklet as the displacement.
-  const amplitudes = plans.map((plan) => plan?.amplitude ?? componentSizes.waveAmplitude);
-  const leaving = !visible;
-
-  const titleWave = useAnimatedStyle(() => ({
-    ...waveTransform(wave0.value, amplitudes[0]),
-    opacity: leaving ? 1 - wave0.value : 1,
-  }));
-  const subtitleWave = useAnimatedStyle(() => ({
-    ...waveTransform(wave1.value, amplitudes[1]),
-    opacity: leaving ? 1 - wave1.value : 1,
-  }));
-  const tipsWave = useAnimatedStyle(() => ({
-    ...waveTransform(wave2.value, amplitudes[2]),
-    opacity: leaving ? 1 - wave2.value : 1,
-  }));
-
-  /** The emitter's beat — the same 2% swell it puts into the water. */
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + pulse.value * WAVE_SCALE }],
+  /** The mark pressed into the surface: smaller, and dimmer for being under. */
+  const sinkStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 - sink.value * MARK_SINK_SCALE }],
+    opacity: 1 - sink.value * MARK_SINK_DIM,
   }));
 
   /**
@@ -651,7 +566,7 @@ export function LoadingScreen({
               a screen is allowed. */}
           {waves && (
             <Animated.View
-              style={[styles.emitter, pulseStyle]}
+              style={[styles.emitter, sinkStyle]}
               onLayout={measureOrigin}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
@@ -666,33 +581,25 @@ export function LoadingScreen({
           )}
 
           {/* The words, arranged *below* the centre rather than centred
-              themselves — the centre belongs to the emitter. */}
+              themselves — the centre belongs to the emitter. They do not move:
+              product, 2026-08, "Unlocking Wallet sigue moviéndose y el div de
+              tip también, cuando te dije que no debería." */}
           <View style={styles.words} pointerEvents="none">
-            {title && (
-              <Animated.View style={titleWave} onLayout={riderLayoutHandlers[0]}>
-                <Text style={styles.title}>{title}</Text>
-              </Animated.View>
-            )}
+            {title && <Text style={styles.title}>{title}</Text>}
 
-            {subtitle && (
-              <Animated.View style={subtitleWave} onLayout={riderLayoutHandlers[1]}>
-                <Text style={styles.subtitle}>{subtitle}</Text>
-              </Animated.View>
-            )}
+            {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
           </View>
 
-          {/* The tips ride too, and they are the far-field passenger — the one
-              that shows the front takes real time to get there. */}
+          {/* The tips, stationary too. They used to be the far-field passenger
+              that showed the front takes real time to get there; the crest
+              itself shows that, and it is the only thing that should. */}
           {showTips && resolvedTips.length > 0 && (
-            <Animated.View
-              style={[styles.tipsContainer, { bottom: 80 + bottomOffset }, tipsWave]}
-              onLayout={riderLayoutHandlers[2]}
-            >
+            <View style={[styles.tipsContainer, { bottom: 80 + bottomOffset }]}>
               <Text style={styles.tipLabel}>{t('general.tip', 'Tip')}</Text>
               <Animated.Text style={[styles.tipText, tipStyle]}>
                 {resolvedTips[currentTipIndex]}
               </Animated.Text>
-            </Animated.View>
+            </View>
           )}
         </View>
       </LinearGradient>

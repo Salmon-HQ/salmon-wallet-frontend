@@ -271,7 +271,7 @@ marks its parts.
 | Bezel on filled controls (`shadowsCSS.bezel`, same literal on DOM and RN)                     | **Shipped**                                                                                 | `packages/shared/src/theme/shadows.ts`                                                                                                                                                                                       |
 | Motion vocabulary (`flick`…`tide`, `current`/`settle`/`sink`/`swellIn`)                       | **Shipped**, and applied in `apps/mobile` with no loose durations left                      | `packages/shared/src/theme/durations.ts`, `apps/mobile/src/utils/motion.ts`, `apps/mobile/hooks/usePressMotion.ts`                                                                                                           |
 | The Surfacing                                                                                 | **Shipped**, minus two parts deliberately left out — see §The Surfacing                     | `apps/mobile/src/components/TransactionSuccessScreen/surfacing.ts`, `SurfacingLayers.tsx`                                                                                                                                    |
-| The wait: centred pulsing mark, radial wavefront, refraction crest, wave-driven exit          | **Shipped** on all three apps; the timing is one shared pure function — see §The wait       | `packages/shared/src/motion/wavefront.ts`, `crest.ts`, both `LoadingScreen`s                                                                                                                                                 |
+| The wait: centred sinking mark, radial wavefront, refraction crest, wave-driven exit          | **Shipped** on all three apps; the timing is one shared pure function — see §The wait       | `packages/shared/src/motion/wavefront.ts`, `crest.ts`, both `LoadingScreen`s                                                                                                                                                 |
 | Icon consolidation onto Phosphor                                                              | **Shipped** on the DOM, with two declared exceptions                                        | `packages/ui/src/icons.ts`                                                                                                                                                                                                   |
 | dApp approval: transaction effect preview + press-and-hold to approve                         | **Shipped**                                                                                 | `packages/ui/src/components/DAppApproval/TransactionEffectsCard.tsx`, `HoldToApproveButton.tsx`                                                                                                                              |
 | Sand / seabed, ambient light shafts                                                           | **Refused by design** — see §Overview and §The water column                                 | —                                                                                                                                                                                                                            |
@@ -848,11 +848,13 @@ NOAA Ocean Exploration; Giering et al., _Front. Mar. Sci._ 2020.)
 
 1. **Aerial perspective** — scattering lays a veiling luminance over anything
    distant, so contrast and internal detail fall off with distance; underwater
-   the falloff is measured in metres rather than kilometres. Encoded as three
-   bands: near flocs larger and brighter, far flocs smaller and dimmer.
+   the falloff is measured in metres rather than kilometres. Encoded as an
+   exponential falloff of opacity with depth — near flocs brighter, far flocs
+   dimmer.
 2. **Texture gradient** — elements of assumed-uniform size project smaller and
-   _denser_ the farther they are (Gibson 1955). Encoded by pushing the far band
-   deeper into the field and holding the near band high. This is the honest
+   _denser_ the farther they are (Gibson 1955). Encoded twice over: the flocs
+   themselves shrink with depth, and the small ones are pushed deeper into the
+   field while the large ones are held high. This is the honest
    name for "denser toward the bottom": it is density with _distance_, not a
    bathymetric profile. Real marine-snow concentration peaks in the upper
    100–200 m and thins below it; the document should not pretend otherwise.
@@ -863,6 +865,60 @@ NOAA Ocean Exploration; Giering et al., _Front. Mar. Sci._ 2020.)
    (ACM TOG 29(2), 2010) runs the same argument backwards: flatten the gradient
    and a real city reads as a model.
 
+**Size and opacity are one decision.** The field originally authored the two
+independently, and they disagreed: opacity tracked depth strongly (r = −0.69
+against the floc's height down the tile) while size barely tracked it at all
+(r = −0.27). That fills the field with mixed signals — a _large_ floc that is
+_faint_ is neither near nor far, it is a smudge — and a mixed signal is what
+flattens a depth ramp. It also let the biggest flocs reach a 4.48-unit radius,
+which reads as an object rather than as suspended matter, because nothing about
+them said "close".
+
+Every floc now carries one hidden parameter instead: `z`, its optical distance,
+spanning `[1, 3]`. Both cues are functions of that single `z`, so they cannot
+decorrelate again — size by the projective law (`rx = 2.55 / z`, the exact
+statement of the texture gradient above) and opacity by Beer–Lambert veiling
+(`exp(−μ(z − 1))`, the exact statement of the aerial perspective above). A near
+floc is therefore larger _and_ stronger and a far floc smaller _and_ fainter,
+always: `corr(rx, opacity)` is 1.00, where it was 0.78. That covariance is the
+whole point — the eye reads "distant" from several cues agreeing far more
+readily than from any one of them shouting, which is why the answer to "make
+the depth read better" was not "make the far ones fainter". `z` itself is 70%
+of the floc's rank by size and 30% of its height down the tile, so the vertical
+gradient now lives in the _size_ data as well as the brightness;
+`corr(cy, rx)` roughly doubled, to −0.56.
+
+The field is **continuous, not layered**. Three discrete plates would be easier
+to reason about, and this document used to describe them. They are wrong here:
+218 particles sorted into three sizes read as a sprite sheet rather than as
+water, because the eye finds the three classes and the volume collapses into
+three stickers. The one thing discrete plates genuinely buy — a different
+parallax rate per plate — is unavailable anyway, since both renderers move the
+whole field on a single transform.
+
+**How small, and the two floors.** The flocs shrank: radius range 0.87–4.48
+units became 0.85–2.55, mean 1.88 → 1.40, median 1.62 → 1.27. Almost all of
+that lands on the near end (−43% on the largest) because the far end was
+already on its floor, and there are two floors rather than one. The
+_rasteriser's_: 0.85 units is a 0.8px radius on the narrowest column this ships
+in, a ~400px extension side panel at dpr 1, which is the smallest ellipse that
+still draws as a dot rather than a smudge of antialiasing. The _panel's_, which
+binds harder: a multiplier of 0.10 on `water.snow` composites to 2 levels in
+255 against the ramp's lightest stop, and below that a floc stops being the far
+end of a ramp and becomes indistinguishable from the ground's own dither. A
+depth ramp whose far end renders as nothing is not depth, it is absence. Since
+size could not carry more of the gradient, brightness took it: the multiplier
+range widened from 0.10–0.88 to 0.10–1.00, so the nearest flocs now reach the
+token itself.
+
+**No blur cue, deliberately.** Softness is the third classical depth cue (Held
+et al., above) and `FeGaussianBlur` is the one filter primitive
+`react-native-svg` actually implements. It is still not used. At these sizes a
+Gaussian spreads the same ink over more pixels — it _lowers_ the peak alpha of
+particles that are already within two 8-bit levels of the ground, and the far
+end is floor-bound exactly there. The far flocs get their softness free anyway:
+under a pixel of radius, the rasteriser's own antialiasing is the blur.
+
 **The ramp.** A vertical gradient on the ground, `neutral-950` at the top to
 `neutral-1000` at the bottom. It suggests an abyss without drawing a floor.
 Its top stop is the ground the three apps already paint
@@ -872,7 +928,10 @@ sheet backdrop — seams against it; moving the ground itself is a separate
 change. Because the ramp only ever darkens, it can only raise text contrast,
 and `contrast.test.ts` asserts every text role at both stops.
 
-**Contrast.** The snow is `rgba(199, 211, 232, 0.12)` and composites to 1.27:1
+**Contrast.** The ceiling did not move to buy any of the above, and it must
+not: the brightest floc measures 1.293:1 against the ramp's lightest stop and
+1.238:1 against its darkest, both under the 1.4:1 cap. The snow is
+`rgba(199, 211, 232, 0.12)` and composites to 1.27:1
 on the lightest ground it can land on — under the 1.4:1 ceiling for any
 non-informational stroke, and in the same register as the deep field's 0.06
 stroke. Every floc's authored opacity is a multiplier ≤ 1 on that one token, so
@@ -899,7 +958,7 @@ The rule is unchanged and now enforced the way it was written to be: snow and
 scales never appear _readably_ behind a number, a row, an address, an input, a
 seed phrase, or an approval surface, because the content on those surfaces
 covers them. Depth is carried by the brightness ramp baked into every floc and
-by the size/density gradient between the bands, not by a crop —
+by the size/density gradient down the field, not by a crop —
 `depthField.test.ts` asserts coverage to the bottom of the field, no empty band
 on the way, and that the top half is brighter than the bottom;
 `contrast.test.ts` asserts that the row fill is opaque and distinct from every
@@ -1314,26 +1373,57 @@ what keeps a wait from competing with the only climax the system has.
      It was **off-centre on the phone for a day**, and the cause is worth
      keeping written down because the arithmetic was never wrong. Yoga resolves
      a percentage `left` on an absolutely-positioned child against the parent's
-     *content* width — width minus padding — but lays it out from the parent's
-     *border-box* edge. The mobile wait's content view carried
+     _content_ width — width minus padding — but lays it out from the parent's
+     _border-box_ edge. The mobile wait's content view carried
      `paddingHorizontal: spacing['2xl']`, so `left: '50%'` landed the emitter at
      `(W − 2·24)/2` instead of `W/2`: **24dp to the left, measured at 73px on a
      1280px-wide 3× capture.** The words were unaffected because they set
      explicit `left`/`right` insets rather than a percentage, which is exactly
      why the title looked centred beside a mark that was not, and the DOM twin
      was unaffected because its overlay has no padding. The origin is measured
-     from the mark's own layout, so the *whole front* was leaving from 24dp left
+     from the mark's own layout, so the _whole front_ was leaving from 24dp left
      of centre, not just the logo. The padding is gone — every child there is
      absolutely positioned and carries its own inset — and `bottomOffset` now
      insets the tips instead of shortening the surface, so the transaction wait
      centres on the screen rather than on the space above the floating chrome.
-   - **The mark pulses**, 2% on `swell`, once per period. It is the emitter.
-     _(Reversal, 2026-08: the pulsing logo had been removed with the spinning
-     ring. It is back because a radial front with no visible source reads as
-     unrelated elements twitching, not as one wave. It returns as ink, not as a
-     fill — the light it throws is a reflection off water, not a second filled
-     element.)_
-   - **Every pulse launches a front, and one front is in flight at a time.** It
+
+   - **The mark sinks**, once per period, and the front is born at the bottom of
+     it. It is the emitter. _(Reversal, 2026-08: it **pulsed** — a 2% swell on
+     `swell`, out and back — and product read that as a jump: "El logo sigue
+     saltando y bajando, no bajando y volviendo a su lugar." The gesture is now
+     the opposite one: it presses *into* the surface.)_ _(Earlier reversal,
+     2026-08: the logo had been removed with the spinning ring. It is back
+     because a radial front with no visible source reads as unrelated elements
+     twitching, not as one wave. It returns as ink, not as a fill — the light it
+     throws is a reflection off water, not a second filled element.)_
+
+     **A scale-down alone does not read as a press.** The same shrink describes
+     an object simply receding from the eye, and this one has to read as an
+     impact, so three things carry it and all three are compositor-only. It
+     **dims** by 12% at the trough — water over a thing is water that takes its
+     light, and the system already spends light this way everywhere else. It
+     goes down on `flick` (90ms, accelerating: it arrives at the water at speed)
+     and comes back on `tide` (720ms, decelerating and **monotonic**) — an
+     eight-to-one ratio, which is the profile of something struck rather than
+     something travelling. No spring, no overshoot: a mark that bounced back
+     past its rest position would be the exact jump the words had just had taken
+     away from them. And the wave leaves at the bottom of the descent, which is
+     what makes the descent a cause.
+
+     **The emission is delayed by the sink, not run beside it.** Both used to
+     start at t=0 of the period, which put the ring's birth at the _top_ of the
+     gesture — a wave appearing while the thing that throws it is still on its
+     way down. The ring now waits out `WAVEFRONT_SINK_MS` before it starts to
+     travel, so the front leaves at the trough. The rhythm product asked for —
+     the next sink landing as the previous wave leaves — is then not a fourth
+     number to tune but an _identity already in the constants_: the trough is at
+     `SINK`, the front clears one crossing later, the next trough is one period
+     after this one, so the calm between them is exactly `WAVEFRONT_REST_MS`
+     whatever the crossing becomes. It is derived and asserted in the pure
+     module (`wavefrontCalmMs`), where it is testable without a frame clock,
+     rather than measured by eye on a device.
+
+   - **Every sink launches a front, and one front is in flight at a time.** It
      reaches the farthest corner of the surface in **1400ms** and then the water
      rests for **600ms** before the next emission. Still a _time_ and not a speed
      in px/s, so the gesture reads the same in a 360px extension popup and on a
@@ -1341,7 +1431,7 @@ what keeps a wait from competing with the only climax the system has.
 
      **1400ms is set by what the eye can follow, not by the transition
      vocabulary.** It was `rise` (420ms), chosen because a front crossing the
-     screen is the same *size* of event as a sheet presenting; on a real phone
+     screen is the same _size_ of event as a sheet presenting; on a real phone
      that is unwatchable, and the reason is measurable. Centre to corner on a
      393×852pt phone is ~470pt, which at a ~30cm viewing distance subtends
      roughly 19° of visual angle. Crossing it in 420ms is **~45°/s — above the
@@ -1353,15 +1443,36 @@ what keeps a wait from competing with the only climax the system has.
      that fires the instant the previous front clears is a metronome however
      slow it is. _(Product, 2026-08: "va tan rápido que no se puede apreciar" and
      "no quiero que parezca un radar, quiero que sea más smooth.")_
-   - **The elements ride it, and they peak _as_ the crest passes.** Title,
-     subtitle and — where a surface shows them — the tips are each displaced
+
+   - **Nothing rides it any more.** _(Reversal, 2026-08: the riders were the
+     point of the system, and they are gone. Product: "Unlocking Wallet sigue
+     moviéndose y el div de tip también, cuando te dije que no debería" — the
+     small jump under each word was not wanted and was not considered
+     necessary. The behaviour was removed rather than damped: an amplitude
+     turned down to nothing is a system that still measures, still schedules and
+     still animates three elements to no visible end.)_ The title, the subtitle
+     and the tips are stationary; the crest is the only thing that moves, and it
+     is the thing that shows the front takes real time to reach the edge.
+
+     What survives in `motion/wavefront.ts` is `planWavefront`, with **no
+     caller** and a comment saying so. It holds the two results that were
+     expensive to arrive at and are cheap to keep — `d/c`, the d'Alembert delay
+     that makes a distance-proportional stagger a physically correct front, and
+     the 1/√d cylindrical attenuation — and product's words on the removal were
+     "al menos por ahora". What was _not_ kept is `startMs`, the half-a-pass
+     centring below: it describes a passenger's curve rather than the wave, so
+     it has no meaning without passengers. The paragraph that argued for it
+     stays, because the argument was right and would have to be made again.
+
+     _The removed behaviour, as it stood — kept because it may come back:_
+     title, subtitle and — where a surface shows them — the tips were displaced
      `waveAmplitude` (3px) upward with a 2% swell over `drift`, delayed in
      proportion to their _measured_ distance from the mark and attenuated as
      1/√d, which is how a circular wave loses amplitude when it spreads its
-     energy over a growing perimeter. Attenuation is not a flourish: it is the
+     energy over a growing perimeter. Attenuation was not a flourish: it is the
      difference between reading as one wave and reading as four things moving.
 
-     The displacement is **centred on the front's arrival** rather than started
+     The displacement was **centred on the front's arrival** rather than started
      by it — `WavefrontPlan.startMs` is `delayMs − durationMs/2`, clamped at
      zero. Started _at_ the arrival, a rider peaks half a pass later, by which
      time the crest is `PASS/2 · c` further out and the element reads as
@@ -1369,6 +1480,7 @@ what keeps a wait from competing with the only climax the system has.
      cuando rebotan no lo hacen cuando pasa la onda, sino cuando ya
      desaparece.")_ A float on water rises as the crest approaches and settles
      as it leaves; it does not wait for the crest to be on top of it.
+
    - **It loops** for as long as the wait lasts. _(Reversal, 2026-08: the cap
      was three emissions, then stillness.)_ What keeps a thirty-second wait from
      being a thirty-second show is the duty cycle, not a counter — the front
@@ -1385,9 +1497,16 @@ what keeps a wait from competing with the only climax the system has.
      looping animation is left running exactly as it is and the ground simply
      holds until it has left. The previous model killed the emission and started
      a fresh closing wave, which cut the visible front in half at the moment the
-     user was most likely to be watching it. The riders switch to leaving on the
-     front's *remaining* schedule — the ones it has already passed go now, the
-     ones ahead of it go as it reaches them.
+     user was most likely to be watching it. _(The riders used to switch to
+     leaving on the front's remaining schedule — the ones it had passed going
+     now, the ones ahead going as it reached them. With the riders gone the hold
+     is the whole exit, which is one fewer thing that can be out of step.)_
+   - **The phase moved with the emission.** The front is in flight over
+     `[SINK, SINK + CROSS)` of the period rather than `[0, CROSS)`, because it
+     is thrown at the trough. A wait resolving _before_ the trough hands off at
+     once — the mark is still on its way down and there is no wave on the screen
+     to wait out — which is also what keeps the worst case at one whole
+     crossing, and therefore keeps the hard bound where it was.
    - **Calm water hands off immediately.** Because only one front is ever in
      flight, a wait that resolves during the rest has nothing to wait for, and
      inventing a closing wave would be pure latency between a decision and its
@@ -1402,10 +1521,10 @@ what keeps a wait from competing with the only climax the system has.
      `if (loading) return <LoadingScreen />` swaps branches the frame `loading`
      flips and unmounts the wait mid-wave, so the closing wave played nowhere on
      the screens it matters most. `useWaitExit` inverts the condition: the wait
-     stays mounted with `visible={false}` — which is what *starts* its exit —
+     stays mounted with `visible={false}` — which is what _starts_ its exit —
      until it reports back through `onExited`. Wired on both transaction success
      screens, the web auth guard and the root redirect. The waits that are
-     rendered *alongside* their content rather than instead of it (both lock
+     rendered _alongside_ their content rather than instead of it (both lock
      screens, both account-add panels, the mobile password screen, the shared
      auth password page) already outlived the flip and needed nothing.
 
@@ -1453,8 +1572,10 @@ corrections, all visible in the references:
 The rings are **line-weight, not tube-weight**: a lit line is 12% of the ring
 spacing and the rest is calm lift, so most of the train's area is the tone
 between the lines. Amplitude decays 0.62 per ring outward, matching the 1/√d
-attenuation the riders already use — the paint has to decay too, or the train
-contradicts the motion it is supposed to be causing.
+attenuation a cylindrical wave obeys — the paint has to decay too, or the train
+contradicts the physics it is supposed to be showing. _(It used to say "the
+attenuation the riders already use"; the riders are gone, the law is not — it
+still lives in `planWavefront`.)_
 
 The colour is `water.light` (`#9FE0EF`), the cold caustic ink The Surfacing's
 band and the press specular already use, promoted to a token here because this

@@ -22,16 +22,20 @@
  *   & Hudson (CHI 2010) argument it carried — that a decelerating augmentation
  *   makes a wait read shorter — is now carried by the front itself, which
  *   crosses once per `pulseCycle` and then rests.
- * - **The wave** (`waves`, on by default) is the disturbed water. The mark pulses; every
- *   pulse launches a front; each element is displaced as the front reaches it,
- *   with a delay proportional to its *measured distance* from the mark and an
- *   amplitude attenuated as 1/√d. That is `f(t − d/c)` — d'Alembert — so it is a
- *   physically correct radial front and not a list stagger, and it needs no
- *   shader to be one. It loops for as long as the wait lasts and ends on a
- *   closing wave that carries the screen off (`onExited`). The arithmetic is in
- *   `@salmon/shared` `motion/wavefront`, shared with the React Native twin, so
- *   the two platforms cannot drift and the timing is testable without a frame
- *   clock.
+ * - **The mark sinks, and the front is born at the trough.** It presses *into*
+ *   the surface rather than swelling off it: quick down (`flick`), slow and
+ *   monotonic back up (`tide`), and the ring is emitted at the moment of impact
+ *   — `animation-delay: WAVEFRONT_SINK_MS` — rather than running on a parallel
+ *   timer. _(Product, 2026-08: "El logo sigue saltando y bajando, no bajando y
+ *   volviendo a su lugar.")_
+ * - **Nothing rides the front.** The title, subtitle and tips are stationary.
+ *   _(Product, 2026-08: "Unlocking Wallet sigue moviéndose y el div de tip
+ *   también, cuando te dije que no debería.")_
+ * - **The wave** (`waves`, on by default) is the disturbed water. It loops for
+ *   as long as the wait lasts and the exit waits for the front to leave the
+ *   screen (`onExited`). The arithmetic is in `@salmon/shared`
+ *   `motion/wavefront`, shared with the React Native twin, so the two platforms
+ *   cannot drift and the timing is testable without a frame clock.
  * - **Tips are off by default** — see `LoadingScreenBaseProps.showTips`.
  */
 import { memo, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
@@ -49,7 +53,6 @@ import {
   duration,
   durationMs,
   easing,
-  componentSizes,
   CREST_FADE_FROM,
   crestGradientCSS,
   crestTrain,
@@ -57,66 +60,56 @@ import {
   markViewBoxAttr,
   motionMs,
   motionEasing,
-  planWavefront,
   planWavefrontExit,
   reducedMotion,
   semantic,
   wavefrontExitMs,
   wavefrontRadius,
   WAVEFRONT_CROSS_MS,
-  WAVEFRONT_PASS_MS,
   WAVEFRONT_PERIOD_MS,
+  WAVEFRONT_RECOVER_MS,
+  WAVEFRONT_SINK_MS,
 } from '@salmon/shared';
 import { WaterColumn, waterColumnHost } from '../WaterColumn';
 import { useReducedMotion } from '../../utils/useReducedMotion';
 import type { LoadingScreenProps } from './types';
 
 // ============================================================================
+// Constants
+// ============================================================================
+
+/** How far the mark presses in, and how much light it loses down there. */
+const MARK_SINK_SCALE = 0.05;
+const MARK_SINK_DIM = 0.12;
+
+// ============================================================================
 // Keyframes
 // ============================================================================
 
 /**
- * One wave passing one element. The displacement occupies `swell` out of the
- * `pulseCycle`; the rest of the cycle is stillness, which is what keeps a wait
- * from becoming a show even though the emission now loops.
+ * The mark pressing into the surface, and the light it loses for being under.
  *
- * The amplitude is read from `--wave-amp`, written per element by the
- * measurement pass — it *parametrises* the animation rather than being animated
- * itself, so it needs no `@property` registration and degrades nowhere. The
- * per-element `animation-delay` is what makes this a wavefront: same curve,
- * later start, in proportion to distance.
+ * **A scale-down on its own does not read as an impact** — the same shrink
+ * describes an object simply moving away from the eye. Three things separate
+ * the readings, and all three are free: it **dims**, because water over a thing
+ * is water that takes its light; it goes down eight times faster than it comes
+ * back up (`flick` against `tide`), which is the profile of something struck
+ * rather than something travelling; and the wave is thrown at the bottom of it.
+ *
+ * The recovery is **monotonic** — `settle`, no overshoot. A spring that
+ * overshoots is the jump product had just had removed from the words.
  */
-const waveKeyframes = keyframes`
-  0% { transform: translateY(0) scale(1); }
-  ${(WAVEFRONT_PASS_MS / 2 / WAVEFRONT_PERIOD_MS) * 100}% {
-    transform: translateY(calc(-1 * var(--wave-amp, ${componentSizes.waveAmplitude}px))) scale(1.02);
+const sinkKeyframes = keyframes`
+  0% { transform: scale(1); opacity: 1; animation-timing-function: ${motionEasing.sink.css}; }
+  ${(WAVEFRONT_SINK_MS / WAVEFRONT_PERIOD_MS) * 100}% {
+    transform: scale(${1 - MARK_SINK_SCALE});
+    opacity: ${1 - MARK_SINK_DIM};
+    animation-timing-function: ${motionEasing.settle.css};
   }
-  ${(WAVEFRONT_PASS_MS / WAVEFRONT_PERIOD_MS) * 100}%, 100% {
-    transform: translateY(0) scale(1);
+  ${((WAVEFRONT_SINK_MS + WAVEFRONT_RECOVER_MS) / WAVEFRONT_PERIOD_MS) * 100}%, 100% {
+    transform: scale(1);
+    opacity: 1;
   }
-`;
-
-/**
- * The closing wave. Same displacement, but the element does not come back — the
- * front carries it off the screen, each one leaving as the front reaches it.
- */
-const waveOutKeyframes = keyframes`
-  from { transform: translateY(0) scale(1); opacity: 1; }
-  to {
-    transform: translateY(calc(-1 * var(--wave-amp, ${componentSizes.waveAmplitude}px))) scale(1.02);
-    opacity: 0;
-  }
-`;
-
-/**
- * The emitter's beat. 2% — the quiet half of `swellIn`'s overshoot, and the
- * same amplitude the riders swell by, so the mark and the water it disturbs are
- * visibly one system.
- */
-const pulseKeyframes = keyframes`
-  0% { transform: scale(1); }
-  ${(motionMs.swell / 2 / WAVEFRONT_PERIOD_MS) * 100}% { transform: scale(1.02); }
-  ${(motionMs.swell / WAVEFRONT_PERIOD_MS) * 100}%, 100% { transform: scale(1); }
 `;
 
 /**
@@ -229,36 +222,12 @@ const Subtitle = styled('div')({
 });
 
 /**
- * A wave rider. Its delay and amplitude arrive as `--wave-delay` / `--wave-amp`,
- * written straight onto the node by the measurement pass — no React state, no
- * re-render, and nothing evaluated per frame. `$rank` survives only as the
- * fallback for the first frame, before the layout pass has run: a wave by rank
- * is better than no front, and much better than a frame with every position
- * still at zero.
- */
-const WaveRider = styled('div')<{ $rank: number; $waves: boolean; $closing: boolean }>(({
-  $rank,
-  $waves,
-  $closing,
-}) => {
-  const fallbackDelay = `${$rank * motionMs.stagger}ms`;
-  return {
-    animation: !$waves
-      ? 'none'
-      : $closing
-        ? `${waveOutKeyframes} ${WAVEFRONT_PASS_MS}ms ${motionEasing.sink.css} var(--wave-exit-delay, 0ms) 1 forwards`
-        : `${waveKeyframes} ${WAVEFRONT_PERIOD_MS}ms ${motionEasing.current.css} var(--wave-delay, ${fallbackDelay}) infinite`,
-    [`@media ${reducedMotion.query}`]: {
-      animation: 'none',
-    },
-  };
-});
-
-/**
- * The emitter. The pulsing mark was removed with the spinning ring and is back
- * by decision, not by drift: without a visible source a radial front reads as
+ * The emitter. The mark was removed with the spinning ring and is back by
+ * decision, not by drift: without a visible source a radial front reads as
  * unrelated elements twitching. Salmon as *ink* — the mark is tinted, never
  * filled, so it does not spend the one living fill a screen is allowed.
+ *
+ * It **sinks**; it does not pulse. See `sinkKeyframes`.
  */
 const Emitter = styled('div')<{ $waves: boolean }>(({ $waves }) => ({
   // The true centre of whatever the wait occupies — not of the viewport. The
@@ -277,9 +246,9 @@ const Emitter = styled('div')<{ $waves: boolean }>(({ $waves }) => ({
   color: semantic.text.accent,
   // Not stopped on close: the front in flight is left to finish crossing, and
   // the ground has faded before the next emission is due.
-  animation: $waves
-    ? `${pulseKeyframes} ${WAVEFRONT_PERIOD_MS}ms ${motionEasing.current.css} infinite`
-    : 'none',
+  // The per-step curves live inside the keyframes (fast in, slow out), so the
+  // animation itself is `linear` — an easing here would ease the easing.
+  animation: $waves ? `${sinkKeyframes} ${WAVEFRONT_PERIOD_MS}ms linear infinite` : 'none',
   [`@media ${reducedMotion.query}`]: {
     animation: 'none',
   },
@@ -333,8 +302,13 @@ const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean }>
     // doing the wrong thing: it covered 90% of the screen in the first 20% of
     // the crossing and then waited off-screen for riders it had already passed.
     // This is a front's velocity, not an element arriving.
+    // The delay carries the *impact*: `WAVEFRONT_SINK_MS` is how long the mark
+    // takes to reach the trough, so the front leaves at the bottom of the sink
+    // rather than at the top of the period. The train's own lag rides on top of
+    // it. One constant holds the mark and the wave together, and the rhythm
+    // falls out of it — see `wavefrontCalmMs`.
     animation: $waves
-      ? `${crestKeyframes} ${WAVEFRONT_PERIOD_MS}ms linear ${$lagMs}ms infinite`
+      ? `${crestKeyframes} ${WAVEFRONT_PERIOD_MS}ms linear ${WAVEFRONT_SINK_MS + $lagMs}ms infinite`
       : 'none',
     [`@media ${reducedMotion.query}`]: {
       animation: 'none',
@@ -486,15 +460,9 @@ export const LoadingScreen = memo(function LoadingScreen({
     );
 
     if (riding && !isReduceMotionEnabled && holdMs > 0) {
-      // How far the front has already travelled, as a time: the riders it has
-      // passed leave now, the ones ahead of it leave as it reaches them.
-      const phase = WAVEFRONT_CROSS_MS - holdMs;
-      const root = contentRef.current;
-      root?.style.setProperty('--wave-hold', `${holdMs}ms`);
-      root?.querySelectorAll<HTMLElement>('[data-wave-rider]').forEach((node) => {
-        const arrival = Number.parseFloat(node.style.getPropertyValue('--wave-arrival')) || 0;
-        node.style.setProperty('--wave-exit-delay', `${Math.max(0, arrival - phase)}ms`);
-      });
+      // Only the ground has anything to wait for: nothing rides the front, so
+      // the hold is the whole exit.
+      contentRef.current?.style.setProperty('--wave-hold', `${holdMs}ms`);
       setIsClosing(true);
       const timer = setTimeout(
         () => {
@@ -520,13 +488,13 @@ export const LoadingScreen = memo(function LoadingScreen({
   }, [visible, isVisible, riding, isReduceMotionEnabled]);
 
   /**
-   * The measurement pass — the only place geometry is read, and the only reason
-   * this is a front rather than a rank stagger.
+   * The measurement pass — one read, and the only reason the front crosses in
+   * `WAVEFRONT_CROSS_MS` on a 360px popup and on a 1440px window alike.
    *
-   * One layout read per rider, written straight back as CSS custom properties,
-   * so nothing re-renders and nothing is evaluated per frame: the passengers do
-   * not move and the origin does not move, so `f(t − d/c)` with a constant `d`
-   * *is* an animation with a delay. Re-measured only when the viewport changes.
+   * It used to plan every rider as well; the riders are gone (product, 2026-08)
+   * and what is left is the ring's final diameter, written straight onto the
+   * mark as a custom property so nothing re-renders and nothing is evaluated
+   * per frame. Re-measured only when the viewport changes.
    */
   useLayoutEffect(() => {
     if (!isVisible || !riding) return undefined;
@@ -546,36 +514,17 @@ export const LoadingScreen = memo(function LoadingScreen({
         x: markBox.left + markBox.width / 2 - surface.left,
         y: markBox.top + markBox.height / 2 - surface.top,
       };
-      const bounds = { width: surface.width, height: surface.height };
 
-      mark.style.setProperty('--wave-ring', `${2 * wavefrontRadius(origin, bounds)}px`);
-
-      root.querySelectorAll<HTMLElement>('[data-wave-rider]').forEach((node) => {
-        const box = node.getBoundingClientRect();
-        const plan = planWavefront(
-          {
-            x: box.left + box.width / 2 - surface.left,
-            y: box.top + box.height / 2 - surface.top,
-          },
-          origin,
-          bounds,
-          isReduceMotionEnabled
-        );
-        if (!plan) return;
-        // Two numbers, and they are different on purpose: the loop starts the
-        // rider at `startMs` — half a pass *before* the crest arrives, so the
-        // displacement peaks as it passes — while the exit needs the arrival
-        // itself to work out which riders the front has already gone by.
-        node.style.setProperty('--wave-delay', `${plan.startMs}ms`);
-        node.style.setProperty('--wave-arrival', `${plan.delayMs}ms`);
-        node.style.setProperty('--wave-amp', `${plan.amplitude}px`);
-      });
+      mark.style.setProperty(
+        '--wave-ring',
+        `${2 * wavefrontRadius(origin, { width: surface.width, height: surface.height })}px`
+      );
     };
 
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [isVisible, riding, isReduceMotionEnabled, title, subtitle]);
+  }, [isVisible, riding, title, subtitle]);
 
   // Cycle through tips
   useEffect(() => {
@@ -634,34 +583,23 @@ export const LoadingScreen = memo(function LoadingScreen({
         </Emitter>
       )}
 
+      {/* The words do not move. Product, 2026-08: "Unlocking Wallet sigue
+          moviéndose y el div de tip también, cuando te dije que no debería." */}
       <Words>
-        {title && (
-          <WaveRider $rank={0} $waves={riding} $closing={isClosing} data-wave-rider>
-            <Title>{title}</Title>
-          </WaveRider>
-        )}
-        {subtitle && (
-          <WaveRider $rank={1} $waves={riding} $closing={isClosing} data-wave-rider>
-            <Subtitle>{subtitle}</Subtitle>
-          </WaveRider>
-        )}
+        {title && <Title>{title}</Title>}
+        {subtitle && <Subtitle>{subtitle}</Subtitle>}
       </Words>
 
-      {/* The tips ride too, and they are the far-field passenger — the one that
-          shows the front takes real time to get there. */}
+      {/* The tips, stationary too. They used to be the far-field passenger that
+          showed the front takes real time to get there; the crest itself shows
+          that, and it is the only thing that should. */}
       {showTips && resolvedTips.length > 0 && (
-        <WaveRider
-          $rank={2}
-          $waves={riding}
-          $closing={isClosing}
-          style={tipsAnchor}
-          data-wave-rider
-        >
+        <div style={tipsAnchor}>
           <TipsContainer>
             <TipLabel>{t('general.tip', 'Tip')}</TipLabel>
             <TipText $fading={tipFading}>{resolvedTips[currentTipIndex]}</TipText>
           </TipsContainer>
-        </WaveRider>
+        </div>
       )}
     </Overlay>
   );

@@ -65,6 +65,7 @@ vi.mock('@salmon/shared', async () => ({
   motionDuration: { tide: '720ms' },
   motionEasing: {
     current: { css: 'cubic-bezier(0.32, 0.72, 0, 1)' },
+    settle: { css: 'cubic-bezier(0.22, 1, 0.36, 1)' },
     sink: { css: 'cubic-bezier(0.4, 0, 1, 1)' },
   },
   reducedMotion: { query: '(prefers-reduced-motion: reduce)' },
@@ -79,15 +80,10 @@ vi.mock('@salmon/shared', async () => ({
   // The wave's arithmetic is `@salmon/shared`'s own and is tested there
   // (`src/motion/wavefront.test.ts`); this file only needs it to answer.
   WAVEFRONT_CROSS_MS: 1400,
-  WAVEFRONT_PASS_MS: 280,
   WAVEFRONT_PERIOD_MS: 2000,
+  WAVEFRONT_SINK_MS: 90,
+  WAVEFRONT_RECOVER_MS: 720,
   wavefrontRadius: () => 500,
-  planWavefront: (
-    _rider: unknown,
-    _origin: unknown,
-    _bounds: unknown,
-    isReduceMotionEnabled: boolean
-  ) => (isReduceMotionEnabled ? null : { delayMs: 100, startMs: 0, amplitude: 2, durationMs: 280 }),
   wavefrontExitMs: (isReduceMotionEnabled: boolean) => (isReduceMotionEnabled ? 180 : 1580),
   planWavefrontExit: (_elapsedMs: number, isReduceMotionEnabled: boolean) =>
     isReduceMotionEnabled ? { holdMs: 0, exitMs: 180 } : { holdMs: 1400, exitMs: 1580 },
@@ -166,6 +162,16 @@ describe('the wave', () => {
     render(<LoadingScreen visible title="Loading wallet" waves={false} />);
 
     expect(screen.queryByTestId('loading-emitter')).toBeNull();
+  });
+
+  it('leaves the words and the tips exactly where they are', () => {
+    // Product, 2026-08: "Unlocking Wallet sigue moviéndose y el div de tip
+    // también, cuando te dije que no debería." The riders were not damped, they
+    // were removed — there is no longer anything on the screen the front can
+    // pick up, and `[data-wave-rider]` was the contract that said otherwise.
+    const { container } = render(<LoadingScreen visible showTips title="Processing swap" />);
+
+    expect(container.querySelector('[data-wave-rider]')).toBeNull();
   });
 
   it('shows no progress track — this screen has never known a percentage', () => {

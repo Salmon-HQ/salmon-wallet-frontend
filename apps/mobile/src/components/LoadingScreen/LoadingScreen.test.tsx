@@ -2,11 +2,14 @@
  * The wait, after the choreography: no spinning ring, no tips, and a descent
  * that exists under reduced motion too — a parallel mapping, not a hole.
  *
- * The pulsing mark is back (product decision, 2026-08) as the wave's emitter,
- * and it is opt-in with the wave: a wait with nothing in the air does not get
- * one. What is asserted here is the contract, not the pixels — that the emitter
+ * The mark is back (product decision, 2026-08) as the wave's emitter, and it is
+ * opt-in with the wave: a wait with nothing in the air does not get one. It
+ * *sinks* rather than pulses, and the front is thrown at the bottom of the
+ * sink — and that arithmetic is tested in `@salmon/shared`.
+ *
+ * What is asserted here is the contract, not the pixels: that the emitter
  * appears only where it was asked for, and that the exit hands off at a fixed
- * time. The wave's arithmetic is tested in `@salmon/shared`.
+ * time.
  */
 import React from 'react';
 import { act, render, screen } from '@testing-library/react-native';
@@ -50,13 +53,9 @@ jest.mock('@salmon/shared', () => ({
   markViewBoxAttr: '0 0 253 236',
   WAVEFRONT_CROSS_MS: 1400,
   WAVEFRONT_PERIOD_MS: 2000,
+  WAVEFRONT_SINK_MS: 90,
+  WAVEFRONT_RECOVER_MS: 720,
   wavefrontRadius: () => 500,
-  planWavefront: (
-    _rider: unknown,
-    _origin: unknown,
-    _bounds: unknown,
-    isReduceMotionEnabled: boolean
-  ) => (isReduceMotionEnabled ? null : { delayMs: 100, startMs: 0, amplitude: 2, durationMs: 280 }),
   wavefrontExitMs: (isReduceMotionEnabled: boolean) => (isReduceMotionEnabled ? 180 : 1580),
   planWavefrontExit: (_elapsedMs: number, isReduceMotionEnabled: boolean) =>
     isReduceMotionEnabled ? { holdMs: 0, exitMs: 180 } : { holdMs: 1400, exitMs: 1580 },
