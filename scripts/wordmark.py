@@ -31,12 +31,14 @@ from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_FONT = ROOT / "packages" / "assets" / "src" / "fonts" / "Geist-Bold.ttf"
+DEFAULT_FONT = ROOT / "packages" / "assets" / "src" / "fonts" / "DMSans-SemiBold.ttf"
 OUT = ROOT / "packages" / "shared" / "src" / "theme" / "wordmark.generated.ts"
 
-# Geist Bold is weight 700 — the display weight this design system already
-# uses for its largest type, which is what makes the logotype and the balance
-# figure read as the same voice.
+# DM Sans SemiBold is weight 600 — the weight DESIGN.md specifies for the
+# wordmark, and the weight this system gives every named, deliberate piece of
+# chrome (headline, title, button, label). It is not the 700 of the balance
+# figure: the wordmark sits in the welcome screen's title slot, not in the
+# display role, and 700 was only ever this script's argparse default.
 DEFAULT_TEXT = "Salmon"
 DEFAULT_TRACK = 0.0
 

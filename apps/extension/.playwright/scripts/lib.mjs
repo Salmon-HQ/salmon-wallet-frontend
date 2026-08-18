@@ -179,7 +179,7 @@ export async function unlockOrRecover(page) {
   if (await recoverBtn.count()) {
     await recoverBtn.click();
     await sleep(1500);
-    await page.getByTestId('recover-seed-input').fill(SEED_A);
+    await page.getByTestId('recover-word-input-1').fill(SEED_A);
     await sleep(500);
     await page.getByTestId('recover-next-button').click();
     await sleep(1500);

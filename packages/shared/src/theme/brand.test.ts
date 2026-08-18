@@ -59,7 +59,7 @@ describe('markToSvg', () => {
 describe('wordmark', () => {
   it('is the word the product is called, in the interface typeface', () => {
     expect(wordmarkText).toBe('Salmon');
-    expect(wordmarkTypeface).toBe('Geist-Bold');
+    expect(wordmarkTypeface).toBe('DMSans-SemiBold');
   });
 
   it('has one path per glyph', () => {

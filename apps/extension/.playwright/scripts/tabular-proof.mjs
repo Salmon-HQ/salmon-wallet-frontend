@@ -4,7 +4,7 @@
 //
 // For each real number on the home screen it clones the live element (so the
 // clone inherits the exact computed style the app applies), swaps the digits
-// for all-1s and then all-0s, and measures both. Geist's proportional `1` is
+// for all-1s and then all-0s, and measures both. DM Sans's stock `1` is
 // 384 units against `0` at 663, so a non-tabular element's two widths differ;
 // a tabular one's are identical. Read-only — the clones are measured off-screen
 // and removed.

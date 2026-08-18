@@ -289,7 +289,7 @@ which does no fee arithmetic on either side.
 
 - **Real assets**: the shipped theme tokens in `packages/shared/src/theme`, the
   brand mark as vector path data in `theme/brand.ts`, the seigaiha
-  `ScalesBackground` component in `packages/ui`, and the Geist / Geist Mono
+  `ScalesBackground` component in `packages/ui`, and the DM Sans / Geist Mono
   binaries in `packages/assets/src/fonts` (SIL OFL 1.1, cleared for embedding).
 - **Real product docs**: OCMS overview and approval-UI notes, the Jupiter
   referral and StealthEX bridge specs, the frontend analytics/privacy model, and

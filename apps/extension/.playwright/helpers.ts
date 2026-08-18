@@ -2,7 +2,7 @@
  * Flow helpers shared across extension specs. Ported from scripts/lib.mjs.
  *
  * Both the lock path and the recover/onboarding path select by the stable
- * data-testid contract (lock-*, select-recover-button, recover-seed-input,
+ * data-testid contract (lock-*, select-recover-button, recover-word-input-*,
  * recover-next-button, password-input/confirm, password-submit-button,
  * success-go-to-wallet-button).
  */
@@ -39,7 +39,7 @@ export async function unlockOrRecover(
     // Auto-waiting actions (no fixed sleeps): each step waits for its target
     // to be actionable. recover-next-button is visibility-toggled until the
     // seed validates; success appears only after the creation loading screen.
-    await page.getByTestId('recover-seed-input').fill(seed);
+    await page.getByTestId('recover-word-input-1').fill(seed);
     await page.getByTestId('recover-next-button').click({ timeout: 30_000 });
     await page.getByTestId('password-input').fill(password());
     await page.getByTestId('password-confirm-input').fill(password());

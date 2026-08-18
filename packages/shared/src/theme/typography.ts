@@ -1,12 +1,18 @@
 /**
  * Typography tokens for Salmon Wallet
- * Uses Geist as the primary font family
+ * Uses DM Sans as the primary font family
  * Works for both React Native (Expo) and Web (WXT+Vite extension)
  */
 
 export const fontFamily = {
-  /** Primary font - Geist */
-  sans: 'Geist',
+  /**
+   * Primary font - DM Sans.
+   *
+   * The shipped binaries are modified: `scripts/dmsans.py` equalises the ten
+   * digit advances, because no released DM Sans has a `tnum` feature to switch
+   * on. See `packages/assets/src/fonts/DMSans-README.md`.
+   */
+  sans: 'DM Sans',
   /**
    * Monospace font - Geist Mono.
    *
@@ -24,20 +30,20 @@ export const fontFamily = {
  * Actual font family names loaded in Expo
  */
 export const fontFamilyNative = {
-  /** Geist Regular (400) — `light` maps here; the ramp ships four weights */
-  light: 'GeistRegular',
-  /** Geist Regular (400) */
-  regular: 'GeistRegular',
-  /** Geist Medium (500) */
-  medium: 'GeistMedium',
-  /** Geist SemiBold (600) */
-  semiBold: 'GeistSemiBold',
-  /** Geist Bold (700) */
-  bold: 'GeistBold',
-  /** Geist Bold (700) — `extraBold` maps here */
-  extraBold: 'GeistBold',
-  /** Geist Bold (700) — `black` maps here; it had no call sites */
-  black: 'GeistBold',
+  /** DM Sans Regular (400) — `light` maps here; the ramp ships four weights */
+  light: 'DMSansRegular',
+  /** DM Sans Regular (400) */
+  regular: 'DMSansRegular',
+  /** DM Sans Medium (500) */
+  medium: 'DMSansMedium',
+  /** DM Sans SemiBold (600) */
+  semiBold: 'DMSansSemiBold',
+  /** DM Sans Bold (700) */
+  bold: 'DMSansBold',
+  /** DM Sans Bold (700) — `extraBold` maps here */
+  extraBold: 'DMSansBold',
+  /** DM Sans Bold (700) — `black` maps here; it had no call sites */
+  black: 'DMSansBold',
   /** Geist Mono Regular (400) - addresses, hashes, keys, seed phrases */
   mono: 'GeistMonoRegular',
 } as const;
@@ -152,7 +158,7 @@ export const lineHeight = {
 } as const;
 
 /**
- * Font weights (maps to Geist variants)
+ * Font weights (maps to DM Sans variants)
  */
 export const fontWeight = {
   /** 300 */
@@ -232,12 +238,20 @@ export type FontScaleCap = typeof fontScaleCap;
  * Tabular figures. Apply to every rendered number: balances, token amounts,
  * prices, percentages, fees, dates, and countdowns.
  *
- * Geist's default digits are proportional — `1` is 384 units wide against
- * `0` at 663 — so a balance visibly reflows every time it repolls. The font
- * ships a `tnum` feature that maps all ten digits to 600-unit variants, but
- * it is opt-in, so switching typeface alone does not fix the jitter; this
- * does. `tabular-nums` is one of the few features React Native's `fontVariant`
- * enum can actually enable, which is why the fix works on all three surfaces.
+ * A no-op against the shipped faces, and deliberately kept anyway.
+ *
+ * DM Sans's stock digits are proportional — `1` is 342 units against `0` at
+ * 656 — so a balance visibly reflows every time it repolls, and DM Sans has no
+ * `tnum` feature to switch on, which makes `font-variant-numeric` and React
+ * Native's `fontVariant` silent no-ops against it. The jitter is therefore
+ * fixed one level down, in the binary: `scripts/dmsans.py` bakes one advance
+ * width into all ten digits and drops their kern pairs, so every number is
+ * tabular whether or not this token is applied (Geist Mono is fixed-pitch and
+ * always was).
+ *
+ * Keep applying it. It costs nothing, it documents intent at the call site,
+ * and it is what stays correct if the family is ever swapped for one that does
+ * gate tabular figures behind a feature.
  */
 export const tabularNums = {
   /** Web and extension — spread into a style object or `sx`. */

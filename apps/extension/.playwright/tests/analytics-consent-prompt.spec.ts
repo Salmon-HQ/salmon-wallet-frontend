@@ -48,7 +48,7 @@ test('first-run consent screen appears in onboarding and opts in', async ({ popu
 
   // Fresh profile → onboarding. Recover up to the consent screen.
   await popup.getByTestId('select-recover-button').click({ timeout: 20_000 });
-  await popup.getByTestId('recover-seed-input').fill(seedA());
+  await popup.getByTestId('recover-word-input-1').fill(seedA());
   await popup.getByTestId('recover-next-button').click({ timeout: 30_000 });
   await popup.getByTestId('password-input').fill(password());
   await popup.getByTestId('password-confirm-input').fill(password());

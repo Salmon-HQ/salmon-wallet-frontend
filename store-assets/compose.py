@@ -124,11 +124,11 @@ def draw_caption(im, eyebrow, headline, canvas_w, top_y, ink):
     unit = canvas_w
     y = top_y
     if eyebrow:
-        f = ImageFont.truetype(str(FONTS / "Geist-SemiBold.ttf"), round(unit * 0.026))
+        f = ImageFont.truetype(str(FONTS / "DMSans-SemiBold.ttf"), round(unit * 0.026))
         w = d.textbbox((0, 0), eyebrow, font=f)[2]
         d.text(((canvas_w - w) / 2, y), eyebrow, font=f, fill=ink)
         y += round(unit * 0.055)
-    f = ImageFont.truetype(str(FONTS / "Geist-Bold.ttf"), round(unit * 0.075))
+    f = ImageFont.truetype(str(FONTS / "DMSans-Bold.ttf"), round(unit * 0.075))
     for line in headline.split("\n"):
         bbox = d.textbbox((0, 0), line, font=f)
         d.text(((canvas_w - bbox[2]) / 2, y), line, font=f, fill=ink)
@@ -158,7 +158,7 @@ def compose_landscape(store):
         frame.alpha_composite(device, (dx, (ch - device.height) // 2))
 
         d = ImageDraw.Draw(frame)
-        f = ImageFont.truetype(str(FONTS / "Geist-Bold.ttf"), round(cw * 0.052))
+        f = ImageFont.truetype(str(FONTS / "DMSans-Bold.ttf"), round(cw * 0.052))
         lines = headline.split("\n")
         lh = round(cw * 0.062)
         y = (ch - lh * len(lines)) // 2

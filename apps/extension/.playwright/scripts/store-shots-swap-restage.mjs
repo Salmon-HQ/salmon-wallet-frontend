@@ -35,7 +35,7 @@ await page.goto(BASE);
 await sleep(3000);
 await page.getByTestId('select-recover-button').click({ timeout: 15000 });
 await sleep(1500);
-await page.getByTestId('recover-seed-input').fill(SECRETS.SALMON_TEST_SEED_B);
+await page.getByTestId('recover-word-input-1').fill(SECRETS.SALMON_TEST_SEED_B);
 await sleep(500);
 await page.getByTestId('recover-next-button').click({ timeout: 30000 });
 await sleep(1500);

@@ -92,13 +92,13 @@ await step('swap', async () => {
 // --- Tabular-figures proof -------------------------------------------------
 // Measure the SAME string of digits at two different digit values, using the
 // computed font of a real balance element on the page. If figures are tabular
-// the two widths are identical; if proportional they differ (Geist's `1` is
+// the two widths are identical; if proportional they differ (stock DM Sans's `1` is
 // 384 units against `0` at 663).
 await step('tabular proof', async () => {
   const probe = await popup.evaluate(() => {
     // Measure in the app's own face at the balance size, so the numbers are
-    // Geist's real advance widths rather than a fallback's.
-    const cs = { fontFamily: 'Geist, sans-serif', fontSize: '60px', fontWeight: '600' };
+    // the shipped face's real advance widths rather than a fallback's.
+    const cs = { fontFamily: 'DM Sans, sans-serif', fontSize: '60px', fontWeight: '600' };
     const measure = (text, variant) => {
       const el = document.createElement('span');
       el.style.cssText = `position:absolute;visibility:hidden;white-space:pre;font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};font-variant-numeric:${variant};`;
