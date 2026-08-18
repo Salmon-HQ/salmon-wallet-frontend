@@ -28,7 +28,6 @@ vi.mock('../../utils/styled', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
-  tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
   colors: {
     text: { primary: '#fff', secondary: '#aaa', disabled: '#666' },
     background: { card: '#111' },
@@ -37,16 +36,28 @@ vi.mock('@salmon/shared', () => ({
   fontSize: { sm: 14, base: 16, md: 18, lg: 20 },
   borderRadius: { lg: 16 },
   fontFamily: { sans: 'sans-serif' },
-  componentSizes: {},
   canonicalNftToSolanaNftData: (...args: unknown[]) => mockCanonicalNftToSolanaNftData(...args),
   getNftSectionTitle: (key: string) => (key === 'solana-devnet' ? 'Solana Devnet' : 'Solana'),
   useSolanaNfts: (...args: unknown[]) => mockUseSolanaNfts(...args),
 }));
 
 vi.mock('@/components', () => ({
-  NftCard: ({ nft }: { nft: { name: string } }) => <div>{nft.name}</div>,
-  NftCardSkeleton: () => <div>Loading...</div>,
-  SolanaSvgIcon: () => <div />,
+  NftCarouselSection: ({
+    title,
+    nfts,
+    showChainLabel = true,
+  }: {
+    title: string;
+    nfts: Array<{ name: string }>;
+    showChainLabel?: boolean;
+  }) => (
+    <div>
+      {showChainLabel && <div>{title}</div>}
+      {nfts.map((nft) => (
+        <div key={nft.name}>{nft.name}</div>
+      ))}
+    </div>
+  ),
   WarningNotice: () => <div />,
   visuallyHidden: {},
 }));

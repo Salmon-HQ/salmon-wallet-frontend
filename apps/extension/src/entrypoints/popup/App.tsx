@@ -89,6 +89,17 @@ function App() {
   const solanaAddress = solanaApprovalAccount?.getReceiveAddress() ?? '';
   const solanaApprovalNetworkId = solanaApprovalAccount?.network.id ?? null;
 
+  // Bedrock Rule, ported from web's DAppApprovalGate: a wait *inside the dApp
+  // approval flow* stands on flat ground, showing nothing living through
+  // itself. The extension has no /dapp/* routes — the popup knows it was
+  // launched for an approval from its URL hash, before accounts are ready.
+  const isDAppApprovalLaunch = useMemo(() => {
+    const hash = window.location.hash?.slice(1);
+    if (!hash) return false;
+    const params = new URLSearchParams(hash);
+    return Boolean(params.get('origin') && params.get('request'));
+  }, []);
+
   // dApp connection flow (when popup is launched for connect approval)
   const [pendingDAppRequest, setPendingDAppRequest] = useState<{
     origin: string;
@@ -419,7 +430,13 @@ function App() {
   // gate, so a boot that resolves in 200ms still shows nothing at all rather
   // than flashing 2s of wave to say so.
   if (waitHeld) {
-    return <LoadingScreen visible={showBootWait} onExited={onWaitExited} />;
+    return (
+      <LoadingScreen
+        visible={showBootWait}
+        bedrock={isDAppApprovalLaunch}
+        onExited={onWaitExited}
+      />
+    );
   }
 
   // Not ready, and too fast to deserve a screen. Paint nothing rather than a

@@ -16,25 +16,16 @@ import {
   fontSize,
   borderRadius,
   fontFamily,
-  componentSizes,
   canonicalNftToSolanaNftData,
   getNftSectionTitle,
   useSolanaNfts,
   type Account,
+  type NftBlockchain,
   type NftData,
   type NftSectionKey,
   type NftSection,
-  tabularNums,
 } from '@salmon/shared';
-import {
-  // NftCarouselSection,
-  // NftCarouselSectionSkeleton,
-  NftCard,
-  NftCardSkeleton,
-  SolanaSvgIcon,
-  WarningNotice,
-  visuallyHidden,
-} from '@/components';
+import { NftCarouselSection, WarningNotice, visuallyHidden } from '@/components';
 
 // ============================================================================
 // Props
@@ -45,8 +36,8 @@ interface CollectiblesPageProps {
   developerNetworks: boolean;
   /** Callback when an NFT is pressed — navigates to detail page */
   onNftDetailPress?: (nft: NftData) => void;
-  // /** Callback when "See All" is pressed — navigates to see-all page */
-  // onSeeAllPress?: (title: string, blockchain: string, nfts: NftData[]) => void;
+  /** Callback when "See All" is pressed — navigates to see-all page */
+  onSeeAllPress?: (data: { title: string; blockchain: NftBlockchain; nfts: NftData[] }) => void;
 }
 
 // ============================================================================
@@ -86,49 +77,6 @@ const EmptyStateSubtext = styled(Typography)({
   fontFamily: fontFamily.sans,
 });
 
-const SectionHeaderRow = styled(Box)({
-  display: 'flex',
-  alignItems: 'center',
-  gap: spacing.sm,
-  paddingLeft: spacing.lg,
-  paddingRight: spacing.lg,
-});
-
-const SectionTitleText = styled('h2')({
-  margin: 0,
-  fontSize: fontSize.md,
-  fontWeight: 600,
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  flex: 1,
-});
-
-const SectionCount = styled(Typography)({
-  ...tabularNums.css,
-  fontSize: 13,
-  fontWeight: 500,
-  color: colors.text.secondary,
-  fontFamily: fontFamily.sans,
-});
-
-const Grid = styled(Box)({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: spacing.md,
-  justifyItems: 'center',
-  paddingLeft: spacing.lg,
-  paddingRight: spacing.lg,
-});
-
-const SkeletonGrid = styled(Box)({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: spacing.md,
-  justifyItems: 'center',
-  paddingLeft: spacing.lg,
-  paddingRight: spacing.lg,
-});
-
 // ============================================================================
 // Component
 // ============================================================================
@@ -137,7 +85,7 @@ export function CollectiblesPage({
   activeAccount,
   developerNetworks,
   onNftDetailPress,
-  /* , onSeeAllPress */
+  onSeeAllPress,
 }: CollectiblesPageProps) {
   const { t } = useTranslation();
 
@@ -219,11 +167,12 @@ export function CollectiblesPage({
     [onNftDetailPress]
   );
 
-  // const handleSeeAllPress = useCallback((sectionKey: NftSectionKey) => {
-  //   const section = nftsBySections[sectionKey];
-  //   const title = getNftSectionTitle(sectionKey, section);
-  //   onSeeAllPress?.(title, section.blockchain, section.nfts);
-  // }, [nftsBySections, onSeeAllPress]);
+  const handleSeeAll = useCallback(
+    (title: string, nfts: NftData[]) => {
+      onSeeAllPress?.({ title, blockchain: 'solana', nfts });
+    },
+    [onSeeAllPress]
+  );
 
   return (
     <Container>
@@ -255,65 +204,24 @@ export function CollectiblesPage({
         </EmptyState>
       )}
 
-      {/* NFT sections — Solana only, grid layout */}
+      {/* NFT sections — Solana only, shared carousel (mirrors web's CollectiblesTab) */}
       {renderedKeys.map((key) => {
         const section = nftsBySections[key];
-        return (
-          <Box key={key} sx={{ display: 'flex', flexDirection: 'column', gap: `${spacing.md}px` }}>
-            {/* Section header — only when the chain label distinguishes something */}
-            {showChainLabel && (
-              <SectionHeaderRow>
-                <SolanaSvgIcon
-                  sx={{
-                    width: componentSizes.iconSizeMedium,
-                    height: componentSizes.iconSizeMedium,
-                    color: colors.text.primary,
-                  }}
-                />
-                <SectionTitleText>{getNftSectionTitle(key, section)}</SectionTitleText>
-                <SectionCount>({section.nfts.length})</SectionCount>
-              </SectionHeaderRow>
-            )}
+        const title = getNftSectionTitle(key, section);
 
-            {/* Grid or Skeleton */}
-            {section.loading ? (
-              <SkeletonGrid>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <NftCardSkeleton key={i} />
-                ))}
-              </SkeletonGrid>
-            ) : (
-              <Grid>
-                {section.nfts.map((nft, index) => (
-                  <NftCard
-                    key={`${nft.mint}-${index}`}
-                    nft={nft}
-                    onPress={handleNftPress ? () => handleNftPress(nft) : undefined}
-                  />
-                ))}
-              </Grid>
-            )}
-          </Box>
-        );
-      })}
-
-      {/* Original carousel rendering (commented out):
-      {visibleKeys.map((key) => {
-        const section = nftsBySections[key];
-        if (section.nfts.length === 0 && !section.loading) return null;
         return (
           <NftCarouselSection
             key={key}
-            title={getNftSectionTitle(key, section)}
-            blockchain={section.blockchain}
+            title={title}
+            blockchain="solana"
             nfts={section.nfts}
             loading={section.loading}
+            showChainLabel={showChainLabel}
             onNftPress={handleNftPress}
-            onSeeAllPress={() => handleSeeAllPress(key)}
+            onSeeAllPress={() => handleSeeAll(title, section.nfts)}
           />
         );
       })}
-      */}
     </Container>
   );
 }

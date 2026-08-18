@@ -21,6 +21,7 @@ export {
   NftDetailPage,
   NftCard,
   NftCardSkeleton,
+  NftCarouselSection,
   NftSeeAllPage,
   NftSendDialog,
   PriceChart,

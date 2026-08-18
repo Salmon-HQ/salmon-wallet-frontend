@@ -775,6 +775,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     setSelectedNft(null);
   }, []);
 
+  const handleSeeAllPress = useCallback(
+    (data: { title: string; blockchain: NftBlockchain; nfts: NftData[] }) => {
+      setSeeAllData(data);
+      setCurrentPage('nftSeeAll');
+    },
+    []
+  );
+
   const handleSeeAllBack = useCallback(() => {
     setCurrentPage('home');
     setSeeAllData(null);
@@ -1524,7 +1532,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               activeAccount={activeAccount}
               developerNetworks={developerNetworks}
               onNftDetailPress={handleNftDetailPress}
-              // onSeeAllPress={handleSeeAllPress}
+              onSeeAllPress={handleSeeAllPress}
             />
           )}
 
