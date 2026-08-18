@@ -14,7 +14,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { I18nProvider } from '../src/i18n';
 import { WalletInitErrorScreen } from '../src/components/WalletInitErrorScreen';
-import { LoadingScreen } from '../src/components/LoadingScreen';
 import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait';
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
 import {
@@ -261,12 +260,25 @@ function RootLayoutNav() {
             </Stack>
             <PendingActivity />
             {/* Wait preview. Off by default; see src/debug/forceWait.ts. */}
-            {DEBUG_FORCE_WAIT && <LoadingScreen visible waves {...DEBUG_FORCE_WAIT_PROPS} />}
+            {DEBUG_FORCE_WAIT && <WaitPreview />}
           </View>
         </SafeAreaProvider>
       </ThemeProvider>
     </I18nProvider>
   );
+}
+
+/**
+ * The wait preview, behind `DEBUG_FORCE_WAIT`. The loading screen is required
+ * lazily rather than imported: a static import would pull the whole motion
+ * layer — Reanimated easings, shared mutables — into every consumer of the
+ * root layout, including tests that have no business knowing about it. With
+ * the switch off this never executes.
+ */
+function WaitPreview() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { LoadingScreen } = require('../src/components/LoadingScreen');
+  return <LoadingScreen visible waves {...DEBUG_FORCE_WAIT_PROPS} />;
 }
 
 /**
