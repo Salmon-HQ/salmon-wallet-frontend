@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   depthDrift,
+  depthRamp,
+  depthRampOpacity,
+  depthRampSize,
+  depthRampZFar,
   depthFieldCycleMs,
   depthFieldTile,
   depthFieldTileHeight,
@@ -42,8 +46,13 @@ describe('marine snow: brightness is capped by the token', () => {
   });
 
   it('no floc is so faint it is wasted geometry', () => {
+    // The floor is a panel limit, not a preference. A multiplier of 0.10 on
+    // `water.snow` composites to about 2 levels in 255 against the ramp's
+    // lightest stop; below that a floc stops being the far end of a depth
+    // ramp and becomes indistinguishable from the ground's own dither. A
+    // depth ramp whose far end renders as nothing is not a ramp.
     for (const [, , , , opacity] of marineSnow) {
-      expect(opacity).toBeGreaterThanOrEqual(0.05);
+      expect(opacity).toBeGreaterThanOrEqual(depthRamp.opacityFar);
     }
   });
 });
@@ -89,8 +98,10 @@ describe('marine snow: the field covers the whole column', () => {
 });
 
 describe('marine snow: aerial perspective is in the data', () => {
-  const near = marineSnow.filter(([, , rx]) => rx >= 2.9);
-  const far = marineSnow.filter(([, , rx]) => rx < 1.8);
+  // The whole field shrank — max rx went 4.48 → 2.55 — so these thresholds
+  // are the new field's near and far thirds, not the old numbers.
+  const near = marineSnow.filter(([, , rx]) => rx >= 2.0);
+  const far = marineSnow.filter(([, , rx]) => rx < 1.1);
 
   it('has both a near and a far population', () => {
     expect(near.length).toBeGreaterThan(5);
@@ -179,6 +190,83 @@ describe('marine snow: the serialised field', () => {
 
   it('is a constant — nothing is randomised at render time', () => {
     expect(marineSnowSvg(water.snow)).toBe(marineSnowSvg(water.snow));
+  });
+});
+
+/**
+ * Size and opacity are one decision, not two.
+ *
+ * This is the property the field was rebuilt around, and the one most likely
+ * to be broken by a well-meaning edit. Every floc is generated from a single
+ * optical distance `z`: its radius is the projective law `rxNear / z` and its
+ * opacity is Beer–Lambert veiling `exp(-mu * (z - 1))`. So a bigger floc is
+ * always a stronger one, and "far" is carried by size and brightness agreeing
+ * rather than by either alone.
+ *
+ * Nudging one floc's opacity without touching its radius — the obvious way to
+ * "make the snow pop" — decorrelates the two cues and flattens the ramp back
+ * to what it was before. These assertions are what make that fail loudly.
+ *
+ * The tolerance throughout is the 0.01 the literals are rounded to.
+ */
+describe('marine snow: size and opacity covary', () => {
+  /** The literals are stored to 2dp, so nothing can be pinned tighter. */
+  const ROUNDING = 0.01;
+
+  it('gives every floc the opacity its own size implies', () => {
+    for (const [, , rx, , opacity] of marineSnow) {
+      const z = depthRamp.rxNear / rx;
+      expect(Math.abs(opacity - depthRampOpacity(z))).toBeLessThanOrEqual(ROUNDING + 1e-9);
+      // and the inverse holds, so the law can be read in either direction
+      expect(Math.abs(rx - depthRampSize(z))).toBeLessThanOrEqual(ROUNDING + 1e-9);
+    }
+  });
+
+  it('never draws a larger floc fainter than a smaller one', () => {
+    // The pairwise statement of the same law — this is the one that fails if
+    // a single floc is hand-tuned, without needing to know the curve.
+    for (const [, , rxA, , opacityA] of marineSnow) {
+      for (const [, , rxB, , opacityB] of marineSnow) {
+        if (rxA > rxB + ROUNDING) {
+          expect(opacityA).toBeGreaterThanOrEqual(opacityB - ROUNDING);
+        }
+      }
+    }
+  });
+
+  it('keeps every floc inside the ramp it was generated from', () => {
+    for (const [, , rx, , opacity] of marineSnow) {
+      expect(rx).toBeGreaterThanOrEqual(depthRamp.rxFar - ROUNDING);
+      expect(rx).toBeLessThanOrEqual(depthRamp.rxNear + ROUNDING);
+      expect(opacity).toBeLessThanOrEqual(1);
+      expect(opacity).toBeGreaterThanOrEqual(depthRamp.opacityFar - 1e-9);
+    }
+    expect(depthRampZFar).toBeCloseTo(3, 5);
+  });
+
+  it('spends the near end of the ramp on opacity, not on size', () => {
+    // The flocs are smaller than they were (the brief), so the depth read has
+    // to come from somewhere else — brightness picks it up. If someone grows
+    // the field back the first assertion catches it; if someone flattens the
+    // brightness range to compensate, the second does.
+    const rx = marineSnow.map(([, , r]) => r);
+    const opacity = marineSnow.map(([, , , , o]) => o);
+    expect(Math.max(...rx)).toBeLessThanOrEqual(2.6);
+    expect(Math.max(...opacity) - Math.min(...opacity)).toBeGreaterThanOrEqual(0.85);
+  });
+
+  it('uses the whole depth range rather than clumping into plates', () => {
+    // Continuous, not three layers: no size should hold an outsized share of
+    // the field, which is what a sprite-sheet read looks like in the data.
+    const buckets = new Map<number, number>();
+    for (const [, , rx] of marineSnow) {
+      const bucket = Math.round(rx * 10);
+      buckets.set(bucket, (buckets.get(bucket) ?? 0) + 1);
+    }
+    for (const count of buckets.values()) {
+      expect(count).toBeLessThan(marineSnow.length / 5);
+    }
+    expect(buckets.size).toBeGreaterThan(12);
   });
 });
 
