@@ -112,3 +112,7 @@ docs/research/
 
 # Generated AMO source archive (pnpm pack:sources)
 salmon-wallet-source.zip
+
+# Impeccable (local design-tool state)
+.impeccable/
+.impeccable.md
