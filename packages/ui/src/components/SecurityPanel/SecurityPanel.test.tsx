@@ -35,6 +35,14 @@ vi.mock('@salmon/shared', () => ({
   fontWeight: { semibold: 600 },
   letterSpacing: { wider: '0.08em' },
   opacity: { soft: 0.9 },
+  semantic: {
+    status: {
+      danger: '#f00',
+      dangerTint: '#300',
+      success: '#0f0',
+      successTint: '#030',
+    },
+  },
   useAccountsContext: () => [null, { changePassword: mockChangePassword }],
   validatePassword: () => ({ isValid: true, strength: 'strong' }),
 }));

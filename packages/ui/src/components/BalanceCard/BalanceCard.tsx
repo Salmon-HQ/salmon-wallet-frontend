@@ -42,6 +42,7 @@ import {
   motionMs,
   motionDuration,
   motionEasing,
+  reducedMotion,
   resolveMotionMs,
   tabularNums,
 } from '@salmon/shared';
@@ -313,6 +314,12 @@ const SkeletonRect = styled(Box)({
   background: `linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.08) 75%)`,
   backgroundSize: `${componentSizes.shimmerWidth}px 100%`,
   animation: `${shimmer} ${durationMs.shimmer}ms ${easing.easeInOut} infinite`,
+  // The calm form: the gradient stays as the resting placeholder, the sweep
+  // does not run — the same per-component guard PendingValue and the
+  // LoadingScreen crests carry.
+  [`@media ${reducedMotion.query}`]: {
+    animation: 'none',
+  },
 });
 
 /**
