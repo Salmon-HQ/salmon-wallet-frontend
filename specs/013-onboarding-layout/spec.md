@@ -345,6 +345,55 @@ Asserting a rendered Y across screens is the test that matches the requirement. 
 - No backend contract is touched; `../salmon-api` is unaffected.
 - The Ethereum surface is untouched.
 
+## Decisions taken by the product owner (2026-08-18)
+
+These three were open when the spec was written and are now settled. The
+sections above stand except where these override them.
+
+1. **The primary action becomes the bottom-most control in its stack**
+   (open question 4). This pins its Y for free — no empty band has to be
+   reserved above it — and the recover screen already orders it that way.
+   The `assist` band still exists for the helper and the error messages,
+   but it now sits *above* the action rather than below it, so revealing
+   the "What is a derivable?" link cannot move the button at all.
+
+2. **`lock.title` is corrected to "Welcome back" on all three platforms**
+   (open question 9). The key already exists; web and extension were
+   passing `'Welcome Back'` as an i18next `defaultValue` for it, which is
+   dead code that also disagreed with the key's own value. Fix the key in
+   both locales, delete the `defaultValue` at every call site, and follow
+   the `i18n-authoring` skill — never guess the Spanish.
+
+3. **The extension is a side panel, not a popup** (open question 1) — but
+   the audit's measurement was still correct, and the resolution is not
+   what either half suggested. Verified against source and the built
+   artifact:
+
+   - `wxt.config.ts` declares `side_panel.default_path` and **does not**
+     declare `action.default_popup`.
+   - The *built* `dist/chrome-mv3/manifest.json` carries
+     `"action": {"default_popup": "popup.html"}` anyway. WXT synthesises
+     it from the mere existence of `src/entrypoints/popup/`. Nobody wrote
+     it.
+   - `background.ts` calls
+     `chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })`
+     at runtime, which is what actually opens the side panel; the Firefox
+     branch clears the popup explicitly and toggles `sidebarAction`.
+
+   So the side panel is correct behaviour achieved by a runtime
+   correction over a manifest that declares the opposite. Under MV3 the
+   background service worker is not persistent, so a first click before
+   the worker has woken opens the popup — the 600px clipped surface the
+   audit measured. That is a real state, just not the common one.
+
+   **The layout work does not have to satisfy the 600px popup ceiling.**
+   The ambiguity gets removed at its source instead, as separate work:
+   either delete the popup entrypoint so the manifest never declares one,
+   or make the popup a deliberate redirect into the side panel. Either
+   makes the entrypoint independent of whether a worker happened to be
+   awake. Until that lands, treat the popup as a degraded first-click
+   state, not as a target surface.
+
 ## Open questions
 
 Only where the code and `DESIGN.md` genuinely could not settle it:
