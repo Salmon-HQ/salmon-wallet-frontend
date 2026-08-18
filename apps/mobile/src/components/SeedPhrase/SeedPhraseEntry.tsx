@@ -44,17 +44,22 @@ export const splitPhrase = (text: string): string[] =>
  * Whitespace and line breaks are normalised away first. A count that is
  * neither 12 nor 24 is still laid out as far as it goes — throwing away what
  * someone pasted is worse than showing them a short grid — and `fits` is false
- * so the caller can say why the phrase will not validate.
+ * so the caller can say why the phrase will not validate — and `count` is what
+ * was actually pasted, so the caller can say *what happened* rather than only
+ * that something is wrong.
  *
  * One function because the grid and the screen's "Paste your seed phrase"
  * button both go through it; two copies would eventually disagree.
  */
-export const distributePhrase = (text: string): { words: string[]; fits: boolean } => {
+export const distributePhrase = (
+  text: string
+): { words: string[]; fits: boolean; count: number } => {
   const pasted = splitPhrase(text);
   const length = pasted.length > SHORT_PHRASE ? LONG_PHRASE : SHORT_PHRASE;
   return {
     words: Array.from({ length }, (_, i) => pasted[i] ?? ''),
     fits: pasted.length === SHORT_PHRASE || pasted.length === LONG_PHRASE,
+    count: pasted.length,
   };
 };
 
@@ -65,7 +70,7 @@ export interface SeedPhraseEntryProps {
   /** Number of boxes to draw. The grid grows to 24 when a paste needs it. */
   onLengthChange: (length: number) => void;
   /** Reported when a paste does not divide into a usable phrase length. */
-  onPasteRejected?: () => void;
+  onPasteRejected?: (count: number) => void;
 }
 
 export function SeedPhraseEntry({
@@ -95,8 +100,8 @@ export function SeedPhraseEntry({
    * that is what was pasted. */
   const fill = useCallback(
     (text: string) => {
-      const { words: filled, fits } = distributePhrase(text);
-      if (!fits) onPasteRejected?.();
+      const { words: filled, fits, count } = distributePhrase(text);
+      if (!fits) onPasteRejected?.(count);
       onLengthChange(filled.length);
       onChange(filled);
     },

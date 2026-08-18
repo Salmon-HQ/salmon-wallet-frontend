@@ -276,7 +276,6 @@ function RootLayoutNav() {
  * the switch off this never executes.
  */
 function WaitPreview() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { LoadingScreen } = require('../src/components/LoadingScreen');
   return <LoadingScreen visible waves {...DEBUG_FORCE_WAIT_PROPS} />;
 }

@@ -59,7 +59,9 @@ export default function RecoverWalletScreen() {
   // State — one entry per box. Twelve to begin with; a paste or a thirteenth
   // typed word grows it to twenty-four.
   const [words, setWords] = useState<string[]>(() => Array<string>(SHORT_PHRASE).fill(''));
-  const [pasteRejected, setPasteRejected] = useState(false);
+  // The count of what was actually pasted, so the screen can say what happened
+  // rather than only that something is wrong. `null` means nothing was rejected.
+  const [pastedCount, setPastedCount] = useState<number | null>(null);
 
   const phrase = useMemo(() => normalizeMnemonic(words.join(' ')), [words]);
   const isComplete = words.every((word) => word.length > 0);
@@ -67,7 +69,7 @@ export default function RecoverWalletScreen() {
 
   const handleWords = useCallback((next: string[]) => {
     setWords(next);
-    setPasteRejected(false);
+    setPastedCount(null);
   }, []);
 
   const handleLength = useCallback((length: number) => {
@@ -92,8 +94,8 @@ export default function RecoverWalletScreen() {
     try {
       const clipboardContent = await Clipboard.getStringAsync();
       if (!clipboardContent) return;
-      const { words: pasted, fits } = distributePhrase(clipboardContent);
-      setPasteRejected(!fits);
+      const { words: pasted, fits, count } = distributePhrase(clipboardContent);
+      setPastedCount(fits ? null : count);
       setWords(pasted);
     } catch (error) {
       console.error('Failed to paste from clipboard:', error);
@@ -114,7 +116,7 @@ export default function RecoverWalletScreen() {
 
   // Only once every box is filled — telling someone their phrase is invalid
   // while they are still typing it is noise.
-  const showInvalid = pasteRejected || (isComplete && !isValidSeedPhrase);
+  const showInvalid = pastedCount !== null || (isComplete && !isValidSeedPhrase);
 
   return (
     <OnboardingLayout
@@ -132,7 +134,7 @@ export default function RecoverWalletScreen() {
           words={words}
           onChange={handleWords}
           onLengthChange={handleLength}
-          onPasteRejected={() => setPasteRejected(true)}
+          onPasteRejected={setPastedCount}
         />
       }
       assist={
@@ -142,7 +144,9 @@ export default function RecoverWalletScreen() {
             maxFontSizeMultiplier={fontScaleCap.chrome}
             testID="recover-invalid-phrase"
           >
-            {t('wallet.create.invalidSeed')}
+            {pastedCount !== null
+              ? t('wallet.recover.pastedWordCount', { count: pastedCount })
+              : t('wallet.create.invalidSeed')}
           </Text>
         ) : undefined
       }

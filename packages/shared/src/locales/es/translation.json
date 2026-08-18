@@ -501,6 +501,7 @@
     "recover": {
       "messageTitle": "Recuperar Cuenta existente",
       "messageBody": "Recuperar tu Cuenta usando tu seed-phrase de 12 o 24 palabras",
+      "pastedWordCount": "Pegaste {{count}} palabras. Una frase de recuperación tiene 12 o 24.",
       "pasteSeed": "Pegar seed-phrase",
       "terms_prefix": "Al recuperar, aceptás los ",
       "placeholder": "Ingresá tu seed phrase...",

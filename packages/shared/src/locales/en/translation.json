@@ -501,6 +501,7 @@
     "recover": {
       "messageTitle": "Recover Existing Account",
       "messageBody": "Recover your account using your 12/24 words seed phrase.",
+      "pastedWordCount": "You pasted {{count}} words. A recovery phrase has 12 or 24.",
       "pasteSeed": "Paste your seed phrase",
       "terms_prefix": "By recovering, you accept the ",
       "placeholder": "Enter your seed phrase...",
