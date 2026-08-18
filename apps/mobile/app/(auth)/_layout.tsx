@@ -4,11 +4,13 @@
  * Screens in order:
  * 1. index (welcome) - Initial screen with create/recover options
  * 2. recover - Recover wallet with seed phrase
- * 3. create - Create new wallet (shows seed phrase)
- * 4. password - Set password for wallet encryption
- * 5. biometric-setup - Optional biometric unlock setup prompt
- * 6. success - Success confirmation after wallet creation
- * 7. derived-accounts - Select derived accounts to import
+ * 3. seed-warning - What losing or leaking the phrase costs (create path)
+ * 4. create - Show and confirm the recovery phrase
+ * 5. password - Set password for wallet encryption
+ * 6. biometric-setup - Optional biometric unlock setup prompt
+ * 7. analytics-consent - First-run anonymous-analytics consent
+ * 8. success - Success confirmation after wallet creation
+ * 9. derived-accounts - Select derived accounts to import
  */
 
 import { Stack } from 'expo-router';
@@ -56,16 +58,25 @@ export default function AuthLayout() {
         />
 
         {/*
-          `recover` and `create` inherit `gestureEnabled: true`. That is
-          correct: backing out of either returns to the welcome screen with no
-          key material written yet, and both screens already run their own
-          in-screen back button through the same path.
+          `recover`, `seed-warning` and `create` inherit
+          `gestureEnabled: true`. That is correct: backing out of any of them
+          returns towards the welcome screen with no key material written yet,
+          and each already runs its own in-screen back button through the same
+          path.
         */}
 
         {/* Recover wallet with seed phrase */}
         <Stack.Screen name="recover" />
 
-        {/* Create new wallet */}
+        {/*
+          What losing or leaking the phrase costs, as a step of its own rather
+          than as copy sharing a screen with the phrase. A warning that costs
+          a step reads as a gate; one that shares a screen reads as
+          boilerplate.
+        */}
+        <Stack.Screen name="seed-warning" />
+
+        {/* Show and confirm the recovery phrase */}
         <Stack.Screen name="create" />
 
         {/* Set password */}

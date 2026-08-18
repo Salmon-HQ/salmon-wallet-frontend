@@ -5,17 +5,19 @@
  * 12 or 24 word seed phrase. It validates the mnemonic and navigates
  * to the password setup screen upon successful validation.
  *
- * Design: Dark gradient background with centered content, step indicator,
- * and orange accent buttons.
+ * Composed on the onboarding slot grid. The "Next" action used to be mounted
+ * conditionally inside a vertically centred column, so the moment the twelfth
+ * valid word was typed the mark, title, description and input all jumped 36pt
+ * at once — the worst defect the layout audit found, and it happened while the
+ * user was still typing. The action now lives in its reserved band whether or
+ * not the phrase is valid; only its visibility changes.
  */
 
-import { Logo } from '@salmon/assets';
 import {
-  borderRadius,
   colors,
   componentSizes,
-  contentPadding,
   fontFamilyNative,
+  fontSize,
   normalizeMnemonic,
   semantic,
   setStashItem,
@@ -23,25 +25,21 @@ import {
   STASH_KEYS,
   validateMnemonic,
 } from '@salmon/shared';
-import { PrimaryButton, ScreenHeader, SecondaryButton } from '../../src/components';
+import {
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
+  PrimaryButton,
+  ReservedSlot,
+  ScreenHeader,
+  SecondaryButton,
+} from '../../src/components';
 import { useSecretScreen } from '../../hooks/useSecretScreen';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 // ============================================================================
 // Component
@@ -114,71 +112,47 @@ export default function RecoverWalletScreen() {
   const showNextButton = isValidSeedPhrase();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <KeyboardAvoidingView
-          style={styles.keyboardView}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          {/* Header with step indicator */}
-          <ScreenHeader onBack={handleBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />
-
-          {/* Content */}
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Logo */}
-            <View style={styles.logoContainer}>
-              <Image source={Logo} style={styles.logo} resizeMode="contain" />
-            </View>
-
-            {/* Title */}
-            <Text style={styles.title}>{t('wallet.recover.messageTitle')}</Text>
-
-            {/* Subtitle */}
-            <Text style={styles.subtitle}>{t('wallet.recover.messageBody')}</Text>
-
-            {/* Seed Phrase Input */}
-            <View style={styles.inputContainer}>
-              <TextInput
-                testID="recover-seed-input"
-                style={[styles.textarea, { borderColor: getInputBorderColor() }]}
-                placeholder={t('wallet.recover.placeholder')}
-                placeholderTextColor={colors.text.tertiary}
-                value={seedPhrase}
-                onChangeText={setSeedPhrase}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                multiline
-                textAlignVertical="center"
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </View>
-
-            {/* Buttons */}
-            <View style={styles.buttonContainer}>
-              {/* Paste Button - Always visible */}
-              <SecondaryButton onPress={handlePaste} testID="recover-paste-button">
-                {t('wallet.recover.pasteSeed').toUpperCase()}
-              </SecondaryButton>
-
-              {/* Next Button - Only visible when seed phrase is valid */}
-              {showNextButton && (
-                <PrimaryButton onPress={handleNext} testID="recover-next-button">
-                  {t('actions.next').toUpperCase()}
-                </PrimaryButton>
-              )}
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
-    </SafeAreaView>
+    <OnboardingLayout
+      testID="recover-screen"
+      backgroundColor={semantic.surface.bedrock}
+      chrome={
+        <ScreenHeader onBack={handleBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />
+      }
+      title={<OnboardingTitle>{t('wallet.recover.messageTitle')}</OnboardingTitle>}
+      description={<OnboardingDescription>{t('wallet.recover.messageBody')}</OnboardingDescription>}
+      body={
+        <View style={styles.inputContainer}>
+          <TextInput
+            testID="recover-seed-input"
+            style={[styles.textarea, { borderColor: getInputBorderColor() }]}
+            placeholder={t('wallet.recover.placeholder')}
+            placeholderTextColor={colors.text.tertiary}
+            value={seedPhrase}
+            onChangeText={setSeedPhrase}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            multiline
+            textAlignVertical="center"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </View>
+      }
+      secondary={
+        <SecondaryButton onPress={handlePaste} testID="recover-paste-button">
+          {t('wallet.recover.pasteSeed').toUpperCase()}
+        </SecondaryButton>
+      }
+      action={
+        <ReservedSlot visible={showNextButton}>
+          <PrimaryButton onPress={handleNext} testID="recover-next-button">
+            {t('actions.next').toUpperCase()}
+          </PrimaryButton>
+        </ReservedSlot>
+      }
+    />
   );
 }
 
@@ -187,73 +161,30 @@ export default function RecoverWalletScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  /**
-   * Opaque bedrock, and it has to be. This screen carries the recovery
-   * phrase, and the Bedrock Rule fixes every seed view at `surface.bedrock`:
-   * no scales, no marine snow, no caustic, no iridescence. The auth stack
-   * behind it now paints the water column for the whole flow, so an opaque
-   * ground here is what keeps the motif off the one secret that cannot be
-   * reissued — the exception is expressed as a fill, not as a missing mount.
-   */
-  safeArea: {
-    flex: 1,
-    backgroundColor: semantic.surface.bedrock,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: contentPadding.screen,
-  },
-  logoContainer: {
-    marginBottom: spacing['2xl'],
-  },
-  logo: {
-    width: componentSizes.logoSizeMedium,
-    height: componentSizes.logoSizeMedium,
-  },
-  title: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: 24,
-    lineHeight: 32,
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: spacing['3xl'],
-    textAlign: 'center',
-    paddingHorizontal: spacing.lg,
-  },
   inputContainer: {
+    flex: 1,
     width: '100%',
-    marginBottom: spacing['2xl'],
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
   },
+  /**
+   * The field fills what `body` gives it rather than declaring a height of
+   * its own. A hardcoded 160 was neither the `inputHeight` token nor related
+   * to the space actually available, so it fought the grid on short screens.
+   */
   textarea: {
     width: '100%',
-    minHeight: 160,
+    flexShrink: 1,
+    minHeight: componentSizes.inputHeight,
+    maxHeight: '100%',
     backgroundColor: colors.input.background,
     borderWidth: 1,
-    borderRadius: borderRadius.lg,
+    borderRadius: componentSizes.inputRadius,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
     color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 16,
+    fontSize: fontSize.bodyLg,
     textAlign: 'center',
-  },
-  buttonContainer: {
-    width: '100%',
-    gap: spacing.lg,
   },
 });

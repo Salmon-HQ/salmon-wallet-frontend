@@ -1,32 +1,38 @@
 /**
  * BiometricSetupScreen - Prompt to enable biometric unlock during onboarding
  *
- * Shown after password setup and before the success screen. If the device
- * does not support biometrics the screen auto-skips to success.
+ * Shown after password setup and before the analytics consent step. If the
+ * device does not support biometrics the screen auto-skips.
  *
- * Design: Same centered layout as success.tsx — logo, icon, title, subtitle,
- * and action buttons at the bottom.
+ * Composed on the onboarding slot grid. The biometric glyph used to sit
+ * *between* the mark and the title — a position no other screen has — so it
+ * lives in `body` now, and the enrolment error occupies the reserved `assist`
+ * band instead of pushing the buttons down when it appears.
  */
 
-import { Logo } from '@salmon/assets';
 import {
-  colors,
-  componentSizes,
-  contentPadding,
   fontFamilyNative,
+  fontScaleCap,
+  fontSize,
   getStashItem,
+  lineHeight,
   spacing,
   type DerivedKeyCache,
   semantic,
 } from '@salmon/shared';
-import { PrimaryButton, SecondaryButton } from '../../src/components';
+import {
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
+  PrimaryButton,
+  SecondaryButton,
+} from '../../src/components';
 import { useBiometricAuth } from '../../hooks/useBiometricAuth';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View } from 'react-native';
 
 // ============================================================================
 // Constants
@@ -112,56 +118,44 @@ export default function BiometricSetupScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Centered content */}
-        <View style={styles.centerContent}>
-          {/* Logo */}
-          <View style={styles.logoContainer}>
-            <Image source={Logo} style={styles.logo} resizeMode="contain" />
-          </View>
-
-          {/* Biometric icon */}
-          <View style={styles.iconContainer}>
-            <Ionicons
-              name={getBiometricIcon(state.biometricType)}
-              size={ICON_SIZE}
-              color={colors.text.primary}
-            />
-          </View>
-
-          {/* Title */}
-          <Text style={styles.title}>{t('wallet.create.biometric_setup_title')}</Text>
-
-          {/* Subtitle */}
-          <Text style={styles.subtitle}>{t('wallet.create.biometric_setup_subtitle')}</Text>
-
-          {/* Error message */}
-          {error && <Text style={styles.error}>{error}</Text>}
+    <OnboardingLayout
+      testID="biometric-setup-screen"
+      title={<OnboardingTitle>{t('wallet.create.biometric_setup_title')}</OnboardingTitle>}
+      description={
+        <OnboardingDescription>{t('wallet.create.biometric_setup_subtitle')}</OnboardingDescription>
+      }
+      body={
+        <View style={styles.iconContainer}>
+          <Ionicons
+            name={getBiometricIcon(state.biometricType)}
+            size={ICON_SIZE}
+            color={semantic.text.primary}
+          />
         </View>
-
-        {/* Bottom buttons */}
-        <View style={styles.buttonsContainer}>
-          <PrimaryButton
-            onPress={handleEnable}
-            loading={isStoring}
-            disabled={isStoring}
-            style={styles.buttonSpacing}
-            testID="biometric-enable-button"
-          >
-            {buttonLabel}
-          </PrimaryButton>
-
-          <SecondaryButton onPress={handleSkip} disabled={isStoring} testID="biometric-skip-button">
-            {t('wallet.create.biometric_setup_skip')}
-          </SecondaryButton>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      }
+      assist={
+        error ? (
+          <Text style={styles.error} maxFontSizeMultiplier={fontScaleCap.chrome}>
+            {error}
+          </Text>
+        ) : undefined
+      }
+      secondary={
+        <SecondaryButton onPress={handleSkip} disabled={isStoring} testID="biometric-skip-button">
+          {t('wallet.create.biometric_setup_skip')}
+        </SecondaryButton>
+      }
+      action={
+        <PrimaryButton
+          onPress={handleEnable}
+          loading={isStoring}
+          disabled={isStoring}
+          testID="biometric-enable-button"
+        >
+          {buttonLabel}
+        </PrimaryButton>
+      }
+    />
   );
 }
 
@@ -170,60 +164,17 @@ export default function BiometricSetupScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  safeArea: {
+  iconContainer: {
     flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: contentPadding.screen,
-  },
-  centerContent: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 'auto',
-  },
-  logoContainer: {
-    marginBottom: spacing['2xl'],
-  },
-  logo: {
-    width: componentSizes.logoSizeLarge,
-    height: componentSizes.logoSizeLarge,
-  },
-  iconContainer: {
-    marginBottom: spacing['2xl'],
-  },
-  title: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: 32,
-    lineHeight: 40,
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: 'center',
+    paddingVertical: spacing.lg,
   },
   error: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.snug,
     textAlign: 'center',
-    marginTop: spacing.lg,
-  },
-  buttonsContainer: {
-    marginTop: 'auto',
-    paddingTop: spacing['2xl'],
-    paddingBottom: spacing['2xl'],
-  },
-  buttonSpacing: {
-    marginBottom: spacing.lg,
   },
 });

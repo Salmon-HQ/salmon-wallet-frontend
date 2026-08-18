@@ -60,6 +60,7 @@ describe('AuthLayout', () => {
 
   it('keeps the swipe-back gesture on the screens the user can return from', () => {
     expect(optionsFor('recover').gestureEnabled).not.toBe(false);
+    expect(optionsFor('seed-warning').gestureEnabled).not.toBe(false);
     expect(optionsFor('create').gestureEnabled).not.toBe(false);
   });
 });

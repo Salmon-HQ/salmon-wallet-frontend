@@ -31,12 +31,9 @@
  * - If valid, proceed to create account
  */
 
-import { Logo } from '@salmon/assets';
 import {
   ApiError,
   colors,
-  componentSizes,
-  contentPadding,
   createAccount,
   fontFamilyNative,
   generateAccountName,
@@ -44,6 +41,9 @@ import {
   getScanNetworks,
   getStashItem,
   PASSWORD_CONSTRAINTS,
+  fontScaleCap,
+  fontSize,
+  lineHeight,
   removeStashItem,
   spacing,
   STASH_KEYS,
@@ -57,27 +57,22 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Keyboard, Linking, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
   LoadingScreen,
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
   PasswordInput,
   PasswordStrengthBar,
   PrimaryButton,
   ScreenHeader,
 } from '../../src/components';
+
+/** Warning, phrase, confirmation, password. */
+const CREATE_FLOW_STEPS = 4;
+/** Phrase, password. */
+const RECOVER_FLOW_STEPS = 2;
 
 // ============================================================================
 // Component
@@ -317,128 +312,114 @@ export default function PasswordScreen() {
   return (
     <>
       <StatusBar style="light" />
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <KeyboardAvoidingView
-            style={styles.keyboardView}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          >
-            {/* Header with Step Indicator */}
-            <ScreenHeader
-              onBack={handleBack}
-              stepIndicator={{
-                totalSteps: flowType === 'create' ? 3 : 2,
-                currentStep: flowType === 'create' ? 3 : 2,
-              }}
-              backDisabled={isLoading || isChecking}
-            />
-
-            {/* Content */}
-            <ScrollView
-              style={styles.scrollView}
-              contentContainerStyle={styles.content}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Logo */}
-              <View style={styles.logoContainer}>
-                <Image source={Logo} style={styles.logo} resizeMode="contain" />
-              </View>
-
-              {/* Title - Different for showSingleInput */}
-              <Text style={styles.title}>
-                {showSingleInput
-                  ? t('wallet.create.enter_your_password') || 'Enter your password'
-                  : t('wallet.create.choose_a_password') || 'Choose a Password'}
-              </Text>
-
-              {/* Subtitle - Only show when not showSingleInput */}
-              {!showSingleInput && (
-                <Text style={styles.subtitle}>
-                  {t('wallet.create.choose_a_password_body') ||
-                    'You will need it to unlock your wallet'}
-                </Text>
-              )}
-
-              {/* Password Input */}
-              <View style={styles.inputContainer}>
-                <PasswordInput
-                  testID="password-input"
-                  value={password}
-                  onChangeText={handlePasswordChange}
-                  placeholder={
-                    showSingleInput
-                      ? t('wallet.create.enter_your_password') || 'Enter your password'
-                      : t('wallet.create.passwordNew') || 'New password'
+      <OnboardingLayout
+        testID="password-screen"
+        scrollBody
+        chrome={
+          <ScreenHeader
+            onBack={handleBack}
+            stepIndicator={{
+              totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
+              currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
+            }}
+            backDisabled={isLoading || isChecking}
+          />
+        }
+        title={
+          <OnboardingTitle>
+            {showSingleInput
+              ? t('wallet.create.enter_your_password')
+              : t('wallet.create.choose_a_password')}
+          </OnboardingTitle>
+        }
+        description={
+          // The single-field variant used to delete this line, dropping 56px
+          // and moving everything below it. Reserved and left empty now.
+          showSingleInput ? undefined : (
+            <OnboardingDescription>
+              {t('wallet.create.choose_a_password_body')}
+            </OnboardingDescription>
+          )
+        }
+        body={
+          <>
+            <View style={styles.inputContainer}>
+              <PasswordInput
+                testID="password-input"
+                value={password}
+                onChangeText={handlePasswordChange}
+                placeholder={
+                  showSingleInput
+                    ? t('wallet.create.enter_your_password')
+                    : t('wallet.create.passwordNew')
+                }
+                error={passwordError}
+                editable={!isLoading && !isChecking}
+                onSubmitEditing={() => {
+                  if (showSingleInput) {
+                    handleSubmit();
+                  } else {
+                    confirmPasswordRef.current?.focus();
                   }
-                  error={passwordError}
-                  editable={!isLoading && !isChecking}
-                  onSubmitEditing={() => {
-                    if (showSingleInput) {
-                      handleSubmit();
-                    } else {
-                      confirmPasswordRef.current?.focus();
-                    }
-                  }}
-                />
+                }}
+              />
 
-                {/* Password Strength Indicator - Only for new password */}
-                {!showSingleInput && password.length > 0 && (
-                  <View style={styles.strengthContainer}>
-                    <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
-                  </View>
-                )}
-              </View>
-
-              {/* Confirm Password Input - Only when not showSingleInput */}
-              {!showSingleInput && (
-                <View style={styles.inputContainer}>
-                  <PasswordInput
-                    testID="password-confirm-input"
-                    value={confirmPassword}
-                    onChangeText={handleConfirmPasswordChange}
-                    placeholder={t('wallet.create.passwordRepeat') || 'Repeat password'}
-                    error={confirmError}
-                    editable={!isLoading && !isChecking}
-                    onSubmitEditing={handleSubmit}
-                  />
+              {/*
+                Feedback about the field above it, so it sits against that
+                field rather than competing with the terms line for the assist
+                band. It appears and disappears as the user types, which is
+                exactly why it belongs in `body` — the give in the grid.
+              */}
+              {!showSingleInput && password.length > 0 && (
+                <View style={styles.strengthContainer}>
+                  <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
                 </View>
               )}
+            </View>
 
-              {/* General Error */}
-              {error && <Text style={styles.generalError}>{error}</Text>}
-
-              {/* Terms Text */}
-              <Text style={styles.termsText}>
-                {flowType === 'recover'
-                  ? t('wallet.recover.terms_prefix')
-                  : t('wallet.create.terms_prefix')}
-                <Text
-                  style={styles.termsHighlight}
-                  onPress={handleTermsPress}
-                  testID="password-terms-link"
-                  accessibilityRole="link"
-                >
-                  {t('general.terms_and_conditions')}
-                </Text>
-              </Text>
-
-              {/* Submit Button */}
-              <View style={styles.buttonContainer}>
-                <PrimaryButton
-                  onPress={handleSubmit}
-                  disabled={!isFormValid() || wrongPassword}
-                  loading={isLoading || isChecking}
-                  testID="password-submit-button"
-                >
-                  {getButtonText()}
-                </PrimaryButton>
+            {!showSingleInput && (
+              <View style={styles.inputContainer}>
+                <PasswordInput
+                  testID="password-confirm-input"
+                  value={confirmPassword}
+                  onChangeText={handleConfirmPasswordChange}
+                  placeholder={t('wallet.create.passwordRepeat')}
+                  error={confirmError}
+                  editable={!isLoading && !isChecking}
+                  onSubmitEditing={handleSubmit}
+                />
               </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </TouchableWithoutFeedback>
-      </SafeAreaView>
+            )}
+
+            {error && <Text style={styles.generalError}>{error}</Text>}
+          </>
+        }
+        assist={
+          <Text style={styles.termsText} maxFontSizeMultiplier={fontScaleCap.chrome}>
+            {flowType === 'recover'
+              ? t('wallet.recover.terms_prefix')
+              : t('wallet.create.terms_prefix')}
+            <Text
+              style={styles.termsHighlight}
+              onPress={handleTermsPress}
+              testID="password-terms-link"
+              accessibilityRole="link"
+            >
+              {t('general.terms_and_conditions')}
+            </Text>
+          </Text>
+        }
+        action={
+          <PrimaryButton
+            onPress={handleSubmit}
+            disabled={!isFormValid() || wrongPassword}
+            loading={isLoading || isChecking}
+            testID="password-submit-button"
+          >
+            {getButtonText()}
+          </PrimaryButton>
+        }
+      />
 
       {/* Loading Screen Overlay */}
       <LoadingScreen
@@ -457,43 +438,6 @@ export default function PasswordScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    alignItems: 'center',
-    paddingHorizontal: contentPadding.screen,
-  },
-  logoContainer: {
-    marginBottom: spacing['2xl'],
-  },
-  logo: {
-    width: componentSizes.logoSizeMedium,
-    height: componentSizes.logoSizeMedium,
-  },
-  title: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: 28,
-    lineHeight: 36,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: spacing['3xl'],
-    textAlign: 'center',
-  },
   inputContainer: {
     width: '100%',
     marginBottom: spacing.lg,
@@ -505,8 +449,8 @@ const styles = StyleSheet.create({
   generalError: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: fontSize.caption,
+    lineHeight: fontSize.caption * lineHeight.snug,
     marginBottom: spacing.lg,
     textAlign: 'center',
     width: '100%',
@@ -514,18 +458,11 @@ const styles = StyleSheet.create({
   termsText: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: fontSize.caption,
+    lineHeight: fontSize.caption * lineHeight.normal,
     textAlign: 'center',
-    marginBottom: spacing['2xl'],
-    paddingHorizontal: spacing['2xl'],
   },
   termsHighlight: {
     color: colors.step.active,
-  },
-  buttonContainer: {
-    width: '100%',
-    marginTop: 'auto',
-    marginBottom: spacing['3xl'],
   },
 });

@@ -9,19 +9,13 @@
  * Does NOT contain any animation logic — that's handled by GateContainer.
  */
 
-import { Logo } from '@salmon/assets';
 import {
   colors,
   fontFamilyNative,
   fontSize,
-  letterSpacing,
   lineHeight,
-  ms,
-  s,
   spacing,
-  vs,
   borderWidth,
-  borderRadius,
   componentSizes,
   semantic,
   useUnlockThrottle,
@@ -30,23 +24,20 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  AccessibilityInfo,
   Alert,
   AppState,
-  Image,
+  findNodeHandle,
   Keyboard,
-  KeyboardAvoidingView,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '../Button';
+import { PrimaryButton, TextButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
+import { OnboardingLayout, OnboardingTitle, ReservedSlot } from '../OnboardingLayout';
 import { WarningNotice } from '../WarningNotice';
 import type { BiometricConfig } from './types';
 
@@ -109,6 +100,22 @@ export function LockContent({
     refresh: refreshThrottle,
   } = useUnlockThrottle(locked);
   const throttled = throttleRemainingMs > 0;
+
+  // The throttle notice takes the unlock button's place, so a screen-reader
+  // user must not be left focused on a node that has just vanished. Focus
+  // follows the swap in both directions.
+  const throttleRef = useRef<View>(null);
+  const unlockRef = useRef<View>(null);
+  const wasThrottled = useRef(false);
+
+  useEffect(() => {
+    if (throttled === wasThrottled.current) return;
+    wasThrottled.current = throttled;
+    const target = throttled ? throttleRef.current : unlockRef.current;
+    if (!target) return;
+    const handle = findNodeHandle(target);
+    if (handle !== null) AccessibilityInfo.setAccessibilityFocus(handle);
+  }, [throttled]);
 
   // Track if we've already auto-prompted biometric for this lock session
   const hasAutoPromptedBiometric = useRef(false);
@@ -304,109 +311,97 @@ export function LockContent({
   return (
     <>
       <StatusBar style="light" />
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <KeyboardAvoidingView
-            style={styles.keyboardView}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          >
-            <View style={styles.content}>
-              <View style={styles.logoSection}>
-                <View>
-                  <Image source={Logo} style={styles.logo} resizeMode="contain" />
-                </View>
-                <Text style={styles.welcomeText}>{t('lock.welcome_back')}</Text>
-
-                {showPasswordFallback && throttled && (
-                  <WarningNotice
-                    tone="warning"
-                    title={t('lock.throttled_title')}
-                    style={styles.throttleNotice}
-                  >
-                    {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
-                  </WarningNotice>
-                )}
-
-                {showPasswordFallback && (
-                  <View style={styles.inputContainer}>
-                    <TextInput
-                      testID="lock-password-input"
-                      accessibilityLabel={t('lock.enter_password')}
-                      style={[styles.input, { borderColor: getInputBorderColor() }]}
-                      placeholder={t('lock.enter_password')}
-                      placeholderTextColor={colors.text.secondary}
-                      secureTextEntry
-                      value={password}
-                      onChangeText={(text) => {
-                        setPassword(text);
-                        if (error) setError(null);
-                      }}
-                      onFocus={() => setIsFocused(true)}
-                      onBlur={() => setIsFocused(false)}
-                      onSubmitEditing={handleUnlock}
-                      editable={!isLoading && !throttled}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      returnKeyType="done"
-                    />
-                    {error && <Text style={styles.errorText}>{error}</Text>}
-                  </View>
-                )}
-              </View>
-
-              {showPasswordFallback && (
-                <View style={styles.buttonSection}>
-                  {/* The screen's committing action, so it is the shared
-                      button. It used to hand-roll the whole control — a
-                      gradient box at `borderRadius.xl` with its own border and
-                      glow, and its own disabled fill — which drew a second,
-                      squarer shape wherever the app's other primary actions
-                      draw a flesh-textured pill. The salmon never dims: the
-                      button's own disabled state swaps to `surface.crest` with
-                      disabled ink. Height is the only override. */}
-                  <PrimaryButton
-                    testID="lock-unlock-button"
-                    onPress={handleUnlock}
-                    disabled={unlockDisabled}
-                    loading={isLoading}
-                    style={styles.button}
-                  >
-                    {t('lock.unlock')}
-                  </PrimaryButton>
-
-                  {canUseBiometric && (
-                    <TouchableOpacity
-                      testID="lock-biometric-button"
-                      accessibilityRole="button"
-                      accessibilityLabel={biometricActionLabel}
-                      accessibilityState={{ disabled: isLoading }}
-                      onPress={() => {
-                        void handleBiometricUnlock();
-                      }}
-                      disabled={isLoading}
-                      style={styles.secondaryActionContainer}
-                    >
-                      <Text style={styles.secondaryActionText}>{biometricActionLabel}</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  <TouchableOpacity
-                    testID="lock-forgot-password-button"
-                    accessibilityRole="button"
-                    accessibilityLabel={t('lock.forgot_password')}
-                    accessibilityState={{ disabled: isLoading }}
-                    onPress={handleForgotPassword}
-                    disabled={isLoading}
-                    style={styles.forgotPasswordContainer}
-                  >
-                    <Text style={styles.forgotPasswordText}>{t('lock.forgot_password')}</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+      <OnboardingLayout
+        testID="lock-screen"
+        variant="unlock"
+        title={<OnboardingTitle>{t('lock.welcome_back')}</OnboardingTitle>}
+        body={
+          /*
+            Reserved, not deleted. The biometric variant used to hold the field
+            and every control below it inside one guard, so failing Face ID
+            moved the mark 115pt down the screen at the exact moment the user
+            was already mildly alarmed. The bands stand either way now.
+          */
+          <ReservedSlot visible={showPasswordFallback}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                testID="lock-password-input"
+                accessibilityLabel={t('lock.enter_password')}
+                style={[styles.input, { borderColor: getInputBorderColor() }]}
+                placeholder={t('lock.enter_password')}
+                placeholderTextColor={colors.text.secondary}
+                secureTextEntry
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (error) setError(null);
+                }}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                onSubmitEditing={handleUnlock}
+                editable={!isLoading && !throttled}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+              />
+              {/* Feedback about the field above it, so it sits against that
+                  field rather than displacing anything. */}
+              {error && <Text style={styles.errorText}>{error}</Text>}
             </View>
-          </KeyboardAvoidingView>
-        </TouchableWithoutFeedback>
-      </SafeAreaView>
+          </ReservedSlot>
+        }
+        assist={
+          <TextButton
+            testID="lock-forgot-password-button"
+            onPress={handleForgotPassword}
+            disabled={isLoading}
+          >
+            {t('lock.forgot_password')}
+          </TextButton>
+        }
+        secondary={
+          <ReservedSlot visible={!!canUseBiometric && showPasswordFallback}>
+            <TextButton
+              testID="lock-biometric-button"
+              onPress={() => {
+                void handleBiometricUnlock();
+              }}
+              disabled={isLoading}
+              color={colors.accent.primary}
+            >
+              {biometricActionLabel}
+            </TextButton>
+          </ReservedSlot>
+        }
+        action={
+          /*
+            While the wallet is throttled the button cannot be pressed anyway,
+            so the notice takes its place: nothing moves, and the user is told
+            why — and for how long — in the exact spot they were about to
+            press. Focus follows the swap in both directions.
+          */
+          throttled ? (
+            <View ref={throttleRef} accessible accessibilityLiveRegion="polite">
+              <WarningNotice tone="warning" title={t('lock.throttled_title')}>
+                {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
+              </WarningNotice>
+            </View>
+          ) : (
+            <ReservedSlot visible={showPasswordFallback}>
+              <View ref={unlockRef}>
+                <PrimaryButton
+                  testID="lock-unlock-button"
+                  onPress={handleUnlock}
+                  disabled={unlockDisabled}
+                  loading={isLoading}
+                >
+                  {t('lock.unlock')}
+                </PrimaryButton>
+              </View>
+            </ReservedSlot>
+          )
+        }
+      />
 
       <LoadingScreen
         visible={showLoadingScreen}
@@ -423,91 +418,34 @@ export function LockContent({
 // ============================================================================
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: s(spacing.lockScreenPadding),
-    gap: vs(spacing['4xl']),
-  },
-  logoSection: {
-    width: '100%',
-    alignItems: 'center',
-    gap: vs(spacing.lockScreenSectionGap),
-  },
-  logo: {
-    width: s(componentSizes.lockScreenLogoSize),
-    height: s(componentSizes.lockScreenLogoSize),
-  },
-  welcomeText: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: ms(fontSize['2xl']),
-    letterSpacing: letterSpacing.balance,
-    lineHeight: vs(38),
-    textAlign: 'center',
-  },
   inputContainer: {
+    flex: 1,
     width: '100%',
+    justifyContent: 'center',
   },
-  throttleNotice: {
-    marginBottom: vs(spacing.sm),
-  },
+  /**
+   * The system input, not a variant of it. The field used to sit at
+   * `borderRadius.badge` (9) with a scaled 54pt height — its own control
+   * shape, on the one screen a returning user sees most.
+   */
   input: {
     width: '100%',
-    minHeight: vs(componentSizes.iconSize5XL),
-    paddingVertical: vs(spacing.sm),
+    height: componentSizes.inputHeight,
     backgroundColor: colors.input.background,
     borderWidth: borderWidth.sheet,
-    borderRadius: borderRadius.badge,
-    paddingHorizontal: s(spacing.lg),
+    borderRadius: componentSizes.inputRadius,
+    paddingHorizontal: spacing.lg,
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: ms(fontSize.lg),
+    fontSize: fontSize.bodyLg,
   },
   errorText: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: ms(fontSize.sm),
-    lineHeight: ms(fontSize.sm * lineHeight.normal),
-    marginTop: vs(spacing.sm),
-    paddingHorizontal: s(spacing.sm),
-  },
-  buttonSection: {
-    width: '100%',
-    gap: vs(spacing.lockScreenGap),
-  },
-  // Size only. Radius, fill, border, bezel, material and the disabled
-  // treatment belong to the button.
-  button: {
-    minHeight: vs(componentSizes.iconSize4XL),
-    height: vs(componentSizes.iconSize4XL),
-  },
-  forgotPasswordContainer: {
-    padding: s(spacing.md),
-  },
-  secondaryActionContainer: {
-    padding: s(spacing.md),
-  },
-  secondaryActionText: {
-    color: colors.accent.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: ms(fontSize.md),
-    lineHeight: ms(16 * lineHeight.normal),
-    textAlign: 'center',
-  },
-  forgotPasswordText: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: ms(fontSize.md),
-    letterSpacing: letterSpacing.balance,
-    lineHeight: vs(38),
+    fontSize: fontSize.caption,
+    lineHeight: fontSize.caption * lineHeight.normal,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.sm,
     textAlign: 'center',
   },
 });

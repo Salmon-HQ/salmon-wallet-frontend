@@ -495,11 +495,6 @@
       "biometric_setup_enable": "Habilitar Biometría",
       "biometric_setup_skip": "Quizás Después",
       "biometric_setup_error": "Error al habilitar biometría. Podés configurarlo después en Ajustes.",
-      "biometric_title": "Activá {{type}}",
-      "biometric_subtitle": "Desbloqueá tu billetera rápido y de forma segura sin escribir tu contraseña",
-      "biometric_enable": "Activar {{type}}",
-      "biometric_skip": "Quizás Después",
-      "biometric_error": "Error al activar el desbloqueo biométrico. Intentá de nuevo.",
       "creating_account": "Creando Cuenta",
       "securing_wallet": "Esperá mientras aseguramos tu wallet"
     },

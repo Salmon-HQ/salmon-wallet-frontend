@@ -495,11 +495,6 @@
       "biometric_setup_enable": "Enable Biometrics",
       "biometric_setup_skip": "Maybe Later",
       "biometric_setup_error": "Failed to enable biometrics. You can set it up later in Settings.",
-      "biometric_title": "Enable {{type}}",
-      "biometric_subtitle": "Unlock your wallet quickly and securely without typing your password",
-      "biometric_enable": "Enable {{type}}",
-      "biometric_skip": "Maybe Later",
-      "biometric_error": "Failed to enable biometric unlock. Please try again.",
       "creating_account": "Creating Account",
       "securing_wallet": "Please wait while we secure your wallet"
     },

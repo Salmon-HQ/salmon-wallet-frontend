@@ -18,13 +18,14 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import { Logo } from '@salmon/assets';
 import {
   colors,
   componentSizes,
-  contentPadding,
   deriveBlockchainAccount,
   fontFamilyNative,
+  fontSize,
+  lineHeight,
+  semantic,
   getScanNetworks,
   getShortAddress,
   spacing,
@@ -38,7 +39,11 @@ import {
 import {
   DerivedAccountCard,
   DerivedAccountCardSkeleton,
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
   PrimaryButton,
+  ReservedSlot,
   ScreenHeader,
   SecondaryButton,
   WarningNotice,
@@ -47,8 +52,7 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 // ============================================================================
 // Loading Skeleton
@@ -214,7 +218,11 @@ export default function DerivedAccountsScreen() {
       if (failedNetworks.length > 0) {
         return (
           <View style={styles.emptyContainer} testID="derived-scan-error">
-            <Ionicons name="cloud-offline-outline" size={64} color={colors.text.tertiary} />
+            <Ionicons
+              name="cloud-offline-outline"
+              size={componentSizes.iconSize3XL}
+              color={semantic.text.secondary}
+            />
             <Text style={styles.emptyTitle}>{t('wallet.derived.scan_failed_title')}</Text>
             <Text style={styles.emptySubtitle}>{t('wallet.derived.scan_failed_body')}</Text>
             <View style={styles.retryButtonContainer}>
@@ -227,7 +235,11 @@ export default function DerivedAccountsScreen() {
       }
       return (
         <View style={styles.emptyContainer}>
-          <Ionicons name="wallet-outline" size={64} color={colors.text.tertiary} />
+          <Ionicons
+            name="wallet-outline"
+            size={componentSizes.iconSize3XL}
+            color={semantic.text.secondary}
+          />
           <Text style={styles.emptyTitle}>{t('wallet.derived.empty_title')}</Text>
           <Text style={styles.emptySubtitle}>{t('wallet.derived.empty_subtitle')}</Text>
         </View>
@@ -278,45 +290,33 @@ export default function DerivedAccountsScreen() {
   return (
     <>
       <StatusBar style="light" />
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        {/* Header */}
-        <ScreenHeader />
-
-        {/* Content */}
-        <View style={styles.content}>
-          {/* Logo */}
-          <View style={styles.logoContainer}>
-            <Image source={Logo} style={styles.logo} resizeMode="contain" />
-          </View>
-
-          {/* Title */}
-          <Text style={styles.title}>{t('wallet.derived.title')}</Text>
-
-          {/* Subtitle */}
-          <Text style={styles.subtitle}>{t('wallet.derived.subtitle')}</Text>
-
-          {/* Dynamic Content */}
-          {renderContent()}
-
-          {/* Buttons */}
-          <View style={styles.buttonContainer}>
-            {accounts.length > 0 && (
-              <PrimaryButton
-                onPress={handleImport}
-                disabled={loading || importing}
-                loading={importing}
-                testID="derived-import-button"
-              >
-                {t('wallet.derived.import_selected', { count: selectedCount })}
-              </PrimaryButton>
-            )}
-
-            <SecondaryButton onPress={handleSkip} disabled={importing} testID="derived-skip-button">
-              {accounts.length === 0 ? t('wallet.derived.continue') : t('wallet.derived.skip')}
-            </SecondaryButton>
-          </View>
-        </View>
-      </SafeAreaView>
+      <OnboardingLayout
+        testID="derived-accounts-screen"
+        chrome={<ScreenHeader />}
+        title={<OnboardingTitle>{t('wallet.derived.title')}</OnboardingTitle>}
+        description={<OnboardingDescription>{t('wallet.derived.subtitle')}</OnboardingDescription>}
+        body={renderContent()}
+        secondary={
+          <SecondaryButton onPress={handleSkip} disabled={importing} testID="derived-skip-button">
+            {accounts.length === 0 ? t('wallet.derived.continue') : t('wallet.derived.skip')}
+          </SecondaryButton>
+        }
+        action={
+          // The scan is asynchronous, so this control used to appear after
+          // first paint and shove everything up 68px with no user input at
+          // all. It holds its reserved band from the first frame now.
+          <ReservedSlot visible={accounts.length > 0}>
+            <PrimaryButton
+              onPress={handleImport}
+              disabled={loading || importing}
+              loading={importing}
+              testID="derived-import-button"
+            >
+              {t('wallet.derived.import_selected', { count: selectedCount })}
+            </PrimaryButton>
+          </ReservedSlot>
+        }
+      />
     </>
   );
 }
@@ -326,49 +326,16 @@ export default function DerivedAccountsScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: contentPadding.screen,
-  },
-  logoContainer: {
-    marginBottom: spacing.lg,
-  },
-  logo: {
-    width: componentSizes.logoSizeSmall,
-    height: componentSizes.logoSizeSmall,
-  },
-  title: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: 24,
-    lineHeight: 32,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: spacing['2xl'],
-    textAlign: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-
   // Loading state
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: spacing['3xl'],
+    justifyContent: 'center',
   },
   loadingText: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 16,
+    fontSize: fontSize.bodyLg,
     marginTop: spacing.lg,
     marginBottom: spacing['2xl'],
   },
@@ -378,22 +345,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: spacing['5xl'],
   },
   emptyTitle: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 16,
+    fontSize: fontSize.bodyLg,
     marginTop: spacing.lg,
     textAlign: 'center',
   },
   emptySubtitle: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 14,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.snug,
     marginTop: spacing.sm,
     textAlign: 'center',
-    paddingHorizontal: spacing['2xl'],
   },
 
   retryButtonContainer: {
@@ -412,7 +378,7 @@ const styles = StyleSheet.create({
   foundText: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 14,
+    fontSize: fontSize.body,
     marginBottom: spacing.lg,
     textAlign: 'center',
   },
@@ -427,13 +393,5 @@ const styles = StyleSheet.create({
   // Skeleton
   skeletonContainer: {
     width: '100%',
-  },
-
-  // Buttons
-  buttonContainer: {
-    width: '100%',
-    paddingTop: spacing.lg,
-    paddingBottom: spacing['2xl'],
-    gap: spacing.md,
   },
 });

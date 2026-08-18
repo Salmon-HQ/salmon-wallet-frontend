@@ -36,31 +36,15 @@ jest.mock('@salmon/assets', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
-  semantic: {
-    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
-    text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', accent: '#FF5C45' },
-    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
-    depth: { column: '#0B0F19', abyss: '#070911' },
-    accent: { fill: '#FF5C45', ink: '#FF5C45', tint: 'rgba(255,92,69,0.10)' },
-    border: { default: '#58637B', raised: '#6F7B95' },
-  },
-  tabularNums: { native: { fontVariant: ['tabular-nums'] }, css: {} },
-  colors: {
-    text: { primary: '#fff', secondary: '#999' },
-    status: { error: '#f00' },
-    step: { active: '#f90' },
-  },
-  componentSizes: { logoSizeMedium: 120 },
-  contentPadding: { screen: 16 },
+  // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
+  ...jest.requireActual('../../test-utils/themeTokens'),
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
-  fontFamilyNative: { bold: 'System', regular: 'System' },
   generateAccountName: () => 'Account 3',
   getMirrorNetworks: jest.fn().mockResolvedValue({ 'solana-mainnet': 'solana-devnet' }),
   getScanNetworks: jest.fn().mockResolvedValue(['solana-mainnet']),
   getStashItem: (...args: unknown[]) => mockGetStashItem(...args),
   PASSWORD_CONSTRAINTS: { MIN_LENGTH: 12, MAX_LENGTH: 128 },
   removeStashItem: (...args: unknown[]) => mockRemoveStashItem(...args),
-  spacing: { xs: 4, sm: 8, lg: 16, '2xl': 24, '3xl': 32 },
   STASH_KEYS: { PENDING_MNEMONIC: 'pending-mnemonic' },
   trackOnboardingEvent: jest.fn(async () => undefined),
   useAccountsContext: () => mockUseAccountsContext(),
@@ -75,8 +59,26 @@ jest.mock('../../src/components', () => {
   const React = require('react');
   const { TextInput, Text, TouchableOpacity } = require('react-native');
 
+  const { View } = require('react-native');
+
   return {
     LoadingScreen: () => null,
+    OnboardingTitle: ({ children }: { children?: React.ReactNode }) =>
+      React.createElement(Text, null, children),
+    OnboardingDescription: ({ children }: { children?: React.ReactNode }) =>
+      React.createElement(Text, null, children),
+    OnboardingLayout: (props: Record<string, React.ReactNode>) =>
+      React.createElement(
+        View,
+        null,
+        props.chrome,
+        props.title,
+        props.description,
+        props.body,
+        props.assist,
+        props.secondary,
+        props.action
+      ),
     PasswordInput: ({
       value,
       onChangeText,

@@ -158,3 +158,6 @@ export type { AboutPanelPropsBase } from './about-panel';
 
 // Pending Activity Banner
 export type { PendingActivityBannerPropsBase } from './pending-activity-banner';
+
+// Onboarding Layout
+export type { OnboardingLayoutPropsBase } from './onboarding-layout';

@@ -5,24 +5,36 @@
  * their wallet. It provides navigation to the main app and option to check
  * derived accounts.
  *
- * Design: Dark gradient background with centered content, salmon logo, and action buttons.
+ * This is the screen the whole slot grid was asked for. Its "What is a
+ * derivable?" helper is 60px — a 44px text button plus a 16px gap — and it
+ * used to arrive with the screen, shoving the primary action 132px up on the
+ * way in and 64px back down on the way out. The helper now occupies the
+ * `assist` band, which is reserved at exactly that 60px on every screen in the
+ * flow and stands empty on all the others. Arriving here fills space that was
+ * always there.
  */
 
-import { Logo } from '@salmon/assets';
 import {
   borderRadius,
   colors,
-  componentSizes,
   contentPadding,
   fontFamilyNative,
+  fontSize,
+  lineHeight,
   spacing,
 } from '@salmon/shared';
-import { PrimaryButton, SecondaryButton, TextButton } from '../../src/components';
+import {
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
+  PrimaryButton,
+  SecondaryButton,
+  TextButton,
+} from '../../src/components';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Modal, Pressable, StyleSheet, Text } from 'react-native';
 
 // ============================================================================
 // Component
@@ -54,47 +66,14 @@ export default function SuccessScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Centered content */}
-        <View style={styles.centerContent}>
-          {/* Logo */}
-          <View style={styles.logoContainer}>
-            <Image source={Logo} style={styles.logo} resizeMode="contain" />
-          </View>
-
-          {/* Title */}
-          <Text style={styles.title}>{t('wallet.create.success_message')}</Text>
-
-          {/* Subtitle */}
-          <Text style={styles.subtitle}>{t('wallet.create.success_message_body')}</Text>
-        </View>
-
-        {/* Bottom buttons */}
-        <View style={styles.buttonsContainer}>
-          {/* Primary Button - Go to Wallet */}
-          <PrimaryButton
-            onPress={handleGoToWallet}
-            style={styles.buttonSpacing}
-            testID="success-go-to-wallet-button"
-          >
-            {t('wallet.create.go_to_my_wallet')}
-          </PrimaryButton>
-
-          {/* Secondary Button - Check Derived Accounts */}
-          <SecondaryButton
-            onPress={handleGoToDerived}
-            style={styles.buttonSpacing}
-            testID="success-check-derived-button"
-          >
-            {t('wallet.create.check_derivables')}
-          </SecondaryButton>
-
-          {/* Info Link - What are derived accounts? */}
+    <>
+      <OnboardingLayout
+        testID="success-screen"
+        title={<OnboardingTitle>{t('wallet.create.success_message')}</OnboardingTitle>}
+        description={
+          <OnboardingDescription>{t('wallet.create.success_message_body')}</OnboardingDescription>
+        }
+        assist={
           <TextButton
             onPress={toggleDialog}
             color={colors.text.secondary}
@@ -102,8 +81,18 @@ export default function SuccessScreen() {
           >
             {t('wallet.create.derivable_info_icon')}
           </TextButton>
-        </View>
-      </ScrollView>
+        }
+        secondary={
+          <SecondaryButton onPress={handleGoToDerived} testID="success-check-derived-button">
+            {t('wallet.create.check_derivables')}
+          </SecondaryButton>
+        }
+        action={
+          <PrimaryButton onPress={handleGoToWallet} testID="success-go-to-wallet-button">
+            {t('wallet.create.go_to_my_wallet')}
+          </PrimaryButton>
+        }
+      />
 
       {/* Derivable Info Dialog */}
       <Modal visible={showDialog} transparent animationType="fade" onRequestClose={toggleDialog}>
@@ -122,7 +111,7 @@ export default function SuccessScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-    </SafeAreaView>
+    </>
   );
 }
 
@@ -131,51 +120,6 @@ export default function SuccessScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: contentPadding.screen,
-  },
-  centerContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 'auto',
-  },
-  logoContainer: {
-    marginBottom: spacing['2xl'],
-  },
-  logo: {
-    width: componentSizes.logoSizeLarge,
-    height: componentSizes.logoSizeLarge,
-  },
-  title: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: 32,
-    lineHeight: 40,
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: 'center',
-  },
-  buttonsContainer: {
-    marginTop: 'auto',
-    paddingTop: spacing['2xl'],
-    paddingBottom: spacing['2xl'],
-  },
-  buttonSpacing: {
-    marginBottom: spacing.lg,
-  },
   // Dialog styles
   dialogOverlay: {
     flex: 1,
@@ -195,16 +139,16 @@ const styles = StyleSheet.create({
   dialogTitle: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: fontSize.title,
+    lineHeight: fontSize.title * lineHeight.snug,
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
   dialogBody: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.normal,
     textAlign: 'center',
     marginBottom: spacing['2xl'],
   },

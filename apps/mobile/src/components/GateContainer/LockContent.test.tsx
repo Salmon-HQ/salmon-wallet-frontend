@@ -46,78 +46,15 @@ jest.mock('expo-status-bar', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
-  // `usePressMotion` inside the shared buttons reads the motion vocabulary.
-  motionEasing: {
-    current: { native: [0.32, 0.72, 0, 1] },
-    settle: { native: [0.22, 1, 0.36, 1] },
-    sink: { native: [0.4, 0, 1, 1] },
-    swellIn: { native: [0.34, 1.2, 0.64, 1] },
-  },
-  motionMs: { flick: 90, feedbackHold: 1600 },
+  // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
+  // The lock screen and the shared buttons under it read a wide slice of the
+  // theme, and listing that slice by hand meant every new token read broke
+  // this file with "cannot read properties of undefined".
+  ...jest.requireActual('../../../test-utils/themeTokens'),
   resolveMotionMs: (ms: number) => ms,
-  // "Deep Water" semantic tokens. Components read these directly now; the
-  // legacy `colors` map below still covers everything not yet migrated.
-  semantic: {
-    accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45', tint: 'rgba(255,92,69,0.1)' },
-    text: {
-      primary: '#F6F8FB',
-      secondary: '#A7B1C4',
-      tertiary: '#8B96AD',
-      disabled: '#6F7B95',
-      accent: '#FF5C45',
-      onAccent: '#070911',
-      onGlass: '#F6F8FB',
-    },
-    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
-    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
-    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
-    state: { hover: 'rgba(199,211,232,0.06)', press: 'rgba(199,211,232,0.10)' },
-  },
-  borderRadius: { badge: 12, xl: 20 },
-  borderWidth: { sheet: 1, thin: 1 },
   useUnlockThrottle: () => mockThrottle,
-  colors: {
-    text: { primary: '#fff', secondary: '#999' },
-    status: { error: '#f00', warningBackground: '#332200', errorBackground: '#330000' },
-    accent: { primary: '#0f0', border: '#0f0' },
-    input: { border: '#444', background: '#111' },
-    button: { disabledOpacity: 0.5, primaryBackground: '#FF5C45', primaryText: '#070911' },
-  },
-  // Unlock is the shared PrimaryButton now, so this mock has to cover the
-  // tokens that button reads too.
-  componentSizes: {
-    lockScreenLogoSize: 120,
-    iconSize5XL: 56,
-    iconSize4XL: 48,
-    buttonHeight: 56,
-    buttonRadius: 12,
-    buttonFleshScale: 1,
-  },
-  shadowsCSS: { bezel: 'none' },
-  fleshTile: { width: 380, height: 40 },
-  fleshFades: [],
-  fleshTiledStrokes: [],
-  fontFamilyNative: { bold: 'System', medium: 'System', regular: 'System' },
-  fontSize: { sm: 14, md: 18, lg: 20, '2xl': 28 },
-  gradients: {
-    primary: { colors: ['#0f0', '#0c0'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } },
-    disabled: { colors: ['#1B2233', '#1B2233'], start: { x: 0, y: 0 }, end: { x: 1, y: 0 } },
-  },
-  letterSpacing: { balance: 1, widest: 1 },
-  lineHeight: { normal: 1.4 },
-  shadows: { button: {} },
   ms: (value: number) => value,
   s: (value: number) => value,
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    lockScreenPadding: 20,
-    lockScreenSectionGap: 20,
-    lockScreenGap: 16,
-    '4xl': 40,
-  },
   vs: (value: number) => value,
 }));
 
@@ -270,7 +207,13 @@ describe('LockContent', () => {
       expect(screen.getByText('lock.throttled_title')).toBeTruthy();
     });
     expect(screen.getByTestId('lock-password-input').props.editable).toBe(false);
-    expect(screen.getByTestId('lock-unlock-button').props.accessibilityState.disabled).toBe(true);
+
+    // The notice takes the button's place rather than sitting above a dead
+    // control: while the wallet is throttled the button cannot be pressed
+    // anyway, so nothing moves and the user is told why — and for how long —
+    // in the exact spot they were about to press.
+    expect(screen.queryByTestId('lock-unlock-button')).toBeNull();
+    expect(screen.getByText('lock.throttled_body')).toBeTruthy();
   });
 
   // Regression guard for the e2e test-label contract (Maestro `id` selectors).

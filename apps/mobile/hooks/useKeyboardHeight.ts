@@ -35,3 +35,28 @@ export function useKeyboardHeight(): number {
 }
 
 export default useKeyboardHeight;
+
+/**
+ * Whether the on-screen keyboard is up, on both platforms.
+ *
+ * One signal for the whole onboarding flow, rather than each screen deciding
+ * for itself: the slot grid collapses the mark and the description while the
+ * keyboard is open, and that collapse has to be identical everywhere or it
+ * becomes another way for the furniture to move.
+ *
+ * `did*` rather than `will*` because Android only ever emits the `did` pair.
+ */
+export function useKeyboardVisible(): boolean {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  return visible;
+}

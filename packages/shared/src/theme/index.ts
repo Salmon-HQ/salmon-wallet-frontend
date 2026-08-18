@@ -72,6 +72,16 @@ export {
   wordmarkToSvg,
 } from './brand';
 
+// The onboarding slot grid — one reserved-height table, read by all three apps.
+export {
+  onboardingSlots,
+  onboardingGridFull,
+  onboardingGridCompact,
+  onboardingCompactHeight,
+  resolveOnboardingGrid,
+} from './onboardingGrid';
+export type { OnboardingSlot, ReservedSlot, OnboardingGrid } from './onboardingGrid';
+
 // Marine snow geometry — the water column's suspended matter, as data both
 // platforms draw. The DOM serialises it; mobile draws the array directly.
 export {
