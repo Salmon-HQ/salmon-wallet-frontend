@@ -6,8 +6,13 @@
 // Foundation
 // ---------------------------------------------------------------------------
 
-export { PrimaryButton, SecondaryButton, TextButton } from './Button';
-export type { PrimaryButtonProps, SecondaryButtonProps, TextButtonProps } from './Button';
+export { HoldToCopyButton, PrimaryButton, SecondaryButton, TextButton } from './Button';
+export type {
+  HoldToCopyButtonProps,
+  PrimaryButtonProps,
+  SecondaryButtonProps,
+  TextButtonProps,
+} from './Button';
 
 export {
   WalletSvgIcon,

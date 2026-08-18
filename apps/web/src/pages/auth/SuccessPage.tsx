@@ -1,16 +1,16 @@
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SuccessPage as AuthSuccessPage } from '@salmon/ui';
-import { useAuthFlow } from './AuthFlowContext';
 
 export function SuccessPage(): React.ReactElement {
   const navigate = useNavigate();
-  const { reset } = useAuthFlow();
 
+  // Leaves through the analytics-consent step, which is what enters the app.
+  // Consent comes after success so the first-run ask never interrupts the
+  // congratulations moment.
   const handleGoToWallet = useCallback(() => {
-    reset();
-    navigate('/home', { replace: true });
-  }, [navigate, reset]);
+    navigate('/auth/analytics-consent', { replace: true });
+  }, [navigate]);
 
   const handleCheckDerived = useCallback(() => {
     navigate('/auth/derived');

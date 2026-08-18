@@ -14,9 +14,11 @@
  * always there.
  */
 
+import { Ionicons } from '@expo/vector-icons';
 import {
   borderRadius,
   colors,
+  componentSizes,
   contentPadding,
   fontFamilyNative,
   fontSize,
@@ -52,10 +54,12 @@ export default function SuccessScreen() {
   }, []);
 
   /**
-   * Navigate to the main app, replacing the auth stack
+   * Leave through the analytics-consent step, which is what enters the app.
+   * Consent comes after success so the first-run ask never interrupts the
+   * congratulations moment.
    */
   const handleGoToWallet = useCallback(() => {
-    router.replace('/(app)/(tabs)');
+    router.replace('/(auth)/analytics-consent');
   }, []);
 
   /**
@@ -77,6 +81,15 @@ export default function SuccessScreen() {
           <TextButton
             onPress={toggleDialog}
             color={colors.text.secondary}
+            // The glyph belongs to the component, not the string — it used to
+            // ride inside the translation as a literal "ⓘ".
+            icon={
+              <Ionicons
+                name="information-circle-outline"
+                size={componentSizes.iconSizeXs}
+                color={colors.text.secondary}
+              />
+            }
             testID="success-info-button"
           >
             {t('wallet.create.derivable_info_icon')}

@@ -28,6 +28,7 @@ import {
   generateMnemonic,
   generateValidationPositions,
   lineHeight,
+  motionMs,
   semantic,
   spacing,
   validateMnemonicWords,
@@ -35,7 +36,8 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState, type UIEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
-import { PrimaryButton, SecondaryButton } from '../Button';
+import { PrimaryButton } from '../Button';
+import { HoldToApproveButton } from '../DAppApproval/HoldToApproveButton';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { ScreenHeader } from '../ScreenHeader';
 import { SeedWordGrid, SeedWordInput } from '../SeedPhrase';
@@ -163,7 +165,7 @@ function SeedPhraseStep({
     try {
       await navigator.clipboard.writeText(mnemonic);
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 2000);
+      setTimeout(() => setShowToast(false), motionMs.feedbackHold);
     } catch {
       // Clipboard API may not be available
     }
@@ -188,9 +190,19 @@ function SeedPhraseStep({
         }
         body={<SeedWordGrid words={words} columns={3} />}
         secondary={
-          <SecondaryButton onClick={handleCopy} fullWidth testID="create-copy-seed-button">
-            {t('wallet.create.copy_key')}
-          </SecondaryButton>
+          /*
+            Held, not tapped: the phrase lands on the clipboard, where anything
+            can read it, so the copy costs the same deliberate half-second as
+            signing does. The keyboard path commits immediately per WCAG, as
+            the hold control already provides.
+          */
+          <HoldToApproveButton
+            onApprove={handleCopy}
+            variant="secondary"
+            testID="create-copy-seed-button"
+          >
+            {t('wallet.create.hold_to_copy')}
+          </HoldToApproveButton>
         }
         action={
           <PrimaryButton onClick={onNext} fullWidth testID="create-backed-up-button">

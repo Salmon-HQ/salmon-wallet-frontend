@@ -7,9 +7,11 @@ export function DerivedAccountsPage(): React.ReactElement {
   const navigate = useNavigate();
   const { reset } = useAuthFlow();
 
+  // The detour still funnels through the analytics-consent step, so the
+  // first-run ask cannot be dodged and is asked exactly once.
   const handleComplete = useCallback(() => {
     reset();
-    navigate('/home', { replace: true });
+    navigate('/auth/analytics-consent', { replace: true });
   }, [navigate, reset]);
 
   return <AuthDerivedAccountsPage onComplete={handleComplete} />;

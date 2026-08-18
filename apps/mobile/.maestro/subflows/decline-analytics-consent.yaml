@@ -6,13 +6,13 @@ appId: io.salmonwallet.app
 # any moment (the floating tools button intercepts taps, and the one-time
 # intro can arrive late — see dev-launcher-pass.yaml). When that happens the
 # decline tap "completes" against the sheet instead of the button and the
-# flow dies waiting for "Congratulations!". Rather than trying to prevent
-# every way the menu can appear, recover from it: if the menu is up after
-# the tap, close it and tap again.
+# flow dies waiting for Home. Rather than trying to prevent every way the
+# menu can appear, recover from it: if the menu is up after the tap, close
+# it and tap again.
 #
-# Key derivation (PBKDF2, 210k iterations) runs between the password screen
-# and this one. It takes over 30s on a cold emulator, so the wait has to
-# outlast it.
+# The screen follows Success now (leaving Success through "Go to my Account"
+# or the derived-accounts detour is what presents it), so the heavy key
+# derivation has already happened; the generous wait is dev-menu slack.
 - extendedWaitUntil:
     visible:
       id: 'analytics-consent-screen'

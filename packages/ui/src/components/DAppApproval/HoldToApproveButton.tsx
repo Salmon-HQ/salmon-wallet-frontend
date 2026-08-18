@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import { styled } from '@mui/material/styles';
 import { semantic } from '@salmon/shared';
-import { PrimaryButton } from '../Button';
+import { PrimaryButton, SecondaryButton } from '../Button';
 
 /** How long the control must be held before it commits. */
 const HOLD_MS = 500;
@@ -27,7 +27,6 @@ const Progress = styled('span')({
   left: 0,
   bottom: 0,
   height: 2,
-  backgroundColor: semantic.text.onAccent,
   pointerEvents: 'none',
   zIndex: 2,
 });
@@ -38,6 +37,13 @@ export interface HoldToApproveButtonProps {
   loading?: boolean;
   children: React.ReactNode;
   testID?: string;
+  /**
+   * Which control the hold wraps. `secondary` for a held action that is not
+   * the screen's committing one — the seed-phrase copy, for instance. The
+   * progress ink follows: `text.onAccent` on the salmon fill, `text.primary`
+   * on the secondary fill where onAccent would vanish.
+   */
+  variant?: 'primary' | 'secondary';
 }
 
 /**
@@ -59,6 +65,7 @@ export function HoldToApproveButton({
   loading,
   children,
   testID,
+  variant = 'primary',
 }: HoldToApproveButtonProps): React.ReactElement {
   const [progress, setProgress] = useState(0);
   const frame = useRef<number | null>(null);
@@ -106,6 +113,8 @@ export function HoldToApproveButton({
     }
   }, []);
 
+  const ButtonControl = variant === 'secondary' ? SecondaryButton : PrimaryButton;
+
   return (
     <Wrapper
       onPointerDown={start}
@@ -114,17 +123,20 @@ export function HoldToApproveButton({
       onPointerCancel={stop}
       onClickCapture={swallowPointerClick}
     >
-      <PrimaryButton
+      <ButtonControl
         onClick={() => void onApprove()}
         disabled={disabled}
         loading={loading}
         testID={testID}
       >
         {children}
-      </PrimaryButton>
+      </ButtonControl>
       {progress > 0 ? (
         <Progress
-          style={{ width: `${Math.min(progress, 1) * 100}%` }}
+          style={{
+            width: `${Math.min(progress, 1) * 100}%`,
+            backgroundColor: variant === 'secondary' ? semantic.text.primary : semantic.text.onAccent,
+          }}
           data-testid="hold-progress"
         />
       ) : null}

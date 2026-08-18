@@ -29,12 +29,12 @@ import {
   validateMnemonicWords,
 } from '@salmon/shared';
 import {
+  HoldToCopyButton,
   OnboardingDescription,
   OnboardingLayout,
   OnboardingTitle,
   PrimaryButton,
   ScreenHeader,
-  SecondaryButton,
   SeedWordGrid,
   SeedWordInput,
 } from '../../src/components';
@@ -125,9 +125,14 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
         }
         body={<SeedWordGrid words={words} columns={3} />}
         secondary={
-          <SecondaryButton onPress={handleCopy} testID="create-copy-seed-button">
-            {t('wallet.create.copy_key')}
-          </SecondaryButton>
+          /*
+            Held, not tapped: the phrase lands on the clipboard, where anything
+            can read it, so the copy costs the same deliberate half-second as
+            signing does.
+          */
+          <HoldToCopyButton onCopy={handleCopy} testID="create-copy-seed-button">
+            {t('wallet.create.hold_to_copy')}
+          </HoldToCopyButton>
         }
         action={
           <PrimaryButton onPress={onNext} testID="create-backed-up-button">

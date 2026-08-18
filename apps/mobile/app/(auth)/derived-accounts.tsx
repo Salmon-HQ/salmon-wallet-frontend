@@ -138,10 +138,11 @@ export default function DerivedAccountsScreen() {
   }, []);
 
   /**
-   * Handle skip - go directly to main app
+   * Handle skip — every exit funnels through the analytics-consent step,
+   * so the derived-accounts detour cannot dodge the first-run ask.
    */
   const handleSkip = useCallback(() => {
-    router.replace('/(app)/(tabs)');
+    router.replace('/(auth)/analytics-consent');
   }, []);
 
   /**
@@ -185,10 +186,10 @@ export default function DerivedAccountsScreen() {
         newDerivedAccounts,
       });
 
-      router.replace('/(app)/(tabs)');
+      router.replace('/(auth)/analytics-consent');
     } catch (error) {
       console.error('Failed to import derived accounts:', error);
-      router.replace('/(app)/(tabs)');
+      router.replace('/(auth)/analytics-consent');
     } finally {
       setImporting(false);
     }

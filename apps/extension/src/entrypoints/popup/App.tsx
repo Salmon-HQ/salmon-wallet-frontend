@@ -41,7 +41,7 @@ import { sessionArea } from '../../utils/storageCompat';
 // ============================================================================
 
 type AuthStep =
-  'select' | 'create' | 'recover' | 'password' | 'analytics-consent' | 'success' | 'derived';
+  'select' | 'create' | 'recover' | 'password' | 'success' | 'derived' | 'analytics-consent';
 
 interface AuthData {
   mnemonic: string;
@@ -354,13 +354,19 @@ function App() {
   }, []);
 
   const handlePasswordSuccess = useCallback(() => {
-    setAuthStep('analytics-consent');
+    setAuthStep('success');
   }, []);
 
+  // Consent is the final step, after success — both of success's exits funnel
+  // through it (directly, or after the derived-accounts detour), so it is
+  // asked exactly once. Resolving it is what leaves the auth flow.
   const handleConsentResolve = useCallback(
     (enabled: boolean) => {
       void resolveConsentPrompt(enabled);
-      setAuthStep('success');
+      setJustCreated(false);
+      setIsAddingAccount(false);
+      setAuthStep('select');
+      setAuthData(null);
     },
     [resolveConsentPrompt]
   );
@@ -374,10 +380,7 @@ function App() {
   }, [authData]);
 
   const handleGoToWallet = useCallback(() => {
-    setJustCreated(false);
-    setIsAddingAccount(false);
-    setAuthStep('select');
-    setAuthData(null);
+    setAuthStep('analytics-consent');
   }, []);
 
   const handleCheckDerived = useCallback(() => {
@@ -385,10 +388,7 @@ function App() {
   }, []);
 
   const handleDerivedComplete = useCallback(() => {
-    setJustCreated(false);
-    setIsAddingAccount(false);
-    setAuthStep('select');
-    setAuthData(null);
+    setAuthStep('analytics-consent');
   }, []);
 
   // "Add Account" from HomePage's WalletSwitcherSheet

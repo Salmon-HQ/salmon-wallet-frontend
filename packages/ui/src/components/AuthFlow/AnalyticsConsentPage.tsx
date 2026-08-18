@@ -8,7 +8,9 @@
  * header at all — a 72px chart icon stood in for both — and it now gains the
  * `chrome` band and the mark like every other screen. The close affordance
  * that used to float absolutely, reserving nothing, is the `chrome` band's
- * back button. Its description is the longest in the flow at roughly seven
+ * leading control — drawn as an X, not a back chevron, because declining
+ * advances the flow rather than backing out of it. Its description is the
+ * longest in the flow at roughly seven
  * lines, so it is not a "mini description": it lives in `body`, which is the
  * give, and the description band stays reserved and empty like any other
  * unused slot.
@@ -59,7 +61,14 @@ export function AnalyticsConsentPage({
       variant="content"
       background={<WaterColumn />}
       scrollBody
-      chrome={<ScreenHeader onBack={onDecline} testID="analytics-consent-decline" />}
+      chrome={
+        <ScreenHeader
+          onBack={onDecline}
+          glyph="close"
+          backLabel={t('settings.analytics_prompt_close')}
+          testID="analytics-consent-decline"
+        />
+      }
       title={<OnboardingTitle>{t('settings.analytics_prompt_title')}</OnboardingTitle>}
       body={
         <Box sx={{ textAlign: 'center' }}>

@@ -90,8 +90,8 @@ export { WalletSwitcherSheet } from './WalletSwitcherSheet';
 export type { AccountListItemProps, WalletSwitcherSheetProps } from './WalletSwitcherSheet';
 
 // BrandMark - the salmon mark, drawn from the vector rather than Logo.png
-export { BrandMark } from './BrandMark';
-export type { BrandMarkProps } from './BrandMark';
+export { BrandMark, Wordmark } from './BrandMark';
+export type { BrandMarkProps, WordmarkProps } from './BrandMark';
 
 // OnboardingLayout - the DOM half of the onboarding slot grid
 export {

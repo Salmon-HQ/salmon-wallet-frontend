@@ -7,7 +7,7 @@
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import { ArrowLeftIcon, iconSize } from '../../icons';
+import { ArrowLeftIcon, XIcon, iconSize } from '../../icons';
 import { colors, componentSizes, contentPadding, opacity } from '@salmon/shared';
 import { StepIndicator } from '../StepIndicator';
 import type { ScreenHeaderProps } from './types';
@@ -77,6 +77,8 @@ const Spacer = styled(Box)({
  */
 export function ScreenHeader({
   onBack,
+  glyph = 'back',
+  backLabel,
   stepIndicator,
   backDisabled,
   className,
@@ -84,17 +86,18 @@ export function ScreenHeader({
   testID,
 }: ScreenHeaderProps) {
   const { t } = useTranslation();
+  const Glyph = glyph === 'close' ? XIcon : ArrowLeftIcon;
   return (
     <Container style={style} className={className}>
-      {/* Back button */}
+      {/* Leading affordance: back, or close where declining advances */}
       <BackButton
         onClick={onBack}
         disabled={!onBack || backDisabled}
-        aria-label={t('accessibility.go_back', 'Go back')}
+        aria-label={backLabel ?? t('accessibility.go_back', 'Go back')}
         data-testid={testID ?? 'screen-header-back-button'}
       >
         {onBack && (
-          <ArrowLeftIcon
+          <Glyph
             size={iconSize.lg}
             color={backDisabled ? colors.text.muted : colors.text.primary}
           />

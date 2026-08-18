@@ -13,6 +13,14 @@ import { StepIndicator } from '../StepIndicator';
 export interface ScreenHeaderProps extends Testable {
   /** Callback when back button is pressed */
   onBack?: () => void;
+  /**
+   * Glyph for the leading affordance. `close` for screens the affordance
+   * exits rather than backs out of — declining advances, so a back chevron
+   * would describe the wrong direction.
+   */
+  glyph?: 'back' | 'close';
+  /** Accessible name for the affordance. Defaults to "Go back". */
+  backLabel?: string;
   /** Show step indicator */
   stepIndicator?: {
     totalSteps: number;
@@ -22,22 +30,29 @@ export interface ScreenHeaderProps extends Testable {
   backDisabled?: boolean;
 }
 
-export function ScreenHeader({ onBack, stepIndicator, backDisabled, testID }: ScreenHeaderProps) {
+export function ScreenHeader({
+  onBack,
+  glyph = 'back',
+  backLabel,
+  stepIndicator,
+  backDisabled,
+  testID,
+}: ScreenHeaderProps) {
   const { t } = useTranslation();
   return (
     <View style={styles.container}>
-      {/* Back button */}
+      {/* Leading affordance: back, or close where declining advances */}
       <TouchableOpacity
         testID={testID ?? 'screen-header-back-button'}
         accessibilityRole="button"
-        accessibilityLabel={t('accessibility.go_back', 'Go back')}
+        accessibilityLabel={backLabel ?? t('accessibility.go_back', 'Go back')}
         onPress={onBack}
         disabled={!onBack || backDisabled}
         style={styles.backButton}
       >
         {onBack && (
           <Ionicons
-            name="chevron-back"
+            name={glyph === 'close' ? 'close' : 'chevron-back'}
             size={componentSizes.iconSizeMedium}
             color={backDisabled ? semantic.text.secondary : colors.text.primary}
           />

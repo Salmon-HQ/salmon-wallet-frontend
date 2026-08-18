@@ -74,7 +74,7 @@ export default function BiometricSetupScreen() {
     if (!state.isReady || hasSkipped.current) return;
     if (!state.isAvailable) {
       hasSkipped.current = true;
-      router.replace('/(auth)/analytics-consent');
+      router.replace('/(auth)/success');
     }
   }, [state.isReady, state.isAvailable]);
 
@@ -87,7 +87,7 @@ export default function BiometricSetupScreen() {
       const keyCache = await getStashItem<DerivedKeyCache>('derived_key_cache');
       if (!keyCache) {
         // Key not available — skip gracefully
-        router.replace('/(auth)/analytics-consent');
+        router.replace('/(auth)/success');
         return;
       }
 
@@ -96,7 +96,7 @@ export default function BiometricSetupScreen() {
 
       if (result === 'stored') {
         await setEnableBiometric(true);
-        router.replace('/(auth)/analytics-consent');
+        router.replace('/(auth)/success');
       } else if (result === 'failed') {
         setError(t('wallet.create.biometric_setup_error'));
       }
@@ -109,7 +109,7 @@ export default function BiometricSetupScreen() {
   };
 
   const handleSkip = () => {
-    router.replace('/(auth)/analytics-consent');
+    router.replace('/(auth)/success');
   };
 
   // Render nothing while checking availability to avoid a flash

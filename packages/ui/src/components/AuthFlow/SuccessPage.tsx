@@ -10,9 +10,10 @@
  * band that grew could not push it.
  */
 import Typography from '@mui/material/Typography';
-import { colors, fontFamily, fontSize, lineHeight, semantic } from '@salmon/shared';
+import { colors, fontFamily, fontSize, lineHeight, semantic, spacing } from '@salmon/shared';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { InfoIcon, iconSize } from '../../icons';
 import { BaseDialog } from '../BaseDialog';
 import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
@@ -42,6 +43,15 @@ export function SuccessPage({
             color={colors.text.secondary}
             testID="success-info-button"
           >
+            {/*
+              The glyph belongs to the component, not the string — it used to
+              ride inside the translation as a literal "ⓘ".
+            */}
+            <InfoIcon
+              size={iconSize.sm}
+              color={colors.text.secondary}
+              style={{ marginRight: spacing.xs, flexShrink: 0 }}
+            />
             {t('wallet.create.derivable_info_icon')}
           </TextButton>
         }

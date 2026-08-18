@@ -1,16 +1,19 @@
 /**
  * AnalyticsConsentScreen - First-run, opt-in pseudonymous-analytics consent.
  *
- * Shown after biometric setup and before the success screen — the final
- * onboarding step before the wallet home. Either choice persists via
- * `resolveConsentPrompt` and advances to success.
+ * Shown after the success screen — the final onboarding step before the
+ * wallet home. Both of success's exits funnel through here (directly via
+ * "Go to my Account", or after the derived-accounts detour), so consent is
+ * asked exactly once and cannot be skipped. Either choice persists via
+ * `resolveConsentPrompt` and enters the app.
  *
  * Composed on the onboarding slot grid, which is the biggest visible change of
  * any screen in the flow: it had no mark and no header, a 72px chart glyph
  * standing in for the mark, a 36px hardcoded title, and an absolutely
  * positioned close button that reserved nothing. It gains the mark and the
  * chrome band; the glyph and the long body copy move into `body`, and
- * declining is the chrome band's affordance rather than a floating X.
+ * declining is the chrome band's affordance — drawn as an X, not a back
+ * chevron, because declining advances the flow rather than backing out.
  */
 
 import {
@@ -44,7 +47,7 @@ export default function AnalyticsConsentScreen() {
   const resolve = useCallback(
     (enabled: boolean) => {
       void resolveConsentPrompt(enabled);
-      router.replace('/(auth)/success');
+      router.replace('/(app)/(tabs)');
     },
     [resolveConsentPrompt]
   );
@@ -53,7 +56,14 @@ export default function AnalyticsConsentScreen() {
     <OnboardingLayout
       testID="analytics-consent-screen"
       variant="content"
-      chrome={<ScreenHeader onBack={() => resolve(false)} testID="analytics-consent-decline" />}
+      chrome={
+        <ScreenHeader
+          onBack={() => resolve(false)}
+          glyph="close"
+          backLabel={t('settings.analytics_prompt_close')}
+          testID="analytics-consent-decline"
+        />
+      }
       title={<OnboardingTitle>{t('settings.analytics_prompt_title')}</OnboardingTitle>}
       body={
         <ScrollView contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>

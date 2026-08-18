@@ -8,9 +8,10 @@
  * 4. create - Show and confirm the recovery phrase
  * 5. password - Set password for wallet encryption
  * 6. biometric-setup - Optional biometric unlock setup prompt
- * 7. analytics-consent - First-run anonymous-analytics consent
- * 8. success - Success confirmation after wallet creation
- * 9. derived-accounts - Select derived accounts to import
+ * 7. success - Success confirmation after wallet creation
+ * 8. derived-accounts - Select derived accounts to import (optional detour)
+ * 9. analytics-consent - First-run anonymous-analytics consent (final step;
+ *    both success exits funnel through it)
  */
 
 import { Stack } from 'expo-router';
@@ -128,14 +129,6 @@ export default function AuthLayout() {
           }}
         />
 
-        {/* First-run anonymous-analytics consent (final onboarding step) */}
-        <Stack.Screen
-          name="analytics-consent"
-          options={{
-            gestureEnabled: false,
-          }}
-        />
-
         {/* Success confirmation */}
         <Stack.Screen
           name="success"
@@ -147,6 +140,14 @@ export default function AuthLayout() {
         {/* Derived accounts selection */}
         <Stack.Screen
           name="derived-accounts"
+          options={{
+            gestureEnabled: false,
+          }}
+        />
+
+        {/* First-run anonymous-analytics consent (final onboarding step) */}
+        <Stack.Screen
+          name="analytics-consent"
           options={{
             gestureEnabled: false,
           }}
