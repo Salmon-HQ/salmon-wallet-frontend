@@ -343,7 +343,7 @@ unconditional focus-visible ring.
 scope** — colour contrast, screen-reader support, 44pt minimum touch targets,
 and reduced-motion behaviour. The engineering bar (contrast assertions in
 `contrast.test.ts`, the focus-visible ring, copy-button announcements, 44pt
-header targets) is now a product commitment, not an accident. Known debt the
-ratification creates: the loading screen's wave train, the marine snow, and the
-logo sink have no reduced-motion variants yet; they need calm equivalents under
-`prefers-reduced-motion` / the OS reduce-motion flag.
+header targets) is now a product commitment, not an accident. Reduced-motion
+is already honoured across both runtimes (the wave train, marine snow, and
+logo sink all go calm under the OS flag, with tests) — an audit on the day of
+ratification found only two unguarded DOM skeletons, fixed the same day.
