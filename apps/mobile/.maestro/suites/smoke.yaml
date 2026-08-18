@@ -12,6 +12,7 @@ appId: io.salmonwallet.app
 - runFlow: ../flows/smoke/home/balance-display.yaml
 - runFlow: ../flows/smoke/home/tab-navigation.yaml
 - runFlow: ../flows/smoke/home/blockchain-switcher.yaml
+- runFlow: ../flows/smoke/home/copy-address-checkmark.yaml
 - runFlow: ../flows/smoke/receive/sheet.yaml
 - runFlow: ../flows/smoke/activity/list.yaml
 - runFlow: ../flows/smoke/nft/detail.yaml
