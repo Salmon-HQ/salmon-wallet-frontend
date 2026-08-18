@@ -133,6 +133,18 @@ describe('SeedPhraseEntry', () => {
     expect(screen.getByTestId('recover-word-grid').dataset.columns).toBe('4');
   });
 
+  it('grows to twenty-four when the thirteenth word is typed by hand', () => {
+    // There is no length picker to get wrong first: committing a word in the
+    // twelfth box with space is how a 24-word phrase is entered by hand.
+    const { current } = setup();
+    fireEvent.change(box(12), { target: { value: 'placeholdertwelve ' } });
+
+    expect(current()).toHaveLength(24);
+    expect(current()[11]).toBe('placeholdertwelve');
+    expect(screen.getAllByTestId(/^recover-word-input-\d+$/)).toHaveLength(24);
+    expect(screen.getByTestId('recover-word-grid').dataset.columns).toBe('4');
+  });
+
   it('keeps a wrong-length paste and reports how many words arrived', () => {
     const { current, onPasteRejected } = setup();
     fireEvent.paste(box(1), {

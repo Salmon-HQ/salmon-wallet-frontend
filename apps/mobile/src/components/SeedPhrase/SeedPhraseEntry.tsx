@@ -26,42 +26,9 @@
  */
 import { useCallback, useRef } from 'react';
 import { StyleSheet, View, type TextInput } from 'react-native';
-import { spacing } from '@salmon/shared';
+import { distributePhrase, LONG_PHRASE, SHORT_PHRASE, spacing } from '@salmon/shared';
 
 import { SeedWordInput } from './SeedWordInput';
-
-/** The two phrase lengths a wallet is recovered from in practice. */
-export const SHORT_PHRASE = 12;
-export const LONG_PHRASE = 24;
-
-/** Splits pasted text into words, tolerating newlines, tabs and double spaces. */
-export const splitPhrase = (text: string): string[] =>
-  text.trim().toLowerCase().split(/\s+/).filter(Boolean);
-
-/**
- * Lays a pasted blob out across boxes.
- *
- * Whitespace and line breaks are normalised away first. A count that is
- * neither 12 nor 24 is still laid out as far as it goes — throwing away what
- * someone pasted is worse than showing them a short grid — and `fits` is false
- * so the caller can say why the phrase will not validate — and `count` is what
- * was actually pasted, so the caller can say *what happened* rather than only
- * that something is wrong.
- *
- * One function because the grid and the screen's "Paste your seed phrase"
- * button both go through it; two copies would eventually disagree.
- */
-export const distributePhrase = (
-  text: string
-): { words: string[]; fits: boolean; count: number } => {
-  const pasted = splitPhrase(text);
-  const length = pasted.length > SHORT_PHRASE ? LONG_PHRASE : SHORT_PHRASE;
-  return {
-    words: Array.from({ length }, (_, i) => pasted[i] ?? ''),
-    fits: pasted.length === SHORT_PHRASE || pasted.length === LONG_PHRASE,
-    count: pasted.length,
-  };
-};
 
 export interface SeedPhraseEntryProps {
   /** One entry per box. Its length is the number of boxes drawn. */
@@ -101,9 +68,14 @@ export function SeedPhraseEntry({
   const fill = useCallback(
     (text: string) => {
       const { words: filled, fits, count } = distributePhrase(text);
-      if (!fits) onPasteRejected?.(count);
       onLengthChange(filled.length);
       onChange(filled);
+      // Reported *after* `onChange`, not before. The screen clears any previous
+      // rejection whenever the words change — that is what makes the notice go
+      // away as soon as someone starts fixing it — so reporting first would
+      // have the paste's own `onChange` immediately wipe the message it just
+      // raised, and a short paste would land silently.
+      if (!fits) onPasteRejected?.(count);
     },
     [onChange, onLengthChange, onPasteRejected]
   );

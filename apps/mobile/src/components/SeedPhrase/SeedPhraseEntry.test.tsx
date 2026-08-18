@@ -17,18 +17,30 @@ jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
+// `seed-phrase` is pure string handling, but it imports `normalizeMnemonic`
+// from crypto/mnemonic, whose siblings pull ESM crypto packages jest-expo will
+// not transform. The one-line stand-in matches the real implementation, which
+// shared's own Vitest suite covers.
+jest.mock('../../../../../packages/shared/src/crypto/mnemonic', () => ({
+  normalizeMnemonic: (phrase: string) => phrase.trim().toLowerCase().replace(/\s+/g, ' '),
+}));
+
 // The real barrel drags in @solana/kit, which jest-expo will not transform;
-// the theme folder imports nothing but itself.
+// the theme folder and the seed-phrase utils (with mnemonic mocked above)
+// import nothing the transform chokes on, so the real implementations stand
+// in for the barrel.
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../test-utils/themeTokens'),
+  ...jest.requireActual('../../../../../packages/shared/src/utils/seed-phrase'),
 }));
 
 jest.mock('../../../hooks/useSecretScreen', () => ({
   useSecretScreen: jest.fn(),
 }));
 
+import { distributePhrase, LONG_PHRASE, SHORT_PHRASE } from '@salmon/shared';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
-import { SeedPhraseEntry, distributePhrase, LONG_PHRASE, SHORT_PHRASE } from './SeedPhraseEntry';
+import { SeedPhraseEntry } from './SeedPhraseEntry';
 
 /** Obviously not a mnemonic — placeholder tokens, never BIP-39 words. */
 const placeholder = (n: number) => Array.from({ length: n }, (_, i) => `zzplaceholder${i + 1}`);
@@ -169,17 +181,30 @@ describe('SeedPhraseEntry', () => {
   it('keeps a wrong-length paste rather than discarding it, and says so', () => {
     // Throwing away what someone pasted is worse than showing them a partly
     // filled grid — but they have to be told why it will not validate.
+    const onChange = jest.fn();
     const onPasteRejected = jest.fn();
     render(
       <SeedPhraseEntry
         words={Array<string>(SHORT_PHRASE).fill('')}
-        onChange={jest.fn()}
+        onChange={onChange}
         onLengthChange={jest.fn()}
         onPasteRejected={onPasteRejected}
       />
     );
     fireEvent.changeText(box(1), placeholder(5).join(' '));
-    expect(onPasteRejected).toHaveBeenCalled();
+    // The count of what actually arrived, so the screen can say what happened.
+    expect(onPasteRejected).toHaveBeenCalledWith(5);
+    // The words still land: nothing pasted is discarded silently.
+    expect(onChange).toHaveBeenCalledWith([
+      ...placeholder(5),
+      ...Array<string>(SHORT_PHRASE - 5).fill(''),
+    ]);
+    // The screen clears any previous rejection whenever the words change, so
+    // the words must land *before* the rejection is reported — the other order
+    // has the paste's own onChange wipe the notice it just raised.
+    expect(onChange.mock.invocationCallOrder[0]).toBeLessThan(
+      onPasteRejected.mock.invocationCallOrder[0]
+    );
   });
 });
 
