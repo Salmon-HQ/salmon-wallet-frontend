@@ -14,6 +14,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { I18nProvider } from '../src/i18n';
 import { WalletInitErrorScreen } from '../src/components/WalletInitErrorScreen';
+import { LoadingScreen } from '../src/components/LoadingScreen';
+import { DEBUG_FORCE_WAIT, DEBUG_FORCE_WAIT_PROPS } from '../src/debug/forceWait';
 import { PendingActivityBanner } from '../src/components/PendingActivityBanner';
 import {
   AccountsProvider,
@@ -258,6 +260,8 @@ function RootLayoutNav() {
               />
             </Stack>
             <PendingActivity />
+            {/* Wait preview. Off by default; see src/debug/forceWait.ts. */}
+            {DEBUG_FORCE_WAIT && <LoadingScreen visible waves {...DEBUG_FORCE_WAIT_PROPS} />}
           </View>
         </SafeAreaProvider>
       </ThemeProvider>
