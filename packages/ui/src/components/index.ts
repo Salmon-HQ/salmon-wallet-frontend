@@ -89,6 +89,27 @@ export type {
 export { WalletSwitcherSheet } from './WalletSwitcherSheet';
 export type { AccountListItemProps, WalletSwitcherSheetProps } from './WalletSwitcherSheet';
 
+// BrandMark - the salmon mark, drawn from the vector rather than Logo.png
+export { BrandMark } from './BrandMark';
+export type { BrandMarkProps } from './BrandMark';
+
+// OnboardingLayout - the DOM half of the onboarding slot grid
+export {
+  OnboardingLayout,
+  OnboardingTitle,
+  OnboardingDescription,
+  ReservedSlot,
+} from './OnboardingLayout';
+export type {
+  OnboardingLayoutProps,
+  OnboardingTextProps,
+  ReservedSlotProps,
+} from './OnboardingLayout';
+
+// LockScreen - the shared unlock screen for web and extension
+export { LockScreen } from './LockScreen';
+export type { LockScreenProps } from './LockScreen';
+
 // ScreenHeader - Common header for onboarding/auth screens
 export { ScreenHeader } from './ScreenHeader';
 export type { ScreenHeaderProps } from './ScreenHeader';

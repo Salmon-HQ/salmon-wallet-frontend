@@ -23,60 +23,20 @@ import { PrimaryButton, SecondaryButton } from '../Button';
 import { DerivedAccountCard, DerivedAccountCardSkeleton } from '../DerivedAccountCard';
 import { WarningNotice } from '../WarningNotice';
 import { ScreenHeader } from '../ScreenHeader';
-import { getAuthContainerStyles } from './common';
+import {
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
+  ReservedSlot,
+} from '../OnboardingLayout';
 import { WaterColumn } from '../WaterColumn';
 import type { DerivedAccountsPageProps } from './types';
 
-const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  backgroundColor: colors.background.primary,
-  ...getAuthContainerStyles($contained),
-}));
-
-const Content = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  padding: `0 ${spacing['2xl']}px`,
-});
-
-const LogoImage = styled('img')({
-  width: 48,
-  height: 48,
-  objectFit: 'contain',
-  marginBottom: spacing.lg,
-});
-
-const Title = styled(Typography)({
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontWeight: 700,
-  fontSize: 24,
-  lineHeight: '32px',
-  marginBottom: spacing.sm,
-  textAlign: 'center',
-});
-
-const Subtitle = styled(Typography)({
-  color: colors.text.secondary,
-  fontFamily: fontFamily.sans,
-  fontSize: 14,
-  lineHeight: '20px',
-  marginBottom: spacing['2xl'],
-  textAlign: 'center',
-  paddingLeft: spacing.lg,
-  paddingRight: spacing.lg,
-});
-
 const LoadingContainer = styled(Box)({
-  flex: 1,
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   width: '100%',
-  paddingTop: spacing['3xl'],
 });
 
 const LoadingText = styled(Typography)({
@@ -88,7 +48,6 @@ const LoadingText = styled(Typography)({
 });
 
 const EmptyContainer = styled(Box)({
-  flex: 1,
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
@@ -114,9 +73,7 @@ const EmptySubtitle = styled(Typography)({
 });
 
 const AccountsContainer = styled(Box)({
-  flex: 1,
   width: '100%',
-  overflowY: 'auto',
 });
 
 const FoundText = styled(Typography)({
@@ -127,19 +84,7 @@ const FoundText = styled(Typography)({
   textAlign: 'center',
 });
 
-const ButtonContainer = styled(Box)({
-  width: '100%',
-  paddingTop: spacing.lg,
-  paddingBottom: spacing['2xl'],
-  display: 'flex',
-  flexDirection: 'column',
-  gap: spacing.md,
-});
-
-export function DerivedAccountsPage({
-  onComplete,
-  contained = false,
-}: DerivedAccountsPageProps): React.ReactElement {
+export function DerivedAccountsPage({ onComplete }: DerivedAccountsPageProps): React.ReactElement {
   const { t } = useTranslation();
   const [{ activeAccount }, actions] = useAccountsContext();
   const [loading, setLoading] = useState(true);
@@ -324,32 +269,41 @@ export function DerivedAccountsPage({
   };
 
   return (
-    <Container $contained={contained}>
-      <WaterColumn />
-      <ScreenHeader />
-      <Content>
-        <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
-        <Title>{t('wallet.derived.title')}</Title>
-        <Subtitle>{t('wallet.derived.subtitle')}</Subtitle>
-
-        {renderContent()}
-
-        <ButtonContainer>
-          {accounts.length > 0 && (
-            <PrimaryButton
-              onClick={handleImport}
-              disabled={loading || importing}
-              loading={importing}
-              testID="derived-import-button"
-            >
-              {t('wallet.derived.import_selected', { count: selectedCount })}
-            </PrimaryButton>
-          )}
-          <SecondaryButton onClick={handleSkip} disabled={importing} testID="derived-skip-button">
-            {accounts.length === 0 ? t('wallet.derived.continue') : t('wallet.derived.skip')}
-          </SecondaryButton>
-        </ButtonContainer>
-      </Content>
-    </Container>
+    <OnboardingLayout
+      testID="derived-accounts-screen"
+      variant="content"
+      background={<WaterColumn />}
+      scrollBody
+      chrome={<ScreenHeader />}
+      title={<OnboardingTitle>{t('wallet.derived.title')}</OnboardingTitle>}
+      description={<OnboardingDescription>{t('wallet.derived.subtitle')}</OnboardingDescription>}
+      body={renderContent()}
+      secondary={
+        <SecondaryButton
+          onClick={handleSkip}
+          disabled={importing}
+          fullWidth
+          testID="derived-skip-button"
+        >
+          {accounts.length === 0 ? t('wallet.derived.continue') : t('wallet.derived.skip')}
+        </SecondaryButton>
+      }
+      action={
+        // The scan is asynchronous, so this control used to appear after first
+        // paint and shove everything up 68px with no user input at all. It
+        // holds its reserved band from the first frame now.
+        <ReservedSlot visible={accounts.length > 0}>
+          <PrimaryButton
+            onClick={handleImport}
+            disabled={loading || importing}
+            loading={importing}
+            fullWidth
+            testID="derived-import-button"
+          >
+            {t('wallet.derived.import_selected', { count: selectedCount })}
+          </PrimaryButton>
+        </ReservedSlot>
+      }
+    />
   );
 }

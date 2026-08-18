@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
-import { LoadingScreen, PrimaryButton, styled } from '@salmon/ui';
+import { BrandMark, LoadingScreen, PrimaryButton, styled } from '@salmon/ui';
 import {
   useAccountsContext,
   colors,
@@ -46,10 +46,15 @@ const Content = styled(Box)({
   alignItems: 'center',
 });
 
-const LogoImage = styled('img')({
-  width: 64,
-  height: 64,
-  objectFit: 'contain',
+/**
+ * A security surface: the mark is how a user tells the real wallet from a page
+ * dressed up as one, so it is drawn from the vector rather than fetched as a
+ * 197x183 raster and letterboxed into a square. 64 is the drawn width the
+ * square box produced after `objectFit: contain`, so nothing moves.
+ */
+const MARK_SIZE = 64;
+
+const Mark = styled(Box)({
   marginBottom: spacing.xl,
 });
 
@@ -134,7 +139,9 @@ export function DAppApprovalGate(): React.ReactElement {
     return (
       <Container>
         <Content>
-          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
+          <Mark>
+            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
+          </Mark>
           <Title>{t('dapp.no_wallet_title', 'No wallet found')}</Title>
           <Subtitle>
             {t(
@@ -151,7 +158,9 @@ export function DAppApprovalGate(): React.ReactElement {
     return (
       <Container>
         <Content>
-          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
+          <Mark>
+            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
+          </Mark>
           <Title>{t('lock.title', 'Welcome Back')}</Title>
           <Subtitle>
             {t('dapp.unlock_subtitle', 'Enter your password to approve this request')}

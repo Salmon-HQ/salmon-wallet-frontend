@@ -1,120 +1,60 @@
+/**
+ * Welcome — the flow's entry point, on the onboarding slot grid.
+ *
+ * Two things changed and both were visible from across the room. The title
+ * used to render *above* the mark — the only screen in the flow that did — so
+ * the wordmark is the `title` slot's content now and the welcome line is the
+ * `description`. And the primary action used to sit on top of the secondary;
+ * it is bottom-most (spec 013, decision 1), which is what pins its Y for free.
+ *
+ * The third action, offered only when accounts already exist, is a text
+ * affordance in `assist`: the reserved `secondary` band holds one control, and
+ * a third button would be the one place in the flow where the grid overflows.
+ */
 import React from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
-import {
-  colors,
-  componentSizes,
-  contentPadding,
-  fontFamily,
-  fontSize,
-  ms,
-  s,
-  spacing,
-  vs,
-} from '@salmon/shared';
-import { styled } from '../../utils/styled';
-import { PrimaryButton, SecondaryButton } from '../Button';
-import { getAuthContainerStyles } from './common';
+import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
+import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { WaterColumn } from '../WaterColumn';
 import type { SelectOptionsPageProps } from './types';
-import { ScreenHeader } from '../ScreenHeader';
-
-const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  backgroundColor: colors.background.primary,
-  ...getAuthContainerStyles($contained),
-}));
-
-const Content = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  padding: `0 ${s(contentPadding.screen)}px`,
-});
-
-const CenterContent = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const WelcomeText = styled(Typography)({
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontWeight: 700,
-  fontSize: ms(fontSize['2xl']),
-  lineHeight: `${ms(32)}px`,
-  textAlign: 'center',
-  marginBottom: vs(spacing['3xl']),
-});
-
-const LogoImage = styled('img')({
-  width: s(componentSizes.logoSizeMedium),
-  height: s(componentSizes.logoSizeMedium),
-  objectFit: 'contain',
-  marginBottom: vs(spacing['2xl']),
-});
-
-const BrandName = styled(Typography)({
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontWeight: 700,
-  fontSize: ms(32),
-  lineHeight: `${ms(40)}px`,
-  textAlign: 'center',
-});
-
-const ButtonsContainer = styled(Box)({
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: vs(spacing.lg),
-  paddingTop: vs(spacing.lg),
-  paddingBottom: vs(spacing['3xl']),
-});
 
 export function SelectOptionsPage({
   onCreateWallet,
   onRecoverWallet,
   hasAccounts,
   onAccessExisting,
-  contained = false,
 }: SelectOptionsPageProps): React.ReactElement {
   const { t } = useTranslation();
 
   return (
-    <Container $contained={contained}>
-      <WaterColumn />
-      <ScreenHeader />
-      <Content>
-        <CenterContent>
-          <WelcomeText>
-            {hasAccounts
-              ? t('wallet.onboarding.titleOnboarded', 'Add Account')
-              : t('wallet.onboarding.titleWelcome', 'Welcome')}
-          </WelcomeText>
-          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
-          <BrandName>Salmon</BrandName>
-        </CenterContent>
-
-        <ButtonsContainer>
-          <PrimaryButton onClick={onCreateWallet} testID="select-create-button">
-            {t('wallet.create_wallet', 'CREATE ACCOUNT').toUpperCase()}
-          </PrimaryButton>
-          <SecondaryButton onClick={onRecoverWallet} testID="select-recover-button">
-            {t('wallet.recover_wallet', 'RECOVER ACCOUNT').toUpperCase()}
-          </SecondaryButton>
-          {hasAccounts && onAccessExisting && (
-            <SecondaryButton onClick={onAccessExisting} testID="select-access-existing-button">
-              {t('wallet.access_existing', 'ACCESS EXISTING ACCOUNT').toUpperCase()}
-            </SecondaryButton>
-          )}
-        </ButtonsContainer>
-      </Content>
-    </Container>
+    <OnboardingLayout
+      testID="welcome-screen"
+      background={<WaterColumn />}
+      title={<OnboardingTitle>Salmon</OnboardingTitle>}
+      description={
+        <OnboardingDescription>
+          {hasAccounts
+            ? t('wallet.onboarding.titleOnboarded')
+            : t('wallet.onboarding.titleWelcome')}
+        </OnboardingDescription>
+      }
+      assist={
+        hasAccounts && onAccessExisting ? (
+          <TextButton onClick={onAccessExisting} testID="select-access-existing-button">
+            {t('wallet.access_existing_account')}
+          </TextButton>
+        ) : undefined
+      }
+      secondary={
+        <SecondaryButton onClick={onRecoverWallet} fullWidth testID="select-recover-button">
+          {t('wallet.recover_wallet')}
+        </SecondaryButton>
+      }
+      action={
+        <PrimaryButton onClick={onCreateWallet} fullWidth testID="select-create-button">
+          {t('wallet.create_wallet')}
+        </PrimaryButton>
+      }
+    />
   );
 }

@@ -17,6 +17,7 @@ export {
   ExplorerSelector,
   LanguageSelector,
   LoadingScreen,
+  LockScreen,
   NftDetailPage,
   NftCard,
   NftCardSkeleton,

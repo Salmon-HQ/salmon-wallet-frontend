@@ -398,7 +398,7 @@
     }
   },
   "lock": {
-    "title": "Ingresá tu contraseña",
+    "title": "Bienvenido de nuevo",
     "forgot_password": "Olvidé mi contraseña",
     "reset_wallet_title": "Restablecer Billetera",
     "reset_wallet_message": "Si olvidaste tu contraseña, necesitarás restablecer tu billetera. Esto eliminará permanentemente todas las cuentas y datos de este dispositivo.\n\nPodrás restaurar tu billetera usando tu frase de recuperación después de restablecerla.",
@@ -516,8 +516,8 @@
       "found_one": "Se encontró {{count}} cuenta derivada",
       "found_other": "Se encontraron {{count}} cuentas derivadas",
       "import_selected": "IMPORTAR SELECCIONADAS ({{count}})",
-      "continue": "CONTINUAR",
-      "skip": "OMITIR",
+      "continue": "Continuar",
+      "skip": "Omitir",
       "scan_failed_title": "No se pudieron buscar las cuentas",
       "scan_failed_body": "No se pudo conectar con la red. Tus cuentas están a salvo — intentá de nuevo.",
       "scan_partial": "Algunas redes no se pudieron escanear. Los resultados pueden estar incompletos."

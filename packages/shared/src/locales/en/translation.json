@@ -398,7 +398,7 @@
     }
   },
   "lock": {
-    "title": "Enter your password",
+    "title": "Welcome back",
     "forgot_password": "I forgot my password",
     "reset_wallet_title": "Reset Wallet",
     "reset_wallet_message": "If you forgot your password, you will need to reset your wallet. This will permanently delete all accounts and data from this device.\n\nYou can restore your wallet using your seed phrase after resetting.",
@@ -516,8 +516,8 @@
       "found_one": "Found {{count}} derived account",
       "found_other": "Found {{count}} derived accounts",
       "import_selected": "IMPORT SELECTED ({{count}})",
-      "continue": "CONTINUE",
-      "skip": "SKIP",
+      "continue": "Continue",
+      "skip": "Skip",
       "scan_failed_title": "Couldn't scan for accounts",
       "scan_failed_body": "We couldn't reach the network. Your accounts are safe — try again.",
       "scan_partial": "Some networks couldn't be scanned. Results may be incomplete."

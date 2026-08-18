@@ -51,14 +51,18 @@ vi.mock('../../components', () => ({
   ),
   ConfirmDialog: () => null,
   LoadingScreen: () => null,
-  WarningNotice: ({ title, children }: PropsWithChildren<{ title?: string }>) => (
-    <div role="alert">
-      <span>{title}</span>
-      <span>{children}</span>
-    </div>
-  ),
+  WarningNotice: () => null,
   WaterColumn: () => null,
   waterColumnHost: { position: 'relative', isolation: 'isolate' },
+  // The screen itself is `@salmon/ui`'s and is tested there. What is this
+  // file's to prove is the adapter: that it clears the cached key on mount and
+  // never unlocks from one.
+  LockScreen: ({ onMount }: { onMount?: () => void }) => {
+    React.useEffect(() => {
+      void onMount?.();
+    }, [onMount]);
+    return <input placeholder="Password" data-testid="lock-password-input" />;
+  },
 }));
 
 vi.mock('../../utils/sessionKeyCache', () => ({
@@ -103,24 +107,6 @@ describe('Extension LockPage', () => {
     mockThrottle.failedAttempts = 0;
     mockThrottle.remainingMs = 0;
     mockThrottle.remainingSeconds = 0;
-  });
-
-  it('says why the prompt stopped accepting attempts, instead of going quiet', async () => {
-    mockThrottle.failedAttempts = 4;
-    mockThrottle.remainingMs = 5000;
-    mockThrottle.remainingSeconds = 5;
-
-    render(
-      <LockPage
-        onUnlock={vi.fn().mockResolvedValue(false)}
-        onUnlockWithCachedKey={vi.fn()}
-        onRemoveAllAccounts={vi.fn()}
-      />
-    );
-
-    // Label, not a dead form.
-    expect(await screen.findByTestId('lock-throttle-notice')).toBeTruthy();
-    expect(screen.getByTestId('lock-password-input')).toHaveProperty('disabled', true);
   });
 
   it('requires explicit re-authentication on the lock screen even if a session key exists', async () => {

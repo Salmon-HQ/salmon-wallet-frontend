@@ -1,95 +1,55 @@
-import { useCallback, useState } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { useTranslation } from 'react-i18next';
+/**
+ * Seed entry, on the onboarding slot grid.
+ *
+ * The one thing that had to survive the port is why this screen was already
+ * the least broken in the flow: it reserved the "Next" button's space with
+ * `visibility: hidden` instead of mounting it when the phrase became valid.
+ * That is now `ReservedSlot`, used by every screen with a conditional control
+ * — the mobile twin's version of this button used to move four slots by 36px
+ * mid-typing because it did not do this.
+ *
+ * Bedrock, and no water: this screen carries the recovery phrase, and the
+ * Bedrock Rule fixes every seed view at `semantic.surface.bedrock`, opaque.
+ * That is a security decision, not a stylistic one.
+ */
 import {
   borderRadius,
   colors,
   fontFamily,
   fontSize,
-  ms,
   normalizeMnemonic,
-  s,
   semantic,
   spacing,
   validateMnemonic,
-  vs,
 } from '@salmon/shared';
+import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { focusRingNone } from '../../theme';
 import { styled } from '../../utils/styled';
 import { PrimaryButton, SecondaryButton } from '../Button';
+import {
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
+  ReservedSlot,
+} from '../OnboardingLayout';
 import { ScreenHeader } from '../ScreenHeader';
-import { getAuthContainerStyles } from './common';
-import { focusRingNone } from '../../theme';
 import type { RecoverWalletPageProps } from './types';
-
-/**
- * Bedrock, and no water. This screen carries the recovery phrase, and the
- * Bedrock Rule fixes every seed view at `surface.bedrock`, opaque: no scales,
- * no caustic, no iridescence, nothing alive moving behind the one secret that
- * cannot be reissued. The rest of the onboarding flow stands in the column;
- * this screen is the floor under it. That is a security decision, not a
- * stylistic one, so the ground here is a flat opaque fill by rule.
- */
-const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  backgroundColor: semantic.surface.bedrock,
-  ...getAuthContainerStyles($contained),
-}));
-
-const Content = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  padding: `0 ${s(spacing['2xl'])}px`,
-});
-
-const FormArea = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const LogoImage = styled('img')({
-  width: ms(60),
-  height: ms(60),
-  objectFit: 'contain',
-  marginBottom: vs(spacing['2xl']),
-});
-
-const Title = styled(Typography)({
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontWeight: 700,
-  fontSize: ms(fontSize['2xl']),
-  lineHeight: `${ms(32)}px`,
-  marginBottom: vs(spacing.md),
-  textAlign: 'center',
-});
-
-const Subtitle = styled(Typography)({
-  color: colors.text.secondary,
-  fontFamily: fontFamily.sans,
-  fontSize: ms(fontSize.base),
-  lineHeight: `${ms(20)}px`,
-  marginBottom: vs(spacing['3xl']),
-  textAlign: 'center',
-  paddingLeft: s(spacing.lg),
-  paddingRight: s(spacing.lg),
-});
 
 const TextArea = styled('textarea')<{ $borderColor: string }>(({ $borderColor }) => ({
   width: '100%',
-  height: vs(160),
+  // Relative to the band it sits in rather than a fixed 160px, so a short
+  // surface takes it out of `body` — which is the give — instead of pushing
+  // the action off the bottom.
+  height: '100%',
+  minHeight: 0,
   backgroundColor: colors.input.background,
   border: `1px solid ${$borderColor}`,
-  borderRadius: ms(borderRadius.lg),
-  padding: s(spacing.lg),
+  borderRadius: borderRadius.lg,
+  padding: spacing.lg,
   color: colors.text.primary,
   fontFamily: fontFamily.sans,
-  fontSize: ms(fontSize.md),
+  fontSize: fontSize.md,
   textAlign: 'center',
   resize: 'none',
   boxSizing: 'border-box',
@@ -105,30 +65,15 @@ const TextArea = styled('textarea')<{ $borderColor: string }>(({ $borderColor })
   '&:focus-visible:focus-visible:focus-visible': focusRingNone,
 }));
 
-const InputContainer = styled(Box)({
-  width: '100%',
-  marginBottom: vs(spacing['2xl']),
-});
-
-const ButtonGroup = styled(Box)({
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: vs(spacing.lg),
-  paddingBottom: vs(spacing['3xl']),
-  paddingTop: vs(spacing.lg),
-});
-
 export function RecoverWalletPage({
   onComplete,
   onBack,
-  contained = false,
 }: RecoverWalletPageProps): React.ReactElement {
   const { t } = useTranslation();
   const [seedPhrase, setSeedPhrase] = useState('');
   const [isFocused, setIsFocused] = useState(false);
 
-  const isValidSeedPhrase = useCallback((): boolean => {
+  const isValidSeedPhrase = useMemo(() => {
     const normalized = normalizeMnemonic(seedPhrase);
     if (!normalized) return false;
     return validateMnemonic(normalized);
@@ -144,49 +89,44 @@ export function RecoverWalletPage({
   }, []);
 
   const handleNext = useCallback(() => {
-    if (!isValidSeedPhrase()) return;
+    if (!isValidSeedPhrase) return;
     onComplete(normalizeMnemonic(seedPhrase));
   }, [isValidSeedPhrase, onComplete, seedPhrase]);
 
-  const borderColor = isFocused ? colors.accent.primary : colors.input.border;
-  const showNextButton = isValidSeedPhrase();
-
   return (
-    <Container $contained={contained}>
-      <ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />
-      <Content>
-        <FormArea>
-          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
-          <Title>{t('wallet.recover.messageTitle')}</Title>
-          <Subtitle>{t('wallet.recover.messageBody')}</Subtitle>
-
-          <InputContainer>
-            <TextArea
-              $borderColor={borderColor}
-              data-testid="recover-seed-input"
-              placeholder={t('wallet.recover.placeholder', 'Enter your seed phrase...')}
-              value={seedPhrase}
-              onChange={(e) => setSeedPhrase(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-          </InputContainer>
-        </FormArea>
-
-        <ButtonGroup>
-          <SecondaryButton onClick={handlePaste} testID="recover-paste-button">
-            {t('wallet.recover.pasteSeed', 'PASTE YOUR SEED PHRASE').toUpperCase()}
-          </SecondaryButton>
-          <Box sx={{ visibility: showNextButton ? 'visible' : 'hidden' }}>
-            <PrimaryButton onClick={handleNext} testID="recover-next-button">
-              {t('actions.next', 'NEXT').toUpperCase()}
-            </PrimaryButton>
-          </Box>
-        </ButtonGroup>
-      </Content>
-    </Container>
+    <OnboardingLayout
+      testID="recover-screen"
+      variant="content"
+      backgroundColor={semantic.surface.bedrock}
+      chrome={<ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />}
+      title={<OnboardingTitle>{t('wallet.recover.messageTitle')}</OnboardingTitle>}
+      description={<OnboardingDescription>{t('wallet.recover.messageBody')}</OnboardingDescription>}
+      body={
+        <TextArea
+          $borderColor={isFocused ? colors.accent.primary : colors.input.border}
+          data-testid="recover-seed-input"
+          placeholder={t('wallet.recover.placeholder')}
+          value={seedPhrase}
+          onChange={(event) => setSeedPhrase(event.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+      }
+      secondary={
+        <SecondaryButton onClick={handlePaste} fullWidth testID="recover-paste-button">
+          {t('wallet.recover.pasteSeed')}
+        </SecondaryButton>
+      }
+      action={
+        <ReservedSlot visible={isValidSeedPhrase}>
+          <PrimaryButton onClick={handleNext} fullWidth testID="recover-next-button">
+            {t('actions.next')}
+          </PrimaryButton>
+        </ReservedSlot>
+      }
+    />
   );
 }

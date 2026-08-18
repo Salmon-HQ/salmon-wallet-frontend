@@ -29,7 +29,7 @@ import {
   hintIconSx,
   Label,
   LogoWrap,
-  LogoImage,
+  MARK_SIZE,
   MessageSurface,
   MessageText,
   MonoValue,
@@ -45,6 +45,7 @@ import {
   Value,
   WarningNotice,
 } from './common';
+import { BrandMark } from '../BrandMark';
 import type { DAppSignMessageApprovalViewProps } from './types';
 
 const monoValueSx = {
@@ -98,7 +99,7 @@ export function DAppSignMessageApprovalView({
       <Content>
         <Header>
           <LogoWrap>
-            <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
+            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
           </LogoWrap>
           <Title>{t('dapp.sign_message_title', 'Sign Message')}</Title>
           <Subtitle>

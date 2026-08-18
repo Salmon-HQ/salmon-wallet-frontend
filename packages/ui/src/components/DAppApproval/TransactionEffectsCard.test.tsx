@@ -8,7 +8,11 @@ import '@testing-library/jest-dom/vitest';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: string | Record<string, unknown>, values?: Record<string, unknown>) => {
+    t: (
+      key: string,
+      fallback?: string | Record<string, unknown>,
+      values?: Record<string, unknown>
+    ) => {
       const template = typeof fallback === 'string' ? fallback : key;
       if (!values) return template;
       return template.replace(/\{\{(\w+)\}\}/g, (_match, name) => String(values[name] ?? ''));
@@ -136,7 +140,9 @@ describe('TransactionEffectsCard', () => {
     );
 
     expect(screen.getByText('Salmon could not determine what this does')).toBeInTheDocument();
-    expect(screen.getByText('The network could not be reached to simulate it.')).toBeInTheDocument();
+    expect(
+      screen.getByText('The network could not be reached to simulate it.')
+    ).toBeInTheDocument();
     expect(screen.queryByText('No balance changes')).not.toBeInTheDocument();
   });
 

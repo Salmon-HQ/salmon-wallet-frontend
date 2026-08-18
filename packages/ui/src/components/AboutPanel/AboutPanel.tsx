@@ -43,6 +43,7 @@ import {
 } from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import type { AboutPanelProps } from './types';
+import { BrandMark } from '../BrandMark';
 
 interface LinkItem {
   id: string;
@@ -227,11 +228,7 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
     <SettingsPanelContent title={t('settings.about', 'About')} onBack={onBack}>
       <LogoSection>
         <LogoContainer>
-          <img
-            src="/images/Logo.png"
-            alt="Salmon Wallet"
-            style={{ width: componentSizes.iconSize3XL, height: componentSizes.iconSize3XL }}
-          />
+          <BrandMark size={componentSizes.iconSize3XL} title="Salmon Wallet" />
         </LogoContainer>
         <AppName>Salmon Wallet</AppName>
         <VersionText>{t('settings.app_version', { version: APP_VERSION })}</VersionText>

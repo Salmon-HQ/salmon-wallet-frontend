@@ -1,69 +1,38 @@
-import React from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import { ChartLineUpIcon, XIcon } from '../../icons';
-import { Trans, useTranslation } from 'react-i18next';
-import { colors, fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
-import { styled } from '../../utils/styled';
-import { PrimaryButton } from '../Button';
-import { getAuthContainerStyles } from './common';
-import { WaterColumn } from '../WaterColumn';
-import type { AnalyticsConsentPageProps } from './types';
-
 /**
  * First-run, opt-in pseudonymous-analytics consent — the final onboarding step
  * before the wallet home (web + extension). Presentational only: the caller
  * wires accept/decline to `useAnalyticsConsent().resolveConsentPrompt` and then
- * advances the flow. Onboarding layout (themed icon + centered heading, like
- * SuccessPage); the body is one centered paragraph with bolded key phrases,
- * plus a Settings footnote. Declining is the standard close affordance: an X
- * in the top-right (same idiom as BaseSheetDialog's StandardHeader).
+ * advances the flow.
+ *
+ * On the grid this screen changes the most visibly. It had no mark and no
+ * header at all — a 72px chart icon stood in for both — and it now gains the
+ * `chrome` band and the mark like every other screen. The close affordance
+ * that used to float absolutely, reserving nothing, is the `chrome` band's
+ * back button. Its description is the longest in the flow at roughly seven
+ * lines, so it is not a "mini description": it lives in `body`, which is the
+ * give, and the description band stays reserved and empty like any other
+ * unused slot.
  */
-const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  backgroundColor: colors.background.primary,
-  padding: `0 ${spacing['2xl']}px`,
-  ...getAuthContainerStyles($contained),
-}));
-
-const CloseButton = styled(IconButton)({
-  position: 'absolute',
-  top: spacing.lg,
-  right: spacing.lg,
-  color: colors.text.secondary,
-  padding: spacing.xs,
-  '&:hover': {
-    backgroundColor: colors.background.card,
-  },
-});
-
-const TopSpacer = styled(Box)({ flex: 1 });
-
-const CenterContent = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const Title = styled(Typography)({
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontWeight: fontWeight.bold,
-  fontSize: fontSize['4xl'],
-  lineHeight: lineHeight.tight,
-  marginBottom: spacing.md,
-  textAlign: 'center',
-});
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import { fontFamily, fontSize, fontWeight, lineHeight, semantic, spacing } from '@salmon/shared';
+import React from 'react';
+import { Trans, useTranslation } from 'react-i18next';
+import { ChartLineUpIcon } from '../../icons';
+import { styled } from '../../utils/styled';
+import { PrimaryButton } from '../Button';
+import { OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
+import { ScreenHeader } from '../ScreenHeader';
+import { WaterColumn } from '../WaterColumn';
+import type { AnalyticsConsentPageProps } from './types';
 
 const Body = styled(Typography)({
-  color: colors.text.primary,
+  color: semantic.text.primary,
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.lg,
-  lineHeight: lineHeight.relaxed,
+  fontSize: fontSize.bodyLg,
+  lineHeight: `${Math.round(fontSize.bodyLg * lineHeight.normal)}px`,
   textAlign: 'center',
+  marginBottom: spacing.xl,
 });
 
 const Bold = styled('strong')({
@@ -71,62 +40,45 @@ const Bold = styled('strong')({
 });
 
 const Footnote = styled(Typography)({
-  color: colors.text.secondary,
+  color: semantic.text.secondary,
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.base,
-  lineHeight: lineHeight.normal,
-  marginTop: spacing.xl,
+  fontSize: fontSize.body,
+  lineHeight: `${Math.round(fontSize.body * lineHeight.normal)}px`,
   textAlign: 'center',
-});
-
-const ButtonsContainer = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'flex-end',
-  paddingBottom: spacing['2xl'],
-  gap: spacing.lg,
 });
 
 export function AnalyticsConsentPage({
   onAccept,
   onDecline,
-  contained = false,
 }: AnalyticsConsentPageProps): React.ReactElement {
   const { t } = useTranslation();
 
   return (
-    <Container $contained={contained} data-testid="analytics-consent-screen">
-      <WaterColumn />
-      <CloseButton
-        onClick={onDecline}
-        aria-label={t('general.close', 'Close')}
-        data-testid="analytics-consent-decline"
-      >
-        <XIcon />
-      </CloseButton>
-      <TopSpacer />
-
-      <CenterContent>
-        <ChartLineUpIcon
-          size={72}
-          color={colors.text.primary}
-          style={{ marginBottom: `${spacing.xl}px` }}
-        />
-        <Title>{t('settings.analytics_prompt_title')}</Title>
-        <Body>
-          <Trans i18nKey="settings.analytics_prompt_body" components={{ bold: <Bold /> }} />
-        </Body>
-        <Footnote>
-          <Trans i18nKey="settings.analytics_prompt_footnote" components={{ bold: <Bold /> }} />
-        </Footnote>
-      </CenterContent>
-
-      <ButtonsContainer>
-        <PrimaryButton onClick={onAccept} testID="analytics-consent-accept">
+    <OnboardingLayout
+      testID="analytics-consent-screen"
+      variant="content"
+      background={<WaterColumn />}
+      scrollBody
+      chrome={<ScreenHeader onBack={onDecline} testID="analytics-consent-decline" />}
+      title={<OnboardingTitle>{t('settings.analytics_prompt_title')}</OnboardingTitle>}
+      body={
+        <Box sx={{ textAlign: 'center' }}>
+          <Box sx={{ marginBottom: `${spacing.xl}px` }}>
+            <ChartLineUpIcon size={72} color={semantic.text.primary} />
+          </Box>
+          <Body>
+            <Trans i18nKey="settings.analytics_prompt_body" components={{ bold: <Bold /> }} />
+          </Body>
+          <Footnote>
+            <Trans i18nKey="settings.analytics_prompt_footnote" components={{ bold: <Bold /> }} />
+          </Footnote>
+        </Box>
+      }
+      action={
+        <PrimaryButton onClick={onAccept} fullWidth testID="analytics-consent-accept">
           {t('settings.analytics_prompt_accept')}
         </PrimaryButton>
-      </ButtonsContainer>
-    </Container>
+      }
+    />
   );
 }

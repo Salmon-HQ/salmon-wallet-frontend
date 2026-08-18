@@ -4,7 +4,7 @@ export type { SelectOptionsPageProps } from './types';
 export { RecoverWalletPage } from './RecoverWalletPage';
 export type { RecoverWalletPageProps } from './types';
 
-export { CreateWalletPage } from './CreateWalletPage';
+export { CreateWalletPage, CREATE_FLOW_STEPS } from './CreateWalletPage';
 export type { CreateWalletPageProps } from './types';
 
 export { PasswordPage } from './PasswordPage';
@@ -14,7 +14,7 @@ export { SuccessPage } from './SuccessPage';
 export type { SuccessPageProps } from './types';
 
 export { DerivedAccountsPage } from './DerivedAccountsPage';
-export type { AuthScreenLayoutProps, DerivedAccountsPageProps } from './types';
+export type { DerivedAccountsPageProps } from './types';
 
 export { AnalyticsConsentPage } from './AnalyticsConsentPage';
 export type { AnalyticsConsentPageProps } from './types';

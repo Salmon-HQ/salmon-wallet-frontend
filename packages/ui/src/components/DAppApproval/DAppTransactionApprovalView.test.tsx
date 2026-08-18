@@ -16,6 +16,10 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
+  // The approval header draws the mark from the vector rather than Logo.png.
+  markPaths: ['M0 0H1V1H0Z'],
+  markViewBoxAttr: '0 0 253 236',
+  markAspectRatio: 253 / 236,
   tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
   semantic: {
     surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
@@ -43,7 +47,13 @@ vi.mock('@salmon/shared', () => ({
     border: { subtle: '#222', default: '#333' },
     text: { primary: '#fff', secondary: '#ccc' },
     interactive: { surface: '#444' },
-    status: { error: '#f00', errorBackground: '#500', warning: '#fa0', warningBackground: '#540', success: '#0f0' },
+    status: {
+      error: '#f00',
+      errorBackground: '#500',
+      warning: '#fa0',
+      warningBackground: '#540',
+      success: '#0f0',
+    },
     button: {
       primaryBackground: '#fff',
       primaryText: '#000',
@@ -68,7 +78,6 @@ vi.mock('@salmon/shared', () => ({
   getShortAddress: (address: string) => address,
   formatBaseUnits: (amount: bigint) => String(amount < 0n ? -amount : amount),
 }));
-
 
 import { DAppTransactionApprovalView } from './DAppTransactionApprovalView';
 

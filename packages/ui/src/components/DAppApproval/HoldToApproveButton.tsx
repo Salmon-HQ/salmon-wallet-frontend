@@ -114,11 +114,19 @@ export function HoldToApproveButton({
       onPointerCancel={stop}
       onClickCapture={swallowPointerClick}
     >
-      <PrimaryButton onClick={() => void onApprove()} disabled={disabled} loading={loading} testID={testID}>
+      <PrimaryButton
+        onClick={() => void onApprove()}
+        disabled={disabled}
+        loading={loading}
+        testID={testID}
+      >
         {children}
       </PrimaryButton>
       {progress > 0 ? (
-        <Progress style={{ width: `${Math.min(progress, 1) * 100}%` }} data-testid="hold-progress" />
+        <Progress
+          style={{ width: `${Math.min(progress, 1) * 100}%` }}
+          data-testid="hold-progress"
+        />
       ) : null}
     </Wrapper>
   );

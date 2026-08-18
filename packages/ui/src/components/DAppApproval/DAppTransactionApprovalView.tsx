@@ -16,7 +16,7 @@ import {
   Header,
   Label,
   LogoWrap,
-  LogoImage,
+  MARK_SIZE,
   MonoValue,
   ScrollArea,
   Subtitle,
@@ -27,6 +27,7 @@ import {
   Title,
   Value,
 } from './common';
+import { BrandMark } from '../BrandMark';
 import { HoldToApproveButton } from './HoldToApproveButton';
 import { TransactionEffectsCard } from './TransactionEffectsCard';
 import type { DAppTransactionApprovalViewProps } from './types';
@@ -67,7 +68,7 @@ export function DAppTransactionApprovalView({
       <Content>
         <Header>
           <LogoWrap>
-            <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
+            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
           </LogoWrap>
           <Title>{t('dapp.transaction_title', 'Approve Transaction')}</Title>
           <Subtitle>

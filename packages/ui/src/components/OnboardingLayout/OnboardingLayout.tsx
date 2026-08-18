@@ -1,0 +1,311 @@
+/**
+ * OnboardingLayout — the DOM half of the onboarding slot grid.
+ *
+ * Every screen in the create, recover and unlock flows on web and extension
+ * composes on this. The reserved heights come from `resolveOnboardingGrid` in
+ * `@salmon/shared`, so the DOM and React Native read one table instead of each
+ * re-deriving spacing per screen. Nothing here decides a number.
+ *
+ * The React Native twin is `apps/mobile/src/components/OnboardingLayout`, and
+ * the two carry the same slot `testID`s (`onboarding-slot-*`) so a mobile and a
+ * DOM screen can be compared like for like.
+ *
+ * ## Two families, each internally rigid
+ *
+ * The `variant` prop picks the table. Within a family every slot's Y is
+ * identical across its screens; between families the mark and the body differ
+ * on purpose — a screen that greets or authenticates is not shaped like one
+ * that shows twelve words.
+ *
+ * ## Three rules do the rest
+ *
+ * 1. **Every slot occupies its reserved height whether or not it is filled.**
+ *    A screen with no secondary action still leaves the band. So arriving at
+ *    the screen that carries "What is a derivable?" reveals the link in space
+ *    that was always there, and the button does not move.
+ * 2. **The stack is one fixed height, and it is centred in the viewport.**
+ *    Because the stack's height does not vary within a family, every slot
+ *    lands at the same Y on every screen of that family.
+ * 3. **`body` is the give.** It is the only slot that shrinks and the only one
+ *    that scrolls. Whatever the viewport is short by comes out of `body`
+ *    first; only when `body` has reached zero does anything else give, and
+ *    then in a fixed order — description, then mark — so the degradation is a
+ *    property of the viewport, not of the screen.
+ *
+ * Rule 3 is what makes the action reachable on the extension's action popup,
+ * where the surface is ~360x600 with `overflow: hidden` and content past the
+ * fold is clipped rather than scrollable. The popup is a degraded first-click
+ * state, not a target surface (spec 013, decision 3): the stack fills whatever
+ * height it is given, `body` scrolls inside it, and the bands below `body`
+ * stay pinned — so the primary action is on screen at 600px as it is at 956.
+ *
+ * ## Measuring the viewport rather than assuming `100vh`
+ *
+ * The column is measured with a `ResizeObserver`, and the soft keyboard is
+ * measured from `window.visualViewport` — the audit found no `dvh`, no `svh`
+ * and no `visualViewport` listener anywhere in this flow, with the containers
+ * at `100vh` inside an `overflow: hidden` parent, so a soft keyboard hid the
+ * action with no way to scroll to it. Only the *overlap* between the keyboard
+ * and the column counts, so a keyboard that covers nothing moves nothing.
+ */
+import Box from '@mui/material/Box';
+import {
+  colors,
+  contentPadding,
+  resolveOnboardingGrid,
+  spacing,
+  type OnboardingLayoutPropsBase,
+} from '@salmon/shared';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { styled } from '../../utils/styled';
+import { BrandMark } from '../BrandMark';
+import { waterColumnHost } from '../WaterColumn';
+
+export interface OnboardingLayoutProps extends OnboardingLayoutPropsBase {
+  /** Painted behind the whole column. Defaults to the app ground. */
+  backgroundColor?: string;
+  /** Rendered behind the stack — the water column, on the screens that carry it. */
+  background?: React.ReactNode;
+}
+
+/**
+ * How much of the column the soft keyboard covers.
+ *
+ * `visualViewport.height` shrinks when the keyboard opens; the difference
+ * against the layout viewport is the keyboard. Zero on a desktop browser, and
+ * zero whenever the keyboard is down.
+ */
+function useKeyboardOcclusion(): number {
+  const [occlusion, setOcclusion] = useState(0);
+
+  useEffect(() => {
+    const vv = typeof window === 'undefined' ? undefined : window.visualViewport;
+    if (!vv) return undefined;
+
+    const measure = () => {
+      setOcclusion(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
+    };
+    measure();
+    vv.addEventListener('resize', measure);
+    vv.addEventListener('scroll', measure);
+    return () => {
+      vv.removeEventListener('resize', measure);
+      vv.removeEventListener('scroll', measure);
+    };
+  }, []);
+
+  return occlusion;
+}
+
+/** The column's own height, remeasured whenever the surface resizes. */
+function useMeasuredHeight(ref: React.RefObject<HTMLElement | null>): number | undefined {
+  const [height, setHeight] = useState<number | undefined>(undefined);
+
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (!node) return undefined;
+
+    const measure = () => {
+      const next = node.getBoundingClientRect().height;
+      if (next > 0) setHeight(next);
+    };
+    measure();
+
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [ref]);
+
+  return height;
+}
+
+const Root = styled(Box)({
+  // A stacking context, so a `<WaterColumn />` passed as `background` paints
+  // above this element's own fill and below every slot.
+  ...waterColumnHost,
+  display: 'flex',
+  backgroundColor: colors.background.primary,
+  flexDirection: 'column',
+  width: '100%',
+  // `100dvh` rather than `100vh`: the audit found neither here, and on a
+  // mobile browser the difference is the URL bar hiding the primary action.
+  height: '100dvh',
+  minHeight: '100dvh',
+  overflow: 'hidden',
+});
+
+const Column = styled(Box)({
+  position: 'relative',
+  flex: 1,
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+});
+
+const Stack = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  width: '100%',
+});
+
+const Slot = styled(Box)({
+  flexShrink: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+});
+
+const Padded = styled(Slot)({
+  paddingLeft: contentPadding.screen,
+  paddingRight: contentPadding.screen,
+});
+
+export function OnboardingLayout({
+  chrome,
+  mark,
+  title,
+  description,
+  body,
+  assist,
+  secondary,
+  action,
+  variant = 'identity',
+  scrollBody = false,
+  backgroundColor,
+  background,
+  testID,
+}: OnboardingLayoutProps): React.ReactElement {
+  const columnRef = useRef<HTMLDivElement>(null);
+  const measured = useMeasuredHeight(columnRef);
+  const occlusion = useKeyboardOcclusion();
+
+  const available = measured === undefined ? undefined : Math.max(0, measured - occlusion);
+
+  // The rung is chosen from the *unoccluded* height on purpose: which grid a
+  // screen is on is a property of the surface, not of whether a keyboard
+  // happens to be up. Resolving it from `available` would drop a description
+  // line when the keyboard opened, which is a slot moving for the exact reason
+  // this component exists to prevent.
+  const grid = resolveOnboardingGrid(variant, measured);
+
+  const height = available === undefined ? grid.stack : Math.min(grid.stack, available);
+  const slack = Math.max(0, (available ?? grid.stack) - grid.stack);
+
+  // What the stack is short by. Zero is the normal case and nothing collapses.
+  // When it is not zero, things go in a fixed order: the empty lead first,
+  // then the description, then the mark — pure space, then explanation, then
+  // decoration, and never the field or the button that commits it.
+  const shortfall = available === undefined ? 0 : Math.max(0, grid.stack - available);
+  const dropLead = shortfall > 0;
+  const dropDescription = shortfall > grid.lead;
+  const dropMark = shortfall > grid.lead + grid.description;
+
+  // `body` is computed rather than left to flex-shrink, and that is what keeps
+  // the families in step. Dropping a slot frees a fixed amount that rarely
+  // matches the shortfall exactly, so the leftover has to land somewhere; if
+  // it lands as unused space at the bottom of the stack it lands *differently*
+  // per family, and the control bands drift apart at short viewports — which
+  // is exactly the defect this component exists to prevent. Giving the
+  // leftover back to `body` makes the stack fill its height precisely, so
+  // `assist`, `secondary` and `action` are at `height` minus their own sum on
+  // every screen, in every family, at every viewport.
+  const reservedAbove =
+    grid.chrome +
+    (dropLead ? 0 : grid.lead) +
+    (dropMark ? 0 : grid.mark) +
+    grid.title +
+    (dropDescription ? 0 : grid.description);
+  const reservedBelow = grid.assist + grid.secondary + grid.action;
+  const bodyHeight = Math.max(0, height - reservedAbove - reservedBelow);
+
+  return (
+    <Root data-testid={testID} sx={backgroundColor ? { backgroundColor } : undefined}>
+      {background}
+      <Column ref={columnRef} data-testid="onboarding-column">
+        <Stack style={{ height, marginTop: slack / 2 }} data-testid="onboarding-stack">
+          <Slot style={{ height: grid.chrome }} data-testid="onboarding-slot-chrome">
+            {chrome}
+          </Slot>
+
+          {/*
+            A reserved empty run above the mark. Nothing is ever placed in it —
+            it is how a variant that needs less `body` than its siblings hands
+            the difference back at the top of the stack instead of leaving it
+            as a hole under the description.
+          */}
+          {!dropLead && grid.lead > 0 && (
+            <Box style={{ height: grid.lead, flexShrink: 0 }} aria-hidden />
+          )}
+
+          {!dropMark && (
+            <Slot
+              style={{ height: grid.mark, alignItems: 'center' }}
+              data-testid="onboarding-slot-mark"
+            >
+              {mark ?? <BrandMark size={grid.markSize} />}
+            </Slot>
+          )}
+
+          {/*
+            The title sits at the bottom of its band and the description at the
+            top of its own, so the space each reserves for a second line that
+            did not come collects outside the pair rather than between them.
+          */}
+          <Padded
+            style={{ minHeight: grid.title, justifyContent: 'flex-end', paddingBottom: spacing.md }}
+            data-testid="onboarding-slot-title"
+          >
+            {title}
+          </Padded>
+
+          {!dropDescription && (
+            <Padded
+              style={{ minHeight: grid.description, justifyContent: 'flex-start' }}
+              data-testid="onboarding-slot-description"
+            >
+              {description}
+            </Padded>
+          )}
+
+          <Box
+            style={{
+              height: bodyHeight,
+              flexShrink: 0,
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              paddingLeft: contentPadding.screen,
+              paddingRight: contentPadding.screen,
+              overflowY: scrollBody ? 'auto' : 'visible',
+            }}
+            data-testid="onboarding-slot-body"
+          >
+            {body}
+          </Box>
+
+          <Padded style={{ height: grid.assist }} data-testid="onboarding-slot-assist">
+            {assist}
+          </Padded>
+
+          <Padded style={{ height: grid.secondary }} data-testid="onboarding-slot-secondary">
+            {secondary}
+          </Padded>
+
+          <Padded
+            style={{
+              height: grid.action,
+              justifyContent: 'flex-start',
+              paddingTop: spacing.lg,
+              paddingBottom: spacing['2xl'],
+            }}
+            data-testid="onboarding-slot-action"
+          >
+            {action}
+          </Padded>
+        </Stack>
+      </Column>
+    </Root>
+  );
+}

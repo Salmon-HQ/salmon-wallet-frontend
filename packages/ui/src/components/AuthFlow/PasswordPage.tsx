@@ -10,15 +10,14 @@ import {
   fontSize,
   getMirrorNetworks,
   getScanNetworks,
-  ms,
+  lineHeight,
   PASSWORD_CONSTRAINTS,
-  s,
+  semantic,
   spacing,
   trackOnboardingEvent,
   useAccountsContext,
   validatePassword,
   getPasswordIssue,
-  vs,
 } from '@salmon/shared';
 import { generateAccountName } from '@salmon/shared/utils/account';
 import { styled } from '../../utils/styled';
@@ -26,98 +25,49 @@ import { PrimaryButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
 import { ScreenHeader } from '../ScreenHeader';
-import { getAuthContainerStyles } from './common';
+import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { WaterColumn } from '../WaterColumn';
+import { CREATE_FLOW_STEPS } from './CreateWalletPage';
 import type { PasswordPageProps } from './types';
-
-const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  backgroundColor: colors.background.primary,
-  ...getAuthContainerStyles($contained),
-}));
-
-const Content = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  padding: `0 ${s(spacing['2xl'])}px`,
-});
-
-const FormArea = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const LogoImage = styled('img')({
-  width: ms(60),
-  height: ms(60),
-  objectFit: 'contain',
-  marginBottom: vs(spacing['2xl']),
-});
-
-const Title = styled(Typography)({
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontWeight: 700,
-  fontSize: ms(fontSize['2xl']),
-  lineHeight: `${ms(36)}px`,
-  marginBottom: vs(spacing.sm),
-  textAlign: 'center',
-});
-
-const Subtitle = styled(Typography)({
-  color: colors.text.secondary,
-  fontFamily: fontFamily.sans,
-  fontSize: ms(fontSize.base),
-  lineHeight: `${ms(24)}px`,
-  marginBottom: vs(spacing['3xl']),
-  textAlign: 'center',
-});
 
 const InputContainer = styled(Box)({
   width: '100%',
-  marginBottom: vs(spacing.lg),
+  marginBottom: spacing.lg,
 });
 
+/**
+ * Feedback about the field above it, so it sits against that field rather than
+ * competing with the terms line for the `assist` band. It appears and
+ * disappears as the user types, which is exactly why it belongs in `body` —
+ * the give in the grid (spec 013, decision 6).
+ */
 const StrengthContainer = styled(Box)({
-  marginTop: vs(spacing.sm),
-  paddingLeft: s(spacing.xs),
-  paddingRight: s(spacing.xs),
+  marginTop: spacing.sm,
+  paddingLeft: spacing.xs,
+  paddingRight: spacing.xs,
 });
 
 const ErrorText = styled(Typography)({
-  color: colors.status.error,
+  color: semantic.status.danger,
   fontFamily: fontFamily.sans,
-  fontSize: ms(12),
-  lineHeight: `${ms(16)}px`,
-  marginBottom: vs(spacing.lg),
+  fontSize: fontSize.caption,
+  lineHeight: `${Math.round(fontSize.caption * lineHeight.snug)}px`,
+  marginBottom: spacing.lg,
   textAlign: 'center',
   width: '100%',
 });
 
 const TermsText = styled(Typography)({
-  color: colors.text.secondary,
+  color: semantic.text.secondary,
   fontFamily: fontFamily.sans,
-  fontSize: ms(12),
-  lineHeight: `${ms(18)}px`,
+  fontSize: fontSize.caption,
+  lineHeight: `${Math.round(fontSize.caption * lineHeight.normal)}px`,
   textAlign: 'center',
-  paddingLeft: s(spacing['2xl']),
-  paddingRight: s(spacing['2xl']),
 });
 
 const TermsLink = styled('span')({
   color: colors.step?.active ?? colors.accent.primary,
   cursor: 'pointer',
-});
-
-const ButtonContainer = styled(Box)({
-  width: '100%',
-  paddingBottom: vs(spacing['3xl']),
-  paddingTop: vs(spacing.lg),
 });
 
 export function PasswordPage({
@@ -126,7 +76,6 @@ export function PasswordPage({
   onCreating,
   onSuccess,
   onBack,
-  contained = false,
 }: PasswordPageProps): React.ReactElement {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
@@ -262,30 +211,39 @@ export function PasswordPage({
 
   return (
     <>
-      <Container $contained={contained}>
-        <WaterColumn />
-        <ScreenHeader
-          onBack={onBack}
-          stepIndicator={{ totalSteps: 2, currentStep: 2 }}
-          backDisabled={isLoading || isChecking}
-        />
-        <Content>
-          <FormArea>
-            <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
-
-            <Title>
-              {showSingleInput
-                ? t('wallet.create.enter_your_password') || 'Enter your password'
-                : t('wallet.create.choose_a_password') || 'Choose a Password'}
-            </Title>
-
-            {!showSingleInput && (
-              <Subtitle>
-                {t('wallet.create.choose_a_password_body') ||
-                  'You will need it to unlock your wallet'}
-              </Subtitle>
-            )}
-
+      <OnboardingLayout
+        testID="password-screen"
+        variant="credential"
+        background={<WaterColumn />}
+        scrollBody
+        chrome={
+          <ScreenHeader
+            onBack={onBack}
+            stepIndicator={{
+              totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
+              currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
+            }}
+            backDisabled={isLoading || isChecking}
+          />
+        }
+        title={
+          <OnboardingTitle>
+            {showSingleInput
+              ? t('wallet.create.enter_your_password')
+              : t('wallet.create.choose_a_password')}
+          </OnboardingTitle>
+        }
+        description={
+          // The single-field variant used to delete this line, dropping 56px
+          // and moving everything below it. Reserved and left empty now.
+          showSingleInput ? undefined : (
+            <OnboardingDescription>
+              {t('wallet.create.choose_a_password_body')}
+            </OnboardingDescription>
+          )
+        }
+        body={
+          <>
             <InputContainer>
               <PasswordInput
                 testID="password-input"
@@ -293,8 +251,8 @@ export function PasswordPage({
                 onChangeText={handlePasswordChange}
                 placeholder={
                   showSingleInput
-                    ? t('wallet.create.enter_your_password') || 'Enter your password'
-                    : t('wallet.create.passwordNew') || 'New password'
+                    ? t('wallet.create.enter_your_password')
+                    : t('wallet.create.passwordNew')
                 }
                 error={passwordError}
                 editable={!isLoading && !isChecking}
@@ -313,7 +271,7 @@ export function PasswordPage({
                   testID="password-confirm-input"
                   value={confirmPassword}
                   onChangeText={handleConfirmPasswordChange}
-                  placeholder={t('wallet.create.passwordRepeat') || 'Repeat password'}
+                  placeholder={t('wallet.create.passwordRepeat')}
                   error={confirmError}
                   editable={!isLoading && !isChecking}
                   onSubmitEditing={handleSubmit}
@@ -322,32 +280,33 @@ export function PasswordPage({
             )}
 
             {error && <ErrorText>{error}</ErrorText>}
-
-            <TermsText>
-              {flowType === 'recover'
-                ? t('wallet.recover.terms_prefix')
-                : t('wallet.create.terms_prefix')}
-              <TermsLink
-                data-testid="password-terms-link"
-                onClick={() => window.open('https://salmonwallet.io/terms', '_blank')}
-              >
-                {t('general.terms_and_conditions')}
-              </TermsLink>
-            </TermsText>
-          </FormArea>
-
-          <ButtonContainer>
-            <PrimaryButton
-              onClick={handleSubmit}
-              disabled={!isFormValid() || wrongPassword}
-              loading={isLoading || isChecking}
-              testID="password-submit-button"
+          </>
+        }
+        assist={
+          <TermsText>
+            {flowType === 'recover'
+              ? t('wallet.recover.terms_prefix')
+              : t('wallet.create.terms_prefix')}
+            <TermsLink
+              data-testid="password-terms-link"
+              onClick={() => window.open('https://salmonwallet.io/terms', '_blank')}
             >
-              {buttonText}
-            </PrimaryButton>
-          </ButtonContainer>
-        </Content>
-      </Container>
+              {t('general.terms_and_conditions')}
+            </TermsLink>
+          </TermsText>
+        }
+        action={
+          <PrimaryButton
+            onClick={handleSubmit}
+            disabled={!isFormValid() || wrongPassword}
+            loading={isLoading || isChecking}
+            fullWidth
+            testID="password-submit-button"
+          >
+            {buttonText}
+          </PrimaryButton>
+        }
+      />
 
       <LoadingScreen
         visible={isLoading}

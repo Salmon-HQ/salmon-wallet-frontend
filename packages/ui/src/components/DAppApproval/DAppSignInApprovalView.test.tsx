@@ -16,6 +16,10 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
+  // The approval header draws the mark from the vector rather than Logo.png.
+  markPaths: ['M0 0H1V1H0Z'],
+  markViewBoxAttr: '0 0 253 236',
+  markAspectRatio: 253 / 236,
   tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
   semantic: {
     surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },

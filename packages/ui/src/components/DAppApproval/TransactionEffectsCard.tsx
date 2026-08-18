@@ -157,7 +157,7 @@ function SolRow({ sol }: { sol: SolChange }): React.ReactElement | null {
 function TokenRow({ change }: { change: TokenChange }): React.ReactElement {
   return (
     <AmountRow
-      asset={change.symbol ?? (getShortAddress(change.mint, 4) ?? change.mint)}
+      asset={change.symbol ?? getShortAddress(change.mint, 4) ?? change.mint}
       amount={change.amount}
       decimals={change.decimals}
     />
@@ -172,14 +172,12 @@ function TokenRow({ change }: { change: TokenChange }): React.ReactElement {
 function ApprovalRow({ grant }: { grant: ApprovalGrant }): React.ReactElement {
   const { t } = useTranslation();
   const isUnlimited = grant.scope === 'unlimited';
-  const token = grant.symbol ?? (getShortAddress(grant.mint, 4) ?? grant.mint);
+  const token = grant.symbol ?? getShortAddress(grant.mint, 4) ?? grant.mint;
   const amount = isUnlimited
     ? t('dapp.effects_approval_unlimited', 'an unlimited amount of')
     : formatBaseUnits(grant.amount, grant.decimals);
   const tone = isUnlimited ? colors.status.error : colors.status.warning;
-  const background = isUnlimited
-    ? colors.status.errorBackground
-    : colors.status.warningBackground;
+  const background = isUnlimited ? colors.status.errorBackground : colors.status.warningBackground;
 
   return (
     <Notice sx={{ borderColor: tone, backgroundColor: background, marginTop: `${spacing.md}px` }}>

@@ -59,11 +59,17 @@ export const LogoWrap = styled(Box)({
   boxShadow: '0 18px 48px rgba(0, 0, 0, 0.3)',
 });
 
-export const LogoImage = styled('img')({
-  width: 38,
-  height: 38,
-  objectFit: 'contain',
-});
+/**
+ * The wallet's own mark inside the approval header.
+ *
+ * This is a security surface: the mark is how a user tells the real wallet
+ * from a page dressed up as one, so it is drawn from the vector rather than
+ * fetched as a 197x183 raster and letterboxed into a square. Crispness is not
+ * decoration here — a soft or wrong mark on an approval prompt is closer to a
+ * phishing problem than an aesthetic one. `MARK_SIZE` is the drawn width the
+ * PNG's square box produced after `objectFit: contain`, so nothing moves.
+ */
+export const MARK_SIZE = 38;
 
 export const Title = styled(Typography)({
   fontSize: fontSize.title,

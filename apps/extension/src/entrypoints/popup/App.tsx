@@ -1,16 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  colors,
   useAccountsContext,
   useAnalyticsConsent,
   useInactivityTimeout,
   useSettleAfterTx,
+  useWaitExit,
+  useWaitGate,
   DerivedKeyCache,
   type NetworkId,
   type TrustedApp,
 } from '@salmon/shared';
 import { getActiveSolanaApprovalAccount } from '@salmon/shared/utils/account';
-import { WalletInitErrorScreen, WaterColumn, waterColumnHost } from '@salmon/ui';
+import { LoadingScreen, WalletInitErrorScreen } from '@salmon/ui';
 import { LockPage } from '../../pages/lock/LockPage';
 import { HomePage } from '../../pages/home/HomePage';
 import {
@@ -48,24 +49,6 @@ interface AuthData {
 }
 
 // ============================================================================
-// Loading Spinner
-// ============================================================================
-
-function LoadingSpinner() {
-  return (
-    <div style={styles.loadingContainer}>
-      {/* The extension's very first frame. It is the one full-screen wait in
-          the app that does not go through the shared `LoadingScreen`, which is
-          why the ground has to be named here a second time rather than
-          inherited — the duplication is the bug, and it is not this change's
-          to fix. */}
-      <WaterColumn />
-      <div style={styles.spinner} />
-    </div>
-  );
-}
-
-// ============================================================================
 // Main App
 // ============================================================================
 
@@ -92,6 +75,13 @@ function App() {
     pathIndex,
   } = state;
   const settleAfterTx = useSettleAfterTx();
+  // `useWaitGate` first: below `motionMs.waitDelay` the wait never mounts at
+  // all, so a boot that resolves in 200ms shows nothing rather than a 2s wave
+  // train that would make the extension feel slower than the spinner it
+  // replaces. `useWaitExit` second: once it has mounted, it leaves on a wave,
+  // and unmounting it the instant `ready` flips would cut the crossing.
+  const showBootWait = useWaitGate(!ready);
+  const { held: waitHeld, onExited: onWaitExited } = useWaitExit(showBootWait);
   const solanaApprovalAccount = useMemo(
     () => getActiveSolanaApprovalAccount(activeAccount, activeBlockchainAccount, pathIndex),
     [activeAccount, activeBlockchainAccount, pathIndex]
@@ -422,8 +412,20 @@ function App() {
 
   // ---- Rendering ----
 
+  // The extension's first frame. It used to be a bespoke CSS spinner that
+  // named the ground a second time and bypassed the shared wait entirely,
+  // which is why the new treatment showed on unlock but not on boot. It goes
+  // through `LoadingScreen` like every other wait now — and through the same
+  // gate, so a boot that resolves in 200ms still shows nothing at all rather
+  // than flashing 2s of wave to say so.
+  if (waitHeld) {
+    return <LoadingScreen visible={showBootWait} onExited={onWaitExited} />;
+  }
+
+  // Not ready, and too fast to deserve a screen. Paint nothing rather than a
+  // branch chosen from state that has not finished loading.
   if (!ready) {
-    return <LoadingSpinner />;
+    return null;
   }
 
   // Wallet is locked — show lock screen even if account metadata failed to load.
@@ -554,41 +556,6 @@ function App() {
 
   // Wallet is unlocked
   return <HomePage onAddAccount={handleAddAccountFromHome} />;
-}
-
-// ============================================================================
-// Styles
-// ============================================================================
-
-const styles: Record<string, React.CSSProperties> = {
-  loadingContainer: {
-    ...waterColumnHost,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
-    backgroundColor: colors.background.primary,
-  },
-  spinner: {
-    width: '32px',
-    height: '32px',
-    border: `3px solid ${colors.accent.tint}`,
-    borderTopColor: colors.accent.primary,
-    borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite',
-  },
-};
-
-// Inject keyframe animation for spinner (only once)
-if (typeof document !== 'undefined' && !document.getElementById('app-spinner-styles')) {
-  const styleSheet = document.createElement('style');
-  styleSheet.id = 'app-spinner-styles';
-  styleSheet.textContent = `
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  `;
-  document.head.appendChild(styleSheet);
 }
 
 export default App;
