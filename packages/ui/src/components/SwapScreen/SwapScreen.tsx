@@ -11,6 +11,7 @@ import ButtonBase from '@mui/material/ButtonBase';
 import {
   semantic,
   useSwapScreenLogic,
+  useWaitExit,
   getTransactionUrl,
   getDefaultExplorer,
   useBridgeSettlement,
@@ -27,6 +28,7 @@ import { useTranslation } from 'react-i18next';
 import { SwapInputScreen } from './SwapInputScreen';
 import { SwapReviewScreen } from './SwapReviewScreen';
 import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
+import { LoadingScreen } from '../LoadingScreen';
 import { BridgeRecipientScreen } from '../BridgeScreen/BridgeRecipientScreen';
 import { BridgeReviewScreen } from '../BridgeScreen/BridgeReviewScreen';
 import { TokenSelectorModal } from '../TokenSelector';
@@ -76,11 +78,27 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
     },
   });
 
+  // Committed: signed and in flight, or settling. No exit at all.
+  const isCommitted = logic.isConfirming || logic.settling;
+
   // Two phases, two rules. Up to and including review nothing has been
   // signed, so leaving is free. From confirm onward this screen is the only
   // report of whether the funds moved — a bridge in particular cannot be
   // cancelled or recovered — so ambient navigation must not discard it.
-  const ownsScreen = logic.isConfirming || logic.settling || logic.step === 'success';
+  const ownsScreen = isCommitted || logic.step === 'success';
+
+  // The wait between the decision and the receipt (DESIGN.md, §The wait —
+  // "Swap confirm — sink, wave, float"). At the confirm tap the review leaves
+  // immediately — no button loader — and the canonical wave wait holds the
+  // screen while sign/submit/confirm runs and, for a Jupiter swap, while the
+  // indexer settles. It then leaves on its own last wave (`useWaitExit`), and
+  // only once the water is calm does the receipt mount, so The Surfacing plays
+  // exactly once — never over an unconfirmed transaction, and never twice.
+  const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
+  // Keep the wave through its own exit on the way to the receipt. A failure is
+  // the exception: the flow cuts back to input (the error surfaces there), so
+  // the wave is not held.
+  const showWave = isCommitted || (isWaveHeld && logic.step === 'success');
 
   React.useEffect(() => {
     onFlowLockChange?.(ownsScreen);
@@ -226,6 +244,7 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
       )}
 
       {logic.step === 'review' &&
+        !logic.isConfirming &&
         logic.swapMode === 'jupiter' &&
         logic.quote &&
         logic.inToken &&
@@ -257,6 +276,7 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
       )}
 
       {logic.step === 'review' &&
+        !logic.isConfirming &&
         logic.swapMode === 'stealthex' &&
         logic.bridgeInToken &&
         logic.bridgeOutToken && (
@@ -275,14 +295,27 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
           />
         )}
 
-      {logic.step === 'success' && (
+      {/* The wave wait. Its overlay covers the viewport, so it stands over
+          whatever step is still mounted underneath. It holds while the
+          transaction is in flight and leaves on its own last wave; the receipt
+          below waits for that report. */}
+      {showWave && (
+        <LoadingScreen
+          visible={isCommitted}
+          waves
+          title={t('transaction.pendingSwap')}
+          subtitle={`${successInLabel} → ${successOutLabel}`}
+          onExited={onWaveGone}
+        />
+      )}
+
+      {logic.step === 'success' && !isWaveHeld && (
         <TransactionSuccessScreen
           title={
             logic.successExchange
               ? t('bridge.initiated', 'Bridge Initiated')
               : t('transaction.swapComplete')
           }
-          pendingTitle={t('transaction.pendingSwap')}
           summary={`${successInLabel} → ${successOutLabel}`}
           explorerUrl={
             logic.successTxId && successChain
@@ -295,7 +328,6 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
               : null
           }
           onContinue={logic.handleSuccessContinue}
-          settling={logic.settling}
           exchange={successExchangeBlock}
           exchangeRate={successRate}
           exchangeFee={successFee}
