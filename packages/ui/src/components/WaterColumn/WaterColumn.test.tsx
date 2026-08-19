@@ -103,9 +103,11 @@ describe('the surfaces the water column must never reach', () => {
     ['the approval views', '../DAppApproval'],
     ['the sheet chrome', '../BaseSheetDialog'],
   ])('mounts no field on %s', (_name, dir) => {
-    // A sheet is a membrane: a live backdrop shows through it, which is the
-    // one place the motif is forbidden outright. Its sanctioned share is the
-    // refraction strip on its own top edge, not the field behind it.
+    // A sheet is a membrane, and a membrane's texture belongs to the material
+    // it is made of, not to the water. The thermocline mounts its own field —
+    // one continuous layer of dark scales in the material's near-black ink —
+    // so the light field of the column never goes behind a sheet, where it
+    // would read as the water showing through the content.
     const files = readdirSync(join(HERE, dir)).filter((name) => name.endsWith('.tsx'));
 
     expect(files.length).toBeGreaterThan(0);

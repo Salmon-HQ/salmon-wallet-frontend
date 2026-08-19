@@ -16,7 +16,8 @@
  */
 
 import React, { createContext, useContext } from 'react';
-import { StyledDialog } from './styles';
+import { Thermocline } from '../Thermocline';
+import { SHEET_GROUND_STYLE, StyledDialog } from './styles';
 import type { BaseSheetDialogProps } from './types';
 
 // ============================================================================
@@ -51,6 +52,7 @@ export function BaseSheetDialog({
   visible,
   onClose,
   children,
+  background,
   size = 'medium',
   colorScheme = 'dialog',
   className,
@@ -58,6 +60,14 @@ export function BaseSheetDialog({
   ariaLabelledBy,
 }: BaseSheetDialogProps): React.ReactElement {
   const contextValue: BaseSheetDialogContextValue = { onClose };
+
+  // A sheet is a membrane, and the thermocline is what a membrane is made of:
+  // every sheet grounds on the thick tier unless its caller brings a ground of
+  // its own, in which case that one wins and the default is not drawn — the
+  // material never stacks. Its texture is the membrane field, one dark scales
+  // layer the material mounts itself. See DESIGN.md §The thermocline is the
+  // sheet material and §The membrane field.
+  const resolvedBackground = background ?? <Thermocline tier="thick" style={SHEET_GROUND_STYLE} />;
 
   return (
     <BaseSheetDialogContext.Provider value={contextValue}>
@@ -71,12 +81,10 @@ export function BaseSheetDialog({
         $size={size}
         disableEnforceFocus
       >
-        {/* No decorative field. A sheet is a membrane — the one translucent
-            plane in the system — and the motif never goes where a live
-            backdrop shows through, because that is the one place it cannot be
-            kept off the content behind it. What a membrane is entitled to is
-            the 24px refraction strip along its own top edge, which is a
-            different appearance at a different scale and is not built yet. */}
+        {/* Ground first: the sub-components below are all positioned and sit
+            on z-index 1, so the material stays behind everything the sheet
+            holds. */}
+        {resolvedBackground}
 
         {/* Content */}
         {children}
