@@ -42,6 +42,7 @@ import {
   shadows,
   vs,
 } from '@salmon/shared';
+import { Thermocline } from '../Thermocline';
 import type { GateContainerProps, GateState } from './types';
 import { curve, timing } from '../../utils/motion';
 import {
@@ -270,10 +271,10 @@ export function GateContainer({
         style={[styles.gate, gateAnimatedStyle]}
         onLayout={(e) => setGateHeight(e.nativeEvent.layout.height)}
       >
-        {/* Shared visual surface — solid color, no scales. While locked the
-            lock content mounts its own ground (the water column), so the
-            surface goes transparent rather than painting a wall over it; the
-            collapsed/settings/wallets states keep their opaque sheet. */}
+        {/* Shared visual surface. The ground is the material, the same thick
+            tier every sheet grounds on — the gate no longer keeps a ground of
+            its own. While locked the lock content mounts its own ground (the
+            water column), so nothing is painted over it. */}
         <View
           testID="gate-surface"
           style={[
@@ -282,6 +283,8 @@ export function GateContainer({
             DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.gateSurface },
           ]}
         >
+          {state !== 'locked' && <Thermocline tier="thick" style={styles.thermocline} />}
+
           {/* Lock content — full screen */}
           {state === 'locked' && <View style={styles.lockContentContainer}>{lockContent}</View>}
 
@@ -426,19 +429,25 @@ const styles = StyleSheet.create({
   },
   surface: {
     flex: 1,
-    // The gate keeps its own ground: `surface.shelf`, the default opaque
-    // surface — the same value the legacy `background.primary` alias carried,
-    // now named for what the ground is.
-    backgroundColor: semantic.surface.shelf,
+    // No fill of its own: the Thermocline mounted inside carries the ground,
+    // the same thick tier `BottomSheetContainer` hardwires for every sheet.
+    // Radii and shadow stay here — the material clips itself to them.
+    backgroundColor: 'transparent',
     // 24 is a documented off-scale one-off (the scale's "header corners"
     // annotation) — deliberate, not a missed r-step.
     borderBottomLeftRadius: borderRadius['2xl'],
     borderBottomRightRadius: borderRadius['2xl'],
     ...shadows.topSheet,
   },
+  // The material fills the gate and clips itself to the gate's own bottom
+  // corners — the mirror of the sheet container's `thermocline` style.
+  thermocline: {
+    ...StyleSheet.absoluteFillObject,
+    borderBottomLeftRadius: borderRadius['2xl'],
+    borderBottomRightRadius: borderRadius['2xl'],
+  },
   surfaceLocked: {
-    backgroundColor: 'transparent',
-    // The shadow goes with the color: `surface` keeps `shadows.topSheet` for
+    // The shadow goes with the ground: `surface` keeps `shadows.topSheet` for
     // the sheet states, and on iOS a shadow with a transparent background
     // composites over the lock content as a ghost band. Elevation for Android.
     shadowOpacity: 0,

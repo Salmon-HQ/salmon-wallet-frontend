@@ -1,5 +1,5 @@
 import React from 'react';
-import { Animated, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 const mockSendNft = jest.fn();
@@ -73,7 +73,12 @@ jest.mock('@salmon/shared', () => ({
     },
     border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
     surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
-    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+    status: {
+      success: '#33D6A6',
+      danger: '#FF6B85',
+      warning: '#FFB020',
+      dangerTint: 'rgba(239,68,68,0.1)',
+    },
     state: { hover: 'rgba(199,211,232,0.06)', press: 'rgba(199,211,232,0.10)' },
     flesh: { band: '#FFF1EE' },
   },
@@ -202,6 +207,43 @@ describe('NftDetailSheet', () => {
     expect(screen.getAllByTestId('blur-container').length).toBeGreaterThanOrEqual(4);
   });
 
+  it('renders Burn as a destructive trigger, not a peer of Send', () => {
+    render(
+      <NftDetailSheet
+        visible
+        onClose={jest.fn()}
+        nft={
+          {
+            mint: 'Mint111',
+            name: 'Blur NFT',
+            image: 'https://example.com/nft.png',
+            blockchain: 'solana',
+          } as any
+        }
+      />
+    );
+
+    const burn = screen.getByTestId('nft-detail-burn-button');
+    // The announced consequence — a channel that survives with colour off.
+    expect(burn.props.accessibilityHint).toContain('irreversible');
+    // Danger ink on the label, not the neutral ink Send's peers wear.
+    const burnLabel = StyleSheet.flatten(screen.getByText('Burn').props.style) as {
+      color?: string;
+    };
+    expect(burnLabel.color).toBe('#FF6B85');
+    // And the wrapper wears the danger tint with a danger edge.
+    const burnWrapper = mockBlurContainer.mock.calls
+      .map(([props]) => props as { backgroundColor?: string; borderColor?: string })
+      .find((props) => props.backgroundColor === 'rgba(239,68,68,0.1)');
+    expect(burnWrapper?.borderColor).toBe('#FF6B85');
+
+    // Send is untouched: it stays the primary, on the salmon fill.
+    const sendLabel = StyleSheet.flatten(screen.getByText('Send').props.style) as {
+      color?: string;
+    };
+    expect(sendLabel.color).toBe('#070911');
+  });
+
   describe('send review flow', () => {
     const nft = {
       mint: 'Mint111',
@@ -215,11 +257,9 @@ describe('NftDetailSheet', () => {
       mockSendNft.mockReset();
       // The native-driven step slide never completes under Jest; finish it
       // synchronously so the step machine advances.
-      jest
-        .spyOn(Animated, 'timing')
-        .mockReturnValue({
-          start: (cb?: Animated.EndCallback) => cb?.({ finished: true }),
-        } as unknown as Animated.CompositeAnimation);
+      jest.spyOn(Animated, 'timing').mockReturnValue({
+        start: (cb?: Animated.EndCallback) => cb?.({ finished: true }),
+      } as unknown as Animated.CompositeAnimation);
     });
 
     afterEach(() => {

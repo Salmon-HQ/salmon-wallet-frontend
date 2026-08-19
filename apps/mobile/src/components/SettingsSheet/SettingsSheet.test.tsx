@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
 const mockPush = jest.fn();
@@ -53,9 +54,21 @@ jest.mock('react-native-reanimated', () => {
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
   semantic: {
-    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+    status: {
+      success: '#33D6A6',
+      danger: '#FF6B85',
+      warning: '#FFB020',
+      dangerTint: 'rgba(239,68,68,0.1)',
+      warningTint: 'rgba(255,171,0,0.1)',
+      warningTintBorder: 'rgba(255,171,0,0.3)',
+    },
     text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', accent: '#FF5C45' },
-    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
+    surface: {
+      shelf: '#10131C',
+      raised: '#161C2D',
+      crest: '#1B2233',
+      membraneThick: 'rgba(11,15,25,0.80)',
+    },
     depth: { column: '#0B0F19', abyss: '#070911' },
     accent: { fill: '#FF5C45', ink: '#FF5C45', tint: 'rgba(255,92,69,0.10)' },
     border: { default: '#58637B', raised: '#6F7B95' },
@@ -185,6 +198,46 @@ describe('SettingsSheet', () => {
 
     expect(mockPush).toHaveBeenCalledWith('currency', undefined);
     expect(mockPop).not.toHaveBeenCalled();
+  });
+
+  describe('rows that expose key material carry the caution weight', () => {
+    const rowStyle = (label: string) =>
+      StyleSheet.flatten(screen.getByLabelText(label).props.style) as {
+        backgroundColor?: string;
+        borderColor?: string;
+      };
+
+    it.each([
+      ['settings.backup', 'settings-item-backup-caution', 'settings.backup_warning_title'],
+      ['settings.private_key', 'settings-item-privateKey-caution', 'settings.private_key_warning'],
+    ])('weights %s on three channels, never colour alone', (label, glyphTestId, hintKey) => {
+      render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
+
+      // Channel 1 — the tint and its edge.
+      expect(rowStyle(label).backgroundColor).toBe('rgba(255,171,0,0.1)');
+      expect(rowStyle(label).borderColor).toBe('rgba(255,171,0,0.3)');
+      // Channel 2 — the glyph.
+      expect(screen.getByTestId(glyphTestId)).toBeTruthy();
+      // Channel 3 — the announced consequence.
+      expect(screen.getByLabelText(label).props.accessibilityHint).toBe(hintKey);
+    });
+
+    it('leaves a preference row unweighted', () => {
+      render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
+
+      expect(rowStyle('settings.currency').backgroundColor).toBe('#111');
+      expect(rowStyle('settings.currency').borderColor).toBeUndefined();
+      expect(screen.getByLabelText('settings.currency').props.accessibilityHint).toBeUndefined();
+    });
+
+    it('stays quieter than a destroy action — the danger rows keep the danger tint', () => {
+      render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
+
+      expect(rowStyle('settings.wallets.remove_all_wallets').backgroundColor).toBe(
+        'rgba(239,68,68,0.1)'
+      );
+      expect(screen.queryByTestId('settings-item-removeAll-caution')).toBeNull();
+    });
   });
 
   it('renders push rows without a right chevron — the push sinks and floats, it does not slide', () => {

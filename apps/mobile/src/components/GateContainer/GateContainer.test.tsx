@@ -23,6 +23,17 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+// The material itself is asserted in Thermocline's own suite; here the gate
+// only has to mount it, on the right tier, with the gate's own geometry.
+jest.mock('../Thermocline', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    Thermocline: (props: { tier?: string; style?: unknown }) => (
+      <View testID="gate-thermocline" {...props} />
+    ),
+  };
+});
+
 jest.mock('../../icons', () => ({
   CaretLeftIcon: () => null,
   XIcon: () => null,
@@ -216,6 +227,32 @@ describe('GateContainer collapsed header with the task context at rest', () => {
     // the old title's sink and the new one's float hang off that key change.
     expect(screen.getByTestId('gate-expanded-title')).toHaveTextContent('Accounts');
     expect(screen.queryByText('Settings')).toBeNull();
+  });
+
+  it('grounds on the thick thermocline instead of a fill of its own', () => {
+    render(
+      <GateContainer
+        state="settings"
+        lockContent={null}
+        headerContent={<Text>header</Text>}
+        settingsContent={<Text>settings</Text>}
+        expandedHeader={{ title: 'Settings', onClose: jest.fn() }}
+      />
+    );
+
+    const material = screen.getByTestId('gate-thermocline');
+    expect(material.props.tier).toBe('thick');
+    // The material carries the ground; the surface paints nothing itself.
+    const surfaceStyle = StyleSheet.flatten(screen.getByTestId('gate-surface').props.style) as {
+      backgroundColor?: string;
+    };
+    expect(surfaceStyle.backgroundColor).toBe('transparent');
+  });
+
+  it('leaves the material out while locked — the lock content owns that ground', () => {
+    renderGate('locked');
+
+    expect(screen.queryByTestId('gate-thermocline')).toBeNull();
   });
 
   it('mounts the back chevron through its verb wrapper only while a back target exists', () => {

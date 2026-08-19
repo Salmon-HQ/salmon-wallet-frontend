@@ -55,6 +55,17 @@ jest.mock('../src/components/Icon', () => ({
   WalletSvgIcon: () => null,
 }));
 
+// The gate's ground. Its own suite asserts the material; here it only has to
+// mount without pulling the scales field's tokens through the mocked barrel.
+jest.mock('../src/components/Thermocline', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    Thermocline: (props: { tier?: string; style?: unknown }) => (
+      <View testID="gate-thermocline" {...props} />
+    ),
+  };
+});
+
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
@@ -79,7 +90,13 @@ jest.mock('@salmon/shared', () => ({
   motionMs: { feedbackHold: 1500 },
   shadows: {
     topSheet: {},
-    header: { shadowColor: '#000', shadowOffset: {}, shadowOpacity: 0, shadowRadius: 0, elevation: 0 },
+    header: {
+      shadowColor: '#000',
+      shadowOffset: {},
+      shadowOpacity: 0,
+      shadowRadius: 0,
+      elevation: 0,
+    },
   },
   spacing: { lg: 16, md: 12, headerPadding: 16, base: 12, sm: 8, xs: 4 },
   ms: (value: number) => value,

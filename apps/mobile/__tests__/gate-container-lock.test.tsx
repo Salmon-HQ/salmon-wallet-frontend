@@ -41,6 +41,17 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+// The gate's ground. Its own suite asserts the material; here it only has to
+// mount without pulling the scales field's tokens through the mocked barrel.
+jest.mock('../src/components/Thermocline', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    Thermocline: (props: { tier?: string; style?: unknown }) => (
+      <View testID="gate-thermocline" {...props} />
+    ),
+  };
+});
+
 // The real barrel pulls @solana/kit, which Jest cannot parse. Only design
 // tokens are needed here.
 jest.mock('@salmon/shared', () => ({
@@ -110,22 +121,24 @@ describe('GateContainer lock state', () => {
     expect(queryByTestId('header-content')).toBeNull();
   });
 
-  it('goes transparent while locked so the lock content’s water shows, and only then', () => {
-    // The lock mounts its own ground (the water column); an opaque gate
-    // surface would paint a wall over it. The collapsed/settings/wallets
-    // states keep their opaque sheet — they sit over app content.
-    const surfaceColor = () => {
-      const style = renderGate('locked').getByTestId('gate-surface').props.style;
+  it('leaves the ground to the lock content while locked, and to the material otherwise', () => {
+    // The lock mounts its own ground (the water column); nothing may paint a
+    // wall over it. Everywhere else the gate grounds on the thick thermocline
+    // — the same material every sheet grounds on — so the surface itself
+    // carries no fill in either case.
+    const surfaceColor = (view: ReturnType<typeof renderGate>) => {
+      const style = view.getByTestId('gate-surface').props.style;
       const flat = (Array.isArray(style) ? style : [style]).filter(Boolean);
       return Object.assign({}, ...flat).backgroundColor;
     };
-    expect(surfaceColor()).toBe('transparent');
 
-    const { getByTestId } = renderGate('collapsed');
-    const style = getByTestId('gate-surface').props.style;
-    const flat = (Array.isArray(style) ? style : [style]).filter(Boolean);
-    // The gate's own ground: `surface.shelf` (mocked above).
-    expect(Object.assign({}, ...flat).backgroundColor).toBe('#10131C');
+    const locked = renderGate('locked');
+    expect(surfaceColor(locked)).toBe('transparent');
+    expect(locked.queryByTestId('gate-thermocline')).toBeNull();
+
+    const collapsed = renderGate('collapsed');
+    expect(surfaceColor(collapsed)).toBe('transparent');
+    expect(collapsed.getByTestId('gate-thermocline').props.tier).toBe('thick');
   });
 
   it('unmounts the wallets panel when the app locks from the wallets state', () => {

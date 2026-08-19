@@ -28,6 +28,12 @@ export interface SettingsOption extends SettingsOptionBase {
   isToggle?: boolean;
   /** Whether this is an action (direct callback) instead of navigation */
   isAction?: boolean;
+  /**
+   * Translation key for what this row exposes. Present only on the rows that
+   * reveal key material: it both marks the row as caution-weighted and is the
+   * hint a screen reader announces, so the weight is never colour alone.
+   */
+  cautionHintKey?: string;
 }
 
 /**

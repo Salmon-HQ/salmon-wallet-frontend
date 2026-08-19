@@ -554,11 +554,16 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           </LinearGradient>
         </TouchableOpacity>
 
+        {/* Burn destroys the thing on screen and nothing brings it back, so
+            the trigger says so before the confirm step does — the same danger
+            vocabulary the review's `isDanger` speaks, on three channels: the
+            danger tint and its edge, the flame glyph, and the announced
+            irreversibility. Send stays the peer it is; this is not one. */}
         <BlurContainer
           style={styles.secondaryButtonWrapper}
           blurIntensity={2.5}
-          backgroundColor={colors.interactive.surface}
-          borderColor={semantic.border.raised}
+          backgroundColor={semantic.status.dangerTint}
+          borderColor={semantic.status.danger}
           borderWidth={borderWidth.actionButton}
         >
           <TouchableOpacity
@@ -568,9 +573,15 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel={t('nft.burn.reviewTitle', 'Burn NFT')}
+            accessibilityHint={t(
+              'nft.burn.reviewBody',
+              'This action is irreversible. Confirm only if you want to permanently burn this NFT.'
+            )}
           >
-            <FireIcon size={ms(18)} color={colors.text.balance} />
-            <Text style={styles.buttonText}>{t('nft.burn_nft', 'Burn')}</Text>
+            <FireIcon weight="fill" size={ms(18)} color={semantic.status.danger} />
+            <Text style={[styles.buttonText, styles.burnButtonText]}>
+              {t('nft.burn_nft', 'Burn')}
+            </Text>
           </TouchableOpacity>
         </BlurContainer>
       </View>
@@ -1183,6 +1194,11 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
     color: colors.text.balance,
+  },
+  // The destructive trigger's label: danger ink, not the neutral balance ink
+  // every other secondary button wears.
+  burnButtonText: {
+    color: semantic.status.danger,
   },
   // Same type as `buttonText`, but for the labels that sit on the salmon fill:
   // only `accent.onFill` clears AA there.
