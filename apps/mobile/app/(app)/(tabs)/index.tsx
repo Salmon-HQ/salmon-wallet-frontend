@@ -948,7 +948,10 @@ export default function HomeScreen() {
           visible={tokenSheetVisible}
           onClose={handleTokenSheetClose}
           token={selectedToken}
-          blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+          // networkId is the single chain source for sheet props — the
+          // carousel index (currentBlockchain) can lag behind it during a
+          // chain switch. Same rule as SendSheet below.
+          blockchain={getBlockchainFromNetworkId(networkId ?? 'solana-mainnet')}
           chartData={selectedTokenChartData}
           chartPeriod={selectedTokenChartPeriod}
           onChartPeriodChange={handleSelectedTokenChartPeriodChange}
@@ -964,7 +967,9 @@ export default function HomeScreen() {
         visible={receiveSheetVisible}
         onClose={handleReceiveSheetClose}
         address={address}
-        blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+        // networkId is the single chain source for sheet props — `address`
+        // already derives from it. Same rule as SendSheet below.
+        blockchain={getBlockchainFromNetworkId(networkId ?? 'solana-mainnet')}
         onCopy={handleReceiveSheetCopy}
       />
 
