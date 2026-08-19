@@ -13,6 +13,7 @@
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 // The real module pulls in @solana/kit, which jest-expo will not transform.
 // Only the tokens this card reads are needed; `spacing.sm` is the value that
@@ -98,9 +99,19 @@ jest.mock('../ScalesBackground', () => {
   };
 });
 
+// The card's light is a debug switch the owner flips by hand. A getter lets one
+// test file drive both readings; the component reads the binding per render.
+let mockCardLight = 'caustic';
+jest.mock('../../debug/cardLight', () => ({
+  get cardLight() {
+    return mockCardLight;
+  },
+}));
+
 import { BalanceCard } from './BalanceCard';
 
 const LOGO_GROUP = 'balance-card-logo-group';
+const CAUSTIC = 'balance-card-caustic';
 
 function renderCard() {
   return render(
@@ -135,5 +146,53 @@ describe('BalanceCard — the motif belongs to the water, not to this card', () 
     const { getByText } = renderCard();
 
     expect(getByText('$1,234')).toBeTruthy();
+  });
+});
+
+/**
+ * The card's light is not the motif. A caustic is a reflection on the card's
+ * own opaque face — the water's light, not the water's texture — so it is
+ * allowed exactly where the scales are not. These assertions pin the three
+ * things that could turn it back into a rule break: it must be switchable, the
+ * ground under it must stay opaque, and it must never touch the amount's ink.
+ */
+describe('BalanceCard — the water’s light on the card’s face', () => {
+  afterEach(() => {
+    mockCardLight = 'caustic';
+  });
+
+  it('draws the caustic under the `caustic` reading', () => {
+    mockCardLight = 'caustic';
+    const { queryAllByTestId } = renderCard();
+
+    expect(queryAllByTestId(CAUSTIC)).toHaveLength(1);
+  });
+
+  it('draws nothing under the `none` reading', () => {
+    mockCardLight = 'none';
+    const { queryAllByTestId } = renderCard();
+
+    expect(queryAllByTestId(CAUSTIC)).toHaveLength(0);
+  });
+
+  it('leaves the card’s own ground opaque, so it still covers the water', () => {
+    mockCardLight = 'caustic';
+    const { getByTestId } = renderCard();
+
+    // RN processes each stop to an ARGB int; the top byte is the alpha. Every
+    // stop must be 0xFF. A translucent stop would let the marine snow read
+    // through a numeric value — this card enforces the Scales Exclusion Rule by
+    // occlusion, so its ground losing opacity is the rule breaking silently.
+    const ground = getByTestId('balance-card-root').props.colors as number[];
+    expect(ground.length).toBeGreaterThan(0);
+    ground.forEach((stop) => expect(stop >>> 24).toBe(0xff));
+  });
+
+  it('does not touch the amount’s ink', () => {
+    mockCardLight = 'caustic';
+    const { getByText } = renderCard();
+
+    const amount = StyleSheet.flatten(getByText('$1,234').props.style) as { color: string };
+    expect(amount.color).toBe('#DDE3ED');
   });
 });

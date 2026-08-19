@@ -25,9 +25,122 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { cardLight } from '../../debug/cardLight';
 import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
 import { ShimmerRect } from '../ShimmerRect';
 import type { BalanceCardProps, BlockchainId } from './types';
+
+/* ------------------------------------------------------------------------ *
+ * The caustic — the water's light on the card's face
+ *
+ * The card is an opaque pane suspended in the column. Unlit it reads as a grey
+ * rectangle, because a pane at depth with no light on it is exactly that. This
+ * layer gives it the water's own light rather than the brand's: `water.light`
+ * (`#9FE0EF`), the cold caustic ink The Surfacing's band and the press specular
+ * already spend. Same rgba literal the two `ScalesBackground`s use for the
+ * caustic stroke — the token is the source of truth, the literal is the
+ * platform's spelling of it.
+ *
+ * Two objections had to be answered before this could be light at all.
+ *
+ * 1. The gate hangs above this card and casts a shadow onto it, so light
+ *    arriving from directly overhead is occluded before it lands — a spotlight
+ *    here would contradict the geometry the shadow already states. So this is
+ *    not incident light. It is a *reflection on the card's own face*: the pane
+ *    returns the rippling surface far above it toward the viewer, and where a
+ *    reflection sits is decided by the viewer's angle, not the source's. An
+ *    awning over your head does not remove the sky from a window in front of
+ *    you. The gate's shadow and this reflection are therefore not rivals; the
+ *    dark band the gate lays across the top edge is what the light beneath it
+ *    reads against, and the two together model the card as a solid object.
+ * 2. DESIGN.md refuses "ambient light shafts or resting caustics" and holds
+ *    that light is an event, never a state. That refusal is about the *water* —
+ *    the column must not glow, or The Surfacing stops meaning anything. This is
+ *    not the medium emitting; it is a surface's specularity, a material
+ *    property in the same class as the thermocline's own frosted texture. It
+ *    stays inside the card, it is static, and it never brightens: nothing about
+ *    it can be mistaken for something having just happened.
+ *
+ * The Scales Exclusion Rule is untouched — no motif enters the card, and the
+ * card's ground stays fully opaque over the water. The rule is about the
+ * motif, not about light.
+ *
+ * Cost: two static `LinearGradient`s inside a layer the card already
+ * composites. No blur, no native module, no clock. Deliberately *not*
+ * `mixBlendMode: 'screen'` like the press specular: over a ground this dark the
+ * two composite within a level or two of each other, and screen would buy a
+ * separate compositing group for nothing.
+ * ------------------------------------------------------------------------ */
+
+/** `water.light`, in the alpha-carrying spelling `expo-linear-gradient` needs. */
+const causticInk = (alpha: number) => `rgba(159, 224, 239, ${alpha})`;
+
+/**
+ * Peak opacity of the brightest filament. **Band 0.03–0.07.**
+ * Below 0.03 the light is not there at all on an OLED phone; above 0.07 the
+ * card's tightest ink pair — the negative change ink `#FF6B85` — would fall
+ * under 4.5:1 if the light ever reached the change row (5.32:1 unlit → 4.37:1
+ * at 0.08). The number is small on purpose: this is a content surface at
+ * depth, not a hero. It is the amount that should be the brightest thing here.
+ */
+const CAUSTIC_PEAK_OPACITY = 0.05;
+
+/**
+ * The second filament, as a fraction of the peak. **Band 0.4–0.8.**
+ * A single wash reads as a vignette; two filaments crossing at different
+ * angles is the least a caustic needs to read as *focused* light. Above 0.8 the
+ * two stop being a crossing and become one wide smear.
+ */
+const CAUSTIC_CROSS_RATIO = 0.6;
+
+/**
+ * How far down the card the light survives, along its own axis.
+ * **Band 0.24–0.40.** The hard ceiling is the amount's cap-height, which lands
+ * near 0.40 of a stock card's height: past that the light is on the number, and
+ * lightening the ground under the screen's largest figure is the one thing this
+ * layer must never do. Move the caustic, never the number.
+ */
+const CAUSTIC_REACH = 0.3;
+
+/**
+ * Where the light enters and which way it runs. The shoulder, not the crown:
+ * the top edge is where the gate's shadow is densest, and a reflection that
+ * starts off-centre reads as gathered rather than as a header treatment.
+ */
+const CAUSTIC_AXIS = { start: { x: 0.05, y: 0 }, end: { x: 0.75, y: 1 } } as const;
+/** The crossing filament: shallower, nearly lateral, so the two actually cross. */
+const CAUSTIC_CROSS_AXIS = { start: { x: 0, y: 0.14 }, end: { x: 1, y: 0.44 } } as const;
+
+/** The reflection on the card's face. Static, non-interactive, clipped to the card. */
+const BalanceCardCaustic = () => (
+  <View style={styles.causticLayer} pointerEvents="none" testID="balance-card-caustic">
+    <LinearGradient
+      colors={[
+        causticInk(0),
+        causticInk(CAUSTIC_PEAK_OPACITY * 0.5),
+        causticInk(CAUSTIC_PEAK_OPACITY),
+        causticInk(0),
+      ]}
+      // Rises fast off the edge and decays slowly — a filament has a bright
+      // core and a long tail, which is what separates it from a linear fade.
+      locations={[0, CAUSTIC_REACH * 0.22, CAUSTIC_REACH * 0.52, CAUSTIC_REACH]}
+      start={CAUSTIC_AXIS.start}
+      end={CAUSTIC_AXIS.end}
+      style={StyleSheet.absoluteFill}
+    />
+    <LinearGradient
+      colors={[
+        causticInk(0),
+        causticInk(CAUSTIC_PEAK_OPACITY * CAUSTIC_CROSS_RATIO),
+        causticInk(0),
+      ]}
+      locations={[0, CAUSTIC_REACH * 0.45, CAUSTIC_REACH * 1.1]}
+      start={CAUSTIC_CROSS_AXIS.start}
+      end={CAUSTIC_CROSS_AXIS.end}
+      style={StyleSheet.absoluteFill}
+    />
+  </View>
+);
 
 /**
  * Get gradient configuration for a blockchain
@@ -228,6 +341,8 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
       style={[styles.container, style]}
       testID="balance-card-root"
     >
+      {cardLight === 'caustic' && <BalanceCardCaustic />}
+
       {/* Group 1: Logo + Network tag. No motif: the motif belongs to the
           water, and this card is content — it carries the balance figure, and
           the scales never go behind a numeric value. Confining the field to
@@ -302,6 +417,16 @@ const styles = StyleSheet.create({
         elevation: shadows.card.elevation,
       },
     }),
+  },
+  /**
+   * Clips the reflection to the card's own rounded face. It carries the clip
+   * rather than the container so the container keeps its drop shadow — on iOS
+   * `overflow: 'hidden'` sets `masksToBounds` and would erase it.
+   */
+  causticLayer: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: ms(borderRadius.card),
+    overflow: 'hidden',
   },
   contentGroup: {
     alignItems: 'center',
