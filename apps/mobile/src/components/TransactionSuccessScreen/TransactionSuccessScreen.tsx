@@ -346,7 +346,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
               size={LOGO_SIZE}
             />
             <Text
-              style={styles.amount}
+              style={[styles.amount, styles.amountSpent]}
               numberOfLines={1}
               adjustsFontSizeToFit
               minimumFontScale={MIN_AMOUNT_SCALE}
@@ -580,6 +580,15 @@ const styles = StyleSheet.create({
     // digit. It costs nothing on the single-string variant, where the text is
     // the column's only child.
     flexShrink: 1,
+  },
+  // What was spent steps down one rank so what arrived reads louder: the
+  // receipt's subject is the amount that landed, and the exchange line lost
+  // that emphasis when the hero left its card.
+  amountSpent: {
+    fontSize: ms(fontSize.bodyLg),
+    fontFamily: fontFamilyNative.regular,
+    color: semantic.text.secondary,
+    lineHeight: ms(fontSize.bodyLg * lineHeight.tight),
   },
   // The quiet receipt: label left, value right, no card — secondary rank
   // under the amount, above the bridge details when there are any.
