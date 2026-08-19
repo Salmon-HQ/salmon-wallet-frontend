@@ -96,6 +96,15 @@ export function LockContent({
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
+  /**
+   * Held from a successful unlock until the next lock: the form sank to make
+   * room for the wait and has no right to come back up. Dropping `visible`
+   * alone would remount the cluster under the departing wave, so the last
+   * wave would uncover the very fish, title and input that already left.
+   * What the wave uncovers after a success is the water column alone —
+   * ground, beat, then the gate's rise (DESIGN.md §Motion).
+   */
+  const [submerged, setSubmerged] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -173,6 +182,7 @@ export function LockContent({
       setShowPasswordFallback(false);
       setPassword('');
       setError(null);
+      setSubmerged(false);
     }
   }, [locked]);
 
@@ -315,6 +325,8 @@ export function LockContent({
       // (LoadingScreen's watchdog guarantees that report). The release is
       // parked, the wave is handed its exit.
       pendingUnlockRef.current = true;
+      // The form stays down for good — see `submerged`.
+      setSubmerged(true);
       setShowLoadingScreen(false);
     } catch (err) {
       console.error('Unlock failed:', err);
@@ -377,8 +389,9 @@ export function LockContent({
         <ScalesBackground variant="deepField" />
         {/* The form gives way to the wait with the passage's sink; on a
             failed unlock it returns under the wait's own ebb, exactly where
-            it was. */}
-        {!showLoadingScreen && (
+            it was. After a successful one it stays down: the wave leaves on
+            bare water. */}
+        {!showLoadingScreen && !submerged && (
           <Animated.View style={styles.passage} exiting={waitExiting}>
             <OnboardingLayout
               testID="lock-screen"

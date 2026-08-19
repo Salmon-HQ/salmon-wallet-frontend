@@ -350,6 +350,15 @@ describe('LockContent', () => {
     expect(mockLoadingScreenProps.visible).toBe(false);
     expect(onUnlockExited).not.toHaveBeenCalled();
 
+    // ...and what the departing wave uncovers is the water column alone. The
+    // form sank to make room for the wait; it does not come back up to ride
+    // the gate.
+    expect(screen.queryByTestId('lock-screen')).toBeNull();
+    expect(screen.queryByTestId('lock-password-input')).toBeNull();
+    expect(screen.queryByTestId('lock-unlock-button')).toBeNull();
+    expect(screen.getByTestId('depth-background')).toBeTruthy();
+    expect(screen.getByTestId('scales-background')).toBeTruthy();
+
     // ...which fires exactly once when the wave reports it has left.
     await act(async () => {
       mockLoadingScreenProps.onExited?.();
@@ -400,10 +409,60 @@ describe('LockContent', () => {
     await waitFor(() => {
       expect(assist.getByText('lock.wrong_password')).toBeTruthy();
     });
+    // Nothing submerges on a failure: the form is there when the wave leaves,
+    // which is the whole point of returning to it.
+    expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    expect(screen.getByTestId('lock-unlock-button')).toBeTruthy();
     await act(async () => {
       mockLoadingScreenProps.onExited?.();
     });
     expect(onUnlockExited).not.toHaveBeenCalled();
+    expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+  });
+
+  it('brings the form back on the next lock', async () => {
+    const props = {
+      onUnlock: jest.fn().mockResolvedValue(true),
+      onUnlockExited: jest.fn(),
+      onRemoveAllAccounts: jest.fn().mockResolvedValue(undefined),
+      biometric: {
+        state: { isAvailable: false, hasStoredKey: false, biometricType: null },
+        authenticateWithBiometric: jest.fn(),
+        storeKeyForBiometric: jest.fn(),
+        enableBiometric: false,
+        refreshState: jest.fn().mockResolvedValue(undefined),
+      },
+    } as const;
+
+    const { rerender } = render(<LockContent locked {...props} />);
+
+    await act(async () => {});
+    await waitFor(() => {
+      expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    });
+
+    fireEvent.changeText(screen.getByTestId('lock-password-input'), 'correct-horse');
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('lock-unlock-button'));
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
+    expect(screen.queryByTestId('lock-password-input')).toBeNull();
+
+    // The gate opens, then the wallet locks again — a fresh lock session gets
+    // the whole form back, empty.
+    rerender(<LockContent locked={false} {...props} />);
+    await act(async () => {});
+    expect(screen.queryByTestId('lock-password-input')).toBeNull();
+
+    rerender(<LockContent locked {...props} />);
+    await act(async () => {});
+    await waitFor(() => {
+      expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    });
+    expect(screen.getByTestId('lock-password-input').props.value).toBe('');
+    expect(screen.getByTestId('lock-unlock-button')).toBeTruthy();
   });
 
   // Regression guard for the e2e test-label contract (Maestro `id` selectors).
