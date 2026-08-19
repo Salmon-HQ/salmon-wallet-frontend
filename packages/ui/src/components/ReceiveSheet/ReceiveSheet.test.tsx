@@ -50,10 +50,17 @@ vi.mock('@salmon/shared', async () => ({
     chain === 'bitcoin' ? 'Bitcoin' : chain === 'ethereum' ? 'Ethereum' : 'Solana',
 }));
 
-// The QR encoder walks a canvas, which jsdom does not provide; chain identity
-// does not depend on it.
+// The QR encoder walks a canvas, which jsdom does not provide; render a
+// prop-carrying stand-in so the suite can assert what the sheet asks of the
+// code (e.g. level-H).
 vi.mock('../QRCode', () => ({
-  QRCode: () => <div data-testid="qr" />,
+  QRCode: ({ ecLevel }: { ecLevel?: string }) => <div data-testid="qr" data-ec-level={ecLevel} />,
+}));
+
+// The mark reads `markPaths` from the (mocked) shared barrel; the sheet only
+// needs it to exist.
+vi.mock('../BrandMark', () => ({
+  BrandMark: () => <svg data-testid="brand-mark" />,
 }));
 
 vi.mock('../FleshBackground', () => ({
@@ -101,5 +108,16 @@ describe('ReceiveSheet chain identity', () => {
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toContain('token.receive.networkOnlyTitle:Bitcoin');
     expect(alert.textContent).toContain('token.receive.networkOnlyBody:Bitcoin');
+  });
+});
+
+describe('ReceiveSheet QR brand mark', () => {
+  it('centers the salmon mark on a knockout over a level-H code', () => {
+    render(<ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="solana" />);
+
+    // The mark hides modules, so the code must carry level-H redundancy.
+    expect(screen.getByTestId('qr').getAttribute('data-ec-level')).toBe('H');
+    expect(screen.getByTestId('receive-qr-logo')).toBeTruthy();
+    expect(screen.getByTestId('brand-mark')).toBeTruthy();
   });
 });

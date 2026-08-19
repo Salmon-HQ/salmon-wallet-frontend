@@ -70,12 +70,27 @@ jest.mock('../FleshBackground', () => ({
   FleshBackground: () => null,
 }));
 
-// The QR encoder needs a canvas/SVG surface; chain identity does not depend
-// on it.
-jest.mock('../QRCode', () => ({
-  __esModule: true,
-  default: () => null,
-}));
+// The QR encoder needs a canvas/SVG surface; render a prop-carrying stand-in
+// so the suite can assert what the sheet asks of the code (e.g. level-H).
+jest.mock('../QRCode', () => {
+  const ReactActual = jest.requireActual('react');
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: (props: Record<string, unknown>) =>
+      ReactActual.createElement(View, { ...props, testID: 'qr-code' }),
+  };
+});
+
+// The mark is react-native-svg; the sheet only needs it to exist.
+jest.mock('../BrandMark', () => {
+  const ReactActual = jest.requireActual('react');
+  const { View } = jest.requireActual('react-native');
+  return {
+    BrandMark: (props: Record<string, unknown>) =>
+      ReactActual.createElement(View, { ...props, testID: 'brand-mark' }),
+  };
+});
 
 import { ReceiveSheet } from './ReceiveSheet';
 
@@ -95,5 +110,16 @@ describe('ReceiveSheet chain identity', () => {
 
     expect(screen.getByText('token.receive.networkOnlyTitle:Bitcoin')).toBeTruthy();
     expect(screen.getByText('token.receive.networkOnlyBody:Bitcoin')).toBeTruthy();
+  });
+});
+
+describe('ReceiveSheet QR brand mark', () => {
+  it('centers the salmon mark on a knockout over a level-H code', () => {
+    render(<ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="solana" />);
+
+    // The mark hides modules, so the code must carry level-H redundancy.
+    expect(screen.getByTestId('qr-code').props.ecLevel).toBe('H');
+    expect(screen.getByTestId('receive-qr-logo')).toBeTruthy();
+    expect(screen.getByTestId('brand-mark')).toBeTruthy();
   });
 });

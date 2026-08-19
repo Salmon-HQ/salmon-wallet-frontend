@@ -547,6 +547,15 @@ Three things follow from that and should not drift:
 The mark is sized by the onboarding grid, never by the screen — a vector has no
 native size to defer to, which is what let six of them coexist before.
 
+**The Receive QR carries the mark (2026-08-19).** The salmon mark sits
+centered on the Receive QR, on its own knockout — the mark is identity, not
+data, so it rests on the code's ground ink and is drawn in the module ink,
+never the accent. The knockout spans 24% of the code's width and the code
+runs error-correction level H, keeping the hidden modules well under the ~30%
+a level-H code can lose: a wallet QR must scan before it decorates. Both
+platforms compose it the same way — the vector `BrandMark` over the code,
+never a raster inside it.
+
 ### The onboarding grid
 
 **Shipped.** Every screen in the create, recover and unlock flows composes on

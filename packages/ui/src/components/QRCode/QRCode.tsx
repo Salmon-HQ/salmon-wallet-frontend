@@ -31,12 +31,13 @@ export function QRCode({
   size,
   backgroundColor = '#FFFFFF',
   color = '#000000',
+  ecLevel = 'M',
   className,
   style,
 }: QRCodeProps) {
   return (
     <Container className={className} style={style}>
-      <QRCodeSVG value={value} size={size} bgColor={backgroundColor} fgColor={color} />
+      <QRCodeSVG value={value} size={size} bgColor={backgroundColor} fgColor={color} level={ecLevel} />
     </Container>
   );
 }

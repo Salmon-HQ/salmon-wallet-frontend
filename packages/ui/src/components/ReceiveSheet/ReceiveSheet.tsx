@@ -34,6 +34,7 @@ import {
 } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 import { QRCode } from '../QRCode';
+import { BrandMark } from '../BrandMark';
 import { BaseSheetDialog } from '../BaseSheetDialog';
 import { FleshBackground } from '../FleshBackground';
 import { WarningNotice } from '../WarningNotice';
@@ -45,6 +46,12 @@ import { CopyTick } from '../CopyTick';
 // ============================================================================
 
 const QR_SIZE_DEFAULT = componentSizes.qrCodeSize;
+
+// Brand mark inside the QR: the knockout (quiet zone behind the mark) covers
+// 24% of the code's width — under the ~30% of modules a level-H code can lose
+// and still scan — and the mark sits inside it with breathing room.
+const QR_LOGO_KNOCKOUT_RATIO = 0.24;
+const QR_LOGO_MARK_RATIO = 0.66; // of the knockout, so the mark never touches modules
 
 // ============================================================================
 // Styled Components
@@ -60,6 +67,7 @@ const ContentWrapper = styled(Box)({
 });
 
 const QRContainer = styled(Box)({
+  position: 'relative',
   borderRadius: borderRadius.xl,
   border: `${componentSizes.qrBorderWidth}px solid ${palette.neutral[0]}`,
   overflow: 'hidden',
@@ -67,6 +75,19 @@ const QRContainer = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   flexShrink: 0,
+});
+
+/** The salmon mark's knockout, centered so no module collides with it. */
+const QRLogoKnockout = styled(Box)({
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: palette.neutral[0],
+  pointerEvents: 'none',
 });
 
 const ChainBadge = styled(Typography)({
@@ -161,6 +182,7 @@ export function ReceiveSheet({
 }: ReceiveSheetProps) {
   const { copied, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
   const [qrSize, setQrSize] = useState<number>(QR_SIZE_DEFAULT);
+  const qrLogoKnockoutSize = Math.round(qrSize * QR_LOGO_KNOCKOUT_RATIO);
   const contentRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
 
@@ -235,7 +257,25 @@ export function ReceiveSheet({
               size={qrSize}
               backgroundColor={palette.neutral[0]}
               color={palette.neutral[1000]}
+              // The centered mark hides modules, so the code carries level-H
+              // redundancy — a wallet QR must stay scannable before it looks good.
+              ecLevel="H"
             />
+            {/* The salmon mark on its own knockout: same inks as the code —
+                knockout is the code's ground, mark is the module ink. */}
+            <QRLogoKnockout
+              data-testid="receive-qr-logo"
+              style={{
+                width: qrLogoKnockoutSize,
+                height: qrLogoKnockoutSize,
+                borderRadius: qrLogoKnockoutSize / 4,
+              }}
+            >
+              <BrandMark
+                size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
+                color={palette.neutral[1000]}
+              />
+            </QRLogoKnockout>
           </QRContainer>
 
           {/* Full Address */}
