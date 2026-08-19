@@ -1,9 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
-import { TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
 const mockUseAddressValidation = jest.fn();
 const mockUseSendContacts = jest.fn();
+const mockKeyboardHeight = jest.fn(() => 0);
 var mockScannerProps: any;
 
 jest.mock('../QRScanner', () => ({
@@ -107,9 +108,14 @@ jest.mock('@salmon/shared', () => ({
   },
   letterSpacing: { widest: 1 },
   shadowsCSS: { bezel: 'none' },
-  fontFamilyNative: { regular: 'System', medium: 'System', bold: 'System' },
+  fontFamilyNative: {
+    regular: 'System',
+    medium: 'System',
+    bold: 'System',
+    mono: 'GeistMonoRegular',
+  },
   fontScaleCap: { chrome: 1.3, dense: 1.4 },
-  fontSize: { xs: 12, sm: 14, base: 16, bodyLg: 18, xl: 24 },
+  fontSize: { xs: 12, sm: 14, base: 16, bodyLg: 18, xl: 24, mono: 13 },
   getShortAddress: (value: string) => `${value.slice(0, 4)}...${value.slice(-4)}`,
   gradients: {
     primary: { colors: ['#0f0', '#0c0'] },
@@ -134,6 +140,10 @@ jest.mock('../../../hooks/useBottomSheetChrome', () => ({
     actionRowBottomPadding: 0,
     compactContentBottomPadding: 0,
   }),
+}));
+
+jest.mock('../../../hooks/useKeyboardHeight', () => ({
+  useKeyboardHeight: () => mockKeyboardHeight(),
 }));
 
 jest.mock('../BlurContainer', () => ({
@@ -161,6 +171,7 @@ const token = {
 describe('StepAddressAmount', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockKeyboardHeight.mockReturnValue(0);
 
     mockUseSendContacts.mockReturnValue({
       contacts: [
@@ -258,6 +269,66 @@ describe('StepAddressAmount', () => {
     expect(screen.getByText('Invalid recipient')).toBeTruthy();
     const touchables = view.UNSAFE_getAllByType(TouchableOpacity);
     expect(touchables.at(-1)?.props.disabled).toBe(true);
+  });
+
+  it('keeps the recipient message line in place whether or not there is a message', () => {
+    render(
+      <StepAddressAmount
+        token={token}
+        blockchain="solana"
+        account={account}
+        onBack={jest.fn()}
+        onReview={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+
+    // Nothing typed yet: the line is already there, holding its height with a
+    // blank, so the Amount block below it cannot move when the error lands.
+    // Mounted but hidden: it holds its line box while staying out of the
+    // accessibility tree, which is why the query has to ask for hidden nodes.
+    const emptySlot = screen.getByTestId('send-recipient-message', { includeHiddenElements: true });
+    expect(emptySlot.props.children).toBe(' ');
+    expect(screen.queryByTestId('send-recipient-message')).toBeNull();
+
+    fireEvent.changeText(screen.getByPlaceholderText('Solana Address'), 'bad-address');
+
+    expect(screen.getByTestId('send-recipient-message').props.children).toBe('Invalid recipient');
+  });
+
+  it('renders the recipient address in the mono face', () => {
+    render(
+      <StepAddressAmount
+        token={token}
+        blockchain="solana"
+        account={account}
+        onBack={jest.fn()}
+        onReview={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+
+    const recipient = StyleSheet.flatten(screen.getByTestId('send-recipient-input').props.style);
+    expect(recipient.fontFamily).toBe('GeistMonoRegular');
+    expect(recipient.fontSize).toBe(13);
+  });
+
+  it('lifts the action row clear of the keyboard', () => {
+    mockKeyboardHeight.mockReturnValue(336);
+
+    render(
+      <StepAddressAmount
+        token={token}
+        blockchain="solana"
+        account={account}
+        onBack={jest.fn()}
+        onReview={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+
+    const row = StyleSheet.flatten(screen.getByTestId('send-action-row').props.style);
+    expect(row.paddingBottom).toBeGreaterThanOrEqual(336);
   });
 
   it('preserves a typed address when the scanner is dismissed, fills address and amount on scan', () => {

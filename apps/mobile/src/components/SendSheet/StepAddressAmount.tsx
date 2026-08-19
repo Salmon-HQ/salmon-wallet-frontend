@@ -7,8 +7,6 @@ import {
   ActivityIndicator,
   StyleSheet,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { QrCodeIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +29,9 @@ import {
   semantic,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 import { BlurContainer } from '../BlurContainer';
+import { ReservedSlot } from '../OnboardingLayout/ReservedSlot';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { TokenLogo } from '../TokenLogo';
 import { QRScanner } from '../QRScanner';
@@ -64,6 +64,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
   const { t } = useTranslation();
   const [{ currency }, { formatPrecise }] = useCurrencyContext();
   const { actionRowBottomPadding, compactContentBottomPadding } = useBottomSheetChrome();
+  const keyboardHeight = useKeyboardHeight();
   const [address, setAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [showScanner, setShowScanner] = useState(false);
@@ -165,12 +166,26 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
     }
   }, [blockchain, t]);
 
+  // The action row and the keyboard.
+  //
+  // This step used to wrap itself in a `KeyboardAvoidingView` with a hardcoded
+  // `keyboardVerticalOffset` of 100, which is the amount by which the lift fell
+  // short of the keyboard: Cancel and Review ended up entirely behind it, so
+  // with the address field focused there was no way to commit and no way to
+  // back out. On Android there was no behavior at all, and the window does not
+  // resize under the edge-to-edge display the platform now forces, so the row
+  // never moved there either.
+  //
+  // The sheet's bottom edge is the screen's bottom edge, so the keyboard's own
+  // measured height is exactly the distance the row has to clear — the same
+  // idiom every other keyboarded surface in the app uses. It is one number for
+  // both platforms, it needs no measurement inside the modal, and it leaves the
+  // sheet's drag handle and its dismiss gesture untouched.
+  const actionRowKeyboardPadding =
+    keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : actionRowBottomPadding;
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={100}
-    >
+    <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -256,18 +271,22 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
               <Text style={[styles.validationIndicator, styles.warningIcon]}>{'\u26A0'}</Text>
             )}
           </BlurContainer>
-          {/* Validation message */}
-          {addressMessage && (
+          {/* Validation message. Its line is reserved from the first frame —
+              nothing moves under the finger: a rejected address used to push
+              the whole Amount block down while the user was still typing into
+              the field above it. */}
+          <ReservedSlot visible={!!addressMessage}>
             <Text
+              testID="send-recipient-message"
               style={[
                 styles.validationMessage,
                 addressMessageType === 'error' && styles.validationMessageError,
                 addressMessageType === 'warning' && styles.validationMessageWarning,
               ]}
             >
-              {t(addressMessage)}
+              {addressMessage ? t(addressMessage) : ' '}
             </Text>
-          )}
+          </ReservedSlot>
         </View>
 
         {/* My Wallets */}
@@ -358,7 +377,10 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
       </ScrollView>
 
       {/* Bottom Buttons */}
-      <View style={[styles.bottomButtons, { paddingBottom: actionRowBottomPadding }]}>
+      <View
+        testID="send-action-row"
+        style={[styles.bottomButtons, { paddingBottom: actionRowKeyboardPadding }]}
+      >
         <SecondaryButton testID="send-cancel-button" style={styles.rowButton} onPress={onCancel}>
           {t('actions.cancel', 'Cancel')}
         </SecondaryButton>
@@ -379,7 +401,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
         onScan={handleScan}
         onClose={() => setShowScanner(false)}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -451,10 +473,14 @@ const styles = StyleSheet.create({
     borderWidth: borderWidth.thin,
     borderColor: semantic.status.success,
   },
+  // An address is a position-critical string: every character carries a place,
+  // and a proportional face lets two of them look alike. Geist Mono at the
+  // system's address size, the same face the confirmation step already prints
+  // the destination in.
   textInput: {
     flex: 1,
-    fontSize: ms(fontSize.bodyLg),
-    fontFamily: fontFamilyNative.regular,
+    fontSize: ms(fontSize.mono),
+    fontFamily: fontFamilyNative.mono,
     color: colors.text.primary,
     paddingVertical: 0,
   },
@@ -519,8 +545,8 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   contactAddress: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.regular,
+    fontSize: ms(fontSize.mono),
+    fontFamily: fontFamilyNative.mono,
     color: colors.text.secondary,
     marginTop: vs(spacing.xxs),
   },
