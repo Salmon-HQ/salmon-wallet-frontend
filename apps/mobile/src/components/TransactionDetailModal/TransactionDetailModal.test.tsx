@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
 const mockSetStringAsync = jest.fn().mockResolvedValue(undefined);
@@ -67,8 +68,13 @@ jest.mock('@salmon/shared', () => ({
     background: { card: '#111' },
     border: { subtle: '#222' },
   },
-  fontFamilyNative: { bold: 'System', medium: 'System', regular: 'System' },
-  fontSize: { xs: 12, sm: 14, base: 16, lg: 20, '2xl': 24 },
+  fontFamilyNative: {
+    bold: 'System',
+    medium: 'System',
+    regular: 'System',
+    mono: 'GeistMonoRegular',
+  },
+  fontSize: { xs: 12, sm: 14, base: 16, lg: 20, '2xl': 24, mono: 13 },
   formatBlockNumber: (value: number) => value.toString(),
   formatDateTime: (value: number) => `date:${value}`,
   formatRawAmount: (amount: string | number, decimals: number) =>
@@ -349,6 +355,41 @@ describe('TransactionDetailModal', () => {
     expect(mockExplorerProps).toHaveBeenCalledWith(
       expect.objectContaining({ blockchain: 'BITCOIN', environment: 'bitcoin-testnet' })
     );
+  });
+
+  it('sets the transaction hash in mono at the address size', () => {
+    render(<TransactionDetailModal visible onClose={jest.fn()} transaction={BASE_TRANSACTION} />);
+
+    const hash = StyleSheet.flatten(screen.getByText(/^hash:/).props.style);
+
+    expect(hash.fontFamily).toBe('GeistMonoRegular');
+    expect(hash.fontSize).toBe(13);
+  });
+
+  it('renders the network fee row when the fee reaches the component', () => {
+    render(<TransactionDetailModal visible onClose={jest.fn()} transaction={BASE_TRANSACTION} />);
+
+    expect(screen.getByText('Network Fee')).toBeTruthy();
+    // 5000 lamports at 9 decimals, per the formatRawAmount mock.
+    expect(screen.getByText(/0\.000005\s*SOL/)).toBeTruthy();
+  });
+
+  it('omits the network fee row when the transaction carries no fee', () => {
+    const { fee: _fee, ...withoutFee } = BASE_TRANSACTION;
+
+    render(
+      <TransactionDetailModal visible onClose={jest.fn()} transaction={withoutFee as never} />
+    );
+
+    expect(screen.queryByText('Network Fee')).toBeNull();
+  });
+
+  it('carries tabular figures on every rendered value', () => {
+    render(<TransactionDetailModal visible onClose={jest.fn()} transaction={BASE_TRANSACTION} />);
+
+    const blockNumber = StyleSheet.flatten(screen.getByText('#123456').props.style);
+
+    expect(blockNumber.fontVariant).toEqual(['tabular-nums']);
   });
 
   it('falls back to Solana mainnet when networkId is missing', () => {

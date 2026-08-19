@@ -151,7 +151,18 @@ export function ExplorerLinkButton({
 
   return (
     <>
-      <BlurContainer borderColor={semantic.text.accent} style={[styles.blurWrapper, style]}>
+      {/* `BlurContainer`'s default border is the glassy radial sheen: opaque
+          near two opposite corners, fully transparent across the middle band.
+          On a card that reads as light catching an edge; on a short, full-width
+          button it erases the long top and bottom runs and leaves the two short
+          side runs standing alone — the broken border. A link affordance needs
+          a border that closes, so this one opts out of the sheen and draws
+          solid. */}
+      <BlurContainer
+        borderColor={semantic.text.accent}
+        useGradientBorder={false}
+        style={[styles.blurWrapper, style]}
+      >
         <TouchableOpacity
           testID="tx-detail-explorer-link"
           style={styles.button}

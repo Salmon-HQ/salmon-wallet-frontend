@@ -33,6 +33,7 @@ import {
   spacing,
   letterSpacing,
   semantic,
+  tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { TokenLogo } from '../TokenLogo';
@@ -43,10 +44,20 @@ import type { TransactionItemProps, TransactionType, TransactionTokenAmount } fr
 // Constants
 // ============================================================================
 
+// `tabularNums.native` types its array as readonly; RN's TextStyle wants a
+// mutable one, so copy it once here.
+const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
+
 const HIDDEN_VALUE = '****';
 
 /** Maximum amounts to show before collapsing */
 const MAX_VISIBLE_AMOUNTS = 2;
+
+/** Widest the protocol chip may grow, in design px, before it truncates */
+const SOURCE_BADGE_MAX_WIDTH = 116;
+
+/** The amount column reserves this width, so the chip can never reach it */
+const AMOUNT_COLUMN_MIN_WIDTH = 104;
 
 /**
  * Transaction type display configuration
@@ -182,7 +193,7 @@ const AmountDisplay: React.FC<{
   const color = sign === '+' ? colors.change.positive : colors.change.negative;
 
   return (
-    <Text style={[styles.amountText, { color }]} numberOfLines={1}>
+    <Text testID="tx-row-amount" style={[styles.amountText, { color }]} numberOfLines={1}>
       {displayAmount}
     </Text>
   );
@@ -193,8 +204,13 @@ const AmountDisplay: React.FC<{
  */
 const SourceBadge: React.FC<{ source: string }> = ({ source }) => {
   return (
-    <View style={styles.sourceBadge}>
-      <Text style={styles.sourceText}>{source}</Text>
+    <View testID="tx-row-source" style={styles.sourceBadge}>
+      {/* A protocol name is raw upstream data of unbounded length
+          (`SOLANA_PROGRAM_LIBRARY`). It is bounded here so it can never grow
+          past its own column and paint over the amount beside it. */}
+      <Text style={styles.sourceText} numberOfLines={1} ellipsizeMode="tail">
+        {source}
+      </Text>
     </View>
   );
 };
@@ -341,9 +357,9 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
                   })}
             </Text>
             {expanded ? (
-              <CaretUpIcon size={12} color={colors.accent.primary} />
+              <CaretUpIcon size={12} color={colors.text.tertiary} />
             ) : (
-              <CaretDownIcon size={12} color={colors.accent.primary} />
+              <CaretDownIcon size={12} color={colors.text.tertiary} />
             )}
           </TouchableOpacity>
         </View>
@@ -477,6 +493,10 @@ const styles = StyleSheet.create({
   },
   infoSection: {
     flex: 1,
+    // A flex item's default minimum size is its content, so an over-long type
+    // label or protocol chip would push this box wider than its flex share and
+    // paint over the amount column. Zero it and let the children shrink.
+    minWidth: 0,
     justifyContent: 'center',
   },
   typeRow: {
@@ -489,12 +509,17 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.lg),
     fontFamily: fontFamilyNative.medium,
     color: colors.text.primary,
+    flexShrink: 1,
   },
   sourceBadge: {
     paddingHorizontal: s(spacing.xs),
     paddingVertical: vs(spacing.xxs),
     backgroundColor: colors.background.card,
     borderRadius: borderRadius.sm,
+    // The chip is bounded twice: it may shrink, and it may never claim more
+    // than this much of the row however long the upstream protocol name is.
+    flexShrink: 1,
+    maxWidth: s(SOURCE_BADGE_MAX_WIDTH),
   },
   sourceText: {
     fontSize: ms(fontSize.xs),
@@ -511,14 +536,22 @@ const styles = StyleSheet.create({
   rightSection: {
     alignItems: 'flex-end',
     marginLeft: s(spacing.sm),
+    // The amount column: it reserves its width before the row's left half is
+    // laid out, and it never gives it back. The chip cannot reach into it.
+    minWidth: s(AMOUNT_COLUMN_MIN_WIDTH),
+    flexShrink: 0,
   },
   amountsContainer: {
-    alignItems: 'flex-end',
+    alignSelf: 'stretch',
   },
   amountText: {
     fontSize: ms(fontSize.base),
     fontFamily: fontFamilyNative.medium,
     marginBottom: vs(spacing.xxs),
+    // Money Composition Rule: amounts right-aligned in a fixed column, on
+    // tabular figures, so the column edge is the same on every row.
+    textAlign: 'right',
+    ...TABULAR,
   },
   timeRow: {
     flexDirection: 'row',
@@ -529,6 +562,7 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.regular,
     color: colors.text.tertiary,
+    ...TABULAR,
   },
   expandChevron: {
     marginLeft: s(spacing.xs),
@@ -563,10 +597,15 @@ const styles = StyleSheet.create({
     gap: s(spacing.xxs),
     marginTop: vs(spacing.xs),
   },
+  /**
+   * One Living Thing Rule: the accent is a budget, and a list that repeats this
+   * toggle once per complex swap was spending it four times a screen on a
+   * disclosure control. A disclosure is chrome — it reads in quiet ink.
+   */
   expandText: {
     fontSize: ms(fontSize.xs),
     fontFamily: fontFamilyNative.medium,
-    color: colors.accent.primary,
+    color: colors.text.tertiary,
   },
 });
 

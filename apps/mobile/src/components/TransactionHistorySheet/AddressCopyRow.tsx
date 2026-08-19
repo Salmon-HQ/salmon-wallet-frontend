@@ -181,9 +181,14 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     marginLeft: s(spacing.md),
   },
+  /**
+   * Monospace-Is-For-Scanning Rule: an address is read positionally, prefix
+   * against suffix, so its characters must hold a fixed width — Geist Mono at
+   * the address size.
+   */
   address: {
-    fontSize: ms(fontSize.base),
-    fontFamily: fontFamilyNative.regular,
+    fontSize: ms(fontSize.mono),
+    fontFamily: fontFamilyNative.mono,
     color: colors.text.primary,
     marginRight: s(spacing.sm),
     flexShrink: 1,

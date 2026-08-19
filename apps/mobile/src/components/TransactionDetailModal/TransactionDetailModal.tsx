@@ -50,6 +50,7 @@ import {
   getShortAddress,
   semantic,
   getBlockchainFromNetworkId,
+  tabularNums,
   type Blockchain,
   type NetworkEnvironment,
 } from '@salmon/shared';
@@ -69,6 +70,10 @@ import type {
   TransactionTokenAmount,
   NftAttribute,
 } from '../TransactionHistorySheet/types';
+
+// `tabularNums.native` types its array as readonly; RN's TextStyle wants a
+// mutable one, so copy it once here.
+const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 
 /**
  * Transaction type display configuration
@@ -682,12 +687,16 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                     : t('transactions.detail.copyTransactionHash', 'Copy transaction hash')
                 }
               >
+                {/* Same card, same gesture, same ink as the address rows'
+                    copy control: accent for the affordance, success for the
+                    confirmation. Two copy buttons side by side in two
+                    different inks read as two different actions. */}
                 {hashCopied ? (
                   <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-                    <CheckIcon size={14} color={colors.accent.primary} />
+                    <CheckIcon size={iconSize.sm} color={semantic.status.success} />
                   </Animated.View>
                 ) : (
-                  <CopyIcon size={14} color={colors.text.secondary} />
+                  <CopyIcon size={iconSize.sm} color={semantic.text.accent} />
                 )}
               </TouchableOpacity>
             </View>
@@ -908,19 +917,26 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.medium,
     color: colors.text.secondary,
   },
+  // Tabular Rule: dates, block numbers, fees and counts all land here.
   sectionValue: {
     fontSize: ms(fontSize.base),
     fontFamily: fontFamilyNative.bold,
     color: colors.text.primary,
+    ...TABULAR,
   },
   hashRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: s(spacing.xs),
   },
+  /**
+   * Monospace-Is-For-Scanning Rule: a transaction hash is compared character by
+   * character against an explorer, so it sets in Geist Mono at the address
+   * size, exactly as the addresses two rows above it do.
+   */
   hashValue: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.regular,
+    fontSize: ms(fontSize.mono),
+    fontFamily: fontFamilyNative.mono,
     color: colors.text.primary,
   },
   copyIconButton: {
@@ -932,7 +948,7 @@ const styles = StyleSheet.create({
     backgroundColor: `${colors.background.card}80`,
   },
   copyIconButtonCopied: {
-    backgroundColor: colors.accent.tint,
+    backgroundColor: `${semantic.status.success}20`,
   },
   // Token row styles
   tokenRow: {
@@ -958,6 +974,8 @@ const styles = StyleSheet.create({
   tokenAmount: {
     fontSize: ms(fontSize.lg),
     fontFamily: fontFamilyNative.bold,
+    textAlign: 'right',
+    ...TABULAR,
   },
   // Swap visualization styles
   swapContainer: {
@@ -975,6 +993,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.bold,
     color: colors.text.primary,
     marginTop: vs(spacing.sm),
+    ...TABULAR,
   },
   swapSymbol: {
     fontSize: ms(fontSize.sm),

@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { act, render, screen, fireEvent } from '@testing-library/react-native';
 
 const mockSetStringAsync = jest.fn().mockResolvedValue(undefined);
@@ -30,8 +31,8 @@ jest.mock('@salmon/shared', () => ({
     border: { default: '#222' },
     text: { secondary: '#999', primary: '#fff' },
   },
-  fontFamilyNative: { medium: 'System', regular: 'System' },
-  fontSize: { base: 16 },
+  fontFamilyNative: { medium: 'System', regular: 'System', mono: 'GeistMonoRegular' },
+  fontSize: { base: 16, mono: 13 },
   getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
   motionMs: { feedbackHold: 1500 },
   ms: (value: number) => value,
@@ -76,5 +77,14 @@ describe('AddressCopyRow copy feedback', () => {
 
     expect(screen.queryByLabelText('actions.copied')).toBeNull();
     expect(screen.getByLabelText('transactions.detail.copyAddressLabel:From')).toBeTruthy();
+  });
+
+  it('sets the address in mono at the address size', () => {
+    render(<AddressCopyRow label="From" address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" />);
+
+    const address = StyleSheet.flatten(screen.getByText('7xKXtg...osgAsU').props.style);
+
+    expect(address.fontFamily).toBe('GeistMonoRegular');
+    expect(address.fontSize).toBe(13);
   });
 });
