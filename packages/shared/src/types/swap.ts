@@ -369,6 +369,12 @@ export interface SwapSuccessSummary {
   chain?: SwapChainType;
   /** Input token network id — drives the explorer URL environment */
   networkId?: string;
+  /** Input token logo URL, captured at confirm time for the success receipt */
+  inLogo?: string;
+  /** Output token logo URL, captured at confirm time for the success receipt */
+  outLogo?: string;
+  /** Salmon fee percent from the confirmed quote (Jupiter only) */
+  feePercent?: number;
 }
 
 /**
@@ -532,6 +538,11 @@ export interface SwapReviewExchangeSide {
   pendingAmount?: boolean;
   /** Whether the USD equivalent is being recalculated */
   pendingUsdValue?: boolean;
+  /**
+   * Render this side's amount one rank up (success receipts give the
+   * received amount the greater hierarchy).
+   */
+  emphasis?: boolean;
 }
 
 /**

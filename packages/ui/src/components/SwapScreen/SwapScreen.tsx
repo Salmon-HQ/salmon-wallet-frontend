@@ -14,6 +14,8 @@ import {
   getTransactionUrl,
   getDefaultExplorer,
   useBridgeSettlement,
+  formatEffectiveRate,
+  formatPercent,
   colors,
   fontFamily,
   fontSize,
@@ -110,6 +112,42 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
   const successOutSymbol = summary ? summary.outSymbol : (logic.outToken?.symbol ?? '');
   const successChain = summary ? summary.chain : logic.inToken?.chain;
   const successNetworkId = summary ? summary.networkId : logic.inToken?.networkId;
+
+  // The exchange graphic on the receipt — the same protagonist the review
+  // showed, built only from data the flow already captured at confirm time.
+  const successInSymbol = summary ? summary.inSymbol : (logic.inToken?.symbol ?? '');
+  const successInAmount = summary ? summary.inAmount : logic.inAmount;
+  const successOutAmount = logic.successExchange
+    ? String(logic.successExchange.amountOut)
+    : summary
+      ? summary.outAmount
+      : logic.outAmount;
+  const successExchangeBlock = {
+    send: {
+      // A bridge's payout is still travelling, so its labels keep the review's
+      // present tense; a settled swap earns the past tense.
+      label: logic.successExchange
+        ? t('swap.you_send', 'You Send')
+        : t('transactions.detail.sentLabel', 'Sent'),
+      logo: summary?.inLogo ?? logic.inToken?.logo ?? undefined,
+      symbol: successInSymbol,
+      amount: successInLabel,
+    },
+    receive: {
+      label: logic.successExchange
+        ? t('swap.you_receive', 'You Receive')
+        : t('transactions.detail.receivedLabel', 'Received'),
+      logo: summary?.outLogo ?? logic.outToken?.logo ?? undefined,
+      symbol: successOutSymbol,
+      amount: logic.successExchange
+        ? `${logic.successExchange.amountOut} ${successOutSymbol}`
+        : successOutLabel,
+    },
+  };
+  const successRate =
+    formatEffectiveRate(successInAmount, successInSymbol, successOutAmount, successOutSymbol) ??
+    undefined;
+  const successFee = summary?.feePercent != null ? formatPercent(summary.feePercent) : undefined;
 
   return (
     <Container style={style}>
@@ -258,6 +296,9 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
           }
           onContinue={logic.handleSuccessContinue}
           settling={logic.settling}
+          exchange={successExchangeBlock}
+          exchangeRate={successRate}
+          exchangeFee={successFee}
           bridgeDepositAddress={logic.successExchange?.depositAddress}
           bridgeAmountIn={logic.successExchange ? successInLabel : undefined}
           bridgeAmountOut={

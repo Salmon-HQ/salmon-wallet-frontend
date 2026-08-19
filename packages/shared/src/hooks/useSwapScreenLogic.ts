@@ -690,8 +690,11 @@ export function useSwapScreenLogic<StyleType = unknown>({
       outSymbol: outToken?.symbol ?? '',
       chain: inToken?.chain,
       networkId: inToken?.networkId,
+      inLogo: inToken?.logo ?? undefined,
+      outLogo: outToken?.logo ?? undefined,
+      feePercent: quote?.fee?.percent,
     });
-  }, [inAmount, outAmount, inToken, outToken]);
+  }, [inAmount, outAmount, inToken, outToken, quote]);
 
   const handleConfirmSwap = useCallback(async () => {
     if (!quote) return;

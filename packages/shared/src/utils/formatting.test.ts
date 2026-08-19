@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { formatBaseUnits } from './formatting';
+import { formatBaseUnits, formatEffectiveRate } from './formatting';
+
+describe('formatEffectiveRate', () => {
+  it('derives the unit rate from the two amounts', () => {
+    expect(formatEffectiveRate('1.1', 'USDC', '0.014', 'SOL')).toBe('1 USDC ≈ 0.0127 SOL');
+  });
+
+  it('handles rates above one and thousands compaction', () => {
+    expect(formatEffectiveRate('0.014', 'SOL', '1.1', 'USDC')).toBe('1 SOL ≈ 78.5714 USDC');
+    expect(formatEffectiveRate('1', 'SOL', '2500000', 'BONK')).toBe('1 SOL ≈ 2500K BONK');
+  });
+
+  it('returns null rather than printing a made-up rate', () => {
+    expect(formatEffectiveRate('', 'USDC', '0.014', 'SOL')).toBeNull();
+    expect(formatEffectiveRate('0', 'USDC', '0.014', 'SOL')).toBeNull();
+    expect(formatEffectiveRate('1.1', 'USDC', 'abc', 'SOL')).toBeNull();
+    expect(formatEffectiveRate('1.1', '', '0.014', 'SOL')).toBeNull();
+  });
+});
 
 describe('formatBaseUnits', () => {
   it('renders whole and fractional parts without trailing zeros', () => {

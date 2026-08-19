@@ -1,9 +1,25 @@
+import type { SwapReviewExchangeSide } from '../swap';
+
 /**
  * Props for the unified TransactionSuccessScreen component.
  *
  * Used by both send and swap flows on mobile and extension.
  */
 export interface TransactionSuccessScreenProps {
+  /**
+   * Exchange graphic for swap/bridge receipts: sent logo → arrow → received
+   * logo with amounts, the received side one rank up. When present it replaces
+   * the plain `summary` line as the hero; `summary` still feeds the pending
+   * loader's subtitle.
+   */
+  exchange?: {
+    send: SwapReviewExchangeSide;
+    receive: SwapReviewExchangeSide;
+  };
+  /** Effective rate line for the receipt (e.g., "1 USDC ≈ 0.0127 SOL") */
+  exchangeRate?: string;
+  /** Salmon fee as shown at review (e.g., "0.85%"), when the flow has it */
+  exchangeFee?: string;
   /** Screen title (e.g., "Send Complete", "Swap Complete") */
   title: string;
   /** Transaction summary (e.g., "5.0 SOL to 7hQ9...xK2f" or "5.0 SOL → 84.65 USDC") */

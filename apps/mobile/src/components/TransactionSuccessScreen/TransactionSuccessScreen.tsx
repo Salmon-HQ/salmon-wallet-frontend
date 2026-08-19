@@ -36,6 +36,7 @@ import {
 import type { TransactionSuccessScreenProps } from '@salmon/shared';
 import { PrimaryButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
+import { SwapReviewExchange } from '../SwapScreen/SwapReviewExchange';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { curve } from '../../utils/motion';
 import { CausticBand, SurfacingMembrane } from './SurfacingLayers';
@@ -68,10 +69,19 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   bridgeAmountOut,
   bridgeExchangeId,
   bridgeDepositTxId,
+  exchange,
+  exchangeRate,
+  exchangeFee,
 }) => {
   const isBridge = !!bridgeDepositAddress;
   const { t } = useTranslation();
   const { floatingBottomOffset } = useTabChrome();
+
+  // The receipt's clock: local time, captured once when the receipt mounts —
+  // the moment the transaction came back — so re-renders never move it.
+  const [receiptTime] = useState(() =>
+    new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  );
 
   // The Surfacing (DESIGN.md §The Surfacing). Reduced motion is a full
   // parallel mapping rather than a switch, and the plan for both paths is
@@ -286,28 +296,62 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
         </Text>
       </Animated.View>
 
-      {/* The hero. Isolated node, tabular digits, nothing between it and the
-          bottom of the screen for a caustic band to travel through. */}
+      {/* The hero. Isolated node, measured by the same onLayout whatever it
+          holds, so the caustic band's stop follows the layout: for a swap or
+          bridge receipt the exchange graphic (logo → arrow → logo, received
+          amount one rank up) is the protagonist; otherwise the summary line. */}
       <Animated.View
-        style={[styles.amountContainer, amountStyle]}
+        style={[styles.amountContainer, exchange ? styles.exchangeHero : null, amountStyle]}
         onLayout={handleAmountLayout}
         testID="tx-success-amount"
       >
-        {/* One line, always. The receipt used to print the whole operation as
-            one 36px title and it broke over three lines — an amount that wraps
-            stops being an amount and becomes a sentence. It shrinks rather than
-            wrapping or truncating: a number on a wallet receipt may not be
-            elided. */}
-        <Text
-          style={styles.amount}
-          testID="tx-success-summary"
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={MIN_AMOUNT_SCALE}
-        >
-          {summary}
-        </Text>
+        {exchange ? (
+          <SwapReviewExchange
+            send={exchange.send}
+            receive={{ ...exchange.receive, emphasis: true }}
+            style={styles.exchangeBlock}
+          />
+        ) : (
+          /* One line, always. The receipt used to print the whole operation as
+             one 36px title and it broke over three lines — an amount that wraps
+             stops being an amount and becomes a sentence. It shrinks rather than
+             wrapping or truncating: a number on a wallet receipt may not be
+             elided. */
+          <Text
+            style={styles.amount}
+            testID="tx-success-summary"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={MIN_AMOUNT_SCALE}
+          >
+            {summary}
+          </Text>
+        )}
       </Animated.View>
+
+      {/* The receipt under the exchange: quiet rows for what the flow already
+          knows — effective rate, Salmon fee when it arrived, local time. They
+          ride the chrome wave, after the moment rather than during it. */}
+      {exchange ? (
+        <Animated.View style={[styles.receiptRows, chromeStyle]} testID="tx-success-receipt">
+          {exchangeRate ? (
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>{t('transactions.detail.rate', 'Rate')}</Text>
+              <Text style={[styles.receiptValue, TABULAR]}>{exchangeRate}</Text>
+            </View>
+          ) : null}
+          {exchangeFee ? (
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>{t('swap.review.salmonFee', 'Salmon fee')}</Text>
+              <Text style={[styles.receiptValue, TABULAR]}>{exchangeFee}</Text>
+            </View>
+          ) : null}
+          <View style={styles.receiptRow}>
+            <Text style={styles.receiptLabel}>{t('transactions.detail.time', 'Time')}</Text>
+            <Text style={[styles.receiptValue, TABULAR]}>{receiptTime}</Text>
+          </View>
+        </Animated.View>
+      ) : null}
 
       {isBridge ? (
         <Animated.View style={[styles.bridgeInfoBox, chromeStyle]}>
@@ -462,6 +506,40 @@ const styles = StyleSheet.create({
     color: semantic.text.primary,
     textAlign: 'center',
     lineHeight: ms(fontSize.title * lineHeight.tight),
+  },
+  // The exchange graphic takes the column's full width inside the centred
+  // cluster; the summary text keeps its content-sized container.
+  exchangeHero: {
+    alignSelf: 'stretch',
+  },
+  exchangeBlock: {
+    alignSelf: 'stretch',
+  },
+  // The quiet receipt: label left, value right, no card — secondary rank
+  // under the exchange, above the bridge details when there are any.
+  receiptRows: {
+    alignSelf: 'stretch',
+    gap: vs(spacing.sm),
+    marginBottom: vs(spacing.xl),
+    paddingHorizontal: s(spacing.base),
+  },
+  receiptRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: s(spacing.md),
+  },
+  receiptLabel: {
+    fontSize: ms(fontSize.sm),
+    fontFamily: fontFamilyNative.regular,
+    color: semantic.text.tertiary,
+  },
+  receiptValue: {
+    fontSize: ms(fontSize.sm),
+    fontFamily: fontFamilyNative.medium,
+    color: semantic.text.secondary,
+    textAlign: 'right',
+    flexShrink: 1,
   },
   bridgeInfoBox: {
     width: '100%',

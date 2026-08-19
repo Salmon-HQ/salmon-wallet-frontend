@@ -455,6 +455,9 @@ describe('useSwapScreenLogic', () => {
       outSymbol: 'USDC',
       chain: 'solana',
       networkId: 'solana-mainnet',
+      inLogo: 'https://example.com/sol.png',
+      outLogo: 'https://example.com/usdc.png',
+      feePercent: undefined,
     });
 
     // Post-swap settling refreshes balances: the fully-spent input token drops
@@ -480,6 +483,9 @@ describe('useSwapScreenLogic', () => {
       outSymbol: 'USDC',
       chain: 'solana',
       networkId: 'solana-mainnet',
+      inLogo: 'https://example.com/sol.png',
+      outLogo: 'https://example.com/usdc.png',
+      feePercent: undefined,
     });
 
     act(() => {
@@ -887,6 +893,9 @@ describe('useSwapScreenLogic', () => {
       outSymbol: 'BTC',
       chain: 'solana',
       networkId: 'solana-mainnet',
+      inLogo: 'https://example.com/sol.png',
+      outLogo: 'https://example.com/btc.png',
+      feePercent: undefined,
     });
   });
 

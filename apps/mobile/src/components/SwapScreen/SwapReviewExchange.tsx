@@ -38,12 +38,13 @@ const ExchangeSide: React.FC<SwapReviewExchangeSide> = ({
   usdValue,
   pendingAmount = false,
   pendingUsdValue = false,
+  emphasis = false,
 }) => (
   <View style={styles.side}>
     <Text style={styles.label}>{label}</Text>
     <TokenLogo uri={logo} symbol={symbol} size={s(LOGO_SIZE)} />
     <PendingValue pending={pendingAmount}>
-      <Text style={[styles.amount, TABULAR]}>{amount}</Text>
+      <Text style={[styles.amount, TABULAR, emphasis && styles.amountEmphasis]}>{amount}</Text>
     </PendingValue>
     {usdValue != null && (
       <PendingValue pending={pendingUsdValue}>
@@ -105,6 +106,12 @@ const styles = StyleSheet.create({
     letterSpacing: letterSpacing.snug,
     lineHeight: ms(fontSize.lg * lineHeight.tight),
     textAlign: 'center',
+  },
+  // The received amount on a success receipt outranks the sent one — one
+  // step up in size, same tabular digits.
+  amountEmphasis: {
+    fontSize: ms(fontSize.xl),
+    lineHeight: ms(fontSize.xl * lineHeight.tight),
   },
   usdValue: {
     fontSize: ms(fontSize.sm),

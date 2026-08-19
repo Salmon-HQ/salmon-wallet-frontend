@@ -59,16 +59,18 @@ const Label = styled(Typography)({
   textAlign: 'center',
 });
 
-const Amount = styled(Typography)({
+const Amount = styled(Typography)<{ $emphasis?: boolean }>(({ $emphasis }) => ({
   ...tabularNums.css,
-  fontSize: fontSize.lg,
+  // The received amount on a success receipt outranks the sent one — one
+  // step up in size, same tabular digits.
+  fontSize: $emphasis ? fontSize.xl : fontSize.lg,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
   letterSpacing: letterSpacing.snug,
-  lineHeight: `${fontSize.lg * lineHeight.tight}px`,
+  lineHeight: `${($emphasis ? fontSize.xl : fontSize.lg) * lineHeight.tight}px`,
   textAlign: 'center',
-});
+}));
 
 const UsdValue = styled(Typography)({
   ...tabularNums.css,
@@ -141,12 +143,13 @@ function ExchangeSide({
   usdValue,
   pendingAmount = false,
   pendingUsdValue = false,
+  emphasis = false,
 }: SwapReviewExchangeSide): React.ReactElement {
   return (
     <Side>
       <Label>{label}</Label>
       <TokenLogo uri={logo} symbol={symbol} />
-      <Amount>
+      <Amount $emphasis={emphasis}>
         <PendingValue pending={pendingAmount}>{amount}</PendingValue>
       </Amount>
       {usdValue != null && (

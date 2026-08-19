@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo, useRef } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
@@ -23,6 +23,7 @@ import {
 } from '@salmon/shared';
 import { LoadingScreen } from '../LoadingScreen';
 import { PrimaryButton } from '../Button';
+import { SwapReviewExchange } from '../SwapScreen/SwapReviewExchange';
 import { useReducedMotion } from '../../utils/useReducedMotion';
 import { CausticBand, SurfacingMembrane } from './SurfacingLayers';
 import { AMOUNT_RISE, BAND_HEIGHT, surfacingTimeline } from './surfacing';
@@ -186,6 +187,55 @@ const Amount = styled(Typography)<{ $rise: boolean }>(({ $rise }) => ({
 }));
 
 /**
+ * The exchange hero's wrapper for swap/bridge receipts — the node the caustic
+ * band measures. It settles behind the band exactly the way the plain amount
+ * does; under reduced motion the timeline zeroes the rise and it fades.
+ */
+const ExchangeHero = styled('div')<{ $rise: boolean }>(({ $rise }) => ({
+  width: '100%',
+  opacity: 0,
+  animation: `${$rise ? amountSettle : chromeFade} 0ms ${motionEasing.settle.css} forwards`,
+}));
+
+/**
+ * The quiet receipt under the exchange: label left, value right, no card.
+ * Secondary rank — it rides the chrome wave, after the moment.
+ */
+const ReceiptRows = styled(Box)({
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: spacing.sm,
+  marginBottom: spacing.xl,
+  padding: `0 ${spacing.base}px`,
+  boxSizing: 'border-box',
+  opacity: 0,
+  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards`,
+});
+
+const ReceiptRow = styled(Box)({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: spacing.md,
+});
+
+const ReceiptLabel = styled(Typography)({
+  fontSize: fontSize.sm,
+  fontFamily: fontFamily.sans,
+  color: colors.text.tertiary,
+});
+
+const ReceiptValue = styled(Typography)({
+  ...tabularNums.css,
+  fontSize: fontSize.sm,
+  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.medium,
+  color: colors.text.secondary,
+  textAlign: 'right',
+});
+
+/**
  * Continue and explorer, pinned to the bottom of the column. The auto margin
  * is what separates the report from the actions without inventing a spacer.
  */
@@ -266,9 +316,18 @@ export function TransactionSuccessScreen({
   bridgeDepositTxId,
   bridgeStatus,
   bridgePayoutTxId,
+  exchange,
+  exchangeRate,
+  exchangeFee,
 }: TransactionSuccessScreenProps): React.ReactElement {
   const { t } = useTranslation();
   const isBridge = !!bridgeDepositAddress;
+
+  // The receipt's clock: local time, captured once when the receipt mounts —
+  // the moment the transaction came back — so re-renders never move it.
+  const [receiptTime] = useState(() =>
+    new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  );
 
   // The Surfacing (DESIGN.md §The Surfacing). Reduced motion is a parallel
   // mapping rather than a switch, and the plan for both paths is
@@ -388,22 +447,64 @@ export function TransactionSuccessScreen({
         <StatusLabel>{title}</StatusLabel>
       </StatusRow>
       <AmountStage>
-        <Amount
-          ref={amountRef}
-          data-testid="tx-success-amount"
-          $rise={timeline.amount.rise > 0}
-          style={
-            {
-              // The only thing CSS cannot know about the string: how long it is.
-              '--tx-amount-chars': Math.max(1, summary.length),
+        {exchange ? (
+          /* The exchange as the protagonist: sent logo → arrow → received
+             logo, the received amount one rank up. Same measured node, same
+             settle — the band's stop follows this layout. */
+          <ExchangeHero
+            ref={amountRef as React.Ref<HTMLDivElement>}
+            data-testid="tx-success-amount"
+            $rise={timeline.amount.rise > 0}
+            style={{
               animationDuration: `${timeline.amount.durationMs}ms`,
               animationDelay: `${timeline.amount.delayMs}ms`,
-            } as React.CSSProperties
-          }
-        >
-          {summary}
-        </Amount>
+            }}
+          >
+            <SwapReviewExchange
+              send={exchange.send}
+              receive={{ ...exchange.receive, emphasis: true }}
+            />
+          </ExchangeHero>
+        ) : (
+          <Amount
+            ref={amountRef}
+            data-testid="tx-success-amount"
+            $rise={timeline.amount.rise > 0}
+            style={
+              {
+                // The only thing CSS cannot know about the string: how long it is.
+                '--tx-amount-chars': Math.max(1, summary.length),
+                animationDuration: `${timeline.amount.durationMs}ms`,
+                animationDelay: `${timeline.amount.delayMs}ms`,
+              } as React.CSSProperties
+            }
+          >
+            {summary}
+          </Amount>
+        )}
       </AmountStage>
+      {/* The receipt under the exchange: quiet rows for what the flow already
+          knows — effective rate, Salmon fee when it arrived, local time. */}
+      {exchange ? (
+        <ReceiptRows data-testid="tx-success-receipt" style={chromeTiming}>
+          {exchangeRate ? (
+            <ReceiptRow>
+              <ReceiptLabel>{t('transactions.detail.rate', 'Rate')}</ReceiptLabel>
+              <ReceiptValue>{exchangeRate}</ReceiptValue>
+            </ReceiptRow>
+          ) : null}
+          {exchangeFee ? (
+            <ReceiptRow>
+              <ReceiptLabel>{t('swap.review.salmonFee', 'Salmon fee')}</ReceiptLabel>
+              <ReceiptValue>{exchangeFee}</ReceiptValue>
+            </ReceiptRow>
+          ) : null}
+          <ReceiptRow>
+            <ReceiptLabel>{t('transactions.detail.time', 'Time')}</ReceiptLabel>
+            <ReceiptValue>{receiptTime}</ReceiptValue>
+          </ReceiptRow>
+        </ReceiptRows>
+      ) : null}
       {isBridge ? (
         <BridgeInfoBox style={chromeTiming}>
           <BridgeLabel>{t('bridge.depositAddress', 'Send funds to')}</BridgeLabel>

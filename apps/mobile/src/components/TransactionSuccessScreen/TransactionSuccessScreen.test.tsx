@@ -145,6 +145,29 @@ jest.mock('../LoadingScreen', () => ({
   LoadingScreen: (props: { title?: string }) => mockLoadingScreen(props),
 }));
 
+// The exchange graphic is tested where it lives (SwapReviewExchange.test).
+// The stub keeps these cases about what the receipt renders and passes.
+jest.mock('../SwapScreen/SwapReviewExchange', () => {
+  const { Text, View } = require('react-native');
+  return {
+    SwapReviewExchange: ({
+      send,
+      receive,
+    }: {
+      send: { amount: string };
+      receive: { amount: string; emphasis?: boolean };
+    }) => (
+      <View testID="swap-review-exchange">
+        <Text>{send.amount}</Text>
+        <Text testID="swap-review-exchange-receive">
+          {receive.amount}
+          {receive.emphasis ? ' (emphasis)' : ''}
+        </Text>
+      </View>
+    ),
+  };
+});
+
 import { TransactionSuccessScreen } from './TransactionSuccessScreen';
 import {
   AMOUNT_LAG_MS,
@@ -246,6 +269,51 @@ describe('TransactionSuccessScreen', () => {
 
       expect(screen.queryByTestId('tx-success-explorer-link')).toBeNull();
       expect(screen.getByTestId('tx-success-continue-button')).toBeTruthy();
+    });
+
+    it('renders the exchange block as the hero with the quiet receipt under it', () => {
+      render(
+        <TransactionSuccessScreen
+          {...baseProps}
+          exchange={{
+            send: { label: 'Sent', symbol: 'USDC', amount: '1.1 USDC' },
+            receive: { label: 'Received', symbol: 'SOL', amount: '0.014 SOL' },
+          }}
+          exchangeRate="1 USDC ≈ 0.0127 SOL"
+          exchangeFee="0.85%"
+        />
+      );
+
+      // The exchange replaces the plain summary line as the protagonist,
+      // inside the same measured hero node the caustic band travels to.
+      expect(screen.getByTestId('swap-review-exchange')).toBeTruthy();
+      expect(screen.queryByTestId('tx-success-summary')).toBeNull();
+      expect(screen.getByTestId('tx-success-amount')).toBeTruthy();
+      // The received amount carries the greater hierarchy.
+      expect(screen.getByTestId('swap-review-exchange-receive')).toHaveTextContent(
+        '0.014 SOL (emphasis)'
+      );
+      // The receipt rows: rate, fee, and a local time value.
+      expect(screen.getByTestId('tx-success-receipt')).toBeTruthy();
+      expect(screen.getByText('1 USDC ≈ 0.0127 SOL')).toBeTruthy();
+      expect(screen.getByText('0.85%')).toBeTruthy();
+      expect(screen.getByText('Time')).toBeTruthy();
+    });
+
+    it('omits rate and fee rows when the flow did not have the data', () => {
+      render(
+        <TransactionSuccessScreen
+          {...baseProps}
+          exchange={{
+            send: { label: 'Sent', symbol: 'USDC', amount: '1.1 USDC' },
+            receive: { label: 'Received', symbol: 'SOL', amount: '0.014 SOL' },
+          }}
+        />
+      );
+
+      expect(screen.queryByText('Rate')).toBeNull();
+      expect(screen.queryByText('Salmon fee')).toBeNull();
+      expect(screen.getByText('Time')).toBeTruthy();
     });
 
     it('keeps the bridge deposit instructions', () => {

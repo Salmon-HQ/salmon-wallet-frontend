@@ -109,6 +109,7 @@ export {
   formatPercent,
   formatSolFee,
   formatConversionRate,
+  formatEffectiveRate,
   // Balance/price display formatting
   formatBalance,
   formatUsdValue,

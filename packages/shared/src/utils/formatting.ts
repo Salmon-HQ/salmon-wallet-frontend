@@ -376,6 +376,24 @@ export function formatSolFee(lamports: number): string {
   return `${sol.toFixed(7).replace(/\.?0+$/, '')} SOL`;
 }
 
+/**
+ * Effective rate line for a completed exchange, derived from the amounts the
+ * flow already has: "1 USDC ≈ 0.0127 SOL". Returns null when either amount is
+ * missing or non-positive — a receipt must not print a made-up rate.
+ */
+export function formatEffectiveRate(
+  inAmount: string | number,
+  inSymbol: string,
+  outAmount: string | number,
+  outSymbol: string
+): string | null {
+  const inValue = typeof inAmount === 'string' ? parseFloat(inAmount) : inAmount;
+  const outValue = typeof outAmount === 'string' ? parseFloat(outAmount) : outAmount;
+  if (!isFinite(inValue) || !isFinite(outValue) || inValue <= 0 || outValue <= 0) return null;
+  if (!inSymbol || !outSymbol) return null;
+  return `1 ${inSymbol} ≈ ${formatConversionRate(String(outValue / inValue))} ${outSymbol}`;
+}
+
 export function formatConversionRate(rate: string): string {
   const numericRate = parseFloat(rate);
   if (isNaN(numericRate) || numericRate === 0) return '0';

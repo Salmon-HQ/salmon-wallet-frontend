@@ -39,6 +39,11 @@ jest.mock('@salmon/shared', () => ({
     retryNow: jest.fn(),
   }),
   getTransactionUrl: () => 'https://solscan.io/tx/abc',
+  // The derivations are unit-tested in packages/shared; here they only need
+  // to produce a stable string for the receipt props.
+  formatEffectiveRate: (_inAmount: string, inSymbol: string, _out: string, outSymbol: string) =>
+    inSymbol && outSymbol ? `1 ${inSymbol} ≈ x ${outSymbol}` : null,
+  formatPercent: (value: number) => `${value.toFixed(2)}%`,
   getDefaultExplorer: () => 'solscan',
   fontFamilyNative: { semiBold: 'System' },
   fontSize: { sm: 12 },
