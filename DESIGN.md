@@ -709,8 +709,8 @@ preference.
 **Shipped** — what the MUI theme and the mobile token file actually render
 today; these are the values in the frontmatter. The full scale is now built
 (e036aac3): `label` and `mono` joined the ramp, `monoLg` landed at 16 —
-**inferred**, because the spec named the step without a number; 16 matches the
-shipped seed input and is flagged for the owner — and the Figma-derived
+inferred at first because the spec named the step without a number; the owner
+confirmed 16 on 2026-08-19 — and the Figma-derived
 one-offs (11.375, 13.65, 14.5) and the deprecated `md` alias are retired, with
 ~120 call sites re-pointed at zero rendered change.
 

@@ -81,7 +81,7 @@ export const fontSize = {
   caption: 12,
   /** 13px - mono: addresses, hashes, memos, origin strings */
   mono: 13,
-  /** 16px - the larger mono size: seed words (DESIGN.md names the step; size pairs with `bodyLg`) */
+  /** 16px - the larger mono size: seed words (owner-confirmed 2026-08-19; size pairs with `bodyLg`) */
   monoLg: 16,
   /** 14px - default UI text: rows, controls, button labels */
   body: 14,
