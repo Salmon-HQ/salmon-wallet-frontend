@@ -8,7 +8,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { WarningIcon } from '../../icons';
 import { colors, spacing, fontSize, fontFamilyNative, vs, semantic } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer } from '../BottomSheetContainer';
@@ -130,7 +130,7 @@ export function ConfirmSheet({
         <View style={styles.titleRow}>
           {/* Colour is never the only channel: glyph, fill and label all say it */}
           {isDanger && (
-            <Ionicons name="warning" size={fontSize.lg} color={semantic.status.danger} />
+            <WarningIcon size={fontSize.lg} color={semantic.status.danger} />
           )}
           <Text style={styles.title}>{title}</Text>
         </View>

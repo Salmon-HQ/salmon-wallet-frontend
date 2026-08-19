@@ -12,10 +12,6 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@expo/vector-icons', () => ({
-  Ionicons: () => null,
-}));
-
 // The action row is the shared PrimaryButton / SecondaryButton now, which
 // pulls Reanimated for its press motion. Jest has no native Worklets, so stand
 // the module up with the handful of primitives those buttons touch.

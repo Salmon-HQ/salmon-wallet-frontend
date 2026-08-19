@@ -7,7 +7,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { GlobeIcon, TrashIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -54,7 +54,7 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
               <Image source={{ uri: app.icon }} style={styles.appIcon} />
             ) : (
               <View style={styles.appIconPlaceholder}>
-                <Ionicons name="globe-outline" size={20} color={colors.text.secondary} />
+                <GlobeIcon size={iconSize.md} color={colors.text.secondary} />
               </View>
             )}
             <View style={styles.appText}>
@@ -75,7 +75,7 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
             disabled={isRevoking}
             activeOpacity={0.7}
           >
-            <Ionicons name="trash-outline" size={18} color={semantic.status.danger} />
+            <TrashIcon size={18} color={semantic.status.danger} />
           </TouchableOpacity>
         </View>
       );

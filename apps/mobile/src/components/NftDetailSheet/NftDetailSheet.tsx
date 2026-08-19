@@ -14,7 +14,7 @@ import {
   BackHandler,
   Dimensions,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { FireIcon } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -547,7 +547,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             accessibilityRole="button"
             accessibilityLabel={t('nft.burn.reviewTitle', 'Burn NFT')}
           >
-            <MaterialIcons name="local-fire-department" size={ms(18)} color={colors.text.balance} />
+            <FireIcon size={ms(18)} color={colors.text.balance} />
             <Text style={styles.buttonText}>{t('nft.burn_nft', 'Burn')}</Text>
           </TouchableOpacity>
         </BlurContainer>
@@ -773,11 +773,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
                 fill. Every band is paler than the fill, so it can only raise
                 the luminance under the label. */}
             {canConfirmBurn && <FleshBackground />}
-            <MaterialIcons
-              name="local-fire-department"
-              size={ms(18)}
-              color={semantic.accent.onFill}
-            />
+            <FireIcon size={ms(18)} color={semantic.accent.onFill} />
             <Text style={styles.primaryButtonText}>{t('nft.burn_nft', 'Burn')}</Text>
           </LinearGradient>
         </TouchableOpacity>

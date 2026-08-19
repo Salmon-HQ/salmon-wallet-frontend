@@ -28,7 +28,8 @@ import {
   SecondaryButton,
 } from '../../src/components';
 import { useBiometricAuth } from '../../hooks/useBiometricAuth';
-import { Ionicons } from '@expo/vector-icons';
+import { EyeIcon, FingerprintIcon, ScanIcon } from '../../src/icons';
+import type { IconComponent } from '../../src/icons';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -44,16 +45,14 @@ const ICON_SIZE = 80;
 // Helpers
 // ============================================================================
 
-function getBiometricIcon(
-  type: 'fingerprint' | 'facial' | 'iris' | null
-): 'finger-print-outline' | 'scan-outline' | 'eye-outline' {
+function getBiometricIcon(type: 'fingerprint' | 'facial' | 'iris' | null): IconComponent {
   switch (type) {
     case 'facial':
-      return 'scan-outline';
+      return ScanIcon;
     case 'iris':
-      return 'eye-outline';
+      return EyeIcon;
     default:
-      return 'finger-print-outline';
+      return FingerprintIcon;
   }
 }
 
@@ -112,6 +111,8 @@ export default function BiometricSetupScreen() {
     router.replace('/(auth)/success');
   };
 
+  const BiometricIcon = getBiometricIcon(state.biometricType);
+
   // Render nothing while checking availability to avoid a flash
   if (!state.isReady || !state.isAvailable) {
     return null;
@@ -126,11 +127,7 @@ export default function BiometricSetupScreen() {
       }
       body={
         <View style={styles.iconContainer}>
-          <Ionicons
-            name={getBiometricIcon(state.biometricType)}
-            size={ICON_SIZE}
-            color={semantic.text.primary}
-          />
+          <BiometricIcon size={ICON_SIZE} color={semantic.text.primary} />
         </View>
       }
       assist={

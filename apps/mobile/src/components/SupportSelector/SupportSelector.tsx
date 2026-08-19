@@ -5,9 +5,19 @@
  * with a security notice about seed phrase protection.
  */
 
-import React, { useCallback, type ComponentProps } from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  BookOpenIcon,
+  CaretRightIcon,
+  DiscordLogoIcon,
+  EnvelopeIcon,
+  QuestionIcon,
+  ShieldCheckIcon,
+  XLogoIcon,
+  iconSize,
+} from '../../icons';
+import type { IconComponent } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -26,14 +36,12 @@ import { SettingsScreenLayout } from '../SettingsScreenLayout';
 // Icon mapping
 // ============================================================================
 
-type IoniconsName = ComponentProps<typeof Ionicons>['name'];
-
-const ICON_MAP: Record<string, IoniconsName> = {
-  faq: 'help-circle-outline',
-  docs: 'book-outline',
-  twitter: 'logo-twitter',
-  discord: 'logo-discord',
-  email: 'mail-outline',
+const ICON_MAP: Record<string, IconComponent> = {
+  faq: QuestionIcon,
+  docs: BookOpenIcon,
+  twitter: XLogoIcon,
+  discord: DiscordLogoIcon,
+  email: EnvelopeIcon,
 };
 
 // ============================================================================
@@ -52,17 +60,16 @@ export function SupportSelector({ options, onOpenLink, onBack }: SupportSelector
         activeOpacity={0.7}
       >
         <View style={styles.optionIconContainer}>
-          <Ionicons
-            name={ICON_MAP[option.id] || 'help-circle-outline'}
-            size={24}
-            color={colors.accent.primary}
-          />
+          {React.createElement(ICON_MAP[option.id] || QuestionIcon, {
+            size: iconSize.lg,
+            color: colors.accent.primary,
+          })}
         </View>
         <View style={styles.optionContent}>
           <Text style={styles.optionTitle}>{option.title}</Text>
           <Text style={styles.optionDescription}>{option.description}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+        <CaretRightIcon size={iconSize.md} color={colors.text.tertiary} />
       </TouchableOpacity>
     ),
     [onOpenLink]
@@ -73,7 +80,7 @@ export function SupportSelector({ options, onOpenLink, onBack }: SupportSelector
       {options.map(renderOption)}
 
       <View style={styles.securityNotice}>
-        <Ionicons name="shield-checkmark-outline" size={20} color={semantic.status.warning} />
+        <ShieldCheckIcon size={iconSize.md} color={semantic.status.warning} />
         <Text style={styles.securityText}>
           {t(
             'settings.security_notice',

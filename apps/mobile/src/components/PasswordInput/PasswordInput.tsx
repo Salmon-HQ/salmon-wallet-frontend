@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { EyeIcon, EyeSlashIcon } from '../../icons';
 import {
   colors,
   componentSizes,
@@ -75,11 +75,11 @@ export function PasswordInput({
           onPress={() => setShowPassword(!showPassword)}
           style={styles.toggleButton}
         >
-          <Ionicons
-            name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-            size={componentSizes.iconSizeMedium}
-            color={colors.text.secondary}
-          />
+          {showPassword ? (
+            <EyeSlashIcon size={componentSizes.iconSizeMedium} color={colors.text.secondary} />
+          ) : (
+            <EyeIcon size={componentSizes.iconSizeMedium} color={colors.text.secondary} />
+          )}
         </TouchableOpacity>
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}

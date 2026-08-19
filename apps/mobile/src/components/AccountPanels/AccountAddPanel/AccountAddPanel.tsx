@@ -18,7 +18,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { CaretRightIcon, FileTextIcon, TreeStructureIcon, iconSize } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -199,7 +199,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         activeOpacity={0.7}
       >
         <View style={styles.methodIcon}>
-          <Ionicons name="git-branch-outline" size={28} color={colors.accent.primary} />
+          <TreeStructureIcon size={iconSize.xl} color={colors.accent.primary} />
         </View>
         <View style={styles.methodInfo}>
           <Text style={styles.methodTitle}>{t('settings.account_add.create_new')}</Text>
@@ -207,7 +207,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
             {t('settings.account_add.create_new_description')}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+        <CaretRightIcon size={iconSize.md} color={colors.text.secondary} />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -218,7 +218,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         activeOpacity={0.7}
       >
         <View style={styles.methodIcon}>
-          <Ionicons name="document-text-outline" size={28} color={colors.accent.primary} />
+          <FileTextIcon size={iconSize.xl} color={colors.accent.primary} />
         </View>
         <View style={styles.methodInfo}>
           <Text style={styles.methodTitle}>{t('settings.account_add.import_seed')}</Text>
@@ -226,7 +226,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
             {t('settings.account_add.import_seed_description')}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+        <CaretRightIcon size={iconSize.md} color={colors.text.secondary} />
       </TouchableOpacity>
     </View>
   );

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { CheckIcon, iconSize } from '../../icons';
 import {
   borderRadius,
   borderWidth,
@@ -51,7 +51,7 @@ const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
     >
       {/* Checkbox */}
       <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
-        {selected && <Ionicons name="checkmark" size={16} color={semantic.accent.onFill} />}
+        {selected && <CheckIcon size={iconSize.sm} color={semantic.accent.onFill} />}
       </View>
 
       {/* Account Info */}

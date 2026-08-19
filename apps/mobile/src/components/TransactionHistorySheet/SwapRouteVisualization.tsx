@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, TouchableOpacity, LayoutChangeEvent } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowRightIcon, CheckIcon, CopyIcon, TreeStructureIcon, iconSize } from '../../icons';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -83,12 +83,11 @@ const HashCopyRow: React.FC<{
         <Text style={styles.summaryValue} numberOfLines={1}>
           {displayValue ?? value}
         </Text>
-        <Ionicons
-          name={copied ? 'checkmark' : 'copy-outline'}
-          size={12}
-          color={copied ? semantic.status.success : colors.text.tertiary}
-          style={styles.copyIcon}
-        />
+        {copied ? (
+          <CheckIcon size={12} color={semantic.status.success} style={styles.copyIcon} />
+        ) : (
+          <CopyIcon size={12} color={colors.text.tertiary} style={styles.copyIcon} />
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -119,7 +118,7 @@ const RouteHop: React.FC<{ hop: SwapRouteHop; isLast: boolean }> = ({ hop, isLas
           <Text style={styles.dexText}>{hop.dex}</Text>
           {hop.percent < 100 && <Text style={styles.percentText}>{hop.percent}%</Text>}
         </View>
-        <Ionicons name="arrow-forward" size={14} color={colors.text.secondary} />
+        <ArrowRightIcon size={14} color={colors.text.secondary} />
       </View>
 
       {/* Output token (only show on last hop or if different from next input) */}
@@ -170,7 +169,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
     <View style={styles.simpleRouteContainer}>
       {/* Route header */}
       <View style={styles.routeHeader}>
-        <Ionicons name="git-branch-outline" size={16} color={colors.text.secondary} />
+        <TreeStructureIcon size={iconSize.sm} color={colors.text.secondary} />
         <Text style={styles.routeHeaderText}>
           {t('transactions.detail.route')}
           {source ? ` ${t('transactions.detail.viaSource', { source })}` : ''}
@@ -199,7 +198,7 @@ const SimpleRouteView: React.FC<{ transaction: Transaction }> = ({ transaction }
 
         {/* Arrow */}
         <View style={styles.routeArrowColumn}>
-          <Ionicons name="arrow-forward" size={20} color={colors.accent.primary} />
+          <ArrowRightIcon size={iconSize.md} color={colors.accent.primary} />
         </View>
 
         {/* Inputs (received) */}
@@ -342,7 +341,7 @@ const DetailedRouteView: React.FC<{ transaction: Transaction }> = ({ transaction
     <View style={styles.detailedRouteContainer}>
       {/* Route header */}
       <View style={styles.routeHeader}>
-        <Ionicons name="git-branch-outline" size={16} color={colors.text.secondary} />
+        <TreeStructureIcon size={iconSize.sm} color={colors.text.secondary} />
         <Text style={styles.routeHeaderText}>
           {t('transactions.detail.route')}
           {source ? ` ${t('transactions.detail.viaSource', { source })}` : ''} (

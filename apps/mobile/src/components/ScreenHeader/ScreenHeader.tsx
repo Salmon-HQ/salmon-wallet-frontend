@@ -5,7 +5,7 @@
  */
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { CaretLeftIcon, XIcon } from '../../icons';
 import { colors, componentSizes, contentPadding, semantic } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 import { StepIndicator } from '../StepIndicator';
@@ -53,13 +53,18 @@ export function ScreenHeader({
         // (DESIGN.md: hit-slop, never inflated visual size).
         hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
       >
-        {onBack && (
-          <Ionicons
-            name={glyph === 'close' ? 'close' : 'chevron-back'}
-            size={componentSizes.iconSizeMedium}
-            color={backDisabled ? semantic.text.secondary : colors.text.primary}
-          />
-        )}
+        {onBack &&
+          (glyph === 'close' ? (
+            <XIcon
+              size={componentSizes.iconSizeMedium}
+              color={backDisabled ? semantic.text.secondary : colors.text.primary}
+            />
+          ) : (
+            <CaretLeftIcon
+              size={componentSizes.iconSizeMedium}
+              color={backDisabled ? semantic.text.secondary : colors.text.primary}
+            />
+          ))}
       </TouchableOpacity>
 
       {/* Step indicator (centered) */}

@@ -7,7 +7,8 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { CaretRightIcon, KeyIcon, LockIcon, TextTIcon, UserCircleIcon, iconSize } from '../../../icons';
+import type { IconComponent } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
 import { colors, spacing, borderRadius, fontSize, fontFamilyNative } from '@salmon/shared';
@@ -20,7 +21,7 @@ import type { AccountEditPanelProps } from './types';
 
 interface SectionItem {
   labelKey: string;
-  icon: React.ComponentProps<typeof Ionicons>['name'];
+  icon: IconComponent;
   onPress: () => void;
   testID: string;
 }
@@ -42,25 +43,25 @@ export function AccountEditPanel({
   const sections: SectionItem[] = [
     {
       labelKey: 'settings.account_edit.name_section',
-      icon: 'text-outline',
+      icon: TextTIcon,
       onPress: onEditName,
       testID: 'account-edit-name',
     },
     {
       labelKey: 'settings.account_edit.avatar_section',
-      icon: 'person-circle-outline',
+      icon: UserCircleIcon,
       onPress: onEditAvatar,
       testID: 'account-edit-avatar',
     },
     {
       labelKey: 'settings.account_edit.backup_section',
-      icon: 'key-outline',
+      icon: KeyIcon,
       onPress: onBackupSeed,
       testID: 'account-edit-backup',
     },
     {
       labelKey: 'settings.account_edit.private_key_section',
-      icon: 'lock-closed-outline',
+      icon: LockIcon,
       onPress: onExportPrivateKey,
       testID: 'account-edit-private-key',
     },
@@ -84,10 +85,10 @@ export function AccountEditPanel({
             accessibilityLabel={t(item.labelKey)}
           >
             <View style={styles.iconContainer}>
-              <Ionicons name={item.icon} size={24} color={colors.text.primary} />
+              <item.icon size={iconSize.lg} color={colors.text.primary} />
             </View>
             <Text style={styles.rowLabel}>{t(item.labelKey)}</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            <CaretRightIcon size={iconSize.md} color={colors.text.secondary} />
           </TouchableOpacity>
         ))}
       </View>

@@ -10,7 +10,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { Ionicons } from '@expo/vector-icons';
+import { CaretRightIcon, EyeIcon, GlobeIcon, WarningIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -199,7 +199,7 @@ export function PrivateKeyPanel({
               activeOpacity={0.7}
             >
               <View style={styles.networkIconContainer}>
-                <Ionicons name="globe-outline" size={24} color={colors.text.primary} />
+                <GlobeIcon size={iconSize.lg} color={colors.text.primary} />
               </View>
               <View style={styles.networkInfo}>
                 <Text style={styles.networkName}>{network.name}</Text>
@@ -207,7 +207,7 @@ export function PrivateKeyPanel({
                   {network.blockchain.charAt(0).toUpperCase() + network.blockchain.slice(1)}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+              <CaretRightIcon size={iconSize.md} color={colors.text.secondary} />
             </TouchableOpacity>
           ))}
         </View>
@@ -223,7 +223,7 @@ export function PrivateKeyPanel({
     <SettingsScreenLayout title={t('settings.private_key')} onBack={currentBackAction}>
       {/* Warning */}
       <View style={styles.warningContainer}>
-        <Ionicons name="warning-outline" size={20} color={semantic.status.warning} />
+        <WarningIcon size={iconSize.md} color={semantic.status.warning} />
         <Text style={styles.warningText}>{t('settings.private_key_warning')}</Text>
       </View>
 
@@ -254,7 +254,7 @@ export function PrivateKeyPanel({
                     testID={`private-key-reveal-overlay-${index}`}
                     accessibilityRole="button"
                   >
-                    <Ionicons name="eye-outline" size={32} color={colors.text.primary} />
+                    <EyeIcon size={32} color={colors.text.primary} />
                     {/* Both branches now cost a proof of identity, so the
                         label no longer promises a free tap. */}
                     <Text style={styles.revealText}>

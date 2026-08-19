@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowSquareOutIcon, CheckIcon, CopyIcon, GlobeIcon, iconSize } from '../../../icons';
 import {
   borderRadius,
   colors,
@@ -203,11 +203,11 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
           >
             <Text style={styles.contractAddress}>{getShortAddress(contractAddress, 6) ?? ''}</Text>
             <View style={styles.copyButton}>
-              <Ionicons
-                name={copied ? 'checkmark' : 'copy-outline'}
-                size={18}
-                color={copied ? semantic.status.success : semantic.text.secondary}
-              />
+              {copied ? (
+                <CheckIcon size={18} color={semantic.status.success} />
+              ) : (
+                <CopyIcon size={18} color={semantic.text.secondary} />
+              )}
             </View>
           </TouchableOpacity>
         </View>
@@ -224,11 +224,10 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
             url: website,
           })}
         >
-          <Ionicons name="globe-outline" size={20} color={colors.accent.primary} />
+          <GlobeIcon size={iconSize.md} color={colors.accent.primary} />
           <Text style={styles.websiteText}>{t('token.info.visitWebsite', 'Visit Website')}</Text>
-          <Ionicons
-            name="open-outline"
-            size={16}
+          <ArrowSquareOutIcon
+            size={iconSize.sm}
             color={colors.accent.primary}
             style={styles.websiteIcon}
           />

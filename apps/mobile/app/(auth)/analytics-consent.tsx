@@ -32,7 +32,7 @@ import {
   PrimaryButton,
   ScreenHeader,
 } from '../../src/components';
-import { Ionicons } from '@expo/vector-icons';
+import { ChartBarIcon } from '../../src/icons';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -69,7 +69,7 @@ export default function AnalyticsConsentScreen() {
         The metrics glyph takes the top slot the fish used to hold — one icon
         on the screen, not two, and the same asset the body carried before.
       */
-      mark={<Ionicons name="stats-chart-outline" size={ICON_SIZE} color={colors.text.primary} />}
+      mark={<ChartBarIcon size={ICON_SIZE} color={colors.text.primary} />}
       title={<OnboardingTitle>{t('settings.analytics_prompt_title')}</OnboardingTitle>}
       body={
         <ScrollView contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>

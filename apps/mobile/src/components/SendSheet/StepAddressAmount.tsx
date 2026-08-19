@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { QrCodeIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -236,7 +236,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
               style={styles.scanButton}
               activeOpacity={0.7}
             >
-              <Ionicons name="qr-code-outline" size={ms(20)} color={colors.text.secondary} />
+              <QrCodeIcon size={ms(iconSize.md)} color={colors.text.secondary} />
             </TouchableOpacity>
             {/* Validation indicator */}
             {address.length > 0 && isValidating && (

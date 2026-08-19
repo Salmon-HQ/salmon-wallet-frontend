@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
 import {
@@ -138,13 +138,13 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
           }
           accessibilityHint={copied ? undefined : t('transactions.detail.copyAddressHint')}
         >
-          <Ionicons
-            name={copied ? 'checkmark' : 'copy-outline'}
-            size={16}
-            // The copy control is the affordance in this row; the address beside it
-            // is data to read and stays neutral mono.
-            color={copied ? semantic.status.success : semantic.text.accent}
-          />
+          {/* The copy control is the affordance in this row; the address beside it
+              is data to read and stays neutral mono. */}
+          {copied ? (
+            <CheckIcon size={iconSize.sm} color={semantic.status.success} />
+          ) : (
+            <CopyIcon size={iconSize.sm} color={semantic.text.accent} />
+          )}
         </TouchableOpacity>
       </View>
     </View>

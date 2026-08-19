@@ -3,9 +3,19 @@
  * Extracted from the route file for use in the SettingsPanelStack.
  */
 
-import React, { useCallback, type ComponentProps } from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowSquareOutIcon,
+  BookOpenIcon,
+  FileIcon,
+  FileTextIcon,
+  GithubLogoIcon,
+  GlobeIcon,
+  XLogoIcon,
+  iconSize,
+} from '../../icons';
+import type { IconComponent } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
 
@@ -21,8 +31,6 @@ import {
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { Logo } from '@salmon/assets';
-
-type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
 const LINKS = {
   website: 'https://www.salmonwallet.io',
@@ -49,7 +57,7 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
     '';
 
   const renderLinkItem = useCallback(
-    (icon: IoniconsName, label: string, url: string, id: string) => (
+    (Icon: IconComponent, label: string, url: string, id: string) => (
       <TouchableOpacity
         testID={`about-link-${id}`}
         accessibilityRole="button"
@@ -58,17 +66,17 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
         activeOpacity={0.7}
       >
         <View style={styles.linkIconContainer}>
-          <Ionicons name={icon} size={20} color={colors.text.primary} />
+          <Icon size={iconSize.md} color={colors.text.primary} />
         </View>
         <Text style={styles.linkLabel}>{label}</Text>
-        <Ionicons name="open-outline" size={18} color={colors.text.secondary} />
+        <ArrowSquareOutIcon size={18} color={colors.text.secondary} />
       </TouchableOpacity>
     ),
     [openLink]
   );
 
   const renderSocialButton = useCallback(
-    (icon: IoniconsName, url: string, id: string) => (
+    (Icon: IconComponent, url: string, id: string) => (
       <TouchableOpacity
         testID={`about-link-${id}`}
         accessibilityRole="button"
@@ -76,7 +84,7 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
         onPress={() => openLink(url)}
         activeOpacity={0.7}
       >
-        <Ionicons name={icon} size={24} color={colors.text.primary} />
+        <Icon size={iconSize.lg} color={colors.text.primary} />
       </TouchableOpacity>
     ),
     [openLink]
@@ -94,27 +102,27 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
       <View style={styles.socialSection}>
         <Text style={styles.sectionLabel}>{t('actions.follow_us')}</Text>
         <View style={styles.socialButtons}>
-          {renderSocialButton('logo-twitter', LINKS.twitter, 'twitter')}
-          {renderSocialButton('logo-github', LINKS.github, 'github')}
-          {renderSocialButton('book-outline', LINKS.medium, 'medium')}
+          {renderSocialButton(XLogoIcon, LINKS.twitter, 'twitter')}
+          {renderSocialButton(GithubLogoIcon, LINKS.github, 'github')}
+          {renderSocialButton(BookOpenIcon, LINKS.medium, 'medium')}
         </View>
       </View>
 
       <View style={styles.linksSection}>
         {renderLinkItem(
-          'globe-outline',
+          GlobeIcon,
           t('settings.about_website', 'Website'),
           LINKS.website,
           'website'
         )}
         {renderLinkItem(
-          'document-text-outline',
+          FileTextIcon,
           t('settings.about_privacy', 'Privacy Policy'),
           LINKS.privacy,
           'privacy'
         )}
         {renderLinkItem(
-          'document-outline',
+          FileIcon,
           t('settings.about_terms', 'Terms of Service'),
           LINKS.terms,
           'terms'

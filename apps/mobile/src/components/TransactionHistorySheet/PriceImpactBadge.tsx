@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCircleIcon, WarningCircleIcon, WarningIcon } from '../../icons';
+import type { IconComponent } from '../../icons';
 import {
   ms,
   vs,
@@ -48,10 +49,10 @@ export interface PriceImpactBadgeProps {
 /**
  * Icon mapping for each severity level
  */
-const SEVERITY_ICONS: Record<PriceImpactSeverity, keyof typeof Ionicons.glyphMap> = {
-  safe: 'checkmark-circle',
-  warning: 'warning',
-  high: 'alert-circle',
+const SEVERITY_ICONS: Record<PriceImpactSeverity, IconComponent> = {
+  safe: CheckCircleIcon,
+  warning: WarningIcon,
+  high: WarningCircleIcon,
 };
 
 /**
@@ -122,7 +123,7 @@ export const PriceImpactBadge: React.FC<PriceImpactBadgeProps> = ({
 }) => {
   const severity = getPriceImpactSeverity(value);
   const color = SEVERITY_COLORS[severity];
-  const iconName = SEVERITY_ICONS[severity];
+  const SeverityIcon = SEVERITY_ICONS[severity];
   const sizeConfig = SIZE_CONFIG[size];
 
   return (
@@ -137,11 +138,11 @@ export const PriceImpactBadge: React.FC<PriceImpactBadgeProps> = ({
       ]}
     >
       {showIcon && (
-        <Ionicons
-          name={iconName}
+        <SeverityIcon
           size={ms(sizeConfig.iconSize)}
           color={color}
           style={styles.icon}
+          weight={severity === 'safe' ? 'fill' : 'regular'}
         />
       )}
       <Text

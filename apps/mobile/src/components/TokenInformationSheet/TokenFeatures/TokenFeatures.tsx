@@ -1,6 +1,29 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowsClockwiseIcon,
+  ArrowsLeftRightIcon,
+  ChartLineIcon,
+  ChatsCircleIcon,
+  CheckCircleIcon,
+  CloudIcon,
+  CreditCardIcon,
+  DiamondIcon,
+  EyeSlashIcon,
+  FingerprintIcon,
+  GameControllerIcon,
+  ImageIcon,
+  MoneyIcon,
+  SmileyIcon,
+  SparkleIcon,
+  StackIcon,
+  TagIcon,
+  TreeStructureIcon,
+  TrendUpIcon,
+  UsersIcon,
+  WrenchIcon,
+} from '../../../icons';
+import type { IconComponent } from '../../../icons';
 import {
   colors,
   ContentLoader,
@@ -16,47 +39,49 @@ import type { TokenFeature } from '@salmon/shared';
 import type { TokenFeaturesProps } from './types';
 
 /**
- * Map common feature icons to Ionicons names
+ * Map common feature keys to icon components
  */
-const FEATURE_ICON_MAP: Record<string, string> = {
-  native: 'diamond-outline',
-  defi: 'swap-horizontal-outline',
-  governance: 'people-outline',
-  staking: 'layers-outline',
-  nft: 'image-outline',
-  gaming: 'game-controller-outline',
-  privacy: 'eye-off-outline',
-  oracle: 'analytics-outline',
-  bridge: 'git-branch-outline',
-  exchange: 'repeat-outline',
-  lending: 'cash-outline',
-  yield: 'trending-up-outline',
-  meme: 'happy-outline',
-  utility: 'build-outline',
-  payment: 'card-outline',
-  social: 'chatbubbles-outline',
-  storage: 'cloud-outline',
-  identity: 'finger-print-outline',
-  verified: 'checkmark-circle-outline',
-  new: 'sparkles-outline',
+const FEATURE_ICON_MAP: Record<string, IconComponent> = {
+  native: DiamondIcon,
+  defi: ArrowsLeftRightIcon,
+  governance: UsersIcon,
+  staking: StackIcon,
+  nft: ImageIcon,
+  gaming: GameControllerIcon,
+  privacy: EyeSlashIcon,
+  oracle: ChartLineIcon,
+  bridge: TreeStructureIcon,
+  exchange: ArrowsClockwiseIcon,
+  lending: MoneyIcon,
+  yield: TrendUpIcon,
+  meme: SmileyIcon,
+  utility: WrenchIcon,
+  payment: CreditCardIcon,
+  social: ChatsCircleIcon,
+  storage: CloudIcon,
+  identity: FingerprintIcon,
+  verified: CheckCircleIcon,
+  new: SparkleIcon,
 };
 
 /**
  * Get icon name for a feature
  */
-function getFeatureIcon(feature: TokenFeature): string {
-  if (feature.icon) return feature.icon;
+function getFeatureIcon(feature: TokenFeature): IconComponent {
+  if (feature.icon && FEATURE_ICON_MAP[feature.icon]) {
+    return FEATURE_ICON_MAP[feature.icon];
+  }
 
   // Try to match by label (case-insensitive)
   const normalizedLabel = feature.label.toLowerCase();
-  for (const [key, iconName] of Object.entries(FEATURE_ICON_MAP)) {
+  for (const [key, FeatureIcon] of Object.entries(FEATURE_ICON_MAP)) {
     if (normalizedLabel.includes(key)) {
-      return iconName;
+      return FeatureIcon;
     }
   }
 
   // Default icon
-  return 'pricetag-outline';
+  return TagIcon;
 }
 
 /**
@@ -64,16 +89,14 @@ function getFeatureIcon(feature: TokenFeature): string {
  */
 const FeatureBadge: React.FC<{ feature: TokenFeature; index: number }> = ({ feature, index }) => {
   const color = getFeatureColor(feature, index);
-  const iconName = getFeatureIcon(feature);
 
   return (
     <View style={[styles.badge, { backgroundColor: `${color}20` }]}>
-      <Ionicons
-        name={iconName as keyof typeof Ionicons.glyphMap}
-        size={14}
-        color={color}
-        style={styles.badgeIcon}
-      />
+      {React.createElement(getFeatureIcon(feature), {
+        size: 14,
+        color,
+        style: styles.badgeIcon,
+      })}
       <Text style={[styles.badgeLabel, { color }]}>{feature.label}</Text>
     </View>
   );

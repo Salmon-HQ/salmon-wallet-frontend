@@ -22,10 +22,6 @@ jest.mock('expo-status-bar', () => ({
   StatusBar: () => null,
 }));
 
-jest.mock('@expo/vector-icons', () => ({
-  Ionicons: () => null,
-}));
-
 jest.mock('@salmon/assets', () => ({
   Logo: 1,
 }));

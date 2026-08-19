@@ -11,7 +11,7 @@ import {
   NativeScrollEvent,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { MagnifyingGlassIcon } from '../../icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   colors,
@@ -218,12 +218,7 @@ export const StepTokenSelect: React.FC<StepTokenSelectProps> = ({
     <View style={styles.container}>
       {/* Search Input */}
       <BlurContainer style={styles.searchContainer}>
-        <Ionicons
-          name="search"
-          size={ms(18)}
-          color={colors.text.secondary}
-          style={styles.searchIcon}
-        />
+        <MagnifyingGlassIcon size={ms(18)} color={colors.text.secondary} style={styles.searchIcon} />
         <TextInput
           testID="send-token-search-input"
           style={styles.searchInput}

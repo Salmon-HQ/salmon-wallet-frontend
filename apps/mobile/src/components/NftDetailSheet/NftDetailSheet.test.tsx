@@ -16,11 +16,6 @@ jest.mock('expo-image', () => ({
   Image: () => null,
 }));
 
-jest.mock('@expo/vector-icons', () => ({
-  Ionicons: () => null,
-  MaterialIcons: () => null,
-}));
-
 jest.mock('expo-linear-gradient', () => ({
   LinearGradient: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));

@@ -9,7 +9,27 @@ import {
   ScrollView,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowDownIcon,
+  ArrowRightIcon,
+  ArrowUpIcon,
+  ArrowsLeftRightIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  ClockIcon,
+  CodeIcon,
+  CopyIcon,
+  CubeIcon,
+  FireIcon,
+  LockIcon,
+  MoneyIcon,
+  PlusCircleIcon,
+  QuestionIcon,
+  ShareNetworkIcon,
+  XCircleIcon,
+  iconSize,
+} from '../../icons';
+import type { IconComponent } from '../../icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
 import {
@@ -54,53 +74,53 @@ const TRANSACTION_TYPE_CONFIG: Record<
   TransactionType,
   {
     label: string;
-    icon: keyof typeof Ionicons.glyphMap;
+    icon: IconComponent;
     color: string;
   }
 > = {
   send: {
     label: 'Sent',
-    icon: 'arrow-up-outline',
+    icon: ArrowUpIcon,
     color: colors.change.negative,
   },
   receive: {
     label: 'Received',
-    icon: 'arrow-down-outline',
+    icon: ArrowDownIcon,
     color: colors.change.positive,
   },
   swap: {
     label: 'Swapped',
-    icon: 'swap-horizontal-outline',
+    icon: ArrowsLeftRightIcon,
     color: colors.palette.purple,
   },
   mint: {
     label: 'Minted',
-    icon: 'add-circle-outline',
+    icon: PlusCircleIcon,
     color: colors.palette.cyan,
   },
   burn: {
     label: 'Burned',
-    icon: 'flame-outline',
+    icon: FireIcon,
     color: colors.palette.orange,
   },
   stake: {
     label: 'Staked',
-    icon: 'lock-closed-outline',
+    icon: LockIcon,
     color: colors.palette.green,
   },
   loan: {
     label: 'Loan',
-    icon: 'cash-outline',
+    icon: MoneyIcon,
     color: colors.palette.amber,
   },
   interaction: {
     label: 'Interaction',
-    icon: 'cube-outline',
+    icon: CubeIcon,
     color: colors.palette.blue,
   },
   unknown: {
     label: 'Unknown',
-    icon: 'help-circle-outline',
+    icon: QuestionIcon,
     color: colors.text.secondary,
   },
 };
@@ -112,17 +132,17 @@ const STATUS_CONFIG = {
   completed: {
     label: 'Completed',
     color: semantic.status.success,
-    icon: 'checkmark-circle' as keyof typeof Ionicons.glyphMap,
+    icon: CheckCircleIcon,
   },
   failed: {
     label: 'Failed',
     color: semantic.status.danger,
-    icon: 'close-circle' as keyof typeof Ionicons.glyphMap,
+    icon: XCircleIcon,
   },
   pending: {
     label: 'Pending',
     color: semantic.status.warning,
-    icon: 'time-outline' as keyof typeof Ionicons.glyphMap,
+    icon: ClockIcon,
   },
 };
 
@@ -219,7 +239,7 @@ const SwapVisualization: React.FC<{
         <Text style={styles.swapSymbol}>{fromToken.symbol}</Text>
       </View>
       <View style={styles.swapArrow}>
-        <Ionicons name="arrow-forward" size={24} color={colors.text.secondary} />
+        <ArrowRightIcon size={iconSize.lg} color={colors.text.secondary} />
       </View>
       <View style={styles.swapTokenSection}>
         <TokenLogo uri={toToken.logo || undefined} symbol={toToken.symbol} size={40} />
@@ -277,9 +297,8 @@ const NftMetadataSection: React.FC<{
           <View style={styles.nftCollectionInfo}>
             <Text style={styles.sectionValue}>{token.nftCollection}</Text>
             {token.nftCollectionVerified && (
-              <Ionicons
-                name="checkmark-circle"
-                size={16}
+              <CheckCircleIcon
+                size={iconSize.sm}
                 color={semantic.status.success}
                 style={styles.verifiedIcon}
               />
@@ -309,11 +328,11 @@ const NftMetadataSection: React.FC<{
  * Action button component
  */
 const ActionButton: React.FC<{
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconComponent;
   label: string;
   onPress: () => void;
   testID?: string;
-}> = ({ icon, label, onPress, testID }) => {
+}> = ({ icon: Icon, label, onPress, testID }) => {
   return (
     <TouchableOpacity
       testID={testID}
@@ -321,7 +340,7 @@ const ActionButton: React.FC<{
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Ionicons name={icon} size={20} color={colors.text.primary} />
+      <Icon size={iconSize.md} color={colors.text.primary} />
       <Text style={styles.actionButtonText}>{label}</Text>
     </TouchableOpacity>
   );
@@ -384,7 +403,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const headerContent = (
     <View style={styles.header}>
       <View style={[styles.typeIconContainer, { backgroundColor: `${typeConfig.color}20` }]}>
-        <Ionicons name={typeConfig.icon} size={22} color={typeConfig.color} />
+        <typeConfig.icon size={22} color={typeConfig.color} />
       </View>
       <View style={styles.headerInfo}>
         <View style={styles.titleRow}>
@@ -398,7 +417,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           )}
         </View>
         <View style={styles.statusRow}>
-          <Ionicons name={statusConfig.icon} size={16} color={statusConfig.color} />
+          <statusConfig.icon size={iconSize.sm} color={statusConfig.color} />
           <Text style={[styles.statusText, { color: statusConfig.color }]}>
             {t(STATUS_LABEL_KEYS[transaction.status] ?? '', statusConfig.label)}
           </Text>
@@ -520,7 +539,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   </View>
                   <View style={styles.hopTokens}>
                     <Text style={styles.hopTokenText}>{hop.inputToken.symbol}</Text>
-                    <Ionicons name="arrow-forward" size={12} color={colors.text.tertiary} />
+                    <ArrowRightIcon size={12} color={colors.text.tertiary} />
                     <Text style={styles.hopTokenText}>{hop.outputToken.symbol}</Text>
                   </View>
                   {hop.percent < 100 && <Text style={styles.hopPercent}>{hop.percent}%</Text>}
@@ -653,10 +672,10 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
               >
                 {hashCopied ? (
                   <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-                    <Ionicons name="checkmark" size={14} color={colors.accent.primary} />
+                    <CheckIcon size={14} color={colors.accent.primary} />
                   </Animated.View>
                 ) : (
-                  <Ionicons name="copy-outline" size={14} color={colors.text.secondary} />
+                  <CopyIcon size={14} color={colors.text.secondary} />
                 )}
               </TouchableOpacity>
             </View>
@@ -667,7 +686,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         {developerMode && (
           <BlurContainer style={styles.section}>
             <View style={styles.devSectionHeader}>
-              <Ionicons name="code-slash-outline" size={16} color={colors.text.secondary} />
+              <CodeIcon size={iconSize.sm} color={colors.text.secondary} />
               <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>
                 {t('transactions.detail.developerInfo', 'Developer Info')}
               </Text>
@@ -772,7 +791,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         {onShare && (
           <View style={styles.actionsRow}>
             <ActionButton
-              icon="share-outline"
+              icon={ShareNetworkIcon}
               label={t('transactions.detail.share', 'Share')}
               onPress={handleShare}
               testID="tx-detail-share-button"

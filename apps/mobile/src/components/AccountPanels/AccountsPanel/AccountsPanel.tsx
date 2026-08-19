@@ -9,7 +9,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -107,7 +107,7 @@ function AccountListItem({
           accessibilityRole="button"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="create-outline" size={20} color={colors.text.secondary} />
+          <PencilSimpleIcon size={iconSize.md} color={colors.text.secondary} />
         </TouchableOpacity>
 
         {canDelete && (
@@ -120,13 +120,13 @@ function AccountListItem({
             accessibilityRole="button"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="trash-outline" size={20} color={semantic.status.danger} />
+            <TrashIcon size={iconSize.md} color={semantic.status.danger} />
           </TouchableOpacity>
         )}
 
         {isActive && (
           <View style={styles.checkmarkContainer}>
-            <Ionicons name="checkmark-circle" size={24} color={semantic.status.success} />
+            <CheckCircleIcon size={iconSize.lg} color={semantic.status.success} />
           </View>
         )}
       </View>
@@ -193,7 +193,7 @@ export function AccountsPanel({
         accessibilityRole="button"
       >
         <View style={styles.addAccountIcon}>
-          <Ionicons name="add" size={24} color={colors.text.primary} />
+          <PlusIcon size={iconSize.lg} color={colors.text.primary} />
         </View>
         <Text style={styles.addAccountText}>{t('settings.account_add.title')}</Text>
       </TouchableOpacity>

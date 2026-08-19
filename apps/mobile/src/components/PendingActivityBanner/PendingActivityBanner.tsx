@@ -11,7 +11,8 @@
 import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCircleIcon, ClockIcon, WarningCircleIcon, XIcon, iconSize } from '../../icons';
+import type { IconComponent } from '../../icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { borderRadius, fontSize, fontWeight, semantic, spacing } from '@salmon/shared';
 import type { PendingActivityBannerPropsBase, PendingActivityItem } from '@salmon/shared';
@@ -25,12 +26,12 @@ export type PendingActivityBannerProps = PendingActivityBannerPropsBase<ViewStyl
  */
 const TONE: Record<
   PendingActivityItem['status'],
-  { color: string; icon: keyof typeof Ionicons.glyphMap | null }
+  { color: string; icon: IconComponent | null }
 > = {
   pending: { color: semantic.text.secondary, icon: null },
-  confirmed: { color: semantic.status.success, icon: 'checkmark-circle-outline' },
-  failed: { color: semantic.status.danger, icon: 'alert-circle-outline' },
-  expired: { color: semantic.status.warning, icon: 'time-outline' },
+  confirmed: { color: semantic.status.success, icon: CheckCircleIcon },
+  failed: { color: semantic.status.danger, icon: WarningCircleIcon },
+  expired: { color: semantic.status.warning, icon: ClockIcon },
 };
 
 export function PendingActivityBanner({ items, onDismiss, style }: PendingActivityBannerProps) {
@@ -51,7 +52,7 @@ export function PendingActivityBanner({ items, onDismiss, style }: PendingActivi
         return (
           <View key={item.id} style={styles.row} testID={`pending-activity-row-${item.status}`}>
             {tone.icon ? (
-              <Ionicons name={tone.icon} size={20} color={tone.color} />
+              <tone.icon size={iconSize.md} color={tone.color} />
             ) : (
               <ActivityIndicator size="small" color={tone.color} />
             )}
@@ -76,7 +77,7 @@ export function PendingActivityBanner({ items, onDismiss, style }: PendingActivi
                 testID={`pending-activity-dismiss-${item.id}`}
                 hitSlop={8}
               >
-                <Ionicons name="close" size={16} color={semantic.text.tertiary} />
+                <XIcon size={iconSize.sm} color={semantic.text.tertiary} />
               </Pressable>
             ) : null}
           </View>

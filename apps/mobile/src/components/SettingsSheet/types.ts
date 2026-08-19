@@ -5,9 +5,7 @@
  * settings content inside the GateContainer expanded state.
  */
 
-import type { ComponentProps } from 'react';
-
-import type { Ionicons } from '@expo/vector-icons';
+import type { IconComponent } from '../../icons';
 import type {
   SettingsSheetBaseProps,
   SettingsOptionBase,
@@ -21,11 +19,11 @@ export interface SettingsSheetProps extends SettingsSheetBaseProps {}
 
 /**
  * Settings option item configuration (React Native specific)
- * Extends base with Ionicons icon name
+ * Extends base with an icon component from the app icon set
  */
 export interface SettingsOption extends SettingsOptionBase {
-  /** Ionicons icon name */
-  icon: ComponentProps<typeof Ionicons>['name'];
+  /** Icon component from `src/icons` */
+  icon: IconComponent;
   /** Whether this is a toggle option (switch) instead of navigation */
   isToggle?: boolean;
   /** Whether this is an action (direct callback) instead of navigation */

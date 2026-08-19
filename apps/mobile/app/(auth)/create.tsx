@@ -11,7 +11,7 @@
  * phrase this screen shows is the phrase the flow stashes.
  */
 
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCircleIcon, iconSize } from '../../src/icons';
 import {
   borderRadius,
   colors,
@@ -74,7 +74,7 @@ function Toast({ message, visible }: ToastProps) {
   return (
     <View style={styles.toastContainer}>
       <View style={styles.toast}>
-        <Ionicons name="checkmark-circle" size={20} color={semantic.status.success} />
+        <CheckCircleIcon size={iconSize.md} color={semantic.status.success} />
         <Text style={styles.toastText}>{message}</Text>
       </View>
     </View>

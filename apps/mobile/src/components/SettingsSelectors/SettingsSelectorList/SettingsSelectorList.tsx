@@ -7,7 +7,7 @@
 
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCircleIcon, iconSize } from '../../../icons';
 import {
   colors,
   spacing,
@@ -90,7 +90,7 @@ export function SettingsSelectorList<T>({
             </View>
           </View>
 
-          {selected && <Ionicons name="checkmark-circle" size={24} color={colors.accent.primary} />}
+          {selected && <CheckCircleIcon size={iconSize.lg} color={colors.accent.primary} />}
         </TouchableOpacity>
       );
     },

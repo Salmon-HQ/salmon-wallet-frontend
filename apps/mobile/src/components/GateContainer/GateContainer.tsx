@@ -29,7 +29,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { CaretLeftIcon, XIcon, iconSize } from '../../icons';
 import {
   colors,
   fontFamilyNative,
@@ -249,7 +249,7 @@ export function GateContainer({
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       accessibilityRole="button"
                     >
-                      <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
+                      <CaretLeftIcon size={iconSize.lg} color={colors.text.primary} />
                     </TouchableOpacity>
                   ) : (
                     <View style={styles.headerButtonPlaceholder} />
@@ -264,7 +264,7 @@ export function GateContainer({
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     accessibilityRole="button"
                   >
-                    <Ionicons name="close" size={24} color={colors.text.primary} />
+                    <XIcon size={iconSize.lg} color={colors.text.primary} />
                   </TouchableOpacity>
                 </View>
               )}

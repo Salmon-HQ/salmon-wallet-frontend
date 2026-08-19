@@ -6,7 +6,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { Ionicons } from '@expo/vector-icons';
+import { EyeIcon, WarningIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -94,7 +94,7 @@ export function BackupPanel({
   return (
     <SettingsScreenLayout title={t('general.seed_phrase')} onBack={onBack}>
       <View style={styles.warningContainer}>
-        <Ionicons name="warning-outline" size={20} color={semantic.status.warning} />
+        <WarningIcon size={iconSize.md} color={semantic.status.warning} />
         <Text style={styles.warningText}>{t('wallet.create.messageBody')}</Text>
       </View>
 
@@ -107,7 +107,7 @@ export function BackupPanel({
             testID="backup-seed-reveal-overlay"
             accessibilityRole="button"
           >
-            <Ionicons name="eye-outline" size={32} color={colors.text.primary} />
+            <EyeIcon size={32} color={colors.text.primary} />
             <Text style={styles.revealText}>{t('settings.wallets.tap_to_reveal')}</Text>
           </TouchableOpacity>
         )}

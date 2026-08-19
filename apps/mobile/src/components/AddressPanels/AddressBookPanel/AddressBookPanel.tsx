@@ -7,7 +7,7 @@
 
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { PencilSimpleIcon, PlusCircleIcon, TrashIcon, UserIcon, iconSize } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -68,7 +68,7 @@ export function AddressBookPanel({
       >
         <View style={styles.contactInfo}>
           <View style={styles.contactIconPlaceholder}>
-            <Ionicons name="person-outline" size={20} color={colors.text.secondary} />
+            <UserIcon size={iconSize.md} color={colors.text.secondary} />
           </View>
           <View style={styles.contactText}>
             <Text style={styles.contactName} numberOfLines={1}>
@@ -93,7 +93,7 @@ export function AddressBookPanel({
             accessibilityRole="button"
             accessibilityLabel={t('actions.edit', 'Edit')}
           >
-            <Ionicons name="create-outline" size={18} color={colors.text.secondary} />
+            <PencilSimpleIcon size={18} color={colors.text.secondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
@@ -103,7 +103,7 @@ export function AddressBookPanel({
             accessibilityRole="button"
             accessibilityLabel={t('actions.remove', 'Remove')}
           >
-            <Ionicons name="trash-outline" size={18} color={semantic.status.danger} />
+            <TrashIcon size={18} color={semantic.status.danger} />
           </TouchableOpacity>
         </View>
       </View>
@@ -140,7 +140,7 @@ export function AddressBookPanel({
             testID="address-book-add-button"
             accessibilityRole="button"
           >
-            <Ionicons name="add-circle-outline" size={20} color={colors.accent.primary} />
+            <PlusCircleIcon size={iconSize.md} color={colors.accent.primary} />
             <Text style={styles.addButtonText}>
               {t('settings.addressbook.addnew', 'Add New Address')}
             </Text>
@@ -161,7 +161,7 @@ export function AddressBookPanel({
             testID="address-book-add-button"
             accessibilityRole="button"
           >
-            <Ionicons name="add-circle-outline" size={20} color={colors.accent.primary} />
+            <PlusCircleIcon size={iconSize.md} color={colors.accent.primary} />
             <Text style={styles.addButtonText}>
               {t('settings.addressbook.addnew', 'Add New Address')}
             </Text>

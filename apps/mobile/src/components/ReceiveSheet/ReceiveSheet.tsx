@@ -22,7 +22,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckIcon } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
@@ -161,7 +161,7 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
           <FleshBackground />
           {copied ? (
             <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-              <Ionicons name="checkmark" size={ms(23)} color={semantic.accent.onFill} />
+              <CheckIcon size={ms(23)} color={semantic.accent.onFill} />
             </Animated.View>
           ) : (
             <ContentCopySvgIcon size={ms(23)} color={semantic.accent.onFill} />

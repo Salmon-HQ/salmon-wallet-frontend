@@ -25,7 +25,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { CaretLeftIcon } from '../../icons';
 
 import {
   colors,
@@ -95,11 +95,7 @@ export function SettingsScreenLayout({
                 accessibilityLabel={t('accessibility.go_back', 'Go back')}
                 accessibilityRole="button"
               >
-                <Ionicons
-                  name="chevron-back"
-                  size={componentSizes.iconSizeMedium}
-                  color={colors.text.primary}
-                />
+                <CaretLeftIcon size={componentSizes.iconSizeMedium} color={colors.text.primary} />
               </TouchableOpacity>
               <Text style={styles.title} numberOfLines={2}>
                 {title}

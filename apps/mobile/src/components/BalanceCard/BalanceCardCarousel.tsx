@@ -39,7 +39,7 @@ import { DEBUG_LAYER_COLORS, DEBUG_LAYER_COLOR } from '../../debug/layerColors';
 import type { BalanceCardCarouselProps, BlockchainId } from './types';
 
 // Import the SVG icons from Icon component
-import { Ionicons } from '@expo/vector-icons';
+import { CaretDownIcon, CaretUpIcon, EyeIcon, EyeSlashIcon } from '../../icons';
 import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -272,11 +272,11 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
               <View style={styles.balanceContainer}>
                 {renderBalance()}
                 <TouchableOpacity onPress={onToggleVisibility} style={styles.eyeButton}>
-                  <Ionicons
-                    name={hiddenBalance ? 'eye-off' : 'eye'}
-                    size={ms(componentSizes.eyeIcon)}
-                    color={semantic.text.secondary}
-                  />
+                  {hiddenBalance ? (
+                    <EyeSlashIcon size={ms(componentSizes.eyeIcon)} color={semantic.text.secondary} />
+                  ) : (
+                    <EyeIcon size={ms(componentSizes.eyeIcon)} color={semantic.text.secondary} />
+                  )}
                 </TouchableOpacity>
               </View>
               {!hiddenBalance && (
@@ -284,12 +284,19 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
                   <Text style={[styles.changeText, { color: changeColor }]}>
                     {showPercentage(changePercent)}
                   </Text>
-                  <Ionicons
-                    name={changePercent >= 0 ? 'chevron-up' : 'chevron-down'}
-                    size={ms(componentSizes.changeArrowIcon)}
-                    color={changeColor}
-                    style={styles.changeArrow}
-                  />
+                  {changePercent >= 0 ? (
+                    <CaretUpIcon
+                      size={ms(componentSizes.changeArrowIcon)}
+                      color={changeColor}
+                      style={styles.changeArrow}
+                    />
+                  ) : (
+                    <CaretDownIcon
+                      size={ms(componentSizes.changeArrowIcon)}
+                      color={changeColor}
+                      style={styles.changeArrow}
+                    />
+                  )}
                   <Text style={[styles.changeText, { color: changeColor }]}>
                     ({formatChange(changeAmount)})
                   </Text>

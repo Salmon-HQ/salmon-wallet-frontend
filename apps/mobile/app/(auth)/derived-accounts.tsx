@@ -17,7 +17,7 @@
  * - mnemonic: The seed phrase to derive accounts from
  */
 
-import { Ionicons } from '@expo/vector-icons';
+import { CloudSlashIcon, WalletIcon } from '../../src/icons';
 import {
   colors,
   componentSizes,
@@ -219,11 +219,7 @@ export default function DerivedAccountsScreen() {
       if (failedNetworks.length > 0) {
         return (
           <View style={styles.emptyContainer} testID="derived-scan-error">
-            <Ionicons
-              name="cloud-offline-outline"
-              size={componentSizes.iconSize3XL}
-              color={semantic.text.secondary}
-            />
+            <CloudSlashIcon size={componentSizes.iconSize3XL} color={semantic.text.secondary} />
             <Text style={styles.emptyTitle}>{t('wallet.derived.scan_failed_title')}</Text>
             <Text style={styles.emptySubtitle}>{t('wallet.derived.scan_failed_body')}</Text>
             <View style={styles.retryButtonContainer}>
@@ -236,11 +232,7 @@ export default function DerivedAccountsScreen() {
       }
       return (
         <View style={styles.emptyContainer}>
-          <Ionicons
-            name="wallet-outline"
-            size={componentSizes.iconSize3XL}
-            color={semantic.text.secondary}
-          />
+          <WalletIcon size={componentSizes.iconSize3XL} color={semantic.text.secondary} />
           <Text style={styles.emptyTitle}>{t('wallet.derived.empty_title')}</Text>
           <Text style={styles.emptySubtitle}>{t('wallet.derived.empty_subtitle')}</Text>
         </View>

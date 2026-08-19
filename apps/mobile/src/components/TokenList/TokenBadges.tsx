@@ -1,4 +1,31 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowElbowUpRightIcon,
+  ChartBarIcon,
+  ChartLineIcon,
+  ChartPieIcon,
+  CheckCircleIcon,
+  CopyIcon,
+  CubeIcon,
+  CurrencyCircleDollarIcon,
+  CurrencyDollarIcon,
+  DropIcon,
+  FileTextIcon,
+  GraduationCapIcon,
+  HandPalmIcon,
+  LinkIcon,
+  LockIcon,
+  MagnifyingGlassIcon,
+  MedalIcon,
+  MoonIcon,
+  RocketLaunchIcon,
+  ShieldCheckIcon,
+  ShieldIcon,
+  TrendUpIcon,
+  TrophyIcon,
+  UsersIcon,
+  WarningIcon,
+} from '../../icons';
+import type { IconComponent } from '../../icons';
 import {
   borderRadius,
   componentSizes,
@@ -27,45 +54,45 @@ import { TOKEN_TAG_META, sortTagsBySignalFirst, type TokenTagTone } from './toke
 const INLINE_BADGE_LIMIT = 2;
 
 /**
- * Mapping of token tags to Ionicons icon names
+ * Mapping of token tags to icon components (mirrors the packages/ui twin)
  */
-const TAG_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
+const TAG_ICON_MAP: Record<string, IconComponent> = {
   // Verification & trust tags
-  verified: 'checkmark-circle',
-  strict: 'shield',
-  major: 'trophy',
-  'moonshot-verified': 'shield-checkmark',
+  verified: CheckCircleIcon,
+  strict: ShieldIcon,
+  major: TrophyIcon,
+  'moonshot-verified': ShieldCheckIcon,
 
   // Community tags
-  community: 'people',
-  'community-assist': 'hand-right',
+  community: UsersIcon,
+  'community-assist': HandPalmIcon,
 
   // Token types
-  lst: 'water',
-  'original-lst': 'medal',
-  stable: 'logo-usd',
-  'token-2022': 'cube',
-  yb: 'analytics',
+  lst: DropIcon,
+  'original-lst': MedalIcon,
+  stable: CurrencyDollarIcon,
+  'token-2022': CubeIcon,
+  yb: ChartLineIcon,
 
   // Launchpad & trading
-  launchpad: 'rocket',
-  moonshot: 'moon',
-  'birdeye-trending': 'trending-up',
-  'pumpfun-graduates': 'school',
+  launchpad: RocketLaunchIcon,
+  moonshot: MoonIcon,
+  'birdeye-trending': TrendUpIcon,
+  'pumpfun-graduates': GraduationCapIcon,
 
   // Financial products
-  'jup-lend-earn': 'cash',
-  prestocks: 'bar-chart',
-  xstocks: 'pie-chart',
+  'jup-lend-earn': CurrencyCircleDollarIcon,
+  prestocks: ChartBarIcon,
+  xstocks: ChartPieIcon,
 
   // Registry & metadata
-  'old-registry': 'document-text',
-  'solana-fm': 'search',
-  wormhole: 'link',
-  deduplicated: 'git-branch',
-  duplicate: 'copy',
-  deprecated: 'warning',
-  internal: 'lock-closed',
+  'old-registry': FileTextIcon,
+  'solana-fm': MagnifyingGlassIcon,
+  wormhole: LinkIcon,
+  deduplicated: ArrowElbowUpRightIcon,
+  duplicate: CopyIcon,
+  deprecated: WarningIcon,
+  internal: LockIcon,
 };
 
 /**
@@ -89,10 +116,10 @@ const TONE_INK: Record<TokenTagTone, string> = {
  * one node rather than descending into the icon glyph.
  */
 const TokenBadge: React.FC<{ tag: string; label: string }> = ({ tag, label }) => {
-  const iconName = TAG_ICON_MAP[tag];
+  const TagIcon = TAG_ICON_MAP[tag];
   const meta = TOKEN_TAG_META[tag];
 
-  if (!iconName) {
+  if (!TagIcon) {
     return null;
   }
 
@@ -106,7 +133,7 @@ const TokenBadge: React.FC<{ tag: string; label: string }> = ({ tag, label }) =>
       accessibilityLabel={label}
       testID={`token-badge-${tag}`}
     >
-      <Ionicons name={iconName} size={ms(fontSize.xs)} color={ink} />
+      <TagIcon size={ms(fontSize.xs)} color={ink} />
     </View>
   );
 };

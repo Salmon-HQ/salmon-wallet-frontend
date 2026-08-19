@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { CaretLeftIcon } from '../../icons';
 import {
   colors,
   componentSizes,
@@ -37,11 +37,7 @@ export function BottomSheetTitleHeader({
           accessibilityLabel={resolvedBackLabel}
           accessibilityRole="button"
         >
-          <Ionicons
-            name="chevron-back"
-            size={ms(componentSizes.iconSizeMedium)}
-            color={colors.text.primary}
-          />
+          <CaretLeftIcon size={ms(componentSizes.iconSizeMedium)} color={colors.text.primary} />
         </TouchableOpacity>
       )}
       <View pointerEvents="none" style={styles.titleContainer}>

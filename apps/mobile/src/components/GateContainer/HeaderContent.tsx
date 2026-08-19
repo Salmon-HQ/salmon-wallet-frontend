@@ -26,7 +26,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckIcon } from '../../icons';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { ContentCopySvgIcon, SettingsSvgIcon, WalletSvgIcon } from '../Icon';
 
@@ -160,7 +160,7 @@ export function HeaderContent({
                 renderer does not reproduce native paint. */}
             {copied ? (
               <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-                <Ionicons name="checkmark" size={s(23)} color={semantic.status.success} />
+                <CheckIcon size={s(23)} color={semantic.status.success} />
               </Animated.View>
             ) : (
               <ContentCopySvgIcon size={s(23)} color={semantic.text.accent} />

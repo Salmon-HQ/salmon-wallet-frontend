@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, StyleSheet, TouchableOpacity, Linking, Modal, Pressable } from 'react-native';
 import type { ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowSquareOutIcon, CaretDownIcon, GlobeIcon, iconSize } from '../../icons';
 import {
   colors,
   ms,
@@ -161,20 +161,10 @@ export function ExplorerLinkButton({
           accessibilityLabel={buttonText}
           accessibilityHint={t('transactions.detail.explorerHint')}
         >
-          <Ionicons
-            name="open-outline"
-            size={16}
-            color={semantic.text.accent}
-            style={styles.icon}
-          />
+          <ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.accent} style={styles.icon} />
           <Text style={styles.buttonText}>{buttonText}</Text>
           {showMenu && availableExplorers.length > 1 && (
-            <Ionicons
-              name="chevron-down"
-              size={14}
-              color={semantic.text.accent}
-              style={styles.chevron}
-            />
+            <CaretDownIcon size={14} color={semantic.text.accent} style={styles.chevron} />
           )}
         </TouchableOpacity>
       </BlurContainer>
@@ -198,14 +188,9 @@ export function ExplorerLinkButton({
                     onPress={() => openExplorer(explorer)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons
-                      name="globe-outline"
-                      size={18}
-                      color={colors.text.primary}
-                      style={styles.menuItemIcon}
-                    />
+                    <GlobeIcon size={18} color={colors.text.primary} style={styles.menuItemIcon} />
                     <Text style={styles.menuItemText}>{explorer.name}</Text>
-                    <Ionicons name="open-outline" size={16} color={colors.text.tertiary} />
+                    <ArrowSquareOutIcon size={iconSize.sm} color={colors.text.tertiary} />
                   </TouchableOpacity>
                 ))}
               </BlurContainer>

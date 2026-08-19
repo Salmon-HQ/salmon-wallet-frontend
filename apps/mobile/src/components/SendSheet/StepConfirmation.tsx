@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Animated, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   borderRadius,
@@ -167,7 +167,7 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
             </View>
             {copied ? (
               <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-                <Ionicons name="checkmark" size={ms(20)} color={semantic.status.success} />
+                <CheckIcon size={ms(iconSize.md)} color={semantic.status.success} />
               </Animated.View>
             ) : (
               <ContentCopySvgIcon size={ms(20)} color={colors.text.secondary} />

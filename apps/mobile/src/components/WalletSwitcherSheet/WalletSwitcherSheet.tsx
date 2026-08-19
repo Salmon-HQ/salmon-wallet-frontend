@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, WalletIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -121,7 +121,7 @@ function AccountListItem({
             accessibilityRole="button"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="create-outline" size={20} color={colors.text.secondary} />
+            <PencilSimpleIcon size={iconSize.md} color={colors.text.secondary} />
           </TouchableOpacity>
         )}
 
@@ -138,9 +138,8 @@ function AccountListItem({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             disabled={!canDelete}
           >
-            <Ionicons
-              name="trash-outline"
-              size={20}
+            <TrashIcon
+              size={iconSize.md}
               color={canDelete ? semantic.status.danger : semantic.text.disabled}
             />
           </TouchableOpacity>
@@ -149,7 +148,7 @@ function AccountListItem({
         {/* Active Indicator */}
         {isActive && (
           <View style={styles.checkmarkContainer}>
-            <Ionicons name="checkmark-circle" size={24} color={semantic.status.success} />
+            <CheckCircleIcon size={iconSize.lg} color={semantic.status.success} />
           </View>
         )}
       </View>
@@ -300,7 +299,7 @@ export function WalletSwitcherSheet({
         accessibilityRole="button"
       >
         <View style={styles.addAccountIcon}>
-          <Ionicons name="add" size={24} color={colors.text.primary} />
+          <PlusIcon size={iconSize.lg} color={colors.text.primary} />
         </View>
         <Text style={styles.addAccountText}>{t('settings.wallets.add_new_wallet')}</Text>
       </TouchableOpacity>
@@ -314,7 +313,7 @@ export function WalletSwitcherSheet({
   const ListEmpty = useMemo(
     () => (
       <View style={styles.emptyState}>
-        <Ionicons name="wallet-outline" size={48} color={colors.text.secondary} />
+        <WalletIcon size={48} color={colors.text.secondary} />
         <Text style={styles.emptyStateText}>{t('settings.wallets.your_wallets')}</Text>
       </View>
     ),

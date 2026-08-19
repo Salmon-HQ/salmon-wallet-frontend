@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { CaretDownIcon, CaretUpIcon, EyeIcon, EyeSlashIcon } from '../../icons';
 import {
   borderRadius,
   colors,
@@ -152,11 +152,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
             accessibilityRole="button"
             accessibilityLabel={t('accessibility.show_balance', 'Show balance')}
           >
-            <Ionicons
-              name="eye-off"
-              size={ms(componentSizes.eyeIcon)}
-              color={semantic.text.secondary}
-            />
+            <EyeSlashIcon size={ms(componentSizes.eyeIcon)} color={semantic.text.secondary} />
           </TouchableOpacity>
         </View>
       );
@@ -181,7 +177,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
           accessibilityRole="button"
           accessibilityLabel={t('accessibility.hide_balance', 'Hide balance')}
         >
-          <Ionicons name="eye" size={ms(componentSizes.eyeIcon)} color={semantic.text.secondary} />
+          <EyeIcon size={ms(componentSizes.eyeIcon)} color={semantic.text.secondary} />
         </TouchableOpacity>
       </View>
     );
@@ -203,12 +199,19 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
     return (
       <View style={styles.changeRow}>
         <Text style={[styles.changeText, { color: changeColor }]}>{displayPercentage}</Text>
-        <Ionicons
-          name={isPositive ? 'chevron-up' : 'chevron-down'}
-          size={ms(componentSizes.changeArrowIcon)}
-          color={changeColor}
-          style={styles.trendingIcon}
-        />
+        {isPositive ? (
+          <CaretUpIcon
+            size={ms(componentSizes.changeArrowIcon)}
+            color={changeColor}
+            style={styles.trendingIcon}
+          />
+        ) : (
+          <CaretDownIcon
+            size={ms(componentSizes.changeArrowIcon)}
+            color={changeColor}
+            style={styles.trendingIcon}
+          />
+        )}
         {displayAbsChange && (
           <Text style={[styles.changeText, { color: changeColor }]}>({displayAbsChange})</Text>
         )}

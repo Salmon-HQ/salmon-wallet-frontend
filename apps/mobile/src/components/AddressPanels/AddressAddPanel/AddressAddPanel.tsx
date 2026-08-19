@@ -5,7 +5,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { QrCodeIcon } from '../../../icons';
 
 import {
   colors,
@@ -88,7 +88,7 @@ export function AddressAddPanel({
           onPress={() => setShowScanner(true)}
           activeOpacity={0.7}
         >
-          <Ionicons name="qr-code-outline" size={18} color={colors.accent.primary} />
+          <QrCodeIcon size={18} color={colors.accent.primary} />
           <Text style={styles.scanButtonText}>{t('qrScanner.scanButton', 'Scan QR code')}</Text>
         </TouchableOpacity>
       </View>

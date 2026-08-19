@@ -16,7 +16,26 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  AddressBookIcon,
+  ArrowSquareOutIcon,
+  CaretRightIcon,
+  ChartBarIcon,
+  CodeIcon,
+  InfoIcon,
+  KeyIcon,
+  LockIcon,
+  MoneyIcon,
+  QuestionIcon,
+  ShieldCheckIcon,
+  SignOutIcon,
+  SquaresFourIcon,
+  TranslateIcon,
+  TrashIcon,
+  UserCircleIcon,
+  UsersIcon,
+  iconSize,
+} from '../../icons';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -86,35 +105,35 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     titleKey: 'settings.sections.account',
     options: [
-      { id: 'accounts', icon: 'people-outline', labelKey: 'settings.accounts.title' },
-      { id: 'avatar', icon: 'person-circle-outline', labelKey: 'settings.profile_picture' },
-      { id: 'security', icon: 'shield-checkmark-outline', labelKey: 'settings.security.title' },
-      { id: 'backup', icon: 'key-outline', labelKey: 'settings.backup' },
-      { id: 'privateKey', icon: 'lock-closed-outline', labelKey: 'settings.private_key' },
+      { id: 'accounts', icon: UsersIcon, labelKey: 'settings.accounts.title' },
+      { id: 'avatar', icon: UserCircleIcon, labelKey: 'settings.profile_picture' },
+      { id: 'security', icon: ShieldCheckIcon, labelKey: 'settings.security.title' },
+      { id: 'backup', icon: KeyIcon, labelKey: 'settings.backup' },
+      { id: 'privateKey', icon: LockIcon, labelKey: 'settings.private_key' },
     ],
   },
   {
     titleKey: 'settings.sections.preferences',
     options: [
-      { id: 'language', icon: 'language-outline', labelKey: 'settings.display_language' },
-      { id: 'currency', icon: 'cash-outline', labelKey: 'settings.currency' },
-      { id: 'explorer', icon: 'open-outline', labelKey: 'settings.select_explorer' },
+      { id: 'language', icon: TranslateIcon, labelKey: 'settings.display_language' },
+      { id: 'currency', icon: MoneyIcon, labelKey: 'settings.currency' },
+      { id: 'explorer', icon: ArrowSquareOutIcon, labelKey: 'settings.select_explorer' },
     ],
   },
   {
     titleKey: 'settings.sections.advanced',
     options: [
-      { id: 'addressBook', icon: 'book-outline', labelKey: 'settings.address_book' },
-      { id: 'trustedApps', icon: 'apps-outline', labelKey: 'settings.trusted_apps' },
+      { id: 'addressBook', icon: AddressBookIcon, labelKey: 'settings.address_book' },
+      { id: 'trustedApps', icon: SquaresFourIcon, labelKey: 'settings.trusted_apps' },
       {
         id: 'network',
-        icon: 'code-slash-outline',
+        icon: CodeIcon,
         labelKey: 'settings.developer_networks',
         isToggle: true,
       },
       {
         id: 'analytics',
-        icon: 'stats-chart-outline',
+        icon: ChartBarIcon,
         labelKey: 'settings.analytics',
         isToggle: true,
       },
@@ -123,8 +142,8 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     titleKey: 'settings.sections.support',
     options: [
-      { id: 'support', icon: 'help-circle-outline', labelKey: 'settings.help_support' },
-      { id: 'about', icon: 'information-circle-outline', labelKey: 'settings.about' },
+      { id: 'support', icon: QuestionIcon, labelKey: 'settings.help_support' },
+      { id: 'about', icon: InfoIcon, labelKey: 'settings.about' },
     ],
   },
   {
@@ -133,14 +152,14 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
     options: [
       {
         id: 'removeWallet',
-        icon: 'trash-outline',
+        icon: TrashIcon,
         labelKey: 'settings.wallets.remove_wallet',
         isDanger: true,
         isAction: true,
       },
       {
         id: 'removeAll',
-        icon: 'log-out-outline',
+        icon: SignOutIcon,
         labelKey: 'settings.wallets.remove_all_wallets',
         isDanger: true,
         isAction: true,
@@ -344,7 +363,7 @@ export function SettingsSheet({
             accessibilityState={{ checked }}
           >
             <View style={styles.iconContainer}>
-              <Ionicons name={option.icon} size={24} color={colors.text.primary} />
+              <option.icon size={iconSize.lg} color={colors.text.primary} />
             </View>
             <View style={styles.toggleLabelContainer}>
               <Text style={styles.optionLabel}>{label}</Text>
@@ -378,17 +397,15 @@ export function SettingsSheet({
           accessibilityLabel={label}
         >
           <View style={[styles.iconContainer, isDanger && styles.iconContainerDanger]}>
-            <Ionicons
-              name={option.icon}
-              size={24}
+            <option.icon
+              size={iconSize.lg}
               color={isDanger ? DANGER_COLORS.text : colors.text.primary}
             />
           </View>
           <Text style={[styles.optionLabel, isDanger && styles.optionLabelDanger]}>{label}</Text>
           {!option.isAction && (
-            <Ionicons
-              name="chevron-forward"
-              size={20}
+            <CaretRightIcon
+              size={iconSize.md}
               color={isDanger ? DANGER_COLORS.text : colors.text.secondary}
             />
           )}

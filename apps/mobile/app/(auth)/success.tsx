@@ -14,7 +14,7 @@
  * always there.
  */
 
-import { Ionicons } from '@expo/vector-icons';
+import { InfoIcon } from '../../src/icons';
 import {
   borderRadius,
   colors,
@@ -84,11 +84,7 @@ export default function SuccessScreen() {
             // The glyph belongs to the component, not the string — it used to
             // ride inside the translation as a literal "ⓘ".
             icon={
-              <Ionicons
-                name="information-circle-outline"
-                size={componentSizes.iconSizeXs}
-                color={colors.text.secondary}
-              />
+              <InfoIcon size={componentSizes.iconSizeXs} color={colors.text.secondary} />
             }
             testID="success-info-button"
           >

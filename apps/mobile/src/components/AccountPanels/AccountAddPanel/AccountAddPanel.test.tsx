@@ -20,10 +20,6 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@expo/vector-icons', () => ({
-  Ionicons: () => null,
-}));
-
 jest.mock('@salmon/shared', () => ({
   semantic: {
     status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },

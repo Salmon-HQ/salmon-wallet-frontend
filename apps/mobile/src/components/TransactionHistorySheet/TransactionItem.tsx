@@ -1,7 +1,23 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ArrowsLeftRightIcon,
+  CaretDownIcon,
+  CaretUpIcon,
+  ClockIcon,
+  CubeIcon,
+  FireIcon,
+  LockIcon,
+  MoneyIcon,
+  PlusCircleIcon,
+  QuestionIcon,
+  XCircleIcon,
+  iconSize,
+} from '../../icons';
+import type { IconComponent } from '../../icons';
 import {
   borderWidth,
   colors,
@@ -39,53 +55,53 @@ const TRANSACTION_TYPE_CONFIG: Record<
   TransactionType,
   {
     label: string;
-    icon: keyof typeof Ionicons.glyphMap;
+    icon: IconComponent;
     color: string;
   }
 > = {
   send: {
     label: 'Sent',
-    icon: 'arrow-up-outline',
+    icon: ArrowUpIcon,
     color: colors.change.negative,
   },
   receive: {
     label: 'Received',
-    icon: 'arrow-down-outline',
+    icon: ArrowDownIcon,
     color: colors.change.positive,
   },
   swap: {
     label: 'Swapped',
-    icon: 'swap-horizontal-outline',
+    icon: ArrowsLeftRightIcon,
     color: colors.palette.purple,
   },
   mint: {
     label: 'Minted',
-    icon: 'add-circle-outline',
+    icon: PlusCircleIcon,
     color: colors.palette.cyan,
   },
   burn: {
     label: 'Burned',
-    icon: 'flame-outline',
+    icon: FireIcon,
     color: colors.palette.orange,
   },
   stake: {
     label: 'Staked',
-    icon: 'lock-closed-outline',
+    icon: LockIcon,
     color: colors.palette.green,
   },
   loan: {
     label: 'Loan',
-    icon: 'cash-outline',
+    icon: MoneyIcon,
     color: colors.palette.amber,
   },
   interaction: {
     label: 'Interaction',
-    icon: 'cube-outline',
+    icon: CubeIcon,
     color: colors.palette.blue,
   },
   unknown: {
     label: 'Unknown',
-    icon: 'help-circle-outline',
+    icon: QuestionIcon,
     color: colors.text.secondary,
   },
 };
@@ -115,9 +131,9 @@ const SwapTokenLogos: React.FC<{
   fromSymbol?: string;
   toLogo?: string | null;
   toSymbol?: string;
-  typeIcon: keyof typeof Ionicons.glyphMap;
+  typeIcon: IconComponent;
   typeColor: string;
-}> = ({ fromLogo, fromSymbol, toLogo, toSymbol, typeIcon, typeColor }) => {
+}> = ({ fromLogo, fromSymbol, toLogo, toSymbol, typeIcon: TypeIcon, typeColor }) => {
   return (
     <View style={styles.swapLogosContainer}>
       <TokenLogo uri={fromLogo || undefined} symbol={fromSymbol} size={34} />
@@ -126,7 +142,7 @@ const SwapTokenLogos: React.FC<{
       </View>
       {/* Type badge */}
       <View style={[styles.typeBadge, { backgroundColor: typeColor }]}>
-        <Ionicons name={typeIcon} size={10} color={colors.text.primary} />
+        <TypeIcon size={10} color={colors.text.primary} />
       </View>
     </View>
   );
@@ -138,14 +154,14 @@ const SwapTokenLogos: React.FC<{
 const TokenLogoWithBadge: React.FC<{
   uri?: string | null;
   symbol?: string;
-  typeIcon: keyof typeof Ionicons.glyphMap;
+  typeIcon: IconComponent;
   typeColor: string;
-}> = ({ uri, symbol, typeIcon, typeColor }) => {
+}> = ({ uri, symbol, typeIcon: TypeIcon, typeColor }) => {
   return (
     <View style={styles.logoWithBadgeContainer}>
       <TokenLogo uri={uri || undefined} symbol={symbol} size={40} />
       <View style={[styles.typeBadge, styles.typeBadgeSingle, { backgroundColor: typeColor }]}>
-        <Ionicons name={typeIcon} size={10} color={colors.text.primary} />
+        <TypeIcon size={10} color={colors.text.primary} />
       </View>
     </View>
   );
@@ -268,7 +284,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     // Fallback to type icon only (no badge needed)
     return (
       <View style={[styles.iconContainer, { backgroundColor: `${config.color}20` }]}>
-        <Ionicons name={config.icon} size={22} color={config.color} />
+        <config.icon size={22} color={config.color} />
       </View>
     );
   };
@@ -286,7 +302,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     if (status === 'failed') {
       return (
         <View style={styles.failedBadge}>
-          <Ionicons name="close-circle" size={16} color={semantic.status.danger} />
+          <XCircleIcon size={iconSize.sm} color={semantic.status.danger} />
           <Text style={styles.failedText}>{t('transactions.detail.failed', 'Failed')}</Text>
         </View>
       );
@@ -295,7 +311,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     if (status === 'pending') {
       return (
         <View style={styles.pendingBadge}>
-          <Ionicons name="time-outline" size={14} color={semantic.status.warning} />
+          <ClockIcon size={14} color={semantic.status.warning} />
           <Text style={styles.pendingText}>{t('transactions.detail.pending', 'Pending')}</Text>
         </View>
       );
@@ -324,11 +340,11 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
                     defaultValue: '+{{count}} more',
                   })}
             </Text>
-            <Ionicons
-              name={expanded ? 'chevron-up' : 'chevron-down'}
-              size={12}
-              color={colors.accent.primary}
-            />
+            {expanded ? (
+              <CaretUpIcon size={12} color={colors.accent.primary} />
+            ) : (
+              <CaretDownIcon size={12} color={colors.accent.primary} />
+            )}
           </TouchableOpacity>
         </View>
       );
@@ -385,14 +401,12 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
           {renderAmounts()}
           <View style={styles.timeRow}>
             <Text style={styles.timeText}>{formatRelativeTimeCompact(timestamp, t)}</Text>
-            {isSwap && (
-              <Ionicons
-                name={expanded ? 'chevron-up' : 'chevron-down'}
-                size={14}
-                color={colors.text.tertiary}
-                style={styles.expandChevron}
-              />
-            )}
+            {isSwap &&
+              (expanded ? (
+                <CaretUpIcon size={14} color={colors.text.tertiary} style={styles.expandChevron} />
+              ) : (
+                <CaretDownIcon size={14} color={colors.text.tertiary} style={styles.expandChevron} />
+              ))}
           </View>
         </View>
       </TouchableOpacity>
