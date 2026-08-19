@@ -19,7 +19,6 @@ import {
   getNetworkLabel,
   fontWeight,
   opacity,
-  seigaihaTile,
   semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -36,7 +35,6 @@ import {
   View,
 } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Svg, { Path } from 'react-native-svg';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -55,47 +53,6 @@ import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
-
-/**
- * One scallop of the seigaiha drawing, recovered from the shared tile rather
- * than re-authored: the tile is 28 arcs wide and two rows (2·rise) tall, and
- * the cubic's control-point drop is 4/3·rise — the same formula scales.ts
- * generates the field from, so the glyph and the water share one geometry.
- */
-const ARC_W = seigaihaTile.width / 28; // 28.8
-const ARC_RISE = seigaihaTile.height / 2; // 12.6
-const ARC_DROP = (ARC_RISE * 4) / 3; // 16.8 — apex at t=0.5 exactly ARC_RISE up
-// Same float clean-up shiftSeigaiha applies, so the path data stays exact.
-const ARC_CTRL_Y = Number((ARC_RISE - ARC_DROP).toFixed(5)); // −4.2
-const ARC_D = `M0 ${ARC_RISE} C0 ${ARC_CTRL_Y} ${ARC_W} ${ARC_CTRL_Y} ${ARC_W} ${ARC_RISE}`;
-
-/**
- * The chain selector's glyph: a single scale arc. Active is the filled scale
- * in primary ink, one step larger; inactive is the same arc as a faint 1px
- * stroke. One Path, no Pattern/Mask, so none of ScalesBackground's iOS
- * pattern-cell traps apply here.
- */
-const ScaleArcGlyph: React.FC<{ width: number; active: boolean }> = ({ width, active }) => {
-  // Stroke is authored in viewBox units so it renders ~1px on screen, and the
-  // viewBox is padded by that stroke so apex/baseline ink is not clipped.
-  const strokeUnits = ARC_W / width;
-  const pad = strokeUnits;
-  const viewW = ARC_W + 2 * pad;
-  const viewH = ARC_RISE + 2 * pad;
-  return (
-    <Svg
-      width={width}
-      height={width * (viewH / viewW)}
-      viewBox={`${-pad} ${-pad} ${viewW} ${viewH}`}
-    >
-      {active ? (
-        <Path d={`${ARC_D} Z`} fill={colors.text.primary} />
-      ) : (
-        <Path d={ARC_D} stroke={colors.step.inactive} strokeWidth={strokeUnits} fill="none" />
-      )}
-    </Svg>
-  );
-};
 
 // Gradient colors for each blockchain
 const BLOCKCHAIN_GRADIENTS: Record<BlockchainId, readonly [string, string, string]> = {
@@ -398,14 +355,10 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
           </Animated.View>
         </GestureDetector>
 
-        {/* The chain selector — one scale arc per available network, fixed
-            under the sliding content. The arcs are the switch affordance, not
-            a footnote: each sits in its own 44pt cell so a thumb can land on
-            it, and a tap plays the exact slide choreography a swipe does
-            (slideToIndex). The glyph is the seigaiha scale, not a pager dot —
-            the pager is the motif. Which chain you are looking at is a
-            selected state: the active arc is filled with the primary ink and
-            one step larger; the rest are faint strokes, the quiet step ink. */}
+        {/* The chain selector — one dot per available network, fixed under the
+            sliding content. The dots are the switch affordance, not a footnote:
+            each sits in its own 44pt cell so a thumb can land on it, and a tap
+            plays the exact slide choreography a swipe does (slideToIndex). */}
         {blockchains.length > 1 && (
           <View style={styles.pagination} testID="balance-carousel-dots">
             {blockchains.map((chain, index) => (
@@ -420,14 +373,7 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
                 style={styles.dotTarget}
                 testID={`balance-carousel-dot-${chain.network.id}`}
               >
-                <ScaleArcGlyph
-                  width={s(
-                    index === activeIndex
-                      ? componentSizes.stepDotSize + 2 * spacing.xxs
-                      : componentSizes.stepDotSize + spacing.xxs
-                  )}
-                  active={index === activeIndex}
-                />
+                <View style={[styles.dot, index === activeIndex && styles.dotActive]} />
               </Pressable>
             ))}
           </View>
@@ -575,22 +521,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    // No marginTop: each arc's 44pt cell already supplies the clearance the
+    // No marginTop: each dot's 44pt cell already supplies the clearance the
     // old spacing.lg margin used to.
   },
   /**
-   * One arc's pressable cell. 44pt square — the WCAG AA touch floor
+   * One dot's pressable cell. 44pt square — the WCAG AA touch floor
    * (PRODUCT.md), reusing componentSizes.headerButtonSize, the token that
    * carries 44 elsewhere. Deliberately unscaled: a hit target is a floor, not
-   * a design size. The visible arc stays small inside it, per DESIGN.md's
+   * a design size. The visible dot stays small inside it, per DESIGN.md's
    * hit-slop-over-inflation rule; adjacent cells touch without overlapping,
-   * which lands arc centers ~44pt apart (≈ spacing.paginationGap).
+   * which lands dot centers ~44pt apart (≈ spacing.paginationGap).
    */
   dotTarget: {
     width: componentSizes.headerButtonSize,
     height: componentSizes.headerButtonSize,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  dot: {
+    width: s(componentSizes.stepDotSize),
+    height: s(componentSizes.stepDotSize),
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.step.inactive,
+  },
+  // Which chain you are looking at is a selected state: the active dot is a
+  // step larger and takes the primary ink. Still a circle — this is chrome.
+  dotActive: {
+    width: s(componentSizes.stepDotSize + spacing.xxs),
+    height: s(componentSizes.stepDotSize + spacing.xxs),
+    backgroundColor: colors.text.primary,
   },
 });
 
