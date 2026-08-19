@@ -15,7 +15,6 @@
     "address": "Address",
     "name_or_address": "Name or \"{{token}}\" Address",
     "seed_phrase": "Seed Phrase",
-    "sending": "Sending...",
     "loading": "Loading...",
     "close": "Close",
     "max": "Max",
@@ -329,7 +328,6 @@
       "reviewAndSend": "Review & Send",
       "blockchainAddress": "{{blockchain}} Address",
       "networkFee": "Network Fee",
-      "sending": "Sending...",
       "confirmAgain": "Confirm Again",
       "copyRecipientAddress": "Copy recipient address",
       "networkFeeAmount": "Network Fee: ~{{fee}}",
@@ -423,8 +421,6 @@
     "biometric_unlock_failed": "Biometric unlock failed",
     "biometric_prompt": "Authenticate to unlock your wallet",
     "biometric_enroll_prompt": "Confirm to enable biometric unlock",
-    "iris": "Iris",
-    "subtitle": "Enter your password to unlock your wallet",
     "password_placeholder": "Password",
     "error": {
       "empty_password": "Please enter your password",
@@ -504,7 +500,6 @@
       "pastedWordCount_other": "You pasted {{count}} words. A recovery phrase has 12 or 24.",
       "pasteSeed": "Paste your seed phrase",
       "terms_prefix": "By recovering, you accept the ",
-      "placeholder": "Enter your seed phrase...",
       "recovering_account": "Recovering Account"
     },
     "derived": {
@@ -522,7 +517,6 @@
       "scan_failed_body": "We couldn't reach the network. Your accounts are safe — try again.",
       "scan_partial": "Some networks couldn't be scanned. Results may be incomplete."
     },
-    "access_existing": "ACCESS EXISTING ACCOUNT",
     "no_tokens_found": "No tokens found",
     "tokens_load_error": "Your tokens couldn't be loaded right now.",
     "loading_wallet": "Loading wallet...",
@@ -655,7 +649,6 @@
       "notSupported": "Burning {{blockchain}} NFTs is not yet supported."
     },
     "ordinal_send_unsupported": "Ordinal transfers are not yet supported.",
-    "sending": "Sending NFT...",
     "unnamed": "Unnamed NFT",
     "emptyTitle": "No Collectibles",
     "emptySubtitle": "Your NFTs and Ordinals will appear here once you receive some",
@@ -853,9 +846,6 @@
     "no_tokens": "No tokens found",
     "no_tokens_hint": "Your tokens will appear here once you receive some",
     "unnamed_account": "Account"
-  },
-  "lock_screen": {
-    "use_biometric": "Biometrics"
   },
   "send": {
     "fee_estimate_failed": "Fee could not be estimated",

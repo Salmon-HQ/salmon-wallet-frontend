@@ -15,7 +15,6 @@
     "address": "Dirección",
     "name_or_address": "Nombre o Dirección \"{{token}}\"",
     "seed_phrase": "Seed-phrase",
-    "sending": "Enviando...",
     "loading": "Cargando...",
     "close": "Cerrar",
     "max": "Máx",
@@ -329,7 +328,6 @@
       "reviewAndSend": "Revisar y Enviar",
       "blockchainAddress": "Dirección {{blockchain}}",
       "networkFee": "Comisión de Red",
-      "sending": "Enviando...",
       "confirmAgain": "Confirmar de nuevo",
       "copyRecipientAddress": "Copiar la dirección del destinatario",
       "networkFeeAmount": "Comisión de Red: ~{{fee}}",
@@ -423,8 +421,6 @@
     "biometric_unlock_failed": "Error al desbloquear con biometría",
     "biometric_prompt": "Autenticate para desbloquear tu wallet",
     "biometric_enroll_prompt": "Confirmá para activar el desbloqueo biométrico",
-    "iris": "Iris",
-    "subtitle": "Ingresá tu contraseña para desbloquear tu billetera",
     "password_placeholder": "Contraseña",
     "error": {
       "empty_password": "Por favor ingresá tu contraseña",
@@ -504,7 +500,6 @@
       "pastedWordCount_other": "Pegaste {{count}} palabras. Una frase de recuperación tiene 12 o 24.",
       "pasteSeed": "Pegar seed-phrase",
       "terms_prefix": "Al recuperar, aceptás los ",
-      "placeholder": "Ingresá tu seed phrase...",
       "recovering_account": "Recuperando Cuenta"
     },
     "derived": {
@@ -522,7 +517,6 @@
       "scan_failed_body": "No se pudo conectar con la red. Tus cuentas están a salvo — intentá de nuevo.",
       "scan_partial": "Algunas redes no se pudieron escanear. Los resultados pueden estar incompletos."
     },
-    "access_existing": "ACCEDER A CUENTA EXISTENTE",
     "no_tokens_found": "No se encontraron tokens",
     "tokens_load_error": "No se pudieron cargar tus tokens en este momento.",
     "loading_wallet": "Cargando billetera...",
@@ -655,7 +649,6 @@
       "notSupported": "La quema de NFTs de {{blockchain}} todavía no está soportada."
     },
     "ordinal_send_unsupported": "Las transferencias de Ordinals aún no están soportadas.",
-    "sending": "Enviando NFT...",
     "unnamed": "NFT sin nombre",
     "emptyTitle": "Sin Coleccionables",
     "emptySubtitle": "Tus NFTs y Ordinals van a aparecer acá cuando recibas alguno",
@@ -853,9 +846,6 @@
     "no_tokens": "No se encontraron tokens",
     "no_tokens_hint": "Tus tokens van a aparecer acá cuando recibas alguno",
     "unnamed_account": "Cuenta"
-  },
-  "lock_screen": {
-    "use_biometric": "Biometría"
   },
   "send": {
     "fee_estimate_failed": "No se pudo estimar la comisión",
