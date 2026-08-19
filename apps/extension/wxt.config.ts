@@ -121,6 +121,21 @@ export default defineConfig({
     }),
   }),
 
+  hooks: {
+    // WXT synthesizes `action.default_popup` (or `browser_action.default_popup`
+    // on Firefox) because the popup/ entrypoint exists — but popup.html is only
+    // the dedicated dApp-approval window the background opens via
+    // `windows.create('popup.html#...')`. The toolbar click must open the side
+    // panel / sidebar, so the manifest must not declare a default popup; the
+    // runtime `setPanelBehavior` / `setPopup('')` calls in background.ts remain
+    // as a belt, but without this the first click before the service worker
+    // wakes opens a 600px popup instead of the side panel.
+    'build:manifestGenerated': (_wxt, manifest) => {
+      delete manifest.action?.default_popup;
+      delete manifest.browser_action?.default_popup;
+    },
+  },
+
   zip: {
     exclude: ['**/__MACOSX/**', '**/.*'],
   },
