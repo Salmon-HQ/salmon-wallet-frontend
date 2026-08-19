@@ -483,11 +483,15 @@ export interface SwapDetailRowProps<StyleType> {
 }
 
 /**
- * Props for SwapReviewCard component
+ * One side of the SwapReviewExchange graphic: the token being sent or received.
  */
-export interface SwapReviewCardProps<StyleType> {
-  /** Card label (e.g., "You Send", "You Receive") */
+export interface SwapReviewExchangeSide {
+  /** Microcopy above the side (e.g., "You Send", "You Receive (estimated)") */
   label: string;
+  /** Token logo URL; the symbol renders as fallback when missing */
+  logo?: string;
+  /** Token symbol, used for the logo fallback */
+  symbol: string;
   /** Amount with symbol (e.g., "0.009 SOL") */
   amount: string;
   /** USD equivalent (e.g., "~$84.65") */
@@ -496,6 +500,19 @@ export interface SwapReviewCardProps<StyleType> {
   pendingAmount?: boolean;
   /** Whether the USD equivalent is being recalculated */
   pendingUsdValue?: boolean;
+}
+
+/**
+ * Props for SwapReviewExchange component - the single graphic block on the
+ * swap and bridge review screens: sent token logo, arrow, received token
+ * logo, with amounts and USD values underneath. Replaces the two stacked
+ * You Send / You Receive cards.
+ */
+export interface SwapReviewExchangeProps<StyleType> {
+  /** The side being sent */
+  send: SwapReviewExchangeSide;
+  /** The side being received */
+  receive: SwapReviewExchangeSide;
   /** Custom style */
   style?: StyleType;
 }

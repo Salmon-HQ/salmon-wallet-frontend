@@ -29,7 +29,7 @@ import type {
   SwapTabSelectorProps as SwapTabSelectorPropsBase,
   SwapAmountInputProps as SwapAmountInputPropsBase,
   SwapDetailRowProps as SwapDetailRowPropsBase,
-  SwapReviewCardProps as SwapReviewCardPropsBase,
+  SwapReviewExchangeProps as SwapReviewExchangePropsBase,
   SwapReviewScreenProps as SwapReviewScreenPropsBase,
   SwapInputScreenProps as SwapInputScreenPropsBase,
   SwapScreenProps as SwapScreenPropsBase,
@@ -58,9 +58,9 @@ export interface SwapAmountInputProps extends SwapAmountInputPropsBase<ViewStyle
 export interface SwapDetailRowProps extends SwapDetailRowPropsBase<ViewStyle> {}
 
 /**
- * Props for SwapReviewCard component (React Native)
+ * Props for SwapReviewExchange component (React Native)
  */
-export interface SwapReviewCardProps extends SwapReviewCardPropsBase<ViewStyle> {}
+export interface SwapReviewExchangeProps extends SwapReviewExchangePropsBase<ViewStyle> {}
 
 /**
  * Props for SwapReviewScreen sub-component (React Native)

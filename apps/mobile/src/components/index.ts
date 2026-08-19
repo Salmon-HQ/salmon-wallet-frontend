@@ -255,7 +255,7 @@ export {
   SwapTabSelector,
   SwapAmountInput,
   SwapDetailRow,
-  SwapReviewCard,
+  SwapReviewExchange,
   SwapInputScreen,
   SwapReviewScreen,
 } from './SwapScreen';
@@ -269,7 +269,7 @@ export type {
   SwapTabSelectorProps,
   SwapAmountInputProps,
   SwapDetailRowProps,
-  SwapReviewCardProps,
+  SwapReviewExchangeProps,
   SwapInputScreenProps,
   SwapReviewScreenProps,
   BridgeTokenSimple,

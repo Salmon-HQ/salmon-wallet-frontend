@@ -19,11 +19,20 @@ jest.mock('../SwapScreen/SwapDetailRow', () => {
   };
 });
 
-jest.mock('../SwapScreen/SwapReviewCard', () => {
-  const { Text: RNText } = require('react-native');
+jest.mock('../SwapScreen/SwapReviewExchange', () => {
+  const { Text: RNText, View: RNView } = require('react-native');
   return {
-    SwapReviewCard: ({ label, amount }: { label: string; amount: string }) => (
-      <RNText>{`${label} ${amount}`}</RNText>
+    SwapReviewExchange: ({
+      send,
+      receive,
+    }: {
+      send: { label: string; amount: string };
+      receive: { label: string; amount: string };
+    }) => (
+      <RNView>
+        <RNText>{`${send.label} ${send.amount}`}</RNText>
+        <RNText>{`${receive.label} ${receive.amount}`}</RNText>
+      </RNView>
     ),
   };
 });

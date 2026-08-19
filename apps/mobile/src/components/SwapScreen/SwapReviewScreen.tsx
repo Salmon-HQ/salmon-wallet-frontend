@@ -22,7 +22,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { BlurContainer } from '../BlurContainer';
 import { SwapDetailRow } from './SwapDetailRow';
-import { SwapReviewCard } from './SwapReviewCard';
+import { SwapReviewExchange } from './SwapReviewExchange';
 import { SwapReviewButtons } from './SwapReviewButtons';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import type { SwapReviewScreenProps } from './types';
@@ -84,23 +84,29 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Send/Receive Cards */}
+        {/* Exchange graphic: sent token → arrow → received token */}
         <View style={styles.cardsContainer}>
           {/* The amount being sent is what the user typed: a new quote cannot
               change it, so it never reports loading. Its dollar value can, and
               so can everything on the receive side. */}
-          <SwapReviewCard
-            label={t('swap.you_send', 'You Send')}
-            amount={formatAmountWithSymbol(displayInAmount, inSymbol)}
-            usdValue={formatUsd(details?.inUsdValue)}
-            pendingUsdValue={isRefreshing}
-          />
-          <SwapReviewCard
-            label={t('swap.you_receive', 'You Receive')}
-            amount={formatAmountWithSymbol(displayOutAmount, outSymbol)}
-            usdValue={formatUsd(details?.outUsdValue)}
-            pendingAmount={isRefreshing}
-            pendingUsdValue={isRefreshing}
+          <SwapReviewExchange
+            send={{
+              label: t('swap.you_send', 'You Send'),
+              logo: inToken.logo,
+              symbol: inSymbol,
+              amount: formatAmountWithSymbol(displayInAmount, inSymbol),
+              usdValue: formatUsd(details?.inUsdValue),
+              pendingUsdValue: isRefreshing,
+            }}
+            receive={{
+              label: t('swap.you_receive', 'You Receive'),
+              logo: outToken.logo,
+              symbol: outSymbol,
+              amount: formatAmountWithSymbol(displayOutAmount, outSymbol),
+              usdValue: formatUsd(details?.outUsdValue),
+              pendingAmount: isRefreshing,
+              pendingUsdValue: isRefreshing,
+            }}
           />
         </View>
 

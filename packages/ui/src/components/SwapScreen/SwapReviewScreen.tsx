@@ -28,7 +28,7 @@ import {
   componentSizes,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
-import { SwapReviewCard } from './SwapReviewCard';
+import { SwapReviewExchange } from './SwapReviewExchange';
 import { SwapDetailRow } from './SwapDetailRow';
 import { SwapReviewButtons } from './SwapReviewButtons';
 import type { SwapReviewScreenProps } from './types';
@@ -176,23 +176,29 @@ export function SwapReviewScreen({
       {/* Scrollable Content */}
       <ScrollContainer>
         <ScrollContent>
-          {/* Send/Receive Cards */}
+          {/* Exchange graphic: sent token → arrow → received token */}
           <CardsContainer>
             {/* The amount being sent is what the user typed: a new quote
                 cannot change it, so it never reports loading. Its dollar
                 value can, and so can everything on the receive side. */}
-            <SwapReviewCard
-              label={t('swap.you_send')}
-              amount={formatAmountWithSymbol(displayInAmount, inSymbol)}
-              usdValue={formatUsd(details?.inUsdValue)}
-              pendingUsdValue={isRefreshing}
-            />
-            <SwapReviewCard
-              label={t('swap.you_receive')}
-              amount={formatAmountWithSymbol(displayOutAmount, outSymbol)}
-              usdValue={formatUsd(details?.outUsdValue)}
-              pendingAmount={isRefreshing}
-              pendingUsdValue={isRefreshing}
+            <SwapReviewExchange
+              send={{
+                label: t('swap.you_send'),
+                logo: inToken.logo,
+                symbol: inSymbol,
+                amount: formatAmountWithSymbol(displayInAmount, inSymbol),
+                usdValue: formatUsd(details?.inUsdValue),
+                pendingUsdValue: isRefreshing,
+              }}
+              receive={{
+                label: t('swap.you_receive'),
+                logo: outToken.logo,
+                symbol: outSymbol,
+                amount: formatAmountWithSymbol(displayOutAmount, outSymbol),
+                usdValue: formatUsd(details?.outUsdValue),
+                pendingAmount: isRefreshing,
+                pendingUsdValue: isRefreshing,
+              }}
             />
           </CardsContainer>
 

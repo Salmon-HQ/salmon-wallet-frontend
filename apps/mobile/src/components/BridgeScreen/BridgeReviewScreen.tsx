@@ -20,7 +20,7 @@ import {
   BRIDGE_PARTNER_FEE_PERCENT,
 } from '@salmon/shared';
 import { SwapDetailRow } from '../SwapScreen/SwapDetailRow';
-import { SwapReviewCard } from '../SwapScreen/SwapReviewCard';
+import { SwapReviewExchange } from '../SwapScreen/SwapReviewExchange';
 import { SwapReviewButtons } from '../SwapScreen/SwapReviewButtons';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import type { BridgeReviewScreenProps } from './types';
@@ -28,7 +28,7 @@ import type { BridgeReviewScreenProps } from './types';
 /**
  * BridgeReviewScreen - Third step of bridge flow
  * Shows bridge details and confirm/back buttons
- * Reuses SwapDetailRow and SwapReviewCard components from SwapScreen
+ * Reuses SwapDetailRow and SwapReviewExchange components from SwapScreen
  */
 export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
   inToken,
@@ -58,16 +58,22 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Send/Receive Cards */}
+        {/* Exchange graphic: sent token → arrow → received token */}
         <View style={styles.cardsContainer}>
-          <SwapReviewCard
-            label={t('swap.you_send', 'You Send')}
-            amount={formatAmountWithSymbol(inAmount, inToken.symbol)}
-          />
-          <SwapReviewCard
-            label={t('bridge.review.youReceiveEstimated', 'You Receive (estimated)')}
-            amount={formatAmountWithSymbol(outAmount, outToken.symbol)}
-            pendingAmount={isRefreshing}
+          <SwapReviewExchange
+            send={{
+              label: t('swap.you_send', 'You Send'),
+              logo: inToken.logo,
+              symbol: inToken.symbol,
+              amount: formatAmountWithSymbol(inAmount, inToken.symbol),
+            }}
+            receive={{
+              label: t('bridge.review.youReceiveEstimated', 'You Receive (estimated)'),
+              logo: outToken.logo,
+              symbol: outToken.symbol,
+              amount: formatAmountWithSymbol(outAmount, outToken.symbol),
+              pendingAmount: isRefreshing,
+            }}
           />
         </View>
 

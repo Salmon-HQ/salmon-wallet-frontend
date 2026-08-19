@@ -43,9 +43,22 @@ jest.mock('./SwapDetailRow', () => {
   return { SwapDetailRow: ({ label }: { label: string }) => <RNText>{label}</RNText> };
 });
 
-jest.mock('./SwapReviewCard', () => {
-  const { Text: RNText } = require('react-native');
-  return { SwapReviewCard: ({ label }: { label: string }) => <RNText>{label}</RNText> };
+jest.mock('./SwapReviewExchange', () => {
+  const { Text: RNText, View: RNView } = require('react-native');
+  return {
+    SwapReviewExchange: ({
+      send,
+      receive,
+    }: {
+      send: { label: string };
+      receive: { label: string };
+    }) => (
+      <RNView>
+        <RNText>{send.label}</RNText>
+        <RNText>{receive.label}</RNText>
+      </RNView>
+    ),
+  };
 });
 
 jest.mock('./SwapReviewButtons', () => {

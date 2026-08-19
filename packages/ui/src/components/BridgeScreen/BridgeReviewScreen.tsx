@@ -3,7 +3,7 @@
  *
  * Web version using MUI and @emotion/styled for browser extension.
  * Shows bridge details and confirm/back buttons.
- * Reuses SwapDetailRow and SwapReviewCard components from SwapScreen.
+ * Reuses SwapDetailRow and SwapReviewExchange components from SwapScreen.
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,7 +27,7 @@ import {
   lineHeight,
 } from '@salmon/shared';
 import { SwapDetailRow } from '../SwapScreen/SwapDetailRow';
-import { SwapReviewCard } from '../SwapScreen/SwapReviewCard';
+import { SwapReviewExchange } from '../SwapScreen/SwapReviewExchange';
 import { SwapReviewButtons } from '../SwapScreen/SwapReviewButtons';
 import type { BridgeReviewScreenProps } from './types';
 
@@ -157,16 +157,22 @@ export function BridgeReviewScreen({
       {/* Scrollable Content */}
       <ScrollContainer>
         <ScrollContent>
-          {/* Send/Receive Cards */}
+          {/* Exchange graphic: sent token → arrow → received token */}
           <CardsContainer>
-            <SwapReviewCard
-              label={t('swap.you_send')}
-              amount={formatAmountWithSymbol(inAmount, inToken.symbol)}
-            />
-            <SwapReviewCard
-              label={t('bridge.review.youReceiveEstimated')}
-              amount={formatAmountWithSymbol(outAmount, outToken.symbol)}
-              pendingAmount={isRefreshing}
+            <SwapReviewExchange
+              send={{
+                label: t('swap.you_send'),
+                logo: inToken.logo,
+                symbol: inToken.symbol,
+                amount: formatAmountWithSymbol(inAmount, inToken.symbol),
+              }}
+              receive={{
+                label: t('bridge.review.youReceiveEstimated'),
+                logo: outToken.logo,
+                symbol: outToken.symbol,
+                amount: formatAmountWithSymbol(outAmount, outToken.symbol),
+                pendingAmount: isRefreshing,
+              }}
             />
           </CardsContainer>
 
