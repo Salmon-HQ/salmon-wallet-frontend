@@ -3,6 +3,8 @@
  * Used by both mobile and extension settings components
  */
 
+import { neutral } from '../theme/palette';
+
 /**
  * Available settings screens that can be navigated to
  */
@@ -383,20 +385,19 @@ export function getSettingsItemTestId(id: string): string {
 /**
  * Avatar color palette for deterministic account colors.
  * Used by WalletSwitcherSheet components.
+ *
+ * Depth-ramp neutrals rather than a second rainbow palette: each step is a
+ * tone from the theme's cold neutral ramp, so avatars read as depths of the
+ * same water instead of competing hues. Every step carries `text.primary`
+ * initials at >= 4.5:1 (asserted in `theme/contrast.test.ts`). `neutral-900`
+ * and `neutral-950` are skipped — they are the card surfaces avatars sit on.
  */
 export const AVATAR_COLORS = [
-  '#FF5C45', // Salmon accent
-  '#10B981', // Emerald
-  '#3B82F6', // Blue
-  '#8B5CF6', // Purple
-  '#F59E0B', // Amber
-  '#EC4899', // Pink
-  '#06B6D4', // Cyan
-  '#EF4444', // Red
-  '#84CC16', // Lime
-  '#6366F1', // Indigo
-  '#14B8A6', // Teal
-  '#F97316', // Orange
+  neutral[600], // shallowest
+  neutral[700],
+  neutral[800],
+  neutral[850],
+  neutral[925], // deepest
 ] as const;
 
 /**

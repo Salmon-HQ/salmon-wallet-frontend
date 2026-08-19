@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 44,
     height: 44,
-    borderRadius: borderRadius.r5,
+    borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -294,7 +294,8 @@ const styles = StyleSheet.create({
   addAccountIcon: {
     width: 44,
     height: 44,
-    borderRadius: borderRadius.r5,
+    // Sits in the avatar slot, so it shares the avatar's `full` radius.
+    borderRadius: borderRadius.full,
     backgroundColor: colors.background.card,
     borderWidth: borderWidth.thin,
     borderColor: semantic.border.default,

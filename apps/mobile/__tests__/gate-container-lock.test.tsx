@@ -51,6 +51,10 @@ jest.mock('@salmon/shared', () => ({
     border: { default: '#222' },
     dialog: { overlay: 'rgba(0,0,0,0.5)' },
   },
+  semantic: {
+    text: { primary: '#fff', secondary: '#999' },
+    border: { raised: '#333', default: '#222' },
+  },
   fontFamilyNative: { bold: 'DMSansBold' },
   fontSize: { lg: 18 },
   spacing: { lg: 16, md: 12, headerPadding: 16 },

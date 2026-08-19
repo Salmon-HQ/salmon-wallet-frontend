@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { neutral, salmon } from './palette';
+import { AVATAR_COLORS } from '../types/settings';
 import { accent, border, depth, scales, state, status, surface, text, water } from './semantic';
 import { colors, isOpaqueColor } from './colors';
 import { shadowsCSS } from './shadows';
@@ -388,6 +389,28 @@ describe('contrast: the tab bar on the thermocline', () => {
 
   it('brand salmon really is below AA text here, which is why the label steps up', () => {
     expect(contrast(accent.ink, membrane)).toBeLessThan(AA_TEXT);
+  });
+});
+
+/**
+ * Account avatars carry `text.primary` initials on a depth-ramp fill. The
+ * rainbow palette this replaced put white initials on amber (#F59E0B, 1.86:1)
+ * and lime (#84CC16, 1.90:1) — decoration passing itself off as identity.
+ * Every step of the ramp must hold AA for the initials, or an account's only
+ * label in the switcher is illegible.
+ */
+describe('contrast: avatar initials on the depth ramp', () => {
+  for (const fill of AVATAR_COLORS) {
+    it(`text.primary meets AA on avatar fill ${fill}`, () => {
+      expect(contrast(text.primary, fill)).toBeGreaterThanOrEqual(AA_TEXT);
+    });
+  }
+
+  it('no avatar step is a card surface, so avatars never dissolve into their row', () => {
+    for (const fill of AVATAR_COLORS) {
+      expect(fill.toLowerCase()).not.toBe(surface.shelf.toLowerCase());
+      expect(fill.toLowerCase()).not.toBe(surface.raised.toLowerCase());
+    }
   });
 });
 

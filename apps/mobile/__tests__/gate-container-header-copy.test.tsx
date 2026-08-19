@@ -89,8 +89,9 @@ jest.mock('@salmon/shared', () => ({
   getAvatarColor: () => '#123456',
   getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
   semantic: {
-    text: { secondary: '#999', accent: '#f54' },
+    text: { primary: '#fff', secondary: '#999', accent: '#f54' },
     status: { success: '#0f0' },
+    border: { raised: '#333', default: '#222' },
   },
 }));
 
