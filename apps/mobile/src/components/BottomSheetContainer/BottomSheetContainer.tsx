@@ -33,11 +33,9 @@ import {
   vs,
   s,
   spacing,
-  opacity,
 } from '@salmon/shared';
 import { BlurTargetProvider } from '../BlurContainer';
 import { Thermocline } from '../Thermocline';
-import { sheetMaterial } from '../../debug/sheetMaterial';
 import { curve, timing } from '../../utils/motion';
 
 // ============================================================================
@@ -92,15 +90,13 @@ export interface BottomSheetContainerProps {
    * Only meaningful when showFadeGradient is true.
    */
   fadeGradientTop?: number;
-  /** Whether to show the fish scale texture overlay (NFT sheets) */
-  showTextureOverlay?: boolean;
   /** Additional style for the sheet container */
   style?: StyleProp<ViewStyle>;
   /**
-   * Optional background element that replaces the sheet's opaque fill —
-   * mounted absolutely behind everything else in the sheet. Used to hand a
-   * sheet's ground to the thermocline material (e.g. the Receive sheet)
-   * without touching the other sheets that mount through here.
+   * Optional background element that replaces the sheet's default
+   * thermocline ground — mounted absolutely behind everything else in the
+   * sheet. Used when a sheet carries its own variant of the material
+   * (e.g. the Receive sheet).
    */
   background?: React.ReactNode;
   /** Additional style for the drag area */
@@ -136,7 +132,8 @@ export interface BottomSheetContainerProps {
  *  - Drag handle bar
  *  - Optional title / custom header content
  *  - Optional top fade gradient (for scrollable content)
- *  - Optional fish scale texture overlay (NFT sheets)
+ *  - Thermocline ground (thick tier) unless the caller passes its own
+ *    `background`
  *
  * @example
  * ```tsx
@@ -160,7 +157,6 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   showFadeGradient = false,
   scrollOffsetValue,
   fadeGradientTop,
-  showTextureOverlay = false,
   style,
   background,
   dragAreaStyle,
@@ -170,17 +166,12 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const blurTargetRef = useRef<View>(null);
   const [isRendered, setIsRendered] = useState(visible);
 
-  // Debug material comparison (see src/debug/sheetMaterial.ts): with the
-  // switch on 'thermocline', every sheet whose caller passed no explicit
-  // `background` gets the thermocline ground the Receive sheet already
-  // carries — same thick tier, same fill-and-clip geometry — and the legacy
-  // texture overlay is suppressed so the materials never stack. Callers with
-  // their own `background` are untouched either way.
-  const debugThermocline = sheetMaterial === 'thermocline' && background == null;
-  const resolvedBackground = debugThermocline ? (
-    <Thermocline tier="thick" style={styles.debugThermocline} />
-  ) : (
-    background
+  // The thermocline is the sheet material: every sheet whose caller passes
+  // no explicit `background` grounds on the thick tier — same fill-and-clip
+  // geometry the Receive sheet pioneered. A caller with its own `background`
+  // still wins.
+  const resolvedBackground = background ?? (
+    <Thermocline tier="thick" style={styles.thermocline} />
   );
 
   // Reanimated shared values for the sheet and backdrop
@@ -317,12 +308,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
 
           {/* Sheet */}
           <Reanimated.View
-            style={[
-              styles.sheetContainer,
-              resolvedBackground != null && styles.sheetTransparent,
-              sheetAnimatedStyle,
-              style,
-            ]}
+            style={[styles.sheetContainer, sheetAnimatedStyle, style]}
           >
             {resolvedBackground}
             <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
@@ -330,13 +316,6 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
                   send, receive, seed backup, approval, settings — so this one
                   call site was painting the motif behind addresses, seed
                   words, inputs and amounts at once. */}
-
-              {/* Optional texture overlay (NFT sheets) — suppressed while the
-                  debug thermocline carries the ground, so the two materials
-                  never stack. */}
-              {showTextureOverlay && !debugThermocline && (
-                <View style={styles.textureOverlay} testID="sheet-texture-overlay" />
-              )}
             </BlurTargetView>
 
             <BlurTargetProvider value={blurTargetRef}>
@@ -401,36 +380,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.sheet.backdrop,
   },
   sheetContainer: {
-    backgroundColor: colors.background.primary,
+    // The background element (thermocline by default) carries the material;
+    // the container itself stays transparent.
     borderTopLeftRadius: borderRadius.card,
     borderTopRightRadius: borderRadius.card,
-    // (When a `background` element is provided, `sheetTransparent` clears
-    // this fill and the element carries the material instead.)
     borderTopWidth: borderWidth.sheet,
     borderTopColor: colors.border.default,
     minHeight: '70%',
     maxHeight: '92%',
     ...shadows.sheet,
   },
-  sheetTransparent: {
-    backgroundColor: 'transparent',
-  },
-  // Mirror of the Receive sheet's thermocline geometry: the material fills
-  // the sheet and clips itself to the sheet's own top corners. Debug-only —
-  // dies with src/debug/sheetMaterial.ts.
-  debugThermocline: {
+  // The material fills the sheet and clips itself to the sheet's own top
+  // corners.
+  thermocline: {
     ...StyleSheet.absoluteFillObject,
     borderTopLeftRadius: borderRadius.card,
     borderTopRightRadius: borderRadius.card,
-  },
-  textureOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.interactive.surface,
-    opacity: opacity.faint,
   },
   dragArea: {
     // Gesture is attached here; keep it empty so consumers can add dragAreaStyle

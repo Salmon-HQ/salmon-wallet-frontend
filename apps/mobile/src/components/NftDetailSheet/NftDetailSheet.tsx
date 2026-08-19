@@ -944,7 +944,6 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       showFadeGradient={step === 'detail'}
       fadeGradientTop={vs(12) + vs(8) + ms(24) + vs(16)}
       scrollOffsetValue={topFadeOpacity}
-      showTextureOverlay
       style={[styles.sheetContainer, style]}
     >
       {(step === 'detail' ||

@@ -864,6 +864,17 @@ carries exactly one scales layer, one ink, no per-region opacity — any
 second copy or brighter edge reads as a band. The Scales Exclusion Rule
 still holds for content surfaces — the field belongs to the material.
 
+**The thermocline is the sheet material (2026-08-19).** Every sheet mounted
+through `BottomSheetContainer` grounds on the thick-tier thermocline by
+default — adopted by the owner comparing the switchable variants live, then
+hardwired with the same ritual as the tint and the blizzard (the debug
+switch died on adoption). The container's opaque fill is gone; the material
+carries the ground and clips to the sheet's top corners. A sheet that passes
+an explicit `background` (Receive's own Thermocline) still wins, and the
+legacy fish-scale texture overlay is removed — the material never stacks
+with the old texture. The gate (Settings, wallet switcher) is a different
+surface — GateContainer, not a bottom sheet — and keeps its own ground.
+
 A rendering note the refraction strip earned the hard way (2026-08-19): on
 mobile the seigaiha pattern must be declared before the mask that consumes
 it, and the mask must set `maskUnits="userSpaceOnUse"` explicitly — iOS

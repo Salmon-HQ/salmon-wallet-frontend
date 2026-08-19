@@ -132,7 +132,6 @@ export const NftSeeAllSheet: React.FC<NftSeeAllSheetProps> = ({
       showFadeGradient
       fadeGradientTop={vs(12) + vs(8) + ms(24) + vs(16)}
       scrollOffsetValue={topFadeOpacity}
-      showTextureOverlay
       style={[styles.sheetContainer, style]}
     >
       {/* Grid Content */}
