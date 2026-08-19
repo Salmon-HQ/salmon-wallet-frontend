@@ -103,7 +103,7 @@ rounded:
   button: '12px'
   xl: '16px'
   2xl: '24px'
-  card: '26px'
+  card: '28px'
   full: '9999px'
 spacing:
   xs: '4px'
@@ -270,7 +270,7 @@ marks its parts.
 | Scales motif rework — reduced to the deep field and the caustic band                          | **Shipped**                                                                                 | `ScalesBackground` `deepField` / `caustic`; the `fish` variant is retired in favour of flesh and kept only as an export                                                                                                      |
 | Bezel on filled controls (`shadowsCSS.bezel`, same literal on DOM and RN)                     | **Shipped**                                                                                 | `packages/shared/src/theme/shadows.ts`                                                                                                                                                                                       |
 | Motion vocabulary (`flick`…`tide`, `current`/`settle`/`sink`/`swellIn`)                       | **Shipped**, and applied in `apps/mobile` with no loose durations left                      | `packages/shared/src/theme/durations.ts`, `apps/mobile/src/utils/motion.ts`, `apps/mobile/hooks/usePressMotion.ts`                                                                                                           |
-| The Surfacing                                                                                 | **Shipped**, minus two parts deliberately left out — see §The Surfacing                     | `apps/mobile/src/components/TransactionSuccessScreen/surfacing.ts`, `SurfacingLayers.tsx`                                                                                                                                    |
+| The Surfacing                                                                                 | **Shipped** on all three apps, minus two parts deliberately left out — see §The Surfacing   | `apps/mobile/src/components/TransactionSuccessScreen/surfacing.ts`, `SurfacingLayers.tsx`; DOM twin in `packages/ui/src/components/TransactionSuccessScreen`                                                                 |
 | The wait: centred sinking mark, radial wavefront, refraction crest, wave-driven exit          | **Shipped** on all three apps; the timing is one shared pure function — see §The wait       | `packages/shared/src/motion/wavefront.ts`, `crest.ts`, both `LoadingScreen`s                                                                                                                                                 |
 | Icon consolidation onto Phosphor                                                              | **Shipped** on the DOM, with two declared exceptions                                        | `packages/ui/src/icons.ts`                                                                                                                                                                                                   |
 | dApp approval: transaction effect preview + press-and-hold to approve                         | **Shipped**                                                                                 | `packages/ui/src/components/DAppApproval/TransactionEffectsCard.tsx`, `HoldToApproveButton.tsx`                                                                                                                              |
@@ -278,8 +278,9 @@ marks its parts.
 | Marine snow drift + scroll parallax, both reduced-motion gated                                | **Shipped**                                                                                 | `packages/shared/src/theme/depthField.ts` (`depthDrift`), both `DepthBackground`s                                                                                                                                            |
 | Light theme (index-flip resolver)                                                             | **Rejected by the owner** (2026-08-18) — see §The light theme                               | —                                                                                                                                                                                                                            |
 | Material/membrane model — the thermocline, adopted as the `tint` rendering (2026-08-19)       | **Shipped** as the `Thermocline` component; the glass/blur rungs were removed with the adoption — see §The thermocline | `apps/mobile/src/components/Thermocline`, `packages/ui/src/components/Thermocline`; first consumers: the tab bar and the Receive sheet                                                                                       |
-| Icons on mobile (`phosphor-react-native`)                                                     | **Specified, not built**                                                                    | only `@phosphor-icons/react` is installed, in `packages/ui`                                                                                                                                                                  |
-| Type scale (`display`…`monoLg`), radius scale (`r0`…`r6`), spacing rhythm                     | **Partly built** — the radius scale's control end is shipped; the rest specified            | Every control now sits on one 12px token (§The Control Radius Rule); `typography.ts` and the container end of `spacing.ts` still carry the Figma-derived one-offs                                                            |
+| Icons on mobile (`phosphor-react-native`)                                                     | **Shipped** — see §Iconography                                                              | `apps/mobile/src/icons.ts`, mirror of `packages/ui/src/icons.ts`                                                                                                                                                             |
+| Type scale (`display`…`monoLg`), radius scale (`r0`…`r6`)                                     | **Shipped** — see §Hierarchy and §Shapes                                                    | `typography.ts` (Figma one-offs retired), `spacing.ts` (`radiusScale`, legacy names soft-deprecated)                                                                                                                         |
+| Marine snow "blizzard" — heroes, mid lift, clustering over the base field                     | **Shipped** — see §The water column                                                         | `packages/shared/src/theme/depthFieldBlizzard.ts`, both `DepthBackground`s                                                                                                                                                   |
 
 **Key Characteristics:**
 
@@ -362,8 +363,8 @@ light theme's `surface.shelf`, and that theme is now rejected (see §The light
 theme).
 
 The translucent tiers `surface.membraneThin` and `surface.membraneThick` are
-**shipped as color values** but the material they belong to is not built; see
-§Elevation & Depth.
+**shipped**, as the ink the thermocline material is made of; see §The
+thermocline under §Elevation & Depth.
 
 ### Named Rules
 
@@ -501,15 +502,22 @@ wordmark cannot drift away from the interface face, because regenerating it is
 how it changes. It is a single colour by construction, so it takes a text
 token like any other ink.
 
-**Where it is used:** no longer on the welcome screen (owner, 2026-08-18,
-a7c09750). It used to render there in the `title` slot in place of a heading,
-in `semantic.text.primary`, the same white as the mark above it, so the lockup
-was one ink — see *The onboarding grid* for the arithmetic that positioned it.
-The welcome now shows the bare mark alone, at the wait screen's 96, so the
-brand is a single object at a single size in both identity moments; the
-screen-reader label still says "Salmon". The wordmark survives as a component
-for other uses — `Wordmark` in `packages/ui` (79293a46), drawn from the shared
-vector — not as spec debt.
+**Where it is used: back on the welcome screen** (owner, d17ede74 — "the door
+introduces itself"). The wordmark returned beneath the fish, at one shared gap
+constant (`onboardingMarkTitleGap` — the same air success puts between its
+mark and "Congratulations"), and beneath it the recorded public one-liner,
+**"Open code. Open ownership."** — kept in English deliberately, as a brand
+line, exactly like the wordmark itself is a graphic and not copy. Both land in
+bands already reserved, so nothing below them moves, and the wordmark is the
+single accessible header announcing Salmon. _(Superseded intermediate state,
+kept as history: a7c09750 had stripped the welcome to the bare mark alone at
+the wait screen's 96, on the argument that the brand should be one object at
+one size in both identity moments. The earlier state before that had the
+wordmark in the `title` slot in place of a heading, in
+`semantic.text.primary`, one ink with the mark. The recorded reason for the
+return is the commit's own title — the door introduces itself; the brand is
+still one ink and one lockup, just no longer nameless.)_ The component is
+`Wordmark` in `packages/ui` (79293a46), drawn from the shared vector.
 
 **Character:** one family for the whole system. At a narrow column width a
 display face that disagrees with the UI face costs more than it earns, and a
@@ -565,20 +573,28 @@ one slot grid: `chrome`, `mark`, `title`, `description`, `body`, `assist`,
 Every slot occupies its reserved height whether or not it is filled, so
 revealing an element cannot move anything else.
 
-**Three families, not one grid.** The first pass put all sixteen screens on a
+**Families, not one grid.** The first pass put all sixteen screens on a
 single table, which was read too literally (product, 2026-08-18: _"la idea era
 que el salmón esté en el mismo lugar según el tipo de screen"_). The invariant
 is **within a family**:
 
-| variant      | the hero                | screens                                               |
-| ------------ | ----------------------- | ----------------------------------------------------- |
-| `identity`   | the mark                | welcome, success, biometric opt-in                    |
-| `credential` | the mark, over a secret | unlock in every state, password creation              |
-| `content`    | what fills `body`       | the seed screens, analytics consent, derived accounts |
+| variant        | the hero                                 | screens                                  |
+| -------------- | ---------------------------------------- | ---------------------------------------- |
+| `identity`     | the mark                                 | welcome, success, biometric opt-in       |
+| `credential`   | the mark, over a secret                  | password creation                        |
+| `lock`         | the mark, description collapsed          | unlock in every state                    |
+| `content`      | what fills `body`                        | the seed screens, derived accounts       |
+| `contentTight` | what fills `body`, right under the title | analytics consent                        |
+
+_(The family grew from three to five, each split earned by a screen that could
+not obey its parent: `lock` is `credential` with the empty description band
+collapsed so the unlock input is not stranded under dead air, and
+`contentTight` is `content` with the same collapse — see the consent bullet
+below.)_
 
 Within a variant every slot's Y is identical across its screens. Between
 variants only the **mark** and the **body** differ — and they differ by
-exactly offsetting amounts, so all three stacks are the same height and the
+exactly offsetting amounts, so every variant's stack is the same height and the
 `chrome`, `assist`, `secondary` and `action` bands land at one Y on all sixteen
 screens.
 
@@ -597,21 +613,43 @@ Rules that hold it together:
   stack, because on the emptiest screen most of the stack is invisible.
 - **`body` is the give**: the only slot that shrinks and the only one that
   scrolls. The action never moves.
-- **The welcome screen shows the bare mark, at 96.** (Owner, 2026-08-18,
-  a7c09750.) The wordmark left the welcome; the mark — at the wait screen's
-  96, the wait's own ink — is the only identity on the two identity moments,
-  so the brand is one object at one size whether the user is arriving or
-  waiting. The wordmark lives on as a component for other uses — see §The
-  wordmark. Removing an element still does not remove its band: the title and
-  description slots keep their reservations and nothing below them moves.
-  _(Superseded spec, kept as history: the title slot held the wordmark, not a
-  heading — drawn from `wordmarkPaths` at 1.6x the size the title token gave
+- **The fish seeks the true centre of the screen, at 177.** (Owner,
+  ed66881c.) On the two doors — welcome and lock — the fish centres itself on
+  the screen, vertically and horizontally, and everything below flows down
+  from it. The size is the identity size, `markSize` **177**
+  (`logoSizeLarge` 137 + `spacing['4xl']` 40), shared by every hero screen.
+  The centring is a runtime lead computed against the real screen height
+  (safe-area aware on mobile), clamped by a shared `minStack` floor: when a
+  short phone physically cannot fit centre plus cluster plus action bands,
+  **both doors rise together to the same Y** instead of drifting apart. One
+  owner-tunable number over the screen centre
+  (`identityClusterCenterOffset`) moves both doors at once; keyboard
+  behaviour is untouched because the lead derives from the already-occluded
+  height. The welcome additionally carries the wordmark and the one-liner
+  beneath the fish — see §The wordmark — in bands already reserved, so
+  nothing below moves.
+  _(Superseded intermediate states, kept as history: a7c09750 showed the bare
+  mark alone at the wait screen's 96, so the brand was one object at one size
+  on both identity moments; before that the title slot held the wordmark, not
+  a heading — drawn from `wordmarkPaths` at 1.6x the size the title token gave
   it, with the description slot reserved and empty (product, 2026-08-18: "¿y
   si agrandamos Salmon y sacamos el Welcome?"). Because the name was a graphic
   it was sized independently, so the flow kept exactly one title token; its
   height was the title band less one `spacing.md`, because filling the band
   exactly measured 0.0dp between the mark's lower fin and the wordmark's cap
   height, tighter than a lockup reads.)_
+- **Success wears the fish, at the door's size.** (Owner, d17ede74 sharpened
+  by 423f0656: "success and welcome are literally the same screen — only the
+  copy and the derivable question differ.") The success screen traded its
+  `CheckCircle` for the `BrandMark` — the climax of onboarding is an identity
+  moment again — and the fish stepped up from the old check's 80 to the same
+  shared 177 welcome reads, on both platforms, from the same constant.
+- **The fish stays only at the doors; every flow screen opens with the icon
+  that names its situation.** (9395c874.) Warning for the seed warning,
+  Sparkle, Key, Lock, Fingerprint, TreeStructure for derived accounts — the
+  same Phosphor vocabulary, mirrored on the DOM pages. A step screen wearing
+  the identity hero claimed an importance it did not have; the icon says what
+  the screen is _for_ instead of who made it.
 - **The mark anchors to the bottom of its band and the title to the bottom of
   its own; the description anchors to the top of hers.** Each band reserves two
   rendered lines for Spanish, and centring the ink left that unused allowance
@@ -634,7 +672,19 @@ Rules that hold it together:
   identity hero — and the body sits directly under the title instead of across
   a mid-screen gap. The reserved bands keep their Y; nothing else moved. The
   flow moved too (79293a46): consent is asked _after_ the success screen, not
-  before it.
+  before it. **Its dead air then collapsed like the lock's** (d2b5d247): the
+  ~230pt between "Help improve Salmon" and its copy was the empty description
+  band plus `body`'s start, so the lock's collapse mechanism generalised —
+  `lockDescription` became `collapsedDescription`, shared by `lock` and the
+  new `contentTight` variant, whose description shrinks to one title-line of
+  air with the difference paid to `body`. `assist` and `action` never move,
+  stack parity with `content` is proven by tests, and title-to-copy now
+  breathes exactly what fish-to-title does.
+- **Password aligns to recover's bands.** (9395c874.) The password screen
+  takes the same variant as recover, with `body` anchored to its band's top
+  edge, so two consecutive screens hold the hero still while only the content
+  floats beneath it — the grid's promise applied across the step boundary,
+  not just within one screen.
 - **The lock screen now complies on mobile.** (6a699b31.) This document always
   said the lock carries the water (§What has shipped), and the RN layout
   structurally could not — it had no background slot. It does now, and the
@@ -657,10 +707,12 @@ preference.
 ### Hierarchy
 
 **Shipped** — what the MUI theme and the mobile token file actually render
-today; these are the values in the frontmatter. The eight-step
-`display`/`title`/`heading`/`bodyLg`/`body`/`label`/`micro`/`mono` scale from
-the art direction is **specified, not built**, and `typography.ts` still carries
-Figma-derived one-off sizes (11.375, 13.65, 14.5) that it is meant to replace.
+today; these are the values in the frontmatter. The full scale is now built
+(e036aac3): `label` and `mono` joined the ramp, `monoLg` landed at 16 —
+**inferred**, because the spec named the step without a number; 16 matches the
+shipped seed input and is flagged for the owner — and the Figma-derived
+one-offs (11.375, 13.65, 14.5) and the deprecated `md` alias are retired, with
+~120 call sites re-pointed at zero rendered change.
 
 - **Balance** (700, 60px, −0.245px, tabular): the total balance, and nothing
   else.
@@ -953,10 +1005,13 @@ contrast bug, and in a wallet a contrast bug on an amount is a fund-loss vector.
 **Radii.** The intended scale is seven steps: `r0` 0, `r1` 4 (chips, tags), `r2`
 8 (icons), `r3` 12 (**every control**, list rows, small cards), `r4` 16 (cards),
 `r5` 22 (the inner core of a bezel), `r6` 28 (bezel outer, sheets), and `full`
-9999 (avatars, toggles). **Shipped**: `spacing.ts` still exposes the legacy set
-— 4, 8, 12, 16, 20, 22, 24, 26 (`card`), plus 2, 9 and 18 one-offs — and the
-frontmatter records those, because they are what renders. The consolidation of
-the container end (`card` 26 into `r6` 28) is specified, not built.
+9999 (avatars, toggles). **Shipped** (e036aac3): `radiusScale` in `spacing.ts`
+carries `r0`–`r6`, the legacy names survive only as soft-deprecated aliases
+pointing at the steps, and the one consolidation this section asked for landed
+— `card` 26 became `r6` 28, felt by the balance card, the sheets and the
+success card. The genuinely off-scale one-offs (2 scrollbar, 9 badge, 18/20/24
+icon and header corners) are marked as such rather than force-fitted, because
+force-fitting them would change rendered corners nobody complained about.
 
 **The Control Radius Rule (shipped).** Every interactive control is 12px:
 buttons, text inputs, action buttons, the pressable token card. One number,
@@ -992,6 +1047,23 @@ it gets re-specified — and the concentric rule it demonstrated survives it,
 because that rule governs any nested radii, not this construction.
 
 ### The scales motif
+
+**The drawing is mathematics, not handwork** (60350c97). The seigaiha paths
+used to be hand-exported artwork, and the owner's eye caught what that costs:
+uneven arc widths, off-centre apices, and a baseline that stair-stepped 0.95
+units across the tile, so the cusps of one row missed the apexes of the row
+below by up to 1.23 units (~3.9px at deepField scale) and the tile's vertical
+seam never truly closed. The paths are now generated from four constants —
+arc width `w` 28.8, `rise` 12.6, control-point drop 16.8 (= 4/3·rise, which
+lands the cubic's apex at t = 0.5 exactly `rise` above the baseline), and a
+0.1 phase inset so no cusp or apex lies exactly on a tile edge, where
+edge-tangent ink is what cell clipping turns into seams. The identity that
+matters — **every cusp of one row rests exactly on the apex of the arc below
+it** — now holds to 1e-13 residual, a guard test pins it at 1e-6 tolerance,
+and the formula is documented in `packages/shared/src/theme/scales.ts` so
+nobody draws these by hand again. The rendered change was imperceptible
+(+0.43% arc height); the point was that the geometry is now regenerable, and
+both platforms share the one data set.
 
 The scales are the water column's texture and their **density is a depth
 cue** — they tell you how far down you are looking, exactly the way
@@ -1063,30 +1135,51 @@ _inside_ of the thing — so the honest material for it is what you see when the
 fish is cut open: the myosepta, pale sheets of collagen and lipid separating
 the muscle blocks. This is the whole of the material rule in one object.
 
+**Why `marbled`, and how it was chosen** (71c6973c → 35a0c6d1 → 5f981cea).
+The first drawing (`lean`) read on the CTA as wavy wallpaper — thin uniform
+squiggles, three times too many, each wandering alone — and against
+photographs of the real thing the misses were structural, not tonal: real
+myosepta are **few**, wide apart, each band swells in the middle and thins at
+the tips, and neighbouring bands sweep together. Two generated candidates were
+built behind a live debug switch — `marbled` (three wide myosepta sweeping a
+shared arc, swelling mid-line and tapering out, soft-edged by a halo pass) and
+`chevron` (nested V bands, the graphic reading) — and the owner compared them
+on device: the chevron lost first, then `marbled` retired the old drawing.
+The comparison switches and the `lean` generator are deleted; `flesh.ts` is
+the single flesh module.
+
 What the drawing commits to, because each of these is easy to undo by
 accident:
 
-- **Bands run across the fillet, raked 32° off vertical.** Myosepta angle back
-  along the fish; bands running with the long axis read as wood grain
-  (van Leeuwen, _JEB_ 202:3405).
-- **Bands are pale, never dark.** The pale stripe is collagen plus the fat that
-  concentrates in the myocommata; dark slits mean _gaping_, which is a defect,
-  not healthy flesh. This is also what makes the texture free of contrast risk:
-  every band is lighter than the fill it sits on, so it can only raise the
-  luminance under a label. Worst-case ink contrast on a salmon fill is exactly
-  the flat fill's, and `flesh.test.ts` asserts that no band is ever darker.
-- **It tiles by construction.** Every band is a level set of one field whose
-  frequencies are whole numbers over the tile in both axes, and the tile height
-  (`lean`, 138×88) is chosen so a band leaving the bottom edge is exactly the
-  band two slots over entering the top — same position, same slope.
+- **Veins are few, filled and tapered — never uniform strokes.** Three bands
+  per 150×88 tile, each a polygon outlined around a centreline with a varying
+  half-width (2 → 7 units, swelling mid-line), sweeping a shared arc. Uniform
+  strokes are what made the old drawing read as wallpaper.
+- **The soft edge is a halo pass, not a filter.** A 1.9×-wider, fainter copy
+  of the same polygon sits under the crisp one (core/halo ink 0.16/0.05) —
+  no SVG blur, because `react-native-svg` stubs the filter primitives and a
+  per-frame blur is a cost a button background must not pay.
+- **Veins are pale, never dark.** The pale stripe is collagen plus the fat
+  that concentrates in the myocommata; dark slits mean _gaping_, which is a
+  defect, not healthy flesh. This is also what makes the texture free of
+  contrast risk: every vein is drawn in `semantic.flesh.band` (`salmon-50`),
+  lighter than the fill, so it can only raise the luminance under a label —
+  worst-case ink contrast on a salmon fill stays exactly the flat fill's
+  6.50:1, and `flesh.test.ts` asserts the 0.2 opacity ceiling that guarantee
+  rides on.
+- **It tiles by construction.** Every centreline and width profile is
+  periodic over the tile in both axes — position, slope _and_ width agree
+  across the crossing — and wrap copies are baked into the data wherever ink
+  reaches past a vertical edge, because `react-native-svg`'s `Pattern` has no
+  overflow.
 
-That last property replaced an earlier test as well as an earlier texture. The
+That seam property replaced an earlier test as well as an earlier texture. The
 old test demanded that every band's opacity envelope reach zero at the tile
 edge, which sounds like the safe assertion and is the opposite: pinning every
 envelope to zero at the same boundary switches all the bands off at once, and
 an untextured column down the seam does not hide the repeat, it advertises it.
-The test now checks what actually makes a tile seamless — continuity of
-position _and_ slope across the crossing.
+What makes a tile seamless is continuity across the crossing, and the marbled
+drawing carries it in the geometry itself.
 
 **Scale.** `componentSizes.buttonFleshScale` is **1**: the bands render at the
 size they were authored. 0.55 was tried and rejected — at that scale the
@@ -1186,6 +1279,42 @@ the depth read better" was not "make the far ones fainter". `z` itself is 70%
 of the floc's rank by size and 30% of its height down the tile, so the vertical
 gradient now lives in the _size_ data as well as the brightness;
 `corr(cy, rx)` roughly doubled, to −0.56.
+
+**The blizzard — the field grows a foreground** (29e34a20, adopted 8bd4df42).
+The numbers above describe the **base field**, which still ships as the layer
+underneath; on its own it read, in the owner's diagnosis against photographs
+of real marine snow, as a **dirty screen** — every particle a hard,
+similar-sized dot, uniformly sprinkled, with nothing in the near field. The
+one-distance law is correct and is **kept** (pinned by tests down to a
+pairwise bigger-is-never-fainter sweep); what was wrong is the _range_ — the
+whole distribution was compressed into the far field. Three additions fix
+that, each behind a documented constant in
+`packages/shared/src/theme/depthFieldBlizzard.ts`:
+
+1. **Heroes.** Three near flocs per tile (≈ one screen), at optical distance
+   `z` 0.35–0.6 — an order nearer than the old near plane, a readable core of
+   roughly 6–10dp on a phone column. They are **soft** — a radial opacity
+   gradient with the peak held only to 25% of the radius, plus per-hero squash
+   and rotation — because an 8dp hard circle reads as a defect, not a
+   particle. A fall-streak elongation exists as a constant and **ships at 0**:
+   on some panels a stretched blob reads as a scratch; the knob stays so the
+   next attempt starts from a dial, not a rewrite.
+2. **A mid-field lift.** Seventy extra flocs at `z` 1.05–2.2 — the gap the
+   old field left between the heroes and the far plane — still on the exact
+   one-distance law. ~1.33× the particle budget in total, far under the cap.
+3. **Clustering.** The added flocs pool into six Gaussian patches (σ 70 tile
+   units, 80% of the added flocs assigned) instead of a statistical sprinkle
+   — real snow arrives in patches, and uniform is precisely what the eye
+   reads as noise. The baked base field is left untouched (its tests pin
+   it), so the patchiness lives entirely in where the _new_ density lands.
+
+The brightness cap holds — every opacity, heroes included, is a multiplier
+≤ 1 on `water.snow`, and a hero's radial fade only ever goes _below_ its
+peak — and the whole field is still generated once from a fixed seed, so the
+DOM serialises it into the same drifting data URI with no extra layer. The
+adoption followed the same protocol as the flesh and the thermocline: a live
+debug switch on both runtimes, the owner compared, the blizzard won, and the
+switch died with the decision.
 
 The field is **continuous, not layered**. Three discrete plates would be easier
 to reason about, and this document used to describe them. They are wrong here:
@@ -1401,10 +1530,17 @@ thing that glows.
 - **The primary fill's material** (**shipped**): the flesh texture, at
   `buttonFleshScale` 1, plus `shadowsCSS.bezel` for the edge. Not the scales —
   see §The flesh texture for why a filled control shows the inside of the fish.
-- **Press specular** (**shipped on mobile**): `PressSpecular` with
-  `usePressMotion`, at `flick`.
+- **A flesh button speaks in bold** (**shipped**, owner rule, 4d08e41b): any
+  button wearing the flesh carries **bold text and a bold icon** — the label
+  must not be quieter than the material under it. Nine flesh call sites across
+  both platforms were aligned (several had drifted to medium or semibold);
+  non-flesh buttons keep the system's regular button weight, and the exception
+  is recorded in both icon modules (`weight="bold"` on a flesh CTA only).
+- **Press specular** (**shipped on both platforms**): `PressSpecular` with
+  `usePressMotion` on mobile; the DOM version landed with the Surfacing port
+  (dc875e30) — the same `water.light` radial at the touch point,
+  screen-blended, `flick`-fast, absent when disabled.
 - **Press-and-hold on Approve** (**shipped**): see §The approval screen below.
-- **Specified, not built**: the press specular on the DOM.
 
 ### Cards / Containers
 
@@ -1514,8 +1650,11 @@ it won for the button and the input — see §The Control Radius Rule, whose pil
 exemption for the tab bar is withdrawn.)_ The active item is a filled icon in
 `salmon-500` with a label beneath in `text.primary` — and it is the screen's one
 living element, which is why the home screen's action buttons are neutral.
-**Specified, not built** as a material; the `GlassTabBar` sizing tokens exist in
-`componentSizes`.
+**Built as a material**: the tab bar is the thermocline's first consumer — the
+`tint` rendering, the refraction strip, and now the membrane field (see §The
+thermocline and §The membrane field); its sizing tokens live in
+`componentSizes`, its radius on `componentSizes.tabBarRadius` → the control
+radius, watched by the anti-pill test.
 
 ### Iconography
 
@@ -1544,10 +1683,17 @@ dependency stays in `packages/ui`'s manifest after being dropped from
 are also not Phosphor and never will be: no general icon set carries them, and
 a brand mark redrawn to match a UI set stops being the brand mark.
 
-**Specified, not built**: mobile. `phosphor-react-native` (MIT, riding
-`react-native-svg`, already a dependency) is the other half of the model this
-monorepo wants — same drawings, same names, two renderers, one icon name in a
-shared contract. It is not installed yet.
+**Shipped on mobile too** (adb3dcef). `phosphor-react-native` (MIT) passed the
+gate it had to pass: pure JS over the `react-native-svg` already shipped, zero
+new native modules, so dev builds and OTA updates keep working untouched.
+`apps/mobile/src/icons.ts` mirrors the ui package's icon module
+export-for-export, deep-imported so Metro never swallows the full set, and
+every Ionicons use in the app migrated to it — sixty-odd glyphs, sizes and
+colors riding the existing tokens. Where the DOM had already chosen a glyph
+for a meaning, mobile takes the same one; the one deliberate divergence mobile
+already had in transaction types is kept and recorded at the call site. No
+Ionicons remain (`@expo/vector-icons` stays only as Expo's transitive
+dependency).
 
 ### Motion
 
@@ -1612,12 +1758,13 @@ the backdrop goes straight to its final scrim, and haptics are kept.
 **Shipped on mobile** (owner, 2026-08-18); the DOM ports it after the numbers
 are calibrated on a device. When one piece of content replaces another, the
 transition speaks the water's own vertical: **leaving is sinking** — the
-outgoing content drops 12dp accelerating on `sink`, its opacity falling the
-way light falls with depth (slowly at first, fast at the end — the same
-accelerating bezier, never linear) — and **arriving is floating** — the
-incoming content rises the same distance decelerating on `current` (buoyancy:
-no overshoot, the system rule), fading in as it comes up, still settling from
-`scale(0.97)`. The verb is not invented: it generalises the two directions the
+outgoing content drops `SINK_FLOAT_TRAVEL` (28dp) accelerating on `sink`, its
+opacity falling the way light falls with depth (slowly at first, fast at the
+end — the same accelerating bezier, never linear) — and **arriving is
+floating** — the incoming content rises the same distance and comes to rest on
+`settle` (buoyancy running out: no overshoot, the system rule), its light
+returning on the Beer–Lambert curve as it comes up, still settling from
+`scale(0.96)`. The verb is not invented: it generalises the two directions the
 system already commits to — the wait's mark *sinks* into the water it
 disturbs, and The Surfacing *rises* — into a rule for everything in between.
 It **replaces the shared-axis transition that was considered** for these
@@ -1626,12 +1773,49 @@ vertical verb serves forward and back alike.
 
 The primitive is `apps/mobile/src/utils/sinkAndFloat.ts` (`floatEntering` /
 `sinkExiting`), the successor of `fadeThrough.ts` — an upgrade, not a
-replacement: the fade and the 0.97 settle survive, the travel is what is new.
-Every number is a **named tunable** the owner calibrates by eye:
-`SINK_FLOAT_TRAVEL` (12dp, band 12–16), `FLOAT_IN_MS` (= `drift`, 280),
-`SINK_OUT_MS` (= `ebb`, 180 — exit faster than enter, as everywhere), plus
-per-call `distance`/`durationMs` overrides. No new duration tokens were
-minted; the verb spends the vocabulary it found.
+replacement: the fade and the settle survive, the travel is what is new.
+
+**Recalibrated to the water's own clock** (owner, 2026-08-18/19, 00caaf41).
+The verb first shipped on generic-UI numbers — 12dp over `drift` 280 in and
+`ebb` 180 out — and the owner's verdict was that nothing looked like it came
+out of water. The verdict was right at the numbers: the system's own water
+runs at 700–2000ms (the logo's return is `tide` 720, the wavefront's crossing
+2000), and at that ratio the swap read as a fade with a direction. So every
+number is re-derived from The Surfacing rather than from any generic motion
+spec, and each is a **named tunable** the owner calibrates by eye on device,
+with its band recorded beside it:
+
+- `SINK_FLOAT_TRAVEL` **28dp** (band 24–40 — 12–16 reads as a nudge, not as
+  depth); `FLOAT_ENTER_SCALE` 0.96 rather than the route transition's 0.97 —
+  a touch more pressure at depth, still felt rather than seen.
+- `FLOAT_IN_MS` = `drift`×2 = **560ms** (band 450–650: on the water's clock,
+  between `rise` 420 and `tide` 720, short of ever feeling like The
+  Surfacing); `SINK_OUT_MS` = `tide`/2 = **360ms** (band 320–400) — still
+  shorter than the float, as everywhere, but no longer `ebb`: water swallows
+  things at its own speed.
+- **Beer–Lambert light.** Opacity is not linear in time: `depthField` already
+  computes a floc's opacity as `exp(−μ·depth)`, so the entering opacity runs
+  on the accelerating `sink` bezier — the vocabulary's closest curve to that
+  exponential — while the travel runs on `settle`. The light returns late and
+  fast; the arrival is heavily damped. Sinking is the mirror.
+- **The beat**: `FLOAT_DELAY_MS` = sink + 90 = **450ms** (a245fc53). Without
+  it the two halves overlap and the eye never reads the double gesture; the
+  90ms of stillness has its own band (90–120 — under ~80 the beat vanishes,
+  over ~150 it reads as lag). Passed **only where something actually sank**
+  first — on a first mount the same delay is pure lag, so those sites pass
+  nothing.
+- **The stagger**: `SINK_FLOAT_STAGGER_MS` = `motionMs.stagger` = **24ms**,
+  inherited from The Surfacing's chrome stagger, for surfaces that arrive in
+  pieces — onboarding's float region, the swap review's five blocks. Small
+  groups only, never more than 4–5 steps.
+
+No new duration tokens were minted; the verb spends the vocabulary it found.
+One mechanism note the beat forced into the open (a245fc53): the swap review
+lives inside a native `Modal`, and entering/exiting animations cannot cross a
+window boundary — the modal's own slide was swallowing the verb. The window is
+now choreographed instead: `animationType="none"`, its visibility waiting out
+the sink and the beat in both directions, with success keeping its documented
+hard cut into The Surfacing.
 
 **Where it applies — and where it deliberately does not:**
 
@@ -1714,6 +1898,17 @@ the price chart when the range changes, and the swap and bridge review screens
 when the quote is refreshed. The shared primitive is `PendingValue`
 (`packages/ui` for web and extension, `apps/mobile` for React Native, contract
 in `packages/shared/src/types/ui/pending-value.ts`).
+
+**A slow quote can never overwrite a newer one** (f25961b4). The honest report
+above has a data-side half: an in-flight quote that resolves _after_ the
+inputs changed used to clobber the fresher quote and its loading state — on
+all three platforms, since they share `useSwapScreenLogic`. A monotonic
+sequence ticket in the shared hook now discards every stale resolution —
+success, error and finally alike — for Jupiter quotes and StealthEX estimates,
+with tests pinning the late-resolve discard and the expired-confirm requote.
+The value the skeleton settles on is therefore always the answer to the
+question the user most recently asked, which is the whole point of reporting
+recalculation honestly.
 
 The control that started the work is part of the report: while the request is in
 flight, the button that fired it says so and stops accepting a second press on
@@ -1966,12 +2161,22 @@ what keeps a wait from competing with the only climax the system has.
      flight, a wait that resolves during the rest has nothing to wait for, and
      inventing a closing wave would be pure latency between a decision and its
      receipt with nothing on screen to justify it.
-   - **The hard bound survives.** `wavefrontExitMs()` — one whole crossing plus
-     an `ebb`, **2180ms worst case** — arms a timer in both implementations, and
-     whichever of the timer and the animation callback arrives first wins. A
-     wallet may never be stranded on a loading screen by an animation that
-     failed to complete. The bound is by construction the maximum of the derived
-     plan, so the guard can only ever fire late.
+   - **The hard bound survives, and gained real slack** (a245fc53).
+     `wavefrontExitMs()` — the sink, plus the **train-length crossing**
+     (`WAVEFRONT_TRAIN_CROSS_MS`, derived from the crest count so "the water is
+     calm" means the _last_ crest has left the viewport, not the leading one;
+     with the current train of one it is exactly one crossing), plus an `ebb`,
+     plus `WAVEFRONT_EXIT_SLACK_MS` (250ms) — **2520ms worst case** — arms a
+     timer in both implementations, and whichever of the timer and the
+     animation callback arrives first wins. A wallet may never be stranded on a
+     loading screen by an animation that failed to complete. The slack exists
+     because without it the JS timer and the UI-thread animation could
+     dead-heat, and the timer winning by a frame cut the wave at the exact
+     moment the user was watching it; with it, the guard can only ever fire
+     late. An early resolve during the float-in cancels the scheduled loops
+     rather than inventing a two-second impact, and the callers that navigate
+     (the password route among them) park on `router` until `onExited`, with a
+     watchdog so navigation can never strand.
    - **The callers were the other half of the promise.** A surface written as
      `if (loading) return <LoadingScreen />` swaps branches the frame `loading`
      flips and unmounts the wait mid-wave, so the closing wave played nowhere on
@@ -2095,12 +2300,26 @@ transaction. Failure is the exception: nothing surfaces — the wave cuts and
 the input floats back with the error. The wallet never shows a receipt it
 cannot stand behind.
 
+**The ending says what happened** (5a2eb574). The swap's success screen used
+to close on one line of text; it now shows the exchange itself — token to
+token, the received amount a rank louder — with a quiet receipt beneath: the
+effective rate derived from the two amounts, the Salmon fee **snapshotted at
+confirm** (the number the user agreed to, not whatever the backend would say
+now), and the local time. Zero new fetches and zero new copy paid for it; the
+caustic band re-measures its stop against the new hero, and the NFT variant is
+untouched.
+
 ### The Surfacing — the signature moment, built
 
 **Shipped on mobile**, in `apps/mobile/src/components/TransactionSuccessScreen`:
 the timeline lives in `surfacing.ts` as a pure function of the reduce-motion
 flag, so the _timing_ is testable without a renderer or a frame clock, and
-`SurfacingLayers.tsx` draws the two things that move. Exactly one screen owns
+`SurfacingLayers.tsx` draws the two things that move. **And on the DOM**
+(dc875e30): web and extension play the same choreography from the same
+`motionMs` timeline ported verbatim — CSS keyframes for the fixed phases,
+WAAPI for the one phase that depends on layout — honouring both recorded
+omissions below (tint instead of blur, no Gaussian on the band); under reduced
+motion the success simply appears. Exactly one screen owns
 it: the confirmation of a completed send or swap. Over `tide` (720ms), three
 things happen on one timeline.
 

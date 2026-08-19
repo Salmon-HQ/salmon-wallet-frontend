@@ -124,6 +124,10 @@ Two positioning cautions the product must respect:
   (primary Solana RPC and DAS), Helius (RPC fallback), Blockdaemon/Ubiquity
   (Bitcoin). A Triton DAS outage surfaces as an *empty* NFT list, so
   "you have none" and "we couldn't load this" must be distinguishable states.
+  **Enforced since 2026-08-19** (1981e8ee): the home token list and the
+  collectibles views on all three platforms gate their empty state on the
+  absence of a load error, and the error state carries an explicit retry — an
+  outage may no longer masquerade as an empty wallet.
 
 ## Capabilities and Constraints
 
