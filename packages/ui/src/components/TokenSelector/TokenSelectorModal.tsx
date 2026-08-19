@@ -8,7 +8,7 @@
  * Web version using MUI Dialog and @emotion/styled for browser extension.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Dialog from '@mui/material/Dialog';
@@ -23,6 +23,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import { MagnifyingGlassIcon, XIcon, iconSize } from '../../icons';
 import { BitcoinSvgIcon, EthereumSvgIcon } from '../Icon';
+import { Thermocline } from '../Thermocline';
 import {
   colors,
   spacing,
@@ -53,20 +54,50 @@ const HIDDEN_VALUE = '******';
 // Styled Components
 // ============================================================================
 
+/**
+ * Geometry for the modal's ground: it fills the paper and sits behind
+ * everything the modal holds. The paper's `overflow: hidden` clips the
+ * material to the modal's corners, so the ground needs no radius of its own.
+ */
+const GROUND_STYLE: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  zIndex: 0,
+};
+
+/**
+ * The modal's sections sit above the ground. They have to be positioned to do
+ * it: the material is an absolutely positioned layer, and an unpositioned
+ * sibling paints beneath one whatever its z-index says.
+ */
+const ABOVE_GROUND = {
+  position: 'relative' as const,
+  zIndex: 1,
+};
+
 const StyledDialog = styled(Dialog)({
   '& .MuiDialog-paper': {
-    backgroundColor: colors.background.primary,
+    // The paper carries no fill of its own: the modal's ground is the material
+    // mounted inside it, and an opaque fill — or MUI's dark-mode elevation
+    // overlay, which is a background image — would paint over it. The radius,
+    // the border and the clip stay, so the material follows the modal's
+    // corners. See DESIGN.md §The thermocline is the sheet material.
+    backgroundColor: 'transparent',
+    backgroundImage: 'none',
     borderRadius: borderRadius.xl,
     border: `${borderWidth.thin}px solid ${colors.border.default}`,
     minWidth: `min(${componentSizes.sheetWidthSm}px, 95vw)`,
     maxWidth: `min(${componentSizes.sheetWidthLg}px, 95vw)`,
     maxHeight: '85vh',
+    overflow: 'hidden',
+    position: 'relative',
     display: 'flex',
     flexDirection: 'column',
   },
 });
 
 const StyledDialogTitle = styled(DialogTitle)({
+  ...ABOVE_GROUND,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -92,6 +123,7 @@ const CloseButton = styled(IconButton)({
 });
 
 const SearchContainer = styled(Box)({
+  ...ABOVE_GROUND,
   padding: `${spacing.md}px ${spacing.xl}px`,
 });
 
@@ -122,6 +154,7 @@ const SearchIconStyled = styled(MagnifyingGlassIcon)({
 });
 
 const StyledDialogContent = styled(DialogContent)({
+  ...ABOVE_GROUND,
   padding: 0,
   overflowY: 'auto',
   flex: 1,
@@ -318,6 +351,7 @@ const EmptyText = styled(Typography)({
 });
 
 const FooterContainer = styled(Box)({
+  ...ABOVE_GROUND,
   padding: `${spacing.md}px ${spacing.xl}px`,
   borderTop: `${borderWidth.thin}px solid ${colors.border.default}`,
 });
@@ -466,6 +500,15 @@ export function TokenSelectorModal({
       aria-labelledby="token-selector-title"
       disableEnforceFocus
     >
+      {/* A modal is the DOM's sheet, and the thermocline is what a sheet is
+          made of: this one grounds on the thick tier instead of an opaque
+          fill. Its texture is the membrane field, one dark scales layer the
+          material mounts itself. See DESIGN.md §The thermocline is the sheet
+          material and §The membrane field. Ground first: every section below
+          is positioned above it, so the material stays behind everything the
+          modal holds. */}
+      <Thermocline tier="thick" style={GROUND_STYLE} />
+
       {/* Header */}
       <StyledDialogTitle id="token-selector-title">
         <TitleText>{t('wallet.select_token', 'Select Token')}</TitleText>

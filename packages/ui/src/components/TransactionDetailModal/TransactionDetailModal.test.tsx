@@ -3,8 +3,8 @@
  */
 
 import React from 'react';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockCopyToClipboard = vi.fn().mockResolvedValue(undefined);
 const mockExplorerOnPress = vi.fn();
@@ -36,7 +36,16 @@ vi.mock('@salmon/shared', () => ({
     scrollbar: 8,
   },
   borderWidth: { thin: 1 },
-  semantic: { status: { success: '#0f0', danger: '#f00', warning: '#fc0' } },
+  semantic: {
+    status: { success: '#0f0', danger: '#f00', warning: '#fc0' },
+    surface: {
+      raised: '#161C2D',
+      crest: '#1B2233',
+      membraneThin: 'rgba(11, 15, 25, 0.62)',
+      membraneThick: 'rgba(11, 15, 25, 0.80)',
+    },
+    scales: { membraneFieldStroke: 'rgba(7, 9, 17, 0.45)' },
+  },
   colors: {
     change: { negative: '#f44', positive: '#4f4' },
     palette: {
@@ -239,6 +248,10 @@ describe('TransactionDetailModal', () => {
     vi.clearAllMocks();
   });
 
+  // The suite mounts the modal once per test into the same document; without
+  // an unmount between them a query for a single element sees every copy.
+  afterEach(cleanup);
+
   it('does not render when transaction is missing', () => {
     const { container } = render(
       <TransactionDetailModal visible onClose={vi.fn()} transaction={null as any} />
@@ -321,5 +334,23 @@ describe('TransactionDetailModal', () => {
     const explorerButton = within(screen.getByRole('dialog')).getByText('Explorer');
     expect(explorerButton.getAttribute('data-blockchain')).toBe('SOLANA');
     expect(explorerButton.getAttribute('data-environment')).toBe('solana-mainnet');
+  });
+});
+
+describe('TransactionDetailModal ground', () => {
+  afterEach(cleanup);
+
+  // A modal is the DOM's sheet, so it is made of the material rather than of
+  // an opaque fill, and the material carries exactly one scales layer — a
+  // second copy reads as a band. See DESIGN.md §The thermocline is the sheet
+  // material and §The membrane field.
+  it('grounds on the material rather than on a fill', () => {
+    render(<TransactionDetailModal visible onClose={vi.fn()} transaction={BASE_TRANSACTION} />);
+    expect(screen.getByTestId('thermocline')).toBeTruthy();
+  });
+
+  it('carries exactly one scales layer', () => {
+    render(<TransactionDetailModal visible onClose={vi.fn()} transaction={BASE_TRANSACTION} />);
+    expect(screen.getAllByTestId('scales-background')).toHaveLength(1);
   });
 });

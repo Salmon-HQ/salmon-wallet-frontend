@@ -81,11 +81,12 @@ import {
   type Blockchain,
   type NetworkEnvironment,
 } from '@salmon/shared';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 
 import { BlurContainer } from '../BlurContainer';
+import { Thermocline } from '../Thermocline';
 import { AddressCopyRow } from '../TransactionHistoryPage/AddressCopyRow';
 import { ConversionRateDisplay } from '../TransactionHistoryPage/ConversionRateDisplay';
 import { ExplorerLinkButton } from '../TransactionHistoryPage/ExplorerLinkButton';
@@ -217,9 +218,25 @@ const CONFIRMATION_LABEL_KEYS: Record<string, string> = {
 // Styled Components
 // ============================================================================
 
+/**
+ * Geometry for the modal's ground: it fills the paper and sits behind
+ * everything the modal holds. The paper's `overflow: hidden` clips the
+ * material to the modal's corners, so the ground needs no radius of its own.
+ */
+const GROUND_STYLE: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  zIndex: 0,
+};
+
 const StyledDialog = styled(Dialog)({
   '& .MuiDialog-paper': {
-    backgroundColor: colors.background.primary,
+    // The paper carries no fill of its own: the modal's ground is the material
+    // mounted inside it, and an opaque fill — or MUI's dark-mode elevation
+    // overlay, which is a background image — would paint over it. See
+    // DESIGN.md §The thermocline is the sheet material.
+    backgroundColor: 'transparent',
+    backgroundImage: 'none',
     borderRadius: borderRadius.xl,
     border: `${borderWidth.thin}px solid ${colors.border.default}`,
     minWidth: `min(${componentSizes.sheetWidthMd}px, 95vw)`,
@@ -971,6 +988,15 @@ export function TransactionDetailModal({
       PaperProps={{ style }}
       disableEnforceFocus
     >
+      {/* A modal is the DOM's sheet, and the thermocline is what a sheet is
+          made of: this one grounds on the thick tier instead of an opaque
+          fill. Its texture is the membrane field, one dark scales layer the
+          material mounts itself. See DESIGN.md §The thermocline is the sheet
+          material and §The membrane field. Ground first: the header, the
+          content and the bottom bar are all positioned on z-index 1, so the
+          material stays behind everything the modal holds. */}
+      <Thermocline tier="thick" style={GROUND_STYLE} />
+
       {/* Header */}
       <HeaderContainer>
         <HeaderRow>

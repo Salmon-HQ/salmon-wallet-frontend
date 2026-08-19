@@ -20,7 +20,8 @@
  */
 
 import React, { createContext, useContext } from 'react';
-import { StyledDialog } from './styles';
+import { Thermocline } from '../Thermocline';
+import { DIALOG_GROUND_STYLE, StyledDialog } from './styles';
 import type { BaseDialogProps } from './types';
 
 // ============================================================================
@@ -77,6 +78,15 @@ export function BaseDialog({
         aria-labelledby={ariaLabelledBy}
         disableEnforceFocus
       >
+        {/* A modal is the DOM's sheet, and the thermocline is what a sheet is
+            made of: the dialog grounds on the thick tier instead of an opaque
+            fill. Its texture is the membrane field, one dark scales layer the
+            material mounts itself, so nothing stacks a second one on top. See
+            DESIGN.md §The thermocline is the sheet material and §The membrane
+            field. Ground first: the sections above it are positioned, so the
+            material stays behind everything the dialog holds. */}
+        <Thermocline tier="thick" style={DIALOG_GROUND_STYLE} />
+
         {children}
       </StyledDialog>
     </BaseDialogContext.Provider>

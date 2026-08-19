@@ -86,6 +86,21 @@ vi.mock('@salmon/shared', () => ({
   ContentLoader: () => null,
   Rect: () => null,
   Circle: () => null,
+  semantic: {
+    surface: {
+      raised: '#161C2D',
+      crest: '#1B2233',
+      membraneThin: 'rgba(11, 15, 25, 0.62)',
+      membraneThick: 'rgba(11, 15, 25, 0.80)',
+    },
+    scales: { membraneFieldStroke: 'rgba(7, 9, 17, 0.45)' },
+  },
+}));
+
+// The seigaiha drawing is pinned by its own suite; here it only needs to be
+// countable, because the rule under test is how many copies of it exist.
+vi.mock('../ScalesBackground', () => ({
+  ScalesBackground: () => <div data-testid="scales-background" />,
 }));
 
 import { TokenSelectorModal } from './TokenSelectorModal';
@@ -185,5 +200,21 @@ describe('TokenSelectorModal balance visibility', () => {
     renderModal({ showBalances: false });
     expect(screen.queryByText('12.5 SOL')).toBeNull();
     expect(screen.getByText('SOL')).toBeTruthy();
+  });
+});
+
+describe('TokenSelectorModal ground', () => {
+  // A modal is the DOM's sheet, so it is made of the material rather than of
+  // an opaque fill, and the material carries exactly one scales layer — a
+  // second copy reads as a band. See DESIGN.md §The thermocline is the sheet
+  // material and §The membrane field.
+  it('grounds on the material rather than on a fill', () => {
+    renderModal();
+    expect(screen.getByTestId('thermocline')).toBeTruthy();
+  });
+
+  it('carries exactly one scales layer', () => {
+    renderModal();
+    expect(screen.getAllByTestId('scales-background')).toHaveLength(1);
   });
 });

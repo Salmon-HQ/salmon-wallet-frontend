@@ -2,6 +2,7 @@
  * Shared styled components for BaseDialog
  */
 
+import type { CSSProperties } from 'react';
 import { styled } from '../../utils/styled';
 import Dialog from '@mui/material/Dialog';
 import type { DialogProps } from '@mui/material/Dialog';
@@ -38,19 +39,49 @@ import {
 
 export const StyledDialog: React.ComponentType<DialogProps> = styled(Dialog)({
   '& .MuiDialog-paper': {
-    backgroundColor: colors.background.primary,
+    // The paper carries no fill of its own: the dialog's ground is the
+    // material mounted inside it, and an opaque fill — or MUI's dark-mode
+    // elevation overlay, which is a background image — would paint over it.
+    // The radius, the border and the clip stay, so the material follows the
+    // dialog's corners. See DESIGN.md §The thermocline is the sheet material.
+    backgroundColor: 'transparent',
+    backgroundImage: 'none',
     borderRadius: borderRadius.xl,
     border: `1px solid ${colors.border.default}`,
     minWidth: `min(${componentSizes.dialogWidthSm}px, 95vw)`,
     maxWidth: `min(${componentSizes.sheetWidthBase}px, 95vw)`,
+    overflow: 'hidden',
+    position: 'relative',
   },
 });
+
+/**
+ * Geometry for the dialog's ground: it fills the paper and sits behind
+ * everything the dialog holds. The paper's `overflow: hidden` clips the
+ * material to the dialog's corners, so the ground needs no radius of its own.
+ */
+export const DIALOG_GROUND_STYLE: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  zIndex: 0,
+};
+
+/**
+ * The dialog's sections sit above the ground. They have to be positioned to
+ * do it: the material is an absolutely positioned layer, and an unpositioned
+ * sibling paints beneath one whatever its z-index says.
+ */
+const ABOVE_GROUND = {
+  position: 'relative' as const,
+  zIndex: 1,
+};
 
 // ============================================================================
 // Header Components
 // ============================================================================
 
 export const StyledDialogTitle: React.ComponentType<DialogTitleProps> = styled(DialogTitle)({
+  ...ABOVE_GROUND,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -91,6 +122,7 @@ export const CloseButton: React.ComponentType<IconButtonProps> = styled(IconButt
 // ============================================================================
 
 export const StyledDialogContent: React.ComponentType<DialogContentProps> = styled(DialogContent)({
+  ...ABOVE_GROUND,
   padding: `${spacing.xl}px`,
 });
 
@@ -158,6 +190,7 @@ export const StyledTextField: React.ComponentType<TextFieldProps> = styled(TextF
  */
 export const StyledDialogActions: React.ComponentType<DialogActionsProps & { $stacked?: boolean }> =
   styled(DialogActions)<{ $stacked?: boolean }>(({ $stacked }) => ({
+    ...ABOVE_GROUND,
     padding: `${spacing.md}px ${spacing.xl}px ${spacing.xl}px`,
     gap: spacing.md,
     ...($stacked
