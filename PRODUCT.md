@@ -92,7 +92,7 @@ Two tiers: **Official** (built and maintained by Salmon) and **Community** (exte
 
 Surfaces Powerups will require that do not exist today: a marketplace/directory, a detail page carrying roughly eleven trust signals at once (official/community, review status, security score, reliability score, rating, monthly active users, successful-action count, last-updated date, open-source status, builder identity, known risks), a permission review sheet, a Powerup manager, a changelog and re-consent flow with a three-way choice, and a report-abuse affordance. Lifecycle states: installed / not installed / enabled / disabled / update-available / update-pending-consent / revoked.
 
-**[open]** The knowledge base asks verbatim: "Should Powerups appear as tabs, action cards, command palette actions, or contextual suggestions?" A human must decide the entry point. Also open: whether all users see the marketplace or it starts behind an advanced mode; the default install state for official Powerups; how security and reliability scores are visualized; whether Salmon supplies Powerup icons, a shape constraint, or accepts arbitrary builder art; and whether the concept is called "Powerups" or "Skills" — two names for one thing currently coexist and shipping both would be a defect.
+**[open]** The knowledge base asks verbatim: "Should Powerups appear as tabs, action cards, command palette actions, or contextual suggestions?" A human must decide the entry point. Also open: whether all users see the marketplace or it starts behind an advanced mode; how security and reliability scores are visualized; and whether Salmon supplies Powerup icons, a shape constraint, or accepts arbitrary builder art. Resolved since: the concept is called "Powerups" — "Skills" is retired as a synonym across the knowledge base; Swap ships as a Powerup enabled by default and can be turned off; "Bridge" is an internal engineering term with no user-facing surface of its own (its UI is Swap); Powerup activation state lives per device, never per wallet; and the tab bar tops out at five tabs.
 
 ### Other planned concepts
 
@@ -146,7 +146,7 @@ Resolved engineering note: the backend's `calculateFee` used to label non-SOL fe
 The binding list, in the company's own words:
 
 1. **Open source is non-negotiable.** Closed code creates hidden power at the wallet layer.
-2. **Custody stays with the user.** Private keys, seed phrases, raw signing primitives, and unrestricted signing authority stay outside Powerups, Skills, agents, and third-party integrations.
+2. **Custody stays with the user.** Private keys, seed phrases, raw signing primitives, and unrestricted signing authority stay outside Powerups, agents, and third-party integrations.
 3. **Security is a process, not a claim.** Avoid inflated security claims.
 4. **Modularity beats bloat.** The base wallet stays focused; advanced workflows are optional, permissioned, reviewable, and removable.
 5. **Users need clarity before approval.** Every sensitive action explains what will happen, what can go wrong, what it costs, and what is being approved.
