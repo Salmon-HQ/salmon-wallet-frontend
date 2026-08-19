@@ -274,9 +274,8 @@
       "confirm_import": "Import Account",
       "confirm": "Confirm",
       "creation_error": "Failed to create account. Please try again.",
-      "session_expired": "Your session expired. Unlock the wallet again to add an account.",
-      "seed_placeholder": "Enter your seed phrase..."
-    },
+      "session_expired": "Your session expired. Unlock the wallet again to add an account."
+          },
     "security": {
       "title": "Security",
       "change_password": "Change Password",

@@ -274,9 +274,8 @@
       "confirm_import": "Importar Cuenta",
       "confirm": "Confirmar",
       "creation_error": "Error al crear la cuenta. Por favor, intentalo de nuevo.",
-      "session_expired": "Tu sesión expiró. Volvé a desbloquear la billetera para agregar una cuenta.",
-      "seed_placeholder": "Ingresá tu seed phrase..."
-    },
+      "session_expired": "Tu sesión expiró. Volvé a desbloquear la billetera para agregar una cuenta."
+          },
     "security": {
       "title": "Seguridad",
       "change_password": "Cambiar Contraseña",

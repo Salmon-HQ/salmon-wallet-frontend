@@ -38,6 +38,8 @@ export interface SeedPhraseEntryProps {
   onLengthChange: (length: number) => void;
   /** Reported when a paste does not divide into a usable phrase length. */
   onPasteRejected?: (count: number) => void;
+  /** Prefix for the cell/input testIDs, mirroring the DOM twin. */
+  testID?: string;
 }
 
 export function SeedPhraseEntry({
@@ -45,6 +47,7 @@ export function SeedPhraseEntry({
   onChange,
   onLengthChange,
   onPasteRejected,
+  testID = 'recover',
 }: SeedPhraseEntryProps) {
   const refs = useRef<(TextInput | null)[]>([]);
 
@@ -124,13 +127,13 @@ export function SeedPhraseEntry({
       {words.map((word, index) => (
         <View
           key={index}
-          testID={`recover-word-cell-${index + 1}`}
+          testID={`${testID}-word-cell-${index + 1}`}
           style={[styles.cell, dense && styles.denseCell, { width: `${100 / columns}%` }]}
         >
           <SeedWordInput
             compact
             dense={dense}
-            testID={`recover-word-input-${index + 1}`}
+            testID={`${testID}-word-input-${index + 1}`}
             position={index + 1}
             value={word}
             onChangeText={(text) => handleChange(index, text)}

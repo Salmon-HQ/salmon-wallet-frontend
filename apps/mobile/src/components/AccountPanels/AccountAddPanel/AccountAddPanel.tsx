@@ -35,6 +35,7 @@ import {
   createAccount,
   getScanNetworks,
   NETWORK_DISPLAY,
+  SHORT_PHRASE,
   EncryptionMaterialMissingError,
   trackEvent,
   type AccountAddStep,
@@ -47,6 +48,8 @@ import { PrimaryButton } from '../../Button';
 import { DerivedAccountCard } from '../../DerivedAccountCard';
 import { LoadingScreen } from '../../LoadingScreen';
 import { WarningNotice } from '../../WarningNotice';
+import { SeedPhraseEntry } from '../../SeedPhrase';
+import { useSecretScreen } from '../../../../hooks/useSecretScreen';
 import type { AccountAddPanelProps } from './types';
 
 // ============================================================================
@@ -57,6 +60,10 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const { t } = useTranslation();
   const [accountState, accountActions] = useAccountsContext();
   const { accounts, activeAccount } = accountState;
+
+  // The imported seed lives in this panel's memory for its whole lifetime,
+  // not just while the grid is mounted (`SeedWordInput` covers those frames).
+  useSecretScreen('account-add-panel');
 
   // Step state
   const [step, setStep] = useState<AccountAddStep>('select-method');
@@ -71,9 +78,15 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   // Loading state
   const [loading, setLoading] = useState(false);
 
-  // Import flow state
-  const [seedPhrase, setSeedPhrase] = useState('');
+  // Import flow state — one entry per grid box. Twelve to begin with; a paste
+  // or a thirteenth typed word grows it to twenty-four.
+  const [seedWords, setSeedWords] = useState<string[]>(() =>
+    Array<string>(SHORT_PHRASE).fill('')
+  );
+  // What was actually pasted when a paste did not fit. `null` = no rejection.
+  const [pastedCount, setPastedCount] = useState<number | null>(null);
   const [seedError, setSeedError] = useState('');
+  const seedPhrase = useMemo(() => normalizeMnemonic(seedWords.join(' ')), [seedWords]);
 
   // Name step state
   const defaultName = useMemo(
@@ -123,14 +136,24 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     setStep('set-name');
   }, [selectedDerived, defaultName]);
 
+  const handleSeedWords = useCallback((next: string[]) => {
+    setSeedWords(next);
+    setPastedCount(null);
+    setSeedError('');
+  }, []);
+
+  const handleSeedLength = useCallback((length: number) => {
+    setSeedWords((prev) =>
+      prev.length === length ? prev : Array.from({ length }, (_, i) => prev[i] ?? '')
+    );
+  }, []);
+
   const handleSeedSubmit = useCallback(() => {
-    const normalized = normalizeMnemonic(seedPhrase);
-    if (!validateMnemonic(normalized)) {
+    if (!validateMnemonic(seedPhrase)) {
       setSeedError(t('wallet.create.invalidSeed'));
       return;
     }
     setSeedError('');
-    setSeedPhrase(normalized);
     setAccountName(defaultName);
     setStep('set-name');
   }, [seedPhrase, defaultName, t]);
@@ -287,23 +310,20 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const renderImportSeed = () => (
     <View>
       <Text style={styles.inputLabel}>{t('settings.account_add.import_seed')}</Text>
-      <TextInput
-        testID="account-add-seed-input"
-        style={styles.seedInput}
-        value={seedPhrase}
-        onChangeText={(text: string) => {
-          setSeedPhrase(text);
-          if (seedError) setSeedError('');
-        }}
-        placeholder={t('settings.account_add.seed_placeholder', 'Enter your seed phrase...')}
-        placeholderTextColor={colors.text.tertiary}
-        multiline
-        numberOfLines={4}
-        autoCapitalize="none"
-        autoCorrect={false}
-        textAlignVertical="top"
+      <SeedPhraseEntry
+        testID="account-add-seed"
+        words={seedWords}
+        onChange={handleSeedWords}
+        onLengthChange={handleSeedLength}
+        onPasteRejected={setPastedCount}
       />
-      {seedError ? <Text style={styles.errorText}>{seedError}</Text> : null}
+      {pastedCount !== null ? (
+        <Text style={styles.errorText}>
+          {t('wallet.recover.pastedWordCount', { count: pastedCount })}
+        </Text>
+      ) : seedError ? (
+        <Text style={styles.errorText}>{seedError}</Text>
+      ) : null}
       <View style={styles.buttonContainer}>
         <PrimaryButton onPress={handleSeedSubmit} testID="account-add-seed-continue-button">
           {t('actions.continue')}
@@ -470,17 +490,5 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
-  },
-  seedInput: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
-    borderWidth: borderWidth.thin,
-    borderColor: colors.border.default,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-    minHeight: 120,
   },
 });

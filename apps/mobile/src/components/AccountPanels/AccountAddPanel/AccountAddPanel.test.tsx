@@ -50,6 +50,7 @@ jest.mock('@salmon/shared', () => ({
     { addAccount: mockAddAccount },
   ],
   getScanNetworks: jest.fn().mockResolvedValue(['solana-mainnet']),
+  SHORT_PHRASE: 12,
   scanDerivedAccounts: (...args: unknown[]) => mockScanDerivedAccounts(...args),
   validateMnemonic: (value: string) => value === 'valid seed phrase',
   normalizeMnemonic: (value: string) => value.trim().replace(/\s+/g, ' '),
@@ -109,6 +110,30 @@ jest.mock('../../LoadingScreen', () => ({
   LoadingScreen: () => null,
 }));
 
+jest.mock('../../../../hooks/useSecretScreen', () => ({
+  useSecretScreen: jest.fn(),
+}));
+
+// The seed is entered through the shared grid, not a free-text field. The stub
+// exposes one input that splits its text into the grid's words array — the
+// panel only consumes the joined result.
+jest.mock('../../SeedPhrase', () => ({
+  SeedPhraseEntry: ({
+    testID,
+    onChange,
+  }: {
+    testID?: string;
+    onChange: (words: string[]) => void;
+  }) => {
+    const React = require('react');
+    const { TextInput } = require('react-native');
+    return React.createElement(TextInput, {
+      testID: `${testID}-entry`,
+      onChangeText: (text: string) => onChange(text.split(' ')),
+    });
+  },
+}));
+
 import { AccountAddPanel } from './AccountAddPanel';
 
 describe('AccountAddPanel', () => {
@@ -136,8 +161,12 @@ describe('AccountAddPanel', () => {
     render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
 
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
+
+    // The free-text seed field is gone — the grid is the only entry surface.
+    expect(screen.queryByTestId('account-add-seed-input')).toBeNull();
+
     fireEvent.changeText(
-      screen.getByPlaceholderText('settings.account_add.seed_placeholder'),
+      screen.getByTestId('account-add-seed-entry'),
       'bad seed'
     );
     fireEvent.press(screen.getByText('actions.continue'));
@@ -152,7 +181,7 @@ describe('AccountAddPanel', () => {
 
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
     fireEvent.changeText(
-      screen.getByPlaceholderText('settings.account_add.seed_placeholder'),
+      screen.getByTestId('account-add-seed-entry'),
       '  valid   seed phrase  '
     );
     fireEvent.press(screen.getByText('actions.continue'));
@@ -184,7 +213,7 @@ describe('AccountAddPanel', () => {
     render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
     fireEvent.changeText(
-      screen.getByPlaceholderText('settings.account_add.seed_placeholder'),
+      screen.getByTestId('account-add-seed-entry'),
       'valid seed phrase'
     );
     fireEvent.press(screen.getByText('actions.continue'));
@@ -209,7 +238,7 @@ describe('AccountAddPanel', () => {
     render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
     fireEvent.changeText(
-      screen.getByPlaceholderText('settings.account_add.seed_placeholder'),
+      screen.getByTestId('account-add-seed-entry'),
       'valid seed phrase'
     );
     fireEvent.press(screen.getByText('actions.continue'));

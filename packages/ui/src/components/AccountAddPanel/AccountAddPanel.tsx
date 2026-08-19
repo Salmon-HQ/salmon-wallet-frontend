@@ -32,6 +32,7 @@ import {
   createAccount,
   NETWORK_DISPLAY,
   getScanNetworks,
+  SHORT_PHRASE,
   EncryptionMaterialMissingError,
   trackEvent,
   type AccountAddStep,
@@ -43,6 +44,7 @@ import { SettingsPanelContent } from '../SettingsPanelContent';
 import { DerivedAccountCard } from '../DerivedAccountCard';
 import { LoadingScreen } from '../LoadingScreen';
 import { WarningNotice } from '../WarningNotice';
+import { SeedPhraseEntry } from '../SeedPhrase';
 import type { AccountAddPanelProps } from './types';
 
 // ============================================================================
@@ -126,8 +128,15 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const [failedNetworks, setFailedNetworks] = useState<string[]>([]);
   const [selectedDerived, setSelectedDerived] = useState<DerivedAccountInfo | null>(null);
   const [scanning, setScanning] = useState(false);
-  const [seedPhrase, setSeedPhrase] = useState('');
+  // One entry per grid box. Twelve to begin with; a paste or a thirteenth
+  // typed word grows it to twenty-four.
+  const [seedWords, setSeedWords] = useState<string[]>(() =>
+    Array<string>(SHORT_PHRASE).fill('')
+  );
+  // What was actually pasted when a paste did not fit. `null` = no rejection.
+  const [pastedCount, setPastedCount] = useState<number | null>(null);
   const [seedError, setSeedError] = useState('');
+  const seedPhrase = useMemo(() => normalizeMnemonic(seedWords.join(' ')), [seedWords]);
   const [confirmError, setConfirmError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -174,14 +183,24 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     setStep('set-name');
   }, [selectedDerived, defaultName]);
 
+  const handleSeedWords = useCallback((next: string[]) => {
+    setSeedWords(next);
+    setPastedCount(null);
+    setSeedError('');
+  }, []);
+
+  const handleSeedLength = useCallback((length: number) => {
+    setSeedWords((prev) =>
+      prev.length === length ? prev : Array.from({ length }, (_, i) => prev[i] ?? '')
+    );
+  }, []);
+
   const handleSeedSubmit = useCallback(() => {
-    const normalized = normalizeMnemonic(seedPhrase);
-    if (!validateMnemonic(normalized)) {
+    if (!validateMnemonic(seedPhrase)) {
       setSeedError(t('wallet.create.invalidSeed'));
       return;
     }
     setSeedError('');
-    setSeedPhrase(normalized);
     setAccountName(defaultName);
     setStep('set-name');
   }, [seedPhrase, defaultName, t]);
@@ -389,27 +408,20 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
 
           {step === 'import-seed' && (
             <>
-              <StyledTextField
-                fullWidth
-                multiline
-                minRows={4}
-                value={seedPhrase}
-                onChange={(e) => {
-                  setSeedPhrase(e.target.value);
-                  if (seedError) setSeedError('');
-                }}
-                placeholder={t(
-                  'settings.account_add.seed_placeholder',
-                  'Enter your seed phrase...'
-                )}
-                autoFocus
-                inputProps={{ 'data-testid': 'account-add-seed-input' }}
+              <SeedPhraseEntry
+                testID="account-add-seed"
+                words={seedWords}
+                onChange={handleSeedWords}
+                onLengthChange={handleSeedLength}
+                onPasteRejected={setPastedCount}
               />
-              {seedError && (
+              {(pastedCount !== null || seedError) && (
                 <Typography
                   sx={{ color: semantic.status.danger, fontSize: fontSize.sm, marginTop: spacing.xs }}
                 >
-                  {seedError}
+                  {pastedCount !== null
+                    ? t('wallet.recover.pastedWordCount', { count: pastedCount })
+                    : seedError}
                 </Typography>
               )}
               <ConfirmButton
