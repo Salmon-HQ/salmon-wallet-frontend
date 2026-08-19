@@ -16,7 +16,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  identityClusterLead,
+  identityClusterCenterOffset,
   onboardingCompactHeight,
   onboardingContentGridCompact,
   onboardingContentGridFull,
@@ -34,7 +34,6 @@ import { componentSizes, spacing } from './spacing';
 
 const reserved = (g: OnboardingGrid) => [
   g.chrome,
-  g.lead,
   g.mark,
   g.title,
   g.description,
@@ -77,10 +76,7 @@ describe('the onboarding slot grid', () => {
   });
 
   it.each(grids)('%s: no content slot is zero — an empty slot still occupies its band', (_n, g) => {
-    // `lead` is the exception and is allowed to be zero: it is not a slot, it
-    // is the space a family gives back when it needs less `body` than its
-    // siblings, and the families whose `body` is full give nothing back.
-    for (const height of reserved(g).filter((h) => h !== g.lead)) {
+    for (const height of reserved(g)) {
       expect(height).toBeGreaterThan(0);
     }
   });
@@ -128,12 +124,9 @@ describe('the onboarding slot grid', () => {
     expect(onboardingCredentialGridFull.body).toBe(
       2 * componentSizes.inputHeight + componentSizes.buttonHeightSmall + 2 * spacing.lg
     );
-    // identity reserves the same body as credential, minus whatever the owner
-    // tunes into the cluster lead: the lock is the reference, and welcome's
-    // emptiness sits under the mark where the fields would be.
-    expect(onboardingIdentityGridFull.body).toBe(
-      onboardingCredentialGridFull.body - identityClusterLead
-    );
+    // identity reserves the same body as credential: welcome's emptiness sits
+    // under the mark where the fields would be.
+    expect(onboardingIdentityGridFull.body).toBe(onboardingCredentialGridFull.body);
     expect(onboardingIdentityGridFull.description).toBe(2 * 24 + spacing['2xl']);
     expect(onboardingContentGridFull.description).toBe(2 * 24 + spacing['2xl']);
     expect(onboardingIdentityGridFull.stack).toBe(817);
@@ -154,21 +147,47 @@ describe('the onboarding slot grid', () => {
     expect(onboardingLockGridCompact.stack).toBe(onboardingCredentialGridCompact.stack);
   });
 
-  it('welcome and the lock share one cluster — same mark size, same band Y', () => {
-    // The lock is the identity reference (owner, 2026-08-18). Parity is by
-    // the shared `heroCluster` constant and the one `identityClusterLead`
-    // knob, not by two numbers that happen to agree.
+  it('welcome and the lock share one cluster — same mark size, same band', () => {
+    // Parity is by the shared `heroCluster` constant, not by two numbers that
+    // happen to agree. The band's Y is not in the grid any more: the layouts
+    // centre the mark band on the screen (owner, 2026-08-18), and the shared
+    // `minStack` floor makes both doors clamp to one Y when a short viewport
+    // cannot hold a centred fish.
     const id = onboardingIdentityGridFull;
     const lock = onboardingLockGridFull;
     expect(id.markSize).toBe(lock.markSize);
     expect(id.mark).toBe(lock.mark);
-    // Same Y for the mark band: everything above it agrees.
-    expect(id.chrome + id.lead).toBe(lock.chrome + lock.lead);
-    expect(id.lead).toBe(identityClusterLead);
-    expect(lock.lead).toBe(identityClusterLead);
+    expect(id.chrome).toBe(lock.chrome);
+    expect(id.minStack).toBe(lock.minStack);
+    expect(onboardingIdentityGridCompact.minStack).toBe(onboardingLockGridCompact.minStack);
   });
 
-  it('spends on body or lead exactly what it saved elsewhere, so all stacks match', () => {
+  it('the owner-tunable centre offset starts at dead centre', () => {
+    // Positive drops both doors' fish below the screen's centre, negative
+    // lifts them — one knob, two screens, identical by construction.
+    expect(identityClusterCenterOffset).toBe(0);
+  });
+
+  it('minStack is the stack with body squeezed to its family’s tallest content', () => {
+    // The centring lead may grow only while the viewport holds this, so the
+    // fish never buys its centre by pushing real content into the actions.
+    const id = onboardingIdentityGridFull;
+    const lock = onboardingLockGridFull;
+    // identity's floor is the 80pt biometric icon; lock's is the field with
+    // the forgot row under it. The hero pair shares the taller of the two.
+    const identityFloor = id.stack - id.body + 80;
+    const lockFloor =
+      lock.stack -
+      lock.body +
+      componentSizes.inputHeight +
+      spacing.sm +
+      componentSizes.buttonHeightSmall;
+    expect(id.minStack).toBe(Math.max(identityFloor, lockFloor));
+    expect(id.minStack).toBeLessThan(id.stack);
+    expect(onboardingLockGridFull.minStack).toBeLessThan(onboardingLockGridFull.stack);
+  });
+
+  it('spends on body exactly what it saved elsewhere, so all stacks match', () => {
     // This is why the primary action, the secondary, the assist band and the
     // chrome sit at one Y across all sixteen screens even though the mark and
     // the body deliberately differ between the two families.
@@ -178,28 +197,18 @@ describe('the onboarding slot grid', () => {
     expect(onboardingContentGridCompact.stack).toBe(onboardingIdentityGridCompact.stack);
     expect(onboardingCredentialGridCompact.stack).toBe(onboardingIdentityGridCompact.stack);
     expect(onboardingLockGridCompact.stack).toBe(onboardingIdentityGridCompact.stack);
-    // content buys its taller body by shrinking the mark...
+    // content buys its taller body by shrinking the mark.
     expect(onboardingContentGridFull.body - onboardingCredentialGridFull.body).toBe(
       onboardingCredentialGridFull.mark - onboardingContentGridFull.mark
     );
-    // ...and identity pays any tuned-in lead out of its body, never the bands.
-    expect(onboardingIdentityGridFull.lead).toBe(
-      onboardingCredentialGridFull.body - onboardingIdentityGridFull.body
-    );
-    expect(onboardingCredentialGridFull.lead).toBe(0);
-    expect(onboardingContentGridFull.lead).toBe(0);
   });
 
-  it('identity no longer lifts — the lock is the reference and welcome matches it', () => {
-    // The 92pt lead that raised welcome's fish above the lock's is gone
-    // (owner, 2026-08-18): the two screens share every band above `body`, so
-    // the fish, the title and the description sit at one Y across them.
+  it('identity and credential agree on every band — welcome is the front door with fields', () => {
     const id = onboardingIdentityGridFull;
     const cred = onboardingCredentialGridFull;
-    for (const key of ['chrome', 'mark', 'markSize', 'title', 'description', 'assist', 'secondary', 'action'] as const) {
+    for (const key of ['chrome', 'mark', 'markSize', 'title', 'description', 'body', 'assist', 'secondary', 'action'] as const) {
       expect(id[key]).toBe(cred[key]);
     }
-    expect(id.lead - cred.lead).toBe(identityClusterLead);
   });
 
   it.each([
@@ -209,7 +218,7 @@ describe('the onboarding slot grid', () => {
   ])('%s: the compact rung reserves less, and only in the description', (_n, full, compact) => {
     expect(compact.stack).toBeLessThan(full.stack);
     expect(compact.description).toBeLessThan(full.description);
-    for (const key of ['chrome', 'lead', 'mark', 'markSize', 'title', 'body', 'assist', 'secondary', 'action'] as const) {
+    for (const key of ['chrome', 'mark', 'markSize', 'title', 'body', 'assist', 'secondary', 'action'] as const) {
       expect(compact[key]).toBe(full[key]);
     }
   });
@@ -222,7 +231,7 @@ describe('the onboarding slot grid', () => {
     const compact = onboardingLockGridCompact;
     expect(compact.stack).toBeLessThan(full.stack);
     expect(compact.body).toBeLessThan(full.body);
-    for (const key of ['chrome', 'lead', 'mark', 'markSize', 'title', 'description', 'assist', 'secondary', 'action'] as const) {
+    for (const key of ['chrome', 'mark', 'markSize', 'title', 'description', 'assist', 'secondary', 'action'] as const) {
       expect(compact[key]).toBe(full[key]);
     }
   });
@@ -251,8 +260,9 @@ describe('the onboarding slot grid', () => {
   it('never removes an element between rungs — it only tightens a band', () => {
     // Losing a whole line of copy because a device is two points shorter is not
     // degradation, it is a defect. The compact rung reserves one description
-    // line instead of two and changes nothing else; every other band, the mark
-    // size and the lead are identical, so no element can vanish with the rung.
+    // line instead of two and changes nothing else; every other band and the
+    // mark size are identical, so no element can vanish with the rung.
+    // (`minStack` and `stack` are derived totals, not bands.)
     for (const [full, compact] of [
       [onboardingIdentityGridFull, onboardingIdentityGridCompact],
       [onboardingCredentialGridFull, onboardingCredentialGridCompact],
@@ -261,7 +271,7 @@ describe('the onboarding slot grid', () => {
       const differing = (Object.keys(full) as (keyof OnboardingGrid)[]).filter(
         (key) => full[key] !== compact[key]
       );
-      expect(differing.sort()).toEqual(['description', 'stack']);
+      expect(differing.sort()).toEqual(['description', 'minStack', 'stack']);
       expect(compact.description).toBeGreaterThan(0);
     }
     // The lock carries no description copy at either rung, so its rung
@@ -269,7 +279,7 @@ describe('the onboarding slot grid', () => {
     const lockDiffering = (Object.keys(onboardingLockGridFull) as (keyof OnboardingGrid)[]).filter(
       (key) => onboardingLockGridFull[key] !== onboardingLockGridCompact[key]
     );
-    expect(lockDiffering.sort()).toEqual(['body', 'stack']);
+    expect(lockDiffering.sort()).toEqual(['body', 'minStack', 'stack']);
   });
 
   it('picks a table by variant and available height, full before measurement', () => {

@@ -84,7 +84,7 @@ export {
   onboardingContentGridFull,
   onboardingContentGridCompact,
   onboardingCompactHeight,
-  identityClusterLead,
+  identityClusterCenterOffset,
   resolveOnboardingGrid,
 } from './onboardingGrid';
 export type {

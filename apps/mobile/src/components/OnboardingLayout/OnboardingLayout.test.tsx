@@ -38,6 +38,7 @@ jest.mock('../../../hooks/useKeyboardHeight', () => ({
 import {
   onboardingContentGridFull,
   onboardingIdentityGridFull,
+  onboardingLockGridFull,
   semantic,
   spacing,
   type OnboardingVariant,
@@ -244,19 +245,65 @@ describe('OnboardingLayout', () => {
     expect(reservedHeights().description).toBe(onboardingIdentityGridFull.description);
   });
 
+  it.each(['identity', 'lock'] as const)(
+    '%s: centres the mark band on the middle of the screen',
+    (variant) => {
+      // The owner's rule for the two doors (2026-08-18): the fish sits at the
+      // middle of the SCREEN. The stack fills the column, the computed lead
+      // drops the mark band's centre to half the screen height, and the
+      // actions anchor at the bottom.
+      const TALL = 1200; // roomy enough that the centring lead never clamps
+      render(<OnboardingLayout variant={variant} />);
+      layout(TALL);
+
+      const grid = variant === 'lock' ? onboardingLockGridFull : onboardingIdentityGridFull;
+      const lead = screen.getByTestId('onboarding-lead').props.style.height;
+      expect(grid.chrome + lead + grid.mark / 2).toBe(TALL / 2);
+
+      const stackStyle = screen.getByTestId('onboarding-stack').props.style;
+      const flat = (Array.isArray(stackStyle) ? stackStyle : [stackStyle]).filter(Boolean);
+      const merged = Object.assign({}, ...flat);
+      // The stack fills the screen — the actions stay at the bottom.
+      expect(merged.height).toBe(TALL);
+      expect(merged.marginTop).toBe(0);
+    }
+  );
+
+  it('welcome and the lock clamp their fish to one Y when the centre does not fit', () => {
+    // On a viewport too short to centre the fish above the flowing cluster
+    // and the bottom bands, both doors rise together — to `minStack`'s shared
+    // ceiling, never each to its own.
+    const IPHONE_17 = 781;
+    const ceiling = IPHONE_17 - onboardingIdentityGridFull.minStack;
+
+    const leadAt = (variant: 'identity' | 'lock') => {
+      const view = render(<OnboardingLayout variant={variant} />);
+      layout(IPHONE_17);
+      const lead = screen.getByTestId('onboarding-lead').props.style.height;
+      view.unmount();
+      return lead;
+    };
+
+    const identityLead = leadAt('identity');
+    expect(identityLead).toBe(ceiling);
+    expect(leadAt('lock')).toBe(identityLead);
+  });
+
   it('drops the description first when the keyboard costs a little room', () => {
     // Explanatory, and not what someone is reading while they type. `body`
     // keeps its whole band, so the field and the grid inside it do not move.
+    // `credential` — the field family whose stack stays fixed; the hero pair
+    // re-centres its fish instead and hands `body` the difference.
     const grid = onboardingIdentityGridFull;
     const view = render(
-      <OnboardingLayout variant="identity" title={<Text>Title</Text>} body={<Text>Body</Text>} />
+      <OnboardingLayout variant="credential" title={<Text>Title</Text>} body={<Text>Body</Text>} />
     );
     layout(grid.stack);
     expect(screen.getByTestId('onboarding-slot-description')).toBeTruthy();
 
     mockKeyboardHeight.mockReturnValue(grid.description - 1);
     view.rerender(
-      <OnboardingLayout variant="identity" title={<Text>Title</Text>} body={<Text>Body</Text>} />
+      <OnboardingLayout variant="credential" title={<Text>Title</Text>} body={<Text>Body</Text>} />
     );
 
     expect(screen.queryByTestId('onboarding-slot-description')).toBeNull();

@@ -26,6 +26,11 @@
  * 2. **The stack is one fixed height, and it is centred in the viewport.**
  *    Because the stack's height does not vary within a family, every slot
  *    lands at the same Y on every screen of that family.
+ *    The hero pair (`identity`, `lock`) is the exception (owner, 2026-08-18):
+ *    its fish is centred on the SCREEN — the stack fills the column, a
+ *    computed lead drops the mark band's centre to half the surface height,
+ *    what the screen has under the fish flows down from it, and the actions
+ *    anchor at the bottom. `body` absorbs the leftover between the two.
  * 3. **`body` is the give.** It is the only slot that shrinks and the only one
  *    that scrolls. Whatever the viewport is short by comes out of `body`
  *    first; only when `body` has reached zero does anything else give, and
@@ -52,6 +57,7 @@ import Box from '@mui/material/Box';
 import {
   colors,
   contentPadding,
+  identityClusterCenterOffset,
   resolveOnboardingGrid,
   spacing,
   type OnboardingLayoutPropsBase,
@@ -189,17 +195,41 @@ export function OnboardingLayout({
   // this component exists to prevent.
   const grid = resolveOnboardingGrid(variant, measured);
 
-  const height = available === undefined ? grid.stack : Math.min(grid.stack, available);
+  // The hero pair centres its fish on the screen (owner, 2026-08-18), so its
+  // stack fills the column and the actions sit at the bottom; the other
+  // families keep the fixed stack centred in the viewport.
+  const centersCluster = variant === 'identity' || variant === 'lock';
+
+  const height =
+    available === undefined ? grid.stack : centersCluster ? available : Math.min(grid.stack, available);
   const slack = Math.max(0, (available ?? grid.stack) - grid.stack);
 
   // What the stack is short by. Zero is the normal case and nothing collapses.
-  // When it is not zero, things go in a fixed order: the empty lead first,
-  // then the description, then the mark — pure space, then explanation, then
-  // decoration, and never the field or the button that commits it.
+  // When it is not zero, things go in a fixed order: the description first,
+  // then the mark — explanation, then decoration, and never the field or the
+  // button that commits it.
   const shortfall = available === undefined ? 0 : Math.max(0, grid.stack - available);
-  const dropLead = shortfall > 0;
-  const dropDescription = shortfall > grid.lead;
-  const dropMark = shortfall > grid.lead + grid.description;
+  const dropDescription = shortfall > 0;
+  const dropMark = shortfall > grid.description;
+
+  // The centring lead — the empty run between `chrome` and the mark that puts
+  // the mark band's centre at half the surface height on the hero pair
+  // (owner, 2026-08-18: "el pez va centrado en la pantalla"). The column is
+  // the full surface here, so its half IS the screen's centre. The grid
+  // cannot carry the number — it depends on the surface's height. Clamped so
+  // `body` never drops below the tallest content the cluster family holds
+  // (`grid.minStack`): when a short surface cannot hold a centred fish, it
+  // rises just enough, and both doors clamp to the same Y.
+  let lead = 0;
+  if (centersCluster && available !== undefined && !dropMark) {
+    lead = Math.max(
+      0,
+      Math.min(
+        available / 2 + identityClusterCenterOffset - grid.chrome - grid.mark / 2,
+        available - grid.minStack
+      )
+    );
+  }
 
   // `body` is computed rather than left to flex-shrink, and that is what keeps
   // the families in step. Dropping a slot frees a fixed amount that rarely
@@ -212,7 +242,7 @@ export function OnboardingLayout({
   // every screen, in every family, at every viewport.
   const reservedAbove =
     grid.chrome +
-    (dropLead ? 0 : grid.lead) +
+    lead +
     (dropMark ? 0 : grid.mark) +
     grid.title +
     (dropDescription ? 0 : grid.description);
@@ -223,19 +253,21 @@ export function OnboardingLayout({
     <Root data-testid={testID} sx={backgroundColor ? { backgroundColor } : undefined}>
       {background}
       <Column ref={columnRef} data-testid="onboarding-column">
-        <Stack style={{ height, marginTop: slack / 2 }} data-testid="onboarding-stack">
+        <Stack
+          style={{ height, marginTop: centersCluster ? 0 : slack / 2 }}
+          data-testid="onboarding-stack"
+        >
           <Slot style={{ height: grid.chrome }} data-testid="onboarding-slot-chrome">
             {chrome}
           </Slot>
 
           {/*
-            A reserved empty run above the mark. Nothing is ever placed in it —
-            it is how a variant that needs less `body` than its siblings hands
-            the difference back at the top of the stack instead of leaving it
-            as a hole under the description.
+            The centring lead, never a slot: the empty run that drops the hero
+            fish to the middle of the surface. Zero on the families that do
+            not centre their mark, and before first measurement.
           */}
-          {!dropLead && grid.lead > 0 && (
-            <Box style={{ height: grid.lead, flexShrink: 0 }} aria-hidden />
+          {lead > 0 && (
+            <Box style={{ height: lead, flexShrink: 0 }} data-testid="onboarding-lead" aria-hidden />
           )}
 
           {!dropMark && (
@@ -275,7 +307,11 @@ export function OnboardingLayout({
               minHeight: 0,
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'center',
+              // On the hero pair the content flows down from the fish — the
+              // lock's field must sit right under the collapsed description
+              // (title→input = fish→title, owner 2026-08-18) while the
+              // leftover collects below it, above the bottom bands.
+              justifyContent: centersCluster ? 'flex-start' : 'center',
               paddingLeft: contentPadding.screen,
               paddingRight: contentPadding.screen,
               overflowY: scrollBody ? 'auto' : 'visible',

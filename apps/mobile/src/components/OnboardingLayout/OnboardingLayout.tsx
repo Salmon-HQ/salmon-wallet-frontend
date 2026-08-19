@@ -26,6 +26,11 @@
  *    action, which put a hole through the middle of every screen. Centring
  *    splits the same leftover above and below. Because the stack's height does
  *    not vary within a family, every slot still lands at the same Y.
+ *    The hero pair (`identity`, `lock`) is the exception (owner, 2026-08-18):
+ *    its fish is centred on the SCREEN — the stack fills the column, a
+ *    computed lead drops the mark band's centre to half the screen height,
+ *    what the screen has under the fish flows down from it, and the actions
+ *    anchor at the bottom. `body` absorbs the leftover between the two.
  * 3. **`body` is the give.** It is the only slot that shrinks and the only one
  *    that scrolls. Whatever the viewport is short by comes out of `body`
  *    first; only when `body` has reached zero and the stack still does not fit
@@ -55,7 +60,12 @@
  * `windowSoftInputMode="adjustResize"`, so the window shrinks and `onLayout`
  * already sees the smaller height.
  */
-import { resolveOnboardingGrid, spacing, contentPadding } from '@salmon/shared';
+import {
+  contentPadding,
+  identityClusterCenterOffset,
+  resolveOnboardingGrid,
+  spacing,
+} from '@salmon/shared';
 import type { OnboardingLayoutPropsBase } from '@salmon/shared';
 import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
@@ -122,8 +132,14 @@ export function OnboardingLayout({
     if (height > 0) setMeasured(height);
   };
 
+  // The hero pair centres its fish on the screen (owner, 2026-08-18), so its
+  // stack fills the column and the actions sit at the bottom; the other
+  // families keep the fixed stack centred in the viewport.
+  const centersCluster = variant === 'identity' || variant === 'lock';
+
   // What the stack actually gets, and how much room is left to centre it in.
-  const height = available === undefined ? grid.stack : Math.min(grid.stack, available);
+  const height =
+    available === undefined ? grid.stack : centersCluster ? available : Math.min(grid.stack, available);
   const slack = Math.max(0, (available ?? grid.stack) - grid.stack);
 
   /**
@@ -161,6 +177,42 @@ export function OnboardingLayout({
   const dropDescription = occlusion > 0 && shortfall > 0;
   const dropMark = occlusion > 0 && shortfall > grid.description;
 
+  /**
+   * The centring lead — an empty run between `chrome` and the mark that puts
+   * the mark band's centre at half the SCREEN height on the hero pair
+   * (owner, 2026-08-18: "el pez va centrado en la pantalla"). The column
+   * excludes the safe areas, so the screen's centre is recovered by adding
+   * them back; the grid cannot carry this number because it depends on the
+   * device's height. Clamped so `body` never drops below the tallest content
+   * the cluster family holds (`grid.minStack`) — when a short viewport, or
+   * the keyboard's bite out of `available`, cannot hold a centred fish, the
+   * fish rises just enough and both doors clamp to the same Y.
+   */
+  let lead = 0;
+  if (centersCluster && available !== undefined && !dropMark) {
+    const screenCenter = (available + insets.top + insets.bottom) / 2 - insets.top;
+    lead = Math.max(
+      0,
+      Math.min(
+        screenCenter + identityClusterCenterOffset - grid.chrome - grid.mark / 2,
+        available - grid.minStack
+      )
+    );
+  }
+
+  // On the hero pair `body` takes whatever sits between the flowing cluster
+  // and the bottom-anchored bands, so the input flows right under the title
+  // and the leftover collects above `assist` instead of moving the actions.
+  const bands =
+    grid.chrome +
+    (dropMark ? 0 : grid.mark) +
+    grid.title +
+    (dropDescription ? 0 : grid.description) +
+    grid.assist +
+    grid.secondary +
+    grid.action;
+  const bodyHeight = centersCluster ? Math.max(0, height - bands - lead) : grid.body;
+
   const bodyContent = scrollBody ? (
     <ScrollView
       contentContainerStyle={styles.bodyScrollContent}
@@ -191,19 +243,20 @@ export function OnboardingLayout({
       )}
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={styles.column} onLayout={onLayout} testID="onboarding-column">
-          <View style={[styles.stack, { height, marginTop: slack / 2 }]} testID="onboarding-stack">
+          <View
+            style={[styles.stack, { height, marginTop: centersCluster ? 0 : slack / 2 }]}
+            testID="onboarding-stack"
+          >
             <View style={[styles.slot, { height: grid.chrome }]} testID="onboarding-slot-chrome">
               {chrome}
             </View>
 
             {/*
-            Reserved empty run, never a slot. A family that needs less `body`
-            than its siblings gives the difference back here rather than
-            leaving it as a hole under the description — which is what drops
-            the mark, title and description into the middle of the region they
-            share with `body`. Zero on the families whose `body` is full.
+            The centring lead, never a slot: the empty run that drops the
+            hero fish to the middle of the screen. Zero on the families that
+            do not centre their mark, and before first measurement.
           */}
-            {grid.lead > 0 && <View style={{ height: grid.lead }} testID="onboarding-lead" />}
+            {lead > 0 && <View style={{ height: lead }} testID="onboarding-lead" />}
 
             {!dropMark && (
               <View style={[styles.centered, { height: grid.mark }]} testID="onboarding-slot-mark">
@@ -227,7 +280,7 @@ export function OnboardingLayout({
               </View>
             )}
 
-            <View style={[styles.body, { height: grid.body }]} testID="onboarding-slot-body">
+            <View style={[styles.body, { height: bodyHeight }]} testID="onboarding-slot-body">
               {bodyContent}
             </View>
 

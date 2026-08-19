@@ -103,17 +103,18 @@ export type ReservedSlot = Exclude<OnboardingSlot, 'body'>;
  * `lock` — the unlock screen in every state. Same cluster as `credential`,
  * with one divergence the owner signed off on (2026-08-18): its `description`
  * band is always empty, so it collapses and hands the height to `body` — see
- * `lockDescription`. The lock is the **identity reference**: the welcome mark
- * matches the lock's mark in size and Y by construction.
+ * `lockDescription`.
  *
  * `content` — what is in `body` is the hero and the mark is subordinate: the
  * seed screens, the analytics consent copy, the derived-account list.
  *
- * `identity` once carried a 92pt `lead` that dropped its mark below the
- * lock's. The owner reversed that (2026-08-18): the lock is the reference,
- * so `identity` now reserves the same `body` as `credential` — the emptiness
- * sits under the mark, where welcome's missing fields would be — and every
- * mark-led screen agrees on the mark's size and Y.
+ * `identity` and `lock` are the hero pair, and their fish is **centred on
+ * the screen** (owner, 2026-08-18, superseding "the lock is the identity
+ * reference for Y"): the layouts place the mark band's centre at half the
+ * screen height — a number this table cannot carry because it depends on the
+ * device — and everything a screen has under the fish flows down from it,
+ * with the actions staying at the bottom. See `identityClusterCenterOffset`
+ * and `minStack`.
  */
 export type OnboardingVariant = 'identity' | 'credential' | 'lock' | 'content';
 
@@ -125,16 +126,6 @@ export interface OnboardingGrid {
   /** Which family this table belongs to. */
   readonly variant: OnboardingVariant;
   readonly chrome: number;
-  /**
-   * Reserved empty run between `chrome` and `mark`. Not a slot — nothing is
-   * ever placed in it, and it has no `testID` content.
-   *
-   * Today it carries exactly one thing: `identityClusterLead`, the
-   * owner-tunable start of the shared welcome/lock cluster. It is paid out of
-   * `body`, so every stack stays the same height and the chrome, assist,
-   * secondary and action bands do not move between families at all.
-   */
-  readonly lead: number;
   /** Reserved band for the mark. Sized by `markSize`, not by the screen. */
   readonly mark: number;
   readonly title: number;
@@ -156,21 +147,39 @@ export interface OnboardingGrid {
    * action. Equal across both variants by construction.
    */
   readonly stack: number;
+  /**
+   * The stack with `body` squeezed to the least height the family's tallest
+   * content actually needs — the biometric icon on `identity`, the field and
+   * its forgot row on `lock`. The centring lead the layouts insert on the
+   * hero pair (see `identityClusterCenterOffset`) may grow only while the
+   * viewport stays at or above this, so the fish never buys its centre by
+   * pushing real content into the action bands. Shared, as the max of the
+   * two, between `identity` and `lock` — both doors clamp to one Y.
+   */
+  readonly minStack: number;
 }
 
-const build = (g: Omit<OnboardingGrid, 'stack'>): OnboardingGrid => ({
-  ...g,
-  stack:
-    g.chrome +
-    g.lead +
-    g.mark +
-    g.title +
-    g.description +
-    g.body +
-    g.assist +
-    g.secondary +
-    g.action,
-});
+/**
+ * The tallest content each family actually places in `body` — the floor the
+ * centring lead must leave standing (`minStack`). Distinct from the reserved
+ * `body`, which is a union padded for parity; this is what a screen would
+ * visibly lose. `credential` and `content` never carry a centring lead, so
+ * their floor is never read.
+ */
+const bodyMinByVariant: Record<OnboardingVariant, number> = {
+  // The 80pt biometric icon — welcome and success put nothing in `body`.
+  identity: 80,
+  credential: 0,
+  // The password field with the forgot-password row under it.
+  lock: componentSizes.inputHeight + spacing.sm + componentSizes.buttonHeightSmall,
+  content: 0,
+};
+
+const build = (g: Omit<OnboardingGrid, 'stack' | 'minStack'>): OnboardingGrid => {
+  const stack =
+    g.chrome + g.mark + g.title + g.description + g.body + g.assist + g.secondary + g.action;
+  return { ...g, stack, minStack: stack - g.body + bodyMinByVariant[g.variant] };
+};
 
 /** True of every screen in the flow, in both variants and at both rungs. */
 const shared = {
@@ -209,16 +218,18 @@ const credentialBody =
 const contentBody = credentialBody + (heroMark - contentMark);
 
 /**
- * owner-tunable — where the identity cluster (fish → title → input) begins.
+ * owner-tunable — offset of the hero fish from the screen's vertical centre.
  *
- * Extra empty run between `chrome` and the mark on the lock and the welcome
- * screen, which share the cluster: tune one number here and both screens'
- * fish drop together, staying identical by construction. It is paid out of
- * `body`, so the stack height and the assist/secondary/action bands never
- * move while playing with it. Zero means the cluster starts where the create
- * flow's does — the mark band right under the chrome.
+ * The owner's rule for the two doors (2026-08-18, superseding "the lock is
+ * the identity reference for Y"): the fish sits at the middle of the SCREEN,
+ * vertically and horizontally, on welcome and on the lock; what each screen
+ * has under it flows down from the fish, and the actions stay at the bottom.
+ * The centre depends on the device's height, so the layouts compute it —
+ * this knob only nudges the target: positive drops the fish below centre,
+ * negative lifts it, and one number moves both doors together, staying
+ * identical by construction. Zero is dead centre.
  */
-export const identityClusterLead = 0;
+export const identityClusterCenterOffset = 0;
 
 /**
  * The lock's `description` band, collapsed.
@@ -236,21 +247,22 @@ const lockDescription = titleLine - spacing.md;
 
 /**
  * One cluster for the two screens the owner tunes as a pair — the welcome
- * mark and the lock mark share size, band and lead by this shared constant,
- * not by two numbers that happen to agree.
+ * mark and the lock mark share size and band by this shared constant, not by
+ * two numbers that happen to agree. Their vertical position is not here: it
+ * is the screen's centre, computed by the layouts and nudged by
+ * `identityClusterCenterOffset`.
  */
 const heroCluster = {
   mark: heroMark,
   markSize: heroMarkSize,
-  body: credentialBody - identityClusterLead,
-  lead: identityClusterLead,
+  body: credentialBody,
 } as const;
 
 const variantConstants = {
   identity: heroCluster,
-  credential: { mark: heroMark, markSize: heroMarkSize, body: credentialBody, lead: 0 },
+  credential: { mark: heroMark, markSize: heroMarkSize, body: credentialBody },
   lock: heroCluster,
-  content: { mark: contentMark, markSize: contentMarkSize, body: contentBody, lead: 0 },
+  content: { mark: contentMark, markSize: contentMarkSize, body: contentBody },
 } as const;
 
 const rung = (variant: OnboardingVariant, description: number): OnboardingGrid => {
@@ -269,11 +281,31 @@ const rung = (variant: OnboardingVariant, description: number): OnboardingGrid =
   return build({ variant, ...shared, ...constants, description });
 };
 
+/**
+ * The hero pair clamps its centring lead against ONE floor — the taller of
+ * the two `minStack`s — so when a short viewport forces the fish above dead
+ * centre, welcome and the lock are forced to the same Y, not each to its own.
+ */
+const shareHeroFloor = (
+  identity: OnboardingGrid,
+  lock: OnboardingGrid
+): [OnboardingGrid, OnboardingGrid] => {
+  const minStack = Math.max(identity.minStack, lock.minStack);
+  return [
+    { ...identity, minStack },
+    { ...lock, minStack },
+  ];
+};
+
 /** Rung 0 — two reserved description lines. Tall phones, the extension side panel, the web app. */
 const fullDescription = 2 * descriptionLine + spacing['2xl'];
-export const onboardingIdentityGridFull = rung('identity', fullDescription);
+const [identityFull, lockFull] = shareHeroFloor(
+  rung('identity', fullDescription),
+  rung('lock', fullDescription)
+);
+export const onboardingIdentityGridFull = identityFull;
 export const onboardingCredentialGridFull = rung('credential', fullDescription);
-export const onboardingLockGridFull = rung('lock', fullDescription);
+export const onboardingLockGridFull = lockFull;
 export const onboardingContentGridFull = rung('content', fullDescription);
 
 /**
@@ -285,9 +317,13 @@ export const onboardingContentGridFull = rung('content', fullDescription);
  * same device the moment anything else in the stack moves.
  */
 const compactDescription = descriptionLine + spacing['2xl'];
-export const onboardingIdentityGridCompact = rung('identity', compactDescription);
+const [identityCompact, lockCompact] = shareHeroFloor(
+  rung('identity', compactDescription),
+  rung('lock', compactDescription)
+);
+export const onboardingIdentityGridCompact = identityCompact;
 export const onboardingCredentialGridCompact = rung('credential', compactDescription);
-export const onboardingLockGridCompact = rung('lock', compactDescription);
+export const onboardingLockGridCompact = lockCompact;
 export const onboardingContentGridCompact = rung('content', compactDescription);
 
 /**

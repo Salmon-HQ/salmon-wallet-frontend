@@ -163,6 +163,34 @@ describe('OnboardingLayout', () => {
     expect(contentHeights.mark).not.toBe(identityHeights.mark);
   });
 
+  it.each(['identity', 'lock'] as const)(
+    '%s: centres the mark band on the middle of the surface',
+    (variant) => {
+      // The owner's rule for the two doors (2026-08-18): the fish sits at the
+      // middle of the SCREEN. The column is the full surface on the DOM, so
+      // half its measured height is the screen's centre; the computed lead
+      // drops the mark band's centre onto it, the stack fills the surface,
+      // and the actions anchor at the bottom.
+      const TALL = 1200; // roomy enough that the centring lead never clamps
+      const spy = vi
+        .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+        .mockReturnValue({ height: TALL } as DOMRect);
+      try {
+        render(<OnboardingLayout variant={variant} />);
+
+        const grid = onboardingIdentityGridFull; // same cluster numbers on lock
+        const lead = parseFloat(screen.getByTestId('onboarding-lead').style.height);
+        expect(grid.chrome + lead + grid.mark / 2).toBe(TALL / 2);
+
+        const stack = screen.getByTestId('onboarding-stack');
+        expect(stack.style.height).toBe(`${TALL}px`);
+        expect(stack.style.marginTop).toBe('0px');
+      } finally {
+        spy.mockRestore();
+      }
+    }
+  );
+
   it('draws the mark from the vector at the grid’s size, never from a raster', () => {
     render(<OnboardingLayout variant="identity" />);
     const mark = screen.getByTestId('brand-mark');
