@@ -49,4 +49,18 @@ describe('SupportSelector', () => {
 
     expect(renderSelector().UNSAFE_queryAllByType(ArrowSquareOutIcon)).toHaveLength(OPTIONS.length);
   });
+
+  // Nothing on this screen commits, so nothing on it spends the accent. The
+  // row glyphs take the quiet ink the settings rows take.
+  it('draws row glyphs in the quiet ink, not the accent', () => {
+    const { semantic } = jest.requireActual('@salmon/shared/src/theme');
+    const { QuestionIcon, EnvelopeIcon } = jest.requireActual('../../icons');
+    const tree = renderSelector();
+
+    for (const Glyph of [QuestionIcon, EnvelopeIcon]) {
+      const [node] = tree.UNSAFE_getAllByType(Glyph);
+      expect(node.props.color).toBe(semantic.text.primary);
+      expect(node.props.color).not.toBe(semantic.accent.ink);
+    }
+  });
 });

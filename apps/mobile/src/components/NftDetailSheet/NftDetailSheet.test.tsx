@@ -85,16 +85,16 @@ jest.mock('@salmon/shared', () => ({
   fleshTile: { width: 380, height: 40 },
   fleshFills: [],
   colors: {
-    text: { primary: '#fff', secondary: '#aaa', balance: '#fff' },
+    text: { primary: '#fff', secondary: '#aaa', tertiary: '#888', balance: '#fff' },
     accent: { primary: '#0f0', border: '#0c0' },
     border: { default: '#333' },
     background: { tokenItem: '#111', interactive: '#222' },
     interactive: { surface: '#111' },
     status: { error: '#f00' },
   },
-  fontSize: { sm: 14, bodyLg: 18, base: 16, '2xl': 24 },
+  fontSize: { sm: 14, bodyLg: 18, base: 16, headline: 24 },
   borderRadius: { badge: 12, iconContainer: 18, button: 16 },
-  fontFamilyNative: { bold: 'System', medium: 'System', regular: 'System' },
+  fontFamilyNative: { bold: 'System', semiBold: 'DMSansSemiBold', medium: 'System', regular: 'System' },
   gradients: { primaryButton: { colors: ['#0f0'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } },
   shadows: { imageHero: {} },
   componentSizes: { nftImageMaxWidth: 200, sheetFadeGradientHeight: 40 },
@@ -106,7 +106,7 @@ jest.mock('@salmon/shared', () => ({
   getSatRarityColor: () => '#fff',
   getShortAddress: () => 'Mint...111',
   borderWidth: { thin: 1, actionButton: 1 },
-  letterSpacing: { wide: 0 },
+  letterSpacing: { label: 0, wider: 1 },
   lineHeight: { normal: 1.4 },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, base: 8, headerPadding: 16 },
   fontWeight: { medium: '500' },
@@ -205,6 +205,33 @@ describe('NftDetailSheet', () => {
     expect(screen.getByText('Attributes')).toBeTruthy();
     expect(screen.getByText('Details')).toBeTruthy();
     expect(screen.getAllByTestId('blur-container').length).toBeGreaterThanOrEqual(4);
+  });
+
+  // The trait is the information; its name is only the label for it.
+  it('gives the attribute value the emphasis and the label the quiet ink', () => {
+    const { colors } = require('@salmon/shared');
+
+    render(
+      <NftDetailSheet
+        visible
+        onClose={jest.fn()}
+        nft={
+          {
+            mint: 'Mint111',
+            name: 'Trait NFT',
+            image: 'https://example.com/nft.png',
+            blockchain: 'solana',
+            attributes: [{ trait_type: 'Mood', value: 'Blurred' }],
+          } as any
+        }
+      />
+    );
+
+    const label = StyleSheet.flatten(screen.getByText('Mood').props.style);
+    const value = StyleSheet.flatten(screen.getByText('Blurred').props.style);
+
+    expect(label.color).toBe(colors.text.tertiary);
+    expect(value.color).toBe(colors.text.primary);
   });
 
   it('renders Burn as a destructive trigger, not a peer of Send', () => {

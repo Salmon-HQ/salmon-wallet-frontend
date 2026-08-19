@@ -67,7 +67,10 @@ export function SupportSelector({ options, onOpenLink, onBack }: SupportSelector
         <View style={styles.optionIconContainer}>
           {React.createElement(ICON_MAP[option.id] || QuestionIcon, {
             size: iconSize.lg,
-            color: semantic.accent.ink,
+            // A list where nothing commits has no living element to spend the
+            // accent on. Row glyphs take the same quiet ink and neutral tile
+            // the settings rows use.
+            color: semantic.text.primary,
           })}
         </View>
         <View style={styles.optionContent}>
@@ -115,7 +118,7 @@ const styles = StyleSheet.create({
     width: componentSizes.iconSize3XL,
     height: componentSizes.iconSize3XL,
     borderRadius: borderRadius.r2,
-    backgroundColor: semantic.accent.tint,
+    backgroundColor: colors.background.card,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,

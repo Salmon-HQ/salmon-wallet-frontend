@@ -1011,8 +1011,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   nftName: {
-    fontSize: ms(fontSize['2xl']),
-    fontFamily: fontFamilyNative.bold,
+    fontSize: ms(fontSize.headline),
+    fontFamily: fontFamilyNative.semiBold,
     color: colors.text.primary,
     textAlign: 'center',
     marginBottom: vs(spacing.sm),
@@ -1092,18 +1092,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(spacing.xs),
     paddingVertical: vs(spacing.sm),
   },
+  // The trait name is the label and the trait is the information, so the
+  // emphasis runs the same way it does on a receipt row: quiet label, loud
+  // value.
   attributeName: {
     fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
+    fontFamily: fontFamilyNative.medium,
+    color: colors.text.tertiary,
     marginBottom: vs(spacing.xs),
     textTransform: 'uppercase',
     letterSpacing: letterSpacing.wider,
   },
   attributeValue: {
     fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.regular,
-    color: colors.text.secondary,
+    fontFamily: fontFamilyNative.bold,
+    color: colors.text.primary,
   },
   detailRow: {
     flexDirection: 'row',
