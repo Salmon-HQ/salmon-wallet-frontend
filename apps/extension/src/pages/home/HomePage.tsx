@@ -67,6 +67,7 @@ import {
   ActionButtonRow,
   TokenList,
   TokenDetailContent,
+  FadeThrough,
   TokenDetailPage,
   NftDetailPage,
   NftSeeAllPage,
@@ -1476,51 +1477,56 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               {/* Token List Section — only this area scrolls */}
               <TokenSectionWrapper>
                 <TopListFade ref={topFadeRef} />
-                {currentBlockchain === 'bitcoin' ? (
-                  <TokenSection onScroll={handleTokenListScroll}>
-                    {/* Bitcoin's home tab *is* the token detail screen — the
+                {/* Keyed by chain: switching chains swaps this whole area with
+                    a fade-through (enter with fade + settle from scale 0.97)
+                    instead of a hard cut; reduce motion keeps the cut. */}
+                <FadeThrough transitionKey={currentBlockchain}>
+                  {currentBlockchain === 'bitcoin' ? (
+                    <TokenSection onScroll={handleTokenListScroll}>
+                      {/* Bitcoin's home tab *is* the token detail screen — the
                         same composition the pushed page renders, minus the
                         push. It shares that component so the two cannot drift
                         into different spacing, titles or chart heights again. */}
-                    <TokenDetailContent
-                      token={hasData ? bitcoinToken : undefined}
-                      blockchain="bitcoin"
-                      hiddenBalance={hiddenBalance}
-                      chartData={bitcoinChartData}
-                      chartPeriod={bitcoinChartPeriod}
-                      onChartPeriodChange={setBitcoinChartPeriod}
-                      chartLoading={bitcoinChartLoading && bitcoinChartData.length === 0}
-                      chartPending={bitcoinChartPending}
-                      chartError={!!bitcoinDataError && bitcoinChartData.length === 0}
-                      coinInfo={bitcoinCoinInfo}
-                      marketData={bitcoinMarketData}
-                      infoLoading={bitcoinInfoLoading && !bitcoinCoinInfo}
-                      bleed={spacing.lg}
-                    />
-                  </TokenSection>
-                ) : (
-                  <TokenSection onScroll={handleTokenListScroll}>
-                    {formattedTokens.length > 0 || !hasData ? (
-                      <TokenList
-                        tokens={formattedTokens}
-                        loading={!hasData}
-                        onTokenPress={handleTokenPress}
+                      <TokenDetailContent
+                        token={hasData ? bitcoinToken : undefined}
+                        blockchain="bitcoin"
                         hiddenBalance={hiddenBalance}
-                        blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+                        chartData={bitcoinChartData}
+                        chartPeriod={bitcoinChartPeriod}
+                        onChartPeriodChange={setBitcoinChartPeriod}
+                        chartLoading={bitcoinChartLoading && bitcoinChartData.length === 0}
+                        chartPending={bitcoinChartPending}
+                        chartError={!!bitcoinDataError && bitcoinChartData.length === 0}
+                        coinInfo={bitcoinCoinInfo}
+                        marketData={bitcoinMarketData}
+                        infoLoading={bitcoinInfoLoading && !bitcoinCoinInfo}
+                        bleed={spacing.lg}
                       />
-                    ) : (
-                      <EmptyState>
-                        <EmptyStateText>{t('home.no_tokens', 'No tokens found')}</EmptyStateText>
-                        <EmptyStateSubtext>
-                          {t(
-                            'home.no_tokens_hint',
-                            'Your tokens will appear here once you receive some'
-                          )}
-                        </EmptyStateSubtext>
-                      </EmptyState>
-                    )}
-                  </TokenSection>
-                )}
+                    </TokenSection>
+                  ) : (
+                    <TokenSection onScroll={handleTokenListScroll}>
+                      {formattedTokens.length > 0 || !hasData ? (
+                        <TokenList
+                          tokens={formattedTokens}
+                          loading={!hasData}
+                          onTokenPress={handleTokenPress}
+                          hiddenBalance={hiddenBalance}
+                          blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+                        />
+                      ) : (
+                        <EmptyState>
+                          <EmptyStateText>{t('home.no_tokens', 'No tokens found')}</EmptyStateText>
+                          <EmptyStateSubtext>
+                            {t(
+                              'home.no_tokens_hint',
+                              'Your tokens will appear here once you receive some'
+                            )}
+                          </EmptyStateSubtext>
+                        </EmptyState>
+                      )}
+                    </TokenSection>
+                  )}
+                </FadeThrough>
 
                 <BottomListFade ref={bottomFadeRef} />
               </TokenSectionWrapper>

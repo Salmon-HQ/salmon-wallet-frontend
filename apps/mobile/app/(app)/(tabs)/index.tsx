@@ -31,6 +31,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 
 import {
   borderRadius,
@@ -86,6 +87,7 @@ import {
   type Transaction,
 } from '../../../src/components';
 import { useDeveloperMode } from '../../../src/contexts/DeveloperModeContext';
+import { fadeThroughEntering, fadeThroughExiting } from '../../../src/utils/fadeThrough';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 
 // Map blockchain to logo URL (outside component to avoid recreation)
@@ -158,6 +160,7 @@ function mapBalanceToToken(item: {
 export default function HomeScreen() {
   const { t } = useTranslation();
   const { scrollBottomPadding } = useTabChrome();
+  const isReduceMotionEnabled = useReducedMotion();
   const [{ currency }] = useCurrencyContext();
 
   // Top fade gradient opacity - animated based on scroll position
@@ -835,73 +838,87 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Scrollable Token List or Bitcoin View */}
+      {/* Scrollable Token List or Bitcoin View.
+          Keyed by chain so switching chains swaps the whole container with a
+          fade-through (Material "fade through": exit in a flick, enter with a
+          fade + settle from scale 0.97) instead of a hard cut. Under reduce
+          motion both props are undefined and the swap stays instant. */}
       <View style={styles.listContainer}>
-        {currentBlockchain === 'bitcoin' ? (
-          // Bitcoin view with chart, about, and market data
-          <ScrollView
-            style={styles.bitcoinScrollView}
-            contentContainerStyle={[styles.bitcoinContent, { paddingBottom: scrollBottomPadding }]}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Price Chart */}
-            <View style={styles.bitcoinSection}>
-              <PriceChart
-                data={bitcoinChartData}
-                selectedPeriod={bitcoinChartPeriod}
-                onPeriodChange={handleChartPeriodChange}
-                loading={bitcoinDataLoading && bitcoinChartData.length === 0}
-                error={bitcoinChartError && bitcoinChartData.length === 0}
-                height={180}
-              />
-            </View>
-
-            {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
-            {!hasData ? (
-              <TokenListSkeleton count={1} />
-            ) : (
-              bitcoinToken && (
-                <TokenListItem
-                  token={bitcoinToken}
-                  hiddenBalance={hiddenBalance}
-                  blockchain="bitcoin"
+        <Reanimated.View
+          key={currentBlockchain}
+          style={styles.chainContent}
+          entering={fadeThroughEntering(isReduceMotionEnabled)}
+          exiting={fadeThroughExiting(isReduceMotionEnabled)}
+        >
+          {currentBlockchain === 'bitcoin' ? (
+            // Bitcoin view with chart, about, and market data
+            <ScrollView
+              style={styles.bitcoinScrollView}
+              contentContainerStyle={[
+                styles.bitcoinContent,
+                { paddingBottom: scrollBottomPadding },
+              ]}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Price Chart */}
+              <View style={styles.bitcoinSection}>
+                <PriceChart
+                  data={bitcoinChartData}
+                  selectedPeriod={bitcoinChartPeriod}
+                  onPeriodChange={handleChartPeriodChange}
+                  loading={bitcoinDataLoading && bitcoinChartData.length === 0}
+                  error={bitcoinChartError && bitcoinChartData.length === 0}
+                  height={180}
                 />
-              )
-            )}
+              </View>
 
-            {/* Market Data */}
-            <View style={styles.bitcoinSection}>
-              <TokenMarketData
-                data={bitcoinMarketData}
-                symbol="BTC"
-                loading={bitcoinDataLoading && !bitcoinCoinInfo}
-              />
-            </View>
+              {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
+              {!hasData ? (
+                <TokenListSkeleton count={1} />
+              ) : (
+                bitcoinToken && (
+                  <TokenListItem
+                    token={bitcoinToken}
+                    hiddenBalance={hiddenBalance}
+                    blockchain="bitcoin"
+                  />
+                )
+              )}
 
-            {/* About Section - at the end */}
-            <View style={styles.bitcoinSection}>
-              <TokenAbout
-                description={bitcoinCoinInfo?.description}
-                loading={bitcoinDataLoading && !bitcoinCoinInfo}
-              />
-            </View>
-          </ScrollView>
-        ) : (
-          // Normal token list for Solana/Ethereum
-          <TokenList
-            tokens={tokenListItems}
-            loading={!hasData}
-            onTokenPress={handleTokenPress}
-            hiddenBalance={hiddenBalance}
-            ListEmptyComponent={ListEmptyComponent}
-            refreshing={refreshing}
-            onRefresh={refresh}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            contentContainerStyle={[styles.listContent, { paddingBottom: scrollBottomPadding }]}
-            blockchain={getBlockchainFromNetworkId(currentBlockchain)}
-          />
-        )}
+              {/* Market Data */}
+              <View style={styles.bitcoinSection}>
+                <TokenMarketData
+                  data={bitcoinMarketData}
+                  symbol="BTC"
+                  loading={bitcoinDataLoading && !bitcoinCoinInfo}
+                />
+              </View>
+
+              {/* About Section - at the end */}
+              <View style={styles.bitcoinSection}>
+                <TokenAbout
+                  description={bitcoinCoinInfo?.description}
+                  loading={bitcoinDataLoading && !bitcoinCoinInfo}
+                />
+              </View>
+            </ScrollView>
+          ) : (
+            // Normal token list for Solana/Ethereum
+            <TokenList
+              tokens={tokenListItems}
+              loading={!hasData}
+              onTokenPress={handleTokenPress}
+              hiddenBalance={hiddenBalance}
+              ListEmptyComponent={ListEmptyComponent}
+              refreshing={refreshing}
+              onRefresh={refresh}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              contentContainerStyle={[styles.listContent, { paddingBottom: scrollBottomPadding }]}
+              blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+            />
+          )}
+        </Reanimated.View>
         {/* Top fade gradient - shows only when scrolled, fades in dynamically */}
         <Animated.View
           style={[styles.topFadeGradient, { opacity: topFadeOpacity }]}
@@ -1002,6 +1019,9 @@ const styles = StyleSheet.create({
     marginBottom: vs(spacing.md),
   },
   listContainer: {
+    flex: 1,
+  },
+  chainContent: {
     flex: 1,
   },
   balanceErrorBanner: {

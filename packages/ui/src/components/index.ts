@@ -126,6 +126,10 @@ export type { GradientBackgroundProps } from './GradientBackground';
 export { BlurContainer } from './BlurContainer';
 export type { BlurContainerProps, BlurTint } from './BlurContainer';
 
+// FadeThrough - keyed top-level content swap under a persistent frame
+export { FadeThrough } from './FadeThrough';
+export type { FadeThroughProps } from './FadeThrough';
+
 // PendingValue - a value being recalculated inside a container that stays put
 export { PendingValue } from './PendingValue';
 export type { PendingValueProps } from './PendingValue';
@@ -359,11 +363,7 @@ export type { NftSendDialogProps } from './NftSendDialog';
 
 // SeedPhrase - Seed word display grid and validation input
 export { SeedPhraseEntry, SeedWordGrid, SeedWordInput } from './SeedPhrase';
-export type {
-  SeedPhraseEntryProps,
-  SeedWordGridProps,
-  SeedWordInputProps,
-} from './SeedPhrase';
+export type { SeedPhraseEntryProps, SeedWordGridProps, SeedWordInputProps } from './SeedPhrase';
 
 // NetworkSelector - Network selection for settings
 export { NetworkSelector } from './NetworkSelector';

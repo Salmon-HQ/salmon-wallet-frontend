@@ -48,6 +48,16 @@ export const motionMs = {
    */
   drift: 280,
   /**
+   * 200ms — the entering half of a fade-through content swap (Material
+   * Design's "fade through": top-level content is replaced under a frame that
+   * stays put — the incoming view fades in and settles from `scale(0.97)`
+   * while the outgoing one drops away in a `flick`). Shorter than `drift`
+   * because nothing travels: the frame, the header and the selector all hold
+   * still, so all the eye has to read is an arrival. Home's per-chain
+   * content (token list ↔ Bitcoin view) is the canonical user.
+   */
+  contentSwap: 200,
+  /**
    * 420ms — sheet presentation. translateY 100%→0 with the backdrop blur and
    * scrim moving over the same window, so the sheet and the water above it are
    * one gesture instead of two.
@@ -128,6 +138,8 @@ export const motionDuration = {
   ebb: `${motionMs.ebb}ms`,
   /** 280ms — element enter, expand/collapse, tab change */
   drift: `${motionMs.drift}ms`,
+  /** 200ms — the entering half of a fade-through content swap */
+  contentSwap: `${motionMs.contentSwap}ms`,
   /** 420ms — sheet presentation */
   rise: `${motionMs.rise}ms`,
   /** 420ms — route transition */
