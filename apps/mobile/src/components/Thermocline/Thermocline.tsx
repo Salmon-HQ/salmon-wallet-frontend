@@ -2,15 +2,10 @@ import { semantic } from '@salmon/shared';
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { thermoclineVariant } from '../../debug/thermoclineVariant';
-import { BlurContainer } from '../BlurContainer';
 import { ScalesBackground } from '../ScalesBackground';
 import type { ThermoclineProps, ThermoclineTier } from './types';
 
 const { scales } = semantic;
-
-/** Rung 4 blur radii per tier (20px thin / 32px thick), as expo-blur intensity. */
-const BLUR_INTENSITY: Record<ThermoclineTier, number> = { thin: 60, thick: 96 };
 
 const SCRIM: Record<ThermoclineTier, string> = {
   thin: semantic.surface.membraneThin,
@@ -22,25 +17,7 @@ const OPAQUE: Record<ThermoclineTier, string> = {
   thick: semantic.surface.crest,
 };
 
-/**
- * Rung 4's `@supports (backdrop-filter: blur(1px))` gate, in its JS form.
- * Without support the tint alone still holds the scrim floor — the alpha is
- * derived from a pure-white worst case, so blur is aesthetic, not
- * contractual.
- */
-function supportsBackdropBlur(): boolean {
-  try {
-    return (
-      typeof CSS !== 'undefined' &&
-      typeof CSS.supports === 'function' &&
-      CSS.supports('backdrop-filter', 'blur(1px)')
-    );
-  } catch {
-    return false;
-  }
-}
-
-/** Rung 5 entry on the DOM: the OS signal, `prefers-reduced-transparency`. */
+/** Opaque-rung entry on the DOM: the OS signal, `prefers-reduced-transparency`. */
 function prefersReducedTransparency(): boolean {
   try {
     return (
@@ -55,27 +32,13 @@ function prefersReducedTransparency(): boolean {
 
 /**
  * Thermocline — web (react-native-web) build of the material. Same contract
- * as the native file, minus the native glass rungs: tint always, blur when
- * the browser supports `backdrop-filter`, and the opaque plane when the OS
- * asks for reduced transparency. See `Thermocline.native.tsx` for the
- * material's full story.
+ * as the native file: the tint alone (adopted 2026-08-19), collapsing to the
+ * opaque plane when the OS asks for reduced transparency. See
+ * `Thermocline.native.tsx` for the material's full story.
  */
-export function Thermocline({
-  surface: _surface,
-  tier = 'thin',
-  refraction = true,
-  style,
-  borderColor,
-  borderWidth,
-}: ThermoclineProps) {
+export function Thermocline({ tier = 'thin', refraction = true, style }: ThermoclineProps) {
   const scrim = SCRIM[tier];
-  const reduced = prefersReducedTransparency();
-  const rung =
-    reduced || thermoclineVariant === 'opaque'
-      ? 'opaque'
-      : thermoclineVariant === 'tint' || !supportsBackdropBlur()
-        ? 'tint'
-        : 'blur';
+  const rung = prefersReducedTransparency() ? 'opaque' : 'tint';
 
   const flat = StyleSheet.flatten(style) ?? {};
   const fill: StyleProp<ViewStyle> = [
@@ -85,20 +48,6 @@ export function Thermocline({
 
   return (
     <View style={[styles.root, style]} pointerEvents="none">
-      {rung === 'blur' && (
-        <BlurContainer
-          style={fill}
-          blurIntensity={BLUR_INTENSITY[tier]}
-          blurTint="systemThickMaterialDark"
-          backgroundColor={scrim}
-          borderColor={borderColor}
-          borderWidth={borderWidth}
-          useGradientBorder
-          pointerEvents="none"
-        >
-          <></>
-        </BlurContainer>
-      )}
       {rung === 'opaque' && (
         <View
           style={[fill, { backgroundColor: OPAQUE[tier] }]}

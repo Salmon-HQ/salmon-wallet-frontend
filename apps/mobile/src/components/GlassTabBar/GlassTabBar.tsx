@@ -172,7 +172,6 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
             material's own bottom edge and stays as it is.
           */}
           <Thermocline
-            surface="chrome"
             tier="thick"
             style={styles.glassBackgroundLayer}
             borderColor={colors.border.subtle}

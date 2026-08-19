@@ -118,7 +118,7 @@ export { GlassTabBar } from './GlassTabBar';
 export type { GlassTabBarProps, TabConfig } from './GlassTabBar';
 
 export { Thermocline } from './Thermocline';
-export type { ThermoclineProps, ThermoclineSurface, ThermoclineTier } from './Thermocline';
+export type { ThermoclineProps, ThermoclineTier } from './Thermocline';
 
 // ---------------------------------------------------------------------------
 // Sheets & Modals

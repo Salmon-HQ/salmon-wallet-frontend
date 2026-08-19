@@ -266,7 +266,7 @@ marks its parts.
 | The water column: depth ramp + marine snow field (`semantic.water`, geometry, both renderers) | **Shipped**, full column height                                                             | `packages/shared/src/theme/depthField.ts`, `packages/ui/src/components/DepthBackground`, `apps/mobile/src/components/DepthBackground`                                                                                        |
 | Opaque list rows (plane P2), so the motif is occluded rather than cropped                     | **Shipped**                                                                                 | `packages/shared/src/theme/colors.ts` (`background.tokenItem`), both `BlurContainer`s                                                                                                                                        |
 | The water column mounted on the app ground                                                    | **Shipped** app-wide: home, onboarding/auth, lock, and every stacked page in all three apps | `packages/ui/src/components/WaterColumn` and `PageShell` / `AuthFlow` / both `LockPage`s, `apps/mobile/app/(app)/(tabs)/_layout.tsx` and `app/(auth)/_layout.tsx`, `apps/web` and `apps/extension` `pages/home/HomePage.tsx` |
-| The flesh texture inside salmon fills (`lean` variant, 138×88 tile, bands raked 32°)          | **Shipped**                                                                                 | `scripts/flesh.py` → `packages/shared/src/theme/flesh.ts`, `semantic.flesh`, both `FleshBackground` renderers                                                                                                                |
+| The flesh texture inside salmon fills (the `marbled` drawing; the earlier `lean` variant and its `scripts/flesh.py` generator were retired 2026-08-18) | **Shipped**                                                                                 | `packages/shared/src/theme/flesh.ts` (generated in TS at import time), `semantic.flesh`, both `FleshBackground` renderers                                                                                                     |
 | Scales motif rework — reduced to the deep field and the caustic band                          | **Shipped**                                                                                 | `ScalesBackground` `deepField` / `caustic`; the `fish` variant is retired in favour of flesh and kept only as an export                                                                                                      |
 | Bezel on filled controls (`shadowsCSS.bezel`, same literal on DOM and RN)                     | **Shipped**                                                                                 | `packages/shared/src/theme/shadows.ts`                                                                                                                                                                                       |
 | Motion vocabulary (`flick`…`tide`, `current`/`settle`/`sink`/`swellIn`)                       | **Shipped**, and applied in `apps/mobile` with no loose durations left                      | `packages/shared/src/theme/durations.ts`, `apps/mobile/src/utils/motion.ts`, `apps/mobile/hooks/usePressMotion.ts`                                                                                                           |
@@ -277,7 +277,7 @@ marks its parts.
 | Sand / seabed, ambient light shafts                                                           | **Refused by design** — see §Overview and §The water column                                 | —                                                                                                                                                                                                                            |
 | Marine snow drift + scroll parallax, both reduced-motion gated                                | **Shipped**                                                                                 | `packages/shared/src/theme/depthField.ts` (`depthDrift`), both `DepthBackground`s                                                                                                                                            |
 | Light theme (index-flip resolver)                                                             | **Rejected by the owner** (2026-08-18) — see §The light theme                               | —                                                                                                                                                                                                                            |
-| Material/membrane model and the five-rung degradation ladder                                  | **Built** as the `Thermocline` component (2026-08-19) — see §The thermocline                | `apps/mobile/src/components/Thermocline`, `packages/ui/src/components/Thermocline`; first consumers: the tab bar and the Receive sheet                                                                                       |
+| Material/membrane model — the thermocline, adopted as the `tint` rendering (2026-08-19)       | **Shipped** as the `Thermocline` component; the glass/blur rungs were removed with the adoption — see §The thermocline | `apps/mobile/src/components/Thermocline`, `packages/ui/src/components/Thermocline`; first consumers: the tab bar and the Receive sheet                                                                                       |
 | Icons on mobile (`phosphor-react-native`)                                                     | **Specified, not built**                                                                    | only `@phosphor-icons/react` is installed, in `packages/ui`                                                                                                                                                                  |
 | Type scale (`display`…`monoLg`), radius scale (`r0`…`r6`), spacing rhythm                     | **Partly built** — the radius scale's control end is shipped; the rest specified            | Every control now sits on one 12px token (§The Control Radius Rule); `typography.ts` and the container end of `spacing.ts` still carry the Figma-derived one-offs                                                            |
 
@@ -780,13 +780,15 @@ of". The equivalence is one-to-one: `membraneThin` is the thermocline's thin
 tier, `membraneThick` its thick tier, and the `gradients.tabBarFade` ramp
 under the tab bar is the material's own bottom edge. The component is
 `Thermocline` on both platforms (`apps/mobile/src/components/Thermocline`,
-`packages/ui/src/components/Thermocline`), it implements the degradation
-ladder below rung for rung, and it carries the refraction strip as part of
-the material. A debug-only switch (`thermoclineVariant`, mobile
-`src/debug/thermoclineVariant.ts` with a DOM mirror next to the component)
-lets the owner's eye compare `glass` / `opaque` / `tint` renderings; all
-three keep the scrim floor and the strip, so legibility never varies with
-the switch, and the OS reduce-transparency signal outranks it.
+`packages/ui/src/components/Thermocline`), and it carries the refraction
+strip as part of the material. The rendering is **`tint`** — the translucent
+membrane ink alone, no blur: the owner compared `glass` / `opaque` / `tint`
+live in the tab bar and the Receive sheet through a debug switch and adopted
+tint (2026-08-19); the switch files are deleted and the glass and blur code
+paths removed with them. Glass could return in another context someday, but
+it is not built. The scrim floor and the strip are unconditional, and the OS
+reduce-transparency signal still collapses the material to the nearest
+opaque plane.
 
 ### The scrim floor
 
@@ -808,7 +810,13 @@ nothing secondary and nothing salmon. Secondary text and status colors require
 past the point where glass is still glass); on a membrane salmon appears only as
 a fill with `neutral-1000` ink, which is opaque and immune.
 
-### The degradation ladder — built (the `Thermocline` component, 2026-08-19)
+### The degradation ladder — built, then collapsed by the tint adoption
+
+**Status (2026-08-19):** rungs 1–3 (liquid glass and both blur rungs) were
+removed from the code when the owner adopted the `tint` rendering; rung 4's
+backdrop-filter went with them. What ships is the tint plus rung 5 (the
+opaque plane, still entered by the OS reduce-transparency signal). The
+ladder below is kept as documented history of what was built and why.
 
 Verified against the packages installed in this repo: `expo-glass-effect`
 (`GlassView`, `GlassContainer`, `isLiquidGlassAvailable`), `expo-blur`
@@ -1014,8 +1022,10 @@ the eye must filter out.
 
 ### The flesh texture
 
-**Shipped.** The myoseptal texture of salmon flesh, as path data, generated by
-`scripts/flesh.py` into `packages/shared/src/theme/flesh.ts`, inked from
+**Shipped.** The myoseptal texture of salmon flesh, as path data, generated
+in TypeScript at import time inside `packages/shared/src/theme/flesh.ts`
+(the original `scripts/flesh.py` generator and its `lean` drawing were
+retired 2026-08-18 when `marbled` won the comparison), inked from
 `semantic.flesh`, and drawn by a `FleshBackground` on each platform — the same
 one-geometry-two-renderers ownership the scales and the snow use.
 

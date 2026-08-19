@@ -110,7 +110,7 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
       // The sheet's ground is the thermocline at its thick tier — a sheet is
       // the one surface Android may blur (at most one per screen), and thick
       // is what lets the secondary copy below keep its contrast floor.
-      background={<Thermocline surface="sheet" tier="thick" style={styles.thermocline} />}
+      background={<Thermocline tier="thick" style={styles.thermocline} />}
     >
       {/* Content */}
       <View style={[styles.content, { paddingBottom: spaciousContentBottomPadding }]}>

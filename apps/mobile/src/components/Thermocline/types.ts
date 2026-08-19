@@ -7,15 +7,7 @@ import type { StyleProp, ViewStyle } from 'react-native';
  */
 export type ThermoclineTier = 'thin' | 'thick';
 
-/**
- * What kind of chrome the surface is. On Android only a `sheet` may blur
- * (at most one blur per screen, ratified 2026-08-18); `chrome` — tab bar,
- * sticky header — lands on the opaque rung there.
- */
-export type ThermoclineSurface = 'sheet' | 'chrome';
-
 export interface ThermoclineProps {
-  surface: ThermoclineSurface;
   /** @default 'thin' */
   tier?: ThermoclineTier;
   /**
@@ -29,7 +21,7 @@ export interface ThermoclineProps {
    * rung so the layout does not move by a pixel between them.
    */
   style?: StyleProp<ViewStyle>;
-  /** Blur rung only — gradient border color, as the tab bar wears today. */
+  /** Unread since the tint adoption (2026-08-19) — the blur rung wore them. */
   borderColor?: string;
   borderWidth?: number;
 }
