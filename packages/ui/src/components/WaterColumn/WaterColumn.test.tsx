@@ -68,13 +68,21 @@ describe('WaterColumn', () => {
 });
 
 describe('the surfaces the water column must never reach', () => {
-  it.each([
-    ['CreateWalletPage', '../AuthFlow/CreateWalletPage.tsx'],
-    ['RecoverWalletPage', '../AuthFlow/RecoverWalletPage.tsx'],
-  ])('keeps the seed view %s on opaque bedrock', (_name, path) => {
-    const source = read(path);
+  it('keeps the seed EXHIBITION (CreateWalletPage) on opaque bedrock', () => {
+    // The Bedrock Rule, narrowed (owner, 2026-08-18): bedrock covers the
+    // views that SHOW a seed — create's warning, display and validation.
+    const source = read('../AuthFlow/CreateWalletPage.tsx');
     expect(source).toContain('semantic.surface.bedrock');
     expect(source).not.toContain('WaterColumn');
+  });
+
+  it('lets seed ENTRY (RecoverWalletPage) stand in the water', () => {
+    // Typing an existing phrase back in is not the ceremonial moment of its
+    // birth: recover carries the same ground as the rest of the flow. The
+    // capture protection is unchanged — only the ground moved.
+    const source = read('../AuthFlow/RecoverWalletPage.tsx');
+    expect(source).toContain('WaterColumn');
+    expect(source).not.toContain('semantic.surface.bedrock');
   });
 
   it.each([

@@ -23,6 +23,7 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
+  componentSizes,
   fontFamily,
   fontSize,
   generateMnemonic,
@@ -33,6 +34,7 @@ import {
   spacing,
   validateMnemonicWords,
 } from '@salmon/shared';
+import { SparkleIcon, WarningIcon } from '../../icons';
 import { useCallback, useEffect, useMemo, useRef, useState, type UIEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
@@ -50,6 +52,9 @@ export const CREATE_FLOW_STEPS = 4;
 
 /** Slop, in px, so a scroll that stops a hair short of the end still counts. */
 const END_SLOP = 8;
+
+/** The step glyph fills the top slot: the grid's own mark size for `content`. */
+const ICON_SIZE = componentSizes.logoSizeSmall;
 
 interface ValidationWord {
   position: number;
@@ -121,6 +126,13 @@ function MessageStep({
       testID="seed-warning-screen"
       variant="content"
       backgroundColor={semantic.surface.bedrock}
+      /*
+        The warning glyph, in the mark slot — the gate names itself. Mirrors
+        the mobile flow (owner, 2026-08-18): the fish stays on welcome and the
+        lock only; each flow step wears one semantic glyph, the consent
+        screen's pattern and size.
+      */
+      mark={<WarningIcon size={ICON_SIZE} color={semantic.text.primary} />}
       chrome={
         <ScreenHeader
           onBack={onBack}
@@ -178,6 +190,9 @@ function SeedPhraseStep({
         variant="content"
         backgroundColor={semantic.surface.bedrock}
         scrollBody
+        // The sparkle: something new coming into being. See the warning
+        // phase's mark note above.
+        mark={<SparkleIcon size={ICON_SIZE} color={semantic.text.primary} />}
         chrome={
           <ScreenHeader
             onBack={onBack}
@@ -274,6 +289,9 @@ function ValidateStep({
       variant="content"
       backgroundColor={semantic.surface.bedrock}
       scrollBody
+      // Same glyph as the phrase it confirms — the step dots carry which half
+      // of the creation this is.
+      mark={<SparkleIcon size={ICON_SIZE} color={semantic.text.primary} />}
       chrome={
         <ScreenHeader
           onBack={onBack}

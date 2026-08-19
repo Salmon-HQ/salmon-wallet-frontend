@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { Modal, View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useSwapScreenLogic,
@@ -22,6 +23,7 @@ import { TokenSelectorModal } from '../TokenSelector';
 import { BridgeRecipientScreen } from '../BridgeScreen/BridgeRecipientScreen';
 import { BridgeReviewScreen } from '../BridgeScreen/BridgeReviewScreen';
 import { WarningNotice } from '../WarningNotice';
+import { floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
 import type { SwapScreenProps } from './types';
 
 /**
@@ -37,6 +39,17 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   const insets = useSafeAreaInsets();
 
   const { trackBridgeExchange, isStalled, retryNow } = useBridgeSettlement();
+
+  // Step changes speak the sink and the float: the outgoing step sinks as its
+  // light goes, the incoming one floats up into place. The ground under them —
+  // DepthBackground, ScalesBackground — is mounted outside the steps and never
+  // travels. The success step is the one exception: its entrance is The
+  // Surfacing, and the verb must not double it — review's sink is the only
+  // half that plays on that handoff. Under reduce motion both helpers return
+  // undefined and every step change is an instant cut.
+  const isReduceMotionEnabled = useReducedMotion();
+  const stepEntering = floatEntering(isReduceMotionEnabled);
+  const stepExiting = sinkExiting(isReduceMotionEnabled);
 
   const logic = useSwapScreenLogic({
     ...props,
@@ -116,7 +129,8 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
     <View style={[styles.container, style]}>
       {!isTaskStep && stalledBanner}
       {logic.step === 'input' && (
-        <SwapInputScreen
+        <Animated.View style={styles.step} entering={stepEntering} exiting={stepExiting}>
+          <SwapInputScreen
           inToken={logic.inToken}
           outToken={logic.outToken}
           inAmount={logic.inAmount}
@@ -138,19 +152,22 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
               : null
           }
           onReview={logic.handleReview}
-        />
+          />
+        </Animated.View>
       )}
 
       {logic.step === 'recipient' && logic.swapMode === 'stealthex' && (
-        <BridgeRecipientScreen
-          recipientAddress={logic.recipientAddress}
-          onAddressChange={logic.setRecipientAddress}
-          targetChain={logic.bridgeTargetChain}
-          onBack={logic.handleBackFromRecipient}
-          onContinue={logic.handleContinueToReview}
-          isValidAddress={logic.addressValidation.valid}
-          addressError={logic.addressError}
-        />
+        <Animated.View style={styles.step} entering={stepEntering} exiting={stepExiting}>
+          <BridgeRecipientScreen
+            recipientAddress={logic.recipientAddress}
+            onAddressChange={logic.setRecipientAddress}
+            targetChain={logic.bridgeTargetChain}
+            onBack={logic.handleBackFromRecipient}
+            onContinue={logic.handleContinueToReview}
+            isValidAddress={logic.addressValidation.valid}
+            addressError={logic.addressError}
+          />
+        </Animated.View>
       )}
 
       <Modal
@@ -171,44 +188,48 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
           {stalledBanner}
 
           {logic.step === 'review' &&
-        logic.swapMode === 'jupiter' &&
-        logic.quote &&
-        logic.inToken &&
-        logic.outToken && (
-          <SwapReviewScreen
-            quote={logic.quote}
-            inToken={logic.inToken}
-            outToken={logic.outToken}
-            inAmount={logic.inAmount}
-            outAmount={logic.outAmount}
-            onBack={logic.handleBackFromReview}
-            onConfirm={logic.handleConfirmOrRefresh}
-            isConfirming={logic.isConfirming}
-            isRefreshing={logic.isLoadingQuote}
-            confirmLabel={logic.swapConfirmLabel}
-            style={taskScreenStyle}
-          />
-        )}
+            logic.swapMode === 'jupiter' &&
+            logic.quote &&
+            logic.inToken &&
+            logic.outToken && (
+              <Animated.View style={styles.step} entering={stepEntering} exiting={stepExiting}>
+                <SwapReviewScreen
+                  quote={logic.quote}
+                  inToken={logic.inToken}
+                  outToken={logic.outToken}
+                  inAmount={logic.inAmount}
+                  outAmount={logic.outAmount}
+                  onBack={logic.handleBackFromReview}
+                  onConfirm={logic.handleConfirmOrRefresh}
+                  isConfirming={logic.isConfirming}
+                  isRefreshing={logic.isLoadingQuote}
+                  confirmLabel={logic.swapConfirmLabel}
+                  style={taskScreenStyle}
+                />
+              </Animated.View>
+            )}
 
-      {logic.step === 'review' &&
-        logic.swapMode === 'stealthex' &&
-        logic.bridgeInToken &&
-        logic.bridgeOutToken && (
-          <BridgeReviewScreen
-            inToken={logic.bridgeInToken}
-            outToken={logic.bridgeOutToken}
-            inAmount={logic.inAmount}
-            outAmount={logic.outAmount}
-            recipientAddress={logic.recipientAddress}
-            estimate={logic.bridgeEstimateForReview}
-            onBack={logic.handleBackFromReview}
-            onConfirm={logic.handleConfirmOrRefresh}
-            isConfirming={logic.isConfirming}
-            isRefreshing={logic.isLoadingEstimate}
-            confirmLabel={logic.swapConfirmLabel}
-            style={taskScreenStyle}
-          />
-        )}
+          {logic.step === 'review' &&
+            logic.swapMode === 'stealthex' &&
+            logic.bridgeInToken &&
+            logic.bridgeOutToken && (
+              <Animated.View style={styles.step} entering={stepEntering} exiting={stepExiting}>
+                <BridgeReviewScreen
+                  inToken={logic.bridgeInToken}
+                  outToken={logic.bridgeOutToken}
+                  inAmount={logic.inAmount}
+                  outAmount={logic.outAmount}
+                  recipientAddress={logic.recipientAddress}
+                  estimate={logic.bridgeEstimateForReview}
+                  onBack={logic.handleBackFromReview}
+                  onConfirm={logic.handleConfirmOrRefresh}
+                  isConfirming={logic.isConfirming}
+                  isRefreshing={logic.isLoadingEstimate}
+                  confirmLabel={logic.swapConfirmLabel}
+                  style={taskScreenStyle}
+                />
+              </Animated.View>
+            )}
 
       {logic.step === 'success' && (
         <TransactionSuccessScreen
@@ -273,6 +294,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
+  },
+  // One step on screen at a time; the wrapper exists so the step can travel
+  // (sink out, float in) while the mounted world behind it holds still.
+  step: {
+    flex: 1,
   },
   // The task window is its own surface: opaque, because it no longer sits on
   // the tab shell's ground, and `fullScreen` so iOS cannot swipe it away.

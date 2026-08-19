@@ -52,7 +52,9 @@ import {
   validatePassword,
   getPasswordIssue,
   semantic,
+  componentSizes,
 } from '@salmon/shared';
+import { LockIcon } from '../../src/icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -315,8 +317,26 @@ export default function PasswordScreen() {
       <StatusBar style="light" />
       <OnboardingLayout
         testID="password-screen"
-        variant="credential"
+        /*
+          `content`, not `credential` (owner, 2026-08-18): recover → password
+          are consecutive steps of one flow, and `credential`'s hero-sized
+          mark band (201pt vs content's 96) dropped this screen's cluster
+          ~105pt below recover's — the lock landed far under where the key had
+          just been. On `content` every band — chrome, mark, title,
+          description, body — is the same constant as recover's, so the hero
+          holds its Y across the step and the first input starts at the same
+          band top as the seed grid's first row. The sink-and-float transition
+          is what makes the still hero read: the content travels, the cluster
+          does not jump.
+        */
+        variant="content"
         scrollBody
+        float
+        /*
+          The lock: what the password buys. The fish leaves the flow screens
+          — one semantic glyph per step, consent's pattern and size.
+        */
+        mark={<LockIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
         chrome={
           <ScreenHeader
             onBack={handleBack}

@@ -86,6 +86,7 @@ import {
 
 import { LoadingScreenProps } from './types';
 import { curve, timing } from '../../utils/motion';
+import { FLOAT_IN_MS, SINK_FLOAT_TRAVEL, floatEntering } from '../../utils/sinkAndFloat';
 import { DepthBackground } from '../DepthBackground';
 import { ScalesBackground } from '../ScalesBackground';
 
@@ -250,6 +251,15 @@ export function LoadingScreen({
   const ring = useSharedValue(0);
   const tipOpacity = useSharedValue(1);
   const overlayOpacity = useSharedValue(visible ? 1 : 0);
+  /**
+   * The wait's own sink-and-float exit: how far the mark, the words and the
+   * tips have dropped on the way out, in dp. They float in with the overlay
+   * (`floatEntering` on the content wrapper) and, when the wait resolves, they
+   * sink together with the last wave — one gesture, delayed by the same
+   * `holdMs` the overlay's ebb waits out, so the content goes down exactly as
+   * the screen's light goes. Zero the whole time the wait is up.
+   */
+  const depart = useSharedValue(0);
 
   // Held in a ref so an inline callback cannot restart the exit timer on every
   // render — which would leave the screen up forever.
@@ -322,7 +332,10 @@ export function LoadingScreen({
     if (visible) {
       setIsVisible(true);
       exitedRef.current = false;
-      startedAtRef.current = Date.now();
+      // The loop starts one float after the overlay does — see below — so the
+      // exit's phase arithmetic measures from the delayed start, not the mount.
+      startedAtRef.current = Date.now() + FLOAT_IN_MS;
+      depart.value = 0;
       overlayOpacity.value = withTiming(1, overlayIn);
 
       // Loops are cycles, not transitions: their `*Cycle` lengths are never
@@ -343,17 +356,28 @@ export function LoadingScreen({
         // on `sink` (accelerating — it arrives at the water at speed), slow back
         // up on `settle` (decelerating and monotonic, so it comes to rest
         // without the overshoot product had just had removed from the words).
+        //
+        // Both loops wait out one `FLOAT_IN_MS` first: the content is still
+        // floating up into place (the entering half of the sink and the
+        // float), and the mark cannot press into the surface before it has
+        // landed on it. The float precedes the impact — arrival, then work —
+        // rather than running through it, and one constant holds the two
+        // together the same way `WAVEFRONT_SINK_MS` holds the sink to the
+        // emission.
         sink.value = 0;
-        sink.value = withRepeat(
-          withSequence(
-            withTiming(1, { duration: WAVEFRONT_SINK_MS, easing: curve.sink }),
-            withTiming(0, { duration: WAVEFRONT_RECOVER_MS, easing: curve.settle }),
-            withTiming(0, {
-              duration: WAVEFRONT_PERIOD_MS - WAVEFRONT_SINK_MS - WAVEFRONT_RECOVER_MS,
-            })
-          ),
-          -1,
-          false
+        sink.value = withDelay(
+          FLOAT_IN_MS,
+          withRepeat(
+            withSequence(
+              withTiming(1, { duration: WAVEFRONT_SINK_MS, easing: curve.sink }),
+              withTiming(0, { duration: WAVEFRONT_RECOVER_MS, easing: curve.settle }),
+              withTiming(0, {
+                duration: WAVEFRONT_PERIOD_MS - WAVEFRONT_SINK_MS - WAVEFRONT_RECOVER_MS,
+              })
+            ),
+            -1,
+            false
+          )
         );
 
         // `Easing.linear`, and it is the one place in this system that gets it.
@@ -370,17 +394,20 @@ export function LoadingScreen({
         // clears the corner `WAVEFRONT_REST_MS` before the next mark hits the
         // water. See `wavefrontCalmMs`.
         ring.value = 0;
-        ring.value = withRepeat(
-          withSequence(
-            withTiming(0, { duration: WAVEFRONT_SINK_MS }),
-            withTiming(1, { duration: WAVEFRONT_CROSS_MS, easing: Easing.linear }),
-            withTiming(0, { duration: 0 }),
-            withTiming(0, {
-              duration: WAVEFRONT_PERIOD_MS - WAVEFRONT_CROSS_MS - WAVEFRONT_SINK_MS,
-            })
-          ),
-          -1,
-          false
+        ring.value = withDelay(
+          FLOAT_IN_MS,
+          withRepeat(
+            withSequence(
+              withTiming(0, { duration: WAVEFRONT_SINK_MS }),
+              withTiming(1, { duration: WAVEFRONT_CROSS_MS, easing: Easing.linear }),
+              withTiming(0, { duration: 0 }),
+              withTiming(0, {
+                duration: WAVEFRONT_PERIOD_MS - WAVEFRONT_CROSS_MS - WAVEFRONT_SINK_MS,
+              })
+            ),
+            -1,
+            false
+          )
         );
       }
       return undefined;
@@ -403,9 +430,23 @@ export function LoadingScreen({
     // `ebb` alone.
     const riding = waves && !isReduceMotionEnabled && geometry.origin !== null;
     const { holdMs } = planWavefrontExit(
-      riding && startedAtRef.current ? Date.now() - startedAtRef.current : 0,
+      // Clamped: a wait that resolves while the content is still floating in
+      // has a start time in the future, and a negative phase is meaningless.
+      riding && startedAtRef.current ? Math.max(0, Date.now() - startedAtRef.current) : 0,
       !riding
     );
+
+    // The content sinks with the wave that carries it out — mark, words and
+    // tips together, on the same delayed window as the overlay's ebb, so the
+    // wait leaves as one gesture rather than as a fade with stragglers. Under
+    // reduce motion there is no travel: the calm variant stays an opacity
+    // step, exactly as before.
+    if (!isReduceMotionEnabled) {
+      depart.value = withDelay(
+        holdMs,
+        withTiming(SINK_FLOAT_TRAVEL, { duration: motionMs.ebb, easing: curve.sink })
+      );
+    }
 
     overlayOpacity.value = withDelay(
       holdMs,
@@ -428,9 +469,9 @@ export function LoadingScreen({
   // value running is a loop with no way to stop it.
   useEffect(
     () => () => {
-      [sink, ring, overlayOpacity, tipOpacity].forEach(cancelAnimation);
+      [sink, ring, overlayOpacity, tipOpacity, depart].forEach(cancelAnimation);
     },
-    [sink, ring, overlayOpacity, tipOpacity]
+    [sink, ring, overlayOpacity, tipOpacity, depart]
   );
 
   // Helper function to advance to next tip
@@ -511,6 +552,11 @@ export function LoadingScreen({
     opacity: tipOpacity.value,
   }));
 
+  /** The content's exit travel — zero for the whole life of the wait. */
+  const departStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: depart.value }],
+  }));
+
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: overlayOpacity.value,
   }));
@@ -558,6 +604,19 @@ export function LoadingScreen({
         )}
 
         <View style={styles.content} onLayout={measureContent}>
+          {/* The sink and the float, on the wait itself: everything the wait
+              owns — mark, words, tips — floats up into place as the overlay
+              fades in (the impact loop waits for the landing; see the effect
+              above), and sinks together with the departing wave on the way
+              out (`departStyle`). The wave crests are outside this wrapper on
+              purpose: the water is the ground, and the ground never travels.
+              Absolute-fill so the children's percentage anchors keep reading
+              the same box; a transform moves no layout, so the measured
+              origin stays honest. */}
+          <Animated.View
+            style={[StyleSheet.absoluteFillObject, departStyle]}
+            entering={floatEntering(isReduceMotionEnabled)}
+          >
           {/* The emitter, nailed to the middle of whatever the wait occupies.
               A radial front whose origin is off-centre reads as a wave from
               somewhere else, so this is the one element on the screen that is
@@ -602,6 +661,7 @@ export function LoadingScreen({
               </Animated.Text>
             </View>
           )}
+          </Animated.View>
         </View>
       </LinearGradient>
     </Animated.View>

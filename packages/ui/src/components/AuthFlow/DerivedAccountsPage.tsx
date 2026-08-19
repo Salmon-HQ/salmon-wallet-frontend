@@ -5,6 +5,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import {
   colors,
+  componentSizes,
   deriveBlockchainAccount,
   fetchAndMergeNetworkConfigs,
   fontFamily,
@@ -18,6 +19,7 @@ import {
   type DerivedAccountInfo,
   useAccountsContext,
 } from '@salmon/shared';
+import { TreeStructureIcon } from '../../icons';
 import { styled } from '../../utils/styled';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { DerivedAccountCard, DerivedAccountCardSkeleton } from '../DerivedAccountCard';
@@ -274,6 +276,9 @@ export function DerivedAccountsPage({ onComplete }: DerivedAccountsPageProps): R
       variant="content"
       background={<WaterColumn />}
       scrollBody
+      // The derivation tree: one key, many branches — which is what this
+      // screen scans. Mirrors mobile; the fish stays on welcome and the lock.
+      mark={<TreeStructureIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
       chrome={<ScreenHeader />}
       title={<OnboardingTitle>{t('wallet.derived.title')}</OnboardingTitle>}
       description={<OnboardingDescription>{t('wallet.derived.subtitle')}</OnboardingDescription>}

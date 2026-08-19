@@ -13,8 +13,24 @@ jest.mock('react-native-safe-area-context', () => ({
 
 const mockLogic: Record<string, unknown> = {};
 
+// Reanimated pulls the Worklets native module, which does not exist under
+// Jest; the step transitions only need a View and the reduce-motion flag.
+jest.mock('react-native-reanimated', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: { View },
+    useReducedMotion: () => false,
+    withTiming: (toValue: unknown) => toValue,
+    Easing: { bezier: () => () => 0 },
+  };
+});
+
 // The real barrel pulls in @solana/kit, which jest-expo cannot transform.
+// The motion vocabulary is real (pure theme tokens) so the step transition
+// helpers can read it.
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/theme/durations'),
   useSwapScreenLogic: () => mockLogic,
   useBridgeSettlement: () => ({
     trackBridgeExchange: jest.fn(),

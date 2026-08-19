@@ -18,7 +18,16 @@
  * act rather than a thumb landing on a button that was already under it.
  */
 
-import { colors, fontFamilyNative, fontScaleCap, fontSize, lineHeight } from '@salmon/shared';
+import {
+  colors,
+  componentSizes,
+  fontFamilyNative,
+  fontScaleCap,
+  fontSize,
+  lineHeight,
+  semantic,
+} from '@salmon/shared';
+import { WarningIcon } from '../../src/icons';
 import {
   OnboardingLayout,
   OnboardingTitle,
@@ -77,9 +86,23 @@ export default function SeedWarningScreen() {
     <OnboardingLayout
       testID="seed-warning-screen"
       variant="content"
+      /*
+        Bedrock: the narrowed Bedrock Rule (owner, 2026-08-18) keeps the whole
+        seed EXHIBITION — this warning, the display, the validation — on the
+        opaque ground, matching the DOM twin, which already painted this step
+        bedrock. Only recover (seed ENTRY) left the rule.
+      */
+      backgroundColor={semantic.surface.bedrock}
+      float
       chrome={
         <ScreenHeader onBack={router.back} stepIndicator={{ totalSteps: 4, currentStep: 1 }} />
       }
+      /*
+        The warning glyph, in the mark slot the fish used to hold — the fish
+        stays on welcome and the lock only. The gate names itself: this step
+        exists to be read as a warning, so it wears one.
+      */
+      mark={<WarningIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
       title={<OnboardingTitle>{t('wallet.create.messageTitle')}</OnboardingTitle>}
       body={
         <ScrollView

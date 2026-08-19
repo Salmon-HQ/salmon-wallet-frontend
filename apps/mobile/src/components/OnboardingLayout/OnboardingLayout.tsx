@@ -67,12 +67,67 @@ import {
   spacing,
 } from '@salmon/shared';
 import type { OnboardingLayoutPropsBase } from '@salmon/shared';
-import { useState, type ReactNode } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
+import { floatEntering } from '../../utils/sinkAndFloat';
 import { BrandMark } from '../BrandMark';
+
+/**
+ * The sink and the float, spoken between onboarding steps.
+ *
+ * The auth Stack keeps `animation: 'none'` — deliberately, see
+ * `app/(auth)/_layout.tsx`: the navigator animating would take the chrome
+ * (chevron, step dots) and the shared water ground along for the ride, which
+ * is exactly what the owner rejected about `slide_from_right`. So the
+ * transition lives here instead, one layer down: only the slots between
+ * `chrome` and `action` travel — the furniture that is already at the same Y
+ * on the next screen holds still, and the content floats up into place.
+ *
+ * Both directions are the same gesture (the water has no left and right), so
+ * back-navigation floats too: the navigator keeps a revealed screen mounted,
+ * which means `entering` alone would only ever fire on push — the region is
+ * re-keyed on every non-initial focus so the float runs on the way back as
+ * well.
+ *
+ * The sink half cannot run here: with `animation: 'none'` the outgoing screen
+ * is detached the same frame the incoming one arrives, so there is no window
+ * for its content to sink through. The exit is the navigator's cut — which is
+ * the fade-through economy anyway (exit near-instant, entrance carries the
+ * verb). Recorded in DESIGN.md §The sink and the float.
+ *
+ * Reduce motion: `floatEntering` returns `undefined` and the step change is
+ * the instant cut it was before.
+ */
+function FloatRegion({ children }: { children: ReactNode }) {
+  const isReduceMotionEnabled = useReducedMotion();
+  const [arrival, setArrival] = useState(0);
+  const isFirstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      // Mount already runs `entering`; re-keying on the first focus would
+      // restart the float a frame in for no reason.
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return;
+      }
+      setArrival((count) => count + 1);
+    }, [])
+  );
+  return (
+    <Animated.View
+      key={arrival}
+      style={styles.floatRegion}
+      entering={floatEntering(isReduceMotionEnabled)}
+    >
+      {children}
+    </Animated.View>
+  );
+}
 
 export interface OnboardingLayoutProps extends OnboardingLayoutPropsBase {
   /**
@@ -87,6 +142,13 @@ export interface OnboardingLayoutProps extends OnboardingLayoutPropsBase {
    * `backgroundColor` and under every slot, and it never takes a touch.
    */
   background?: ReactNode;
+  /**
+   * Float the content slots in on every arrival at this screen — the
+   * onboarding flow's expression of the sink and the float (see `FloatRegion`
+   * above). Only screens inside a navigator may pass it: it reads the focus
+   * signal. `chrome` and `action` never travel.
+   */
+  float?: boolean;
 }
 
 export function OnboardingLayout({
@@ -102,6 +164,7 @@ export function OnboardingLayout({
   scrollBody = false,
   backgroundColor,
   background,
+  float = false,
   testID,
 }: OnboardingLayoutProps) {
   // Measured rather than read off `Dimensions`: the grid has to react to the
@@ -213,17 +276,63 @@ export function OnboardingLayout({
     grid.action;
   const bodyHeight = centersCluster ? Math.max(0, height - bands - lead) : grid.body;
 
-  const bodyContent = scrollBody ? (
-    <ScrollView
-      contentContainerStyle={styles.bodyScrollContent}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-      showsVerticalScrollIndicator={false}
-    >
-      {body}
-    </ScrollView>
-  ) : (
-    body
+  // Everything between `chrome` and `action` — the region that travels when
+  // `float` is on. Heights are all reserved per slot, so grouping them in a
+  // wrapper changes no Y.
+  const slots = (
+    <>
+      {/*
+        The centring lead, never a slot: the empty run that drops the
+        hero fish to the middle of the screen. Zero on the families that
+        do not centre their mark, and before first measurement.
+      */}
+      {lead > 0 && <View style={{ height: lead }} testID="onboarding-lead" />}
+
+      {!dropMark && (
+        <View style={[styles.centered, { height: grid.mark }]} testID="onboarding-slot-mark">
+          {mark ?? <BrandMark size={grid.markSize} />}
+        </View>
+      )}
+
+      <View
+        style={[styles.padded, styles.title, { minHeight: grid.title }]}
+        testID="onboarding-slot-title"
+      >
+        {title}
+      </View>
+
+      {!dropDescription && (
+        <View
+          style={[styles.padded, styles.description, { minHeight: grid.description }]}
+          testID="onboarding-slot-description"
+        >
+          {description}
+        </View>
+      )}
+
+      <View style={[styles.body, { height: bodyHeight }]} testID="onboarding-slot-body">
+        {scrollBody ? (
+          <ScrollView
+            contentContainerStyle={styles.bodyScrollContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+          >
+            {body}
+          </ScrollView>
+        ) : (
+          body
+        )}
+      </View>
+
+      <View style={[styles.padded, { height: grid.assist }]} testID="onboarding-slot-assist">
+        {assist}
+      </View>
+
+      <View style={[styles.padded, { height: grid.secondary }]} testID="onboarding-slot-secondary">
+        {secondary}
+      </View>
+    </>
   );
 
   return (
@@ -251,49 +360,10 @@ export function OnboardingLayout({
               {chrome}
             </View>
 
-            {/*
-            The centring lead, never a slot: the empty run that drops the
-            hero fish to the middle of the screen. Zero on the families that
-            do not centre their mark, and before first measurement.
-          */}
-            {lead > 0 && <View style={{ height: lead }} testID="onboarding-lead" />}
-
-            {!dropMark && (
-              <View style={[styles.centered, { height: grid.mark }]} testID="onboarding-slot-mark">
-                {mark ?? <BrandMark size={grid.markSize} />}
-              </View>
-            )}
-
-            <View
-              style={[styles.padded, styles.title, { minHeight: grid.title }]}
-              testID="onboarding-slot-title"
-            >
-              {title}
-            </View>
-
-            {!dropDescription && (
-              <View
-                style={[styles.padded, styles.description, { minHeight: grid.description }]}
-                testID="onboarding-slot-description"
-              >
-                {description}
-              </View>
-            )}
-
-            <View style={[styles.body, { height: bodyHeight }]} testID="onboarding-slot-body">
-              {bodyContent}
-            </View>
-
-            <View style={[styles.padded, { height: grid.assist }]} testID="onboarding-slot-assist">
-              {assist}
-            </View>
-
-            <View
-              style={[styles.padded, { height: grid.secondary }]}
-              testID="onboarding-slot-secondary"
-            >
-              {secondary}
-            </View>
+            {/* The travelling region: everything between the chrome above and
+                the action below. When `float` is on, arriving at the screen
+                floats these slots up into place; the furniture stays put. */}
+            {float ? <FloatRegion>{slots}</FloatRegion> : slots}
 
             <View style={[styles.action, { height: grid.action }]} testID="onboarding-slot-action">
               {action}
@@ -321,6 +391,14 @@ const styles = StyleSheet.create({
    */
   stack: {
     width: '100%',
+  },
+  /**
+   * Transparent grouping only: every child carries its own reserved height, so
+   * the region auto-sizes to their sum and no slot's Y moves. `flexShrink`
+   * mirrors the slots' own behaviour inside the fixed-height stack.
+   */
+  floatRegion: {
+    flexShrink: 1,
   },
   slot: {
     flexShrink: 0,
@@ -380,9 +458,19 @@ const styles = StyleSheet.create({
     minHeight: 0,
     paddingHorizontal: contentPadding.screen,
   },
+  /**
+   * Top-anchored, not centred (owner, 2026-08-18, with the recover → password
+   * alignment): `body`'s first line lands at the band's top on every screen,
+   * so two consecutive steps put their first row at the same Y by
+   * construction — the seed grid's first row and the password field share a
+   * Y because they share a band edge, not because two contents happen to be
+   * the same height. Centring made the first line a function of how tall the
+   * body content was, which is exactly the per-screen drift the grid exists
+   * to prevent. Leftover collects below, like everywhere else in the stack.
+   */
   bodyScrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingBottom: spacing.sm,
   },
   action: {

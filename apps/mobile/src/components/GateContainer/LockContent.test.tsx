@@ -45,6 +45,10 @@ jest.mock('expo-status-bar', () => ({
   StatusBar: () => null,
 }));
 
+// OnboardingLayout's float region reads the focus signal; the lock renders
+// outside any navigator and never passes `float`.
+jest.mock('expo-router', () => ({ useFocusEffect: () => {} }));
+
 jest.mock('@salmon/shared', () => ({
   // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
   // The lock screen and the shared buttons under it read a wide slice of the

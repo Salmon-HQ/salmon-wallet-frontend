@@ -14,7 +14,7 @@
  * always there.
  */
 
-import { InfoIcon } from '../../src/icons';
+import { CheckCircleIcon, InfoIcon } from '../../src/icons';
 import {
   borderRadius,
   colors,
@@ -73,6 +73,19 @@ export default function SuccessScreen() {
     <>
       <OnboardingLayout
         testID="success-screen"
+        float
+        /*
+          The success checkmark — one of the two glyphs in the app allowed to
+          be `fill` (DESIGN.md §Iconography), and this is its screen. The fish
+          stays on welcome and the lock only.
+        */
+        mark={
+          <CheckCircleIcon
+            size={componentSizes.logoSizeSmall}
+            color={colors.text.primary}
+            weight="fill"
+          />
+        }
         title={<OnboardingTitle>{t('wallet.create.success_message')}</OnboardingTitle>}
         description={
           <OnboardingDescription>{t('wallet.create.success_message_body')}</OnboardingDescription>

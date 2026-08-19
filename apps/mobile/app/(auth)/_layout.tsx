@@ -29,11 +29,13 @@ export default function AuthLayout() {
         exactly the seam the column exists to remove. One static Svg for every
         screen in the stack, not one per screen.
 
-        `create` and `recover` opt out by painting themselves opaque in
-        `surface.bedrock`: they carry the recovery phrase, and the Bedrock Rule
-        allows no motif behind a seed. Every other screen here — welcome,
-        password, biometric, consent, success, derived accounts — is content on
-        an opaque surface over an open column.
+        The create trio — `seed-warning`, `create` (display and validate) —
+        opts out by painting itself opaque in `surface.bedrock`: they EXHIBIT
+        the recovery phrase, and the narrowed Bedrock Rule (owner, 2026-08-18)
+        allows no motif behind a seed being shown. `recover` no longer opts
+        out: entering an existing phrase is not the ceremonial moment of its
+        birth, so it stands in the same water as every other screen here —
+        welcome, password, biometric, consent, success, derived accounts.
       */}
       <DepthBackground />
       <ScalesBackground variant="deepField" />
@@ -42,27 +44,33 @@ export default function AuthLayout() {
           // Hide headers - we handle our own back buttons
           headerShown: false,
           /*
-            No transition between onboarding steps.
+            The navigator does not animate. The content does.
 
-            The default `slide_from_right` took the whole outgoing screen out
-            to the left and brought the next one in from the right — and since
-            every screen renders its own chrome, the chevron and the step dots
-            went with it. What the product owner saw was the entire indicator
-            leaving and returning with the salmon dot already advanced, which
-            reads as navigating somewhere else when the only thing that changed
-            is which step is current.
+            `none` used to mean "no transition between onboarding steps", for
+            reasons that all still hold: the default `slide_from_right` took
+            the whole outgoing screen out to the left and brought the next one
+            in from the right — and since every screen renders its own chrome,
+            the chevron and the step dots went with it. What the product owner
+            saw was the entire indicator leaving and returning with the salmon
+            dot already advanced, which reads as navigating somewhere else
+            when the only thing that changed is which step is current. It also
+            fought the flow's own composition: the water column and the scales
+            are mounted once, outside this navigator, for every screen in the
+            stack, and every screen composes on one slot grid — the furniture
+            is already at the same Y on the next screen. And `none` rather
+            than `fade` because `contentStyle` is transparent, so a cross-fade
+            shows both screens' text stacked on the shared ground.
 
-            It also fought the flow's own composition: the water column and the
-            scales are mounted once, outside this navigator, for every screen in
-            the stack. A ground that holds still while the content over it
-            slides is two surfaces disagreeing. And every screen here composes
-            on one slot grid, so the furniture is already in the same place on
-            the next screen — sliding it out and back in only to redraw it at
-            the identical Y is motion that describes something untrue.
-
-            `none` rather than `fade`: `contentStyle` is transparent, so a
-            cross-fade shows both screens' text stacked on the shared ground for
-            the length of the fade.
+            What changed (owner, 2026-08-18, "the sink and the float"): steps
+            now DO transition — but one layer down, in the screens' own
+            content. Each screen's `OnboardingLayout` passes `float`, which
+            floats the slots between `chrome` and `action` up into place on
+            every arrival, forward and back. The navigator setting stays
+            `none` precisely so the chrome, the dots and the shared water
+            never travel — the objections above are answered by moving the
+            transition below them, not by suppressing it. The exit half is the
+            navigator's instant cut (a detached screen has no frame to sink
+            through); see DESIGN.md §The sink and the float.
           */
           animation: 'none',
           // Prevent gesture back on certain screens (handled per-screen)

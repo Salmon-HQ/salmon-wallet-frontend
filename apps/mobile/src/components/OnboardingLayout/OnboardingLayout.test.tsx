@@ -26,6 +26,22 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+// Reanimated pulls the Worklets native module, which does not exist under
+// Jest; the float region only needs a View and the reduce-motion flag.
+jest.mock('react-native-reanimated', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: { View },
+    useReducedMotion: () => false,
+    withTiming: (toValue: unknown) => toValue,
+    Easing: { bezier: () => () => 0 },
+  };
+});
+
+// The float region re-keys itself on focus; there is no navigator here.
+jest.mock('expo-router', () => ({ useFocusEffect: () => {} }));
+
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../test-utils/themeTokens'),
 }));
@@ -400,6 +416,34 @@ describe('OnboardingLayout', () => {
     // What is left between them is the gap the title's reservation was derived
     // from in the first place.
     expect(styleOf('title').paddingBottom).toBe(spacing.md);
+  });
+
+  it('keeps every slot in place when the float region wraps the content', () => {
+    // The sink and the float travels only the region between `chrome` and
+    // `action`; grouping the slots must not lose any of them, and the two
+    // pieces of furniture stay direct children of the stack — they never
+    // travel.
+    render(
+      <OnboardingLayout
+        float
+        chrome={<Text>chrome</Text>}
+        title={<Text>Title</Text>}
+        description={<Text>Description</Text>}
+        body={<Text>Body</Text>}
+        action={<Text>action</Text>}
+      />
+    );
+
+    for (const slot of SLOTS) {
+      expect(screen.getByTestId(`onboarding-slot-${slot}`)).toBeTruthy();
+    }
+    const stack = screen.getByTestId('onboarding-stack');
+    const directTestIds = (stack.children as Array<{ props?: { testID?: string } }>)
+      .map((child) => child?.props?.testID)
+      .filter(Boolean);
+    expect(directTestIds).toContain('onboarding-slot-chrome');
+    expect(directTestIds).toContain('onboarding-slot-action');
+    expect(directTestIds).not.toContain('onboarding-slot-title');
   });
 });
 

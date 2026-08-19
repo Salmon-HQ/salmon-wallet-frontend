@@ -10,10 +10,18 @@
  * band that grew could not push it.
  */
 import Typography from '@mui/material/Typography';
-import { colors, fontFamily, fontSize, lineHeight, semantic, spacing } from '@salmon/shared';
+import {
+  colors,
+  componentSizes,
+  fontFamily,
+  fontSize,
+  lineHeight,
+  semantic,
+  spacing,
+} from '@salmon/shared';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { InfoIcon, iconSize } from '../../icons';
+import { CheckCircleIcon, InfoIcon, iconSize } from '../../icons';
 import { BaseDialog } from '../BaseDialog';
 import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
@@ -33,6 +41,18 @@ export function SuccessPage({
       <OnboardingLayout
         testID="success-screen"
         background={<WaterColumn />}
+        /*
+          The success checkmark — one of the two glyphs allowed to be `fill`
+          (DESIGN.md §Iconography), and this is its screen. Mirrors mobile:
+          the fish stays on welcome and the lock only.
+        */
+        mark={
+          <CheckCircleIcon
+            size={componentSizes.logoSizeSmall}
+            color={semantic.text.primary}
+            weight="fill"
+          />
+        }
         title={<OnboardingTitle>{t('wallet.create.success_message')}</OnboardingTitle>}
         description={
           <OnboardingDescription>{t('wallet.create.success_message_body')}</OnboardingDescription>

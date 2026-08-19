@@ -856,14 +856,24 @@ job is to hover over something else. If a surface does not overlap scrolling
 content, it is opaque. This is what keeps the system from becoming a glass
 casserole.
 
-**The Bedrock Rule.** The dApp approval sheet and every seed-phrase view are
-`surface.bedrock`, α 1.00, no blur, no scales, no caustic, no iridescence. This
-is a security decision, not a taste one: a translucent approval sheet shows the
-requesting page _through_ the material it is asking you to trust, teaching the
-user that page content and wallet chrome share a visual plane — exactly the
-confusion a phishing overlay wants. The backdrop behind it is a hard scrim
-(`rgba(3,6,12,0.86)`), so the page underneath is dimmed out, not stylishly
-present.
+**The Bedrock Rule.** The dApp approval sheet and every view that **exhibits**
+a seed phrase are `surface.bedrock`, α 1.00, no blur, no scales, no caustic,
+no iridescence. This is a security decision, not a taste one: a translucent
+approval sheet shows the requesting page _through_ the material it is asking
+you to trust, teaching the user that page content and wallet chrome share a
+visual plane — exactly the confusion a phishing overlay wants. The backdrop
+behind it is a hard scrim (`rgba(3,6,12,0.86)`), so the page underneath is
+dimmed out, not stylishly present.
+
+_(Narrowed, 2026-08-18, owner.)_ It used to read "every seed-phrase view",
+which put the recover screen on bedrock too. The rule now covers the seed's
+**exhibition only** — create's warning, display and validation steps — and not
+its **entry**: typing an existing phrase back in is not the same ceremonial
+moment as its birth, so recover stands in the same water as the rest of the
+onboarding stack (depth column, scales, marine snow). What does _not_ narrow
+is the capture protection — `useSecretScreen` and its DOM counterpart guard
+the entry field exactly as before; the rule that moved is about the ground,
+not about screenshots.
 
 **The Scrim-Before-Glass Rule.** Never ship a membrane before its guaranteed
 alpha. A membrane without its scrim floor is a beautiful screenshot and a
@@ -1523,7 +1533,87 @@ Reduced motion is a full parallel mapping, not a switch that turns motion off
 and leaves holes: opacity steps replace translations, the stagger disappears,
 the backdrop goes straight to its final scrim, and haptics are kept.
 
-#### Loading in place: the container never becomes a skeleton
+#### The sink and the float — the transition verb
+
+**Shipped on mobile** (owner, 2026-08-18); the DOM ports it after the numbers
+are calibrated on a device. When one piece of content replaces another, the
+transition speaks the water's own vertical: **leaving is sinking** — the
+outgoing content drops 12dp accelerating on `sink`, its opacity falling the
+way light falls with depth (slowly at first, fast at the end — the same
+accelerating bezier, never linear) — and **arriving is floating** — the
+incoming content rises the same distance decelerating on `current` (buoyancy:
+no overshoot, the system rule), fading in as it comes up, still settling from
+`scale(0.97)`. The verb is not invented: it generalises the two directions the
+system already commits to — the wait's mark *sinks* into the water it
+disturbs, and The Surfacing *rises* — into a rule for everything in between.
+It **replaces the shared-axis transition that was considered** for these
+swaps: shared-axis has a left and a right, and the water does not; one
+vertical verb serves forward and back alike.
+
+The primitive is `apps/mobile/src/utils/sinkAndFloat.ts` (`floatEntering` /
+`sinkExiting`), the successor of `fadeThrough.ts` — an upgrade, not a
+replacement: the fade and the 0.97 settle survive, the travel is what is new.
+Every number is a **named tunable** the owner calibrates by eye:
+`SINK_FLOAT_TRAVEL` (12dp, band 12–16), `FLOAT_IN_MS` (= `drift`, 280),
+`SINK_OUT_MS` (= `ebb`, 180 — exit faster than enter, as everywhere), plus
+per-call `distance`/`durationMs` overrides. No new duration tokens were
+minted; the verb spends the vocabulary it found.
+
+**Where it applies — and where it deliberately does not:**
+
+| Surface | Verb? | Why |
+| --- | --- | --- |
+| Onboarding step changes, forward **and** back | Yes | The water has no left and right; both directions are the same arrival |
+| Button-driven step changes (swap input → review, bridge review) | Yes | The outgoing step sinks, the incoming floats; the mounted ground (`DepthBackground`, scales) never travels |
+| Home chain swap + home mount | Yes | The fade-through, given the vertical — frame holds still, content travels |
+| The wait's own entry and exit | Yes | See §The wait below — one gesture with the wave |
+| The Surfacing (transaction success) | **No** | It *is* the float, at ceremony scale; doubling the verb under it would cheapen the climax. On the swap handoff only review's sink plays |
+| Tabs | **No** (owner) | Lateral and high-frequency — repetition would dilute the verb; the cut/micro-fade stays |
+| Sheets and modals | **No** (owner) | Their native slide-up already speaks the float; saying it twice is stutter |
+| Anything full-screen (wavefront on navigation, etc.) | **No** | The full-screen front belongs to the wait alone — see "no front on a button press" |
+
+**Reduced motion:** both halves return `undefined` — the swap is an instant
+cut, the `fadeThrough`/`useReducedMotion` pattern unchanged.
+
+**The auth stack's `animation: 'none'` — reversed in meaning, kept as
+mechanism.** The onboarding navigator was set to `none` for reasons recorded
+in `app/(auth)/_layout.tsx` and still true: the default `slide_from_right`
+"took the whole outgoing screen out to the left … and since every screen
+renders its own chrome, the chevron and the step dots went with it", reading
+"as navigating somewhere else when the only thing that changed is which step
+is current"; the water column and scales are mounted once outside the
+navigator, and "a ground that holds still while the content over it slides is
+two surfaces disagreeing"; and `fade` was ruled out because the transparent
+`contentStyle` "shows both screens' text stacked on the shared ground". What
+is reversed is the *policy* — "no transition between onboarding steps" — not
+the setting: steps now transition, but one layer down. Each screen's
+`OnboardingLayout` floats only the slots between `chrome` and `action`
+(`float` prop → `FloatRegion`, re-keyed on focus so back-navigation floats
+too), so the chrome, the dots and the ground hold still — every objection
+that justified `none` is answered by moving the transition *below* the
+navigator rather than suppressing it. Known asymmetry, recorded rather than
+hidden: with `none`, the outgoing screen is detached the same frame the next
+arrives, so onboarding's exit half is the navigator's cut — the entrance
+carries the verb, which is the fade-through economy (exit near-instant)
+anyway. Revisit only if the stack ever gains a real exit window.
+
+Within a screen the verb never runs: "nothing moves under the finger" — the
+float fires between screens, on arrival, and no slot reflows inside a mounted
+screen.
+
+**The wait speaks it end to end.** On entry, everything the wait owns — mark,
+words, tips — floats up into place while the overlay fades in, and the impact
+loop (the mark's sink and the wave it throws) waits out exactly one
+`FLOAT_IN_MS` before its first press: the float *precedes* the impact — the
+mark cannot press into a surface it has not landed on — rather than running
+through it, and the exit phase arithmetic measures from the delayed start so
+the calm-water handoff stays honest. On exit, the same content sinks
+(`SINK_FLOAT_TRAVEL`, over `ebb` on `sink`) on the same `holdMs` delay as the
+overlay's ebb — the wait leaves as **one gesture with the departing wave**,
+not as a fade with stragglers. The crests are outside the travelling wrapper:
+the water is the ground, and the ground never travels. Under reduce motion
+the calm variant is untouched — no travel in, no travel out, an opacity step
+each way.
 
 A skeleton says _this screen is being built_. Once a card, a row or a panel is
 already on screen, that sentence is a lie: the screen exists, and what is

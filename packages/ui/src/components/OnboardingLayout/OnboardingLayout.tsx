@@ -307,11 +307,14 @@ export function OnboardingLayout({
               minHeight: 0,
               display: 'flex',
               flexDirection: 'column',
-              // On the hero pair the content flows down from the fish — the
-              // lock's field must sit right under the collapsed description
-              // (title→input = fish→title, owner 2026-08-18) while the
-              // leftover collects below it, above the bottom bands.
-              justifyContent: centersCluster ? 'flex-start' : 'center',
+              // Top-anchored everywhere (owner, 2026-08-18, with the
+              // recover → password alignment): the body's first line lands at
+              // the band's top on every screen, so consecutive steps share a
+              // first-row Y by sharing a band edge — the mobile twin's
+              // `bodyScrollContent` rule. On the hero pair this is also what
+              // puts the lock's field right under the collapsed description
+              // (title→input = fish→title). Leftover collects below.
+              justifyContent: 'flex-start',
               paddingLeft: contentPadding.screen,
               paddingRight: contentPadding.screen,
               overflowY: scrollBody ? 'auto' : 'visible',

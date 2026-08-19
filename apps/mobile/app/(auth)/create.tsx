@@ -11,10 +11,11 @@
  * phrase this screen shows is the phrase the flow stashes.
  */
 
-import { CheckCircleIcon, iconSize } from '../../src/icons';
+import { CheckCircleIcon, SparkleIcon, iconSize } from '../../src/icons';
 import {
   borderRadius,
   colors,
+  componentSizes,
   contentPadding,
   fontFamilyNative,
   fontSize,
@@ -113,6 +114,13 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
         variant="content"
         backgroundColor={semantic.surface.bedrock}
         scrollBody
+        float
+        /*
+          The sparkle: something new coming into being. The fish leaves the
+          flow screens (welcome and the lock keep it); each step wears one
+          semantic glyph in the mark slot, consent's pattern and size.
+        */
+        mark={<SparkleIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
         chrome={
           <ScreenHeader
             onBack={onBack}
@@ -208,6 +216,10 @@ function ValidateStep({ mnemonic, onComplete, onBack, t }: ValidateStepProps) {
       variant="content"
       backgroundColor={semantic.surface.bedrock}
       scrollBody
+      float
+      // Same glyph as the phrase it confirms — the step dots carry which half
+      // of the creation this is.
+      mark={<SparkleIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
       chrome={
         <ScreenHeader
           onBack={onBack}

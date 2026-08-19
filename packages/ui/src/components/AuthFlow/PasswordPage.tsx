@@ -18,7 +18,9 @@ import {
   useAccountsContext,
   validatePassword,
   getPasswordIssue,
+  componentSizes,
 } from '@salmon/shared';
+import { LockIcon } from '../../icons';
 import { generateAccountName } from '@salmon/shared/utils/account';
 import { styled } from '../../utils/styled';
 import { PrimaryButton } from '../Button';
@@ -218,9 +220,16 @@ export function PasswordPage({
     <>
       <OnboardingLayout
         testID="password-screen"
-        variant="credential"
+        // `content`, not `credential` (owner, 2026-08-18): same bands as the
+        // recover step before it, so the hero cluster holds its Y across the
+        // flow and the first input starts at the seed grid's first-row Y.
+        // Mirrors the mobile twin.
+        variant="content"
         background={<WaterColumn />}
         scrollBody
+        // The lock: what the password buys. Mirrors mobile — one semantic
+        // glyph per flow step, the fish stays on welcome and the lock only.
+        mark={<LockIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
         chrome={
           <ScreenHeader
             onBack={onBack}

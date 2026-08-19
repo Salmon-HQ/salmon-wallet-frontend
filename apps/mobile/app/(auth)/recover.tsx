@@ -15,6 +15,7 @@
  */
 
 import {
+  componentSizes,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
@@ -37,6 +38,7 @@ import {
   SeedPhraseEntry,
 } from '../../src/components';
 import { SHORT_PHRASE, distributePhrase } from '../../src/components/SeedPhrase';
+import { KeyIcon } from '../../src/icons';
 import { useSecretScreen } from '../../hooks/useSecretScreen';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
@@ -122,9 +124,24 @@ export default function RecoverWalletScreen() {
     <OnboardingLayout
       testID="recover-screen"
       variant="content"
-      backgroundColor={semantic.surface.bedrock}
+      /*
+        No bedrock here (owner, 2026-08-18): the Bedrock Rule narrowed to the
+        EXHIBITION of a seed — create's warning/display/validate. Entering an
+        existing phrase is not the ceremonial moment of its birth, so recover
+        stands in the same water as the rest of the stack (the layout's
+        DepthBackground + ScalesBackground show through the transparent
+        content). The capture protection (`useSecretScreen`) is unchanged.
+      */
       scrollBody
+      float
       chrome={<ScreenHeader onBack={handleBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />}
+      /*
+        The key: what this screen asks for is the thing that reopens the
+        wallet. The fish leaves the flow screens — it stays on welcome and the
+        lock only — and each step names itself with the consent screen's
+        pattern: one semantic glyph in the mark slot, same size, same ink.
+      */
+      mark={<KeyIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
       title={<OnboardingTitle>{t('wallet.recover.messageTitle')}</OnboardingTitle>}
       description={
         <OnboardingDescription>{t('wallet.recover.messageBody')}</OnboardingDescription>

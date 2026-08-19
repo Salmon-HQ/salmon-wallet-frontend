@@ -87,7 +87,7 @@ import {
   type Transaction,
 } from '../../../src/components';
 import { useDeveloperMode } from '../../../src/contexts/DeveloperModeContext';
-import { fadeThroughEntering, fadeThroughExiting } from '../../../src/utils/fadeThrough';
+import { floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 
 // Map blockchain to logo URL (outside component to avoid recreation)
@@ -839,16 +839,19 @@ export default function HomeScreen() {
       )}
 
       {/* Scrollable Token List or Bitcoin View.
-          Keyed by chain so switching chains swaps the whole container with a
-          fade-through (Material "fade through": exit in a flick, enter with a
-          fade + settle from scale 0.97) instead of a hard cut. Under reduce
-          motion both props are undefined and the swap stays instant. */}
+          Keyed by chain so switching chains swaps the whole container with
+          the sink and the float: the outgoing chain's content sinks 12dp as
+          its light goes, the incoming one floats up into place — the
+          fade-through it upgrades, given the vertical the rest of the system
+          already speaks. The frame above (balance card, chain selector) holds
+          still; only the content travels. Under reduce motion both props are
+          undefined and the swap stays instant. */}
       <View style={styles.listContainer}>
         <Reanimated.View
           key={currentBlockchain}
           style={styles.chainContent}
-          entering={fadeThroughEntering(isReduceMotionEnabled)}
-          exiting={fadeThroughExiting(isReduceMotionEnabled)}
+          entering={floatEntering(isReduceMotionEnabled)}
+          exiting={sinkExiting(isReduceMotionEnabled)}
         >
           {currentBlockchain === 'bitcoin' ? (
             // Bitcoin view with chart, about, and market data

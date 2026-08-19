@@ -66,6 +66,10 @@ export default function WelcomeScreen() {
   return (
     <OnboardingLayout
       testID="welcome-screen"
+      // Arrivals float — including backing out of recover/seed-warning to
+      // here. The fish stays: welcome and the lock are the identity pair, the
+      // only screens that keep the brand mark (owner, 2026-08-18).
+      float
       /*
         The brand alone (product, 2026-08-18): the fish, no wordmark. The mark
         slot centres its children itself, so the vector needs no alignSelf

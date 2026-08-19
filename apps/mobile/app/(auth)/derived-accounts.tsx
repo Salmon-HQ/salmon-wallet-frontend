@@ -17,7 +17,7 @@
  * - mnemonic: The seed phrase to derive accounts from
  */
 
-import { CloudSlashIcon, WalletIcon } from '../../src/icons';
+import { CloudSlashIcon, TreeStructureIcon, WalletIcon } from '../../src/icons';
 import {
   colors,
   componentSizes,
@@ -286,6 +286,10 @@ export default function DerivedAccountsScreen() {
       <OnboardingLayout
         testID="derived-accounts-screen"
         variant="content"
+        float
+        // The derivation tree: one key, many branches — which is what this
+        // screen scans. One semantic glyph per flow step, consent's pattern.
+        mark={<TreeStructureIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
         chrome={<ScreenHeader />}
         title={<OnboardingTitle>{t('wallet.derived.title')}</OnboardingTitle>}
         description={<OnboardingDescription>{t('wallet.derived.subtitle')}</OnboardingDescription>}

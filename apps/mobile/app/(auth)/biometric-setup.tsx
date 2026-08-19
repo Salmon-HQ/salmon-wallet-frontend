@@ -4,19 +4,20 @@
  * Shown after password setup and before the analytics consent step. If the
  * device does not support biometrics the screen auto-skips.
  *
- * Composed on the onboarding slot grid. The biometric glyph used to sit
- * *between* the mark and the title — a position no other screen has — so it
- * lives in `body` now, and the enrolment error occupies the reserved `assist`
- * band instead of pushing the buttons down when it appears.
+ * Composed on the onboarding slot grid. The biometric glyph is the screen's
+ * only icon and sits in the `mark` slot, where the fish sat before the fish
+ * was pulled back to welcome and the lock (owner, 2026-08-18) — the consent
+ * screen's pattern, one glyph per step. The enrolment error occupies the
+ * reserved `assist` band instead of pushing the buttons down when it appears.
  */
 
 import {
+  componentSizes,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
   getStashItem,
   lineHeight,
-  spacing,
   type DerivedKeyCache,
   semantic,
 } from '@salmon/shared';
@@ -33,13 +34,14 @@ import type { IconComponent } from '../../src/icons';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-const ICON_SIZE = 80;
+/** The glyph fills the top slot: the grid's own mark size for flow steps. */
+const ICON_SIZE = componentSizes.logoSizeSmall;
 
 // ============================================================================
 // Helpers
@@ -121,14 +123,13 @@ export default function BiometricSetupScreen() {
   return (
     <OnboardingLayout
       testID="biometric-setup-screen"
+      float
+      // One icon on the screen, not two: the biometric glyph moves up into
+      // the mark slot the fish vacated, and `body` goes empty.
+      mark={<BiometricIcon size={ICON_SIZE} color={semantic.text.primary} />}
       title={<OnboardingTitle>{t('wallet.create.biometric_setup_title')}</OnboardingTitle>}
       description={
         <OnboardingDescription>{t('wallet.create.biometric_setup_subtitle')}</OnboardingDescription>
-      }
-      body={
-        <View style={styles.iconContainer}>
-          <BiometricIcon size={ICON_SIZE} color={semantic.text.primary} />
-        </View>
       }
       assist={
         error ? (
@@ -161,12 +162,6 @@ export default function BiometricSetupScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  iconContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.lg,
-  },
   error: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,

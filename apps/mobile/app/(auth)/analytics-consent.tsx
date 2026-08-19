@@ -57,6 +57,7 @@ export default function AnalyticsConsentScreen() {
     <OnboardingLayout
       testID="analytics-consent-screen"
       variant="content"
+      float
       chrome={
         <ScreenHeader
           onBack={() => resolve(false)}

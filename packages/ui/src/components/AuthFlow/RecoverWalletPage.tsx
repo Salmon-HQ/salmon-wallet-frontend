@@ -11,12 +11,14 @@
  * `visibility: hidden` instead of mounting it when the phrase became valid.
  * That is now `ReservedSlot`, used by every screen with a conditional control.
  *
- * Bedrock, and no water: this screen carries the recovery phrase, and the
- * Bedrock Rule fixes every seed view at `semantic.surface.bedrock`, opaque.
- * That is a security decision, not a stylistic one.
+ * Water, not bedrock (owner, 2026-08-18): the Bedrock Rule narrowed to seed
+ * EXHIBITION (create's warning/display/validate). Entry of an existing phrase
+ * is not that ceremony, so this screen stands in the flow's own water. The
+ * capture protection is unchanged.
  */
 import Typography from '@mui/material/Typography';
 import {
+  componentSizes,
   distributePhrase,
   fontFamily,
   fontSize,
@@ -26,6 +28,7 @@ import {
   SHORT_PHRASE,
   validateMnemonic,
 } from '@salmon/shared';
+import { KeyIcon } from '../../icons';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
@@ -38,6 +41,7 @@ import {
   ReservedSlot,
 } from '../OnboardingLayout';
 import { ScreenHeader } from '../ScreenHeader';
+import { WaterColumn } from '../WaterColumn';
 import type { RecoverWalletPageProps } from './types';
 
 const InvalidNotice = styled(Typography)({
@@ -105,7 +109,21 @@ export function RecoverWalletPage({
     <OnboardingLayout
       testID="recover-screen"
       variant="content"
-      backgroundColor={semantic.surface.bedrock}
+      /*
+        No bedrock (owner, 2026-08-18): the Bedrock Rule narrowed to the
+        EXHIBITION of a seed — create's warning/display/validate. Entering an
+        existing phrase is not the ceremonial moment of its birth, so recover
+        stands in the same water as the rest of the flow. Capture protection
+        is unchanged.
+      */
+      background={<WaterColumn />}
+      /*
+        The key: what this screen asks for is the thing that reopens the
+        wallet. Mirrors the mobile flow (owner, 2026-08-18): the fish stays on
+        welcome and the lock only; each flow step wears one semantic glyph in
+        the mark slot, the consent screen's pattern and size.
+      */
+      mark={<KeyIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
       chrome={<ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />}
       title={<OnboardingTitle>{t('wallet.recover.messageTitle')}</OnboardingTitle>}
       description={<OnboardingDescription>{t('wallet.recover.messageBody')}</OnboardingDescription>}
