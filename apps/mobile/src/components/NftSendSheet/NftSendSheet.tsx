@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     opacity: colors.button.disabledOpacity,
   },
   cancelButtonText: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.medium,
     fontWeight: fontWeight.semibold,
     color: colors.text.primary,
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonText: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.medium,
     fontWeight: fontWeight.medium,
     color: semantic.accent.onFill,

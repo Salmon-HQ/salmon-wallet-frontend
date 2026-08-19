@@ -413,12 +413,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tokenCardName: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.medium,
     color: colors.text.primary,
   },
   tokenCardBalance: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.medium,
     color: colors.text.primary,
   },
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.regular,
     color: colors.text.primary,
     paddingVertical: 0,
@@ -466,15 +466,15 @@ const styles = StyleSheet.create({
     marginLeft: s(spacing.sm),
   },
   validIcon: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     color: semantic.status.success,
   },
   invalidIcon: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     color: semantic.status.danger,
   },
   warningIcon: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     color: semantic.status.warning,
   },
   validationMessage: {
@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     flex: 1,
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.regular,
     color: colors.text.primary,
     paddingVertical: 0,

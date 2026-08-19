@@ -127,7 +127,7 @@ export const Label = styled(Typography)({
 });
 
 export const Value = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
   wordBreak: 'break-word',
@@ -159,7 +159,7 @@ export const AppIdentityText = styled(Box)({
 });
 
 export const AppIdentityName = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
   wordBreak: 'break-word',

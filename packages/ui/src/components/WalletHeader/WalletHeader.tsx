@@ -59,7 +59,7 @@ const AccountTextContainer = styled(Box)({
 });
 
 const AccountName = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,

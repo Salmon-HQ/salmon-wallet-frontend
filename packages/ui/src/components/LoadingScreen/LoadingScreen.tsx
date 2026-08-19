@@ -217,8 +217,8 @@ const Subtitle = styled('div')({
   color: colors.text.secondary,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.regular,
-  fontSize: fontSize.md,
-  lineHeight: `${fontSize.md * lineHeight.normal}px`,
+  fontSize: fontSize.bodyLg,
+  lineHeight: `${fontSize.bodyLg * lineHeight.normal}px`,
 });
 
 /**

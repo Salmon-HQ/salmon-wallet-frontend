@@ -36,7 +36,7 @@ vi.mock('@salmon/shared', async () => ({
     buttonHeightCompact: 44,
   },
   copyToClipboard: vi.fn(async () => true),
-  fontSize: { sm: 14, base: 16, md: 15 },
+  fontSize: { sm: 14, base: 16, bodyLg: 15 },
   fontWeight: { semibold: 600, extraBold: 800 },
   letterSpacing: { change: '0.02em', wide: '0.04em' },
   lineHeight: { condensed: 1.2 },

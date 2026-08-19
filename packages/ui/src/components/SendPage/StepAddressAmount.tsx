@@ -145,7 +145,7 @@ const TokenCardLogoFallbackText = styled(Typography)({
 });
 
 const TokenCardName = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -156,7 +156,7 @@ const TokenCardName = styled(Typography)({
 
 const TokenCardBalance = styled(Typography)({
   ...tabularNums.css,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -181,7 +181,7 @@ const StyledInput = styled(InputBase)({
   ...tabularNums.css,
   width: '100%',
   color: colors.text.primary,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontFamily: fontFamily.sans,
   '& .MuiInputBase-input': {
     padding: `${spacing.md}px 0`,
@@ -538,21 +538,21 @@ export function StepAddressAmount({
               )}
               {address.length > 0 && !isValidating && validationState === 'valid' && (
                 <ValidationIndicatorBox>
-                  <span style={{ color: semantic.status.success, fontSize: fontSize.md }}>
+                  <span style={{ color: semantic.status.success, fontSize: fontSize.bodyLg }}>
                     {'\u2713'}
                   </span>
                 </ValidationIndicatorBox>
               )}
               {address.length > 0 && !isValidating && validationState === 'invalid' && (
                 <ValidationIndicatorBox>
-                  <span style={{ color: semantic.status.danger, fontSize: fontSize.md }}>
+                  <span style={{ color: semantic.status.danger, fontSize: fontSize.bodyLg }}>
                     {'\u2715'}
                   </span>
                 </ValidationIndicatorBox>
               )}
               {address.length > 0 && !isValidating && validationState === 'warning' && (
                 <ValidationIndicatorBox>
-                  <span style={{ color: semantic.status.warning, fontSize: fontSize.md }}>
+                  <span style={{ color: semantic.status.warning, fontSize: fontSize.bodyLg }}>
                     {'\u26A0'}
                   </span>
                 </ValidationIndicatorBox>

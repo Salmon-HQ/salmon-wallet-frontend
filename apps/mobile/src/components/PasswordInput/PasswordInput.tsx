@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   toggleButton: {
     padding: spacing.xs,

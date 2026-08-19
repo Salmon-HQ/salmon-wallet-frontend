@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   text: {
     color: semantic.text.primary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     letterSpacing: letterSpacing.widest,
     textAlign: 'center',
   },

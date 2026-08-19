@@ -229,7 +229,7 @@ const SecondaryButtonInner = styled(ButtonBase)({
 
 const ButtonText = styled(Typography)<{ $onAccent?: boolean }>(({ $onAccent }) => ({
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   // On the salmon fill the only legal ink is `neutral-1000` (6.50:1). The
   // outlined sibling keeps the light label it already had.

@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     color: colors.scanner.textSecondary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   content: {
     flex: 1,
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   messageText: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     color: colors.scanner.textSecondary,
     textAlign: 'center',
     marginBottom: spacing['2xl'],
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   },
   settingsButtonText: {
     color: semantic.text.primary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
   },
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   },
   rejectionText: {
     color: semantic.text.primary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     textAlign: 'center',
   },
 });

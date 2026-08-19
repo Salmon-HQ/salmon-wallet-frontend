@@ -32,7 +32,7 @@ vi.mock('@salmon/shared', () => ({
   },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 },
   fontFamily: { sans: 'sans-serif', mono: 'monospace' },
-  fontSize: { xs: 10, sm: 12, base: 14, md: 16, title: 20 },
+  fontSize: { xs: 10, sm: 12, base: 14, bodyLg: 16, title: 20 },
   fontWeight: { medium: 500, semibold: 600, bold: 700 },
   // Mirrors the real exact formatter closely enough for rendering assertions;
   // its own edge cases are covered in `packages/shared/src/utils/formatting.test.ts`.

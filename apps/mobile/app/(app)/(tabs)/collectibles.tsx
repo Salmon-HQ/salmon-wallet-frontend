@@ -718,7 +718,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: semantic.text.secondary,
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     marginTop: vs(spacing.lg),
   },
   scrollView: {

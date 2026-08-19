@@ -70,7 +70,7 @@ vi.mock('@salmon/shared', () => ({
     xs: 12,
     sm: 14,
     base: 16,
-    md: 18,
+    bodyLg: 18,
     lg: 20,
     xl: 24,
     '2xl': 28,

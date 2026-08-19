@@ -83,7 +83,7 @@ vi.mock('@salmon/shared', () => {
   return {
     colors,
     fontFamily: { sans: 'sans-serif' },
-    fontSize: { xs: 12, sm: 14, md: 16, '2xl': 24 },
+    fontSize: { xs: 12, sm: 14, bodyLg: 16, '2xl': 24 },
     fontWeight: { semibold: 600 },
     spacing: { xs: 4, sm: 8, lg: 16, '2xl': 32, '3xl': 48 },
     componentSizes: {

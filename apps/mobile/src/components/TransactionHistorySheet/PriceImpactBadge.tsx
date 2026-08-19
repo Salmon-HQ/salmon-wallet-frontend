@@ -84,7 +84,7 @@ const SIZE_CONFIG: Record<
   },
   large: {
     iconSize: 16,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     paddingH: spacing.md,
     paddingV: 6,
   },

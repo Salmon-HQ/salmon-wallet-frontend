@@ -46,7 +46,7 @@ vi.mock('@salmon/shared', () => {
       sheet: { backdrop: '#0008' },
     },
     spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20 },
-    fontSize: { sm: 12, md: 14, lg: 16, xl: 18 },
+    fontSize: { sm: 12, bodyLg: 14, lg: 16, xl: 18 },
     fontWeight: { regular: 400, semibold: 600 },
     letterSpacing: { wider: '0.05em' },
     shadowsCSS: { sheet: 'none', card: 'none' },

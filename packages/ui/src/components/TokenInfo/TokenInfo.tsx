@@ -43,7 +43,7 @@ const Section = styled(Box)({
 });
 
 const SectionTitle = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -81,7 +81,7 @@ const StatLabel = styled(Typography)({
 
 const StatValue = styled(Typography)({
   ...tabularNums.css,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,

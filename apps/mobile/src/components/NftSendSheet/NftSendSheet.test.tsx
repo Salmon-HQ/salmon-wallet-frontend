@@ -44,7 +44,7 @@ jest.mock('@salmon/shared', () => ({
     background: { tokenItem: '#111', tertiary: '#222', card: '#000' },
     status: { error: '#f00' },
   },
-  fontSize: { sm: 14, base: 16, md: 18, '2xl': 24 },
+  fontSize: { sm: 14, base: 16, bodyLg: 18, '2xl': 24 },
   borderRadius: { lg: 16, badge: 12, iconContainer: 18, button: 16 },
   borderWidth: { thin: 1, actionButton: 1 },
   componentSizes: { nftImageMaxWidth: 200, buttonHeightMedium: 48 },

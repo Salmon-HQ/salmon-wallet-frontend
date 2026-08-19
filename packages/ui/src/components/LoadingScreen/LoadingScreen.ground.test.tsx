@@ -40,7 +40,7 @@ vi.mock('@salmon/shared', async () => ({
   },
   fontFamily: { sans: 'sans-serif' },
   fontWeight: { regular: 400, bold: 700 },
-  fontSize: { sm: 12, base: 14, md: 16, '2xl': 24 },
+  fontSize: { sm: 12, base: 14, bodyLg: 16, '2xl': 24 },
   lineHeight: { condensed: 1.2, normal: 1.5, tokenListItem: 1.4 },
   spacing: { sm: 8, lg: 16, '2xl': 24, '3xl': 32, '5xl': 48, '7xl': 72 },
   borderWidth: { heavy: 3 },

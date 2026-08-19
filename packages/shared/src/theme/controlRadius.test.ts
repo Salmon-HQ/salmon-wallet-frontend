@@ -24,6 +24,9 @@ describe('the control radius', () => {
     ['componentSizes.buttonRadius', componentSizes.buttonRadius],
     ['componentSizes.inputRadius', componentSizes.inputRadius],
     ['componentSizes.actionButtonRadius', componentSizes.actionButtonRadius],
+    // The tab bar too — the product owner's call: it is a control, not a pill
+    // (it was 28). `GlassTabBar` consumes this token on all its layers.
+    ['componentSizes.tabBarRadius', componentSizes.tabBarRadius],
     ['borderRadius.button', borderRadius.button],
   ])('%s resolves to the control radius', (_name, value) => {
     expect(value).toBe(CONTROL_RADIUS);
@@ -37,6 +40,7 @@ describe('the control radius', () => {
       componentSizes.buttonRadius,
       componentSizes.inputRadius,
       componentSizes.actionButtonRadius,
+      componentSizes.tabBarRadius,
       borderRadius.button,
     ]) {
       expect(value).toBeLessThan(pillFloor);

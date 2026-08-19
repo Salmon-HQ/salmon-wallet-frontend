@@ -79,7 +79,7 @@ vi.mock('@salmon/shared', () => ({
   durationMs: { debounce: 0 },
   easing: { ease: 'ease' },
   fontFamily: { sans: 'Inter, sans-serif' },
-  fontSize: { xs: 12, sm: 14, base: 16, md: 18, xl: 24 },
+  fontSize: { xs: 12, sm: 14, base: 16, bodyLg: 18, xl: 24 },
   fontWeight: { medium: 500, semibold: 600, bold: 700, extraBold: 800 },
   getShortAddress: (value: string) => `${value.slice(0, 4)}...${value.slice(-4)}`,
   gradients: { disabledCSS: '#555', primaryCSS: '#0f0' },

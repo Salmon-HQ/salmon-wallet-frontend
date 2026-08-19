@@ -53,7 +53,7 @@ vi.mock('@salmon/shared', () => ({
   borderRadius: { lg: 16, full: '50%', card: 12 },
   borderWidth: { accent: 1 },
   fontFamily: { sans: 'Inter, sans-serif' },
-  fontSize: { sm: 12, base: 14, body: 14, md: 16, title: 20, headline: 24, '4xl': 36 },
+  fontSize: { sm: 12, base: 14, body: 14, bodyLg: 16, title: 20, headline: 24, '4xl': 36 },
   fontWeight: { medium: 500, semibold: 600, bold: 700 },
   letterSpacing: { snug: -0.12, widest: 1 },
   lineHeight: { none: 1, tight: 1.25 },

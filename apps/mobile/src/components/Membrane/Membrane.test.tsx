@@ -41,7 +41,9 @@ jest.mock('../BlurContainer', () => {
 
 import { Membrane } from './Membrane';
 
-const GEOMETRY = { borderRadius: 28, backgroundColor: 'rgba(0, 0, 0, 0.4)' };
+// The tab bar's geometry: `componentSizes.tabBarRadius` (the control radius,
+// 12 — a control, not a pill; pinned in shared's `controlRadius.test.ts`).
+const GEOMETRY = { borderRadius: 12, backgroundColor: 'rgba(0, 0, 0, 0.4)' };
 
 describe('Membrane', () => {
   beforeEach(() => {

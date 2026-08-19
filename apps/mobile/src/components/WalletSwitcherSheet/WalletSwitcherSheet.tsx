@@ -396,8 +396,8 @@ const styles = StyleSheet.create({
   avatarText: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.md,
-    lineHeight: fontSize.md * lineHeight.none,
+    fontSize: fontSize.bodyLg,
+    lineHeight: fontSize.bodyLg * lineHeight.none,
   },
   accountInfo: {
     flex: 1,
@@ -407,8 +407,8 @@ const styles = StyleSheet.create({
   accountName: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
-    lineHeight: fontSize.md * lineHeight.normal,
+    fontSize: fontSize.bodyLg,
+    lineHeight: fontSize.bodyLg * lineHeight.normal,
   },
   accountAddress: {
     color: colors.text.secondary,
@@ -463,8 +463,8 @@ const styles = StyleSheet.create({
   addAccountText: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
-    lineHeight: fontSize.md * lineHeight.normal,
+    fontSize: fontSize.bodyLg,
+    lineHeight: fontSize.bodyLg * lineHeight.normal,
     marginLeft: spacing.md,
   },
   emptyState: {
@@ -475,8 +475,8 @@ const styles = StyleSheet.create({
   emptyStateText: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
-    lineHeight: fontSize.md * lineHeight.normal,
+    fontSize: fontSize.bodyLg,
+    lineHeight: fontSize.bodyLg * lineHeight.normal,
     marginTop: spacing.md,
     textAlign: 'center',
   },

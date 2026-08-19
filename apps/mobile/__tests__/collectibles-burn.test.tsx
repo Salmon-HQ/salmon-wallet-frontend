@@ -70,7 +70,7 @@ jest.mock('@salmon/shared', () => ({
   },
   createBurnTransaction: (...args: unknown[]) => mockCreateBurnTransaction(...args),
   fontFamilyNative: { semiBold: 'System', medium: 'System' },
-  fontSize: { md: 16, sm: 14, xl: 20 },
+  fontSize: { bodyLg: 16, sm: 14, xl: 20 },
   signAndSendPreparedSolanaTransactions: (...args: unknown[]) =>
     mockSignAndSendPreparedSolanaTransactions(...args),
   letterSpacing: { wide: 0, wider: 0 },

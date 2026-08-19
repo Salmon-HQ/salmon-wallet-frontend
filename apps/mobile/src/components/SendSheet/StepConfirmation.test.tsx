@@ -88,7 +88,7 @@ jest.mock('@salmon/shared', () => ({
   shadowsCSS: { bezel: 'none' },
   fontFamilyNative: { bold: 'System', medium: 'System', regular: 'System', mono: 'System' },
   fontScaleCap: { chrome: 1.2 },
-  fontSize: { xs: 10, sm: 14, md: 16, title: 32 },
+  fontSize: { xs: 10, sm: 14, bodyLg: 16, title: 32 },
   gradients: { primary: { colors: ['#FF5C45', '#E64A34'] } },
   motionMs: { feedbackHold: 2000, flick: 90 },
   ms: (value: number) => value,

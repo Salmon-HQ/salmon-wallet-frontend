@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   methodTitle: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     marginBottom: spacing.xxs,
   },
   methodDescription: {
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
   loadingText: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   buttonContainer: {
     marginTop: spacing.xl,
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   scanErrorTitle: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     textAlign: 'center',
   },
   scanErrorBody: {
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   seedInput: {
     backgroundColor: colors.background.card,
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     minHeight: 120,
   },
 });

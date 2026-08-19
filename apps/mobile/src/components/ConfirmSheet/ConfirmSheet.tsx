@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   message: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     // Left-aligned: the message runs to several lines, and a centred block
     // moves the start of every line.
     textAlign: 'left',

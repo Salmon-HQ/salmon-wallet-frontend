@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   addressSection: {
     marginTop: spacing.lg,
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   networkText: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   saveButton: {
     backgroundColor: colors.accent.primary,
@@ -184,6 +184,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: semantic.accent.onFill,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
 });

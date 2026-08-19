@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     color: colors.text.secondary,
     textAlign: 'center',
   },
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     color: semantic.accent.onFill,
   },
   saveButtonTextDisabled: {

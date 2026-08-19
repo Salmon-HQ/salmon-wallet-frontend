@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   },
   copyButtonText: {
     flexShrink: 1,
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.bold,
     color: colors.button.primaryText,
     textAlign: 'center',

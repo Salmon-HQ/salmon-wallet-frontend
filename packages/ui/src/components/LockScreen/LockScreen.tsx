@@ -67,7 +67,7 @@ export interface LockScreenProps {
 const StyledInput = styled(InputBase)<{ $hasError: boolean }>(({ $hasError }) => ({
   width: '100%',
   padding: `${componentSizes.inputPaddingVertical}px ${spacing.lg}px`,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontFamily: fontFamily.sans,
   backgroundColor: colors.input.background,
   border: `1px solid ${$hasError ? semantic.status.danger : colors.input.border}`,

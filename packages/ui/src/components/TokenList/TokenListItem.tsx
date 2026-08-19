@@ -71,7 +71,7 @@ const BitcoinInfoContainer = styled(Box)({
 
 const BitcoinPrice = styled(Typography)({
   ...tabularNums.css,
-  fontSize: ms(fontSize.tokenNamePrice),
+  fontSize: ms(fontSize.body),
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -87,7 +87,7 @@ const BitcoinChangeRow = styled(Box)({
 
 const BitcoinChangeText = styled(Typography)<{ $changeColor?: string }>(({ $changeColor }) => ({
   ...tabularNums.css,
-  fontSize: ms(fontSize.tokenChange),
+  fontSize: ms(fontSize.caption),
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: $changeColor || colors.text.muted,
@@ -158,7 +158,7 @@ const NameRow = styled(Box)({
 });
 
 const TokenName = styled(Typography)({
-  fontSize: ms(fontSize.tokenNamePrice),
+  fontSize: ms(fontSize.body),
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -178,19 +178,19 @@ const PriceRow = styled(Box)({
 
 const Price = styled(Typography)({
   ...tabularNums.css,
-  fontSize: ms(fontSize.tokenNamePrice),
+  fontSize: ms(fontSize.body),
   fontFamily: fontFamily.sans,
   color: colors.text.muted,
 });
 
 const BulletSeparator = styled(Typography)({
-  fontSize: ms(fontSize.tokenNamePrice),
+  fontSize: ms(fontSize.body),
   color: 'rgba(255, 255, 255, 0.5)',
 });
 
 const ChangeText = styled(Typography)<{ $changeColor?: string }>(({ $changeColor }) => ({
   ...tabularNums.css,
-  fontSize: ms(fontSize.tokenChange),
+  fontSize: ms(fontSize.caption),
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: $changeColor || colors.text.muted,

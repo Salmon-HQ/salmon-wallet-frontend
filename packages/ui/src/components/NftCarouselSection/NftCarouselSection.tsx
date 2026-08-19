@@ -47,7 +47,7 @@ const HeaderRow = styled(Box)({
 
 const Title = styled('h2')({
   margin: 0,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
   fontFamily: fontFamily.sans,

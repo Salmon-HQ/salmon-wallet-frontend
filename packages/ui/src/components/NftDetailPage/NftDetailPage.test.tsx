@@ -76,7 +76,7 @@ vi.mock('@salmon/shared', () => ({
   durationMs: { feedbackShort: 0 },
   easing: { ease: 'ease' },
   fontFamily: { sans: 'Inter, sans-serif' },
-  fontSize: { xs: 12, sm: 14, md: 18 },
+  fontSize: { xs: 12, sm: 14, bodyLg: 18 },
   fontWeight: { regular: 400, medium: 500, bold: 700, black: 900 },
   formatRawAmount: (amount: string | number, decimals: number) =>
     `${Number(amount) / 10 ** decimals}`,

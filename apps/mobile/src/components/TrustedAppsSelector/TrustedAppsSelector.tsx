@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   appName: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   appDomain: {
     color: colors.text.secondary,

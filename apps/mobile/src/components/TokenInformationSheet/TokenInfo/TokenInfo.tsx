@@ -88,11 +88,11 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
             foregroundColor={colors.skeleton.highlight}
           >
             {/* "About" title */}
-            <Rect x="0" y="0" rx="4" ry="4" width="80" height={fontSize.md} />
+            <Rect x="0" y="0" rx="4" ry="4" width="80" height={fontSize.bodyLg} />
             {/* Description lines */}
-            <Rect x="0" y={fontSize.md + spacing.sm} rx="4" ry="4" width="100%" height="14" />
-            <Rect x="0" y={fontSize.md + spacing.sm + 18} rx="4" ry="4" width="80%" height="14" />
-            <Rect x="0" y={fontSize.md + spacing.sm + 36} rx="4" ry="4" width="60%" height="14" />
+            <Rect x="0" y={fontSize.bodyLg + spacing.sm} rx="4" ry="4" width="100%" height="14" />
+            <Rect x="0" y={fontSize.bodyLg + spacing.sm + 18} rx="4" ry="4" width="80%" height="14" />
+            <Rect x="0" y={fontSize.bodyLg + spacing.sm + 36} rx="4" ry="4" width="60%" height="14" />
           </ContentLoader>
         </View>
 
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold as '600',
     color: colors.text.primary,
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxs,
   },
   statValue: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     fontFamily: fontFamilyNative.medium,
     fontWeight: fontWeight.medium as '500',
     color: colors.text.primary,

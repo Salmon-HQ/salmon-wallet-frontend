@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     color: colors.text.primary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   skeletonContainer: {
     paddingTop: spacing.sm,
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   },
   tokenName: {
     color: colors.text.primary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     fontFamily: fontFamilyNative.medium,
     fontWeight: fontWeight.medium,
   },
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
   },
   loadMoreText: {
     color: colors.text.primary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     fontFamily: fontFamilyNative.medium,
     fontWeight: fontWeight.medium,
   },
@@ -456,11 +456,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: colors.text.secondary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   retryText: {
     color: colors.accent.primary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     fontFamily: fontFamilyNative.medium,
     fontWeight: fontWeight.medium,
     marginTop: spacing.md,
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     color: colors.text.primary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
   },

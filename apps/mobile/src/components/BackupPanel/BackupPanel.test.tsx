@@ -29,7 +29,7 @@ jest.mock('@salmon/shared', () => ({
     text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
   },
   fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', mono: 'System' },
-  fontSize: { sm: 14, base: 16, md: 18 },
+  fontSize: { sm: 14, base: 16, bodyLg: 18 },
   motionMs: { feedbackHold: 1500 },
   semantic: { status: { warning: '#FFB020', danger: '#FF6B85' } },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20 },

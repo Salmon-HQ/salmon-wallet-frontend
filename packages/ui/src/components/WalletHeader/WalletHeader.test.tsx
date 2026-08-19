@@ -40,7 +40,7 @@ vi.mock('@salmon/shared', async () => ({
   borderRadius: { '2xl': 24, tokenIcon: 20 },
   fontFamily: { sans: 'System' },
   fontWeight: { semibold: 600, bold: 700 },
-  fontSize: { sm: 14, md: 16 },
+  fontSize: { sm: 14, bodyLg: 16 },
   getAvatarColor: () => '#123456',
   getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
   getInitials: (name: string) => name.slice(0, 2).toUpperCase(),

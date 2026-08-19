@@ -40,7 +40,7 @@ jest.mock('@salmon/shared', () => ({
     step: { inactive: 'rgba(255, 255, 255, 0.3)' },
   },
   spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, '2xl': 24 },
-  borderRadius: { sm: 4, card: 26 },
+  borderRadius: { sm: 4, card: 28 },
   componentSizes: {
     blockchainIcon: 42,
     logoContainer: 48,

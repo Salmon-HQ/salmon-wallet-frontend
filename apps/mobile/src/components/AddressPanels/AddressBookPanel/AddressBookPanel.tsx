@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   contactName: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   contactAddress: {
     color: colors.text.secondary,

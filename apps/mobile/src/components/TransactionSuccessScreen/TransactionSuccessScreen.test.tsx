@@ -119,7 +119,7 @@ jest.mock('@salmon/shared', () => ({
   },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, '4xl': 40, '5xl': 48 },
   borderRadius: { lg: 16, full: 999, card: 12 },
-  fontSize: { sm: 12, base: 14, body: 14, md: 16, title: 20, headline: 24, '4xl': 36 },
+  fontSize: { sm: 12, base: 14, body: 14, bodyLg: 16, title: 20, headline: 24, '4xl': 36 },
   fontWeight: { semibold: '600', bold: '700' },
   gradients: { primaryButton: { colors: ['#0f0'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } },
   shadows: { imageHero: {} },

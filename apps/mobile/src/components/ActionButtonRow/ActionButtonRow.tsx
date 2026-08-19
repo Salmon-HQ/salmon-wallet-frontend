@@ -21,7 +21,7 @@ import { CallMadeSvgIcon, QrCodeScannerSvgIcon, ReceiptLongSvgIcon } from '../Ic
 import type { ActionButtonRowProps } from './types';
 
 const ACTION_BUTTON_ICON_SIZE = fontSize.lg;
-const ACTION_BUTTON_TEXT_SIZE = fontSize.md;
+const ACTION_BUTTON_TEXT_SIZE = fontSize.bodyLg;
 
 /**
  * ActionButtonRow component for primary wallet actions

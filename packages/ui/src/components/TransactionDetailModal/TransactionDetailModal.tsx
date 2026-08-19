@@ -407,7 +407,7 @@ const TokenInfoBox = styled(Box)({
 });
 
 const TokenSymbol = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
 });
@@ -424,7 +424,7 @@ const TokenName = styled(Typography)({
 
 const TokenAmount = styled(Typography)({
   ...tabularNums.css,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.bold,
   flexShrink: 0,
 });
@@ -464,7 +464,7 @@ const SwapLogoPlaceholder = styled(Box)({
 
 const SwapAmount = styled(Typography)({
   ...tabularNums.css,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.bold,
   color: colors.text.primary,
   marginTop: spacing.sm,

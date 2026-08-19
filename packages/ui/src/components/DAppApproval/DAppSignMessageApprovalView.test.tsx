@@ -54,7 +54,7 @@ vi.mock('@salmon/shared', () => ({
   componentSizes: { buttonMinWidth: 64, buttonHeight: 48, buttonRadius: 12 },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 },
   fontFamily: { sans: 'sans-serif', mono: 'monospace' },
-  fontSize: { xs: 10, sm: 12, base: 14, md: 16, title: 20 },
+  fontSize: { xs: 10, sm: 12, base: 14, bodyLg: 16, title: 20 },
   fontWeight: { medium: 500, semibold: 600, bold: 700 },
   letterSpacing: { widest: '1px' },
   shadowsCSS: { none: 'none' },

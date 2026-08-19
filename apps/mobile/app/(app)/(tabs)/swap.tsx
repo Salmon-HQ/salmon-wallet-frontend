@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: semantic.text.secondary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     marginTop: spacing.lg,
   },
 });

@@ -63,7 +63,7 @@ const EmptyContainer = styled(Box)({
 });
 
 const EmptyTitle = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   color: colors.text.primary,
   marginTop: spacing.lg,
@@ -86,7 +86,7 @@ const ErrorContainer = styled(Box)({
 });
 
 const ErrorTitle = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   color: colors.text.primary,
   marginBottom: spacing.base,

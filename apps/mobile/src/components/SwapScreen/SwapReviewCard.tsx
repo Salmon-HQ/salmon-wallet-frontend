@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.medium,
     color: colors.text.primary,
     letterSpacing: letterSpacing.slight,

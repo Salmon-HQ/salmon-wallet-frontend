@@ -30,7 +30,7 @@ jest.mock('@salmon/shared', () => ({
   ContentLoader: ({ children }: { children?: React.ReactNode }) => children,
   Rect: () => null,
   fontFamilyNative: { semiBold: 'System', regular: 'System', medium: 'System' },
-  fontSize: { md: 16, base: 14, sm: 12 },
+  fontSize: { bodyLg: 16, base: 14, sm: 12 },
   fontWeight: { semibold: '600', regular: '400', medium: '500' },
   formatLargeNumber: (value: number) => String(value),
   getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,

@@ -98,7 +98,7 @@ const SearchInput = styled(InputBase)({
   borderRadius: borderRadius.lg,
   padding: `${spacing.sm}px ${spacing.md}px`,
   color: colors.text.primary,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontFamily: fontFamily.sans,
   border: `${borderWidth.thin}px solid ${colors.input.border}`,
   transition: `border-color ${duration.normal} ${easing.ease}`,
@@ -159,7 +159,7 @@ const TokenIconPlaceholder = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   color: colors.text.secondary,
 });
 
@@ -176,7 +176,7 @@ const TokenNameRow = styled(Box)({
 });
 
 const TokenName = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -286,7 +286,7 @@ const LoadMoreButton = styled(Button)({
   padding: `${spacing.md}px`,
   textTransform: 'none',
   color: colors.text.primary,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   marginTop: spacing.sm,
@@ -303,7 +303,7 @@ const EmptyContainer = styled(Box)({
 });
 
 const EmptyText = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontFamily: fontFamily.sans,
   color: colors.text.secondary,
 });
@@ -320,7 +320,7 @@ const CloseActionButton = styled(Button)({
   padding: `${spacing.md}px`,
   textTransform: 'none',
   color: colors.text.primary,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
   '&:hover': {

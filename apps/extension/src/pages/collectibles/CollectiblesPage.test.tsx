@@ -33,7 +33,7 @@ vi.mock('@salmon/shared', () => ({
     background: { card: '#111' },
   },
   spacing: { sm: 8, md: 12, lg: 16, xl: 24 },
-  fontSize: { sm: 14, base: 16, md: 18, lg: 20 },
+  fontSize: { sm: 14, base: 16, bodyLg: 18, lg: 20 },
   borderRadius: { lg: 16 },
   fontFamily: { sans: 'sans-serif' },
   canonicalNftToSolanaNftData: (...args: unknown[]) => mockCanonicalNftToSolanaNftData(...args),

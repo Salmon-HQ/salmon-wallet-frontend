@@ -74,7 +74,7 @@ vi.mock('@salmon/shared', async () => ({
   copyToClipboard: (value: string) => mockCopyToClipboard(value),
   borderRadius: { md: 12, lg: 16, full: 9999 },
   borderWidth: { thin: 1, medium: 2 },
-  fontSize: { xs: 12, sm: 14, md: 16, '3xl': 28, title: 32 },
+  fontSize: { xs: 12, sm: 14, bodyLg: 16, '3xl': 28, title: 32 },
   shadowsCSS: { button: 'none', bezel: 'none', none: 'none' },
   opacity: { high: 0.85, medium: 0.6, soft: 0.8 },
   duration: { fast: '120ms', normal: '200ms', fastest: '80ms' },

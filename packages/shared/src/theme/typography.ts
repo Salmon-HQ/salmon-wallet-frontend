@@ -75,8 +75,14 @@ export const fontSize = {
   // ---------------------------------------------------------------------
   /** 10px - uppercase labels, badges, plane markers, "TESTNET" */
   micro: 10,
+  /** 10px - section and plane labels (600, uppercase, +0.3px); size shared with `micro` */
+  label: 10,
   /** 12px - dense secondary text: list sublines, metadata, deltas */
   caption: 12,
+  /** 13px - mono: addresses, hashes, memos, origin strings */
+  mono: 13,
+  /** 16px - the larger mono size: seed words (DESIGN.md names the step; size pairs with `bodyLg`) */
+  monoLg: 16,
   /** 14px - default UI text: rows, controls, button labels */
   body: 14,
   /** 16px - reading text and primary values in a row */
@@ -101,8 +107,6 @@ export const fontSize = {
   sm: 12,
   /** 14px @deprecated use `body` */
   base: 14,
-  /** 16px @deprecated use `bodyLg` */
-  md: 16,
   /** 18px @deprecated use `heading` */
   lg: 18,
   /** 20px @deprecated use `title` */
@@ -115,12 +119,6 @@ export const fontSize = {
   '4xl': 36,
   /** 36px @deprecated use `display` */
   '5xl': 36,
-  /** 12px @deprecated component-named; use `caption` (was 11.375) */
-  tokenChange: 12,
-  /** 14px @deprecated component-named; use `body` (was 13.65) */
-  tokenNamePrice: 14,
-  /** 14px @deprecated component-named; use `body` (was 14.5) */
-  actionButton: 14,
 
   // ---------------------------------------------------------------------
   // Icon glyph sizes — not text, deliberately off the type scale

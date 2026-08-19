@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   sectionHeader: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.bold,
     color: colors.text.primary,
     marginBottom: vs(spacing.md),

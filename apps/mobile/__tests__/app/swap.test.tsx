@@ -47,7 +47,7 @@ jest.mock('@salmon/shared', () => ({
     state: { hover: 'rgba(199,211,232,0.06)', selectedEdge: '#FF5C45' },
   },
   colors: { text: { muted: '#999' } },
-  fontSize: { md: 18 },
+  fontSize: { bodyLg: 18 },
   getTokenList: jest.fn().mockResolvedValue([{ address: 'mint-sol', symbol: 'SOL', decimals: 9 }]),
   useJupiterTokenList: () => ({
     tokens: [{ address: 'mint-sol', symbol: 'SOL', decimals: 9 }],

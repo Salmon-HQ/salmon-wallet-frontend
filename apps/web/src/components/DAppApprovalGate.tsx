@@ -79,7 +79,7 @@ const Form = styled('form')({ width: '100%' });
 const StyledInput = styled(InputBase)<{ $hasError: boolean }>(({ $hasError }) => ({
   width: '100%',
   padding: '14px 16px',
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontFamily: fontFamily.sans,
   backgroundColor: colors.input.background,
   border: `1px solid ${$hasError ? semantic.status.danger : colors.input.border}`,

@@ -32,7 +32,7 @@ const ContentContainer = styled(Box)({
 });
 
 const Title = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,

@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   subtitle: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     lineHeight: 24,
     textAlign: 'center',
     marginBottom: spacing['3xl'],

@@ -47,7 +47,7 @@ const StyledInput = styled(InputBase)<{ $borderColor: string }>(({ $borderColor 
   color: colors.text.primary,
   // Seed Phrase Rule: the typed word renders in the mono face.
   fontFamily: fontFamily.mono,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   transition: `border-color ${duration.normal} ${easing.ease}`,
   '& .MuiInputBase-input': {
     padding: 0,

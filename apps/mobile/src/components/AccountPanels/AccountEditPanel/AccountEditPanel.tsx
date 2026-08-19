@@ -128,6 +128,6 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
 });

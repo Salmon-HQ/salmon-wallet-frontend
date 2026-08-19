@@ -133,7 +133,7 @@ const SaveButton = styled(Button)<{ $isDisabled?: boolean }>(({ $isDisabled }) =
   padding: `${spacing.md}px`,
   textTransform: 'none',
   fontWeight: fontWeight.bold,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   borderRadius: borderRadius.lg,
   backgroundColor: $isDisabled ? colors.card.border : colors.accent.primary,
   color: $isDisabled ? colors.text.secondary : colors.text.primary,

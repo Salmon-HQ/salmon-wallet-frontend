@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   versionText: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     marginBottom: spacing.xxs,
   },
   buildText: {
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   copyright: {
     color: colors.text.tertiary,

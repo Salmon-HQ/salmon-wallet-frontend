@@ -27,7 +27,7 @@ jest.mock('@salmon/shared', () => ({
     button: { primaryBackground: '#FF5C45', primaryText: '#070911' },
     status: { warningBackground: '#3A2C10', errorBackground: '#3A1620' },
   },
-  fontSize: { xs: 10, sm: 14, base: 16, md: 18, '2xl': 24 },
+  fontSize: { xs: 10, sm: 14, base: 16, bodyLg: 18, '2xl': 24 },
   fontFamilyNative: { bold: 'System', semiBold: 'System', medium: 'System', regular: 'System' },
   letterSpacing: { wide: 0, change: 0 },
   lineHeight: { condensed: 1.2 },

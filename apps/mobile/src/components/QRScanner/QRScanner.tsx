@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     color: colors.scanner.textSecondary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   content: {
     flex: 1,
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   messageText: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     color: colors.scanner.textSecondary,
     textAlign: 'center',
     marginBottom: spacing.sm,
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: semantic.text.primary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
   },

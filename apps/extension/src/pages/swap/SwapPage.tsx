@@ -58,7 +58,7 @@ const LoadingContainer = styled(Box)({
 const LoadingText = styled(Typography)({
   color: colors.text.secondary,
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
 });
 
 // ============================================================================

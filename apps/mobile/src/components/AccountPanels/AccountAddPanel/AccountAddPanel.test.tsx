@@ -44,7 +44,7 @@ jest.mock('@salmon/shared', () => ({
   spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '3xl': 32 },
   borderRadius: { lg: 16, md: 12 },
   borderWidth: { thin: 1 },
-  fontSize: { sm: 14, md: 18 },
+  fontSize: { sm: 14, bodyLg: 18 },
   fontFamilyNative: { medium: 'System', regular: 'System' },
   useAccountsContext: () => [
     {

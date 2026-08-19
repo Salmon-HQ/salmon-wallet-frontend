@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     marginBottom: vs(spacing.base),
   },
   emptySubtitle: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.regular,
     color: colors.text.secondary,
     textAlign: 'center',
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   retryText: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.medium,
     color: semantic.accent.onFill,
   },

@@ -37,22 +37,22 @@ const BlurContent = styled('div')({
 });
 
 const Label = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
   letterSpacing: letterSpacing.slight,
-  lineHeight: `${fontSize.md * lineHeight.normal}px`,
+  lineHeight: `${fontSize.bodyLg * lineHeight.normal}px`,
 });
 
 const Value = styled(Typography)({
   ...tabularNums.css,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
   letterSpacing: letterSpacing.slight,
-  lineHeight: `${fontSize.md * lineHeight.normal}px`,
+  lineHeight: `${fontSize.bodyLg * lineHeight.normal}px`,
 });
 
 // ============================================================================

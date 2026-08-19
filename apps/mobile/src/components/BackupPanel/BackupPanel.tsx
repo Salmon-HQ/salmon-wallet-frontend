@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   revealText: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   wordsGrid: {
     flexDirection: 'row',

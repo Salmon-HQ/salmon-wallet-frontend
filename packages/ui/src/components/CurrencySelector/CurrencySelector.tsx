@@ -32,7 +32,7 @@ const CurrencySymbol = styled(Box)({
 });
 
 const SymbolText = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
 });

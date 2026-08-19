@@ -40,7 +40,7 @@ const StyledButton = styled(Button)<{ fullWidth?: boolean }>(({ fullWidth }) => 
   backgroundColor: colors.button.primaryBackground,
   borderRadius: componentSizes.buttonRadius,
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.bold,
   letterSpacing: letterSpacing.widest,
   color: colors.button.primaryText,

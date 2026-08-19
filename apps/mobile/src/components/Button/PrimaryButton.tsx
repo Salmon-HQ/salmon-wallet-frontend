@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   text: {
     color: colors.button.primaryText,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     letterSpacing: letterSpacing.widest,
     // `adjustsFontSizeToFit` stretches the Text to the full button width, so
     // without an explicit center the label left-aligns (visible on short labels

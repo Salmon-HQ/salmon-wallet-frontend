@@ -39,7 +39,7 @@ vi.mock('@salmon/shared', () => ({
   colors: { button: { primaryBackground: '#fff', primaryText: '#000', disabledOpacity: 0.5 } },
   componentSizes: { buttonMinWidth: 64, buttonHeight: 48, buttonRadius: 12 },
   fontFamily: { sans: 'sans-serif' },
-  fontSize: { md: 16 },
+  fontSize: { bodyLg: 16 },
   fontWeight: { bold: 700 },
   letterSpacing: { widest: '1px' },
   shadowsCSS: { none: 'none' },

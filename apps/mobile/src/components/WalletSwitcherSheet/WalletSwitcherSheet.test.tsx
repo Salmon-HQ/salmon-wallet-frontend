@@ -63,7 +63,7 @@ jest.mock('@salmon/shared', () => ({
   },
   fontSize: {
     sm: 14,
-    md: 18,
+    bodyLg: 18,
   },
   lineHeight: {
     none: 1,

@@ -48,14 +48,14 @@ const styles = StyleSheet.create({
     minHeight: vs(componentSizes.backButtonSize),
   },
   label: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.medium,
     color: colors.text.primary,
     letterSpacing: letterSpacing.slight,
     lineHeight: ms(15 * lineHeight.normal),
   },
   value: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.extraBold,
     color: colors.text.primary,
     letterSpacing: letterSpacing.slight,

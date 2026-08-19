@@ -411,9 +411,9 @@ describe('contrast: the bezel', () => {
     // The row the underside darkens is genuinely too dark for the ink…
     expect(contrast(text.onAccent, shaded)).toBeLessThan(AA_TEXT);
     // …which is fine only because a centred label never reaches it. One line of
-    // `fontSize.md` in a `buttonHeight` pill leaves this much clearance below
+    // `fontSize.bodyLg` in a `buttonHeight` pill leaves this much clearance below
     // the glyph box, and the shade is `Math.abs(offsetY)` pixels tall.
-    const clearance = (componentSizes.buttonHeight - fontSize.md) / 2;
+    const clearance = (componentSizes.buttonHeight - fontSize.bodyLg) / 2;
     expect(clearance).toBeGreaterThan(Math.abs(insets[1].offsetY));
   });
 });

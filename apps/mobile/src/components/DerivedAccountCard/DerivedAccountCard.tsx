@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   address: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   networkRow: {
     flexDirection: 'row',

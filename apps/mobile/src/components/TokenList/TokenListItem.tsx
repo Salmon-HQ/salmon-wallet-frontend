@@ -283,12 +283,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   name: {
-    fontSize: ms(fontSize.tokenNamePrice),
+    fontSize: ms(fontSize.body),
     fontFamily: fontFamilyNative.medium,
     color: colors.text.balance,
     flexShrink: 1,
     minWidth: 0,
-    lineHeight: ms(fontSize.tokenNamePrice) * lineHeight.tokenListItem,
+    lineHeight: ms(fontSize.body) * lineHeight.tokenListItem,
     letterSpacing: ms(-0.07, 0.3),
   },
   priceRow: {
@@ -298,18 +298,18 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   price: {
-    fontSize: ms(fontSize.tokenNamePrice),
+    fontSize: ms(fontSize.body),
     fontFamily: fontFamilyNative.semiBold,
     color: semantic.text.secondary,
-    lineHeight: ms(fontSize.tokenNamePrice) * lineHeight.tokenListItem,
+    lineHeight: ms(fontSize.body) * lineHeight.tokenListItem,
     letterSpacing: ms(-0.07, 0.3),
     flexShrink: 0,
   },
   changeArrow: {
-    fontSize: ms(fontSize.tokenNamePrice),
+    fontSize: ms(fontSize.body),
   },
   changeText: {
-    fontSize: ms(fontSize.tokenChange),
+    fontSize: ms(fontSize.caption),
     fontFamily: fontFamilyNative.light,
     letterSpacing: ms(-0.06, 0.3),
     flexShrink: 1,
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     gap: s(spacing.xxs),
   },
   bitcoinChangeText: {
-    fontSize: ms(fontSize.tokenChange),
+    fontSize: ms(fontSize.caption),
     fontFamily: fontFamilyNative.light,
     letterSpacing: ms(-0.06, 0.3),
   },

@@ -195,13 +195,13 @@ const styles = StyleSheet.create({
   },
   glassContainer: {
     width: '100%',
-    borderRadius: 28,
+    borderRadius: componentSizes.tabBarRadius,
     overflow: 'hidden',
     position: 'relative',
   },
   glassBackgroundLayer: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 28,
+    borderRadius: componentSizes.tabBarRadius,
     backgroundColor: colors.background.glass,
     borderColor: colors.border.subtle,
     borderWidth: borderWidth.thin,

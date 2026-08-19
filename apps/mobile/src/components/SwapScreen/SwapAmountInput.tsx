@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.bold,
     color: colors.text.primary,
     paddingVertical: 0,

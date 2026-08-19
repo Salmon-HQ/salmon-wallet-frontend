@@ -125,7 +125,7 @@ const OnFillContent = styled('span')({
 });
 
 const CopyButtonText = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.extraBold,
   color: colors.button.primaryText,
   textAlign: 'center',

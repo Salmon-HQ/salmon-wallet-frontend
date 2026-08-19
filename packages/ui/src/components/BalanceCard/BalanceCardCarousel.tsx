@@ -53,7 +53,7 @@ const ArrowButton = styled('button')<{ $visible: boolean }>(({ $visible }) => ({
   justifyContent: 'center',
   textAlign: 'center',
   lineHeight: lineHeight.none,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   opacity: $visible ? 1 : 0,
   pointerEvents: $visible ? 'auto' : 'none',

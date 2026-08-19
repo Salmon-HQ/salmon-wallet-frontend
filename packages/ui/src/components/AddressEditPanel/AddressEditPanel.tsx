@@ -46,7 +46,7 @@ const StyledInput = styled(InputBase)({
   padding: `${spacing.sm}px ${spacing.lg}px`,
   color: colors.text.primary,
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   '& .MuiInputBase-input': {
     padding: `${spacing.md}px 0`,
     '&::placeholder': {
@@ -64,7 +64,7 @@ const NetworkBox = styled(Box)({
 
 const NetworkText = styled(Typography)({
   color: colors.text.secondary,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontFamily: fontFamily.sans,
 });
 
@@ -74,7 +74,7 @@ const SaveButton = styled(Button)({
   padding: `${spacing.md}px`,
   borderRadius: borderRadius.lg,
   textTransform: 'none',
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   backgroundColor: colors.accent.primary,

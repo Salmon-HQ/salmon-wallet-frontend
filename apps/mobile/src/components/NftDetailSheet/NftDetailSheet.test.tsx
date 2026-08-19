@@ -88,7 +88,7 @@ jest.mock('@salmon/shared', () => ({
     interactive: { surface: '#111' },
     status: { error: '#f00' },
   },
-  fontSize: { sm: 14, md: 18, base: 16, '2xl': 24 },
+  fontSize: { sm: 14, bodyLg: 18, base: 16, '2xl': 24 },
   borderRadius: { badge: 12, iconContainer: 18, button: 16 },
   fontFamilyNative: { bold: 'System', medium: 'System', regular: 'System' },
   gradients: { primaryButton: { colors: ['#0f0'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } },

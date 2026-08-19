@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
   networkName: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   networkBlockchain: {
     color: colors.text.secondary,
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
   revealText: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   emptyText: {
     color: colors.text.secondary,

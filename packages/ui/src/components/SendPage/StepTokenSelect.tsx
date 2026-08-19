@@ -74,7 +74,7 @@ const SearchIconStyled = styled(MagnifyingGlassIcon)({
 });
 
 const SectionHeader = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,

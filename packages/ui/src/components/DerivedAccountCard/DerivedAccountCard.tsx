@@ -81,7 +81,7 @@ const Info = styled(Box)({
 const Address = styled(Typography)({
   color: colors.text.primary,
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
 });
 
 const NetworkRow = styled(Box)({

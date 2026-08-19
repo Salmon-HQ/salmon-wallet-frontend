@@ -43,7 +43,7 @@ vi.mock('@salmon/shared', async () => ({
   borderRadius: { lg: 16, md: 12 },
   fontFamily: { sans: 'System', mono: 'monospace' },
   fontWeight: { semibold: 600, regular: 400, medium: 500 },
-  fontSize: { sm: 14, md: 16, base: 14 },
+  fontSize: { sm: 14, bodyLg: 16, base: 14 },
   formatLargeNumber: (value: number) => String(value),
   useCurrencyContext: () => [null, { formatLarge: (value: number) => `$${value}` }],
   getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,

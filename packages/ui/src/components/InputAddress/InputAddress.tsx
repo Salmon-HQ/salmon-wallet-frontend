@@ -84,7 +84,7 @@ const StyledInput = styled(InputBase)<{
   flex: 1,
   color: $inputDisabled ? colors.text.tertiary : colors.text.primary,
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   '& .MuiInputBase-input': {
     padding: `${spacing.md}px 0`,
     '&::placeholder': {

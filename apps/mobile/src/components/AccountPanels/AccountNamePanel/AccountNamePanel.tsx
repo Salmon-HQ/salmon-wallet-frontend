@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   inputError: {
     borderColor: semantic.status.danger,

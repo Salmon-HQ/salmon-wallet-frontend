@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   primaryText: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   secondaryText: {
     color: colors.text.secondary,

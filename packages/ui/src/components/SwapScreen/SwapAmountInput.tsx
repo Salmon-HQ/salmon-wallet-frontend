@@ -78,7 +78,7 @@ const LoadingContainer = styled(Box)({
 const StyledInput = styled(InputBase)({
   ...tabularNums.css,
   flex: 1,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,

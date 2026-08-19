@@ -992,7 +992,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: semantic.text.secondary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     marginTop: spacing.lg,
   },
   fixedHeader: {
@@ -1039,7 +1039,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
   },
   emptyStateText: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     fontFamily: fontFamilyNative.medium,
     fontWeight: '500',
     color: semantic.text.secondary,

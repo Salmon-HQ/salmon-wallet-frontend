@@ -52,49 +52,77 @@ export const spacing = {
 } as const;
 
 /**
- * Border radius tokens
+ * The radius scale — seven steps plus `full` (DESIGN.md §Shapes).
+ *
+ * Kept as a named const so the legacy aliases below can reference the steps
+ * instead of repeating the numbers.
  */
-export const borderRadius = {
+const radiusScale = {
   /** 0px */
-  none: 0,
-  /** 2px - Scrollbar thumb */
-  scrollbar: 2,
-  /** 4px */
-  sm: 4,
-  /** 8px */
-  md: 8,
-  /** 9px - NFT card badges */
-  badge: 9,
+  r0: 0,
+  /** 4px - chips, tags */
+  r1: 4,
+  /** 8px - icons */
+  r2: 8,
   /**
    * 12px — the control radius.
    *
    * Every interactive control in the system sits here: buttons, text inputs,
    * action buttons, list rows, small cards. A control is not a pill.
    */
-  lg: 12,
+  r3: 12,
+  /** 16px - cards */
+  r4: 16,
+  /** 22px - the inner core of a bezel */
+  r5: 22,
+  /** 28px - bezel outer, sheets, the balance card (consolidated from 26) */
+  r6: 28,
+  /** 9999px - fully rounded: avatars, toggles */
+  full: 9999,
+} as const;
+
+/**
+ * Border radius tokens.
+ *
+ * `r0`–`r6` + `full` are the scale; everything else is a legacy alias
+ * (soft-deprecated — prefer the `rN` step named in each tag) or an off-scale
+ * one-off the scale does not yet consolidate.
+ */
+export const borderRadius = {
+  ...radiusScale,
+  /** 0px @deprecated use `r0` */
+  none: radiusScale.r0,
+  /** 2px - Scrollbar thumb (off-scale one-off) */
+  scrollbar: 2,
+  /** 4px @deprecated use `r1` */
+  sm: radiusScale.r1,
+  /** 8px @deprecated use `r2` */
+  md: radiusScale.r2,
+  /** 9px - NFT card badges (off-scale one-off) */
+  badge: 9,
+  /** 12px — the control radius. @deprecated use `r3` */
+  lg: radiusScale.r3,
   /**
-   * 12px — alias of `lg`, kept because ~15 call sites across three apps import
+   * 12px — alias of `r3`, kept because ~15 call sites across three apps import
    * it by this name. It used to be 14; it was never a distinct step, only the
-   * legacy scale's separate value for "button". Pinned to `lg` by
+   * legacy scale's separate value for "button". Pinned by
    * `controlRadius.test.ts`.
    */
-  button: 12,
-  /** 16px */
-  xl: 16,
-  /** 18px - Icon containers */
+  button: radiusScale.r3,
+  /** 16px @deprecated use `r4` */
+  xl: radiusScale.r4,
+  /** 18px - Icon containers (off-scale one-off) */
   iconContainer: 18,
-  /** 20px - Large icon/avatar corners */
+  /** 20px - Large icon/avatar corners (off-scale one-off) */
   iconLg: 20,
-  /** 22px - Token icon corners */
-  tokenIcon: 22,
-  /** 24px - Header corners */
+  /** 22px - Token icon corners @deprecated use `r5` */
+  tokenIcon: radiusScale.r5,
+  /** 24px - Header corners (off-scale one-off) */
   header: 24,
-  /** 24px */
+  /** 24px (off-scale one-off) */
   '2xl': 24,
-  /** 26px - Balance card corners */
-  card: 26,
-  /** 9999px - fully rounded */
-  full: 9999,
+  /** 28px - Balance card / sheet corners @deprecated use `r6` (was 26) */
+  card: radiusScale.r6,
 } as const;
 
 /**
@@ -207,6 +235,12 @@ export const componentSizes = {
   headerInnerHeight: 63,
 
   // Tab Bar (GlassTabBar)
+  /**
+   * The tab bar's corner radius. Product-owner decision: the bar is a control,
+   * not a pill — it sits on the control radius (was 28). Pinned by
+   * `controlRadius.test.ts`.
+   */
+  tabBarRadius: borderRadius.lg,
   tabBarPaddingTop: 32,
   tabBarMinBottomPadding: 16,
   /** 60px - Tab bar item container height */

@@ -42,7 +42,7 @@ vi.mock('@salmon/shared', () => ({
     { key: 'explorer', name: 'Explorer' },
   ],
   getDefaultExplorer: () => 'solscan',
-  fontSize: { sm: 14, md: 16, base: 14, lg: 18 },
+  fontSize: { sm: 14, bodyLg: 16, base: 14, lg: 18 },
   fontWeight: { medium: 500 },
   opacity: { high: 0.9 },
   spacing: { sm: 8, md: 12, lg: 16 },
