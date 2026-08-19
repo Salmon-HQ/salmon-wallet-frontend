@@ -43,6 +43,7 @@ import {
   fontSize,
   fontWeight,
   letterSpacing,
+  borderWidth,
   shadowsCSS,
   opacity,
   componentSizes,
@@ -163,12 +164,12 @@ const Header = styled(Box)({
   alignItems: 'center',
   justifyContent: 'space-between',
   padding: `${spacing.lg}px ${spacing.lg}px`,
-  borderBottom: `1px solid ${colors.border.default}`,
+  borderBottom: `${borderWidth.thin}px solid ${colors.border.default}`,
   flexShrink: 0,
 });
 
 const HeaderTitle = styled(Typography)({
-  fontSize: fontSize.lg,
+  fontSize: fontSize.heading,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
 });
@@ -187,10 +188,10 @@ const MenuContent = styled(Box)({
 });
 
 const SectionTitle = styled(Typography)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.label,
   fontWeight: fontWeight.semibold,
   textTransform: 'uppercase',
-  letterSpacing: letterSpacing.wider,
+  letterSpacing: letterSpacing.label,
   color: $isDanger ? semantic.status.danger : colors.text.secondary,
   padding: `${spacing.md}px ${spacing.lg}px ${spacing.sm}px`,
   marginTop: spacing.sm,
@@ -207,6 +208,18 @@ const StyledListItemButton = styled(ListItemButton)<{ $isDanger?: boolean }>(({ 
   },
 }));
 
+// A toggle row is not a button. The row used to be a `ListItemButton`
+// (role button) wrapping a `Switch` (role checkbox), so a screen reader
+// announced the same setting twice; the switch is the only control here and
+// the row is the layout around it — the same collapse the mobile surface made
+// (DESIGN.md §"The settings surface joined the system").
+const ToggleRow = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  width: '100%',
+  padding: `${spacing.md}px ${spacing.lg}px`,
+});
+
 const StyledListItemIcon = styled(ListItemIcon)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
   minWidth: componentSizes.backButtonSize,
   color: $isDanger ? semantic.status.danger : colors.text.secondary,
@@ -214,12 +227,12 @@ const StyledListItemIcon = styled(ListItemIcon)<{ $isDanger?: boolean }>(({ $isD
 
 const StyledListItemText = styled(ListItemText)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
   '& .MuiListItemText-primary': {
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     fontWeight: fontWeight.medium,
     color: $isDanger ? semantic.status.danger : colors.text.primary,
   },
   '& .MuiListItemText-secondary': {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     color: colors.text.secondary,
     marginTop: spacing.xxs,
   },
@@ -391,25 +404,29 @@ export function SettingsPanelStack({
       if (item.type === 'toggle') {
         const toggle = toggleConfigFor(item.id);
         const checked = toggle?.checked ?? false;
-        const fireToggle = () => toggle?.onToggle?.(!checked);
+        const descriptionId = description ? `${item.id}-description` : undefined;
         return (
           <StyledListItem key={item.id}>
-            <StyledListItemButton data-testid={getSettingsItemTestId(item.id)} onClick={fireToggle}>
+            <ToggleRow data-testid={getSettingsItemTestId(item.id)}>
               <StyledListItemIcon>{icon}</StyledListItemIcon>
-              <StyledListItemText primary={label} secondary={description} />
+              <StyledListItemText
+                primary={label}
+                secondary={description}
+                secondaryTypographyProps={descriptionId ? { id: descriptionId } : undefined}
+              />
               <StyledSwitch
                 edge="end"
                 checked={checked}
-                onChange={fireToggle}
-                onClick={(e) => e.stopPropagation()}
+                onChange={() => toggle?.onToggle?.(!checked)}
                 slotProps={{
                   input: {
                     'data-testid': toggle?.testId ?? getSettingsItemTestId(item.id),
                     'aria-label': label,
+                    'aria-describedby': descriptionId,
                   } as React.InputHTMLAttributes<HTMLInputElement>,
                 }}
               />
-            </StyledListItemButton>
+            </ToggleRow>
           </StyledListItem>
         );
       }

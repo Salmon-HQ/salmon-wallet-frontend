@@ -95,7 +95,7 @@ const SecurityIcon = styled(ShieldIcon)({
 });
 
 const SecurityText = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.caption,
   color: colors.text.secondary,
   lineHeight: lineHeight.tokenListItem,
   flex: 1,
@@ -115,7 +115,11 @@ export function SupportSelector({
   const renderOption = useCallback(
     (option: SupportOptionItem) => (
       <ListItem key={option.id} disablePadding>
-        <StyledListItemButton onClick={() => onOpenLink(option.url)}>
+        {/* Every row leaves the app for an external URL (docs, social, mailto),
+            so each one announces as a link, not a button — the same reading the
+            mobile surface gives them (DESIGN.md §"The settings surface joined
+            the system"). */}
+        <StyledListItemButton role="link" onClick={() => onOpenLink(option.url)}>
           <StyledListItemIcon>{ICON_MAP[option.id] || <QuestionIcon />}</StyledListItemIcon>
           <ListItemText
             primary={t(option.title)}
@@ -123,14 +127,14 @@ export function SupportSelector({
             primaryTypographyProps={{
               sx: {
                 color: colors.text.primary,
-                fontSize: fontSize.base,
+                fontSize: fontSize.body,
                 fontWeight: fontWeight.medium,
               },
             }}
             secondaryTypographyProps={{
               sx: {
                 color: colors.text.secondary,
-                fontSize: fontSize.sm,
+                fontSize: fontSize.caption,
               },
             }}
           />

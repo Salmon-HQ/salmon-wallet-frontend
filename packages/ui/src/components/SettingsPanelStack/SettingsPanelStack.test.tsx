@@ -45,14 +45,15 @@ vi.mock('@salmon/shared', () => {
       text: { primary: '#fff', secondary: '#999', tertiary: '#666' },
       sheet: { backdrop: '#0008' },
     },
-    spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20 },
-    fontSize: { sm: 12, bodyLg: 14, lg: 16, xl: 18 },
-    fontWeight: { regular: 400, semibold: 600 },
-    letterSpacing: { wider: '0.05em' },
-    shadowsCSS: { sheet: 'none', card: 'none' },
-    opacity: { full: 1, half: 0.5 },
+    spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20 },
+    fontSize: { label: 10, caption: 12, body: 14, heading: 18 },
+    fontWeight: { regular: 400, medium: 500, semibold: 600 },
+    letterSpacing: { label: 0.3 },
+    borderWidth: { thin: 1 },
+    shadowsCSS: { none: 'none', sheet: 'none', card: 'none' },
+    opacity: { full: 1, half: 0.5, disabled: 0.5 },
     componentSizes: { backButtonSize: 40, drawerWidth: 320 },
-    durationMs: { fast: 150, normal: 300 },
+    durationMs: { fast: 150, normal: 300, medium: 250, slow: 400 },
   };
 });
 
@@ -113,5 +114,46 @@ describe('SettingsPanelStack — menu routing', () => {
     for (const id of otherIds) {
       expect(screen.queryByTestId(id)).toBeNull();
     }
+  });
+});
+
+describe('SettingsPanelStack — a toggle row announces once', () => {
+  // The row used to be a button wrapping a switch, so the same setting was
+  // announced twice. The switch is the only control on the row now.
+  const toggles: Array<[string, string]> = [
+    ['settings.developer_networks', 'settings-developer-networks-toggle'],
+    ['settings.analytics', 'settings-analytics-toggle'],
+  ];
+
+  it.each(toggles)('"%s" is a switch and not also a button', (label) => {
+    renderStack();
+
+    expect(screen.getByRole('checkbox', { name: label })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: label })).toBeNull();
+  });
+
+  it.each(toggles)('"%s" keeps its e2e handle on the control', (_label, testId) => {
+    renderStack();
+
+    expect(screen.getByTestId(testId)).toBeTruthy();
+  });
+
+  it('reports the toggle through the switch itself', () => {
+    const onDeveloperNetworksToggle = vi.fn();
+    render(
+      <SettingsPanelStack
+        visible
+        onClose={vi.fn()}
+        panelRegistry={makeRegistry()}
+        developerNetworksEnabled={false}
+        onDeveloperNetworksToggle={onDeveloperNetworksToggle}
+        onRemoveWallet={vi.fn()}
+        onRemoveAllWallets={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('settings-developer-networks-toggle'));
+
+    expect(onDeveloperNetworksToggle).toHaveBeenCalledWith(true);
   });
 });

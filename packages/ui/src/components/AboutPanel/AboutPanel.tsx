@@ -128,22 +128,22 @@ const LogoContainer = styled(Box)({
 });
 
 const AppName = styled(Typography)({
-  fontSize: fontSize.xl,
+  fontSize: fontSize.title,
   fontWeight: fontWeight.bold,
   color: colors.text.primary,
 });
 
 const VersionText = styled(Typography)({
   ...tabularNums.css,
-  fontSize: fontSize.sm,
+  fontSize: fontSize.caption,
   color: colors.text.secondary,
 });
 
 const SectionTitle = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.label,
   fontWeight: fontWeight.semibold,
   textTransform: 'uppercase',
-  letterSpacing: letterSpacing.wider,
+  letterSpacing: letterSpacing.label,
   color: colors.text.secondary,
   padding: `${spacing.md}px ${spacing.lg}px ${spacing.sm}px`,
   marginTop: spacing.sm,
@@ -177,7 +177,7 @@ const StyledDivider = styled(Divider)({
 });
 
 const FooterText = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.caption,
   color: colors.text.secondary,
   textAlign: 'center',
   padding: `${spacing.lg}px`,
@@ -198,7 +198,11 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
   const renderLinkItem = useCallback(
     (link: LinkItem) => (
       <ListItem key={link.id} disablePadding>
+        {/* Every row here opens an external destination in a new tab, so it
+            announces as a link rather than a button (DESIGN.md §"The settings
+            surface joined the system"). */}
         <StyledListItemButton
+          role="link"
           onClick={() => handleLinkClick(link.url)}
           data-testid={`about-link-${link.id}`}
         >
@@ -212,7 +216,7 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
             primaryTypographyProps={{
               sx: {
                 color: colors.text.primary,
-                fontSize: fontSize.base,
+                fontSize: fontSize.body,
                 fontWeight: fontWeight.medium,
               },
             }}

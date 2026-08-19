@@ -11,7 +11,6 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
@@ -38,11 +37,18 @@ const StyledList = styled(List)({
   padding: `${spacing.sm}px 0`,
 });
 
-const StyledListItemButton = styled(ListItemButton)({
+// The row itself does nothing — the revoke button beside it is the only
+// control. It used to be a `ListItemButton` with no `onClick`, which is a
+// focusable `role="button"` that a keyboard user lands on and cannot act on,
+// so it is inert markup now (DESIGN.md §"The settings surface joined the
+// system"). The hover tint went with it: a highlight on a row that cannot be
+// pressed promises an action that is not there.
+const AppRow = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  width: '100%',
   padding: `${spacing.sm}px ${spacing.lg}px`,
-  '&:hover': {
-    backgroundColor: colors.background.card,
-  },
+  minWidth: 0,
 });
 
 const RevokeButton = styled(IconButton)({
@@ -69,13 +75,13 @@ const EmptyContainer = styled(Box)({
 
 const EmptyText = styled(Typography)({
   color: colors.text.secondary,
-  fontSize: fontSize.base,
+  fontSize: fontSize.body,
   textAlign: 'center',
 });
 
 const EmptySubtext = styled(Typography)({
   color: colors.text.disabled,
-  fontSize: fontSize.sm,
+  fontSize: fontSize.caption,
   textAlign: 'center',
 });
 
@@ -124,7 +130,7 @@ export function TrustedAppsSelector({
                 </RevokeButton>
               }
             >
-              <StyledListItemButton disableRipple data-testid={`trusted-apps-item-${app.domain}`}>
+              <AppRow data-testid={`trusted-apps-item-${app.domain}`}>
                 <ListItemAvatar>
                   {app.icon ? (
                     <AppAvatar src={app.icon} alt={app.name || app.domain} />
@@ -141,7 +147,7 @@ export function TrustedAppsSelector({
                     sx: {
                       color: colors.text.primary,
                       fontWeight: fontWeight.medium,
-                      fontSize: fontSize.base,
+                      fontSize: fontSize.body,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
@@ -150,14 +156,14 @@ export function TrustedAppsSelector({
                   secondaryTypographyProps={{
                     sx: {
                       color: colors.text.secondary,
-                      fontSize: fontSize.sm,
+                      fontSize: fontSize.caption,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                     },
                   }}
                 />
-              </StyledListItemButton>
+              </AppRow>
             </ListItem>
           ))}
         </StyledList>
