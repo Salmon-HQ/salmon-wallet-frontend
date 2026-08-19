@@ -445,6 +445,8 @@ A rendering note the membrane's scales earned the hard way: on mobile the seigai
 
 ### The scrim floor
 
+**The gate takes a floor; a sheet does not.** The scrim floor is defined against a worst-case backdrop, and for chrome that hovers over content the live backdrop is that case. The gate is the exception: it covers nearly the whole screen and its job is to _replace_ the home, not veil it — grounded on the thick tier alone, the balance, the token rows and the tab bar read straight through the settings list. So the expanded gate paints `surface.crest` under the material: the thick tier's own nearest opaque plane, the same one the reduce-transparency rung collapses to, which is what keeps the two rungs on one ground. The material above it is unchanged — same tier, same ink, same field — it simply stops compositing over the home. The collapsed header bar takes no floor, since there the gate genuinely is chrome over content, and the lock keeps its own.
+
 Blur without a scrim is a contrast lottery: the ratio depends on whatever pixel happens to be behind the text, and in a wallet that can be a white NFT thumbnail. So each tier is defined as tint + alpha + blur radius, with the alpha derived from a pure-white worst-case backdrop.
 
 | Tier            | Value                    | Blur | Worst-case composite | Guarantees                                  |

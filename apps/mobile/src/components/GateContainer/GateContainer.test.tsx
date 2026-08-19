@@ -18,6 +18,7 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { semantic } from '@salmon/shared';
 
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
@@ -56,7 +57,7 @@ jest.mock('@salmon/shared', () => ({
   semantic: {
     text: { primary: '#fff' },
     border: { raised: '#6F7B95' },
-    surface: { shelf: '#10131C' },
+    surface: { shelf: '#10131C', crest: '#1B2233' },
   },
   shadows: {
     topSheet: {},
@@ -152,6 +153,13 @@ const translateYOf = (testID: string): number | undefined => {
   return style.transform?.find((part) => part.translateY !== undefined)?.translateY;
 };
 
+const surfaceBackground = (): string | undefined =>
+  (
+    StyleSheet.flatten(screen.getByTestId('gate-surface').props.style) as {
+      backgroundColor?: string;
+    }
+  ).backgroundColor;
+
 const opacityOf = (testID: string): number | undefined =>
   (StyleSheet.flatten(screen.getByTestId(testID).props.style) as { opacity?: number }).opacity;
 
@@ -242,11 +250,16 @@ describe('GateContainer collapsed header with the task context at rest', () => {
 
     const material = screen.getByTestId('gate-thermocline');
     expect(material.props.tier).toBe('thick');
-    // The material carries the ground; the surface paints nothing itself.
-    const surfaceStyle = StyleSheet.flatten(screen.getByTestId('gate-surface').props.style) as {
-      backgroundColor?: string;
-    };
-    expect(surfaceStyle.backgroundColor).toBe('transparent');
+    // Expanded, the material gets its scrim floor: the thick tier's own
+    // nearest opaque plane, so nothing of the home survives behind it.
+    expect(surfaceBackground()).toBe(semantic.surface.crest);
+  });
+
+  it('keeps the floor out while collapsed — there the gate is chrome over content', () => {
+    renderGate('collapsed');
+
+    expect(screen.getByTestId('gate-thermocline').props.tier).toBe('thick');
+    expect(surfaceBackground()).toBe('transparent');
   });
 
   it('leaves the material out while locked — the lock content owns that ground', () => {

@@ -280,6 +280,7 @@ export function GateContainer({
           style={[
             styles.surface,
             state === 'locked' && styles.surfaceLocked,
+            showExpanded && styles.surfaceFloor,
             DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.gateSurface },
           ]}
         >
@@ -445,6 +446,21 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     borderBottomLeftRadius: borderRadius['2xl'],
     borderBottomRightRadius: borderRadius['2xl'],
+  },
+  // The gate's scrim floor. A sheet veils content the user has already left,
+  // so the thick tier's alpha over live pixels is enough there; the gate
+  // covers nearly the whole screen and has to *replace* the home, not veil
+  // it — without a floor the amount, the token rows and the tab bar stayed
+  // legible straight through the settings list. Per DESIGN.md §The scrim
+  // floor a membrane only guarantees its ratios over a defined backdrop, so
+  // the gate gives the material one: `surface.crest`, the thick tier's own
+  // nearest opaque plane — the same plane the reduce-transparency rung
+  // collapses to, so the two rungs land on the same ground and the material
+  // stays what it is (its ink and its scales field, now over a known floor
+  // instead of the home). Only while expanded: collapsed the gate is chrome
+  // over content and reads as it always has, and locked keeps its own ground.
+  surfaceFloor: {
+    backgroundColor: semantic.surface.crest,
   },
   surfaceLocked: {
     // The shadow goes with the ground: `surface` keeps `shadows.topSheet` for
