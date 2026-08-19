@@ -12,7 +12,7 @@
 import Typography from '@mui/material/Typography';
 import {
   colors,
-  componentSizes,
+  onboardingIdentityGridFull,
   fontFamily,
   fontSize,
   lineHeight,
@@ -44,11 +44,12 @@ export function SuccessPage({
         background={<WaterColumn />}
         /*
           Success is a moment of identity again (owner, 2026-08-18,
-          superseding the checkmark from the motion batch): the fish, at the
-          size the CheckCircle occupied. Mirrors mobile — only success; the
+          superseding the checkmark from the motion batch): the fish at the
+          door's own size — this screen mirrors welcome, only the copy and
+          the derivable question differ. Mirrors mobile — only success; the
           other flow screens keep their icons.
         */
-        mark={<BrandMark size={componentSizes.logoSizeSmall} />}
+        mark={<BrandMark size={onboardingIdentityGridFull.markSize} />}
         title={<OnboardingTitle>{t('wallet.create.success_message')}</OnboardingTitle>}
         description={
           <OnboardingDescription>{t('wallet.create.success_message_body')}</OnboardingDescription>

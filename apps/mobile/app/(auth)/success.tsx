@@ -19,6 +19,7 @@ import {
   borderRadius,
   colors,
   componentSizes,
+  onboardingIdentityGridFull,
   contentPadding,
   fontFamilyNative,
   fontSize,
@@ -77,11 +78,12 @@ export default function SuccessScreen() {
         float
         /*
           Success is a moment of identity again (owner, 2026-08-18,
-          superseding the checkmark from the motion batch): the fish, at the
-          size the CheckCircle occupied. Only success — the other flow
+          superseding the checkmark from the motion batch): the fish at the
+          door's own size — this screen mirrors welcome, only the copy and
+          the derivable question differ. Only success — the other flow
           screens keep their icons.
         */
-        mark={<BrandMark size={componentSizes.logoSizeSmall} />}
+        mark={<BrandMark size={onboardingIdentityGridFull.markSize} />}
         title={<OnboardingTitle>{t('wallet.create.success_message')}</OnboardingTitle>}
         description={
           <OnboardingDescription>{t('wallet.create.success_message_body')}</OnboardingDescription>
