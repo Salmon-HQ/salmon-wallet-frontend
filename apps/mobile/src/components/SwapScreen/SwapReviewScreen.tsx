@@ -21,11 +21,11 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { BlurContainer } from '../BlurContainer';
-import { SwapDetailRow } from './SwapDetailRow';
+import { SwapDetailsCard } from './SwapDetailsCard';
 import { SwapReviewExchange } from './SwapReviewExchange';
 import { SwapReviewButtons } from './SwapReviewButtons';
 import { useTabChrome } from '../../../hooks/useTabChrome';
-import type { SwapReviewScreenProps } from './types';
+import type { SwapDetailItem, SwapReviewScreenProps } from './types';
 
 /**
  * SwapReviewScreen - Second step of swap flow
@@ -110,68 +110,63 @@ export const SwapReviewScreen: React.FC<SwapReviewScreenProps> = ({
           />
         </View>
 
-        {/* Details Section */}
-        <View style={styles.detailsContainer}>
-          {fee && (
-            <SwapDetailRow
-              label={t('swap.review.salmonFee', 'Salmon fee')}
-              value={formatPercent(fee.percent)}
-            />
-          )}
-          {details?.router && (
-            <SwapDetailRow label={t('swap.router', 'Router')} value={details.router} />
-          )}
-          {routeNames && routeNames.length > 0 && (
-            <SwapDetailRow
-              label={t('swap.review.route', 'Route')}
-              value={routeNames.join(' → ')}
-              pending={isRefreshing}
-            />
-          )}
-          {details?.gasless && (
-            <SwapDetailRow label={t('swap.gasless', 'Gasless')} value={t('swap.yes', 'Yes')} />
-          )}
-          {details?.prioritizationFeeLamports != null && (
-            <SwapDetailRow
-              label={t('swap.priority_fee', 'Priority Fee')}
-              value={formatSolFee(details.prioritizationFeeLamports)}
-              pending={isRefreshing}
-            />
-          )}
-          {details?.rentFeeLamports != null && (
-            <SwapDetailRow
-              label={t('swap.rent_fee', 'Rent Fee')}
-              value={formatSolFee(details.rentFeeLamports)}
-              pending={isRefreshing}
-            />
-          )}
-          {details?.slippageBps != null && (
-            <SwapDetailRow
-              label={t('swap.slippage_tolerance', 'Slippage Tolerance')}
-              value={formatPercent(details.slippageBps / 100)}
-            />
-          )}
-          {details?.otherAmountThreshold != null && (
-            <SwapDetailRow
-              label={t('swap.minimum_received', 'Minimum Received')}
-              value={formatAmountWithSymbol(
+        {/* Details Section — one grouped card (owner, on-device 2026-08-18):
+            a pill per row overflowed the viewport by itself and forced the
+            review to scroll. The critical rows stay visible; the advanced
+            ones fold behind the "Details" disclosure inside the card. */}
+        <SwapDetailsCard
+          style={styles.detailsContainer}
+          rows={[
+            fee && {
+              label: t('swap.review.salmonFee', 'Salmon fee'),
+              value: formatPercent(fee.percent),
+            },
+            details?.slippageBps != null && {
+              label: t('swap.slippage_tolerance', 'Slippage Tolerance'),
+              value: formatPercent(details.slippageBps / 100),
+            },
+            details?.otherAmountThreshold != null && {
+              label: t('swap.minimum_received', 'Minimum Received'),
+              value: formatAmountWithSymbol(
                 Number(details.otherAmountThreshold) / 10 ** outDecimals,
                 outSymbol
-              )}
-              pending={isRefreshing}
-            />
-          )}
-          {details?.swapMode && (
-            <SwapDetailRow label={t('swap.swap_mode', 'Swap Mode')} value={details.swapMode} />
-          )}
-          {details?.priceImpact != null && (
-            <SwapDetailRow
-              label={t('swap.review.totalPriceImpact', 'Total Price Impact')}
-              value={formatPercent(details.priceImpact)}
-              pending={isRefreshing}
-            />
-          )}
-        </View>
+              ),
+              pending: isRefreshing,
+            },
+            details?.priceImpact != null && {
+              label: t('swap.review.totalPriceImpact', 'Total Price Impact'),
+              value: formatPercent(details.priceImpact),
+              pending: isRefreshing,
+            },
+          ].filter((row): row is SwapDetailItem => Boolean(row))}
+          advancedRows={[
+            details?.router && { label: t('swap.router', 'Router'), value: details.router },
+            routeNames &&
+              routeNames.length > 0 && {
+                label: t('swap.review.route', 'Route'),
+                value: routeNames.join(' → '),
+                pending: isRefreshing,
+              },
+            details?.gasless && {
+              label: t('swap.gasless', 'Gasless'),
+              value: t('swap.yes', 'Yes'),
+            },
+            details?.prioritizationFeeLamports != null && {
+              label: t('swap.priority_fee', 'Priority Fee'),
+              value: formatSolFee(details.prioritizationFeeLamports),
+              pending: isRefreshing,
+            },
+            details?.rentFeeLamports != null && {
+              label: t('swap.rent_fee', 'Rent Fee'),
+              value: formatSolFee(details.rentFeeLamports),
+              pending: isRefreshing,
+            },
+            details?.swapMode && {
+              label: t('swap.swap_mode', 'Swap Mode'),
+              value: details.swapMode,
+            },
+          ].filter((row): row is SwapDetailItem => Boolean(row))}
+        />
 
         {/* Warning Box */}
         <BlurContainer
@@ -235,7 +230,6 @@ const styles = StyleSheet.create({
     marginBottom: vs(spacing['2xl']),
   },
   detailsContainer: {
-    gap: vs(spacing.md - 3),
     marginBottom: vs(spacing['3xl']),
   },
   warningBox: {

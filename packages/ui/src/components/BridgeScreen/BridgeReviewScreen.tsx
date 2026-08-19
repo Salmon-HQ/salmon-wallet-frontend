@@ -3,7 +3,7 @@
  *
  * Web version using MUI and @emotion/styled for browser extension.
  * Shows bridge details and confirm/back buttons.
- * Reuses SwapDetailRow and SwapReviewExchange components from SwapScreen.
+ * Reuses SwapDetailsCard and SwapReviewExchange components from SwapScreen.
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,7 +26,7 @@ import {
   letterSpacing,
   lineHeight,
 } from '@salmon/shared';
-import { SwapDetailRow } from '../SwapScreen/SwapDetailRow';
+import { SwapDetailsCard } from '../SwapScreen/SwapDetailsCard';
 import { SwapReviewExchange } from '../SwapScreen/SwapReviewExchange';
 import { SwapReviewButtons } from '../SwapScreen/SwapReviewButtons';
 import type { BridgeReviewScreenProps } from './types';
@@ -73,13 +73,6 @@ const CardsContainer = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   gap: spacing.md,
-  marginBottom: spacing['2xl'],
-});
-
-const DetailsContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: spacing.md - 3,
   marginBottom: spacing['2xl'],
 });
 
@@ -176,42 +169,46 @@ export function BridgeReviewScreen({
             />
           </CardsContainer>
 
-          {/* Details Section */}
-          <DetailsContainer>
-            <SwapDetailRow
-              label={t('bridge.review.recipient')}
-              value={getShortAddress(recipientAddress, 8) ?? ''}
-            />
-            <SwapDetailRow
-              label={t('bridge.review.fromNetwork')}
-              value={inToken.network || 'Solana'}
-            />
-            <SwapDetailRow
-              label={t('bridge.review.toNetwork')}
-              value={outToken.network || t('transactions.unknown')}
-            />
-            {estimate && (
-              <>
-                <SwapDetailRow
-                  label={t('bridge.review.minimumAmount')}
-                  value={formatAmountWithSymbol(estimate.minAmount, inToken.symbol)}
-                  pending={isRefreshing}
-                />
-                <SwapDetailRow
-                  label={t('bridge.review.estimatedOutput')}
-                  value={formatAmountWithSymbol(estimate.estimatedAmount, outToken.symbol)}
-                  pending={isRefreshing}
-                />
-              </>
-            )}
-            {/* The swap names its cut ("Salmon fee"); the bridge netted 0.4%
-                into the estimate above and said nothing. Same cut, same row. */}
-            <SwapDetailRow
-              label={t('bridge.review.salmonFee')}
-              value={formatPercent(BRIDGE_PARTNER_FEE_PERCENT)}
-            />
-            <SwapDetailRow label={t('bridge.review.provider')} value="StealthEX" />
-          </DetailsContainer>
+          {/* Details Section — one grouped card, same treatment as the swap
+              review (no disclosure: every bridge row is commit-relevant). */}
+          <SwapDetailsCard
+            style={{ marginBottom: spacing['2xl'] }}
+            rows={[
+              {
+                label: t('bridge.review.recipient'),
+                value: getShortAddress(recipientAddress, 8) ?? '',
+              },
+              {
+                label: t('bridge.review.fromNetwork'),
+                value: inToken.network || 'Solana',
+              },
+              {
+                label: t('bridge.review.toNetwork'),
+                value: outToken.network || t('transactions.unknown'),
+              },
+              ...(estimate
+                ? [
+                    {
+                      label: t('bridge.review.minimumAmount'),
+                      value: formatAmountWithSymbol(estimate.minAmount, inToken.symbol),
+                      pending: isRefreshing,
+                    },
+                    {
+                      label: t('bridge.review.estimatedOutput'),
+                      value: formatAmountWithSymbol(estimate.estimatedAmount, outToken.symbol),
+                      pending: isRefreshing,
+                    },
+                  ]
+                : []),
+              // The swap names its cut ("Salmon fee"); the bridge netted 0.4%
+              // into the estimate above and said nothing. Same cut, same row.
+              {
+                label: t('bridge.review.salmonFee'),
+                value: formatPercent(BRIDGE_PARTNER_FEE_PERCENT),
+              },
+              { label: t('bridge.review.provider'), value: 'StealthEX' },
+            ]}
+          />
 
           {/* The commit point. Duration is a convenience note; the custody
               and no-recovery facts are the ones that cost money, so they get

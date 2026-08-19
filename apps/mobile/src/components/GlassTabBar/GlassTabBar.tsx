@@ -13,13 +13,22 @@ import {
   semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { BlurContainer } from '../BlurContainer';
 import { GridViewSvgIcon, HomeSvgIcon, SwapSvgIcon } from '../Icon';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+import { useTaskChrome } from '../../contexts/TaskChromeContext';
+import { curve, timing } from '../../utils/motion';
+import { FLOAT_IN_MS, SINK_FLOAT_TRAVEL, SINK_OUT_MS } from '../../utils/sinkAndFloat';
 import type { TabConfig } from './types';
 
 const TAB_CONFIG: Record<string, TabConfig> = {
@@ -102,13 +111,37 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
 export function GlassTabBar({ state, descriptors: _descriptors, navigation }: BottomTabBarProps) {
   const { tabBarBottomPadding } = useTabChrome();
 
+  // The pill is the shell's footer, and the verb owns it too (owner,
+  // on-device 2026-08-18): when the swap's task window takes the screen the
+  // whole bar sinks with the outgoing content — the normal sink, distance and
+  // duration from the shared verb — and floats back as the shell returns.
+  // Reduce motion: `timing` resolves to a cut.
+  const { isTaskEngaged } = useTaskChrome();
+  const isReduceMotionEnabled = useReducedMotion();
+  const sunk = useSharedValue(isTaskEngaged ? 1 : 0);
+  useEffect(() => {
+    sunk.value = withTiming(
+      isTaskEngaged ? 1 : 0,
+      isTaskEngaged
+        ? timing(SINK_OUT_MS, isReduceMotionEnabled, curve.sink)
+        : timing(FLOAT_IN_MS, isReduceMotionEnabled)
+    );
+  }, [isTaskEngaged, isReduceMotionEnabled, sunk]);
+  const sinkStyle = useAnimatedStyle(() => ({
+    opacity: 1 - sunk.value,
+    transform: [{ translateY: sunk.value * SINK_FLOAT_TRAVEL }],
+  }));
+
   // Filter and order routes to only show Home, Collectibles, and Swap
   const visibleRoutes = TAB_ORDER.map((tabName) =>
     state.routes.find((route) => route.name === tabName)
   ).filter((route): route is (typeof state.routes)[0] => route !== undefined);
 
   return (
-    <View style={styles.container} pointerEvents="box-none">
+    <Animated.View
+      style={[styles.container, sinkStyle]}
+      pointerEvents={isTaskEngaged ? 'none' : 'box-none'}
+    >
       {/*
         Membrane bottom edge — conceptually the lower boundary of the future
         membrane material; the membrane batch should absorb this gradient.
@@ -118,6 +151,7 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
       */}
       <LinearGradient
         colors={gradients.tabBarFade.colors}
+        locations={[...gradients.tabBarFade.locations]}
         start={gradients.tabBarFade.start}
         end={gradients.tabBarFade.end}
         style={styles.membraneBottomEdge}
@@ -172,7 +206,7 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
           </View>
         </BlurContainer>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

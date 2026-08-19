@@ -67,6 +67,7 @@ import {
 import { useLanguage } from '../../../src/i18n';
 import { useBiometricAuth } from '../../../hooks/useBiometricAuth';
 import { DeveloperModeProvider } from '../../../src/contexts/DeveloperModeContext';
+import { TaskChromeProvider } from '../../../src/contexts/TaskChromeContext';
 import { GateContainer } from '../../../src/components/GateContainer';
 import { LockContent } from '../../../src/components/GateContainer/LockContent';
 import { HeaderContent } from '../../../src/components/GateContainer/HeaderContent';
@@ -743,19 +744,20 @@ export default function TabLayout() {
   }, [accountState, activeAccount, accountActions, handleRemoveAllWallets, t]);
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <TaskChromeProvider>
+      <View style={styles.container}>
+        <StatusBar style="light" />
 
-      {/* Background layers wrapped in BlurTargetView for Android blur targeting */}
-      <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
-        {/* Layer 1: the water column — a depth ramp that darkens toward the
+        {/* Background layers wrapped in BlurTargetView for Android blur targeting */}
+        <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
+          {/* Layer 1: the water column — a depth ramp that darkens toward the
             bottom, plus the marine snow field across the top. The ramp starts
             at the ground the app already painted, so nothing above it seams;
             the snow is spent before the first token row, which is what keeps
             it on the right side of The Scales Exclusion Rule. */}
-        <DepthBackground />
+          <DepthBackground />
 
-        {/* Layer 2: the deep field. It belongs here and only here — on the
+          {/* Layer 2: the deep field. It belongs here and only here — on the
             ground, in the same plane as the ramp and the snow. It used to
             tile behind whole tabs *and* live inside the balance card; the
             card is content and has lost it, because the motif belongs to the
@@ -763,109 +765,110 @@ export default function TabLayout() {
             snow is: everything that carries a value — rows, cards, inputs —
             is opaque and covers it. The snow is what gives the 3.2× scale
             something to be large against rather than merely near. */}
-        <ScalesBackground variant="deepField" />
+          <ScalesBackground variant="deepField" />
 
-        {/* Layer 3: Bottom fade gradient. Ends on the ramp's own floor rather
+          {/* Layer 3: Bottom fade gradient. Ends on the ramp's own floor rather
             than the old flat ground, which would have lightened the abyss. */}
-        <LinearGradient
-          colors={['transparent', semantic.water.gradient[1]]}
-          style={styles.bottomFadeGradient}
+          <LinearGradient
+            colors={['transparent', semantic.water.gradient[1]]}
+            style={styles.bottomFadeGradient}
+            pointerEvents="none"
+          />
+        </BlurTargetView>
+
+        {/* Tab screens fill the remaining space */}
+        <DeveloperModeProvider value={{ developerNetworks }}>
+          <BlurTargetProvider value={blurTargetRef}>
+            <Tabs
+              tabBar={(props) => <GlassTabBar {...props} />}
+              screenOptions={{
+                headerShown: false,
+                tabBarStyle: { display: 'none' },
+              }}
+            >
+              <Tabs.Screen name="index" options={{ title: t('tabs.home', 'Home') }} />
+              <Tabs.Screen
+                name="collectibles"
+                options={{ title: t('tabs.collectibles', 'Collectibles') }}
+              />
+              <Tabs.Screen name="swap" options={{ title: t('tabs.swap', 'Swap') }} />
+              <Tabs.Screen
+                name="settings"
+                options={{ href: null, title: t('tabs.settings', 'Settings') }}
+              />
+            </Tabs>
+          </BlurTargetProvider>
+        </DeveloperModeProvider>
+
+        <View
           pointerEvents="none"
+          style={[
+            styles.topSafeAreaOverlay,
+            { height: topInset },
+            DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.topSafeAreaOverlay },
+          ]}
         />
-      </BlurTargetView>
 
-      {/* Tab screens fill the remaining space */}
-      <DeveloperModeProvider value={{ developerNetworks }}>
-        <BlurTargetProvider value={blurTargetRef}>
-          <Tabs
-            tabBar={(props) => <GlassTabBar {...props} />}
-            screenOptions={{
-              headerShown: false,
-              tabBarStyle: { display: 'none' },
-            }}
-          >
-            <Tabs.Screen name="index" options={{ title: t('tabs.home', 'Home') }} />
-            <Tabs.Screen
-              name="collectibles"
-              options={{ title: t('tabs.collectibles', 'Collectibles') }}
+        {/* Unified Gate — lock screen, header, settings, wallet switcher */}
+        <GateContainer
+          state={gateState}
+          expandedHeader={expandedHeader}
+          onBackdropPress={() => {
+            if (settingsVisible) handleSettingsClose();
+            if (walletSwitcherVisible) handleWalletSwitcherClose();
+          }}
+          lockContent={
+            <LockContent
+              locked={accountState.locked}
+              onUnlock={handleLockUnlock}
+              onUnlockWithKey={handleLockUnlockWithKey}
+              onGetDerivedKey={handleGetDerivedKey}
+              onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
+              biometric={lockBiometricConfig}
             />
-            <Tabs.Screen name="swap" options={{ title: t('tabs.swap', 'Swap') }} />
-            <Tabs.Screen
-              name="settings"
-              options={{ href: null, title: t('tabs.settings', 'Settings') }}
+          }
+          headerContent={
+            <HeaderContent
+              accountName={accountName}
+              address={address}
+              onCopyAddress={handleCopyAddress}
+              onSettingsPress={() => setSettingsVisible(true)}
+              onWalletPress={() => setWalletSwitcherVisible(true)}
+              developerMode={developerNetworks}
+              avatarUrl={activeAccount?.avatar}
+              accountId={activeAccount?.id}
             />
-          </Tabs>
-        </BlurTargetProvider>
-      </DeveloperModeProvider>
-
-      <View
-        pointerEvents="none"
-        style={[
-          styles.topSafeAreaOverlay,
-          { height: topInset },
-          DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.topSafeAreaOverlay },
-        ]}
-      />
-
-      {/* Unified Gate — lock screen, header, settings, wallet switcher */}
-      <GateContainer
-        state={gateState}
-        expandedHeader={expandedHeader}
-        onBackdropPress={() => {
-          if (settingsVisible) handleSettingsClose();
-          if (walletSwitcherVisible) handleWalletSwitcherClose();
-        }}
-        lockContent={
-          <LockContent
-            locked={accountState.locked}
-            onUnlock={handleLockUnlock}
-            onUnlockWithKey={handleLockUnlockWithKey}
-            onGetDerivedKey={handleGetDerivedKey}
-            onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
-            biometric={lockBiometricConfig}
-          />
-        }
-        headerContent={
-          <HeaderContent
-            accountName={accountName}
-            address={address}
-            onCopyAddress={handleCopyAddress}
-            onSettingsPress={() => setSettingsVisible(true)}
-            onWalletPress={() => setWalletSwitcherVisible(true)}
-            developerMode={developerNetworks}
-            avatarUrl={activeAccount?.avatar}
-            accountId={activeAccount?.id}
-          />
-        }
-        settingsContent={
-          <SettingsSheet
-            visible={settingsVisible}
-            onClose={handleSettingsClose}
-            panelRegistry={panelRegistry}
-            initialPanels={settingsInitialPanels}
-            developerNetworksEnabled={developerNetworks}
-            onDeveloperNetworksToggle={toggleDeveloperNetworks}
-            analyticsEnabled={analyticsConsent}
-            onAnalyticsToggle={setAnalyticsConsent}
-            onRemoveWallet={handleRemoveWallet}
-            onRemoveAllWallets={handleRemoveAllWallets}
-            onHeaderChange={handleSettingsHeaderChange}
-          />
-        }
-        walletsContent={
-          <WalletSwitcherSheet
-            visible={walletSwitcherVisible}
-            onClose={handleWalletSwitcherClose}
-            accounts={accounts}
-            activeAccountId={accountId ?? ''}
-            onSelectAccount={handleSelectAccount}
-            onAddAccount={handleAddAccount}
-            onEditAccount={handleEditAccount}
-            onDeleteAccount={handleDeleteAccount}
-          />
-        }
-      />
-    </View>
+          }
+          settingsContent={
+            <SettingsSheet
+              visible={settingsVisible}
+              onClose={handleSettingsClose}
+              panelRegistry={panelRegistry}
+              initialPanels={settingsInitialPanels}
+              developerNetworksEnabled={developerNetworks}
+              onDeveloperNetworksToggle={toggleDeveloperNetworks}
+              analyticsEnabled={analyticsConsent}
+              onAnalyticsToggle={setAnalyticsConsent}
+              onRemoveWallet={handleRemoveWallet}
+              onRemoveAllWallets={handleRemoveAllWallets}
+              onHeaderChange={handleSettingsHeaderChange}
+            />
+          }
+          walletsContent={
+            <WalletSwitcherSheet
+              visible={walletSwitcherVisible}
+              onClose={handleWalletSwitcherClose}
+              accounts={accounts}
+              activeAccountId={accountId ?? ''}
+              onSelectAccount={handleSelectAccount}
+              onAddAccount={handleAddAccount}
+              onEditAccount={handleEditAccount}
+              onDeleteAccount={handleDeleteAccount}
+            />
+          }
+        />
+      </View>
+    </TaskChromeProvider>
   );
 }
 

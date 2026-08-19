@@ -90,8 +90,10 @@ jest.mock('../ScalesBackground', () => {
   };
 });
 
+import { Text } from 'react-native';
 import { SwapScreen } from './SwapScreen';
 import { FLOAT_DELAY_MS } from '../../utils/sinkAndFloat';
+import { TaskChromeProvider, useTaskChrome } from '../../contexts/TaskChromeContext';
 
 const setLogic = (overrides: Record<string, unknown>) => {
   for (const key of Object.keys(mockLogic)) delete mockLogic[key];
@@ -226,5 +228,84 @@ describe('SwapScreen task window choreography', () => {
 
     // No timer, no lingering window: the modal leaves the tree at once.
     expect(screen.queryByTestId('swap-task-modal')).toBeNull();
+  });
+});
+
+/**
+ * The compuerta. The gate header and the floating pill are shell chrome —
+ * outside the step, outside the modal — so the verb reaches them through
+ * TaskChromeContext. The contract: engaged the moment the task step begins
+ * (the chrome leaves during the beat, before the window covers it), and held
+ * until the window has actually gone, so the chrome's return lands exactly
+ * on the shell's delayed input float.
+ */
+describe('SwapScreen compuerta signal', () => {
+  const reviewLogic = {
+    step: 'review',
+    quote: { outAmount: '1' },
+    inToken: { symbol: 'SOL', chain: 'solana' },
+    outToken: { symbol: 'USDC', chain: 'solana' },
+  };
+
+  const Probe = () => {
+    const { isTaskEngaged } = useTaskChrome();
+    return <Text testID="task-chrome-probe">{String(isTaskEngaged)}</Text>;
+  };
+
+  const renderWithProbe = () =>
+    render(
+      <TaskChromeProvider>
+        <SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />
+        <Probe />
+      </TaskChromeProvider>
+    );
+
+  const rerenderWithProbe = (view: ReturnType<typeof render>) =>
+    view.rerender(
+      <TaskChromeProvider>
+        <SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />
+        <Probe />
+      </TaskChromeProvider>
+    );
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('raises the compuerta the moment review begins — before the window appears', () => {
+    setLogic({ step: 'input' });
+    const view = renderWithProbe();
+    expect(screen.getByTestId('task-chrome-probe').props.children).toBe('false');
+
+    setLogic(reviewLogic);
+    rerenderWithProbe(view);
+
+    // The window is still waiting out the beat, but the chrome must already
+    // be leaving with the sinking content.
+    expect(screen.getByTestId('task-chrome-probe').props.children).toBe('true');
+  });
+
+  it('holds the compuerta up until the window has gone, then lowers it', () => {
+    setLogic(reviewLogic);
+    const view = renderWithProbe();
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(screen.getByTestId('task-chrome-probe').props.children).toBe('true');
+
+    setLogic({ step: 'input' });
+    rerenderWithProbe(view);
+
+    // Review is still sinking inside the open window — the chrome stays out.
+    expect(screen.getByTestId('task-chrome-probe').props.children).toBe('true');
+
+    act(() => {
+      jest.advanceTimersByTime(FLOAT_DELAY_MS);
+    });
+    // The window vanished; the chrome comes back with the delayed float.
+    expect(screen.getByTestId('task-chrome-probe').props.children).toBe('false');
   });
 });

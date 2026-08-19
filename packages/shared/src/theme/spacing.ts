@@ -225,6 +225,12 @@ export const componentSizes = {
   /** 44px - Header action buttons */
   headerButtonSize: 44,
   backButtonSize: 40,
+  /**
+   * 38px - one compact row inside the grouped review-details card (owner's
+   * band is 36-40; tune here and every review screen moves together). The
+   * per-row pill it replaces sat at `backButtonSize` + 9px of gap each.
+   */
+  swapDetailRowHeight: 38,
 
   // Balance card elements
   logoContainer: 35,

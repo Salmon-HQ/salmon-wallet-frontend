@@ -681,6 +681,7 @@
       "title": "Revisión de Swap",
       "salmonFee": "Comisión Salmon",
       "route": "Ruta",
+      "details": "Detalles",
       "totalPriceImpact": "Impacto Total en el Precio",
       "pleaseNote": "Nota Importante",
       "pleaseNoteText": "Las tasas de swap son estimadas. El monto real que recibirás puede variar debido al deslizamiento y las condiciones del mercado. Las transacciones son irreversibles una vez confirmadas.",

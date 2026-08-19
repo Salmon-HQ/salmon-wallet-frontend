@@ -7,13 +7,17 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('../SwapScreen/SwapDetailRow', () => {
+jest.mock('../SwapScreen/SwapDetailsCard', () => {
   const { Text: RNText, View: RNView } = require('react-native');
   return {
-    SwapDetailRow: ({ label, value }: { label: string; value: string }) => (
-      <RNView>
-        <RNText>{label}</RNText>
-        <RNText>{value}</RNText>
+    SwapDetailsCard: ({ rows }: { rows: { label: string; value: string }[] }) => (
+      <RNView testID="swap-details-card">
+        {rows.map((row) => (
+          <RNView key={row.label}>
+            <RNText>{row.label}</RNText>
+            <RNText>{row.value}</RNText>
+          </RNView>
+        ))}
       </RNView>
     ),
   };

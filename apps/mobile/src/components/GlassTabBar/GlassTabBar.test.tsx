@@ -27,6 +27,25 @@ jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 
+// Reanimated pulls the Worklets native module, which does not exist under
+// Jest; the bar's sink only needs a View and inert animation shims.
+jest.mock('react-native-reanimated', () => {
+  const ReactActual = jest.requireActual('react');
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: {
+      View: ({ children, ...props }: Record<string, unknown>) =>
+        ReactActual.createElement(View, props, children),
+    },
+    useReducedMotion: () => false,
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: () => ({}),
+    withTiming: (toValue: unknown) => toValue,
+    Easing: { bezier: () => () => 0 },
+  };
+});
+
 jest.mock('expo-linear-gradient', () => {
   const ReactActual = jest.requireActual('react');
   const { View } = jest.requireActual('react-native');
@@ -82,16 +101,39 @@ describe('GlassTabBar membrane bottom edge', () => {
     const { getByTestId } = render(<GlassTabBar {...props} />);
 
     const fade = getByTestId('tab-bar-fade');
-    const [opaqueStop, transparentStop] = fade.props.colors;
-    // Bottom stop is the depth ramp's own floor, so the gradient reads as
+    const stops: string[] = fade.props.colors;
+    // Bottom stops are the depth ramp's own floor, so the gradient reads as
     // water darkening. Pure black is yesterday's slab — it must not return.
-    expect(opaqueStop).toBe(semantic.water.gradient[1]);
-    expect(opaqueStop).not.toBe('#000000');
+    expect(stops[0]).toBe(semantic.water.gradient[1]);
+    expect(stops).not.toContain('#000000');
     // The transparent stop carries the same hue, so the fade never grays out
     // mid-ramp on platforms that interpolate through transparent black.
-    expect(transparentStop).toBe('rgba(7, 9, 17, 0)');
+    expect(stops[stops.length - 1]).toBe('rgba(7, 9, 17, 0)');
     // Bottom-to-top: the opaque stop sits at the physical bottom edge.
     expect(gradients.tabBarFade.start).toEqual({ x: 0.5, y: 1 });
     expect(gradients.tabBarFade.end).toEqual({ x: 0.5, y: 0 });
+  });
+
+  it('holds a solid water floor under the pill before it starts fading', () => {
+    // Owner, on-device: whatever passes under the pill must be near-illegible.
+    // The floor stays fully opaque from the physical bottom edge up through
+    // at least 40% of the mask, hands off through a high-opacity shoulder,
+    // and only the top of the mask is the soft fade.
+    const { getByTestId } = render(<GlassTabBar {...props} />);
+    const fade = getByTestId('tab-bar-fade');
+
+    const stops: string[] = fade.props.colors;
+    const locations: number[] = fade.props.locations;
+    expect(locations).toHaveLength(stops.length);
+    // Two identical opaque stops bracket the solid zone…
+    expect(stops[1]).toBe(stops[0]);
+    expect(locations[0]).toBe(0);
+    // …and the zone reaches at least 40% up the mask.
+    expect(locations[1]).toBeGreaterThanOrEqual(0.4);
+    // The shoulder between the solid zone and the fade stays heavy (≥0.8
+    // alpha) and on the water's own hue.
+    expect(stops[2]).toMatch(/^rgba\(7, 9, 17, 0\.8[0-9]*\)$/);
+    expect(locations[2]).toBeGreaterThan(locations[1]);
+    expect(locations[locations.length - 1]).toBe(1);
   });
 });

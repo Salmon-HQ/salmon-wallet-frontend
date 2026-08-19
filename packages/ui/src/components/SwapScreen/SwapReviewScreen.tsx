@@ -29,9 +29,10 @@ import {
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { SwapReviewExchange } from './SwapReviewExchange';
-import { SwapDetailRow } from './SwapDetailRow';
+import { SwapDetailsCard } from './SwapDetailsCard';
 import { SwapReviewButtons } from './SwapReviewButtons';
 import type { SwapReviewScreenProps } from './types';
+import type { SwapDetailItem } from '@salmon/shared';
 
 // ============================================================================
 // Styled Components
@@ -86,17 +87,6 @@ const CardsContainer = styled(Box)({
   flexDirection: 'column',
   gap: spacing.md,
   marginBottom: spacing['2xl'],
-});
-
-const DetailsContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: spacing.md - 3,
-  marginBottom: spacing['3xl'],
-});
-
-const PriceImpactContainer = styled(Box)({
-  marginBottom: spacing.lg,
 });
 
 const WarningContent = styled(Box)({
@@ -202,68 +192,56 @@ export function SwapReviewScreen({
             />
           </CardsContainer>
 
-          {/* Details Section */}
-          <DetailsContainer>
-            {fee && (
-              <SwapDetailRow
-                label={t('swap.review.salmonFee')}
-                value={formatPercent(fee.percent)}
-              />
-            )}
-            {details?.router && <SwapDetailRow label={t('swap.router')} value={details.router} />}
-            {routeNames && routeNames.length > 0 && (
-              <SwapDetailRow
-                label={t('swap.review.route')}
-                value={routeNames.join(' → ')}
-                pending={isRefreshing}
-              />
-            )}
-            {details?.gasless && <SwapDetailRow label={t('swap.gasless')} value={t('swap.yes')} />}
-            {details?.prioritizationFeeLamports != null && (
-              <SwapDetailRow
-                label={t('swap.priority_fee')}
-                value={formatSolFee(details.prioritizationFeeLamports)}
-                pending={isRefreshing}
-              />
-            )}
-            {details?.rentFeeLamports != null && (
-              <SwapDetailRow
-                label={t('swap.rent_fee')}
-                value={formatSolFee(details.rentFeeLamports)}
-                pending={isRefreshing}
-              />
-            )}
-            {details?.slippageBps != null && (
-              <SwapDetailRow
-                label={t('swap.slippage_tolerance')}
-                value={formatPercent(details.slippageBps / 100)}
-              />
-            )}
-            {details?.otherAmountThreshold != null && (
-              <SwapDetailRow
-                label={t('swap.minimum_received')}
-                value={formatAmountWithSymbol(
+          {/* Details Section — one grouped card, mirroring mobile: the
+              critical rows stay visible; the advanced ones fold behind the
+              "Details" disclosure inside the card. */}
+          <SwapDetailsCard
+            style={{ marginBottom: spacing['3xl'] }}
+            rows={[
+              fee && {
+                label: t('swap.review.salmonFee'),
+                value: formatPercent(fee.percent),
+              },
+              details?.slippageBps != null && {
+                label: t('swap.slippage_tolerance'),
+                value: formatPercent(details.slippageBps / 100),
+              },
+              details?.otherAmountThreshold != null && {
+                label: t('swap.minimum_received'),
+                value: formatAmountWithSymbol(
                   Number(details.otherAmountThreshold) / 10 ** outDecimals,
                   outSymbol
-                )}
-                pending={isRefreshing}
-              />
-            )}
-            {details?.swapMode && (
-              <SwapDetailRow label={t('swap.swap_mode')} value={details.swapMode} />
-            )}
-          </DetailsContainer>
-
-          {/* Price Impact (highlighted) */}
-          {details?.priceImpact != null && (
-            <PriceImpactContainer>
-              <SwapDetailRow
-                label={t('swap.review.totalPriceImpact')}
-                value={formatPercent(details.priceImpact)}
-                pending={isRefreshing}
-              />
-            </PriceImpactContainer>
-          )}
+                ),
+                pending: isRefreshing,
+              },
+              details?.priceImpact != null && {
+                label: t('swap.review.totalPriceImpact'),
+                value: formatPercent(details.priceImpact),
+                pending: isRefreshing,
+              },
+            ].filter((row): row is SwapDetailItem => Boolean(row))}
+            advancedRows={[
+              details?.router && { label: t('swap.router'), value: details.router },
+              routeNames &&
+                routeNames.length > 0 && {
+                  label: t('swap.review.route'),
+                  value: routeNames.join(' → '),
+                  pending: isRefreshing,
+                },
+              details?.gasless && { label: t('swap.gasless'), value: t('swap.yes') },
+              details?.prioritizationFeeLamports != null && {
+                label: t('swap.priority_fee'),
+                value: formatSolFee(details.prioritizationFeeLamports),
+                pending: isRefreshing,
+              },
+              details?.rentFeeLamports != null && {
+                label: t('swap.rent_fee'),
+                value: formatSolFee(details.rentFeeLamports),
+                pending: isRefreshing,
+              },
+              details?.swapMode && { label: t('swap.swap_mode'), value: details.swapMode },
+            ].filter((row): row is SwapDetailItem => Boolean(row))}
+          />
 
           {/* Warning Box */}
           <BlurContainer

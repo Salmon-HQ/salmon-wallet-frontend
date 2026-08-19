@@ -17,6 +17,7 @@ export type {
   // UI types
   SwapToken,
   SwapTab,
+  SwapDetailItem,
   SwapStepBase,
   SwapScreenStep,
   BridgeTokenSimple,
@@ -29,6 +30,7 @@ import type {
   SwapTabSelectorProps as SwapTabSelectorPropsBase,
   SwapAmountInputProps as SwapAmountInputPropsBase,
   SwapDetailRowProps as SwapDetailRowPropsBase,
+  SwapDetailsCardProps as SwapDetailsCardPropsBase,
   SwapReviewExchangeProps as SwapReviewExchangePropsBase,
   SwapReviewScreenProps as SwapReviewScreenPropsBase,
   SwapInputScreenProps as SwapInputScreenPropsBase,
@@ -56,6 +58,11 @@ export interface SwapAmountInputProps extends SwapAmountInputPropsBase<ViewStyle
  * Props for SwapDetailRow component (React Native)
  */
 export interface SwapDetailRowProps extends SwapDetailRowPropsBase<ViewStyle> {}
+
+/**
+ * Props for SwapDetailsCard component (React Native)
+ */
+export interface SwapDetailsCardProps extends SwapDetailsCardPropsBase<ViewStyle> {}
 
 /**
  * Props for SwapReviewExchange component (React Native)

@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { render, within } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -18,13 +18,14 @@ jest.mock('@salmon/shared', () => ({
     text: { primary: '#fff', secondary: '#aaa' },
     palette: { amber: '#cc0' },
     status: { warningBackground: '#330' },
+    border: { subtle: 'rgba(255, 255, 255, 0.15)' },
   },
   semantic: { status: { warning: '#FFB020' } },
-  componentSizes: { chartHeight: 200 },
-  fontSize: { sm: 14, '2xl': 24 },
-  fontFamilyNative: { semiBold: 'System', medium: 'System' },
+  componentSizes: { chartHeight: 200, swapDetailRowHeight: 38 },
+  fontSize: { sm: 14, bodyLg: 16, '2xl': 24 },
+  fontFamilyNative: { semiBold: 'System', medium: 'System', extraBold: 'System' },
   borderRadius: { md: 12 },
-  letterSpacing: { normal: 0, wide: 0.5 },
+  letterSpacing: { normal: 0, slight: 0, wide: 0.5 },
   lineHeight: { condensed: 1.2, normal: 1.5 },
   opacity: { faint: 0.05 },
   spacing: { xs: 4, md: 12, base: 16, lg: 16, '2xl': 24, '3xl': 32, '4xl': 40, headerPadding: 20 },
@@ -38,9 +39,16 @@ jest.mock('../BlurContainer', () => {
   return { BlurContainer: RNView };
 });
 
-jest.mock('./SwapDetailRow', () => {
-  const { Text: RNText } = require('react-native');
-  return { SwapDetailRow: ({ label }: { label: string }) => <RNText>{label}</RNText> };
+jest.mock('../PendingValue', () => {
+  const { View: RNView } = require('react-native');
+  return {
+    PendingValue: ({ children }: { children: React.ReactNode }) => <RNView>{children}</RNView>,
+  };
+});
+
+jest.mock('../../icons', () => {
+  const { View: RNView } = require('react-native');
+  return { CaretDownIcon: () => <RNView />, iconSize: { sm: 16, md: 20, lg: 24 } };
 });
 
 jest.mock('./SwapReviewExchange', () => {
@@ -81,7 +89,7 @@ const quote = {
   output: { amount: '19711120', decimals: 9, symbol: 'SOL' },
   fee: { percent: 0.5 },
   routeNames: ['HumidiFi'],
-  custom: { priceImpact: -0.5, slippageBps: 2000 },
+  custom: { priceImpact: -0.5, slippageBps: 2000, router: 'Jupiter', swapMode: 'ExactIn' },
 };
 
 function renderScreen() {
@@ -120,5 +128,43 @@ describe('SwapReviewScreen — the warning card can always be read', () => {
     );
 
     expect(paddingBottom).toBeGreaterThan(0);
+  });
+});
+
+describe('SwapReviewScreen — the details are one card, and it fits', () => {
+  it('groups every detail row into a single card instead of a pill stack', () => {
+    const { getAllByTestId } = renderScreen();
+    // One grouped card; the per-row pills (one BlurContainer each) are what
+    // made the review taller than the viewport.
+    expect(getAllByTestId('swap-details-card')).toHaveLength(1);
+  });
+
+  it('keeps the critical rows visible and folds the advanced ones by default', () => {
+    const { getByText, queryByText } = renderScreen();
+
+    // Critical — always on screen.
+    expect(getByText('Salmon fee')).toBeTruthy();
+    expect(getByText('Slippage Tolerance')).toBeTruthy();
+    expect(getByText('Total Price Impact')).toBeTruthy();
+    // Advanced — folded behind the disclosure.
+    expect(queryByText('Router')).toBeNull();
+    expect(queryByText('Route')).toBeNull();
+    expect(queryByText('Swap Mode')).toBeNull();
+  });
+
+  it('reveals the advanced rows when the Details disclosure is pressed', () => {
+    const { getByTestId, getByText } = renderScreen();
+
+    const disclosure = getByTestId('swap-details-disclosure');
+    expect(disclosure.props.accessibilityState).toMatchObject({ expanded: false });
+
+    fireEvent.press(disclosure);
+
+    expect(getByText('Router')).toBeTruthy();
+    expect(getByText('Route')).toBeTruthy();
+    expect(getByText('Swap Mode')).toBeTruthy();
+    expect(getByTestId('swap-details-disclosure').props.accessibilityState).toMatchObject({
+      expanded: true,
+    });
   });
 });

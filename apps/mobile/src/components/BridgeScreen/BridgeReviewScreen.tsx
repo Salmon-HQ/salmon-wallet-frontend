@@ -19,7 +19,7 @@ import {
   semantic,
   BRIDGE_PARTNER_FEE_PERCENT,
 } from '@salmon/shared';
-import { SwapDetailRow } from '../SwapScreen/SwapDetailRow';
+import { SwapDetailsCard } from '../SwapScreen/SwapDetailsCard';
 import { SwapReviewExchange } from '../SwapScreen/SwapReviewExchange';
 import { SwapReviewButtons } from '../SwapScreen/SwapReviewButtons';
 import { useTabChrome } from '../../../hooks/useTabChrome';
@@ -28,7 +28,7 @@ import type { BridgeReviewScreenProps } from './types';
 /**
  * BridgeReviewScreen - Third step of bridge flow
  * Shows bridge details and confirm/back buttons
- * Reuses SwapDetailRow and SwapReviewExchange components from SwapScreen
+ * Reuses SwapDetailsCard and SwapReviewExchange components from SwapScreen
  */
 export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
   inToken,
@@ -77,42 +77,46 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
           />
         </View>
 
-        {/* Details Section */}
-        <View style={styles.detailsContainer}>
-          <SwapDetailRow
-            label={t('bridge.review.recipient', 'Recipient')}
-            value={getShortAddress(recipientAddress, 8) ?? ''}
-          />
-          <SwapDetailRow
-            label={t('bridge.review.fromNetwork', 'From Network')}
-            value={inToken.network || 'Solana'}
-          />
-          <SwapDetailRow
-            label={t('bridge.review.toNetwork', 'To Network')}
-            value={outToken.network || t('transactions.unknown')}
-          />
-          {estimate && (
-            <>
-              <SwapDetailRow
-                label={t('bridge.review.minimumAmount', 'Minimum Amount')}
-                value={formatAmountWithSymbol(estimate.minAmount, inToken.symbol)}
-                pending={isRefreshing}
-              />
-              <SwapDetailRow
-                label={t('bridge.review.estimatedOutput', 'Estimated Output')}
-                value={formatAmountWithSymbol(estimate.estimatedAmount, outToken.symbol)}
-                pending={isRefreshing}
-              />
-            </>
-          )}
-          {/* The swap names its cut ("Salmon fee"); the bridge netted 0.4%
-              into the estimate above and said nothing. Same cut, same row. */}
-          <SwapDetailRow
-            label={t('bridge.review.salmonFee', 'Salmon fee')}
-            value={formatPercent(BRIDGE_PARTNER_FEE_PERCENT)}
-          />
-          <SwapDetailRow label={t('bridge.review.provider', 'Provider')} value="StealthEX" />
-        </View>
+        {/* Details Section — one grouped card, same treatment as the swap
+            review (no disclosure: every bridge row is commit-relevant). */}
+        <SwapDetailsCard
+          style={styles.detailsContainer}
+          rows={[
+            {
+              label: t('bridge.review.recipient', 'Recipient'),
+              value: getShortAddress(recipientAddress, 8) ?? '',
+            },
+            {
+              label: t('bridge.review.fromNetwork', 'From Network'),
+              value: inToken.network || 'Solana',
+            },
+            {
+              label: t('bridge.review.toNetwork', 'To Network'),
+              value: outToken.network || t('transactions.unknown'),
+            },
+            ...(estimate
+              ? [
+                  {
+                    label: t('bridge.review.minimumAmount', 'Minimum Amount'),
+                    value: formatAmountWithSymbol(estimate.minAmount, inToken.symbol),
+                    pending: isRefreshing,
+                  },
+                  {
+                    label: t('bridge.review.estimatedOutput', 'Estimated Output'),
+                    value: formatAmountWithSymbol(estimate.estimatedAmount, outToken.symbol),
+                    pending: isRefreshing,
+                  },
+                ]
+              : []),
+            // The swap names its cut ("Salmon fee"); the bridge netted 0.4%
+            // into the estimate above and said nothing. Same cut, same row.
+            {
+              label: t('bridge.review.salmonFee', 'Salmon fee'),
+              value: formatPercent(BRIDGE_PARTNER_FEE_PERCENT),
+            },
+            { label: t('bridge.review.provider', 'Provider'), value: 'StealthEX' },
+          ]}
+        />
 
         {/* The swap warns about irreversibility on the flow that settles in
             thirteen seconds; the bridge, which genuinely cannot be stopped,
@@ -180,7 +184,6 @@ const styles = StyleSheet.create({
     marginBottom: vs(spacing['2xl']),
   },
   detailsContainer: {
-    gap: vs(spacing.md - 3),
     marginBottom: vs(spacing['2xl']),
   },
   dangerBox: {

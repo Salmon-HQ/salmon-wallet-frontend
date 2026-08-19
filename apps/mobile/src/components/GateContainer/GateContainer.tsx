@@ -43,6 +43,8 @@ import {
 } from '@salmon/shared';
 import type { GateContainerProps, GateState } from './types';
 import { curve, timing } from '../../utils/motion';
+import { FLOAT_IN_MS, SINK_OUT_MS } from '../../utils/sinkAndFloat';
+import { useTaskChrome } from '../../contexts/TaskChromeContext';
 import { DEBUG_LAYER_COLORS, DEBUG_LAYER_COLOR } from '../../debug/layerColors';
 
 // ============================================================================
@@ -65,6 +67,9 @@ export function GateContainer({
   onBackdropPress,
   onUnlockAnimationComplete,
 }: GateContainerProps) {
+  // The compuerta signal: true while a task window (swap review/success)
+  // owns the screen. Published by SwapScreen through TaskChromeContext.
+  const { isTaskEngaged: concealed } = useTaskChrome();
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const headerHeight = insets.top + componentSizes.headerHeight;
@@ -154,6 +159,25 @@ export function GateContainer({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, collapsedY]);
+
+  // The compuerta: while a task window owns the screen, the collapsed header
+  // leaves upward — the whole gate travels one headerHeight further up, on
+  // the verb's own numbers (sink out, float back). It runs after the state
+  // effect above so that on a same-commit change the concealment wins.
+  // Reduce motion: `timing` resolves to a cut. Only the collapsed state
+  // conceals — every other state owns translateY through the effect above.
+  useEffect(() => {
+    if (state !== 'collapsed') return;
+    if (concealed) {
+      translateY.value = withTiming(
+        -gateHeight,
+        timing(SINK_OUT_MS, isReduceMotionEnabled, curve.sink)
+      );
+    } else {
+      translateY.value = withTiming(collapsedY, timing(FLOAT_IN_MS, isReduceMotionEnabled));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [concealed, state, collapsedY, gateHeight, isReduceMotionEnabled]);
 
   // Android back button for expanded states
   useEffect(() => {

@@ -29,6 +29,7 @@ import type {
   SwapTabSelectorProps as SwapTabSelectorPropsBase,
   SwapAmountInputProps as SwapAmountInputPropsBase,
   SwapDetailRowProps as SwapDetailRowPropsBase,
+  SwapDetailsCardProps as SwapDetailsCardPropsBase,
   SwapReviewExchangeProps as SwapReviewExchangePropsBase,
   SwapReviewScreenProps as SwapReviewScreenPropsBase,
   SwapInputScreenProps as SwapInputScreenPropsBase,
@@ -56,6 +57,11 @@ export interface SwapAmountInputProps extends SwapAmountInputPropsBase<CSSProper
  * Props for SwapDetailRow component (Web)
  */
 export interface SwapDetailRowProps extends SwapDetailRowPropsBase<CSSProperties> {}
+
+/**
+ * Props for SwapDetailsCard component (web)
+ */
+export interface SwapDetailsCardProps extends SwapDetailsCardPropsBase<CSSProperties> {}
 
 /**
  * Props for SwapReviewExchange component (Web)

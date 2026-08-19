@@ -483,6 +483,38 @@ export interface SwapDetailRowProps<StyleType> {
 }
 
 /**
+ * One row of the grouped review-details card: what `SwapDetailRowProps`
+ * carries, minus the style — the card owns the row chrome.
+ */
+export interface SwapDetailItem {
+  /** Label on the left */
+  label: string;
+  /** Value on the right */
+  value: string;
+  /** Whether this row's value is being recalculated (see `SwapDetailRowProps.pending`) */
+  pending?: boolean;
+}
+
+/**
+ * Props for SwapDetailsCard — the review screens' detail rows grouped into
+ * ONE card with compact rows and hairline separators, instead of a pill per
+ * row (the pill stack alone overflowed the viewport). Advanced rows fold
+ * behind a "Details" disclosure, collapsed by default, so the critical rows
+ * and the warning stay on screen without scrolling.
+ */
+export interface SwapDetailsCardProps<StyleType> {
+  /** Rows that are always visible (the critical ones). */
+  rows: SwapDetailItem[];
+  /**
+   * Rows folded behind the "Details" disclosure. Omit (or pass empty) to
+   * render a plain grouped card with no disclosure — the bridge review does.
+   */
+  advancedRows?: SwapDetailItem[];
+  /** Custom style */
+  style?: StyleType;
+}
+
+/**
  * One side of the SwapReviewExchange graphic: the token being sent or received.
  */
 export interface SwapReviewExchangeSide {

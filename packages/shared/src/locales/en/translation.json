@@ -681,6 +681,7 @@
       "title": "Swap Review",
       "salmonFee": "Salmon fee",
       "route": "Route",
+      "details": "Details",
       "totalPriceImpact": "Total Price Impact",
       "pleaseNote": "Please Note",
       "pleaseNoteText": "Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed.",

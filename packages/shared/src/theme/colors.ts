@@ -166,6 +166,15 @@ const VERTICAL = { start: { x: 0.5, y: 0 }, end: { x: 0.5, y: 1 } } as const;
 const DEEP_PANE_CSS = `linear-gradient(180deg, ${neutral[850]} 0%, ${neutral[900]} 50%, ${neutral[950]} 100%)`;
 const SHALLOW_PANE_CSS = `linear-gradient(180deg, ${neutral[800]} 0%, ${neutral[850]} 50%, ${neutral[900]} 100%)`;
 
+/**
+ * Tab-bar fade tunables — see `gradients.tabBarFade` below. Locations run
+ * along the gradient axis, physical bottom edge (0) → top of the mask (1).
+ */
+/** Fully opaque water floor from the bottom edge up to this fraction. */
+const TAB_BAR_FADE_SOLID_STOP = 0.45;
+/** High-opacity shoulder (alpha 0.85 in the stop itself) ends here. */
+const TAB_BAR_FADE_HEAVY_STOP = 0.72;
+
 export const gradients = {
   /**
    * The primary fill. Flat `salmon-500`, not a gradient into a muddy red:
@@ -230,9 +239,23 @@ export const gradients = {
    * TabBar bottom fade (water → transparent, bottom to top). The opaque stop
    * is the depth ramp's own floor (`semantic.water.gradient[1]`), so content
    * dissolves into the water darkening — never a flat black slab over it.
+   *
+   * Stops (owner, on-device 2026-08-18): whatever passes under the pill must
+   * be near-illegible, so the floor holds SOLID from the physical bottom edge
+   * up through the pill, hands off through a heavy shoulder, and only the top
+   * of the mask is the soft water fade. Locations run along the gradient
+   * axis, bottom (0) → top (1). Tunables:
+   *  - TAB_BAR_FADE_SOLID_STOP: how far up the fully opaque zone reaches
+   *    (0.45 ≈ the pill's own band; lower it and rows read through the pill).
+   *  - TAB_BAR_FADE_HEAVY_STOP: where the high-opacity shoulder (alpha 0.85
+   *    in the stop itself) hands off to the fade — keeps the ramp from
+   *    thinning too fast above the solid zone.
+   * All stops stay on the water floor's hue — never #000000 (a test guards
+   * it): the top of the ramp must still read as water, not a plate.
    */
   tabBarFade: {
-    colors: [neutral[1000], 'rgba(7, 9, 17, 0)'] as const,
+    colors: [neutral[1000], neutral[1000], 'rgba(7, 9, 17, 0.85)', 'rgba(7, 9, 17, 0)'] as const,
+    locations: [0, TAB_BAR_FADE_SOLID_STOP, TAB_BAR_FADE_HEAVY_STOP, 1] as const,
     start: { x: 0.5, y: 1 },
     end: { x: 0.5, y: 0 },
   },

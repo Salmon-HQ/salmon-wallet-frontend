@@ -24,6 +24,7 @@ import { BridgeRecipientScreen } from '../BridgeScreen/BridgeRecipientScreen';
 import { BridgeReviewScreen } from '../BridgeScreen/BridgeReviewScreen';
 import { WarningNotice } from '../WarningNotice';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
+import { useTaskChrome } from '../../contexts/TaskChromeContext';
 import type { SwapScreenProps } from './types';
 
 /**
@@ -137,6 +138,18 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
     return () => clearTimeout(timer);
   }, [isTaskStep, isTaskWindowVisible, isReduceMotionEnabled, stepSwap.fromSuccess]);
 
+  // The compuerta and the pill (owner, on-device): the shell's chrome is part
+  // of the transition. Engaged the moment the task begins — the gate rises
+  // and the tab bar sinks during the beat, before the window covers them —
+  // and held until the window has actually gone, so on the way back the
+  // chrome returns exactly as the shell's delayed input float begins.
+  const { setTaskEngaged } = useTaskChrome();
+  useEffect(() => {
+    setTaskEngaged(isTaskStep || isTaskWindowVisible);
+  }, [isTaskStep, isTaskWindowVisible, setTaskEngaged]);
+  // Leaving the swap tab entirely must hand the chrome back.
+  useEffect(() => () => setTaskEngaged(false), [setTaskEngaged]);
+
   const handleTaskDismiss = useCallback(() => {
     if (isCommitted) return;
     if (logic.step === 'review') {
@@ -152,24 +165,22 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   const taskScreenStyle = { paddingBottom: insets.bottom + spacing.lg };
 
   const stalledBanner = isStalled ? (
-        <View style={styles.stalledBanner} testID="bridge-stalled-banner">
-          <WarningNotice
-            tone="warning"
-            title={t('bridge.settlement_stalled_title', "Can't check your bridge status")}
-            action={
-              <TouchableOpacity onPress={retryNow} testID="bridge-stalled-retry">
-                <Text style={styles.stalledRetryText}>
-                  {t('bridge.settlement_retry', 'Check now')}
-                </Text>
-              </TouchableOpacity>
-            }
-          >
-            {t(
-              'bridge.settlement_stalled_body',
-              "Your funds are on the way, but we can't reach the status service. We'll keep trying."
-            )}
-          </WarningNotice>
-        </View>
+    <View style={styles.stalledBanner} testID="bridge-stalled-banner">
+      <WarningNotice
+        tone="warning"
+        title={t('bridge.settlement_stalled_title', "Can't check your bridge status")}
+        action={
+          <TouchableOpacity onPress={retryNow} testID="bridge-stalled-retry">
+            <Text style={styles.stalledRetryText}>{t('bridge.settlement_retry', 'Check now')}</Text>
+          </TouchableOpacity>
+        }
+      >
+        {t(
+          'bridge.settlement_stalled_body',
+          "Your funds are on the way, but we can't reach the status service. We'll keep trying."
+        )}
+      </WarningNotice>
+    </View>
   ) : null;
 
   return (
@@ -178,27 +189,27 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
       {logic.step === 'input' && (
         <Animated.View style={styles.step} entering={stepEntering} exiting={stepExiting}>
           <SwapInputScreen
-          inToken={logic.inToken}
-          outToken={logic.outToken}
-          inAmount={logic.inAmount}
-          outAmount={logic.outAmount}
-          onInAmountChange={logic.setInAmount}
-          onInTokenPress={() => logic.setShowInTokenModal(true)}
-          onOutTokenPress={() => logic.setShowOutTokenModal(true)}
-          inUsdValue={logic.inUsdValue}
-          isLoadingQuote={logic.isLoadingQuote || logic.isLoadingEstimate}
-          canReview={logic.canReview}
-          reviewWarning={logic.reviewWarning}
-          swapError={logic.swapError}
-          bridgeReference={
-            logic.lastBridgeExchange
-              ? {
-                  id: logic.lastBridgeExchange.id,
-                  depositAddress: logic.lastBridgeExchange.depositAddress,
-                }
-              : null
-          }
-          onReview={logic.handleReview}
+            inToken={logic.inToken}
+            outToken={logic.outToken}
+            inAmount={logic.inAmount}
+            outAmount={logic.outAmount}
+            onInAmountChange={logic.setInAmount}
+            onInTokenPress={() => logic.setShowInTokenModal(true)}
+            onOutTokenPress={() => logic.setShowOutTokenModal(true)}
+            inUsdValue={logic.inUsdValue}
+            isLoadingQuote={logic.isLoadingQuote || logic.isLoadingEstimate}
+            canReview={logic.canReview}
+            reviewWarning={logic.reviewWarning}
+            swapError={logic.swapError}
+            bridgeReference={
+              logic.lastBridgeExchange
+                ? {
+                    id: logic.lastBridgeExchange.id,
+                    depositAddress: logic.lastBridgeExchange.depositAddress,
+                  }
+                : null
+            }
+            onReview={logic.handleReview}
           />
         </Animated.View>
       )}
@@ -278,37 +289,37 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
               </Animated.View>
             )}
 
-      {logic.step === 'success' && (
-        <TransactionSuccessScreen
-          title={
-            logic.successExchange
-              ? t('bridge.initiated', 'Bridge Initiated')
-              : t('transaction.swapComplete')
-          }
-          pendingTitle={t('transaction.pendingSwap')}
-          summary={`${successInLabel} → ${successOutLabel}`}
-          explorerUrl={
-            logic.successTxId && successChain
-              ? getTransactionUrl(
-                  successChain.toUpperCase() as Blockchain,
-                  (successNetworkId ?? 'mainnet') as NetworkEnvironment,
-                  getDefaultExplorer(successChain.toUpperCase() as Blockchain),
-                  logic.successTxId
-                )
-              : null
-          }
-          onContinue={logic.handleSuccessContinue}
-          settling={logic.settling}
-          bridgeDepositAddress={logic.successExchange?.depositAddress}
-          bridgeAmountIn={logic.successExchange ? successInLabel : undefined}
-          bridgeAmountOut={
-            logic.successExchange
-              ? `${logic.successExchange.amountOut} ${successOutSymbol}`
-              : undefined
-          }
-          bridgeExchangeId={logic.successExchange?.id}
-          bridgeDepositTxId={logic.depositTxId ?? undefined}
-        />
+          {logic.step === 'success' && (
+            <TransactionSuccessScreen
+              title={
+                logic.successExchange
+                  ? t('bridge.initiated', 'Bridge Initiated')
+                  : t('transaction.swapComplete')
+              }
+              pendingTitle={t('transaction.pendingSwap')}
+              summary={`${successInLabel} → ${successOutLabel}`}
+              explorerUrl={
+                logic.successTxId && successChain
+                  ? getTransactionUrl(
+                      successChain.toUpperCase() as Blockchain,
+                      (successNetworkId ?? 'mainnet') as NetworkEnvironment,
+                      getDefaultExplorer(successChain.toUpperCase() as Blockchain),
+                      logic.successTxId
+                    )
+                  : null
+              }
+              onContinue={logic.handleSuccessContinue}
+              settling={logic.settling}
+              bridgeDepositAddress={logic.successExchange?.depositAddress}
+              bridgeAmountIn={logic.successExchange ? successInLabel : undefined}
+              bridgeAmountOut={
+                logic.successExchange
+                  ? `${logic.successExchange.amountOut} ${successOutSymbol}`
+                  : undefined
+              }
+              bridgeExchangeId={logic.successExchange?.id}
+              bridgeDepositTxId={logic.depositTxId ?? undefined}
+            />
           )}
         </View>
       </Modal>
