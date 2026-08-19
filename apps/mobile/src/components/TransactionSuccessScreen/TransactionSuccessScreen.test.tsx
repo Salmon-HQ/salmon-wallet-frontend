@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { render, screen, within } from '@testing-library/react-native';
 
 const mockNotificationAsync = jest.fn();
 
@@ -18,37 +18,6 @@ const mockLoadingScreen = ({ title, bottomOffset }: { title?: string; bottomOffs
   </Text>
 );
 
-const mockReducedMotion = jest.fn(() => false);
-/** Every `withTiming` config the component asked for, in order. */
-const timings: Array<{ duration?: number }> = [];
-/** Every `withDelay` delay the component asked for, in order. */
-const delays: number[] = [];
-
-jest.mock('react-native-reanimated', () => {
-  const { View, Text } = require('react-native');
-  return {
-    __esModule: true,
-    default: { View, Text },
-    useSharedValue: (value: unknown) => ({ value }),
-    useAnimatedStyle: (fn: () => unknown) => fn(),
-    useReducedMotion: () => mockReducedMotion(),
-    withSpring: (value: unknown) => value,
-    withDelay: (delay: number, value: unknown) => {
-      delays.push(delay);
-      return value;
-    },
-    withTiming: (value: unknown, config?: { duration?: number }) => {
-      if (config) timings.push(config);
-      return value;
-    },
-    Easing: {
-      out: (fn: unknown) => fn,
-      cubic: (t: number) => t,
-      bezier: (...args: number[]) => args,
-    },
-  };
-});
-
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: string) => fallback ?? key,
@@ -65,12 +34,7 @@ jest.mock('expo-linear-gradient', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
-  // The motion vocabulary is the real thing on purpose: these tests assert
-  // that the Surfacing's durations come out of `motionMs`, and a stubbed
-  // `motionMs` would assert nothing.
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  // The caustic band is the scales motif, and the motif's geometry is data:
-  // a stub would only assert that a stub renders.
   ...jest.requireActual('@salmon/shared/src/theme/scales'),
   letterSpacing: { normal: 0, wide: 0.3, snug: -0.12 },
   // The real gate is `useWaitGate` and it is tested where it lives
@@ -167,15 +131,6 @@ jest.mock('../TokenLogo', () => {
 });
 
 import { TransactionSuccessScreen } from './TransactionSuccessScreen';
-import {
-  AMOUNT_LAG_MS,
-  BAND_TRAVEL_MS,
-  STATIC_HIGHLIGHT_HOLD_MS,
-  amountLandsAtMs,
-  surfacingTimeline,
-} from './surfacing';
-
-const { motionMs } = jest.requireActual('@salmon/shared/src/theme/durations');
 
 const baseProps = {
   title: 'Swap Complete',
@@ -187,9 +142,6 @@ const baseProps = {
 describe('TransactionSuccessScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockReducedMotion.mockReturnValue(false);
-    timings.length = 0;
-    delays.length = 0;
   });
 
   describe('while settling', () => {
@@ -373,95 +325,37 @@ describe('TransactionSuccessScreen', () => {
     expect(amount.props.adjustsFontSizeToFit).toBe(true);
   });
 
-  describe('The Surfacing', () => {
-    const layout = (testID: string, box: { y: number; height: number }) =>
-      fireEvent(screen.getByTestId(testID), 'layout', {
-        nativeEvent: { layout: { x: 0, width: 390, ...box } },
-      });
+  describe('the receipt arrives complete', () => {
+    it('holds nothing back — every element is there, at full strength, the frame it mounts', () => {
+      render(
+        <TransactionSuccessScreen
+          {...baseProps}
+          exchange={{
+            send: { label: 'Sent', symbol: 'USDC', amount: '1.1 USDC' },
+            receive: { label: 'Received', symbol: 'SOL', amount: '0.014 SOL' },
+          }}
+        />
+      );
 
-    const durations = () => timings.map((config) => config.duration);
-
-    it('clears the membrane over `tide` — the duration reserved for this moment', () => {
-      render(<TransactionSuccessScreen {...baseProps} />);
-
-      expect(durations()).toContain(motionMs.tide);
+      // Nothing staggers and nothing travels: no element of the receipt may
+      // start hidden or offset waiting for a turn that no longer exists.
+      for (const testID of [
+        'tx-success-title',
+        'tx-success-amount',
+        'tx-success-receipt',
+        'tx-success-explorer-link',
+        'tx-success-continue-button',
+      ]) {
+        const style = StyleSheet.flatten(screen.getByTestId(testID).props.style) ?? {};
+        expect(style.opacity ?? 1).toBe(1);
+        expect(style.transform).toBeUndefined();
+      }
     });
 
-    it('settles the amount over `drift`, delayed so it lands one lag after the band', () => {
-      render(<TransactionSuccessScreen {...baseProps} />);
-
-      const timeline = surfacingTimeline(false);
-      expect(durations()).toContain(motionMs.drift);
-      expect(delays).toContain(timeline.amount.delayMs);
-      expect(amountLandsAtMs(timeline)).toBe(BAND_TRAVEL_MS + AMOUNT_LAG_MS);
-    });
-
-    it('lights the hero across the band’s travel, not after it', () => {
-      // The band used to rise over a screen whose hero was still at opacity
-      // zero for the whole 560ms, so the light read as a stray element
-      // arriving before the receipt did. The reveal carries the content: the
-      // amount's opacity runs undelayed and is full exactly when it lands.
-      render(<TransactionSuccessScreen {...baseProps} />);
-
-      const timeline = surfacingTimeline(false);
-      expect(durations()).toContain(amountLandsAtMs(timeline));
-      // Only the settle waits for the band — the light does not.
-      expect(timeline.amount.delayMs).toBeGreaterThan(0);
-    });
-
-    it('travels the band only once the corridor has been measured', () => {
-      render(<TransactionSuccessScreen {...baseProps} />);
-
-      expect(durations()).not.toContain(BAND_TRAVEL_MS);
-
-      layout('tx-success-screen', { y: 0, height: 800 });
-      layout('tx-success-amount', { y: 300, height: 60 });
-
-      expect(durations()).toContain(BAND_TRAVEL_MS);
-    });
-
-    it('takes the parallel path under reduced motion, not a hole where the moment was', () => {
-      mockReducedMotion.mockReturnValue(true);
-      render(<TransactionSuccessScreen {...baseProps} />);
-      layout('tx-success-screen', { y: 0, height: 800 });
-      layout('tx-success-amount', { y: 300, height: 60 });
-
-      // The membrane still clears — in one `swell` step, not over `tide`.
-      expect(durations()).toContain(motionMs.swell);
-      expect(durations()).not.toContain(motionMs.tide);
-      // The band is drawn once and held; it never travels.
-      expect(durations()).not.toContain(BAND_TRAVEL_MS);
-      expect(delays).toContain(STATIC_HIGHLIGHT_HOLD_MS);
-      // Nothing waits for a Surfacing that no longer travels.
-      expect(delays).not.toContain(motionMs.tide);
-    });
-
-    it('keeps the success haptic under reduced motion', () => {
-      mockReducedMotion.mockReturnValue(true);
+    it('still confirms the arrival with the success haptic', () => {
       render(<TransactionSuccessScreen {...baseProps} />);
 
       expect(mockNotificationAsync).toHaveBeenCalledTimes(1);
-    });
-
-    it('spends no duration outside the shared vocabulary', () => {
-      render(<TransactionSuccessScreen {...baseProps} />);
-      layout('tx-success-screen', { y: 0, height: 800 });
-      layout('tx-success-amount', { y: 300, height: 60 });
-
-      const timeline = surfacingTimeline(false);
-      // Every duration is either a `motionMs` token or one of the Surfacing's
-      // two named quantities — never a number someone typed at a call site.
-      const allowed = new Set<number>([
-        ...(Object.values(motionMs) as number[]),
-        BAND_TRAVEL_MS,
-        timeline.band.fadeMs,
-        // Derived from the plan, not typed at the call site: the hero's light
-        // spans exactly the corridor between the start and its landing.
-        amountLandsAtMs(timeline),
-      ]);
-      for (const duration of durations()) {
-        expect(allowed.has(duration as number)).toBe(true);
-      }
     });
   });
 });

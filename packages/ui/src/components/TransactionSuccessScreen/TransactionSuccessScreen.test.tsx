@@ -193,18 +193,6 @@ describe('TransactionSuccessScreen', () => {
       expect(link.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
-    it('gives the primary the first chrome wave and the assist the trailing one', () => {
-      render(<TransactionSuccessScreen {...baseProps} />);
-
-      const primary = screen.getByTestId('tx-success-continue-button').closest('div');
-      const assist = screen.getByTestId('tx-success-assist');
-
-      // `chrome.delayMs` for the action, plus one `stagger` for the assist:
-      // the ranking survives the move to the bottom edge as timing.
-      expect(primary?.style.animationDelay).toBe('720ms');
-      expect(assist.style.animationDelay).toBe('744ms');
-    });
-
     it('holds the assist band open when the chain has no explorer link', () => {
       const { rerender } = render(<TransactionSuccessScreen {...baseProps} />);
       const withLink = getComputedStyle(screen.getByTestId('tx-success-assist')).height;
@@ -234,14 +222,13 @@ describe('TransactionSuccessScreen', () => {
       );
 
       const hero = screen.getByTestId('tx-success-amount');
-      // The exchange replaces the plain summary line as the protagonist,
-      // inside the same measured hero node the caustic band travels to.
+      // The exchange replaces the plain summary line as the protagonist.
       expect(hero.textContent).toContain('1.1 USDC');
       expect(hero.textContent).toContain('0.014 SOL');
       expect(hero.textContent).toContain('→');
       expect(screen.queryByText('1 SOL → 200 USDC')).toBeNull();
-      // Nothing boxes it: no card sits between The Surfacing and the thing it
-      // surfaces, so the hero draws neither a fill nor a border of its own.
+      // Nothing boxes it: no card sits around the thing the receipt is about,
+      // so the hero draws neither a fill nor a border of its own.
       const heroStyle = getComputedStyle(hero);
       expect(heroStyle.backgroundColor).toBe('rgba(0, 0, 0, 0)');
       expect(heroStyle.borderRadius).toBe('');
@@ -269,17 +256,6 @@ describe('TransactionSuccessScreen', () => {
       // back to its own initials rather than to a hole in the line.
       expect(marks[0].getAttribute('src')).toBe('https://x/usdc.png');
       expect(marks[1].textContent).toBe('SOL');
-    });
-
-    it('lets the hero\u2019s light run the whole corridor while only its travel waits for the band', () => {
-      render(<TransactionSuccessScreen {...baseProps} />);
-
-      const hero = screen.getByTestId('tx-success-amount');
-      // Two clocks on one element: the light spans from 0 to the moment the
-      // amount lands, so the band carries its content rather than climbing an
-      // empty screen; the travel keeps the timeline's own delay.
-      expect(hero.style.animationDelay).toBe('0ms, 400ms');
-      expect(hero.style.animationDuration).toBe('680ms, 280ms');
     });
 
     it('omits rate and fee rows when the flow did not have the data', () => {
@@ -313,56 +289,31 @@ describe('TransactionSuccessScreen', () => {
     });
   });
 
-  /**
-   * The Surfacing (DESIGN.md §The Surfacing). What is worth asserting here is
-   * not that pixels move — the timing is `surfacingTimeline`'s and is tested
-   * in `surfacing.test.ts` — but that the phases are mounted on the receipt
-   * and that the reduce-motion signal chooses the calm variant. Same shape as
-   * `LoadingScreen.ground.test.tsx`.
-   */
-  describe('The Surfacing', () => {
-    const setReducedMotion = (matches: boolean) => {
-      window.matchMedia = ((query: string) => ({
-        matches,
-        media: query,
-        onchange: null,
-        addEventListener: () => {},
-        removeEventListener: () => {},
-        addListener: () => {},
-        removeListener: () => {},
-        dispatchEvent: () => false,
-      })) as unknown as typeof window.matchMedia;
-    };
-
-    afterEach(() => {
-      delete (window as { matchMedia?: unknown }).matchMedia;
-    });
-
-    it('mounts the membrane that clears and the caustic band that travels', () => {
-      render(<TransactionSuccessScreen {...baseProps} />);
-
-      expect(screen.getByTestId('tx-surfacing-membrane')).toBeTruthy();
-      const band = screen.getByTestId('tx-surfacing-band');
-      expect(band.getAttribute('data-surfacing-mode')).toBe('travel');
-    });
-
-    it('does not play the moment behind the wait', () => {
-      render(<TransactionSuccessScreen {...baseProps} settling />);
-
-      expect(screen.queryByTestId('tx-surfacing-membrane')).toBeNull();
-      expect(screen.queryByTestId('tx-surfacing-band')).toBeNull();
-    });
-
-    it('chooses the calm variant under reduced motion — static light, no travel', () => {
-      setReducedMotion(true);
-      render(<TransactionSuccessScreen {...baseProps} />);
-
-      // The moment stays recognizable; it just does not travel. The membrane
-      // still clears and the caustic light is drawn once, static.
-      expect(screen.getByTestId('tx-surfacing-membrane')).toBeTruthy();
-      expect(screen.getByTestId('tx-surfacing-band').getAttribute('data-surfacing-mode')).toBe(
-        'static'
+  describe('the receipt arrives complete', () => {
+    it('holds nothing back — every element is there, at full strength, the frame it mounts', () => {
+      render(
+        <TransactionSuccessScreen
+          {...baseProps}
+          exchange={{
+            send: { label: 'Sent', symbol: 'USDC', amount: '1.1 USDC' },
+            receive: { label: 'Received', symbol: 'SOL', amount: '0.014 SOL' },
+          }}
+        />
       );
+
+      // Nothing staggers and nothing travels: no element of the receipt may
+      // start hidden or offset waiting for a turn that no longer exists.
+      for (const testID of [
+        'tx-success-status',
+        'tx-success-amount',
+        'tx-success-receipt',
+        'tx-success-assist',
+        'tx-success-continue-button',
+      ]) {
+        const style = getComputedStyle(screen.getByTestId(testID));
+        expect(style.opacity === '' || style.opacity === '1').toBe(true);
+        expect(style.animationName === '' || style.animationName === 'none').toBe(true);
+      }
     });
   });
 });

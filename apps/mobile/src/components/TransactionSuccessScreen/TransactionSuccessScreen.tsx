@@ -1,19 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  Linking,
-  type LayoutChangeEvent,
-} from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  useReducedMotion,
-  withDelay,
-  withTiming,
-} from 'react-native-reanimated';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import {
@@ -38,9 +24,6 @@ import { PrimaryButton, TextButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import { TokenLogo } from '../TokenLogo';
 import { useTabChrome } from '../../../hooks/useTabChrome';
-import { curve } from '../../utils/motion';
-import { CausticBand, SurfacingMembrane } from './SurfacingLayers';
-import { BAND_HEIGHT, MEMBRANE_OPACITY_TO, amountLandsAtMs, surfacingTimeline } from './surfacing';
 
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a
 // mutable one.
@@ -91,48 +74,6 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
     new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   );
 
-  // The Surfacing (DESIGN.md §The Surfacing). Reduced motion is a full
-  // parallel mapping rather than a switch, and the plan for both paths is
-  // `surfacingTimeline` — a pure function, so the timing is testable without a
-  // frame clock.
-  const isReduceMotionEnabled = useReducedMotion();
-  const timeline = useMemo(() => surfacingTimeline(isReduceMotionEnabled), [isReduceMotionEnabled]);
-
-  const statusOpacity = useSharedValue(0);
-  // The amount is the hero, so it owns its own node and its own value: the
-  // caustic band travels up to it and it settles behind the band, translateY
-  // +6 → 0 on `settle`, digits already at tabular width so nothing reflows.
-  const amountOpacity = useSharedValue(0);
-  const amountTranslateY = useSharedValue(0);
-  // Two waves of chrome, named for their order rather than for one element,
-  // because the order is rank, not position: the first wave carries
-  // everything at the primary rank — the bridge details and the continue
-  // action — and the second carries the explorer link, the quiet assist over
-  // the primary it defers to.
-  const chromeOpacity = useSharedValue(0);
-  const chromeTrailOpacity = useSharedValue(0);
-  const membraneOpacity = useSharedValue(1);
-  const bandOpacity = useSharedValue(0);
-  const bandTranslateY = useSharedValue(0);
-
-  // Where the band starts (below the bottom edge) and where it stops (centred
-  // on the amount). Both come from layout rather than from a guess, because
-  // the corridor's length changes with the summary's line count. The amount is
-  // measured inside the centred cluster, so its screen position is the
-  // cluster's own offset plus the amount's offset within it.
-  const [screenHeight, setScreenHeight] = useState(0);
-  const [clusterTop, setClusterTop] = useState(0);
-  const [amountCenterInCluster, setAmountCenterInCluster] = useState(0);
-  const amountCenterY = clusterTop + amountCenterInCluster;
-
-  const handleScreenLayout = useCallback((event: LayoutChangeEvent) => {
-    setScreenHeight(event.nativeEvent.layout.height);
-  }, []);
-
-  const handleClusterLayout = useCallback((event: LayoutChangeEvent) => {
-    setClusterTop(event.nativeEvent.layout.y);
-  }, []);
-
   const showWait = useWaitGate(settling);
   // And the wait is not merely unmounted when it ends: this branch swaps the
   // instant `settling` flips, so the closing wave used to play nowhere on the
@@ -141,127 +82,15 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   // left the screen and it reports back.
   const { held: waveHeld, onExited: onWaveGone } = useWaitExit(showWait);
 
-  const handleAmountLayout = useCallback((event: LayoutChangeEvent) => {
-    const { y, height } = event.nativeEvent.layout;
-    setAmountCenterInCluster(y + height / 2);
-  }, []);
-
   useEffect(() => {
     // Keyed on the wait *screen*, not on `settling`: the gate can hold the wait
-    // a moment past the settle, and The Surfacing must not play behind it.
+    // a moment past the settle, and the receipt's confirmation must not fire
+    // behind it. The haptic is the whole of the arrival now — the receipt
+    // itself is simply there, complete, the frame it mounts.
     if (showWait) return;
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-    // 1. The membrane clears: the water above the transaction thins out.
-    membraneOpacity.value = withTiming(MEMBRANE_OPACITY_TO, {
-      duration: timeline.membrane.durationMs,
-      easing: curve.current,
-    });
-
-    // 3. The amount settles. `settle` never passes its target, so a number
-    //    never appears to have been wrong for a frame.
-    //
-    //    Its *light* is on the band's own clock rather than behind it: the
-    //    hero used to hold at opacity 0 for the whole travel and appear only
-    //    after the band had passed, so the band read as a stray element
-    //    rising over an empty screen and the screen arrived afterwards. The
-    //    reveal has to carry the content, not precede it — so the amount
-    //    comes up on the Beer–Lambert curve across the whole corridor and is
-    //    fully there exactly when it lands (`amountLandsAtMs`). What still
-    //    waits for the band is the *settle*: the last 6dp of travel play
-    //    behind the light, which is the moment DESIGN.md §The Surfacing
-    //    specifies. Under reduced motion the delay is 0 and the two are the
-    //    same single step they always were.
-    amountTranslateY.value = timeline.amount.rise;
-    amountOpacity.value = withTiming(1, {
-      duration: amountLandsAtMs(timeline),
-      easing: curve.current,
-    });
-    amountTranslateY.value = withDelay(
-      timeline.amount.delayMs,
-      withTiming(0, { duration: timeline.amount.durationMs, easing: curve.settle })
-    );
-
-    // Then everything else, after the moment rather than during it.
-    statusOpacity.value = withTiming(1, {
-      duration: timeline.chrome.durationMs,
-      easing: curve.current,
-    });
-    chromeOpacity.value = withDelay(
-      timeline.chrome.delayMs,
-      withTiming(1, { duration: timeline.chrome.durationMs, easing: curve.current })
-    );
-    chromeTrailOpacity.value = withDelay(
-      timeline.chrome.delayMs + timeline.chrome.staggerMs,
-      withTiming(1, { duration: timeline.chrome.durationMs, easing: curve.current })
-    );
-  }, [
-    showWait,
-    timeline,
-    statusOpacity,
-    amountOpacity,
-    amountTranslateY,
-    chromeOpacity,
-    chromeTrailOpacity,
-    membraneOpacity,
-  ]);
-
-  // 2. The caustic band. Held back until the corridor has been measured — a
-  //    band that travels to the wrong place is worse than one frame of nothing.
-  useEffect(() => {
-    if (showWait || screenHeight <= 0 || amountCenterInCluster <= 0) return;
-
-    const restingY = amountCenterY - BAND_HEIGHT / 2;
-
-    if (timeline.band.mode === 'static') {
-      // Reduced motion: drawn once across the amount, held, then faded. It
-      // does not travel, and it never repeats.
-      bandTranslateY.value = restingY;
-      bandOpacity.value = 1;
-      bandOpacity.value = withDelay(
-        timeline.band.durationMs,
-        withTiming(0, { duration: timeline.band.fadeMs, easing: curve.sink })
-      );
-      return;
-    }
-
-    bandTranslateY.value = screenHeight;
-    bandOpacity.value = 1;
-    bandTranslateY.value = withTiming(restingY, {
-      duration: timeline.band.durationMs,
-      easing: curve.current,
-    });
-    bandOpacity.value = withDelay(
-      timeline.band.durationMs,
-      withTiming(0, { duration: timeline.band.fadeMs, easing: curve.sink })
-    );
-  }, [
-    showWait,
-    timeline,
-    screenHeight,
-    amountCenterInCluster,
-    amountCenterY,
-    bandOpacity,
-    bandTranslateY,
-  ]);
-
-  const statusStyle = useAnimatedStyle(() => ({
-    opacity: statusOpacity.value,
-  }));
-
-  const amountStyle = useAnimatedStyle(() => ({
-    opacity: amountOpacity.value,
-    transform: [{ translateY: amountTranslateY.value }],
-  }));
-
-  const chromeStyle = useAnimatedStyle(() => ({
-    opacity: chromeOpacity.value,
-  }));
-
-  const chromeTrailStyle = useAnimatedStyle(() => ({
-    opacity: chromeTrailOpacity.value,
-  }));
+  }, [showWait]);
 
   const handleExplorerPress = () => {
     if (explorerUrl) {
@@ -291,39 +120,29 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   return (
     <View
       style={[styles.container, styles.receipt, { paddingBottom: floatingBottomOffset }]}
-      onLayout={handleScreenLayout}
       testID="tx-success-screen"
     >
-      {/* The membrane this moment clears. Behind everything, and behind the
-          content it is thinning out over. */}
-      <SurfacingMembrane opacity={membraneOpacity} />
-
       {/* The cluster — status, amount, and the bridge details when there are
           any — is centred in the corridor between the top chrome and the
           actions. It owns the leftover height (flex: 1), so the actions stay
           on the bottom edge and the report sits in the middle of the water
           rather than leaving a void under it. */}
-      <View style={styles.cluster} onLayout={handleClusterLayout} testID="tx-success-cluster">
+      <View style={styles.cluster} testID="tx-success-cluster">
       {/* Status is a line of ink, not a 96px disc: `status.success` is
           specified as ink (9.99:1), and the outcome the user came for is the
           amount below it. Three channels are kept — colour, the ✓ glyph, and
           the label — so the state never rides on hue alone. */}
-      <Animated.View style={[styles.statusRow, statusStyle]}>
+      <View style={styles.statusRow}>
         <Text style={styles.statusGlyph}>✓</Text>
         <Text style={styles.statusLabel} testID="tx-success-title">
           {title}
         </Text>
-      </Animated.View>
+      </View>
 
-      {/* The hero. Isolated node, measured by onLayout, so the caustic band's
-          stop follows the layout. The summary line is the protagonist on every
-          ending — the swap receipt used to box its exchange here as a card,
-          and the ending reads as an ending, not a second review. */}
-      <Animated.View
-        style={[styles.amountContainer, amountStyle]}
-        onLayout={handleAmountLayout}
-        testID="tx-success-amount"
-      >
+      {/* The hero. The summary line is the protagonist on every ending — the
+          swap receipt used to box its exchange here as a card, and the ending
+          reads as an ending, not a second review. */}
+      <View style={styles.amountContainer} testID="tx-success-amount">
         {/* One line, always. The receipt used to print the whole operation as
             one 36px title and it broke over three lines — an amount that wraps
             stops being an amount and becomes a sentence. It shrinks rather than
@@ -379,13 +198,12 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
             {summary}
           </Text>
         )}
-      </Animated.View>
+      </View>
 
       {/* The receipt under the amount: quiet rows for what the flow already
-          knows — effective rate, Salmon fee when it arrived, local time. They
-          ride the chrome wave, after the moment rather than during it. */}
+          knows — effective rate, Salmon fee when it arrived, local time. */}
       {exchange ? (
-        <Animated.View style={[styles.receiptRows, chromeStyle]} testID="tx-success-receipt">
+        <View style={styles.receiptRows} testID="tx-success-receipt">
           {exchangeRate ? (
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>{t('transactions.detail.rate', 'Rate')}</Text>
@@ -402,11 +220,11 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
             <Text style={styles.receiptLabel}>{t('transactions.detail.time', 'Time')}</Text>
             <Text style={[styles.receiptValue, TABULAR]}>{receiptTime}</Text>
           </View>
-        </Animated.View>
+        </View>
       ) : null}
 
       {isBridge ? (
-        <Animated.View style={[styles.bridgeInfoBox, chromeStyle]}>
+        <View style={styles.bridgeInfoBox}>
           <Text style={styles.bridgeLabel}>{t('bridge.depositAddress', 'Send funds to')}</Text>
           <Text style={styles.bridgeValue}>{bridgeDepositAddress}</Text>
           {bridgeAmountIn && (
@@ -448,18 +266,18 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
               <Text style={[styles.bridgeValue, { marginBottom: 0 }]}>{bridgeExchangeId}</Text>
             </>
           )}
-        </Animated.View>
+        </View>
       ) : null}
       </View>
 
       {/* The ending composes like the onboarding ending: a quiet text-button
           band (the explorer link) over the primary action, which is the
           bottom-most control. The wallet's own action still outranks the link
-          that leaves for a block explorer — it rides the first chrome wave,
-          the link the second — and the assist band keeps its reserved height
-          even when there is no link, so the primary never moves. */}
+          that leaves for a block explorer, and what says so is the position —
+          and the assist band keeps its reserved height even when there is no
+          link, so the primary never moves. */}
       <View style={styles.actionGroup}>
-        <Animated.View style={[styles.assistBand, chromeTrailStyle]}>
+        <View style={styles.assistBand}>
           {!isBridge && explorerUrl ? (
             <TextButton
               onPress={handleExplorerPress}
@@ -469,9 +287,9 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
               {t('transaction.viewOnExplorer')}
             </TextButton>
           ) : null}
-        </Animated.View>
+        </View>
 
-        <Animated.View style={[styles.buttonContainer, chromeStyle]}>
+        <View style={styles.buttonContainer}>
           <PrimaryButton
             onPress={onContinue}
             disabled={settling}
@@ -479,12 +297,8 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           >
             {t('transaction.continue', 'Back to wallet')}
           </PrimaryButton>
-        </Animated.View>
+        </View>
       </View>
-
-      {/* The shaft of light, last so it passes over the amount rather than
-          under it. It takes no touches and it never repeats. */}
-      <CausticBand opacity={bandOpacity} translateY={bandTranslateY} />
     </View>
   );
 };
@@ -499,15 +313,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: s(spacing.headerPadding),
-    // The caustic band blends in `screen`; without a stacking context here it
-    // would blend against whatever is behind the whole sheet.
-    isolation: 'isolate',
-    // The band travels in from below the bottom edge.
-    overflow: 'hidden',
   },
   // The receipt column: actions on the bottom edge, and the cluster centred in
-  // whatever is left above them. Product 2026-08: the report belongs in the
-  // middle of the corridor, not pinned under the top chrome with a void below.
+  // whatever is left above them. The report belongs in the middle of the
+  // corridor, not pinned under the top chrome with a void below.
   // The wait keeps `container`'s own centring: a loader with nothing under it
   // is centred the same way.
   receipt: {
@@ -550,8 +359,7 @@ const styles = StyleSheet.create({
   },
   // The hero as a line of tokens: mark, amount, arrow, mark, amount. It stays
   // one row — each amount shrinks inside its own share of the width rather
-  // than wrapping, because the node the caustic band stops on has to keep one
-  // measurable centre.
+  // than wrapping.
   exchangeLine: {
     flexDirection: 'row',
     alignItems: 'center',

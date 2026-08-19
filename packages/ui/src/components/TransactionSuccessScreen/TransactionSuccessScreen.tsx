@@ -1,8 +1,7 @@
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
-import { keyframes } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import {
@@ -16,56 +15,17 @@ import {
   letterSpacing,
   lineHeight,
   componentSizes,
-  motionEasing,
   tabularNums,
   useWaitGate,
   useWaitExit,
 } from '@salmon/shared';
 import { LoadingScreen } from '../LoadingScreen';
 import { PrimaryButton, TextButton } from '../Button';
-import { useReducedMotion } from '../../utils/useReducedMotion';
-import { CausticBand, SurfacingMembrane } from './SurfacingLayers';
-import { AMOUNT_RISE, BAND_HEIGHT, amountLandsAtMs, surfacingTimeline } from './surfacing';
 import type { TransactionSuccessScreenProps } from './types';
 
-// ============================================================================
-// Keyframes
-// ============================================================================
-//
-// The Surfacing's choreography (DESIGN.md §The Surfacing): chrome is a fade,
-// not a rise — the one thing allowed to travel on this screen is the caustic
-// band, and the amount settling behind it. Durations and delays come from
-// `surfacingTimeline` and are applied inline, so the keyframes carry only the
-// shape of each move.
-
-const chromeFade = keyframes`
-  from { opacity: 0; }
-  to { opacity: 1; }
-`;
-
-/**
- * The hero's travel, and only its travel. Its light runs on a different clock:
- * DESIGN.md §The Surfacing has the band *carry* its content rather than
- * precede it, so the opacity spans the whole corridor while the last few px of
- * travel play behind the light — the settle the register specifies. The
- * distance is a custom property so reduced motion, whose timeline sets the
- * rise to 0, gets no translation at all instead of a suppressed one.
- */
-const amountRise = keyframes`
-  from { transform: translateY(var(--tx-amount-rise, ${AMOUNT_RISE}px)); }
-  to { transform: translateY(0); }
-`;
-
-/**
- * What every hero — the plain summary line and the two-mark exchange line
- * alike — plays. Two animations on one element: the light on the corridor's
- * clock, the travel on the settle's. Durations and delays are the timeline's
- * and are applied inline, as a matching pair of comma-separated lists.
- */
-const heroSurfacing = {
-  opacity: 0,
-  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards, ${amountRise} 0ms ${motionEasing.settle.css} forwards`,
-} as const;
+// The receipt has no entrance choreography: every element of it is there the
+// moment the screen mounts. Nothing on this screen travels, staggers or waits
+// for anything else.
 
 // ============================================================================
 // Styled Components
@@ -82,23 +42,29 @@ const Container = styled(Box)({
 });
 
 /**
- * The receipt reads from the top, not from the middle. A slip that floats in
- * the centre of a tall column has no reading order — the eye lands between the
- * lines instead of on the first one — so the report sits at the top and the
- * actions are pushed to the bottom edge by `ActionGroup`'s auto margin. The
- * wait screen keeps `Container`'s centring: a loader with nothing under it is
- * the one case where the middle is right.
+ * The receipt column: actions on the bottom edge, and the report centred in
+ * whatever height is left above them. The extension's side panel is a full
+ * viewport tall, so a report pinned under the top chrome left the whole middle
+ * of the panel empty. The wait screen keeps `Container`'s own centring: a
+ * loader with nothing under it is centred the same way.
  */
 const Receipt = styled(Container)({
   justifyContent: 'flex-start',
   paddingTop: spacing['5xl'],
-  // The Surfacing's stage. The membrane and the caustic band are positioned
-  // against this element; the band blends in `screen`, so without a stacking
-  // context here it would blend against whatever is behind the whole screen,
-  // and it travels in from below the bottom edge, so the overflow is clipped.
-  position: 'relative',
-  isolation: 'isolate',
-  overflow: 'hidden',
+});
+
+/**
+ * The centred report. Stretched so the hero can use the full width, and
+ * `flex: 1` so it owns the corridor between the top padding and the actions —
+ * the same composition the mobile receipt uses.
+ */
+const Cluster = styled(Box)({
+  flex: 1,
+  alignSelf: 'stretch',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
 });
 
 /**
@@ -116,10 +82,6 @@ const StatusRow = styled(Box)({
   alignItems: 'center',
   gap: spacing.sm,
   marginBottom: spacing.md,
-  opacity: 0,
-  // Duration comes from the timeline, inline. No delay: the status arrives
-  // with the membrane, the way the mobile screen plays it.
-  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards`,
 });
 
 const StatusGlyph = styled(Typography)({
@@ -139,20 +101,13 @@ const StatusLabel = styled(Typography)({
 });
 
 /**
- * The stage The Surfacing will play on (DESIGN.md, specified/not built). It is
- * a positioned, full-width band so the caustic light shape can be mounted
- * behind the amount and travel up to it without reflowing anything, and the
- * amount is already tabular so its digits will not shift when it settles.
- * Nothing here animates beyond the existing fade — the motion work is in flight
- * elsewhere.
- *
- * It is also the amount's *container*: `100cqw` below is this element's inline
- * size, which is the real budget the number has to fit into. A viewport unit
- * was not — in a side panel the column is the viewport, in the web app it is
- * capped at `webContainerMaxWidth` and centred, and `9vw` answered neither.
+ * The hero's row, and the amount's *container*: `100cqw` below is this
+ * element's inline size, which is the real budget the number has to fit into.
+ * A viewport unit was not — in a side panel the column is the viewport, in the
+ * web app it is capped at `webContainerMaxWidth` and centred, and `9vw`
+ * answered neither.
  */
 const AmountStage = styled(Box)({
-  position: 'relative',
   width: '100%',
   display: 'flex',
   justifyContent: 'center',
@@ -187,8 +142,7 @@ const Amount = styled(Typography)<{ $spent?: boolean }>(({ $spent }) => ({
   // what happened asks for. The rank is bought by stepping the *spent* side
   // down rather than the received side up, in size, weight and ink at once.
   // Raising the received side would put it at the rank of the status line it
-  // sits under, and the hero is inside the node The Surfacing measures, so
-  // growing it would move where the caustic band lands.
+  // sits under.
   fontWeight: $spent ? fontWeight.regular : fontWeight.medium,
   color: $spent ? colors.text.secondary : colors.text.primary,
   textAlign: 'center',
@@ -215,15 +169,13 @@ const Amount = styled(Typography)<{ $spent?: boolean }>(({ $spent }) => ({
   // Inside the exchange line the amount shares the row with two marks and an
   // arrow; it may shrink to its budget but it may never be elided.
   minWidth: 0,
-  ...heroSurfacing,
 }));
 
 /**
  * The exchange hero: mark, sent amount, arrow, mark, received amount, on one
- * line and unboxed. Boxing it put a content surface between The Surfacing and
- * the thing it surfaces (DESIGN.md §The ending says what happened) — the
- * one-line summary *is* the hero the light lands on. It is also the node the
- * caustic band measures, so it keeps one measurable centre and never wraps.
+ * line and unboxed. Boxing it put a content surface around the thing the
+ * receipt is about (DESIGN.md §The ending says what happened) — the one-line
+ * summary *is* the hero, and it never wraps.
  */
 const ExchangeLine = styled('div')({
   width: '100%',
@@ -233,7 +185,6 @@ const ExchangeLine = styled('div')({
   justifyContent: 'center',
   gap: spacing.sm,
   minWidth: 0,
-  ...heroSurfacing,
 });
 
 /**
@@ -310,7 +261,7 @@ function TokenLogo({ uri, symbol }: { uri?: string; symbol: string }): React.Rea
 
 /**
  * The quiet receipt under the exchange: label left, value right, no card.
- * Secondary rank — it rides the chrome wave, after the moment.
+ * Secondary rank.
  */
 const ReceiptRows = styled(Box)({
   width: '100%',
@@ -320,8 +271,6 @@ const ReceiptRows = styled(Box)({
   marginBottom: spacing.xl,
   padding: `0 ${spacing.base}px`,
   boxSizing: 'border-box',
-  opacity: 0,
-  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards`,
 });
 
 const ReceiptRow = styled(Box)({
@@ -348,8 +297,8 @@ const ReceiptValue = styled(Typography)({
 
 /**
  * The bottom of the column, on the onboarding ending's bands (DESIGN.md §The
- * Surfacing, "The ending borrows the onboarding ending's bands"): the assist
- * band directly over the action band's primary, with the grid's `spacing.lg`
+ * ending says what happened): the assist band directly over the action
+ * band's primary, with the grid's `spacing.lg`
  * of air between them. The two endings are the same event at different
  * scales, so they are not two layouts. The auto margin separates the report
  * from the actions without inventing a spacer.
@@ -375,9 +324,6 @@ const AssistBand = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  opacity: 0,
-  // The trailing chrome wave. Delay and duration are the timeline's, inline.
-  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards`,
 });
 
 /**
@@ -400,8 +346,6 @@ const BridgeInfoBox = styled(Box)({
   borderRadius: borderRadius.card,
   padding: spacing.lg,
   marginBottom: spacing.xl,
-  opacity: 0,
-  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards`,
 });
 
 const BridgeLabel = styled(Typography)({
@@ -418,18 +362,6 @@ const BridgeValue = styled(Typography)({
   color: colors.text.primary,
   wordBreak: 'break-all' as const,
   marginBottom: spacing.md,
-});
-
-/**
- * The receipt's continue action is the same primary control every other screen
- * commits with — it used to be a hand-rolled MUI button carrying a gradient, a
- * salmon outline and a 12px radius, which made the one button on this screen
- * the only button in the app without the flesh in it. Only the entrance
- * animation is local; fill, radius, bezel and material come from the button.
- */
-const ContinueButtonWrapper = styled('div')({
-  opacity: 0,
-  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards`,
 });
 
 // ============================================================================
@@ -471,23 +403,6 @@ export function TransactionSuccessScreen({
     new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   );
 
-  // The Surfacing (DESIGN.md §The Surfacing). Reduced motion is a parallel
-  // mapping rather than a switch, and the plan for both paths is
-  // `surfacingTimeline` — a pure function, so the timing is testable without
-  // a frame clock. Same tokens, same phases as the mobile screen.
-  const isReduceMotionEnabled = useReducedMotion();
-  const timeline = useMemo(
-    () => surfacingTimeline(isReduceMotionEnabled),
-    [isReduceMotionEnabled]
-  );
-
-  const receiptRef = useRef<HTMLDivElement | null>(null);
-  const amountRef = useRef<HTMLElement | null>(null);
-  const bandRef = useRef<HTMLDivElement | null>(null);
-  // The moment never repeats — not on a reduce-motion toggle, not on a
-  // re-render.
-  const playedRef = useRef(false);
-
   const handleExplorerClick = () => {
     if (explorerUrl) {
       window.open(explorerUrl, '_blank', 'noopener,noreferrer');
@@ -507,56 +422,6 @@ export function TransactionSuccessScreen({
   // left the screen and it reports back.
   const { held: waveHeld, onExited: onWaveGone } = useWaitExit(showWait);
 
-  // The caustic band, driven with WAAPI because where it stops is a function
-  // of layout: it rises from below the bottom edge to rest centred on the
-  // amount, whose position moves with the summary's line length. CSS carries
-  // every phase that has no layout dependency; the script carries the one
-  // that does. Keyed on the wait *screen*, not on `settling` — the gate can
-  // hold the wait a moment past the settle, and The Surfacing must not play
-  // behind it.
-  useLayoutEffect(() => {
-    if (waveHeld || playedRef.current) return;
-    const receipt = receiptRef.current;
-    const amount = amountRef.current;
-    const band = bandRef.current;
-    if (!receipt || !amount || !band) return;
-    // No WAAPI (jsdom) — the band stays parked at opacity 0; the moment is
-    // choreography, never content.
-    if (typeof band.animate !== 'function') return;
-    const receiptRect = receipt.getBoundingClientRect();
-    const amountRect = amount.getBoundingClientRect();
-    // Held back until the corridor has been measured — a band that travels to
-    // the wrong place is worse than one frame of nothing.
-    if (receiptRect.height <= 0 || amountRect.height <= 0) return;
-    playedRef.current = true;
-
-    const amountCenterY = amountRect.top - receiptRect.top + amountRect.height / 2;
-    const restingY = amountCenterY - BAND_HEIGHT / 2;
-
-    if (timeline.band.mode === 'travel') {
-      band.animate(
-        [
-          { transform: `translateY(${receiptRect.height}px)` },
-          { transform: `translateY(${restingY}px)` },
-        ],
-        { duration: timeline.band.durationMs, easing: motionEasing.current.css, fill: 'both' }
-      );
-    } else {
-      // Reduced motion: drawn once across the amount, held, then faded. It
-      // does not travel, and it never repeats.
-      band.style.transform = `translateY(${restingY}px)`;
-    }
-    // Full strength while it travels (or holds), then it dissipates in
-    // whatever `tide` has left — `fill: 'both'` holds opacity 1 through the
-    // delay and 0 after.
-    band.animate([{ opacity: 1 }, { opacity: 0 }], {
-      delay: timeline.band.durationMs,
-      duration: timeline.band.fadeMs,
-      easing: motionEasing.sink.css,
-      fill: 'both',
-    });
-  }, [waveHeld, timeline]);
-
   if (waveHeld) {
     return (
       <Container>
@@ -571,30 +436,12 @@ export function TransactionSuccessScreen({
     );
   }
 
-  const chromeTiming: React.CSSProperties = {
-    animationDuration: `${timeline.chrome.durationMs}ms`,
-    animationDelay: `${timeline.chrome.delayMs}ms`,
-  };
-
-  // The hero's two clocks, as one matching pair of lists: the light spans the
-  // whole corridor and is fully there exactly when the amount lands
-  // (`amountLandsAtMs`); the travel keeps the timeline's own delay and
-  // duration, so the last few px still settle behind the band.
-  const heroTiming = {
-    '--tx-amount-rise': `${timeline.amount.rise}px`,
-    animationDuration: `${amountLandsAtMs(timeline)}ms, ${timeline.amount.durationMs}ms`,
-    animationDelay: `0ms, ${timeline.amount.delayMs}ms`,
-  } as React.CSSProperties;
-
   return (
-    <Receipt ref={receiptRef}>
-      {/* The membrane this moment clears. Behind everything, and behind the
-          content it is thinning out over. */}
-      <SurfacingMembrane durationMs={timeline.membrane.durationMs} />
-      <StatusRow
-        data-testid="tx-success-status"
-        style={{ animationDuration: `${timeline.chrome.durationMs}ms` }}
-      >
+    <Receipt>
+      {/* The report, centred in the corridor between the top padding and the
+          actions on the bottom edge. */}
+      <Cluster>
+      <StatusRow data-testid="tx-success-status">
         <StatusGlyph aria-hidden>✓</StatusGlyph>
         <StatusLabel>{title}</StatusLabel>
       </StatusRow>
@@ -605,12 +452,10 @@ export function TransactionSuccessScreen({
              exchange the flow hands over, so they cost no fetch and no new
              prop, and each one leading its amount is what makes the line read
              as *this token to that token* rather than as two strings with an
-             arrow between them. Same measured node as the plain summary — the
-             band's stop follows this layout. */
+             arrow between them. */
           <ExchangeLine
-            ref={amountRef as React.Ref<HTMLDivElement>}
             data-testid="tx-success-amount"
-            style={{ ...heroTiming, '--tx-amount-chars': exchangeChars } as React.CSSProperties}
+            style={{ '--tx-amount-chars': exchangeChars } as React.CSSProperties}
           >
             <TokenLogo uri={exchange.send.logo} symbol={exchange.send.symbol} />
             <Amount $spent>{exchange.send.amount}</Amount>
@@ -620,11 +465,9 @@ export function TransactionSuccessScreen({
           </ExchangeLine>
         ) : (
           <Amount
-            ref={amountRef}
             data-testid="tx-success-amount"
             style={
               {
-                ...heroTiming,
                 // The only thing CSS cannot know about the string: how long it is.
                 '--tx-amount-chars': Math.max(1, summary.length),
               } as React.CSSProperties
@@ -637,7 +480,7 @@ export function TransactionSuccessScreen({
       {/* The receipt under the exchange: quiet rows for what the flow already
           knows — effective rate, Salmon fee when it arrived, local time. */}
       {exchange ? (
-        <ReceiptRows data-testid="tx-success-receipt" style={chromeTiming}>
+        <ReceiptRows data-testid="tx-success-receipt">
           {exchangeRate ? (
             <ReceiptRow>
               <ReceiptLabel>{t('transactions.detail.rate', 'Rate')}</ReceiptLabel>
@@ -657,7 +500,7 @@ export function TransactionSuccessScreen({
         </ReceiptRows>
       ) : null}
       {isBridge ? (
-        <BridgeInfoBox style={chromeTiming}>
+        <BridgeInfoBox>
           <BridgeLabel>{t('bridge.depositAddress', 'Send funds to')}</BridgeLabel>
           <BridgeValue>{bridgeDepositAddress}</BridgeValue>
           {bridgeAmountIn && (
@@ -708,21 +551,14 @@ export function TransactionSuccessScreen({
           )}
         </BridgeInfoBox>
       ) : null}
+      </Cluster>
       {/* The ending composes like the onboarding ending: a quiet text-button
           assist band over the bottom-most full-width primary. The wallet's own
           action still outranks a link that leaves it for a block explorer, and
-          what says so is the *wave order*, not the position — the primary
-          rides the first chrome wave, the assist the trailing one. The band
-          keeps its reserved height with no link in it, so the primary lands at
-          one Y on every ending. */}
+          what says so is the position. The band keeps its reserved height with
+          no link in it, so the primary lands at one Y on every ending. */}
       <ActionGroup>
-        <AssistBand
-          data-testid="tx-success-assist"
-          style={{
-            animationDuration: `${timeline.chrome.durationMs}ms`,
-            animationDelay: `${timeline.chrome.delayMs + timeline.chrome.staggerMs}ms`,
-          }}
-        >
+        <AssistBand data-testid="tx-success-assist">
           {!isBridge && explorerUrl ? (
             <TextButton
               onClick={handleExplorerClick}
@@ -733,15 +569,10 @@ export function TransactionSuccessScreen({
             </TextButton>
           ) : null}
         </AssistBand>
-        <ContinueButtonWrapper style={chromeTiming}>
-          <PrimaryButton onClick={onContinue} testID="tx-success-continue-button">
-            {t('transaction.continue')}
-          </PrimaryButton>
-        </ContinueButtonWrapper>
+        <PrimaryButton onClick={onContinue} testID="tx-success-continue-button">
+          {t('transaction.continue')}
+        </PrimaryButton>
       </ActionGroup>
-      {/* The shaft of light, last so it passes over the amount rather than
-          under it. It takes no clicks and it never repeats. */}
-      <CausticBand ref={bandRef} mode={timeline.band.mode} />
     </Receipt>
   );
 }
