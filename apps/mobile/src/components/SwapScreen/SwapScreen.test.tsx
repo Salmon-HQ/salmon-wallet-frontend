@@ -32,6 +32,9 @@ jest.mock('react-native-reanimated', () => {
 // helpers can read it.
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
+  // The wave-exit hold is real (pure React): the choreography under test is
+  // exactly when the wait leaves and the receipt is allowed in.
+  ...jest.requireActual('@salmon/shared/src/hooks/useWaitExit'),
   useSwapScreenLogic: () => mockLogic,
   useBridgeSettlement: () => ({
     trackBridgeExchange: jest.fn(),
@@ -65,6 +68,21 @@ jest.mock('./SwapReviewScreen', () => {
 jest.mock('../TransactionSuccessScreen', () => {
   const { View } = require('react-native');
   return { TransactionSuccessScreen: () => <View testID="tx-success-screen" /> };
+});
+jest.mock('../LoadingScreen', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    // Stand-in that keeps the exit contract: when the wave stops being
+    // visible it reports `onExited`, the way the real screen does once its
+    // last front has left. Visibility is exposed for assertions.
+    LoadingScreen: ({ visible, onExited }: { visible?: boolean; onExited?: () => void }) => {
+      React.useEffect(() => {
+        if (!visible) onExited?.();
+      }, [visible, onExited]);
+      return <View testID="swap-wave-screen" accessibilityLabel={String(visible)} />;
+    },
+  };
 });
 jest.mock('../TokenSelector', () => {
   const { View } = require('react-native');
@@ -312,5 +330,101 @@ describe('SwapScreen compuerta signal', () => {
     });
     // The window vanished; the chrome comes back with the delayed float.
     expect(screen.getByTestId('task-chrome-probe').props.children).toBe('false');
+  });
+});
+
+/**
+ * The sink and the wave. At the confirm tap the review sinks immediately —
+ * no button loader, no frozen review — and the canonical wave wait holds
+ * while sign/submit/confirm (and the settle) run. The receipt is allowed in
+ * only after the wave's own exit has reported, so The Surfacing plays once,
+ * never over an unconfirmed transaction, and never twice.
+ */
+describe('SwapScreen confirm choreography — sink, wave, float', () => {
+  const reviewLogic = {
+    step: 'review',
+    quote: { outAmount: '1' },
+    inToken: { symbol: 'SOL', chain: 'solana' },
+    outToken: { symbol: 'USDC', chain: 'solana' },
+  };
+
+  const renderSwap = () =>
+    render(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
+  const rerenderSwap = (view: ReturnType<typeof render>) =>
+    view.rerender(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  const openReview = () => {
+    setLogic(reviewLogic);
+    const view = renderSwap();
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(screen.getByTestId('swap-review-screen')).toBeTruthy();
+    return view;
+  };
+
+  it('sinks the review at the tap and floats the wave — no receipt yet', () => {
+    const view = openReview();
+
+    setLogic({ ...reviewLogic, isConfirming: true });
+    rerenderSwap(view);
+
+    expect(screen.queryByTestId('swap-review-screen')).toBeNull();
+    expect(screen.getByTestId('swap-wave-screen').props.accessibilityLabel).toBe('true');
+    expect(screen.queryByTestId('tx-success-screen')).toBeNull();
+  });
+
+  it('holds the wave through the settle — the receipt never precedes calm water', () => {
+    const view = openReview();
+    setLogic({ ...reviewLogic, isConfirming: true });
+    rerenderSwap(view);
+
+    // Confirmed on-chain, indexer still settling: still the wave, no receipt.
+    setLogic({ step: 'success', settling: true });
+    rerenderSwap(view);
+
+    expect(screen.getByTestId('swap-wave-screen').props.accessibilityLabel).toBe('true');
+    expect(screen.queryByTestId('tx-success-screen')).toBeNull();
+  });
+
+  it('floats the receipt in once, only after the last wave has left', () => {
+    const view = openReview();
+    setLogic({ ...reviewLogic, isConfirming: true });
+    rerenderSwap(view);
+
+    setLogic({ step: 'success', settling: false });
+    act(() => {
+      rerenderSwap(view);
+    });
+
+    // The wave reported its exit; the receipt owns the screen alone.
+    expect(screen.queryByTestId('swap-wave-screen')).toBeNull();
+    expect(screen.getByTestId('tx-success-screen')).toBeTruthy();
+  });
+
+  it('cuts the wave and returns to input on failure — nobody is stranded on the wait', () => {
+    const view = openReview();
+    setLogic({ ...reviewLogic, isConfirming: true });
+    rerenderSwap(view);
+    expect(screen.getByTestId('swap-wave-screen')).toBeTruthy();
+
+    // onSwap rejected: the hook clears isConfirming and steps back to input,
+    // where the error surfaces. The wave leaves with the closing window.
+    setLogic({ step: 'input', swapError: 'swap.errors.generic' });
+    rerenderSwap(view);
+    expect(screen.queryByTestId('swap-wave-screen')).toBeNull();
+
+    act(() => {
+      jest.advanceTimersByTime(FLOAT_DELAY_MS);
+    });
+    expect(screen.queryByTestId('swap-task-modal')).toBeNull();
+    expect(screen.getByTestId('swap-input-screen')).toBeTruthy();
   });
 });

@@ -20,11 +20,20 @@ jest.mock('@salmon/shared', () => ({
 jest.mock('../Button', () => {
   const { Text: RNText } = require('react-native');
   return {
-    // Stand-ins that keep the call site's own style, so the assertions below
-    // read what SwapReviewButtons hands each button and nothing else.
-    PrimaryButton: ({ style, testID }: { style?: object; testID?: string }) => (
-      <RNText testID={testID} style={style} />
-    ),
+    // Stand-ins that keep the call site's own style, loading and disabled,
+    // so the assertions below read what SwapReviewButtons hands each button
+    // and nothing else.
+    PrimaryButton: ({
+      style,
+      testID,
+      loading,
+      disabled,
+    }: {
+      style?: object;
+      testID?: string;
+      loading?: boolean;
+      disabled?: boolean;
+    }) => <RNText testID={testID} style={style} accessibilityState={{ busy: loading, disabled }} />,
     SecondaryButton: ({ style, testID }: { style?: object; testID?: string }) => (
       <RNText testID={testID} style={style} />
     ),
@@ -75,6 +84,26 @@ describe('SwapReviewButtons — the pair is symmetric', () => {
         expect(style[key] ?? 0).toBe(0);
       }
     }
+  });
+
+  it('never spins the confirm button for a confirm in flight — the wave wait owns that', () => {
+    // The review sinks at the tap and the wave wait takes over (SwapScreen),
+    // so a confirming button shows no loader; it only refuses a second press.
+    const { getByTestId } = render(
+      <SwapReviewButtons onBack={jest.fn()} onConfirm={jest.fn()} isConfirming />
+    );
+    const state = getByTestId('swap-confirm-button').props.accessibilityState;
+    expect(state.busy).toBe(false);
+    expect(state.disabled).toBe(true);
+  });
+
+  it('still spins the confirm button while a fresh quote is in flight', () => {
+    const { getByTestId } = render(
+      <SwapReviewButtons onBack={jest.fn()} onConfirm={jest.fn()} isRefreshing />
+    );
+    const state = getByTestId('swap-confirm-button').props.accessibilityState;
+    expect(state.busy).toBe(true);
+    expect(state.disabled).toBe(true);
   });
 
   it('does not put flex back on the buttons themselves', () => {

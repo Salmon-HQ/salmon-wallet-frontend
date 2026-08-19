@@ -28,7 +28,10 @@ export const SwapReviewButtons: React.FC<SwapReviewButtonsProps> = ({
 }) => {
   const { t } = useTranslation();
   // A quote in flight owns the confirm button too: it says so while it works,
-  // and stops accepting a second press on top of the first.
+  // and stops accepting a second press on top of the first. A confirm in
+  // flight is different — the review sinks at the tap and the wave wait takes
+  // over (see SwapScreen), so the button never spins for it; it only stops
+  // accepting a second press while the sink plays out.
   const isBusy = isConfirming || isRefreshing;
   return (
     <View style={[styles.buttonsContainer, style]}>
@@ -45,7 +48,7 @@ export const SwapReviewButtons: React.FC<SwapReviewButtonsProps> = ({
       <View style={styles.half}>
         <PrimaryButton
           onPress={onConfirm}
-          loading={isBusy}
+          loading={isRefreshing}
           disabled={isBusy}
           style={styles.confirmButton}
           testID="swap-confirm-button"

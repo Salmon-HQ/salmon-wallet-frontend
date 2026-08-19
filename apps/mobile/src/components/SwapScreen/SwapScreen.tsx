@@ -4,6 +4,7 @@ import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useSwapScreenLogic,
+  useWaitExit,
   getTransactionUrl,
   getDefaultExplorer,
   formatEffectiveRate,
@@ -21,6 +22,7 @@ import { SwapReviewScreen } from './SwapReviewScreen';
 import { DepthBackground } from '../DepthBackground';
 import { ScalesBackground } from '../ScalesBackground';
 import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
+import { LoadingScreen } from '../LoadingScreen';
 import { TokenSelectorModal } from '../TokenSelector';
 import { BridgeRecipientScreen } from '../BridgeScreen/BridgeRecipientScreen';
 import { BridgeReviewScreen } from '../BridgeScreen/BridgeReviewScreen';
@@ -120,13 +122,27 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   // Committed: signed and in flight, or settling. No exit at all.
   const isCommitted = logic.isConfirming || logic.settling;
 
+  // The wait between the decision and the receipt. At the confirm tap the
+  // review sinks immediately — no button loader — and the canonical wave wait
+  // (LoadingScreen, the app's waiting language) holds while sign/submit/
+  // confirm runs and, for a Jupiter swap, while the indexer settles. The wait
+  // then exits on its last wave (useWaitExit), and only once the water is
+  // calm does the receipt mount, so The Surfacing plays exactly once — never
+  // over an unconfirmed transaction, and never twice.
+  const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
+  // Render the wave while the outcome is pending, and keep it through its own
+  // exit on the way to the receipt. A failure is the exception: the flow cuts
+  // back to input (the error surfaces there), so the wave is not held.
+  const showWave = isCommitted || (isWaveHeld && logic.step === 'success');
+
   // Step changes speak the sink and the float: the outgoing step sinks as its
   // light goes, the incoming one floats up into place. The ground under them —
   // DepthBackground, ScalesBackground — is mounted outside the steps and never
   // travels. The success step is the one exception: its entrance is The
-  // Surfacing, and the verb must not double it — review's sink is the only
-  // half that plays on that handoff. Under reduce motion the helpers return
-  // undefined and every step change is an instant cut.
+  // Surfacing, and the verb must not double it — the wave wait's exit is the
+  // only thing that precedes it, so it mounts with no entering of its own.
+  // Under reduce motion the helpers return undefined and every step change is
+  // an instant cut.
   //
   // The beat (owner, on-device): the float waits out the sink plus a short
   // pause — but only when something actually sank. The previous step is
@@ -287,6 +303,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
           {stalledBanner}
 
           {logic.step === 'review' &&
+            !logic.isConfirming &&
             logic.swapMode === 'jupiter' &&
             logic.quote &&
             logic.inToken &&
@@ -309,6 +326,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
             )}
 
           {logic.step === 'review' &&
+            !logic.isConfirming &&
             logic.swapMode === 'stealthex' &&
             logic.bridgeInToken &&
             logic.bridgeOutToken && (
@@ -330,14 +348,33 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
               </Animated.View>
             )}
 
-          {logic.step === 'success' && (
+          {/* The wave wait — its own step, floating in after the review's
+              sink (the same beat every step swap keeps). It holds while the
+              transaction is in flight and leaves on its own last wave; the
+              receipt below waits for that report. */}
+          {showWave && (
+            <Animated.View
+              style={styles.step}
+              entering={floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })}
+            >
+              <LoadingScreen
+                visible={isCommitted}
+                waves
+                title={t('transaction.pendingSwap')}
+                subtitle={`${successInLabel} → ${successOutLabel}`}
+                bottomOffset={insets.bottom}
+                onExited={onWaveGone}
+              />
+            </Animated.View>
+          )}
+
+          {logic.step === 'success' && !isWaveHeld && (
             <TransactionSuccessScreen
               title={
                 logic.successExchange
                   ? t('bridge.initiated', 'Bridge Initiated')
                   : t('transaction.swapComplete')
               }
-              pendingTitle={t('transaction.pendingSwap')}
               summary={`${successInLabel} → ${successOutLabel}`}
               explorerUrl={
                 logic.successTxId && successChain
@@ -350,7 +387,6 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
                   : null
               }
               onContinue={logic.handleSuccessContinue}
-              settling={logic.settling}
               exchange={successExchangeBlock}
               exchangeRate={successRate}
               exchangeFee={successFee}
