@@ -14,7 +14,7 @@ const { scales } = semantic;
  * compression noise rather than as water. Each variant now has a job, a
  * distance, and a stroke actually visible at that distance.
  */
-export type ScalesVariant = 'deepField' | 'fish' | 'caustic';
+export type ScalesVariant = 'deepField' | 'fish' | 'caustic' | 'refraction';
 
 /**
  * `#9FE0EF` at 10%. DESIGN.md §The Surfacing specifies the caustic light by
@@ -42,6 +42,15 @@ const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boo
    * the signature moment, and a signature used twice is a texture.
    */
   caustic: { stroke: CAUSTIC_STROKE, scale: scales.refractionScale, fade: true },
+  /**
+   * The refraction strip — the top edge of every thermocline surface. Same
+   * 0.5× geometry as the caustic, but the stroke is the horizontal sweep
+   * (`scales.refractionSweep`) rather than a flat ink; the stroke value here
+   * is a placeholder the component replaces with a gradient reference. The
+   * band's 0.08 opacity is applied by the mounting container
+   * (`scales.refractionOpacity`), keeping this file about geometry and ink.
+   */
+  refraction: { stroke: CAUSTIC_STROKE, scale: scales.refractionScale, fade: false },
 };
 
 export interface ScalesBackgroundProps {
@@ -96,20 +105,41 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
   const patternId = `scales-${uid}`;
   const fadeId = `scalesFade-${uid}`;
   const maskId = `scalesMask-${uid}`;
+  const sweepId = `scalesSweep-${uid}`;
 
   const config = VARIANTS[variant];
+  const isRefraction = variant === 'refraction';
   // The paths are drawn at the native tile size and the whole drawing is
   // scaled — stretching the tile height alone would shear it instead of
   // moving it away from the eye. 1px is the only stroke weight for a boundary
   // in this system, so the authored width is divided by the scale to survive
   // the multiplication, exactly as the DOM version does it.
-  const strokeColor = config.stroke;
+  // The refraction sweep must run across the whole band, so it cannot be the
+  // pattern's own stroke paint — a gradient stroke would restart inside every
+  // tile. Instead the pattern is drawn in white and used as a luminance mask
+  // over one full-width gradient rect.
+  const strokeColor = isRefraction ? '#FFFFFF' : config.stroke;
   const strokeWidth = 1 / config.scale;
+  const sweep = scales.refractionSweep;
 
   return (
     <View style={[styles.container, style]} pointerEvents="none">
       <Svg width="100%" height="100%">
         <Defs>
+          {isRefraction && (
+            <>
+              {/* The horizontal sweep — the strip's iridescence runs across
+                  the band, not down it. */}
+              <LinearGradient id={sweepId} x1="0" y1="0" x2="1" y2="0">
+                {sweep.map((color, i) => (
+                  <Stop key={color} offset={i / (sweep.length - 1)} stopColor={color} />
+                ))}
+              </LinearGradient>
+              <Mask id={maskId}>
+                <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${patternId})`} />
+              </Mask>
+            </>
+          )}
           {config.fade && (
             <>
               {/* Thins downward to a floor rather than to nothing. A motif
@@ -161,8 +191,8 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
         <Rect
           width="100%"
           height="100%"
-          fill={`url(#${patternId})`}
-          mask={config.fade ? `url(#${maskId})` : undefined}
+          fill={isRefraction ? `url(#${sweepId})` : `url(#${patternId})`}
+          mask={config.fade || isRefraction ? `url(#${maskId})` : undefined}
         />
       </Svg>
     </View>

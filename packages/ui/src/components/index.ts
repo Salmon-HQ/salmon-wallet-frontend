@@ -150,6 +150,14 @@ export type { WalletInitErrorScreenProps } from './WalletInitErrorScreen';
 export { ScalesBackground } from './ScalesBackground';
 export type { ScalesBackgroundProps, ScalesVariant } from './ScalesBackground';
 
+export { Thermocline, thermoclineVariant } from './Thermocline';
+export type {
+  ThermoclineProps,
+  ThermoclineSurface,
+  ThermoclineTier,
+  ThermoclineVariant,
+} from './Thermocline';
+
 // DepthBackground - the water column's ground: depth ramp plus marine snow
 export { DepthBackground } from './DepthBackground';
 export type { DepthBackgroundProps } from './DepthBackground';

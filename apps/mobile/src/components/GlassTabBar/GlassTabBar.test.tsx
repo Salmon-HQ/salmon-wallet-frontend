@@ -55,11 +55,11 @@ jest.mock('expo-linear-gradient', () => {
   };
 });
 
-jest.mock('../Membrane', () => {
+jest.mock('../Thermocline', () => {
   const ReactActual = jest.requireActual('react');
   const { View } = jest.requireActual('react-native');
   return {
-    Membrane: (props: Record<string, unknown>) => ReactActual.createElement(View, props),
+    Thermocline: (props: Record<string, unknown>) => ReactActual.createElement(View, props),
   };
 });
 

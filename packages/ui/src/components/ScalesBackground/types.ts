@@ -24,7 +24,15 @@ export type ScalesVariant =
    * Never mount it anywhere but the completed-transaction confirmation: it is
    * the signature moment, and a signature used twice is a texture.
    */
-  | 'caustic';
+  | 'caustic'
+  /**
+   * The refraction strip — the 24px band clipped to the top edge of every
+   * thermocline (membrane) surface. Same 0.5× geometry as the caustic, but
+   * the ink is the horizontal `scales.refractionSweep` gradient; the band's
+   * 0.08 opacity is applied by the mounting container. Part of the material —
+   * never mounted free-standing.
+   */
+  | 'refraction';
 
 export interface ScalesBackgroundProps {
   /** Which of the sanctioned appearances to draw. Defaults to `deepField`. */

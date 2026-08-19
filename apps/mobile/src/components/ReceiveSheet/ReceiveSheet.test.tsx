@@ -53,6 +53,17 @@ jest.mock('../BottomSheetContainer', () => {
   };
 });
 
+// The sheet's ground material is not under test here; mocking it keeps the
+// suite off react-native-svg and the accessibility probes.
+jest.mock('../Thermocline', () => {
+  const ReactActual = jest.requireActual('react');
+  const { View } = jest.requireActual('react-native');
+  return {
+    Thermocline: (props: Record<string, unknown>) =>
+      ReactActual.createElement(View, { ...props, testID: 'thermocline' }),
+  };
+});
+
 jest.mock('../FleshBackground', () => ({
   FleshBackground: () => null,
 }));

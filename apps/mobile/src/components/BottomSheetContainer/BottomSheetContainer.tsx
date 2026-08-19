@@ -94,6 +94,13 @@ export interface BottomSheetContainerProps {
   showTextureOverlay?: boolean;
   /** Additional style for the sheet container */
   style?: StyleProp<ViewStyle>;
+  /**
+   * Optional background element that replaces the sheet's opaque fill —
+   * mounted absolutely behind everything else in the sheet. Used to hand a
+   * sheet's ground to the thermocline material (e.g. the Receive sheet)
+   * without touching the other sheets that mount through here.
+   */
+  background?: React.ReactNode;
   /** Additional style for the drag area */
   dragAreaStyle?: StyleProp<ViewStyle>;
   /**
@@ -153,6 +160,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   fadeGradientTop,
   showTextureOverlay = false,
   style,
+  background,
   dragAreaStyle,
   dismissible = true,
   testID,
@@ -293,7 +301,15 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
           </TouchableWithoutFeedback>
 
           {/* Sheet */}
-          <Reanimated.View style={[styles.sheetContainer, sheetAnimatedStyle, style]}>
+          <Reanimated.View
+            style={[
+              styles.sheetContainer,
+              background != null && styles.sheetTransparent,
+              sheetAnimatedStyle,
+              style,
+            ]}
+          >
+            {background}
             <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
               {/* No scales. Every sheet in the app mounts through here —
                   send, receive, seed backup, approval, settings — so this one
@@ -369,11 +385,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.primary,
     borderTopLeftRadius: borderRadius.card,
     borderTopRightRadius: borderRadius.card,
+    // (When a `background` element is provided, `sheetTransparent` clears
+    // this fill and the element carries the material instead.)
     borderTopWidth: borderWidth.sheet,
     borderTopColor: colors.border.default,
     minHeight: '70%',
     maxHeight: '92%',
     ...shadows.sheet,
+  },
+  sheetTransparent: {
+    backgroundColor: 'transparent',
   },
   textureOverlay: {
     position: 'absolute',

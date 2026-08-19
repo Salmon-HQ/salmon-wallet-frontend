@@ -203,6 +203,12 @@ export const scales = {
   refractionScale: 0.5,
   refractionOpacity: 0.08,
   refractionHeight: 24,
+  /**
+   * The strip's horizontal sweep — caustic cyan through `salmon-300` to
+   * `success-300`, DESIGN.md §the refraction strip. The direction's only
+   * iridescence; composites measure under the 1.4:1 decorative ceiling.
+   */
+  refractionSweep: ['#9FE0EF', salmon[300], success[300]],
 } as const;
 
 /**

@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { BottomSheetContainer } from '../BottomSheetContainer';
+import { Thermocline } from '../Thermocline';
 import { FleshBackground } from '../FleshBackground';
 import { WarningNotice } from '../WarningNotice';
 import QRCode from '../QRCode';
@@ -106,6 +107,10 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
       title={title}
       testID="receive-sheet"
       style={[styles.sheetContainer, style]}
+      // The sheet's ground is the thermocline at its thick tier — a sheet is
+      // the one surface Android may blur (at most one per screen), and thick
+      // is what lets the secondary copy below keep its contrast floor.
+      background={<Thermocline surface="sheet" tier="thick" style={styles.thermocline} />}
     >
       {/* Content */}
       <View style={[styles.content, { paddingBottom: spaciousContentBottomPadding }]}>
@@ -179,6 +184,13 @@ const styles = StyleSheet.create({
     minHeight: undefined,
     maxHeight: '92%',
     overflow: 'hidden',
+  },
+  // The material fills the sheet and clips itself to the sheet's own top
+  // corners; the refraction strip rides its top edge.
+  thermocline: {
+    ...StyleSheet.absoluteFillObject,
+    borderTopLeftRadius: borderRadius.card,
+    borderTopRightRadius: borderRadius.card,
   },
   title: {
     fontSize: ms(fontSize['2xl']),

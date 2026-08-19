@@ -23,7 +23,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Membrane } from '../Membrane';
+import { Thermocline } from '../Thermocline';
 import { GridViewSvgIcon, HomeSvgIcon, SwapSvgIcon } from '../Icon';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { useTaskChrome } from '../../contexts/TaskChromeContext';
@@ -162,18 +162,19 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
       <View style={[styles.content, { paddingBottom: tabBarBottomPadding }]}>
         <View style={styles.glassContainer}>
           {/*
-            The tab bar is the app's canonical P3 membrane: chrome that floats
-            over scrolling content. `scrim` is `membraneThick` rather than
-            `membraneThin` because the tab labels are 11px — below the 15px /
-            weight-500 floor `membraneThin` guarantees.
+            The tab bar is the app's canonical thermocline: chrome that floats
+            over scrolling content, at the 12px control radius. Tier is
+            `thick` rather than the `thin` a tab bar would normally wear
+            because the tab labels are 11px — below the ≥15px / weight-500
+            floor `membraneThin` guarantees. The tabBarFade gradient below is
+            the material's own bottom edge and stays as it is.
           */}
-          <Membrane
+          <Thermocline
+            surface="chrome"
+            tier="thick"
             style={styles.glassBackgroundLayer}
-            blurIntensity={24}
-            blurBackgroundColor={colors.background.glass}
             borderColor={colors.border.subtle}
             borderWidth={borderWidth.thin}
-            scrim={semantic.surface.membraneThick}
           />
           <View style={styles.bar}>
             {visibleRoutes.map((route) => {

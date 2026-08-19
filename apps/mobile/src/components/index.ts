@@ -117,8 +117,8 @@ export type { BottomSheetTitleHeaderProps } from './BottomSheetTitleHeader';
 export { GlassTabBar } from './GlassTabBar';
 export type { GlassTabBarProps, TabConfig } from './GlassTabBar';
 
-export { Membrane } from './Membrane';
-export type { MembraneProps } from './Membrane';
+export { Thermocline } from './Thermocline';
+export type { ThermoclineProps, ThermoclineSurface, ThermoclineTier } from './Thermocline';
 
 // ---------------------------------------------------------------------------
 // Sheets & Modals

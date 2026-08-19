@@ -23,7 +23,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { BlurContainer } from '../BlurContainer';
+import { Thermocline } from '../Thermocline';
 import { GridViewSvgIcon, HomeSvgIcon, SwapSvgIcon } from '../Icon';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { useTaskChrome } from '../../contexts/TaskChromeContext';
@@ -162,14 +162,21 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
         style={[styles.content, { paddingBottom: tabBarBottomPadding }]}
         pointerEvents="box-none"
       >
-        <BlurContainer
-          style={styles.glassContainer}
-          blurIntensity={24}
-          backgroundColor={colors.background.glass}
-          borderColor={colors.border.subtle}
-          borderWidth={borderWidth.thin}
-          useGradientBorder
-        >
+        <View style={styles.glassContainer}>
+          {/*
+            The tab bar is the app's canonical thermocline, at the 12px
+            control radius. Tier is `thick` rather than `thin` because the
+            tab labels are 11px — below the ≥15px / weight-500 floor
+            `membraneThin` guarantees. The tabBarFade gradient above is the
+            material's own bottom edge and stays as it is.
+          */}
+          <Thermocline
+            surface="chrome"
+            tier="thick"
+            style={styles.glassBackgroundLayer}
+            borderColor={colors.border.subtle}
+            borderWidth={borderWidth.thin}
+          />
           <View style={styles.bar}>
             {visibleRoutes.map((route) => {
               const isFocused = state.routes[state.index]?.name === route.name;
@@ -204,7 +211,7 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
               );
             })}
           </View>
-        </BlurContainer>
+        </View>
       </View>
     </Animated.View>
   );
@@ -233,10 +240,15 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: componentSizes.tabBarRadius,
     overflow: 'hidden',
+    position: 'relative',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.22)',
+  },
+  glassBackgroundLayer: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: componentSizes.tabBarRadius,
     backgroundColor: colors.background.glass,
     borderColor: colors.border.subtle,
     borderWidth: borderWidth.thin,
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.22)',
   },
   bar: {
     flexDirection: 'row',

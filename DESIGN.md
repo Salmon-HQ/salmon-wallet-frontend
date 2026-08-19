@@ -277,7 +277,7 @@ marks its parts.
 | Sand / seabed, ambient light shafts                                                           | **Refused by design** — see §Overview and §The water column                                 | —                                                                                                                                                                                                                            |
 | Marine snow drift + scroll parallax, both reduced-motion gated                                | **Shipped**                                                                                 | `packages/shared/src/theme/depthField.ts` (`depthDrift`), both `DepthBackground`s                                                                                                                                            |
 | Light theme (index-flip resolver)                                                             | **Rejected by the owner** (2026-08-18) — see §The light theme                               | —                                                                                                                                                                                                                            |
-| Material/membrane model and the five-rung degradation ladder                                  | **Specified, not built**                                                                    | —                                                                                                                                                                                                                            |
+| Material/membrane model and the five-rung degradation ladder                                  | **Built** as the `Thermocline` component (2026-08-19) — see §The thermocline                | `apps/mobile/src/components/Thermocline`, `packages/ui/src/components/Thermocline`; first consumers: the tab bar and the Receive sheet                                                                                       |
 | Icons on mobile (`phosphor-react-native`)                                                     | **Specified, not built**                                                                    | only `@phosphor-icons/react` is installed, in `packages/ui`                                                                                                                                                                  |
 | Type scale (`display`…`monoLg`), radius scale (`r0`…`r6`), spacing rhythm                     | **Partly built** — the radius scale's control end is shipped; the rest specified            | Every control now sits on one 12px token (§The Control Radius Rule); `typography.ts` and the container end of `spacing.ts` still carry the Figma-derived one-offs                                                            |
 
@@ -741,7 +741,7 @@ Depth is not shadow. Depth is **material and edge**. A surface is not "higher"
 because it has a bigger blur radius; it is higher because it is made of
 something else.
 
-### The five planes — specified, not built
+### The five planes — P3's material is built; see §The thermocline
 
 | Plane | Name                    | Content                                                                           | Material                                     |
 | ----- | ----------------------- | --------------------------------------------------------------------------------- | -------------------------------------------- |
@@ -752,8 +752,41 @@ something else.
 | P4    | Caustic                 | Transient light: focus ring, press specular, the surfacing sweep                  | Additive, non-blocking, no pointer events    |
 
 The colour values for P0–P2 and both membrane tiers are **shipped** in
-`semantic.ts`. The material system that consumes them — the blur, the scrim, the
-platform abstraction — is not.
+`semantic.ts`. The material system that consumes them — the blur, the scrim,
+the platform abstraction — is the `Thermocline` component; see §The
+thermocline.
+
+### The thermocline — the membrane material's name (2026-08-19)
+
+The material P3 is made of is named — and registered in code as — the
+**thermocline**. In real water a thermocline is the boundary layer between
+masses of different density: light crossing it refracts, so everything seen
+through it blurs, doubles and shimmers. Divers know the layer by exactly the
+look this system builds — the water below stays legible as *water*, but
+nothing seen through the boundary can be read precisely. Blur + tint over
+scrolling content is not a metaphor for that phenomenon; it is that
+phenomenon, rendered: the blur is the refraction across the density step, the
+tint is the extra column of water the light has to cross, and the scrim floor
+is the guarantee that what sits *on* the layer — the chrome — stays sharp
+while what lies *under* it softens. The owner wants this justification
+legible in the document rather than folded into a component comment, because
+the repo is open source and a name that has to be taken on faith is a name
+that will drift (owner, 2026-08-18).
+
+The naming is a material name, not a token rename: `surface.membraneThin`,
+`surface.membraneThick` and every `membrane*` name in `semantic.ts` stay as
+they are — three apps read them — and mean "the tint the thermocline is made
+of". The equivalence is one-to-one: `membraneThin` is the thermocline's thin
+tier, `membraneThick` its thick tier, and the `gradients.tabBarFade` ramp
+under the tab bar is the material's own bottom edge. The component is
+`Thermocline` on both platforms (`apps/mobile/src/components/Thermocline`,
+`packages/ui/src/components/Thermocline`), it implements the degradation
+ladder below rung for rung, and it carries the refraction strip as part of
+the material. A debug-only switch (`thermoclineVariant`, mobile
+`src/debug/thermoclineVariant.ts` with a DOM mirror next to the component)
+lets the owner's eye compare `glass` / `opaque` / `tint` renderings; all
+three keep the scrim floor and the strip, so legibility never varies with
+the switch, and the OS reduce-transparency signal outranks it.
 
 ### The scrim floor
 
@@ -775,7 +808,7 @@ nothing secondary and nothing salmon. Secondary text and status colors require
 past the point where glass is still glass); on a membrane salmon appears only as
 a fill with `neutral-1000` ink, which is opaque and immune.
 
-### The degradation ladder — specified, not built
+### The degradation ladder — built (the `Thermocline` component, 2026-08-19)
 
 Verified against the packages installed in this repo: `expo-glass-effect`
 (`GlassView`, `GlassContainer`, `isLiquidGlassAvailable`), `expo-blur`
@@ -944,14 +977,17 @@ the content.
    appearance: the shaft of light in The Surfacing, masked by this same
    geometry at 0.5× in `#9FE0EF`. Same drawing, seen moving rather than at
    rest.
-3. **The refraction strip** (**specified, not built**) — a 24px band clipped to
+3. **The refraction strip** (**shipped**, as part of the `Thermocline`
+   material — the `refraction` variant of both `ScalesBackground`s, mounted
+   by the component itself) — a 24px band clipped to
    the top edge of any membrane, pattern scale 0.5×, opacity 0.08, filled with a
    horizontal sweep from `#9FE0EF` through `salmon-300` to `success-300`. This
    is the direction's only iridescence and it is contained: composites measure
    1.24:1 and 1.18:1, under the 1.4:1 ceiling for any non-informational stroke.
-   No text is ever placed within that band. It waits on the membrane material,
-   which is not built either. The tokens (`refractionScale`,
-   `refractionOpacity`, `refractionHeight`) already exist.
+   No text is ever placed within that band. It ships with the thermocline
+   material and is mounted only by it. The tokens (`refractionScale`,
+   `refractionOpacity`, `refractionHeight`, `refractionSweep`) live in
+   `semantic.ts`.
 
 **The fish appearance is retired.** The motif used to have a third resting
 appearance — the drawing at 1.0× pressed into the primary CTA's salmon fill —

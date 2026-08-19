@@ -60,7 +60,24 @@ const VARIANTS: Record<
     fade: true,
     fadeFloor: 0,
   },
+  /**
+   * The refraction strip — the top edge of every thermocline surface. The
+   * sweep must run across the whole band, so it cannot be the tile's own
+   * stroke (it would restart inside every repeat): the tile is drawn in white
+   * and used as a mask over one full-width horizontal gradient.
+   */
+  refraction: {
+    stroke: '#FFFFFF',
+    scale: scales.refractionScale,
+    fade: false,
+    fadeFloor: 1,
+  },
 };
+
+/** `background-image` for the refraction band: the horizontal sweep. */
+function refractionSweep(): string {
+  return `linear-gradient(to right, ${scales.refractionSweep.join(', ')})`;
+}
 
 /**
  * One tile as an SVG document, sized so the browser tiles it at `scale`.
@@ -87,24 +104,39 @@ function tileUrl(stroke: string, strokeWidth: number, scale: number, tile: numbe
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
-const Container = styled(Box)<{ $topOffset: number; $image: string; $fade: boolean; $floor: number }>(
-  ({ $topOffset, $image, $fade, $floor }) => ({
-    position: 'absolute',
-    top: $topOffset,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    pointerEvents: 'none',
-    backgroundImage: $image,
-    backgroundRepeat: 'repeat',
-    ...($fade
-      ? {
-          maskImage: `linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,${$floor}) 100%)`,
-          WebkitMaskImage: `linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,${$floor}) 100%)`,
-        }
-      : {}),
-  })
-);
+const Container = styled(Box)<{
+  $topOffset: number;
+  $image: string;
+  $fade: boolean;
+  $floor: number;
+  $sweep: boolean;
+}>(({ $topOffset, $image, $fade, $floor, $sweep }) => ({
+  position: 'absolute',
+  top: $topOffset,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  pointerEvents: 'none',
+  // The refraction band inverts the roles: the sweep gradient is the paint
+  // and the white-stroked tile is the mask, so the gradient runs unbroken
+  // across the whole band instead of restarting per repeat.
+  backgroundImage: $sweep ? refractionSweep() : $image,
+  backgroundRepeat: 'repeat',
+  ...($sweep
+    ? {
+        maskImage: $image,
+        maskRepeat: 'repeat',
+        WebkitMaskImage: $image,
+        WebkitMaskRepeat: 'repeat',
+      }
+    : {}),
+  ...($fade
+    ? {
+        maskImage: `linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,${$floor}) 100%)`,
+        WebkitMaskImage: `linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,${$floor}) 100%)`,
+      }
+    : {}),
+}));
 
 /**
  * ScalesBackground - the seigaiha fish-scale motif, at one of its three scales.
@@ -148,6 +180,7 @@ export function ScalesBackground({
       $image={image}
       $fade={config.fade}
       $floor={config.fadeFloor}
+      $sweep={variant === 'refraction'}
       style={style}
       className={className}
     />
