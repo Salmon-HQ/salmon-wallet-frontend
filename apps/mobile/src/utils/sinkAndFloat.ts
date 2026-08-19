@@ -41,6 +41,7 @@
 import { motionMs } from '@salmon/shared';
 import { withDelay, withTiming, type EntryExitAnimationFunction } from 'react-native-reanimated';
 
+import { verbDepth } from '../debug/verbDepth';
 import { curve, timing } from './motion';
 
 /**
@@ -88,6 +89,37 @@ export const FLOAT_DELAY_MS = SINK_OUT_MS + 90;
  */
 export const SINK_FLOAT_STAGGER_MS = motionMs.stagger;
 
+/*
+ * ——— The `pushback` re-weighting (behind `debug/verbDepth`) ———
+ *
+ * Diagnosis: in the shipped verb, translation dominates and there is no scale
+ * on the exit, so the swap reads as a Y-slide. Scale is the Z cue (Material
+ * shared-Z-axis, iOS sheet push-back, aerial perspective — DESIGN.md is the
+ * authority). Pushback re-weights the same verb: scale carries the depth,
+ * travel shrinks to a buoyancy accent. Clocks, curves, the beat and the
+ * stagger are the shared ones above — only the geometry changes.
+ */
+
+/**
+ * Pushback travel, dp — the buoyancy accent, no longer the carrier.
+ * Band 0–10: at 0 the swap is pure depth (may read as a crossfade-zoom),
+ * above ~10 the slide starts to compete with the scale again.
+ */
+export const PUSHBACK_TRAVEL = 8;
+/**
+ * Where the outgoing content recedes to — the push-back itself.
+ * Band 0.88–0.93: above ~0.93 the recession is too subtle to out-speak the
+ * travel; below ~0.88 it reads as a shrink, not a depth.
+ */
+export const PUSHBACK_SINK_SCALE = 0.9;
+/**
+ * Where the incoming content arrives from. 0.90 = arrival from depth (small
+ * → full, the mirror of the sink — one continuous Z axis). The alternative
+ * worth an eye: 1.06 = arrival from the viewer's side (large → full), the
+ * Material shared-Z-axis pairing where old and new pass each other.
+ */
+export const PUSHBACK_ENTER_SCALE = 0.9;
+
 /** Per-call overrides, for a consumer whose geometry wants its own numbers. */
 export interface SinkFloatOptions {
   /** Travel distance in dp. Defaults to {@link SINK_FLOAT_TRAVEL}. */
@@ -112,9 +144,16 @@ export interface SinkFloatOptions {
  */
 export function floatEntering(
   isReduceMotionEnabled: boolean,
-  { distance = SINK_FLOAT_TRAVEL, durationMs = FLOAT_IN_MS, delayMs = 0 }: SinkFloatOptions = {}
+  options: SinkFloatOptions = {}
 ): EntryExitAnimationFunction | undefined {
   if (isReduceMotionEnabled) return undefined;
+  const { durationMs = FLOAT_IN_MS, delayMs = 0 } = options;
+  // Under `pushback` the default travel is the accent, and the entering scale
+  // is the arrival from depth; a per-call `distance` override still maps onto
+  // the travel in both variants — the scale stays the verb's own.
+  const isPushback = verbDepth === 'pushback';
+  const distance = options.distance ?? (isPushback ? PUSHBACK_TRAVEL : SINK_FLOAT_TRAVEL);
+  const enterScale = isPushback ? PUSHBACK_ENTER_SCALE : FLOAT_ENTER_SCALE;
   // Travel and light on their own curves — one physical event, two media.
   const travel = timing(durationMs, false, curve.settle);
   const light = timing(durationMs, false, curve.sink);
@@ -125,7 +164,7 @@ export function floatEntering(
     return {
       initialValues: {
         opacity: 0,
-        transform: [{ translateY: distance }, { scale: FLOAT_ENTER_SCALE }],
+        transform: [{ translateY: distance }, { scale: enterScale }],
       },
       animations: {
         opacity: rise(1, light),
@@ -144,10 +183,33 @@ export function floatEntering(
  */
 export function sinkExiting(
   isReduceMotionEnabled: boolean,
-  { distance = SINK_FLOAT_TRAVEL, durationMs = SINK_OUT_MS }: SinkFloatOptions = {}
+  options: SinkFloatOptions = {}
 ): EntryExitAnimationFunction | undefined {
   if (isReduceMotionEnabled) return undefined;
+  const { durationMs = SINK_OUT_MS } = options;
   const config = timing(durationMs, false, curve.sink);
+  if (verbDepth === 'pushback') {
+    // The outgoing recedes: scale settles to PUSHBACK_SINK_SCALE (the
+    // settle-family curve — a landing, not a drop) while the small travel and
+    // the light run the sink curve unchanged. Compositing over the water ramp
+    // stays the tint. A per-call `distance` override maps onto the travel.
+    const distance = options.distance ?? PUSHBACK_TRAVEL;
+    const recede = timing(durationMs, false, curve.settle);
+    return () => {
+      'worklet';
+      return {
+        initialValues: { opacity: 1, transform: [{ translateY: 0 }, { scale: 1 }] },
+        animations: {
+          opacity: withTiming(0, config),
+          transform: [
+            { translateY: withTiming(distance, config) },
+            { scale: withTiming(PUSHBACK_SINK_SCALE, recede) },
+          ],
+        },
+      };
+    };
+  }
+  const distance = options.distance ?? SINK_FLOAT_TRAVEL;
   return () => {
     'worklet';
     return {

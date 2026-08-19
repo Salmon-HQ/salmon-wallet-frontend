@@ -25,7 +25,22 @@ jest.mock('react-native-reanimated', () => ({
 // real one, so a token change shows up in these assertions.
 jest.mock('@salmon/shared', () => jest.requireActual('@salmon/shared/src/theme/durations'));
 
+// The verb-depth debug switch, made mutable so both variants are asserted in
+// one run. The helpers read it at call time, so flipping the property between
+// tests is enough — no module re-require needed.
+const mockVerbDepthModule = { verbDepth: 'current' as 'current' | 'pushback' };
+jest.mock('../debug/verbDepth', () => ({
+  // A getter defers the read past the mock factory's hoisted execution, so
+  // the helpers always see the value the running test just set.
+  get verbDepth() {
+    return mockVerbDepthModule.verbDepth;
+  },
+}));
+
 import {
+  PUSHBACK_ENTER_SCALE,
+  PUSHBACK_SINK_SCALE,
+  PUSHBACK_TRAVEL,
   FLOAT_DELAY_MS,
   FLOAT_ENTER_SCALE,
   FLOAT_IN_MS,
@@ -53,6 +68,12 @@ type StubAnimation = {
 };
 
 describe('sinkAndFloat', () => {
+  beforeEach(() => {
+    // The shipped default is asserted separately; the current-verb contract
+    // below runs against the `current` selection.
+    mockVerbDepthModule.verbDepth = 'current';
+  });
+
   it('chooses the instant cut under reduce motion', () => {
     expect(floatEntering(true)).toBeUndefined();
     expect(sinkExiting(true)).toBeUndefined();
@@ -138,5 +159,101 @@ describe('sinkAndFloat', () => {
 
   it('inherits the band stagger from the Surfacing chrome', () => {
     expect(SINK_FLOAT_STAGGER_MS).toBe(motionMs.stagger);
+  });
+
+  describe('the pushback re-weighting (debug/verbDepth)', () => {
+    beforeEach(() => {
+      mockVerbDepthModule.verbDepth = 'pushback';
+    });
+
+    it('ships with pushback selected — the candidate is what the owner sees on reload', () => {
+      expect(jest.requireActual('../debug/verbDepth').verbDepth).toBe('pushback');
+    });
+
+    it('still cuts under reduce motion', () => {
+      expect(floatEntering(true)).toBeUndefined();
+      expect(sinkExiting(true)).toBeUndefined();
+    });
+
+    it('exits by receding: scale to 0.90 on settle, travel shrunk to the accent', () => {
+      const exiting = sinkExiting(false);
+      const animation = (exiting as unknown as () => StubAnimation)();
+      expect(animation.initialValues).toEqual({
+        opacity: 1,
+        transform: [{ translateY: 0 }, { scale: 1 }],
+      });
+      // The recession is a landing, not a drop — the settle-family curve.
+      expect(animation.animations.transform[1].scale?.toValue).toBe(PUSHBACK_SINK_SCALE);
+      expect(animation.animations.transform[1].scale?.config.easing).toEqual(
+        motionEasing.settle.native
+      );
+      // Travel is the accent; light and travel keep the sink curve and clock.
+      expect(animation.animations.transform[0].translateY?.toValue).toBe(PUSHBACK_TRAVEL);
+      expect(animation.animations.transform[0].translateY?.config.easing).toEqual(
+        motionEasing.sink.native
+      );
+      expect(animation.animations.opacity.toValue).toBe(0);
+      expect(animation.animations.opacity.config.duration).toBe(SINK_OUT_MS);
+      expect(animation.animations.opacity.config.easing).toEqual(motionEasing.sink.native);
+    });
+
+    it('enters from depth: scale from 0.90 to 1, travel the accent, light unchanged', () => {
+      const entering = floatEntering(false);
+      const animation = (entering as unknown as () => StubAnimation)();
+      expect(animation.initialValues).toEqual({
+        opacity: 0,
+        transform: [{ translateY: PUSHBACK_TRAVEL }, { scale: PUSHBACK_ENTER_SCALE }],
+      });
+      expect(animation.animations.transform[1].scale?.toValue).toBe(1);
+      expect(animation.animations.transform[0].translateY?.toValue).toBe(0);
+      expect(animation.animations.opacity.toValue).toBe(1);
+      expect(animation.animations.opacity.config.duration).toBe(FLOAT_IN_MS);
+      expect(animation.animations.opacity.config.easing).toEqual(motionEasing.sink.native);
+    });
+
+    it('maps a per-call distance override onto the travel accent; scale stays the verb’s own', () => {
+      const entering = floatEntering(false, { distance: 16, durationMs: motionMs.contentSwap });
+      const enterAnimation = (entering as unknown as () => StubAnimation)();
+      expect(enterAnimation.initialValues.transform[0].translateY).toBe(16);
+      expect(enterAnimation.initialValues.transform[1].scale).toBe(PUSHBACK_ENTER_SCALE);
+      expect(enterAnimation.animations.opacity.config.duration).toBe(motionMs.contentSwap);
+
+      const exiting = sinkExiting(false, { distance: 16 });
+      const exitAnimation = (exiting as unknown as () => StubAnimation)();
+      expect(exitAnimation.animations.transform[0].translateY?.toValue).toBe(16);
+      expect(exitAnimation.animations.transform[1].scale?.toValue).toBe(PUSHBACK_SINK_SCALE);
+    });
+
+    it('still honors the beat: every animated property waits out delayMs', () => {
+      const entering = floatEntering(false, { delayMs: FLOAT_DELAY_MS });
+      const animation = (entering as unknown as () => StubAnimation)();
+      expect(animation.animations.opacity.delayMs).toBe(FLOAT_DELAY_MS);
+      expect(animation.animations.transform[0].translateY?.delayMs).toBe(FLOAT_DELAY_MS);
+      expect(animation.animations.transform[1].scale?.delayMs).toBe(FLOAT_DELAY_MS);
+    });
+
+    it('keeps the tuning bands: travel 0–10dp, scales 0.88–0.93', () => {
+      expect(PUSHBACK_TRAVEL).toBeGreaterThanOrEqual(0);
+      expect(PUSHBACK_TRAVEL).toBeLessThanOrEqual(10);
+      expect(PUSHBACK_SINK_SCALE).toBeGreaterThanOrEqual(0.88);
+      expect(PUSHBACK_SINK_SCALE).toBeLessThanOrEqual(0.93);
+    });
+
+    it('leaves the current variant byte-for-byte when current is selected', () => {
+      mockVerbDepthModule.verbDepth = 'current';
+      const exiting = sinkExiting(false);
+      const animation = (exiting as unknown as () => StubAnimation)();
+      // No scale track on the current exit — translation-only, as shipped.
+      expect(animation.initialValues).toEqual({ opacity: 1, transform: [{ translateY: 0 }] });
+      expect(animation.animations.transform).toHaveLength(1);
+      expect(animation.animations.transform[0].translateY?.toValue).toBe(SINK_FLOAT_TRAVEL);
+
+      const entering = floatEntering(false);
+      const enterAnimation = (entering as unknown as () => StubAnimation)();
+      expect(enterAnimation.initialValues.transform).toEqual([
+        { translateY: SINK_FLOAT_TRAVEL },
+        { scale: FLOAT_ENTER_SCALE },
+      ]);
+    });
   });
 });
