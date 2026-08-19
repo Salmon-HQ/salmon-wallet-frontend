@@ -18,13 +18,14 @@
  *   flush against the band's left padding under a centred mark.
  * - **The gap over it is pinned.** The band is bottom-anchored, so
  *   `marginBottom: 'auto'` lifts the wordmark to the top of it and `marginTop`
- *   sets the distance from the mark explicitly — one `spacing.md`, the same
- *   step the title and description use.
+ *   sets the distance from the mark explicitly — `onboardingMarkTitleGap`, the
+ *   grid's own fish→title air, so welcome's fish→wordmark distance is the same
+ *   one success has between its mark and "Congratulations!" (owner, 2026-08-18).
  */
 import {
   fontSize,
+  onboardingMarkTitleGap,
   semantic,
-  spacing,
   wordmarkAspectRatio,
   wordmarkPaths,
   wordmarkText,
@@ -65,7 +66,7 @@ export function Wordmark({
         flexShrink: 0,
         alignSelf: 'center',
         marginBottom: 'auto',
-        marginTop: spacing.md,
+        marginTop: onboardingMarkTitleGap,
       }}
     >
       {wordmarkPaths.map((d) => (

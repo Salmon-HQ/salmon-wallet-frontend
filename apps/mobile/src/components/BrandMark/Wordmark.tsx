@@ -34,15 +34,16 @@
  *
  * **The gap over it is pinned.** The band is bottom-anchored, so `marginBottom:
  * 'auto'` lifts the wordmark to the top of it and `marginTop` sets the distance
- * from the mark explicitly — one `spacing.md`, the same step the title and
- * description use. Pinning it means resizing the wordmark changes the wordmark
- * and nothing else; leaving it to the band's spare room made the gap a
- * side-effect of the height.
+ * from the mark explicitly — `onboardingMarkTitleGap`, the grid's own
+ * fish→title air, so welcome's fish→wordmark distance is the same one success
+ * has between its mark and "Congratulations!" (owner, 2026-08-18). Pinning it
+ * means resizing the wordmark changes the wordmark and nothing else; leaving
+ * it to the band's spare room made the gap a side-effect of the height.
  */
 import {
   fontSize,
+  onboardingMarkTitleGap,
   semantic,
-  spacing,
   wordmarkAspectRatio,
   wordmarkPaths,
   wordmarkText,
@@ -94,6 +95,6 @@ const styles = StyleSheet.create({
     // Lift to the top of a bottom-anchored band, then set the distance from
     // the mark explicitly rather than inheriting whatever room is left over.
     marginBottom: 'auto',
-    marginTop: spacing.md,
+    marginTop: onboardingMarkTitleGap,
   },
 });

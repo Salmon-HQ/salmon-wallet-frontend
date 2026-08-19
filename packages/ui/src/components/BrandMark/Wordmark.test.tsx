@@ -12,7 +12,12 @@ vi.mock('@salmon/shared', async () => {
   return { ...theme };
 });
 
-import { fontSize, spacing, wordmarkAspectRatio, wordmarkText } from '../../../../shared/src/theme';
+import {
+  fontSize,
+  onboardingMarkTitleGap,
+  wordmarkAspectRatio,
+  wordmarkText,
+} from '../../../../shared/src/theme';
 import { Wordmark } from './Wordmark';
 
 afterEach(cleanup);
@@ -37,7 +42,9 @@ describe('Wordmark', () => {
     render(<Wordmark />);
     const style = screen.getByTestId('wordmark').style;
     expect(style.alignSelf).toBe('center');
-    expect(style.marginTop).toBe(`${spacing.md}px`);
+    // The grid's own fish→title air — the same distance success keeps between
+    // its mark and "Congratulations!" (owner, 2026-08-18).
+    expect(style.marginTop).toBe(`${onboardingMarkTitleGap}px`);
     expect(style.marginBottom).toBe('auto');
   });
 });

@@ -14,7 +14,7 @@
  * always there.
  */
 
-import { CheckCircleIcon, InfoIcon } from '../../src/icons';
+import { InfoIcon } from '../../src/icons';
 import {
   borderRadius,
   colors,
@@ -26,6 +26,7 @@ import {
   spacing,
 } from '@salmon/shared';
 import {
+  BrandMark,
   OnboardingDescription,
   OnboardingLayout,
   OnboardingTitle,
@@ -75,17 +76,12 @@ export default function SuccessScreen() {
         testID="success-screen"
         float
         /*
-          The success checkmark — one of the two glyphs in the app allowed to
-          be `fill` (DESIGN.md §Iconography), and this is its screen. The fish
-          stays on welcome and the lock only.
+          Success is a moment of identity again (owner, 2026-08-18,
+          superseding the checkmark from the motion batch): the fish, at the
+          size the CheckCircle occupied. Only success — the other flow
+          screens keep their icons.
         */
-        mark={
-          <CheckCircleIcon
-            size={componentSizes.logoSizeSmall}
-            color={colors.text.primary}
-            weight="fill"
-          />
-        }
+        mark={<BrandMark size={componentSizes.logoSizeSmall} />}
         title={<OnboardingTitle>{t('wallet.create.success_message')}</OnboardingTitle>}
         description={
           <OnboardingDescription>{t('wallet.create.success_message_body')}</OnboardingDescription>

@@ -21,8 +21,9 @@ import {
 } from '@salmon/shared';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircleIcon, InfoIcon, iconSize } from '../../icons';
+import { InfoIcon, iconSize } from '../../icons';
 import { BaseDialog } from '../BaseDialog';
+import { BrandMark } from '../BrandMark';
 import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
 import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { WaterColumn } from '../WaterColumn';
@@ -42,17 +43,12 @@ export function SuccessPage({
         testID="success-screen"
         background={<WaterColumn />}
         /*
-          The success checkmark — one of the two glyphs allowed to be `fill`
-          (DESIGN.md §Iconography), and this is its screen. Mirrors mobile:
-          the fish stays on welcome and the lock only.
+          Success is a moment of identity again (owner, 2026-08-18,
+          superseding the checkmark from the motion batch): the fish, at the
+          size the CheckCircle occupied. Mirrors mobile — only success; the
+          other flow screens keep their icons.
         */
-        mark={
-          <CheckCircleIcon
-            size={componentSizes.logoSizeSmall}
-            color={semantic.text.primary}
-            weight="fill"
-          />
-        }
+        mark={<BrandMark size={componentSizes.logoSizeSmall} />}
         title={<OnboardingTitle>{t('wallet.create.success_message')}</OnboardingTitle>}
         description={
           <OnboardingDescription>{t('wallet.create.success_message_body')}</OnboardingDescription>

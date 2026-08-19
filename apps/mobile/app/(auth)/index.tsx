@@ -8,26 +8,35 @@
  * If the user has existing accounts stored, it also shows an option
  * to access them via the lock screen.
  *
- * Composed on the onboarding slot grid. The brand appears once, as the mark
- * alone — the wordmark came off this screen at the owner's request
- * (2026-08-18: only the fish, no "Salmon" text) — so the `mark` slot carries
- * the screen's accessible name and the `title` band stays reserved and empty.
+ * Composed on the onboarding slot grid. The brand speaks in full here (owner,
+ * 2026-08-18, superseding "only the fish"): the fish in `mark`, the wordmark
+ * in `title` — its pinned gap is the grid's own fish→title air, the same
+ * distance success keeps to "Congratulations!" — and the slogan in
+ * `description`, so nothing below the pair moves.
  * The third action, offered only when accounts already exist, is a text
  * affordance in `assist`: the reserved `secondary` band holds one control, and
  * a third button would be the one place in the flow where the grid overflows.
  */
 
-import { onboardingIdentityGridFull, useAccountsContext, wordmarkText } from '@salmon/shared';
+import {
+  fontFamilyNative,
+  fontSize,
+  lineHeight,
+  onboardingIdentityGridFull,
+  semantic,
+  useAccountsContext,
+} from '@salmon/shared';
 import {
   BrandMark,
   OnboardingLayout,
   PrimaryButton,
   SecondaryButton,
   TextButton,
+  Wordmark,
 } from '../../src/components';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 // ============================================================================
 // Component
@@ -71,30 +80,30 @@ export default function WelcomeScreen() {
       // only screens that keep the brand mark (owner, 2026-08-18).
       float
       /*
-        The brand alone (product, 2026-08-18): the fish, no wordmark. The mark
-        slot centres its children itself, so the vector needs no alignSelf
-        here. The wrapper keeps the screen named — the mark is the only thing
-        on it, so the reader announces "Salmon" as the header the eye
-        recognises. Drawn at the grid's own size — the lock is the identity
-        reference, so this fish and the lock's are the same fish at the same Y
-        (markSize is identical at both rungs; the full table is safe to read).
+        The fish, drawn at the grid's own size — this fish and the lock's are
+        the same fish at the same Y (markSize is identical at both rungs; the
+        full table is safe to read). No accessible name here: the wordmark
+        below is the screen's header and announces "Salmon" — labelling the
+        fish too would say it twice.
       */
       mark={
-        <View
-          accessible
-          accessibilityRole="header"
-          accessibilityLabel={wordmarkText}
-          testID="welcome-brand-mark"
-        >
+        <View testID="welcome-brand-mark">
           <BrandMark size={onboardingIdentityGridFull.markSize} />
         </View>
       }
       /*
-        No title and no description: the mark says what the screen is. Both
-        bands stay reserved and empty — passing nothing leaves each slot at
-        its full height, which is the whole point of the grid: everything
-        below holds its Y.
+        The name and the lema (owner, 2026-08-18): the wordmark in the title
+        band — its own pinned gap puts it at the grid's fish→title distance —
+        and the slogan in the description band, so both live in bands the grid
+        already reserved and nothing below them moves.
       */
+      title={<Wordmark />}
+      description={
+        // Brand line, not UI copy — deliberately untranslated, like the wordmark itself (PRODUCT.md §Positioning).
+        <Text style={styles.slogan} testID="welcome-slogan">
+          Open code. Open ownership.
+        </Text>
+      }
       assist={
         hasAccounts ? (
           <TextButton onPress={handleAccessExistingAccount} testID="select-access-existing-button">
@@ -115,3 +124,19 @@ export default function WelcomeScreen() {
     />
   );
 }
+
+// ============================================================================
+// Styles
+// ============================================================================
+
+const styles = StyleSheet.create({
+  // The slogan is a brand line at body size in secondary ink — quieter than
+  // the flow's description token, subordinate to the wordmark above it.
+  slogan: {
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.normal,
+    textAlign: 'center',
+  },
+});

@@ -14,8 +14,8 @@ jest.mock('@salmon/shared', () => ({
 import {
   fontSize,
   onboardingIdentityGridFull,
+  onboardingMarkTitleGap,
   semantic,
-  spacing,
   wordmarkAspectRatio,
   wordmarkText,
 } from '@salmon/shared';
@@ -48,7 +48,9 @@ describe('Wordmark', () => {
     const flat = (Array.isArray(style) ? style : [style]).flat(Infinity).filter(Boolean);
     const merged = Object.assign({}, ...flat);
     expect(merged.alignSelf).toBe('center');
-    expect(merged.marginTop).toBe(spacing.md);
+    // The grid's own fish→title air — the same distance success keeps between
+    // its mark and "Congratulations!" (owner, 2026-08-18).
+    expect(merged.marginTop).toBe(onboardingMarkTitleGap);
     expect(merged.marginBottom).toBe('auto');
   });
 

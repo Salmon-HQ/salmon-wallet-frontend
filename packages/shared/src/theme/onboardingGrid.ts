@@ -122,6 +122,18 @@ export type OnboardingVariant = 'identity' | 'credential' | 'lock' | 'content';
 const titleLine = Math.round(fontSize.headline * lineHeight.tight);
 const descriptionLine = Math.round(fontSize.bodyLg * lineHeight.normal);
 
+/**
+ * The air between the mark's ink and a one-line title's first rendered line.
+ *
+ * The mark is bottom-anchored in its band and the title bottom-anchored in
+ * its own two-line band, so a title that renders on one line leaves exactly
+ * its reserved second line — one `titleLine` — empty between the fish and the
+ * text. Exported so a screen that puts brand furniture in the title band
+ * (welcome's wordmark) can pin the same fish→text distance success has
+ * between its mark and "Congratulations!", instead of inventing a number.
+ */
+export const onboardingMarkTitleGap = titleLine;
+
 export interface OnboardingGrid {
   /** Which family this table belongs to. */
   readonly variant: OnboardingVariant;
