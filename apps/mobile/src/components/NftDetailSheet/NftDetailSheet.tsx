@@ -18,7 +18,7 @@ import { FireIcon } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import Reanimated, { useReducedMotion } from 'react-native-reanimated';
+import { useReducedMotion } from 'react-native-reanimated';
 import {
   colors,
   motionMs,
@@ -53,7 +53,6 @@ import {
   semantic,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
-import { sinkExiting } from '../../utils/sinkAndFloat';
 import { ArrowUpRightIcon } from '../../icons';
 import { BlurContainer } from '../BlurContainer';
 import { BottomSheetContainer } from '../BottomSheetContainer';
@@ -947,20 +946,17 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       scrollOffsetValue={topFadeOpacity}
       style={[styles.sheetContainer, style]}
     >
-      {/* The outgoing step of the passage: when the flow gives way to the
-          success screen, whatever step was up leaves by sinking, and the wait
-          inside that screen arrives one beat later on its own clock. Reduce
-          motion keeps the cut. */}
+      {/* Steps inside a sheet do not speak the sink and the float: the sheet
+          itself is the thing that rises and ebbs, and a step sinking inside it
+          is the verb said twice. The flow keeps its own sliding-step
+          mechanism; the success screen keeps The Surfacing as its entrance. */}
       {(step === 'detail' ||
         step === 'send' ||
         step === 'review' ||
         step === 'burn' ||
         transitionFromStep ||
-        transitionToStep) && (
-        <Reanimated.View style={styles.stepPassage} exiting={sinkExiting(isReduceMotionEnabled)}>
-          {renderSlidingSteps()}
-        </Reanimated.View>
-      )}
+        transitionToStep) &&
+        renderSlidingSteps()}
 
       {step === 'success' && (
         <TransactionSuccessScreen
@@ -1013,10 +1009,6 @@ const styles = StyleSheet.create({
     letterSpacing: ms(-0.32, 0.3),
   },
   keyboardView: {
-    flex: 1,
-  },
-  /** The flow's travel frame for its sink out to the success screen. */
-  stepPassage: {
     flex: 1,
   },
   stepTransitionContainer: {

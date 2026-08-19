@@ -9,23 +9,7 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-// The confirmation step's sink pulls Reanimated, which has no native Worklets
-// under Jest; the mock only has to let the entering/exiting props exist.
-jest.mock('react-native-reanimated', () => {
-  const { View } = jest.requireActual('react-native');
-  return {
-    __esModule: true,
-    default: { View },
-    useReducedMotion: () => false,
-    withTiming: (toValue: unknown) => toValue,
-    withDelay: (_delayMs: number, animation: unknown) => animation,
-    Easing: { bezier: (...coefficients: number[]) => coefficients },
-  };
-});
-
 jest.mock('@salmon/shared', () => ({
-  // The real motion vocabulary — the sink helper reads it at module load.
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
   useSendTransaction: () => ({
     estimateFee: jest.fn(),
     sendTransaction: jest.fn(),
