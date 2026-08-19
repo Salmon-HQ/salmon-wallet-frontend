@@ -38,6 +38,7 @@ import {
   borderRadius,
   componentSizes,
   motionMs,
+  semantic,
   shadows,
   vs,
 } from '@salmon/shared';
@@ -284,7 +285,7 @@ export function GateContainer({
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       accessibilityRole="button"
                     >
-                      <CaretLeftIcon size={iconSize.lg} color={colors.text.primary} />
+                      <CaretLeftIcon size={iconSize.lg} color={semantic.text.primary} />
                     </TouchableOpacity>
                   ) : (
                     <View style={styles.headerButtonPlaceholder} />
@@ -299,7 +300,7 @@ export function GateContainer({
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     accessibilityRole="button"
                   >
-                    <XIcon size={iconSize.lg} color={colors.text.primary} />
+                    <XIcon size={iconSize.lg} color={semantic.text.primary} />
                   </TouchableOpacity>
                 </View>
               )}
@@ -437,26 +438,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.default,
+    // Per-Plane Border Rule: this divider sits above the shelf, where
+    // `border.default` drops under 3:1 — `raised` clears it.
+    borderBottomColor: semantic.border.raised,
   },
   expandedHeaderTitle: {
     flex: 1,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.lg,
+    fontSize: fontSize.heading,
     textAlign: 'center',
   },
   headerButton: {
-    width: 40,
-    height: 40,
+    width: componentSizes.backButtonSize,
+    height: componentSizes.backButtonSize,
     borderRadius: borderRadius.iconLg,
     backgroundColor: colors.background.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerButtonPlaceholder: {
-    width: 40,
-    height: 40,
+    width: componentSizes.backButtonSize,
+    height: componentSizes.backButtonSize,
   },
   expandedBody: {
     flex: 1,

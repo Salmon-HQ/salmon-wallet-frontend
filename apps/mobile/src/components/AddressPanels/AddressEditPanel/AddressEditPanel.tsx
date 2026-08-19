@@ -54,7 +54,7 @@ export function AddressEditPanel({
         value={form.label}
         onChangeText={form.setLabel}
         placeholder={t('settings.addressbook.label', 'Label')}
-        placeholderTextColor={colors.text.tertiary}
+        placeholderTextColor={semantic.text.tertiary}
         autoCapitalize="words"
         autoCorrect={false}
       />
@@ -102,17 +102,17 @@ export default AddressEditPanel;
 
 const styles = StyleSheet.create({
   fieldLabel: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     marginBottom: spacing.sm,
     marginTop: spacing.lg,
   },
   textInput: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
   },
@@ -121,11 +121,11 @@ const styles = StyleSheet.create({
   },
   networkDisplay: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
   },
   networkText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
   },

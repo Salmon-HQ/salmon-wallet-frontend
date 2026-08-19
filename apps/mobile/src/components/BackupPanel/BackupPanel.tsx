@@ -14,6 +14,7 @@ import {
   colors,
   fontFamilyNative,
   fontSize,
+  lineHeight,
   semantic,
   spacing,
   useAccountsContext,
@@ -107,7 +108,7 @@ export function BackupPanel({
             testID="backup-seed-reveal-overlay"
             accessibilityRole="button"
           >
-            <EyeIcon size={32} color={colors.text.primary} />
+            <EyeIcon size={iconSize.xl} color={semantic.text.primary} />
             <Text style={styles.revealText}>{t('settings.wallets.tap_to_reveal')}</Text>
           </TouchableOpacity>
         )}
@@ -147,10 +148,10 @@ export function BackupPanel({
           disabled={!showSeedPhrase}
           testID="backup-seed-copy-button"
         >
-          {copied ? t('wallet.copied') : t('actions.copy').toUpperCase()}
+          {copied ? t('wallet.copied') : t('actions.copy')}
         </SecondaryButton>
         <PrimaryButton onPress={onBack} testID="backup-seed-done-button">
-          {t('actions.done').toUpperCase()}
+          {t('actions.done')}
         </PrimaryButton>
       </View>
 
@@ -173,22 +174,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: semantic.status.warningTint,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
     marginBottom: spacing.xl,
     gap: spacing.sm,
   },
   warningText: {
     flex: 1,
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
-    lineHeight: 20,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.snug,
   },
   seedContainer: {
     position: 'relative',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     padding: spacing.lg,
     marginBottom: spacing.xl,
   },
@@ -199,14 +200,14 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: colors.overlay.dark,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
     gap: spacing.sm,
   },
   revealText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
   },
@@ -220,22 +221,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background.tertiary,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.r1,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     marginBottom: spacing.sm,
   },
   wordIndex: {
-    color: colors.text.tertiary,
+    color: semantic.text.tertiary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginRight: spacing.sm,
     minWidth: 20,
   },
   wordText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.mono,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
   },
   buttonContainer: {
     gap: spacing.md,

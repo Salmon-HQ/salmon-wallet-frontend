@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 import {
   colors,
+  componentSizes,
   spacing,
   borderRadius,
   fontFamilyNative,
@@ -68,7 +69,7 @@ export function AddressBookPanel({
       >
         <View style={styles.contactInfo}>
           <View style={styles.contactIconPlaceholder}>
-            <UserIcon size={iconSize.md} color={colors.text.secondary} />
+            <UserIcon size={iconSize.md} color={semantic.text.secondary} />
           </View>
           <View style={styles.contactText}>
             <Text style={styles.contactName} numberOfLines={1}>
@@ -93,7 +94,7 @@ export function AddressBookPanel({
             accessibilityRole="button"
             accessibilityLabel={t('actions.edit', 'Edit')}
           >
-            <PencilSimpleIcon size={18} color={colors.text.secondary} />
+            <PencilSimpleIcon size={iconSize.sm} color={semantic.text.secondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
@@ -103,7 +104,7 @@ export function AddressBookPanel({
             accessibilityRole="button"
             accessibilityLabel={t('actions.remove', 'Remove')}
           >
-            <TrashIcon size={18} color={semantic.status.danger} />
+            <TrashIcon size={iconSize.sm} color={semantic.status.danger} />
           </TouchableOpacity>
         </View>
       </View>
@@ -140,7 +141,7 @@ export function AddressBookPanel({
             testID="address-book-add-button"
             accessibilityRole="button"
           >
-            <PlusCircleIcon size={iconSize.md} color={colors.accent.primary} />
+            <PlusCircleIcon size={iconSize.md} color={semantic.accent.ink} />
             <Text style={styles.addButtonText}>
               {t('settings.addressbook.addnew', 'Add New Address')}
             </Text>
@@ -161,7 +162,7 @@ export function AddressBookPanel({
             testID="address-book-add-button"
             accessibilityRole="button"
           >
-            <PlusCircleIcon size={iconSize.md} color={colors.accent.primary} />
+            <PlusCircleIcon size={iconSize.md} color={semantic.accent.ink} />
             <Text style={styles.addButtonText}>
               {t('settings.addressbook.addnew', 'Add New Address')}
             </Text>
@@ -184,7 +185,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    // Control Radius Rule: a settings list row is a control — r3, not r2.
+    borderRadius: borderRadius.r3,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -195,8 +197,8 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   contactIconPlaceholder: {
-    width: 36,
-    height: 36,
+    width: componentSizes.iconSizeXL,
+    height: componentSizes.iconSizeXL,
     borderRadius: borderRadius.iconContainer,
     backgroundColor: colors.card.border,
     alignItems: 'center',
@@ -208,19 +210,19 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   contactName: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
   },
   contactAddress: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
+    fontSize: fontSize.mono,
   },
   contactNetwork: {
     color: semantic.text.disabled,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 11,
+    fontSize: fontSize.caption,
   },
   actions: {
     flexDirection: 'row',
@@ -237,9 +239,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   addButtonText: {
-    color: colors.accent.primary,
+    color: semantic.accent.ink,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -249,9 +251,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   emptyText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     textAlign: 'center',
   },
 });

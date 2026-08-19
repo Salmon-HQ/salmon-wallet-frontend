@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 
 import {
   colors,
+  componentSizes,
   spacing,
   borderRadius,
   borderWidth,
@@ -236,7 +237,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         activeOpacity={0.7}
       >
         <View style={styles.methodIcon}>
-          <TreeStructureIcon size={iconSize.xl} color={colors.accent.primary} />
+          <TreeStructureIcon size={iconSize.xl} color={semantic.accent.ink} />
         </View>
         <View style={styles.methodInfo}>
           <Text style={styles.methodTitle}>{t('settings.account_add.create_new')}</Text>
@@ -244,7 +245,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
             {t('settings.account_add.create_new_description')}
           </Text>
         </View>
-        <CaretRightIcon size={iconSize.md} color={colors.text.secondary} />
+        <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -255,7 +256,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         activeOpacity={0.7}
       >
         <View style={styles.methodIcon}>
-          <FileTextIcon size={iconSize.xl} color={colors.accent.primary} />
+          <FileTextIcon size={iconSize.xl} color={semantic.accent.ink} />
         </View>
         <View style={styles.methodInfo}>
           <Text style={styles.methodTitle}>{t('settings.account_add.import_seed')}</Text>
@@ -263,7 +264,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
             {t('settings.account_add.import_seed_description')}
           </Text>
         </View>
-        <CaretRightIcon size={iconSize.md} color={colors.text.secondary} />
+        <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
       </TouchableOpacity>
     </View>
   );
@@ -272,7 +273,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     <View>
       {scanning ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent.primary} />
+          <ActivityIndicator size="large" color={semantic.accent.ink} />
           <Text style={styles.loadingText}>{t('settings.account_add.scanning')}</Text>
         </View>
       ) : derivedAccounts.length === 0 && failedNetworks.length > 0 ? (
@@ -355,7 +356,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         value={accountName}
         onChangeText={setAccountName}
         placeholder={t('settings.account_add.set_name_placeholder')}
-        placeholderTextColor={colors.text.tertiary}
+        placeholderTextColor={semantic.text.tertiary}
         autoFocus
         maxLength={32}
         returnKeyType="done"
@@ -421,13 +422,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     padding: spacing.lg,
   },
   methodIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
+    width: componentSizes.iconSize3XL,
+    height: componentSizes.iconSize3XL,
+    borderRadius: borderRadius.r2,
     backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -438,15 +439,15 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   methodTitle: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
     marginBottom: spacing.xxs,
   },
   methodDescription: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
   },
   loadingContainer: {
     alignItems: 'center',
@@ -455,7 +456,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   loadingText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
   },
@@ -467,15 +468,15 @@ const styles = StyleSheet.create({
     paddingVertical: spacing['2xl'],
   },
   scanErrorTitle: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
     textAlign: 'center',
   },
   scanErrorBody: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     textAlign: 'center',
     marginTop: spacing.sm,
   },
@@ -485,24 +486,24 @@ const styles = StyleSheet.create({
   errorText: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginTop: spacing.xs,
     marginLeft: spacing.xs,
   },
   inputLabel: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginBottom: spacing.sm,
   },
   input: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     borderWidth: borderWidth.thin,
-    borderColor: colors.border.default,
+    borderColor: semantic.border.default,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
   },

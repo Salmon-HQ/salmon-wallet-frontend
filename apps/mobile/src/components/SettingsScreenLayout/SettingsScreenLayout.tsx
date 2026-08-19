@@ -28,12 +28,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CaretLeftIcon } from '../../icons';
 
 import {
-  colors,
   spacing,
   contentPadding,
   fontSize,
   fontFamilyNative,
   componentSizes,
+  lineHeight,
+  semantic,
 } from '@salmon/shared';
 
 // ============================================================================
@@ -95,7 +96,7 @@ export function SettingsScreenLayout({
                 accessibilityLabel={t('accessibility.go_back', 'Go back')}
                 accessibilityRole="button"
               >
-                <CaretLeftIcon size={componentSizes.iconSizeMedium} color={colors.text.primary} />
+                <CaretLeftIcon size={componentSizes.iconSizeMedium} color={semantic.text.primary} />
               </TouchableOpacity>
               <Text style={styles.title} numberOfLines={2}>
                 {title}
@@ -169,16 +170,16 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   title: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.lg,
+    fontSize: fontSize.heading,
     flex: 1,
   },
   subtitle: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
-    lineHeight: 20,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.snug,
     paddingHorizontal: contentPadding.screen,
     marginBottom: spacing.lg,
   },

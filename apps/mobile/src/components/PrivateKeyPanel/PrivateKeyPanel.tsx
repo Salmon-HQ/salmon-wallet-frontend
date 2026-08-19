@@ -16,11 +16,13 @@ import { useTranslation } from 'react-i18next';
 import {
   borderRadius,
   colors,
+  componentSizes,
   fontFamilyNative,
   fontSize,
   getAccountKeysForNetwork,
   getShortAddress,
   letterSpacing,
+  lineHeight,
   semantic,
   spacing,
   useAccountsContext,
@@ -199,7 +201,7 @@ export function PrivateKeyPanel({
               activeOpacity={0.7}
             >
               <View style={styles.networkIconContainer}>
-                <GlobeIcon size={iconSize.lg} color={colors.text.primary} />
+                <GlobeIcon size={iconSize.lg} color={semantic.text.primary} />
               </View>
               <View style={styles.networkInfo}>
                 <Text style={styles.networkName}>{network.name}</Text>
@@ -207,7 +209,7 @@ export function PrivateKeyPanel({
                   {network.blockchain.charAt(0).toUpperCase() + network.blockchain.slice(1)}
                 </Text>
               </View>
-              <CaretRightIcon size={iconSize.md} color={colors.text.secondary} />
+              <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
             </TouchableOpacity>
           ))}
         </View>
@@ -254,7 +256,7 @@ export function PrivateKeyPanel({
                     testID={`private-key-reveal-overlay-${index}`}
                     accessibilityRole="button"
                   >
-                    <EyeIcon size={32} color={colors.text.primary} />
+                    <EyeIcon size={iconSize.xl} color={semantic.text.primary} />
                     {/* Both branches now cost a proof of identity, so the
                         label no longer promises a free tap. */}
                     <Text style={styles.revealText}>
@@ -283,7 +285,7 @@ export function PrivateKeyPanel({
                 disabled={!isRevealed}
                 testID={`private-key-copy-button-${index}`}
               >
-                {isCopied ? t('wallet.copied') : t('actions.copy').toUpperCase()}
+                {isCopied ? t('wallet.copied') : t('actions.copy')}
               </SecondaryButton>
               {copyFailedIndex === index && (
                 <Text style={styles.copyFailedText} testID={`private-key-copy-error-${index}`}>
@@ -298,7 +300,7 @@ export function PrivateKeyPanel({
       {/* Done button */}
       <View style={styles.doneContainer}>
         <PrimaryButton onPress={onBack} testID="private-key-done-button">
-          {t('actions.done').toUpperCase()}
+          {t('actions.done')}
         </PrimaryButton>
       </View>
 
@@ -329,13 +331,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     padding: spacing.lg,
   },
   networkIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
+    width: componentSizes.iconSize2XL,
+    height: componentSizes.iconSize2XL,
+    borderRadius: borderRadius.r2,
     backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -345,14 +347,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   networkName: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
   },
   networkBlockchain: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
+    fontSize: fontSize.mono,
     marginTop: spacing.xxs,
   },
   // Warning
@@ -360,17 +362,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: semantic.status.warningTint,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
     marginBottom: spacing.xl,
     gap: spacing.sm,
   },
   warningText: {
     flex: 1,
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
-    lineHeight: 20,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.snug,
   },
   // Key card
   keyCard: {
@@ -380,38 +382,40 @@ const styles = StyleSheet.create({
   keyHeader: {
     gap: spacing.xs,
   },
+  // The `label` role: 10/600/uppercase/+0.3px, as the other on-system
+  // surfaces render section labels.
   pathLabel: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.label,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wider,
+    letterSpacing: letterSpacing.label,
   },
   pathValue: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
   },
   addressValue: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
+    fontSize: fontSize.mono,
     marginTop: spacing.xxs,
   },
   keyContainer: {
     position: 'relative',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     padding: spacing.lg,
     minHeight: 80,
     justifyContent: 'center',
   },
   keyText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
-    lineHeight: 22,
-    letterSpacing: letterSpacing.wider,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.normal,
+    letterSpacing: letterSpacing.loose,
   },
   revealOverlay: {
     position: 'absolute',
@@ -420,21 +424,21 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: colors.overlay.dark,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
     gap: spacing.sm,
   },
   revealText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
   },
   emptyText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     textAlign: 'center',
     marginVertical: spacing.xl,
   },
@@ -444,7 +448,7 @@ const styles = StyleSheet.create({
   copyFailedText: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginTop: spacing.sm,
     textAlign: 'center',
   },

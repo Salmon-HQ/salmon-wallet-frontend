@@ -38,10 +38,14 @@ jest.mock('@salmon/shared', () => ({
     border: { default: '#222' },
   },
   fontFamilyNative: { bold: 'System' },
-  fontSize: { lg: 18 },
+  fontSize: { heading: 18 },
   spacing: { lg: 16, md: 12 },
   borderRadius: { '2xl': 24, header: 24, iconLg: 20 },
-  componentSizes: { headerHeight: 56 },
+  componentSizes: { headerHeight: 56, backButtonSize: 40 },
+  semantic: {
+    text: { primary: '#fff' },
+    border: { raised: '#6F7B95' },
+  },
   shadows: {
     topSheet: {},
     header: {

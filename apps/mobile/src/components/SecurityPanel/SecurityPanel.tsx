@@ -166,8 +166,8 @@ export function SecurityPanel({
               testID="security-biometric-toggle"
               value={isBiometricEnabled}
               onValueChange={onToggleBiometric}
-              trackColor={{ false: colors.background.card, true: colors.accent.primary }}
-              thumbColor={colors.text.primary}
+              trackColor={{ false: colors.background.card, true: semantic.accent.ink }}
+              thumbColor={semantic.text.primary}
             />
           </View>
         </View>
@@ -184,12 +184,14 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: spacing.xl,
   },
+  // The `label` role: 10/600/uppercase/+0.3px, as the other on-system
+  // surfaces render section labels.
   sectionTitle: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.label,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wider,
+    letterSpacing: letterSpacing.label,
     marginBottom: spacing.md,
   },
   inputGroup: {
@@ -198,7 +200,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginTop: spacing.xs,
     marginBottom: spacing.sm,
   },
@@ -209,7 +211,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     padding: spacing.lg,
   },
   biometricInfo: {
@@ -217,14 +219,14 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   biometricTitle: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
     marginBottom: spacing.xxs,
   },
   biometricDescription: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
   },
 });

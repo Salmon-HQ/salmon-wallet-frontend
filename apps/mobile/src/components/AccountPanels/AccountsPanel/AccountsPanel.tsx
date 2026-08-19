@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 import {
   colors,
+  componentSizes,
   spacing,
   borderRadius,
   borderWidth,
@@ -107,7 +108,7 @@ function AccountListItem({
           accessibilityRole="button"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <PencilSimpleIcon size={iconSize.md} color={colors.text.secondary} />
+          <PencilSimpleIcon size={iconSize.md} color={semantic.text.secondary} />
         </TouchableOpacity>
 
         {canDelete && (
@@ -193,7 +194,7 @@ export function AccountsPanel({
         accessibilityRole="button"
       >
         <View style={styles.addAccountIcon}>
-          <PlusIcon size={iconSize.lg} color={colors.text.primary} />
+          <PlusIcon size={iconSize.lg} color={semantic.text.primary} />
         </View>
         <Text style={styles.addAccountText}>{t('settings.account_add.title')}</Text>
       </TouchableOpacity>
@@ -224,7 +225,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.card,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
+    // Control Radius Rule: a settings list row is a control — r3, not r2.
+    borderRadius: borderRadius.r3,
     marginBottom: spacing.sm,
   },
   accountItemActive: {
@@ -234,12 +236,12 @@ const styles = StyleSheet.create({
   avatar: {
     width: 44,
     height: 44,
-    borderRadius: borderRadius.tokenIcon,
+    borderRadius: borderRadius.r5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.bold,
     fontSize: fontSize.bodyLg,
     lineHeight: fontSize.bodyLg * lineHeight.none,
@@ -250,16 +252,16 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   accountName: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
     lineHeight: fontSize.bodyLg * lineHeight.normal,
   },
   accountAddress: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
-    lineHeight: fontSize.sm * lineHeight.normal,
+    fontSize: fontSize.caption,
+    lineHeight: fontSize.caption * lineHeight.normal,
     marginTop: spacing.xxs,
   },
   actionButtons: {
@@ -268,14 +270,14 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   actionButton: {
-    width: 32,
-    height: 32,
+    width: componentSizes.iconSizeLarge,
+    height: componentSizes.iconSizeLarge,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.r1,
   },
   checkmarkContainer: {
-    width: 32,
+    width: componentSizes.iconSizeLarge,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -286,21 +288,22 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     marginTop: spacing.md,
-    borderRadius: borderRadius.md,
+    // Control Radius Rule: a settings list row is a control — r3, not r2.
+    borderRadius: borderRadius.r3,
   },
   addAccountIcon: {
     width: 44,
     height: 44,
-    borderRadius: borderRadius.tokenIcon,
+    borderRadius: borderRadius.r5,
     backgroundColor: colors.background.card,
     borderWidth: borderWidth.thin,
-    borderColor: colors.border.default,
+    borderColor: semantic.border.default,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
   },
   addAccountText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
     lineHeight: fontSize.bodyLg * lineHeight.normal,

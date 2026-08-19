@@ -53,12 +53,12 @@ const SPACING = { headerPadding: 20, base: 12, sm: 8, xs: 4 };
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  colors: { text: { primary: '#fff' } },
+  borderRadius: { full: 9999 },
   fontFamilyNative: { bold: 'System', semiBold: 'System' },
   fontScaleCap: { chrome: 1.2 },
-  fontSize: { xs: 10, sm: 14 },
+  fontSize: { micro: 10, caption: 12 },
   fontWeight: { semibold: '600', bold: '700' },
-  letterSpacing: { header: 0 },
+  letterSpacing: { normal: 0 },
   componentSizes: { iconSizeLarge: 32, iconSizeMButton: 28, buttonHeightSmall: 44 },
   spacing: { headerPadding: 20, base: 12, sm: 8, xs: 4 },
   motionMs: { feedbackHold: 1500, drift: 280, ebb: 180, stagger: 24, swell: 300 },
@@ -74,7 +74,7 @@ jest.mock('@salmon/shared', () => ({
   getAvatarColor: () => '#123456',
   getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
   semantic: {
-    text: { secondary: '#999', accent: '#f54' },
+    text: { primary: '#fff', secondary: '#999', accent: '#f54' },
     status: { success: '#0f0' },
   },
 }));

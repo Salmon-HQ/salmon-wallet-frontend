@@ -6,7 +6,7 @@
  */
 
 import {
-  colors,
+  borderRadius,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
@@ -253,11 +253,11 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   accountText: {
-    fontSize: ms(fontSize.sm),
+    fontSize: ms(fontSize.caption),
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    letterSpacing: letterSpacing.header,
+    color: semantic.text.primary,
+    letterSpacing: letterSpacing.normal,
     lineHeight: vs(22),
   },
   copyButton: {
@@ -273,18 +273,18 @@ const styles = StyleSheet.create({
   headerAvatar: {
     width: s(componentSizes.iconSizeMButton),
     height: s(componentSizes.iconSizeMButton),
-    borderRadius: s(14),
+    borderRadius: borderRadius.full,
   },
   headerAvatarFallback: {
     width: s(componentSizes.iconSizeMButton),
     height: s(componentSizes.iconSizeMButton),
-    borderRadius: s(14),
+    borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerAvatarText: {
-    color: colors.text.primary,
-    fontSize: ms(fontSize.xs),
+    color: semantic.text.primary,
+    fontSize: ms(fontSize.micro),
     fontFamily: fontFamilyNative.bold,
     fontWeight: fontWeight.bold,
   },

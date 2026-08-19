@@ -356,7 +356,7 @@ export function LockContent({
 
   const getInputBorderColor = () => {
     if (error) return semantic.status.danger;
-    if (isFocused) return colors.accent.primary;
+    if (isFocused) return semantic.accent.ink;
     return colors.input.border;
   };
 
@@ -407,7 +407,7 @@ export function LockContent({
                       accessibilityLabel={t('lock.enter_password')}
                       style={[styles.input, { borderColor: getInputBorderColor() }]}
                       placeholder={t('lock.enter_password')}
-                      placeholderTextColor={colors.text.secondary}
+                      placeholderTextColor={semantic.text.secondary}
                       secureTextEntry
                       value={password}
                       onChangeText={(text) => {
@@ -472,7 +472,7 @@ export function LockContent({
                       void handleBiometricUnlock();
                     }}
                     disabled={isLoading}
-                    color={colors.accent.primary}
+                    color={semantic.accent.ink}
                   >
                     {biometricActionLabel}
                   </TextButton>
@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     borderWidth: borderWidth.sheet,
     borderRadius: componentSizes.inputRadius,
     paddingHorizontal: spacing.lg,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
   },

@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 import {
   colors,
+  componentSizes,
   spacing,
   borderRadius,
   fontFamilyNative,
@@ -54,7 +55,7 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
               <Image source={{ uri: app.icon }} style={styles.appIcon} />
             ) : (
               <View style={styles.appIconPlaceholder}>
-                <GlobeIcon size={iconSize.md} color={colors.text.secondary} />
+                <GlobeIcon size={iconSize.md} color={semantic.text.secondary} />
               </View>
             )}
             <View style={styles.appText}>
@@ -75,7 +76,7 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
             disabled={isRevoking}
             activeOpacity={0.7}
           >
-            <TrashIcon size={18} color={semantic.status.danger} />
+            <TrashIcon size={iconSize.sm} color={semantic.status.danger} />
           </TouchableOpacity>
         </View>
       );
@@ -111,7 +112,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    // Control Radius Rule: a settings list row is a control — r3, not r2.
+    borderRadius: borderRadius.r3,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -122,14 +124,14 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   appIcon: {
-    width: 36,
-    height: 36,
+    width: componentSizes.iconSizeXL,
+    height: componentSizes.iconSizeXL,
     borderRadius: borderRadius.iconContainer,
     backgroundColor: colors.card.border,
   },
   appIconPlaceholder: {
-    width: 36,
-    height: 36,
+    width: componentSizes.iconSizeXL,
+    height: componentSizes.iconSizeXL,
     borderRadius: borderRadius.iconContainer,
     backgroundColor: colors.card.border,
     alignItems: 'center',
@@ -141,14 +143,14 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   appName: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
   },
   appDomain: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
+    fontSize: fontSize.mono,
   },
   revokeButton: {
     padding: spacing.sm,
@@ -164,15 +166,15 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   emptyText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     textAlign: 'center',
   },
   emptySubtext: {
     color: semantic.text.disabled,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     textAlign: 'center',
   },
 });

@@ -22,12 +22,14 @@ import { useTranslation } from 'react-i18next';
 
 import {
   colors,
+  componentSizes,
   spacing,
   borderRadius,
   fontFamilyNative,
   type SupportSelectorBaseProps,
   type SupportOptionItem,
   fontSize,
+  lineHeight,
   semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
@@ -62,14 +64,14 @@ export function SupportSelector({ options, onOpenLink, onBack }: SupportSelector
         <View style={styles.optionIconContainer}>
           {React.createElement(ICON_MAP[option.id] || QuestionIcon, {
             size: iconSize.lg,
-            color: colors.accent.primary,
+            color: semantic.accent.ink,
           })}
         </View>
         <View style={styles.optionContent}>
           <Text style={styles.optionTitle}>{option.title}</Text>
           <Text style={styles.optionDescription}>{option.description}</Text>
         </View>
-        <CaretRightIcon size={iconSize.md} color={colors.text.tertiary} />
+        <CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />
       </TouchableOpacity>
     ),
     [onOpenLink]
@@ -103,15 +105,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     padding: spacing.md,
     marginBottom: spacing.md,
   },
   optionIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.accent.tint,
+    width: componentSizes.iconSize3XL,
+    height: componentSizes.iconSize3XL,
+    borderRadius: borderRadius.r2,
+    backgroundColor: semantic.accent.tint,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -120,30 +122,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionTitle: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
     marginBottom: spacing.xxs,
   },
   optionDescription: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
+    fontSize: fontSize.mono,
   },
   securityNotice: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: semantic.status.warningTint,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
     marginTop: spacing.lg,
     gap: spacing.sm,
   },
   securityText: {
     flex: 1,
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: fontSize.mono,
+    lineHeight: fontSize.mono * lineHeight.snug,
   },
 });

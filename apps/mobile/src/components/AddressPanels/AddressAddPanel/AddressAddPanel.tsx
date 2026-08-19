@@ -5,7 +5,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { QrCodeIcon } from '../../../icons';
+import { QrCodeIcon, iconSize } from '../../../icons';
 
 import {
   colors,
@@ -62,7 +62,7 @@ export function AddressAddPanel({
         value={form.label}
         onChangeText={form.setLabel}
         placeholder={t('settings.addressbook.label', 'Label')}
-        placeholderTextColor={colors.text.tertiary}
+        placeholderTextColor={semantic.text.tertiary}
         autoCapitalize="words"
         autoCorrect={false}
       />
@@ -88,7 +88,7 @@ export function AddressAddPanel({
           onPress={() => setShowScanner(true)}
           activeOpacity={0.7}
         >
-          <QrCodeIcon size={18} color={colors.accent.primary} />
+          <QrCodeIcon size={iconSize.sm} color={semantic.accent.ink} />
           <Text style={styles.scanButtonText}>{t('qrScanner.scanButton', 'Scan QR code')}</Text>
         </TouchableOpacity>
       </View>
@@ -131,17 +131,17 @@ export default AddressAddPanel;
 
 const styles = StyleSheet.create({
   fieldLabel: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     marginBottom: spacing.sm,
     marginTop: spacing.lg,
   },
   textInput: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
   },
@@ -157,17 +157,17 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
   scanButtonText: {
-    color: colors.accent.primary,
+    color: semantic.accent.ink,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
   },
   networkDisplay: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
   },
   networkText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
   },

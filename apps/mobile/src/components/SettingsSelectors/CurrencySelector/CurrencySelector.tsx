@@ -11,12 +11,14 @@ import { useTranslation } from 'react-i18next';
 
 import {
   colors,
+  componentSizes,
   spacing,
   borderRadius,
   fontFamilyNative,
   type CurrencySelectorBaseProps,
   type CurrencySelectorItem,
   fontSize,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
@@ -71,17 +73,17 @@ export default CurrencySelector;
 
 const styles = StyleSheet.create({
   symbolContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
+    width: componentSizes.iconSize2XL,
+    height: componentSizes.iconSize2XL,
+    borderRadius: borderRadius.r2,
     backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
   symbolText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.lg,
+    fontSize: fontSize.heading,
   },
 });

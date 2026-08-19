@@ -11,7 +11,15 @@ import { CaretRightIcon, KeyIcon, LockIcon, TextTIcon, UserCircleIcon, iconSize 
 import type { IconComponent } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
-import { colors, spacing, borderRadius, fontSize, fontFamilyNative } from '@salmon/shared';
+import {
+  colors,
+  componentSizes,
+  spacing,
+  borderRadius,
+  fontSize,
+  fontFamilyNative,
+  semantic,
+} from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import type { AccountEditPanelProps } from './types';
 
@@ -85,10 +93,10 @@ export function AccountEditPanel({
             accessibilityLabel={t(item.labelKey)}
           >
             <View style={styles.iconContainer}>
-              <item.icon size={iconSize.lg} color={colors.text.primary} />
+              <item.icon size={iconSize.lg} color={semantic.text.primary} />
             </View>
             <Text style={styles.rowLabel}>{t(item.labelKey)}</Text>
-            <CaretRightIcon size={iconSize.md} color={colors.text.secondary} />
+            <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
           </TouchableOpacity>
         ))}
       </View>
@@ -103,7 +111,7 @@ export function AccountEditPanel({
 const styles = StyleSheet.create({
   sectionContainer: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     overflow: 'hidden',
   },
   row: {
@@ -114,12 +122,12 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.default,
+    borderBottomColor: semantic.border.default,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
+    width: componentSizes.iconSize2XL,
+    height: componentSizes.iconSize2XL,
+    borderRadius: borderRadius.r2,
     backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -127,7 +135,7 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     flex: 1,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
   },

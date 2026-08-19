@@ -62,7 +62,7 @@ export function AccountNamePanel({
           value={name}
           onChangeText={handleChangeText}
           placeholder={t('settings.account_add.set_name_placeholder')}
-          placeholderTextColor={colors.text.tertiary}
+          placeholderTextColor={semantic.text.tertiary}
           autoFocus
           maxLength={32}
           returnKeyType="done"
@@ -92,12 +92,12 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     borderWidth: borderWidth.thin,
-    borderColor: colors.border.default,
+    borderColor: semantic.border.default,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
   },
@@ -107,14 +107,14 @@ const styles = StyleSheet.create({
   errorText: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginTop: spacing.xs,
     marginLeft: spacing.xs,
   },
   disclaimer: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginBottom: spacing.xl,
   },
   buttonContainer: {

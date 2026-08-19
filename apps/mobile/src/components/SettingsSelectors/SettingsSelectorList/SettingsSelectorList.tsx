@@ -90,7 +90,7 @@ export function SettingsSelectorList<T>({
             </View>
           </View>
 
-          {selected && <CheckCircleIcon size={iconSize.lg} color={colors.accent.primary} />}
+          {selected && <CheckCircleIcon size={iconSize.lg} color={semantic.accent.ink} />}
         </TouchableOpacity>
       );
     },
@@ -108,7 +108,7 @@ export function SettingsSelectorList<T>({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="small" color={colors.accent.primary} />
+        <ActivityIndicator size="small" color={semantic.accent.ink} />
       </View>
     );
   }
@@ -132,7 +132,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    // Control Radius Rule: a settings list row is a control — r3, not r2.
+    borderRadius: borderRadius.r3,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -153,23 +154,23 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   primaryText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
   },
   secondaryText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
   },
   loadingContainer: {
     padding: spacing.xl,
     alignItems: 'center',
   },
   emptyText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     textAlign: 'center',
     padding: spacing.xl,
   },

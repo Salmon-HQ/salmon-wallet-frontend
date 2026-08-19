@@ -363,7 +363,7 @@ export function SettingsSheet({
             accessibilityState={{ checked }}
           >
             <View style={styles.iconContainer}>
-              <option.icon size={iconSize.lg} color={colors.text.primary} />
+              <option.icon size={iconSize.lg} color={semantic.text.primary} />
             </View>
             <View style={styles.toggleLabelContainer}>
               <Text style={styles.optionLabel}>{label}</Text>
@@ -374,8 +374,8 @@ export function SettingsSheet({
                 testID={toggleTestId}
                 value={checked}
                 onValueChange={(value) => onToggle?.(value)}
-                trackColor={{ false: colors.background.card, true: colors.accent.primary }}
-                thumbColor={colors.text.primary}
+                trackColor={{ false: colors.background.card, true: semantic.accent.ink }}
+                thumbColor={semantic.text.primary}
               />
             </View>
           </View>
@@ -399,14 +399,14 @@ export function SettingsSheet({
           <View style={[styles.iconContainer, isDanger && styles.iconContainerDanger]}>
             <option.icon
               size={iconSize.lg}
-              color={isDanger ? DANGER_COLORS.text : colors.text.primary}
+              color={isDanger ? DANGER_COLORS.text : semantic.text.primary}
             />
           </View>
           <Text style={[styles.optionLabel, isDanger && styles.optionLabelDanger]}>{label}</Text>
           {!option.isAction && (
             <CaretRightIcon
               size={iconSize.md}
-              color={isDanger ? DANGER_COLORS.text : colors.text.secondary}
+              color={isDanger ? DANGER_COLORS.text : semantic.text.secondary}
             />
           )}
         </TouchableOpacity>
@@ -511,8 +511,11 @@ export function SettingsSheet({
           style={[styles.topFadeGradient, { opacity: topFadeOpacity }]}
           pointerEvents="none"
         >
+          {/* The fade must read the same token as the ground it fades over
+              (the gate surface paints `background.primary`) — a different
+              token here renders as a visible band. */}
           <LinearGradient
-            colors={[colors.background.secondary, 'transparent']}
+            colors={[colors.background.primary, 'transparent']}
             style={StyleSheet.absoluteFill}
           />
         </Animated.View>
@@ -573,12 +576,14 @@ const styles = StyleSheet.create({
     borderTopColor: semantic.status.dangerTint,
     paddingTop: spacing.md,
   },
+  // The `label` role: 10/600/uppercase/+0.3px, as the other on-system
+  // surfaces render section and plane labels.
   sectionHeaderText: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.label,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wider,
+    letterSpacing: letterSpacing.label,
   },
   sectionHeaderTextDanger: {
     color: DANGER_COLORS.text,
@@ -588,7 +593,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
     paddingHorizontal: 0,
-    borderRadius: borderRadius.md,
+    // Control Radius Rule: a settings list row is a control — r3, not r2.
+    borderRadius: borderRadius.r3,
   },
   optionRowSurface: {
     marginHorizontal: spacing.xs,
@@ -602,9 +608,9 @@ const styles = StyleSheet.create({
     backgroundColor: DANGER_COLORS.background,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
+    width: componentSizes.iconSize2XL,
+    height: componentSizes.iconSize2XL,
+    borderRadius: borderRadius.r2,
     backgroundColor: colors.background.card,
     alignItems: 'center',
     justifyContent: 'center',
@@ -615,7 +621,7 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     flex: 1,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.bodyLg,
   },
@@ -632,9 +638,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleDescription: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginTop: spacing.xxs,
   },
   topFadeGradient: {

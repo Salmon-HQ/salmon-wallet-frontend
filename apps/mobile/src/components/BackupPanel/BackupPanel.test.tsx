@@ -19,17 +19,22 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
   // The mobile wrapper hook reads the real motion vocabulary.
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  borderRadius: { sm: 8, md: 12, lg: 16 },
+  borderRadius: { r1: 4, r2: 8, r3: 12 },
   colors: {
     background: { card: '#111', tertiary: '#222' },
     overlay: { dark: 'rgba(0,0,0,0.8)' },
     status: { warningBackground: '#332200', errorBackground: '#330000' },
+    // Still read by unmocked dependencies (WarningNotice).
     text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
   },
   fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', mono: 'System' },
-  fontSize: { sm: 14, base: 16, bodyLg: 18 },
+  fontSize: { sm: 12, caption: 12, body: 14, bodyLg: 18 },
+  lineHeight: { snug: 1.4 },
   motionMs: { feedbackHold: 1500 },
-  semantic: { status: { warning: '#FFB020', danger: '#FF6B85' } },
+  semantic: {
+    status: { warning: '#FFB020', danger: '#FF6B85', warningTint: 'rgba(255,171,0,0.1)' },
+    text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
+  },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20 },
   useAccountsContext: () => [
     { activeAccount: { mnemonic: TEST_PHRASE } },

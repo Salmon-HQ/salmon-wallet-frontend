@@ -219,7 +219,7 @@ export function AccountAvatarPanel({
           />
         ) : nftsLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.accent.primary} />
+            <ActivityIndicator size="large" color={semantic.accent.ink} />
           </View>
         ) : nfts.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.sm,
     alignItems: 'center',
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     backgroundColor: colors.background.card,
   },
   // The panel's one accent is spent on Save. An active tab is chrome, and a
@@ -289,8 +289,8 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    fontSize: fontSize.caption,
+    color: semantic.text.secondary,
   },
   tabTextActive: {
     color: semantic.text.primary,
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   nftItem: {
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     overflow: 'hidden',
     borderWidth: borderWidth.medium,
     borderColor: 'transparent',
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     textAlign: 'center',
   },
   saveButton: {
