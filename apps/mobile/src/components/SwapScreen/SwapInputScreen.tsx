@@ -10,6 +10,7 @@ import {
   vs,
   s,
   fontSize,
+  lineHeight,
   borderWidth,
   semantic,
 } from '@salmon/shared';
@@ -73,23 +74,54 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           placeholder={t('swap.enter_amount', 'Enter an amount')}
         />
 
-        {swapError ? (
-          <Text testID="swap-error-text" style={styles.errorText}>
-            {typeof swapError === 'string' ? t(swapError) : t(swapError.key, swapError.params)}
-          </Text>
-        ) : null}
+        {/* The notice slot, reserved. Every message that can appear here does
+            so while the user is still typing the amount — a minimum-amount
+            notice, a stale or failed quote, an insufficient balance — so the
+            slot holds one line of height from the first frame and fills it
+            when it has something to say. Without the reservation the whole
+            "You Receive" block travelled down the screen the moment the
+            amount crossed the minimum, which is the field moving under the
+            finger that the layout rule exists to forbid. Same technique as
+            `ReservedSlot`: keep the space, not the content. */}
+        <View style={styles.noticeSlot} testID="swap-notice-slot">
+          {swapError ? (
+            <Text testID="swap-error-text" style={styles.errorText}>
+              {typeof swapError === 'string' ? t(swapError) : t(swapError.key, swapError.params)}
+            </Text>
+          ) : null}
 
-        {reviewWarning ? (
-          <Text style={styles.warningText}>
-            {typeof reviewWarning === 'string'
-              ? t(reviewWarning)
-              : t(reviewWarning.key, reviewWarning.params)}
-          </Text>
-        ) : null}
+          {reviewWarning ? (
+            <Text testID="swap-warning-text" style={styles.warningText}>
+              {typeof reviewWarning === 'string'
+                ? t(reviewWarning)
+                : t(reviewWarning.key, reviewWarning.params)}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* You Receive */}
+        <SwapAmountInput
+          testID="swap-to"
+          label={t('swap.you_receive', 'You Receive')}
+          value={outAmount}
+          onChangeValue={() => {}}
+          token={outToken}
+          onTokenPress={onOutTokenPress}
+          editable={false}
+          placeholder="0"
+          isLoading={isLoadingQuote}
+        />
+
+        <Text style={styles.disclaimerText}>
+          {t('swap.platform_fee_disclaimer', 'Includes 0.5% platform fee')}
+        </Text>
 
         {/* A bridge that failed after its exchange was created leaves the user
             with an order they cannot see and no way to name it. This is the
-            only reference that exists — a reference number, not debug output. */}
+            only reference that exists — a reference number, not debug output.
+            It sits below the amounts rather than between them: it is far too
+            tall to reserve a slot for, so the only way it can never displace
+            the "You Receive" block is to live underneath it. */}
         {bridgeReference && (swapError || reviewWarning) ? (
           <View style={styles.referenceBox} testID="bridge-failure-reference">
             <Text style={styles.referenceTitle}>
@@ -113,23 +145,6 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
             </Text>
           </View>
         ) : null}
-
-        {/* You Receive */}
-        <SwapAmountInput
-          testID="swap-to"
-          label={t('swap.you_receive', 'You Receive')}
-          value={outAmount}
-          onChangeValue={() => {}}
-          token={outToken}
-          onTokenPress={onOutTokenPress}
-          editable={false}
-          placeholder="0"
-          isLoading={isLoadingQuote}
-        />
-
-        <Text style={styles.disclaimerText}>
-          {t('swap.platform_fee_disclaimer', 'Includes 0.5% platform fee')}
-        </Text>
       </View>
 
       {/* Review Button */}
@@ -162,19 +177,27 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
+  // One line of the notice type, always. The messages are single-line by
+  // construction; a longer one grows the slot rather than being clipped,
+  // which is the honest trade — an unreadable notice is worse than a shift
+  // that only a rare message can cause.
+  noticeSlot: {
+    minHeight: vs(fontSize.sm * lineHeight.normal),
+    justifyContent: 'center',
+  },
   errorText: {
     fontSize: fontSize.sm,
+    lineHeight: fontSize.sm * lineHeight.normal,
     fontFamily: fontFamilyNative.medium,
     color: semantic.status.danger,
     textAlign: 'center',
-    marginBottom: spacing.sm,
   },
   warningText: {
     fontSize: fontSize.sm,
+    lineHeight: fontSize.sm * lineHeight.normal,
     fontFamily: fontFamilyNative.medium,
     color: semantic.status.warning,
     textAlign: 'center',
-    marginBottom: spacing.sm,
   },
   referenceBox: {
     backgroundColor: semantic.surface.raised,
@@ -219,14 +242,13 @@ const styles = StyleSheet.create({
   // salmon outline and a glow, with the button's own fill forced transparent —
   // a second, squarer shape behind the pill that read as two stacked buttons.
   button: {
-    // The button sizes to its label, not to the screen. It used to be held in
-    // by a shrink-wrapping gradient wrapper; with the wrapper gone, the
-    // button's own `width: '100%'` stretched it edge to edge inside a row that
-    // spans the viewport. `auto` is what the wrapper was doing implicitly.
-    width: 'auto',
-    minWidth: s(componentSizes.copyButtonWidth),
+    // Full width, in both states. A screen's committing action is full-width
+    // per the button spec, and sizing it to its label made the control's
+    // geometry a function of its state: the disabled label is shorter, so the
+    // one target the user is waiting to become pressable shrank and moved
+    // while they typed. Width is not a state.
+    width: '100%',
     height: vs(componentSizes.buttonHeightCompact),
-    paddingHorizontal: s(spacing['2xl']),
   },
 });
 
