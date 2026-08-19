@@ -61,6 +61,7 @@ import { useEffect, useRef } from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import {
+  blizzardSnowSvg,
   depthDrift,
   depthFieldCycleMs,
   depthFieldTileHeight,
@@ -68,17 +69,22 @@ import {
   semantic,
   wrapDepthOffset,
 } from '@salmon/shared';
+import { DEBUG_SNOW_VARIANT } from './snowVariant';
 import type { DepthBackgroundProps } from './types';
 
 const { water } = semantic;
 
 /**
- * The field, serialised once. `#` has to be escaped inside a data URI even
- * when the rest is left readable, and the token is an `rgba()` so there is
- * none — `encodeURIComponent` is used anyway because the colour is a token
- * and a future hex value must not silently truncate the document.
+ * The field, serialised once — the variant the debug switch selects. `#` has
+ * to be escaped inside a data URI even when the rest is left readable, and
+ * the token is an `rgba()` so there is none — `encodeURIComponent` is used
+ * anyway because the colour is a token and a future hex value must not
+ * silently truncate the document. The heroes ride the same document, so the
+ * existing WAAPI drift moves them with the field — no second layer.
  */
-const SNOW_URL = `url("data:image/svg+xml,${encodeURIComponent(marineSnowSvg(water.snow))}")`;
+const SNOW_URL = `url("data:image/svg+xml,${encodeURIComponent(
+  DEBUG_SNOW_VARIANT === 'blizzard' ? blizzardSnowSvg(water.snow) : marineSnowSvg(water.snow)
+)}")`;
 
 /**
  * Tiles of field hanging above the column. Two, because the drift and the

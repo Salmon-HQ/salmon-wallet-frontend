@@ -28,9 +28,11 @@ import {
 // out of the shipped tokens.
 vi.mock('@salmon/shared', async () => ({
   ...(await import('../../../../shared/src/theme/depthField')),
+  ...(await import('../../../../shared/src/theme/depthFieldBlizzard')),
   ...(await import('../../../../shared/src/theme/semantic')),
 }));
 
+import { DEBUG_SNOW_VARIANT } from './snowVariant';
 import { DepthBackground } from './DepthBackground';
 
 const COLUMN_WIDTH = 440;
@@ -118,6 +120,22 @@ describe('DepthBackground: the drift', () => {
     // No parallax offset either — reduced motion reduces both.
     const snow = container.querySelector('div > div') as HTMLElement;
     expect(snow.style.translate).toBe('');
+  });
+
+  it('ships the blizzard variant by default, heroes riding the same drifting layer', () => {
+    // The switch mirrors apps/mobile/src/debug/snowVariant.ts; 'blizzard' is
+    // what the tuning is for, so it is what a fresh checkout shows.
+    expect(DEBUG_SNOW_VARIANT).toBe('blizzard');
+    stubDom(false);
+    render(<DepthBackground />);
+    // The heroes' soft radial fill is serialised into the one background
+    // image — same data URI, same WAAPI drift, no second layer. The image
+    // rides the styled component's class, so it is read from the injected
+    // stylesheet rather than from an inline style.
+    const css = Array.from(document.querySelectorAll('style'))
+      .map((tag) => tag.textContent)
+      .join('');
+    expect(css).toContain('radialGradient');
   });
 
   it('draws nothing to move when the snow is turned off', () => {

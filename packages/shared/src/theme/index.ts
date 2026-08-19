@@ -111,9 +111,24 @@ export {
 } from './depthField';
 export type { SnowFloc } from './depthField';
 
+// Blizzard variant — the same field with heroes, a mid-field lift, and
+// clustering. Renderers pick a variant through their debug switches.
+export {
+  blizzard,
+  blizzardClusterCenters,
+  blizzardHeroes,
+  blizzardMidFlocs,
+  blizzardSnow,
+  blizzardSnowSvg,
+  blizzardSnowTiled,
+} from './depthFieldBlizzard';
+export type { HeroFloc, SnowVariant } from './depthFieldBlizzard';
+
 // Flesh geometry — the myoseptal texture as path data both platforms draw.
 export { fleshTile, fleshFades, fleshStrokes, fleshTiledStrokes } from './flesh';
 export type { FleshFadeStop, FleshStroke } from './flesh';
+export { fleshVariantFills, fleshVariantTiles } from './fleshVariants';
+export type { FleshFill, FleshVariant } from './fleshVariants';
 
 // Seigaiha geometry — the scales motif as path data both platforms draw.
 export { seigaihaTile, seigaihaPaths, seigaihaTiledPaths, shiftSeigaiha } from './scales';

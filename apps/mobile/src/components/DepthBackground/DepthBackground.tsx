@@ -49,6 +49,9 @@
  */
 import { LinearGradient } from 'expo-linear-gradient';
 import {
+  blizzard,
+  blizzardHeroes,
+  blizzardSnowTiled,
   depthDrift,
   depthFieldCycleMs,
   depthFieldTile,
@@ -70,9 +73,21 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, { ClipPath, Defs, Ellipse, G, Rect, Use } from 'react-native-svg';
+import Svg, { ClipPath, Defs, Ellipse, G, RadialGradient, Rect, Stop, Use } from 'react-native-svg';
+
+import { DEBUG_SNOW_VARIANT } from '../../debug/snowVariant';
 
 const { water } = semantic;
+
+/**
+ * The field the debug switch selects. Constants, resolved once at module
+ * scope: the switch is a compare-in-live knob, not runtime state.
+ */
+const SNOW_FLOCS = DEBUG_SNOW_VARIANT === 'blizzard' ? blizzardSnowTiled : marineSnowTiled;
+const SNOW_HEROES = DEBUG_SNOW_VARIANT === 'blizzard' ? blizzardHeroes : [];
+
+/** The `<Defs>` id of the heroes' soft radial fill. */
+const HERO_GRADIENT_ID = 'salmon-hero-floc';
 
 /**
  * Tiles of field stacked above the screen. One is enough: the combined
@@ -215,8 +230,19 @@ export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, s
                   height={depthFieldTile.height}
                 />
               </ClipPath>
+              {SNOW_HEROES.length > 0 && (
+                // The heroes' soft edge: peak at the token to `heroCoreStop`,
+                // then a fade to nothing — a near floc is a blur, never a
+                // hard disc. Default units are the ellipse's own bounds, so
+                // one gradient serves every hero.
+                <RadialGradient id={HERO_GRADIENT_ID}>
+                  <Stop offset={0} stopColor={water.snow} stopOpacity={1} />
+                  <Stop offset={blizzard.heroCoreStop} stopColor={water.snow} stopOpacity={1} />
+                  <Stop offset={1} stopColor={water.snow} stopOpacity={0} />
+                </RadialGradient>
+              )}
               <G id={SNOW_TILE_ID} clipPath={`url(#${SNOW_CLIP_ID})`}>
-                {marineSnowTiled.map(([cx, cy, rx, ry, opacity], i) => (
+                {SNOW_FLOCS.map(([cx, cy, rx, ry, opacity], i) => (
                   <Ellipse
                     key={i}
                     cx={cx}
@@ -225,6 +251,20 @@ export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, s
                     ry={ry}
                     fill={water.snow}
                     fillOpacity={opacity}
+                  />
+                ))}
+                {SNOW_HEROES.map(([cx, cy, rx, ry, opacity, rotation], i) => (
+                  <Ellipse
+                    key={`hero-${i}`}
+                    cx={cx}
+                    cy={cy}
+                    rx={rx}
+                    ry={ry}
+                    fill={`url(#${HERO_GRADIENT_ID})`}
+                    fillOpacity={opacity}
+                    rotation={rotation}
+                    originX={cx}
+                    originY={cy}
                   />
                 ))}
               </G>
