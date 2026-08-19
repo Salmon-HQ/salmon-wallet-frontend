@@ -363,6 +363,12 @@ export function useSwapScreenLogic<StyleType = unknown>({
   const [isLoadingBridgeTokens, setIsLoadingBridgeTokens] = useState(false);
 
   const quoteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Monotonic sequence for quote/estimate requests. The debounce timer above
+  // only cancels requests that have not fired yet; once a fetch is in flight,
+  // a slow response can land after the inputs changed (or after a manual
+  // refresh) and overwrite the newer quote. Every new request bumps the
+  // sequence, and responses whose ticket no longer matches are discarded.
+  const quoteSeqRef = useRef(0);
   const { countdown, startCountdown } = useCountdownTimer({
     shouldRun: step === 'review' && !isConfirming,
     shouldReset: step !== 'review',
@@ -516,6 +522,8 @@ export function useSwapScreenLogic<StyleType = unknown>({
   // Fetch quote/estimate when input changes
   useEffect(() => {
     if (quoteTimerRef.current) clearTimeout(quoteTimerRef.current);
+    // Any response still in flight belongs to older inputs: invalidate it.
+    const seq = ++quoteSeqRef.current;
 
     setOutAmount('');
     setQuote(null);
@@ -532,6 +540,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
       quoteTimerRef.current = setTimeout(async () => {
         try {
           const fetchedQuote = await onGetQuoteRef.current(inToken, outToken, inAmount);
+          if (seq !== quoteSeqRef.current) return; // stale response — a newer request owns the state
           const displayAmount = formatQuoteOutAmount(fetchedQuote);
           if (displayAmount === null) {
             setQuote(null);
@@ -543,11 +552,13 @@ export function useSwapScreenLogic<StyleType = unknown>({
           setOutAmount(displayAmount);
           setQuoteError(null);
         } catch (error) {
+          if (seq !== quoteSeqRef.current) return;
           console.error('Failed to fetch quote:', error);
           setQuoteError('swap.errors.quoteFailed');
           setOutAmount('');
         } finally {
-          setIsLoadingQuote(false);
+          // A stale request must not clear the loading flag the newer one set.
+          if (seq === quoteSeqRef.current) setIsLoadingQuote(false);
         }
       }, QUOTE_DEBOUNCE_MS);
     } else if (mode === 'stealthex' && onGetBridgeEstimateRef.current) {
@@ -561,6 +572,7 @@ export function useSwapScreenLogic<StyleType = unknown>({
             toStealthExNetwork(inToken.networkId || inToken.chain),
             toStealthExNetwork(outToken.networkId || outToken.chain)
           );
+          if (seq !== quoteSeqRef.current) return; // stale response — a newer request owns the state
           if (estimate) {
             setBridgeEstimate(estimate);
             setOutAmount(estimate.estimatedAmount.toString());
@@ -568,13 +580,14 @@ export function useSwapScreenLogic<StyleType = unknown>({
             setQuoteError('swap.errors.estimateFailed');
           }
         } catch (error) {
+          if (seq !== quoteSeqRef.current) return;
           console.warn('Failed to fetch estimate:', error);
           // Bridge estimates come from a third-party HTTP API — classify into
           // a translation key instead of surfacing the raw provider text.
           setQuoteError(classifyBridgeError(error, undefined));
           setOutAmount('');
         } finally {
-          setIsLoadingEstimate(false);
+          if (seq === quoteSeqRef.current) setIsLoadingEstimate(false);
         }
       }, QUOTE_DEBOUNCE_MS);
     }
@@ -842,10 +855,13 @@ export function useSwapScreenLogic<StyleType = unknown>({
     if (!inToken || !outToken || !inAmount || parseFloat(inAmount) <= 0) return;
 
     const mode = getSwapMode(inToken, outToken);
+    // A manual refresh supersedes any debounced request still in flight.
+    const seq = ++quoteSeqRef.current;
     if (mode === 'jupiter') {
       setIsLoadingQuote(true);
       try {
         const fetchedQuote = await onGetQuoteRef.current(inToken, outToken, inAmount);
+        if (seq !== quoteSeqRef.current) return;
         const displayAmount = formatQuoteOutAmount(fetchedQuote);
         if (displayAmount === null) {
           setQuote(null);
@@ -857,10 +873,11 @@ export function useSwapScreenLogic<StyleType = unknown>({
         setOutAmount(displayAmount);
         setQuoteError(null);
       } catch (error) {
+        if (seq !== quoteSeqRef.current) return;
         console.error('Failed to refresh quote:', error);
         setQuoteError('swap.errors.quoteFailed');
       } finally {
-        setIsLoadingQuote(false);
+        if (seq === quoteSeqRef.current) setIsLoadingQuote(false);
       }
     } else if (mode === 'stealthex' && onGetBridgeEstimateRef.current) {
       setIsLoadingEstimate(true);
@@ -872,14 +889,16 @@ export function useSwapScreenLogic<StyleType = unknown>({
           toStealthExNetwork(inToken.networkId || inToken.chain),
           toStealthExNetwork(outToken.networkId || outToken.chain)
         );
+        if (seq !== quoteSeqRef.current) return;
         if (estimate) {
           setBridgeEstimate(estimate);
           setOutAmount(estimate.estimatedAmount.toString());
         }
       } catch (error) {
+        if (seq !== quoteSeqRef.current) return;
         console.warn('Failed to refresh estimate:', error);
       } finally {
-        setIsLoadingEstimate(false);
+        if (seq === quoteSeqRef.current) setIsLoadingEstimate(false);
       }
     }
     startCountdown();

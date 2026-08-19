@@ -184,6 +184,113 @@ describe('useSwapScreenLogic', () => {
     expect(result.current.reviewWarning).toBeNull();
   });
 
+  it('discards a stale quote response that resolves after the inputs changed', async () => {
+    vi.useFakeTimers();
+
+    const NEW_QUOTE = {
+      output: { amount: '5000000', decimals: 6 },
+      custom: { priceImpact: 0.4 },
+    } as any;
+
+    let resolveStale!: (q: unknown) => void;
+    const staleQuotePromise = new Promise((resolve) => {
+      resolveStale = resolve;
+    });
+
+    const onGetQuote = vi
+      .fn()
+      // First request (amount '1') hangs until we resolve it manually.
+      .mockReturnValueOnce(staleQuotePromise)
+      // Second request (amount '2') resolves immediately.
+      .mockResolvedValueOnce(NEW_QUOTE);
+
+    const props = createProps({
+      initialInToken: SOL,
+      initialOutToken: USDC,
+      onGetQuote,
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    act(() => {
+      result.current.setInAmount('1');
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(onGetQuote).toHaveBeenCalledTimes(1);
+
+    // User edits the amount while the first request is still in flight.
+    act(() => {
+      result.current.setInAmount('2');
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(onGetQuote).toHaveBeenCalledTimes(2);
+    expect(result.current.quote).toBe(NEW_QUOTE);
+    expect(result.current.outAmount).toBe('5');
+
+    // The slow first response lands late: it must NOT overwrite the newer quote.
+    await act(async () => {
+      resolveStale(QUOTE);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(result.current.quote).toBe(NEW_QUOTE);
+    expect(result.current.outAmount).toBe('5');
+    expect(result.current.isLoadingQuote).toBe(false);
+  }, 10_000);
+
+  it('refreshes instead of executing when the quote countdown has expired on confirm', async () => {
+    vi.useFakeTimers();
+
+    const props = createProps({
+      initialInToken: SOL,
+      initialOutToken: USDC,
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    act(() => {
+      result.current.setInAmount('1');
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    act(() => {
+      result.current.handleReview();
+    });
+    expect(result.current.step).toBe('review');
+    expect(props.onGetQuote).toHaveBeenCalledTimes(1);
+
+    // Let the 15s quote countdown run out on the review screen.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+
+    await act(async () => {
+      await result.current.handleConfirmOrRefresh();
+    });
+
+    // Expired quote must not be executed — it must be re-quoted.
+    expect(props.onSwap).not.toHaveBeenCalled();
+    expect(props.onGetQuote).toHaveBeenCalledTimes(2);
+    expect(result.current.step).toBe('review');
+
+    // With a fresh quote and a running countdown, confirm now executes.
+    await act(async () => {
+      await result.current.handleConfirmOrRefresh();
+    });
+    expect(props.onSwap).toHaveBeenCalledWith(QUOTE);
+  }, 10_000);
+
   it('surfaces minimum USD guardrails before review', () => {
     const lowPriceSol = { ...SOL, usdPrice: 0.5 };
     const props = createProps({
