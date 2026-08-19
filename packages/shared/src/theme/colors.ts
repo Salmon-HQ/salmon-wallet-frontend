@@ -226,9 +226,13 @@ export const gradients = {
     start: { x: 0.5, y: 0 },
     end: { x: 0.5, y: 1 },
   },
-  /** TabBar bottom fade (black → transparent, bottom to top) */
+  /**
+   * TabBar bottom fade (water → transparent, bottom to top). The opaque stop
+   * is the depth ramp's own floor (`semantic.water.gradient[1]`), so content
+   * dissolves into the water darkening — never a flat black slab over it.
+   */
   tabBarFade: {
-    colors: ['#000000', 'rgba(0, 0, 0, 0)'] as const,
+    colors: [neutral[1000], 'rgba(7, 9, 17, 0)'] as const,
     start: { x: 0.5, y: 1 },
     end: { x: 0.5, y: 0 },
   },

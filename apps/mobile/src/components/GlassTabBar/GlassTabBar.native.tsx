@@ -109,17 +109,23 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
   ).filter((route): route is (typeof state.routes)[0] => route !== undefined);
 
   return (
-    // The fade only needs to cover content scrolling toward the pill, not the
-    // safe-area gap below it — that gap gets its own plain View so the real
-    // background (with its pattern) shows through instead of the gradient's
-    // opaque bottom stop painting a flat black slab under the pill.
-    <View style={[styles.container, { paddingBottom: tabBarBottomPadding }]}>
+    <View style={styles.container}>
+      {/*
+        Membrane bottom edge — conceptually the lower boundary of the future
+        membrane material; the membrane batch should absorb this gradient.
+        It runs to the physical bottom edge (safe area included) so no raw
+        list row shows in the gap under the pill, and its opaque stop is the
+        water's own floor so it reads as depth, not a slab.
+      */}
       <LinearGradient
         colors={gradients.tabBarFade.colors}
         start={gradients.tabBarFade.start}
         end={gradients.tabBarFade.end}
-        style={styles.fade}
-      >
+        style={styles.membraneBottomEdge}
+        pointerEvents="none"
+        testID="tab-bar-fade"
+      />
+      <View style={[styles.content, { paddingBottom: tabBarBottomPadding }]}>
         <View style={styles.glassContainer}>
           {/*
             The tab bar is the app's canonical P3 membrane: chrome that floats
@@ -170,7 +176,7 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
             })}
           </View>
         </View>
-      </LinearGradient>
+      </View>
     </View>
   );
 }
@@ -182,15 +188,17 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
-    paddingHorizontal: s(spacing.lg),
     zIndex: 50,
     elevation: 50,
   },
-  // The fade's own box — deliberately excludes the safe-area gap below the
-  // pill (that's `container`'s paddingBottom) so the gradient's opaque
-  // bottom stop never paints over it.
-  fade: {
+  // Spans the whole container, safe-area gap included — the water-colored
+  // stops are what keep the old opaque-black slab from coming back.
+  membraneBottomEdge: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  content: {
     width: '100%',
+    paddingHorizontal: s(spacing.lg),
     paddingTop: vs(spacing.lg),
   },
   glassContainer: {
