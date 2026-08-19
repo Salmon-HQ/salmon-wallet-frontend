@@ -315,7 +315,13 @@ export function LockContent({
       <StatusBar style="light" />
       <OnboardingLayout
         testID="lock-screen"
-        variant="credential"
+        /*
+          `lock`, not `credential`: the same cluster as the create flow's
+          password screen, but the always-empty description band collapses so
+          "Welcome back" sits one title line above the input — the same air
+          that separates the fish from the title (owner decision, 2026-08-18).
+        */
+        variant="lock"
         /*
           The lock carries the water column (DESIGN.md §the lock screen): the
           same ground the swap task modal mounts — depth ramp, marine snow,

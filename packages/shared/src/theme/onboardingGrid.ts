@@ -15,7 +15,9 @@
  *
  * | variant    | the hero            | screens                                                                |
  * | ---------- | ------------------- | ---------------------------------------------------------------------- |
- * | `identity` | the mark            | welcome, unlock and all its states, password, biometric opt-in, success |
+ * | `identity` | the mark            | welcome, biometric opt-in, success                                     |
+ * | `credential` | the mark, over a secret | password (create flow)                                           |
+ * | `lock`     | the mark, over a secret | unlock in every state                                            |
  * | `content`  | what fills `body`   | seed warning, seed display, seed confirmation, seed entry, analytics consent, derived accounts |
  *
  * `identity` draws the mark large and high with at most one input under it.
@@ -93,27 +95,27 @@ export type ReservedSlot = Exclude<OnboardingSlot, 'body'>;
  * Which family a screen belongs to.
  *
  * `identity` — the mark is the hero and there is nothing to fill in: welcome,
- * success, the biometric opt-in. `body` holds at most a glyph.
+ * success, the biometric opt-in. `body` stays reserved and mostly empty.
  *
  * `credential` — the mark is still the hero, but the screen asks for a secret:
- * unlock in every state, and setting a password. `body` holds the fields.
+ * setting a password in the create flow. `body` holds the fields.
+ *
+ * `lock` — the unlock screen in every state. Same cluster as `credential`,
+ * with one divergence the owner signed off on (2026-08-18): its `description`
+ * band is always empty, so it collapses and hands the height to `body` — see
+ * `lockDescription`. The lock is the **identity reference**: the welcome mark
+ * matches the lock's mark in size and Y by construction.
  *
  * `content` — what is in `body` is the hero and the mark is subordinate: the
  * seed screens, the analytics consent copy, the derived-account list.
  *
- * `identity` and `credential` were one family until the product owner said the
- * welcome screen still sat too high. The cause was arithmetic, not taste: the
- * family reserved `body` at what the password screen needs — two fields and the
- * strength meter — and welcome, which puts nothing in `body`, wore that
- * reservation as 188dp of emptiness under its description. Centring the stack
- * could not fix it, because on the emptiest screen in the flow most of the
- * stack is invisible.
- *
- * Splitting them is what lets both hold at once. Every screen that reserves a
- * field now actually has one, and the screens that do not hand the difference
- * back as `lead`.
+ * `identity` once carried a 92pt `lead` that dropped its mark below the
+ * lock's. The owner reversed that (2026-08-18): the lock is the reference,
+ * so `identity` now reserves the same `body` as `credential` — the emptiness
+ * sits under the mark, where welcome's missing fields would be — and every
+ * mark-led screen agrees on the mark's size and Y.
  */
-export type OnboardingVariant = 'identity' | 'credential' | 'content';
+export type OnboardingVariant = 'identity' | 'credential' | 'lock' | 'content';
 
 /** One rendered line of the title, and of the description. */
 const titleLine = Math.round(fontSize.headline * lineHeight.tight);
@@ -127,13 +129,10 @@ export interface OnboardingGrid {
    * Reserved empty run between `chrome` and `mark`. Not a slot — nothing is
    * ever placed in it, and it has no `testID` content.
    *
-   * It exists so a variant that needs less `body` than its siblings gives the
-   * difference back at the *top* of the stack instead of leaving it as a hole
-   * under the description. That drops the mark, the title and the description
-   * into the middle of the region they share with `body`, which is what
-   * "centre the visible group" means in practice — while every stack stays the
-   * same height, so the chrome, assist, secondary and action bands do not move
-   * between families at all.
+   * Today it carries exactly one thing: `identityClusterLead`, the
+   * owner-tunable start of the shared welcome/lock cluster. It is paid out of
+   * `body`, so every stack stays the same height and the chrome, assist,
+   * secondary and action bands do not move between families at all.
    */
   readonly lead: number;
   /** Reserved band for the mark. Sized by `markSize`, not by the screen. */
@@ -202,33 +201,79 @@ const credentialBody =
   2 * componentSizes.inputHeight + componentSizes.buttonHeightSmall + 2 * spacing.lg;
 
 /**
- * One glyph — the biometric opt-in's icon, the only thing any `identity` screen
- * puts in `body`. Welcome and success put nothing there at all.
- */
-const identityBody = componentSizes.logoSizeSmall + spacing.lg;
-
-/**
- * Exactly what `content` saved by shrinking the mark, and exactly what
- * `identity` saved by not holding a field. Keeping all three stacks equal is
- * what holds the chrome, assist, secondary and action bands at one Y across all
- * sixteen screens while the mark and the body deliberately differ by family.
+ * Exactly what `content` saved by shrinking the mark. Keeping every stack
+ * equal is what holds the chrome, assist, secondary and action bands at one Y
+ * across all sixteen screens while the mark and the body deliberately differ
+ * by family.
  */
 const contentBody = credentialBody + (heroMark - contentMark);
-const identityLead = credentialBody - identityBody;
+
+/**
+ * owner-tunable — where the identity cluster (fish → title → input) begins.
+ *
+ * Extra empty run between `chrome` and the mark on the lock and the welcome
+ * screen, which share the cluster: tune one number here and both screens'
+ * fish drop together, staying identical by construction. It is paid out of
+ * `body`, so the stack height and the assist/secondary/action bands never
+ * move while playing with it. Zero means the cluster starts where the create
+ * flow's does — the mark band right under the chrome.
+ */
+export const identityClusterLead = 0;
+
+/**
+ * The lock's `description` band, collapsed.
+ *
+ * The band is always empty on the lock, and at full height it left 84pt
+ * between "Welcome back" and the input while the fish sat one title line
+ * (30pt) above the title. The title band already ends `spacing.md` below its
+ * text, so reserving `titleLine − spacing.md` here makes title→input exactly
+ * one title line too — the same air that separates fish→title. The freed
+ * height goes to `body` (see `rung`), so the stack and every band below hold
+ * their Y; the lock deliberately diverges from `credential` only between the
+ * title and the input (owner decision, 2026-08-18).
+ */
+const lockDescription = titleLine - spacing.md;
+
+/**
+ * One cluster for the two screens the owner tunes as a pair — the welcome
+ * mark and the lock mark share size, band and lead by this shared constant,
+ * not by two numbers that happen to agree.
+ */
+const heroCluster = {
+  mark: heroMark,
+  markSize: heroMarkSize,
+  body: credentialBody - identityClusterLead,
+  lead: identityClusterLead,
+} as const;
 
 const variantConstants = {
-  identity: { mark: heroMark, markSize: heroMarkSize, body: identityBody, lead: identityLead },
+  identity: heroCluster,
   credential: { mark: heroMark, markSize: heroMarkSize, body: credentialBody, lead: 0 },
+  lock: heroCluster,
   content: { mark: contentMark, markSize: contentMarkSize, body: contentBody, lead: 0 },
 } as const;
 
-const rung = (variant: OnboardingVariant, description: number): OnboardingGrid =>
-  build({ variant, ...shared, ...variantConstants[variant], description });
+const rung = (variant: OnboardingVariant, description: number): OnboardingGrid => {
+  const constants = variantConstants[variant];
+  if (variant === 'lock') {
+    // The collapsed description hands its height to `body`, per rung, so the
+    // lock's stack stays equal to its siblings' and no control band moves.
+    return build({
+      variant,
+      ...shared,
+      ...constants,
+      description: lockDescription,
+      body: constants.body + (description - lockDescription),
+    });
+  }
+  return build({ variant, ...shared, ...constants, description });
+};
 
 /** Rung 0 — two reserved description lines. Tall phones, the extension side panel, the web app. */
 const fullDescription = 2 * descriptionLine + spacing['2xl'];
 export const onboardingIdentityGridFull = rung('identity', fullDescription);
 export const onboardingCredentialGridFull = rung('credential', fullDescription);
+export const onboardingLockGridFull = rung('lock', fullDescription);
 export const onboardingContentGridFull = rung('content', fullDescription);
 
 /**
@@ -242,6 +287,7 @@ export const onboardingContentGridFull = rung('content', fullDescription);
 const compactDescription = descriptionLine + spacing['2xl'];
 export const onboardingIdentityGridCompact = rung('identity', compactDescription);
 export const onboardingCredentialGridCompact = rung('credential', compactDescription);
+export const onboardingLockGridCompact = rung('lock', compactDescription);
 export const onboardingContentGridCompact = rung('content', compactDescription);
 
 /**
@@ -289,6 +335,8 @@ export const resolveOnboardingGrid = (
       return compact ? onboardingContentGridCompact : onboardingContentGridFull;
     case 'credential':
       return compact ? onboardingCredentialGridCompact : onboardingCredentialGridFull;
+    case 'lock':
+      return compact ? onboardingLockGridCompact : onboardingLockGridFull;
     default:
       return compact ? onboardingIdentityGridCompact : onboardingIdentityGridFull;
   }

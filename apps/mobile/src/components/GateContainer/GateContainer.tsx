@@ -343,6 +343,11 @@ const styles = StyleSheet.create({
   },
   surfaceLocked: {
     backgroundColor: 'transparent',
+    // The shadow goes with the color: `surface` keeps `shadows.topSheet` for
+    // the sheet states, and on iOS a shadow with a transparent background
+    // composites over the lock content as a ghost band. Elevation for Android.
+    shadowOpacity: 0,
+    elevation: 0,
   },
   lockContentContainer: {
     flex: 1,

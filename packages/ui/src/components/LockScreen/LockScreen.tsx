@@ -50,7 +50,7 @@ import { styled } from '../../utils/styled';
 import { PrimaryButton, TextButton } from '../Button';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { LoadingScreen } from '../LoadingScreen';
-import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
+import { OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { WaterColumn } from '../WaterColumn';
 
 export interface LockScreenProps {
@@ -185,10 +185,17 @@ export function LockScreen({
     <>
       <OnboardingLayout
         testID="lock-screen"
-        variant="credential"
+        /*
+          `lock`, not `credential`: the same cluster as the create flow's
+          password screen, but the always-empty description band collapses so
+          the title sits one title line above the input — the same air that
+          separates the fish from the title (owner decision, 2026-08-18). The
+          subtitle came off with it, mirroring mobile, which never carried one:
+          the collapsed band holds no line of copy.
+        */
+        variant="lock"
         background={<WaterColumn />}
         title={<OnboardingTitle>{t('lock.title')}</OnboardingTitle>}
-        description={<OnboardingDescription>{t('lock.subtitle')}</OnboardingDescription>}
         body={
           <Box sx={{ width: '100%' }}>
             <StyledInput

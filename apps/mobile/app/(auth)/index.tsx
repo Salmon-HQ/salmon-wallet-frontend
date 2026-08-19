@@ -17,7 +17,7 @@
  * a third button would be the one place in the flow where the grid overflows.
  */
 
-import { useAccountsContext, wordmarkText } from '@salmon/shared';
+import { onboardingIdentityGridFull, useAccountsContext, wordmarkText } from '@salmon/shared';
 import {
   BrandMark,
   OnboardingLayout,
@@ -28,13 +28,6 @@ import {
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
-
-/**
- * The welcome mark draws at the loading screen's size (its `MARK_SIZE`), not
- * the identity grid's default — the owner's reference is "the waiting ink"
- * and will be tuned by eye.
- */
-const WELCOME_MARK_SIZE = 96;
 
 // ============================================================================
 // Component
@@ -78,7 +71,9 @@ export default function WelcomeScreen() {
         slot centres its children itself, so the vector needs no alignSelf
         here. The wrapper keeps the screen named — the mark is the only thing
         on it, so the reader announces "Salmon" as the header the eye
-        recognises.
+        recognises. Drawn at the grid's own size — the lock is the identity
+        reference, so this fish and the lock's are the same fish at the same Y
+        (markSize is identical at both rungs; the full table is safe to read).
       */
       mark={
         <View
@@ -87,7 +82,7 @@ export default function WelcomeScreen() {
           accessibilityLabel={wordmarkText}
           testID="welcome-brand-mark"
         >
-          <BrandMark size={WELCOME_MARK_SIZE} />
+          <BrandMark size={onboardingIdentityGridFull.markSize} />
         </View>
       }
       /*

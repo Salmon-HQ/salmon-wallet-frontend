@@ -16,6 +16,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  identityClusterLead,
   onboardingCompactHeight,
   onboardingContentGridCompact,
   onboardingContentGridFull,
@@ -23,6 +24,8 @@ import {
   onboardingCredentialGridFull,
   onboardingIdentityGridCompact,
   onboardingIdentityGridFull,
+  onboardingLockGridCompact,
+  onboardingLockGridFull,
   onboardingSlots,
   resolveOnboardingGrid,
   type OnboardingGrid,
@@ -46,6 +49,8 @@ const grids: [string, OnboardingGrid][] = [
   ['identity/compact', onboardingIdentityGridCompact],
   ['credential/full', onboardingCredentialGridFull],
   ['credential/compact', onboardingCredentialGridCompact],
+  ['lock/full', onboardingLockGridFull],
+  ['lock/compact', onboardingLockGridCompact],
   ['content/full', onboardingContentGridFull],
   ['content/compact', onboardingContentGridCompact],
 ];
@@ -119,15 +124,48 @@ describe('the onboarding slot grid', () => {
   });
 
   it('the full grids reserve what their tokens say they do', () => {
-    // identity's body: two fields and the strength meter under them.
+    // credential's body: two fields and the strength meter under them.
     expect(onboardingCredentialGridFull.body).toBe(
       2 * componentSizes.inputHeight + componentSizes.buttonHeightSmall + 2 * spacing.lg
     );
-    // identity puts at most a glyph there — the biometric opt-in's icon.
-    expect(onboardingIdentityGridFull.body).toBe(componentSizes.logoSizeSmall + spacing.lg);
+    // identity reserves the same body as credential, minus whatever the owner
+    // tunes into the cluster lead: the lock is the reference, and welcome's
+    // emptiness sits under the mark where the fields would be.
+    expect(onboardingIdentityGridFull.body).toBe(
+      onboardingCredentialGridFull.body - identityClusterLead
+    );
     expect(onboardingIdentityGridFull.description).toBe(2 * 24 + spacing['2xl']);
     expect(onboardingContentGridFull.description).toBe(2 * 24 + spacing['2xl']);
     expect(onboardingIdentityGridFull.stack).toBe(817);
+  });
+
+  it('the lock collapses its empty description so title→input equals fish→title', () => {
+    // The fish sits one title line (30) above the title's ink, because the
+    // title band anchors its text down over a `spacing.md` of padding. The
+    // title band ends `spacing.md` below the text, so a description band of
+    // `titleLine − spacing.md` makes title→input one title line too.
+    expect(onboardingLockGridFull.description).toBe(30 - spacing.md);
+    expect(spacing.md + onboardingLockGridFull.description).toBe(30);
+    // The band survives at both rungs — collapsed is not removed.
+    expect(onboardingLockGridCompact.description).toBe(onboardingLockGridFull.description);
+    // The freed height went to `body`, so the lock's stack matches its
+    // siblings' and the control bands hold their Y.
+    expect(onboardingLockGridFull.stack).toBe(onboardingCredentialGridFull.stack);
+    expect(onboardingLockGridCompact.stack).toBe(onboardingCredentialGridCompact.stack);
+  });
+
+  it('welcome and the lock share one cluster — same mark size, same band Y', () => {
+    // The lock is the identity reference (owner, 2026-08-18). Parity is by
+    // the shared `heroCluster` constant and the one `identityClusterLead`
+    // knob, not by two numbers that happen to agree.
+    const id = onboardingIdentityGridFull;
+    const lock = onboardingLockGridFull;
+    expect(id.markSize).toBe(lock.markSize);
+    expect(id.mark).toBe(lock.mark);
+    // Same Y for the mark band: everything above it agrees.
+    expect(id.chrome + id.lead).toBe(lock.chrome + lock.lead);
+    expect(id.lead).toBe(identityClusterLead);
+    expect(lock.lead).toBe(identityClusterLead);
   });
 
   it('spends on body or lead exactly what it saved elsewhere, so all stacks match', () => {
@@ -136,13 +174,15 @@ describe('the onboarding slot grid', () => {
     // the body deliberately differ between the two families.
     expect(onboardingContentGridFull.stack).toBe(onboardingIdentityGridFull.stack);
     expect(onboardingCredentialGridFull.stack).toBe(onboardingIdentityGridFull.stack);
+    expect(onboardingLockGridFull.stack).toBe(onboardingIdentityGridFull.stack);
     expect(onboardingContentGridCompact.stack).toBe(onboardingIdentityGridCompact.stack);
     expect(onboardingCredentialGridCompact.stack).toBe(onboardingIdentityGridCompact.stack);
+    expect(onboardingLockGridCompact.stack).toBe(onboardingIdentityGridCompact.stack);
     // content buys its taller body by shrinking the mark...
     expect(onboardingContentGridFull.body - onboardingCredentialGridFull.body).toBe(
       onboardingCredentialGridFull.mark - onboardingContentGridFull.mark
     );
-    // ...and identity, which needs no field, hands the difference back as lead.
+    // ...and identity pays any tuned-in lead out of its body, never the bands.
     expect(onboardingIdentityGridFull.lead).toBe(
       onboardingCredentialGridFull.body - onboardingIdentityGridFull.body
     );
@@ -150,18 +190,16 @@ describe('the onboarding slot grid', () => {
     expect(onboardingContentGridFull.lead).toBe(0);
   });
 
-  it('lifts the visible group on identity without moving any control', () => {
-    // The welcome screen's complaint. Everything above `body` starts `lead`
-    // lower, and everything from `assist` down is untouched — because the
-    // stack is the same height, `lead` only moves what sits between.
+  it('identity no longer lifts — the lock is the reference and welcome matches it', () => {
+    // The 92pt lead that raised welcome's fish above the lock's is gone
+    // (owner, 2026-08-18): the two screens share every band above `body`, so
+    // the fish, the title and the description sit at one Y across them.
     const id = onboardingIdentityGridFull;
     const cred = onboardingCredentialGridFull;
-    const above = (g: OnboardingGrid) => g.chrome + g.lead;
-    expect(above(id) - above(cred)).toBe(id.lead);
-    expect(id.lead).toBeGreaterThan(0);
-    for (const key of ['chrome', 'title', 'description', 'assist', 'secondary', 'action'] as const) {
+    for (const key of ['chrome', 'mark', 'markSize', 'title', 'description', 'assist', 'secondary', 'action'] as const) {
       expect(id[key]).toBe(cred[key]);
     }
+    expect(id.lead - cred.lead).toBe(identityClusterLead);
   });
 
   it.each([
@@ -172,6 +210,19 @@ describe('the onboarding slot grid', () => {
     expect(compact.stack).toBeLessThan(full.stack);
     expect(compact.description).toBeLessThan(full.description);
     for (const key of ['chrome', 'lead', 'mark', 'markSize', 'title', 'body', 'assist', 'secondary', 'action'] as const) {
+      expect(compact[key]).toBe(full[key]);
+    }
+  });
+
+  it('lock: the compact rung pays out of body — its description is already collapsed', () => {
+    // The lock's description is a fixed run of air, not copy, so the rung has
+    // no line to drop there; the height the siblings save on description the
+    // lock saves on the body that had absorbed it. The stacks stay in step.
+    const full = onboardingLockGridFull;
+    const compact = onboardingLockGridCompact;
+    expect(compact.stack).toBeLessThan(full.stack);
+    expect(compact.body).toBeLessThan(full.body);
+    for (const key of ['chrome', 'lead', 'mark', 'markSize', 'title', 'description', 'assist', 'secondary', 'action'] as const) {
       expect(compact[key]).toBe(full[key]);
     }
   });
@@ -191,7 +242,7 @@ describe('the onboarding slot grid', () => {
     // same bundle. The boundary belongs nowhere near a shipping handset.
     const shortestPhoneInUse = 781;
     expect(onboardingCompactHeight).toBeLessThan(shortestPhoneInUse - 100);
-    for (const variant of ['identity', 'credential', 'content'] as const) {
+    for (const variant of ['identity', 'credential', 'lock', 'content'] as const) {
       expect(resolveOnboardingGrid(variant, 781).variant).toBe(variant);
       expect(resolveOnboardingGrid(variant, 781)).toBe(resolveOnboardingGrid(variant, 876));
     }
@@ -213,12 +264,20 @@ describe('the onboarding slot grid', () => {
       expect(differing.sort()).toEqual(['description', 'stack']);
       expect(compact.description).toBeGreaterThan(0);
     }
+    // The lock carries no description copy at either rung, so its rung
+    // tightens `body` instead — still a band, never an element.
+    const lockDiffering = (Object.keys(onboardingLockGridFull) as (keyof OnboardingGrid)[]).filter(
+      (key) => onboardingLockGridFull[key] !== onboardingLockGridCompact[key]
+    );
+    expect(lockDiffering.sort()).toEqual(['body', 'stack']);
   });
 
   it('picks a table by variant and available height, full before measurement', () => {
     expect(resolveOnboardingGrid('identity', undefined)).toBe(onboardingIdentityGridFull);
     expect(resolveOnboardingGrid('content', undefined)).toBe(onboardingContentGridFull);
     expect(resolveOnboardingGrid('credential', undefined)).toBe(onboardingCredentialGridFull);
+    expect(resolveOnboardingGrid('lock', undefined)).toBe(onboardingLockGridFull);
+    expect(resolveOnboardingGrid('lock', onboardingCompactHeight)).toBe(onboardingLockGridCompact);
     expect(resolveOnboardingGrid('credential', onboardingCompactHeight)).toBe(
       onboardingCredentialGridCompact
     );
@@ -236,6 +295,7 @@ describe('the onboarding slot grid', () => {
   it('every grid reports the variant it belongs to', () => {
     expect(onboardingIdentityGridFull.variant).toBe('identity');
     expect(onboardingCredentialGridFull.variant).toBe('credential');
+    expect(onboardingLockGridFull.variant).toBe('lock');
     expect(onboardingContentGridCompact.variant).toBe('content');
   });
 });

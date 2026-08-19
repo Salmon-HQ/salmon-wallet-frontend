@@ -50,6 +50,15 @@ describe('the (auth) screens', () => {
     expect(source).not.toMatch(/flexGrow: 1,\s*\n\s*paddingHorizontal/);
   });
 
+  it('index.tsx draws the welcome mark at the grid’s own size — the lock is the reference', () => {
+    // The 96pt `WELCOME_MARK_SIZE` override is gone (owner, 2026-08-18): the
+    // welcome fish and the lock fish are the same fish at the same Y, and
+    // parity comes from the shared grid constant, not a local number.
+    const source = read('index.tsx');
+    expect(source).toContain('onboardingIdentityGridFull.markSize');
+    expect(source).not.toContain('WELCOME_MARK_SIZE');
+  });
+
   it.each(screens)('%s draws the mark from the vector, never from Logo.png', (file) => {
     // `Logo` is the 197x183 raster with a near-white `#FCFCFC` baked into it.
     // The grid's mark is `markPaths`, tinted from a token, drawn by the layout.

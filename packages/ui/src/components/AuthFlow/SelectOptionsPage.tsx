@@ -11,7 +11,7 @@
  * affordance in `assist`: the reserved `secondary` band holds one control, and
  * a third button would be the one place in the flow where the grid overflows.
  */
-import { wordmarkText } from '@salmon/shared';
+import { onboardingIdentityGridFull, wordmarkText } from '@salmon/shared';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrandMark } from '../BrandMark';
@@ -19,13 +19,6 @@ import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { WaterColumn } from '../WaterColumn';
 import type { SelectOptionsPageProps } from './types';
-
-/**
- * The welcome mark draws at the loading screen's size — the owner's reference
- * is "the waiting ink" (mobile `MARK_SIZE`), declared to apply to the DOM too
- * — and will be tuned by eye.
- */
-const WELCOME_MARK_SIZE = 96;
 
 export function SelectOptionsPage({
   onCreateWallet,
@@ -45,6 +38,9 @@ export function SelectOptionsPage({
         named — the mark is the only thing on it, so the reader announces
         "Salmon" as the heading the eye recognises. No title, no description:
         both bands stay reserved and empty so everything below holds its Y.
+        Drawn at the grid's own size — the lock is the identity reference, so
+        this fish and the lock's are the same fish at the same Y (markSize is
+        identical at both rungs; the full table is safe to read).
       */
       mark={
         <div
@@ -53,7 +49,7 @@ export function SelectOptionsPage({
           aria-label={wordmarkText}
           data-testid="welcome-brand-mark"
         >
-          <BrandMark size={WELCOME_MARK_SIZE} />
+          <BrandMark size={onboardingIdentityGridFull.markSize} />
         </div>
       }
       assist={

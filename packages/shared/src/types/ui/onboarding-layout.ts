@@ -37,9 +37,11 @@ export interface OnboardingLayoutPropsBase extends Testable {
   /**
    * Which family the screen belongs to, and therefore which reserved-height
    * table it reads. `identity` (the default) makes the mark the hero — welcome,
-   * unlock in every state, setting a password, the biometric opt-in, success.
-   * `content` hands the middle of the screen to what fills `body` — the seed
-   * screens, the consent copy, the derived-account list.
+   * the biometric opt-in, success. `credential` adds a secret to that cluster —
+   * setting a password. `lock` is the unlock screen in every state, with its
+   * empty description band collapsed. `content` hands the middle of the screen
+   * to what fills `body` — the seed screens, the consent copy, the
+   * derived-account list.
    *
    * Slots are at an identical Y across every screen of one variant; between
    * variants the mark and the body differ deliberately.
