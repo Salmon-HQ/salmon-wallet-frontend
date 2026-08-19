@@ -27,6 +27,7 @@ vi.mock('react-i18next', () => ({
 vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual('../../../../shared/src/theme')),
   ...(await vi.importActual('../../../../shared/src/hooks/useAddressBookForm')),
+  ...(await vi.importActual('../../../../shared/src/utils/network')),
 }));
 
 vi.mock('../../utils/styled', async () => {
@@ -84,6 +85,22 @@ describe('AddressEditPanel', () => {
     );
     return onSave;
   }
+
+  // The edit screen restates which network the contact lives on; on a test
+  // network that restatement is the fund-safety signal, so it must not shrink
+  // to the chain name (DESIGN.md §Chain identity).
+  it('names the environment of a non-mainnet contact', () => {
+    render(
+      <AddressEditPanel
+        contact={{ ...contact, networkId: 'solana-devnet', networkName: 'Devnet' }}
+        activeBlockchain="solana"
+        onSave={vi.fn()}
+        onBack={() => {}}
+      />
+    );
+
+    expect(screen.getByText('Solana Devnet')).toBeInTheDocument();
+  });
 
   it('disables save when the label is emptied and enables it again when refilled', () => {
     renderPanel();

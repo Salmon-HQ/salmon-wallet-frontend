@@ -21,6 +21,7 @@ import {
   formatAmountWithSymbol,
   formatPercent,
   getShortAddress,
+  getNetworkName,
   BRIDGE_PARTNER_FEE_PERCENT,
   fontSize,
   letterSpacing,
@@ -180,11 +181,17 @@ export function BridgeReviewScreen({
               },
               {
                 label: t('bridge.review.fromNetwork'),
-                value: inToken.network || 'Solana',
+                // `network` carries the canonical networkId, so it is formatted
+                // rather than printed: a review row approving a transfer must not
+                // show `solana-devnet` as a machine string, nor hide the
+                // environment (DESIGN.md §Chain identity).
+                value: inToken.network ? getNetworkName(inToken.network) : 'Solana',
               },
               {
                 label: t('bridge.review.toNetwork'),
-                value: outToken.network || t('transactions.unknown'),
+                value: outToken.network
+                  ? getNetworkName(outToken.network)
+                  : t('transactions.unknown'),
               },
               ...(estimate
                 ? [

@@ -24,6 +24,7 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual('../../../../shared/src/utils/formatting')),
+  ...(await vi.importActual('../../../../shared/src/utils/network')),
   tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
   semantic: {
     status: { danger: '#f00', warning: '#fc0', success: '#0f0' },
@@ -128,7 +129,12 @@ describe('StepAddressAmount', () => {
 
     mockUseSendContacts.mockReturnValue({
       contacts: [
-        { name: 'Alice', address: 'Alice11111111111111111111111111111', blockchain: 'solana' },
+        {
+          name: 'Alice',
+          address: 'Alice11111111111111111111111111111',
+          blockchain: 'solana',
+          networkName: 'Devnet',
+        },
       ],
       ownWallets: [{ accountName: 'Vault', address: 'Vault11111111111111111111111111111' }],
     });
@@ -154,6 +160,24 @@ describe('StepAddressAmount', () => {
         messageType: address ? 'error' : null,
       };
     });
+  });
+
+  // Fund safety, not cosmetics: a contact saved on a test network must never
+  // read as its mainnet twin on the screen where a send destination is picked.
+  it('names the environment of a non-mainnet contact, never the chain alone', () => {
+    render(
+      <StepAddressAmount
+        token={token}
+        blockchain="solana"
+        account={account}
+        onBack={vi.fn()}
+        onReview={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Solana Devnet')).toBeTruthy();
+    expect(screen.queryByText('Solana')).toBeNull();
   });
 
   it('uses quick fill to update amount and fiat conversion', () => {

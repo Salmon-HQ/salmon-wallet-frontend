@@ -41,6 +41,7 @@ import {
   borderWidth,
   useAccountsContext,
   getShortAddress,
+  getNetworkName,
   type AccountKeyInfo,
   fontFamily,
   fontSize,
@@ -329,9 +330,10 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                   </NetworkListItemIcon>
                   <NetworkListItemText
                     primary={network.name}
-                    secondary={
-                      network.blockchain.charAt(0).toUpperCase() + network.blockchain.slice(1)
-                    }
+                    /* Chain only, deliberately: the primary line above is the
+                       network name, which already carries the environment, so
+                       repeating it here would say the same thing twice. */
+                    secondary={getNetworkName(network.blockchain)}
                   />
                   <ChevronIcon />
                 </NetworkListItemButton>

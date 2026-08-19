@@ -20,6 +20,7 @@ import {
   semantic,
   spacing,
   getShortAddress,
+  getNetworkName,
   AddressbookError,
   type AddressBookItem,
   fontSize,
@@ -188,8 +189,11 @@ export function AddressBookPanel({
                       <>
                         {contact.domain || getShortAddress(contact.address, 6)}
                         {' \u00B7 '}
-                        {contact.networkId.split('-')[0].charAt(0).toUpperCase() +
-                          contact.networkId.split('-')[0].slice(1)}
+                        {/* The whole network, environment included: this is the list a
+                            send destination is picked from, and a devnet contact that
+                            reads "Solana" is the confusion DESIGN.md §Chain identity
+                            exists to prevent. */}
+                        {getNetworkName(contact.networkId)}
                       </>
                     }
                     primaryTypographyProps={{

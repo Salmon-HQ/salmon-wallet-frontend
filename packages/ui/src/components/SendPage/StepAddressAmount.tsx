@@ -29,6 +29,7 @@ import {
   useCurrencyContext,
   useSendContacts,
   getShortAddress,
+  getNetworkName,
   borderRadius,
   borderWidth,
   fontSize,
@@ -361,6 +362,25 @@ const BlockchainBadgeText = styled(Typography)({
   color: colors.text.secondary,
 });
 
+/**
+ * The network a contact belongs to, environment included.
+ *
+ * A send contact carries the chain and the network name as separate fields and
+ * no canonical identifier, and only the name carries the environment — a devnet
+ * contact rendered from the chain alone reads "Solana", which is exactly the
+ * mistake DESIGN.md §Chain identity forbids on a surface where funds are about
+ * to leave. The chain is prefixed only when the name does not already carry it,
+ * because network names in the catalogue are inconsistent about that.
+ */
+function contactNetworkLabel(contact: { blockchain: string; networkName?: string }): string {
+  const chain = getNetworkName(contact.blockchain);
+  const network = contact.networkName ? getNetworkName(contact.networkName) : '';
+  if (!network) return chain;
+  return network.toLowerCase().includes(contact.blockchain.toLowerCase())
+    ? network
+    : `${chain} ${network}`;
+}
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -603,9 +623,7 @@ export function StepAddressAmount({
                   <ContactAddress>{getShortAddress(contact.address)}</ContactAddress>
                 </ContactInfo>
                 <BlockchainBadge>
-                  <BlockchainBadgeText>
-                    {contact.blockchain.charAt(0).toUpperCase() + contact.blockchain.slice(1)}
-                  </BlockchainBadgeText>
+                  <BlockchainBadgeText>{contactNetworkLabel(contact)}</BlockchainBadgeText>
                 </BlockchainBadge>
               </ContactRow>
             ))}
