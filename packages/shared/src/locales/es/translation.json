@@ -835,6 +835,7 @@
     "token_balance": "Token {{name}}, balance {{amount}} {{symbol}}",
     "token_price_balance": "Token {{name}}, precio {{price}}, balance {{amount}} {{symbol}}",
     "select_token": "Seleccionar {{name}}",
+    "select_token_on_network": "Seleccionar {{name}} en {{network}}",
     "copy_contract_address": "Copiar dirección del contrato",
     "open_website": "Abrir sitio web: {{url}}",
     "select_period": "Seleccionar período {{period}}",

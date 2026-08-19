@@ -12,8 +12,18 @@ import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+// The fallback strings carry `{{name}}` / `{{network}}`, so the stub
+// interpolates: a label assertion has to see the announced sentence, not the
+// template.
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string, fallback?: string) => fallback ?? key }),
+  useTranslation: () => ({
+    t: (key: string, fallback?: string, options?: Record<string, unknown>) => {
+      const template = fallback ?? key;
+      return options
+        ? template.replace(/{{(\w+)}}/g, (_match, name: string) => String(options[name] ?? ''))
+        : template;
+    },
+  }),
 }));
 
 // The real `@salmon/shared` barrel pulls react-native into the jsdom bundle,
@@ -63,6 +73,14 @@ vi.mock('@salmon/shared', () => ({
   tabularNums: { css: {} },
   getIconSize: (size?: number) => size ?? 24,
   getShortAddress: (value?: string) => (value ? value.slice(0, 8) : ''),
+  // Mirrors the real derivation; the formatting itself is asserted in
+  // `packages/shared/src/utils/network.test.ts`.
+  getNetworkName: (network: string) =>
+    network
+      .split(/[-_\s]+/)
+      .filter(Boolean)
+      .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ') || network,
   getTokenKey: (token: { mint?: string; address?: string; symbol?: string }) =>
     token.mint || token.address || token.symbol || '',
   ContentLoader: () => null,
@@ -131,6 +149,29 @@ describe('TokenSelectorModal network identity', () => {
     renderModal({ tokens: [{ ...btcMainnet, network: 'Bitcoin' }] });
     expect(screen.getByTestId('chain-mark-bitcoin')).toBeTruthy();
     expect(screen.queryByText('BITCOIN')).toBeNull();
+  });
+});
+
+describe('TokenSelectorModal announced network', () => {
+  it('speaks the network of a silent Solana mainnet row', () => {
+    renderModal();
+    expect(screen.getByLabelText('Select Solana on Solana Mainnet')).toBeTruthy();
+  });
+
+  it('speaks the human name of a devnet row while the chip stays the raw identifier', () => {
+    renderModal();
+    expect(screen.getByLabelText('Select Dev Token on Solana Devnet')).toBeTruthy();
+    expect(screen.getByText('SOLANA-DEVNET')).toBeTruthy();
+  });
+
+  it('announces the network even when the row is told not to draw one', () => {
+    renderModal({ showNetworkChip: false });
+    expect(screen.getByLabelText('Select Bitcoin on Bitcoin Mainnet')).toBeTruthy();
+  });
+
+  it('keeps the plain label for a row that carries no network', () => {
+    renderModal({ tokens: [{ mint: 'no-net', name: 'Orphan', symbol: 'ORP', uiAmount: 1 }] });
+    expect(screen.getByLabelText('Select Orphan')).toBeTruthy();
   });
 });
 

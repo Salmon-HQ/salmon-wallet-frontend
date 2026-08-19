@@ -32,6 +32,7 @@ import {
   fontFamily,
   fontWeight,
   getShortAddress,
+  getNetworkName,
   getTokenKey,
   ContentLoader,
   Rect,
@@ -589,9 +590,23 @@ export function TokenSelectorModal({
                   key={getTokenKey(token)}
                   onClick={() => handleSelect(token)}
                   role="button"
-                  aria-label={t('accessibility.select_token', 'Select {{name}}', {
-                    name: tokenName,
-                  })}
+                  // DESIGN.md, §Chain identity: the visual channel may stay
+                  // quiet, the announced one never does — the label speaks the
+                  // full human network whatever the row happens to draw.
+                  aria-label={
+                    token.network
+                      ? t(
+                          'accessibility.select_token_on_network',
+                          'Select {{name}} on {{network}}',
+                          {
+                            name: tokenName,
+                            network: getNetworkName(token.network),
+                          }
+                        )
+                      : t('accessibility.select_token', 'Select {{name}}', {
+                          name: tokenName,
+                        })
+                  }
                   data-testid={`token-select-${token.symbol || tokenName}`}
                 >
                   {/* Token Icon */}

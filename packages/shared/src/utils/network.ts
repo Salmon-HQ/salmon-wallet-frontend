@@ -47,6 +47,40 @@ export function getNetworkLabel(blockchain: BlockchainId): string | null {
 }
 
 /**
+ * Formats a network identifier as the human network name a screen reader
+ * should say: `solana-devnet` becomes "Solana Devnet", `bitcoin-mainnet`
+ * becomes "Bitcoin Mainnet", and a bare chain name such as `Bitcoin` passes
+ * through already well formed.
+ *
+ * Network names are proper nouns and read the same in every language, so this
+ * is formatting rather than translation, and deriving the name means a new
+ * chain needs no catalogue entry.
+ *
+ * The ceiling: title-casing each segment assumes every segment is a word, which
+ * holds for the whole current catalogue (solana, bitcoin, ethereum, mainnet,
+ * devnet, testnet, sepolia) but would mangle an acronym — a future
+ * `bsc-mainnet` announces "Bsc Mainnet" instead of "BSC Mainnet". The way out,
+ * when a chain like that actually exists, is a small exception map consulted
+ * *above* this derivation and falling through to it when there is no entry —
+ * never a full table of network names in its place, which is exactly the
+ * maintenance burden this avoids.
+ *
+ * An identifier that cannot be made presentable comes back as itself rather
+ * than as a generic "Unknown network": an ugly announcement still carries the
+ * network and leaves the user able to notice where they are, and this is the
+ * one place where knowing the network is fund safety.
+ */
+export function getNetworkName(network: string): string {
+  return (
+    network
+      .split(/[-_\s]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ') || network
+  );
+}
+
+/**
  * Sorts networks according to a predefined order.
  * Networks not in the order list are placed at the end in their original order.
  */

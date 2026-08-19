@@ -228,6 +228,7 @@ export {
   sortNetworks,
   filterNetworks,
   getNetworkLabel,
+  getNetworkName,
 } from './network';
 
 // Validation utilities
