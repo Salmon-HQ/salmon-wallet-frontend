@@ -27,11 +27,24 @@ interface EncryptedMnemonics extends LockedVault {
 export type StoredMnemonics = Record<string, string> | EncryptedMnemonics;
 
 export function isEncryptedMnemonics(mnemonics: StoredMnemonics): mnemonics is EncryptedMnemonics {
+  if (typeof mnemonics !== 'object' || mnemonics === null) {
+    return false;
+  }
+  if ((mnemonics as EncryptedMnemonics).isEncrypted === true) {
+    return true;
+  }
+  // Recognize a vault by shape even when the `isEncrypted` flag is missing:
+  // change-password used to persist the raw LockedVault without the flag,
+  // which made the vault read as "plaintext" and locked the user out. A
+  // legitimate plaintext record maps ids to mnemonic strings (all string
+  // values), so a numeric `iterations` alongside the vault fields can only
+  // be an encrypted vault.
+  const vault = mnemonics as Partial<LockedVault>;
   return (
-    typeof mnemonics === 'object' &&
-    mnemonics !== null &&
-    'isEncrypted' in mnemonics &&
-    (mnemonics as EncryptedMnemonics).isEncrypted === true
+    typeof vault.encrypted === 'string' &&
+    typeof vault.nonce === 'string' &&
+    typeof vault.salt === 'string' &&
+    typeof vault.iterations === 'number'
   );
 }
 
@@ -106,7 +119,11 @@ export async function changeStoredPassword(
   );
   const newVault = await lock(mnemonics, newPassword);
 
-  await setStorageItem(STORAGE_KEYS.MNEMONICS, newVault);
+  // Single persisted write, flagged as encrypted like every other vault
+  // write site — persisting the bare LockedVault made the stored value read
+  // as plaintext, which broke unlock and change-password afterwards. Any
+  // failure before this line leaves the old vault (and old password) intact.
+  await setStorageItem(STORAGE_KEYS.MNEMONICS, { ...newVault, isEncrypted: true });
   await removeStashItem(STASH_KEYS.DERIVED_KEY);
 }
 
