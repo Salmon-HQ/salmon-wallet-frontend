@@ -20,7 +20,9 @@ import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import InputBase from '@mui/material/InputBase';
 import CircularProgress from '@mui/material/CircularProgress';
+import type { SvgIconProps } from '@mui/material/SvgIcon';
 import { MagnifyingGlassIcon, XIcon, iconSize } from '../../icons';
+import { BitcoinSvgIcon, EthereumSvgIcon } from '../Icon';
 import {
   colors,
   spacing,
@@ -201,6 +203,12 @@ const NetworkChipText = styled(Typography)({
   textTransform: 'uppercase',
 });
 
+const ChainMark = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  marginLeft: spacing.sm,
+});
+
 const TokenBalance = styled(Typography)({
   ...tabularNums.css,
   fontSize: fontSize.base,
@@ -329,6 +337,54 @@ const CloseActionButton = styled(Button)({
 });
 
 // ============================================================================
+// Chain identity
+// ============================================================================
+
+// DESIGN.md, §Chain identity. Mainnet is the silent default: Solana rows carry
+// nothing (in a Solana-first wallet a badge on every row says "you are where
+// you always are"), and a non-Solana mainnet token gets only its quiet chain
+// mark — the brand's own glyph, the same one BalanceCard and DerivedAccountCard
+// draw, never a redrawn interface icon. Anything that is NOT mainnet keeps the
+// loud text chip, so a devnet or testnet token can never be mistaken for the
+// real thing; the chip stays a machine identifier and is deliberately not
+// translated.
+const CHAIN_MARKS: Record<string, React.ComponentType<SvgIconProps>> = {
+  bitcoin: BitcoinSvgIcon,
+  ethereum: EthereumSvgIcon,
+};
+
+const CHAIN_MARK_SIZE = componentSizes.iconSizeXxsm;
+
+const chainMarkStyle = {
+  fontSize: CHAIN_MARK_SIZE,
+  width: CHAIN_MARK_SIZE,
+  height: CHAIN_MARK_SIZE,
+  color: colors.text.tertiary,
+};
+
+const NetworkIdentity: React.FC<{ network: string }> = ({ network }) => {
+  // Network values arrive either as canonical ids ('bitcoin-mainnet',
+  // 'solana-devnet') or as bare chain names ('Bitcoin') from the swap logic's
+  // chain fallback; a bare chain name carries no environment, so it counts as
+  // mainnet.
+  const [chain, env] = network.toLowerCase().split('-');
+  if (env && env !== 'mainnet') {
+    return (
+      <NetworkChip data-testid="network-chip">
+        <NetworkChipText>{network.toUpperCase()}</NetworkChipText>
+      </NetworkChip>
+    );
+  }
+  const Mark = CHAIN_MARKS[chain];
+  if (!Mark) return null;
+  return (
+    <ChainMark data-testid={`chain-mark-${chain}`}>
+      <Mark style={chainMarkStyle} />
+    </ChainMark>
+  );
+};
+
+// ============================================================================
 // TokenSelectorModal Component
 // ============================================================================
 
@@ -366,6 +422,7 @@ export function TokenSelectorModal({
   showNetworkChip = false,
   showVerifiedDisclaimer = false,
   loading = false,
+  showBalances = true,
 }: TokenSelectorModalProps): React.ReactElement {
   const { t } = useTranslation();
 
@@ -520,9 +577,12 @@ export function TokenSelectorModal({
           ) : (
             paginatedTokens.map((token) => {
               const tokenName = token.name || getShortAddress(token.mint || token.address, 4) || '';
-              const balanceText = token.uiAmount
-                ? `${hiddenBalance ? HIDDEN_VALUE : token.uiAmount} ${token.symbol || ''}`
-                : token.symbol || '';
+              // With balances hidden the right column falls back to the symbol
+              // alone — identity stays, holdings go.
+              const balanceText =
+                showBalances && token.uiAmount
+                  ? `${hiddenBalance ? HIDDEN_VALUE : token.uiAmount} ${token.symbol || ''}`
+                  : token.symbol || '';
 
               return (
                 <TokenItemContainer
@@ -552,9 +612,7 @@ export function TokenSelectorModal({
                     <TokenNameRow>
                       <TokenName>{tokenName}</TokenName>
                       {showNetworkChip && token.network && (
-                        <NetworkChip>
-                          <NetworkChipText>{token.network.toUpperCase()}</NetworkChipText>
-                        </NetworkChip>
+                        <NetworkIdentity network={token.network} />
                       )}
                     </TokenNameRow>
                     <TokenBalance>{balanceText}</TokenBalance>

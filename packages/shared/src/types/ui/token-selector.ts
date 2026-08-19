@@ -102,6 +102,12 @@ export interface TokenSelectorModalPropsBase<TStyle> {
   showVerifiedDisclaimer?: boolean;
   /** Whether tokens are still loading */
   loading?: boolean;
+  /**
+   * Whether rows show the user's holdings. The "You Send" selector keeps them
+   * (they are load-bearing there); the "You Receive" selector hides them — you
+   * do not hold what you are about to receive. Defaults to true.
+   */
+  showBalances?: boolean;
   /** Platform-specific style prop */
   style?: TStyle;
 }

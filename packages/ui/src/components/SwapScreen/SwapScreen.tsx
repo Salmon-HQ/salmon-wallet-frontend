@@ -363,6 +363,7 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
         onSelect={logic.handleOutTokenModalSelect}
         showNetworkChip={true}
         hiddenBalance={logic.swapMode === 'stealthex'}
+        showBalances={false}
         loading={logic.tokensLoading || logic.isLoadingBridgeTokens}
       />
     </Container>
