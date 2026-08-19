@@ -205,7 +205,14 @@ export function TokenSelectorModal({
         <TouchableOpacity
           testID={`token-row-${token.symbol}`}
           accessibilityRole="button"
-          accessibilityLabel={`${tokenName}${token.network ? ` ${token.network}` : ''}`}
+          accessibilityLabel={
+            token.network
+              ? t('accessibility.token_on_network', {
+                  token: tokenName,
+                  network: token.network,
+                })
+              : tokenName
+          }
           onPress={() => handleSelect(token)}
           activeOpacity={0.7}
         >

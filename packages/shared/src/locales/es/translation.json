@@ -827,6 +827,7 @@
     "view_activity": "Ver actividad",
     "show_balance": "Mostrar balance",
     "hide_balance": "Ocultar balance",
+    "token_on_network": "{{token}} en {{network}}",
     "select_blockchain": "Cambiar a {{name}}",
     "previous_blockchain": "Blockchain anterior",
     "next_blockchain": "Blockchain siguiente",
