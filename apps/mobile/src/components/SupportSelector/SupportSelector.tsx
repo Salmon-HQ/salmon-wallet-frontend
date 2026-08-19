@@ -8,8 +8,8 @@
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import {
+  ArrowSquareOutIcon,
   BookOpenIcon,
-  CaretRightIcon,
   DiscordLogoIcon,
   EnvelopeIcon,
   QuestionIcon,
@@ -74,7 +74,11 @@ export function SupportSelector({ options, onOpenLink, onBack }: SupportSelector
           <Text style={styles.optionTitle}>{t(option.title)}</Text>
           <Text style={styles.optionDescription}>{t(option.description)}</Text>
         </View>
-        <CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />
+        {/* Leaving the app is not the same promise as pushing a panel: the
+            right-pointing caret means "slides in from there", which internal
+            navigation no longer does and this row never did. The external
+            glyph says the destination is outside the wallet. */}
+        <ArrowSquareOutIcon size={iconSize.md} color={semantic.text.tertiary} />
       </TouchableOpacity>
     ),
     [onOpenLink, t]

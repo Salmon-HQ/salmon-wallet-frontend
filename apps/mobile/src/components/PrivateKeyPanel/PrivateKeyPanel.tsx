@@ -10,7 +10,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { CaretRightIcon, EyeIcon, GlobeIcon, WarningIcon, iconSize } from '../../icons';
+import { EyeIcon, GlobeIcon, WarningIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -36,6 +36,21 @@ import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { useSettingsHeaderOverride } from '../SettingsHeaderContext';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
+import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
+
+// ============================================================================
+// Chain identity
+// ============================================================================
+
+// The chain marks the rest of the app already uses for identity (BalanceCard,
+// DerivedAccountCard, the swap's token selector) — the icon migration's
+// declared exception. Four identical globes told the reader nothing about
+// which chain's key they were about to expose.
+const CHAIN_MARKS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
+  solana: SolanaSvgIcon,
+  bitcoin: BitcoinSvgIcon,
+  ethereum: EthereumSvgIcon,
+};
 
 // ============================================================================
 // Types
@@ -191,27 +206,48 @@ export function PrivateKeyPanel({
         onBack={onBack}
       >
         <View style={styles.networkList}>
-          {networks.map((network) => (
-            <TouchableOpacity
-              key={network.id}
-              testID={`private-key-network-option-${network.id}`}
-              accessibilityRole="button"
-              style={styles.networkCard}
-              onPress={() => handleSelectNetwork(network.id)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.networkIconContainer}>
-                <GlobeIcon size={iconSize.lg} color={semantic.text.primary} />
-              </View>
-              <View style={styles.networkInfo}>
-                <Text style={styles.networkName}>{network.name}</Text>
-                <Text style={styles.networkBlockchain}>
-                  {network.blockchain.charAt(0).toUpperCase() + network.blockchain.slice(1)}
-                </Text>
-              </View>
-              <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
-            </TouchableOpacity>
-          ))}
+          {networks.map((network) => {
+            // Ids arrive canonical ('solana-mainnet', 'bitcoin-testnet'), so
+            // the environment is the second segment; an id without one counts
+            // as mainnet, the same reading the token selector does.
+            const [chain, env] = network.id.toLowerCase().split('-');
+            const Mark = CHAIN_MARKS[chain] ?? GlobeIcon;
+            const isNonMainnet = Boolean(env) && env !== 'mainnet';
+
+            return (
+              <TouchableOpacity
+                key={network.id}
+                testID={`private-key-network-option-${network.id}`}
+                accessibilityRole="button"
+                style={styles.networkCard}
+                onPress={() => handleSelectNetwork(network.id)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.networkIconContainer}>
+                  <Mark size={iconSize.lg} color={semantic.text.primary} />
+                </View>
+                <View style={styles.networkInfo}>
+                  <Text style={styles.networkName}>{network.name}</Text>
+                  <Text style={styles.networkBlockchain}>
+                    {network.blockchain.charAt(0).toUpperCase() + network.blockchain.slice(1)}
+                  </Text>
+                </View>
+                {/* Chain identity: a non-mainnet environment always keeps its
+                    loud text chip, so a testnet key can never be read as a
+                    mainnet one. Mainnet stays silent — the quiet chain mark
+                    on the left already carries it. The row no longer carries
+                    a caret: selecting a network does not slide a panel in. */}
+                {isNonMainnet && (
+                  <View
+                    style={styles.networkChip}
+                    testID={`private-key-network-chip-${network.id}`}
+                  >
+                    <Text style={styles.networkChipText}>{env.toUpperCase()}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </SettingsScreenLayout>
     );
@@ -356,6 +392,19 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.mono,
     marginTop: spacing.xxs,
+  },
+  // Same chip the token selector paints on non-mainnet rows.
+  networkChip: {
+    backgroundColor: `${colors.border.default}CC`,
+    borderRadius: borderRadius.r1,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxs,
+    marginLeft: spacing.sm,
+  },
+  networkChipText: {
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.xs,
   },
   // Warning
   warningContainer: {

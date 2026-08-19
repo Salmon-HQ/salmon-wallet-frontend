@@ -54,6 +54,30 @@ import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
+// Pagination dot touch geometry. The dots' visible size, colour and spacing
+// are fixed by design, so the hit area is the only thing allowed to grow —
+// and it grows under two rules, in that order:
+//
+//  1. Adjacent hit boxes must not overlap. A tap landing in the gap between
+//     two dots has to belong to exactly one of them, so the horizontal reach
+//     is capped at half the gap on each side; the boxes meet, never cross.
+//  2. Within that cap, each box is as large as it can be.
+//
+// Rule 1 pins the box width to the dot pitch (DOT_SIZE + 2 * DOT_GAP), which
+// is far below the 44pt floor. Widening it further is not a hit-slop problem:
+// it needs the dots themselves spaced further apart, which is a visual change
+// this component is not allowed to make. Height has no neighbour, so it takes
+// the full floor.
+const DOT_SIZE = s(spacing.xs);
+const DOT_GAP = s(spacing.xxs + 1);
+const TOUCH_TARGET_MIN = 44;
+const DOT_HIT_SLOP = {
+  left: DOT_GAP,
+  right: DOT_GAP,
+  top: (TOUCH_TARGET_MIN - DOT_SIZE) / 2,
+  bottom: (TOUCH_TARGET_MIN - DOT_SIZE) / 2,
+};
+
 // Gradient colors for each blockchain
 const BLOCKCHAIN_GRADIENTS: Record<BlockchainId, readonly [string, string, string]> = {
   solana: gradients.balanceCardSolana.colors,
@@ -360,8 +384,9 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
             {blockchains.map((chain, index) => (
               <Pressable
                 key={index}
+                testID={`balance-carousel-dot-${index}`}
                 onPress={() => index !== activeIndex && updateIndex(index)}
-                hitSlop={s(spacing.sm)}
+                hitSlop={DOT_HIT_SLOP}
                 accessibilityRole="button"
                 accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
                   name: chain.network.name,
@@ -518,11 +543,11 @@ const styles = StyleSheet.create({
     marginTop: vs(spacing.lg),
   },
   dot: {
-    width: s(spacing.xs),
-    height: s(spacing.xs),
+    width: DOT_SIZE,
+    height: DOT_SIZE,
     borderRadius: s(spacing.xxs),
     backgroundColor: colors.step.inactive,
-    marginHorizontal: s(spacing.xxs + 1),
+    marginHorizontal: DOT_GAP,
   },
   dotActive: {
     backgroundColor: colors.text.primary,
