@@ -32,7 +32,6 @@ vi.mock('@salmon/shared', async () => ({
   ...(await import('../../../../shared/src/theme/semantic')),
 }));
 
-import { DEBUG_SNOW_VARIANT } from './snowVariant';
 import { DepthBackground } from './DepthBackground';
 
 const COLUMN_WIDTH = 440;
@@ -122,10 +121,7 @@ describe('DepthBackground: the drift', () => {
     expect(snow.style.translate).toBe('');
   });
 
-  it('ships the blizzard variant by default, heroes riding the same drifting layer', () => {
-    // The switch mirrors apps/mobile/src/debug/snowVariant.ts; 'blizzard' is
-    // what the tuning is for, so it is what a fresh checkout shows.
-    expect(DEBUG_SNOW_VARIANT).toBe('blizzard');
+  it('draws the blizzard field, heroes riding the same drifting layer', () => {
     stubDom(false);
     render(<DepthBackground />);
     // The heroes' soft radial fill is serialised into the one background

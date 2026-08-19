@@ -34,7 +34,6 @@ jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('../../../../packages/shared/src/theme/semantic'),
 }));
 
-import { DEBUG_SNOW_VARIANT } from '../../src/debug/snowVariant';
 import { DepthBackground } from '../../src/components/DepthBackground';
 
 // Reanimated 4's own mock boots the Worklets native module, which does not
@@ -99,10 +98,7 @@ describe('DepthBackground', () => {
     }
   });
 
-  it('ships the blizzard variant by default, drawn floc for floc', () => {
-    // The switch is the owner's compare-in-live knob; 'blizzard' is what the
-    // tuning is for, so 'blizzard' is what a fresh checkout shows.
-    expect(DEBUG_SNOW_VARIANT).toBe('blizzard');
+  it('draws the blizzard field, floc for floc', () => {
     const { UNSAFE_queryAllByType } = render(<DepthBackground />);
     // Every regular floc plus every hero, once each in the shared tile —
     // and the blizzard is a lift over the current field, not a replacement.

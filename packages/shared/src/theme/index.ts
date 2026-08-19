@@ -122,13 +122,11 @@ export {
   blizzardSnowSvg,
   blizzardSnowTiled,
 } from './depthFieldBlizzard';
-export type { HeroFloc, SnowVariant } from './depthFieldBlizzard';
+export type { HeroFloc } from './depthFieldBlizzard';
 
 // Flesh geometry — the myoseptal texture as path data both platforms draw.
-export { fleshTile, fleshFades, fleshStrokes, fleshTiledStrokes } from './flesh';
-export type { FleshFadeStop, FleshStroke } from './flesh';
-export { fleshVariantFills, fleshVariantTiles } from './fleshVariants';
-export type { FleshFill, FleshVariant } from './fleshVariants';
+export { fleshTile, fleshFills } from './flesh';
+export type { FleshFill } from './flesh';
 
 // Seigaiha geometry — the scales motif as path data both platforms draw.
 export { seigaihaTile, seigaihaPaths, seigaihaTiledPaths, shiftSeigaiha } from './scales';

@@ -43,9 +43,6 @@ import {
   type SnowFloc,
 } from './depthField';
 
-/** Which snow field a renderer draws. Debug switches pick one. */
-export type SnowVariant = 'current' | 'blizzard';
-
 /**
  * The blizzard's tuneable constants. All distances are optical (`z`, where
  * size is `depthRamp.rxNear / z` — smaller `z` is nearer); all lengths are

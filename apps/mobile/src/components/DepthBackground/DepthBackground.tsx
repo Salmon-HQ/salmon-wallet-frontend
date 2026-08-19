@@ -56,7 +56,6 @@ import {
   depthFieldCycleMs,
   depthFieldTile,
   depthFieldTileHeight,
-  marineSnowTiled,
   semantic,
 } from '@salmon/shared';
 import React, { useEffect } from 'react';
@@ -75,16 +74,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { ClipPath, Defs, Ellipse, G, RadialGradient, Rect, Stop, Use } from 'react-native-svg';
 
-import { DEBUG_SNOW_VARIANT } from '../../debug/snowVariant';
-
 const { water } = semantic;
 
-/**
- * The field the debug switch selects. Constants, resolved once at module
- * scope: the switch is a compare-in-live knob, not runtime state.
- */
-const SNOW_FLOCS = DEBUG_SNOW_VARIANT === 'blizzard' ? blizzardSnowTiled : marineSnowTiled;
-const SNOW_HEROES = DEBUG_SNOW_VARIANT === 'blizzard' ? blizzardHeroes : [];
+/** The field — constants, resolved once at module scope. */
+const SNOW_FLOCS = blizzardSnowTiled;
+const SNOW_HEROES = blizzardHeroes;
 
 /** The `<Defs>` id of the heroes' soft radial fill. */
 const HERO_GRADIENT_ID = 'salmon-hero-floc';
