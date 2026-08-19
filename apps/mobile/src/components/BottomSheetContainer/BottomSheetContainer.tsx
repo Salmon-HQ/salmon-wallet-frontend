@@ -36,6 +36,8 @@ import {
   opacity,
 } from '@salmon/shared';
 import { BlurTargetProvider } from '../BlurContainer';
+import { Thermocline } from '../Thermocline';
+import { sheetMaterial } from '../../debug/sheetMaterial';
 import { curve, timing } from '../../utils/motion';
 
 // ============================================================================
@@ -167,6 +169,19 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
 }) => {
   const blurTargetRef = useRef<View>(null);
   const [isRendered, setIsRendered] = useState(visible);
+
+  // Debug material comparison (see src/debug/sheetMaterial.ts): with the
+  // switch on 'thermocline', every sheet whose caller passed no explicit
+  // `background` gets the thermocline ground the Receive sheet already
+  // carries — same thick tier, same fill-and-clip geometry — and the legacy
+  // texture overlay is suppressed so the materials never stack. Callers with
+  // their own `background` are untouched either way.
+  const debugThermocline = sheetMaterial === 'thermocline' && background == null;
+  const resolvedBackground = debugThermocline ? (
+    <Thermocline tier="thick" style={styles.debugThermocline} />
+  ) : (
+    background
+  );
 
   // Reanimated shared values for the sheet and backdrop
   const translateY = useSharedValue(SCREEN_HEIGHT);
@@ -304,20 +319,24 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
           <Reanimated.View
             style={[
               styles.sheetContainer,
-              background != null && styles.sheetTransparent,
+              resolvedBackground != null && styles.sheetTransparent,
               sheetAnimatedStyle,
               style,
             ]}
           >
-            {background}
+            {resolvedBackground}
             <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
               {/* No scales. Every sheet in the app mounts through here —
                   send, receive, seed backup, approval, settings — so this one
                   call site was painting the motif behind addresses, seed
                   words, inputs and amounts at once. */}
 
-              {/* Optional texture overlay (NFT sheets) */}
-              {showTextureOverlay && <View style={styles.textureOverlay} />}
+              {/* Optional texture overlay (NFT sheets) — suppressed while the
+                  debug thermocline carries the ground, so the two materials
+                  never stack. */}
+              {showTextureOverlay && !debugThermocline && (
+                <View style={styles.textureOverlay} testID="sheet-texture-overlay" />
+              )}
             </BlurTargetView>
 
             <BlurTargetProvider value={blurTargetRef}>
@@ -395,6 +414,14 @@ const styles = StyleSheet.create({
   },
   sheetTransparent: {
     backgroundColor: 'transparent',
+  },
+  // Mirror of the Receive sheet's thermocline geometry: the material fills
+  // the sheet and clips itself to the sheet's own top corners. Debug-only —
+  // dies with src/debug/sheetMaterial.ts.
+  debugThermocline: {
+    ...StyleSheet.absoluteFillObject,
+    borderTopLeftRadius: borderRadius.card,
+    borderTopRightRadius: borderRadius.card,
   },
   textureOverlay: {
     position: 'absolute',
