@@ -89,6 +89,7 @@ export {
   onboardingMarkTitleGap,
   identityClusterCenterOffset,
   resolveOnboardingGrid,
+  resolveOnboardingBands,
 } from './onboardingGrid';
 export type {
   OnboardingSlot,

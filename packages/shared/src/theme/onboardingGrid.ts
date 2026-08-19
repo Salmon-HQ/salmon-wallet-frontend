@@ -39,10 +39,13 @@
  * ## The rules that make it hold
  *
  * - A reserved height is the **union of what any screen in the variant needs**,
- *   never what the screen in front of you needs. A slot a screen does not use
- *   is left empty, never collapsed — otherwise arriving at the one screen that
- *   carries an extra element (the "What is a derivable?" helper on Success)
- *   shoves every control above it.
+ *   never what the screen in front of you needs. A slot one screen leaves
+ *   empty is still reserved for the sibling that fills it — otherwise arriving
+ *   at the one screen that carries an extra element (the "What is a
+ *   derivable?" helper on Success) shoves every control above it. A band no
+ *   screen in the variant can ever fill has a union of zero, and reserving for
+ *   it is the same defect in the other direction: it collapses, and pays the
+ *   freed height to `body` (`collapsedDescription`, `collapsedSecondary`).
  * - `body` is reserved from the union like every other slot, so the stack has
  *   one fixed height — and that is what lets the stack be **centred** in the
  *   viewport instead of anchored to the top. Anchoring left the slack in one
@@ -114,6 +117,9 @@ export type ReservedSlot = Exclude<OnboardingSlot, 'body'>;
  * empty, so it collapses to the same one-line air the lock keeps and the body
  * starts one title line under the title. The analytics consent screen (owner,
  * 2026-08-18: the ~230pt hole between "Help improve Salmon" and its copy).
+ * Its `secondary` band collapses for the same reason — its one screen offers
+ * a single action, so the union there is zero, not an allowance held for a
+ * sibling. See `collapsedSecondary`.
  *
  * `identity` and `lock` are the hero pair, and their fish is **centred on
  * the screen** (owner, 2026-08-18, superseding "the lock is the identity
@@ -267,6 +273,19 @@ export const identityClusterCenterOffset = 0;
 const collapsedDescription = titleLine - spacing.md;
 
 /**
+ * The `secondary` band, collapsed — `contentTight`.
+ *
+ * A reserved height is the union of what any screen in the variant needs
+ * (DESIGN.md §The onboarding grid), and `contentTight` has one screen, which
+ * carries no secondary action: the union is genuinely zero, so reserving a
+ * button's height there is a hole the variant can never fill rather than
+ * space held for a sibling screen. Collapsed exactly like the description
+ * above, with the freed height paid to `body` (see `rung`), so the stack, the
+ * assist band and the action hold the Y they have on `content`.
+ */
+const collapsedSecondary = 0;
+
+/**
  * One cluster for the two screens the owner tunes as a pair — the welcome
  * mark and the lock mark share size and band by this shared constant, not by
  * two numbers that happen to agree. Their vertical position is not here: it
@@ -292,18 +311,24 @@ const variantConstants = {
 
 const rung = (variant: OnboardingVariant, description: number): OnboardingGrid => {
   const constants = variantConstants[variant];
-  if (variant === 'lock' || variant === 'contentTight') {
-    // The collapsed description hands its height to `body`, per rung, so the
-    // variant's stack stays equal to its siblings' and no control band moves.
-    return build({
-      variant,
-      ...shared,
-      ...constants,
-      description: collapsedDescription,
-      body: constants.body + (description - collapsedDescription),
-    });
-  }
-  return build({ variant, ...shared, ...constants, description });
+  // A band whose union across the variant's screens is empty collapses, and
+  // every point it gives up is paid to `body` — the mechanism is the same for
+  // both bands, so the variant's stack stays equal to its siblings' and no
+  // control band moves.
+  const collapsesDescription = variant === 'lock' || variant === 'contentTight';
+  const resolvedDescription = collapsesDescription ? collapsedDescription : description;
+  const resolvedSecondary = variant === 'contentTight' ? collapsedSecondary : shared.secondary;
+  return build({
+    variant,
+    ...shared,
+    ...constants,
+    description: resolvedDescription,
+    secondary: resolvedSecondary,
+    body:
+      constants.body +
+      (description - resolvedDescription) +
+      (shared.secondary - resolvedSecondary),
+  });
 };
 
 /**
@@ -374,6 +399,34 @@ export const onboardingContentTightGridCompact = rung('contentTight', compactDes
  * copy for two points of height.
  */
 export const onboardingCompactHeight = 640;
+
+/**
+ * The table a screen actually draws, given whether it carries a secondary.
+ *
+ * `assist` is defined as a quiet line sitting directly over the bottom-most
+ * full-width primary (DESIGN.md §The ending borrows the onboarding ending's
+ * bands). On a screen that passes no secondary, a reserved secondary band
+ * wedges between the two and strands the quiet line in mid-air — so `assist`
+ * anchors to the bottom of the region it shares with `secondary`, and the
+ * height freed above goes to `body`, exactly as a collapsed description does.
+ *
+ * The stack is untouched, so `action` keeps the Y it has on every sibling
+ * screen; only what was empty above the assist changes hands. Screens that do
+ * carry a secondary — including one held permanently reserved for an element
+ * that appears on input — are returned unchanged.
+ *
+ * Read by both layouts so the rule is stated once rather than twice.
+ *
+ * @param grid - The variant's table, from `resolveOnboardingGrid`.
+ * @param hasSecondary - Whether the screen passes anything for the slot.
+ */
+export const resolveOnboardingBands = (
+  grid: OnboardingGrid,
+  hasSecondary: boolean
+): OnboardingGrid =>
+  hasSecondary || grid.secondary === 0
+    ? grid
+    : { ...grid, secondary: collapsedSecondary, body: grid.body + grid.secondary };
 
 /**
  * Picks the table for a variant and an available height.

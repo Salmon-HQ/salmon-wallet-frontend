@@ -20,9 +20,13 @@
  * ## Three rules do the rest
  *
  * 1. **Every slot occupies its reserved height whether or not it is filled.**
- *    A screen with no secondary action still leaves the band. So arriving at
- *    the screen that carries "What is a derivable?" reveals the link in space
- *    that was always there, and the button does not move.
+ *    A screen that shares its family with one carrying a secondary action
+ *    still leaves the band, so arriving at the screen with "What is a
+ *    derivable?" reveals the link in space that was always there and the
+ *    button does not move. The one band a screen genuinely never shares is
+ *    the exception: a screen that passes no secondary at all hands that height
+ *    to `body` and lets `assist` sit directly over the action — see
+ *    `resolveOnboardingBands`. The stack is unchanged, so `action` is not.
  * 2. **The stack is one fixed height, and it is centred in the viewport.**
  *    Because the stack's height does not vary within a family, every slot
  *    lands at the same Y on every screen of that family.
@@ -61,6 +65,7 @@ import {
   identityClusterCenterOffset,
   motionEasing,
   reducedMotion,
+  resolveOnboardingBands,
   resolveOnboardingGrid,
   SINK_FLOAT_TRAVEL,
   SINK_OUT_MS,
@@ -225,7 +230,11 @@ export function OnboardingLayout({
   // happens to be up. Resolving it from `available` would drop a description
   // line when the keyboard opened, which is a slot moving for the exact reason
   // this component exists to prevent.
-  const grid = resolveOnboardingGrid(variant, measured);
+  // The screen's own table: a screen that passes no secondary hands that band
+  // to `body` and drops its assist onto the action, per
+  // `resolveOnboardingBands`. The stack is the same either way, so `action`
+  // does not move.
+  const grid = resolveOnboardingBands(resolveOnboardingGrid(variant, measured), secondary != null);
 
   // The hero pair centres its fish on the screen (owner, 2026-08-18), so its
   // stack fills the column and the actions sit at the bottom; the other

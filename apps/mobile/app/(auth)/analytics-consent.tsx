@@ -77,9 +77,16 @@ export default function AnalyticsConsentScreen() {
           {/*
             The longest description in the flow at roughly seven lines. It is
             not a "mini description" and must not be forced into that slot, so
-            it lives in `body` — which is the give — top-anchored, with the
-            empty description band collapsed by `contentTight`, so it starts
-            one title line under the title instead of below a reserved void.
+            it lives in `body` — which is the give — with the empty description
+            and secondary bands collapsed by `contentTight`, so the copy starts
+            one title line under the title instead of below a reserved void and
+            the footnote sits directly over Accept.
+
+            Centred inside its band rather than pinned to its top: this is the
+            one screen of its variant and `body` now holds every point the two
+            collapsed bands gave back, so anchoring the copy up left the icon,
+            title and copy clustered high over a hole. The band already owns
+            the space — the copy is centred in it, not padded down into it.
           */}
           <Text style={styles.copy} maxFontSizeMultiplier={fontScaleCap.chrome}>
             <Trans
@@ -110,7 +117,7 @@ const styles = StyleSheet.create({
   bodyContent: {
     flexGrow: 1,
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
   },
   copy: {
     color: semantic.text.primary,

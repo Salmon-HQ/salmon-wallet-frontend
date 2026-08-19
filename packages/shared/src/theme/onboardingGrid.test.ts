@@ -29,6 +29,7 @@ import {
   onboardingLockGridCompact,
   onboardingLockGridFull,
   onboardingSlots,
+  resolveOnboardingBands,
   resolveOnboardingGrid,
   type OnboardingGrid,
 } from './onboardingGrid';
@@ -80,7 +81,12 @@ describe('the onboarding slot grid', () => {
   });
 
   it.each(grids)('%s: no content slot is zero — an empty slot still occupies its band', (_n, g) => {
-    for (const height of reserved(g)) {
+    // Except a band whose union across the variant's screens is genuinely
+    // zero: `contentTight` has one screen and it offers a single action, so
+    // its `secondary` collapses rather than reserving a hole nothing can ever
+    // fill. Asserted on its own below.
+    const bands = g.variant === 'contentTight' ? reserved(g).filter((_h, i) => i !== 6) : reserved(g);
+    for (const height of bands) {
       expect(height).toBeGreaterThan(0);
     }
   });
@@ -96,7 +102,9 @@ describe('the onboarding slot grid', () => {
     // always there.
     expect(grid.assist).toBe(componentSizes.buttonHeightSmall + spacing.lg);
     expect(grid.assist).toBe(60);
-    expect(grid.secondary).toBe(componentSizes.buttonHeight + spacing.lg);
+    if (grid.variant !== 'contentTight') {
+      expect(grid.secondary).toBe(componentSizes.buttonHeight + spacing.lg);
+    }
     expect(grid.action).toBe(spacing.lg + componentSizes.buttonHeight + spacing['2xl']);
   });
 
@@ -167,11 +175,72 @@ describe('the onboarding slot grid', () => {
     // the control bands hold their Y; everything else is `content`'s table.
     expect(onboardingContentTightGridFull.stack).toBe(onboardingContentGridFull.stack);
     expect(onboardingContentTightGridCompact.stack).toBe(onboardingContentGridCompact.stack);
+    // `body` holds what both collapsed bands gave back — the description
+    // above, and the secondary below (see the next test).
     expect(onboardingContentTightGridFull.body - onboardingContentGridFull.body).toBe(
-      onboardingContentGridFull.description - onboardingContentTightGridFull.description
+      onboardingContentGridFull.description -
+        onboardingContentTightGridFull.description +
+        onboardingContentGridFull.secondary -
+        onboardingContentTightGridFull.secondary
     );
     expect(onboardingContentTightGridFull.mark).toBe(onboardingContentGridFull.mark);
     expect(onboardingContentTightGridFull.markSize).toBe(onboardingContentGridFull.markSize);
+  });
+
+  it('contentTight reserves nothing for a secondary its one screen can never have', () => {
+    // The union rule cuts both ways: a band no screen in the variant can fill
+    // is a hole, not an allowance. The consent screen offers a single action,
+    // so the band collapses and `body` takes the height — the stack, and with
+    // it the assist band and the action, are exactly `content`'s.
+    for (const grid of [onboardingContentTightGridFull, onboardingContentTightGridCompact]) {
+      expect(grid.secondary).toBe(0);
+    }
+    expect(onboardingContentGridFull.secondary).toBeGreaterThan(0);
+    expect(onboardingContentTightGridFull.stack).toBe(onboardingContentGridFull.stack);
+    expect(onboardingContentTightGridCompact.stack).toBe(onboardingContentGridCompact.stack);
+    expect(onboardingContentTightGridFull.assist).toBe(onboardingContentGridFull.assist);
+    expect(onboardingContentTightGridFull.action).toBe(onboardingContentGridFull.action);
+  });
+
+  describe('a screen with an assist and no secondary', () => {
+    // `assist` is the quiet line over the bottom-most primary. With no
+    // secondary to hold the band between them, the line would hang in mid-air,
+    // so it anchors to the bottom of the region the two share and `body` takes
+    // the height freed above it — the password screen's case.
+    const grid = onboardingContentGridFull;
+    const withSecondary = resolveOnboardingBands(grid, true);
+    const withoutSecondary = resolveOnboardingBands(grid, false);
+
+    it('puts its assist directly above the action', () => {
+      expect(withoutSecondary.secondary).toBe(0);
+      expect(withoutSecondary.assist).toBe(grid.assist);
+    });
+
+    it('hands the freed height to body, so the action does not move', () => {
+      expect(withoutSecondary.body).toBe(grid.body + grid.secondary);
+      // The action is the last band of a stack whose height did not change,
+      // so its top edge sits at `stack − action` on both — the button under
+      // the thumb is at the same Y as on every sibling screen. The assist,
+      // one band up, is the only thing that moved.
+      expect(withoutSecondary.stack).toBe(grid.stack);
+      expect(withoutSecondary.action).toBe(grid.action);
+      const actionTop = (g: OnboardingGrid) => g.stack - g.action;
+      expect(actionTop(withoutSecondary)).toBe(actionTop(grid));
+      const assistTop = (g: OnboardingGrid) => g.stack - g.action - g.secondary - g.assist;
+      expect(assistTop(withoutSecondary)).toBe(assistTop(grid) + grid.secondary);
+    });
+
+    it('leaves a screen that carries a secondary exactly as it was', () => {
+      expect(withSecondary).toBe(grid);
+      // And a variant whose band is already collapsed is returned untouched
+      // either way — the two mechanisms cannot double-count.
+      expect(resolveOnboardingBands(onboardingContentTightGridFull, false)).toBe(
+        onboardingContentTightGridFull
+      );
+      expect(resolveOnboardingBands(onboardingContentTightGridFull, true)).toBe(
+        onboardingContentTightGridFull
+      );
+    });
   });
 
   it('welcome and the lock share one cluster — same mark size, same band', () => {

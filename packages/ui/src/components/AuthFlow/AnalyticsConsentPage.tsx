@@ -87,10 +87,13 @@ export function AnalyticsConsentPage({
       title={<OnboardingTitle>{t('settings.analytics_prompt_title')}</OnboardingTitle>}
       body={
         /*
-          `marginBottom: 'auto'` pins the copy to the top of the body slot so
-          it reads immediately after the title instead of floating mid-slot.
+          `marginY: 'auto'` centres the copy in the body slot. This is the one
+          screen of its variant and `body` now holds every point the collapsed
+          description and secondary bands gave back, so pinning the copy to the
+          top left the icon, title and copy clustered high over a hole. The band
+          already owns the space — the copy is centred in it, not padded down.
         */
-        <Box sx={{ textAlign: 'center', marginBottom: 'auto' }}>
+        <Box sx={{ textAlign: 'center', marginY: 'auto' }}>
           <Body>
             <Trans i18nKey="settings.analytics_prompt_body" components={{ bold: <Bold /> }} />
           </Body>

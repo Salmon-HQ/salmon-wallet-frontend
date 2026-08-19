@@ -105,7 +105,9 @@ describe('OnboardingLayout', () => {
   it.each(['identity', 'content'] as const)(
     '%s: reserves every slot at that variant’s table height',
     (variant) => {
-      render(<OnboardingLayout variant={variant} />);
+      // With a secondary, so the variant's own table is what is drawn: a
+      // screen that passes none hands that band to `body` — asserted below.
+      render(<OnboardingLayout variant={variant} secondary={<Text>Second</Text>} />);
       const grid = tableFor(variant);
 
       expect(reservedHeights()).toEqual({
@@ -129,10 +131,21 @@ describe('OnboardingLayout', () => {
   it.each(['identity', 'content'] as const)(
     '%s: leaves an unused slot empty rather than collapsing it',
     (variant) => {
-      // The whole point. A screen with nothing in `assist` and nothing in
-      // `secondary` reserves exactly as much as one that fills both, so moving
-      // between them cannot move the primary action.
-      const bare = render(<OnboardingLayout variant={variant} action={<Text>Go</Text>} />);
+      // The whole point. A screen with nothing in `assist`, and a `secondary`
+      // held reserved for a control that has not arrived, reserves exactly as
+      // much as one that fills both — so moving between them cannot move the
+      // primary action.
+      const bare = render(
+        <OnboardingLayout
+          variant={variant}
+          secondary={
+            <ReservedSlot visible={false}>
+              <Text>Check derivables</Text>
+            </ReservedSlot>
+          }
+          action={<Text>Go</Text>}
+        />
+      );
       const bareHeights = reservedHeights();
       bare.unmount();
 
@@ -150,6 +163,43 @@ describe('OnboardingLayout', () => {
       );
 
       expect(reservedHeights()).toEqual(bareHeights);
+    }
+  );
+
+  it.each(['identity', 'content'] as const)(
+    '%s: a screen with an assist and no secondary puts the assist over the action',
+    (variant) => {
+      // The password screen's case. `assist` is the quiet line over the
+      // bottom-most primary, so with no secondary to hold the band between
+      // them the line anchors to the bottom of the region the two share and
+      // `body` takes the height freed above it.
+      const grid = tableFor(variant);
+      const withSecondary = render(
+        <OnboardingLayout
+          variant={variant}
+          assist={<Text>Terms</Text>}
+          secondary={<Text>Second</Text>}
+          action={<Text>Go</Text>}
+        />
+      );
+      const withHeights = reservedHeights();
+      withSecondary.unmount();
+
+      render(
+        <OnboardingLayout variant={variant} assist={<Text>Terms</Text>} action={<Text>Go</Text>} />
+      );
+      const withoutHeights = reservedHeights();
+
+      expect(withoutHeights.secondary).toBe(0);
+      expect(withoutHeights.assist).toBe(withHeights.assist);
+      expect(withoutHeights.body).toBe(grid.body + grid.secondary);
+      // The action is the last band of a stack of unchanged height, so it is
+      // at the same Y: every band still sums to the same total, and the action
+      // band itself is untouched.
+      expect(withoutHeights.action).toBe(withHeights.action);
+      const total = (heights: Record<string, number>) =>
+        Object.values(heights).reduce((sum, height) => sum + height, 0);
+      expect(total(withoutHeights)).toBe(total(withHeights));
     }
   );
 
@@ -311,16 +361,20 @@ describe('OnboardingLayout', () => {
     // `credential` — the field family whose stack stays fixed; the hero pair
     // re-centres its fish instead and hands `body` the difference.
     const grid = onboardingIdentityGridFull;
-    const view = render(
-      <OnboardingLayout variant="credential" title={<Text>Title</Text>} body={<Text>Body</Text>} />
+    const screenUnderTest = () => (
+      <OnboardingLayout
+        variant="credential"
+        title={<Text>Title</Text>}
+        body={<Text>Body</Text>}
+        secondary={<Text>Second</Text>}
+      />
     );
+    const view = render(screenUnderTest());
     layout(grid.stack);
     expect(screen.getByTestId('onboarding-slot-description')).toBeTruthy();
 
     mockKeyboardHeight.mockReturnValue(grid.description - 1);
-    view.rerender(
-      <OnboardingLayout variant="credential" title={<Text>Title</Text>} body={<Text>Body</Text>} />
-    );
+    view.rerender(screenUnderTest());
 
     expect(screen.queryByTestId('onboarding-slot-description')).toBeNull();
     expect(screen.getByTestId('onboarding-slot-mark')).toBeTruthy();
