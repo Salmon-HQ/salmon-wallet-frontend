@@ -86,15 +86,42 @@ describe('seigaiha geometry', () => {
     // Row 2 is row 1 translated; the tile is one full period of that lattice.
     // A tile wider or taller than the period leaves a bare column or band at
     // every repeat, which is what the exported artboard size used to do.
-    const rowSpan = (a: string, b: string) => {
-      const xs = [...points(a), ...points(b)].map(([x]) => x);
+    const rowSpan = (a: string) => {
+      const xs = points(a).map(([x]) => x);
       return Math.max(...xs) - Math.min(...xs);
     };
-    expect(rowSpan(seigaihaPaths[0], seigaihaPaths[1])).toBeCloseTo(W, 2);
-    expect(rowSpan(seigaihaPaths[2], seigaihaPaths[3])).toBeCloseTo(W, 2);
+    expect(rowSpan(seigaihaPaths[0])).toBeCloseTo(W, 2);
+    expect(rowSpan(seigaihaPaths[1])).toBeCloseTo(W, 2);
 
-    const rowOffset = points(seigaihaPaths[2])[0][1] - points(seigaihaPaths[0])[0][1];
+    const rowOffset = points(seigaihaPaths[1])[0][1] - points(seigaihaPaths[0])[0][1];
     expect(2 * rowOffset).toBeCloseTo(H, 2);
+  });
+
+  it('rests every cusp exactly on an arc apex of the row below', () => {
+    // The seigaiha relation itself: the two points where an arc ends (the
+    // cusps) sit on the topmost point of the arcs flanking it from the row
+    // below. The paths are generated from the formula in `scales.ts` so this
+    // holds to float precision; hand-edited numbers broke it by up to 1.23
+    // units, which is what this test exists to prevent.
+    const arcs = (d: string) => {
+      const p = points(d);
+      const out: Array<Array<[number, number]>> = [];
+      for (let i = 0; i < p.length; i += SAMPLES + 1) out.push(p.slice(i, i + SAMPLES + 1));
+      return out;
+    };
+    const cuspsOf = (d: string) => arcs(d).map((a) => a[0]).concat([arcs(d).at(-1)![SAMPLES]]);
+    const apexesOf = (d: string) =>
+      arcs(d).map((a) => a.reduce((top, pt) => (pt[1] < top[1] ? pt : top)));
+    const wrap = (dx: number) => ((dx % W) + 1.5 * W) % W - W / 2;
+
+    const rests = (cusps: Array<[number, number]>, apexes: Array<[number, number]>, dy: number) =>
+      cusps.every(([cx, cy]) =>
+        apexes.some(([ax, ay]) => Math.abs(wrap(cx - ax)) < 1e-6 && Math.abs(cy - ay - dy) < 1e-6)
+      );
+
+    // Row 1 cusps on row 2 apexes; row 2 cusps on the next period's row 1.
+    expect(rests(cuspsOf(seigaihaPaths[0]), apexesOf(seigaihaPaths[1]), 0)).toBe(true);
+    expect(rests(cuspsOf(seigaihaPaths[1]), apexesOf(seigaihaPaths[0]), H)).toBe(true);
   });
 
   it('shifts paths without disturbing their shape', () => {
