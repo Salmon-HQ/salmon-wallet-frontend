@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 
 jest.mock('react-i18next', () => ({
@@ -25,12 +26,19 @@ jest.mock('@salmon/shared', () => ({
     button: { primaryBackground: '#FF5C45', primaryText: '#070911' },
     status: { warningBackground: '#3A2C10', errorBackground: '#3A1620' },
   },
-  fontSize: { xs: 10, sm: 14, base: 16, bodyLg: 18, '2xl': 24 },
-  fontFamilyNative: { bold: 'System', semiBold: 'System', medium: 'System', regular: 'System' },
+  fontSize: { xs: 10, sm: 14, base: 16, mono: 13, bodyLg: 18, '2xl': 24 },
+  fontFamilyNative: {
+    bold: 'System',
+    semiBold: 'System',
+    medium: 'System',
+    regular: 'System',
+    mono: 'GeistMonoRegular',
+  },
   letterSpacing: { wide: 0, change: 0 },
-  lineHeight: { condensed: 1.2 },
+  lineHeight: { condensed: 1.2, snug: 1.4 },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, headerPadding: 16 },
-  borderRadius: { lg: 16, xl: 20, full: 9999 },
+  borderRadius: { r1: 4, lg: 16, xl: 20, full: 9999 },
+  chunkAddress: (address: string) => address.replace(/(.{4})/g, '$1 ').trim(),
   componentSizes: {
     qrBorderWidth: 8,
     receiveContentGap: 16,
@@ -110,6 +118,39 @@ describe('ReceiveSheet chain identity', () => {
 
     expect(screen.getByText('token.receive.networkOnlyTitle:Bitcoin')).toBeTruthy();
     expect(screen.getByText('token.receive.networkOnlyBody:Bitcoin')).toBeTruthy();
+  });
+});
+
+describe('ReceiveSheet address', () => {
+  it('renders the address in mono, chunked, with leading derived from its size', () => {
+    render(<ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="solana" />);
+
+    const address = screen.getByTestId('receive-address');
+    const style = StyleSheet.flatten(address.props.style);
+
+    expect(address.props.children).toBe(
+      '7xKX tg2C W87d 97TX JSDp bD5j Bkhe TqA8 3TZR uJos gAsU'
+    );
+    expect(style.fontFamily).toBe('GeistMonoRegular');
+    expect(style.fontSize).toBe(13);
+    // Wrapped chunks collided when the leading was a literal unrelated to the size.
+    expect(style.lineHeight).toBeGreaterThan(style.fontSize);
+  });
+});
+
+describe('ReceiveSheet shapes and labels', () => {
+  it('gives the chain chip the chip radius, not a pill', () => {
+    render(<ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="solana" />);
+
+    const chip = screen.getByTestId('receive-chain-badge');
+    expect(StyleSheet.flatten(chip.props.style).borderRadius).toBe(4);
+  });
+
+  it('renders the copy label as its translation says, with no text transform', () => {
+    render(<ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="solana" />);
+
+    const label = screen.getByText('token.receive.copyAddress');
+    expect(StyleSheet.flatten(label.props.style).textTransform).toBeUndefined();
   });
 });
 

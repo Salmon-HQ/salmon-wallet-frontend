@@ -73,6 +73,5 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.sm,
-    textTransform: 'capitalize',
   },
 });

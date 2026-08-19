@@ -1,4 +1,5 @@
 import {
+  chunkAddress,
   colors,
   fontSize,
   getChainDisplayName,
@@ -172,9 +173,13 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
           </View>
         </View>
 
-        {/* Address */}
-        <Text style={styles.address} selectable testID="receive-address">
-          {address}
+        {/* Address — mono in 4-character chunks, the same treatment the send
+            confirmation gives a full address: fixed-width chunks are what let
+            the eye compare a prefix and a suffix positionally. Not selectable,
+            because the chunk spaces are not part of the address; the copy
+            button below hands over the real string. */}
+        <Text style={styles.address} testID="receive-address">
+          {chunkAddress(address)}
         </Text>
 
         {/* Wrong-network deposits are unrecoverable, so say so here rather
@@ -266,7 +271,9 @@ const styles = StyleSheet.create({
   },
   chainBadge: {
     backgroundColor: semantic.surface.raised,
-    borderRadius: ms(borderRadius.full),
+    // A text chip takes the chip step, not a pill: the Control Radius Rule
+    // reserves `full` for what genuinely is a circle (avatars, toggles).
+    borderRadius: ms(borderRadius.r1),
     borderWidth: 1,
     borderColor: semantic.border.raised,
     paddingVertical: vs(spacing.xs),
@@ -279,12 +286,13 @@ const styles = StyleSheet.create({
     letterSpacing: letterSpacing.wide,
   },
   address: {
-    fontSize: ms(fontSize.base),
-    fontFamily: fontFamilyNative.bold,
+    fontSize: ms(fontSize.mono),
+    fontFamily: fontFamilyNative.mono,
     color: colors.text.primary,
     textAlign: 'center',
-    letterSpacing: letterSpacing.change,
-    lineHeight: ms(14 * lineHeight.condensed),
+    // Derived from the size the line actually renders at — a literal here let
+    // the wrapped chunks of a long address collide.
+    lineHeight: ms(fontSize.mono * lineHeight.snug),
   },
   copyButton: {
     flexDirection: 'row',
@@ -307,7 +315,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.bold,
     color: colors.button.primaryText,
     textAlign: 'center',
-    textTransform: 'capitalize',
   },
 });
 

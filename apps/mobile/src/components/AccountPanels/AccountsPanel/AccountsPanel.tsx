@@ -128,7 +128,10 @@ function AccountListItem({
 
         {isActive && (
           <View style={styles.checkmarkContainer}>
-            <CheckCircleIcon size={iconSize.lg} color={semantic.status.success} />
+            {/* Selection is salmon, not green: green is a status ink (an
+                outcome), and a selected row is not an outcome. Same
+                vocabulary the settings selectors use. */}
+            <CheckCircleIcon size={iconSize.lg} color={semantic.accent.ink} />
           </View>
         )}
       </View>
@@ -264,9 +267,10 @@ const styles = StyleSheet.create({
   },
   accountAddress: {
     color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
-    lineHeight: fontSize.caption * lineHeight.normal,
+    // An address is position-critical, so it reads in mono at the mono step.
+    fontFamily: fontFamilyNative.mono,
+    fontSize: fontSize.mono,
+    lineHeight: fontSize.mono * lineHeight.snug,
     marginTop: spacing.xxs,
   },
   actionButtons: {
