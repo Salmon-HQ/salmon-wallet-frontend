@@ -15,6 +15,7 @@ export {
   CurrencySelector,
   DepthBackground,
   ExplorerSelector,
+  FadeThrough,
   LanguageSelector,
   LoadingScreen,
   LockScreen,
