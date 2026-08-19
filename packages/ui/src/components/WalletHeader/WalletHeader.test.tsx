@@ -57,6 +57,9 @@ vi.mock('@salmon/shared', async () => ({
 import { WalletHeader } from './WalletHeader';
 
 const { motionMs } = await import('../../../../shared/src/theme/durations');
+const { CHROME_SCALE, SINK_EXIT_SCALE, SINK_FLOAT_TRAVEL } = await import(
+  '../../../../shared/src/motion/sinkFloat'
+);
 const { SINK_FLOAT_STAGGER_MS } = await import('../../../../shared/src/motion/sinkFloat');
 
 const FIRST_ADDRESS = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
@@ -125,5 +128,21 @@ describe('WalletHeader copy address', () => {
     // Still the same control, and still holding its confirmation.
     expect(screen.getByTestId('copy-tick')).toBe(tick);
     expect(screen.getByLabelText('actions.copied')).toBeTruthy();
+  });
+
+  it('speaks the verb at chrome depth, taking the number from shared rather than deriving one', () => {
+    render(
+      <WalletHeader accountName="Account 1" address={FIRST_ADDRESS} onCopyAddress={vi.fn()} />
+    );
+
+    const line = screen.getByText('Account 1').parentElement as HTMLElement;
+    expect(line.style.getPropertyValue('--salmon-sink-float-scale')).toBe(String(CHROME_SCALE));
+    // Half the depth of content, not a depth the header computed for itself —
+    // and shallower than content, so the frame never out-speaks what it frames.
+    expect(CHROME_SCALE).toBeGreaterThan(SINK_EXIT_SCALE);
+    // Travel stays the accent, still at chrome's half.
+    expect(line.style.getPropertyValue('--salmon-sink-float-travel')).toBe(
+      `${SINK_FLOAT_TRAVEL / 2}px`
+    );
   });
 });

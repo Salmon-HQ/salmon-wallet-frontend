@@ -20,7 +20,9 @@ vi.mock('@salmon/shared', async () => ({
 }));
 
 const { reducedMotion } = await import('../../../../shared/src/theme/durations');
-const { FLOAT_DELAY_MS, SINK_OUT_MS } = await import('../../../../shared/src/motion/sinkFloat');
+const { FLOAT_DELAY_MS, FLOAT_ENTER_SCALE, SINK_EXIT_SCALE, SINK_OUT_MS } = await import(
+  '../../../../shared/src/motion/sinkFloat'
+);
 const { SinkFloat } = await import('./SinkFloat');
 
 function stubMatchMedia(matches: boolean) {
@@ -103,20 +105,63 @@ describe('SinkFloat', () => {
     expect(screen.getByText('bitcoin')).toBeTruthy();
   });
 
-  it('carries the travel and the two clocks as styles, so overrides need no new stylesheet', () => {
+  it('carries the travel, the depth and the two clocks as styles, so overrides need no new stylesheet', () => {
     stubMatchMedia(false);
     render(
-      <SinkFloat transitionKey="solana" distance={14} floatMs={280} sinkMs={180}>
+      <SinkFloat transitionKey="solana" distance={14} scale={0.8} floatMs={280} sinkMs={180}>
         <span>content</span>
       </SinkFloat>
     );
 
     const frame = screen.getByText('content').parentElement as HTMLElement;
     expect(frame.style.getPropertyValue('--salmon-sink-float-travel')).toBe('14px');
+    expect(frame.style.getPropertyValue('--salmon-sink-float-scale')).toBe('0.8');
     expect(frame.style.getPropertyValue('--salmon-sink-float-in')).toBe('280ms');
     expect(frame.style.getPropertyValue('--salmon-sink-float-out')).toBe('180ms');
-    // The float is real CSS built from the vocabulary, both media at once.
-    expect(document.head.innerHTML).toContain('scale(0.96)');
+  });
+
+  it('arrives from depth: the float rises from the shared enter scale', () => {
+    stubMatchMedia(false);
+    render(
+      <SinkFloat transitionKey="solana">
+        <span>content</span>
+      </SinkFloat>
+    );
+
+    const frame = screen.getByText('content').parentElement as HTMLElement;
+    expect(frame.style.getPropertyValue('--salmon-sink-float-scale')).toBe(
+      String(FLOAT_ENTER_SCALE)
+    );
+  });
+
+  it('recedes on the way out — the half that was missing, when the exit only slid and dimmed', () => {
+    stubMatchMedia(false);
+    const { rerender } = render(
+      <SinkFloat transitionKey="solana">
+        <span>solana</span>
+      </SinkFloat>
+    );
+    rerender(
+      <SinkFloat transitionKey="bitcoin">
+        <span>bitcoin</span>
+      </SinkFloat>
+    );
+
+    // Still the outgoing subtree, and it now goes away from the viewer rather
+    // than off a shelf: the depth is on the frame and the sink keyframe spends
+    // it on a scale, not on travel and light alone.
+    const sinking = screen.getByText('solana').parentElement as HTMLElement;
+    expect(sinking.style.getPropertyValue('--salmon-sink-float-scale')).toBe(
+      String(SINK_EXIT_SCALE)
+    );
+    const css = document.head.innerHTML;
+    const transformAnimation = css
+      .split(`.${sinking.className.split(' ').pop()}{`)[1]
+      ?.match(/animation:([\w-]+)/)?.[1];
+    expect(transformAnimation).toBeDefined();
+    const sinkKeyframes = css.split(`@keyframes ${transformAnimation}{`)[1]?.split('}}')[0];
+    expect(sinkKeyframes).toContain('transform:none');
+    expect(sinkKeyframes).toContain('scale(var(--salmon-sink-float-scale))');
   });
 
   it('cuts instantly under reduce motion — and still swaps', () => {

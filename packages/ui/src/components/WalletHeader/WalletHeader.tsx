@@ -28,6 +28,7 @@ import {
   motionMs,
   semantic,
   useCopyFeedback,
+  CHROME_SCALE,
   SINK_FLOAT_STAGGER_MS,
   SINK_FLOAT_TRAVEL,
 } from '@salmon/shared';
@@ -39,14 +40,22 @@ import { SinkFloat } from '../SinkFloat';
 
 /**
  * The verb at chrome scale (DESIGN.md, "Chrome speaks the verb at chrome
- * scale"): the account line travels like the content below it, but smaller
- * and quicker — half the travel, in on `drift`, out on `ebb`, and a float
- * delay of one sink plus a stagger-beat. Keyed on the address, so a chain
- * switch and an account switch ride the same gesture; on first mount nothing
- * sank, so the line simply floats.
+ * scale"): the account line travels like the content below it, but shallower
+ * and quicker — in on `drift`, out on `ebb`, and a float delay of one sink
+ * plus a stagger-beat. Keyed on the address, so a chain switch and an account
+ * switch ride the same gesture; on first mount nothing sank, so the line
+ * simply floats.
+ *
+ * "Half" is spent on the **depth**, which is what carries the verb since it
+ * was re-weighted (DESIGN.md, §The verb reads as depth, not as a slide), and
+ * it is `CHROME_SCALE` — a shared, named number — rather than a division done
+ * here, because a depth derived at a call site is exactly how the exit's
+ * missing recession stayed hidden. The travel keeps its own half, since travel
+ * is still only the accent.
  */
 const accountLineVerb = {
   distance: SINK_FLOAT_TRAVEL / 2,
+  scale: CHROME_SCALE,
   floatMs: motionMs.drift,
   sinkMs: motionMs.ebb,
   holdMs: motionMs.ebb + SINK_FLOAT_STAGGER_MS,
