@@ -170,6 +170,28 @@
     "no_trusted_apps": "No hay apps conectadas",
     "no_trusted_apps_hint": "Las apps que conectes aparecerán aquí",
     "help_support": "Ayuda & Soporte",
+    "support": {
+      "faq": {
+        "title": "Preguntas Frecuentes",
+        "description": "Encontrá respuestas a las preguntas más comunes"
+      },
+      "docs": {
+        "title": "Documentación",
+        "description": "Aprendé a usar Salmon Wallet"
+      },
+      "twitter": {
+        "title": "Twitter / X",
+        "description": "Enterate de las novedades y escribinos"
+      },
+      "discord": {
+        "title": "Comunidad de Discord",
+        "description": "Sumate a nuestra comunidad para recibir ayuda"
+      },
+      "email": {
+        "title": "Soporte por Email",
+        "description": "Contactanos directamente para recibir ayuda"
+      }
+    },
     "security_notice": "El equipo de Salmon Wallet nunca te va a pedir tu frase de recuperación ni tus claves privadas. No compartas esta información con nadie.",
     "currency": "Moneda de visualización",
     "backup": "Respaldar Seed Phrase",

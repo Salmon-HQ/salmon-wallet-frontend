@@ -118,8 +118,8 @@ export function SupportSelector({
         <StyledListItemButton onClick={() => onOpenLink(option.url)}>
           <StyledListItemIcon>{ICON_MAP[option.id] || <QuestionIcon />}</StyledListItemIcon>
           <ListItemText
-            primary={option.title}
-            secondary={option.description}
+            primary={t(option.title)}
+            secondary={t(option.description)}
             primaryTypographyProps={{
               sx: {
                 color: colors.text.primary,
@@ -138,21 +138,16 @@ export function SupportSelector({
         </StyledListItemButton>
       </ListItem>
     ),
-    [onOpenLink]
+    [onOpenLink, t]
   );
 
   return (
-    <SettingsPanelContent title={t('settings.help_support', 'Help & Support')} onBack={onBack}>
+    <SettingsPanelContent title={t('settings.help_support')} onBack={onBack}>
       <StyledList>{options.map(renderOption)}</StyledList>
 
       <SecurityNotice>
         <SecurityIcon />
-        <SecurityText>
-          {t(
-            'settings.security_notice',
-            'Salmon Wallet team will never ask for your seed phrase or private keys. Never share this information with anyone.'
-          )}
-        </SecurityText>
+        <SecurityText>{t('settings.security_notice')}</SecurityText>
       </SecurityNotice>
     </SettingsPanelContent>
   );

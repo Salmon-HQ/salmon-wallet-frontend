@@ -60,6 +60,9 @@ export function SupportSelector({ options, onOpenLink, onBack }: SupportSelector
         style={styles.optionCard}
         onPress={() => onOpenLink(option.url)}
         activeOpacity={0.7}
+        // Every row leaves the app for an external URL (docs, social, mailto),
+        // so each one is a link, not a button.
+        accessibilityRole="link"
       >
         <View style={styles.optionIconContainer}>
           {React.createElement(ICON_MAP[option.id] || QuestionIcon, {
@@ -68,27 +71,22 @@ export function SupportSelector({ options, onOpenLink, onBack }: SupportSelector
           })}
         </View>
         <View style={styles.optionContent}>
-          <Text style={styles.optionTitle}>{option.title}</Text>
-          <Text style={styles.optionDescription}>{option.description}</Text>
+          <Text style={styles.optionTitle}>{t(option.title)}</Text>
+          <Text style={styles.optionDescription}>{t(option.description)}</Text>
         </View>
         <CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />
       </TouchableOpacity>
     ),
-    [onOpenLink]
+    [onOpenLink, t]
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.help_support', 'Help & Support')} onBack={onBack}>
+    <SettingsScreenLayout title={t('settings.help_support')} onBack={onBack}>
       {options.map(renderOption)}
 
       <View style={styles.securityNotice}>
         <ShieldCheckIcon size={iconSize.md} color={semantic.status.warning} />
-        <Text style={styles.securityText}>
-          {t(
-            'settings.security_notice',
-            'Salmon Wallet team will never ask for your seed phrase or private keys. Never share this information with anyone.'
-          )}
-        </Text>
+        <Text style={styles.securityText}>{t('settings.security_notice')}</Text>
       </View>
     </SettingsScreenLayout>
   );

@@ -215,9 +215,9 @@ export interface TrustedAppsSelectorBaseProps {
 export interface SupportOptionItem {
   /** Unique identifier */
   id: string;
-  /** Display title */
+  /** Translation key for the display title (resolved via t()) */
   title: string;
-  /** Short description */
+  /** Translation key for the short description (resolved via t()) */
   description: string;
   /** Link URL (https or mailto) */
   url: string;
@@ -242,32 +242,32 @@ export interface SupportSelectorBaseProps {
 export const SUPPORT_OPTIONS: SupportOptionItem[] = [
   {
     id: 'faq',
-    title: 'Frequently Asked Questions',
-    description: 'Find answers to common questions',
+    title: 'settings.support.faq.title',
+    description: 'settings.support.faq.description',
     url: 'https://salmonwallet.io/faq',
   },
   {
     id: 'docs',
-    title: 'Documentation',
-    description: 'Learn how to use Salmon Wallet',
+    title: 'settings.support.docs.title',
+    description: 'settings.support.docs.description',
     url: 'https://docs.salmonwallet.io',
   },
   {
     id: 'twitter',
-    title: 'Twitter / X',
-    description: 'Get updates and reach out to us',
+    title: 'settings.support.twitter.title',
+    description: 'settings.support.twitter.description',
     url: 'https://twitter.com/salmonwallet',
   },
   {
     id: 'discord',
-    title: 'Discord Community',
-    description: 'Join our community for support',
+    title: 'settings.support.discord.title',
+    description: 'settings.support.discord.description',
     url: 'https://discord.gg/salmonwallet',
   },
   {
     id: 'email',
-    title: 'Email Support',
-    description: 'Contact us directly for help',
+    title: 'settings.support.email.title',
+    description: 'settings.support.email.description',
     url: 'mailto:support@salmonwallet.io',
   },
 ];
