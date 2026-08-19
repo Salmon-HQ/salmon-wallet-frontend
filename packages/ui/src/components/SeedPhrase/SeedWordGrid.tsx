@@ -8,6 +8,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   borderWidth,
@@ -26,11 +27,17 @@ const Container = styled(Box)({
   gap: spacing.sm,
 });
 
+/**
+ * The Bedrock Rule (DESIGN.md) governs the surface a seed phrase actually
+ * rests on, and that is the cell rather than the screen behind it: the page
+ * already stands on bedrock, so a translucent cell drawn over it puts a live
+ * backdrop directly under the words. The cell takes the same opaque ground.
+ */
 const WordCard = styled(Box)({
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'center',
-  backgroundColor: colors.card.background,
+  backgroundColor: semantic.surface.bedrock,
   border: `${borderWidth.thin}px solid ${colors.card.border}`,
   borderRadius: borderRadius.md,
   paddingTop: spacing.sm,
@@ -50,15 +57,20 @@ const WordIndex = styled(Typography)({
   color: colors.text.tertiary,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.medium,
-  fontSize: fontSize.sm,
+  fontSize: fontSize.label,
   minWidth: componentSizes.iconSizeSmall,
 });
 
-// Seed words are Geist Mono (Seed Phrase Rule) — read character by character.
+/**
+ * Seed words are Geist Mono at the larger mono size, weight 500 (the Seed
+ * Phrase Rule) — the most position-critical string in the app, read character
+ * by character.
+ */
 const WordText = styled(Typography)({
   color: colors.text.primary,
   fontFamily: fontFamily.mono,
-  fontSize: fontSize.base,
+  fontSize: fontSize.monoLg,
+  fontWeight: fontWeight.medium,
 });
 
 export function SeedWordGrid({ words, columns = 3 }: SeedWordGridProps) {
@@ -67,7 +79,7 @@ export function SeedWordGrid({ words, columns = 3 }: SeedWordGridProps) {
   return (
     <Container>
       {words.map((word, index) => (
-        <WordCard key={index} sx={{ width: cardWidth }}>
+        <WordCard key={index} sx={{ width: cardWidth }} data-testid={`seed-word-cell-${index + 1}`}>
           <WordIndex>{index + 1}</WordIndex>
           <WordText>{word}</WordText>
         </WordCard>
