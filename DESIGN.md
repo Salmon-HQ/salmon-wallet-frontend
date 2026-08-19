@@ -790,6 +790,14 @@ it is not built. The scrim floor and the strip are unconditional, and the OS
 reduce-transparency signal still collapses the material to the nearest
 opaque plane.
 
+A rendering note the refraction strip earned the hard way (2026-08-19): on
+mobile the seigaiha pattern must be declared before the mask that consumes
+it, and the mask must set `maskUnits="userSpaceOnUse"` explicitly — iOS
+Fabric derives `maskContentUnits` from `maskUnits`, and the
+objectBoundingBox default rasterizes the pattern as a tiny fraction-space
+patch anchored at the band's origin. A structure-guard test in
+`ScalesBackground.test.tsx` holds both invariants.
+
 ### The scrim floor
 
 Blur without a scrim is a contrast lottery: the ratio depends on whatever pixel
@@ -1689,7 +1697,28 @@ in `packages/shared/src/types/ui/pending-value.ts`).
 
 The control that started the work is part of the report: while the request is in
 flight, the button that fired it says so and stops accepting a second press on
-top of the first.
+top of the first. The swap confirm is the one deliberate exception — see the
+sink-wave-float note under §The wait: there the tap's answer is the review
+sinking, not a spinner on the button.
+
+**Chrome speaks the verb at chrome scale (2026-08-19).** When the active chain
+switches, the home header's account line (name + truncated address) travels
+like the content below it, but smaller and quicker: half the travel (14dp),
+in on `drift` (280ms), out on `ebb` (180ms), and a float delay of one sink
+plus a stagger-beat (204ms) — only when something actually sank; first mount
+floats immediately. Only the text travels: the copy button and its feedback
+state stay mounted so the tick is never reset mid-hold. Keyed on the address,
+so account switches ride the same gesture. Reduce motion cuts instantly.
+
+**Copy feedback travels both ways (2026-08-19).** The copy→tick swap is a
+round trip, not a latch: the tick arrives (mobile: scale 0.4→1 on
+`settle`/`swell`; DOM: opacity crossfade on `swell`), holds for
+`feedbackHold`, then leaves on its own exit (mobile: `sink`/`ebb`; DOM: the
+same crossfade reversed) before the copy affordance returns. Nothing bounces
+— the old spring is gone. On mobile the wrapper hook lags its `copied` flag
+by the exit so the tick stays mounted while it sinks; on web and extension
+the internal `CopyTick` keeps both icons mounted and moves only opacity.
+Reduced motion drops the travel, never the hold.
 
 ### The wait — the water the logo disturbs, built
 
@@ -2035,6 +2064,16 @@ move real views. `react-native-svg` is not an alternative: `FeTurbulence` and
 notoriously unaccelerated and displaces pixels rather than elements. What ships
 is a physically correct train of rigid bodies floating, which is the part the
 eye actually reads.
+
+**Swap confirm — sink, wave, float (2026-08-19, mobile).** The confirm tap is
+the last thing the review does: it sinks immediately, with no button loader —
+a spinner on a button claims the button is working when the water is. The
+wave wait takes the screen for as long as sign, submit, confirm and settle
+run, and leaves on its own last wave (`useWaitExit`); only then does the
+receipt mount, so The Surfacing plays exactly once, never over an unconfirmed
+transaction. Failure is the exception: nothing surfaces — the wave cuts and
+the input floats back with the error. The wallet never shows a receipt it
+cannot stand behind.
 
 ### The Surfacing — the signature moment, built
 
