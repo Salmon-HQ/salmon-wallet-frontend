@@ -5,7 +5,7 @@ import {
   useCopyFeedback as useSharedCopyFeedback,
 } from '@salmon/shared';
 import type { CopyFeedbackKey } from '@salmon/shared';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing } from 'react-native';
 
 /** Where the tick grows from. Felt as an arrival, not a pop-in. */
@@ -50,14 +50,14 @@ export function useCopyFeedback() {
       sub.remove();
     };
   }, []);
-  // Lags `copied` on the way out, so the tick stays mounted while it sinks.
-  const [shown, setShown] = useState(false);
-  const lastKeyRef = useRef<CopyFeedbackKey | true | null>(null);
+  // Lags `copiedKey` on the way out, so the tick stays mounted while it
+  // sinks. Holding the key itself (rather than a flag plus a ref) keeps the
+  // rendered value in state — render must never read a ref.
+  const [shownKey, setShownKey] = useState<CopyFeedbackKey | true | null>(null);
 
   useEffect(() => {
     if (copied) {
-      lastKeyRef.current = copiedKey;
-      setShown(true);
+      setShownKey(copiedKey);
       scale.setValue(TICK_ENTER_SCALE);
       Animated.timing(scale, {
         toValue: 1,
@@ -78,7 +78,7 @@ export function useCopyFeedback() {
     // Unmount on a timer of the same length rather than the animation
     // callback: native-driver completions never arrive under Jest, and a
     // timer is just as deterministic on device.
-    const hideAt = setTimeout(() => setShown(false), exitMs);
+    const hideAt = setTimeout(() => setShownKey(null), exitMs);
     return () => {
       clearTimeout(hideAt);
       exit.stop();
@@ -89,12 +89,12 @@ export function useCopyFeedback() {
     sharedReset();
     scale.stopAnimation();
     scale.setValue(0);
-    setShown(false);
+    setShownKey(null);
   }, [sharedReset, scale]);
 
   return {
-    copied: shown,
-    copiedKey: shown ? lastKeyRef.current : null,
+    copied: shownKey !== null,
+    copiedKey: shownKey,
     scale,
     trigger,
     reset,
