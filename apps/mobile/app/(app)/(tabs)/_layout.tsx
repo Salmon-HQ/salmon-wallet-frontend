@@ -216,27 +216,47 @@ export default function TabLayout() {
     setWalletSwitcherVisible(false);
   }, [accountState.locked]);
 
+  // The parked gate release. A password unlock flips `locked` the instant the
+  // crypto resolves, and the gate leaving 'locked' unmounts LockContent — and
+  // with it the unlock wait, cutting its wave mid-crossing. The hold keeps the
+  // gate rendered as locked until LockContent reports the wave has left the
+  // screen (`onUnlockExited`, watchdog-backed), the same parked pattern the
+  // password screen uses for its route.
+  const [unlockHeld, setUnlockHeld] = useState(false);
+
   // Compute gate state
-  const gateState: GateState = accountState.locked
-    ? 'locked'
-    : settingsVisible
-      ? 'settings'
-      : walletSwitcherVisible
-        ? 'wallets'
-        : 'collapsed';
+  const gateState: GateState =
+    accountState.locked || unlockHeld
+      ? 'locked'
+      : settingsVisible
+        ? 'settings'
+        : walletSwitcherVisible
+          ? 'wallets'
+          : 'collapsed';
 
   // Lock handlers (moved from root _layout.tsx)
   const handleLockUnlock = useCallback(
     async (password: string): Promise<boolean> => {
+      // Held *before* the await: `locked` flips inside unlockAccounts, in an
+      // earlier microtask than any state set after it, so holding afterwards
+      // leaves one frame where the gate collapses and the wait unmounts.
+      setUnlockHeld(true);
       try {
-        return await accountActions.unlockAccounts(password);
+        const success = await accountActions.unlockAccounts(password);
+        if (!success) setUnlockHeld(false);
+        return success;
       } catch (err) {
         console.error('Unlock failed:', err);
+        setUnlockHeld(false);
         return false;
       }
     },
     [accountActions]
   );
+
+  const handleUnlockExited = useCallback(() => {
+    setUnlockHeld(false);
+  }, []);
 
   const handleLockUnlockWithKey = useCallback(
     async (keyJson: string): Promise<boolean> => {
@@ -823,6 +843,7 @@ export default function TabLayout() {
               onUnlock={handleLockUnlock}
               onUnlockWithKey={handleLockUnlockWithKey}
               onGetDerivedKey={handleGetDerivedKey}
+              onUnlockExited={handleUnlockExited}
               onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
               biometric={lockBiometricConfig}
             />

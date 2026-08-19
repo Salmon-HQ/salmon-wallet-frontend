@@ -57,6 +57,15 @@ export interface LockContentProps {
   onGetDerivedKey?: () => Promise<string | null>;
   /** Callback to remove all accounts (reset wallet) */
   onRemoveAllAccounts: () => Promise<void>;
+  /**
+   * Called once the unlock wait's closing wave has fully left the screen after
+   * a successful unlock. The owner holds the gate in its locked state until
+   * this fires — releasing it earlier unmounts this component (and the wave)
+   * mid-crossing, the same hard cut the password screen's parked route exists
+   * to prevent. LoadingScreen's own watchdog guarantees the exit callback, so
+   * the gate cannot be stranded.
+   */
+  onUnlockExited?: () => void;
   /** Biometric configuration */
   biometric?: BiometricConfig;
 }
@@ -70,6 +79,7 @@ export function LockContent({
   onUnlock,
   onUnlockWithKey,
   onRemoveAllAccounts,
+  onUnlockExited,
   biometric,
 }: LockContentProps) {
   const { t } = useTranslation();
@@ -248,6 +258,18 @@ export function LockContent({
   /** Same condition the button, its a11y state and its fill all read. */
   const unlockDisabled = isLoading || throttled || !password.trim();
 
+  /**
+   * Set on a successful unlock instead of releasing the gate immediately —
+   * the release unmounts this component, and an unmounted wait is a wave cut
+   * mid-crossing. Consumed exactly once by `handleWaitExited`.
+   */
+  const pendingUnlockRef = useRef(false);
+  const handleWaitExited = useCallback(() => {
+    if (!pendingUnlockRef.current) return;
+    pendingUnlockRef.current = false;
+    onUnlockExited?.();
+  }, [onUnlockExited]);
+
   const handleUnlock = useCallback(async () => {
     if (!password.trim()) {
       setError(t('lock.enter_password_error'));
@@ -258,14 +280,31 @@ export function LockContent({
     setError(null);
     Keyboard.dismiss();
 
+    // The wait, up before the work: unlocking derives the vault key on the JS
+    // thread, and a screen that appears after the freeze has explained nothing.
+    setShowLoadingScreen(true);
+    // Yield to UI thread so LoadingScreen renders before heavy crypto derivation
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     try {
       const success = await onUnlock(password);
       if (!success) {
+        // Back to the input, never stranded on the wave: dropping `visible`
+        // starts the wave's exit while this screen — still gate-held locked on
+        // a failure — stays mounted under it with the error in the assist band.
         refreshThrottle();
         setError(t('lock.wrong_password'));
         setPassword('');
         setShowLoadingScreen(false);
+        return;
       }
+      // Unlocked — but the gate may not open yet. `locked` has already flipped
+      // in shared state; the owner keeps the gate rendered as locked until
+      // `handleWaitExited` reports the last wave has left the screen
+      // (LoadingScreen's watchdog guarantees that report). The release is
+      // parked, the wave is handed its exit.
+      pendingUnlockRef.current = true;
+      setShowLoadingScreen(false);
     } catch (err) {
       console.error('Unlock failed:', err);
       setError(t('lock.unlock_failed'));
@@ -446,6 +485,7 @@ export function LockContent({
         title={t('lock.unlocking') || 'Unlocking Wallet'}
         showTips={true}
         tipInterval={3000}
+        onExited={handleWaitExited}
       />
     </>
   );
