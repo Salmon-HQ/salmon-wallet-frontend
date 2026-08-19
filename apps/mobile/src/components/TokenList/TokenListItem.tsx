@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   },
   changeText: {
     fontSize: ms(fontSize.caption),
-    fontFamily: fontFamilyNative.light,
+    fontFamily: fontFamilyNative.regular,
     letterSpacing: ms(-0.06, 0.3),
     flexShrink: 1,
   },

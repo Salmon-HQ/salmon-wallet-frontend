@@ -29,6 +29,7 @@ import {
   Share,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import Reanimated, { useReducedMotion } from 'react-native-reanimated';
@@ -89,22 +90,6 @@ import {
 import { useDeveloperMode } from '../../../src/contexts/DeveloperModeContext';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
 import { useTabChrome } from '../../../hooks/useTabChrome';
-
-// Map blockchain to logo URL (outside component to avoid recreation)
-const BLOCKCHAIN_LOGOS: Record<BlockchainId, string> = {
-  solana:
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-  'solana-devnet':
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-  bitcoin:
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
-  'bitcoin-testnet':
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
-  ethereum:
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
-  'ethereum-sepolia':
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
-};
 
 /**
  * Maps context networkId to transaction API networkId format.
@@ -365,7 +350,6 @@ export default function HomeScreen() {
           id: network.id,
           name: network.name,
           blockchain,
-          logo: BLOCKCHAIN_LOGOS[blockchain],
         },
         ...balanceData,
       };
@@ -782,20 +766,33 @@ export default function HomeScreen() {
 
   // Memoize the empty component
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
+  // The list only renders this once loading finished (TokenList shows the
+  // skeleton while `!hasData`), so there is no loading branch here. A failed
+  // load with zero tokens is an error state, never "No tokens found".
   const ListEmptyComponent = useMemo(
-    () => (
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyStateText}>
-          {loading
-            ? t('wallet.loading_tokens', 'Loading tokens...')
-            : t('wallet.no_tokens_found', 'No tokens found')}
-        </Text>
-        <Text style={styles.emptyStateSubtext}>
-          {t('wallet.tokens_empty_subtitle', 'Your tokens will appear here once you receive some')}
-        </Text>
-      </View>
-    ),
-    [loading, t]
+    () =>
+      balanceError ? (
+        <View style={styles.emptyState} testID="token-list-error">
+          <Text style={styles.emptyStateText}>
+            {t('wallet.tokens_load_error', "Your tokens couldn't be loaded right now.")}
+          </Text>
+          <TouchableOpacity
+            onPress={refresh}
+            accessibilityRole="button"
+            testID="token-list-retry-button"
+          >
+            <Text style={styles.retryText}>{t('actions.retry', 'Retry')}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>{t('wallet.no_tokens_found', 'No tokens found')}</Text>
+          <Text style={styles.emptyStateSubtext}>
+            {t('wallet.tokens_empty_subtitle', 'Your tokens will appear here once you receive some')}
+          </Text>
+        </View>
+      ),
+    [balanceError, refresh, t]
   );
 
   // Loading state - wait for hook to be ready
@@ -1084,6 +1081,13 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     color: colors.text.disabled,
     textAlign: 'center',
+  },
+  retryText: {
+    fontSize: fontSize.base,
+    fontFamily: fontFamilyNative.semiBold,
+    color: colors.accent.primary,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
   },
   // Bitcoin view styles
   bitcoinScrollView: {

@@ -48,6 +48,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import {
@@ -458,11 +459,13 @@ export default function CollectiblesScreen() {
   const loadError =
     mainnetQuery.error !== null || (developerNetworks && devnetQuery.error !== null);
 
-  // Check if all visible sections are empty (after loading)
+  // Check if all visible sections are empty (after loading).
+  // A failed load is not "you have no collectibles" — the error state owns
+  // that render, so the empty state stays out of it.
   const isEmpty = useMemo(() => {
-    if (isLoading) return false;
+    if (isLoading || loadError) return false;
     return visibleSectionKeys.every((key) => nftsBySections[key].nfts.length === 0);
-  }, [isLoading, visibleSectionKeys, nftsBySections]);
+  }, [isLoading, loadError, visibleSectionKeys, nftsBySections]);
 
   // // Get NFTs for current see all sheet
   // const seeAllNfts = useMemo(() => {
@@ -537,7 +540,7 @@ export default function CollectiblesScreen() {
           </View>
         )}
 
-        {/* Load failure banner — retry is pull-to-refresh */}
+        {/* Load failure banner — explicit retry (pull-to-refresh also works) */}
         {loadError && (
           <View style={styles.loadErrorBanner} testID="collectibles-load-error">
             <WarningNotice
@@ -546,13 +549,22 @@ export default function CollectiblesScreen() {
                 'collectibles.load_error',
                 "Your collectibles couldn't be loaded right now."
               )}
+              action={
+                <TouchableOpacity
+                  onPress={handleRefresh}
+                  accessibilityRole="button"
+                  testID="collectibles-retry-button"
+                >
+                  <Text style={styles.retryText}>{t('actions.retry', 'Retry')}</Text>
+                </TouchableOpacity>
+              }
             />
           </View>
         )}
 
         {/* Empty State */}
         {isEmpty && (
-          <View style={styles.emptyContainer}>
+          <View style={styles.emptyContainer} testID="collectibles-empty">
             <Text style={styles.emptyText}>{t('nft.emptyTitle', 'No Collectibles')}</Text>
             <Text style={styles.emptySubtext}>
               {t(
@@ -778,6 +790,11 @@ const styles = StyleSheet.create({
   loadErrorBanner: {
     marginHorizontal: s(spacing.headerPadding),
     marginBottom: vs(spacing.lg),
+  },
+  retryText: {
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: ms(fontSize.sm),
+    color: colors.accent.primary,
   },
   // Grid layout styles (matching NftSeeAllSheet pattern)
   sectionContainer: {

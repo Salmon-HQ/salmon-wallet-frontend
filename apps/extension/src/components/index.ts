@@ -34,6 +34,7 @@ export {
   SendPage,
   SupportSelector,
   SwapScreen,
+  TextButton,
   TokenAbout,
   TokenDetailContent,
   TokenDetailPage,

@@ -62,6 +62,7 @@ import { isSolanaAccount } from '@salmon/shared/utils/account';
 import { sessionArea } from '../../utils/storageCompat';
 import {
   WalletHeader,
+  TextButton,
   WarningNotice,
   BalanceCardCarousel,
   ActionButtonRow,
@@ -1513,6 +1514,20 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                           hiddenBalance={hiddenBalance}
                           blockchain={getBlockchainFromNetworkId(currentBlockchain)}
                         />
+                      ) : balanceError ? (
+                        /* Failed load with nothing to show is an error state,
+                           never "No tokens found". */
+                        <EmptyState data-testid="token-list-error">
+                          <EmptyStateText>
+                            {t(
+                              'wallet.tokens_load_error',
+                              "Your tokens couldn't be loaded right now."
+                            )}
+                          </EmptyStateText>
+                          <TextButton onClick={() => refresh()} testID="token-list-retry-button">
+                            {t('actions.retry', 'Retry')}
+                          </TextButton>
+                        </EmptyState>
                       ) : (
                         <EmptyState>
                           <EmptyStateText>{t('home.no_tokens', 'No tokens found')}</EmptyStateText>

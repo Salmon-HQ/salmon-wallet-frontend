@@ -15,7 +15,7 @@ import {
   type NftSectionKey,
   type NftSection,
 } from '@salmon/shared';
-import { NftCarouselSection, WarningNotice, visuallyHidden } from '@salmon/ui';
+import { NftCarouselSection, TextButton, WarningNotice, visuallyHidden } from '@salmon/ui';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -128,9 +128,16 @@ export function CollectiblesTab({
   const showChainLabel = renderedKeys.length > 1;
 
   const isLoading = visibleKeys.some((key) => nftsBySections[key].loading);
-  const isEmpty = !isLoading && visibleKeys.every((key) => nftsBySections[key].nfts.length === 0);
   const loadError =
     mainnetQuery.error !== null || (developerNetworks && devnetQuery.error !== null);
+  // A failed load is not "you have no collectibles" — the error state owns it.
+  const isEmpty =
+    !isLoading && !loadError && visibleKeys.every((key) => nftsBySections[key].nfts.length === 0);
+
+  const handleRetry = useCallback(() => {
+    void mainnetQuery.refresh();
+    if (developerNetworks) void devnetQuery.refresh();
+  }, [mainnetQuery, devnetQuery, developerNetworks]);
 
   const handleNftPress = useCallback(
     (nft: NftData) => {
@@ -159,6 +166,11 @@ export function CollectiblesTab({
           <WarningNotice
             tone="warning"
             title={t('collectibles.load_error', "Your collectibles couldn't be loaded right now.")}
+            action={
+              <TextButton onClick={handleRetry} testID="collectibles-retry-button">
+                {t('actions.retry', 'Retry')}
+              </TextButton>
+            }
           />
         </Box>
       )}

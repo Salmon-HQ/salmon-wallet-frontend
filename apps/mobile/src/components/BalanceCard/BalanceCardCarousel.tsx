@@ -24,7 +24,16 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  AccessibilityActionEvent,
+  Dimensions,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -117,6 +126,20 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
       onBlockchainChange?.(blockchain.network.blockchain, newIndex);
     },
     [blockchains, onBlockchainChange]
+  );
+
+  // Screen-reader chain switching: swipe gestures are invisible to assistive
+  // tech, so the chain identity element exposes increment/decrement actions.
+  const handleAccessibilityAction = useCallback(
+    (event: AccessibilityActionEvent) => {
+      const { actionName } = event.nativeEvent;
+      if (actionName === 'increment' && activeIndex < blockchains.length - 1) {
+        updateIndex(activeIndex + 1);
+      } else if (actionName === 'decrement' && activeIndex > 0) {
+        updateIndex(activeIndex - 1);
+      }
+    },
+    [activeIndex, blockchains.length, updateIndex]
   );
 
   const panGesture = Gesture.Pan()
@@ -256,7 +279,15 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
                 the water behind this card, not to the card, which is content
                 and carries the balance figure. Asserted in
                 BalanceCard.scales.test.tsx. */}
-            <View style={styles.logoGroup} testID="balance-carousel-logo-group">
+            <View
+              style={styles.logoGroup}
+              testID="balance-carousel-logo-group"
+              accessible
+              accessibilityRole="adjustable"
+              accessibilityLabel={currentBlockchain?.network.name}
+              accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+              onAccessibilityAction={handleAccessibilityAction}
+            >
               <View style={styles.logoContainer}>
                 {renderLogo(currentBlockchain?.network.blockchain || 'solana')}
               </View>
@@ -271,7 +302,16 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
             <View style={styles.contentGroup}>
               <View style={styles.balanceContainer}>
                 {renderBalance()}
-                <TouchableOpacity onPress={onToggleVisibility} style={styles.eyeButton}>
+                <TouchableOpacity
+                  onPress={onToggleVisibility}
+                  style={styles.eyeButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    hiddenBalance
+                      ? t('accessibility.show_balance', 'Show balance')
+                      : t('accessibility.hide_balance', 'Hide balance')
+                  }
+                >
                   {hiddenBalance ? (
                     <EyeSlashIcon size={ms(componentSizes.eyeIcon)} color={semantic.text.secondary} />
                   ) : (
@@ -279,29 +319,37 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
                   )}
                 </TouchableOpacity>
               </View>
-              {!hiddenBalance && (
-                <View style={styles.changeRow}>
-                  <Text style={[styles.changeText, { color: changeColor }]}>
-                    {showPercentage(changePercent)}
+              {/* Masked, not unmounted: hiding the balance must not move the
+                  layout (the DOM BalanceCard twin does the same). */}
+              <View style={styles.changeRow}>
+                {hiddenBalance ? (
+                  <Text style={[styles.changeText, { color: semantic.text.secondary }]}>
+                    {hiddenValue}
                   </Text>
-                  {changePercent >= 0 ? (
-                    <CaretUpIcon
-                      size={ms(componentSizes.changeArrowIcon)}
-                      color={changeColor}
-                      style={styles.changeArrow}
-                    />
-                  ) : (
-                    <CaretDownIcon
-                      size={ms(componentSizes.changeArrowIcon)}
-                      color={changeColor}
-                      style={styles.changeArrow}
-                    />
-                  )}
-                  <Text style={[styles.changeText, { color: changeColor }]}>
-                    ({formatChange(changeAmount)})
-                  </Text>
-                </View>
-              )}
+                ) : (
+                  <>
+                    <Text style={[styles.changeText, { color: changeColor }]}>
+                      {showPercentage(changePercent)}
+                    </Text>
+                    {changePercent >= 0 ? (
+                      <CaretUpIcon
+                        size={ms(componentSizes.changeArrowIcon)}
+                        color={changeColor}
+                        style={styles.changeArrow}
+                      />
+                    ) : (
+                      <CaretDownIcon
+                        size={ms(componentSizes.changeArrowIcon)}
+                        color={changeColor}
+                        style={styles.changeArrow}
+                      />
+                    )}
+                    <Text style={[styles.changeText, { color: changeColor }]}>
+                      ({formatChange(changeAmount)})
+                    </Text>
+                  </>
+                )}
+              </View>
             </View>
           </Animated.View>
         </GestureDetector>
@@ -309,8 +357,18 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
         {/* Pagination dots — fixed, not part of the sliding content */}
         {blockchains.length > 1 && (
           <View style={styles.pagination}>
-            {blockchains.map((_, index) => (
-              <View key={index} style={[styles.dot, index === activeIndex && styles.dotActive]} />
+            {blockchains.map((chain, index) => (
+              <Pressable
+                key={index}
+                onPress={() => index !== activeIndex && updateIndex(index)}
+                hitSlop={s(spacing.sm)}
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
+                  name: chain.network.name,
+                })}
+                accessibilityState={{ selected: index === activeIndex }}
+                style={[styles.dot, index === activeIndex && styles.dotActive]}
+              />
             ))}
           </View>
         )}
