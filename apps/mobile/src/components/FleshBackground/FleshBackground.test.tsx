@@ -33,14 +33,14 @@ const renderedPathCount = (variant?: FleshVariant): number => {
 };
 
 describe('FleshBackground variant switch', () => {
-  it('tells the three variants apart by geometry', () => {
+  it('tells the variants apart by geometry', () => {
     // If two variants ever rendered the same number of paths, the assertions
     // below would stop proving which drawing was chosen.
-    const counts = (['current', 'marbled', 'chevron'] as const).map(expectedPathCount);
-    expect(new Set(counts).size).toBe(3);
+    const counts = (['current', 'marbled'] as const).map(expectedPathCount);
+    expect(new Set(counts).size).toBe(2);
   });
 
-  it.each(['current', 'marbled', 'chevron'] as const)('renders %s when asked', (variant) => {
+  it.each(['current', 'marbled'] as const)('renders %s when asked', (variant) => {
     expect(renderedPathCount(variant)).toBe(expectedPathCount(variant));
   });
 

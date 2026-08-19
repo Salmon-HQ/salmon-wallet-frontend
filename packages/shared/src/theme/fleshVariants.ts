@@ -32,7 +32,7 @@
  */
 
 /** The switchable texture choices. `'current'` is the shipped `flesh.ts`. */
-export type FleshVariant = 'current' | 'marbled' | 'chevron';
+export type FleshVariant = 'current' | 'marbled';
 
 /** One filled band pass: `[path, fillOpacity]`. */
 export type FleshFill = readonly [d: string, opacity: number];
@@ -70,25 +70,10 @@ const MARBLED_INK: readonly [number, number] = [0.16, 0.05];
 export const marbledTile = { width: 150, height: 88 } as const;
 
 /* ------------------------------------------------------------------------ *
- * chevron — nested regular Vs. The graphic, "brand mark" option.
  * ------------------------------------------------------------------------ */
 
 /** Vs stacked per tile height. 3 over 84px = 28px apart. */
-const CHEVRON_BANDS = 3;
 
-/** Total vertical rise of each V, tile units. Must stay under the band
- * spacing so nested Vs never touch. */
-const CHEVRON_DEPTH = 12;
-
-/** `[min, max]` band width: each limb swells mid-run and sharpens into the
- * apex, so the V reads as cut flesh rather than a ruled zigzag. */
-const CHEVRON_WIDTH: readonly [number, number] = [1.6, 5];
-
-/** `[core, halo]` fill opacity — a touch quieter than marbled because the
- * regular geometry already carries more visual weight per band. */
-const CHEVRON_INK: readonly [number, number] = [0.13, 0.04];
-
-export const chevronTile = { width: 144, height: 84 } as const;
 
 /* ------------------------------------------------------------------------ *
  * Generation
@@ -152,46 +137,16 @@ const buildMarbled = (): ReadonlyArray<FleshFill> => {
   return fills;
 };
 
-const buildChevron = (): ReadonlyArray<FleshFill> => {
-  const { width: W, height: H } = chevronTile;
-  const S = H / CHEVRON_BANDS;
-  const [wMin, wMax] = CHEVRON_WIDTH;
-  const [core, halo] = CHEVRON_INK;
-  const STEPS = 24; // even, so a sample lands exactly on the apex at W/2
-
-  const fills: FleshFill[] = [];
-  for (let k = 0; k < CHEVRON_BANDS; k += 1) {
-    const samples: Sample[] = [];
-    for (let i = 0; i <= STEPS; i += 1) {
-      const t = i / STEPS;
-      const x = t * W;
-      // Triangle wave, apex at mid-tile; centred so the band never leaves
-      // the tile vertically (depth/2 + max width/2 < spacing/2).
-      const tri = Math.abs(2 * t - 1) - 0.5;
-      const y = (k + 0.5) * S + CHEVRON_DEPTH * tri;
-      // Along each limb: swell mid-run, sharpen into apex and tile edge.
-      // Periodic in x, so the zigzag hands off cleanly when the tile repeats.
-      const limb = t <= 0.5 ? t * 2 : (1 - t) * 2;
-      const half = (wMin + (wMax - wMin) * Math.sin(Math.PI * limb)) / 2;
-      samples.push([x, y, half]);
-    }
-    fills.push([outline(samples, HALO_SPREAD, 'y'), halo]);
-    fills.push([outline(samples, 1, 'y'), core]);
-  }
-  return fills;
-};
 
 /** Tile per candidate variant, keyed for the renderers' switch. */
 export const fleshVariantTiles = {
   marbled: marbledTile,
-  chevron: chevronTile,
 } as const;
 
 /**
  * The filled passes per candidate variant, wrap copies included — a renderer
  * only has to map over the array, exactly like `fleshTiledStrokes`.
  */
-export const fleshVariantFills: Record<'marbled' | 'chevron', ReadonlyArray<FleshFill>> = {
+export const fleshVariantFills: Record<'marbled', ReadonlyArray<FleshFill>> = {
   marbled: buildMarbled(),
-  chevron: buildChevron(),
 };

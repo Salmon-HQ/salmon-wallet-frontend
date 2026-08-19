@@ -16,7 +16,7 @@ import { fleshVariantFills, fleshVariantTiles } from './fleshVariants';
 const points = (d: string): ReadonlyArray<readonly [number, number]> =>
   Array.from(d.matchAll(/(-?[\d.]+),(-?[\d.]+)/g), (m) => [Number(m[1]), Number(m[2])] as const);
 
-describe.each(['marbled', 'chevron'] as const)('fleshVariants: %s', (variant) => {
+describe.each(['marbled'] as const)('fleshVariants: %s', (variant) => {
   const fills = fleshVariantFills[variant];
   const tile = fleshVariantTiles[variant];
 

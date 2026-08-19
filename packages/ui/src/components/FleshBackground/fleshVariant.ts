@@ -6,7 +6,7 @@
  * temporary flag).
  *
  * `'current'` is the shipped `flesh.ts` stroke texture; `'marbled'` and
- * `'chevron'` are the candidates in
+ * are the candidates in
  * `packages/shared/src/theme/fleshVariants.ts`. Delete this file once a
  * variant is signed off.
  */

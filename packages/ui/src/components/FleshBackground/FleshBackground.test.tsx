@@ -35,7 +35,7 @@ const renderedPathCount = (variant?: FleshVariant): number => {
 afterEach(cleanup);
 
 describe('FleshBackground variant switch (DOM)', () => {
-  it.each(['current', 'marbled', 'chevron'] as const)('renders %s when asked', (variant) => {
+  it.each(['current', 'marbled'] as const)('renders %s when asked', (variant) => {
     expect(renderedPathCount(variant)).toBe(expectedPathCount(variant));
   });
 

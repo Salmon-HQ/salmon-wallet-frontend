@@ -5,7 +5,7 @@
  *  - `'current'` — the shipped `flesh.ts` stroke texture.
  *  - `'marbled'` — wide tapered veins sweeping in nested arcs (organic,
  *    closest to the reference photos).
- *  - `'chevron'` — nested regular Vs (graphic, "brand mark").
+ *  - `'marbled'` — nested regular Vs (graphic, "brand mark").
  *
  * Flip the value below, save, let Fast Refresh reload — every salmon CTA
  * updates at once. The DOM side reads the mirror constant in
