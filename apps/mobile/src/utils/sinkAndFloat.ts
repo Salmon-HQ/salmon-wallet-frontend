@@ -38,56 +38,36 @@
  * Reduce motion: both helpers return `undefined`, which hands Reanimated no
  * layout animation at all — the swap is an instant cut.
  */
-import { motionMs } from '@salmon/shared';
+import {
+  FLOAT_DELAY_MS,
+  FLOAT_ENTER_SCALE,
+  FLOAT_IN_MS,
+  SINK_FLOAT_STAGGER_MS,
+  SINK_FLOAT_TRAVEL,
+  SINK_OUT_MS,
+} from '@salmon/shared';
 import { withDelay, withTiming, type EntryExitAnimationFunction } from 'react-native-reanimated';
 
 import { verbDepth } from '../debug/verbDepth';
 import { curve, timing } from './motion';
 
 /**
- * How far things travel, dp. Owner's band is 24–40 (12–16 read as a nudge,
- * not as depth); dial it here and every consumer (home's chain swap,
- * onboarding, the swap steps, the wait's exit) moves together.
- */
-export const SINK_FLOAT_TRAVEL = 28;
-/**
- * Where the incoming content settles from. 0.96 rather than the route
- * transition's 0.97: a touch more pressure at depth, still felt rather than
- * seen — below ~0.95 it starts to read as zoom.
- */
-export const FLOAT_ENTER_SCALE = 0.96;
-/**
- * The float's length — drift×2 (560ms). Owner's band: 450–650. Long enough
- * to sit on the water's clock (between `rise` 420 and `tide` 720), short
- * enough that a step change never feels like The Surfacing.
- */
-export const FLOAT_IN_MS = motionMs.drift * 2;
-/**
- * The sink's length — tide/2 (360ms). Owner's band: 320–400. Shorter than
- * the float, always — but no longer `ebb`: water swallows things at its own
- * speed.
- */
-export const SINK_OUT_MS = motionMs.tide / 2;
-/**
- * The beat between the sink and the float (owner, 2026-08-18): without it the
- * two halves overlap and the eye never reads the double gesture. The float
- * waits out the whole sink **plus** a short perceptible pause (band 90–120ms
- * — under ~80 the beat vanishes, over ~150 it reads as lag). Tunable: the
- * owner calibrates on the device.
+ * The verb's numbers — distance, entering scale, the two clocks, the beat and
+ * the stagger — are owned by `@salmon/shared` (`motion/sinkFloat`), because
+ * the verb is drawn twice: Reanimated here, CSS animations in `packages/ui`.
+ * Each constant's derivation and its tuning band are documented there.
  *
- * Pass it as `delayMs` **only where something actually sinks first** — a
- * keyed content swap (home's chain switch), a step change with a real exit.
- * On arrivals with no prior sink (first mount of a screen, the wait's own
- * float) the same delay is pure lag; those sites pass nothing.
+ * Re-exported so mobile consumers keep importing them from the module that
+ * also hands them the animations.
  */
-export const FLOAT_DELAY_MS = SINK_OUT_MS + 90;
-/**
- * The step between bands when a surface arrives in pieces (onboarding's
- * float region, the swap review). Inherited from the Surfacing's chrome
- * stagger (`motionMs.stagger`, 24ms); owner's band is 24–40. Small groups
- * only — never more than 4–5 steps.
- */
-export const SINK_FLOAT_STAGGER_MS = motionMs.stagger;
+export {
+  FLOAT_DELAY_MS,
+  FLOAT_ENTER_SCALE,
+  FLOAT_IN_MS,
+  SINK_FLOAT_STAGGER_MS,
+  SINK_FLOAT_TRAVEL,
+  SINK_OUT_MS,
+};
 
 /*
  * ——— The `pushback` re-weighting (behind `debug/verbDepth`) ———

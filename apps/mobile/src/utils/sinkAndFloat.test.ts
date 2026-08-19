@@ -6,6 +6,7 @@
  * light runs on its own Beer–Lambert curve while the travel settles, and
  * reduce motion gets no layout animation at all — the swap stays a cut.
  */
+import * as shared from '@salmon/shared';
 import { motionEasing, motionMs } from '@salmon/shared';
 
 // Reanimated pulls the Worklets native module, which does not exist under
@@ -21,9 +22,13 @@ jest.mock('react-native-reanimated', () => ({
 }));
 
 // The shared barrel reaches the Solana ESM packages, which this Jest config
-// does not transform. Only the motion vocabulary matters here — and it is the
-// real one, so a token change shows up in these assertions.
-jest.mock('@salmon/shared', () => jest.requireActual('@salmon/shared/src/theme/durations'));
+// does not transform. Only the motion vocabulary matters here — the duration
+// tokens and the verb's own constants — and both are the real modules, so a
+// number changing upstream shows up in these assertions.
+jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/theme/durations'),
+  ...jest.requireActual('@salmon/shared/src/motion/sinkFloat'),
+}));
 
 // The verb-depth debug switch, made mutable so both variants are asserted in
 // one run. The helpers read it at call time, so flipping the property between
@@ -159,6 +164,17 @@ describe('sinkAndFloat', () => {
 
   it('inherits the band stagger from the Surfacing chrome', () => {
     expect(SINK_FLOAT_STAGGER_MS).toBe(motionMs.stagger);
+  });
+
+  it('re-exports the shared constants rather than declaring its own', () => {
+    // Identity, not equality: a mobile-local copy that happens to compute the
+    // same number today is exactly the drift this module exists to prevent.
+    expect(SINK_FLOAT_TRAVEL).toBe(shared.SINK_FLOAT_TRAVEL);
+    expect(FLOAT_ENTER_SCALE).toBe(shared.FLOAT_ENTER_SCALE);
+    expect(FLOAT_IN_MS).toBe(shared.FLOAT_IN_MS);
+    expect(SINK_OUT_MS).toBe(shared.SINK_OUT_MS);
+    expect(FLOAT_DELAY_MS).toBe(shared.FLOAT_DELAY_MS);
+    expect(SINK_FLOAT_STAGGER_MS).toBe(shared.SINK_FLOAT_STAGGER_MS);
   });
 
   describe('the pushback re-weighting (debug/verbDepth)', () => {
