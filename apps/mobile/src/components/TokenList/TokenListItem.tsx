@@ -6,6 +6,7 @@ import {
   fontFamilyNative,
   fontScaleCap,
   fontSize,
+  formatTokenAmount,
   getLabelValue,
   hiddenValue,
   lineHeight,
@@ -101,7 +102,9 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
       ? formatValue(usdBalance)
       : null;
 
-  const displayTokenAmount = hiddenBalance ? hiddenValue : `${uiAmount} ${symbol || ''}`;
+  const displayTokenAmount = hiddenBalance
+    ? hiddenValue
+    : `${formatTokenAmount(uiAmount)} ${symbol || ''}`;
 
   // Bitcoin has a different layout showing price, change, and BTC amount
   if (blockchain === 'bitcoin') {

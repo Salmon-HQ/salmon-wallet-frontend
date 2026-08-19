@@ -8,6 +8,7 @@
 
 import round from 'lodash-es/round';
 import isNil from 'lodash-es/isNil';
+import i18n from 'i18next';
 import type { PriceDataPoint } from '../types/ui';
 
 // ============================================================================
@@ -99,6 +100,41 @@ export function formatBaseUnits(amount: bigint, decimals: number): string {
   const whole = digits.slice(0, digits.length - decimals);
   const fraction = digits.slice(digits.length - decimals).replace(/0+$/, '');
   return fraction ? `${whole}.${fraction}` : whole;
+}
+
+/**
+ * Formats a token amount for display, with the decimal separator following
+ * the app's active i18n language — never the OS locale and never a hardcode.
+ *
+ * Token rows previously interpolated the raw `uiAmount` into the string,
+ * leaving the number→string conversion to the runtime; on some devices that
+ * conversion tracks the OS locale, so an English UI showed "0,00013129 BTC".
+ * Formatting explicitly against `i18n.language` pins the separator to the
+ * language the rest of the copy is in: '.' under en, ',' under es.
+ *
+ * Grouping is disabled to match the raw-amount look the rows already have,
+ * and up to 9 fraction digits are kept so BTC (8) and SOL (9) precision
+ * survive intact.
+ *
+ * @param amount - Token amount in UI units (number, or its string form)
+ * @param locale - Override locale; defaults to the active i18next language
+ * @returns The formatted amount, or the input as-is when not a finite number
+ *
+ * @example
+ * ```typescript
+ * formatTokenAmount(0.00013129, 'en') // '0.00013129'
+ * formatTokenAmount(0.00013129, 'es') // '0,00013129'
+ * ```
+ */
+export function formatTokenAmount(amount: number | string, locale?: string): string {
+  const value = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (typeof value !== 'number' || !isFinite(value)) return String(amount);
+
+  const resolvedLocale = locale || i18n.language || 'en';
+  return new Intl.NumberFormat(resolvedLocale, {
+    maximumFractionDigits: 9,
+    useGrouping: false,
+  }).format(value);
 }
 
 /**

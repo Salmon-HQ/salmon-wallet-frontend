@@ -1,5 +1,43 @@
 import { describe, expect, it } from 'vitest';
-import { formatBaseUnits, formatEffectiveRate } from './formatting';
+import { formatBaseUnits, formatEffectiveRate, formatTokenAmount } from './formatting';
+
+describe('formatTokenAmount', () => {
+  it('uses a point as decimal separator under en', () => {
+    expect(formatTokenAmount(0.00013129, 'en')).toBe('0.00013129');
+    expect(formatTokenAmount(1.5, 'en')).toBe('1.5');
+  });
+
+  it('uses a comma as decimal separator under es', () => {
+    expect(formatTokenAmount(0.00013129, 'es')).toBe('0,00013129');
+    expect(formatTokenAmount(1.5, 'es')).toBe('1,5');
+  });
+
+  it('keeps BTC (8) and SOL (9) fraction precision', () => {
+    expect(formatTokenAmount(0.00000001, 'en')).toBe('0.00000001');
+    expect(formatTokenAmount(0.000000001, 'en')).toBe('0.000000001');
+    expect(formatTokenAmount(0.000000001, 'es')).toBe('0,000000001');
+  });
+
+  it('does not group thousands, matching the raw-amount row look', () => {
+    expect(formatTokenAmount(1234567.89, 'en')).toBe('1234567.89');
+    expect(formatTokenAmount(1234567.89, 'es')).toBe('1234567,89');
+  });
+
+  it('accepts string amounts', () => {
+    expect(formatTokenAmount('0.00013129', 'es')).toBe('0,00013129');
+    expect(formatTokenAmount('42', 'en')).toBe('42');
+  });
+
+  it('falls back to en when no locale is set on i18n', () => {
+    // i18n is uninitialized in this test env, so language is undefined
+    expect(formatTokenAmount(0.5)).toBe('0.5');
+  });
+
+  it('returns the input unchanged when it is not a finite number', () => {
+    expect(formatTokenAmount('abc', 'en')).toBe('abc');
+    expect(formatTokenAmount(NaN, 'en')).toBe('NaN');
+  });
+});
 
 describe('formatEffectiveRate', () => {
   it('derives the unit rate from the two amounts', () => {

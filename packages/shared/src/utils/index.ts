@@ -86,6 +86,7 @@ export {
   // Amount formatting
   formatAmount,
   formatBaseUnits,
+  formatTokenAmount,
   showAmount,
   showValue,
   // Percentage utilities

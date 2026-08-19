@@ -24,6 +24,7 @@ import {
   ContentLoader,
   Rect,
   Circle,
+  formatTokenAmount,
   getShortAddress,
   getTokenKey,
   fontFamilyNative,
@@ -197,7 +198,7 @@ export function TokenSelectorModal({
       // identity stays, holdings go.
       const balanceText =
         showBalances && token.uiAmount
-          ? `${hiddenBalance ? HIDDEN_VALUE : token.uiAmount} ${token.symbol || ''}`
+          ? `${hiddenBalance ? HIDDEN_VALUE : formatTokenAmount(token.uiAmount)} ${token.symbol || ''}`
           : token.symbol || '';
 
       return (

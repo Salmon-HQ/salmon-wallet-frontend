@@ -42,6 +42,7 @@ jest.mock('@salmon/shared', () => ({
   ContentLoader: () => null,
   Rect: () => null,
   Circle: () => null,
+  formatTokenAmount: (value: number | string) => String(value),
   getShortAddress: (value: string) => value.slice(0, 8),
   getTokenKey: (token: { mint?: string; address?: string; symbol?: string }) =>
     token.mint || token.address || token.symbol || '',
