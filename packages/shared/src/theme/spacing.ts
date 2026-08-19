@@ -341,6 +341,11 @@ export const componentSizes = {
 
   // Dialog / Sheet widths
   dialogWidthSm: 340,
+  /**
+   * Minimum height for a full-screen-style stage (e.g. the transaction
+   * success receipt) when it plays inside a dialog instead of a page.
+   */
+  dialogStageMinHeight: 420,
   sheetWidthSm: 360,
   sheetWidthMd: 380,
   sheetWidthBase: 400,

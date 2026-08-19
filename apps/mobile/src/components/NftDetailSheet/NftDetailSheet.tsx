@@ -62,7 +62,7 @@ import { InputAddress } from '../InputAddress';
 import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
 import type { NftDetailSheetProps, NftAttribute } from './types';
 
-type NftDetailStep = 'detail' | 'send' | 'burn' | 'success';
+type NftDetailStep = 'detail' | 'send' | 'review' | 'burn' | 'success';
 type SuccessKind = 'send' | 'burn' | null;
 
 const FALLBACK_GRADIENT = {
@@ -179,7 +179,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
   const isReduceMotionEnabled = useReducedMotion();
 
   const startStepTransition = useCallback(
-    (nextStep: 'detail' | 'send' | 'burn', direction: 1 | -1) => {
+    (nextStep: 'detail' | 'send' | 'review' | 'burn', direction: 1 | -1) => {
       if (step === nextStep) return;
 
       setTransitionFromStep(step);
@@ -210,6 +210,8 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       if (step === 'success') {
         handleSuccessContinue();
+      } else if (step === 'review') {
+        startStepTransition('send', -1);
       } else if (step === 'send' || step === 'burn') {
         startStepTransition('detail', -1);
         onBurnReset?.();
@@ -242,6 +244,16 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     setSending(false);
     setSendError(null);
     startStepTransition('detail', -1);
+  }, [startStepTransition]);
+
+  const handleOpenReviewStep = useCallback(() => {
+    setSendError(null);
+    startStepTransition('review', 1);
+  }, [startStepTransition]);
+
+  const handleBackToSend = useCallback(() => {
+    setSendError(null);
+    startStepTransition('send', -1);
   }, [startStepTransition]);
 
   const handleOpenBurnStep = useCallback(() => {
@@ -427,6 +439,14 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     />
   ) : null;
 
+  const reviewHeaderContent = nft ? (
+    <BottomSheetTitleHeader
+      title={t('nft.send.reviewTitle', 'Review Send')}
+      onBack={handleBackToSend}
+      backAccessibilityLabel={t('general.back', 'Back')}
+    />
+  ) : null;
+
   const burnHeaderContent = nft ? (
     <BottomSheetTitleHeader
       title={t('nft.burn.reviewTitle', 'Burn NFT')}
@@ -438,11 +458,13 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
   const headerContent =
     step === 'send'
       ? sendHeaderContent
-      : step === 'burn'
-        ? burnHeaderContent
-        : step === 'detail'
-          ? detailHeaderContent
-          : undefined;
+      : step === 'review'
+        ? reviewHeaderContent
+        : step === 'burn'
+          ? burnHeaderContent
+          : step === 'detail'
+            ? detailHeaderContent
+            : undefined;
   const canConfirmSend = addressValid && !sending && nft?.blockchain !== 'bitcoin';
   const canConfirmBurn = !burnPreparing && !burnError && !!burnPreview;
   const lutInfo = burnPreview?.lookupTable;
@@ -593,19 +615,10 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
                   placeholder={t('nft.send.enterRecipientAddress', 'Enter recipient address')}
                   label={t('token.send.recipient', 'Recipient')}
                 />
-
-                {sendError && <Text style={styles.errorText}>{t(sendError)}</Text>}
               </>
             )}
           </View>
         </BlurContainer>
-
-        {sending && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.accent.primary} />
-            <Text style={styles.loadingText}>{t('nft.send.sending', 'Sending NFT...')}</Text>
-          </View>
-        )}
 
         <View style={styles.actionButtonsContainer}>
           <BlurContainer
@@ -628,13 +641,13 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
 
           {nft.blockchain !== 'bitcoin' && (
             <TouchableOpacity
-              testID="nft-send-confirm-button"
+              testID="nft-send-continue-button"
               style={styles.buttonWrapper}
-              onPress={handleConfirmSend}
+              onPress={handleOpenReviewStep}
               disabled={!canConfirmSend}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel={t('nft.send.title', 'Send NFT')}
+              accessibilityLabel={t('nft.send.reviewTitle', 'Review Send')}
             >
               <LinearGradient
                 colors={[...gradients.primaryButton.colors]}
@@ -646,14 +659,102 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
                 fill. Every band is paler than the fill, so it can only raise
                 the luminance under the label. */}
                 {canConfirmSend && <FleshBackground />}
-                <ArrowUpRightIcon weight="bold" size={ms(15)} color={semantic.accent.onFill} />
-                <Text style={styles.primaryButtonText}>{t('actions.send', 'Send')}</Text>
+                <Text style={styles.primaryButtonText}>{t('actions.continue', 'Continue')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+
+  // The review step: everything the signature will move, on one card, before
+  // anything is signed — the NFT, its collection, and where it is going.
+  const renderReviewStep = () => (
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={[
+        styles.scrollViewContent,
+        { paddingBottom: spaciousContentBottomPadding },
+      ]}
+      showsVerticalScrollIndicator={false}
+      scrollIndicatorInsets={{ bottom: bottomInset }}
+    >
+      {renderNftImage()}
+
+      <BlurContainer blurIntensity={10} blurTint="dark" style={styles.sectionContainer}>
+        <View style={styles.sectionContent}>
+          <Text style={styles.sectionTitle} numberOfLines={2}>
+            {nft.name}
+          </Text>
+          {nft.collectionName && (
+            <Text style={styles.collectionName} numberOfLines={1}>
+              {nft.collectionName}
+            </Text>
+          )}
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>{t('token.send.recipient', 'Recipient')}</Text>
+            <Text style={styles.detailValue} testID="nft-send-review-recipient">
+              {getShortAddress(address) ?? address}
+            </Text>
+          </View>
+        </View>
+      </BlurContainer>
+
+      {sending && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.accent.primary} />
+          <Text style={styles.loadingText}>{t('nft.send.sending', 'Sending NFT...')}</Text>
+        </View>
+      )}
+
+      {sendError && <Text style={styles.errorText}>{t(sendError)}</Text>}
+
+      <View style={styles.actionButtonsContainer}>
+        <BlurContainer
+          style={styles.secondaryButtonWrapper}
+          blurIntensity={2.5}
+          backgroundColor={colors.interactive.surface}
+          borderColor={semantic.border.raised}
+          borderWidth={borderWidth.actionButton}
+        >
+          <TouchableOpacity
+            style={styles.secondaryButtonContent}
+            onPress={handleBackToSend}
+            disabled={sending}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={t('actions.back', 'Back')}
+          >
+            <Text style={styles.buttonText}>{t('actions.back', 'Back')}</Text>
+          </TouchableOpacity>
+        </BlurContainer>
+
+        <TouchableOpacity
+          testID="nft-send-confirm-button"
+          style={styles.buttonWrapper}
+          onPress={handleConfirmSend}
+          disabled={!canConfirmSend}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={t('nft.send.title', 'Send NFT')}
+        >
+          <LinearGradient
+            colors={[...gradients.primaryButton.colors]}
+            start={gradients.primaryButton.start}
+            end={gradients.primaryButton.end}
+            style={[styles.primaryButton, !canConfirmSend && styles.primaryButtonDisabled]}
+          >
+            {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+                fill. Every band is paler than the fill, so it can only raise
+                the luminance under the label. */}
+            {canConfirmSend && <FleshBackground />}
+            <ArrowUpRightIcon weight="bold" size={ms(15)} color={semantic.accent.onFill} />
+            <Text style={styles.primaryButtonText}>{t('actions.send', 'Send')}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 
   const renderBurnStep = () => (
@@ -785,6 +886,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     if (!transitionFromStep || !transitionToStep) {
       if (step === 'detail') return renderDetailStep();
       if (step === 'send') return renderSendStep();
+      if (step === 'review') return renderReviewStep();
       return renderBurnStep();
     }
 
@@ -817,14 +919,18 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             ? renderDetailStep()
             : transitionFromStep === 'send'
               ? renderSendStep()
-              : renderBurnStep()}
+              : transitionFromStep === 'review'
+                ? renderReviewStep()
+                : renderBurnStep()}
         </Animated.View>
         <Animated.View style={[styles.stepTransitionPane, incomingStyle]}>
           {transitionToStep === 'detail'
             ? renderDetailStep()
             : transitionToStep === 'send'
               ? renderSendStep()
-              : renderBurnStep()}
+              : transitionToStep === 'review'
+                ? renderReviewStep()
+                : renderBurnStep()}
         </Animated.View>
       </View>
     );
@@ -843,6 +949,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     >
       {(step === 'detail' ||
         step === 'send' ||
+        step === 'review' ||
         step === 'burn' ||
         transitionFromStep ||
         transitionToStep) &&

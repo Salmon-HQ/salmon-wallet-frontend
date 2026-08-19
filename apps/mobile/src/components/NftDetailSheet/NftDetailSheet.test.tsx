@@ -1,6 +1,11 @@
 import React from 'react';
-import { View } from 'react-native';
-import { render, screen } from '@testing-library/react-native';
+import { Animated, View } from 'react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+
+const mockSendNft = jest.fn();
+// Stable across renders: a fresh `reset` identity would re-fire the sheet's
+// reset effect on every render and snap the flow back to the detail step.
+const mockNftTransfer = { sendNft: mockSendNft, reset: jest.fn(), settling: false };
 
 const mockBlurContainer = jest.fn(({ children }: { children?: React.ReactNode }) => (
   <View testID="blur-container">{children}</View>
@@ -102,7 +107,7 @@ jest.mock('@salmon/shared', () => ({
   fontWeight: { medium: '500' },
   formatRawAmount: () => '0',
   trackEvent: jest.fn(),
-  useNftTransfer: () => ({ sendNft: jest.fn(), reset: jest.fn() }),
+  useNftTransfer: () => mockNftTransfer,
   getTransactionUrl: () => null,
   getDefaultExplorer: () => 'solscan',
 }));
@@ -137,13 +142,34 @@ jest.mock('../BottomSheetTitleHeader', () => ({
   BottomSheetTitleHeader: () => null,
 }));
 
-jest.mock('../InputAddress', () => ({
-  InputAddress: () => null,
-}));
+// A stand-in that immediately reports a valid recipient, so the flow can
+// advance without exercising the real validation pipeline.
+jest.mock('../InputAddress', () => {
+  const React = require('react');
+  return {
+    InputAddress: ({
+      onChange,
+      onValidation,
+    }: {
+      onChange: (address: string) => void;
+      onValidation: (result: { isValid: boolean }) => void;
+    }) => {
+      React.useEffect(() => {
+        onChange('DestAddr111');
+        onValidation({ isValid: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- test stub: fire once
+      }, []);
+      return null;
+    },
+  };
+});
 
-jest.mock('../TransactionSuccessScreen', () => ({
-  TransactionSuccessScreen: () => null,
-}));
+jest.mock('../TransactionSuccessScreen', () => {
+  const { View } = require('react-native');
+  return {
+    TransactionSuccessScreen: () => <View testID="transaction-success-screen" />,
+  };
+});
 
 import { NftDetailSheet } from './NftDetailSheet';
 
@@ -174,5 +200,60 @@ describe('NftDetailSheet', () => {
     expect(screen.getByText('Attributes')).toBeTruthy();
     expect(screen.getByText('Details')).toBeTruthy();
     expect(screen.getAllByTestId('blur-container').length).toBeGreaterThanOrEqual(4);
+  });
+
+  describe('send review flow', () => {
+    const nft = {
+      mint: 'Mint111',
+      name: 'Blur NFT',
+      image: 'https://example.com/nft.png',
+      blockchain: 'solana',
+      collectionName: 'Blur Collection',
+    } as any;
+
+    beforeEach(() => {
+      mockSendNft.mockReset();
+      // The native-driven step slide never completes under Jest; finish it
+      // synchronously so the step machine advances.
+      jest
+        .spyOn(Animated, 'timing')
+        .mockReturnValue({
+          start: (cb?: Animated.EndCallback) => cb?.({ finished: true }),
+        } as unknown as Animated.CompositeAnimation);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    const goToReview = () => {
+      fireEvent.press(screen.getByTestId('nft-detail-send-button'));
+      fireEvent.press(screen.getByTestId('nft-send-continue-button'));
+    };
+
+    it('shows a review step with the NFT, collection and recipient before signing', () => {
+      render(<NftDetailSheet visible onClose={jest.fn()} nft={nft} />);
+
+      goToReview();
+
+      expect(screen.getByText('Blur NFT')).toBeTruthy();
+      expect(screen.getByText('Blur Collection')).toBeTruthy();
+      expect(screen.getByTestId('nft-send-review-recipient').props.children).toBe('Mint...111');
+      // Nothing was signed on the way to review.
+      expect(mockSendNft).not.toHaveBeenCalled();
+    });
+
+    it('sends only from the review confirm and then shows the success screen', async () => {
+      mockSendNft.mockResolvedValue({ txId: 'tx123' });
+      render(<NftDetailSheet visible onClose={jest.fn()} nft={nft} />);
+
+      goToReview();
+
+      fireEvent.press(screen.getByTestId('nft-send-confirm-button'));
+      await act(async () => {});
+
+      expect(mockSendNft).toHaveBeenCalledWith(nft, 'DestAddr111');
+      expect(screen.getByTestId('transaction-success-screen')).toBeTruthy();
+    });
   });
 });

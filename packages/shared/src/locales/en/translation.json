@@ -275,7 +275,7 @@
       "confirm": "Confirm",
       "creation_error": "Failed to create account. Please try again.",
       "session_expired": "Your session expired. Unlock the wallet again to add an account."
-          },
+    },
     "security": {
       "title": "Security",
       "change_password": "Change Password",
@@ -630,6 +630,7 @@
     },
     "send": {
       "title": "Send NFT",
+      "reviewTitle": "Review Send",
       "sending": "Sending NFT...",
       "enterRecipientAddress": "Enter recipient address",
       "ordinalsNotSupported": "Ordinal transfers are not yet supported.",

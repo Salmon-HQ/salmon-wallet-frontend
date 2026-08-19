@@ -275,7 +275,7 @@
       "confirm": "Confirmar",
       "creation_error": "Error al crear la cuenta. Por favor, intentalo de nuevo.",
       "session_expired": "Tu sesión expiró. Volvé a desbloquear la billetera para agregar una cuenta."
-          },
+    },
     "security": {
       "title": "Seguridad",
       "change_password": "Cambiar Contraseña",
@@ -630,6 +630,7 @@
     },
     "send": {
       "title": "Enviar NFT",
+      "reviewTitle": "Revisar envío",
       "sending": "Enviando NFT...",
       "enterRecipientAddress": "Ingresá la dirección del destinatario",
       "ordinalsNotSupported": "Las transferencias de Ordinals aún no están soportadas.",
