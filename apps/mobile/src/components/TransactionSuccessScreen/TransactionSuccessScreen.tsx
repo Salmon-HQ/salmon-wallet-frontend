@@ -34,9 +34,8 @@ import {
   useWaitExit,
 } from '@salmon/shared';
 import type { TransactionSuccessScreenProps } from '@salmon/shared';
-import { PrimaryButton } from '../Button';
+import { PrimaryButton, TextButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
-import { SwapReviewExchange } from '../SwapScreen/SwapReviewExchange';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { curve } from '../../utils/motion';
 import { CausticBand, SurfacingMembrane } from './SurfacingLayers';
@@ -97,11 +96,10 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   const amountOpacity = useSharedValue(0);
   const amountTranslateY = useSharedValue(0);
   // Two waves of chrome, named for their order rather than for one element,
-  // because the order is the point: the stagger has to agree with what sits
-  // above what. The first wave carries everything at the primary rank — the
-  // bridge details and the continue action — and the second carries the
-  // explorer link below it. Naming them `link` and `button` is what let the
-  // link fade in before the button it now sits under.
+  // because the order is rank, not position: the first wave carries
+  // everything at the primary rank — the bridge details and the continue
+  // action — and the second carries the explorer link, the quiet assist over
+  // the primary it defers to.
   const chromeOpacity = useSharedValue(0);
   const chromeTrailOpacity = useSharedValue(0);
   const membraneOpacity = useSharedValue(1);
@@ -296,40 +294,32 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
         </Text>
       </Animated.View>
 
-      {/* The hero. Isolated node, measured by the same onLayout whatever it
-          holds, so the caustic band's stop follows the layout: for a swap or
-          bridge receipt the exchange graphic (logo → arrow → logo, received
-          amount one rank up) is the protagonist; otherwise the summary line. */}
+      {/* The hero. Isolated node, measured by onLayout, so the caustic band's
+          stop follows the layout. The summary line is the protagonist on every
+          ending — the swap receipt used to box its exchange here as a card,
+          and the ending reads as an ending, not a second review. */}
       <Animated.View
-        style={[styles.amountContainer, exchange ? styles.exchangeHero : null, amountStyle]}
+        style={[styles.amountContainer, amountStyle]}
         onLayout={handleAmountLayout}
         testID="tx-success-amount"
       >
-        {exchange ? (
-          <SwapReviewExchange
-            send={exchange.send}
-            receive={{ ...exchange.receive, emphasis: true }}
-            style={styles.exchangeBlock}
-          />
-        ) : (
-          /* One line, always. The receipt used to print the whole operation as
-             one 36px title and it broke over three lines — an amount that wraps
-             stops being an amount and becomes a sentence. It shrinks rather than
-             wrapping or truncating: a number on a wallet receipt may not be
-             elided. */
-          <Text
-            style={styles.amount}
-            testID="tx-success-summary"
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={MIN_AMOUNT_SCALE}
-          >
-            {summary}
-          </Text>
-        )}
+        {/* One line, always. The receipt used to print the whole operation as
+            one 36px title and it broke over three lines — an amount that wraps
+            stops being an amount and becomes a sentence. It shrinks rather than
+            wrapping or truncating: a number on a wallet receipt may not be
+            elided. */}
+        <Text
+          style={styles.amount}
+          testID="tx-success-summary"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={MIN_AMOUNT_SCALE}
+        >
+          {summary}
+        </Text>
       </Animated.View>
 
-      {/* The receipt under the exchange: quiet rows for what the flow already
+      {/* The receipt under the amount: quiet rows for what the flow already
           knows — effective rate, Salmon fee when it arrived, local time. They
           ride the chrome wave, after the moment rather than during it. */}
       {exchange ? (
@@ -400,34 +390,34 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
       ) : null}
       </View>
 
-      {/* Continue first, explorer second — the same ranking the DOM receipt
-          uses. The wallet's own action outranks a link that leaves it for a
-          block explorer, and both the reading order and the stagger have to
-          say so: the continue action rides the first chrome wave, the link the
-          second. */}
+      {/* The ending composes like the onboarding ending: a quiet text-button
+          band (the explorer link) over the primary action, which is the
+          bottom-most control. The wallet's own action still outranks the link
+          that leaves for a block explorer — it rides the first chrome wave,
+          the link the second — and the assist band keeps its reserved height
+          even when there is no link, so the primary never moves. */}
       <View style={styles.actionGroup}>
+        <Animated.View style={[styles.assistBand, chromeTrailStyle]}>
+          {!isBridge && explorerUrl ? (
+            <TextButton
+              onPress={handleExplorerPress}
+              color={semantic.text.secondary}
+              testID="tx-success-explorer-link"
+            >
+              {t('transaction.viewOnExplorer')}
+            </TextButton>
+          ) : null}
+        </Animated.View>
+
         <Animated.View style={[styles.buttonContainer, chromeStyle]}>
           <PrimaryButton
             onPress={onContinue}
-            style={styles.button}
             disabled={settling}
             testID="tx-success-continue-button"
           >
             {t('transaction.continue', 'Back to wallet')}
           </PrimaryButton>
         </Animated.View>
-
-        {!isBridge && explorerUrl ? (
-          <Animated.View style={[styles.linkContainer, chromeTrailStyle]}>
-            <TouchableOpacity
-              testID="tx-success-explorer-link"
-              onPress={handleExplorerPress}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.explorerLink}>{t('transaction.viewOnExplorer')}</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        ) : null}
       </View>
 
       {/* The shaft of light, last so it passes over the amount rather than
@@ -507,16 +497,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: ms(fontSize.title * lineHeight.tight),
   },
-  // The exchange graphic takes the column's full width inside the centred
-  // cluster; the summary text keeps its content-sized container.
-  exchangeHero: {
-    alignSelf: 'stretch',
-  },
-  exchangeBlock: {
-    alignSelf: 'stretch',
-  },
   // The quiet receipt: label left, value right, no card — secondary rank
-  // under the exchange, above the bridge details when there are any.
+  // under the amount, above the bridge details when there are any.
   receiptRows: {
     alignSelf: 'stretch',
     gap: vs(spacing.sm),
@@ -561,33 +543,24 @@ const styles = StyleSheet.create({
     color: semantic.text.primary,
     marginBottom: vs(spacing.md),
   },
-  // Continue and explorer, pinned to the bottom of the column. The auto margin
-  // separates the report from the actions without inventing a spacer.
+  // The bottom of the column, on the onboarding ending's bands: the assist
+  // band (a quiet text button) directly over the action band's primary, with
+  // the grid's `spacing.lg` of air between them. The auto margin separates
+  // the report from the actions without inventing a spacer.
   actionGroup: {
     marginTop: 'auto',
-    alignItems: 'center',
+    alignSelf: 'stretch',
     gap: vs(spacing.lg),
     paddingTop: vs(spacing.xl),
   },
-  linkContainer: {
+  // Reserved at the assist band's control height whether or not a link is
+  // rendered, so the primary sits at one Y across every ending.
+  assistBand: {
+    height: vs(componentSizes.buttonHeightSmall),
     alignItems: 'center',
-  },
-  explorerLink: {
-    fontSize: ms(fontSize.body),
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.accent,
-    textAlign: 'center',
-    textDecorationLine: 'underline',
+    justifyContent: 'center',
   },
   buttonContainer: {
-    alignItems: 'center',
-  },
-  // Width and height only. The gradient wrapper that used to sit around this
-  // button forced the fill transparent, which cancelled the flesh — the one
-  // material a filled control is supposed to show.
-  button: {
-    width: 'auto',
-    minWidth: s(componentSizes.copyButtonWidth),
-    height: vs(componentSizes.buttonHeightCompact),
+    alignSelf: 'stretch',
   },
 });

@@ -66,6 +66,17 @@ const ContentWrapper = styled(Box)({
   flex: 1,
 });
 
+/**
+ * The badge labels the QR, not the sheet, so the two travel as one group: a
+ * tight gap inside it, the content gap outside it.
+ */
+const QRGroup = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: spacing.md,
+});
+
 const QRContainer = styled(Box)({
   position: 'relative',
   borderRadius: borderRadius.xl,
@@ -244,14 +255,15 @@ export function ReceiveSheet({
         style={{ paddingTop: spacing.xl, paddingBottom: spacing['2xl'], flex: 1 }}
       >
         <ContentWrapper ref={contentRef} data-testid="receive-sheet">
-          {/* Chain badge — opaque fill and a written label, so it survives a
-              colorblind reader, a narrow column and a screenshot. */}
-          <ChainBadge data-testid="receive-chain-badge">
-            {t('token.send.blockchainAddress', { blockchain: chainName })}
-          </ChainBadge>
+          <QRGroup>
+            {/* Chain badge — opaque fill and a written label, so it survives a
+                colorblind reader, a narrow column and a screenshot. */}
+            <ChainBadge data-testid="receive-chain-badge">
+              {t('token.send.blockchainAddress', { blockchain: chainName })}
+            </ChainBadge>
 
-          {/* QR Code */}
-          <QRContainer data-testid="receive-qr-code">
+            {/* QR Code */}
+            <QRContainer data-testid="receive-qr-code">
             <QRCode
               value={address}
               size={qrSize}
@@ -275,8 +287,9 @@ export function ReceiveSheet({
                 size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
                 color={palette.neutral[1000]}
               />
-            </QRLogoKnockout>
-          </QRContainer>
+              </QRLogoKnockout>
+            </QRContainer>
+          </QRGroup>
 
           {/* Full Address */}
           <AddressText data-testid="receive-address">{address}</AddressText>

@@ -122,16 +122,19 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
     >
       {/* Content */}
       <View style={[styles.content, { paddingBottom: spaciousContentBottomPadding }]}>
-        {/* Chain badge — opaque fill and a written label, so it survives a
-            colorblind reader, a narrow column and a screenshot. */}
-        <View style={styles.chainBadge} testID="receive-chain-badge">
-          <Text style={styles.chainBadgeText}>
-            {t('token.send.blockchainAddress', { blockchain: chainName })}
-          </Text>
-        </View>
+        {/* The badge labels the QR, not the sheet, so the two travel as one
+            group: a tight gap inside it, the content gap outside it. */}
+        <View style={styles.qrGroup}>
+          {/* Chain badge — opaque fill and a written label, so it survives a
+              colorblind reader, a narrow column and a screenshot. */}
+          <View style={styles.chainBadge} testID="receive-chain-badge">
+            <Text style={styles.chainBadgeText}>
+              {t('token.send.blockchainAddress', { blockchain: chainName })}
+            </Text>
+          </View>
 
-        {/* QR Code Container */}
-        <View style={styles.qrContainer} testID="receive-qr-code">
+          {/* QR Code Container */}
+          <View style={styles.qrContainer} testID="receive-qr-code">
           {/* The QR is data, not an accent. Painting it salmon put two warm
               objects on one sheet — the code and the copy button — and the
               accent belongs on the control that acts. Neutral also maximises
@@ -164,6 +167,7 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
                 size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
                 color={semantic.depth.abyss}
               />
+            </View>
             </View>
           </View>
         </View>
@@ -237,12 +241,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(CONTENT_PADDING_HORIZONTAL),
     gap: vs(componentSizes.receiveContentGap),
   },
+  // The badge sits `spacing.md` over the QR it labels — clearly tighter than
+  // the content gap that separates the group from the sheet title above it.
+  qrGroup: {
+    alignItems: 'center',
+    gap: vs(spacing.md),
+    marginTop: vs(spacing.headerPadding),
+  },
   qrContainer: {
     borderRadius: ms(borderRadius.xl),
     borderWidth: componentSizes.qrBorderWidth,
     borderColor: colors.text.primary,
     overflow: 'hidden',
-    marginTop: vs(spacing.headerPadding),
   },
   qrLogoOverlay: {
     ...StyleSheet.absoluteFillObject,

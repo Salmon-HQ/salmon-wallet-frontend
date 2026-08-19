@@ -123,7 +123,13 @@ jest.mock('@salmon/shared', () => ({
   fontWeight: { semibold: '600', bold: '700' },
   gradients: { primaryButton: { colors: ['#0f0'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } },
   shadows: { imageHero: {} },
-  componentSizes: { logoSizeSmall: 80, buttonHeightCompact: 48, buttonMinWidthLg: 200 },
+  componentSizes: {
+    logoSizeSmall: 80,
+    buttonHeight: 56,
+    buttonHeightSmall: 44,
+    buttonHeightCompact: 48,
+    buttonMinWidthLg: 200,
+  },
   ms: (value: number) => value,
   vs: (value: number) => value,
   s: (value: number) => value,
@@ -139,34 +145,13 @@ jest.mock('../../../hooks/useTabChrome', () => ({
 jest.mock('../Button', () => ({
   PrimaryButton: (props: { children?: React.ReactNode; testID?: string }) =>
     mockPrimaryButton(props),
+  TextButton: (props: { children?: React.ReactNode; testID?: string }) =>
+    mockPrimaryButton(props),
 }));
 
 jest.mock('../LoadingScreen', () => ({
   LoadingScreen: (props: { title?: string }) => mockLoadingScreen(props),
 }));
-
-// The exchange graphic is tested where it lives (SwapReviewExchange.test).
-// The stub keeps these cases about what the receipt renders and passes.
-jest.mock('../SwapScreen/SwapReviewExchange', () => {
-  const { Text, View } = require('react-native');
-  return {
-    SwapReviewExchange: ({
-      send,
-      receive,
-    }: {
-      send: { amount: string };
-      receive: { amount: string; emphasis?: boolean };
-    }) => (
-      <View testID="swap-review-exchange">
-        <Text>{send.amount}</Text>
-        <Text testID="swap-review-exchange-receive">
-          {receive.amount}
-          {receive.emphasis ? ' (emphasis)' : ''}
-        </Text>
-      </View>
-    ),
-  };
-});
 
 import { TransactionSuccessScreen } from './TransactionSuccessScreen';
 import {
@@ -245,13 +230,13 @@ describe('TransactionSuccessScreen', () => {
       expect(screen.queryByTestId('loading-screen')).toBeNull();
     });
 
-    it('puts the continue action before the explorer link — the wallet outranks the block explorer', () => {
+    it('composes like the onboarding ending — the quiet explorer link over the bottom-most primary', () => {
       render(<TransactionSuccessScreen {...baseProps} />);
 
       const tree = JSON.stringify(screen.toJSON());
-      expect(tree.indexOf('tx-success-continue-button')).toBeGreaterThan(-1);
-      expect(tree.indexOf('tx-success-continue-button')).toBeLessThan(
-        tree.indexOf('tx-success-explorer-link')
+      expect(tree.indexOf('tx-success-explorer-link')).toBeGreaterThan(-1);
+      expect(tree.indexOf('tx-success-explorer-link')).toBeLessThan(
+        tree.indexOf('tx-success-continue-button')
       );
     });
 
@@ -271,7 +256,7 @@ describe('TransactionSuccessScreen', () => {
       expect(screen.getByTestId('tx-success-continue-button')).toBeTruthy();
     });
 
-    it('renders the exchange block as the hero with the quiet receipt under it', () => {
+    it('keeps the summary line as the hero on a swap — the exchange card is gone, the receipt stays', () => {
       render(
         <TransactionSuccessScreen
           {...baseProps}
@@ -284,15 +269,12 @@ describe('TransactionSuccessScreen', () => {
         />
       );
 
-      // The exchange replaces the plain summary line as the protagonist,
-      // inside the same measured hero node the caustic band travels to.
-      expect(screen.getByTestId('swap-review-exchange')).toBeTruthy();
-      expect(screen.queryByTestId('tx-success-summary')).toBeNull();
+      // The boxed SENT→RECEIVED card no longer renders; the summary line is
+      // the protagonist inside the same measured hero node the caustic band
+      // travels to.
+      expect(screen.queryByTestId('swap-review-exchange')).toBeNull();
+      expect(screen.getByTestId('tx-success-summary')).toBeTruthy();
       expect(screen.getByTestId('tx-success-amount')).toBeTruthy();
-      // The received amount carries the greater hierarchy.
-      expect(screen.getByTestId('swap-review-exchange-receive')).toHaveTextContent(
-        '0.014 SOL (emphasis)'
-      );
       // The receipt rows: rate, fee, and a local time value.
       expect(screen.getByTestId('tx-success-receipt')).toBeTruthy();
       expect(screen.getByText('1 USDC ≈ 0.0127 SOL')).toBeTruthy();
