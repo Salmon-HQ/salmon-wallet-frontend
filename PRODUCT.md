@@ -68,7 +68,7 @@ Two positioning cautions the product must respect:
 
 ## Operating Context
 
-- **Self-custody.** Keys are encrypted on device, protected by a user password. Losing the recovery phrase is unrecoverable, and the site says so publicly.
+- **Self-custody.** Keys are encrypted on device, protected by a user password. Losing the recovery phrase is unrecoverable, and the site says so publicly. Changing the password is **atomic**: success is reported only after the re-encrypted vault has persisted with its encryption flag — any earlier failure leaves the old password fully valid — and the vault reader recognizes an encrypted vault by shape rather than by flag alone, so a wallet left flagless still unlocks with its post-change password.
 - **Approval is the product's centre of gravity.** Every sensitive action must explain what will happen, what can go wrong, what it costs, and what is being approved.
 - **Off-chain message signing (OCMS)** is shipped — a Solana Foundation standard, with Salmon listed as an early adopter. A v1 OCMS message begins with `0xff` plus the literal domain `"solana offchain"`, which can never begin a valid transaction, closing the transaction-lookalike blind-signing attack. Shipped on web v1.1.0 and extension 0.11.1/0.11.2. Mobile carries only the WebCrypto polyfill and has no dApp surface at all.
 - **Mobile Wallet Adapter is Android-only, permanently.** iOS suspends backgrounded apps, which kills the socket MWA depends on. dApp connectivity is therefore an Android-and-extension capability, and the iOS build must present that absence as a platform reality rather than a missing or broken feature.
