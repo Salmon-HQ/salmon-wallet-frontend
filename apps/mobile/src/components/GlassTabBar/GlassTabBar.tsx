@@ -4,6 +4,8 @@ import {
   componentSizes,
   fontFamilyNative,
   fontScaleCap,
+  fontSize,
+  lineHeight,
   ms,
   s,
   spacing,
@@ -74,10 +76,14 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
   }
 
   // The one-fill rule governs fills, not ink, so which tab you are on can be
-  // salmon again: `accent.ink` at 6.07:1 on the bar, against `text.tertiary`
-  // for the rest. The Send pill keeps the screen's only salmon fill.
+  // salmon — but the bar is a membrane, and ratios are measured against its
+  // worst-case composite (#3C3F47), not the app ground. Icons are graphics
+  // (1.4.11, 3:1): `accent.ink` at 3.44:1 and `text.tertiary` at 3.54:1 both
+  // clear it. Labels are small text (1.4.3, 4.5:1): the active one wears
+  // `accent.inkOnMembrane` (5.27:1), the rest `text.secondary` (4.88:1).
+  // Asserted in `packages/shared/src/theme/contrast.test.ts`.
   const iconColor = isFocused ? semantic.accent.ink : semantic.text.tertiary;
-  const labelColor = isFocused ? semantic.accent.ink : semantic.text.tertiary;
+  const labelColor = isFocused ? semantic.accent.inkOnMembrane : semantic.text.secondary;
   const IconComponent = config.icon;
 
   return (
@@ -166,10 +172,11 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
         <View style={styles.glassContainer}>
           {/*
             The tab bar is the app's canonical thermocline, at the 12px
-            control radius. Tier is `thick` rather than `thin` because the
-            tab labels are 11px — below the ≥15px / weight-500 floor
-            `membraneThin` guarantees. The tabBarFade gradient above is the
-            material's own bottom edge and stays as it is.
+            control radius. Tier is `thick` rather than `thin` because
+            `membraneThin` guarantees `text.primary` alone (DESIGN.md §The
+            scrim floor) and these labels wear secondary and salmon ink, which
+            only `thick`'s worst-case composite carries. The tabBarFade
+            gradient above is the material's own bottom edge and stays as it is.
           */}
           <Thermocline
             tier="thick"
@@ -281,16 +288,18 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(11),
-    lineHeight: ms(13),
+    // `caption` (12) — the type scale's smallest non-uppercase step; the old
+    // 11px was an off-ramp one-off below the scale's floor.
+    fontSize: ms(fontSize.caption),
+    lineHeight: ms(fontSize.caption * lineHeight.tight),
     letterSpacing: ms(0.2, 0.3),
     textAlign: 'center',
   },
   tabLabelActive: {
-    color: semantic.text.primary,
+    color: semantic.accent.inkOnMembrane,
   },
   tabLabelInactive: {
-    color: semantic.text.tertiary,
+    color: semantic.text.secondary,
   },
 });
 

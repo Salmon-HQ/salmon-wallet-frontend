@@ -347,6 +347,50 @@ describe('contrast: content that occludes the motif', () => {
   });
 });
 
+/**
+ * The tab bar on the thermocline. The membrane tiers only guarantee contrast
+ * over their documented scrim, so every ink the tab bar wears is measured
+ * against `membraneThick`'s worst-case composite — the tint over pure white,
+ * the brightest backdrop a scrolling NFT thumbnail can put behind it.
+ *
+ * Icons are graphics (1.4.11, 3:1) and may keep the brand step; labels are
+ * small text (1.4.3, 4.5:1) and need the lighter salmon — which is why
+ * `accent.inkOnMembrane` exists at all.
+ */
+describe('contrast: the tab bar on the thermocline', () => {
+  /** `surface.membraneThick` composited over white, straight alpha in sRGB. */
+  const membrane = (() => {
+    const [r, g, b, alpha] = surface.membraneThick
+      .match(/rgba\((\d+), (\d+), (\d+), ([\d.]+)\)/)!
+      .slice(1)
+      .map(Number);
+    return `#${[r, g, b]
+      .map((channel) =>
+        Math.round(channel * alpha + 255 * (1 - alpha))
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')}`;
+  })();
+
+  it('the active label ink clears AA text on the worst-case composite', () => {
+    expect(contrast(accent.inkOnMembrane, membrane)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it('the inactive label ink clears AA text on the worst-case composite', () => {
+    expect(contrast(text.secondary, membrane)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it('both icon inks clear the graphics threshold', () => {
+    expect(contrast(accent.ink, membrane)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    expect(contrast(text.tertiary, membrane)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
+  it('brand salmon really is below AA text here, which is why the label steps up', () => {
+    expect(contrast(accent.ink, membrane)).toBeLessThan(AA_TEXT);
+  });
+});
+
 describe('contrast: values this palette replaced', () => {
   it('rejects the retired border, which failed 1.4.11 on the password field', () => {
     expect(contrast('#404962', surface.shelf)).toBeLessThan(AA_NON_TEXT);

@@ -12,7 +12,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
-import { gradients, spacing } from '@salmon/shared/src/theme';
+import { fontSize, gradients, semantic, spacing } from '@salmon/shared/src/theme';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 // The real theme tokens, without dragging the barrel's Solana ESM into Jest.
@@ -142,5 +142,25 @@ describe('GlassTabBar membrane bottom edge', () => {
     const maxAlpha = Number(alphaMatch?.[1]);
     expect(maxAlpha).toBeLessThan(1);
     expect(maxAlpha).toBeGreaterThanOrEqual(0.85);
+  });
+});
+
+/**
+ * Label legibility on the membrane. The ratios themselves are asserted in
+ * `packages/shared/src/theme/contrast.test.ts` against `membraneThick`'s
+ * worst-case composite; this pins that the bar actually wears those inks and
+ * that the label never slips back under the type scale (the old 11px one-off).
+ */
+describe('GlassTabBar labels', () => {
+  it('sit on the type scale and wear the membrane-safe inks', () => {
+    const { getByText } = render(<GlassTabBar {...props} />);
+
+    // index 0 → Home is the active tab.
+    const active = StyleSheet.flatten(getByText('Home').props.style);
+    expect(active.fontSize).toBeGreaterThanOrEqual(fontSize.caption);
+    expect(active.color).toBe(semantic.accent.inkOnMembrane);
+
+    const inactive = StyleSheet.flatten(getByText('Swap').props.style);
+    expect(inactive.color).toBe(semantic.text.secondary);
   });
 });

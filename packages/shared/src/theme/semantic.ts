@@ -144,6 +144,14 @@ export const state = {
 /** Salmon-tinted backgrounds that sit *under* salmon ink (5.29:1 composite). */
 export const accent = {
   ink: salmon[500],
+  /**
+   * Salmon as *text* on a membrane. `accent.ink` measures 3.44:1 on
+   * `membraneThick`'s worst-case composite (#3C3F47) — fine for a 26px icon
+   * (1.4.11, 3:1) but under the 4.5:1 AA floor for small text. This step
+   * clears it at 5.27:1, so an active tab label can stay salmon without the
+   * icon losing the brand step. Asserted in `contrast.test.ts`.
+   */
+  inkOnMembrane: salmon[300],
   tint: 'rgba(255, 92, 69, 0.10)',
   tintHover: 'rgba(255, 92, 69, 0.15)',
   /** Fill + the only legal text color on it */
