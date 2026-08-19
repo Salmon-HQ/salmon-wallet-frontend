@@ -43,7 +43,9 @@ const AccountItem = styled(ListItemButton)<{ $isActive?: boolean }>(({ $isActive
   alignItems: 'center',
   gap: spacing.md,
   padding: `${spacing.md}px ${spacing.lg}px`,
-  borderRadius: borderRadius.md,
+  // The control radius (DESIGN.md §The Control Radius Rule): a list row is
+  // the shape every other control in the system is measured against.
+  borderRadius: borderRadius.r3,
   backgroundColor: $isActive ? colors.interactive.hoverSubtle : 'transparent',
   '&:hover': {
     backgroundColor: colors.background.tertiary,
@@ -153,6 +155,21 @@ export function AccountsPanel({
               key={account.id}
               $isActive={isActive}
               onClick={() => handleSelectAccount(account.id)}
+              // Which account is active is state, and state is never carried by
+              // the fill alone (DESIGN.md §Colors, The Three-Channel State
+              // Rule). The check glyph carries it for the eye; `aria-current`
+              // and the name carry it for a screen reader.
+              //
+              // `aria-current` rather than `aria-selected`: the latter is only
+              // legal on an option, tab, row or treeitem, and these rows cannot
+              // be options — each one nests its own edit and delete controls,
+              // and an option may not contain interactive children. What is
+              // being expressed is "the current item in a set", which is what
+              // `aria-current` is for.
+              aria-current={isActive}
+              aria-label={
+                isActive ? t('accessibility.active_account', { name: account.name }) : account.name
+              }
               data-testid={`account-item-${account.id}`}
             >
               {account.avatar ? (
@@ -163,7 +180,7 @@ export function AccountsPanel({
                     sx={{
                       color: colors.text.primary,
                       fontWeight: fontWeight.bold,
-                      fontSize: fontSize.base,
+                      fontSize: fontSize.body,
                     }}
                   >
                     {initials}
@@ -177,7 +194,7 @@ export function AccountsPanel({
                   sx={{
                     color: colors.text.primary,
                     fontWeight: fontWeight.semibold,
-                    fontSize: fontSize.base,
+                    fontSize: fontSize.body,
                   }}
                 >
                   {account.name}
@@ -187,7 +204,7 @@ export function AccountsPanel({
                     noWrap
                     sx={{
                       color: colors.text.secondary,
-                      fontSize: fontSize.sm,
+                      fontSize: fontSize.caption,
                     }}
                   >
                     {truncated}
@@ -202,7 +219,7 @@ export function AccountsPanel({
                     e.stopPropagation();
                     onEditAccount(account.id);
                   }}
-                  aria-label={t('actions.edit', 'Edit')}
+                  aria-label={t('accessibility.edit_account')}
                   data-testid={`account-edit-${account.id}`}
                   sx={{ color: colors.text.secondary }}
                 >
@@ -216,7 +233,7 @@ export function AccountsPanel({
                       e.stopPropagation();
                       handleDeleteClick(account);
                     }}
-                    aria-label={t('actions.remove', 'Remove')}
+                    aria-label={t('accessibility.delete_account')}
                     data-testid={`account-remove-${account.id}`}
                     sx={{ color: semantic.status.danger }}
                   >
@@ -239,7 +256,7 @@ export function AccountsPanel({
           sx={{
             color: colors.text.primary,
             fontWeight: fontWeight.semibold,
-            fontSize: fontSize.base,
+            fontSize: fontSize.body,
           }}
         >
           {t('settings.account_add.title')}

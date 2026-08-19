@@ -174,6 +174,14 @@ export const componentSizes = {
   /** 14px - Input vertical padding */
   inputPaddingVertical: 14,
 
+  /**
+   * 180px - the ceiling of the account's profile avatar, the one place an
+   * avatar is a hero rather than an identity chip. It is a ceiling and not a
+   * size: the surface it sits on is a resizable narrow column, so the avatar
+   * tracks the column's width and stops growing here.
+   */
+  avatarProfileMax: 180,
+
   // Logo
   logoSizeLarge: 137,
   logoSizeMedium: 120,

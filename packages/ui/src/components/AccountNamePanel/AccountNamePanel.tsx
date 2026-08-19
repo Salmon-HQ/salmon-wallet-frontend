@@ -9,20 +9,18 @@ import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { styled } from '../../utils/styled';
 import {
   colors,
   spacing,
-  borderRadius,
+  componentSizes,
   fontSize,
-  fontWeight,
   useAccountsContext,
   type Account,
-  opacity,
 } from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
+import { PrimaryButton } from '../Button';
 import type { AccountNamePanelProps } from './types';
 
 // ============================================================================
@@ -32,9 +30,11 @@ import type { AccountNamePanelProps } from './types';
 const StyledTextField = styled(TextField)({
   '& .MuiOutlinedInput-root': {
     backgroundColor: colors.interactive.surface,
-    borderRadius: borderRadius.md,
+    // The control radius: a field and the button under it are one shape
+    // (DESIGN.md §The Control Radius Rule). It was 8.
+    borderRadius: componentSizes.inputRadius,
     color: colors.text.primary,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     '& fieldset': {
       borderColor: colors.border.default,
     },
@@ -47,23 +47,6 @@ const StyledTextField = styled(TextField)({
   },
   '& .MuiInputLabel-root': {
     color: colors.text.secondary,
-  },
-});
-
-const SaveButton = styled(Button)({
-  backgroundColor: colors.accent.primary,
-  color: colors.text.primary,
-  fontWeight: fontWeight.semibold,
-  textTransform: 'none',
-  borderRadius: borderRadius.md,
-  padding: `${spacing.md}px`,
-  '&:hover': {
-    backgroundColor: colors.accent.primary,
-    opacity: opacity.soft,
-  },
-  '&.Mui-disabled': {
-    backgroundColor: colors.interactive.hoverStrong,
-    color: colors.text.disabled,
   },
 });
 
@@ -102,6 +85,7 @@ export function AccountNamePanel({ accountId, onBack }: AccountNamePanelProps): 
             if (error) setError('');
           }}
           placeholder={t('settings.account_add.set_name_placeholder')}
+          aria-label={t('settings.account_edit.name_section')}
           error={!!error}
           helperText={error}
           autoFocus
@@ -115,22 +99,22 @@ export function AccountNamePanel({ accountId, onBack }: AccountNamePanelProps): 
         <Typography
           sx={{
             color: colors.text.secondary,
-            fontSize: fontSize.sm,
+            fontSize: fontSize.caption,
             marginBottom: spacing.xl,
           }}
         >
           {t('settings.wallets.edit_name_disclaimer')}
         </Typography>
 
-        <SaveButton
-          fullWidth
-          variant="contained"
+        {/* The system's own primary button, not a hand-rolled salmon fill —
+            the settings surface joined the system (DESIGN.md §Motion). */}
+        <PrimaryButton
           onClick={handleSave}
           disabled={!name.trim()}
-          data-testid="account-name-save-button"
+          testID="account-name-save-button"
         >
           {t('actions.save')}
-        </SaveButton>
+        </PrimaryButton>
       </Box>
     </SettingsPanelContent>
   );

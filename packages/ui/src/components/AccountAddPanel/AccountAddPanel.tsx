@@ -12,7 +12,6 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -37,11 +36,11 @@ import {
   trackEvent,
   type AccountAddStep,
   type DerivedAccountInfo,
-  opacity,
   componentSizes,
   useWaitExit,
 } from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
+import { PrimaryButton } from '../Button';
 import { DerivedAccountCard } from '../DerivedAccountCard';
 import { LoadingScreen } from '../LoadingScreen';
 import { WarningNotice } from '../WarningNotice';
@@ -58,14 +57,15 @@ const MethodCard = styled(ListItemButton)({
   gap: spacing.md,
   padding: spacing.lg,
   backgroundColor: colors.interactive.surface,
-  borderRadius: borderRadius.lg,
+  // The control radius, by its scale name (DESIGN.md §The Control Radius Rule).
+  borderRadius: borderRadius.r3,
   marginBottom: spacing.md,
 });
 
 const MethodIcon = styled(Box)({
   width: componentSizes.iconSize3XL,
   height: componentSizes.iconSize3XL,
-  borderRadius: borderRadius.md,
+  borderRadius: borderRadius.r2,
   backgroundColor: colors.interactive.hoverSubtle,
   display: 'flex',
   alignItems: 'center',
@@ -78,30 +78,21 @@ const MethodInfo = styled(Box)({
   minWidth: 0,
 });
 
-const ConfirmButton = styled(Button)({
-  backgroundColor: colors.accent.primary,
-  color: colors.text.primary,
-  fontWeight: fontWeight.semibold,
-  textTransform: 'none',
-  borderRadius: borderRadius.md,
-  padding: `${spacing.md}px`,
-  marginTop: spacing.xl,
-  '&:hover': {
-    backgroundColor: colors.accent.primary,
-    opacity: opacity.soft,
-  },
-  '&.Mui-disabled': {
-    backgroundColor: colors.interactive.hoverStrong,
-    color: colors.text.disabled,
-  },
-});
+/**
+ * The committing action is the system's own primary button — the settings
+ * surface joined the system (DESIGN.md §Motion), so no panel hand-rolls the
+ * salmon fill any more. This only holds the gap above it.
+ */
+const CONFIRM_SLOT_STYLE = { marginTop: spacing.xl } as const;
 
 const StyledTextField = styled(TextField)({
   '& .MuiOutlinedInput-root': {
     backgroundColor: colors.interactive.surface,
-    borderRadius: borderRadius.md,
+    // The control radius: a field and the button under it are one shape
+    // (DESIGN.md §The Control Radius Rule). It was 8.
+    borderRadius: componentSizes.inputRadius,
     color: colors.text.primary,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     '& fieldset': {
       borderColor: colors.border.default,
     },
@@ -301,13 +292,13 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                     sx={{
                       color: colors.text.primary,
                       fontWeight: fontWeight.semibold,
-                      fontSize: fontSize.base,
+                      fontSize: fontSize.body,
                       marginBottom: spacing.xxs,
                     }}
                   >
                     {t('settings.account_add.create_new')}
                   </Typography>
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.sm }}>
+                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
                     {t('settings.account_add.create_new_description')}
                   </Typography>
                 </MethodInfo>
@@ -323,13 +314,13 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                     sx={{
                       color: colors.text.primary,
                       fontWeight: fontWeight.semibold,
-                      fontSize: fontSize.base,
+                      fontSize: fontSize.body,
                       marginBottom: spacing.xxs,
                     }}
                   >
                     {t('settings.account_add.import_seed')}
                   </Typography>
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.sm }}>
+                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
                     {t('settings.account_add.import_seed_description')}
                   </Typography>
                 </MethodInfo>
@@ -351,7 +342,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                   }}
                 >
                   <CircularProgress sx={{ color: colors.accent.primary }} />
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.base }}>
+                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.body }}>
                     {t('settings.account_add.scanning')}
                   </Typography>
                 </Box>
@@ -366,25 +357,25 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                   }}
                   data-testid="derived-scan-error"
                 >
-                  <Typography sx={{ color: colors.text.primary, fontSize: fontSize.base }}>
+                  <Typography sx={{ color: colors.text.primary, fontSize: fontSize.body }}>
                     {t('wallet.derived.scan_failed_title')}
                   </Typography>
                   <Typography
                     sx={{
                       color: colors.text.secondary,
-                      fontSize: fontSize.sm,
+                      fontSize: fontSize.caption,
                       textAlign: 'center',
                     }}
                   >
                     {t('wallet.derived.scan_failed_body')}
                   </Typography>
-                  <ConfirmButton
-                    variant="contained"
+                  <PrimaryButton
+                    fullWidth={false}
                     onClick={handleSelectDerive}
-                    data-testid="derived-scan-retry-button"
+                    testID="derived-scan-retry-button"
                   >
                     {t('transactions.tapToRetry')}
-                  </ConfirmButton>
+                  </PrimaryButton>
                 </Box>
               ) : (
                 <>
@@ -407,15 +398,14 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                       blockchain={NETWORK_DISPLAY[item.networkId]?.blockchain}
                     />
                   ))}
-                  <ConfirmButton
-                    fullWidth
-                    variant="contained"
+                  <PrimaryButton
+                    style={CONFIRM_SLOT_STYLE}
                     onClick={handleDerivedContinue}
                     disabled={!selectedDerived}
-                    data-testid="account-add-derive-continue-button"
+                    testID="account-add-derive-continue-button"
                   >
                     {t('actions.continue')}
-                  </ConfirmButton>
+                  </PrimaryButton>
                 </>
               )}
             </>
@@ -434,7 +424,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                 <Typography
                   sx={{
                     color: semantic.status.danger,
-                    fontSize: fontSize.sm,
+                    fontSize: fontSize.caption,
                     marginTop: spacing.xs,
                   }}
                 >
@@ -443,14 +433,13 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                     : seedError}
                 </Typography>
               )}
-              <ConfirmButton
-                fullWidth
-                variant="contained"
+              <PrimaryButton
+                style={CONFIRM_SLOT_STYLE}
                 onClick={handleSeedSubmit}
-                data-testid="account-add-seed-continue-button"
+                testID="account-add-seed-continue-button"
               >
                 {t('actions.continue')}
-              </ConfirmButton>
+              </PrimaryButton>
             </>
           )}
 
@@ -464,6 +453,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                   if (confirmError) setConfirmError('');
                 }}
                 placeholder={t('settings.account_add.set_name_placeholder')}
+                aria-label={t('settings.account_add.set_name')}
                 autoFocus
                 inputProps={{ maxLength: 32, 'data-testid': 'account-add-name-input' }}
                 onKeyDown={(e) => {
@@ -474,23 +464,22 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                 <Typography
                   sx={{
                     color: semantic.status.danger,
-                    fontSize: fontSize.sm,
+                    fontSize: fontSize.caption,
                     marginTop: spacing.xs,
                   }}
                 >
                   {confirmError}
                 </Typography>
               )}
-              <ConfirmButton
-                fullWidth
-                variant="contained"
+              <PrimaryButton
+                style={CONFIRM_SLOT_STYLE}
                 onClick={handleConfirm}
-                data-testid="account-add-confirm-button"
+                testID="account-add-confirm-button"
               >
                 {selectedDerived
                   ? t('settings.account_add.confirm_create')
                   : t('settings.account_add.confirm_import')}
-              </ConfirmButton>
+              </PrimaryButton>
             </>
           )}
         </Box>

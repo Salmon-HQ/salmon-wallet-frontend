@@ -33,7 +33,9 @@ import type { AccountEditPanelProps } from './types';
 
 const SectionContainer = styled(Box)({
   backgroundColor: colors.interactive.surface,
-  borderRadius: borderRadius.lg,
+  // The control radius, by its scale name (DESIGN.md §The Control Radius Rule);
+  // `borderRadius.lg` is the deprecated alias for the same 12.
+  borderRadius: borderRadius.r3,
   overflow: 'hidden',
 });
 
@@ -47,7 +49,7 @@ const Row = styled(ListItemButton)({
 const IconContainer = styled(Box)({
   width: componentSizes.iconSize2XL,
   height: componentSizes.iconSize2XL,
-  borderRadius: borderRadius.md,
+  borderRadius: borderRadius.r2,
   backgroundColor: colors.interactive.hoverSubtle,
   display: 'flex',
   alignItems: 'center',
@@ -65,6 +67,21 @@ const Divider = styled(Box)({
 // ============================================================================
 // Component
 // ============================================================================
+
+/**
+ * The profile avatar tracks the column it sits in and stops at its token
+ * ceiling. The extension is a resizable narrow column, so a fixed size would
+ * either crowd the narrow end or look stranded at the wide one; the ceiling
+ * is the token and the growth is the surface's own.
+ */
+const AVATAR_SIZE = `min(45vw, ${componentSizes.avatarProfileMax}px)`;
+/**
+ * The initials are a proportion of the box that holds them, not a step on the
+ * type scale: they are the avatar's content rather than the screen's copy, so
+ * they must stay centred in the circle at every width it takes.
+ */
+const AVATAR_INITIALS_RATIO = 0.31;
+const AVATAR_INITIALS_SIZE = `calc(${AVATAR_SIZE} * ${AVATAR_INITIALS_RATIO})`;
 
 export function AccountEditPanel({
   accountId,
@@ -124,16 +141,16 @@ export function AccountEditPanel({
           {account.avatar && !imgError ? (
             <Avatar
               src={account.avatar}
-              sx={{ width: 'min(45vw, 180px)', height: 'min(45vw, 180px)' }}
+              sx={{ width: AVATAR_SIZE, height: AVATAR_SIZE }}
               imgProps={{ alt: '', onError: () => setImgError(true) }}
             />
           ) : (
             <Avatar
               sx={{
-                width: 'min(45vw, 180px)',
-                height: 'min(45vw, 180px)',
+                width: AVATAR_SIZE,
+                height: AVATAR_SIZE,
                 backgroundColor: avatarColor,
-                fontSize: 'clamp(2rem, 8vw, 3.5rem)',
+                fontSize: AVATAR_INITIALS_SIZE,
                 fontWeight: fontWeight.semibold,
                 color: colors.text.primary,
               }}
@@ -144,7 +161,7 @@ export function AccountEditPanel({
           <Typography
             sx={{
               color: colors.text.secondary,
-              fontSize: fontSize.lg,
+              fontSize: fontSize.heading,
               fontWeight: fontWeight.semibold,
               textAlign: 'center',
             }}
@@ -164,7 +181,7 @@ export function AccountEditPanel({
                   flex: 1,
                   color: colors.text.primary,
                   fontWeight: fontWeight.semibold,
-                  fontSize: fontSize.base,
+                  fontSize: fontSize.body,
                 }}
               >
                 {t(item.labelKey)}

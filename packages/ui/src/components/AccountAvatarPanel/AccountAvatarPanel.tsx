@@ -10,13 +10,14 @@ import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
+  borderWidth,
   fontFamily,
   fontSize,
   fontWeight,
@@ -28,6 +29,7 @@ import {
   useAvatarNfts,
 } from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
+import { PrimaryButton } from '../Button';
 import type { AccountAvatarPanelProps } from './types';
 
 // ============================================================================
@@ -39,7 +41,8 @@ const ToggleContainer = styled(Box)({
   margin: `0 ${spacing.lg}px`,
   marginBottom: spacing.lg,
   backgroundColor: colors.background.tertiary,
-  borderRadius: borderRadius.md,
+  // The tab strip is a control, not a pill (DESIGN.md §The Control Radius Rule).
+  borderRadius: borderRadius.r3,
   position: 'relative',
   padding: spacing.xxs,
 });
@@ -51,7 +54,9 @@ const ToggleHighlight = styled(Box)<{ $isRight?: boolean }>(({ $isRight }) => ({
   width: `calc(50% - ${spacing.xxs}px)`,
   height: `calc(100% - ${spacing.xxs * 2}px)`,
   backgroundColor: colors.accent.primary,
-  borderRadius: borderRadius.md - spacing.xxs,
+  // The step below the control radius, so the highlight nests inside the
+  // strip's corner instead of being derived by arithmetic from it.
+  borderRadius: borderRadius.r2,
   transition: `left ${duration.medium} ${easing.ease}`,
 }));
 
@@ -64,7 +69,7 @@ const ToggleButton = styled('button')<{ $isActive?: boolean }>(({ $isActive }) =
   padding: `${spacing.sm}px 0`,
   cursor: 'pointer',
   fontWeight: fontWeight.semibold,
-  fontSize: fontSize.base,
+  fontSize: fontSize.body,
   color: $isActive ? colors.text.primary : colors.text.secondary,
   textAlign: 'center',
   transition: `color ${duration.medium} ${easing.ease}`,
@@ -90,13 +95,16 @@ const AvatarCircle = styled('button')<{ $isSelected?: boolean }>(({ $isSelected 
   aspectRatio: '1',
   borderRadius: '50%',
   overflow: 'hidden',
-  border: $isSelected ? `3px solid ${colors.accent.primary}` : '3px solid transparent',
+  border: `${borderWidth.heavy}px solid ${$isSelected ? colors.accent.primary : 'transparent'}`,
   padding: 0,
   cursor: 'pointer',
   background: 'none',
   transition: `border-color ${duration.normal} ${easing.ease}`,
   '&:hover': {
-    borderColor: $isSelected ? colors.accent.primary : 'rgba(255, 255, 255, 0.3)',
+    // `border.raised` is the plane-correct stroke above `surface.shelf`
+    // (DESIGN.md §Colors); the raw white wash it replaces was the last
+    // hardcoded colour on this surface.
+    borderColor: $isSelected ? colors.accent.primary : semantic.border.raised,
   },
   '& img': {
     width: '100%',
@@ -109,15 +117,18 @@ const AvatarCircle = styled('button')<{ $isSelected?: boolean }>(({ $isSelected 
 const NftCardButton = styled('button')<{ $isSelected?: boolean }>(({ $isSelected }) => ({
   width: '100%',
   aspectRatio: '1',
-  borderRadius: borderRadius.md,
+  borderRadius: borderRadius.r3,
   overflow: 'hidden',
-  border: $isSelected ? `3px solid ${colors.accent.primary}` : '3px solid transparent',
+  border: `${borderWidth.heavy}px solid ${$isSelected ? colors.accent.primary : 'transparent'}`,
   padding: 0,
   cursor: 'pointer',
   background: 'none',
   transition: `border-color ${duration.normal} ${easing.ease}`,
   '&:hover': {
-    borderColor: $isSelected ? colors.accent.primary : 'rgba(255, 255, 255, 0.3)',
+    // `border.raised` is the plane-correct stroke above `surface.shelf`
+    // (DESIGN.md §Colors); the raw white wash it replaces was the last
+    // hardcoded colour on this surface.
+    borderColor: $isSelected ? colors.accent.primary : semantic.border.raised,
   },
   '& img': {
     width: '100%',
@@ -126,24 +137,10 @@ const NftCardButton = styled('button')<{ $isSelected?: boolean }>(({ $isSelected
   },
 }));
 
-const SaveButton = styled(Button)<{ $isDisabled?: boolean }>(({ $isDisabled }) => ({
-  display: 'flex',
-  width: `calc(100% - ${spacing.lg * 2}px)`,
-  margin: `${spacing.lg}px auto 0`,
-  padding: `${spacing.md}px`,
-  textTransform: 'none',
-  fontWeight: fontWeight.bold,
-  fontSize: fontSize.bodyLg,
-  borderRadius: borderRadius.lg,
-  backgroundColor: $isDisabled ? colors.card.border : colors.accent.primary,
-  color: $isDisabled ? colors.text.secondary : colors.text.primary,
-  '&:hover': {
-    backgroundColor: $isDisabled ? colors.card.border : colors.accent.primary,
-  },
-  '&.Mui-disabled': {
-    color: colors.text.secondary,
-  },
-}));
+/** The committing action is the system's own primary button; this only places it. */
+const SaveSlot = styled(Box)({
+  padding: `${spacing.lg}px ${spacing.lg}px 0`,
+});
 
 const EmptyState = styled(Box)({
   display: 'flex',
@@ -168,6 +165,11 @@ const ScrollContent = styled(Box)({
 // ============================================================================
 // Component
 // ============================================================================
+
+/** Stable ids so each tab can point at the one panel it controls. */
+const PRESETS_TAB_ID = 'avatar-tab-presets';
+const NFTS_TAB_ID = 'avatar-tab-nfts';
+const TAB_PANEL_ID = 'avatar-tab-panel';
 
 export function AccountAvatarPanel({ onBack }: AccountAvatarPanelProps): React.ReactElement {
   const { t } = useTranslation();
@@ -196,9 +198,17 @@ export function AccountAvatarPanel({ onBack }: AccountAvatarPanelProps): React.R
   return (
     <SettingsPanelContent title={t('settings.profile_picture')} onBack={onBack}>
       {/* Toggle */}
-      <ToggleContainer>
+      <ToggleContainer role="tablist">
         <ToggleHighlight $isRight={activeTab === 'nfts'} />
+        {/* The sliding highlight says which tab is chosen to the eye only. The
+            tab roles and `aria-selected` say it to a screen reader, which is a
+            product commitment at full scope (PRODUCT.md). */}
         <ToggleButton
+          type="button"
+          role="tab"
+          id={PRESETS_TAB_ID}
+          aria-selected={activeTab === 'presets'}
+          aria-controls={TAB_PANEL_ID}
           $isActive={activeTab === 'presets'}
           onClick={() => setActiveTab('presets')}
           data-testid="avatar-tab-presets"
@@ -206,6 +216,11 @@ export function AccountAvatarPanel({ onBack }: AccountAvatarPanelProps): React.R
           {t('settings.avatar_presets')}
         </ToggleButton>
         <ToggleButton
+          type="button"
+          role="tab"
+          id={NFTS_TAB_ID}
+          aria-selected={activeTab === 'nfts'}
+          aria-controls={TAB_PANEL_ID}
           $isActive={activeTab === 'nfts'}
           onClick={() => setActiveTab('nfts')}
           data-testid="avatar-tab-nfts"
@@ -215,12 +230,18 @@ export function AccountAvatarPanel({ onBack }: AccountAvatarPanelProps): React.R
       </ToggleContainer>
 
       {/* Content */}
-      <ScrollContent>
+      <ScrollContent
+        id={TAB_PANEL_ID}
+        role="tabpanel"
+        aria-labelledby={activeTab === 'presets' ? PRESETS_TAB_ID : NFTS_TAB_ID}
+      >
         {activeTab === 'presets' ? (
           <PresetGrid>
             {PRESET_AVATAR_URLS.map((url, index) => (
               <AvatarCircle
                 key={index}
+                type="button"
+                aria-pressed={selectedUrl === url}
                 $isSelected={selectedUrl === url}
                 onClick={() => setSelectedUrl(url)}
                 data-testid={`avatar-preset-${index}`}
@@ -238,7 +259,7 @@ export function AccountAvatarPanel({ onBack }: AccountAvatarPanelProps): React.R
           </LoadingState>
         ) : nfts.length === 0 ? (
           <EmptyState>
-            <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.base }}>
+            <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.body }}>
               {t('settings.avatar_empty_nfts')}
             </Typography>
           </EmptyState>
@@ -247,6 +268,8 @@ export function AccountAvatarPanel({ onBack }: AccountAvatarPanelProps): React.R
             {nfts.map((nft) => (
               <NftCardButton
                 key={nft.mint}
+                type="button"
+                aria-pressed={selectedUrl === nft.image}
                 $isSelected={selectedUrl === nft.image}
                 onClick={() => nft.image && setSelectedUrl(nft.image)}
                 data-testid={`avatar-nft-${nft.mint}`}
@@ -259,14 +282,11 @@ export function AccountAvatarPanel({ onBack }: AccountAvatarPanelProps): React.R
       </ScrollContent>
 
       {/* Save Button */}
-      <SaveButton
-        $isDisabled={!hasChanged}
-        disabled={!hasChanged}
-        onClick={handleSave}
-        data-testid="avatar-save-button"
-      >
-        {t('actions.save')}
-      </SaveButton>
+      <SaveSlot>
+        <PrimaryButton disabled={!hasChanged} onClick={handleSave} testID="avatar-save-button">
+          {t('actions.save')}
+        </PrimaryButton>
+      </SaveSlot>
     </SettingsPanelContent>
   );
 }
