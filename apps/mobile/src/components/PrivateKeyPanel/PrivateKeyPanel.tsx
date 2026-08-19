@@ -398,24 +398,29 @@ const styles = StyleSheet.create({
   },
   addressValue: {
     color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
+    fontFamily: fontFamilyNative.mono,
     fontSize: fontSize.mono,
     marginTop: spacing.xxs,
   },
+  // The Bedrock Rule (DESIGN.md): a private key is a bedrock surface like the
+  // seed — its exhibiting ground is `surface.bedrock`, α 1.00, never a
+  // translucent card that lets the water show through the key.
   keyContainer: {
     position: 'relative',
-    backgroundColor: colors.background.card,
+    backgroundColor: semantic.surface.bedrock,
     borderRadius: borderRadius.r3,
     padding: spacing.lg,
     minHeight: 80,
     justifyContent: 'center',
   },
+  // Geist Mono, as every value read character by character renders — the key
+  // is the most position-critical string in the app. Mono is fixed-pitch, so
+  // no added tracking.
   keyText: {
     color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
-    lineHeight: fontSize.body * lineHeight.normal,
-    letterSpacing: letterSpacing.loose,
+    fontFamily: fontFamilyNative.mono,
+    fontSize: fontSize.monoLg,
+    lineHeight: fontSize.monoLg * lineHeight.normal,
   },
   revealOverlay: {
     position: 'absolute',

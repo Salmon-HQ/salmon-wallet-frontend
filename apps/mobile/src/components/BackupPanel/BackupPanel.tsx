@@ -14,6 +14,7 @@ import {
   colors,
   fontFamilyNative,
   fontSize,
+  fontWeight,
   lineHeight,
   semantic,
   spacing,
@@ -186,9 +187,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.body,
     lineHeight: fontSize.body * lineHeight.snug,
   },
+  // The Bedrock Rule (DESIGN.md): a surface that exhibits a seed phrase is
+  // `surface.bedrock`, α 1.00 — never a translucent card that lets the water
+  // show through the words.
   seedContainer: {
     position: 'relative',
-    backgroundColor: colors.background.card,
+    backgroundColor: semantic.surface.bedrock,
     borderRadius: borderRadius.r3,
     padding: spacing.lg,
     marginBottom: spacing.xl,
@@ -226,17 +230,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     marginBottom: spacing.sm,
   },
+  // Seed Phrase Rule (DESIGN.md): cell numbers are `text.tertiary` at label
+  // size so they are never mistaken for part of the phrase.
   wordIndex: {
     color: semantic.text.tertiary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.caption,
+    fontSize: fontSize.label,
     marginRight: spacing.sm,
     minWidth: 20,
   },
+  // Seed Phrase Rule: Geist Mono at the larger mono size, weight 500.
   wordText: {
     color: semantic.text.primary,
     fontFamily: fontFamilyNative.mono,
-    fontSize: fontSize.body,
+    fontWeight: fontWeight.medium,
+    fontSize: fontSize.monoLg,
   },
   buttonContainer: {
     gap: spacing.md,
