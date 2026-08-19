@@ -973,7 +973,11 @@ export default function HomeScreen() {
         visible={sendSheetVisible}
         onClose={handleSendSheetClose}
         tokens={tokens}
-        blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+        // networkId is the single chain source here: `tokens` and `account`
+        // already derive from it, and the carousel index can lag behind it
+        // during a chain switch — mixing the two hands the sheet
+        // cross-chain props.
+        blockchain={getBlockchainFromNetworkId(networkId ?? 'solana-mainnet')}
         account={activeBlockchainAccount}
         onSuccess={handleSendSuccess}
         showUnverifiedTokens={developerNetworks}

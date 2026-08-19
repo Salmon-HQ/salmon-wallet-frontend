@@ -89,26 +89,55 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     sendHook.reset();
   }, [sendHook, skipTokenSelect, tokens]);
 
+  // The sheet stays mounted across chain switches, so flow state derived from
+  // one chain (step, selected token) must be re-derived the moment the
+  // `blockchain` prop changes — otherwise the sheet opens showing the previous
+  // chain's token. Render-time reset (not an effect) so the very first render
+  // after a switch is already correct.
+  const [flowBlockchain, setFlowBlockchain] = useState(blockchain);
+  if (flowBlockchain !== blockchain) {
+    setFlowBlockchain(blockchain);
+    setStep(skipTokenSelect ? 'address-amount' : 'token-select');
+    setSelectedToken(skipTokenSelect && tokens.length > 0 ? tokens[0] : null);
+    setRecipientAddress('');
+    setResolvedRecipientAddress(undefined);
+    setAmount('');
+    setSuccessTxId(null);
+    setIsSending(false);
+  }
+
+  // sendHook.reset() is a side effect, so it cannot run during render.
+  useEffect(() => {
+    sendHook.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blockchain]);
+
   // Handle close; state reset is driven by the visible -> false transition so
   // external closes (for example, on lock) clear the flow too.
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
 
+  // Latest-value ref so the close timer below can depend on `visible` alone.
+  // Depending on `resetFlowState` directly would re-run the effect whenever its
+  // identity changes, and the cleanup would cancel the pending reset timer
+  // without re-arming it (previousVisibleRef is already overwritten).
+  const resetFlowStateRef = useRef(resetFlowState);
+  resetFlowStateRef.current = resetFlowState;
+
   useEffect(() => {
     const wasVisible = previousVisibleRef.current;
     previousVisibleRef.current = visible;
-
     if (!visible && wasVisible) {
       const timer = setTimeout(() => {
-        resetFlowState();
+        resetFlowStateRef.current();
       }, ANIMATION_DURATION);
 
       return () => clearTimeout(timer);
     }
 
     return undefined;
-  }, [visible, resetFlowState]);
+  }, [visible]);
 
   const handleSuccessContinue = useCallback(() => {
     if (successTxId) {

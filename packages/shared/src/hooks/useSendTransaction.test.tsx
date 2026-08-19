@@ -390,4 +390,23 @@ describe('useSendTransaction', () => {
     expect(result.current.error).toBeNull();
     expect(result.current.isError).toBe(false);
   });
+
+  it('keeps a stable return identity across re-renders', () => {
+    // Consumers hang effects off the returned object (and off `reset`); a
+    // fresh literal every render would re-trigger those effects each render.
+    const { result, rerender } = renderHook(
+      () =>
+        useSendTransaction({
+          account: mockAccount as any,
+          blockchain: 'solana',
+        }),
+      { wrapper: makeWrapper() }
+    );
+
+    const first = result.current;
+    rerender();
+
+    expect(result.current).toBe(first);
+    expect(result.current.reset).toBe(first.reset);
+  });
 });

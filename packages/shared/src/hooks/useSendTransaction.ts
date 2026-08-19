@@ -23,7 +23,7 @@
  * ```
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 import type { BlockchainType, BlockchainAccount } from '../types/blockchain';
 import type {
@@ -223,14 +223,19 @@ export function useSendTransaction({
     [account, settleUntilChanged, pendingTransactions]
   );
 
-  return {
-    estimateFee,
-    sendTransaction,
-    status,
-    settling,
-    feeEstimateFailed,
-    error,
-    isError: error !== null,
-    reset,
-  };
+  // Stable return identity: consumers hang effects off this object (and off
+  // `reset`), so a fresh literal every render would re-trigger them each time.
+  return useMemo(
+    () => ({
+      estimateFee,
+      sendTransaction,
+      status,
+      settling,
+      feeEstimateFailed,
+      error,
+      isError: error !== null,
+      reset,
+    }),
+    [estimateFee, sendTransaction, status, settling, feeEstimateFailed, error, reset]
+  );
 }
