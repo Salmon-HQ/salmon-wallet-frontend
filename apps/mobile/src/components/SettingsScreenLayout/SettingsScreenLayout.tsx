@@ -33,6 +33,7 @@ import {
   fontSize,
   fontFamilyNative,
   componentSizes,
+  letterSpacing,
   lineHeight,
   semantic,
 } from '@salmon/shared';
@@ -93,6 +94,9 @@ export function SettingsScreenLayout({
               <TouchableOpacity
                 onPress={onBack}
                 style={styles.backButton}
+                // backButtonSize is 40 — the slop takes the touch target
+                // past the 44pt minimum.
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityLabel={t('accessibility.go_back', 'Go back')}
                 accessibilityRole="button"
               >
@@ -169,10 +173,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: spacing.sm,
   },
+  // The `title` role (600, 20, −0.12): a panel title is a card/panel-level
+  // heading on the type scale, not the 18/bold one-off it used to be.
   title: {
     color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.heading,
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.title,
+    letterSpacing: letterSpacing.snug,
     flex: 1,
   },
   subtitle: {

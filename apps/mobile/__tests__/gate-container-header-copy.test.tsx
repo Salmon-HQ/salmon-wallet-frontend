@@ -92,6 +92,7 @@ jest.mock('@salmon/shared', () => ({
     text: { primary: '#fff', secondary: '#999', accent: '#f54' },
     status: { success: '#0f0' },
     border: { raised: '#333', default: '#222' },
+    surface: { shelf: '#10131C' },
   },
 }));
 

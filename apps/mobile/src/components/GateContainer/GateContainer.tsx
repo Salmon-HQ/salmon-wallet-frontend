@@ -44,7 +44,13 @@ import {
 } from '@salmon/shared';
 import type { GateContainerProps, GateState } from './types';
 import { curve, timing } from '../../utils/motion';
-import { FLOAT_IN_MS, SINK_OUT_MS } from '../../utils/sinkAndFloat';
+import {
+  FLOAT_IN_MS,
+  SINK_FLOAT_TRAVEL,
+  SINK_OUT_MS,
+  floatEntering,
+  sinkExiting,
+} from '../../utils/sinkAndFloat';
 import { useTaskChrome } from '../../contexts/TaskChromeContext';
 import { DEBUG_LAYER_COLORS, DEBUG_LAYER_COLOR } from '../../debug/layerColors';
 
@@ -237,6 +243,15 @@ export function GateContainer({
   // Use current header if expanded, or snapshot header during close animation
   const activeExpandedHeader = isExpanded ? expandedHeader : lastExpandedHeaderRef.current;
 
+  // The header title's verb (chrome scale, like HeaderContent's account line):
+  // the first title a session shows floats with no delay — nothing sank —
+  // while every later swap waits out the old title's sink plus a beat.
+  const expandedTitle = activeExpandedHeader?.title || '';
+  const [titleSwap, setTitleSwap] = useState({ title: expandedTitle, hasPrior: false });
+  if (titleSwap.title !== expandedTitle) {
+    setTitleSwap({ title: expandedTitle, hasPrior: true });
+  }
+
   return (
     <>
       {/* Backdrop — visible during expand and close animation */}
@@ -277,22 +292,60 @@ export function GateContainer({
               {/* Header bar with title, back, close */}
               {activeExpandedHeader && (
                 <View style={styles.expandedHeader}>
+                  {/* The back chevron speaks the same chrome-scale verb as the
+                      title. What changes per navigation is its *presence* —
+                      between panels the affordance is visually identical, so
+                      only the appear (stack gains depth) and disappear (back
+                      to the menu root) travel; the placeholder keeps the slot
+                      so nothing reflows. */}
                   {activeExpandedHeader.onBack ? (
-                    <TouchableOpacity
-                      testID="screen-header-back-button"
-                      onPress={activeExpandedHeader.onBack}
-                      style={styles.headerButton}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      accessibilityRole="button"
+                    <Animated.View
+                      testID="gate-back-verb"
+                      entering={floatEntering(isReduceMotionEnabled, {
+                        distance: SINK_FLOAT_TRAVEL / 2,
+                        durationMs: motionMs.drift,
+                        delayMs: titleSwap.hasPrior ? motionMs.ebb + motionMs.stagger : 0,
+                      })}
+                      exiting={sinkExiting(isReduceMotionEnabled, {
+                        distance: SINK_FLOAT_TRAVEL / 2,
+                        durationMs: motionMs.ebb,
+                      })}
                     >
-                      <CaretLeftIcon size={iconSize.lg} color={semantic.text.primary} />
-                    </TouchableOpacity>
+                      <TouchableOpacity
+                        testID="screen-header-back-button"
+                        onPress={activeExpandedHeader.onBack}
+                        style={styles.headerButton}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        accessibilityRole="button"
+                      >
+                        <CaretLeftIcon size={iconSize.lg} color={semantic.text.primary} />
+                      </TouchableOpacity>
+                    </Animated.View>
                   ) : (
                     <View style={styles.headerButtonPlaceholder} />
                   )}
-                  <Text style={styles.expandedHeaderTitle} numberOfLines={1}>
-                    {activeExpandedHeader.title || ''}
-                  </Text>
+                  {/* The title speaks the verb at chrome scale, like the home
+                      header's account line: keyed on the string so a panel
+                      change sinks the old title and floats the new one. Only
+                      the text travels — the back/close buttons stay mounted. */}
+                  <Animated.View
+                    key={expandedTitle}
+                    testID="gate-expanded-title"
+                    style={styles.expandedHeaderTitleWrapper}
+                    entering={floatEntering(isReduceMotionEnabled, {
+                      distance: SINK_FLOAT_TRAVEL / 2,
+                      durationMs: motionMs.drift,
+                      delayMs: titleSwap.hasPrior ? motionMs.ebb + motionMs.stagger : 0,
+                    })}
+                    exiting={sinkExiting(isReduceMotionEnabled, {
+                      distance: SINK_FLOAT_TRAVEL / 2,
+                      durationMs: motionMs.ebb,
+                    })}
+                  >
+                    <Text style={styles.expandedHeaderTitle} numberOfLines={1}>
+                      {expandedTitle}
+                    </Text>
+                  </Animated.View>
                   <TouchableOpacity
                     testID="sheet-close-button"
                     onPress={activeExpandedHeader.onClose}
@@ -373,7 +426,12 @@ const styles = StyleSheet.create({
   },
   surface: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    // The gate keeps its own ground: `surface.shelf`, the default opaque
+    // surface — the same value the legacy `background.primary` alias carried,
+    // now named for what the ground is.
+    backgroundColor: semantic.surface.shelf,
+    // 24 is a documented off-scale one-off (the scale's "header corners"
+    // annotation) — deliberate, not a missed r-step.
     borderBottomLeftRadius: borderRadius['2xl'],
     borderBottomRightRadius: borderRadius['2xl'],
     ...shadows.topSheet,
@@ -412,7 +470,9 @@ const styles = StyleSheet.create({
     // second card edge stacked under this one. Filling the slot makes this
     // row's bottom coincide with `surface`'s, so there is exactly one edge.
     height: vs(componentSizes.headerHeight),
-    backgroundColor: colors.background.primary,
+    // Same ground as `surface` above — the gate's own shelf.
+    backgroundColor: semantic.surface.shelf,
+    // 24, the header-corner off-scale one-off — deliberate, see `surface`.
     borderBottomLeftRadius: borderRadius.header,
     borderBottomRightRadius: borderRadius.header,
     ...Platform.select({
@@ -442,8 +502,10 @@ const styles = StyleSheet.create({
     // `border.default` drops under 3:1 — `raised` clears it.
     borderBottomColor: semantic.border.raised,
   },
-  expandedHeaderTitle: {
+  expandedHeaderTitleWrapper: {
     flex: 1,
+  },
+  expandedHeaderTitle: {
     color: semantic.text.primary,
     fontFamily: fontFamilyNative.bold,
     fontSize: fontSize.heading,
@@ -452,6 +514,7 @@ const styles = StyleSheet.create({
   headerButton: {
     width: componentSizes.backButtonSize,
     height: componentSizes.backButtonSize,
+    // 20 is a documented off-scale one-off (large icon corners) — deliberate.
     borderRadius: borderRadius.iconLg,
     backgroundColor: colors.background.card,
     alignItems: 'center',

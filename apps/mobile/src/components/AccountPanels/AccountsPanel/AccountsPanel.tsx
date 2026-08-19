@@ -7,7 +7,7 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../../icons';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +29,7 @@ import {
   semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { ConfirmSheet } from '../../ConfirmSheet';
 import type { AccountsPanelProps } from './types';
 
 // ============================================================================
@@ -150,24 +151,16 @@ export function AccountsPanel({
 }: AccountsPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const canDelete = accounts.length > 1;
+  const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
 
-  const handleDelete = useCallback(
-    (accountId: string, accountName: string) => {
-      Alert.alert(
-        t('settings.wallets.delete_confirm_title'),
-        t('settings.wallets.delete_confirm_message', { name: accountName }),
-        [
-          { text: t('actions.cancel'), style: 'cancel' },
-          {
-            text: t('actions.remove'),
-            style: 'destructive',
-            onPress: () => onDeleteAccount(accountId),
-          },
-        ]
-      );
-    },
-    [onDeleteAccount, t]
-  );
+  const handleDelete = useCallback((account: Account) => {
+    setAccountToDelete(account);
+  }, []);
+
+  const handleDeleteConfirmed = useCallback(async () => {
+    if (!accountToDelete) return;
+    await onDeleteAccount(accountToDelete.id);
+  }, [accountToDelete, onDeleteAccount]);
 
   const renderItem = useCallback(
     (item: Account) => (
@@ -176,7 +169,7 @@ export function AccountsPanel({
         isActive={item.id === activeAccountId}
         onPress={() => onSelectAccount(item.id)}
         onEdit={() => onEditAccount(item.id)}
-        onDelete={() => handleDelete(item.id, item.name)}
+        onDelete={() => handleDelete(item)}
         canDelete={canDelete}
       />
     ),
@@ -210,6 +203,18 @@ export function AccountsPanel({
         ))}
         {ListFooter}
       </View>
+
+      <ConfirmSheet
+        visible={accountToDelete !== null}
+        onClose={() => setAccountToDelete(null)}
+        title={t('settings.wallets.delete_confirm_title')}
+        message={t('settings.wallets.delete_confirm_message', {
+          name: accountToDelete?.name ?? '',
+        })}
+        confirmText={t('actions.remove')}
+        isDanger
+        onConfirm={handleDeleteConfirmed}
+      />
     </SettingsScreenLayout>
   );
 }

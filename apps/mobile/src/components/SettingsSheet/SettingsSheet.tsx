@@ -19,7 +19,6 @@ import {
 import {
   AddressBookIcon,
   ArrowSquareOutIcon,
-  CaretRightIcon,
   ChartBarIcon,
   CodeIcon,
   InfoIcon,
@@ -405,13 +404,9 @@ export function SettingsSheet({
               color={isDanger ? DANGER_COLORS.text : semantic.text.primary}
             />
           </View>
+          {/* No chevron: the right-pointing caret promised a lateral slide,
+              and the push now sinks and floats on the vertical. */}
           <Text style={[styles.optionLabel, isDanger && styles.optionLabelDanger]}>{label}</Text>
-          {!option.isAction && (
-            <CaretRightIcon
-              size={iconSize.md}
-              color={isDanger ? DANGER_COLORS.text : semantic.text.secondary}
-            />
-          )}
         </TouchableOpacity>
       );
     },

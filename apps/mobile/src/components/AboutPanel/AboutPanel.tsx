@@ -4,7 +4,7 @@
  */
 
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import {
   ArrowSquareOutIcon,
   BookOpenIcon,
@@ -32,7 +32,7 @@ import {
   semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
-import { Logo } from '@salmon/assets';
+import { BrandMark, Wordmark } from '../BrandMark';
 
 const LINKS = {
   website: 'https://www.salmonwallet.io',
@@ -95,8 +95,11 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
   return (
     <SettingsScreenLayout title={t('settings.about')} onBack={onBack}>
       <View style={styles.appInfoSection}>
-        <Image source={Logo} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.appName}>Salmon Wallet</Text>
+        {/* The drawn mark and name — BrandMark's own docs retired the raster
+            Logo.png, and the Wordmark keeps the product's name a graphic at
+            the same mark→name air the welcome and success screens use. */}
+        <BrandMark size={componentSizes.logoSizeMedium} />
+        <Wordmark />
         <Text style={styles.versionText}>{t('settings.app_version', { version: appVersion })}</Text>
         <Text style={styles.buildText}>{t('settings.about_build', { build: buildNumber })}</Text>
       </View>
@@ -143,21 +146,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing['2xl'],
   },
-  logo: {
-    width: componentSizes.logoSizeMedium,
-    height: componentSizes.logoSizeMedium,
-    marginBottom: spacing.lg,
-  },
-  appName: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.headline,
-    marginBottom: spacing.xs,
-  },
   versionText: {
     color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
+    // The Wordmark above pins its own top gap and carries no bottom margin.
+    marginTop: spacing.xs,
     marginBottom: spacing.xxs,
   },
   buildText: {
@@ -189,7 +183,8 @@ const styles = StyleSheet.create({
     width: componentSizes.iconSize3XL,
     height: componentSizes.iconSize3XL,
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.full,
+    // Control Radius Rule: a square link button is a control — r3, not a pill.
+    borderRadius: borderRadius.r3,
     alignItems: 'center',
     justifyContent: 'center',
   },

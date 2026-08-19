@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { CaretRightIcon, KeyIcon, LockIcon, TextTIcon, UserCircleIcon, iconSize } from '../../../icons';
+import { KeyIcon, LockIcon, TextTIcon, UserCircleIcon, iconSize } from '../../../icons';
 import type { IconComponent } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
@@ -95,8 +95,9 @@ export function AccountEditPanel({
             <View style={styles.iconContainer}>
               <item.icon size={iconSize.lg} color={semantic.text.primary} />
             </View>
+            {/* No chevron: these rows push a panel, and the push sinks and
+                floats on the vertical — a right caret would promise a slide. */}
             <Text style={styles.rowLabel}>{t(item.labelKey)}</Text>
-            <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
           </TouchableOpacity>
         ))}
       </View>

@@ -45,6 +45,7 @@ jest.mock('@salmon/shared', () => ({
   semantic: {
     text: { primary: '#fff' },
     border: { raised: '#6F7B95' },
+    surface: { shelf: '#10131C' },
   },
   shadows: {
     topSheet: {},
@@ -195,5 +196,50 @@ describe('GateContainer collapsed header with the task context at rest', () => {
 
     expect(translateYOf('gate-root')).toBe(COLLAPSED_Y);
     expect(opacityOf('gate-header-bar')).toBe(1);
+  });
+
+  it('swaps the expanded title through its keyed wrapper when the panel changes', () => {
+    const renderExpanded = (title: string) => (
+      <GateContainer
+        state="settings"
+        lockContent={null}
+        headerContent={<Text>header</Text>}
+        settingsContent={<Text>settings</Text>}
+        expandedHeader={{ title, onClose: jest.fn() }}
+      />
+    );
+    const view = render(renderExpanded('Settings'));
+    expect(screen.getByTestId('gate-expanded-title')).toHaveTextContent('Settings');
+
+    view.rerender(renderExpanded('Accounts'));
+    // The wrapper is keyed on the title string, so the swap remounts it —
+    // the old title's sink and the new one's float hang off that key change.
+    expect(screen.getByTestId('gate-expanded-title')).toHaveTextContent('Accounts');
+    expect(screen.queryByText('Settings')).toBeNull();
+  });
+
+  it('mounts the back chevron through its verb wrapper only while a back target exists', () => {
+    const renderExpanded = (onBack?: () => void) => (
+      <GateContainer
+        state="settings"
+        lockContent={null}
+        headerContent={<Text>header</Text>}
+        settingsContent={<Text>settings</Text>}
+        expandedHeader={{ title: 'Settings', onClose: jest.fn(), onBack }}
+      />
+    );
+    // Menu root: no back target, the slot holds a placeholder.
+    const view = render(renderExpanded(undefined));
+    expect(screen.queryByTestId('gate-back-verb')).toBeNull();
+    expect(screen.queryByTestId('screen-header-back-button')).toBeNull();
+
+    // A panel is pushed: the chevron appears through the animated wrapper.
+    view.rerender(renderExpanded(jest.fn()));
+    expect(screen.getByTestId('gate-back-verb')).toBeTruthy();
+    expect(screen.getByTestId('screen-header-back-button')).toBeTruthy();
+
+    // Back to the root: it leaves again.
+    view.rerender(renderExpanded(undefined));
+    expect(screen.queryByTestId('gate-back-verb')).toBeNull();
   });
 });

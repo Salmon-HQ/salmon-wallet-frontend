@@ -186,4 +186,11 @@ describe('SettingsSheet', () => {
     expect(mockPush).toHaveBeenCalledWith('currency', undefined);
     expect(mockPop).not.toHaveBeenCalled();
   });
+
+  it('renders push rows without a right chevron — the push sinks and floats, it does not slide', () => {
+    const { CaretRightIcon } = jest.requireActual('../../icons');
+    const view = render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
+
+    expect(view.UNSAFE_queryAllByType(CaretRightIcon)).toHaveLength(0);
+  });
 });

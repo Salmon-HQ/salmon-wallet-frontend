@@ -54,6 +54,7 @@ jest.mock('@salmon/shared', () => ({
   semantic: {
     text: { primary: '#fff', secondary: '#999' },
     border: { raised: '#333', default: '#222' },
+    surface: { shelf: '#10131C' },
   },
   fontFamilyNative: { bold: 'DMSansBold' },
   fontSize: { lg: 18 },
@@ -123,7 +124,8 @@ describe('GateContainer lock state', () => {
     const { getByTestId } = renderGate('collapsed');
     const style = getByTestId('gate-surface').props.style;
     const flat = (Array.isArray(style) ? style : [style]).filter(Boolean);
-    expect(Object.assign({}, ...flat).backgroundColor).toBe('#000');
+    // The gate's own ground: `surface.shelf` (mocked above).
+    expect(Object.assign({}, ...flat).backgroundColor).toBe('#10131C');
   });
 
   it('unmounts the wallets panel when the app locks from the wallets state', () => {

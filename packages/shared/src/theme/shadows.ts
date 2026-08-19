@@ -7,7 +7,13 @@
  * React Native shadow properties
  */
 export const shadows = {
-  /** Strong downward shadow for header */
+  /**
+   * Shadow Vocabulary — the gate's collapsed header bar. The gate is a
+   * sheet-like surface hanging from the top of the screen, and this is the
+   * ambient its bottom edge casts on the content scrolling beneath it — the
+   * downward counterpart of `sheet`. Registered into the vocabulary as-is
+   * (values unchanged): the edge needs the shadow to read as an edge.
+   */
   header: {
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
@@ -71,7 +77,12 @@ export const shadows = {
     shadowRadius: 20,
     elevation: 16,
   },
-  /** TopSheet subtle depth shadow */
+  /**
+   * Shadow Vocabulary — the gate/top-sheet surface when expanded. Same
+   * rationale as `header`: the gate is a sheet-like surface whose bottom
+   * edge needs an ambient to separate it from what it covers. Registered
+   * into the vocabulary as-is (values unchanged).
+   */
   topSheet: {
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
