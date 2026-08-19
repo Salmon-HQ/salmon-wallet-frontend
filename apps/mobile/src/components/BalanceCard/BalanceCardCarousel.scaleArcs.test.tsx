@@ -1,12 +1,14 @@
 /**
- * The chain selector dots on the balance carousel.
+ * The chain selector on the balance carousel — the pager is the motif.
  *
- * The dots under the balance are the visible chain-switch control, not a
- * passive page indicator: one per available network, each tappable inside a
- * 44pt cell (WCAG AA touch floor, PRODUCT.md), each labelled for assistive
- * tech, and a tap drives the same updateIndex path a swipe settle does.
- * In developer mode the network list grows (devnet/testnet entries) and the
- * dot row must grow with it, in list order.
+ * Each position under the balance renders as a seigaiha scale arc, the brand
+ * motif, not a generic pager dot: one per available network, each tappable
+ * inside a 44pt cell (WCAG AA touch floor, PRODUCT.md), each labelled for
+ * assistive tech, and a tap drives the same updateIndex path a swipe settle
+ * does. The active arc is filled in the primary ink and one step larger; the
+ * inactive ones are faint stroke arcs. In developer mode the network list
+ * grows (devnet/testnet entries) and the arc row must grow with it, in list
+ * order.
  */
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
@@ -15,6 +17,7 @@ import { StyleSheet } from 'react-native';
 // The real module pulls in @solana/kit, which jest-expo will not transform.
 // Only the tokens and helpers this carousel (and its motion util) read.
 jest.mock('@salmon/shared', () => ({
+  seigaihaTile: { width: 806.4, height: 25.2 },
   semantic: {
     text: { primary: '#F6F8FB', secondary: '#A7B1C4' },
   },
@@ -159,6 +162,8 @@ jest.mock('../../debug/layerColors', () => ({
   DEBUG_LAYER_COLOR: {},
 }));
 
+import { Path } from 'react-native-svg';
+
 import { BalanceCardCarousel } from './BalanceCardCarousel';
 
 const MAINNET_BLOCKCHAINS = [
@@ -201,13 +206,39 @@ const DEVELOPER_BLOCKCHAINS = [
   },
 ];
 
-describe('BalanceCardCarousel — the dots are the chain selector', () => {
-  it('renders one dot per network, keyed by network id', () => {
-    const { getByTestId } = render(<BalanceCardCarousel blockchains={MAINNET_BLOCKCHAINS} />);
+describe('BalanceCardCarousel — the scale arcs are the chain selector', () => {
+  it('renders one scale arc per network, keyed by network id', () => {
+    const api = render(<BalanceCardCarousel blockchains={MAINNET_BLOCKCHAINS} />);
 
-    expect(getByTestId('balance-carousel-dots').children).toHaveLength(3);
+    expect(api.getByTestId('balance-carousel-dots').children).toHaveLength(3);
     for (const chain of MAINNET_BLOCKCHAINS) {
-      expect(getByTestId(`balance-carousel-dot-${chain.network.id}`)).toBeTruthy();
+      expect(api.getByTestId(`balance-carousel-dot-${chain.network.id}`)).toBeTruthy();
+    }
+    // The glyph is the seigaiha arc — a single cubic per cell, derived from
+    // the shared tile (w = tile.width/28 = 28.8, rise = tile.height/2 = 12.6).
+    const paths = api.UNSAFE_getAllByType(Path);
+    expect(paths).toHaveLength(3);
+    for (const path of paths) {
+      expect(path.props.d).toContain('M0 12.6 C0 -4.2');
+      expect(path.props.d).toContain('28.8 -4.2 28.8 12.6');
+    }
+  });
+
+  it('fills the active arc with primary ink and strokes the rest faintly', () => {
+    const api = render(<BalanceCardCarousel blockchains={MAINNET_BLOCKCHAINS} />);
+
+    const paths = api.UNSAFE_getAllByType(Path);
+    const filled = paths.filter((p) => p.props.fill === '#F6F8FB');
+    const stroked = paths.filter((p) => p.props.stroke === 'rgba(255, 255, 255, 0.3)');
+
+    // Exactly one filled (the active, closed along its baseline) — the others
+    // are open faint strokes with no fill.
+    expect(filled).toHaveLength(1);
+    expect(filled[0].props.d.endsWith('Z')).toBe(true);
+    expect(stroked).toHaveLength(2);
+    for (const p of stroked) {
+      expect(p.props.fill).toBe('none');
+      expect(p.props.d.endsWith('Z')).toBe(false);
     }
   });
 
@@ -222,7 +253,7 @@ describe('BalanceCardCarousel — the dots are the chain selector', () => {
     expect(onBlockchainChange).toHaveBeenCalledWith('bitcoin', 1);
   });
 
-  it('does nothing when the active dot is tapped again', () => {
+  it('does nothing when the active arc is tapped again', () => {
     const onBlockchainChange = jest.fn();
     const { getByTestId } = render(
       <BalanceCardCarousel blockchains={MAINNET_BLOCKCHAINS} onBlockchainChange={onBlockchainChange} />
@@ -233,7 +264,7 @@ describe('BalanceCardCarousel — the dots are the chain selector', () => {
     expect(onBlockchainChange).not.toHaveBeenCalled();
   });
 
-  it('labels every dot for assistive tech and marks the active one selected', () => {
+  it('labels every arc for assistive tech and marks the active one selected', () => {
     const { getByLabelText, getByTestId } = render(
       <BalanceCardCarousel blockchains={MAINNET_BLOCKCHAINS} />
     );
@@ -249,7 +280,7 @@ describe('BalanceCardCarousel — the dots are the chain selector', () => {
     ).toEqual({ selected: false });
   });
 
-  it('gives each dot a 44pt touch cell (WCAG AA floor)', () => {
+  it('gives each arc a 44pt touch cell (WCAG AA floor)', () => {
     const { getByTestId } = render(<BalanceCardCarousel blockchains={MAINNET_BLOCKCHAINS} />);
 
     const cell = StyleSheet.flatten(
@@ -259,7 +290,7 @@ describe('BalanceCardCarousel — the dots are the chain selector', () => {
     expect(cell.height).toBeGreaterThanOrEqual(44);
   });
 
-  it('grows to one dot per developer-mode network, in list order', () => {
+  it('grows to one arc per developer-mode network, in list order', () => {
     const { getByTestId } = render(<BalanceCardCarousel blockchains={DEVELOPER_BLOCKCHAINS} />);
 
     const row = getByTestId('balance-carousel-dots');
@@ -269,7 +300,7 @@ describe('BalanceCardCarousel — the dots are the chain selector', () => {
     }
   });
 
-  it('switches to a developer network when its dot is tapped', () => {
+  it('switches to a developer network when its arc is tapped', () => {
     const onBlockchainChange = jest.fn();
     const { getByTestId } = render(
       <BalanceCardCarousel
