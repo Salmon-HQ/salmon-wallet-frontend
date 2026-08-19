@@ -1,13 +1,7 @@
 /**
- * GENERATED FILE — do not edit by hand.
- *
- * The myoseptal texture of salmon flesh, as path data, produced by
- * `scripts/flesh.py`. Regenerate — or retune — with:
- *
- *     python3 scripts/flesh.py
- *
- * Hand edits are lost on the next run. The reasoning below describes what the
- * generator does; the reasoning for *why* lives in that script's docstring.
+ * The myoseptal texture of salmon flesh — the "marbled" drawing — generated
+ * here at import time so a retune is a constant change, never a redraw (the
+ * `scales.ts` lesson: nothing hand-drawn).
  *
  * Companion to the scales motif, and deliberately its opposite. Scales are
  * skin: the outside of the animal, and the right texture for a ground or a
@@ -16,291 +10,114 @@
  * the myosepta, pale sheets of collagen and lipid separating the muscle
  * blocks.
  *
- * Anatomy this draws, and why it is shaped this way:
- *  - Bands run ACROSS the fillet, raked 32° off vertical. Myosepta angle back
- *    along the fish; bands running with the long axis read as wood grain
- *    instead. (van Leeuwen, JEB 202:3405)
- *  - Each band is a W: nested cones, dorsal and ventral, with the mid-height
- *    part bowing toward the head, and the two lobes deliberately unequal.
- *  - Cone traces span more than one vertebra, so consecutive myosepta overlap
- *    in projection. The faint half-bands between the full ones are that
- *    overlap, and they are what stops the texture reading as parallel stripes.
- *  - Bands are PALE, never dark. The pale stripe is collagen plus the fat that
- *    concentrates in the myocommata. Dark slits mean gaping, which is a defect,
- *    not healthy flesh.
+ * Audited against photos of real salmon: myosepta are FEW, wide apart, each
+ * band swells in the middle and thins at the tips, and neighbouring bands
+ * sweep together. The veins are therefore drawn as FILLED tapered paths (a
+ * polygon outlined around a centreline with a varying half-width), not
+ * uniform strokes. The soft edge is a wider, fainter copy of the same polygon
+ * under the crisp one — no SVG filters, because `react-native-svg` (15.15.3)
+ * stubs `FeTurbulence`/`FeDisplacementMap` and blurring a pattern tile is the
+ * kind of per-frame cost a button background must not pay.
  *
- * How it tiles, which is the property most easily broken by a well-meaning
- * edit: every band is a level set of one field whose frequencies are whole
- * numbers over the tile in both axes, and the tile height is chosen so a band
- * leaving the bottom edge is exactly the band 2 slots over entering the top —
- * same position and same slope. The opacity envelopes are sampled from the
- * same field at absolute horizontal positions, so where a band leaves the tile
- * its continuation picks up at exactly the value it left at, and one tile over
- * the whole field repeats. Nothing is pinned to zero at an edge; a band that
- * fades out at the boundary does not hide the repeat, it advertises it as an
- * untextured column — which is precisely what the previous texture did.
- *
- * Two platform constraints shaped the data:
- *
- *  1. NO FILTERS. `react-native-svg` (checked at 15.15.3) implements
- *     `FeTurbulence` and `FeDisplacementMap` as `warnUnimplementedFilter();
- *     return null`, so procedural noise does not exist on mobile. All the
- *     irregularity is authored into the path data below, and the soft edge is
- *     faked with stacked strokes rather than a blur. Gradients on stroke ARE
- *     natively supported, so the along-band fade is portable. Both renderers
- *     run it down the band's bounding box — every band spans the tile's full
- *     height, so a stop's offset is simply a height within the tile.
- *
- *  2. CONTRAST IS FREE. Every band is lighter than the fill it sits on, so the
- *     texture can only ever raise the luminance under a label. Worst-case
- *     contrast for ink on a salmon fill is therefore exactly the flat fill's —
- *     this texture cannot reduce label contrast at all. Introducing a band
- *     darker than the fill, at any opacity, would break that guarantee;
- *     `flesh.test.ts` asserts against it.
- *
- * Path data rather than an `.svg` import, for the same reason as `brand.ts`:
- * strings need no bundler support and cannot drift between platforms. Both
- * `packages/ui` and `apps/mobile` draw exactly these arrays; nothing is
- * randomised at render time.
+ * Guarantees:
+ *  - Pale-only: the veins are drawn in the `semantic.flesh.band` token the
+ *    renderers use, so the texture can only raise luminance under a label;
+ *    label contrast is untouched by construction. Introducing a fill darker
+ *    than the salmon ground would break that; `flesh.test.ts` asserts the
+ *    0.2 opacity ceiling.
+ *  - Seamless tiling: every centreline and every width profile is periodic
+ *    over the tile in both axes, so the band leaving one edge is exactly the
+ *    band entering the opposite edge — position, slope and width all agree.
+ *    Wrap copies are baked into the data wherever ink reaches past a vertical
+ *    tile edge, because `react-native-svg`'s Pattern has no overflow.
  */
+
+/** One filled band pass: `[path, fillOpacity]`. */
+export type FleshFill = readonly [d: string, opacity: number];
+
+const TWO_PI = Math.PI * 2;
+
+/** Veins per tile width. 3 over a 150px tile = 50px apart. */
+const BANDS = 3;
+
+/**
+ * How far each vein bows sideways as it sweeps down the tile, in tile units.
+ * All veins share the one bow, which is what makes them nest as arcs that
+ * barrel together (myosepta) instead of independent wiggles.
+ */
+const ARC_AMP = 10;
+
+/**
+ * Vein half-profile: `[min, max]` width in tile units. The vein swells to
+ * `max` mid-tile and thins to `min` at the tips — `min` stays visible so the
+ * tile edge never shows a bare row.
+ */
+const WIDTH: readonly [number, number] = [2, 7];
+
+/**
+ * Ink: `[core, halo]` fill opacity. Few veins, so the core sits just under
+ * the 0.2 ceiling `flesh.test.ts` enforces.
+ */
+const INK: readonly [number, number] = [0.16, 0.05];
 
 /** The drawing's native tile, in the units the paths are authored in. */
-export const fleshTile = { width: 138, height: 88 } as const;
+export const fleshTile = { width: 150, height: 88 } as const;
 
-/** One gradient stop along a band's length: `[offset, opacity]`. */
-export type FleshFadeStop = readonly [offset: number, opacity: number];
+/** The halo pass is this much wider than the core it softens. */
+const HALO_SPREAD = 1.9;
 
-/**
- * Opacity envelopes running along a band's length, sampled from the same
- * periodic field the geometry comes from. They never reach zero: the floor is
- * 0.013, so the texture is as alive at a tile edge as anywhere else.
- */
-export const fleshFades: ReadonlyArray<ReadonlyArray<FleshFadeStop>> = [
-  [
-    [0, 0.255],
-    [0.125, 0.752],
-    [0.25, 0.588],
-    [0.375, 0.506],
-    [0.5, 0.454],
-    [0.625, 0.587],
-    [0.75, 0.667],
-    [0.875, 0.521],
-    [1, 0.385],
-  ],
-  [
-    [0, 0.111],
-    [0.125, 0.158],
-    [0.25, 0.359],
-    [0.375, 0.139],
-    [0.5, 0.028],
-    [0.625, 0.579],
-    [0.75, 0.06],
-    [0.875, 0.427],
-    [1, 0.015],
-  ],
-  [
-    [0, 0.7],
-    [0.125, 0.408],
-    [0.25, 0.747],
-    [0.375, 0.554],
-    [0.5, 0.244],
-    [0.625, 0.867],
-    [0.75, 0.418],
-    [0.875, 0.666],
-    [1, 0.364],
-  ],
-  [
-    [0, 0.265],
-    [0.125, 0.115],
-    [0.25, 0.349],
-    [0.375, 0.135],
-    [0.5, 0.06],
-    [0.625, 0.25],
-    [0.75, 0.333],
-    [0.875, 0.074],
-    [1, 0.138],
-  ],
-  [
-    [0, 0.385],
-    [0.125, 0.642],
-    [0.25, 0.689],
-    [0.375, 0.392],
-    [0.5, 0.601],
-    [0.625, 0.407],
-    [0.75, 0.857],
-    [0.875, 0.363],
-    [1, 0.464],
-  ],
-  [
-    [0, 0.015],
-    [0.125, 0.304],
-    [0.25, 0.401],
-    [0.375, 0.033],
-    [0.5, 0.258],
-    [0.625, 0.09],
-    [0.75, 0.392],
-    [0.875, 0.161],
-    [1, 0.022],
-  ],
-  [
-    [0, 0.364],
-    [0.125, 0.578],
-    [0.25, 0.763],
-    [0.375, 0.388],
-    [0.5, 0.483],
-    [0.625, 0.645],
-    [0.75, 0.549],
-    [0.875, 0.661],
-    [1, 0.255],
-  ],
-  [
-    [0, 0.138],
-    [0.125, 0.164],
-    [0.25, 0.317],
-    [0.375, 0.15],
-    [0.5, 0.043],
-    [0.625, 0.344],
-    [0.75, 0.224],
-    [0.875, 0.12],
-    [1, 0.111],
-  ],
-  [
-    [0, 0.464],
-    [0.125, 0.674],
-    [0.25, 0.547],
-    [0.375, 0.605],
-    [0.5, 0.385],
-    [0.625, 0.549],
-    [0.75, 0.843],
-    [0.875, 0.234],
-    [1, 0.7],
-  ],
-  [
-    [0, 0.022],
-    [0.125, 0.528],
-    [0.25, 0.124],
-    [0.375, 0.18],
-    [0.5, 0.113],
-    [0.625, 0.087],
-    [0.75, 0.752],
-    [0.875, 0.013],
-    [1, 0.265],
-  ],
-];
+type Sample = readonly [x: number, y: number, halfWidth: number];
+
+/** A closed polygon around a centreline: down one edge, back up the other. */
+const outline = (samples: ReadonlyArray<Sample>, spread: number): string => {
+  const edge = (side: 1 | -1) =>
+    samples.map(([x, y, half]) => `${(x + side * half * spread).toFixed(2)},${y.toFixed(2)}`);
+  const left = edge(-1);
+  const right = edge(1).reverse();
+  return `M ${left.join(' L ')} L ${right.join(' L ')} Z`;
+};
+
+const build = (): ReadonlyArray<FleshFill> => {
+  const { width: W, height: H } = fleshTile;
+  const S = W / BANDS;
+  const [wMin, wMax] = WIDTH;
+  const [core, halo] = INK;
+  const STEPS = 22;
+
+  const fills: FleshFill[] = [];
+  for (let k = 0; k < BANDS; k += 1) {
+    const samples: Sample[] = [];
+    for (let i = 0; i <= STEPS; i += 1) {
+      const t = i / STEPS;
+      const y = t * H;
+      // Shared bow (fundamental + a fixed 0.35 second harmonic for the
+      // unequal lobes) — periodic over H, so slope and position both hand
+      // off cleanly at the tile edge.
+      const bow = ARC_AMP * (Math.sin(TWO_PI * t) + 0.35 * Math.sin(2 * TWO_PI * t + 1.1));
+      // Rake: one band-slot of drift per tile height, so the band leaving
+      // the bottom is exactly the next band entering the top.
+      const x = (k + 0.5) * S + S * t + bow;
+      // Swell mid-tile, thin (never zero) at the tips; periodic over H.
+      const half = (wMin + (wMax - wMin) * (0.5 - 0.5 * Math.cos(TWO_PI * t))) / 2;
+      samples.push([x, y, half]);
+    }
+    // Wrap copies wherever the halo's ink reaches past a vertical tile edge —
+    // react-native-svg's Pattern has no overflow, so the wrap is baked in.
+    const reach = samples.map(([x, , half]) => [x - half * HALO_SPREAD, x + half * HALO_SPREAD]);
+    const minX = Math.min(...reach.map(([lo]) => lo));
+    const maxX = Math.max(...reach.map(([, hi]) => hi));
+    const shifts = [0, ...(minX < 0 ? [W] : []), ...(maxX > W ? [-W] : [])];
+    for (const dx of shifts) {
+      const shifted = samples.map(([x, y, half]) => [x + dx, y, half] as const);
+      fills.push([outline(shifted, HALO_SPREAD), halo]);
+      fills.push([outline(shifted, 1), core]);
+    }
+  }
+  return fills;
+};
 
 /**
- * One stroke: `[path, width, opacity, fade index]`. Bands are pre-expanded
- * into their soft-edge stacks — a wide faint pass under a narrow stronger one
- * — so a renderer only has to map over this array.
+ * The filled passes both renderers draw, wrap copies included — a renderer
+ * only has to map over the array.
  */
-export type FleshStroke = readonly [d: string, width: number, opacity: number, fade: number];
-
-/** The band curves. Several strokes share one, which is the soft-edge stack. */
-const paths = [
-  'M 0.43,0.00 C 1.81,0.92 3.34,1.83 4.63,2.75 C 5.91,3.67 7.16,4.58 8.14,5.50 C 9.12,6.42 9.89,7.33 10.51,8.25 C 11.14,9.17 11.69,10.08 11.88,11.00 C 12.07,11.92 11.68,12.83 11.66,13.75 C 11.65,14.67 11.64,15.58 11.80,16.50 C 11.97,17.42 12.30,18.33 12.66,19.25 C 13.02,20.17 13.57,21.08 13.95,22.00 C 14.33,22.92 14.76,23.83 14.95,24.75 C 15.14,25.67 15.17,26.58 15.08,27.50 C 14.99,28.42 14.64,29.33 14.41,30.25 C 14.17,31.17 13.52,32.08 13.69,33.00 C 13.86,33.92 14.58,34.83 15.44,35.75 C 16.30,36.67 17.47,37.58 18.84,38.50 C 20.21,39.42 21.99,40.33 23.66,41.25 C 25.33,42.17 27.27,43.08 28.86,44.00 C 30.44,44.92 32.00,45.83 33.18,46.75 C 34.35,47.67 35.22,48.58 35.89,49.50 C 36.57,50.42 36.85,51.33 37.22,52.25 C 37.58,53.17 37.92,54.08 38.11,55.00 C 38.30,55.92 38.08,56.83 38.36,57.75 C 38.64,58.67 39.20,59.58 39.80,60.50 C 40.41,61.42 41.32,62.33 42.01,63.25 C 42.70,64.17 43.51,65.08 43.96,66.00 C 44.41,66.92 44.70,67.83 44.72,68.75 C 44.75,69.67 44.42,70.58 44.11,71.50 C 43.80,72.42 43.16,73.33 42.84,74.25 C 42.51,75.17 41.95,76.08 42.14,77.00 C 42.34,77.92 43.10,78.83 44.03,79.75 C 44.96,80.67 46.30,81.58 47.71,82.50 C 49.12,83.42 50.92,84.33 52.49,85.25 C 54.05,86.17 55.77,87.08 57.09,88.00',
-  'M 15.70,0.00 C 17.30,0.92 18.95,1.83 20.18,2.75 C 21.41,3.67 22.40,4.58 23.10,5.50 C 23.79,6.42 24.08,7.33 24.37,8.25 C 24.65,9.17 24.85,10.08 24.82,11.00 C 24.79,11.92 24.19,12.83 24.19,13.75 C 24.19,14.67 24.40,15.58 24.81,16.50 C 25.22,17.42 25.98,18.33 26.65,19.25 C 27.32,20.17 28.23,21.08 28.82,22.00 C 29.40,22.92 29.96,23.83 30.16,24.75 C 30.37,25.67 30.27,26.58 30.05,27.50 C 29.83,28.42 29.23,29.33 28.84,30.25 C 28.45,31.17 27.64,32.08 27.69,33.00 C 27.74,33.92 28.36,34.83 29.16,35.75 C 29.96,36.67 31.15,37.58 32.51,38.50 C 33.88,39.42 35.69,40.33 37.36,41.25 C 39.03,42.17 40.96,43.08 42.52,44.00 C 44.09,44.92 45.60,45.83 46.75,46.75 C 47.89,47.67 48.73,48.58 49.39,49.50 C 50.04,50.42 50.33,51.33 50.69,52.25 C 51.06,53.17 51.35,54.08 51.57,55.00 C 51.78,55.92 51.68,56.83 51.97,57.75 C 52.26,58.67 52.76,59.58 53.28,60.50 C 53.81,61.42 54.56,62.33 55.13,63.25 C 55.70,64.17 56.34,65.08 56.71,66.00 C 57.08,66.92 57.31,67.83 57.37,68.75 C 57.43,69.67 57.22,70.58 57.07,71.50 C 56.92,72.42 56.55,73.33 56.46,74.25 C 56.37,75.17 56.11,76.08 56.51,77.00 C 56.91,77.92 57.85,78.83 58.86,79.75 C 59.88,80.67 61.25,81.58 62.61,82.50 C 63.97,83.42 65.61,84.33 67.00,85.25 C 68.39,86.17 69.84,87.08 70.96,88.00',
-  'M 29.12,0.00 C 30.65,0.92 32.15,1.83 33.26,2.75 C 34.37,3.67 35.17,4.58 35.78,5.50 C 36.39,6.42 36.61,7.33 36.92,8.25 C 37.23,9.17 37.51,10.08 37.65,11.00 C 37.79,11.92 37.53,12.83 37.77,13.75 C 38.02,14.67 38.54,15.58 39.13,16.50 C 39.72,17.42 40.61,18.33 41.30,19.25 C 41.99,20.17 42.80,21.08 43.27,22.00 C 43.74,22.92 44.05,23.83 44.11,24.75 C 44.16,25.67 43.88,26.58 43.61,27.50 C 43.34,28.42 42.77,29.33 42.49,30.25 C 42.22,31.17 41.72,32.08 41.98,33.00 C 42.24,33.92 43.07,34.83 44.06,35.75 C 45.05,36.67 46.46,37.58 47.93,38.50 C 49.40,39.42 51.26,40.33 52.88,41.25 C 54.50,42.17 56.27,43.08 57.63,44.00 C 59.00,44.92 60.21,45.83 61.08,46.75 C 61.95,47.67 62.46,48.58 62.87,49.50 C 63.28,50.42 63.33,51.33 63.55,52.25 C 63.77,53.17 63.99,54.08 64.20,55.00 C 64.40,55.92 64.41,56.83 64.80,57.75 C 65.19,58.67 65.86,59.58 66.53,60.50 C 67.20,61.42 68.12,62.33 68.82,63.25 C 69.52,64.17 70.28,65.08 70.71,66.00 C 71.14,66.92 71.38,67.83 71.41,68.75 C 71.43,69.67 71.12,70.58 70.84,71.50 C 70.56,72.42 70.01,73.33 69.73,74.25 C 69.46,75.17 68.93,76.08 69.19,77.00 C 69.45,77.92 70.34,78.83 71.31,79.75 C 72.28,80.67 73.63,81.58 75.02,82.50 C 76.40,83.42 78.11,84.33 79.62,85.25 C 81.12,86.17 82.73,87.08 84.05,88.00',
-  'M 42.36,0.00 C 43.86,0.92 45.31,1.83 46.40,2.75 C 47.49,3.67 48.27,4.58 48.88,5.50 C 49.50,6.42 49.74,7.33 50.08,8.25 C 50.41,9.17 50.68,10.08 50.88,11.00 C 51.08,11.92 50.98,12.83 51.27,13.75 C 51.55,14.67 52.07,15.58 52.61,16.50 C 53.16,17.42 53.94,18.33 54.54,19.25 C 55.15,20.17 55.83,21.08 56.25,22.00 C 56.67,22.92 56.96,23.83 57.08,24.75 C 57.19,25.67 57.05,26.58 56.96,27.50 C 56.87,28.42 56.57,29.33 56.55,30.25 C 56.52,31.17 56.32,32.08 56.78,33.00 C 57.24,33.92 58.24,34.83 59.30,35.75 C 60.37,36.67 61.79,37.58 63.18,38.50 C 64.58,39.42 66.25,40.33 67.66,41.25 C 69.08,42.17 70.54,43.08 71.66,44.00 C 72.79,44.92 73.71,45.83 74.41,46.75 C 75.11,47.67 75.47,48.58 75.87,49.50 C 76.27,50.42 76.41,51.33 76.80,52.25 C 77.19,53.17 77.77,54.08 78.22,55.00 C 78.68,55.92 78.95,56.83 79.55,57.75 C 80.14,58.67 81.05,59.58 81.81,60.50 C 82.58,61.42 83.53,62.33 84.14,63.25 C 84.74,64.17 85.27,65.08 85.44,66.00 C 85.60,66.92 85.44,67.83 85.11,68.75 C 84.79,69.67 84.06,70.58 83.48,71.50 C 82.91,72.42 82.08,73.33 81.66,74.25 C 81.24,75.17 80.64,76.08 80.97,77.00 C 81.31,77.92 82.48,78.83 83.67,79.75 C 84.87,80.67 86.53,81.58 88.16,82.50 C 89.79,83.42 91.76,84.33 93.46,85.25 C 95.16,86.17 96.94,87.08 98.38,88.00',
-  'M 57.09,0.00 C 58.42,0.92 59.59,1.83 60.44,2.75 C 61.29,3.67 61.77,4.58 62.18,5.50 C 62.58,6.42 62.62,7.33 62.85,8.25 C 63.08,9.17 63.31,10.08 63.54,11.00 C 63.78,11.92 63.82,12.83 64.25,13.75 C 64.68,14.67 65.39,15.58 66.11,16.50 C 66.83,17.42 67.82,18.33 68.58,19.25 C 69.34,20.17 70.16,21.08 70.66,22.00 C 71.15,22.92 71.46,23.83 71.55,24.75 C 71.63,25.67 71.39,26.58 71.16,27.50 C 70.94,28.42 70.44,29.33 70.21,30.25 C 69.99,31.17 69.49,32.08 69.79,33.00 C 70.09,33.92 71.00,34.83 71.99,35.75 C 72.98,36.67 74.34,37.58 75.72,38.50 C 77.11,39.42 78.81,40.33 80.30,41.25 C 81.79,42.17 83.37,43.08 84.65,44.00 C 85.93,44.92 87.06,45.83 87.99,46.75 C 88.92,47.67 89.58,48.58 90.23,49.50 C 90.89,50.42 91.33,51.33 91.93,52.25 C 92.54,53.17 93.36,54.08 93.87,55.00 C 94.37,55.92 94.53,56.83 94.97,57.75 C 95.40,58.67 96.02,59.58 96.48,60.50 C 96.94,61.42 97.45,62.33 97.71,63.25 C 97.97,64.17 98.09,65.08 98.03,66.00 C 97.96,66.92 97.63,67.83 97.32,68.75 C 97.01,69.67 96.47,70.58 96.17,71.50 C 95.87,72.42 95.53,73.33 95.53,74.25 C 95.54,75.17 95.52,76.08 96.20,77.00 C 96.88,77.92 98.33,78.83 99.63,79.75 C 100.92,80.67 102.51,81.58 103.96,82.50 C 105.41,83.42 107.00,84.33 108.35,85.25 C 109.70,86.17 110.99,87.08 112.07,88.00',
-  'M 70.96,0.00 C 72.08,0.92 73.00,1.83 73.72,2.75 C 74.43,3.67 74.82,4.58 75.25,5.50 C 75.67,6.42 75.85,7.33 76.29,8.25 C 76.72,9.17 77.34,10.08 77.86,11.00 C 78.37,11.92 78.70,12.83 79.36,13.75 C 80.02,14.67 80.98,15.58 81.81,16.50 C 82.64,17.42 83.66,18.33 84.33,19.25 C 85.00,20.17 85.59,21.08 85.81,22.00 C 86.02,22.92 85.91,23.83 85.63,24.75 C 85.35,25.67 84.66,26.58 84.11,27.50 C 83.57,28.42 82.76,29.33 82.36,30.25 C 81.95,31.17 81.35,32.08 81.68,33.00 C 82.01,33.92 83.16,34.83 84.33,35.75 C 85.51,36.67 87.13,37.58 88.73,38.50 C 90.32,39.42 92.24,40.33 93.89,41.25 C 95.55,42.17 97.26,43.08 98.64,44.00 C 100.03,44.92 101.22,45.83 102.18,46.75 C 103.15,47.67 103.81,48.58 104.44,49.50 C 105.07,50.42 105.47,51.33 105.96,52.25 C 106.46,53.17 107.09,54.08 107.42,55.00 C 107.75,55.92 107.70,56.83 107.93,57.75 C 108.16,58.67 108.51,59.58 108.81,60.50 C 109.12,61.42 109.48,62.33 109.75,63.25 C 110.03,64.17 110.27,65.08 110.47,66.00 C 110.67,66.92 110.79,67.83 110.94,68.75 C 111.10,69.67 111.20,70.58 111.40,71.50 C 111.60,72.42 111.82,73.33 112.14,74.25 C 112.45,75.17 112.69,76.08 113.31,77.00 C 113.93,77.92 114.96,78.83 115.84,79.75 C 116.73,80.67 117.66,81.58 118.60,82.50 C 119.54,83.42 120.50,84.33 121.46,85.25 C 122.42,86.17 123.40,87.08 124.37,88.00',
-  'M 84.05,0.00 C 85.37,0.92 86.54,1.83 87.52,2.75 C 88.49,3.67 89.20,4.58 89.91,5.50 C 90.63,6.42 91.13,7.33 91.80,8.25 C 92.47,9.17 93.35,10.08 93.92,11.00 C 94.49,11.92 94.72,12.83 95.21,13.75 C 95.71,14.67 96.39,15.58 96.89,16.50 C 97.40,17.42 97.97,18.33 98.27,19.25 C 98.57,20.17 98.72,21.08 98.68,22.00 C 98.64,22.92 98.33,23.83 98.02,24.75 C 97.72,25.67 97.18,26.58 96.87,27.50 C 96.56,28.42 96.20,29.33 96.17,30.25 C 96.15,31.17 96.09,32.08 96.73,33.00 C 97.37,33.92 98.77,34.83 100.02,35.75 C 101.26,36.67 102.78,37.58 104.18,38.50 C 105.57,39.42 107.09,40.33 108.38,41.25 C 109.66,42.17 110.88,43.08 111.90,44.00 C 112.92,44.92 113.75,45.83 114.50,46.75 C 115.24,47.67 115.79,48.58 116.36,49.50 C 116.94,50.42 117.40,51.33 117.95,52.25 C 118.50,53.17 119.20,54.08 119.66,55.00 C 120.12,55.92 120.31,56.83 120.70,57.75 C 121.09,58.67 121.56,59.58 122.02,60.50 C 122.48,61.42 122.98,62.33 123.44,63.25 C 123.89,64.17 124.36,65.08 124.76,66.00 C 125.15,66.92 125.52,67.83 125.82,68.75 C 126.11,69.67 126.35,70.58 126.53,71.50 C 126.71,72.42 126.81,73.33 126.92,74.25 C 127.03,75.17 126.90,76.08 127.20,77.00 C 127.50,77.92 128.08,78.83 128.72,79.75 C 129.36,80.67 130.09,81.58 131.03,82.50 C 131.96,83.42 133.11,84.33 134.34,85.25 C 135.58,86.17 137.05,87.08 138.43,88.00',
-  'M 98.38,0.00 C 99.82,0.92 101.07,1.83 102.10,2.75 C 103.13,3.67 103.86,4.58 104.56,5.50 C 105.25,6.42 105.71,7.33 106.26,8.25 C 106.81,9.17 107.50,10.08 107.88,11.00 C 108.25,11.92 108.25,12.83 108.52,13.75 C 108.78,14.67 109.16,15.58 109.48,16.50 C 109.81,17.42 110.18,18.33 110.46,19.25 C 110.74,20.17 110.97,21.08 111.16,22.00 C 111.34,22.92 111.43,23.83 111.56,24.75 C 111.68,25.67 111.74,26.58 111.90,27.50 C 112.05,28.42 112.22,29.33 112.48,30.25 C 112.74,31.17 112.91,32.08 113.47,33.00 C 114.03,33.92 115.00,34.83 115.81,35.75 C 116.63,36.67 117.50,37.58 118.38,38.50 C 119.25,39.42 120.16,40.33 121.07,41.25 C 121.98,42.17 122.90,43.08 123.83,44.00 C 124.76,44.92 125.71,45.83 126.64,46.75 C 127.57,47.67 128.51,48.58 129.39,49.50 C 130.28,50.42 131.15,51.33 131.96,52.25 C 132.78,53.17 133.69,54.08 134.27,55.00 C 134.85,55.92 135.05,56.83 135.43,57.75 C 135.80,58.67 136.14,59.58 136.50,60.50 C 136.86,61.42 137.24,62.33 137.61,63.25 C 137.97,64.17 138.37,65.08 138.68,66.00 C 138.99,66.92 139.29,67.83 139.45,68.75 C 139.62,69.67 139.68,70.58 139.67,71.50 C 139.66,72.42 139.48,73.33 139.38,74.25 C 139.29,75.17 138.86,76.08 139.10,77.00 C 139.34,77.92 140.02,78.83 140.84,79.75 C 141.67,80.67 142.74,81.58 144.03,82.50 C 145.32,83.42 146.97,84.33 148.59,85.25 C 150.20,86.17 152.11,87.08 153.70,88.00',
-  'M 112.07,0.00 C 113.15,0.92 114.04,1.83 114.84,2.75 C 115.64,3.67 116.24,4.58 116.86,5.50 C 117.48,6.42 117.99,7.33 118.57,8.25 C 119.15,9.17 119.88,10.08 120.35,11.00 C 120.82,11.92 121.02,12.83 121.41,13.75 C 121.80,14.67 122.25,15.58 122.69,16.50 C 123.13,17.42 123.60,18.33 124.02,19.25 C 124.44,20.17 124.86,21.08 125.21,22.00 C 125.56,22.92 125.87,23.83 126.11,24.75 C 126.35,25.67 126.52,26.58 126.64,27.50 C 126.76,28.42 126.78,29.33 126.83,30.25 C 126.88,31.17 126.68,32.08 126.92,33.00 C 127.17,33.92 127.69,34.83 128.28,35.75 C 128.87,36.67 129.55,37.58 130.45,38.50 C 131.35,39.42 132.47,40.33 133.68,41.25 C 134.89,42.17 136.35,43.08 137.73,44.00 C 139.10,44.92 140.64,45.83 141.93,46.75 C 143.23,47.67 144.50,48.58 145.52,49.50 C 146.53,50.42 147.33,51.33 148.00,52.25 C 148.66,53.17 149.27,54.08 149.52,55.00 C 149.76,55.92 149.43,56.83 149.47,57.75 C 149.52,58.67 149.58,59.58 149.81,60.50 C 150.04,61.42 150.44,62.33 150.86,63.25 C 151.27,64.17 151.88,65.08 152.32,66.00 C 152.75,66.92 153.23,67.83 153.47,68.75 C 153.70,69.67 153.77,70.58 153.71,71.50 C 153.65,72.42 153.32,73.33 153.10,74.25 C 152.88,75.17 152.22,76.08 152.39,77.00 C 152.56,77.92 153.26,78.83 154.10,79.75 C 154.93,80.67 156.08,81.58 157.41,82.50 C 158.74,83.42 160.48,84.33 162.10,85.25 C 163.71,86.17 165.60,87.08 167.12,88.00',
-  'M 124.37,0.00 C 125.34,0.92 126.33,1.83 127.28,2.75 C 128.23,3.67 129.19,4.58 130.09,5.50 C 130.99,6.42 131.86,7.33 132.66,8.25 C 133.47,9.17 134.37,10.08 134.92,11.00 C 135.47,11.92 135.65,12.83 135.98,13.75 C 136.31,14.67 136.60,15.58 136.91,16.50 C 137.22,17.42 137.55,18.33 137.85,19.25 C 138.15,20.17 138.49,21.08 138.73,22.00 C 138.98,22.92 139.21,23.83 139.31,24.75 C 139.41,25.67 139.41,26.58 139.35,27.50 C 139.28,28.42 139.04,29.33 138.90,30.25 C 138.76,31.17 138.29,32.08 138.50,33.00 C 138.71,33.92 139.36,34.83 140.17,35.75 C 140.97,36.67 142.03,37.58 143.32,38.50 C 144.61,39.42 146.28,40.33 147.91,41.25 C 149.54,42.17 151.47,43.08 153.10,44.00 C 154.74,44.92 156.42,45.83 157.70,46.75 C 158.98,47.67 160.02,48.58 160.78,49.50 C 161.53,50.42 161.88,51.33 162.23,52.25 C 162.58,53.17 162.84,54.08 162.87,55.00 C 162.91,55.92 162.38,56.83 162.43,57.75 C 162.49,58.67 162.76,59.58 163.23,60.50 C 163.69,61.42 164.50,62.33 165.21,63.25 C 165.91,64.17 166.86,65.08 167.47,66.00 C 168.08,66.92 168.65,67.83 168.86,68.75 C 169.07,69.67 168.98,70.58 168.75,71.50 C 168.52,72.42 167.90,73.33 167.48,74.25 C 167.06,75.17 166.21,76.08 166.23,77.00 C 166.24,77.92 166.80,78.83 167.55,79.75 C 168.30,80.67 169.42,81.58 170.73,82.50 C 172.04,83.42 173.78,84.33 175.38,85.25 C 176.99,86.17 178.85,87.08 180.36,88.00',
-];
-
-/** Every `x,y` pair in the authored path data. The format is uniform. */
-const POINT = /(-?[\d.]+),(-?[\d.]+)/g;
-
-/** Shifts a whole path sideways, which for this data is an x-only rewrite. */
-const shiftX = (d: string, dx: number): string =>
-  d.replace(POINT, (_, x: string, y: string) => `${(Number(x) + dx).toFixed(2)},${y}`);
-
-/** The bands of one field period — the drawing itself, before it is wrapped. */
-export const fleshStrokes: ReadonlyArray<FleshStroke> = [
-  [paths[0], 5.94, 0.0399, 0],
-  [paths[0], 3.87, 0.0712, 0],
-  [paths[0], 1.8, 0.2, 0],
-  [paths[1], 4.75, 0.02, 1],
-  [paths[1], 3.1, 0.0356, 1],
-  [paths[1], 1.44, 0.1, 1],
-  [paths[2], 5.94, 0.0399, 2],
-  [paths[2], 3.87, 0.0712, 2],
-  [paths[2], 1.8, 0.2, 2],
-  [paths[3], 4.75, 0.02, 3],
-  [paths[3], 3.1, 0.0356, 3],
-  [paths[3], 1.44, 0.1, 3],
-  [paths[4], 5.94, 0.0399, 4],
-  [paths[4], 3.87, 0.0712, 4],
-  [paths[4], 1.8, 0.2, 4],
-  [paths[5], 4.75, 0.02, 5],
-  [paths[5], 3.1, 0.0356, 5],
-  [paths[5], 1.44, 0.1, 5],
-  [paths[6], 5.94, 0.0399, 6],
-  [paths[6], 3.87, 0.0712, 6],
-  [paths[6], 1.8, 0.2, 6],
-  [paths[7], 4.75, 0.02, 7],
-  [paths[7], 3.1, 0.0356, 7],
-  [paths[7], 1.44, 0.1, 7],
-  [paths[8], 5.94, 0.0399, 8],
-  [paths[8], 3.87, 0.0712, 8],
-  [paths[8], 1.8, 0.2, 8],
-  [paths[9], 4.75, 0.02, 9],
-  [paths[9], 3.1, 0.0356, 9],
-  [paths[9], 1.44, 0.1, 9],
-];
-
-/**
- * The strokes a renderer actually draws: the bands above, plus the copies
- * displaced by a whole tile width wherever a band's ink reaches past an edge.
- * This is the `overflow="visible"` the DOM would otherwise do for us,
- * resolved here because `react-native-svg`'s `Pattern` has no such prop and
- * would silently clip instead.
- */
-export const fleshTiledStrokes: ReadonlyArray<FleshStroke> = [
-  [paths[0], 5.94, 0.0399, 0],
-  [shiftX(paths[0], 138), 5.94, 0.0399, 0],
-  [paths[0], 3.87, 0.0712, 0],
-  [shiftX(paths[0], 138), 3.87, 0.0712, 0],
-  [paths[0], 1.8, 0.2, 0],
-  [shiftX(paths[0], 138), 1.8, 0.2, 0],
-  [paths[1], 4.75, 0.02, 1],
-  [paths[1], 3.1, 0.0356, 1],
-  [paths[1], 1.44, 0.1, 1],
-  [paths[2], 5.94, 0.0399, 2],
-  [paths[2], 3.87, 0.0712, 2],
-  [paths[2], 1.8, 0.2, 2],
-  [paths[3], 4.75, 0.02, 3],
-  [paths[3], 3.1, 0.0356, 3],
-  [paths[3], 1.44, 0.1, 3],
-  [paths[4], 5.94, 0.0399, 4],
-  [paths[4], 3.87, 0.0712, 4],
-  [paths[4], 1.8, 0.2, 4],
-  [paths[5], 4.75, 0.02, 5],
-  [paths[5], 3.1, 0.0356, 5],
-  [paths[5], 1.44, 0.1, 5],
-  [shiftX(paths[6], -138), 5.94, 0.0399, 6],
-  [paths[6], 5.94, 0.0399, 6],
-  [shiftX(paths[6], -138), 3.87, 0.0712, 6],
-  [paths[6], 3.87, 0.0712, 6],
-  [shiftX(paths[6], -138), 1.8, 0.2, 6],
-  [paths[6], 1.8, 0.2, 6],
-  [shiftX(paths[7], -138), 4.75, 0.02, 7],
-  [paths[7], 4.75, 0.02, 7],
-  [shiftX(paths[7], -138), 3.1, 0.0356, 7],
-  [paths[7], 3.1, 0.0356, 7],
-  [shiftX(paths[7], -138), 1.44, 0.1, 7],
-  [paths[7], 1.44, 0.1, 7],
-  [shiftX(paths[8], -138), 5.94, 0.0399, 8],
-  [paths[8], 5.94, 0.0399, 8],
-  [shiftX(paths[8], -138), 3.87, 0.0712, 8],
-  [paths[8], 3.87, 0.0712, 8],
-  [shiftX(paths[8], -138), 1.8, 0.2, 8],
-  [paths[8], 1.8, 0.2, 8],
-  [shiftX(paths[9], -138), 4.75, 0.02, 9],
-  [paths[9], 4.75, 0.02, 9],
-  [shiftX(paths[9], -138), 3.1, 0.0356, 9],
-  [paths[9], 3.1, 0.0356, 9],
-  [shiftX(paths[9], -138), 1.44, 0.1, 9],
-  [paths[9], 1.44, 0.1, 9],
-];
+export const fleshFills: ReadonlyArray<FleshFill> = build();
