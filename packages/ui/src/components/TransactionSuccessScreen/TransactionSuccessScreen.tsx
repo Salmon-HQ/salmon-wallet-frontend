@@ -176,17 +176,21 @@ const AMOUNT_CHAR_EM = 0.62;
  */
 const EXCHANGE_FURNITURE_CHARS = 7;
 
-const Amount = styled(Typography)<{ $emphasis?: boolean }>(({ $emphasis }) => ({
+const Amount = styled(Typography)<{ $spent?: boolean }>(({ $spent }) => ({
   fontFamily: fontFamily.sans,
   // Secondary rank: one step down from the headline in size and one in weight.
   // It keeps `text.primary` — a number on a receipt may be smaller than the
   // sentence above it, but it may never be dimmer than it is legible.
-  // On an exchange line the received side is one rank louder than the sent
-  // one, in weight always and in size wherever the column has the room — the
-  // ranking DESIGN.md §The ending says what happened asks for. A single hero
-  // takes the quieter of the two: there is nothing for it to outrank.
-  fontWeight: $emphasis ? fontWeight.semibold : fontWeight.medium,
-  color: colors.text.primary,
+  //
+  // A receipt's subject is the amount that arrived, so on an exchange line the
+  // received side must read louder — the ranking DESIGN.md §The ending says
+  // what happened asks for. The rank is bought by stepping the *spent* side
+  // down rather than the received side up, in size, weight and ink at once.
+  // Raising the received side would put it at the rank of the status line it
+  // sits under, and the hero is inside the node The Surfacing measures, so
+  // growing it would move where the caustic band lands.
+  fontWeight: $spent ? fontWeight.regular : fontWeight.medium,
+  color: $spent ? colors.text.secondary : colors.text.primary,
   textAlign: 'center',
   lineHeight: lineHeight.tight,
   ...tabularNums.css,
@@ -206,7 +210,7 @@ const Amount = styled(Typography)<{ $emphasis?: boolean }>(({ $emphasis }) => ({
   whiteSpace: 'nowrap',
   maxWidth: '100%',
   fontSize: `clamp(${fontSize.body}px, calc(100cqw / (var(--tx-amount-chars, 24) * ${AMOUNT_CHAR_EM})), ${
-    $emphasis ? fontSize.headline : fontSize.title
+    $spent ? fontSize.bodyLg : fontSize.title
   }px)`,
   // Inside the exchange line the amount shares the row with two marks and an
   // arrow; it may shrink to its budget but it may never be elided.
@@ -609,10 +613,10 @@ export function TransactionSuccessScreen({
             style={{ ...heroTiming, '--tx-amount-chars': exchangeChars } as React.CSSProperties}
           >
             <TokenLogo uri={exchange.send.logo} symbol={exchange.send.symbol} />
-            <Amount>{exchange.send.amount}</Amount>
+            <Amount $spent>{exchange.send.amount}</Amount>
             <ExchangeArrow aria-hidden>→</ExchangeArrow>
             <TokenLogo uri={exchange.receive.logo} symbol={exchange.receive.symbol} />
-            <Amount $emphasis>{exchange.receive.amount}</Amount>
+            <Amount>{exchange.receive.amount}</Amount>
           </ExchangeLine>
         ) : (
           <Amount
