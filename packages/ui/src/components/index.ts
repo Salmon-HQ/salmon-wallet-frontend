@@ -130,6 +130,10 @@ export type { BlurContainerProps, BlurTint } from './BlurContainer';
 export { FadeThrough } from './FadeThrough';
 export type { FadeThroughProps } from './FadeThrough';
 
+// SinkFloat - keyed content swap that speaks the transition verb: sink, beat, float
+export { SinkFloat } from './SinkFloat';
+export type { SinkFloatProps } from './SinkFloat';
+
 // PendingValue - a value being recalculated inside a container that stays put
 export { PendingValue } from './PendingValue';
 export type { PendingValueProps } from './PendingValue';

@@ -25,13 +25,32 @@ import {
   opacity,
   componentSizes,
   durationMs,
+  motionMs,
   semantic,
   useCopyFeedback,
+  SINK_FLOAT_STAGGER_MS,
+  SINK_FLOAT_TRAVEL,
 } from '@salmon/shared';
 import { CopyIcon, RefreshIcon, SettingsIcon } from '../Icon';
 import type { WalletHeaderProps } from './types';
 
 import { CopyTick } from '../CopyTick';
+import { SinkFloat } from '../SinkFloat';
+
+/**
+ * The verb at chrome scale (DESIGN.md, "Chrome speaks the verb at chrome
+ * scale"): the account line travels like the content below it, but smaller
+ * and quicker — half the travel, in on `drift`, out on `ebb`, and a float
+ * delay of one sink plus a stagger-beat. Keyed on the address, so a chain
+ * switch and an account switch ride the same gesture; on first mount nothing
+ * sank, so the line simply floats.
+ */
+const accountLineVerb = {
+  distance: SINK_FLOAT_TRAVEL / 2,
+  floatMs: motionMs.drift,
+  sinkMs: motionMs.ebb,
+  holdMs: motionMs.ebb + SINK_FLOAT_STAGGER_MS,
+} as const;
 const Container = styled(Box)({
   display: 'flex',
   flexDirection: 'row',
@@ -240,9 +259,18 @@ export function WalletHeader({
           </MuiAvatar>
         ) : null}
         <AccountTextContainer>
-          <AccountName>{accountName}</AccountName>
+          {/* Only the text travels. `CopyTick` stays outside the animated
+              wrappers and stays mounted, so a swap can never reset the tick
+              mid-hold — which is also why the address and the name each carry
+              their own wrapper instead of sharing one around the row that
+              holds the copy control. */}
+          <SinkFloat transitionKey={address} {...accountLineVerb}>
+            <AccountName>{accountName}</AccountName>
+          </SinkFloat>
           <AddressContainer>
-            <Address>{truncatedAddress}</Address>
+            <SinkFloat transitionKey={address} {...accountLineVerb}>
+              <Address>{truncatedAddress}</Address>
+            </SinkFloat>
             <CopyTick
               copied={copied}
               copy={<CopyIconStyled />}

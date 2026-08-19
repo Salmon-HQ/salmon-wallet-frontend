@@ -48,9 +48,19 @@ vi.mock('@salmon/shared', async () => ({
   componentSizes: { headerButtonSize: 40 },
   durationMs: { spin: 800 },
   semantic: { text: { accent: '#f54' }, status: { success: '#0f0' } },
+  // The verb's real numbers and curves: the header spends the shared
+  // vocabulary, so a token change shows up here.
+  ...(await vi.importActual('../../../../shared/src/motion/sinkFloat')),
+  ...(await vi.importActual('../../../../shared/src/theme/durations')),
 }));
 
 import { WalletHeader } from './WalletHeader';
+
+const { motionMs } = await import('../../../../shared/src/theme/durations');
+const { SINK_FLOAT_STAGGER_MS } = await import('../../../../shared/src/motion/sinkFloat');
+
+const FIRST_ADDRESS = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';
+const SECOND_ADDRESS = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM';
 
 describe('WalletHeader copy address', () => {
   beforeEach(() => {
@@ -87,5 +97,33 @@ describe('WalletHeader copy address', () => {
     expect(screen.queryByLabelText('actions.copied')).toBeNull();
     // WalletHeader truncates to 6 leading/trailing chars, unlike the mobile header.
     expect(screen.getByLabelText('accessibility.copy_address:7xKXtg...osgAsU')).toBeTruthy();
+  });
+
+  it('keeps the tick mounted while the account line speaks the verb', () => {
+    const { rerender } = render(
+      <WalletHeader accountName="Account 1" address={FIRST_ADDRESS} onCopyAddress={vi.fn()} />
+    );
+
+    fireEvent.click(screen.getByTestId('wallet-header-copy-address'));
+    const tick = screen.getByTestId('copy-tick');
+
+    // A chain switch mid-hold: the text sinks, the copy control does not.
+    rerender(
+      <WalletHeader accountName="Account 1" address={SECOND_ADDRESS} onCopyAddress={vi.fn()} />
+    );
+
+    expect(screen.getByTestId('copy-tick')).toBe(tick);
+    expect(screen.getByLabelText('actions.copied')).toBeTruthy();
+    // The outgoing address is held while it sinks — the swap waits out the beat.
+    expect(screen.getByText('7xKXtg...osgAsU')).toBeTruthy();
+
+    act(() => {
+      vi.advanceTimersByTime(motionMs.ebb + SINK_FLOAT_STAGGER_MS);
+    });
+
+    expect(screen.getByText('9WzDXw...YtAWWM')).toBeTruthy();
+    // Still the same control, and still holding its confirmation.
+    expect(screen.getByTestId('copy-tick')).toBe(tick);
+    expect(screen.getByLabelText('actions.copied')).toBeTruthy();
   });
 });
