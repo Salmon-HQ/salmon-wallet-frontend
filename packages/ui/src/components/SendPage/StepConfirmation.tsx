@@ -348,9 +348,17 @@ export function StepConfirmation({
         </AddressButton>
 
         {/* Fee Display — on estimation failure keep the row visible as a
-            warning instead of hiding it; confirming stays enabled. */}
+            warning instead of hiding it; confirming stays enabled.
+
+            The estimate arrives as a canonical numeric string from the chain
+            layer, which is where it has to stay canonical — a fee that other
+            code may compare or carry must not be language-shaped at the
+            source. The language is applied here, at the one place it is read
+            by a person, per PRODUCT.md's i18n constraint. */}
         {estimatedFee ? (
-          <FeeText>{t('token.send.networkFeeAmount', { fee: estimatedFee })}</FeeText>
+          <FeeText>
+            {t('token.send.networkFeeAmount', { fee: formatTokenAmount(estimatedFee) })}
+          </FeeText>
         ) : sendHook.feeEstimateFailed ? (
           <FeeText sx={{ color: semantic.status.danger }} data-testid="send-fee-estimate-failed">
             {t('send.fee_estimate_failed', 'Fee could not be estimated')}
