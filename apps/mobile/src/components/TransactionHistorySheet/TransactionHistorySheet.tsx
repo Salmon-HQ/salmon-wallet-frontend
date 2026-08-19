@@ -19,6 +19,7 @@ import {
   s,
   spacing,
   fontSize,
+  letterSpacing,
   fontFamilyNative,
   borderRadius,
   semantic,
@@ -215,7 +216,7 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
       onClose={onClose}
       title={title}
       showFadeGradient
-      fadeGradientTop={vs(12) + vs(8) + ms(fontSize['2xl']) + vs(18)}
+      fadeGradientTop={vs(12) + vs(8) + ms(fontSize.headline) + vs(18)}
       scrollOffsetValue={topFadeOpacity}
       style={style}
     >
@@ -261,12 +262,12 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: ms(fontSize['2xl']),
-    fontFamily: fontFamilyNative.bold,
+    fontSize: ms(fontSize.headline),
+    fontFamily: fontFamilyNative.semiBold,
     color: colors.text.primary,
     textAlign: 'center',
     marginBottom: vs(spacing.headerPadding),
-    letterSpacing: ms(-0.12, 0.3),
+    letterSpacing: ms(letterSpacing.snug, 0.3),
   },
   content: {
     flex: 1,

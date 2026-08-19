@@ -38,10 +38,10 @@ jest.mock('@salmon/shared', () => ({
   },
   semantic: { status: { warning: '#FFB020' } },
   componentSizes: { chartHeight: 200, swapDetailRowHeight: 38 },
-  fontSize: { sm: 14, bodyLg: 16, '2xl': 24 },
+  fontSize: { sm: 14, bodyLg: 16, headline: 24 },
   fontFamilyNative: { semiBold: 'System', medium: 'System', extraBold: 'System' },
   borderRadius: { md: 12 },
-  letterSpacing: { normal: 0, slight: 0, wide: 0.5 },
+  letterSpacing: { normal: 0, slight: 0, snug: -0.12 },
   lineHeight: { condensed: 1.2, normal: 1.5 },
   opacity: { faint: 0.05 },
   spacing: { xs: 4, md: 12, base: 16, lg: 16, '2xl': 24, '3xl': 32, '4xl': 40, headerPadding: 20 },
@@ -182,5 +182,18 @@ describe('SwapReviewScreen — the details are one card, and it fits', () => {
     expect(getByTestId('swap-details-disclosure').props.accessibilityState).toMatchObject({
       expanded: true,
     });
+  });
+});
+
+describe('SwapReviewScreen title typography', () => {
+  it('sets the screen title in the headline role, not a bold wide one', () => {
+    const { getByText } = renderScreen();
+
+    const title = StyleSheet.flatten(getByText('Swap Review').props.style);
+
+    expect(title.fontSize).toBe(24);
+    expect(title.fontFamily).toBe('System');
+    // The headline role tracks negative; the old alias tracked +0.3.
+    expect(title.letterSpacing).toBe(-0.12);
   });
 });

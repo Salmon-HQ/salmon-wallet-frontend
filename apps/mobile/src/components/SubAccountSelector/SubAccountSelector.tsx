@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: fontSize.sm,
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.label,
   },
   chipTextActive: {
     fontFamily: fontFamilyNative.medium,

@@ -70,11 +70,12 @@ jest.mock('@salmon/shared', () => ({
   },
   fontFamilyNative: {
     bold: 'System',
+    semiBold: 'DMSansSemiBold',
     medium: 'System',
     regular: 'System',
     mono: 'GeistMonoRegular',
   },
-  fontSize: { xs: 12, sm: 14, base: 16, lg: 20, '2xl': 24, mono: 13 },
+  fontSize: { xs: 12, sm: 14, base: 16, lg: 20, headline: 24, mono: 13 },
   formatBlockNumber: (value: number) => value.toString(),
   formatDateTime: (value: number) => `date:${value}`,
   formatRawAmount: (amount: string | number, decimals: number) =>
@@ -85,7 +86,7 @@ jest.mock('@salmon/shared', () => ({
     if (networkId.startsWith('ethereum')) return 'ethereum';
     return 'solana';
   },
-  letterSpacing: { wide: 1 },
+  letterSpacing: { label: 1, snug: -0.12 },
   spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, headerPadding: 20 },
   truncateHash: (value: string) => `hash:${value.slice(0, 8)}`,
   ms: (value: number) => value,

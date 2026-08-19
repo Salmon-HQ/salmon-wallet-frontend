@@ -17,6 +17,7 @@ import {
   s,
   fontFamilyNative,
   fontSize,
+  letterSpacing,
   borderRadius,
   spacing,
 } from '@salmon/shared';
@@ -196,12 +197,12 @@ const styles = StyleSheet.create({
     minHeight: '85%',
   },
   title: {
-    fontSize: ms(fontSize['2xl']),
-    fontFamily: fontFamilyNative.bold,
+    fontSize: ms(fontSize.headline),
+    fontFamily: fontFamilyNative.semiBold,
     color: colors.text.primary,
     textAlign: 'center',
     marginBottom: vs(spacing.lg),
-    letterSpacing: ms(-0.12, 0.3),
+    letterSpacing: ms(letterSpacing.snug, 0.3),
   },
   scrollView: {
     flex: 1,

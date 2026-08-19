@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   input: {
-    fontSize: fontSize['2xl'],
+    fontSize: fontSize.headline,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
     color: colors.text.balance,

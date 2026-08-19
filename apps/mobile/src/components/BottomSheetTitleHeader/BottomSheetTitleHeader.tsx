@@ -7,6 +7,7 @@ import {
   componentSizes,
   fontFamilyNative,
   fontSize,
+  letterSpacing,
   ms,
   s,
   spacing,
@@ -70,10 +71,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: ms(fontSize['2xl']),
-    fontFamily: fontFamilyNative.bold,
+    fontSize: ms(fontSize.headline),
+    fontFamily: fontFamilyNative.semiBold,
     color: colors.text.primary,
     textAlign: 'center',
-    letterSpacing: ms(-0.12, 0.3),
+    letterSpacing: ms(letterSpacing.snug, 0.3),
   },
 });

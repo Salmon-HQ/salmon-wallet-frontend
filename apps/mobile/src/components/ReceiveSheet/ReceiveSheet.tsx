@@ -234,11 +234,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.card,
   },
   title: {
-    fontSize: ms(fontSize['2xl']),
-    fontFamily: fontFamilyNative.bold,
+    fontSize: ms(fontSize.headline),
+    fontFamily: fontFamilyNative.semiBold,
     color: colors.text.primary,
     textAlign: 'center',
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.snug,
     lineHeight: ms(24 * lineHeight.condensed),
   },
   content: {
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.semiBold,
     color: semantic.text.primary,
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.label,
   },
   address: {
     fontSize: ms(fontSize.mono),

@@ -232,11 +232,11 @@ const styles = StyleSheet.create({
     opacity: opacity.faint,
   },
   title: {
-    fontSize: ms(fontSize['2xl']),
+    fontSize: ms(fontSize.headline),
     fontFamily: fontFamilyNative.semiBold,
     color: colors.text.primary,
     textAlign: 'center',
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.snug,
     lineHeight: ms(24 * lineHeight.condensed),
     marginBottom: vs(spacing['2xl']),
   },

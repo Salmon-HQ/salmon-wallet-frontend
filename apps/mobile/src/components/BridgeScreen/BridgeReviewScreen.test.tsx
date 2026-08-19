@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 
 jest.mock('react-i18next', () => ({
@@ -65,12 +66,12 @@ jest.mock('@salmon/shared', () => ({
     status: { errorBackground: '#300', warningBackground: '#330', warningBorder: '#cc0' },
   },
   semantic: { status: { danger: '#FF6B85', warning: '#FFB020' } },
-  fontSize: { sm: 14, '2xl': 24 },
-  fontFamilyNative: { bold: 'System', medium: 'System' },
+  fontSize: { sm: 14, headline: 24 },
+  fontFamilyNative: { bold: 'System', semiBold: 'DMSansSemiBold', medium: 'System' },
   spacing: { xs: 4, md: 12, base: 16, lg: 20, '2xl': 24, '4xl': 40, headerPadding: 16 },
   borderRadius: { md: 12 },
   borderWidth: { thin: 1 },
-  letterSpacing: { normal: 0, wide: 0.5 },
+  letterSpacing: { normal: 0, snug: -0.12 },
   lineHeight: { normal: 1.4, condensed: 1.2 },
   ms: (value: number) => value,
   vs: (value: number) => value,
@@ -109,5 +110,16 @@ describe('BridgeReviewScreen', () => {
 
     expect(screen.getByTestId('bridge-irreversible-notice')).toBeTruthy();
     expect(screen.getByText(/no cancel and no way to reverse or recover/i)).toBeTruthy();
+  });
+
+  it('sets the screen title in the headline role, not a bold wide one', () => {
+    render(<BridgeReviewScreen {...PROPS} />);
+
+    const title = StyleSheet.flatten(screen.getByText('Bridge Review').props.style);
+
+    expect(title.fontSize).toBe(24);
+    expect(title.fontFamily).toBe('DMSansSemiBold');
+    // The headline role tracks negative; the old alias tracked +0.3.
+    expect(title.letterSpacing).toBe(-0.12);
   });
 });

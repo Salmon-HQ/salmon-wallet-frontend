@@ -786,8 +786,8 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize['2xl'],
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.headline,
     lineHeight: 32,
     textAlign: 'center',
     marginBottom: spacing.sm,

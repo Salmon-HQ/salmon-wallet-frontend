@@ -53,7 +53,7 @@ jest.mock('@salmon/shared', () => ({
   fontSize: { xs: 10, sm: 14, balance: 60 },
   fontWeight: { medium: '500', semibold: '600' },
   fontFamilyNative: { medium: 'DMSans', semiBold: 'DMSans' },
-  letterSpacing: { wide: 0.3, balance: -0.245, change: 0 },
+  letterSpacing: { label: 0.3, balance: -0.245, change: 0 },
   opacity: { faint: 0.4 },
   shadows: {
     card: { shadowColor: '#000', shadowOffset: {}, shadowOpacity: 0, shadowRadius: 0, elevation: 0 },

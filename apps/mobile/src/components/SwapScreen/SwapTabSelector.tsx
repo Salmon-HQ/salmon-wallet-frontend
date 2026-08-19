@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: ms(fontSize.lg),
     fontFamily: fontFamilyNative.bold,
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.label,
     lineHeight: ms(18 * lineHeight.condensed),
   },
   tabTextActive: {

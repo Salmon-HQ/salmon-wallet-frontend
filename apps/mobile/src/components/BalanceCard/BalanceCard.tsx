@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.text.primary,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.label,
   },
   balanceContainer: {
     alignItems: 'center',

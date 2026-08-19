@@ -176,8 +176,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(spacing.headerPadding),
   },
   title: {
-    fontSize: ms(fontSize['2xl']),
-    fontFamily: fontFamilyNative.extraBold,
+    fontSize: ms(fontSize.headline),
+    fontFamily: fontFamilyNative.semiBold,
     color: colors.text.primary,
     textAlign: 'center',
     letterSpacing: ms(-0.32, 0.3),

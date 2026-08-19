@@ -37,8 +37,8 @@ jest.mock('@salmon/shared', () => ({
     descentSegmentHeight: 44,
     waveAmplitude: 3,
   },
-  fontFamilyNative: { regular: 'DMSansRegular', bold: 'DMSansBold' },
-  fontSize: { sm: 12, base: 14, bodyLg: 16, '2xl': 24 },
+  fontFamilyNative: { regular: 'DMSansRegular', semiBold: 'DMSansSemiBold', bold: 'DMSansBold' },
+  fontSize: { sm: 12, base: 14, bodyLg: 16, headline: 24 },
   letterSpacing: { widest: 1 },
   motionMs: {
     flick: 90,

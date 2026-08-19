@@ -856,9 +856,10 @@ const styles = StyleSheet.create({
     marginBottom: vs(spacing.xs),
   },
   title: {
-    fontSize: ms(fontSize['2xl']),
-    fontFamily: fontFamilyNative.bold,
+    fontSize: ms(fontSize.headline),
+    fontFamily: fontFamilyNative.semiBold,
     color: colors.text.primary,
+    letterSpacing: letterSpacing.snug,
   },
   sourceBadge: {
     paddingHorizontal: s(spacing.sm),
@@ -871,7 +872,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.medium,
     color: colors.text.tertiary,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.label,
   },
   statusRow: {
     flexDirection: 'row',
@@ -1082,7 +1083,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.medium,
     color: colors.text.tertiary,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.label,
     marginBottom: vs(spacing.xxs),
   },
   nftAttributeValue: {
@@ -1100,7 +1101,7 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.xs),
     fontFamily: fontFamilyNative.bold,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.label,
   },
   // Swap route hop styles
   hopRow: {
@@ -1158,7 +1159,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.bold,
     color: colors.text.primary,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.label,
   },
   devSubSection: {
     marginTop: vs(spacing.md),
@@ -1171,7 +1172,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.bold,
     color: colors.text.tertiary,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.label,
     marginBottom: vs(spacing.xs),
   },
   devRow: {

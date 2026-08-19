@@ -26,7 +26,7 @@ jest.mock('@salmon/shared', () => ({
     button: { primaryBackground: '#FF5C45', primaryText: '#070911' },
     status: { warningBackground: '#3A2C10', errorBackground: '#3A1620' },
   },
-  fontSize: { xs: 10, sm: 14, base: 16, mono: 13, bodyLg: 18, '2xl': 24 },
+  fontSize: { xs: 10, sm: 14, base: 16, mono: 13, bodyLg: 18, headline: 24 },
   fontFamilyNative: {
     bold: 'System',
     semiBold: 'System',
@@ -34,7 +34,7 @@ jest.mock('@salmon/shared', () => ({
     regular: 'System',
     mono: 'GeistMonoRegular',
   },
-  letterSpacing: { wide: 0, change: 0 },
+  letterSpacing: { label: 0.3, snug: -0.12, change: 0 },
   lineHeight: { condensed: 1.2, snug: 1.4 },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, headerPadding: 16 },
   borderRadius: { r1: 4, lg: 16, xl: 20, full: 9999 },
