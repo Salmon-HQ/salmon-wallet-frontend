@@ -142,37 +142,6 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
     [activeIndex, blockchains.length, updateIndex]
   );
 
-  /**
-   * The one animated route to another chain — swipe settle and dot tap both
-   * land here, so the exit-on-`ebb` / enter-on-`drift` choreography (and its
-   * reduce-motion resolution, already baked into cardIn/cardOut) cannot fork.
-   * Content exits toward the side it would have been swiped: forward targets
-   * exit left, backward targets exit right.
-   */
-  const slideToIndex = useCallback(
-    (targetIndex: number) => {
-      'worklet';
-      if (isAnimating.value || targetIndex === activeIndex) return;
-      const exitX = targetIndex > activeIndex ? -SCREEN_WIDTH : SCREEN_WIDTH;
-      isAnimating.value = true;
-      // Animate current content OFF toward the exit side
-      translateX.value = withTiming(exitX, cardOut, (finished) => {
-        if (finished) {
-          // Update index (loads new content)
-          runOnJS(updateIndex)(targetIndex);
-          // Position new content OFF on the opposite side, then bring it IN
-          translateX.value = -exitX;
-          translateX.value = withTiming(0, cardIn, (timingFinished) => {
-            if (timingFinished) {
-              isAnimating.value = false;
-            }
-          });
-        }
-      });
-    },
-    [activeIndex, cardIn, cardOut, isAnimating, translateX, updateIndex]
-  );
-
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
       if (isAnimating.value) return;
@@ -185,9 +154,39 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
       const shouldSwipeRight = event.translationX > SWIPE_THRESHOLD && activeIndex > 0;
 
       if (shouldSwipeLeft) {
-        slideToIndex(activeIndex + 1);
+        // Swipe left → animate current content OFF to the left
+        isAnimating.value = true;
+        translateX.value = withTiming(-SCREEN_WIDTH, cardOut, (finished) => {
+          if (finished) {
+            // Update index (loads new content)
+            runOnJS(updateIndex)(activeIndex + 1);
+            // Position new content OFF to the right
+            translateX.value = SCREEN_WIDTH;
+            // Animate new content IN from the right
+            translateX.value = withTiming(0, cardIn, (timingFinished) => {
+              if (timingFinished) {
+                isAnimating.value = false;
+              }
+            });
+          }
+        });
       } else if (shouldSwipeRight) {
-        slideToIndex(activeIndex - 1);
+        // Swipe right → animate current content OFF to the right
+        isAnimating.value = true;
+        translateX.value = withTiming(SCREEN_WIDTH, cardOut, (finished) => {
+          if (finished) {
+            // Update index (loads new content)
+            runOnJS(updateIndex)(activeIndex - 1);
+            // Position new content OFF to the left
+            translateX.value = -SCREEN_WIDTH;
+            // Animate new content IN from the left
+            translateX.value = withTiming(0, cardIn, (timingFinished) => {
+              if (timingFinished) {
+                isAnimating.value = false;
+              }
+            });
+          }
+        });
       } else {
         // Not enough swipe distance → smooth return to center (no bounce)
         isAnimating.value = true;
@@ -355,26 +354,21 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
           </Animated.View>
         </GestureDetector>
 
-        {/* The chain selector — one dot per available network, fixed under the
-            sliding content. The dots are the switch affordance, not a footnote:
-            each sits in its own 44pt cell so a thumb can land on it, and a tap
-            plays the exact slide choreography a swipe does (slideToIndex). */}
+        {/* Pagination dots — fixed, not part of the sliding content */}
         {blockchains.length > 1 && (
-          <View style={styles.pagination} testID="balance-carousel-dots">
+          <View style={styles.pagination}>
             {blockchains.map((chain, index) => (
               <Pressable
-                key={chain.network.id}
-                onPress={() => slideToIndex(index)}
+                key={index}
+                onPress={() => index !== activeIndex && updateIndex(index)}
+                hitSlop={s(spacing.sm)}
                 accessibilityRole="button"
                 accessibilityLabel={t('accessibility.select_blockchain', 'Switch to {{name}}', {
                   name: chain.network.name,
                 })}
                 accessibilityState={{ selected: index === activeIndex }}
-                style={styles.dotTarget}
-                testID={`balance-carousel-dot-${chain.network.id}`}
-              >
-                <View style={[styles.dot, index === activeIndex && styles.dotActive]} />
-              </Pressable>
+                style={[styles.dot, index === activeIndex && styles.dotActive]}
+              />
             ))}
           </View>
         )}
@@ -521,34 +515,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    // No marginTop: each dot's 44pt cell already supplies the clearance the
-    // old spacing.lg margin used to.
-  },
-  /**
-   * One dot's pressable cell. 44pt square — the WCAG AA touch floor
-   * (PRODUCT.md), reusing componentSizes.headerButtonSize, the token that
-   * carries 44 elsewhere. Deliberately unscaled: a hit target is a floor, not
-   * a design size. The visible dot stays small inside it, per DESIGN.md's
-   * hit-slop-over-inflation rule; adjacent cells touch without overlapping,
-   * which lands dot centers ~44pt apart (≈ spacing.paginationGap).
-   */
-  dotTarget: {
-    width: componentSizes.headerButtonSize,
-    height: componentSizes.headerButtonSize,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: vs(spacing.lg),
   },
   dot: {
-    width: s(componentSizes.stepDotSize),
-    height: s(componentSizes.stepDotSize),
-    borderRadius: borderRadius.full,
+    width: s(spacing.xs),
+    height: s(spacing.xs),
+    borderRadius: s(spacing.xxs),
     backgroundColor: colors.step.inactive,
+    marginHorizontal: s(spacing.xxs + 1),
   },
-  // Which chain you are looking at is a selected state: the active dot is a
-  // step larger and takes the primary ink. Still a circle — this is chrome.
   dotActive: {
-    width: s(componentSizes.stepDotSize + spacing.xxs),
-    height: s(componentSizes.stepDotSize + spacing.xxs),
     backgroundColor: colors.text.primary,
   },
 });
