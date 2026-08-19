@@ -4,6 +4,7 @@ import { act, render, screen, fireEvent, waitFor } from '@testing-library/react-
 const mockSetStringAsync = jest.fn().mockResolvedValue(undefined);
 const mockNotificationAsync = jest.fn().mockResolvedValue(undefined);
 const mockExplorerPress = jest.fn();
+const mockExplorerProps = jest.fn();
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -73,6 +74,11 @@ jest.mock('@salmon/shared', () => ({
   formatRawAmount: (amount: string | number, decimals: number) =>
     `${Number(amount) / 10 ** decimals}`,
   getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
+  getBlockchainFromNetworkId: (networkId: string) => {
+    if (networkId.startsWith('bitcoin')) return 'bitcoin';
+    if (networkId.startsWith('ethereum')) return 'ethereum';
+    return 'solana';
+  },
   letterSpacing: { wide: 1 },
   spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, headerPadding: 20 },
   truncateHash: (value: string) => `hash:${value.slice(0, 8)}`,
@@ -114,7 +120,15 @@ jest.mock('../TransactionHistorySheet/AddressCopyRow', () => ({
 }));
 
 jest.mock('../TransactionHistorySheet/ExplorerLinkButton', () => ({
-  ExplorerLinkButton: ({ onPress }: { onPress?: (url: string, explorerName: string) => void }) => {
+  ExplorerLinkButton: ({
+    onPress,
+    ...props
+  }: {
+    onPress?: (url: string, explorerName: string) => void;
+    blockchain?: string;
+    environment?: string;
+  }) => {
+    mockExplorerProps(props);
     const React = require('react');
     const { TouchableOpacity, Text } = require('react-native');
     return React.createElement(
@@ -320,5 +334,28 @@ describe('TransactionDetailModal', () => {
 
     expect(mockExplorerPress).toHaveBeenCalledTimes(1);
     expect(onViewExplorer).toHaveBeenCalledWith(BASE_TRANSACTION);
+  });
+
+  it('derives the explorer chain and environment from networkId', () => {
+    render(
+      <TransactionDetailModal
+        visible
+        onClose={jest.fn()}
+        transaction={BASE_TRANSACTION}
+        networkId="bitcoin-testnet"
+      />
+    );
+
+    expect(mockExplorerProps).toHaveBeenCalledWith(
+      expect.objectContaining({ blockchain: 'BITCOIN', environment: 'bitcoin-testnet' })
+    );
+  });
+
+  it('falls back to Solana mainnet when networkId is missing', () => {
+    render(<TransactionDetailModal visible onClose={jest.fn()} transaction={BASE_TRANSACTION} />);
+
+    expect(mockExplorerProps).toHaveBeenCalledWith(
+      expect.objectContaining({ blockchain: 'SOLANA', environment: 'solana-mainnet' })
+    );
   });
 });

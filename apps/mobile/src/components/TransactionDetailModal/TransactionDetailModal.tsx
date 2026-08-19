@@ -49,6 +49,9 @@ import {
   truncateHash,
   getShortAddress,
   semantic,
+  getBlockchainFromNetworkId,
+  type Blockchain,
+  type NetworkEnvironment,
 } from '@salmon/shared';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -358,6 +361,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   onCopyHash,
   onShare,
   developerMode,
+  networkId,
   style,
 }) => {
   const { t } = useTranslation();
@@ -398,6 +402,14 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   if (!transaction) {
     return null;
   }
+
+  // Derive explorer target from the active network (same pattern as
+  // SendSheet / NftDetailSheet) instead of hardcoding Solana mainnet.
+  const explorerNetworkId = networkId ?? 'solana-mainnet';
+  const explorerBlockchain = getBlockchainFromNetworkId(
+    explorerNetworkId
+  ).toUpperCase() as Blockchain;
+  const explorerEnvironment = explorerNetworkId as NetworkEnvironment;
 
   // Header content for the BottomSheetContainer drag area
   const headerContent = (
@@ -779,8 +791,8 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
       <View style={[styles.fixedBottomBar, { paddingBottom: insets.bottom + vs(spacing.md) }]}>
         <ExplorerLinkButton
           txHash={transaction.id}
-          blockchain="SOLANA"
-          environment="solana-mainnet"
+          blockchain={explorerBlockchain}
+          environment={explorerEnvironment}
           showMenu
           onPress={(_url, _explorerName) => {
             if (onViewExplorer) {

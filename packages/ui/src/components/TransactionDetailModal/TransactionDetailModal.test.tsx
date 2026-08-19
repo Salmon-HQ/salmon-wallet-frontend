@@ -101,6 +101,11 @@ vi.mock('@salmon/shared', () => ({
   duration: { normal: '200ms' },
   durationMs: { feedbackShort: 0 },
   easing: { ease: 'ease' },
+  getBlockchainFromNetworkId: (networkId: string) => {
+    if (networkId.startsWith('bitcoin')) return 'bitcoin';
+    if (networkId.startsWith('ethereum')) return 'ethereum';
+    return 'solana';
+  },
 }));
 
 vi.mock('../../utils/styled', async () => {
@@ -135,8 +140,18 @@ vi.mock('../TransactionHistoryPage/ConversionRateDisplay', () => ({
 }));
 
 vi.mock('../TransactionHistoryPage/ExplorerLinkButton', () => ({
-  ExplorerLinkButton: ({ onPress }: { onPress?: (url: string, explorerName: string) => void }) => (
+  ExplorerLinkButton: ({
+    onPress,
+    blockchain,
+    environment,
+  }: {
+    onPress?: (url: string, explorerName: string) => void;
+    blockchain?: string;
+    environment?: string;
+  }) => (
     <button
+      data-blockchain={blockchain}
+      data-environment={environment}
       onClick={() => {
         mockExplorerOnPress();
         onPress?.('https://explorer/tx', 'Solscan');
@@ -283,5 +298,28 @@ describe('TransactionDetailModal', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Share' }));
     expect(onShare).toHaveBeenCalledWith(BASE_TRANSACTION);
+  });
+
+  it('derives the explorer chain and environment from networkId', () => {
+    render(
+      <TransactionDetailModal
+        visible
+        onClose={vi.fn()}
+        transaction={BASE_TRANSACTION}
+        networkId="bitcoin-testnet"
+      />
+    );
+
+    const explorerButton = within(screen.getByRole('dialog')).getByText('Explorer');
+    expect(explorerButton.getAttribute('data-blockchain')).toBe('BITCOIN');
+    expect(explorerButton.getAttribute('data-environment')).toBe('bitcoin-testnet');
+  });
+
+  it('falls back to Solana mainnet when networkId is missing', () => {
+    render(<TransactionDetailModal visible onClose={vi.fn()} transaction={BASE_TRANSACTION} />);
+
+    const explorerButton = within(screen.getByRole('dialog')).getByText('Explorer');
+    expect(explorerButton.getAttribute('data-blockchain')).toBe('SOLANA');
+    expect(explorerButton.getAttribute('data-environment')).toBe('solana-mainnet');
   });
 });

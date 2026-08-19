@@ -77,6 +77,9 @@ import {
   durationMs,
   easing,
   tabularNums,
+  getBlockchainFromNetworkId,
+  type Blockchain,
+  type NetworkEnvironment,
 } from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -909,6 +912,7 @@ export function TransactionDetailModal({
   onCopyHash,
   onShare,
   developerMode,
+  networkId,
   className,
   style,
 }: TransactionDetailModalProps) {
@@ -948,6 +952,14 @@ export function TransactionDetailModal({
   if (!transaction) {
     return null;
   }
+
+  // Derive explorer target from the active network (same pattern as
+  // SendPage / NftSendDialog) instead of hardcoding Solana mainnet.
+  const explorerNetworkId = networkId ?? 'solana-mainnet';
+  const explorerBlockchain = getBlockchainFromNetworkId(
+    explorerNetworkId
+  ).toUpperCase() as Blockchain;
+  const explorerEnvironment = explorerNetworkId as NetworkEnvironment;
 
   return (
     <StyledDialog
@@ -1329,8 +1341,8 @@ export function TransactionDetailModal({
       <FixedBottomBar>
         <ExplorerLinkButton
           txHash={transaction.id}
-          blockchain="SOLANA"
-          environment="solana-mainnet"
+          blockchain={explorerBlockchain}
+          environment={explorerEnvironment}
           showMenu
           onPress={(_url, _explorerName) => {
             if (onViewExplorer) {

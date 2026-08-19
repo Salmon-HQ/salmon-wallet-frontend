@@ -1011,6 +1011,7 @@ export default function HomeScreen() {
         onViewExplorer={handleViewExplorer}
         onShare={handleShareTransaction}
         developerMode={developerNetworks}
+        networkId={networkId}
       />
     </View>
   );
