@@ -84,6 +84,8 @@ jest.mock('@salmon/shared', () => ({
   fleshTile: { width: 380, height: 40 },
   fleshFades: [],
   fleshTiledStrokes: [],
+  fleshVariantTiles: { marbled: { width: 150, height: 88 }, chevron: { width: 144, height: 84 } },
+  fleshVariantFills: { marbled: [], chevron: [] },
   colors: {
     accent: { border: '#0f0' },
     text: { primary: '#fff', secondary: '#999' },

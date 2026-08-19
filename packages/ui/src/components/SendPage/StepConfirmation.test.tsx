@@ -62,6 +62,8 @@ vi.mock('@salmon/shared', async () => ({
   fleshTile: { width: 380, height: 40 },
   fleshFades: [],
   fleshTiledStrokes: [],
+  fleshVariantTiles: { marbled: { width: 150, height: 88 }, chevron: { width: 144, height: 84 } },
+  fleshVariantFills: { marbled: [], chevron: [] },
   fontFamily: { sans: 'DM Sans, sans-serif', mono: 'Geist Mono, ui-monospace, monospace' },
   fontWeight: { regular: 400, medium: 500, semibold: 600, bold: 700, extraBold: 800 },
   useSendTransaction: () => ({

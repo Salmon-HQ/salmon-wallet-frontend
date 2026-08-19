@@ -29,9 +29,25 @@
 import React, { useId } from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 import Svg, { Defs, LinearGradient, Pattern, Path, Rect, Stop } from 'react-native-svg';
-import { fleshFades, fleshTile, fleshTiledStrokes, semantic } from '@salmon/shared';
+import {
+  fleshFades,
+  fleshTile,
+  fleshTiledStrokes,
+  fleshVariantFills,
+  fleshVariantTiles,
+  semantic,
+  type FleshVariant,
+} from '@salmon/shared';
+import { DEBUG_FLESH_VARIANT } from '../../debug/fleshVariant';
 
 export interface FleshBackgroundProps {
+  /**
+   * Which candidate drawing to render — see
+   * `packages/shared/src/theme/fleshVariants.ts`. Exposed for tests; screens
+   * leave it on the debug switch so every CTA flips together.
+   * @default DEBUG_FLESH_VARIANT
+   */
+  variant?: FleshVariant;
   /**
    * The band colour. Must be a *pale* tint of the fill it sits on — a darker
    * band would let the texture cut label contrast instead of only raising it.
@@ -54,6 +70,7 @@ export interface FleshBackgroundProps {
 }
 
 export const FleshBackground: React.FC<FleshBackgroundProps> = ({
+  variant = DEBUG_FLESH_VARIANT,
   color = semantic.flesh.band,
   scale = 1,
   opacity = 1,
@@ -65,6 +82,33 @@ export const FleshBackground: React.FC<FleshBackgroundProps> = ({
   // the colons are stripped because they are not valid in an SVG fragment id.
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const patternId = `flesh-${uid}`;
+  const tile = variant === 'current' ? fleshTile : fleshVariantTiles[variant];
+
+  // The candidate variants are filled tapered polygons at flat opacity — no
+  // fade gradients, the taper does the organic work — so their pattern is a
+  // plain map over the fills.
+  if (variant !== 'current') {
+    return (
+      <View style={[styles.container, style]} pointerEvents="none">
+        <Svg width="100%" height="100%">
+          <Defs>
+            <Pattern
+              id={patternId}
+              patternUnits="userSpaceOnUse"
+              width={tile.width}
+              height={tile.height}
+              patternTransform={`scale(${scale})`}
+            >
+              {fleshVariantFills[variant].map(([d, fillOpacity], i) => (
+                <Path key={i} d={d} fill={color} fillOpacity={fillOpacity * opacity} />
+              ))}
+            </Pattern>
+          </Defs>
+          <Rect width="100%" height="100%" fill={`url(#${patternId})`} />
+        </Svg>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, style]} pointerEvents="none">

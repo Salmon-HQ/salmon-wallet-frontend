@@ -21,10 +21,19 @@
  * ```
  */
 import { useId } from 'react';
-import { fleshFades, fleshTile, fleshTiledStrokes, semantic } from '@salmon/shared';
+import {
+  fleshFades,
+  fleshTile,
+  fleshTiledStrokes,
+  fleshVariantFills,
+  fleshVariantTiles,
+  semantic,
+} from '@salmon/shared';
+import { DEBUG_FLESH_VARIANT } from './fleshVariant';
 import type { FleshBackgroundProps } from './types';
 
 export function FleshBackground({
+  variant = DEBUG_FLESH_VARIANT,
   color = semantic.flesh.band,
   scale = 1,
   opacity = 1,
@@ -37,6 +46,38 @@ export function FleshBackground({
   // React id are not valid in an SVG fragment identifier, so they are stripped.
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const patternId = `flesh${uid}`;
+
+  // The candidate variants are filled tapered polygons at flat opacity — no
+  // fade gradients, the taper does the organic work — so their pattern is a
+  // plain map over the fills.
+  if (variant !== 'current') {
+    const tile = fleshVariantTiles[variant];
+    return (
+      <svg
+        width="100%"
+        height="100%"
+        aria-hidden="true"
+        focusable="false"
+        style={{ position: 'absolute', inset: 0, pointerEvents: 'none', ...style }}
+        className={className}
+      >
+        <defs>
+          <pattern
+            id={patternId}
+            patternUnits="userSpaceOnUse"
+            width={tile.width}
+            height={tile.height}
+            patternTransform={`scale(${scale})`}
+          >
+            {fleshVariantFills[variant].map(([d, fillOpacity], i) => (
+              <path key={i} d={d} fill={color} fillOpacity={fillOpacity * opacity} />
+            ))}
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill={`url(#${patternId})`} />
+      </svg>
+    );
+  }
 
   return (
     <svg

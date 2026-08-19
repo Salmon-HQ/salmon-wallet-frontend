@@ -39,6 +39,8 @@ vi.mock('@salmon/shared', () => ({
   fleshTile: { width: 380, height: 40 },
   fleshFades: [],
   fleshTiledStrokes: [],
+  fleshVariantTiles: { marbled: { width: 150, height: 88 }, chevron: { width: 144, height: 84 } },
+  fleshVariantFills: { marbled: [], chevron: [] },
   palette: {
     salmon: { 500: '#FF5C45', 600: '#E64A34' },
     neutral: { 0: '#FFFFFF', 1000: '#070911' },
