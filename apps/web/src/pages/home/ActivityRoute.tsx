@@ -71,6 +71,7 @@ export function ActivityRoute(): React.ReactElement {
         visible={!!selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
         transaction={selectedTransaction}
+        networkId={networkId}
         developerMode={developerNetworks}
       />
     </>

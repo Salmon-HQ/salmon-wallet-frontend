@@ -207,10 +207,8 @@ export const scales = {
    */
   fishStroke: 'rgba(7, 9, 17, 0.10)',
   fishScale: 1,
-  /** Refraction strip — a band clipped to the top edge of any membrane. */
+  /** Seigaiha tile scale shared by the caustic, refraction, and membrane variants. */
   refractionScale: 0.5,
-  refractionOpacity: 0.08,
-  refractionHeight: 24,
   /**
    * The strip's horizontal sweep — caustic cyan through `salmon-300` to
    * `success-300`, DESIGN.md §the refraction strip. The direction's only
@@ -228,12 +226,6 @@ export const scales = {
    * survives the opaque rung.
    */
   membraneFieldStroke: 'rgba(7, 9, 17, 0.45)',
-  /**
-   * @deprecated The field's subtlety now lives in `membraneFieldStroke`'s own
-   * alpha; no renderer applies a container opacity anymore. Kept because
-   * `semantic` is a public export with three apps behind it.
-   */
-  membraneFieldOpacity: 0.04,
 } as const;
 
 /**

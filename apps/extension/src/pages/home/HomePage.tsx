@@ -1369,6 +1369,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               visible={!!selectedTransaction}
               onClose={() => setSelectedTransaction(null)}
               transaction={selectedTransaction}
+              networkId={networkId}
               developerMode={developerNetworks}
             />
           </>
@@ -1636,6 +1637,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         visible={!!selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
         transaction={selectedTransaction}
+        networkId={networkId}
         developerMode={developerNetworks}
       />
     </Container>
