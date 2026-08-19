@@ -71,9 +71,20 @@ export const motionMs = {
    */
   route: 420,
   /**
-   * 720ms — The Surfacing. The signature moment, and the only thing in the app
-   * allowed to take this long: the confirmation of a completed send or swap.
-   * Never reuse it for ordinary success states.
+   * 720ms — the water's long clock, and the only length in the app allowed to
+   * be this slow.
+   *
+   * It was minted for The Surfacing, the transaction receipt's entrance, which
+   * has since been removed (DESIGN.md §The receipt): the receipt now arrives
+   * whole, so nothing runs at this length end to end any more. The token is
+   * not orphaned by that — it is the number the rest of the water is derived
+   * from, and it still has live consumers: the wait mark's monotonic return
+   * after its impact (`WAVEFRONT_RECOVER_MS`), the sink half of the transition
+   * verb (`SINK_OUT_MS` = `tide`/2), and the wait's closing ramp
+   * (`WAVEFRONT_EBB_MS`, the same half).
+   *
+   * Still never reuse it for an ordinary success state: at this length a
+   * gesture claims to be the slowest thing on screen.
    */
   tide: 720,
 
