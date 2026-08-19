@@ -7,7 +7,6 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import InputBase from '@mui/material/InputBase';
-import Button from '@mui/material/Button';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
@@ -21,6 +20,7 @@ import {
   fontSize,
   opacity,
 } from '@salmon/shared';
+import { PrimaryButton } from '../Button';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { InputAddress } from '../InputAddress';
 import type { AddressEditPanelProps } from './types';
@@ -31,7 +31,7 @@ import type { AddressEditPanelProps } from './types';
 
 const FieldLabel = styled(Typography)({
   color: colors.text.secondary,
-  fontSize: fontSize.base,
+  fontSize: fontSize.body,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   marginBottom: spacing.sm,
@@ -41,7 +41,7 @@ const FieldLabel = styled(Typography)({
 const StyledInput = styled(InputBase)({
   width: '100%',
   backgroundColor: colors.input.background,
-  borderRadius: borderRadius.lg,
+  borderRadius: borderRadius.r3,
   border: `${borderWidth.thin}px solid ${colors.input.border}`,
   padding: `${spacing.sm}px ${spacing.lg}px`,
   color: colors.text.primary,
@@ -58,7 +58,7 @@ const StyledInput = styled(InputBase)({
 
 const NetworkBox = styled(Box)({
   backgroundColor: colors.input.background,
-  borderRadius: borderRadius.lg,
+  borderRadius: borderRadius.r3,
   padding: `${spacing.md}px ${spacing.lg}px`,
 });
 
@@ -68,30 +68,8 @@ const NetworkText = styled(Typography)({
   fontFamily: fontFamily.sans,
 });
 
-const SaveButton = styled(Button)({
-  width: '100%',
-  marginTop: spacing['2xl'],
-  padding: `${spacing.md}px`,
-  borderRadius: borderRadius.lg,
-  textTransform: 'none',
-  fontSize: fontSize.bodyLg,
-  fontWeight: fontWeight.medium,
-  fontFamily: fontFamily.sans,
-  backgroundColor: colors.accent.primary,
-  color: colors.text.primary,
-  '&:hover': {
-    backgroundColor: colors.accent.primary,
-    opacity: opacity.soft,
-  },
-  '&:disabled': {
-    backgroundColor: colors.accent.primary,
-    color: colors.text.primary,
-    opacity: opacity.faint,
-  },
-});
-
 const ErrorText = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.caption,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: semantic.status.danger,
@@ -157,13 +135,14 @@ export function AddressEditPanel({
         </NetworkBox>
 
         {/* Save */}
-        <SaveButton
+        <PrimaryButton
           onClick={handleSave}
           disabled={!form.canSave}
-          data-testid="address-book-save-button"
+          testID="address-book-save-button"
+          style={{ marginTop: spacing['2xl'] }}
         >
           {t('settings.addressbook.save', 'Save Address')}
-        </SaveButton>
+        </PrimaryButton>
         {errorText && <ErrorText data-testid="address-book-save-error">{errorText}</ErrorText>}
       </Box>
     </SettingsPanelContent>
