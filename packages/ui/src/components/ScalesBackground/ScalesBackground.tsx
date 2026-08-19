@@ -23,7 +23,19 @@ const { scales } = semantic;
  * absent — tiled edge to edge as wallpaper. Each variant now has a job, a
  * distance, and a stroke that is actually visible at that distance.
  */
-const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boolean }> = {
+/**
+ * `#9FE0EF` at 10% — `water.light`'s ink. DESIGN.md §The Surfacing specifies
+ * the caustic light by value and `scales` carries the motif's grounded
+ * appearances, not a transient one. Kept here with the other strokes rather
+ * than at the call site so the motif's ink stays in one file, mirroring the
+ * mobile `ScalesBackground`.
+ */
+const CAUSTIC_STROKE = 'rgba(159, 224, 239, 0.10)';
+
+const VARIANTS: Record<
+  ScalesVariant,
+  { stroke: string; scale: number; fade: boolean; fadeFloor: number }
+> = {
   deepField: {
     stroke: scales.deepFieldStroke,
     scale: scales.deepFieldScale,
@@ -31,11 +43,22 @@ const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boo
     // nothing: the field is the column's texture, and the column has no
     // bottom edge in the middle of the screen.
     fade: true,
+    fadeFloor: scales.deepFieldFloor,
   },
   fish: {
     stroke: scales.fishStroke,
     scale: scales.fishScale,
     fade: false,
+    fadeFloor: 1,
+  },
+  caustic: {
+    stroke: CAUSTIC_STROKE,
+    // Same 0.5× as the refraction strip, because it is the same light seen
+    // moving instead of at rest. The caustic is the fade exception: it is a
+    // shaft of light with a leading edge, so it does go to nothing.
+    scale: scales.refractionScale,
+    fade: true,
+    fadeFloor: 0,
   },
 };
 
@@ -64,8 +87,8 @@ function tileUrl(stroke: string, strokeWidth: number, scale: number, tile: numbe
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
-const Container = styled(Box)<{ $topOffset: number; $image: string; $fade: boolean }>(
-  ({ $topOffset, $image, $fade }) => ({
+const Container = styled(Box)<{ $topOffset: number; $image: string; $fade: boolean; $floor: number }>(
+  ({ $topOffset, $image, $fade, $floor }) => ({
     position: 'absolute',
     top: $topOffset,
     left: 0,
@@ -76,8 +99,8 @@ const Container = styled(Box)<{ $topOffset: number; $image: string; $fade: boole
     backgroundRepeat: 'repeat',
     ...($fade
       ? {
-          maskImage: `linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,${scales.deepFieldFloor}) 100%)`,
-          WebkitMaskImage: `linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,${scales.deepFieldFloor}) 100%)`,
+          maskImage: `linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,${$floor}) 100%)`,
+          WebkitMaskImage: `linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,${$floor}) 100%)`,
         }
       : {}),
   })
@@ -124,6 +147,7 @@ export function ScalesBackground({
       $topOffset={topOffset}
       $image={image}
       $fade={config.fade}
+      $floor={config.fadeFloor}
       style={style}
       className={className}
     />

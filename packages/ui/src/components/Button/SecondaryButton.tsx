@@ -18,12 +18,17 @@ import {
   duration,
   easing,
 } from '@salmon/shared';
+import { PressSpecular, setSpecularOrigin } from './PressSpecular';
 import type { SecondaryButtonProps } from './types';
 
 const StyledButton = styled(Button)<{
   fullWidth?: boolean;
   $buttonVariant?: 'filled' | 'outline';
 }>(({ fullWidth, $buttonVariant = 'filled' }) => ({
+  // Clip the press specular to the control's own bounds — the highlight is
+  // 240px across and would otherwise spill past the pill.
+  position: 'relative',
+  overflow: 'hidden',
   width: fullWidth ? '100%' : 'auto',
   minWidth: componentSizes.buttonMinWidth,
   height: componentSizes.buttonHeight,
@@ -62,6 +67,15 @@ const LoaderWrapper = styled('span')({
   justifyContent: 'center',
 });
 
+/** Keeps the label above the specular, as mobile draws it. Never a hit target. */
+const Label = styled('span')({
+  position: 'relative',
+  zIndex: 1,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+});
+
 export function SecondaryButton({
   onClick,
   children,
@@ -87,14 +101,18 @@ export function SecondaryButton({
       className={className}
       disableRipple={false}
       data-testid={testID}
+      onPointerDown={setSpecularOrigin}
     >
-      {loading ? (
-        <LoaderWrapper>
-          <CircularProgress size={24} sx={{ color: colors.button.secondaryText }} />
-        </LoaderWrapper>
-      ) : (
-        children
-      )}
+      {!isDisabled && <PressSpecular />}
+      <Label>
+        {loading ? (
+          <LoaderWrapper>
+            <CircularProgress size={24} sx={{ color: colors.button.secondaryText }} />
+          </LoaderWrapper>
+        ) : (
+          children
+        )}
+      </Label>
     </StyledButton>
   );
 }

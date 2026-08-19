@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useMemo, useRef } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
@@ -16,22 +16,35 @@ import {
   letterSpacing,
   lineHeight,
   componentSizes,
-  duration,
-  easing,
+  motionEasing,
   tabularNums,
   useWaitGate,
   useWaitExit,
 } from '@salmon/shared';
 import { LoadingScreen } from '../LoadingScreen';
 import { PrimaryButton } from '../Button';
+import { useReducedMotion } from '../../utils/useReducedMotion';
+import { CausticBand, SurfacingMembrane } from './SurfacingLayers';
+import { AMOUNT_RISE, BAND_HEIGHT, surfacingTimeline } from './surfacing';
 import type { TransactionSuccessScreenProps } from './types';
 
 // ============================================================================
 // Keyframes
 // ============================================================================
+//
+// The Surfacing's choreography (DESIGN.md §The Surfacing): chrome is a fade,
+// not a rise — the one thing allowed to travel on this screen is the caustic
+// band, and the amount settling behind it. Durations and delays come from
+// `surfacingTimeline` and are applied inline, so the keyframes carry only the
+// shape of each move.
 
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(8px); }
+const chromeFade = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const amountSettle = keyframes`
+  from { opacity: 0; transform: translateY(${AMOUNT_RISE}px); }
   to { opacity: 1; transform: translateY(0); }
 `;
 
@@ -60,6 +73,13 @@ const Container = styled(Box)({
 const Receipt = styled(Container)({
   justifyContent: 'flex-start',
   paddingTop: spacing['5xl'],
+  // The Surfacing's stage. The membrane and the caustic band are positioned
+  // against this element; the band blends in `screen`, so without a stacking
+  // context here it would blend against whatever is behind the whole screen,
+  // and it travels in from below the bottom edge, so the overflow is clipped.
+  position: 'relative',
+  isolation: 'isolate',
+  overflow: 'hidden',
 });
 
 /**
@@ -78,7 +98,9 @@ const StatusRow = styled(Box)({
   gap: spacing.sm,
   marginBottom: spacing.md,
   opacity: 0,
-  animation: `${fadeIn} ${duration.slow} ${easing.easeOut} forwards`,
+  // Duration comes from the timeline, inline. No delay: the status arrives
+  // with the membrane, the way the mobile screen plays it.
+  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards`,
 });
 
 const StatusGlyph = styled(Typography)({
@@ -129,7 +151,7 @@ const AmountStage = styled(Box)({
  */
 const AMOUNT_CHAR_EM = 0.62;
 
-const Amount = styled(Typography)({
+const Amount = styled(Typography)<{ $rise: boolean }>(({ $rise }) => ({
   fontFamily: fontFamily.sans,
   // Secondary rank: one step down from the headline in size and one in weight.
   // It keeps `text.primary` — a number on a receipt may be smaller than the
@@ -156,8 +178,12 @@ const Amount = styled(Typography)({
   maxWidth: '100%',
   fontSize: `clamp(${fontSize.body}px, calc(100cqw / (var(--tx-amount-chars, 24) * ${AMOUNT_CHAR_EM})), ${fontSize.title}px)`,
   opacity: 0,
-  animation: `${fadeIn} ${duration.slow} ${easing.easeOut} ${duration.stagger1} forwards`,
-});
+  // The hero settles behind the band: translateY +6 → 0 on `settle`, digits
+  // already at tabular width so nothing reflows. Under reduced motion the
+  // timeline sets `rise` to 0 and the amount is simply there. Duration and
+  // delay are the timeline's, inline.
+  animation: `${$rise ? amountSettle : chromeFade} 0ms ${motionEasing.settle.css} forwards`,
+}));
 
 /**
  * Continue and explorer, pinned to the bottom of the column. The auto margin
@@ -179,7 +205,9 @@ const ExplorerLink = styled(Link)({
   textAlign: 'center',
   cursor: 'pointer',
   opacity: 0,
-  animation: `${fadeIn} ${duration.slow} ${easing.easeOut} ${duration.stagger3} forwards`,
+  // The second chrome wave — the link that leaves the wallet arrives after
+  // the continue action. Delay and duration are the timeline's, inline.
+  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards`,
 });
 
 const BridgeInfoBox = styled(Box)({
@@ -189,7 +217,7 @@ const BridgeInfoBox = styled(Box)({
   padding: spacing.lg,
   marginBottom: spacing.xl,
   opacity: 0,
-  animation: `${fadeIn} ${duration.slow} ${easing.easeOut} ${duration.stagger1} forwards`,
+  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards`,
 });
 
 const BridgeLabel = styled(Typography)({
@@ -217,7 +245,7 @@ const BridgeValue = styled(Typography)({
  */
 const ContinueButtonWrapper = styled('div')({
   opacity: 0,
-  animation: `${fadeIn} ${duration.slow} ${easing.easeOut} ${duration.stagger2} forwards`,
+  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards`,
 });
 
 // ============================================================================
@@ -242,6 +270,23 @@ export function TransactionSuccessScreen({
   const { t } = useTranslation();
   const isBridge = !!bridgeDepositAddress;
 
+  // The Surfacing (DESIGN.md §The Surfacing). Reduced motion is a parallel
+  // mapping rather than a switch, and the plan for both paths is
+  // `surfacingTimeline` — a pure function, so the timing is testable without
+  // a frame clock. Same tokens, same phases as the mobile screen.
+  const isReduceMotionEnabled = useReducedMotion();
+  const timeline = useMemo(
+    () => surfacingTimeline(isReduceMotionEnabled),
+    [isReduceMotionEnabled]
+  );
+
+  const receiptRef = useRef<HTMLDivElement | null>(null);
+  const amountRef = useRef<HTMLElement | null>(null);
+  const bandRef = useRef<HTMLDivElement | null>(null);
+  // The moment never repeats — not on a reduce-motion toggle, not on a
+  // re-render.
+  const playedRef = useRef(false);
+
   const handleExplorerClick = () => {
     if (explorerUrl) {
       window.open(explorerUrl, '_blank', 'noopener,noreferrer');
@@ -261,6 +306,56 @@ export function TransactionSuccessScreen({
   // left the screen and it reports back.
   const { held: waveHeld, onExited: onWaveGone } = useWaitExit(showWait);
 
+  // The caustic band, driven with WAAPI because where it stops is a function
+  // of layout: it rises from below the bottom edge to rest centred on the
+  // amount, whose position moves with the summary's line length. CSS carries
+  // every phase that has no layout dependency; the script carries the one
+  // that does. Keyed on the wait *screen*, not on `settling` — the gate can
+  // hold the wait a moment past the settle, and The Surfacing must not play
+  // behind it.
+  useLayoutEffect(() => {
+    if (waveHeld || playedRef.current) return;
+    const receipt = receiptRef.current;
+    const amount = amountRef.current;
+    const band = bandRef.current;
+    if (!receipt || !amount || !band) return;
+    // No WAAPI (jsdom) — the band stays parked at opacity 0; the moment is
+    // choreography, never content.
+    if (typeof band.animate !== 'function') return;
+    const receiptRect = receipt.getBoundingClientRect();
+    const amountRect = amount.getBoundingClientRect();
+    // Held back until the corridor has been measured — a band that travels to
+    // the wrong place is worse than one frame of nothing.
+    if (receiptRect.height <= 0 || amountRect.height <= 0) return;
+    playedRef.current = true;
+
+    const amountCenterY = amountRect.top - receiptRect.top + amountRect.height / 2;
+    const restingY = amountCenterY - BAND_HEIGHT / 2;
+
+    if (timeline.band.mode === 'travel') {
+      band.animate(
+        [
+          { transform: `translateY(${receiptRect.height}px)` },
+          { transform: `translateY(${restingY}px)` },
+        ],
+        { duration: timeline.band.durationMs, easing: motionEasing.current.css, fill: 'both' }
+      );
+    } else {
+      // Reduced motion: drawn once across the amount, held, then faded. It
+      // does not travel, and it never repeats.
+      band.style.transform = `translateY(${restingY}px)`;
+    }
+    // Full strength while it travels (or holds), then it dissipates in
+    // whatever `tide` has left — `fill: 'both'` holds opacity 1 through the
+    // delay and 0 after.
+    band.animate([{ opacity: 1 }, { opacity: 0 }], {
+      delay: timeline.band.durationMs,
+      duration: timeline.band.fadeMs,
+      easing: motionEasing.sink.css,
+      fill: 'both',
+    });
+  }, [waveHeld, timeline]);
+
   if (waveHeld) {
     return (
       <Container>
@@ -275,23 +370,42 @@ export function TransactionSuccessScreen({
     );
   }
 
+  const chromeTiming: React.CSSProperties = {
+    animationDuration: `${timeline.chrome.durationMs}ms`,
+    animationDelay: `${timeline.chrome.delayMs}ms`,
+  };
+
   return (
-    <Receipt>
-      <StatusRow data-testid="tx-success-status">
+    <Receipt ref={receiptRef}>
+      {/* The membrane this moment clears. Behind everything, and behind the
+          content it is thinning out over. */}
+      <SurfacingMembrane durationMs={timeline.membrane.durationMs} />
+      <StatusRow
+        data-testid="tx-success-status"
+        style={{ animationDuration: `${timeline.chrome.durationMs}ms` }}
+      >
         <StatusGlyph aria-hidden>✓</StatusGlyph>
         <StatusLabel>{title}</StatusLabel>
       </StatusRow>
       <AmountStage>
         <Amount
+          ref={amountRef}
           data-testid="tx-success-amount"
-          // The only thing CSS cannot know about the string: how long it is.
-          style={{ '--tx-amount-chars': Math.max(1, summary.length) } as React.CSSProperties}
+          $rise={timeline.amount.rise > 0}
+          style={
+            {
+              // The only thing CSS cannot know about the string: how long it is.
+              '--tx-amount-chars': Math.max(1, summary.length),
+              animationDuration: `${timeline.amount.durationMs}ms`,
+              animationDelay: `${timeline.amount.delayMs}ms`,
+            } as React.CSSProperties
+          }
         >
           {summary}
         </Amount>
       </AmountStage>
       {isBridge ? (
-        <BridgeInfoBox>
+        <BridgeInfoBox style={chromeTiming}>
           <BridgeLabel>{t('bridge.depositAddress', 'Send funds to')}</BridgeLabel>
           <BridgeValue>{bridgeDepositAddress}</BridgeValue>
           {bridgeAmountIn && (
@@ -347,7 +461,7 @@ export function TransactionSuccessScreen({
           link that leaves the wallet for a block explorer, and reading order
           has to match that ranking. */}
       <ActionGroup>
-        <ContinueButtonWrapper>
+        <ContinueButtonWrapper style={chromeTiming}>
           <PrimaryButton
             onClick={onContinue}
             fullWidth={false}
@@ -365,11 +479,18 @@ export function TransactionSuccessScreen({
             onClick={handleExplorerClick}
             underline="always"
             data-testid="tx-success-explorer-link"
+            style={{
+              animationDuration: `${timeline.chrome.durationMs}ms`,
+              animationDelay: `${timeline.chrome.delayMs + timeline.chrome.staggerMs}ms`,
+            }}
           >
             {t('transaction.viewOnExplorer')}
           </ExplorerLink>
         ) : null}
       </ActionGroup>
+      {/* The shaft of light, last so it passes over the amount rather than
+          under it. It takes no clicks and it never repeats. */}
+      <CausticBand ref={bandRef} mode={timeline.band.mode} />
     </Receipt>
   );
 }

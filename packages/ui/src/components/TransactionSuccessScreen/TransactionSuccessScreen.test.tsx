@@ -24,18 +24,47 @@ vi.mock('@salmon/shared', () => ({
   useWaitExit: (showWait: boolean) => ({ held: showWait, onExited: () => {} }),
   semantic: {
     status: { success: '#0f0' },
-    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
+    surface: {
+      shelf: '#10131C',
+      raised: '#161C2D',
+      crest: '#1B2233',
+      bedrock: '#0B0F19',
+      membraneThick: 'rgba(11, 15, 25, 0.80)',
+    },
     text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
     border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
     scales: {
       deepFieldStroke: 'rgba(199, 211, 232, 0.06)',
       deepFieldScale: 3.2,
       deepFieldHeight: 180,
+      deepFieldFloor: 0.35,
       fishStroke: 'rgba(7, 9, 17, 0.10)',
       fishScale: 1,
+      refractionScale: 0.5,
     },
     flesh: { band: '#FFF1EE' },
+    water: { light: '#9FE0EF' },
   },
+  // The Surfacing reads the motion vocabulary, the caustic band draws the
+  // scales tile, and the shared PrimaryButton now carries the press specular.
+  seigaihaTile: { width: 120, height: 60 },
+  seigaihaTiledPaths: ['M0 0h1v1H0z'],
+  motionMs: {
+    flick: 90,
+    swell: 180,
+    ebb: 180,
+    drift: 280,
+    rise: 420,
+    tide: 720,
+    stagger: 24,
+  },
+  motionDuration: { flick: '90ms' },
+  motionEasing: {
+    current: { css: 'cubic-bezier(0.32, 0.72, 0, 1)' },
+    settle: { css: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+    sink: { css: 'cubic-bezier(0.4, 0, 1, 1)' },
+  },
+  reducedMotion: { query: '(prefers-reduced-motion: reduce)' },
   fleshTile: { width: 380, height: 40 },
   fleshFades: [],
   fleshTiledStrokes: [],
@@ -169,6 +198,59 @@ describe('TransactionSuccessScreen', () => {
 
       expect(screen.getByText('bc1qdeposit')).toBeTruthy();
       expect(screen.getByText('33 USDC')).toBeTruthy();
+    });
+  });
+
+  /**
+   * The Surfacing (DESIGN.md §The Surfacing). What is worth asserting here is
+   * not that pixels move — the timing is `surfacingTimeline`'s and is tested
+   * in `surfacing.test.ts` — but that the phases are mounted on the receipt
+   * and that the reduce-motion signal chooses the calm variant. Same shape as
+   * `LoadingScreen.ground.test.tsx`.
+   */
+  describe('The Surfacing', () => {
+    const setReducedMotion = (matches: boolean) => {
+      window.matchMedia = ((query: string) => ({
+        matches,
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      })) as unknown as typeof window.matchMedia;
+    };
+
+    afterEach(() => {
+      delete (window as { matchMedia?: unknown }).matchMedia;
+    });
+
+    it('mounts the membrane that clears and the caustic band that travels', () => {
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      expect(screen.getByTestId('tx-surfacing-membrane')).toBeTruthy();
+      const band = screen.getByTestId('tx-surfacing-band');
+      expect(band.getAttribute('data-surfacing-mode')).toBe('travel');
+    });
+
+    it('does not play the moment behind the wait', () => {
+      render(<TransactionSuccessScreen {...baseProps} settling />);
+
+      expect(screen.queryByTestId('tx-surfacing-membrane')).toBeNull();
+      expect(screen.queryByTestId('tx-surfacing-band')).toBeNull();
+    });
+
+    it('chooses the calm variant under reduced motion — static light, no travel', () => {
+      setReducedMotion(true);
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      // The moment stays recognizable; it just does not travel. The membrane
+      // still clears and the caustic light is drawn once, static.
+      expect(screen.getByTestId('tx-surfacing-membrane')).toBeTruthy();
+      expect(screen.getByTestId('tx-surfacing-band').getAttribute('data-surfacing-mode')).toBe(
+        'static'
+      );
     });
   });
 });

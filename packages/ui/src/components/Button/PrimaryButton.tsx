@@ -29,6 +29,7 @@ import {
   easing,
 } from '@salmon/shared';
 import { FleshBackground } from '../FleshBackground';
+import { PressSpecular, setSpecularOrigin } from './PressSpecular';
 import type { PrimaryButtonProps } from './types';
 
 const StyledButton = styled(Button)<{ fullWidth?: boolean }>(({ fullWidth }) => ({
@@ -102,6 +103,7 @@ export function PrimaryButton({
       className={className}
       disableRipple={false}
       data-testid={testID}
+      onPointerDown={setSpecularOrigin}
     >
       {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
           fill. A filled button is mass, not surface, so the material it shows
@@ -109,6 +111,9 @@ export function PrimaryButton({
           than the fill, so the 6.50:1 ink composite is a floor here, not a
           budget. Absent when the fill is absent. */}
       {!isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />}
+      {/* The specular sits over the flesh and under the label (the label's own
+          zIndex), and the pill's `overflow: hidden` clips it to the control. */}
+      {!isDisabled && <PressSpecular />}
       <Label>
         {loading ? (
           <LoaderWrapper>

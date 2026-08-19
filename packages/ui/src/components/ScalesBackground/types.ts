@@ -17,7 +17,14 @@ export type ScalesVariant =
    * the button's own material. Kept because this union is a public export
    * with three apps behind it.
    */
-  | 'fish';
+  | 'fish'
+  /**
+   * The caustic band of The Surfacing — the transient one. 0.5×, fading
+   * downward to nothing so the band reads as a shaft with a leading edge.
+   * Never mount it anywhere but the completed-transaction confirmation: it is
+   * the signature moment, and a signature used twice is a texture.
+   */
+  | 'caustic';
 
 export interface ScalesBackgroundProps {
   /** Which of the sanctioned appearances to draw. Defaults to `deepField`. */
