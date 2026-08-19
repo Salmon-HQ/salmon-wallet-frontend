@@ -39,6 +39,7 @@ import {
   easing,
   sanitizeDecimalInput,
   tabularNums,
+  formatTokenAmount,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -415,7 +416,10 @@ export function StepAddressAmount({
   // Balance display
   const balanceDisplay = useMemo(() => {
     if (tokenBalance === 0) return `0 ${token.symbol}`;
-    return `${Number(tokenBalance.toFixed(4))} ${token.symbol}`;
+    // Rounding unchanged; the separator follows the app's language rather than
+    // the host's, per PRODUCT.md's i18n constraint. Display only — the quick-fill
+    // and validation paths read `tokenBalance` itself, never this string.
+    return `${formatTokenAmount(Number(tokenBalance.toFixed(4)))} ${token.symbol}`;
   }, [tokenBalance, token.symbol]);
 
   // Validate form (address must be validated AND amount must be valid)

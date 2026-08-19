@@ -31,6 +31,7 @@ import {
   duration,
   easing,
   tabularNums,
+  formatTokenAmount,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { StepTokenSelectProps, SendToken } from './types';
@@ -225,6 +226,9 @@ const SkeletonText = styled(Skeleton)({
 // Token Row Component
 // ============================================================================
 
+/** Balances below this render as "less than", not as a row of leading zeros. */
+const MIN_DISPLAYED_BALANCE = 0.0001;
+
 interface TokenRowProps {
   token: SendToken;
   onPress: (token: SendToken) => void;
@@ -238,8 +242,11 @@ const TokenRow = React.memo(function TokenRow({ token, onPress }: TokenRowProps)
   const balanceDisplay = useMemo(() => {
     const amount = typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount;
     if (amount === 0) return `0 ${token.symbol}`;
-    if (amount < 0.0001) return `<0.0001 ${token.symbol}`;
-    return `${Number(amount.toFixed(4))} ${token.symbol}`;
+    // Same rounding as before; only the separator moves, and it follows the
+    // app's language per PRODUCT.md's i18n constraint.
+    if (amount < MIN_DISPLAYED_BALANCE)
+      return `<${formatTokenAmount(MIN_DISPLAYED_BALANCE)} ${token.symbol}`;
+    return `${formatTokenAmount(Number(amount.toFixed(4)))} ${token.symbol}`;
   }, [token.uiAmount, token.symbol]);
 
   return (

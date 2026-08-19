@@ -22,7 +22,8 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async () => ({
+  ...(await vi.importActual('../../../../shared/src/utils/formatting')),
   tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
   semantic: {
     status: { danger: '#f00', warning: '#fc0', success: '#0f0' },
@@ -221,6 +222,34 @@ describe('StepAddressAmount', () => {
     fireEvent.click(screen.getByRole('button', { name: 'general.max' }));
 
     expect(screen.getByDisplayValue('10')).toBeTruthy();
+  });
+
+  it('renders the balance in the app language while MAX still fills a parseable amount', async () => {
+    const i18n = (await import('i18next')).default;
+    const originalLanguage = i18n.language;
+    i18n.language = 'es';
+
+    try {
+      render(
+        <StepAddressAmount
+          token={token}
+          liveBalance={10.5}
+          blockchain="solana"
+          account={account}
+          onBack={vi.fn()}
+          onReview={vi.fn()}
+          onCancel={vi.fn()}
+        />
+      );
+
+      expect(screen.getByText('10,5 USDC')).toBeTruthy();
+
+      // The displayed string is never parsed back: MAX derives from the number.
+      fireEvent.click(screen.getByRole('button', { name: 'general.max' }));
+      expect(screen.getByDisplayValue('10.5')).toBeTruthy();
+    } finally {
+      i18n.language = originalLanguage;
+    }
   });
 
   it('keeps review disabled for invalid recipient state', () => {

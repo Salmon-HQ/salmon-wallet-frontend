@@ -36,6 +36,7 @@ import {
   easing,
   tabularNums,
   useCopyFeedback,
+  formatTokenAmount,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { PrimaryButton, SecondaryButton } from '../Button';
@@ -224,7 +225,9 @@ export function StepConfirmation({
   // Amount display
   const amountDisplay = useMemo(() => {
     const numAmount = parseFloat(amount);
-    return `${Number(numAmount.toFixed(6))} ${token.symbol}`;
+    // Rounding unchanged; the separator follows the app's language rather than
+    // the host's, per PRODUCT.md's i18n constraint.
+    return `${formatTokenAmount(Number(numAmount.toFixed(6)))} ${token.symbol}`;
   }, [amount, token.symbol]);
 
   // Estimate fee on mount

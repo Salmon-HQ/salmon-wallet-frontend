@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { formatBaseUnits, formatEffectiveRate, formatTokenAmount } from './formatting';
+import { afterEach, describe, expect, it } from 'vitest';
+import i18n from 'i18next';
+import {
+  formatBaseUnits,
+  formatEffectiveRate,
+  formatTokenAmount,
+  formatTokenBalance,
+} from './formatting';
 
 describe('formatTokenAmount', () => {
   it('uses a point as decimal separator under en', () => {
@@ -36,6 +42,58 @@ describe('formatTokenAmount', () => {
   it('returns the input unchanged when it is not a finite number', () => {
     expect(formatTokenAmount('abc', 'en')).toBe('abc');
     expect(formatTokenAmount(NaN, 'en')).toBe('NaN');
+  });
+});
+
+describe('formatTokenBalance', () => {
+  const originalLanguage = i18n.language;
+
+  afterEach(() => {
+    i18n.language = originalLanguage;
+  });
+
+  it('uses a point as decimal separator under en', () => {
+    expect(formatTokenBalance(1.5, 10, 'en')).toBe('1.5');
+    expect(formatTokenBalance(0.00013129, 10, 'en')).toBe('0.00013129');
+  });
+
+  it('uses a comma as decimal separator under es', () => {
+    expect(formatTokenBalance(1.5, 10, 'es')).toBe('1,5');
+    expect(formatTokenBalance(0.00013129, 10, 'es')).toBe('0,00013129');
+  });
+
+  it('follows the app language rather than the host default', () => {
+    i18n.language = 'es';
+    expect(formatTokenBalance(1.5)).toBe('1,5');
+
+    i18n.language = 'en';
+    expect(formatTokenBalance(1.5)).toBe('1.5');
+  });
+
+  it('trims trailing fractional zeros', () => {
+    expect(formatTokenBalance(2.5, 10, 'en')).toBe('2.5');
+    expect(formatTokenBalance(3, 10, 'es')).toBe('3');
+  });
+
+  it('rounds to the requested decimals', () => {
+    expect(formatTokenBalance(1.123456789012, 4, 'en')).toBe('1.1235');
+    expect(formatTokenBalance(1.123456789012, 4, 'es')).toBe('1,1235');
+  });
+
+  it('keeps BTC (8) and SOL (9) fraction precision', () => {
+    expect(formatTokenBalance(0.00000001, 10, 'en')).toBe('0.00000001');
+    expect(formatTokenBalance(0.000000001, 10, 'es')).toBe('0,000000001');
+  });
+
+  it('does not group thousands, matching the raw-amount row look', () => {
+    expect(formatTokenBalance(1234567.89, 10, 'en')).toBe('1234567.89');
+    expect(formatTokenBalance(1234567.89, 10, 'es')).toBe('1234567,89');
+  });
+
+  it('renders nil and zero balances as a bare zero', () => {
+    expect(formatTokenBalance(undefined, 10, 'es')).toBe('0');
+    expect(formatTokenBalance(null, 10, 'es')).toBe('0');
+    expect(formatTokenBalance(0, 10, 'es')).toBe('0');
   });
 });
 

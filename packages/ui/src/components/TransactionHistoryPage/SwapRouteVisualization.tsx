@@ -24,6 +24,7 @@ import {
   formatBlockNumber,
   formatDateTime,
   formatRawAmount,
+  formatTokenAmount,
   getShortAddress,
   semantic,
   spacing,
@@ -373,7 +374,7 @@ const TransactionSummaryRows: React.FC<{ transaction: Transaction }> = ({ transa
         <SummaryRow>
           <SummaryLabel>{t('transactions.detail.totalFees')}</SummaryLabel>
           <SummaryValue>
-            {swapRoute.totalFee.amount} {swapRoute.totalFee.symbol}
+            {formatTokenAmount(swapRoute.totalFee.amount)} {swapRoute.totalFee.symbol}
           </SummaryValue>
         </SummaryRow>
       )}
@@ -382,7 +383,8 @@ const TransactionSummaryRows: React.FC<{ transaction: Transaction }> = ({ transa
         <SummaryRow>
           <SummaryLabel>{t('transactions.detail.networkFee')}</SummaryLabel>
           <SummaryValue>
-            {(fee.amount / Math.pow(10, fee.decimals)).toFixed(6)} {fee.symbol}
+            {formatTokenAmount(Number((fee.amount / Math.pow(10, fee.decimals)).toFixed(6)))}{' '}
+            {fee.symbol}
           </SummaryValue>
         </SummaryRow>
       )}

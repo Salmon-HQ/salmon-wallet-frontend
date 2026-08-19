@@ -22,6 +22,7 @@ vi.mock('react-i18next', () => ({
 // parse. Mock the tokens this step reads and keep the real `chunkAddress`
 // behaviour, which is what the assertions are about.
 vi.mock('@salmon/shared', async () => ({
+  ...(await vi.importActual('../../../../shared/src/utils/formatting')),
   ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
   // CopyTick reads the real motion vocabulary.
   ...(await vi.importActual('../../../../shared/src/theme/durations')),

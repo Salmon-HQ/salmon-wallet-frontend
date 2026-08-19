@@ -375,13 +375,43 @@ export function formatRawAmount(
   return formattedAmount.toFixed(6).replace(/\.?0+$/, '');
 }
 
+/**
+ * Formats an available balance for display: rounded to `decimals` fraction
+ * digits, then rendered by `formatTokenAmount`.
+ *
+ * This used to build its string with `toFixed` plus a trailing-zero trim,
+ * which always emits '.' and whose trim regex only ever matched a '.'
+ * separator. Per PRODUCT.md's i18n constraint the app's language — not the
+ * host locale — decides how a number reads, so the rendering is delegated
+ * rather than reimplemented: `formatTokenAmount` already ties `Intl` to
+ * `i18n.language`, disables grouping and trims trailing zeros in any locale.
+ * What is left here is the rounding, which is what distinguishes the two:
+ * this one takes a caller-supplied precision. The default matches the 9
+ * fraction digits `formatTokenAmount` renders — and the deepest supported
+ * chain — so the signature does not promise precision the renderer drops.
+ *
+ * Display only: callers must derive amounts from the numeric balance, never
+ * by parsing this string back.
+ *
+ * @param value - Balance in UI units
+ * @param decimals - Fraction digits to round to before rendering
+ * @param locale - Override locale; defaults to the active i18next language
+ * @returns The formatted balance, or '0' when the balance is nil or zero
+ *
+ * @example
+ * ```typescript
+ * formatTokenBalance(1.5, 9, 'en')  // '1.5'
+ * formatTokenBalance(1.5, 9, 'es')  // '1,5'
+ * ```
+ */
 export function formatTokenBalance(
   value: number | undefined | null,
-  decimals: number = 10
+  decimals: number = 9,
+  locale?: string
 ): string {
   if (value === undefined || value === null) return '0';
   if (value === 0) return '0';
-  return value.toFixed(decimals).replace(/\.?0+$/, '');
+  return formatTokenAmount(Number(value.toFixed(decimals)), locale);
 }
 
 /** @deprecated Use `formatFiatPrecise` from `currencyFormatting` for multi-currency support. */

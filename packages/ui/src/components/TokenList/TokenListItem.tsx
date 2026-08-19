@@ -23,6 +23,7 @@ import {
   ms,
   showPercentage,
   getLabelValue,
+  formatTokenAmount,
   hiddenValue,
   useCurrencyContext,
   opacity,
@@ -260,7 +261,12 @@ export function TokenListItem({
       ? formatValue(usdBalance)
       : null;
 
-  const displayTokenAmount = hiddenBalance ? hiddenValue : `${uiAmount} ${symbol || ''}`;
+  // The separator follows the app's language, not the host's — see PRODUCT.md's
+  // i18n constraint. The mobile row already renders through this formatter.
+  const displayTokenAmount = hiddenBalance
+    ? hiddenValue
+    : `${formatTokenAmount(uiAmount)} ${symbol || ''}`;
+  const accessibleAmount = formatTokenAmount(uiAmount);
 
   const blurContainerStyle = {
     borderRadius: ms(borderRadius.lg),
@@ -278,7 +284,7 @@ export function TokenListItem({
           aria-label={t(
             'accessibility.token_balance',
             '{{name}} token, balance {{amount}} {{symbol}}',
-            { name, amount: uiAmount, symbol }
+            { name, amount: accessibleAmount, symbol }
           )}
           data-testid={`token-row-${symbol}`}
         >
@@ -327,7 +333,7 @@ export function TokenListItem({
         aria-label={t(
           'accessibility.token_balance',
           '{{name}} token, balance {{amount}} {{symbol}}',
-          { name, amount: uiAmount, symbol }
+          { name, amount: accessibleAmount, symbol }
         )}
         data-testid={`token-row-${symbol}`}
       >
