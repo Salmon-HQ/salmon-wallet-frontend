@@ -7,6 +7,13 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PrivateKeyPanel } from './PrivateKeyPanel';
+import { semantic } from '../../../../shared/src/theme';
+
+/** jsdom reports computed colors as `rgb(...)`; the tokens are authored as hex. */
+function rgbOf(hex: string): string {
+  const value = parseInt(hex.slice(1), 16);
+  return `rgb(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255})`;
+}
 
 /** Obviously fake — no real credential belongs in a test. */
 const CORRECT_PASSWORD = 'test-password-000';
@@ -105,5 +112,49 @@ describe('PrivateKeyPanel reveal', () => {
     await waitFor(() => {
       expect(screen.getByTestId('private-key-clipboard-warning-0')).toBeTruthy();
     });
+  });
+});
+
+describe('PrivateKeyPanel key exhibition surface', () => {
+  afterEach(cleanup);
+
+  it('exhibits the key on bedrock, not on a translucent card', () => {
+    render(<PrivateKeyPanel onBack={vi.fn()} />);
+
+    const card = screen.getByTestId('private-key-card-0');
+    const background = window.getComputedStyle(card).backgroundColor;
+
+    // A secret shown through a translucent surface is the failure this pins.
+    expect(background).toBe(rgbOf(semantic.surface.bedrock));
+    expect(background).not.toContain('rgba');
+  });
+});
+
+describe('PrivateKeyPanel reveal overlay keyboard access', () => {
+  afterEach(cleanup);
+
+  it('exposes the overlay as a focusable button with a name', () => {
+    render(<PrivateKeyPanel onBack={vi.fn()} />);
+
+    const overlay = screen.getByTestId('private-key-reveal-overlay-0');
+    expect(overlay.getAttribute('role')).toBe('button');
+    expect(overlay.getAttribute('tabindex')).toBe('0');
+    expect(overlay.getAttribute('aria-label')).toBe('Tap to reveal');
+  });
+
+  it('opens the same password gate from the keyboard as from a click', () => {
+    render(<PrivateKeyPanel onBack={vi.fn()} />);
+    fireEvent.keyDown(screen.getByTestId('private-key-reveal-overlay-0'), { key: ' ' });
+
+    // Keyboard reaches the gate, and the gate still holds.
+    expect(screen.getByLabelText('Password')).toBeTruthy();
+    expect(screen.queryByText(FAKE_PRIVATE_KEY)).toBeNull();
+  });
+
+  it('ignores keys that are not activation keys', () => {
+    render(<PrivateKeyPanel onBack={vi.fn()} />);
+    fireEvent.keyDown(screen.getByTestId('private-key-reveal-overlay-0'), { key: 'a' });
+
+    expect(screen.queryByLabelText('Password')).toBeNull();
   });
 });

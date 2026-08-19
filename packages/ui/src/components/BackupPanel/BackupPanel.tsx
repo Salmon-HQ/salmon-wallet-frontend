@@ -63,10 +63,12 @@ const WarningAlert = styled(Alert)({
   },
 });
 
+// The phrase is exhibited here, so this panel is bedrock at full alpha — no
+// translucent card, no motif (DESIGN.md §The Bedrock Rule).
 const SeedPhraseCard = styled(Paper)({
-  backgroundColor: colors.background.card,
+  backgroundColor: semantic.surface.bedrock,
   padding: spacing.lg,
-  borderRadius: borderRadius.lg,
+  borderRadius: borderRadius.r3,
   border: `${borderWidth.thin}px solid ${colors.border.default}`,
   position: 'relative',
 });
@@ -87,15 +89,19 @@ const WordChip = styled(Box)({
   border: `${borderWidth.thin}px solid ${colors.border.default}`,
 });
 
+// The cell index is a label, not part of the phrase — DESIGN.md §The Seed
+// Phrase Rule puts it in the label treatment so it can never be read as a word.
 const WordNumber = styled(Typography)({
-  fontSize: fontSize.xs,
+  fontSize: fontSize.label,
   fontWeight: fontWeight.medium,
-  color: colors.text.secondary,
+  color: colors.text.tertiary,
   minWidth: componentSizes.iconSizeXs,
 });
 
+// Exhibited seed words: Geist Mono at the larger mono size, weight 500
+// (DESIGN.md §The Seed Phrase Rule).
 const WordText = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.monoLg,
   fontWeight: fontWeight.medium,
   color: colors.text.primary,
   fontFamily: fontFamily.mono,
@@ -112,7 +118,7 @@ const BlurOverlay = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   backgroundColor: colors.overlay.dark,
-  borderRadius: borderRadius.lg,
+  borderRadius: borderRadius.r3,
   gap: spacing.md,
   cursor: 'pointer',
   transition: `background-color ${duration.normal}`,
@@ -122,7 +128,7 @@ const BlurOverlay = styled(Box)({
 });
 
 const RevealText = styled(Typography)({
-  fontSize: fontSize.base,
+  fontSize: fontSize.body,
   fontWeight: fontWeight.medium,
   color: colors.text.secondary,
 });
@@ -137,7 +143,7 @@ const ActionButton = styled(Button)({
   flex: 1,
   textTransform: 'none',
   fontWeight: fontWeight.medium,
-  borderRadius: borderRadius.md,
+  borderRadius: borderRadius.r3,
 });
 
 const CopyButton = styled(ActionButton)({
@@ -151,13 +157,25 @@ const CopyButton = styled(ActionButton)({
 });
 
 const SectionLabel = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.label,
   fontWeight: fontWeight.semibold,
   color: colors.text.secondary,
   textTransform: 'uppercase',
-  letterSpacing: letterSpacing.wider,
+  letterSpacing: letterSpacing.label,
   marginBottom: spacing.sm,
 });
+
+/**
+ * A styled div carrying only an onClick is invisible to the keyboard. The
+ * reveal gate is an interactive control, so it answers to Enter and Space.
+ */
+function activateOnKey(activate: () => void) {
+  return (event: React.KeyboardEvent<HTMLElement>): void => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    activate();
+  };
+}
 
 // ============================================================================
 // Component
@@ -251,7 +269,14 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
                 </SeedPhraseGrid>
 
                 {!seedPhraseVisible && (
-                  <BlurOverlay onClick={handleReveal} data-testid="backup-seed-reveal-overlay">
+                  <BlurOverlay
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t('settings.tap_to_reveal', 'Tap to reveal')}
+                    onClick={handleReveal}
+                    onKeyDown={activateOnKey(handleReveal)}
+                    data-testid="backup-seed-reveal-overlay"
+                  >
                     <KeyIcon size={fontSize.iconLg} color={colors.text.secondary} />
                     <RevealText>{t('settings.tap_to_reveal', 'Tap to reveal')}</RevealText>
                   </BlurOverlay>

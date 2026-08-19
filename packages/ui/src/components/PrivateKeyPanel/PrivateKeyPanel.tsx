@@ -83,42 +83,46 @@ const WarningAlert = styled(Alert)({
   },
 });
 
+// The key is exhibited here, so this panel is bedrock at full alpha — no
+// translucent card, no motif (DESIGN.md §The Bedrock Rule).
 const PrivateKeyCard = styled(Paper)({
-  backgroundColor: colors.background.card,
+  backgroundColor: semantic.surface.bedrock,
   padding: spacing.lg,
-  borderRadius: borderRadius.lg,
+  borderRadius: borderRadius.r3,
   border: `${borderWidth.thin}px solid ${colors.border.default}`,
   position: 'relative',
 });
 
+// The most position-critical string in the app: Geist Mono at the larger mono
+// size (DESIGN.md §The Bedrock Rule, the private key's exhibition).
 const KeyText = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.monoLg,
   fontWeight: fontWeight.medium,
   color: colors.text.primary,
   fontFamily: fontFamily.mono,
   wordBreak: 'break-all',
-  lineHeight: lineHeight.relaxed,
+  lineHeight: lineHeight.normal,
   minHeight: componentSizes.backButtonSize,
 });
 
 const PathLabel = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.label,
   fontWeight: fontWeight.semibold,
   color: colors.text.secondary,
   textTransform: 'uppercase',
-  letterSpacing: letterSpacing.wider,
+  letterSpacing: letterSpacing.label,
   marginBottom: spacing.sm,
 });
 
 const PathValue = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.mono,
   fontWeight: fontWeight.medium,
   color: colors.text.primary,
   fontFamily: fontFamily.mono,
 });
 
 const AddressValue = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.caption,
   color: colors.text.secondary,
   marginTop: spacing.xxs,
 });
@@ -134,7 +138,7 @@ const BlurOverlay = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   backgroundColor: colors.overlay.dark,
-  borderRadius: borderRadius.lg,
+  borderRadius: borderRadius.r3,
   gap: spacing.xxs,
   cursor: 'pointer',
   transition: `background-color ${duration.normal}`,
@@ -144,7 +148,7 @@ const BlurOverlay = styled(Box)({
 });
 
 const RevealText = styled(Typography)({
-  fontSize: fontSize.base,
+  fontSize: fontSize.body,
   fontWeight: fontWeight.medium,
   color: colors.text.secondary,
 });
@@ -159,7 +163,7 @@ const ActionButton = styled(Button)({
   flex: 1,
   textTransform: 'none',
   fontWeight: fontWeight.medium,
-  borderRadius: borderRadius.md,
+  borderRadius: borderRadius.r3,
 });
 
 const CopyButton = styled(ActionButton)({
@@ -186,12 +190,12 @@ const NetworkListItemIcon = styled(ListItemIcon)({
 
 const NetworkListItemText = styled(ListItemText)({
   '& .MuiListItemText-primary': {
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     fontWeight: fontWeight.medium,
     color: colors.text.primary,
   },
   '& .MuiListItemText-secondary': {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     color: colors.text.secondary,
   },
 });
@@ -201,6 +205,18 @@ const ChevronIcon = styled(CaretRightIcon)({
   width: iconSize.md,
   height: iconSize.md,
 });
+
+/**
+ * A styled div carrying only an onClick is invisible to the keyboard. The
+ * reveal gate is an interactive control, so it answers to Enter and Space.
+ */
+function activateOnKey(activate: () => void) {
+  return (event: React.KeyboardEvent<HTMLElement>): void => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    activate();
+  };
+}
 
 // ============================================================================
 // Component
@@ -371,7 +387,11 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
 
                   {!isRevealed && (
                     <BlurOverlay
+                      role="button"
+                      tabIndex={0}
+                      aria-label={t('settings.tap_to_reveal', 'Tap to reveal')}
                       onClick={() => handleReveal(index)}
+                      onKeyDown={activateOnKey(() => handleReveal(index))}
                       data-testid={`private-key-reveal-overlay-${index}`}
                     >
                       <KeyIcon size={fontSize.iconLg} color={colors.text.secondary} />
@@ -435,7 +455,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                     data-testid={`private-key-copy-error-${index}`}
                     sx={{
                       color: semantic.status.danger,
-                      fontSize: fontSize.sm,
+                      fontSize: fontSize.caption,
                       fontWeight: fontWeight.medium,
                       marginTop: `${spacing.sm}px`,
                     }}

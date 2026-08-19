@@ -7,6 +7,13 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BackupPanel } from './BackupPanel';
+import { semantic } from '../../../../shared/src/theme';
+
+/** jsdom reports computed colors as `rgb(...)`; the tokens are authored as hex. */
+function rgbOf(hex: string): string {
+  const value = parseInt(hex.slice(1), 16);
+  return `rgb(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255})`;
+}
 
 /** Obviously fake — no real credential belongs in a test. */
 const CORRECT_PASSWORD = 'test-password-000';
@@ -84,6 +91,50 @@ describe('BackupPanel seed reveal', () => {
     await renderPanelWithRevealedSeed();
 
     expect(screen.getByTestId('backup-seed-clipboard-warning')).toBeTruthy();
+  });
+});
+
+describe('BackupPanel seed exhibition surface', () => {
+  afterEach(cleanup);
+
+  it('exhibits the phrase on bedrock, not on a translucent card', () => {
+    render(<BackupPanel onBack={vi.fn()} />);
+
+    const card = screen.getByTestId('backup-seed-phrase');
+    const background = window.getComputedStyle(card).backgroundColor;
+
+    // A secret shown through a translucent surface is the failure this pins.
+    expect(background).toBe(rgbOf(semantic.surface.bedrock));
+    expect(background).not.toContain('rgba');
+  });
+});
+
+describe('BackupPanel reveal overlay keyboard access', () => {
+  afterEach(cleanup);
+
+  it('exposes the overlay as a focusable button with a name', () => {
+    render(<BackupPanel onBack={vi.fn()} />);
+
+    const overlay = screen.getByTestId('backup-seed-reveal-overlay');
+    expect(overlay.getAttribute('role')).toBe('button');
+    expect(overlay.getAttribute('tabindex')).toBe('0');
+    expect(overlay.getAttribute('aria-label')).toBe('Tap to reveal');
+  });
+
+  it('opens the same password gate from the keyboard as from a click', () => {
+    render(<BackupPanel onBack={vi.fn()} />);
+    fireEvent.keyDown(screen.getByTestId('backup-seed-reveal-overlay'), { key: 'Enter' });
+
+    // Keyboard reaches the gate, and the gate still holds.
+    expect(screen.getByLabelText('Password')).toBeTruthy();
+    expect(screen.queryByText('alpha')).toBeNull();
+  });
+
+  it('ignores keys that are not activation keys', () => {
+    render(<BackupPanel onBack={vi.fn()} />);
+    fireEvent.keyDown(screen.getByTestId('backup-seed-reveal-overlay'), { key: 'a' });
+
+    expect(screen.queryByLabelText('Password')).toBeNull();
   });
 });
 
