@@ -76,31 +76,49 @@ import type { BalanceCardProps, BlockchainId } from './types';
 const causticInk = (alpha: number) => `rgba(159, 224, 239, ${alpha})`;
 
 /**
- * Peak opacity of the brightest filament. **Band 0.03–0.07.**
- * Below 0.03 the light is not there at all on an OLED phone; above 0.07 the
- * card's tightest ink pair — the negative change ink `#FF6B85` — would fall
- * under 4.5:1 if the light ever reached the change row (5.32:1 unlit → 4.37:1
- * at 0.08). The number is small on purpose: this is a content surface at
- * depth, not a hero. It is the amount that should be the brightest thing here.
+ * The three readings the debug switch offers, and what each is for.
+ *
+ * `peak` is the opacity of the brightest filament; `reach` is how far the light
+ * survives along its own axis; `cross` is what the second filament carries as a
+ * fraction of the peak. Those are the only three levers, and each reading is
+ * the same light seen at a different strength — not three different ideas.
+ *
+ * The earlier 0.07 opacity ceiling assumed the light could arrive at the change
+ * row. It cannot: the axis runs down-right, and at these reaches the change row
+ * sits past the end of the gradient, so its alpha is exactly zero at every
+ * reading here. The ceiling that actually binds is the amount, whose leftmost
+ * glyphs the light grazes because the axis is diagonal — and even the `bold`
+ * graze leaves the amount at 7.65:1 on the lightest of the two panes, well over
+ * AA. Contrast is therefore not what limits this layer; the register is. The
+ * numbers below were re-derived from the card's measured geometry, not carried
+ * over.
+ *
+ * Worst-case measured ratios over the lighter `SHALLOW_PANE` ground (the
+ * unfavourable of the two), taken at the brightest point inside each text box:
+ *
+ * | reading | peak | reach | cross | amount `#DDE3ED`   | change `#FF6B85` |
+ * | ------- | ---- | ----- | ----- | ------------------ | ---------------- |
+ * | none    | —    | —     | —     | 11.62:1            | 6.21:1           |
+ * | subtle  | 0.05 | 0.30  | 0.60  | 10.89:1 (α 0.027)  | 6.21:1 (α 0)     |
+ * | present | 0.11 | 0.32  | 0.70  |  9.50:1 (α 0.082)  | 6.21:1 (α 0)     |
+ * | bold    | 0.18 | 0.34  | 0.75  |  7.65:1 (α 0.164)  | 6.21:1 (α 0)     |
+ *
+ * `reach` stays well under 0.40 at every reading — the amount's cap-height sits
+ * there, and the light must never gather on the number. It is nudged rather
+ * than pushed between readings because reach is what turns a gathered
+ * reflection into a header treatment; `peak` is the lever that buys visibility
+ * without spreading the shape. `cross` rises with `peak` for the same reason a
+ * brighter caustic needs a stronger second filament: one filament alone reads
+ * as a wash the moment it is bright enough to see.
  */
-const CAUSTIC_PEAK_OPACITY = 0.05;
-
-/**
- * The second filament, as a fraction of the peak. **Band 0.4–0.8.**
- * A single wash reads as a vignette; two filaments crossing at different
- * angles is the least a caustic needs to read as *focused* light. Above 0.8 the
- * two stop being a crossing and become one wide smear.
- */
-const CAUSTIC_CROSS_RATIO = 0.6;
-
-/**
- * How far down the card the light survives, along its own axis.
- * **Band 0.24–0.40.** The hard ceiling is the amount's cap-height, which lands
- * near 0.40 of a stock card's height: past that the light is on the number, and
- * lightening the ground under the screen's largest figure is the one thing this
- * layer must never do. Move the caustic, never the number.
- */
-const CAUSTIC_REACH = 0.3;
+const CAUSTIC_READINGS = {
+  /** The first pass, kept verbatim. Judged invisible; on the dial as the floor. */
+  subtle: { peak: 0.05, reach: 0.3, cross: 0.6 },
+  /** The intended reading: the same shape, opened until it is actually there. */
+  present: { peak: 0.11, reach: 0.32, cross: 0.7 },
+  /** Past comfort on purpose, to bracket the answer from above. */
+  bold: { peak: 0.18, reach: 0.34, cross: 0.75 },
+} as const;
 
 /**
  * Where the light enters and which way it runs. The shoulder, not the crown:
@@ -112,35 +130,30 @@ const CAUSTIC_AXIS = { start: { x: 0.05, y: 0 }, end: { x: 0.75, y: 1 } } as con
 const CAUSTIC_CROSS_AXIS = { start: { x: 0, y: 0.14 }, end: { x: 1, y: 0.44 } } as const;
 
 /** The reflection on the card's face. Static, non-interactive, clipped to the card. */
-const BalanceCardCaustic = () => (
-  <View style={styles.causticLayer} pointerEvents="none" testID="balance-card-caustic">
-    <LinearGradient
-      colors={[
-        causticInk(0),
-        causticInk(CAUSTIC_PEAK_OPACITY * 0.5),
-        causticInk(CAUSTIC_PEAK_OPACITY),
-        causticInk(0),
-      ]}
-      // Rises fast off the edge and decays slowly — a filament has a bright
-      // core and a long tail, which is what separates it from a linear fade.
-      locations={[0, CAUSTIC_REACH * 0.22, CAUSTIC_REACH * 0.52, CAUSTIC_REACH]}
-      start={CAUSTIC_AXIS.start}
-      end={CAUSTIC_AXIS.end}
-      style={StyleSheet.absoluteFill}
-    />
-    <LinearGradient
-      colors={[
-        causticInk(0),
-        causticInk(CAUSTIC_PEAK_OPACITY * CAUSTIC_CROSS_RATIO),
-        causticInk(0),
-      ]}
-      locations={[0, CAUSTIC_REACH * 0.45, CAUSTIC_REACH * 1.1]}
-      start={CAUSTIC_CROSS_AXIS.start}
-      end={CAUSTIC_CROSS_AXIS.end}
-      style={StyleSheet.absoluteFill}
-    />
-  </View>
-);
+const BalanceCardCaustic = ({ reading }: { reading: keyof typeof CAUSTIC_READINGS }) => {
+  const { peak, reach, cross } = CAUSTIC_READINGS[reading];
+
+  return (
+    <View style={styles.causticLayer} pointerEvents="none" testID="balance-card-caustic">
+      <LinearGradient
+        colors={[causticInk(0), causticInk(peak * 0.5), causticInk(peak), causticInk(0)]}
+        // Rises fast off the edge and decays slowly — a filament has a bright
+        // core and a long tail, which is what separates it from a linear fade.
+        locations={[0, reach * 0.22, reach * 0.52, reach]}
+        start={CAUSTIC_AXIS.start}
+        end={CAUSTIC_AXIS.end}
+        style={StyleSheet.absoluteFill}
+      />
+      <LinearGradient
+        colors={[causticInk(0), causticInk(peak * cross), causticInk(0)]}
+        locations={[0, reach * 0.45, reach * 1.1]}
+        start={CAUSTIC_CROSS_AXIS.start}
+        end={CAUSTIC_CROSS_AXIS.end}
+        style={StyleSheet.absoluteFill}
+      />
+    </View>
+  );
+};
 
 /**
  * Get gradient configuration for a blockchain
@@ -341,7 +354,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
       style={[styles.container, style]}
       testID="balance-card-root"
     >
-      {cardLight === 'caustic' && <BalanceCardCaustic />}
+      {cardLight !== 'none' && <BalanceCardCaustic reading={cardLight} />}
 
       {/* Group 1: Logo + Network tag. No motif: the motif belongs to the
           water, and this card is content — it carries the balance figure, and

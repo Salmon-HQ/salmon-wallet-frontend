@@ -100,8 +100,8 @@ jest.mock('../ScalesBackground', () => {
 });
 
 // The card's light is a debug switch the owner flips by hand. A getter lets one
-// test file drive both readings; the component reads the binding per render.
-let mockCardLight = 'caustic';
+// test file drive every reading; the component reads the binding per render.
+let mockCardLight = 'present';
 jest.mock('../../debug/cardLight', () => ({
   get cardLight() {
     return mockCardLight;
@@ -155,14 +155,20 @@ describe('BalanceCard — the motif belongs to the water, not to this card', () 
  * allowed exactly where the scales are not. These assertions pin the three
  * things that could turn it back into a rule break: it must be switchable, the
  * ground under it must stay opaque, and it must never touch the amount's ink.
+ *
+ * The switch now carries a range rather than one proposal, so these also pin
+ * that the range is a real one: every lit reading draws its own layer, and no
+ * two of them composite to the same strength.
  */
 describe('BalanceCard — the water’s light on the card’s face', () => {
+  const LIT_READINGS = ['subtle', 'present', 'bold'] as const;
+
   afterEach(() => {
-    mockCardLight = 'caustic';
+    mockCardLight = 'present';
   });
 
-  it('draws the caustic under the `caustic` reading', () => {
-    mockCardLight = 'caustic';
+  it.each(LIT_READINGS)('draws the caustic under the `%s` reading', (reading) => {
+    mockCardLight = reading;
     const { queryAllByTestId } = renderCard();
 
     expect(queryAllByTestId(CAUSTIC)).toHaveLength(1);
@@ -175,8 +181,31 @@ describe('BalanceCard — the water’s light on the card’s face', () => {
     expect(queryAllByTestId(CAUSTIC)).toHaveLength(0);
   });
 
+  // The dial has to be a dial. If two readings ever composite to the same
+  // thing the owner is comparing a reading against itself and cannot tell.
+  it('gives each lit reading its own strength', () => {
+    const alphas = LIT_READINGS.map((reading) => {
+      mockCardLight = reading;
+      const { getByTestId, unmount } = renderCard();
+      // The filament's brightest stop is the third of the four; RN hands back
+      // ARGB ints, and the top byte is the alpha this reading peaks at.
+      type Filament = { props: { colors: number[] } };
+      const isFilament = (node: { props: Record<string, unknown> }) =>
+        Array.isArray(node.props.colors);
+      const filaments = getByTestId(CAUSTIC).findAll(isFilament) as unknown as Filament[];
+      const peaks = filaments.map((node) =>
+        Math.max(...node.props.colors.map((stop) => stop >>> 24))
+      );
+      unmount();
+      return Math.max(...peaks);
+    });
+
+    expect(new Set(alphas).size).toBe(LIT_READINGS.length);
+    expect(alphas).toEqual([...alphas].sort((a, b) => a - b));
+  });
+
   it('leaves the card’s own ground opaque, so it still covers the water', () => {
-    mockCardLight = 'caustic';
+    mockCardLight = 'present';
     const { getByTestId } = renderCard();
 
     // RN processes each stop to an ARGB int; the top byte is the alpha. Every
@@ -189,7 +218,7 @@ describe('BalanceCard — the water’s light on the card’s face', () => {
   });
 
   it('does not touch the amount’s ink', () => {
-    mockCardLight = 'caustic';
+    mockCardLight = 'bold';
     const { getByText } = renderCard();
 
     const amount = StyleSheet.flatten(getByText('$1,234').props.style) as { color: string };
