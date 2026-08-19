@@ -9,6 +9,17 @@
 import { Text } from 'react-native';
 import { render } from '@testing-library/react-native';
 
+// The guard is skipped in iOS dev builds (the simulator renders secure
+// surfaces black); forcing the debug flag on lets these tests exercise the
+// real protection behavior under jest's __DEV__=true. The flag is read
+// lazily per mount, so the skip case below can flip it.
+let mockForceGuardInDev = true;
+jest.mock('../src/debug/captureGuard', () => ({
+  get DEBUG_FORCE_CAPTURE_GUARD_IN_DEV() {
+    return mockForceGuardInDev;
+  },
+}));
+
 const mockPreventScreenCaptureAsync = jest.fn((_key: string) => Promise.resolve());
 const mockAllowScreenCaptureAsync = jest.fn((_key: string) => Promise.resolve());
 const mockEnableAppSwitcherProtectionAsync = jest.fn(() => Promise.resolve());
@@ -16,24 +27,25 @@ const mockDisableAppSwitcherProtectionAsync = jest.fn(() => Promise.resolve());
 
 // Mirrors the real module's keyed refcounting so the test exercises the key
 // discipline the hook depends on, not just that some function was called.
+// (The hook now calls the async functions directly — inlined so the iOS
+// Simulator can skip capture prevention — so the refcount lives here.)
 jest.mock('expo-screen-capture', () => {
-  const { useEffect } = require('react');
   const activeTags = new Set<string>();
 
   return {
-    usePreventScreenCapture: (key = 'default') => {
-      useEffect(() => {
-        if (!activeTags.has(key)) {
-          activeTags.add(key);
-          mockPreventScreenCaptureAsync(key);
-        }
-        return () => {
-          activeTags.delete(key);
-          if (activeTags.size === 0) {
-            mockAllowScreenCaptureAsync(key);
-          }
-        };
-      }, [key]);
+    preventScreenCaptureAsync: (key = 'default') => {
+      if (!activeTags.has(key)) {
+        activeTags.add(key);
+        mockPreventScreenCaptureAsync(key);
+      }
+      return Promise.resolve();
+    },
+    allowScreenCaptureAsync: (key = 'default') => {
+      activeTags.delete(key);
+      if (activeTags.size === 0) {
+        mockAllowScreenCaptureAsync(key);
+      }
+      return Promise.resolve();
     },
     enableAppSwitcherProtectionAsync: () => mockEnableAppSwitcherProtectionAsync(),
     disableAppSwitcherProtectionAsync: () => mockDisableAppSwitcherProtectionAsync(),
@@ -136,5 +148,34 @@ describe('useSecretScreen', () => {
       screen.unmount();
       expect(mockDisableAppSwitcherProtectionAsync).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('useSecretScreen in iOS development (default: guard skipped)', () => {
+  const originalOS = Platform.OS;
+
+  beforeAll(() => {
+    Platform.OS = 'ios';
+    mockForceGuardInDev = false; // the shipped default of the debug flag
+  });
+  afterAll(() => {
+    Platform.OS = originalOS;
+    mockForceGuardInDev = true;
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    __resetAppSwitcherRefCountForTests();
+  });
+
+  it('skips capture prevention (the sim renders secure surfaces black) but keeps app-switcher protection', () => {
+    const screen = render(<SecretScreen label="sim-secret" />);
+
+    expect(mockPreventScreenCaptureAsync).not.toHaveBeenCalled();
+    expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
+
+    screen.unmount();
+    expect(mockAllowScreenCaptureAsync).not.toHaveBeenCalled();
+    expect(mockDisableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
   });
 });

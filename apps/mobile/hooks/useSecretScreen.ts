@@ -27,10 +27,29 @@
 import { useEffect, useId } from 'react';
 import { Platform } from 'react-native';
 import {
-  usePreventScreenCapture,
+  preventScreenCaptureAsync,
+  allowScreenCaptureAsync,
   enableAppSwitcherProtectionAsync,
   disableAppSwitcherProtectionAsync,
 } from 'expo-screen-capture';
+import { DEBUG_FORCE_CAPTURE_GUARD_IN_DEV } from '../src/debug/captureGuard';
+
+/**
+ * The iOS Simulator renders "secure" surfaces (the isSecureTextEntry trick
+ * behind preventScreenCaptureAsync) as a black display, not just a black
+ * screenshot — a secret screen becomes unusable while developing. No
+ * JS-visible signal separates simulator from physical device in this dev
+ * client (measured: Constants.platform.ios lost its model id in SDK 55,
+ * Platform.constants carries no flag, hostUri reports the LAN IP on both),
+ * and expo-device is a native module whose addition would invalidate the
+ * installed dev builds. So the guard is skipped in iOS development builds
+ * altogether — `__DEV__` is compiled false in release, where the guard
+ * always runs — with a debug flag to force it back on when the protection
+ * itself is being verified on a physical device.
+ */
+function shouldSkipCaptureGuard(): boolean {
+  return __DEV__ && Platform.OS === 'ios' && !DEBUG_FORCE_CAPTURE_GUARD_IN_DEV;
+}
 
 /**
  * Several secret components can be mounted at once (for example one
@@ -65,7 +84,16 @@ function releaseAppSwitcherProtection(): void {
 export function useSecretScreen(label: string): void {
   const instanceId = useId();
 
-  usePreventScreenCapture(`${label}:${instanceId}`);
+  // Inlined usePreventScreenCapture so the simulator can skip it (a hook
+  // cannot be called conditionally); same keyed refcounting underneath.
+  useEffect(() => {
+    if (shouldSkipCaptureGuard()) return;
+    const key = `${label}:${instanceId}`;
+    void preventScreenCaptureAsync(key).catch(() => {});
+    return () => {
+      void allowScreenCaptureAsync(key).catch(() => {});
+    };
+  }, [label, instanceId]);
 
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
