@@ -83,12 +83,16 @@ vi.mock('@salmon/shared', () => ({
   fontFamily: { sans: 'Inter, sans-serif' },
   fontSize: { sm: 12, base: 14, body: 14, bodyLg: 16, title: 20, headline: 24, '4xl': 36 },
   fontWeight: { medium: 500, semibold: 600, bold: 700 },
-  letterSpacing: { snug: -0.12, widest: 1 },
+  letterSpacing: { snug: -0.12, wide: 0.5, widest: 1 },
+  // The assist band's control is the shared TextButton.
+  opacity: { low: 0.6 },
   lineHeight: { none: 1, tight: 1.25 },
   // The continue action is the shared PrimaryButton now, so this mock has to
   // cover the tokens that button reads too.
   componentSizes: {
     logoSizeSmall: 80,
+    // The assist band reserves exactly the assist control's own height.
+    buttonHeightSmall: 44,
     buttonHeightCompact: 48,
     buttonMinWidthLg: 200,
     buttonMinWidth: 120,
@@ -99,37 +103,18 @@ vi.mock('@salmon/shared', () => ({
   shadowsCSS: { bezel: 'none' },
   gradients: { primaryCSS: 'linear-gradient(#0f0, #0c0)' },
   duration: {
+    normal: '200ms',
     slow: '300ms',
     slower: '500ms',
     stagger1: '100ms',
     stagger2: '200ms',
     stagger3: '300ms',
   },
-  easing: { easeOut: 'ease-out', bounce: 'ease-out' },
+  easing: { ease: 'ease', easeOut: 'ease-out', bounce: 'ease-out' },
 }));
 
 vi.mock('../LoadingScreen', () => ({
   LoadingScreen: ({ title }: { title?: string }) => <div data-testid="loading-screen">{title}</div>,
-}));
-
-// The exchange graphic is tested where it lives (SwapReviewExchange.test).
-// The stub keeps these cases about what the receipt renders and passes.
-vi.mock('../SwapScreen/SwapReviewExchange', () => ({
-  SwapReviewExchange: ({
-    send,
-    receive,
-  }: {
-    send: { amount: string };
-    receive: { amount: string; emphasis?: boolean };
-  }) => (
-    <div data-testid="swap-review-exchange">
-      <span>{send.amount}</span>
-      <span data-testid="swap-review-exchange-receive">
-        {receive.amount}
-        {receive.emphasis ? ' (emphasis)' : ''}
-      </span>
-    </div>
-  ),
 }));
 
 import { TransactionSuccessScreen } from './TransactionSuccessScreen';
@@ -196,21 +181,51 @@ describe('TransactionSuccessScreen', () => {
       expect(amount.style.getPropertyValue('--tx-amount-chars')).toBe(String(summary.length));
     });
 
-    it('puts the continue action before the explorer link — the wallet outranks the block explorer', () => {
+    it('puts the assist band over the primary, the way the onboarding ending composes', () => {
       render(<TransactionSuccessScreen {...baseProps} />);
 
-      const button = screen.getByTestId('tx-success-continue-button');
       const link = screen.getByTestId('tx-success-explorer-link');
+      const button = screen.getByTestId('tx-success-continue-button');
 
-      expect(button.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      // The primary is the bottom-most control; the quiet link sits above it.
+      // The wallet still outranks the block explorer, and what says so is the
+      // wave order below, not the position.
+      expect(link.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
-    it('renders the exchange block as the hero with the quiet receipt under it', () => {
+    it('gives the primary the first chrome wave and the assist the trailing one', () => {
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      const primary = screen.getByTestId('tx-success-continue-button').closest('div');
+      const assist = screen.getByTestId('tx-success-assist');
+
+      // `chrome.delayMs` for the action, plus one `stagger` for the assist:
+      // the ranking survives the move to the bottom edge as timing.
+      expect(primary?.style.animationDelay).toBe('720ms');
+      expect(assist.style.animationDelay).toBe('744ms');
+    });
+
+    it('holds the assist band open when the chain has no explorer link', () => {
+      const { rerender } = render(<TransactionSuccessScreen {...baseProps} />);
+      const withLink = getComputedStyle(screen.getByTestId('tx-success-assist')).height;
+
+      rerender(<TransactionSuccessScreen {...baseProps} explorerUrl={null} />);
+      const withoutLink = getComputedStyle(screen.getByTestId('tx-success-assist')).height;
+
+      // A Bitcoin receipt and a Solana receipt put their primary at the same
+      // Y: the button under the thumb never moves because of what the chain
+      // happened to support.
+      expect(screen.queryByTestId('tx-success-explorer-link')).toBeNull();
+      expect(withoutLink).toBe(withLink);
+      expect(withoutLink).toBe('44px');
+    });
+
+    it('renders the exchange as one unboxed hero line with the quiet receipt under it', () => {
       render(
         <TransactionSuccessScreen
           {...baseProps}
           exchange={{
-            send: { label: 'Sent', symbol: 'USDC', amount: '1.1 USDC' },
+            send: { label: 'Sent', symbol: 'USDC', amount: '1.1 USDC', logo: 'https://x/usdc.png' },
             receive: { label: 'Received', symbol: 'SOL', amount: '0.014 SOL' },
           }}
           exchangeRate="1 USDC ≈ 0.0127 SOL"
@@ -218,20 +233,53 @@ describe('TransactionSuccessScreen', () => {
         />
       );
 
+      const hero = screen.getByTestId('tx-success-amount');
       // The exchange replaces the plain summary line as the protagonist,
       // inside the same measured hero node the caustic band travels to.
-      expect(screen.getByTestId('swap-review-exchange')).toBeTruthy();
-      expect(screen.getByTestId('tx-success-amount')).toBeTruthy();
+      expect(hero.textContent).toContain('1.1 USDC');
+      expect(hero.textContent).toContain('0.014 SOL');
+      expect(hero.textContent).toContain('→');
       expect(screen.queryByText('1 SOL → 200 USDC')).toBeNull();
-      // The received amount carries the greater hierarchy.
-      expect(screen.getByTestId('swap-review-exchange-receive').textContent).toBe(
-        '0.014 SOL (emphasis)'
-      );
+      // Nothing boxes it: no card sits between The Surfacing and the thing it
+      // surfaces, so the hero draws neither a fill nor a border of its own.
+      const heroStyle = getComputedStyle(hero);
+      expect(heroStyle.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      expect(heroStyle.borderRadius).toBe('');
       // The receipt rows: rate, fee, and a local time value.
       expect(screen.getByTestId('tx-success-receipt')).toBeTruthy();
       expect(screen.getByText('1 USDC ≈ 0.0127 SOL')).toBeTruthy();
       expect(screen.getByText('0.85%')).toBeTruthy();
       expect(screen.getByText('Time')).toBeTruthy();
+    });
+
+    it('carries both tokens\u2019 marks on the exchange hero', () => {
+      render(
+        <TransactionSuccessScreen
+          {...baseProps}
+          exchange={{
+            send: { label: 'Sent', symbol: 'USDC', amount: '1.1 USDC', logo: 'https://x/usdc.png' },
+            receive: { label: 'Received', symbol: 'SOL', amount: '0.014 SOL' },
+          }}
+        />
+      );
+
+      const marks = screen.getAllByTestId('tx-success-token-logo');
+      expect(marks).toHaveLength(2);
+      // The one that arrived with a logo draws it; the one that did not falls
+      // back to its own initials rather than to a hole in the line.
+      expect(marks[0].getAttribute('src')).toBe('https://x/usdc.png');
+      expect(marks[1].textContent).toBe('SOL');
+    });
+
+    it('lets the hero\u2019s light run the whole corridor while only its travel waits for the band', () => {
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      const hero = screen.getByTestId('tx-success-amount');
+      // Two clocks on one element: the light spans from 0 to the moment the
+      // amount lands, so the band carries its content rather than climbing an
+      // empty screen; the travel keeps the timeline's own delay.
+      expect(hero.style.animationDelay).toBe('0ms, 400ms');
+      expect(hero.style.animationDuration).toBe('680ms, 280ms');
     });
 
     it('omits rate and fee rows when the flow did not have the data', () => {

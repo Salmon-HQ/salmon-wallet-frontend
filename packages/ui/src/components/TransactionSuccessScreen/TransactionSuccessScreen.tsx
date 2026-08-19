@@ -22,11 +22,10 @@ import {
   useWaitExit,
 } from '@salmon/shared';
 import { LoadingScreen } from '../LoadingScreen';
-import { PrimaryButton } from '../Button';
-import { SwapReviewExchange } from '../SwapScreen/SwapReviewExchange';
+import { PrimaryButton, TextButton } from '../Button';
 import { useReducedMotion } from '../../utils/useReducedMotion';
 import { CausticBand, SurfacingMembrane } from './SurfacingLayers';
-import { AMOUNT_RISE, BAND_HEIGHT, surfacingTimeline } from './surfacing';
+import { AMOUNT_RISE, BAND_HEIGHT, amountLandsAtMs, surfacingTimeline } from './surfacing';
 import type { TransactionSuccessScreenProps } from './types';
 
 // ============================================================================
@@ -44,10 +43,29 @@ const chromeFade = keyframes`
   to { opacity: 1; }
 `;
 
-const amountSettle = keyframes`
-  from { opacity: 0; transform: translateY(${AMOUNT_RISE}px); }
-  to { opacity: 1; transform: translateY(0); }
+/**
+ * The hero's travel, and only its travel. Its light runs on a different clock:
+ * DESIGN.md §The Surfacing has the band *carry* its content rather than
+ * precede it, so the opacity spans the whole corridor while the last few px of
+ * travel play behind the light — the settle the register specifies. The
+ * distance is a custom property so reduced motion, whose timeline sets the
+ * rise to 0, gets no translation at all instead of a suppressed one.
+ */
+const amountRise = keyframes`
+  from { transform: translateY(var(--tx-amount-rise, ${AMOUNT_RISE}px)); }
+  to { transform: translateY(0); }
 `;
+
+/**
+ * What every hero — the plain summary line and the two-mark exchange line
+ * alike — plays. Two animations on one element: the light on the corridor's
+ * clock, the travel on the settle's. Durations and delays are the timeline's
+ * and are applied inline, as a matching pair of comma-separated lists.
+ */
+const heroSurfacing = {
+  opacity: 0,
+  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards, ${amountRise} 0ms ${motionEasing.settle.css} forwards`,
+} as const;
 
 // ============================================================================
 // Styled Components
@@ -152,12 +170,22 @@ const AmountStage = styled(Box)({
  */
 const AMOUNT_CHAR_EM = 0.62;
 
-const Amount = styled(Typography)<{ $rise: boolean }>(({ $rise }) => ({
+/**
+ * What the exchange line's furniture — two marks, the arrow, the four gaps
+ * between them — costs in the same units the character budget is measured in.
+ */
+const EXCHANGE_FURNITURE_CHARS = 7;
+
+const Amount = styled(Typography)<{ $emphasis?: boolean }>(({ $emphasis }) => ({
   fontFamily: fontFamily.sans,
   // Secondary rank: one step down from the headline in size and one in weight.
   // It keeps `text.primary` — a number on a receipt may be smaller than the
   // sentence above it, but it may never be dimmer than it is legible.
-  fontWeight: fontWeight.medium,
+  // On an exchange line the received side is one rank louder than the sent
+  // one, in weight always and in size wherever the column has the room — the
+  // ranking DESIGN.md §The ending says what happened asks for. A single hero
+  // takes the quieter of the two: there is nothing for it to outrank.
+  fontWeight: $emphasis ? fontWeight.semibold : fontWeight.medium,
   color: colors.text.primary,
   textAlign: 'center',
   lineHeight: lineHeight.tight,
@@ -177,25 +205,104 @@ const Amount = styled(Typography)<{ $rise: boolean }>(({ $rise }) => ({
   // screen gives `adjustsFontSizeToFit`.
   whiteSpace: 'nowrap',
   maxWidth: '100%',
-  fontSize: `clamp(${fontSize.body}px, calc(100cqw / (var(--tx-amount-chars, 24) * ${AMOUNT_CHAR_EM})), ${fontSize.title}px)`,
-  opacity: 0,
-  // The hero settles behind the band: translateY +6 → 0 on `settle`, digits
-  // already at tabular width so nothing reflows. Under reduced motion the
-  // timeline sets `rise` to 0 and the amount is simply there. Duration and
-  // delay are the timeline's, inline.
-  animation: `${$rise ? amountSettle : chromeFade} 0ms ${motionEasing.settle.css} forwards`,
+  fontSize: `clamp(${fontSize.body}px, calc(100cqw / (var(--tx-amount-chars, 24) * ${AMOUNT_CHAR_EM})), ${
+    $emphasis ? fontSize.headline : fontSize.title
+  }px)`,
+  // Inside the exchange line the amount shares the row with two marks and an
+  // arrow; it may shrink to its budget but it may never be elided.
+  minWidth: 0,
+  ...heroSurfacing,
 }));
 
 /**
- * The exchange hero's wrapper for swap/bridge receipts — the node the caustic
- * band measures. It settles behind the band exactly the way the plain amount
- * does; under reduced motion the timeline zeroes the rise and it fades.
+ * The exchange hero: mark, sent amount, arrow, mark, received amount, on one
+ * line and unboxed. Boxing it put a content surface between The Surfacing and
+ * the thing it surfaces (DESIGN.md §The ending says what happened) — the
+ * one-line summary *is* the hero the light lands on. It is also the node the
+ * caustic band measures, so it keeps one measurable centre and never wraps.
  */
-const ExchangeHero = styled('div')<{ $rise: boolean }>(({ $rise }) => ({
+const ExchangeLine = styled('div')({
   width: '100%',
-  opacity: 0,
-  animation: `${$rise ? amountSettle : chromeFade} 0ms ${motionEasing.settle.css} forwards`,
-}));
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: spacing.sm,
+  minWidth: 0,
+  ...heroSurfacing,
+});
+
+/**
+ * The arrow is not the subject: one rank down from the amounts and in
+ * secondary ink, so the two figures stay the loudest things on the line. It is
+ * data, not copy — the direction between two amounts, the same glyph the plain
+ * summary string already prints.
+ */
+const ExchangeArrow = styled('span')({
+  fontFamily: fontFamily.sans,
+  fontSize: fontSize.body,
+  color: colors.text.secondary,
+  lineHeight: lineHeight.none,
+  flexShrink: 0,
+});
+
+/**
+ * The token marks on the hero line. Small enough to sit inside a line of text
+ * as punctuation — the mark here is beside a number rather than being the
+ * row's own subject.
+ */
+const LOGO_SIZE = 20;
+
+const LogoImg = styled('img')({
+  width: LOGO_SIZE,
+  height: LOGO_SIZE,
+  borderRadius: borderRadius.full,
+  backgroundColor: colors.background.tertiary,
+  objectFit: 'cover',
+  flexShrink: 0,
+});
+
+const LogoFallback = styled('div')({
+  width: LOGO_SIZE,
+  height: LOGO_SIZE,
+  borderRadius: borderRadius.full,
+  backgroundColor: colors.background.tertiary,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: fontSize.sm,
+  fontWeight: fontWeight.medium,
+  fontFamily: fontFamily.sans,
+  color: colors.text.secondary,
+  flexShrink: 0,
+  overflow: 'hidden',
+});
+
+/**
+ * Token mark with a symbol-initials fallback, local to this receipt. There is
+ * no shared DOM mark to reuse yet and four private copies already exist;
+ * consolidating them is a decision of its own, not a side effect of this one.
+ */
+function TokenLogo({ uri, symbol }: { uri?: string; symbol: string }): React.ReactElement {
+  const [failed, setFailed] = useState(false);
+
+  if (!uri || failed) {
+    return (
+      <LogoFallback data-testid="tx-success-token-logo">
+        {symbol ? symbol.slice(0, 3).toUpperCase() : '?'}
+      </LogoFallback>
+    );
+  }
+
+  return (
+    <LogoImg
+      src={uri}
+      alt=""
+      data-testid="tx-success-token-logo"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 /**
  * The quiet receipt under the exchange: label left, value right, no card.
@@ -236,28 +343,51 @@ const ReceiptValue = styled(Typography)({
 });
 
 /**
- * Continue and explorer, pinned to the bottom of the column. The auto margin
- * is what separates the report from the actions without inventing a spacer.
+ * The bottom of the column, on the onboarding ending's bands (DESIGN.md §The
+ * Surfacing, "The ending borrows the onboarding ending's bands"): the assist
+ * band directly over the action band's primary, with the grid's `spacing.lg`
+ * of air between them. The two endings are the same event at different
+ * scales, so they are not two layouts. The auto margin separates the report
+ * from the actions without inventing a spacer.
  */
 const ActionGroup = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'center',
+  alignSelf: 'stretch',
   gap: spacing.lg,
   marginTop: 'auto',
   paddingTop: spacing.xl,
 });
 
-const ExplorerLink = styled(Link)({
+/**
+ * The assist band, reserved at the assist control's own height whether or not
+ * a link is rendered — the onboarding grid's Nothing Moves Under the Finger
+ * Rule applied outside onboarding. A Bitcoin receipt and a Solana receipt put
+ * their primary at the same Y, so the button under the thumb never moves
+ * because of what the chain happened to support.
+ */
+const AssistBand = styled(Box)({
+  height: componentSizes.buttonHeightSmall,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  opacity: 0,
+  // The trailing chrome wave. Delay and duration are the timeline's, inline.
+  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards`,
+});
+
+/**
+ * The transaction ids inside the bridge's deposit instructions, each a link
+ * out to a block explorer. It is body copy that happens to be clickable, not
+ * a control, so it stays a link rather than borrowing the assist band's
+ * button.
+ */
+const BridgeTxLink = styled(Link)({
   fontSize: fontSize.body,
   fontFamily: fontFamily.sans,
   color: colors.accent.primary,
   textAlign: 'center',
   cursor: 'pointer',
-  opacity: 0,
-  // The second chrome wave — the link that leaves the wallet arrives after
-  // the continue action. Delay and duration are the timeline's, inline.
-  animation: `${chromeFade} 0ms ${motionEasing.current.css} forwards`,
 });
 
 const BridgeInfoBox = styled(Box)({
@@ -322,6 +452,14 @@ export function TransactionSuccessScreen({
 }: TransactionSuccessScreenProps): React.ReactElement {
   const { t } = useTranslation();
   const isBridge = !!bridgeDepositAddress;
+
+  // The exchange line's budget. The two marks, the arrow and the four gaps are
+  // not characters, but they eat the same inline space — together about seven
+  // characters at the hero's cap — so they are counted as such. The clamp this
+  // feeds is a lower bound on what fits, not an average.
+  const exchangeChars = exchange
+    ? exchange.send.amount.length + exchange.receive.amount.length + EXCHANGE_FURNITURE_CHARS
+    : 0;
 
   // The receipt's clock: local time, captured once when the receipt mounts —
   // the moment the transaction came back — so re-renders never move it.
@@ -434,6 +572,16 @@ export function TransactionSuccessScreen({
     animationDelay: `${timeline.chrome.delayMs}ms`,
   };
 
+  // The hero's two clocks, as one matching pair of lists: the light spans the
+  // whole corridor and is fully there exactly when the amount lands
+  // (`amountLandsAtMs`); the travel keeps the timeline's own delay and
+  // duration, so the last few px still settle behind the band.
+  const heroTiming = {
+    '--tx-amount-rise': `${timeline.amount.rise}px`,
+    animationDuration: `${amountLandsAtMs(timeline)}ms, ${timeline.amount.durationMs}ms`,
+    animationDelay: `0ms, ${timeline.amount.delayMs}ms`,
+  } as React.CSSProperties;
+
   return (
     <Receipt ref={receiptRef}>
       {/* The membrane this moment clears. Behind everything, and behind the
@@ -448,34 +596,33 @@ export function TransactionSuccessScreen({
       </StatusRow>
       <AmountStage>
         {exchange ? (
-          /* The exchange as the protagonist: sent logo → arrow → received
-             logo, the received amount one rank up. Same measured node, same
-             settle — the band's stop follows this layout. */
-          <ExchangeHero
+          /* The exchange as the protagonist, unboxed: mark, sent amount,
+             arrow, mark, received amount. The marks are already on the
+             exchange the flow hands over, so they cost no fetch and no new
+             prop, and each one leading its amount is what makes the line read
+             as *this token to that token* rather than as two strings with an
+             arrow between them. Same measured node as the plain summary — the
+             band's stop follows this layout. */
+          <ExchangeLine
             ref={amountRef as React.Ref<HTMLDivElement>}
             data-testid="tx-success-amount"
-            $rise={timeline.amount.rise > 0}
-            style={{
-              animationDuration: `${timeline.amount.durationMs}ms`,
-              animationDelay: `${timeline.amount.delayMs}ms`,
-            }}
+            style={{ ...heroTiming, '--tx-amount-chars': exchangeChars } as React.CSSProperties}
           >
-            <SwapReviewExchange
-              send={exchange.send}
-              receive={{ ...exchange.receive, emphasis: true }}
-            />
-          </ExchangeHero>
+            <TokenLogo uri={exchange.send.logo} symbol={exchange.send.symbol} />
+            <Amount>{exchange.send.amount}</Amount>
+            <ExchangeArrow aria-hidden>→</ExchangeArrow>
+            <TokenLogo uri={exchange.receive.logo} symbol={exchange.receive.symbol} />
+            <Amount $emphasis>{exchange.receive.amount}</Amount>
+          </ExchangeLine>
         ) : (
           <Amount
             ref={amountRef}
             data-testid="tx-success-amount"
-            $rise={timeline.amount.rise > 0}
             style={
               {
+                ...heroTiming,
                 // The only thing CSS cannot know about the string: how long it is.
                 '--tx-amount-chars': Math.max(1, summary.length),
-                animationDuration: `${timeline.amount.durationMs}ms`,
-                animationDelay: `${timeline.amount.delayMs}ms`,
               } as React.CSSProperties
             }
           >
@@ -527,14 +674,13 @@ export function TransactionSuccessScreen({
             <>
               <BridgeLabel>{t('bridge.depositTxId', 'Deposit Transaction')}</BridgeLabel>
               <BridgeValue>
-                <ExplorerLink
+                <BridgeTxLink
                   href={`https://solscan.io/tx/${bridgeDepositTxId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ animation: 'none', opacity: 1 }}
                 >
                   {bridgeDepositTxId.slice(0, 8)}...{bridgeDepositTxId.slice(-8)}
-                </ExplorerLink>
+                </BridgeTxLink>
               </BridgeValue>
             </>
           )}
@@ -558,36 +704,36 @@ export function TransactionSuccessScreen({
           )}
         </BridgeInfoBox>
       ) : null}
-      {/* Continue first, explorer second. The receipt's own action outranks a
-          link that leaves the wallet for a block explorer, and reading order
-          has to match that ranking. */}
+      {/* The ending composes like the onboarding ending: a quiet text-button
+          assist band over the bottom-most full-width primary. The wallet's own
+          action still outranks a link that leaves it for a block explorer, and
+          what says so is the *wave order*, not the position — the primary
+          rides the first chrome wave, the assist the trailing one. The band
+          keeps its reserved height with no link in it, so the primary lands at
+          one Y on every ending. */}
       <ActionGroup>
+        <AssistBand
+          data-testid="tx-success-assist"
+          style={{
+            animationDuration: `${timeline.chrome.durationMs}ms`,
+            animationDelay: `${timeline.chrome.delayMs + timeline.chrome.staggerMs}ms`,
+          }}
+        >
+          {!isBridge && explorerUrl ? (
+            <TextButton
+              onClick={handleExplorerClick}
+              color={semantic.text.secondary}
+              testID="tx-success-explorer-link"
+            >
+              {t('transaction.viewOnExplorer')}
+            </TextButton>
+          ) : null}
+        </AssistBand>
         <ContinueButtonWrapper style={chromeTiming}>
-          <PrimaryButton
-            onClick={onContinue}
-            fullWidth={false}
-            testID="tx-success-continue-button"
-            style={{
-              minWidth: componentSizes.buttonMinWidthLg,
-              height: componentSizes.buttonHeightCompact,
-            }}
-          >
+          <PrimaryButton onClick={onContinue} testID="tx-success-continue-button">
             {t('transaction.continue')}
           </PrimaryButton>
         </ContinueButtonWrapper>
-        {!isBridge && explorerUrl ? (
-          <ExplorerLink
-            onClick={handleExplorerClick}
-            underline="always"
-            data-testid="tx-success-explorer-link"
-            style={{
-              animationDuration: `${timeline.chrome.durationMs}ms`,
-              animationDelay: `${timeline.chrome.delayMs + timeline.chrome.staggerMs}ms`,
-            }}
-          >
-            {t('transaction.viewOnExplorer')}
-          </ExplorerLink>
-        ) : null}
       </ActionGroup>
       {/* The shaft of light, last so it passes over the amount rather than
           under it. It takes no clicks and it never repeats. */}
