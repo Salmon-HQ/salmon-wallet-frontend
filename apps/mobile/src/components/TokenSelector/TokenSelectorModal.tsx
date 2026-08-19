@@ -35,6 +35,7 @@ import {
   s,
 } from '@salmon/shared';
 import { MagnifyingGlassIcon } from '../../icons';
+import { BitcoinSvgIcon, EthereumSvgIcon } from '../Icon/SvgIcons';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
@@ -53,6 +54,39 @@ const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 const SKELETON_COUNT = 5;
 const SKELETON_ROW_HEIGHT = vs(12) * 2 + ms(32); // paddingVertical * 2 + logo height
 const SKELETON_ROW_WIDTH = 280; // approximate inner width
+
+// Chain identity on token rows. Mainnet is the silent default: Solana rows
+// carry no marker at all (in a Solana-first wallet the chip is redundant on
+// every row), and a non-Solana mainnet token gets only its quiet chain mark —
+// the same glyphs BalanceCard and DerivedAccountCard use for chain identity.
+// Anything that is NOT mainnet keeps the loud text chip, so a devnet/testnet
+// token can never be mistaken for a mainnet one in developer mode.
+const CHAIN_MARKS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
+  bitcoin: BitcoinSvgIcon,
+  ethereum: EthereumSvgIcon,
+};
+
+const NetworkIdentity: React.FC<{ network: string }> = ({ network }) => {
+  // Network values arrive either as canonical ids ('bitcoin-mainnet',
+  // 'solana-devnet') or as bare chain names ('Bitcoin') from the swap logic's
+  // chain fallback; a bare chain name carries no environment, so it counts as
+  // mainnet.
+  const [chain, env] = network.toLowerCase().split('-');
+  if (env && env !== 'mainnet') {
+    return (
+      <View style={styles.networkChip}>
+        <Text style={styles.networkChipText}>{network.toUpperCase()}</Text>
+      </View>
+    );
+  }
+  const Mark = CHAIN_MARKS[chain];
+  if (!Mark) return null;
+  return (
+    <View style={styles.chainMark} testID={`chain-mark-${chain}`}>
+      <Mark size={ms(14)} color={colors.text.tertiary} />
+    </View>
+  );
+};
 
 const TokenListSkeleton: React.FC = () => {
   const { t } = useTranslation();
@@ -109,7 +143,16 @@ export function TokenSelectorModal({
   showNetworkChip = false,
   showVerifiedDisclaimer = false,
   loading = false,
-}: TokenSelectorModalProps): React.ReactElement {
+  showBalances = true,
+}: TokenSelectorModalProps & {
+  /**
+   * Whether rows show the user's holdings. The You Send selector keeps them
+   * (they're load-bearing there); the You Receive selector hides them —
+   * how much you already hold is noise when choosing what to receive.
+   * Mobile-local prop until another platform needs it.
+   */
+  showBalances?: boolean;
+}): React.ReactElement {
   const { t } = useTranslation();
   const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
   const { standardContentBottomPadding } = useBottomSheetChrome();
@@ -150,9 +193,12 @@ export function TokenSelectorModal({
   const renderTokenItem: ListRenderItem<TokenSelectorToken> = useCallback(
     ({ item: token }) => {
       const tokenName = token.name || getShortAddress(token.mint || token.address);
-      const balanceText = token.uiAmount
-        ? `${hiddenBalance ? HIDDEN_VALUE : token.uiAmount} ${token.symbol || ''}`
-        : token.symbol || '';
+      // With balances hidden the right column falls back to the symbol alone —
+      // identity stays, holdings go.
+      const balanceText =
+        showBalances && token.uiAmount
+          ? `${hiddenBalance ? HIDDEN_VALUE : token.uiAmount} ${token.symbol || ''}`
+          : token.symbol || '';
 
       return (
         <TouchableOpacity
@@ -169,11 +215,7 @@ export function TokenSelectorModal({
             <Text style={styles.tokenName} numberOfLines={1}>
               {tokenName}
             </Text>
-            {showNetworkChip && token.network && (
-              <View style={styles.networkChip}>
-                <Text style={styles.networkChipText}>{token.network.toUpperCase()}</Text>
-              </View>
-            )}
+            {showNetworkChip && token.network && <NetworkIdentity network={token.network} />}
             <Text style={styles.tokenBalance} numberOfLines={1}>
               {balanceText}
             </Text>
@@ -181,7 +223,7 @@ export function TokenSelectorModal({
         </TouchableOpacity>
       );
     },
-    [handleSelect, hiddenBalance, showNetworkChip]
+    [handleSelect, hiddenBalance, showNetworkChip, showBalances]
   );
 
   const renderFeaturedTokens = useCallback(() => {
@@ -398,6 +440,9 @@ const styles = StyleSheet.create({
     color: colors.text.balance,
     marginLeft: s(spacing.sm),
     ...TABULAR,
+  },
+  chainMark: {
+    marginLeft: s(spacing.sm),
   },
   networkChip: {
     backgroundColor: `${colors.border.default}CC`,

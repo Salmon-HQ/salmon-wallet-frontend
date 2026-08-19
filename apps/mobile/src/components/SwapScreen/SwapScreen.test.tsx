@@ -86,7 +86,13 @@ jest.mock('../LoadingScreen', () => {
 });
 jest.mock('../TokenSelector', () => {
   const { View } = require('react-native');
-  return { TokenSelectorModal: () => <View testID="token-selector-modal" /> };
+  return {
+    // Surfaces the balance-visibility prop so the per-side contract (send
+    // shows holdings, receive hides them) stays asserted.
+    TokenSelectorModal: ({ showBalances }: { showBalances?: boolean }) => (
+      <View testID="token-selector-modal" accessibilityLabel={String(showBalances)} />
+    ),
+  };
 });
 jest.mock('../BridgeScreen/BridgeRecipientScreen', () => {
   const { View } = require('react-native');
@@ -169,6 +175,16 @@ describe('SwapScreen task surface', () => {
     expect(screen.getByTestId('tx-success-screen')).toBeTruthy();
     expect(screen.getByTestId('depth-background')).toBeTruthy();
     expect(screen.getByTestId('scales-background').props.accessibilityLabel).toBe('deepField');
+  });
+
+  it('keeps balances on the You Send selector and hides them on You Receive', () => {
+    setLogic({ step: 'input' });
+    render(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
+
+    const [sendModal, receiveModal] = screen.getAllByTestId('token-selector-modal');
+    // Send omits the prop (defaults to visible balances); receive turns it off.
+    expect(sendModal.props.accessibilityLabel).toBe('undefined');
+    expect(receiveModal.props.accessibilityLabel).toBe('false');
   });
 });
 

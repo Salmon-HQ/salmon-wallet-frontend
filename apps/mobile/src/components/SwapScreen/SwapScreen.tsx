@@ -421,6 +421,8 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
         tokens={logic.modalOutTokens}
         onSelect={logic.handleOutTokenModalSelect}
         showNetworkChip={true}
+        // You Receive: what you already hold is noise when choosing what to get.
+        showBalances={false}
         hiddenBalance={logic.swapMode === 'stealthex'}
         loading={logic.tokensLoading || logic.isLoadingBridgeTokens}
       />
