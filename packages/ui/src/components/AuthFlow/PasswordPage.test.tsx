@@ -58,6 +58,10 @@ vi.mock('@salmon/shared', async () => ({
   // The wave's arithmetic, pulled in whole for the same reason as the tokens:
   // it is runtime-agnostic and the LoadingScreen this page mounts reads it.
   ...(await vi.importActual('../../../../shared/src/motion')),
+  // The hook that keeps the wait mounted until its closing wave has left: the
+  // page parks its handoff behind that report, so a stub here would test a
+  // passage the product does not have.
+  ...(await vi.importActual('../../../../shared/src/hooks/useWaitExit')),
   PASSWORD_CONSTRAINTS: { MIN_LENGTH: 12, MAX_LENGTH: 128 },
   ApiError: MockApiError,
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),

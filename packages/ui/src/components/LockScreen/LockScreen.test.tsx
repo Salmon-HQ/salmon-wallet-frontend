@@ -10,7 +10,7 @@
  * displaces the field or the action. The mobile twin asserts the same shape
  * in `apps/mobile/src/components/GateContainer/LockContent.test.tsx`.
  */
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mutable so a test can put the screen into its throttled state.
@@ -27,16 +27,28 @@ vi.mock('react-i18next', () => ({
 // which Vite cannot parse.
 vi.mock('@salmon/shared', async () => {
   const theme = await import('../../../../shared/src/theme');
+  // The passage's own numbers and the hook that holds the wait mounted: both
+  // are runtime-agnostic, and faking them would let this screen's sink drift
+  // from the verb every other surface speaks.
+  const sinkFloat = await import('../../../../shared/src/motion/sinkFloat');
+  const waitExit = await import('../../../../shared/src/hooks/useWaitExit');
   return {
     ...theme,
+    ...sinkFloat,
+    ...waitExit,
     useUnlockThrottle: () => mockThrottle,
   };
 });
 
 // The loading overlay reads wavefront constants that live outside the theme
-// subtree, and it renders nothing here anyway (`visible` is false).
+// subtree, and it draws nothing this file asserts. What it does carry is the
+// report the unlock passage waits on, so the stand-in hands `onExited` back.
+const { wait } = vi.hoisted(() => ({ wait: {} as { onExited?: () => void } }));
 vi.mock('../LoadingScreen', () => ({
-  LoadingScreen: () => null,
+  LoadingScreen: ({ onExited }: { onExited?: () => void }) => {
+    wait.onExited = onExited;
+    return null;
+  },
 }));
 
 // The water column's drawing has its own tests; what this file must prove is
@@ -48,9 +60,13 @@ vi.mock('../WaterColumn', () => ({
 
 import { LockScreen } from './LockScreen';
 
-const renderLock = (onUnlock = vi.fn().mockResolvedValue(true)) => {
+const renderLock = (onUnlock = vi.fn().mockResolvedValue(true), onUnlocked?: () => void) => {
   render(
-    <LockScreen onUnlock={onUnlock} onRemoveAllAccounts={vi.fn().mockResolvedValue(undefined)} />
+    <LockScreen
+      onUnlock={onUnlock}
+      onUnlocked={onUnlocked}
+      onRemoveAllAccounts={vi.fn().mockResolvedValue(undefined)}
+    />
   );
   return onUnlock;
 };
@@ -92,6 +108,27 @@ describe('LockScreen', () => {
     expect(onUnlock).toHaveBeenCalledWith('not-the-password');
     // Feedback is a band occupant, not a displacement: the button holds.
     expect(screen.getByTestId('lock-unlock-button')).toBeTruthy();
+  });
+
+  it('parks the release until the wait reports its last wave has left', async () => {
+    // The release unmounts this screen, so firing it on a successful unlock
+    // cuts the closing wave — the cut the whole passage exists to prevent
+    // (DESIGN.md §The wait, "The unlock passage is sequential and counted").
+    const onUnlocked = vi.fn();
+    const onUnlock = renderLock(vi.fn().mockResolvedValue(true), onUnlocked);
+
+    fireEvent.change(screen.getByTestId('lock-password-input'), {
+      target: { value: 'the-password' },
+    });
+    fireEvent.click(screen.getByTestId('lock-unlock-button'));
+
+    await waitFor(() => {
+      expect(onUnlock).toHaveBeenCalledWith('the-password');
+    });
+    expect(onUnlocked).not.toHaveBeenCalled();
+
+    act(() => wait.onExited?.());
+    expect(onUnlocked).toHaveBeenCalledTimes(1);
   });
 
   it('puts the throttle notice in `assist` and disables the button in place', () => {

@@ -8,7 +8,7 @@
  * 4. set-name: Choose account name
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -39,6 +39,7 @@ import {
   type DerivedAccountInfo,
   opacity,
   componentSizes,
+  useWaitExit,
 } from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { DerivedAccountCard } from '../DerivedAccountCard';
@@ -130,15 +131,32 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const [scanning, setScanning] = useState(false);
   // One entry per grid box. Twelve to begin with; a paste or a thirteenth
   // typed word grows it to twenty-four.
-  const [seedWords, setSeedWords] = useState<string[]>(() =>
-    Array<string>(SHORT_PHRASE).fill('')
-  );
+  const [seedWords, setSeedWords] = useState<string[]>(() => Array<string>(SHORT_PHRASE).fill(''));
   // What was actually pasted when a paste did not fit. `null` = no rejection.
   const [pastedCount, setPastedCount] = useState<number | null>(null);
   const [seedError, setSeedError] = useState('');
   const seedPhrase = useMemo(() => normalizeMnemonic(seedWords.join(' ')), [seedWords]);
   const [confirmError, setConfirmError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  /**
+   * The wait's exit, held. This panel renders inside the settings panel stack,
+   * a drawer with its own choreography, so it takes only the half of the
+   * passage that is its own: the wait stays mounted with `visible={false}` —
+   * which is what starts its exit — and the completion handoff is parked
+   * behind `onExited`, because completing earlier unmounts the panel and cuts
+   * the closing wave mid-crossing (DESIGN.md §The wait). The wait's own
+   * watchdog guarantees the report, so the handoff cannot be stranded. It does
+   * not sink: a sheet's content never speaks the verb.
+   */
+  const { held, onExited } = useWaitExit(loading);
+  const pendingCompleteRef = useRef(false);
+  const handleWaitExited = useCallback(() => {
+    onExited();
+    if (!pendingCompleteRef.current) return;
+    pendingCompleteRef.current = false;
+    onComplete();
+  }, [onExited, onComplete]);
 
   const defaultName = useMemo(
     () => t('settings.account_add.default_name', { number: counter + 1 }),
@@ -224,7 +242,10 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       // derived account reuses the active seed (create); an imported seed is a
       // recovery. No seed, address or key material — just which flow completed.
       trackEvent(selectedDerived ? 'wallet_created' : 'wallet_recovered');
-      onComplete();
+      // Parked, not fired: dropping `loading` starts the wait's exit, and
+      // `handleWaitExited` completes once the last wave has left the screen.
+      pendingCompleteRef.current = true;
+      setLoading(false);
     } catch (err) {
       setLoading(false);
       if (err instanceof EncryptionMaterialMissingError) {
@@ -233,16 +254,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       }
       setConfirmError(t('settings.account_add.creation_error'));
     }
-  }, [
-    accountName,
-    defaultName,
-    selectedDerived,
-    activeAccount,
-    seedPhrase,
-    accountActions,
-    onComplete,
-    t,
-  ]);
+  }, [accountName, defaultName, selectedDerived, activeAccount, seedPhrase, accountActions, t]);
 
   const handleStepBack = useCallback(() => {
     if (step === 'set-name') {
@@ -264,15 +276,18 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
 
   return (
     <>
-      <LoadingScreen
-        visible={loading}
-        title={
-          selectedDerived
-            ? t('settings.account_add.confirm_create')
-            : t('settings.account_add.confirm_import')
-        }
-        subtitle={t('general.loading')}
-      />
+      {held && (
+        <LoadingScreen
+          visible={loading}
+          title={
+            selectedDerived
+              ? t('settings.account_add.confirm_create')
+              : t('settings.account_add.confirm_import')
+          }
+          subtitle={t('general.loading')}
+          onExited={handleWaitExited}
+        />
+      )}
       <SettingsPanelContent title={stepTitles[step]} onBack={handleStepBack}>
         <Box sx={{ padding: `0 ${spacing.lg}px` }}>
           {step === 'select-method' && (
@@ -417,7 +432,11 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
               />
               {(pastedCount !== null || seedError) && (
                 <Typography
-                  sx={{ color: semantic.status.danger, fontSize: fontSize.sm, marginTop: spacing.xs }}
+                  sx={{
+                    color: semantic.status.danger,
+                    fontSize: fontSize.sm,
+                    marginTop: spacing.xs,
+                  }}
                 >
                   {pastedCount !== null
                     ? t('wallet.recover.pastedWordCount', { count: pastedCount })
@@ -453,7 +472,11 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
               />
               {confirmError && (
                 <Typography
-                  sx={{ color: semantic.status.danger, fontSize: fontSize.sm, marginTop: spacing.xs }}
+                  sx={{
+                    color: semantic.status.danger,
+                    fontSize: fontSize.sm,
+                    marginTop: spacing.xs,
+                  }}
                 >
                   {confirmError}
                 </Typography>

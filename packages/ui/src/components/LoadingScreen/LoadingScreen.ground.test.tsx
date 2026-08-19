@@ -32,6 +32,10 @@ vi.mock('@salmon/shared', async () => ({
   // tokens, and a fake here would let the two platforms draw two different
   // waves without a test noticing.
   ...(await vi.importActual<Record<string, unknown>>('@salmon/shared/src/motion/crest')),
+  // The verb's own numbers, real for the same reason: the wait's passage — the
+  // float in, the beat before the first press, the sink out — is spent from
+  // this vocabulary, and a fake here would let it drift from the mobile twin.
+  ...(await vi.importActual<Record<string, unknown>>('@salmon/shared/src/motion/sinkFloat')),
   DEFAULT_WALLET_TIP_KEYS: ['tips.one'],
   colors: {
     background: { primary: '#10131C', secondary: '#070911' },
@@ -90,7 +94,16 @@ vi.mock('@salmon/shared', async () => ({
     isReduceMotionEnabled ? { holdMs: 0, exitMs: 180 } : { holdMs: 1400, exitMs: 1580 },
 }));
 
+import { FLOAT_DELAY_MS, FLOAT_IN_MS } from '@salmon/shared/src/motion/sinkFloat';
+
 import { LoadingScreen } from './LoadingScreen';
+
+/**
+ * When the wait's content has landed and the mark may start pressing into the
+ * water. The beat is intrinsic to the wait, so the impact loop — and therefore
+ * the exit's phase arithmetic — measures from here rather than from mount.
+ */
+const CONTENT_LANDS_MS = FLOAT_DELAY_MS + FLOAT_IN_MS;
 
 describe('the ground under a full-screen wait', () => {
   afterEach(cleanup);
@@ -189,11 +202,35 @@ describe('the wave', () => {
     expect(screen.queryByTestId('loading-emitter')).toBeNull();
   });
 
+  it('hands off at once when the wait resolves before the mark has landed', () => {
+    // The content is still floating in, so nothing has been thrown yet: there
+    // is no front on the screen to wait out, which is the same answer the plan
+    // gives for calm water (DESIGN.md §The wait, "Calm water hands off
+    // immediately").
+    const onExited = vi.fn();
+    const { rerender } = render(
+      <LoadingScreen visible waves title="Processing swap" onExited={onExited} />
+    );
+
+    rerender(<LoadingScreen visible={false} waves title="Processing swap" onExited={onExited} />);
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(onExited).toHaveBeenCalledTimes(1);
+  });
+
   it('holds until the front in flight has left the screen, then ebbs', () => {
     const onExited = vi.fn();
     const { rerender } = render(
       <LoadingScreen visible waves title="Processing swap" onExited={onExited} />
     );
+
+    // Past the landing: the float precedes the impact, so the loop — and the
+    // phase the exit reads — only starts once the content is in place.
+    act(() => {
+      vi.advanceTimersByTime(CONTENT_LANDS_MS + 1);
+    });
 
     rerender(<LoadingScreen visible={false} waves title="Processing swap" onExited={onExited} />);
 

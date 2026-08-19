@@ -20,6 +20,12 @@
  *   error and the throttle message both land in the band reserved for them,
  *   so neither displaces the field above nor the action below. The throttle
  *   wins when both hold — it is the one that explains why typing is off.
+ * - **The unlock passage is sequential and counted** (DESIGN.md §The wait):
+ *   the form sinks to make room for the wait, the wait leaves on its own last
+ *   wave, and only then is the release the caller parked — navigation, session
+ *   caching — allowed to run. Releasing earlier unmounts this screen mid-wave,
+ *   which is the cut `useWaitExit` exists to prevent; here there is no route to
+ *   park on, so the release is what parks.
  * - **The action never moves.** While the wallet is throttled the button is
  *   disabled in place and the assist band says when the next attempt is
  *   allowed. Focus follows the notice in both directions so a screen-reader
@@ -28,14 +34,20 @@
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
+import { keyframes } from '@mui/material/styles';
 import {
   colors,
   componentSizes,
   fontFamily,
   fontSize,
+  motionEasing,
+  reducedMotion,
   semantic,
+  SINK_FLOAT_TRAVEL,
+  SINK_OUT_MS,
   spacing,
   useUnlockThrottle,
+  useWaitExit,
 } from '@salmon/shared';
 import {
   useCallback,
@@ -98,6 +110,27 @@ const ThrottleText = styled(Typography)({
   textAlign: 'center',
 });
 
+/**
+ * The form giving way to the wait: what leaves sinks (DESIGN.md §The sink and
+ * the float — the transition verb). It stays mounted while it goes down — the
+ * wait's overlay covers it — so a failed unlock puts it back exactly where it
+ * was, and after a successful one it stays down: what the departing wave
+ * uncovers is the water alone, never the fish, title and input that already
+ * left. Reduce motion is the same decision with no travel.
+ */
+const sinkAwayKeyframes = keyframes`
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(${SINK_FLOAT_TRAVEL}px); }
+`;
+
+const Passage = styled('div')<{ $sunk: boolean }>(({ $sunk }) => ({
+  animation: $sunk ? `${sinkAwayKeyframes} ${SINK_OUT_MS}ms ${motionEasing.sink.css} both` : 'none',
+  [`@media ${reducedMotion.query}`]: {
+    animation: 'none',
+    opacity: $sunk ? 0 : 1,
+  },
+}));
+
 const ForgotRow = styled(Box)({
   display: 'flex',
   justifyContent: 'center',
@@ -117,9 +150,32 @@ export function LockScreen({
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
+  /**
+   * Held from a successful unlock until this screen is released: the form sank
+   * to make room for the wait and has no right to come back up while the last
+   * wave is still leaving.
+   */
+  const [submerged, setSubmerged] = useState(false);
   const mountedRef = useRef(false);
   const throttleRef = useRef<HTMLDivElement>(null);
   const unlockRef = useRef<HTMLDivElement>(null);
+
+  // The wait stays mounted with `visible={false}` — which is what starts its
+  // exit — until it reports its closing wave has left the screen.
+  const { held, onExited } = useWaitExit(showLoadingScreen);
+  /**
+   * Set on a successful unlock instead of releasing immediately: the release
+   * unmounts this screen, and an unmounted wait is a wave cut mid-crossing.
+   * Consumed exactly once by `handleWaitExited`, whose arrival the wait's own
+   * watchdog guarantees, so the release can never be stranded.
+   */
+  const pendingUnlockRef = useRef(false);
+  const handleWaitExited = useCallback(() => {
+    onExited();
+    if (!pendingUnlockRef.current) return;
+    pendingUnlockRef.current = false;
+    void onUnlocked?.();
+  }, [onExited, onUnlocked]);
 
   // Failed attempts cost time. Show the cost instead of a prompt that has
   // quietly stopped answering.
@@ -164,14 +220,18 @@ export function LockScreen({
         setShowLoadingScreen(false);
         return;
       }
-      await onUnlocked?.();
+      // Unlocked — but nothing may leave yet. The release is parked and the
+      // wave is handed its exit; the form stays down for good.
+      pendingUnlockRef.current = true;
+      setSubmerged(true);
+      setShowLoadingScreen(false);
     } catch {
       setError(t('lock.error.unlock_failed'));
       setShowLoadingScreen(false);
     } finally {
       setIsUnlocking(false);
     }
-  }, [onUnlock, onUnlocked, password, refreshThrottle, t]);
+  }, [onUnlock, password, refreshThrottle, t]);
 
   const handleFinalConfirm = useCallback(async () => {
     try {
@@ -183,9 +243,10 @@ export function LockScreen({
 
   return (
     <>
-      <OnboardingLayout
-        testID="lock-screen"
-        /*
+      <Passage $sunk={showLoadingScreen || submerged}>
+        <OnboardingLayout
+          testID="lock-screen"
+          /*
           `lock`, not `credential`: the same cluster as the create flow's
           password screen, but the always-empty description band collapses so
           the title sits one title line above the input — the same air that
@@ -193,76 +254,77 @@ export function LockScreen({
           subtitle came off with it, mirroring mobile, which never carried one:
           the collapsed band holds no line of copy.
         */
-        variant="lock"
-        background={<WaterColumn />}
-        title={<OnboardingTitle>{t('lock.title')}</OnboardingTitle>}
-        body={
-          <Box sx={{ width: '100%' }}>
-            <StyledInput
-              type="password"
-              value={password}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                setPassword(event.target.value);
-                if (error) setError(null);
-              }}
-              onKeyDown={(event: KeyboardEvent) => {
-                if (event.key === 'Enter') void handleSubmit();
-              }}
-              placeholder={t('lock.password_placeholder')}
-              $hasError={!!error}
-              disabled={isUnlocking || throttled}
-              autoFocus
-              fullWidth
-              inputProps={{
-                'data-testid': 'lock-password-input',
-                'aria-label': t('lock.password_placeholder'),
-              }}
-            />
-            {/* The escape hatch belongs to the field it escapes from, so it
+          variant="lock"
+          background={<WaterColumn />}
+          title={<OnboardingTitle>{t('lock.title')}</OnboardingTitle>}
+          body={
+            <Box sx={{ width: '100%' }}>
+              <StyledInput
+                type="password"
+                value={password}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                  setPassword(event.target.value);
+                  if (error) setError(null);
+                }}
+                onKeyDown={(event: KeyboardEvent) => {
+                  if (event.key === 'Enter') void handleSubmit();
+                }}
+                placeholder={t('lock.password_placeholder')}
+                $hasError={!!error}
+                disabled={isUnlocking || throttled}
+                autoFocus
+                fullWidth
+                inputProps={{
+                  'data-testid': 'lock-password-input',
+                  'aria-label': t('lock.password_placeholder'),
+                }}
+              />
+              {/* The escape hatch belongs to the field it escapes from, so it
                 sits directly under it rather than in a band of its own. */}
-            <ForgotRow>
-              <TextButton
-                onClick={() => setShowResetDialog(true)}
-                disabled={isUnlocking}
-                testID="lock-forgot-password-button"
-              >
-                {t('lock.forgot_password')}
-              </TextButton>
-            </ForgotRow>
-          </Box>
-        }
-        assist={
-          throttled ? (
-            <Box
-              ref={throttleRef}
-              tabIndex={-1}
-              aria-live="polite"
-              data-testid="lock-throttle-notice"
-            >
-              <ThrottleText>
-                {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
-              </ThrottleText>
+              <ForgotRow>
+                <TextButton
+                  onClick={() => setShowResetDialog(true)}
+                  disabled={isUnlocking}
+                  testID="lock-forgot-password-button"
+                >
+                  {t('lock.forgot_password')}
+                </TextButton>
+              </ForgotRow>
             </Box>
-          ) : error ? (
-            <ErrorText aria-live="polite" data-testid="lock-error">
-              {error}
-            </ErrorText>
-          ) : null
-        }
-        action={
-          <Box ref={unlockRef} tabIndex={-1}>
-            <PrimaryButton
-              onClick={() => void handleSubmit()}
-              disabled={!password.trim() || throttled}
-              loading={isUnlocking}
-              fullWidth
-              testID="lock-unlock-button"
-            >
-              {t('lock.unlock')}
-            </PrimaryButton>
-          </Box>
-        }
-      />
+          }
+          assist={
+            throttled ? (
+              <Box
+                ref={throttleRef}
+                tabIndex={-1}
+                aria-live="polite"
+                data-testid="lock-throttle-notice"
+              >
+                <ThrottleText>
+                  {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
+                </ThrottleText>
+              </Box>
+            ) : error ? (
+              <ErrorText aria-live="polite" data-testid="lock-error">
+                {error}
+              </ErrorText>
+            ) : null
+          }
+          action={
+            <Box ref={unlockRef} tabIndex={-1}>
+              <PrimaryButton
+                onClick={() => void handleSubmit()}
+                disabled={!password.trim() || throttled}
+                loading={isUnlocking}
+                fullWidth
+                testID="lock-unlock-button"
+              >
+                {t('lock.unlock')}
+              </PrimaryButton>
+            </Box>
+          }
+        />
+      </Passage>
 
       <ConfirmDialog
         visible={showResetDialog}
@@ -289,12 +351,15 @@ export function LockScreen({
         onConfirm={handleFinalConfirm}
       />
 
-      <LoadingScreen
-        visible={showLoadingScreen}
-        title={t('lock.unlocking')}
-        showTips
-        tipInterval={3000}
-      />
+      {held && (
+        <LoadingScreen
+          visible={showLoadingScreen}
+          title={t('lock.unlocking')}
+          showTips
+          tipInterval={3000}
+          onExited={handleWaitExited}
+        />
+      )}
     </>
   );
 }

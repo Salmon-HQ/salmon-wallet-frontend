@@ -36,6 +36,16 @@
  *   screen (`onExited`). The arithmetic is in `@salmon/shared`
  *   `motion/wavefront`, shared with the React Native twin, so the two platforms
  *   cannot drift and the timing is testable without a frame clock.
+ * - **The wait owns its passage.** Everything it owns — mark, words, tips —
+ *   floats up into place as the overlay fades in, and the beat is *intrinsic*:
+ *   the cluster waits out `FLOAT_DELAY_MS` inside this component, so a caller
+ *   that sank to make room keeps the double gesture for free and call sites
+ *   pass nothing. The impact loop waits out that beat plus one float before its
+ *   first press — the mark cannot press into a surface it has not landed on.
+ *   On the way out the same content sinks on the overlay's own closing ramp, so
+ *   the wait leaves as one gesture with the departing wave. The crests stay
+ *   outside the travelling cluster: the water is the ground, and the ground
+ *   never travels. (DESIGN.md §Motion, "The wait owns its passage, end to end".)
  * - **Tips are off by default** — see `LoadingScreenBaseProps.showTips`.
  */
 import { memo, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
@@ -49,6 +59,10 @@ import {
   fontSize,
   lineHeight,
   DEFAULT_WALLET_TIP_KEYS,
+  FLOAT_DELAY_MS,
+  FLOAT_ENTER_SCALE,
+  FLOAT_IN_MS,
+  SINK_FLOAT_TRAVEL,
   spacing,
   duration,
   durationMs,
@@ -77,6 +91,18 @@ import type { LoadingScreenProps } from './types';
 // ============================================================================
 // Constants
 // ============================================================================
+
+/**
+ * When the content has landed, and the earliest the impact loop may begin.
+ *
+ * The beat is intrinsic to the wait (DESIGN.md §Motion, "The wait owns its
+ * passage, end to end"): the cluster's float waits out `FLOAT_DELAY_MS` after
+ * mount, so a caller that sank to make room keeps the double gesture for free
+ * and never delays the wait itself — doing so would double-count the beat.
+ * The float therefore ends one beat *plus* one float after the overlay mounts,
+ * and the mark cannot press into a surface it has not landed on yet.
+ */
+const CONTENT_LANDS_MS = FLOAT_DELAY_MS + FLOAT_IN_MS;
 
 /** How far the mark presses in, and how much light it loses down there. */
 const MARK_SINK_SCALE = 0.05;
@@ -146,6 +172,34 @@ const fadeOutKeyframes = keyframes`
   to { opacity: 0; }
 `;
 
+/**
+ * The wait arriving: everything it owns rises the verb's travel and comes to
+ * rest on `settle` — buoyancy running out, no overshoot — while its light
+ * returns on the accelerating `sink` curve, which is the vocabulary's closest
+ * bezier to Beer-Lambert. Two media, one event, so two animations rather than
+ * one keyframe set. DESIGN.md §The sink and the float.
+ */
+const floatTravelKeyframes = keyframes`
+  from { transform: translateY(${SINK_FLOAT_TRAVEL}px) scale(${FLOAT_ENTER_SCALE}); }
+  to { transform: none; }
+`;
+
+const floatLightKeyframes = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+/**
+ * The wait leaving: the same content goes down with the departing wave, on the
+ * overlay's own closing ramp and its own hold, so the screen leaves as one
+ * gesture rather than as a fade with stragglers. Only the travel lives here —
+ * the light is the overlay's, which is fading over exactly this window.
+ */
+const sinkOutKeyframes = keyframes`
+  from { transform: none; }
+  to { transform: translateY(${SINK_FLOAT_TRAVEL}px); }
+`;
+
 // ============================================================================
 // Styled Components
 // ============================================================================
@@ -176,9 +230,45 @@ const Overlay = styled('div')<{ $isFadingOut: boolean; $waveOut: boolean }>(
     // what the caller is told and what the ground does are the same number.
     animation: $waveOut
       ? `${fadeOutKeyframes} ${WAVEFRONT_EBB_MS}ms ${motionEasing.sink.css} var(--wave-hold, ${WAVEFRONT_CROSS_MS}ms) forwards`
-      : `${$isFadingOut ? fadeOutKeyframes : fadeInKeyframes} 0.3s ease-out forwards`,
+      : // The plain ramp, in tokens: `durationMs.slow` is the same number the
+        // exit timer below spends, so what the caller is told and what the
+        // screen does are one number here too. Arriving decelerates (`settle`),
+        // leaving accelerates away (`sink`).
+        `${$isFadingOut ? fadeOutKeyframes : fadeInKeyframes} ${durationMs.slow}ms ${
+          $isFadingOut ? motionEasing.sink.css : motionEasing.settle.css
+        } forwards`,
   })
 );
+
+/**
+ * Everything the wait owns — mark, words, tips — as one travelling cluster.
+ *
+ * It floats up into place as the overlay fades in and sinks with the departing
+ * wave on the way out, on the overlay's own `--wave-hold` and closing ramp, so
+ * the wait arrives and leaves as one gesture (DESIGN.md §Motion, "The wait owns
+ * its passage, end to end").
+ *
+ * The crests are deliberately **not** in here: the water is the ground, and the
+ * ground never travels. Absolute-fill so the cluster is exactly the frame its
+ * children were already centred in — nothing below changes position, and a
+ * transform moves no layout, so the measured origin stays honest.
+ *
+ * Reduce motion cuts every stage: no travel in, no travel out, and the overlay's
+ * own opacity step carries the wait either way.
+ */
+const Cluster = styled('div')<{ $waveOut: boolean }>(({ $waveOut }) => ({
+  position: 'absolute',
+  inset: 0,
+  animation: $waveOut
+    ? `${sinkOutKeyframes} ${WAVEFRONT_EBB_MS}ms ${motionEasing.sink.css} var(--wave-hold, 0ms) forwards`
+    : [
+        `${floatTravelKeyframes} ${FLOAT_IN_MS}ms ${motionEasing.settle.css} ${FLOAT_DELAY_MS}ms both`,
+        `${floatLightKeyframes} ${FLOAT_IN_MS}ms ${motionEasing.sink.css} ${FLOAT_DELAY_MS}ms both`,
+      ].join(', '),
+  [`@media ${reducedMotion.query}`]: {
+    animation: 'none',
+  },
+}));
 
 /** Diameter of the mark that emits the wave, px. */
 const MARK_SIZE = 96;
@@ -253,7 +343,11 @@ const Emitter = styled('div')<{ $waves: boolean }>(({ $waves }) => ({
   // the ground has faded before the next emission is due.
   // The per-step curves live inside the keyframes (fast in, slow out), so the
   // animation itself is `linear` — an easing here would ease the easing.
-  animation: $waves ? `${sinkKeyframes} ${WAVEFRONT_PERIOD_MS}ms linear infinite` : 'none',
+  // Delayed by `CONTENT_LANDS_MS`: the float precedes the impact, because the
+  // mark cannot press into a surface it has not landed on.
+  animation: $waves
+    ? `${sinkKeyframes} ${WAVEFRONT_PERIOD_MS}ms linear ${CONTENT_LANDS_MS}ms infinite`
+    : 'none',
   [`@media ${reducedMotion.query}`]: {
     animation: 'none',
   },
@@ -313,7 +407,9 @@ const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean }>
     // it. One constant holds the mark and the wave together, and the rhythm
     // falls out of it — see `wavefrontCalmMs`.
     animation: $waves
-      ? `${crestKeyframes} ${WAVEFRONT_PERIOD_MS}ms linear ${WAVEFRONT_SINK_MS + $lagMs}ms infinite`
+      ? `${crestKeyframes} ${WAVEFRONT_PERIOD_MS}ms linear ${
+          CONTENT_LANDS_MS + WAVEFRONT_SINK_MS + $lagMs
+        }ms infinite`
       : 'none',
     [`@media ${reducedMotion.query}`]: {
       animation: 'none',
@@ -426,9 +522,13 @@ export const LoadingScreen = memo(function LoadingScreen({
   const contentRef = useRef<HTMLDivElement>(null);
   const originRef = useRef<HTMLDivElement>(null);
   /**
-   * When the loop started, so the exit can ask where the front is without
-   * reading an animation off the compositor. The phase is
+   * When the impact loop starts, so the exit can ask where the front is
+   * without reading an animation off the compositor. The phase is
    * `(now − startedAt) % period`, which is all `planWavefrontExit` needs.
+   *
+   * It is the *delayed* start — the content floats in first — so the exit
+   * arithmetic measures from the same instant the keyframes do and the
+   * calm-water handoff stays honest.
    */
   const startedAtRef = useRef(0);
   // Held in a ref so an inline callback cannot restart the exit timer on every
@@ -444,7 +544,7 @@ export const LoadingScreen = memo(function LoadingScreen({
       setIsVisible(true);
       setIsFadingOut(false);
       setIsClosing(false);
-      startedAtRef.current = Date.now();
+      startedAtRef.current = Date.now() + CONTENT_LANDS_MS;
       return undefined;
     }
     if (!isVisible) return undefined;
@@ -459,9 +559,14 @@ export const LoadingScreen = memo(function LoadingScreen({
     // front is ever in flight (`WAVEFRONT_REST_MS`), the fade always completes
     // before the next emission is due, and a wait that resolves during the rest
     // has nothing to wait for at all.
+    // A wait that resolves while the content is still floating in has thrown
+    // nothing yet: there is no front on the screen to wait out, which is the
+    // same answer the plan gives for calm water.
+    const elapsedMs = startedAtRef.current ? Date.now() - startedAtRef.current : 0;
+    const preImpact = elapsedMs < 0;
     const { holdMs, exitMs } = planWavefrontExit(
-      startedAtRef.current ? Date.now() - startedAtRef.current : 0,
-      !riding || isReduceMotionEnabled
+      Math.max(0, elapsedMs),
+      !riding || isReduceMotionEnabled || preImpact
     );
 
     if (riding && !isReduceMotionEnabled && holdMs > 0) {
@@ -513,16 +618,21 @@ export const LoadingScreen = memo(function LoadingScreen({
       // panel rather than over the whole window gets its own centre and its own
       // corner distance out of the same three lines — there is no full-screen
       // special case to keep in step.
-      const surface = root.getBoundingClientRect();
-      const markBox = mark.getBoundingClientRect();
+      //
+      // Read from layout (`offset*`) rather than from a client rect: the mark
+      // rides the cluster, which is mid-float when this runs, and a rect
+      // includes that transform. The cluster is absolute-fill, so the mark's
+      // offsets are already the overlay's own coordinates.
       const origin = {
-        x: markBox.left + markBox.width / 2 - surface.left,
-        y: markBox.top + markBox.height / 2 - surface.top,
+        x: mark.offsetLeft + mark.offsetWidth / 2,
+        y: mark.offsetTop + mark.offsetHeight / 2,
       };
 
-      mark.style.setProperty(
+      // Written on the overlay rather than on the mark: the crests are siblings
+      // of the travelling cluster now, and they inherit it from here.
+      root.style.setProperty(
         '--wave-ring',
-        `${2 * wavefrontRadius(origin, { width: surface.width, height: surface.height })}px`
+        `${2 * wavefrontRadius(origin, { width: root.clientWidth, height: root.clientHeight })}px`
       );
     };
 
@@ -565,47 +675,60 @@ export const LoadingScreen = memo(function LoadingScreen({
           are exactly what they were; only what they stand in has changed. */}
       {!bedrock && <WaterColumn />}
 
-      {/* The emitter and the front it launches. Decorative and announced by
-          the overlay's own `role="status"`, so it is hidden from assistive
-          technology rather than narrated as a second thing happening. It is
-          pinned to the middle of the surface: the origin of a radial front is
-          the one thing on this screen that may not be off-centre. */}
-      {riding && (
-        <Emitter ref={originRef} $waves={riding} aria-hidden="true" data-testid="loading-emitter">
-          {crestTrain().map(({ lag, alpha }) => (
-            <Crest
-              key={lag}
-              $alpha={alpha}
-              $lagMs={Math.round(lag * WAVEFRONT_CROSS_MS)}
-              $waves={riding}
-            />
-          ))}
-          <Mark viewBox={markViewBoxAttr} fill="currentColor" focusable="false">
-            {markPaths.map((d) => (
-              <path key={d} d={d} />
-            ))}
-          </Mark>
-        </Emitter>
-      )}
+      {/* The front, drawn — a sibling of the travelling cluster rather than a
+          child of the mark that throws it: the water is the ground, and the
+          ground never travels. Decorative and announced by the overlay's own
+          `role="status"`, so it is hidden from assistive technology rather
+          than narrated as a second thing happening. Its origin is the middle
+          of the surface, which is where the mark rests. */}
+      {riding &&
+        crestTrain().map(({ lag, alpha }) => (
+          <Crest
+            key={lag}
+            $alpha={alpha}
+            $lagMs={Math.round(lag * WAVEFRONT_CROSS_MS)}
+            $waves={riding}
+            aria-hidden="true"
+          />
+        ))}
 
-      {/* The words do not move. Product, 2026-08: "Unlocking Wallet sigue
-          moviéndose y el div de tip también, cuando te dije que no debería." */}
-      <Words>
-        {title && <Title>{title}</Title>}
-        {subtitle && <Subtitle>{subtitle}</Subtitle>}
-      </Words>
+      {/* Everything the wait owns, floating in as one and sinking out as one.
+          See `Cluster`. */}
+      <Cluster $waveOut={isClosing} data-testid="loading-cluster">
+        {/* The emitter. It is pinned to the middle of the surface: the origin
+            of a radial front is the one thing on this screen that may not be
+            off-centre. */}
+        {riding && (
+          <Emitter ref={originRef} $waves={riding} aria-hidden="true" data-testid="loading-emitter">
+            <Mark viewBox={markViewBoxAttr} fill="currentColor" focusable="false">
+              {markPaths.map((d) => (
+                <path key={d} d={d} />
+              ))}
+            </Mark>
+          </Emitter>
+        )}
 
-      {/* The tips, stationary too. They used to be the far-field passenger that
-          showed the front takes real time to get there; the crest itself shows
-          that, and it is the only thing that should. */}
-      {showTips && resolvedTips.length > 0 && (
-        <div style={tipsAnchor}>
-          <TipsContainer>
-            <TipLabel>{t('general.tip', 'Tip')}</TipLabel>
-            <TipText $fading={tipFading}>{resolvedTips[currentTipIndex]}</TipText>
-          </TipsContainer>
-        </div>
-      )}
+        {/* The words do not move — not on the front, at least. Product,
+            2026-08: "Unlocking Wallet sigue moviéndose y el div de tip
+            también, cuando te dije que no debería." They arrive and leave with
+            the rest of the wait, which is the passage, not a rider. */}
+        <Words>
+          {title && <Title>{title}</Title>}
+          {subtitle && <Subtitle>{subtitle}</Subtitle>}
+        </Words>
+
+        {/* The tips, stationary too. They used to be the far-field passenger that
+            showed the front takes real time to get there; the crest itself shows
+            that, and it is the only thing that should. */}
+        {showTips && resolvedTips.length > 0 && (
+          <div style={tipsAnchor}>
+            <TipsContainer>
+              <TipLabel>{t('general.tip', 'Tip')}</TipLabel>
+              <TipText $fading={tipFading}>{resolvedTips[currentTipIndex]}</TipText>
+            </TipsContainer>
+          </div>
+        )}
+      </Cluster>
     </Overlay>
   );
 });
