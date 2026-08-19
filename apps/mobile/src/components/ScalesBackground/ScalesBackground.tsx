@@ -126,6 +126,38 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
     <View style={[styles.container, style]} pointerEvents="none">
       <Svg width="100%" height="100%">
         <Defs>
+          {/* The tile is the pattern cell, and on iOS a cell is a
+              `CGPatternCreate` bounds rect that CoreGraphics clips against —
+              so the cell has to be the *rendered* size and the drawing scaled
+              into it. `patternTransform` cannot do that job: at 15.15.3
+              `RNSVGPainter.paintPattern` never concats the transform (only the
+              gradient painters do), so iOS silently drew the tile at 1× with a
+              1/scale stroke — sub-pixel hairlines that break up — while
+              Android applied it to the shader matrix and drew it whole. A `G`
+              matrix is an ordinary node transform, honoured by both.
+
+              Declared before any Mask that fills with it: react-native-svg
+              registers painters imperatively at parse time, so a mask that
+              references the pattern before it exists captures stale bounds
+              and rasterizes a shrunken patch. */}
+          <Pattern
+            id={patternId}
+            patternUnits="userSpaceOnUse"
+            width={seigaihaTile.width * config.scale}
+            height={seigaihaTile.height * config.scale}
+          >
+            <G scale={config.scale}>
+              {seigaihaTiledPaths.map((d, i) => (
+                <Path
+                  key={i}
+                  d={d}
+                  stroke={strokeColor}
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                />
+              ))}
+            </G>
+          </Pattern>
           {isRefraction && (
             <>
               {/* The horizontal sweep — the strip's iridescence runs across
@@ -135,7 +167,12 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
                   <Stop key={color} offset={i / (sweep.length - 1)} stopColor={color} />
                 ))}
               </LinearGradient>
-              <Mask id={maskId}>
+              {/* `maskUnits` set explicitly: on iOS Fabric, RNSVGMask derives
+                  BOTH maskUnits and maskContentUnits from this one prop, and
+                  the objectBoundingBox default rasterizes the mask content in
+                  fraction-space anchored at the origin — the "tiny scales in
+                  a corner" patch. userSpaceOnUse keeps both in user space. */}
+              <Mask id={maskId} maskUnits="userSpaceOnUse">
                 <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${patternId})`} />
               </Mask>
             </>
@@ -160,33 +197,6 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
               </Mask>
             </>
           )}
-          {/* The tile is the pattern cell, and on iOS a cell is a
-              `CGPatternCreate` bounds rect that CoreGraphics clips against —
-              so the cell has to be the *rendered* size and the drawing scaled
-              into it. `patternTransform` cannot do that job: at 15.15.3
-              `RNSVGPainter.paintPattern` never concats the transform (only the
-              gradient painters do), so iOS silently drew the tile at 1× with a
-              1/scale stroke — sub-pixel hairlines that break up — while
-              Android applied it to the shader matrix and drew it whole. A `G`
-              matrix is an ordinary node transform, honoured by both. */}
-          <Pattern
-            id={patternId}
-            patternUnits="userSpaceOnUse"
-            width={seigaihaTile.width * config.scale}
-            height={seigaihaTile.height * config.scale}
-          >
-            <G scale={config.scale}>
-              {seigaihaTiledPaths.map((d, i) => (
-                <Path
-                  key={i}
-                  d={d}
-                  stroke={strokeColor}
-                  strokeWidth={strokeWidth}
-                  fill="none"
-                />
-              ))}
-            </G>
-          </Pattern>
         </Defs>
         <Rect
           width="100%"
