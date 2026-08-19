@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, Alert } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { BlurTargetView } from 'expo-blur';
 import { Tabs, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -74,6 +75,7 @@ import { HeaderContent } from '../../../src/components/GateContainer/HeaderConte
 import type { DerivedKeyCache } from '@salmon/shared';
 import type { GateState, GateExpandedHeader } from '../../../src/components/GateContainer/types';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+import { FLOAT_DELAY_MS } from '../../../src/utils/sinkAndFloat';
 import { DEBUG_LAYER_COLORS, DEBUG_LAYER_COLOR } from '../../../src/debug/layerColors';
 
 /**
@@ -223,6 +225,14 @@ export default function TabLayout() {
   // screen (`onUnlockExited`, watchdog-backed), the same parked pattern the
   // password screen uses for its route.
   const [unlockHeld, setUnlockHeld] = useState(false);
+  const isReduceMotionEnabled = useReducedMotion();
+  const unlockReleaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (unlockReleaseTimer.current !== null) clearTimeout(unlockReleaseTimer.current);
+    },
+    []
+  );
 
   // Compute gate state
   const gateState: GateState =
@@ -254,17 +264,40 @@ export default function TabLayout() {
     [accountActions]
   );
 
+  // The unlock passage is sequential: hold → the wait's sink (`onUnlockExited`
+  // fires as it completes) → one beat of calm water → the gate's rise. The
+  // beat is `FLOAT_DELAY_MS`, the same pause every sink in this water earns
+  // before what follows it moves. Under reduce motion the whole passage is a
+  // cut, so the release is immediate.
   const handleUnlockExited = useCallback(() => {
-    setUnlockHeld(false);
-  }, []);
+    if (isReduceMotionEnabled) {
+      setUnlockHeld(false);
+      return;
+    }
+    if (unlockReleaseTimer.current !== null) clearTimeout(unlockReleaseTimer.current);
+    unlockReleaseTimer.current = setTimeout(() => {
+      unlockReleaseTimer.current = null;
+      setUnlockHeld(false);
+    }, FLOAT_DELAY_MS);
+  }, [isReduceMotionEnabled]);
 
   const handleLockUnlockWithKey = useCallback(
     async (keyJson: string): Promise<boolean> => {
+      // Parked like the password path: `locked` flips inside
+      // unlockWithCachedKey, in an earlier microtask than the awaited return,
+      // and an unparked gate starts rising while LockContent is still
+      // settling — a cut. There is no wave here (the key is fast), so on
+      // success the release is immediate and the gate rises through its own
+      // choreography instead of mid-commit.
+      setUnlockHeld(true);
       try {
         const keyCache: DerivedKeyCache = JSON.parse(keyJson);
-        return await accountActions.unlockWithCachedKey(keyCache);
+        const success = await accountActions.unlockWithCachedKey(keyCache);
+        setUnlockHeld(false);
+        return success;
       } catch (error) {
         console.error('Biometric unlock failed:', error);
+        setUnlockHeld(false);
         return false;
       }
     },

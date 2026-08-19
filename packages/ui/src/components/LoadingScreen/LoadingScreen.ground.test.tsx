@@ -80,6 +80,7 @@ vi.mock('@salmon/shared', async () => ({
   // The wave's arithmetic is `@salmon/shared`'s own and is tested there
   // (`src/motion/wavefront.test.ts`); this file only needs it to answer.
   WAVEFRONT_CROSS_MS: 1400,
+  WAVEFRONT_EBB_MS: 360,
   WAVEFRONT_PERIOD_MS: 2000,
   WAVEFRONT_SINK_MS: 90,
   WAVEFRONT_RECOVER_MS: 720,

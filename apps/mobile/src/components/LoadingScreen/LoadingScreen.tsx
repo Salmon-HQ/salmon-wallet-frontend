@@ -78,6 +78,7 @@ import {
   wavefrontExitMs,
   wavefrontRadius,
   WAVEFRONT_CROSS_MS,
+  WAVEFRONT_EBB_MS,
   WAVEFRONT_PERIOD_MS,
   WAVEFRONT_RECOVER_MS,
   WAVEFRONT_SINK_MS,
@@ -86,7 +87,12 @@ import {
 
 import { LoadingScreenProps } from './types';
 import { curve, timing } from '../../utils/motion';
-import { FLOAT_IN_MS, SINK_FLOAT_TRAVEL, floatEntering } from '../../utils/sinkAndFloat';
+import {
+  FLOAT_DELAY_MS,
+  FLOAT_IN_MS,
+  SINK_FLOAT_TRAVEL,
+  floatEntering,
+} from '../../utils/sinkAndFloat';
 import { DepthBackground } from '../DepthBackground';
 import { ScalesBackground } from '../ScalesBackground';
 
@@ -117,6 +123,16 @@ const MARK_SINK_DIM = 0.12;
 const MARK_SIZE = 96;
 /** Clear space between the mark's edge and the first word under it. */
 const MARK_TO_WORDS = spacing['3xl'];
+
+/**
+ * When the content has landed and the impact loops may begin. The beat is
+ * intrinsic to the wait now — the content's `entering` waits out
+ * `FLOAT_DELAY_MS` so a wait arriving over a sinking step always keeps the
+ * double gesture — so the float ends one beat *plus* one float after the
+ * overlay mounts, and the mark cannot press into a surface it has not
+ * reached yet.
+ */
+const CONTENT_LANDS_MS = FLOAT_DELAY_MS + FLOAT_IN_MS;
 
 /** The crests alive at once, resolved once at module load. */
 const CRESTS = crestTrain();
@@ -283,6 +299,13 @@ export function LoadingScreen({
    * all `planWavefrontExit` needs to keep the handoff pure and testable.
    */
   const startedAtRef = useRef(0);
+  /**
+   * True from the moment the exit is planned until the wait shows again.
+   * The exit effect also re-runs when `geometry.origin` lands late while
+   * `visible` is already false; without this guard that re-run re-plans the
+   * exit from a fresh `Date.now()` and restarts the ebb mid-flight.
+   */
+  const exitArmedRef = useRef(false);
   const finishExit = useCallback(() => {
     if (exitedRef.current) return;
     exitedRef.current = true;
@@ -332,9 +355,11 @@ export function LoadingScreen({
     if (visible) {
       setIsVisible(true);
       exitedRef.current = false;
-      // The loop starts one float after the overlay does — see below — so the
-      // exit's phase arithmetic measures from the delayed start, not the mount.
-      startedAtRef.current = Date.now() + FLOAT_IN_MS;
+      exitArmedRef.current = false;
+      // The loop starts one beat and one float after the overlay does — see
+      // below — so the exit's phase arithmetic measures from the delayed
+      // start, not the mount.
+      startedAtRef.current = Date.now() + CONTENT_LANDS_MS;
       depart.value = 0;
       overlayOpacity.value = withTiming(1, overlayIn);
 
@@ -357,16 +382,16 @@ export function LoadingScreen({
         // up on `settle` (decelerating and monotonic, so it comes to rest
         // without the overshoot product had just had removed from the words).
         //
-        // Both loops wait out one `FLOAT_IN_MS` first: the content is still
-        // floating up into place (the entering half of the sink and the
-        // float), and the mark cannot press into the surface before it has
-        // landed on it. The float precedes the impact — arrival, then work —
-        // rather than running through it, and one constant holds the two
-        // together the same way `WAVEFRONT_SINK_MS` holds the sink to the
-        // emission.
+        // Both loops wait out `CONTENT_LANDS_MS` first: the content is still
+        // arriving — one beat behind whatever sank to make room for it, then
+        // one float up into place — and the mark cannot press into the
+        // surface before it has landed on it. The float precedes the impact —
+        // arrival, then work — rather than running through it, and one
+        // constant holds the two together the same way `WAVEFRONT_SINK_MS`
+        // holds the sink to the emission.
         sink.value = 0;
         sink.value = withDelay(
-          FLOAT_IN_MS,
+          CONTENT_LANDS_MS,
           withRepeat(
             withSequence(
               withTiming(1, { duration: WAVEFRONT_SINK_MS, easing: curve.sink }),
@@ -395,7 +420,7 @@ export function LoadingScreen({
         // water. See `wavefrontCalmMs`.
         ring.value = 0;
         ring.value = withDelay(
-          FLOAT_IN_MS,
+          CONTENT_LANDS_MS,
           withRepeat(
             withSequence(
               withTiming(0, { duration: WAVEFRONT_SINK_MS }),
@@ -427,10 +452,20 @@ export function LoadingScreen({
     //
     // Because only one front is ever in flight (`WAVEFRONT_REST_MS`), a wait
     // that resolves during the rest has nothing to wait for and hands off on
-    // `ebb` alone.
+    // the closing ramp alone.
+    //
+    // Once planned, the exit is never re-planned: a `geometry.origin`
+    // measurement landing while the wait is already leaving would otherwise
+    // re-run this branch and restart the ebb. The effect's cleanup has just
+    // cleared the watchdog, so only the watchdog is re-armed.
+    if (exitArmedRef.current) {
+      const rearmed = setTimeout(finishExit, wavefrontExitMs(isReduceMotionEnabled));
+      return () => clearTimeout(rearmed);
+    }
+    exitArmedRef.current = true;
     const riding = waves && !isReduceMotionEnabled && geometry.origin !== null;
-    // Resolved while the content is still floating in: the loops are only
-    // *scheduled* (they wait out one FLOAT_IN_MS) and nothing has moved yet,
+    // Resolved while the content is still arriving: the loops are only
+    // *scheduled* (they wait out CONTENT_LANDS_MS) and nothing has moved yet,
     // so cancel them and leave on ebb alone — calm water for real. Once the
     // descent has begun, nothing is cancelled: the plan holds through the
     // committed strike and the whole train's crossing.
@@ -448,19 +483,22 @@ export function LoadingScreen({
 
     // The content sinks with the wave that carries it out — mark, words and
     // tips together, on the same delayed window as the overlay's ebb, so the
-    // wait leaves as one gesture rather than as a fade with stragglers. Under
-    // reduce motion there is no travel: the calm variant stays an opacity
-    // step, exactly as before.
+    // wait leaves as one gesture rather than as a fade with stragglers. The
+    // ramp is `WAVEFRONT_EBB_MS` — the sink half of the verb, per DESIGN.md
+    // §Motion — shared with the exit plan so what the caller is told and what
+    // the screen does stay the same number. Under reduce motion there is no
+    // travel and no viscosity: the calm variant stays a short opacity step.
+    const rampMs = isReduceMotionEnabled ? motionMs.ebb : WAVEFRONT_EBB_MS;
     if (!isReduceMotionEnabled) {
       depart.value = withDelay(
         holdMs,
-        withTiming(SINK_FLOAT_TRAVEL, { duration: motionMs.ebb, easing: curve.sink })
+        withTiming(SINK_FLOAT_TRAVEL, { duration: rampMs, easing: curve.sink })
       );
     }
 
     overlayOpacity.value = withDelay(
       holdMs,
-      withTiming(0, { duration: motionMs.ebb, easing: curve.sink }, (finished) => {
+      withTiming(0, { duration: rampMs, easing: curve.sink }, (finished) => {
         if (finished) {
           runOnJS(finishExit)();
         }
@@ -625,52 +663,56 @@ export function LoadingScreen({
               origin stays honest. */}
           <Animated.View
             style={[StyleSheet.absoluteFillObject, departStyle]}
-            entering={floatEntering(isReduceMotionEnabled)}
+            // The beat is intrinsic to the wait: whatever step gave way to it
+            // is still sinking when this mounts, so the content always waits
+            // out the sink plus the pause. Callers therefore never delay the
+            // wait themselves — doing so would double-count the beat.
+            entering={floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })}
           >
-          {/* The emitter, nailed to the middle of whatever the wait occupies.
+            {/* The emitter, nailed to the middle of whatever the wait occupies.
               A radial front whose origin is off-centre reads as a wave from
               somewhere else, so this is the one element on the screen that is
               positioned rather than laid out. The mark is **white**
               (`semantic.text.primary`, the same ink as the title below it) and
               deliberately not the accent: salmon is the ink of *action*, and a
               wait has no action in it — see DESIGN.md §The wait. */}
-          {waves && (
-            <Animated.View
-              style={[styles.emitter, sinkStyle]}
-              onLayout={measureOrigin}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              testID="loading-emitter"
-            >
-              <Svg width={MARK_SIZE} height={MARK_SIZE} viewBox={markViewBoxAttr}>
-                {markPaths.map((d) => (
-                  <Path key={d} d={d} fill={semantic.text.primary} />
-                ))}
-              </Svg>
-            </Animated.View>
-          )}
+            {waves && (
+              <Animated.View
+                style={[styles.emitter, sinkStyle]}
+                onLayout={measureOrigin}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                testID="loading-emitter"
+              >
+                <Svg width={MARK_SIZE} height={MARK_SIZE} viewBox={markViewBoxAttr}>
+                  {markPaths.map((d) => (
+                    <Path key={d} d={d} fill={semantic.text.primary} />
+                  ))}
+                </Svg>
+              </Animated.View>
+            )}
 
-          {/* The words, arranged *below* the centre rather than centred
+            {/* The words, arranged *below* the centre rather than centred
               themselves — the centre belongs to the emitter. They do not move:
               product, 2026-08, "Unlocking Wallet sigue moviéndose y el div de
               tip también, cuando te dije que no debería." */}
-          <View style={styles.words} pointerEvents="none">
-            {title && <Text style={styles.title}>{title}</Text>}
+            <View style={styles.words} pointerEvents="none">
+              {title && <Text style={styles.title}>{title}</Text>}
 
-            {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-          </View>
+              {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+            </View>
 
-          {/* The tips, stationary too. They used to be the far-field passenger
+            {/* The tips, stationary too. They used to be the far-field passenger
               that showed the front takes real time to get there; the crest
               itself shows that, and it is the only thing that should. */}
-          {showTips && resolvedTips.length > 0 && (
-            <View style={[styles.tipsContainer, { bottom: 80 + bottomOffset }]}>
-              <Text style={styles.tipLabel}>{t('general.tip', 'Tip')}</Text>
-              <Animated.Text style={[styles.tipText, tipStyle]}>
-                {resolvedTips[currentTipIndex]}
-              </Animated.Text>
-            </View>
-          )}
+            {showTips && resolvedTips.length > 0 && (
+              <View style={[styles.tipsContainer, { bottom: 80 + bottomOffset }]}>
+                <Text style={styles.tipLabel}>{t('general.tip', 'Tip')}</Text>
+                <Animated.Text style={[styles.tipText, tipStyle]}>
+                  {resolvedTips[currentTipIndex]}
+                </Animated.Text>
+              </View>
+            )}
           </Animated.View>
         </View>
       </LinearGradient>

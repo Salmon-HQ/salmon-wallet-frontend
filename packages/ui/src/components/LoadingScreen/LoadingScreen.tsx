@@ -58,7 +58,6 @@ import {
   crestTrain,
   markPaths,
   markViewBoxAttr,
-  motionMs,
   motionEasing,
   planWavefrontExit,
   reducedMotion,
@@ -66,6 +65,7 @@ import {
   wavefrontExitMs,
   wavefrontRadius,
   WAVEFRONT_CROSS_MS,
+  WAVEFRONT_EBB_MS,
   WAVEFRONT_PERIOD_MS,
   WAVEFRONT_RECOVER_MS,
   WAVEFRONT_SINK_MS,
@@ -172,8 +172,10 @@ const Overlay = styled('div')<{ $isFadingOut: boolean; $waveOut: boolean }>(
     // ebbs. The hold arrives as `--wave-hold`, written by the exit effect from
     // `planWavefrontExit`, so what the caller is told and what the screen does
     // are the same number.
+    // The ramp is `WAVEFRONT_EBB_MS` — shared with `planWavefrontExit`, so
+    // what the caller is told and what the ground does are the same number.
     animation: $waveOut
-      ? `${fadeOutKeyframes} ${motionMs.ebb}ms ${motionEasing.sink.css} var(--wave-hold, ${WAVEFRONT_CROSS_MS}ms) forwards`
+      ? `${fadeOutKeyframes} ${WAVEFRONT_EBB_MS}ms ${motionEasing.sink.css} var(--wave-hold, ${WAVEFRONT_CROSS_MS}ms) forwards`
       : `${$isFadingOut ? fadeOutKeyframes : fadeInKeyframes} 0.3s ease-out forwards`,
   })
 );

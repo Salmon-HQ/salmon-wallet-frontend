@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 
 const mockAddAccount = jest.fn();
@@ -106,8 +106,29 @@ jest.mock('../../DerivedAccountCard', () => ({
   },
 }));
 
+// Captured so the tests can drive the wait's contract: `visible` says whether
+// the wave is up, and invoking `onExited` stands in for the wave leaving the
+// screen (the real component's watchdog guarantees it fires).
+const mockLoadingScreenProps: { visible?: boolean; onExited?: () => void } = {};
 jest.mock('../../LoadingScreen', () => ({
-  LoadingScreen: () => null,
+  LoadingScreen: (props: { visible: boolean; onExited?: () => void }) => {
+    mockLoadingScreenProps.visible = props.visible;
+    mockLoadingScreenProps.onExited = props.onExited;
+    return null;
+  },
+}));
+
+// The passage hook pulls Reanimated and the motion vocabulary, neither of
+// which this file's narrow `@salmon/shared` mock carries. Its composition has
+// its own unit test (`src/utils/useWaitPassage.test.ts`); here it only has to
+// hand back the exit-report callback the panel parks `onComplete` behind.
+jest.mock('../../../utils/useWaitPassage', () => ({
+  useWaitPassage: (showWait: boolean) => ({
+    held: showWait,
+    onExited: jest.fn(),
+    exiting: undefined,
+    entering: undefined,
+  }),
 }));
 
 jest.mock('../../../../hooks/useSecretScreen', () => ({
@@ -165,10 +186,7 @@ describe('AccountAddPanel', () => {
     // The free-text seed field is gone — the grid is the only entry surface.
     expect(screen.queryByTestId('account-add-seed-input')).toBeNull();
 
-    fireEvent.changeText(
-      screen.getByTestId('account-add-seed-entry'),
-      'bad seed'
-    );
+    fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), 'bad seed');
     fireEvent.press(screen.getByText('actions.continue'));
 
     expect(screen.getByText('wallet.create.invalidSeed')).toBeTruthy();
@@ -180,10 +198,7 @@ describe('AccountAddPanel', () => {
     render(<AccountAddPanel onComplete={onComplete} onBack={jest.fn()} />);
 
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
-    fireEvent.changeText(
-      screen.getByTestId('account-add-seed-entry'),
-      '  valid   seed phrase  '
-    );
+    fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), '  valid   seed phrase  ');
     fireEvent.press(screen.getByText('actions.continue'));
 
     await waitFor(() => {
@@ -203,6 +218,18 @@ describe('AccountAddPanel', () => {
     });
 
     expect(mockAddAccount).toHaveBeenCalledWith({ id: 'account-1' });
+
+    // The completion is parked behind the wait's exit: dropping `loading`
+    // starts the wave's exit, and only its report hands the panel back.
+    expect(mockLoadingScreenProps.visible).toBe(false);
+    expect(onComplete).not.toHaveBeenCalled();
+    await act(async () => {
+      mockLoadingScreenProps.onExited?.();
+    });
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      mockLoadingScreenProps.onExited?.();
+    });
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
@@ -212,10 +239,7 @@ describe('AccountAddPanel', () => {
 
     render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
-    fireEvent.changeText(
-      screen.getByTestId('account-add-seed-entry'),
-      'valid seed phrase'
-    );
+    fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), 'valid seed phrase');
     fireEvent.press(screen.getByText('actions.continue'));
 
     await waitFor(() => {
@@ -237,10 +261,7 @@ describe('AccountAddPanel', () => {
 
     render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
-    fireEvent.changeText(
-      screen.getByTestId('account-add-seed-entry'),
-      'valid seed phrase'
-    );
+    fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), 'valid seed phrase');
     fireEvent.press(screen.getByText('actions.continue'));
 
     await waitFor(() => {

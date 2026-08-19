@@ -348,15 +348,14 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
               </Animated.View>
             )}
 
-          {/* The wave wait — its own step, floating in after the review's
-              sink (the same beat every step swap keeps). It holds while the
-              transaction is in flight and leaves on its own last wave; the
-              receipt below waits for that report. */}
+          {/* The wave wait — its own step. The beat after the review's sink
+              is intrinsic to LoadingScreen now (its content waits out
+              FLOAT_DELAY_MS on its own), so the wrapper carries only the
+              undelayed float — a second delay here would double-count the
+              beat. It holds while the transaction is in flight and leaves on
+              its own last wave; the receipt below waits for that report. */}
           {showWave && (
-            <Animated.View
-              style={styles.step}
-              entering={floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })}
-            >
+            <Animated.View style={styles.step} entering={taskStepEntering}>
               <LoadingScreen
                 visible={isCommitted}
                 waves

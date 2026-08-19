@@ -8,7 +8,9 @@ import {
 } from '@salmon/shared';
 import type { Blockchain, NetworkEnvironment } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
+import Animated, { useReducedMotion } from 'react-native-reanimated';
 
+import { sinkExiting } from '../../utils/sinkAndFloat';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
 import { StepTokenSelect } from './StepTokenSelect';
@@ -58,6 +60,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   const previousVisibleRef = useRef(visible);
 
   const { t } = useTranslation();
+  const isReduceMotionEnabled = useReducedMotion();
 
   // Live balance for the selected token, derived from the reactive `tokens` prop
   // every render. RQ-backed parents update this list when funds arrive — passing
@@ -261,19 +264,25 @@ export const SendSheet: React.FC<SendSheetProps> = ({
           />
         )}
 
+        {/* The outgoing step of the passage: when the review gives way — to
+            the success wait or back to the form — it leaves by sinking, and
+            the wait inside the success screen arrives one beat later on its
+            own clock. Reduce motion keeps the cut. */}
         {step === 'confirmation' && selectedToken && (
-          <StepConfirmation
-            token={selectedToken}
-            recipientAddress={recipientAddress}
-            resolvedRecipientAddress={resolvedRecipientAddress}
-            amount={amount}
-            blockchain={blockchain}
-            account={account}
-            onBack={handleBackToAddressAmount}
-            onCancel={handleClose}
-            onSuccess={handleSuccess}
-            onSendingChange={setIsSending}
-          />
+          <Animated.View style={styles.step} exiting={sinkExiting(isReduceMotionEnabled)}>
+            <StepConfirmation
+              token={selectedToken}
+              recipientAddress={recipientAddress}
+              resolvedRecipientAddress={resolvedRecipientAddress}
+              amount={amount}
+              blockchain={blockchain}
+              account={account}
+              onBack={handleBackToAddressAmount}
+              onCancel={handleClose}
+              onSuccess={handleSuccess}
+              onSendingChange={setIsSending}
+            />
+          </Animated.View>
         )}
 
         {step === 'success' && successTxId && selectedToken && (
@@ -302,6 +311,10 @@ export const SendSheet: React.FC<SendSheetProps> = ({
 
 const styles = StyleSheet.create({
   content: {
+    flex: 1,
+  },
+  /** The confirmation step's travel frame for its sink out of the sheet. */
+  step: {
     flex: 1,
   },
 });

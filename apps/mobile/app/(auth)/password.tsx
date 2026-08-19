@@ -60,6 +60,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Keyboard, Linking, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { useWaitPassage } from '../../src/utils/useWaitPassage';
 import {
   LoadingScreen,
   OnboardingDescription,
@@ -118,6 +120,11 @@ export default function PasswordScreen() {
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wrongPassword, setWrongPassword] = useState(false);
+
+  // The passage into the wait: when the wait rises, the form sinks under it.
+  // The auth layout owns the ground, so the whole layout may travel; the wait
+  // itself owns the beat on its way in.
+  const { exiting: waitExiting } = useWaitPassage(isLoading);
 
   // Refs
   const confirmPasswordRef = useRef<TextInput>(null);
@@ -338,9 +345,14 @@ export default function PasswordScreen() {
   return (
     <>
       <StatusBar style="light" />
-      <OnboardingLayout
-        testID="password-screen"
-        /*
+      {/* The form gives way to the wait with the passage's sink. On a failure
+          it returns under the wait's own ebb, exactly where it was; on
+          success the parked route navigates before it can reappear. */}
+      {!isLoading && (
+        <Animated.View style={styles.passage} exiting={waitExiting}>
+          <OnboardingLayout
+            testID="password-screen"
+            /*
           `content`, not `credential` (owner, 2026-08-18): recover → password
           are consecutive steps of one flow, and `credential`'s hero-sized
           mark band (201pt vs content's 96) dropped this screen's cluster
@@ -352,126 +364,128 @@ export default function PasswordScreen() {
           is what makes the still hero read: the content travels, the cluster
           does not jump.
         */
-        variant="content"
-        scrollBody
-        float
-        /*
+            variant="content"
+            scrollBody
+            float
+            /*
           The lock: what the password buys. The fish leaves the flow screens
           — one semantic glyph per step, consent's pattern and size.
         */
-        mark={<LockIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
-        chrome={
-          <ScreenHeader
-            onBack={handleBack}
-            stepIndicator={{
-              totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
-              currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
-            }}
-            backDisabled={isLoading || isChecking}
-          />
-        }
-        title={
-          <OnboardingTitle>
-            {showSingleInput
-              ? t('wallet.create.enter_your_password')
-              : t('wallet.create.choose_a_password')}
-          </OnboardingTitle>
-        }
-        description={
-          // The single-field variant used to delete this line, dropping 56px
-          // and moving everything below it. Reserved and left empty now.
-          showSingleInput ? undefined : (
-            <OnboardingDescription>
-              {t('wallet.create.choose_a_password_body')}
-            </OnboardingDescription>
-          )
-        }
-        body={
-          <>
-            <View style={styles.inputContainer}>
-              <PasswordInput
-                testID="password-input"
-                value={password}
-                onChangeText={handlePasswordChange}
-                placeholder={
-                  showSingleInput
-                    ? t('wallet.create.enter_your_password')
-                    : t('wallet.create.passwordNew')
-                }
-                error={passwordError}
-                editable={!isLoading && !isChecking}
-                onSubmitEditing={() => {
-                  if (showSingleInput) {
-                    handleSubmit();
-                  } else {
-                    confirmPasswordRef.current?.focus();
-                  }
+            mark={<LockIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+            chrome={
+              <ScreenHeader
+                onBack={handleBack}
+                stepIndicator={{
+                  totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
+                  currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
                 }}
+                backDisabled={isLoading || isChecking}
               />
+            }
+            title={
+              <OnboardingTitle>
+                {showSingleInput
+                  ? t('wallet.create.enter_your_password')
+                  : t('wallet.create.choose_a_password')}
+              </OnboardingTitle>
+            }
+            description={
+              // The single-field variant used to delete this line, dropping 56px
+              // and moving everything below it. Reserved and left empty now.
+              showSingleInput ? undefined : (
+                <OnboardingDescription>
+                  {t('wallet.create.choose_a_password_body')}
+                </OnboardingDescription>
+              )
+            }
+            body={
+              <>
+                <View style={styles.inputContainer}>
+                  <PasswordInput
+                    testID="password-input"
+                    value={password}
+                    onChangeText={handlePasswordChange}
+                    placeholder={
+                      showSingleInput
+                        ? t('wallet.create.enter_your_password')
+                        : t('wallet.create.passwordNew')
+                    }
+                    error={passwordError}
+                    editable={!isLoading && !isChecking}
+                    onSubmitEditing={() => {
+                      if (showSingleInput) {
+                        handleSubmit();
+                      } else {
+                        confirmPasswordRef.current?.focus();
+                      }
+                    }}
+                  />
 
-              {/*
+                  {/*
                 Feedback about the field above it, so it sits against that
                 field rather than competing with the terms line for the assist
                 band. Its slot is reserved from the first frame — "nothing
                 moves under the finger": typing the first character reveals
                 the meter instead of shoving the confirmation field down.
               */}
-              {!showSingleInput && (
-                <ReservedSlot visible={password.length > 0}>
-                  <View style={styles.strengthContainer}>
-                    <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
+                  {!showSingleInput && (
+                    <ReservedSlot visible={password.length > 0}>
+                      <View style={styles.strengthContainer}>
+                        <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
+                      </View>
+                    </ReservedSlot>
+                  )}
+                </View>
+
+                {!showSingleInput && (
+                  <View style={styles.inputContainer}>
+                    <PasswordInput
+                      testID="password-confirm-input"
+                      value={confirmPassword}
+                      onChangeText={handleConfirmPasswordChange}
+                      placeholder={t('wallet.create.passwordRepeat')}
+                      error={confirmError}
+                      editable={!isLoading && !isChecking}
+                      onSubmitEditing={handleSubmit}
+                    />
                   </View>
-                </ReservedSlot>
-              )}
-            </View>
+                )}
 
-            {!showSingleInput && (
-              <View style={styles.inputContainer}>
-                <PasswordInput
-                  testID="password-confirm-input"
-                  value={confirmPassword}
-                  onChangeText={handleConfirmPasswordChange}
-                  placeholder={t('wallet.create.passwordRepeat')}
-                  error={confirmError}
-                  editable={!isLoading && !isChecking}
-                  onSubmitEditing={handleSubmit}
-                />
-              </View>
-            )}
-
-            {/* Reserved for the same reason as the strength bar: a failure
+                {/* Reserved for the same reason as the strength bar: a failure
                 message must not shove the layout when it lands. */}
-            <ReservedSlot visible={!!error}>
-              <Text style={styles.generalError}>{error ?? ' '}</Text>
-            </ReservedSlot>
-          </>
-        }
-        assist={
-          <Text style={styles.termsText} maxFontSizeMultiplier={fontScaleCap.chrome}>
-            {flowType === 'recover'
-              ? t('wallet.recover.terms_prefix')
-              : t('wallet.create.terms_prefix')}
-            <Text
-              style={styles.termsHighlight}
-              onPress={handleTermsPress}
-              testID="password-terms-link"
-              accessibilityRole="link"
-            >
-              {t('general.terms_and_conditions')}
-            </Text>
-          </Text>
-        }
-        action={
-          <PrimaryButton
-            onPress={handleSubmit}
-            disabled={!isFormValid() || wrongPassword}
-            loading={isLoading || isChecking}
-            testID="password-submit-button"
-          >
-            {getButtonText()}
-          </PrimaryButton>
-        }
-      />
+                <ReservedSlot visible={!!error}>
+                  <Text style={styles.generalError}>{error ?? ' '}</Text>
+                </ReservedSlot>
+              </>
+            }
+            assist={
+              <Text style={styles.termsText} maxFontSizeMultiplier={fontScaleCap.chrome}>
+                {flowType === 'recover'
+                  ? t('wallet.recover.terms_prefix')
+                  : t('wallet.create.terms_prefix')}
+                <Text
+                  style={styles.termsHighlight}
+                  onPress={handleTermsPress}
+                  testID="password-terms-link"
+                  accessibilityRole="link"
+                >
+                  {t('general.terms_and_conditions')}
+                </Text>
+              </Text>
+            }
+            action={
+              <PrimaryButton
+                onPress={handleSubmit}
+                disabled={!isFormValid() || wrongPassword}
+                loading={isLoading || isChecking}
+                testID="password-submit-button"
+              >
+                {getButtonText()}
+              </PrimaryButton>
+            }
+          />
+        </Animated.View>
+      )}
 
       {/* Loading Screen Overlay */}
       <LoadingScreen
@@ -491,6 +505,10 @@ export default function PasswordScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
+  /** The form's travel frame for the passage into the wait. */
+  passage: {
+    flex: 1,
+  },
   inputContainer: {
     width: '100%',
     marginBottom: spacing.lg,

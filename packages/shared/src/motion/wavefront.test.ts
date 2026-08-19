@@ -20,6 +20,7 @@ import {
   WAVEFRONT_RECOVER_MS,
   WAVEFRONT_SINK_MS,
   WAVEFRONT_TRAIN_CROSS_MS,
+  WAVEFRONT_EBB_MS,
   WAVEFRONT_EXIT_SLACK_MS,
   planWavefront,
   planWavefrontExit,
@@ -133,13 +134,20 @@ describe('planWavefront — reduce motion', () => {
 });
 
 describe('wavefrontExitMs — the hard upper bound', () => {
-  it('bounds the handoff at the whole strike plus an ebb, with guard slack', () => {
+  it('bounds the handoff at the whole strike plus the closing ramp, with guard slack', () => {
     expect(wavefrontExitMs(false)).toBe(
-      WAVEFRONT_SINK_MS + WAVEFRONT_TRAIN_CROSS_MS + motionMs.ebb + WAVEFRONT_EXIT_SLACK_MS
+      WAVEFRONT_SINK_MS + WAVEFRONT_TRAIN_CROSS_MS + WAVEFRONT_EBB_MS + WAVEFRONT_EXIT_SLACK_MS
     );
     // Spelled out because it is the dead time a caller pays for the crossing:
     // slowing the front slows the receipt one for one. See WAVEFRONT_CROSS_MS.
-    expect(wavefrontExitMs(false)).toBe(2520);
+    expect(wavefrontExitMs(false)).toBe(2700);
+  });
+
+  it('closes on the sink half of the verb, not the generic-UI ebb', () => {
+    // DESIGN.md §Motion: the wait's exit is 360 — tide/2, the same length the
+    // sink-and-float verb gives every departure in this water.
+    expect(WAVEFRONT_EBB_MS).toBe(motionMs.tide / 2);
+    expect(WAVEFRONT_EBB_MS).toBe(360);
   });
 
   it('is never shorter than any exit the wave can actually plan', () => {
@@ -160,9 +168,9 @@ describe('wavefrontExitMs — the hard upper bound', () => {
     // exact tie is a race, and the guard losing it cuts the exit's last
     // frames. Slack must be genuine, at every phase.
     for (let elapsed = 0; elapsed <= WAVEFRONT_PERIOD_MS * 2; elapsed += 17) {
-      expect(planWavefrontExit(elapsed, false).exitMs + WAVEFRONT_EXIT_SLACK_MS).toBeLessThanOrEqual(
-        wavefrontExitMs(false)
-      );
+      expect(
+        planWavefrontExit(elapsed, false).exitMs + WAVEFRONT_EXIT_SLACK_MS
+      ).toBeLessThanOrEqual(wavefrontExitMs(false));
     }
     expect(planWavefrontExit(0, true).exitMs + WAVEFRONT_EXIT_SLACK_MS).toBeLessThanOrEqual(
       wavefrontExitMs(true)
@@ -179,7 +187,7 @@ describe('planWavefrontExit — hand off on calm water', () => {
   it('waits out the whole train when the work resolves at the impact', () => {
     expect(planWavefrontExit(WAVEFRONT_SINK_MS, false)).toEqual({
       holdMs: WAVEFRONT_TRAIN_CROSS_MS,
-      exitMs: WAVEFRONT_TRAIN_CROSS_MS + motionMs.ebb,
+      exitMs: WAVEFRONT_TRAIN_CROSS_MS + WAVEFRONT_EBB_MS,
     });
   });
 
@@ -190,7 +198,7 @@ describe('planWavefrontExit — hand off on calm water', () => {
     // viewport first (owner, 2026-08, on device).
     expect(planWavefrontExit(WAVEFRONT_SINK_MS - 1, false)).toEqual({
       holdMs: WAVEFRONT_TRAIN_CROSS_MS + 1,
-      exitMs: WAVEFRONT_TRAIN_CROSS_MS + 1 + motionMs.ebb,
+      exitMs: WAVEFRONT_TRAIN_CROSS_MS + 1 + WAVEFRONT_EBB_MS,
     });
   });
 
@@ -205,7 +213,7 @@ describe('planWavefrontExit — hand off on calm water', () => {
     // wait for, and inventing a closing wave would be pure latency.
     const midRest = WAVEFRONT_SINK_MS + WAVEFRONT_CROSS_MS + WAVEFRONT_REST_MS / 2;
 
-    expect(planWavefrontExit(midRest, false)).toEqual({ holdMs: 0, exitMs: motionMs.ebb });
+    expect(planWavefrontExit(midRest, false)).toEqual({ holdMs: 0, exitMs: WAVEFRONT_EBB_MS });
   });
 
   it('reads the same on the tenth emission as on the first', () => {
@@ -233,9 +241,7 @@ describe('planWavefrontExit — hand off on calm water', () => {
     // Phase 0 is the top of the sink: the strike and the whole train are
     // still ahead, so the hold is the full strike — a caller whose loop truly
     // has not started cancels it and passes the calm flag instead.
-    expect(planWavefrontExit(-1, false).holdMs).toBe(
-      WAVEFRONT_SINK_MS + WAVEFRONT_TRAIN_CROSS_MS
-    );
+    expect(planWavefrontExit(-1, false).holdMs).toBe(WAVEFRONT_SINK_MS + WAVEFRONT_TRAIN_CROSS_MS);
   });
 });
 

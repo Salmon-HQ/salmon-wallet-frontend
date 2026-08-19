@@ -34,7 +34,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Animated from 'react-native-reanimated';
 
+import { useWaitPassage } from '../../utils/useWaitPassage';
 import { PrimaryButton, TextButton } from '../Button';
 import { DepthBackground } from '../DepthBackground';
 import { LoadingScreen } from '../LoadingScreen';
@@ -103,6 +105,11 @@ export function LockContent({
   // Whether biometric state has been determined
   const [biometricReady, setBiometricReady] = useState(false);
 
+  // The passage into the wait: when the unlock wait rises, the lock form
+  // sinks under it — the same verb every step swap in the app speaks. The
+  // wait itself owns the beat on its way in.
+  const { exiting: waitExiting } = useWaitPassage(showLoadingScreen);
+
   // Failed attempts cost time. The wait is shown, never silent — an input that
   // stops answering with no explanation reads as a broken wallet.
   const {
@@ -154,9 +161,13 @@ export function LockContent({
     }
   })();
 
-  // Reset state when unlocked
+  // Reset state on *entering* locked, never on leaving it. After a successful
+  // unlock `locked` flips false while the gate is still held and this
+  // component still mounted — resetting there stripped the fallback UI
+  // mid-unlock, so a bare fish and title rode the exit for its whole length.
+  // A fresh lock session is the moment stale state must go.
   useEffect(() => {
-    if (!locked) {
+    if (locked) {
       hasAutoPromptedBiometric.current = false;
       setBiometricReady(false);
       setShowPasswordFallback(false);
@@ -352,133 +363,144 @@ export function LockContent({
   return (
     <>
       <StatusBar style="light" />
-      <OnboardingLayout
-        testID="lock-screen"
-        /*
-          `lock`, not `credential`: the same cluster as the create flow's
-          password screen, but the always-empty description band collapses so
-          "Welcome back" sits one title line above the input — the same air
-          that separates the fish from the title (owner decision, 2026-08-18).
-        */
-        variant="lock"
-        /*
-          The lock carries the water column (DESIGN.md §the lock screen): the
-          same ground the swap task modal mounts — depth ramp, marine snow,
-          deep-field scales. The ground color sits under the ramp so nothing
-          behind the gate can ever show through while it paints.
-        */
-        backgroundColor={semantic.depth.column}
-        background={
-          <>
-            <DepthBackground />
-            <ScalesBackground variant="deepField" />
-          </>
-        }
-        title={<OnboardingTitle>{t('lock.welcome_back')}</OnboardingTitle>}
-        body={
-          /*
+      {/*
+        The lock carries the water column (DESIGN.md §the lock screen): the
+        same ground the swap task modal mounts — depth ramp, marine snow,
+        deep-field scales. It is mounted *outside* the layout, the way the
+        swap task modal mounts it outside its steps, because the ground never
+        travels: when the unlock wait rises, the form below sinks and the
+        water stays. The ground color sits under the ramp so nothing behind
+        the gate can ever show through while it paints.
+      */}
+      <View style={styles.ground}>
+        <DepthBackground />
+        <ScalesBackground variant="deepField" />
+        {/* The form gives way to the wait with the passage's sink; on a
+            failed unlock it returns under the wait's own ebb, exactly where
+            it was. */}
+        {!showLoadingScreen && (
+          <Animated.View style={styles.passage} exiting={waitExiting}>
+            <OnboardingLayout
+              testID="lock-screen"
+              /*
+                `lock`, not `credential`: the same cluster as the create flow's
+                password screen, but the always-empty description band collapses so
+                "Welcome back" sits one title line above the input — the same air
+                that separates the fish from the title (owner decision, 2026-08-18).
+              */
+              variant="lock"
+              title={<OnboardingTitle>{t('lock.welcome_back')}</OnboardingTitle>}
+              body={
+                /*
             Reserved, not deleted. The biometric variant used to hold the field
             and every control below it inside one guard, so failing Face ID
             moved the mark 115pt down the screen at the exact moment the user
             was already mildly alarmed. The bands stand either way now.
           */
-          <ReservedSlot visible={showPasswordFallback}>
-            {/* Anchored to the top of the band, like the DOM twin — the band
+                <ReservedSlot visible={showPasswordFallback}>
+                  {/* Anchored to the top of the band, like the DOM twin — the band
                 is sized for two fields, and centring one field in it left it
                 floating over ~66pt of air. */}
-            <View style={styles.inputContainer}>
-              <TextInput
-                testID="lock-password-input"
-                accessibilityLabel={t('lock.enter_password')}
-                style={[styles.input, { borderColor: getInputBorderColor() }]}
-                placeholder={t('lock.enter_password')}
-                placeholderTextColor={colors.text.secondary}
-                secureTextEntry
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  if (error) setError(null);
-                }}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                onSubmitEditing={handleUnlock}
-                editable={!isLoading && !throttled}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-              />
-              {/* The escape hatch belongs to the field it escapes from, so it
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      testID="lock-password-input"
+                      accessibilityLabel={t('lock.enter_password')}
+                      style={[styles.input, { borderColor: getInputBorderColor() }]}
+                      placeholder={t('lock.enter_password')}
+                      placeholderTextColor={colors.text.secondary}
+                      secureTextEntry
+                      value={password}
+                      onChangeText={(text) => {
+                        setPassword(text);
+                        if (error) setError(null);
+                      }}
+                      onFocus={() => setIsFocused(true)}
+                      onBlur={() => setIsFocused(false)}
+                      onSubmitEditing={handleUnlock}
+                      editable={!isLoading && !throttled}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      returnKeyType="done"
+                    />
+                    {/* The escape hatch belongs to the field it escapes from, so it
                   sits directly under it rather than in a band of its own. */}
-              <View style={styles.forgotRow}>
-                <TextButton
-                  testID="lock-forgot-password-button"
-                  onPress={handleForgotPassword}
-                  disabled={isLoading}
-                >
-                  {t('lock.forgot_password')}
-                </TextButton>
-              </View>
-            </View>
-          </ReservedSlot>
-        }
-        assist={
-          /*
+                    <View style={styles.forgotRow}>
+                      <TextButton
+                        testID="lock-forgot-password-button"
+                        onPress={handleForgotPassword}
+                        disabled={isLoading}
+                      >
+                        {t('lock.forgot_password')}
+                      </TextButton>
+                    </View>
+                  </View>
+                </ReservedSlot>
+              }
+              assist={
+                /*
             The feedback band, as spec 013 FR-005 assigns it: the throttle
             notice and the wrong-password error both land here, so neither
             displaces the field above nor the button below. The throttle wins
             when both hold — it is the one that explains why typing is off.
           */
-          throttled ? (
-            <View
-              ref={throttleRef}
-              accessible
-              accessibilityLiveRegion="polite"
-              testID="lock-throttle-notice"
-            >
-              <Text style={styles.throttleText}>
-                {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
-              </Text>
-            </View>
-          ) : error ? (
-            <Text testID="lock-error" accessibilityLiveRegion="polite" style={styles.errorText}>
-              {error}
-            </Text>
-          ) : null
-        }
-        secondary={
-          <ReservedSlot visible={!!canUseBiometric && showPasswordFallback}>
-            <TextButton
-              testID="lock-biometric-button"
-              onPress={() => {
-                void handleBiometricUnlock();
-              }}
-              disabled={isLoading}
-              color={colors.accent.primary}
-            >
-              {biometricActionLabel}
-            </TextButton>
-          </ReservedSlot>
-        }
-        action={
-          /*
+                throttled ? (
+                  <View
+                    ref={throttleRef}
+                    accessible
+                    accessibilityLiveRegion="polite"
+                    testID="lock-throttle-notice"
+                  >
+                    <Text style={styles.throttleText}>
+                      {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
+                    </Text>
+                  </View>
+                ) : error ? (
+                  <Text
+                    testID="lock-error"
+                    accessibilityLiveRegion="polite"
+                    style={styles.errorText}
+                  >
+                    {error}
+                  </Text>
+                ) : null
+              }
+              secondary={
+                <ReservedSlot visible={!!canUseBiometric && showPasswordFallback}>
+                  <TextButton
+                    testID="lock-biometric-button"
+                    onPress={() => {
+                      void handleBiometricUnlock();
+                    }}
+                    disabled={isLoading}
+                    color={colors.accent.primary}
+                  >
+                    {biometricActionLabel}
+                  </TextButton>
+                </ReservedSlot>
+              }
+              action={
+                /*
             The button holds its spot in every state. While throttled it is
             disabled and the assist band above says why — and for how long —
             so nothing moves. Focus follows the notice in both directions.
           */
-          <ReservedSlot visible={showPasswordFallback}>
-            <View ref={unlockRef}>
-              <PrimaryButton
-                testID="lock-unlock-button"
-                onPress={handleUnlock}
-                disabled={unlockDisabled}
-                loading={isLoading}
-              >
-                {t('lock.unlock')}
-              </PrimaryButton>
-            </View>
-          </ReservedSlot>
-        }
-      />
+                <ReservedSlot visible={showPasswordFallback}>
+                  <View ref={unlockRef}>
+                    <PrimaryButton
+                      testID="lock-unlock-button"
+                      onPress={handleUnlock}
+                      disabled={unlockDisabled}
+                      loading={isLoading}
+                    >
+                      {t('lock.unlock')}
+                    </PrimaryButton>
+                  </View>
+                </ReservedSlot>
+              }
+            />
+          </Animated.View>
+        )}
+      </View>
 
       <LoadingScreen
         visible={showLoadingScreen}
@@ -496,6 +518,15 @@ export function LockContent({
 // ============================================================================
 
 const styles = StyleSheet.create({
+  /** The water column's host — the one layer of this screen that never moves. */
+  ground: {
+    flex: 1,
+    backgroundColor: semantic.depth.column,
+  },
+  /** The form's travel frame for the passage into and out of the wait. */
+  passage: {
+    flex: 1,
+  },
   inputContainer: {
     width: '100%',
   },

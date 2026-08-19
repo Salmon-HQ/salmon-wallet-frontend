@@ -107,8 +107,8 @@ export interface WavefrontPlan {
  *   at about the same place — below ~1–2°/s the eye fixates rather than
  *   pursues. So there is room to roughly double this again, and no more.
  * - **The handoff is coupled to it, one for one.** The exit waits for calm
- *   water, so the worst case is a whole crossing plus an `ebb`: **2180ms** at
- *   2000, against 1580ms at 1400. That is dead time on a screen the user is
+ *   water, so the worst case is a whole crossing plus the closing ramp:
+ *   **2360ms** at 2000, against 1760ms at 1400. That is dead time on a screen the user is
  *   already waiting on, and every 100ms added here is 100ms added there. The
  *   coupling is deliberate and stays — see {@link wavefrontExitMs}.
  *
@@ -147,6 +147,24 @@ export const WAVEFRONT_PERIOD_MS = WAVEFRONT_CROSS_MS + WAVEFRONT_REST_MS;
 export const WAVEFRONT_TRAIN_CROSS_MS = Math.round(
   WAVEFRONT_CROSS_MS * (1 + (CREST_COUNT - 1) * CREST_SPACING)
 );
+
+/**
+ * The closing ramp of the wait's ground — how long the overlay's light takes
+ * to go out (and, on mobile, the content to sink) once the water is calm.
+ *
+ * `tide / 2` (360ms), the same arithmetic as the sink half of the
+ * sink-and-float verb, so the wait leaves at the speed everything else in
+ * this water leaves at. It replaced `motionMs.ebb` (180ms): DESIGN.md §Motion
+ * sets the wait's exit at 360, and the generic-UI ebb read as a fade with a
+ * direction rather than as water swallowing the screen. Shared here — not a
+ * per-platform copy — because {@link planWavefrontExit} and
+ * {@link wavefrontExitMs} bake it into the handoff arithmetic both twins arm
+ * their watchdogs on.
+ *
+ * Reduce motion keeps `motionMs.ebb`: a user who cannot see the water is not
+ * made to wait out its viscosity.
+ */
+export const WAVEFRONT_EBB_MS = motionMs.tide / 2;
 
 /**
  * How long the front takes to pass one passenger — `drift`.
@@ -268,10 +286,11 @@ export function planWavefront(
 
 /**
  * The hard upper bound on the handoff — how long the wait may take to leave,
- * whatever the animation does. **2520ms** at the current crossing (sink +
- * train crossing + ebb + {@link WAVEFRONT_EXIT_SLACK_MS} of guard headroom).
+ * whatever the animation does. **2700ms** at the current crossing (sink +
+ * train crossing + {@link WAVEFRONT_EBB_MS} +
+ * {@link WAVEFRONT_EXIT_SLACK_MS} of guard headroom).
  *
- * It is the whole strike plus an `ebb` because the exit waits for calm water, and
+ * It is the whole strike plus the closing ramp because the exit waits for calm water, and
  * that coupling was considered and kept when the crossing was slowed (2026-08).
  * The alternative — closing on a faster wave than the one that was emitted —
  * buys back the difference by making the front *accelerate* at the exact moment
@@ -280,9 +299,9 @@ export function planWavefront(
  * stops being one. The earlier model that cancelled the emission and started a
  * fresh closing wave was rejected for the same reason. What actually pays for
  * the slower crossing is that this is the *worst* case and not the usual one:
- * a wait resolving during the rest hands off on `ebb` alone, so the mean hold
- * is `(CROSS/2)·(CROSS/PERIOD) + ebb` — about 950ms at 2000, against ~670ms at
- * 1400.
+ * a wait resolving during the rest hands off on the ramp alone, so the mean
+ * hold is `(CROSS/2)·(CROSS/PERIOD) + ramp` — about 1130ms at 2000, against
+ * ~850ms at 1400.
  *
  * A wallet may never be trapped on a loading screen by an animation that failed
  * to complete, so every caller arms a timer at this value and whichever of the
@@ -297,7 +316,7 @@ export function planWavefront(
  */
 export function wavefrontExitMs(isReduceMotionEnabled: boolean): number {
   if (isReduceMotionEnabled) return motionMs.ebb + WAVEFRONT_EXIT_SLACK_MS;
-  return WAVEFRONT_SINK_MS + WAVEFRONT_TRAIN_CROSS_MS + motionMs.ebb + WAVEFRONT_EXIT_SLACK_MS;
+  return WAVEFRONT_SINK_MS + WAVEFRONT_TRAIN_CROSS_MS + WAVEFRONT_EBB_MS + WAVEFRONT_EXIT_SLACK_MS;
 }
 
 /**
@@ -367,5 +386,5 @@ export function planWavefrontExit(
   const clearsAt = WAVEFRONT_SINK_MS + WAVEFRONT_TRAIN_CROSS_MS;
   const holdMs = phase < clearsAt ? Math.round(clearsAt - phase) : 0;
 
-  return { holdMs, exitMs: holdMs + motionMs.ebb };
+  return { holdMs, exitMs: holdMs + WAVEFRONT_EBB_MS };
 }

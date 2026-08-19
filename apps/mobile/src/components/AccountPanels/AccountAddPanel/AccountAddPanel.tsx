@@ -8,7 +8,7 @@
  * 4. set-name: Choose account name
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -50,6 +50,7 @@ import { LoadingScreen } from '../../LoadingScreen';
 import { WarningNotice } from '../../WarningNotice';
 import { SeedPhraseEntry } from '../../SeedPhrase';
 import { useSecretScreen } from '../../../../hooks/useSecretScreen';
+import { useWaitPassage } from '../../../utils/useWaitPassage';
 import type { AccountAddPanelProps } from './types';
 
 // ============================================================================
@@ -78,11 +79,22 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   // Loading state
   const [loading, setLoading] = useState(false);
 
+  // The wait's passage: the panel keeps the wait mounted until its closing
+  // wave has left, and the completion handoff is parked behind that report —
+  // completing earlier unmounts the wait mid-wave. LoadingScreen's watchdog
+  // guarantees the report, so the handoff cannot be stranded.
+  const { onExited: waitExited } = useWaitPassage(loading);
+  const pendingCompleteRef = useRef(false);
+  const handleWaitExited = useCallback(() => {
+    waitExited();
+    if (!pendingCompleteRef.current) return;
+    pendingCompleteRef.current = false;
+    onComplete();
+  }, [waitExited, onComplete]);
+
   // Import flow state — one entry per grid box. Twelve to begin with; a paste
   // or a thirteenth typed word grows it to twenty-four.
-  const [seedWords, setSeedWords] = useState<string[]>(() =>
-    Array<string>(SHORT_PHRASE).fill('')
-  );
+  const [seedWords, setSeedWords] = useState<string[]>(() => Array<string>(SHORT_PHRASE).fill(''));
   // What was actually pasted when a paste did not fit. `null` = no rejection.
   const [pastedCount, setPastedCount] = useState<number | null>(null);
   const [seedError, setSeedError] = useState('');
@@ -177,7 +189,10 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       // derived account reuses the active seed (create); an imported seed is a
       // recovery. No seed, address or key material — just which flow completed.
       trackEvent(selectedDerived ? 'wallet_created' : 'wallet_recovered');
-      onComplete();
+      // Parked, not fired: dropping `loading` starts the wait's exit, and
+      // `handleWaitExited` completes once the last wave has left the screen.
+      pendingCompleteRef.current = true;
+      setLoading(false);
     } catch (err) {
       setLoading(false);
       if (err instanceof EncryptionMaterialMissingError) {
@@ -194,7 +209,6 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     activeAccount,
     seedPhrase,
     accountActions,
-    onComplete,
     t,
   ]);
 
@@ -383,6 +397,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
             : t('settings.account_add.confirm_import')
         }
         subtitle={t('general.loading')}
+        onExited={handleWaitExited}
       />
       <SettingsScreenLayout title={currentTitle} onBack={handleStepBack}>
         {step === 'select-method' && renderSelectMethod()}

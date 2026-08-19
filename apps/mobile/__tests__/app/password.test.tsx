@@ -41,9 +41,25 @@ jest.mock('@salmon/assets', () => ({
   Logo: 1,
 }));
 
+// The passage into the wait pulls Reanimated, which has no native Worklets
+// under Jest; the mock only has to let the entering/exiting props exist.
+jest.mock('react-native-reanimated', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: { View },
+    useReducedMotion: () => false,
+    withTiming: (toValue: unknown) => toValue,
+    withDelay: (_delayMs: number, animation: unknown) => animation,
+    Easing: { bezier: (...coefficients: number[]) => coefficients },
+  };
+});
+
 jest.mock('@salmon/shared', () => ({
   // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
   ...jest.requireActual('../../test-utils/themeTokens'),
+  // The real wait-exit hook: the passage into the wait composes it.
+  ...jest.requireActual('../../../../packages/shared/src/hooks/useWaitExit'),
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
   generateAccountName: () => 'Account 3',
   getMirrorNetworks: jest.fn().mockResolvedValue({ 'solana-mainnet': 'solana-devnet' }),

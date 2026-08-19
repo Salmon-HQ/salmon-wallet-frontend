@@ -55,6 +55,9 @@ jest.mock('@salmon/shared', () => ({
   // theme, and listing that slice by hand meant every new token read broke
   // this file with "cannot read properties of undefined".
   ...jest.requireActual('../../../test-utils/themeTokens'),
+  // The real wait-exit hook: the passage into the unlock wait composes it,
+  // and a stub here would let this file pass while the hold contract drifted.
+  ...jest.requireActual('../../../../../packages/shared/src/hooks/useWaitExit'),
   resolveMotionMs: (ms: number) => ms,
   useUnlockThrottle: () => mockThrottle,
   ms: (value: number) => value,
@@ -268,19 +271,25 @@ describe('LockContent', () => {
       expect(screen.getByTestId('lock-password-input')).toBeTruthy();
     });
 
-    // The lock carries the water (DESIGN.md): both layers, behind the stack.
-    const background = within(screen.getByTestId('onboarding-background'));
-    expect(background.getByTestId('depth-background')).toBeTruthy();
-    expect(background.getByTestId('scales-background')).toBeTruthy();
+    // The lock carries the water (DESIGN.md): both layers, mounted outside
+    // the layout — the ground never travels when the form sinks into the wait.
+    expect(screen.getByTestId('depth-background')).toBeTruthy();
+    expect(screen.getByTestId('scales-background')).toBeTruthy();
 
     // The forgot affordance sits in `body`, against the field it escapes from.
     const body = within(screen.getByTestId('onboarding-slot-body'));
     expect(body.getByTestId('lock-forgot-password-button')).toBeTruthy();
 
-    // The wrong-password error lands in `assist`, not against the input.
+    // The wrong-password error lands in `assist`, not against the input. The
+    // form gives way to the wait while the attempt runs (its subtree
+    // unmounts), so the attempt has to finish — one 100ms yield — before the
+    // bands are back to be queried.
     fireEvent.changeText(screen.getByTestId('lock-password-input'), 'nope');
     await act(async () => {
       fireEvent.press(screen.getByTestId('lock-unlock-button'));
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(100);
     });
     const assist = within(screen.getByTestId('onboarding-slot-assist'));
     await waitFor(() => {
