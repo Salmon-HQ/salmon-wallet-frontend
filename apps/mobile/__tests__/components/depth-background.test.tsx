@@ -14,7 +14,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { Ellipse, RadialGradient, Use } from 'react-native-svg';
-import { useReducedMotion } from 'react-native-reanimated';
+import { useReducedMotion, useSharedValue, withRepeat } from 'react-native-reanimated';
 import {
   depthFieldTileHeight,
   marineSnowTiled,
@@ -46,12 +46,12 @@ jest.mock('react-native-reanimated', () => {
     __esModule: true,
     default: { View },
     makeMutable: mutable,
-    useSharedValue: mutable,
+    useSharedValue: jest.fn(mutable),
     useAnimatedStyle: (fn: () => unknown) => fn(),
     useAnimatedScrollHandler: (fn: unknown) => fn,
     useReducedMotion: jest.fn(() => false),
     withTiming: (to: number) => to,
-    withRepeat: (animation: number) => animation,
+    withRepeat: jest.fn((animation: number) => animation),
     withSequence: (...animations: number[]) => animations[animations.length - 1],
     cancelAnimation: () => {},
     Easing: { linear: (t: number) => t },
@@ -65,9 +65,46 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 
 const mockedUseReducedMotion = useReducedMotion as jest.MockedFunction<typeof useReducedMotion>;
 
+const mockedWithRepeat = withRepeat as unknown as jest.Mock;
+const mockedUseSharedValue = useSharedValue as unknown as jest.Mock;
+
 describe('DepthBackground', () => {
+  beforeEach(() => {
+    mockedWithRepeat.mockClear();
+    mockedUseSharedValue.mockClear();
+  });
+
   afterEach(() => {
     mockedUseReducedMotion.mockReturnValue(false);
+  });
+
+  it('runs one clock for every field on screen', () => {
+    // The wait paints its own ground over the one already behind it. With a
+    // per-instance clock the second field started at phase 0 while the first
+    // kept drifting, so the wait's exit swapped one phase for another and the
+    // snow jumped — up to a whole tile, in one frame. The second field has to
+    // inherit the drift in flight instead: no local shared value, and no
+    // second loop started.
+    render(
+      <>
+        <DepthBackground />
+        <DepthBackground />
+      </>
+    );
+
+    expect(mockedUseSharedValue).not.toHaveBeenCalled();
+    expect(mockedWithRepeat).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts the clock again once the last field has gone and a new one arrives', () => {
+    // Shared state must not become a one-shot: with no field mounted there is
+    // nothing to keep in phase, and the next one has to start the drift.
+    const first = render(<DepthBackground />);
+    expect(mockedWithRepeat).toHaveBeenCalledTimes(1);
+    first.unmount();
+
+    render(<DepthBackground />);
+    expect(mockedWithRepeat).toHaveBeenCalledTimes(2);
   });
 
   it('stacks enough field to cover the screen plus the tile the offset can consume', () => {

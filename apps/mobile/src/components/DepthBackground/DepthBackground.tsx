@@ -28,8 +28,9 @@
  * **Motion.** The snow sinks, continuously, at `depthDrift.pxPerSecond`, and
  * it sinks faster while a list is being scrolled — see `depthDrift` for why
  * those two numbers are what they are. Both offsets are added into a single
- * `translateY` on the container: the drift is a Reanimated shared value
- * driven by `withTiming` on the UI thread, the scroll arrives through
+ * `translateY` on the container: the drift is a module-level shared value
+ * driven by `withTiming` on the UI thread — one clock for every field on
+ * screen, see `depthDriftOffset` — the scroll arrives through
  * `depthParallaxScroll`, and `useAnimatedStyle` sums them. Summed, not
  * switched — the hand speeds the water up, it does not take it over. React
  * never re-renders for either.
@@ -67,7 +68,6 @@ import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useReducedMotion,
-  useSharedValue,
   withRepeat,
   withSequence,
   withTiming,
@@ -108,6 +108,28 @@ const SNOW_CLIP_ID = 'salmon-marine-snow-tile';
 export const depthParallaxScroll = makeMutable(0);
 
 /**
+ * The field's own clock, and there is exactly **one** of it.
+ *
+ * It used to be a per-instance `useSharedValue`, which was invisible while one
+ * field was mounted and wrong the moment two were: the wait screen paints its
+ * own ground over the one already behind it, so a wait that opened mid-cycle
+ * started a second field at phase 0 and the wait's exit swapped it back for a
+ * field that had kept drifting. That swap is the snow *jumping* when the wave
+ * leaves — up to one tile of displacement in a single frame. It was never
+ * parallax: the parallax offset is module-level too and is identical for every
+ * field on screen.
+ *
+ * One clock for every field means every field draws the same pixels, so a
+ * field mounting or unmounting over another is not an event anyone can see.
+ * The first field to mount starts it; later ones inherit the phase in flight;
+ * it is only cancelled when the last one goes.
+ */
+const depthDriftOffset = makeMutable(0);
+
+/** How many mounted fields are currently drawing off `depthDriftOffset`. */
+let depthDriftRunners = 0;
+
+/**
  * Feed a `ScrollView`/`FlatList`'s offset to the water column, on the UI
  * thread. Screens that already own an `onScroll` callback can skip this and
  * assign `depthParallaxScroll.value` from it instead.
@@ -136,14 +158,13 @@ export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, s
   const copies = Math.ceil(height / tile) + HEADROOM_TILES;
   const cycleMs = depthFieldCycleMs(tile);
 
-  const drift = useSharedValue(0);
+  const drift = depthDriftOffset;
 
   useEffect(() => {
-    if (!snow || reducedMotion) {
-      cancelAnimation(drift);
-      drift.value = 0;
-      return;
-    }
+    // Nothing to run, and nothing to stop either: a field that draws no snow
+    // and a reduced-motion device both leave the clock alone rather than
+    // resetting a value another mounted field may be drifting on.
+    if (!snow || reducedMotion) return undefined;
 
     // Finish the tile that is in progress at its own speed, snap back through
     // the seam (identical pixels, so the reset is not a frame anyone sees),
@@ -158,7 +179,13 @@ export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, s
       );
     };
 
-    run();
+    // The first field starts the clock; a second one mounting over it inherits
+    // the phase already in flight, which is the whole point. `run()` always
+    // resumes from the current value, so re-running it — on a resume, or after
+    // a rotation changed the tile — is continuous rather than a reset.
+    depthDriftRunners += 1;
+    if (depthDriftRunners === 1) run();
+
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') run();
       else cancelAnimation(drift);
@@ -166,7 +193,8 @@ export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, s
 
     return () => {
       subscription.remove();
-      cancelAnimation(drift);
+      depthDriftRunners -= 1;
+      if (depthDriftRunners === 0) cancelAnimation(drift);
     };
   }, [snow, reducedMotion, tile, cycleMs, drift]);
 

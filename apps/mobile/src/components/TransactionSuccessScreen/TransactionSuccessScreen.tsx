@@ -36,10 +36,11 @@ import {
 import type { TransactionSuccessScreenProps } from '@salmon/shared';
 import { PrimaryButton, TextButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
+import { TokenLogo } from '../TokenLogo';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { curve } from '../../utils/motion';
 import { CausticBand, SurfacingMembrane } from './SurfacingLayers';
-import { BAND_HEIGHT, MEMBRANE_OPACITY_TO, surfacingTimeline } from './surfacing';
+import { BAND_HEIGHT, MEMBRANE_OPACITY_TO, amountLandsAtMs, surfacingTimeline } from './surfacing';
 
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a
 // mutable one.
@@ -51,6 +52,14 @@ const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
  * drift away from the DOM screen's floor when either token moves.
  */
 const MIN_AMOUNT_SCALE = fontSize.body / fontSize.title;
+
+/**
+ * The token marks on the hero line. Small enough to sit inside a line of text
+ * as punctuation — the same idiom the token selector uses at 32 and 48, one
+ * step further down because here the mark is beside a number rather than being
+ * the row's own subject.
+ */
+const LOGO_SIZE = 20;
 
 // ============================================================================
 // Component
@@ -152,11 +161,23 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
 
     // 3. The amount settles. `settle` never passes its target, so a number
     //    never appears to have been wrong for a frame.
+    //
+    //    Its *light* is on the band's own clock rather than behind it: the
+    //    hero used to hold at opacity 0 for the whole travel and appear only
+    //    after the band had passed, so the band read as a stray element
+    //    rising over an empty screen and the screen arrived afterwards. The
+    //    reveal has to carry the content, not precede it — so the amount
+    //    comes up on the Beer–Lambert curve across the whole corridor and is
+    //    fully there exactly when it lands (`amountLandsAtMs`). What still
+    //    waits for the band is the *settle*: the last 6dp of travel play
+    //    behind the light, which is the moment DESIGN.md §The Surfacing
+    //    specifies. Under reduced motion the delay is 0 and the two are the
+    //    same single step they always were.
     amountTranslateY.value = timeline.amount.rise;
-    amountOpacity.value = withDelay(
-      timeline.amount.delayMs,
-      withTiming(1, { duration: timeline.amount.durationMs, easing: curve.settle })
-    );
+    amountOpacity.value = withTiming(1, {
+      duration: amountLandsAtMs(timeline),
+      easing: curve.current,
+    });
     amountTranslateY.value = withDelay(
       timeline.amount.delayMs,
       withTiming(0, { duration: timeline.amount.durationMs, easing: curve.settle })
@@ -307,16 +328,57 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
             one 36px title and it broke over three lines — an amount that wraps
             stops being an amount and becomes a sentence. It shrinks rather than
             wrapping or truncating: a number on a wallet receipt may not be
-            elided. */}
-        <Text
-          style={styles.amount}
-          testID="tx-success-summary"
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={MIN_AMOUNT_SCALE}
-        >
-          {summary}
-        </Text>
+            elided.
+
+            On a swap the line carries the two tokens' own marks. The exchange
+            already reaches this screen with both logos on it, so the icons
+            cost no fetch and no new prop: each one leads its amount, which is
+            what makes the line read as *this token to that token* rather than
+            as two strings with an arrow between them. `summary` is the same
+            text either way — the two halves are its two halves — so a send
+            receipt, and any swap whose logos never arrived, prints exactly
+            the line it printed before. */}
+        {exchange ? (
+          <View style={styles.exchangeLine} testID="tx-success-summary">
+            <TokenLogo
+              uri={exchange.send.logo}
+              symbol={exchange.send.symbol}
+              size={LOGO_SIZE}
+            />
+            <Text
+              style={styles.amount}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={MIN_AMOUNT_SCALE}
+            >
+              {exchange.send.amount}
+            </Text>
+            <Text style={styles.amountArrow}>→</Text>
+            <TokenLogo
+              uri={exchange.receive.logo}
+              symbol={exchange.receive.symbol}
+              size={LOGO_SIZE}
+            />
+            <Text
+              style={styles.amount}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={MIN_AMOUNT_SCALE}
+            >
+              {exchange.receive.amount}
+            </Text>
+          </View>
+        ) : (
+          <Text
+            style={styles.amount}
+            testID="tx-success-summary"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={MIN_AMOUNT_SCALE}
+          >
+            {summary}
+          </Text>
+        )}
       </Animated.View>
 
       {/* The receipt under the amount: quiet rows for what the flow already
@@ -486,6 +548,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: vs(spacing['2xl']),
   },
+  // The hero as a line of tokens: mark, amount, arrow, mark, amount. It stays
+  // one row — each amount shrinks inside its own share of the width rather
+  // than wrapping, because the node the caustic band stops on has to keep one
+  // measurable centre.
+  exchangeLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: s(spacing.sm),
+  },
+  // The arrow is not the subject: one rank down and in secondary ink, so the
+  // two amounts stay the loudest things on the line.
+  amountArrow: {
+    fontSize: ms(fontSize.headline),
+    fontFamily: fontFamilyNative.regular,
+    color: semantic.text.secondary,
+  },
   // Secondary rank: one step down from the headline in size and one in weight.
   // It keeps `text.primary` — a number on a receipt may be smaller than the
   // sentence above it, but never dimmer than it is legible.
@@ -496,6 +575,11 @@ const styles = StyleSheet.create({
     color: semantic.text.primary,
     textAlign: 'center',
     lineHeight: ms(fontSize.title * lineHeight.tight),
+    // On the exchange line the two amounts share the row with two marks and
+    // an arrow; shrinking is how the line stays a line without eliding a
+    // digit. It costs nothing on the single-string variant, where the text is
+    // the column's only child.
+    flexShrink: 1,
   },
   // The quiet receipt: label left, value right, no card — secondary rank
   // under the amount, above the bridge details when there are any.

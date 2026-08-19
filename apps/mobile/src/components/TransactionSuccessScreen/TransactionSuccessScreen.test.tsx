@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 
 const mockNotificationAsync = jest.fn();
 
@@ -153,6 +153,19 @@ jest.mock('../LoadingScreen', () => ({
   LoadingScreen: (props: { title?: string }) => mockLoadingScreen(props),
 }));
 
+// The real one reaches expo-image; what matters here is which token each mark
+// was asked to draw and how big.
+jest.mock('../TokenLogo', () => {
+  const { Text } = require('react-native');
+  return {
+    TokenLogo: ({ uri, symbol, size }: { uri?: string; symbol?: string; size: number }) => (
+      <Text testID={`token-logo-${symbol}`} accessibilityLabel={`${uri ?? 'none'}:${size}`}>
+        {symbol}
+      </Text>
+    ),
+  };
+});
+
 import { TransactionSuccessScreen } from './TransactionSuccessScreen';
 import {
   AMOUNT_LAG_MS,
@@ -282,6 +295,45 @@ describe('TransactionSuccessScreen', () => {
       expect(screen.getByText('Time')).toBeTruthy();
     });
 
+    it('puts each token mark on the hero line, inside the node the band travels to', () => {
+      render(
+        <TransactionSuccessScreen
+          {...baseProps}
+          exchange={{
+            send: { label: 'Sent', symbol: 'USDC', amount: '1.1 USDC', logo: 'https://u/usdc.png' },
+            receive: {
+              label: 'Received',
+              symbol: 'SOL',
+              amount: '0.0132 SOL',
+              logo: 'https://u/sol.png',
+            },
+          }}
+        />
+      );
+
+      const hero = screen.getByTestId('tx-success-amount');
+      // Both marks, both amounts, and all of it inside the measured hero —
+      // the caustic band stops on that node, so the icons may not live
+      // outside it.
+      expect(within(hero).getByTestId('token-logo-USDC').props.accessibilityLabel).toBe(
+        'https://u/usdc.png:20'
+      );
+      expect(within(hero).getByTestId('token-logo-SOL').props.accessibilityLabel).toBe(
+        'https://u/sol.png:20'
+      );
+      expect(within(hero).getByText('1.1 USDC')).toBeTruthy();
+      expect(within(hero).getByText('0.0132 SOL')).toBeTruthy();
+      expect(screen.getByTestId('tx-success-summary')).toBeTruthy();
+    });
+
+    it('falls back to the plain summary line when there is no exchange', () => {
+      // A send receipt has one amount and no second token; nothing to flank.
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      expect(screen.getByTestId('tx-success-summary')).toHaveTextContent('1 SOL → 200 USDC');
+      expect(screen.queryByTestId('token-logo-SOL')).toBeNull();
+    });
+
     it('omits rate and fee rows when the flow did not have the data', () => {
       render(
         <TransactionSuccessScreen
@@ -344,6 +396,19 @@ describe('TransactionSuccessScreen', () => {
       expect(amountLandsAtMs(timeline)).toBe(BAND_TRAVEL_MS + AMOUNT_LAG_MS);
     });
 
+    it('lights the hero across the band’s travel, not after it', () => {
+      // The band used to rise over a screen whose hero was still at opacity
+      // zero for the whole 560ms, so the light read as a stray element
+      // arriving before the receipt did. The reveal carries the content: the
+      // amount's opacity runs undelayed and is full exactly when it lands.
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      const timeline = surfacingTimeline(false);
+      expect(durations()).toContain(amountLandsAtMs(timeline));
+      // Only the settle waits for the band — the light does not.
+      expect(timeline.amount.delayMs).toBeGreaterThan(0);
+    });
+
     it('travels the band only once the corridor has been measured', () => {
       render(<TransactionSuccessScreen {...baseProps} />);
 
@@ -390,6 +455,9 @@ describe('TransactionSuccessScreen', () => {
         ...(Object.values(motionMs) as number[]),
         BAND_TRAVEL_MS,
         timeline.band.fadeMs,
+        // Derived from the plan, not typed at the call site: the hero's light
+        // spans exactly the corridor between the start and its landing.
+        amountLandsAtMs(timeline),
       ]);
       for (const duration of durations()) {
         expect(allowed.has(duration as number)).toBe(true);

@@ -658,21 +658,26 @@ export function LoadingScreen({
               above), and sinks together with the departing wave on the way
               out (`departStyle`). The wave crests are outside this wrapper on
               purpose: the water is the ground, and the ground never travels.
-              Absolute-fill so the children's percentage anchors keep reading
-              the same box; a transform moves no layout, so the measured
-              origin stays honest. */}
+              Absolute-fill so it is exactly the frame the cluster centres in;
+              a transform moves no layout, so the measured origin stays
+              honest. */}
           <Animated.View
-            style={[StyleSheet.absoluteFillObject, departStyle]}
+            testID="loading-cluster"
+            style={[StyleSheet.absoluteFillObject, styles.cluster, departStyle]}
             // The beat is intrinsic to the wait: whatever step gave way to it
             // is still sinking when this mounts, so the content always waits
             // out the sink plus the pause. Callers therefore never delay the
             // wait themselves — doing so would double-count the beat.
             entering={floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })}
           >
-            {/* The emitter, nailed to the middle of whatever the wait occupies.
-              A radial front whose origin is off-centre reads as a wave from
-              somewhere else, so this is the one element on the screen that is
-              positioned rather than laid out. The mark is **white**
+            {/* The emitter, and the head of the cluster. It used to be pinned
+              to the exact middle of the frame with the words hanging below
+              it, which centred the *mark* and left the thing the eye actually
+              reads — mark plus words — sitting under the middle of the phone.
+              The cluster is centred as one column instead, so the wait's
+              content is centred on both axes whatever number of lines the
+              caller passes, and the front's origin is still measured from
+              this box rather than assumed. The mark is **white**
               (`semantic.text.primary`, the same ink as the title below it) and
               deliberately not the accent: salmon is the ink of *action*, and a
               wait has no action in it — see DESIGN.md §The wait. */}
@@ -692,8 +697,7 @@ export function LoadingScreen({
               </Animated.View>
             )}
 
-            {/* The words, arranged *below* the centre rather than centred
-              themselves — the centre belongs to the emitter. They do not move:
+            {/* The words, the second half of the cluster. They do not move:
               product, 2026-08, "Unlocking Wallet sigue moviéndose y el div de
               tip también, cuando te dije que no debería." */}
             <View style={styles.words} pointerEvents="none">
@@ -760,17 +764,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   /**
-   * Pinned to start below the surface's centre point. `top: '50%'` plus the
-   * mark's half-height is the whole recentring: the emitter owns the middle and
-   * the words hang off it, so the origin of the front is the middle of the
-   * phone whatever the words happen to be.
+   * The cluster — mark, then words — centred as one column in the frame.
+   *
+   * The wait's content is what the eye reads, so it is what has to be centred.
+   * Pinning the mark to `top: 50%` and hanging the words below it centred the
+   * emitter and left the cluster low by half the words' height, which is the
+   * off-centre product saw on the swap wait (two lines) more than on the
+   * one-line waits. Centring the column keeps the mark horizontally exact —
+   * `alignItems: 'center'`, no percentage anchor, so the Yoga padding trap
+   * documented on `content` cannot come back — and the front's origin is
+   * measured from the mark's real box, so it follows the cluster honestly.
    */
+  cluster: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   words: {
-    position: 'absolute',
-    top: '50%',
-    left: spacing['2xl'],
-    right: spacing['2xl'],
-    marginTop: MARK_SIZE / 2 + MARK_TO_WORDS,
+    alignSelf: 'stretch',
+    paddingHorizontal: spacing['2xl'],
     alignItems: 'center',
   },
   title: {
@@ -787,15 +798,14 @@ const styles = StyleSheet.create({
     fontSize: fontSize.bodyLg,
     lineHeight: 24,
     textAlign: 'center',
-    marginBottom: spacing['3xl'],
   },
-  /** The emitter, dead centre of the surface — see `styles.words`. */
+  /**
+   * The emitter, head of the cluster — see `styles.cluster`. The clear space
+   * to the first word lives here rather than on the words, so a wait with no
+   * mark (`waves={false}`) centres its words with no phantom gap above them.
+   */
   emitter: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginTop: -MARK_SIZE / 2,
-    marginLeft: -MARK_SIZE / 2,
+    marginBottom: MARK_TO_WORDS,
     width: MARK_SIZE,
     height: MARK_SIZE,
     alignItems: 'center',

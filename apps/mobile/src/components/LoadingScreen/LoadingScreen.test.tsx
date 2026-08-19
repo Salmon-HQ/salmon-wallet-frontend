@@ -12,7 +12,8 @@
  * time.
  */
 import React from 'react';
-import { act, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { act, render, screen, within } from '@testing-library/react-native';
 
 let mockReduceMotion = false;
 
@@ -79,7 +80,12 @@ jest.mock('expo-linear-gradient', () => {
   const { View } = jest.requireActual('react-native');
   return { LinearGradient: View };
 });
-jest.mock('../DepthBackground', () => ({ DepthBackground: () => null }));
+// Rendered rather than nulled: one of the cases below is about *where* the
+// water column sits in the tree, and a null cannot be located.
+jest.mock('../DepthBackground', () => {
+  const { View } = jest.requireActual('react-native');
+  return { DepthBackground: () => <View testID="depth-background" /> };
+});
 jest.mock('../ScalesBackground', () => ({ ScalesBackground: () => null }));
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string, fallback?: string) => fallback ?? key }),
@@ -158,6 +164,41 @@ describe('LoadingScreen', () => {
     render(<LoadingScreen visible title="Unlocking" waves={false} />);
 
     expect(screen.queryByTestId('loading-emitter', { includeHiddenElements: true })).toBeNull();
+  });
+
+  describe('the cluster', () => {
+    it('centres mark and words as one column, however many lines the caller passes', () => {
+      // The mark used to be pinned to `top: 50%` with the words hanging below
+      // it, which centred the *emitter* and left the thing the eye reads
+      // sitting under the middle of the phone — worst on the swap wait, which
+      // passes both a title and a subtitle.
+      render(<LoadingScreen visible title="Processing swap" subtitle="1.1 USDC → 0.0132 SOL" />);
+
+      const cluster = StyleSheet.flatten(
+        screen.getByTestId('loading-cluster', { includeHiddenElements: true }).props.style
+      );
+      expect(cluster.justifyContent).toBe('center');
+      expect(cluster.alignItems).toBe('center');
+
+      // Nothing inside the cluster may position itself against the frame:
+      // one absolute child and the column stops describing where anything is.
+      const emitter = StyleSheet.flatten(
+        screen.getByTestId('loading-emitter', { includeHiddenElements: true }).props.style
+      );
+      expect(emitter.position).toBeUndefined();
+      expect(emitter.top).toBeUndefined();
+      expect(emitter.left).toBeUndefined();
+    });
+
+    it('keeps the water out of the cluster, so the snow never travels with it', () => {
+      // The ground is the ground: the departing transform lives on the
+      // cluster, and anything under it would sink with the words on exit.
+      render(<LoadingScreen visible title="Processing swap" />);
+
+      const cluster = screen.getByTestId('loading-cluster', { includeHiddenElements: true });
+      expect(screen.getByTestId('depth-background')).toBeTruthy();
+      expect(within(cluster).queryByTestId('depth-background')).toBeNull();
+    });
   });
 
   describe('the handoff', () => {
