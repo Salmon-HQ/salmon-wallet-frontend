@@ -72,7 +72,7 @@ export {
   wordmarkToSvg,
 } from './brand';
 
-// The onboarding slot grid — four reserved-height tables, read by all three apps.
+// The onboarding slot grid — five reserved-height tables, read by all three apps.
 export {
   onboardingSlots,
   onboardingIdentityGridFull,
@@ -83,6 +83,8 @@ export {
   onboardingLockGridCompact,
   onboardingContentGridFull,
   onboardingContentGridCompact,
+  onboardingContentTightGridFull,
+  onboardingContentTightGridCompact,
   onboardingCompactHeight,
   onboardingMarkTitleGap,
   identityClusterCenterOffset,

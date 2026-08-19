@@ -20,6 +20,8 @@ import {
   onboardingCompactHeight,
   onboardingContentGridCompact,
   onboardingContentGridFull,
+  onboardingContentTightGridCompact,
+  onboardingContentTightGridFull,
   onboardingCredentialGridCompact,
   onboardingCredentialGridFull,
   onboardingIdentityGridCompact,
@@ -52,6 +54,8 @@ const grids: [string, OnboardingGrid][] = [
   ['lock/compact', onboardingLockGridCompact],
   ['content/full', onboardingContentGridFull],
   ['content/compact', onboardingContentGridCompact],
+  ['contentTight/full', onboardingContentTightGridFull],
+  ['contentTight/compact', onboardingContentTightGridCompact],
 ];
 
 describe('the onboarding slot grid', () => {
@@ -147,6 +151,29 @@ describe('the onboarding slot grid', () => {
     expect(onboardingLockGridCompact.stack).toBe(onboardingCredentialGridCompact.stack);
   });
 
+  it('the consent collapses its empty description so title→copy equals one title line', () => {
+    // Same mechanism as the lock, same constant: the copy lives in `body`,
+    // which is top-anchored, so a description band of `titleLine − spacing.md`
+    // plus the title band's own `spacing.md` tail puts "Help improve Salmon"
+    // exactly one title line above its copy — the ~230pt hole is gone.
+    expect(onboardingContentTightGridFull.description).toBe(30 - spacing.md);
+    expect(spacing.md + onboardingContentTightGridFull.description).toBe(30);
+    expect(onboardingContentTightGridFull.description).toBe(onboardingLockGridFull.description);
+    // The band survives at both rungs — collapsed is not removed.
+    expect(onboardingContentTightGridCompact.description).toBe(
+      onboardingContentTightGridFull.description
+    );
+    // The freed height went to `body`, so the stack matches `content`'s and
+    // the control bands hold their Y; everything else is `content`'s table.
+    expect(onboardingContentTightGridFull.stack).toBe(onboardingContentGridFull.stack);
+    expect(onboardingContentTightGridCompact.stack).toBe(onboardingContentGridCompact.stack);
+    expect(onboardingContentTightGridFull.body - onboardingContentGridFull.body).toBe(
+      onboardingContentGridFull.description - onboardingContentTightGridFull.description
+    );
+    expect(onboardingContentTightGridFull.mark).toBe(onboardingContentGridFull.mark);
+    expect(onboardingContentTightGridFull.markSize).toBe(onboardingContentGridFull.markSize);
+  });
+
   it('welcome and the lock share one cluster — same mark size, same band', () => {
     // Parity is by the shared `heroCluster` constant, not by two numbers that
     // happen to agree. The band's Y is not in the grid any more: the layouts
@@ -194,9 +221,11 @@ describe('the onboarding slot grid', () => {
     expect(onboardingContentGridFull.stack).toBe(onboardingIdentityGridFull.stack);
     expect(onboardingCredentialGridFull.stack).toBe(onboardingIdentityGridFull.stack);
     expect(onboardingLockGridFull.stack).toBe(onboardingIdentityGridFull.stack);
+    expect(onboardingContentTightGridFull.stack).toBe(onboardingIdentityGridFull.stack);
     expect(onboardingContentGridCompact.stack).toBe(onboardingIdentityGridCompact.stack);
     expect(onboardingCredentialGridCompact.stack).toBe(onboardingIdentityGridCompact.stack);
     expect(onboardingLockGridCompact.stack).toBe(onboardingIdentityGridCompact.stack);
+    expect(onboardingContentTightGridCompact.stack).toBe(onboardingIdentityGridCompact.stack);
     // content buys its taller body by shrinking the mark.
     expect(onboardingContentGridFull.body - onboardingCredentialGridFull.body).toBe(
       onboardingCredentialGridFull.mark - onboardingContentGridFull.mark
@@ -223,12 +252,13 @@ describe('the onboarding slot grid', () => {
     }
   });
 
-  it('lock: the compact rung pays out of body — its description is already collapsed', () => {
-    // The lock's description is a fixed run of air, not copy, so the rung has
-    // no line to drop there; the height the siblings save on description the
-    // lock saves on the body that had absorbed it. The stacks stay in step.
-    const full = onboardingLockGridFull;
-    const compact = onboardingLockGridCompact;
+  it.each([
+    ['lock', onboardingLockGridFull, onboardingLockGridCompact],
+    ['contentTight', onboardingContentTightGridFull, onboardingContentTightGridCompact],
+  ])('%s: the compact rung pays out of body — its description is already collapsed', (_n, full, compact) => {
+    // A collapsed description is a fixed run of air, not copy, so the rung has
+    // no line to drop there; the height the siblings save on description these
+    // variants save on the body that had absorbed it. The stacks stay in step.
     expect(compact.stack).toBeLessThan(full.stack);
     expect(compact.body).toBeLessThan(full.body);
     for (const key of ['chrome', 'mark', 'markSize', 'title', 'description', 'assist', 'secondary', 'action'] as const) {
@@ -251,7 +281,7 @@ describe('the onboarding slot grid', () => {
     // same bundle. The boundary belongs nowhere near a shipping handset.
     const shortestPhoneInUse = 781;
     expect(onboardingCompactHeight).toBeLessThan(shortestPhoneInUse - 100);
-    for (const variant of ['identity', 'credential', 'lock', 'content'] as const) {
+    for (const variant of ['identity', 'credential', 'lock', 'content', 'contentTight'] as const) {
       expect(resolveOnboardingGrid(variant, 781).variant).toBe(variant);
       expect(resolveOnboardingGrid(variant, 781)).toBe(resolveOnboardingGrid(variant, 876));
     }
@@ -274,12 +304,20 @@ describe('the onboarding slot grid', () => {
       expect(differing.sort()).toEqual(['description', 'minStack', 'stack']);
       expect(compact.description).toBeGreaterThan(0);
     }
-    // The lock carries no description copy at either rung, so its rung
-    // tightens `body` instead — still a band, never an element.
-    const lockDiffering = (Object.keys(onboardingLockGridFull) as (keyof OnboardingGrid)[]).filter(
-      (key) => onboardingLockGridFull[key] !== onboardingLockGridCompact[key]
-    );
-    expect(lockDiffering.sort()).toEqual(['body', 'minStack', 'stack']);
+    // The lock and the consent carry no description copy at either rung, so
+    // their rung tightens `body` instead — still a band, never an element.
+    // (The lock's `minStack` moves too, because it is shared with identity's,
+    // whose description does change; `contentTight`'s floor is `body` at zero,
+    // so `stack − body` — and with it `minStack` — is identical at both rungs.)
+    for (const [full, compact, differingKeys] of [
+      [onboardingLockGridFull, onboardingLockGridCompact, ['body', 'minStack', 'stack']],
+      [onboardingContentTightGridFull, onboardingContentTightGridCompact, ['body', 'stack']],
+    ] as const) {
+      const differing = (Object.keys(full) as (keyof OnboardingGrid)[]).filter(
+        (key) => full[key] !== compact[key]
+      );
+      expect(differing.sort()).toEqual([...differingKeys]);
+    }
   });
 
   it('picks a table by variant and available height, full before measurement', () => {
@@ -297,6 +335,10 @@ describe('the onboarding slot grid', () => {
     expect(resolveOnboardingGrid('content', onboardingCompactHeight)).toBe(
       onboardingContentGridCompact
     );
+    expect(resolveOnboardingGrid('contentTight', undefined)).toBe(onboardingContentTightGridFull);
+    expect(resolveOnboardingGrid('contentTight', onboardingCompactHeight)).toBe(
+      onboardingContentTightGridCompact
+    );
     expect(resolveOnboardingGrid('identity', onboardingCompactHeight + 1)).toBe(
       onboardingIdentityGridFull
     );
@@ -307,5 +349,6 @@ describe('the onboarding slot grid', () => {
     expect(onboardingCredentialGridFull.variant).toBe('credential');
     expect(onboardingLockGridFull.variant).toBe('lock');
     expect(onboardingContentGridCompact.variant).toBe('content');
+    expect(onboardingContentTightGridFull.variant).toBe('contentTight');
   });
 });

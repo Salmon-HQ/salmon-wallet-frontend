@@ -56,7 +56,7 @@ export default function AnalyticsConsentScreen() {
   return (
     <OnboardingLayout
       testID="analytics-consent-screen"
-      variant="content"
+      variant="contentTight"
       float
       chrome={
         <ScreenHeader
@@ -77,8 +77,9 @@ export default function AnalyticsConsentScreen() {
           {/*
             The longest description in the flow at roughly seven lines. It is
             not a "mini description" and must not be forced into that slot, so
-            it lives in `body` — which is the give — top-anchored so it reads
-            immediately after the title instead of floating mid-slot.
+            it lives in `body` — which is the give — top-anchored, with the
+            empty description band collapsed by `contentTight`, so it starts
+            one title line under the title instead of below a reserved void.
           */}
           <Text style={styles.copy} maxFontSizeMultiplier={fontScaleCap.chrome}>
             <Trans

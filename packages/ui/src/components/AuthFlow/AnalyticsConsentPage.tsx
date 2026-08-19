@@ -13,7 +13,8 @@
  * because declining advances the flow rather than backing out of it. Its
  * description is the longest in the flow at roughly seven lines, so it is
  * not a "mini description": it lives in `body`, which is the give, and the
- * description band stays reserved and empty like any other unused slot.
+ * always-empty description band collapses (`contentTight`) so the copy starts
+ * one title line under the title instead of below a reserved void.
  */
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -67,7 +68,7 @@ export function AnalyticsConsentPage({
   return (
     <OnboardingLayout
       testID="analytics-consent-screen"
-      variant="content"
+      variant="contentTight"
       background={<WaterColumn />}
       scrollBody
       chrome={

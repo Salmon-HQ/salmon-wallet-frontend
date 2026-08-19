@@ -18,7 +18,8 @@
  * | `identity` | the mark            | welcome, biometric opt-in, success                                     |
  * | `credential` | the mark, over a secret | password (create flow)                                           |
  * | `lock`     | the mark, over a secret | unlock in every state                                            |
- * | `content`  | what fills `body`   | seed warning, seed display, seed confirmation, seed entry, analytics consent, derived accounts |
+ * | `content`  | what fills `body`   | seed warning, seed display, seed confirmation, seed entry, derived accounts |
+ * | `contentTight` | what fills `body`, right under the title | analytics consent          |
  *
  * `identity` draws the mark large and high with at most one input under it.
  * `content` makes the mark subordinate and hands the middle of the screen to
@@ -103,10 +104,16 @@ export type ReservedSlot = Exclude<OnboardingSlot, 'body'>;
  * `lock` — the unlock screen in every state. Same cluster as `credential`,
  * with one divergence the owner signed off on (2026-08-18): its `description`
  * band is always empty, so it collapses and hands the height to `body` — see
- * `lockDescription`.
+ * `collapsedDescription`.
  *
  * `content` — what is in `body` is the hero and the mark is subordinate: the
- * seed screens, the analytics consent copy, the derived-account list.
+ * seed screens, the derived-account list.
+ *
+ * `contentTight` — `content` with the lock's collapse: a content-led screen
+ * whose copy lives in `body` and whose `description` band is therefore always
+ * empty, so it collapses to the same one-line air the lock keeps and the body
+ * starts one title line under the title. The analytics consent screen (owner,
+ * 2026-08-18: the ~230pt hole between "Help improve Salmon" and its copy).
  *
  * `identity` and `lock` are the hero pair, and their fish is **centred on
  * the screen** (owner, 2026-08-18, superseding "the lock is the identity
@@ -116,7 +123,7 @@ export type ReservedSlot = Exclude<OnboardingSlot, 'body'>;
  * with the actions staying at the bottom. See `identityClusterCenterOffset`
  * and `minStack`.
  */
-export type OnboardingVariant = 'identity' | 'credential' | 'lock' | 'content';
+export type OnboardingVariant = 'identity' | 'credential' | 'lock' | 'content' | 'contentTight';
 
 /** One rendered line of the title, and of the description. */
 const titleLine = Math.round(fontSize.headline * lineHeight.tight);
@@ -185,6 +192,7 @@ const bodyMinByVariant: Record<OnboardingVariant, number> = {
   // The password field with the forgot-password row under it.
   lock: componentSizes.inputHeight + spacing.sm + componentSizes.buttonHeightSmall,
   content: 0,
+  contentTight: 0,
 };
 
 const build = (g: Omit<OnboardingGrid, 'stack' | 'minStack'>): OnboardingGrid => {
@@ -244,18 +252,19 @@ const contentBody = credentialBody + (heroMark - contentMark);
 export const identityClusterCenterOffset = 0;
 
 /**
- * The lock's `description` band, collapsed.
+ * The `description` band, collapsed — shared by `lock` and `contentTight`.
  *
- * The band is always empty on the lock, and at full height it left 84pt
- * between "Welcome back" and the input while the fish sat one title line
- * (30pt) above the title. The title band already ends `spacing.md` below its
- * text, so reserving `titleLine − spacing.md` here makes title→input exactly
- * one title line too — the same air that separates fish→title. The freed
- * height goes to `body` (see `rung`), so the stack and every band below hold
- * their Y; the lock deliberately diverges from `credential` only between the
- * title and the input (owner decision, 2026-08-18).
+ * The band is always empty on these screens, and at full height it left ~84pt
+ * of hole under the title — between "Welcome back" and the lock's input, and
+ * between "Help improve Salmon" and the consent copy. The title band already
+ * ends `spacing.md` below its text, so reserving `titleLine − spacing.md`
+ * here makes title→body exactly one title line — the same air that separates
+ * fish→title. The freed height goes to `body` (see `rung`), so the stack and
+ * every band below hold their Y; these variants deliberately diverge from
+ * their siblings only between the title and the body (owner decisions,
+ * 2026-08-18).
  */
-const lockDescription = titleLine - spacing.md;
+const collapsedDescription = titleLine - spacing.md;
 
 /**
  * One cluster for the two screens the owner tunes as a pair — the welcome
@@ -270,24 +279,28 @@ const heroCluster = {
   body: credentialBody,
 } as const;
 
+/** `content` and `contentTight` share every constant — only the description collapses. */
+const contentCluster = { mark: contentMark, markSize: contentMarkSize, body: contentBody } as const;
+
 const variantConstants = {
   identity: heroCluster,
   credential: { mark: heroMark, markSize: heroMarkSize, body: credentialBody },
   lock: heroCluster,
-  content: { mark: contentMark, markSize: contentMarkSize, body: contentBody },
+  content: contentCluster,
+  contentTight: contentCluster,
 } as const;
 
 const rung = (variant: OnboardingVariant, description: number): OnboardingGrid => {
   const constants = variantConstants[variant];
-  if (variant === 'lock') {
+  if (variant === 'lock' || variant === 'contentTight') {
     // The collapsed description hands its height to `body`, per rung, so the
-    // lock's stack stays equal to its siblings' and no control band moves.
+    // variant's stack stays equal to its siblings' and no control band moves.
     return build({
       variant,
       ...shared,
       ...constants,
-      description: lockDescription,
-      body: constants.body + (description - lockDescription),
+      description: collapsedDescription,
+      body: constants.body + (description - collapsedDescription),
     });
   }
   return build({ variant, ...shared, ...constants, description });
@@ -319,6 +332,7 @@ export const onboardingIdentityGridFull = identityFull;
 export const onboardingCredentialGridFull = rung('credential', fullDescription);
 export const onboardingLockGridFull = lockFull;
 export const onboardingContentGridFull = rung('content', fullDescription);
+export const onboardingContentTightGridFull = rung('contentTight', fullDescription);
 
 /**
  * Rung 1 — the compact grid, below `onboardingCompactHeight`.
@@ -337,6 +351,7 @@ export const onboardingIdentityGridCompact = identityCompact;
 export const onboardingCredentialGridCompact = rung('credential', compactDescription);
 export const onboardingLockGridCompact = lockCompact;
 export const onboardingContentGridCompact = rung('content', compactDescription);
+export const onboardingContentTightGridCompact = rung('contentTight', compactDescription);
 
 /**
  * Available height at or below which the compact grid is used.
@@ -381,6 +396,8 @@ export const resolveOnboardingGrid = (
   switch (variant) {
     case 'content':
       return compact ? onboardingContentGridCompact : onboardingContentGridFull;
+    case 'contentTight':
+      return compact ? onboardingContentTightGridCompact : onboardingContentTightGridFull;
     case 'credential':
       return compact ? onboardingCredentialGridCompact : onboardingCredentialGridFull;
     case 'lock':

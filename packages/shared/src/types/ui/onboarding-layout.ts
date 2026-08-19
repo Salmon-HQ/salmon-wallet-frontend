@@ -40,8 +40,10 @@ export interface OnboardingLayoutPropsBase extends Testable {
    * the biometric opt-in, success. `credential` adds a secret to that cluster —
    * setting a password. `lock` is the unlock screen in every state, with its
    * empty description band collapsed. `content` hands the middle of the screen
-   * to what fills `body` — the seed screens, the consent copy, the
-   * derived-account list.
+   * to what fills `body` — the seed screens, the derived-account list.
+   * `contentTight` is `content` with the lock's collapse: the copy lives in
+   * `body` and the empty description band shrinks to one line of air, so the
+   * body starts one title line under the title — the analytics consent.
    *
    * Slots are at an identical Y across every screen of one variant; between
    * variants the mark and the body differ deliberately.
