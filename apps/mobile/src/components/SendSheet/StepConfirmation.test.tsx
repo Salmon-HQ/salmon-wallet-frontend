@@ -37,8 +37,23 @@ jest.mock('expo-linear-gradient', () => ({
 
 const mockEstimateFee = jest.fn(async () => null);
 
+// The number renderer reads the active language off i18next, so the language
+// is what these tests move. Held in a mutable object because `jest.mock` is
+// hoisted above every `const` that is not named `mock*`.
+const mockI18n = { language: 'en' };
+jest.mock('i18next', () => ({ __esModule: true, default: mockI18n }));
+
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+  // The shared renderer's own body. It cannot be pulled in with
+  // `requireActual` — the module it lives in imports lodash-es, which this
+  // preset leaves untransformed — so its two contract terms are restated:
+  // `Intl` bound to the app language, and no thousands grouping.
+  formatTokenAmount: (value: number | string) =>
+    new Intl.NumberFormat(mockI18n.language, {
+      maximumFractionDigits: 9,
+      useGrouping: false,
+    }).format(Number(value)),
   // `usePressMotion` inside the shared buttons reads the motion vocabulary.
   motionEasing: {
     current: { native: [0.32, 0.72, 0, 1] },
@@ -179,5 +194,40 @@ describe('StepConfirmation destination address', () => {
     expect(confirm.props.accessibilityRole).toBe('button');
     // A control label is never uppercase (DESIGN.md §Typography).
     expect(confirm).toHaveTextContent('actions.confirm');
+  });
+});
+
+// The last screen before a signature is the one where the amount has to read
+// in the language the rest of the sentence is in. `toFixed` emitted a period
+// regardless, so a Spanish UI asked for a confirmation written in English
+// punctuation.
+describe('StepConfirmation amount separator', () => {
+  afterEach(() => {
+    mockI18n.language = 'en';
+  });
+
+  it('sets the decimal point under English', () => {
+    render(<StepConfirmation {...baseProps} amount="1234.5678" recipientAddress={RESOLVED} />);
+
+    expect(screen.getByTestId('send-confirm-amount')).toHaveTextContent('1234.5678 SOL');
+  });
+
+  it('sets the decimal comma under Spanish', () => {
+    mockI18n.language = 'es';
+
+    render(<StepConfirmation {...baseProps} amount="1234.5678" recipientAddress={RESOLVED} />);
+
+    expect(screen.getByTestId('send-confirm-amount')).toHaveTextContent('1234,5678 SOL');
+  });
+
+  // A token amount is compared digit by digit, so it takes no thousands
+  // separator — under Spanish that separator is the point, which would read as
+  // the decimal mark of the fiat value beside it.
+  it('never groups thousands', () => {
+    mockI18n.language = 'es';
+
+    render(<StepConfirmation {...baseProps} amount="1234567" recipientAddress={RESOLVED} />);
+
+    expect(screen.getByTestId('send-confirm-amount')).toHaveTextContent('1234567 SOL');
   });
 });

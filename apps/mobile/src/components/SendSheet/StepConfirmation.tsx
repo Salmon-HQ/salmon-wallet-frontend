@@ -9,6 +9,7 @@ import {
   componentSizes,
   fontFamilyNative,
   fontSize,
+  formatTokenAmount,
   ms,
   s,
   semantic,
@@ -56,10 +57,15 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
       ? recipientAddress
       : null;
 
-  // Amount display
+  // Amount display.
+  //
+  // Render edge only: `amount` stays the raw typed string everywhere else on
+  // this screen, because both `estimateFee` and `sendTransaction` parse it.
+  // `toFixed` emitted a period whatever the app language was, so a Spanish UI
+  // signed for an amount written in English punctuation.
   const amountDisplay = useMemo(() => {
     const numAmount = parseFloat(amount);
-    return `${Number(numAmount.toFixed(6))} ${token.symbol}`;
+    return `${formatTokenAmount(numAmount)} ${token.symbol}`;
   }, [amount, token.symbol]);
 
   // Estimate fee on mount
@@ -138,7 +144,9 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
         </View>
 
         {/* Amount */}
-        <Text style={styles.amountText}>{amountDisplay}</Text>
+        <Text testID="send-confirm-amount" style={styles.amountText}>
+          {amountDisplay}
+        </Text>
 
         {/* Recipient Address */}
         <TouchableOpacity

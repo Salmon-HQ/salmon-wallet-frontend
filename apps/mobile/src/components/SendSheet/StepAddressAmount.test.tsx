@@ -49,7 +49,22 @@ jest.mock('expo-linear-gradient', () => ({
   LinearGradient: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
 
+// The number renderer reads the active language off i18next, so the language
+// is what the separator tests move. Held in a mutable object because
+// `jest.mock` is hoisted above every `const` that is not named `mock*`.
+const mockI18n = { language: 'en' };
+jest.mock('i18next', () => ({ __esModule: true, default: mockI18n }));
+
 jest.mock('@salmon/shared', () => ({
+  // The shared token renderer's own body. It cannot be pulled in with
+  // `requireActual` — the module it lives in imports lodash-es, which this
+  // preset leaves untransformed — so its two contract terms are restated:
+  // `Intl` bound to the app language, and no thousands grouping.
+  formatTokenAmount: (value: number | string) =>
+    new Intl.NumberFormat(mockI18n.language, {
+      maximumFractionDigits: 9,
+      useGrouping: false,
+    }).format(Number(value)),
   // `usePressMotion` inside the shared buttons reads the motion vocabulary.
   motionEasing: {
     current: { native: [0.32, 0.72, 0, 1] },
@@ -171,6 +186,7 @@ const token = {
 describe('StepAddressAmount', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockI18n.language = 'en';
     mockKeyboardHeight.mockReturnValue(0);
 
     mockUseSendContacts.mockReturnValue({
@@ -249,6 +265,41 @@ describe('StepAddressAmount', () => {
     fireEvent.press(screen.getByText('general.max'));
 
     expect(screen.getByDisplayValue('10')).toBeTruthy();
+  });
+
+  // The balance label is localized; the amount field is not, and must not be.
+  // MAX derives from the numeric balance, and what it writes into the field is
+  // parsed back on review and on send — so a Spanish comma there would be read
+  // as a truncation. The two halves are asserted together because the bug this
+  // guards against is precisely one of them following the other.
+  it('localizes the balance label while MAX still fills a parseable number', () => {
+    mockI18n.language = 'es';
+    const onReview = jest.fn();
+
+    render(
+      <StepAddressAmount
+        token={token}
+        liveBalance={10.5}
+        blockchain="solana"
+        account={account}
+        onBack={jest.fn()}
+        onReview={onReview}
+        onCancel={jest.fn()}
+      />
+    );
+
+    expect(screen.getByText('10,5 USDC')).toBeTruthy();
+
+    fireEvent.press(screen.getByText('Vault'));
+    fireEvent.press(screen.getByText('general.max'));
+    fireEvent.press(screen.getByText('Review & Send'));
+
+    expect(screen.getByDisplayValue('10.5')).toBeTruthy();
+    expect(onReview).toHaveBeenCalledWith(
+      'Vault11111111111111111111111111111',
+      '10.5',
+      'ResolvedVault11111111111111111111111'
+    );
   });
 
   it('shows validation feedback and keeps review disabled for invalid address', () => {

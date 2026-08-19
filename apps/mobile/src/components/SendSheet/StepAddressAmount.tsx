@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import {
   colors,
   fontFamilyNative,
+  formatTokenAmount,
   ms,
   vs,
   s,
@@ -111,11 +112,13 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
     return `${formatPrecise(numAmount * token.price)} ${currency.toUpperCase()}`;
   }, [amount, token.price, formatPrecise, currency]);
 
-  // Balance display
-  const balanceDisplay = useMemo(() => {
-    if (tokenBalance === 0) return `0 ${token.symbol}`;
-    return `${Number(tokenBalance.toFixed(4))} ${token.symbol}`;
-  }, [tokenBalance, token.symbol]);
+  // Balance display. Display only — the quick-fill percentages and the
+  // validity check keep reading `tokenBalance` as a number, so the balance
+  // that decides a transfer never round-trips through a formatted string.
+  const balanceDisplay = useMemo(
+    () => `${formatTokenAmount(tokenBalance)} ${token.symbol}`,
+    [tokenBalance, token.symbol]
+  );
 
   // Validate form (address must be validated AND amount must be valid)
   const isValid = useMemo(() => {
