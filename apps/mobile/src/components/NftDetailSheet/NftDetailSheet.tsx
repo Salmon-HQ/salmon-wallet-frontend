@@ -53,7 +53,7 @@ import {
   semantic,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
-import { CallMadeSvgIcon } from '../Icon/SvgIcons';
+import { ArrowUpRightIcon } from '../../icons';
 import { BlurContainer } from '../BlurContainer';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { FleshBackground } from '../FleshBackground';
@@ -527,7 +527,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
                 fill. Every band is paler than the fill, so it can only raise
                 the luminance under the label. */}
             <FleshBackground />
-            <CallMadeSvgIcon size={ms(15)} color={semantic.accent.onFill} />
+            <ArrowUpRightIcon weight="bold" size={ms(15)} color={semantic.accent.onFill} />
             <Text style={styles.primaryButtonText}>{t('actions.send', 'Send')}</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -646,7 +646,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
                 fill. Every band is paler than the fill, so it can only raise
                 the luminance under the label. */}
                 {canConfirmSend && <FleshBackground />}
-                <CallMadeSvgIcon size={ms(15)} color={semantic.accent.onFill} />
+                <ArrowUpRightIcon weight="bold" size={ms(15)} color={semantic.accent.onFill} />
                 <Text style={styles.primaryButtonText}>{t('actions.send', 'Send')}</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -1078,8 +1078,9 @@ const styles = StyleSheet.create({
   // only `accent.onFill` clears AA there.
   primaryButtonText: {
     fontSize: ms(fontSize.base),
-    fontFamily: fontFamilyNative.semiBold,
-    fontWeight: fontWeight.semibold,
+    // Everything on a flesh fill is bold — label and glyph alike.
+    fontFamily: fontFamilyNative.bold,
+    fontWeight: fontWeight.bold,
     color: semantic.accent.onFill,
   },
   messageText: {

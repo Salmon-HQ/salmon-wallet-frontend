@@ -57,10 +57,6 @@ jest.mock('../FleshBackground', () => ({
   FleshBackground: () => null,
 }));
 
-jest.mock('../Icon/SvgIcons', () => ({
-  ContentCopySvgIcon: () => null,
-}));
-
 // The QR encoder needs a canvas/SVG surface; chain identity does not depend
 // on it.
 jest.mock('../QRCode', () => ({

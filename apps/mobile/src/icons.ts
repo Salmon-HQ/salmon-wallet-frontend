@@ -8,7 +8,9 @@
  * riding `react-native-svg`).
  *
  * Rules (DESIGN.md §Iconography):
- * - Weight is `regular`, which is Phosphor's default, so it is never passed.
+ * - Weight is `regular`, which is Phosphor's default, so it is never passed —
+ *   with one exception: a glyph inside a flesh-textured salmon CTA carries
+ *   `weight="bold"`, matching the CTA's bold label.
  *   `fill` is allowed in exactly two places: the active tab item and the
  *   success checkmark. `duotone` is never used.
  * - Size comes from `iconSize` below (or `componentSizes` for legacy steps).
@@ -41,6 +43,7 @@ export { ArrowElbowUpRightIcon } from 'phosphor-react-native/src/icons/ArrowElbo
 export { ArrowRightIcon } from 'phosphor-react-native/src/icons/ArrowRight';
 export { ArrowSquareOutIcon } from 'phosphor-react-native/src/icons/ArrowSquareOut';
 export { ArrowUpIcon } from 'phosphor-react-native/src/icons/ArrowUp';
+export { ArrowUpRightIcon } from 'phosphor-react-native/src/icons/ArrowUpRight';
 export { ArrowsClockwiseIcon } from 'phosphor-react-native/src/icons/ArrowsClockwise';
 export { ArrowsLeftRightIcon } from 'phosphor-react-native/src/icons/ArrowsLeftRight';
 export { BookOpenIcon } from 'phosphor-react-native/src/icons/BookOpen';
@@ -90,6 +93,7 @@ export { MoonIcon } from 'phosphor-react-native/src/icons/Moon';
 export { PencilSimpleIcon } from 'phosphor-react-native/src/icons/PencilSimple';
 export { PlusIcon } from 'phosphor-react-native/src/icons/Plus';
 export { PlusCircleIcon } from 'phosphor-react-native/src/icons/PlusCircle';
+export { PulseIcon } from 'phosphor-react-native/src/icons/Pulse';
 export { QrCodeIcon } from 'phosphor-react-native/src/icons/QrCode';
 export { QuestionIcon } from 'phosphor-react-native/src/icons/Question';
 export { RocketLaunchIcon } from 'phosphor-react-native/src/icons/RocketLaunch';

@@ -7,7 +7,9 @@
  * same drawings, same names, a different renderer.
  *
  * Rules (DESIGN.md §Iconography):
- * - Weight is `regular`, which is Phosphor's default, so it is never passed.
+ * - Weight is `regular`, which is Phosphor's default, so it is never passed —
+ *   with one exception: a glyph inside a flesh-textured salmon CTA carries
+ *   `weight="bold"`, matching the CTA's bold label.
  *   `fill` is allowed in exactly two places: the active tab item and the
  *   success checkmark. `duotone` is never used.
  * - Size comes from `iconSize` below. 16 is the floor — a thinner box loses

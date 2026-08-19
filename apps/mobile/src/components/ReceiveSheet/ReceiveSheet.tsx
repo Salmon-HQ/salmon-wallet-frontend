@@ -22,7 +22,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { CheckIcon } from '../../icons';
+import { CheckIcon, CopyIcon } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
@@ -30,7 +30,6 @@ import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { FleshBackground } from '../FleshBackground';
 import { WarningNotice } from '../WarningNotice';
-import { ContentCopySvgIcon } from '../Icon/SvgIcons';
 import QRCode from '../QRCode';
 import type { ReceiveSheetProps } from './types';
 
@@ -161,10 +160,10 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
           <FleshBackground />
           {copied ? (
             <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-              <CheckIcon size={ms(23)} color={semantic.accent.onFill} />
+              <CheckIcon weight="bold" size={ms(23)} color={semantic.accent.onFill} />
             </Animated.View>
           ) : (
-            <ContentCopySvgIcon size={ms(23)} color={semantic.accent.onFill} />
+            <CopyIcon weight="bold" size={ms(23)} color={semantic.accent.onFill} />
           )}
           <Text style={styles.copyButtonText} numberOfLines={1} ellipsizeMode="tail">
             {copied ? t('token.receive.copied') : t('token.receive.copyAddress')}

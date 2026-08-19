@@ -261,9 +261,9 @@ export function ReceiveSheet({
             <FleshBackground />
             <OnFillContent>
               {copied ? (
-                <CheckIcon size={iconSize.md} color={colors.button.primaryText} />
+                <CheckIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />
               ) : (
-                <CopyIcon size={iconSize.md} color={colors.button.primaryText} />
+                <CopyIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />
               )}
               <CopyButtonText>
                 {copied ? t('token.receive.copied') : t('token.receive.copyAddress')}

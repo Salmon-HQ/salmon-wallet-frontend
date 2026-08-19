@@ -180,12 +180,17 @@ export function ActionButtonRow({
               absent. */}
           {!sendDisabled && <FleshBackground />}
           <OnFillContent>
+            {/* Bold, like the label: everything on a flesh fill is bold. */}
             <SendIcon
+              weight="bold"
               size={iconSize}
               color={sendDisabled ? semantic.text.disabled : semantic.accent.onFill}
             />
             <ButtonText
-              sx={{ color: sendDisabled ? semantic.text.disabled : semantic.accent.onFill }}
+              sx={{
+                color: sendDisabled ? semantic.text.disabled : semantic.accent.onFill,
+                fontWeight: fontWeight.bold,
+              }}
             >
               {t('actions.send', 'Send')}
             </ButtonText>

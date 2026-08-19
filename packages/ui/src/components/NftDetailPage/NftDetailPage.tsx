@@ -572,8 +572,11 @@ export function NftDetailPage({
                         can only raise the luminance under the label. */}
                     <FleshBackground />
                     <OnFillContent>
-                      <FireIcon size={iconSize.sm} color={colors.text.balance} />
-                      <ButtonText>{t('nft.burn_nft', 'Burn')}</ButtonText>
+                      {/* Bold, like the label: everything on a flesh fill is bold. */}
+                      <FireIcon weight="bold" size={iconSize.sm} color={colors.text.balance} />
+                      <ButtonText sx={{ fontWeight: fontWeight.bold }}>
+                        {t('nft.burn_nft', 'Burn')}
+                      </ButtonText>
                     </OnFillContent>
                   </PrimaryButtonBase>
                 </ActionButtonsContainer>
@@ -590,8 +593,15 @@ export function NftDetailPage({
                       only raise the luminance under the label. */}
                   <FleshBackground />
                   <OnFillContent>
-                    <ArrowUpRightIcon size={iconSize.sm} color={colors.button.primaryText} />
-                    <ButtonText $onAccent>{t('actions.send', 'Send')}</ButtonText>
+                    {/* Bold, like the label: everything on a flesh fill is bold. */}
+                    <ArrowUpRightIcon
+                      weight="bold"
+                      size={iconSize.sm}
+                      color={colors.button.primaryText}
+                    />
+                    <ButtonText $onAccent sx={{ fontWeight: fontWeight.bold }}>
+                      {t('actions.send', 'Send')}
+                    </ButtonText>
                   </OnFillContent>
                 </PrimaryButtonBase>
 

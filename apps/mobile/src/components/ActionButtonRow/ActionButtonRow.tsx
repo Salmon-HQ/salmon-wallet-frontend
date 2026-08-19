@@ -17,7 +17,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { BlurContainer } from '../BlurContainer';
 import { FleshBackground } from '../FleshBackground';
-import { CallMadeSvgIcon, QrCodeScannerSvgIcon, ReceiptLongSvgIcon } from '../Icon/SvgIcons';
+import { ArrowDownIcon, ArrowUpIcon, PulseIcon } from '../../icons';
 import type { ActionButtonRowProps } from './types';
 
 const ACTION_BUTTON_ICON_SIZE = fontSize.lg;
@@ -105,7 +105,9 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
               fill and nowhere else on this screen. Absent when the fill is
               absent. */}
           {!sendDisabled && <FleshBackground />}
-          <CallMadeSvgIcon
+          {/* Bold, like the label: everything on a flesh fill is bold. */}
+          <ArrowUpIcon
+            weight="bold"
             size={ms(ACTION_BUTTON_ICON_SIZE)}
             color={sendDisabled ? semantic.text.disabled : semantic.accent.onFill}
           />
@@ -136,7 +138,7 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
             accessibilityRole="button"
             accessibilityLabel={t('accessibility.receive_tokens', 'Receive tokens')}
           >
-            <QrCodeScannerSvgIcon
+            <ArrowDownIcon
               size={ms(ACTION_BUTTON_ICON_SIZE)}
               color={receiveDisabled ? semantic.text.disabled : colors.text.balance}
             />
@@ -168,7 +170,7 @@ export const ActionButtonRow: React.FC<ActionButtonRowProps> = ({
             accessibilityRole="button"
             accessibilityLabel={t('accessibility.view_activity', 'View activity')}
           >
-            <ReceiptLongSvgIcon
+            <PulseIcon
               size={ms(ACTION_BUTTON_ICON_SIZE)}
               color={activityDisabled ? semantic.text.disabled : colors.text.balance}
             />
@@ -230,7 +232,8 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     flexShrink: 1,
     fontSize: ms(ACTION_BUTTON_TEXT_SIZE),
-    fontFamily: fontFamilyNative.regular,
+    // Everything on a flesh fill is bold — label and glyph alike.
+    fontFamily: fontFamilyNative.bold,
     // The only legal ink on a salmon fill. Never `text.primary` (3.06:1).
     color: semantic.accent.onFill,
     lineHeight: ms(ACTION_BUTTON_TEXT_SIZE * 1.35),

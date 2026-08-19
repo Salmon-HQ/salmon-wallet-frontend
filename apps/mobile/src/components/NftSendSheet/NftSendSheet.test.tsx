@@ -104,7 +104,6 @@ jest.mock('../InputAddress', () => ({
 
 jest.mock('../Icon/SvgIcons', () => ({
   BitcoinSvgIcon: () => null,
-  CallMadeSvgIcon: () => null,
   EthereumSvgIcon: () => null,
   SolanaSvgIcon: () => null,
 }));

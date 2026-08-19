@@ -50,7 +50,8 @@ import { InputAddress } from '../InputAddress';
 import { BlurContainer } from '../BlurContainer';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { FleshBackground } from '../FleshBackground';
-import { BitcoinSvgIcon, CallMadeSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
+import { BitcoinSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
+import { ArrowUpRightIcon } from '../../icons';
 
 export interface NftSendSheetProps {
   visible: boolean;
@@ -243,7 +244,7 @@ export function NftSendSheet({
                 fill. Every band is paler than the fill, so it can only raise
                 the luminance under the label. */}
               {canConfirm && <FleshBackground />}
-              <CallMadeSvgIcon size={ms(15)} color={semantic.accent.onFill} />
+              <ArrowUpRightIcon weight="bold" size={ms(15)} color={semantic.accent.onFill} />
               <Text
                 style={styles.buttonText}
                 numberOfLines={1}
@@ -403,8 +404,9 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: ms(fontSize.bodyLg),
-    fontFamily: fontFamilyNative.medium,
-    fontWeight: fontWeight.medium,
+    // Everything on a flesh fill is bold — label and glyph alike.
+    fontFamily: fontFamilyNative.bold,
+    fontWeight: fontWeight.bold,
     color: semantic.accent.onFill,
   },
 });

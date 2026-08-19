@@ -148,11 +148,6 @@ jest.mock('../TransactionSuccessScreen', () => ({
   TransactionSuccessScreen: () => null,
 }));
 
-jest.mock('../Icon/SvgIcons', () => ({
-  CallMadeSvgIcon: () => null,
-  ContentCopySvgIcon: () => null,
-}));
-
 import { NftDetailSheet } from './NftDetailSheet';
 
 describe('NftDetailSheet', () => {
