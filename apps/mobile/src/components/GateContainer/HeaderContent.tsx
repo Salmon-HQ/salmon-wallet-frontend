@@ -20,15 +20,18 @@ import {
   getShortAddress,
   getAvatarColor,
   getInitials,
+  motionMs,
   semantic,
 } from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
+import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 import { CheckIcon } from '../../icons';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { ContentCopySvgIcon, SettingsSvgIcon, WalletSvgIcon } from '../Icon';
+import { floatEntering, sinkExiting, SINK_FLOAT_TRAVEL } from '../../utils/sinkAndFloat';
 
 // ============================================================================
 // Props
@@ -62,6 +65,18 @@ export function HeaderContent({
   const { t } = useTranslation();
   const [imgError, setImgError] = useState(false);
   const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
+  const isReduceMotionEnabled = useReducedMotion();
+
+  // Chrome-scale sink and float for the account text: when the active chain
+  // switches, the address half of the line changes, so the text is keyed on
+  // `address` and speaks the same verb as home's chain swap — half the
+  // travel, shorter clock, because this is chrome, not content. On first
+  // mount nothing sinks, so the float takes no delay (same render-time
+  // pattern as home's `chainSwap`).
+  const [addressSwap, setAddressSwap] = useState({ address, hasPrior: false });
+  if (addressSwap.address !== address) {
+    setAddressSwap({ address, hasPrior: true });
+  }
 
   const handleCopyPress = useCallback(() => {
     onCopyAddress?.();
@@ -115,14 +130,31 @@ export function HeaderContent({
         </TouchableOpacity>
 
         <View style={styles.accountInfo}>
-          <Text
-            style={styles.accountText}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-            maxFontSizeMultiplier={fontScaleCap.chrome}
+          {/* Only the text travels — the copy button and its feedback state
+              stay mounted (remounting would reset the tick mid-hold). */}
+          <Reanimated.View
+            key={address}
+            testID="wallet-header-account-text"
+            style={styles.accountTextWrapper}
+            entering={floatEntering(isReduceMotionEnabled, {
+              distance: SINK_FLOAT_TRAVEL / 2,
+              durationMs: motionMs.drift,
+              delayMs: addressSwap.hasPrior ? motionMs.ebb + motionMs.stagger : 0,
+            })}
+            exiting={sinkExiting(isReduceMotionEnabled, {
+              distance: SINK_FLOAT_TRAVEL / 2,
+              durationMs: motionMs.ebb,
+            })}
           >
-            {displayText}
-          </Text>
+            <Text
+              style={styles.accountText}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              maxFontSizeMultiplier={fontScaleCap.chrome}
+            >
+              {displayText}
+            </Text>
+          </Reanimated.View>
           <TouchableOpacity
             testID="wallet-header-copy-address"
             onPress={handleCopyPress}
@@ -214,9 +246,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: s(spacing.sm),
   },
-  accountText: {
+  // The flex/minWidth pair moved from the Text to this wrapper when the text
+  // gained its animated shell — the row math is unchanged.
+  accountTextWrapper: {
     flex: 1,
     minWidth: 0,
+  },
+  accountText: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,

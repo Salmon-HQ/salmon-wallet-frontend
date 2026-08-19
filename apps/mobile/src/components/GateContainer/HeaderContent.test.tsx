@@ -12,6 +12,32 @@ jest.mock('expo-image', () => ({
   Image: () => null,
 }));
 
+// Minimal Reanimated stand-in. `Reanimated.View` renders a plain View that
+// carries a per-mount id, so tests can tell a remount (new key) from a
+// re-render (same key) without reaching into fibers.
+jest.mock('react-native-reanimated', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  let mountCount = 0;
+  const AnimatedView = (props: Record<string, unknown>) => {
+    const [mountId] = React.useState(() => (mountCount += 1));
+    return React.createElement(View, { ...props, mountId });
+  };
+  return {
+    __esModule: true,
+    default: { View: AnimatedView },
+    useReducedMotion: () => false,
+  };
+});
+
+// The real module pulls Reanimated worklets and shared easing tables; the
+// component only forwards its return values to `entering`/`exiting`.
+jest.mock('../../utils/sinkAndFloat', () => ({
+  SINK_FLOAT_TRAVEL: 28,
+  floatEntering: () => undefined,
+  sinkExiting: () => undefined,
+}));
+
 jest.mock('../Icon', () => ({
   ContentCopySvgIcon: () => null,
   SettingsSvgIcon: () => null,
@@ -35,7 +61,12 @@ jest.mock('@salmon/shared', () => ({
   letterSpacing: { header: 0 },
   componentSizes: { iconSizeLarge: 32, iconSizeMButton: 28, buttonHeightSmall: 44 },
   spacing: { headerPadding: 20, base: 12, sm: 8, xs: 4 },
-  motionMs: { feedbackHold: 1500 },
+  motionMs: { feedbackHold: 1500, drift: 280, ebb: 180, stagger: 24, swell: 300 },
+  motionEasing: {
+    sink: { native: [0.4, 0, 1, 1] },
+    settle: { native: [0.25, 1, 0.5, 1] },
+  },
+  resolveMotionMs: (ms: number) => ms,
   ms: (value: number) => value,
   s: (value: number) => value,
   vs: (value: number) => value,
@@ -83,6 +114,11 @@ describe('HeaderContent copy address', () => {
     expect(onCopyAddress).toHaveBeenCalled();
     expect(screen.getByLabelText('actions.copied')).toBeTruthy();
 
+    // Two flushes: the first runs out `feedbackHold` (copied → false), the
+    // second drives the exit animation's frames so `shown` follows.
+    act(() => {
+      jest.runAllTimers();
+    });
     act(() => {
       jest.runAllTimers();
     });
@@ -91,6 +127,70 @@ describe('HeaderContent copy address', () => {
     expect(
       screen.getByLabelText('accessibility.copy_address:7xKX...gAsU')
     ).toBeTruthy();
+  });
+});
+
+describe('HeaderContent chain swap', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+    jest.useRealTimers();
+  });
+
+  it('re-keys the account text on address change without remounting the copy button', () => {
+    render(
+      <HeaderContent
+        accountName="Account 1"
+        address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+        onCopyAddress={jest.fn()}
+      />
+    );
+
+    const mountIdBefore = screen.getByTestId('wallet-header-account-text').props.mountId;
+
+    // Arm the copy feedback: if the swap remounted the button's subtree,
+    // this state would be wiped mid-hold.
+    fireEvent.press(screen.getByTestId('wallet-header-copy-address'));
+    expect(screen.getByLabelText('actions.copied')).toBeTruthy();
+
+    screen.rerender(
+      <HeaderContent
+        accountName="Account 1"
+        address="bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
+        onCopyAddress={jest.fn()}
+      />
+    );
+
+    const mountIdAfter = screen.getByTestId('wallet-header-account-text').props.mountId;
+    expect(mountIdAfter).not.toBe(mountIdBefore);
+
+    // Copy feedback survived the swap — the button was never remounted.
+    expect(screen.getByLabelText('actions.copied')).toBeTruthy();
+  });
+
+  it('does not remount the account text when only unrelated props change', () => {
+    render(
+      <HeaderContent
+        accountName="Account 1"
+        address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+      />
+    );
+
+    const mountIdBefore = screen.getByTestId('wallet-header-account-text').props.mountId;
+
+    screen.rerender(
+      <HeaderContent
+        accountName="Renamed"
+        address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+      />
+    );
+
+    expect(screen.getByTestId('wallet-header-account-text').props.mountId).toBe(mountIdBefore);
   });
 });
 
