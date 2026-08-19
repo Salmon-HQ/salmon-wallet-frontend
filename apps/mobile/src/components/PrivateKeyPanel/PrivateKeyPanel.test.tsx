@@ -19,6 +19,8 @@ jest.mock('expo-clipboard', () => ({
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+  // The mobile wrapper hook reads the real motion vocabulary.
+  ...jest.requireActual('@salmon/shared/src/theme/durations'),
   borderRadius: { sm: 8, md: 12, lg: 16 },
   colors: {
     background: { card: '#111', tertiary: '#222' },

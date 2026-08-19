@@ -21,6 +21,8 @@ jest.mock('../../utils/haptics', () => ({
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+  // The mobile wrapper hook reads the real motion vocabulary.
+  ...jest.requireActual('@salmon/shared/src/theme/durations'),
   borderRadius: { md: 12, xl: 20 },
   borderWidth: { thin: 1 },
   colors: {
@@ -63,6 +65,11 @@ describe('AddressCopyRow copy feedback', () => {
     expect(mockSetStringAsync).toHaveBeenCalled();
     expect(screen.getByLabelText('actions.copied')).toBeTruthy();
 
+    act(() => {
+      jest.runAllTimers();
+    });
+    // The hold has expired; the tick is now playing its exit (`ebb`) before
+    // unmounting, so run the timer the exit effect scheduled.
     act(() => {
       jest.runAllTimers();
     });

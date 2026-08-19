@@ -125,6 +125,11 @@ describe('GateContainer + HeaderContent (real mounting path)', () => {
     act(() => {
       jest.runAllTimers();
     });
+    // The hold has expired; the tick is now playing its exit (`ebb`) before
+    // unmounting, so run the timer the exit effect scheduled.
+    act(() => {
+      jest.runAllTimers();
+    });
 
     expect(screen.queryByLabelText('actions.copied')).toBeNull();
   });

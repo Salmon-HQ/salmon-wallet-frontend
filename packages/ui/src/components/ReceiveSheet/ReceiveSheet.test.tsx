@@ -19,6 +19,8 @@ vi.mock('react-i18next', () => ({
 // (`getChainDisplayName`).
 vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
+  // CopyTick reads the real motion vocabulary.
+  ...(await vi.importActual('../../../../shared/src/theme/durations')),
   colors: {
     text: { primary: '#EDF1F7' },
     button: { primaryBackground: '#FF5C45', primaryText: '#070911' },

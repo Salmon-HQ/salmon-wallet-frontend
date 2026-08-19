@@ -39,6 +39,7 @@ import { FleshBackground } from '../FleshBackground';
 import { WarningNotice } from '../WarningNotice';
 import type { ReceiveSheetProps } from './types';
 
+import { CopyTick } from '../CopyTick';
 // ============================================================================
 // Constants
 // ============================================================================
@@ -260,11 +261,11 @@ export function ReceiveSheet({
                 raise the luminance under the label. */}
             <FleshBackground />
             <OnFillContent>
-              {copied ? (
-                <CheckIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />
-              ) : (
-                <CopyIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />
-              )}
+              <CopyTick
+                copied={copied}
+                copy={<CopyIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />}
+                tick={<CheckIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />}
+              />
               <CopyButtonText>
                 {copied ? t('token.receive.copied') : t('token.receive.copyAddress')}
               </CopyButtonText>

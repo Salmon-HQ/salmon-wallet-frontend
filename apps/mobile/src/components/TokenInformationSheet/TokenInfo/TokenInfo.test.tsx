@@ -15,6 +15,8 @@ jest.mock('expo-clipboard', () => ({
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+  // The mobile wrapper hook reads the real motion vocabulary.
+  ...jest.requireActual('@salmon/shared/src/theme/durations'),
   borderRadius: { lg: 16, md: 12 },
   colors: {
     background: { card: '#111' },
@@ -60,6 +62,11 @@ describe('TokenInfo copy contract address', () => {
     expect(mockSetStringAsync).toHaveBeenCalledWith('So11111111111111111111111111111111111111112');
     expect(screen.getByLabelText('actions.copied')).toBeTruthy();
 
+    act(() => {
+      jest.runAllTimers();
+    });
+    // The hold has expired; the tick is now playing its exit (`ebb`) before
+    // unmounting, so run the timer the exit effect scheduled.
     act(() => {
       jest.runAllTimers();
     });

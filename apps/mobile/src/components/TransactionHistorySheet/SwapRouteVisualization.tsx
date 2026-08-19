@@ -1,6 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, StyleSheet, TouchableOpacity, LayoutChangeEvent } from 'react-native';
+import {
+  Animated as RNAnimated,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  LayoutChangeEvent,
+} from 'react-native';
 import { ArrowRightIcon, CheckIcon, CopyIcon, TreeStructureIcon, iconSize } from '../../icons';
 import Animated, {
   useAnimatedStyle,
@@ -27,9 +34,9 @@ import {
   semantic,
   spacing,
   truncateHash,
-  useCopyFeedback,
   vs,
 } from '@salmon/shared';
+import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import type { Transaction, SwapRouteHop } from './types';
 import { TokenLogo } from '../TokenLogo';
 import { PriceImpactBadge } from './PriceImpactBadge';
@@ -58,7 +65,7 @@ const HashCopyRow: React.FC<{
   displayValue?: string;
 }> = ({ label, value, displayValue }) => {
   const { t } = useTranslation();
-  const { copied, trigger: showCopied } = useCopyFeedback();
+  const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
 
   const handleCopy = useCallback(async () => {
     try {
@@ -84,7 +91,9 @@ const HashCopyRow: React.FC<{
           {displayValue ?? value}
         </Text>
         {copied ? (
-          <CheckIcon size={12} color={semantic.status.success} style={styles.copyIcon} />
+          <RNAnimated.View style={{ transform: [{ scale: tickScale }] }}>
+            <CheckIcon size={12} color={semantic.status.success} style={styles.copyIcon} />
+          </RNAnimated.View>
         ) : (
           <CopyIcon size={12} color={colors.text.tertiary} style={styles.copyIcon} />
         )}

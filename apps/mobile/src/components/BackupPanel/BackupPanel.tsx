@@ -17,8 +17,8 @@ import {
   semantic,
   spacing,
   useAccountsContext,
-  useCopyFeedback,
 } from '@salmon/shared';
+import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { ConfirmSheet } from '../ConfirmSheet';

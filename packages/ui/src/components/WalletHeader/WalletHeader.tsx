@@ -31,6 +31,7 @@ import {
 import { CopyIcon, RefreshIcon, SettingsIcon } from '../Icon';
 import type { WalletHeaderProps } from './types';
 
+import { CopyTick } from '../CopyTick';
 const Container = styled(Box)({
   display: 'flex',
   flexDirection: 'row',
@@ -242,15 +243,17 @@ export function WalletHeader({
           <AccountName>{accountName}</AccountName>
           <AddressContainer>
             <Address>{truncatedAddress}</Address>
-            {copied ? (
-              <CheckIcon
-                size={iconSize.sm}
-                color={semantic.status.success}
-                style={{ marginLeft: `${spacing.sm}px` }}
-              />
-            ) : (
-              <CopyIconStyled />
-            )}
+            <CopyTick
+              copied={copied}
+              copy={<CopyIconStyled />}
+              tick={
+                <CheckIcon
+                  size={iconSize.sm}
+                  color={semantic.status.success}
+                  style={{ marginLeft: `${spacing.sm}px` }}
+                />
+              }
+            />
           </AddressContainer>
         </AccountTextContainer>
       </AccountInfo>

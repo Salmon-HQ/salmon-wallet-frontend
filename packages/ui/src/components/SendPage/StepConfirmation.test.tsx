@@ -23,6 +23,8 @@ vi.mock('react-i18next', () => ({
 // behaviour, which is what the assertions are about.
 vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
+  // CopyTick reads the real motion vocabulary.
+  ...(await vi.importActual('../../../../shared/src/theme/durations')),
   chunkAddress: (address?: string | null) =>
     address ? address.replace(/(.{4})/g, '$1 ').trim() : '',
   colors: {

@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { Animated, View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
@@ -15,9 +15,9 @@ import {
   s,
   semantic,
   spacing,
-  useCopyFeedback,
   vs,
 } from '@salmon/shared';
+import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 
 // ============================================================================
 // Types
@@ -94,7 +94,7 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
   style,
 }) => {
   const { t } = useTranslation();
-  const { copied, trigger: showCopied } = useCopyFeedback();
+  const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
 
   const displayAddress = getTruncatedAddress(address, truncate);
 
@@ -141,7 +141,9 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
           {/* The copy control is the affordance in this row; the address beside it
               is data to read and stays neutral mono. */}
           {copied ? (
-            <CheckIcon size={iconSize.sm} color={semantic.status.success} />
+            <Animated.View style={{ transform: [{ scale: tickScale }] }}>
+              <CheckIcon size={iconSize.sm} color={semantic.status.success} />
+            </Animated.View>
           ) : (
             <CopyIcon size={iconSize.sm} color={semantic.text.accent} />
           )}

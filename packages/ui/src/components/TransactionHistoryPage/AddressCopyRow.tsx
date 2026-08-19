@@ -34,6 +34,7 @@ import {
 import { BlurContainer } from '../BlurContainer';
 import type { AddressCopyRowProps } from './types';
 
+import { CopyTick } from '../CopyTick';
 // ============================================================================
 // Constants
 // ============================================================================
@@ -138,11 +139,11 @@ export function AddressCopyRow({
             data-testid={`tx-detail-copy-address-${label}`}
             sx={copied ? { backgroundColor: `${semantic.status.success}20` } : undefined}
           >
-            {copied ? (
-              <CheckIcon size={iconSize.sm} color={semantic.status.success} />
-            ) : (
-              <CopyIcon size={iconSize.sm} color={colors.text.secondary} />
-            )}
+            <CopyTick
+              copied={copied}
+              copy={<CopyIcon size={iconSize.sm} color={colors.text.secondary} />}
+              tick={<CheckIcon size={iconSize.sm} color={semantic.status.success} />}
+            />
           </CopyButton>
         </RightSection>
       </Container>

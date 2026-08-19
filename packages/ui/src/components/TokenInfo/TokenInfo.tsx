@@ -32,6 +32,7 @@ import { CheckIcon, iconSize } from '../../icons';
 import { CopyIcon } from '../Icon';
 import type { TokenInfoProps } from './types';
 
+import { CopyTick } from '../CopyTick';
 const Container = styled(Box)({
   backgroundColor: colors.background.card,
   borderRadius: borderRadius.lg,
@@ -346,11 +347,11 @@ export function TokenInfo({
           >
             <ContractAddress>{getShortAddress(contractAddress, 6)}</ContractAddress>
             <CopyButton>
-              {copied ? (
-                <CheckIcon color={semantic.status.success} size={iconSize.md} />
-              ) : (
-                <CopyIcon color={colors.text.muted} size={iconSize.md} />
-              )}
+              <CopyTick
+                copied={copied}
+                copy={<CopyIcon color={colors.text.muted} size={iconSize.md} />}
+                tick={<CheckIcon color={semantic.status.success} size={iconSize.md} />}
+              />
             </CopyButton>
           </ContractRow>
         </Section>

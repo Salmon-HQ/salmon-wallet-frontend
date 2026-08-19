@@ -11,13 +11,13 @@ import {
   Rect,
   semantic,
   spacing,
-  useCopyFeedback,
   useCurrencyContext,
 } from '@salmon/shared';
 import * as Clipboard from 'expo-clipboard';
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useCopyFeedback } from '../../../../hooks/useCopyFeedback';
 import type { TokenInfoProps } from './types';
 
 /**
@@ -57,7 +57,7 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
 }) => {
   const { t } = useTranslation();
   const [, { formatLarge }] = useCurrencyContext();
-  const { copied, trigger: showCopied } = useCopyFeedback();
+  const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
 
   const handleCopyAddress = useCallback(async () => {
     if (contractAddress) {
@@ -204,7 +204,9 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
             <Text style={styles.contractAddress}>{getShortAddress(contractAddress, 6) ?? ''}</Text>
             <View style={styles.copyButton}>
               {copied ? (
-                <CheckIcon size={18} color={semantic.status.success} />
+                <Animated.View style={{ transform: [{ scale: tickScale }] }}>
+                  <CheckIcon size={18} color={semantic.status.success} />
+                </Animated.View>
               ) : (
                 <CopyIcon size={18} color={semantic.text.secondary} />
               )}

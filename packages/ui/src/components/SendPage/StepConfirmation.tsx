@@ -41,6 +41,7 @@ import { BlurContainer } from '../BlurContainer';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import type { StepConfirmationProps } from './types';
 
+import { CopyTick } from '../CopyTick';
 // ============================================================================
 // Styled Components
 // ============================================================================
@@ -333,19 +334,12 @@ export function StepConfirmation({
                   </ResolvedFromText>
                 )}
               </AddressColumn>
-              {copied ? (
-                <CheckIcon
-                  size={iconSize.md}
-                  color={semantic.status.success}
-                  style={{ flexShrink: 0 }}
-                />
-              ) : (
-                <CopyIcon
-                  size={iconSize.md}
-                  color={colors.text.secondary}
-                  style={{ flexShrink: 0 }}
-                />
-              )}
+              <CopyTick
+                copied={copied}
+                style={{ flexShrink: 0 }}
+                copy={<CopyIcon size={iconSize.md} color={colors.text.secondary} />}
+                tick={<CheckIcon size={iconSize.md} color={semantic.status.success} />}
+              />
             </AddressContent>
           </BlurContainer>
         </AddressButton>

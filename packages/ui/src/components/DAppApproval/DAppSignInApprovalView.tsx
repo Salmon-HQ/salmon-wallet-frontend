@@ -56,6 +56,7 @@ import {
 import { BrandMark } from '../BrandMark';
 import type { DAppSignInApprovalViewProps } from './types';
 
+import { CopyTick } from '../CopyTick';
 const monoValueSx = {
   fontFamily: fontFamily.mono,
   fontSize: fontSize.xs,
@@ -207,15 +208,16 @@ export function DAppSignInApprovalView({
                       sx={{ ...monoValueSx, display: 'flex', alignItems: 'center', gap: '6px' }}
                     >
                       {getShortAddress(siws.address)}
-                      {copied ? (
-                        <CheckIcon
-                          sx={{ fontSize: 14, color: semantic.status.success, flexShrink: 0 }}
-                        />
-                      ) : (
-                        <ContentCopyOutlinedIcon
-                          sx={{ fontSize: 14, color: colors.text.secondary, flexShrink: 0 }}
-                        />
-                      )}
+                      <CopyTick
+                        copied={copied}
+                        style={{ flexShrink: 0 }}
+                        copy={
+                          <ContentCopyOutlinedIcon
+                            sx={{ fontSize: 14, color: colors.text.secondary }}
+                          />
+                        }
+                        tick={<CheckIcon sx={{ fontSize: 14, color: semantic.status.success }} />}
+                      />
                     </SummaryValue>
                   </SummaryItem>
 

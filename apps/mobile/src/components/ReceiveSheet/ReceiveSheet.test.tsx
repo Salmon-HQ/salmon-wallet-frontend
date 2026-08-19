@@ -10,6 +10,8 @@ jest.mock('react-i18next', () => ({
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+  // The mobile wrapper hook reads the real motion vocabulary.
+  ...jest.requireActual('@salmon/shared/src/theme/durations'),
   semantic: {
     accent: { fill: '#FF5C45', onFill: '#070911' },
     text: { primary: '#F6F8FB', secondary: '#A7B1C4' },

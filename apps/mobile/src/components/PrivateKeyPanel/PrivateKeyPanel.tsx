@@ -24,7 +24,6 @@ import {
   semantic,
   spacing,
   useAccountsContext,
-  useCopyFeedback,
   type Account,
   type AccountKeyInfo,
 } from '@salmon/shared';
@@ -34,6 +33,7 @@ import { WarningNotice } from '../WarningNotice';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { useSettingsHeaderOverride } from '../SettingsHeaderContext';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
+import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 
 // ============================================================================
 // Types

@@ -40,6 +40,7 @@ import { SettingsPanelContent } from '../SettingsPanelContent';
 import { WarningNotice } from '../WarningNotice';
 import type { BackupPanelProps } from './types';
 
+import { CopyTick } from '../CopyTick';
 // ============================================================================
 // Styled Components
 // ============================================================================
@@ -261,7 +262,13 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
                 <Tooltip title={copied ? t('actions.copied', 'Copied!') : ''} open={copied}>
                   <CopyButton
                     variant="outlined"
-                    startIcon={copied ? <CheckIcon color={semantic.status.success} /> : <CopyIcon />}
+                    startIcon={
+                      <CopyTick
+                        copied={copied}
+                        copy={<CopyIcon />}
+                        tick={<CheckIcon color={semantic.status.success} />}
+                      />
+                    }
                     onClick={handleCopy}
                     disabled={!seedPhraseVisible}
                     data-testid="backup-seed-copy-button"

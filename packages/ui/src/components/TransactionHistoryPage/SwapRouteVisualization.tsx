@@ -45,6 +45,7 @@ import { ConversionRateDisplay } from './ConversionRateDisplay';
 import { PriceImpactBadge } from './PriceImpactBadge';
 import type { SwapRouteHop, SwapRouteVisualizationProps, Transaction } from './types';
 
+import { CopyTick } from '../CopyTick';
 // ============================================================================
 // Styled Components
 // ============================================================================
@@ -280,11 +281,11 @@ const HashCopyRow: React.FC<{
       <SummaryLabel>{label}</SummaryLabel>
       <HashCopyContainer onClick={handleCopy}>
         <SummaryValue>{displayValue ?? value}</SummaryValue>
-        {copied ? (
-          <CheckIcon size={iconSize.sm} color={semantic.status.success} />
-        ) : (
-          <CopyIcon size={iconSize.sm} color={colors.text.tertiary} />
-        )}
+        <CopyTick
+          copied={copied}
+          copy={<CopyIcon size={iconSize.sm} color={colors.text.tertiary} />}
+          tick={<CheckIcon size={iconSize.sm} color={semantic.status.success} />}
+        />
       </HashCopyContainer>
     </SummaryRow>
   );

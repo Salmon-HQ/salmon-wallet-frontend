@@ -60,6 +60,7 @@ import { SettingsPanelContent } from '../SettingsPanelContent';
 import { WarningNotice } from '../WarningNotice';
 import type { PrivateKeyPanelProps } from './types';
 
+import { CopyTick } from '../CopyTick';
 // ============================================================================
 // Styled Components
 // ============================================================================
@@ -395,7 +396,11 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                     <CopyButton
                       variant="outlined"
                       startIcon={
-                        isCopied ? <CheckIcon color={semantic.status.success} /> : <CopyIcon />
+                        <CopyTick
+                          copied={isCopied}
+                          copy={<CopyIcon />}
+                          tick={<CheckIcon color={semantic.status.success} />}
+                        />
                       }
                       onClick={() => handleCopy(accountKey.privateKey, index)}
                       disabled={!isRevealed}
