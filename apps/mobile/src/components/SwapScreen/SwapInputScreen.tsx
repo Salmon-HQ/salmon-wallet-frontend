@@ -242,12 +242,15 @@ const styles = StyleSheet.create({
   // salmon outline and a glow, with the button's own fill forced transparent —
   // a second, squarer shape behind the pill that read as two stacked buttons.
   button: {
-    // Full width, in both states. A screen's committing action is full-width
-    // per the button spec, and sizing it to its label made the control's
-    // geometry a function of its state: the disabled label is shorter, so the
-    // one target the user is waiting to become pressable shrank and moved
-    // while they typed. Width is not a state.
-    width: '100%',
+    // One fixed width, in both states. DESIGN.md's Buttons section makes a
+    // screen's committing action full-width, but a control pinned to both
+    // edges of this screen reads as a bar rather than a button, so this CTA
+    // is the qualified case: narrower than the screen, and a fixed step
+    // rather than `auto` — sizing it to its label made the geometry a
+    // function of its state, and the one target the user is waiting to
+    // become pressable shrank and moved while they typed. Width is not a
+    // state.
+    width: s(componentSizes.copyButtonWidth),
     height: vs(componentSizes.buttonHeightCompact),
   },
 });

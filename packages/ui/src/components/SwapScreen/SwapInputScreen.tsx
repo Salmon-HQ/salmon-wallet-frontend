@@ -72,8 +72,13 @@ const DisclaimerText = styled(Typography)({
 // primary button now paints itself — fill, flesh and bezel — so a second fill
 // behind it showed up as a duplicate button peeking out from under the first,
 // offset by the wrapper's own border and radius.
+// It also bounds the width. DESIGN.md's Buttons section makes a screen's
+// committing action full-width, but a control spanning this screen edge to
+// edge reads as a bar rather than a button, so the CTA is fixed to one width
+// step here — fixed rather than label-sized, because the geometry of the one
+// target the user is waiting on must not be a function of its state.
 const ReviewButtonWrapper = styled('div')({
-  minWidth: componentSizes.copyButtonWidth,
+  width: componentSizes.copyButtonWidth,
 });
 
 // ============================================================================
@@ -157,10 +162,7 @@ export function SwapInputScreen({
             onClick={onReview}
             disabled={!canReview}
             testID="swap-review-button"
-            style={{
-              minWidth: componentSizes.copyButtonWidth,
-              height: componentSizes.buttonHeightCompact,
-            }}
+            style={{ height: componentSizes.buttonHeightCompact }}
           >
             {t('swap.review.reviewAndSwap')}
           </PrimaryButton>

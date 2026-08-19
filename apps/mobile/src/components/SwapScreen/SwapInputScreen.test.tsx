@@ -128,12 +128,12 @@ describe('SwapInputScreen — the Review CTA geometry is not a state', () => {
     expect(disabled).toEqual(enabled);
   });
 
-  it('keeps the committing action full-width in both states', () => {
+  it('gives the committing action one fixed width, narrower than the screen', () => {
     for (const canReview of [true, false]) {
       const style = flatStyle(renderScreen({ canReview }).getByTestId('swap-review-button'));
 
-      expect(style.width).toBe('100%');
-      expect(style.minWidth).toBeUndefined();
+      // The mocked token, unscaled: a number, never '100%' and never 'auto'.
+      expect(style.width).toBe(120);
     }
   });
 });
