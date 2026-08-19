@@ -276,7 +276,7 @@ marks its parts.
 | dApp approval: transaction effect preview + press-and-hold to approve                         | **Shipped**                                                                                 | `packages/ui/src/components/DAppApproval/TransactionEffectsCard.tsx`, `HoldToApproveButton.tsx`                                                                                                                              |
 | Sand / seabed, ambient light shafts                                                           | **Refused by design** — see §Overview and §The water column                                 | —                                                                                                                                                                                                                            |
 | Marine snow drift + scroll parallax, both reduced-motion gated                                | **Shipped**                                                                                 | `packages/shared/src/theme/depthField.ts` (`depthDrift`), both `DepthBackground`s                                                                                                                                            |
-| Light theme (index-flip resolver)                                                             | **Specified, not built**                                                                    | —                                                                                                                                                                                                                            |
+| Light theme (index-flip resolver)                                                             | **Rejected by the owner** (2026-08-18) — see §The light theme                               | —                                                                                                                                                                                                                            |
 | Material/membrane model and the five-rung degradation ladder                                  | **Specified, not built**                                                                    | —                                                                                                                                                                                                                            |
 | Icons on mobile (`phosphor-react-native`)                                                     | **Specified, not built**                                                                    | only `@phosphor-icons/react` is installed, in `packages/ui`                                                                                                                                                                  |
 | Type scale (`display`…`monoLg`), radius scale (`r0`…`r6`), spacing rhythm                     | **Partly built** — the radius scale's control end is shipped; the rest specified            | Every control now sits on one 12px token (§The Control Radius Rule); `typography.ts` and the container end of `spacing.ts` still carry the Figma-derived one-offs                                                            |
@@ -294,8 +294,9 @@ marks its parts.
 
 Cold neutrals with a fixed blue bias, one warm brand ramp, and three status
 ramps chosen so none of them collides with salmon in hue. The neutral ramp runs
-0 (lightest) → 1000 (deepest) so a light theme becomes a re-mapping of ramp
-indices, not a second palette.
+0 (lightest) → 1000 (deepest) so a light theme would have been a re-mapping of
+ramp indices, not a second palette — the ordering stands even though that
+theme is now rejected (see §The light theme).
 
 Ratios below are computed with WCAG 2.x relative luminance against
 `neutral-950` (`#10131C`), the default card surface, unless stated. All of them
@@ -356,8 +357,9 @@ the system, and each points at a ramp step rather than a literal.
 
 Pure `#FFFFFF` is not a text token. Deep water has no pure white in it;
 `neutral-50` is the whitest thing in the app and reads warmer and calmer at
-16.37:1. `neutral-0` exists in the ramp only as the light theme's future
-`surface.shelf`.
+16.37:1. `neutral-0` remains in the ramp with no consumer — it was reserved as the
+light theme's `surface.shelf`, and that theme is now rejected (see §The light
+theme).
 
 The translucent tiers `surface.membraneThin` and `surface.membraneThick` are
 **shipped as color values** but the material they belong to is not built; see
@@ -397,7 +399,20 @@ color _plus_ an icon _plus_ a label. Color alone is never the signal — not for
 danger, not for success, not for a price move. The `+`/`−` on an amount is a
 glyph, not a hue.
 
-### The light theme — specified, not built
+### The light theme — rejected
+
+**Rejected, not deferred** (owner, 2026-08-18). The identity is dark — deep
+water _is_ the product, not a skin on it. A light theme would break the
+material/luminance model the whole system is loaded with: the handful of
+luminance levels below `#0B0F19` that every shadow in the system lives in
+(§The wait measured the ground at 16 of 255 and calibrated the wave train's
+light/shadow alternation against exactly that headroom), and the light/shadow
+alternation built on it. Flipping the ramp flips the ground out from under all
+of it.
+
+The index-flip spec below is **kept as history**, not deleted — it records
+what would have been built and one asymmetry (the border step) that was real
+and would have to be rediscovered if this decision is ever revisited.
 
 Every semantic token maps to a ramp index, and the theme flips the index, not
 the hex. `depth.abyss` → `neutral-25`, `depth.column` → `neutral-50`,
@@ -464,7 +479,10 @@ it updates, so that is not a jitter source.
 Note against the original direction: it called for variable WOFF2 on web and
 extension with static instances only on mobile, and for a Geist Mono Medium for
 seed words. What ships is static TTF everywhere, and there is no mono medium.
-The variable/WOFF2 pipeline is **specified, not built**.
+The variable/WOFF2 pipeline is **rejected as a promise** (owner, 2026-08-18):
+it has no consumers and no demonstrated need, so the open item is withdrawn
+rather than left standing as debt. If a real need appears, it gets
+re-specified.
 
 ### The wordmark
 
@@ -483,9 +501,15 @@ wordmark cannot drift away from the interface face, because regenerating it is
 how it changes. It is a single colour by construction, so it takes a text
 token like any other ink.
 
-**Where it is used:** the welcome screen renders it in the `title` slot in
-place of a heading — see *The onboarding grid*. It takes `semantic.text.primary`,
-the same white as the mark above it, so the lockup is one ink.
+**Where it is used:** no longer on the welcome screen (owner, 2026-08-18,
+a7c09750). It used to render there in the `title` slot in place of a heading,
+in `semantic.text.primary`, the same white as the mark above it, so the lockup
+was one ink — see *The onboarding grid* for the arithmetic that positioned it.
+The welcome now shows the bare mark alone, at the wait screen's 96, so the
+brand is a single object at a single size in both identity moments; the
+screen-reader label still says "Salmon". The wordmark survives as a component
+for other uses — `Wordmark` in `packages/ui` (79293a46), drawn from the shared
+vector — not as spec debt.
 
 **Character:** one family for the whole system. At a narrow column width a
 display face that disagrees with the UI face costs more than it earns, and a
@@ -564,17 +588,21 @@ Rules that hold it together:
   stack, because on the emptiest screen most of the stack is invisible.
 - **`body` is the give**: the only slot that shrinks and the only one that
   scrolls. The action never moves.
-- **The welcome screen's title slot holds the wordmark, not a heading.** The
-  product's name is drawn from `wordmarkPaths` at 1.6x the size the title token
-  gave it, and the description slot is left reserved and empty (product,
-  2026-08-18: *"¿y si agrandamos Salmon y sacamos el Welcome?"*). Because the
-  name is a graphic it is sized independently, so the flow keeps exactly one
-  title token — raising that token to enlarge the name would have enlarged every
-  heading in the flow. Its height is the title band less one `spacing.md`, which
-  surfaces as the gap over it: filling the band exactly measured 0.0dp between
-  the mark's lower fin and the wordmark's cap height, which is tighter than a
-  lockup reads. Removing the string does not remove the band — the description
-  slot keeps its 72dp and nothing below it moves.
+- **The welcome screen shows the bare mark, at 96.** (Owner, 2026-08-18,
+  a7c09750.) The wordmark left the welcome; the mark — at the wait screen's
+  96, the wait's own ink — is the only identity on the two identity moments,
+  so the brand is one object at one size whether the user is arriving or
+  waiting. The wordmark lives on as a component for other uses — see §The
+  wordmark. Removing an element still does not remove its band: the title and
+  description slots keep their reservations and nothing below them moves.
+  _(Superseded spec, kept as history: the title slot held the wordmark, not a
+  heading — drawn from `wordmarkPaths` at 1.6x the size the title token gave
+  it, with the description slot reserved and empty (product, 2026-08-18: "¿y
+  si agrandamos Salmon y sacamos el Welcome?"). Because the name was a graphic
+  it was sized independently, so the flow kept exactly one title token; its
+  height was the title band less one `spacing.md`, because filling the band
+  exactly measured 0.0dp between the mark's lower fin and the wordmark's cap
+  height, tighter than a lockup reads.)_
 - **The mark anchors to the bottom of its band and the title to the bottom of
   its own; the description anchors to the top of hers.** Each band reserves two
   rendered lines for Spanish, and centring the ink left that unused allowance
@@ -591,6 +619,31 @@ Rules that hold it together:
   this grid, so the furniture is already in place on the next screen; sliding it
   out and back only to redraw it at the identical Y describes something untrue,
   and it dragged the step indicator's chevron and dots along with it.
+- **The analytics consent screen carries one icon, and its body sits against
+  its title.** (Owner, 2026-08-18, a7c09750.) The metrics icon takes the mark
+  slot — the fish is gone from it, so a policy screen no longer wears the
+  identity hero — and the body sits directly under the title instead of across
+  a mid-screen gap. The reserved bands keep their Y; nothing else moved. The
+  flow moved too (79293a46): consent is asked _after_ the success screen, not
+  before it.
+- **The lock screen now complies on mobile.** (6a699b31.) This document always
+  said the lock carries the water (§What has shipped), and the RN layout
+  structurally could not — it had no background slot. It does now, and the
+  bands obey spec 013: the error and throttle copy land in `assist`, "I forgot
+  my password" sits in `body` directly under the input, and the unlock button
+  disables during throttle rather than disappearing.
+
+**The Nothing Moves Under the Finger Rule** (owner, 2026-08-18). The grid's
+promise is not only that slots land at the same Y from screen to screen — it
+is that **nothing displaces content while the user is interacting**. An
+element that appears in response to input — a strength meter, an inline error
+— reserves its space from the first frame, in a `ReservedSlot`, and fills it
+when it has something to say; revealing it cannot move the field under the
+finger or the button under the thumb. First applied case: the password
+strength bar (79ac4dba), with tests pinning that the layout height never
+changes as the user types. This rule has the rank of the Tabular Rule and the
+Bedrock Rule: it is the promise the grid exists to keep, not a layout
+preference.
 
 ### Hierarchy
 
@@ -740,23 +793,28 @@ Verified against the packages installed in this repo: `expo-glass-effect`
 3. **Android 12+.** `BlurView` with `dimezisBlurViewSdk31Plus`, intensity 40,
    plus the same scrim. Blur on **at most one element per screen** — the sheet
    gets it, the tab bar does not. Press feedback is Android's own ripple.
+   **Ratified as written** (owner, 2026-08-18): Android stays faithful to its
+   platform — this rung is the Android design, not a degraded iOS.
 4. **Extension side panel.** `backdrop-filter: blur(20px) saturate(115%)` over
    the membrane tint, on **exactly two elements per document** — the sticky
    header and the tab bar, both `position: fixed`. Never on a scrolling
    container, never on a sheet, never on a list row. Gate with
    `@supports (backdrop-filter: blur(1px))`.
-5. **No transparency.** Triggered by `AccessibilityInfo.isReduceTransparencyEnabled()`,
-   by `@media (prefers-reduced-transparency: reduce)`, or by an in-app
-   Appearance toggle — the toggle is the real control, because the media query
-   could not be verified outside Chromium. Membranes become the nearest opaque
+5. **No transparency.** In v1 this rung is entered by the **OS signal alone**
+   (owner, 2026-08-18): `AccessibilityInfo.isReduceTransparencyEnabled()` on
+   native, `@media (prefers-reduced-transparency: reduce)` on the DOM. The
+   in-app Appearance toggle this ladder used to name as "the real control" is
+   **deferred to a later Settings pass**, not dropped — the argument for it
+   (the media query could not be verified outside Chromium) still stands and
+   is why the toggle stays on the roadmap. Membranes become the nearest opaque
    plane: thin → `surface.raised`, thick → `surface.crest`. Edges keep their
-   inner highlight, the ambient shadow stays, and **the layout does not move by
+   inner highlight, and **the layout does not move by
    one pixel**. Android below 12 also lands here.
 
 Rung 5 is a first-class look, not a fallback. It is what a large fraction of
 users and every low-end Android will see.
 
-### Shadow Vocabulary — the bezel is built, the ambients are not
+### Shadow Vocabulary — the bezel is built; the card ambient has its one consumer; the membrane ambient is rejected
 
 - **Top inner highlight** (`inset 0 1px 0 rgba(226,236,255,0.14)`): the lit rim.
   Every membrane and every raised card gets it.
@@ -771,17 +829,25 @@ users and every low-end Android will see.
   view's own radius, so the rim follows the corner the way the DOM's does. One
   measured caveat: Android draws inset shadows only from API 29, and below that
   the bezel is simply absent and nothing else changes.
-- **Card ambient** (`0 8px 24px -8px rgba(3,6,12,0.45)`): raised cards (E2).
-- **Membrane ambient** (`0 24px 48px -12px rgba(3,6,12,0.55)`): floating chrome
-  (E3). Real offset, real blur.
+- **Card ambient** (`0 8px 24px -8px rgba(3,6,12,0.45)`, `shadowsCSS.cardAmbient`):
+  **shipped on its one consumer, the balance card**, and that is where it stays.
+  The promise of rolling it out to every raised card is **withdrawn** (owner,
+  2026-08-18) — no other surface has demonstrated the need; if one does, the
+  expansion gets re-specified.
+- **Membrane ambient** (`0 24px 48px -12px rgba(3,6,12,0.55)`): **rejected as a
+  promise** (owner, 2026-08-18). It never gained a consumer, and a shadow no
+  surface wears is spec debt, not a shadow. The value stays recorded here so a
+  re-specification, if a real need appears, starts from the number that was
+  chosen.
 - **Press specular**: a 90ms 12%-opacity radial at the touch point, 120px
   radius, `screen` blend, in a cold `#9FE0EF`. The only place a cold light color
   touches a control, and it is transient.
 
 Four elevation levels, each expressed as material: **E0** ground, no edge, no
 shadow · **E1** `surface.shelf` with the top highlight only · **E2**
-`surface.raised` plus bezel, highlight, bottom shade, card ambient · **E3**
-membrane or `surface.crest` with membrane ambient.
+`surface.raised` plus bezel, highlight, bottom shade — the card ambient only on
+the balance card · **E3** membrane or `surface.crest` (the membrane ambient it
+used to name is rejected, above).
 
 ### Named Rules
 
@@ -822,8 +888,10 @@ is not a pill.** The primary button was 28 on a 56px body — a full pill — an
 the field was 8, so a button and the input above it read as two different
 shapes doing one job. 12 is the token-list row, which is the shape the user
 already sees most, and a control now belongs to the same family as the row it
-sits under. A pill is reserved for what genuinely is one: the tab bar and
-`full` (avatars, toggles).
+sits under. A pill is reserved for what genuinely is one: `full` (avatars,
+toggles). The tab bar used to be exempted here as a genuine pill; that
+exemption is withdrawn (owner, 2026-08-18) — the tab bar is a control, and it
+takes the control radius. See §Navigation for the reversal.
 
 **The concentric rule: inner radius = outer radius − padding.** 28 − 6 = 22 is
 the canonical pair, and it is what makes a double bezel look machined rather
@@ -834,11 +902,15 @@ in `borderWidth` (0.5, 0.75, 0.8) are legacy: they disappear on 1× Android and
 in a narrow column at 100% zoom. 2px exists only for the focus ring. No colored
 `border-left` accent thicker than 1px.
 
-**The double bezel** — specified, not built, and not to be confused with
-`shadowsCSS.bezel`, which is the 1px two-rim edge on a filled control and does
-ship. This one is a construction, not a shadow. On the balance card and the
-approval sheet: an outer shell filled `rgba(199, 211, 232, 0.06)` with a 1px
-hairline, 6px of padding, radius 28; the inner core is its own surface at radius 22.
+**The double bezel** — **rejected as a promise** (owner, 2026-08-18); not to
+be confused with `shadowsCSS.bezel`, which is the 1px two-rim edge on a filled
+control and does ship. This one was a construction, not a shadow — on the
+balance card and the approval sheet: an outer shell filled
+`rgba(199, 211, 232, 0.06)` with a 1px hairline, 6px of padding, radius 28;
+the inner core its own surface at radius 22. It never gained a consumer and no
+need was demonstrated, so the open item is withdrawn; if a real need appears,
+it gets re-specified — and the concentric rule it demonstrated survives it,
+because that rule governs any nested radii, not this construction.
 
 ### The scales motif
 
@@ -1260,8 +1332,10 @@ thing that glows.
   explicitly because MUI's dark mode fakes elevation with a white overlay
   gradient that fights the depth ramp.
 - **Border**: 1px `border.raised` on anything above `surface.shelf`.
-- **Shadow strategy**: see §Elevation & Depth. Ambient shadows are specified,
-  not built; today the separation is carried by surface color alone.
+- **Shadow strategy**: see §Elevation & Depth. The card ambient ships on its
+  one consumer, the balance card; everywhere else the separation is carried by
+  surface color alone, and the membrane ambient is rejected (2026-08-18) — see
+  §Shadow Vocabulary.
 - **Internal padding**: 20px on content cards, 16px in the narrow column.
 - **The balance card does not remount when the chain changes** (**shipped**).
   Switching chains crossfades only what is _printed_ on the card — logo, network
@@ -1346,9 +1420,14 @@ Two details are load-bearing:
 
 ### Navigation
 
-The tab bar is `membraneThin` at 28px radius, floating clear of the bottom edge
-on phone and attached to the bottom edge in the extension side panel, with the
-24px refraction strip along its top edge. The active item is a filled icon in
+The tab bar is `membraneThin` at **12px radius** — the control radius —
+floating clear of the bottom edge on phone and attached to the bottom edge in
+the extension side panel, with the 24px refraction strip along its top edge.
+_(Reversal, 2026-08-18: it was specified at 28, which treated the tab bar as
+material — a floating pill of membrane. The owner's call is that the tab bar
+is a **control**, not material, so "a control is not a pill" wins here the way
+it won for the button and the input — see §The Control Radius Rule, whose pill
+exemption for the tab bar is withdrawn.)_ The active item is a filled icon in
 `salmon-500` with a label beneath in `text.primary` — and it is the screen's one
 living element, which is why the home screen's action buttons are neutral.
 **Specified, not built** as a material; the `GlassTabBar` sizing tokens exist in
