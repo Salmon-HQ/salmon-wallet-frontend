@@ -50,6 +50,7 @@ jest.mock('@salmon/shared', () => ({
     stagger: 24,
     shimmerCycle: 1400,
     pulseCycle: 1200,
+    waitFloor: 5000,
   },
   markPaths: ['M0 0h1v1H0z'],
   markViewBoxAttr: '0 0 253 236',
@@ -133,12 +134,15 @@ describe('LoadingScreen', () => {
     expect(screen.queryByTestId('loading-descent')).toBeNull();
   });
 
-  it('keeps its wait screens free of the tip carousel by default', () => {
-    // "Always check the transaction details before signing", arriving after the
-    // signature. The default is off; the screens where the advice still applies
-    // to a decision the user can make opt in.
+  it('shows the tips on every wait, and lets one surface suppress them', () => {
+    // Reversal (owner): the default was off, so only unlock and recovery had
+    // anything to read while they waited. Every wait shows them now; the prop
+    // survives as the exception rather than the rule.
     render(<LoadingScreen visible title="Processing swap" />);
+    expect(screen.getByText('general.tips.1')).toBeTruthy();
 
+    screen.unmount();
+    render(<LoadingScreen visible title="Processing swap" showTips={false} />);
     expect(screen.queryByText('general.tips.1')).toBeNull();
   });
 
@@ -213,11 +217,18 @@ describe('LoadingScreen', () => {
 
       rerender(<LoadingScreen visible={false} title="Processing swap" waves onExited={onExited} />);
 
-      // One whole crossing plus an ebb — the worst case, and the value the
-      // hard timer is armed at so a dropped animation callback cannot strand a
-      // caller on the wait screen.
+      // The owner's floor is spent first and nothing is planned inside it: the
+      // wave is still looping and the exit has not been decided yet.
       act(() => {
-        jest.advanceTimersByTime(1579);
+        jest.advanceTimersByTime(4999);
+      });
+      expect(onExited).not.toHaveBeenCalled();
+
+      // Then one whole crossing plus an ebb — the worst case, and the value the
+      // hard timer is armed at so a dropped animation callback cannot strand a
+      // caller on the wait screen. The two are sequential, never overlapped.
+      act(() => {
+        jest.advanceTimersByTime(1 + 1579);
       });
       expect(onExited).not.toHaveBeenCalled();
 
@@ -236,8 +247,16 @@ describe('LoadingScreen', () => {
 
       rerender(<LoadingScreen visible={false} title="Processing swap" waves onExited={onExited} />);
 
+      // The floor is a *hold*, not a transition: reduced motion does not
+      // shorten it, exactly as the copy-feedback hold is not shortened. What
+      // reduced motion still buys is the wave it does not have to wait out.
       act(() => {
-        jest.advanceTimersByTime(180);
+        jest.advanceTimersByTime(4999);
+      });
+      expect(onExited).not.toHaveBeenCalled();
+
+      act(() => {
+        jest.advanceTimersByTime(1 + 180);
       });
       expect(onExited).toHaveBeenCalledTimes(1);
     });
@@ -251,7 +270,7 @@ describe('LoadingScreen', () => {
       rerender(<LoadingScreen visible={false} title="Processing swap" waves onExited={onExited} />);
 
       act(() => {
-        jest.advanceTimersByTime(5000);
+        jest.advanceTimersByTime(5000 + 5000);
       });
       expect(onExited).toHaveBeenCalledTimes(1);
     });

@@ -46,7 +46,10 @@
  *   the wait leaves as one gesture with the departing wave. The crests stay
  *   outside the travelling cluster: the water is the ground, and the ground
  *   never travels. (DESIGN.md §Motion, "The wait owns its passage, end to end".)
- * - **Tips are off by default** — see `LoadingScreenBaseProps.showTips`.
+ * - **Tips are on by default** — see `LoadingScreenBaseProps.showTips`.
+ * - **A wait lasts at least `motionMs.waitFloor`**, whether or not the work
+ *   behind it has already finished. The floor is spent with the crest still
+ *   looping, and only then is the exit planned — see the visibility effect.
  */
 import { memo, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -73,6 +76,7 @@ import {
   markPaths,
   markViewBoxAttr,
   motionEasing,
+  motionMs,
   planWavefrontExit,
   reducedMotion,
   semantic,
@@ -488,7 +492,7 @@ export const LoadingScreen = memo(function LoadingScreen({
   subtitle,
   tips = DEFAULT_WALLET_TIP_KEYS as unknown as string[],
   tipInterval = 4000,
-  showTips = false,
+  showTips = true,
   // Every wait is water. `waves` used to default to `false` and be passed only
   // by the transaction wait; product hit the account-recovery wait (2026-08) and
   // found it bare. The treatment is the wait now, not a decoration one screen
@@ -531,6 +535,13 @@ export const LoadingScreen = memo(function LoadingScreen({
    * calm-water handoff stays honest.
    */
   const startedAtRef = useRef(0);
+  /**
+   * When the overlay came up, so the exit can spend the owner's floor
+   * (`motionMs.waitFloor`) before it plans anything. Measured from the moment
+   * the caller sees the wait appear, not from the loop's delayed start: the
+   * floor is about how long the *screen* is up.
+   */
+  const shownAtRef = useRef(0);
   // Held in a ref so an inline callback cannot restart the exit timer on every
   // render — which would leave the screen up forever.
   const onExitedRef = useRef(onExited);
@@ -545,9 +556,22 @@ export const LoadingScreen = memo(function LoadingScreen({
       setIsFadingOut(false);
       setIsClosing(false);
       startedAtRef.current = Date.now() + CONTENT_LANDS_MS;
+      shownAtRef.current = Date.now();
       return undefined;
     }
     if (!isVisible) return undefined;
+
+    // **The floor comes first, and it is a hold rather than a transition.** A
+    // wait stays up `motionMs.waitFloor` whether or not the work behind it has
+    // already finished, and reduced motion does not shorten it — exactly as
+    // the copy-feedback hold is not shortened. It is spent with the crest's
+    // `infinite` animation still running and nothing cancelled, so when the
+    // exit is finally planned it is planned from the phase the water is
+    // genuinely in: the floor and the calm-water hold are sequential, never
+    // double-counted. See DESIGN.md §The wait.
+    const floorMs = Math.max(0, motionMs.waitFloor - (Date.now() - shownAtRef.current));
+
+    let exitTimer: ReturnType<typeof setTimeout> | undefined;
 
     // The exit, and it waits for calm water. Product, 2026-08: *"que no se pase
     // a la siguiente screen hasta que la última onda salga de la pantalla, es
@@ -562,39 +586,53 @@ export const LoadingScreen = memo(function LoadingScreen({
     // A wait that resolves while the content is still floating in has thrown
     // nothing yet: there is no front on the screen to wait out, which is the
     // same answer the plan gives for calm water.
-    const elapsedMs = startedAtRef.current ? Date.now() - startedAtRef.current : 0;
-    const preImpact = elapsedMs < 0;
-    const { holdMs, exitMs } = planWavefrontExit(
-      Math.max(0, elapsedMs),
-      !riding || isReduceMotionEnabled || preImpact
-    );
-
-    if (riding && !isReduceMotionEnabled && holdMs > 0) {
-      // Only the ground has anything to wait for: nothing rides the front, so
-      // the hold is the whole exit.
-      contentRef.current?.style.setProperty('--wave-hold', `${holdMs}ms`);
-      setIsClosing(true);
-      const timer = setTimeout(
-        () => {
-          setIsVisible(false);
-          setIsClosing(false);
-          onExitedRef.current?.();
-          // The hard bound, unchanged in job: a wallet may never be stranded on a
-          // wait. `exitMs` is what the screen is actually doing and
-          // `wavefrontExitMs` is its worst case, so the guard can only be late.
-        },
-        Math.min(exitMs, wavefrontExitMs(false))
+    const planExit = () => {
+      const elapsedMs = startedAtRef.current ? Date.now() - startedAtRef.current : 0;
+      const preImpact = elapsedMs < 0;
+      const { holdMs, exitMs } = planWavefrontExit(
+        Math.max(0, elapsedMs),
+        !riding || isReduceMotionEnabled || preImpact
       );
-      return () => clearTimeout(timer);
-    }
 
-    setIsFadingOut(true);
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      setIsFadingOut(false);
-      onExitedRef.current?.();
-    }, durationMs.slow);
-    return () => clearTimeout(timer);
+      if (riding && !isReduceMotionEnabled && holdMs > 0) {
+        // Only the ground has anything to wait for: nothing rides the front, so
+        // the hold is the whole exit.
+        contentRef.current?.style.setProperty('--wave-hold', `${holdMs}ms`);
+        setIsClosing(true);
+        exitTimer = setTimeout(
+          () => {
+            setIsVisible(false);
+            setIsClosing(false);
+            onExitedRef.current?.();
+            // The hard bound, unchanged in job: a wallet may never be stranded on a
+            // wait. `exitMs` is what the screen is actually doing and
+            // `wavefrontExitMs` is its worst case, so the guard can only be late.
+            // The floor is spent before this is armed, so it bounds the whole
+            // thing rather than racing it.
+          },
+          Math.min(exitMs, wavefrontExitMs(false))
+        );
+        return;
+      }
+
+      setIsFadingOut(true);
+      exitTimer = setTimeout(() => {
+        setIsVisible(false);
+        setIsFadingOut(false);
+        onExitedRef.current?.();
+      }, durationMs.slow);
+    };
+
+    // The floor is a plain hold: the wait is simply still up, doing what it was
+    // already doing, and the exit is planned when it runs out.
+    let floorTimer: ReturnType<typeof setTimeout> | undefined;
+    if (floorMs <= 0) planExit();
+    else floorTimer = setTimeout(planExit, floorMs);
+
+    return () => {
+      if (floorTimer) clearTimeout(floorTimer);
+      if (exitTimer) clearTimeout(exitTimer);
+    };
   }, [visible, isVisible, riding, isReduceMotionEnabled]);
 
   /**

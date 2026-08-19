@@ -65,6 +65,7 @@ vi.mock('@salmon/shared', async () => ({
     stagger: 24,
     shimmerCycle: 1400,
     pulseCycle: 1200,
+    waitFloor: 5000,
   },
   motionDuration: { tide: '720ms' },
   motionEasing: {
@@ -202,11 +203,14 @@ describe('the wave', () => {
     expect(screen.queryByTestId('loading-emitter')).toBeNull();
   });
 
-  it('hands off at once when the wait resolves before the mark has landed', () => {
-    // The content is still floating in, so nothing has been thrown yet: there
-    // is no front on the screen to wait out, which is the same answer the plan
-    // gives for calm water (DESIGN.md §The wait, "Calm water hands off
-    // immediately").
+  it('still leaves on a real wave when the work resolved before the mark landed', () => {
+    // The exit used to be planned the instant the work resolved, so a wait
+    // that resolved during the float-in had thrown nothing and left on the
+    // ramp alone. The floor changes what is true here rather than what is
+    // implemented: it outlasts the landing, so by the time the exit is planned
+    // the mark has pressed and there is a front to see out. The plan is still
+    // read at that later moment, which is what keeps the floor and the
+    // calm-water hold from double-counting.
     const onExited = vi.fn();
     const { rerender } = render(
       <LoadingScreen visible waves title="Processing swap" onExited={onExited} />
@@ -215,9 +219,26 @@ describe('the wave', () => {
     rerender(<LoadingScreen visible={false} waves title="Processing swap" onExited={onExited} />);
 
     act(() => {
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(5000 + 1579);
+    });
+    expect(onExited).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
     });
     expect(onExited).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the tips on every wait, and lets one surface suppress them', () => {
+    // Reversal (owner): the default was off, so only unlock and recovery had
+    // anything to read while they waited. Every wait shows them now; the prop
+    // survives as the exception rather than the rule.
+    render(<LoadingScreen visible title="Processing swap" />);
+    expect(screen.getByText('tips.one')).toBeTruthy();
+
+    cleanup();
+    render(<LoadingScreen visible title="Processing swap" showTips={false} />);
+    expect(screen.queryByText('tips.one')).toBeNull();
   });
 
   it('holds until the front in flight has left the screen, then ebbs', () => {
@@ -234,9 +255,11 @@ describe('the wave', () => {
 
     rerender(<LoadingScreen visible={false} waves title="Processing swap" onExited={onExited} />);
 
-    // One whole crossing plus an ebb: the front is not cut off, it finishes.
+    // The owner's floor first, with the crest still looping and the exit not
+    // yet planned; then one whole crossing plus an ebb, so the front is not
+    // cut off, it finishes. The two are sequential, never overlapped.
     act(() => {
-      vi.advanceTimersByTime(1579);
+      vi.advanceTimersByTime(5000 - (CONTENT_LANDS_MS + 1) + 1579);
     });
     expect(onExited).not.toHaveBeenCalled();
 
@@ -256,9 +279,17 @@ describe('the wave', () => {
 
     rerender(<LoadingScreen visible={false} waves title="Processing swap" onExited={onExited} />);
 
+    // The floor is a *hold*, not a transition: reduced motion does not shorten
+    // it, exactly as the copy-feedback hold is not shortened. What reduced
+    // motion still buys is the wave it does not have to wait out.
+    act(() => {
+      vi.advanceTimersByTime(4999);
+    });
+    expect(onExited).not.toHaveBeenCalled();
+
     // The plain fade, not the wave-driven exit: the receipt arrives sooner.
     act(() => {
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(1 + 300);
     });
     expect(onExited).toHaveBeenCalledTimes(1);
   });

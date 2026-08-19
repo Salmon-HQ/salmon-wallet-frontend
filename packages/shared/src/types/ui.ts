@@ -119,15 +119,20 @@ export interface LoadingScreenBaseProps {
   /** Interval in ms to change tips (default: 4000) */
   tipInterval?: number;
   /**
-   * Whether to cycle wallet tips at the bottom (default: **false**).
+   * Whether to cycle wallet tips at the bottom (default: **true**).
    *
-   * The default used to be `true`, which put "always check the transaction
-   * details before signing" on the screen that follows signing. A caution for a
-   * moment that has already passed is not filler — it teaches the user to skip
-   * security copy, and this product needs the approval and look-alike warnings
-   * read. Tips are opt-in now, and the screens that opt in are the ones where
-   * the advice still applies to a decision the user can still make: unlock, and
-   * wallet creation/recovery.
+   * _Reversal._ The default was `false`, and the argument for it was that a
+   * caution belongs before the decision it guards: "always check the
+   * transaction details before signing" on the screen that *follows* signing
+   * teaches the user to skip security copy. Tips were opt-in, and only unlock
+   * and wallet creation/recovery opted in.
+   *
+   * The owner reversed it: the tips are shown on every wait, on both
+   * platforms. A wait is the one screen with nothing else to read, and a wait
+   * that speaks only its own title is the bare screen DESIGN.md §The wait
+   * already refused once when the wave was made unconditional. The prop
+   * survives so a surface with a reason to suppress them still can — it is
+   * the exception now, not the rule.
    */
   showTips?: boolean;
   /** Custom logo size (default: 100) */

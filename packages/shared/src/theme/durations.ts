@@ -110,6 +110,26 @@ export const motionMs = {
    * shown the moment it is known.
    */
   waitMinVisible: 600,
+  /**
+   * 5000ms — **the owner-set floor on a wait, and the one place to dial it.**
+   * Once a waiting screen is up it stays up at least this long, whether or not
+   * the work behind it has already finished, on every wait: unlock, boot,
+   * recovery and transactions alike.
+   *
+   * It is a third gate in the same family as `waitDelay` and `waitMinVisible`,
+   * and it obeys the same two rules. It is a **hold**, not a transition:
+   * `resolveMotionMs` must never be applied to it, and reduced motion must not
+   * shorten it — exactly as `feedbackHold` is not shortened. And it never
+   * delays the real work, only the screen.
+   *
+   * It composes *in front of* the wave's exit rather than replacing it (see
+   * DESIGN.md §The wait, "the exit waits for calm water"): the floor is spent
+   * first, with the wave still looping, and only then is the exit planned from
+   * the phase the water is actually in — so the two are never double-counted,
+   * and the watchdog that guarantees the handoff is armed at the floor plus
+   * `wavefrontExitMs()`, so it still bounds the whole thing.
+   */
+  waitFloor: 5000,
 
   /**
    * Continuous loops. These are cycle lengths, not transitions: they describe

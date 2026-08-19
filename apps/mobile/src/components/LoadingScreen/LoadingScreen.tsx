@@ -37,7 +37,10 @@
  *   native module, and therefore a store release rather than an OTA. Skia would
  *   not even solve it: it distorts pixels in its own canvas, it does not move
  *   real views.
- * - **Tips are off by default** — see `LoadingScreenBaseProps.showTips`.
+ * - **Tips are on by default** — see `LoadingScreenBaseProps.showTips`.
+ * - **A wait lasts at least `motionMs.waitFloor`**, whether or not the work
+ *   behind it has already finished. The floor is spent with the wave still
+ *   looping, and only then is the exit planned — see the exit effect below.
  *
  * Uses react-native-reanimated for 60fps animations, all on the UI thread.
  */
@@ -231,7 +234,7 @@ export function LoadingScreen({
   subtitle,
   tips = DEFAULT_WALLET_TIP_KEYS as unknown as string[],
   tipInterval = 4000,
-  showTips = false,
+  showTips = true,
   // Every wait is water. `waves` used to default to `false` and be passed only
   // by the transaction wait; product hit the account-recovery wait (2026-08)
   // and found it bare. The treatment is the wait now, not a decoration one
@@ -300,6 +303,13 @@ export function LoadingScreen({
    */
   const startedAtRef = useRef(0);
   /**
+   * When the overlay came up, so the exit can spend the owner's floor
+   * (`motionMs.waitFloor`) before it plans anything. Measured from the same
+   * moment the caller sees the wait appear, not from the loop's delayed start:
+   * the floor is about how long the *screen* is up.
+   */
+  const shownAtRef = useRef(0);
+  /**
    * True from the moment the exit is planned until the wait shows again.
    * The exit effect also re-runs when `geometry.origin` lands late while
    * `visible` is already false; without this guard that re-run re-plans the
@@ -356,6 +366,7 @@ export function LoadingScreen({
       setIsVisible(true);
       exitedRef.current = false;
       exitArmedRef.current = false;
+      shownAtRef.current = Date.now();
       // The loop starts one beat and one float after the overlay does — see
       // below — so the exit's phase arithmetic measures from the delayed
       // start, not the mount.
@@ -457,59 +468,84 @@ export function LoadingScreen({
     // Once planned, the exit is never re-planned: a `geometry.origin`
     // measurement landing while the wait is already leaving would otherwise
     // re-run this branch and restart the ebb. The effect's cleanup has just
-    // cleared the watchdog, so only the watchdog is re-armed.
-    if (exitArmedRef.current) {
-      const rearmed = setTimeout(finishExit, wavefrontExitMs(isReduceMotionEnabled));
-      return () => clearTimeout(rearmed);
-    }
-    exitArmedRef.current = true;
-    const riding = waves && !isReduceMotionEnabled && geometry.origin !== null;
-    // Resolved while the content is still arriving: the loops are only
-    // *scheduled* (they wait out CONTENT_LANDS_MS) and nothing has moved yet,
-    // so cancel them and leave on ebb alone — calm water for real. Once the
-    // descent has begun, nothing is cancelled: the plan holds through the
-    // committed strike and the whole train's crossing.
-    const preStart = riding && startedAtRef.current > 0 && Date.now() < startedAtRef.current;
-    if (preStart) {
-      cancelAnimation(sink);
-      cancelAnimation(ring);
-    }
-    const { holdMs } = planWavefrontExit(
-      riding && !preStart && startedAtRef.current
-        ? Math.max(0, Date.now() - startedAtRef.current)
-        : 0,
-      !riding || preStart
-    );
-
-    // The content sinks with the wave that carries it out — mark, words and
-    // tips together, on the same delayed window as the overlay's ebb, so the
-    // wait leaves as one gesture rather than as a fade with stragglers. The
-    // ramp is `WAVEFRONT_EBB_MS` — the sink half of the verb, per DESIGN.md
-    // §Motion — shared with the exit plan so what the caller is told and what
-    // the screen does stay the same number. Under reduce motion there is no
-    // travel and no viscosity: the calm variant stays a short opacity step.
-    const rampMs = isReduceMotionEnabled ? motionMs.ebb : WAVEFRONT_EBB_MS;
-    if (!isReduceMotionEnabled) {
-      depart.value = withDelay(
-        holdMs,
-        withTiming(SINK_FLOAT_TRAVEL, { duration: rampMs, easing: curve.sink })
-      );
-    }
-
-    overlayOpacity.value = withDelay(
-      holdMs,
-      withTiming(0, { duration: rampMs, easing: curve.sink }, (finished) => {
-        if (finished) {
-          runOnJS(finishExit)();
-        }
-      })
-    );
+    // cleared the timers, so the watchdog is re-armed and — while the floor
+    // below is still being spent — so is the floor's own timer, which lands
+    // at the same absolute moment because it is measured from `shownAtRef`.
+    //
+    // **The floor comes first, and it is a hold rather than a transition.** A
+    // wait stays up `motionMs.waitFloor` whether or not the work behind it has
+    // already finished, and reduced motion does not shorten it — exactly as
+    // the copy-feedback hold is not shortened. It is spent with the wave still
+    // looping and nothing cancelled, so when the exit is finally planned it is
+    // planned from the phase the water is genuinely in: the floor and the
+    // calm-water hold are sequential, never double-counted. See DESIGN.md
+    // §The wait.
+    const floorMs = Math.max(0, motionMs.waitFloor - (Date.now() - shownAtRef.current));
 
     // The hard bound, unchanged in job: a wallet may never be stranded on a
-    // wait by an animation callback that never arrives. It is the worst case of
-    // the plan above, so it can only ever fire *after* the animation would have.
-    const fallback = setTimeout(finishExit, wavefrontExitMs(isReduceMotionEnabled));
-    return () => clearTimeout(fallback);
+    // wait by an animation callback that never arrives. It is the floor plus
+    // the worst case of the plan below, so it can only ever fire *after* the
+    // animation would have.
+    const fallback = setTimeout(finishExit, floorMs + wavefrontExitMs(isReduceMotionEnabled));
+
+    if (exitArmedRef.current) {
+      return () => clearTimeout(fallback);
+    }
+
+    const planExit = () => {
+      exitArmedRef.current = true;
+      const riding = waves && !isReduceMotionEnabled && geometry.origin !== null;
+      // Resolved while the content is still arriving: the loops are only
+      // *scheduled* (they wait out CONTENT_LANDS_MS) and nothing has moved yet,
+      // so cancel them and leave on ebb alone — calm water for real. Once the
+      // descent has begun, nothing is cancelled: the plan holds through the
+      // committed strike and the whole train's crossing.
+      const preStart = riding && startedAtRef.current > 0 && Date.now() < startedAtRef.current;
+      if (preStart) {
+        cancelAnimation(sink);
+        cancelAnimation(ring);
+      }
+      const { holdMs } = planWavefrontExit(
+        riding && !preStart && startedAtRef.current
+          ? Math.max(0, Date.now() - startedAtRef.current)
+          : 0,
+        !riding || preStart
+      );
+
+      // The content sinks with the wave that carries it out — mark, words and
+      // tips together, on the same delayed window as the overlay's ebb, so the
+      // wait leaves as one gesture rather than as a fade with stragglers. The
+      // ramp is `WAVEFRONT_EBB_MS` — the sink half of the verb, per DESIGN.md
+      // §Motion — shared with the exit plan so what the caller is told and what
+      // the screen does stay the same number. Under reduce motion there is no
+      // travel and no viscosity: the calm variant stays a short opacity step.
+      const rampMs = isReduceMotionEnabled ? motionMs.ebb : WAVEFRONT_EBB_MS;
+      if (!isReduceMotionEnabled) {
+        depart.value = withDelay(
+          holdMs,
+          withTiming(SINK_FLOAT_TRAVEL, { duration: rampMs, easing: curve.sink })
+        );
+      }
+
+      overlayOpacity.value = withDelay(
+        holdMs,
+        withTiming(0, { duration: rampMs, easing: curve.sink }, (finished) => {
+          if (finished) {
+            runOnJS(finishExit)();
+          }
+        })
+      );
+    };
+
+    if (floorMs <= 0) {
+      planExit();
+      return () => clearTimeout(fallback);
+    }
+    const floorTimer = setTimeout(planExit, floorMs);
+    return () => {
+      clearTimeout(floorTimer);
+      clearTimeout(fallback);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, waves, geometry.origin, overlayOpacity, sink, ring, isReduceMotionEnabled]);
 
