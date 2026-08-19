@@ -1,21 +1,33 @@
 /**
  * SettingsPanelStack – React Native panel stack speaking the sink-and-float.
  *
- * Renders stacked panels on top of the settings menu using navigation/animation
+ * Renders the settings panels on top of the menu using navigation/animation
  * state owned by the parent sheet. Includes swipe-right gesture to pop.
  *
  * Push/pop used to slide horizontally (shared-axis). DESIGN.md §Motion replaced
  * shared-axis for content swaps — "shared-axis has a left and a right, and the
- * water does not" — so the stack now speaks the verb: the covered panel sinks
- * (`curve.sink`, SINK_OUT_MS), the incoming panel floats up after one beat
- * (`FLOAT_DELAY_MS`), and a pop is the mirror — the top panel sinks and the
- * revealed one floats back. The values are driven `withTiming`s rather than
- * Reanimated entering/exiting props because the sheet owns the mount/unmount
- * clock (its `route`/`ebb` bookkeeping timers): a layout `exiting` would only
- * start at the unmount the sheet schedules, adding one dead `ebb` of lag.
+ * water does not" — so the stack speaks the verb: the panel on screen sinks
+ * (`curve.sink`, SINK_OUT_MS), and only then does the next one float up.
+ *
+ * The two halves are **strictly sequential**, never overlapping: exactly one
+ * panel is on screen at a time, and the incoming one is not even mounted until
+ * the outgoing one has finished sinking — a push raises the rendered depth
+ * from the sink's own completion callback, not from a hand-tuned delay that
+ * could drift out of step with `SINK_OUT_MS`. Between the two halves the
+ * content area is genuinely empty for one beat (`REVEAL_BEAT_MS`); that beat
+ * is what makes the eye read two gestures instead of a crossfade.
+ *
+ * A pop is the mirror and needs no callback: the sheet already sinks the top
+ * panel across its own `ebb` window and shortens the stack afterwards, so the
+ * revealed panel mounts after the sink either way.
+ *
+ * The values are driven `withTiming`s rather than Reanimated entering/exiting
+ * props because the sheet owns the mount/unmount clock (its `route`/`ebb`
+ * bookkeeping timers): a layout `exiting` would only start at the unmount the
+ * sheet schedules, adding one dead `ebb` of lag.
  */
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -27,6 +39,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   useReducedMotion,
+  runOnJS,
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
@@ -45,11 +58,14 @@ import {
 
 const SWIPE_THRESHOLD = 80;
 /**
- * The beat a revealed panel waits before floating back — the sink that
- * uncovers it has already played inside the sheet's `ebb` window, so only the
- * pause itself remains (see `FLOAT_DELAY_MS`'s derivation: sink + 90).
+ * The empty beat between the sink and the float. The sink is no longer waited
+ * out by the delay — the arriving panel does not exist until it is over — so
+ * only the pause itself remains (see `FLOAT_DELAY_MS`'s derivation: sink + 90).
  */
 const REVEAL_BEAT_MS = FLOAT_DELAY_MS - SINK_OUT_MS;
+
+/** What the panel currently on screen is doing on its way out. */
+type SinkKind = 'push' | 'pop' | null;
 
 export function SettingsPanelStack({
   panelRegistry,
@@ -59,30 +75,60 @@ export function SettingsPanelStack({
   animating,
   slideDirection,
 }: MobileSettingsPanelStackProps): React.ReactElement {
+  const isReduceMotionEnabled = useReducedMotion();
+  // How deep into `stack` the screen has actually caught up. A push grows
+  // `stack` immediately; this follows only once the outgoing panel has sunk.
+  const [shownDepth, setShownDepth] = useState(stack.length);
+
+  // A push waits for the sink. Everything else settles at once: a pop (the
+  // sheet sank the top before shortening the stack), the sheet's first panels
+  // (nothing on screen to sink), a close/reset, and reduce motion (a cut).
+  const waitsForSink = stack.length > shownDepth && shownDepth > 0 && !isReduceMotionEnabled;
+
+  useEffect(() => {
+    if (!waitsForSink && stack.length !== shownDepth) {
+      setShownDepth(stack.length);
+    }
+  }, [stack.length, shownDepth, waitsForSink]);
+
+  // The sink's own completion — a push adds exactly one entry, so the depth
+  // steps by one and the pushed panel mounts on the very next render.
+  const revealPushedPanel = useCallback(() => {
+    setShownDepth((depth) => depth + 1);
+  }, []);
+
+  // Whether a panel was already on screen when this one mounts. It carries the
+  // value committed for the previous panel: true after a sink (push or pop) —
+  // the arrival floats — and false for the sheet's first panel, which has
+  // nothing to follow and simply appears. `PanelSlide` reads it once, at mount.
+  const [hasShownPanel, setHasShownPanel] = useState(false);
+  useEffect(() => {
+    setHasShownPanel(shownDepth > 0);
+  }, [shownDepth]);
+
+  const index = shownDepth - 1;
+  const entry = index >= 0 ? stack[index] : undefined;
+  if (!entry) return <View style={styles.container} />;
+
+  const sink: SinkKind =
+    animating && slideDirection === 'out' ? 'pop' : waitsForSink ? 'push' : null;
+
   return (
     <View style={styles.container}>
-      {stack.map((entry, idx) => {
-        const isTop = idx === stack.length - 1;
-        // Only render top 2 panels for performance
-        if (idx < stack.length - 2) return null;
-        const isExiting = isTop && animating && slideDirection === 'out';
-        return (
-          <PanelSlide
-            key={`${entry.screen}-${idx}`}
-            direction={isTop && animating ? slideDirection : 'idle'}
-            isTop={isTop}
-            animating={animating && isTop}
-            onSwipeRight={onBack}
-            canSwipe={isTop && !animating}
-          >
-            {panelRegistry[entry.screen]?.({
-              onBack: isExiting ? () => {} : onBack,
-              onNavigate: isExiting ? () => {} : onNavigate,
-              ...(entry.props || {}),
-            })}
-          </PanelSlide>
-        );
-      })}
+      <PanelSlide
+        key={`${entry.screen}-${index}`}
+        enter={hasShownPanel ? 'float' : 'rest'}
+        sink={sink}
+        onSinkEnd={revealPushedPanel}
+        onSwipeRight={onBack}
+        canSwipe={!animating && !waitsForSink}
+      >
+        {panelRegistry[entry.screen]?.({
+          onBack: sink ? () => {} : onBack,
+          onNavigate: sink ? () => {} : onNavigate,
+          ...(entry.props || {}),
+        })}
+      </PanelSlide>
     </View>
   );
 }
@@ -93,25 +139,24 @@ export function SettingsPanelStack({
 
 interface PanelSlideProps {
   children: React.ReactNode;
-  direction: 'in' | 'out' | 'idle';
-  isTop: boolean;
-  animating: boolean;
+  /** `float` rises from depth after the beat; `rest` is already surfaced. */
+  enter: 'float' | 'rest';
+  sink: SinkKind;
+  /** Called when a push's sink finishes — the cue to mount the next panel. */
+  onSinkEnd: () => void;
   canSwipe?: boolean;
   onSwipeRight?: () => void;
 }
 
 function PanelSlide({
   children,
-  direction,
-  isTop,
-  animating,
+  enter,
+  sink,
+  onSinkEnd,
   canSwipe = false,
   onSwipeRight,
 }: PanelSlideProps): React.ReactElement {
-  // A panel mounting as the pushed top starts under the surface; a panel
-  // mounting as the covered one below starts (and stays) sunk; a panel
-  // mounted with no animation (the sheet's initial panels) starts at rest.
-  const startsSunk = (isTop && animating && direction === 'in') || !isTop;
+  const startsSunk = enter === 'float';
   const translateY = useSharedValue(startsSunk ? SINK_FLOAT_TRAVEL : 0);
   const opacity = useSharedValue(startsSunk ? 0 : 1);
   const scale = useSharedValue(startsSunk ? FLOAT_ENTER_SCALE : 1);
@@ -129,54 +174,35 @@ function PanelSlide({
   // component's reach), and a 360ms sink would be cut mid-flight at 180.
   const popSink = timing(motionMs.ebb, isReduceMotionEnabled, curve.sink);
 
-  const prevIsTopRef = useRef(isTop);
+  // Arriving: float up after the beat the sink left empty. Reduce motion has
+  // no beat to keep — the delay is dropped and the timings resolve to a cut.
   useEffect(() => {
-    const wasTop = prevIsTopRef.current;
-    prevIsTopRef.current = isTop;
-
-    const float = (delayMs: number) => {
-      const rise = (toValue: number, config: typeof floatTravel) =>
-        delayMs > 0 && !isReduceMotionEnabled
-          ? withDelay(delayMs, withTiming(toValue, config))
-          : withTiming(toValue, config);
-      translateY.value = rise(0, floatTravel);
-      scale.value = rise(1, floatTravel);
-      opacity.value = rise(1, floatLight);
-    };
-
-    if (!isTop) {
-      if (wasTop) {
-        // A push covered this panel: it sinks while the new one floats.
-        translateY.value = withTiming(SINK_FLOAT_TRAVEL, sinkOut);
-        scale.value = withTiming(FLOAT_ENTER_SCALE, sinkOut);
-        opacity.value = withTiming(0, sinkOut);
-      }
-      // Mounted as the covered panel: the initial values already hold it sunk.
-      return;
-    }
-
-    if (animating && direction === 'out') {
-      // Pop: leaving is sinking.
-      translateY.value = withTiming(SINK_FLOAT_TRAVEL, popSink);
-      opacity.value = withTiming(0, popSink);
-      return;
-    }
-
-    if (animating && direction === 'in') {
-      // Push: arriving is floating — never before the outgoing surface's
-      // full sink plus the beat (owner: the ordering is non-negotiable;
-      // FLOAT_DELAY_MS = SINK_OUT_MS + 90 is exactly that grammar).
-      float(FLOAT_DELAY_MS);
-      return;
-    }
-
-    if (!wasTop) {
-      // A pop revealed this panel: it floats back from where it sank,
-      // waiting out only the beat — the uncovering sink already played.
-      float(REVEAL_BEAT_MS);
-    }
+    if (enter !== 'float') return;
+    const rise = (toValue: number, config: typeof floatTravel) =>
+      isReduceMotionEnabled
+        ? withTiming(toValue, config)
+        : withDelay(REVEAL_BEAT_MS, withTiming(toValue, config));
+    translateY.value = rise(0, floatTravel);
+    scale.value = rise(1, floatTravel);
+    opacity.value = rise(1, floatLight);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animating, isTop, direction, isReduceMotionEnabled]);
+  }, []);
+
+  // Leaving: sinking. A push reports the end of its sink so the next panel can
+  // mount; a pop is timed by the sheet, which unmounts this panel itself.
+  useEffect(() => {
+    if (!sink) return;
+    const config = sink === 'pop' ? popSink : sinkOut;
+    translateY.value = withTiming(SINK_FLOAT_TRAVEL, config, () => {
+      // Fires cut short as well as completed: a sink that was interrupted must
+      // still hand over, or the stack would stay on the panel that left.
+      'worklet';
+      if (sink === 'push') runOnJS(onSinkEnd)();
+    });
+    scale.value = withTiming(FLOAT_ENTER_SCALE, config);
+    opacity.value = withTiming(0, config);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sink]);
 
   // Swipe-right gesture to pop — useMemo so the responder updates when deps change
   const panResponder = useMemo(
@@ -207,7 +233,7 @@ function PanelSlide({
 
   return (
     <Animated.View
-      style={[styles.panel, { zIndex: isTop ? 2 : 1 }, animatedStyle]}
+      style={[styles.panel, animatedStyle]}
       {...(canSwipe ? panResponder.panHandlers : {})}
     >
       {/* No scales: settings panels are rows of labels, inputs and the
