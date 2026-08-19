@@ -790,6 +790,17 @@ it is not built. The scrim floor and the strip are unconditional, and the OS
 reduce-transparency signal still collapses the material to the nearest
 opaque plane.
 
+**The membrane field (2026-08-19).** The thermocline's fill is no longer
+plain ink: the strip's 0.5× seigaiha now covers the whole membrane surface at
+`scales.membraneFieldOpacity` (0.04, half the strip's 0.08), tiling in
+register with the strip so the 24px band reads as the brighter top edge of
+one continuous field rather than an ornament on a flat tint. The field is
+texture, not transparency — it survives the reduce-transparency collapse to
+the opaque plane. This amends the earlier rule that a membrane's share of the
+motif is the strip alone (owner directive, from the footer screenshots); the
+Scales Exclusion Rule still holds for content surfaces — the field belongs to
+the material.
+
 A rendering note the refraction strip earned the hard way (2026-08-19): on
 mobile the seigaiha pattern must be declared before the mask that consumes
 it, and the mask must set `maskUnits="userSpaceOnUse"` explicitly — iOS

@@ -62,6 +62,12 @@ export function Thermocline({ tier = 'thin', refraction = true, style }: Thermoc
           testID="thermocline-scrim"
         />
       )}
+      {/* The membrane field — the strip's seigaiha over the whole surface at
+          half its opacity; texture, not transparency, so it renders on every
+          rung. See Thermocline.native.tsx. */}
+      <View style={styles.scalesField} pointerEvents="none" testID="thermocline-field">
+        <ScalesBackground variant="refraction" />
+      </View>
       {refraction && (
         <View style={styles.refractionBand} pointerEvents="none" testID="thermocline-refraction">
           <ScalesBackground variant="refraction" />
@@ -73,6 +79,11 @@ export function Thermocline({ tier = 'thin', refraction = true, style }: Thermoc
 
 const styles = StyleSheet.create({
   root: {
+    overflow: 'hidden',
+  },
+  scalesField: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: scales.membraneFieldOpacity,
     overflow: 'hidden',
   },
   refractionBand: {

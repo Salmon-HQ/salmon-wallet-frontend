@@ -209,6 +209,14 @@ export const scales = {
    * iridescence; composites measure under the 1.4:1 decorative ceiling.
    */
   refractionSweep: ['#9FE0EF', salmon[300], success[300]],
+  /**
+   * The membrane field — the same 0.5× seigaiha extended over the *whole*
+   * thermocline surface as the material's own texture (owner, 2026-08-19).
+   * Half the strip's 0.08 so the top edge stays the brighter, distinct
+   * element and the field reads as grain in the ink rather than a second
+   * strip. It is texture, not transparency, so it survives the opaque rung.
+   */
+  membraneFieldOpacity: 0.04,
 } as const;
 
 /**

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { render, waitFor, within } from '@testing-library/react-native';
 import { AccessibilityInfo, StyleSheet } from 'react-native';
 
 const RAISED = '#161C2D';
@@ -20,6 +20,7 @@ jest.mock('@salmon/shared', () => ({
       refractionOpacity: 0.08,
       refractionHeight: 24,
       refractionSweep: ['#9FE0EF', '#FF9E8B', '#7BEFCB'],
+      membraneFieldOpacity: 0.04,
     },
   },
 }));
@@ -100,7 +101,7 @@ describe('Thermocline', () => {
       const style = StyleSheet.flatten(band.props.style);
       expect(style.height).toBe(24);
       expect(style.opacity).toBe(0.08);
-      expect(getByTestId('scales-background').props.variant).toBe('refraction');
+      expect(within(band).getByTestId('scales-background').props.variant).toBe('refraction');
     });
 
     it('stays mounted on the opaque rung', async () => {
@@ -116,6 +117,35 @@ describe('Thermocline', () => {
       const { queryByTestId } = render(<Thermocline refraction={false} style={GEOMETRY} />);
 
       expect(queryByTestId('thermocline-refraction')).toBeNull();
+    });
+  });
+
+  describe('the membrane field', () => {
+    it('covers the whole surface at half the strip opacity', () => {
+      const { getByTestId } = render(<Thermocline style={GEOMETRY} />);
+
+      const field = getByTestId('thermocline-field');
+      const style = StyleSheet.flatten(field.props.style);
+      expect(style.opacity).toBe(0.04);
+      // Full-surface: absoluteFill, no height cap.
+      expect(style.top).toBe(0);
+      expect(style.bottom).toBe(0);
+      expect(within(field).getByTestId('scales-background').props.variant).toBe('refraction');
+    });
+
+    it('is texture, not transparency — it survives the opaque rung', async () => {
+      jest.spyOn(AccessibilityInfo, 'isReduceTransparencyEnabled').mockResolvedValue(true);
+
+      const { getByTestId, queryByTestId } = render(<Thermocline style={GEOMETRY} />);
+
+      await waitFor(() => expect(queryByTestId('thermocline-opaque')).toBeTruthy());
+      expect(getByTestId('thermocline-field')).toBeTruthy();
+    });
+
+    it('stays mounted when the strip is turned off', () => {
+      const { getByTestId } = render(<Thermocline refraction={false} style={GEOMETRY} />);
+
+      expect(getByTestId('thermocline-field')).toBeTruthy();
     });
   });
 });

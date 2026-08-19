@@ -29,6 +29,21 @@ function RefractionStrip() {
 }
 
 /**
+ * The membrane field — the same seigaiha as the strip, extended over the
+ * whole surface at half the strip's opacity (owner, 2026-08-19). Same 0.5×
+ * geometry and same anchor as the strip, so the strip reads as the brighter
+ * top of one continuous field rather than a separate ornament. Texture, not
+ * transparency: it renders on every rung, opaque included.
+ */
+function ScalesField() {
+  return (
+    <View style={styles.scalesField} pointerEvents="none" testID="thermocline-field">
+      <ScalesBackground variant="refraction" />
+    </View>
+  );
+}
+
+/**
  * Thermocline — the P3 membrane material, named after the phenomenon it is.
  *
  * A thermocline is the boundary layer between water masses of different
@@ -76,6 +91,7 @@ export function Thermocline({ tier = 'thin', refraction = true, style }: Thermoc
           testID="thermocline-scrim"
         />
       )}
+      <ScalesField />
       {refraction && <RefractionStrip />}
     </View>
   );
@@ -83,6 +99,11 @@ export function Thermocline({ tier = 'thin', refraction = true, style }: Thermoc
 
 const styles = StyleSheet.create({
   root: {
+    overflow: 'hidden',
+  },
+  scalesField: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: scales.membraneFieldOpacity,
     overflow: 'hidden',
   },
   refractionBand: {

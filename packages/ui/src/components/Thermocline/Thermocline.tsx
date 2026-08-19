@@ -85,6 +85,19 @@ const Layer = styled(Box)<{ $background: string }>(({ $background }) => ({
   background: $background,
 }));
 
+/**
+ * The membrane field — the strip's seigaiha extended over the whole surface
+ * at half its opacity (owner, 2026-08-19). Same 0.5× geometry and top-left
+ * anchor as the strip, so the strip reads as the brighter top of one
+ * continuous field. Texture, not transparency: painted on every rung.
+ */
+const ScalesField = styled(Box)({
+  position: 'absolute',
+  inset: 0,
+  opacity: scales.membraneFieldOpacity,
+  overflow: 'hidden',
+});
+
 const RefractionBand = styled(Box)({
   position: 'absolute',
   top: 0,
@@ -106,6 +119,9 @@ export function Thermocline({ tier = 'thin', refraction = true, style, className
       ) : (
         <Layer $background={SCRIM[tier]} data-testid="thermocline-scrim" />
       )}
+      <ScalesField data-testid="thermocline-field">
+        <ScalesBackground variant="refraction" />
+      </ScalesField>
       {refraction && (
         <RefractionBand data-testid="thermocline-refraction">
           <ScalesBackground variant="refraction" />

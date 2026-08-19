@@ -22,6 +22,7 @@ vi.mock('@salmon/shared', () => ({
       refractionOpacity: 0.08,
       refractionHeight: 24,
       refractionSweep: ['#9FE0EF', '#FF9E8B', '#7BEFCB'],
+      membraneFieldOpacity: 0.04,
     },
   },
 }));
@@ -87,8 +88,10 @@ describe('Thermocline (DOM)', () => {
     it('is part of the material, mounted by default', () => {
       render(<Thermocline />);
 
-      expect(screen.getByTestId('thermocline-refraction')).toBeTruthy();
-      expect(screen.getByTestId('scales-background').dataset.variant).toBe('refraction');
+      const band = screen.getByTestId('thermocline-refraction');
+      expect(band.querySelector('[data-testid="scales-background"]')?.getAttribute('data-variant')).toBe(
+        'refraction'
+      );
     });
 
     it('stays mounted on the opaque rung', () => {
@@ -103,6 +106,32 @@ describe('Thermocline (DOM)', () => {
       render(<Thermocline refraction={false} />);
 
       expect(screen.queryByTestId('thermocline-refraction')).toBeNull();
+    });
+  });
+
+  describe('the membrane field', () => {
+    it('covers the whole surface with the strip seigaiha', () => {
+      render(<Thermocline />);
+
+      const field = screen.getByTestId('thermocline-field');
+      expect(
+        field.querySelector('[data-testid="scales-background"]')?.getAttribute('data-variant')
+      ).toBe('refraction');
+    });
+
+    it('is texture, not transparency — it survives the opaque rung', () => {
+      reducedTransparency = true;
+
+      render(<Thermocline />);
+
+      expect(screen.getByTestId('thermocline').dataset.rung).toBe('opaque');
+      expect(screen.getByTestId('thermocline-field')).toBeTruthy();
+    });
+
+    it('stays mounted when the strip is turned off', () => {
+      render(<Thermocline refraction={false} />);
+
+      expect(screen.getByTestId('thermocline-field')).toBeTruthy();
     });
   });
 });
