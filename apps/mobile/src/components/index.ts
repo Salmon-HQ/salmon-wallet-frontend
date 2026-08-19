@@ -215,9 +215,6 @@ export type {
 export { NftSeeAllSheet } from './NftSeeAllSheet';
 export type { NftSeeAllSheetProps } from './NftSeeAllSheet';
 
-export { NftSendSheet } from './NftSendSheet';
-export type { NftSendSheetProps } from './NftSendSheet';
-
 // ---------------------------------------------------------------------------
 // Transaction
 // ---------------------------------------------------------------------------
