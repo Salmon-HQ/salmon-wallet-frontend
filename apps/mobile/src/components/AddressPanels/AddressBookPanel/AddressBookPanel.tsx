@@ -16,6 +16,7 @@ import {
   spacing,
   borderRadius,
   fontFamilyNative,
+  getNetworkName,
   getShortAddress,
   type AddressBookSelectorBaseProps,
   type AddressBookItem,
@@ -69,8 +70,7 @@ export function AddressBookPanel({
               {contact.domain || getShortAddress(contact.address, 6)}
             </Text>
             <Text style={styles.contactNetwork} numberOfLines={1}>
-              {contact.networkId.split('-')[0].charAt(0).toUpperCase() +
-                contact.networkId.split('-')[0].slice(1)}
+              {getNetworkName(contact.networkId)}
             </Text>
           </View>
         </View>
