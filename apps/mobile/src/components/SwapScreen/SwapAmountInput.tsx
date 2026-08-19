@@ -185,6 +185,10 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
+    // The spinner stands where the resolved value will sit: left-aligned,
+    // like the input text. Centered, it floats in the middle of the field
+    // and the value appears to jump when it lands.
+    alignItems: 'flex-start',
   },
   input: {
     flex: 1,

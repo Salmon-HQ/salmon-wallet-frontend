@@ -245,6 +245,95 @@ describe('useSwapScreenLogic', () => {
     expect(result.current.isLoadingQuote).toBe(false);
   }, 10_000);
 
+  it('clears a stranded estimate loading flag when the pair switches to jupiter mid-flight', async () => {
+    vi.useFakeTimers();
+
+    let resolveEstimate!: (v: unknown) => void;
+    const hangingEstimate = new Promise((resolve) => {
+      resolveEstimate = resolve;
+    });
+    const onGetBridgeEstimate = vi.fn().mockReturnValueOnce(hangingEstimate);
+
+    const props = createProps({
+      initialInToken: SOL,
+      tokens: [SOL, USDC, BTC],
+      featuredTokens: [SOL, USDC, BTC],
+      jupiterTokens: [SOL, USDC],
+      onGetBridgeEstimate,
+      onGetAvailableTokens: vi.fn().mockResolvedValue(BRIDGE_AVAILABLE_TOKENS),
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.handleOutTokenSelect(BTC);
+    });
+    act(() => {
+      result.current.setInAmount('1');
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(onGetBridgeEstimate).toHaveBeenCalledTimes(1);
+    expect(result.current.isLoadingEstimate).toBe(true);
+
+    // While the estimate is still in flight, the user picks a Solana output:
+    // the pair is now jupiter, and the estimate response will be discarded as
+    // stale — its loading flag must not stay stuck on the screen.
+    act(() => {
+      result.current.handleOutTokenSelect(USDC);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+
+    expect(result.current.quote).toBe(QUOTE);
+    expect(result.current.outAmount).toBe('2.5');
+    expect(result.current.isLoadingQuote).toBe(false);
+    expect(result.current.isLoadingEstimate).toBe(false);
+
+    // The stale estimate landing late changes nothing.
+    await act(async () => {
+      resolveEstimate(BRIDGE_ESTIMATE);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.isLoadingEstimate).toBe(false);
+    expect(result.current.outAmount).toBe('2.5');
+  }, 10_000);
+
+  it('clears the quote loading flag when the amount is cleared mid-debounce', async () => {
+    vi.useFakeTimers();
+
+    const props = createProps({
+      initialInToken: SOL,
+      initialOutToken: USDC,
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    act(() => {
+      result.current.setInAmount('1');
+    });
+    expect(result.current.isLoadingQuote).toBe(true);
+
+    // Clearing the amount cancels the debounced request — nothing will ever
+    // resolve to clear the flag, so the effect itself must reset it.
+    act(() => {
+      result.current.setInAmount('');
+    });
+    expect(result.current.isLoadingQuote).toBe(false);
+  });
+
   it('refreshes instead of executing when the quote countdown has expired on confirm', async () => {
     vi.useFakeTimers();
 

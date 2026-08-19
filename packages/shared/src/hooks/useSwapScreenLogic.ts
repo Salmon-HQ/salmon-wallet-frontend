@@ -530,6 +530,13 @@ export function useSwapScreenLogic<StyleType = unknown>({
     setBridgeEstimate(null);
     setBridgeTransaction(null);
     setQuoteError(null);
+    // The invalidated request can no longer clear its own loading flag (its
+    // finally is seq-guarded, and its debounce timer may never fire at all),
+    // so this run owns both flags. Without this, switching the pair across
+    // providers mid-flight (stealthex → jupiter or back) strands the other
+    // provider's flag as true and the receive field spins forever.
+    setIsLoadingQuote(false);
+    setIsLoadingEstimate(false);
 
     if (!inToken || !outToken || !inAmount || parseFloat(inAmount) <= 0) return;
 
