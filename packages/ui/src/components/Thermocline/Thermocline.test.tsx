@@ -18,11 +18,7 @@ vi.mock('@salmon/shared', () => ({
       membraneThick: 'rgba(11, 15, 25, 0.80)',
     },
     scales: {
-      refractionScale: 0.5,
-      refractionOpacity: 0.08,
-      refractionHeight: 24,
-      refractionSweep: ['#9FE0EF', '#FF9E8B', '#7BEFCB'],
-      membraneFieldOpacity: 0.04,
+      membraneFieldStroke: 'rgba(7, 9, 17, 0.45)',
     },
   },
 }));
@@ -84,39 +80,27 @@ describe('Thermocline (DOM)', () => {
     expect(screen.queryByTestId('thermocline-scrim')).toBeNull();
   });
 
-  describe('the refraction strip', () => {
-    it('is part of the material, mounted by default', () => {
-      render(<Thermocline />);
-
-      const band = screen.getByTestId('thermocline-refraction');
-      expect(band.querySelector('[data-testid="scales-background"]')?.getAttribute('data-variant')).toBe(
-        'refraction'
-      );
-    });
-
-    it('stays mounted on the opaque rung', () => {
-      reducedTransparency = true;
-
-      render(<Thermocline />);
-
-      expect(screen.getByTestId('thermocline-refraction')).toBeTruthy();
-    });
-
-    it('can be turned off', () => {
-      render(<Thermocline refraction={false} />);
-
-      expect(screen.queryByTestId('thermocline-refraction')).toBeNull();
-    });
-  });
-
   describe('the membrane field', () => {
-    it('covers the whole surface with the strip seigaiha', () => {
+    it('is one continuous dark field — the membrane variant, edge to edge', () => {
       render(<Thermocline />);
 
       const field = screen.getByTestId('thermocline-field');
       expect(
         field.querySelector('[data-testid="scales-background"]')?.getAttribute('data-variant')
-      ).toBe('refraction');
+      ).toBe('membrane');
+    });
+
+    it('has no separate refraction strip — a brighter top band broke the material (owner, 2026-08-19)', () => {
+      render(<Thermocline />);
+
+      expect(screen.queryByTestId('thermocline-refraction')).toBeNull();
+    });
+
+    it('ignores the deprecated refraction prop', () => {
+      render(<Thermocline refraction={false} />);
+
+      expect(screen.getByTestId('thermocline-field')).toBeTruthy();
+      expect(screen.queryByTestId('thermocline-refraction')).toBeNull();
     });
 
     it('is texture, not transparency — it survives the opaque rung', () => {
@@ -125,12 +109,6 @@ describe('Thermocline (DOM)', () => {
       render(<Thermocline />);
 
       expect(screen.getByTestId('thermocline').dataset.rung).toBe('opaque');
-      expect(screen.getByTestId('thermocline-field')).toBeTruthy();
-    });
-
-    it('stays mounted when the strip is turned off', () => {
-      render(<Thermocline refraction={false} />);
-
       expect(screen.getByTestId('thermocline-field')).toBeTruthy();
     });
   });

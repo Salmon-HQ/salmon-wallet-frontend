@@ -851,16 +851,18 @@ it is not built. The scrim floor and the strip are unconditional, and the OS
 reduce-transparency signal still collapses the material to the nearest
 opaque plane.
 
-**The membrane field (2026-08-19).** The thermocline's fill is no longer
-plain ink: the strip's 0.5× seigaiha now covers the whole membrane surface at
-`scales.membraneFieldOpacity` (0.04, half the strip's 0.08), tiling in
-register with the strip so the 24px band reads as the brighter top edge of
-one continuous field rather than an ornament on a flat tint. The field is
-texture, not transparency — it survives the reduce-transparency collapse to
-the opaque plane. This amends the earlier rule that a membrane's share of the
-motif is the strip alone (owner directive, from the footer screenshots); the
-Scales Exclusion Rule still holds for content surfaces — the field belongs to
-the material.
+**The membrane field (2026-08-19, revised same day).** The thermocline's
+texture is one continuous field of dark scales: the 0.5× seigaiha drawn in
+`scales.membraneFieldStroke` (near-black at 0.45, ~1.06:1 on
+`surface.crest`), edge to edge on every rung, opaque included — texture, not
+transparency. The first cut layered a light-ink field under the 24px
+refraction strip; the two copies composited in the strip's band and the
+sweep rasterized as a luminance seam that broke the material on both
+platforms, so the strip is retired and its idea merged into the field. The
+sweep survives only in the caustic of The Surfacing. Rule: the membrane
+carries exactly one scales layer, one ink, no per-region opacity — any
+second copy or brighter edge reads as a band. The Scales Exclusion Rule
+still holds for content surfaces — the field belongs to the material.
 
 A rendering note the refraction strip earned the hard way (2026-08-19): on
 mobile the seigaiha pattern must be declared before the mask that consumes

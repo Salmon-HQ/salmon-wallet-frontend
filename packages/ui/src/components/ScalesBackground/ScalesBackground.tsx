@@ -72,6 +72,17 @@ const VARIANTS: Record<
     fade: false,
     fadeFloor: 1,
   },
+  /**
+   * The membrane field — the thermocline's own texture, edge to edge. Same
+   * 0.5× geometry as the refraction strip but a flat *dark* ink (owner,
+   * 2026-08-19: dark scales, one continuous field, no brighter band).
+   */
+  membrane: {
+    stroke: scales.membraneFieldStroke,
+    scale: scales.refractionScale,
+    fade: false,
+    fadeFloor: 1,
+  },
 };
 
 /** `background-image` for the refraction band: the horizontal sweep. */

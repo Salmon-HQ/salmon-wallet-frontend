@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 
 /**
- * The three — and only three — sanctioned appearances of the scales motif.
+ * The sanctioned appearances of the scales motif — these and no others.
  *
  * The motif is the water column's texture and its density is a depth cue, so
  * each appearance is a different distance from the eye rather than a different
@@ -32,7 +32,15 @@ export type ScalesVariant =
    * 0.08 opacity is applied by the mounting container. Part of the material —
    * never mounted free-standing.
    */
-  | 'refraction';
+  | 'refraction'
+  /**
+   * The membrane field — the thermocline's own texture, edge to edge. Same
+   * 0.5× geometry as the refraction strip but a flat *dark* ink
+   * (`scales.membraneFieldStroke`; owner, 2026-08-19: dark scales, one
+   * continuous field, no brighter band). Part of the material — never
+   * mounted free-standing.
+   */
+  | 'membrane';
 
 export interface ScalesBackgroundProps {
   /** Which of the sanctioned appearances to draw. Defaults to `deepField`. */

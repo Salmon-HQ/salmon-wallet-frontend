@@ -210,11 +210,20 @@ export const scales = {
    */
   refractionSweep: ['#9FE0EF', salmon[300], success[300]],
   /**
-   * The membrane field — the same 0.5× seigaiha extended over the *whole*
-   * thermocline surface as the material's own texture (owner, 2026-08-19).
-   * Half the strip's 0.08 so the top edge stays the brighter, distinct
-   * element and the field reads as grain in the ink rather than a second
-   * strip. It is texture, not transparency, so it survives the opaque rung.
+   * The membrane field's ink — the 0.5× seigaiha over the *whole* thermocline
+   * surface, drawn dark (owner, 2026-08-19: "quiero que estén oscuras las
+   * escamas"). Dark grain in the membrane's own ink, one continuous field with
+   * no brighter edge — the light sweep read as a seam where the strip and the
+   * field overlapped. Near-black at 0.45 measures ~1.06:1 on `surface.crest`,
+   * under the 1.4:1 decorative ceiling. Alpha lives here, deep-field style;
+   * the container paints it at full opacity. Texture, not transparency, so it
+   * survives the opaque rung.
+   */
+  membraneFieldStroke: 'rgba(7, 9, 17, 0.45)',
+  /**
+   * @deprecated The field's subtlety now lives in `membraneFieldStroke`'s own
+   * alpha; no renderer applies a container opacity anymore. Kept because
+   * `semantic` is a public export with three apps behind it.
    */
   membraneFieldOpacity: 0.04,
 } as const;

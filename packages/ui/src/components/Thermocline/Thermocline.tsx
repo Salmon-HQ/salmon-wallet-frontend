@@ -22,14 +22,17 @@ import { semantic } from '@salmon/shared';
 import { styled } from '../../utils/styled';
 import { ScalesBackground } from '../ScalesBackground';
 
-const { scales } = semantic;
-
 export type ThermoclineTier = 'thin' | 'thick';
 
 export interface ThermoclineProps {
   /** @default 'thin' */
   tier?: ThermoclineTier;
-  /** The 24px refraction strip at the top edge — part of the material. @default true */
+  /**
+   * @deprecated Unread since 2026-08-19: the refraction strip merged into
+   * the membrane field — its brighter top 24px stacked over the field and
+   * read as a band that broke the material. The field is now one continuous
+   * dark ink; there is no separate strip to toggle.
+   */
   refraction?: boolean;
   style?: CSSProperties;
   className?: string;
@@ -86,29 +89,21 @@ const Layer = styled(Box)<{ $background: string }>(({ $background }) => ({
 }));
 
 /**
- * The membrane field — the strip's seigaiha extended over the whole surface
- * at half its opacity (owner, 2026-08-19). Same 0.5× geometry and top-left
- * anchor as the strip, so the strip reads as the brighter top of one
- * continuous field. Texture, not transparency: painted on every rung.
+ * The membrane field — the 0.5× seigaiha over the whole surface as one flat
+ * dark ink (owner, 2026-08-19: dark scales, one continuous field). The
+ * former 24px refraction strip is merged into this field: a second, brighter
+ * copy clipped to the top edge stacked over the field there and read as a
+ * band that broke the material. No container opacity — the subtlety is the
+ * ink's own alpha (`scales.membraneFieldStroke`), one knob. Texture, not
+ * transparency: painted on every rung.
  */
 const ScalesField = styled(Box)({
   position: 'absolute',
   inset: 0,
-  opacity: scales.membraneFieldOpacity,
   overflow: 'hidden',
 });
 
-const RefractionBand = styled(Box)({
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  height: scales.refractionHeight,
-  opacity: scales.refractionOpacity,
-  overflow: 'hidden',
-});
-
-export function Thermocline({ tier = 'thin', refraction = true, style, className }: ThermoclineProps) {
+export function Thermocline({ tier = 'thin', style, className }: ThermoclineProps) {
   const reduced = usePrefersReducedTransparency();
   const rung = reduced ? 'opaque' : 'tint';
 
@@ -120,13 +115,8 @@ export function Thermocline({ tier = 'thin', refraction = true, style, className
         <Layer $background={SCRIM[tier]} data-testid="thermocline-scrim" />
       )}
       <ScalesField data-testid="thermocline-field">
-        <ScalesBackground variant="refraction" />
+        <ScalesBackground variant="membrane" />
       </ScalesField>
-      {refraction && (
-        <RefractionBand data-testid="thermocline-refraction">
-          <ScalesBackground variant="refraction" />
-        </RefractionBand>
-      )}
     </Root>
   );
 }

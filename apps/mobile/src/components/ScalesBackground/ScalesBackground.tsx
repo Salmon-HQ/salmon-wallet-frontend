@@ -14,7 +14,7 @@ const { scales } = semantic;
  * compression noise rather than as water. Each variant now has a job, a
  * distance, and a stroke actually visible at that distance.
  */
-export type ScalesVariant = 'deepField' | 'fish' | 'caustic' | 'refraction';
+export type ScalesVariant = 'deepField' | 'fish' | 'caustic' | 'refraction' | 'membrane';
 
 /**
  * `#9FE0EF` at 10%. DESIGN.md §The Surfacing specifies the caustic light by
@@ -51,6 +51,14 @@ const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boo
    * (`scales.refractionOpacity`), keeping this file about geometry and ink.
    */
   refraction: { stroke: CAUSTIC_STROKE, scale: scales.refractionScale, fade: false },
+  /**
+   * The membrane field — the thermocline's own texture, edge to edge. Same
+   * 0.5× geometry as the refraction strip but drawn as a flat *dark* ink
+   * (owner, 2026-08-19: dark scales, one continuous field, no brighter
+   * band). No sweep, no fade — any per-region difference reads as a seam in
+   * the material.
+   */
+  membrane: { stroke: scales.membraneFieldStroke, scale: scales.refractionScale, fade: false },
 };
 
 export interface ScalesBackgroundProps {

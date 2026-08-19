@@ -5,8 +5,6 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { ScalesBackground } from '../ScalesBackground';
 import type { ThermoclineProps, ThermoclineTier } from './types';
 
-const { scales } = semantic;
-
 const SCRIM: Record<ThermoclineTier, string> = {
   thin: semantic.surface.membraneThin,
   thick: semantic.surface.membraneThick,
@@ -36,7 +34,7 @@ function prefersReducedTransparency(): boolean {
  * opaque plane when the OS asks for reduced transparency. See
  * `Thermocline.native.tsx` for the material's full story.
  */
-export function Thermocline({ tier = 'thin', refraction = true, style }: ThermoclineProps) {
+export function Thermocline({ tier = 'thin', style }: ThermoclineProps) {
   const scrim = SCRIM[tier];
   const rung = prefersReducedTransparency() ? 'opaque' : 'tint';
 
@@ -62,17 +60,14 @@ export function Thermocline({ tier = 'thin', refraction = true, style }: Thermoc
           testID="thermocline-scrim"
         />
       )}
-      {/* The membrane field — the strip's seigaiha over the whole surface at
-          half its opacity; texture, not transparency, so it renders on every
-          rung. See Thermocline.native.tsx. */}
+      {/* The membrane field — the 0.5× seigaiha as one flat dark ink, edge
+          to edge; the former refraction strip is merged into it (it stacked
+          over the field in the top 24px and read as a band). Texture, not
+          transparency, so it renders on every rung. See
+          Thermocline.native.tsx. */}
       <View style={styles.scalesField} pointerEvents="none" testID="thermocline-field">
-        <ScalesBackground variant="refraction" />
+        <ScalesBackground variant="membrane" />
       </View>
-      {refraction && (
-        <View style={styles.refractionBand} pointerEvents="none" testID="thermocline-refraction">
-          <ScalesBackground variant="refraction" />
-        </View>
-      )}
     </View>
   );
 }
@@ -81,18 +76,10 @@ const styles = StyleSheet.create({
   root: {
     overflow: 'hidden',
   },
+  // No container opacity — the field's subtlety is the ink's own alpha
+  // (`scales.membraneFieldStroke`), so there is exactly one knob.
   scalesField: {
     ...StyleSheet.absoluteFillObject,
-    opacity: scales.membraneFieldOpacity,
-    overflow: 'hidden',
-  },
-  refractionBand: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: scales.refractionHeight,
-    opacity: scales.refractionOpacity,
     overflow: 'hidden',
   },
 });

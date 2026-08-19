@@ -11,9 +11,10 @@ export interface ThermoclineProps {
   /** @default 'thin' */
   tier?: ThermoclineTier;
   /**
-   * The 24px refraction strip clipped to the top edge — part of the
-   * material, on by default.
-   * @default true
+   * @deprecated Unread since 2026-08-19: the refraction strip merged into
+   * the membrane field — its brighter top 24px stacked over the field and
+   * read as a band that broke the material. The field is now one continuous
+   * dark ink; there is no separate strip to toggle.
    */
   refraction?: boolean;
   /**

@@ -6,8 +6,6 @@ import { useMembraneMaterial } from '../../../hooks/useMembraneMaterial';
 import { ScalesBackground } from '../ScalesBackground';
 import type { ThermoclineProps, ThermoclineTier } from './types';
 
-const { scales } = semantic;
-
 /** Scrim per tier — the floor, always painted, never negotiated. */
 const SCRIM: Record<ThermoclineTier, string> = {
   thin: semantic.surface.membraneThin,
@@ -20,25 +18,19 @@ const OPAQUE: Record<ThermoclineTier, string> = {
   thick: semantic.surface.crest,
 };
 
-function RefractionStrip() {
-  return (
-    <View style={styles.refractionBand} pointerEvents="none" testID="thermocline-refraction">
-      <ScalesBackground variant="refraction" />
-    </View>
-  );
-}
-
 /**
- * The membrane field — the same seigaiha as the strip, extended over the
- * whole surface at half the strip's opacity (owner, 2026-08-19). Same 0.5×
- * geometry and same anchor as the strip, so the strip reads as the brighter
- * top of one continuous field rather than a separate ornament. Texture, not
- * transparency: it renders on every rung, opaque included.
+ * The membrane field — the 0.5× seigaiha over the whole surface, drawn as a
+ * flat dark ink (owner, 2026-08-19: dark scales, one continuous field). The
+ * former 24px refraction strip is merged into this field: a second, brighter
+ * copy clipped to the top edge stacked over the field there and read as a
+ * band that broke the material — screenshots, tab bar and ReceiveSheet. One
+ * layer, one ink, edge to edge. Texture, not transparency: it renders on
+ * every rung, opaque included.
  */
 function ScalesField() {
   return (
     <View style={styles.scalesField} pointerEvents="none" testID="thermocline-field">
-      <ScalesBackground variant="refraction" />
+      <ScalesBackground variant="membrane" />
     </View>
   );
 }
@@ -62,7 +54,7 @@ function ScalesField() {
  * events, no children. Evolves the former `Membrane` component; the
  * `surface.membrane*` tokens keep their name.
  */
-export function Thermocline({ tier = 'thin', refraction = true, style }: ThermoclineProps) {
+export function Thermocline({ tier = 'thin', style }: ThermoclineProps) {
   const material = useMembraneMaterial();
   const rung = material === 'opaque' ? 'opaque' : 'tint';
   const scrim = SCRIM[tier];
@@ -92,7 +84,6 @@ export function Thermocline({ tier = 'thin', refraction = true, style }: Thermoc
         />
       )}
       <ScalesField />
-      {refraction && <RefractionStrip />}
     </View>
   );
 }
@@ -101,18 +92,10 @@ const styles = StyleSheet.create({
   root: {
     overflow: 'hidden',
   },
+  // No container opacity — the field's subtlety is the ink's own alpha
+  // (`scales.membraneFieldStroke`), so there is exactly one knob.
   scalesField: {
     ...StyleSheet.absoluteFillObject,
-    opacity: scales.membraneFieldOpacity,
-    overflow: 'hidden',
-  },
-  refractionBand: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: scales.refractionHeight,
-    opacity: scales.refractionOpacity,
     overflow: 'hidden',
   },
 });
