@@ -1,11 +1,12 @@
 /**
  * The sink-and-float contract. What matters is not the pixels but the
  * decisions that are easy to regress silently: exit sinks *down* and enter
- * floats *up* over the same named distance, the durations come from the
- * shared vocabulary (`drift` in, `ebb` out — exit faster than enter), and
+ * floats *up* over the same named distance, the durations are derived from
+ * the water's clock (drift×2 in, tide/2 out — exit faster than enter), the
+ * light runs on its own Beer–Lambert curve while the travel settles, and
  * reduce motion gets no layout animation at all — the swap stays a cut.
  */
-import { motionMs } from '@salmon/shared';
+import { motionEasing, motionMs } from '@salmon/shared';
 
 // Reanimated pulls the Worklets native module, which does not exist under
 // Jest. `withTiming` is stubbed to echo its arguments so the assertions can
@@ -28,13 +29,18 @@ import {
   FLOAT_DELAY_MS,
   FLOAT_ENTER_SCALE,
   FLOAT_IN_MS,
+  SINK_FLOAT_STAGGER_MS,
   SINK_FLOAT_TRAVEL,
   SINK_OUT_MS,
   floatEntering,
   sinkExiting,
 } from './sinkAndFloat';
 
-type StubTiming = { toValue: number; config: { duration: number }; delayMs?: number };
+type StubTiming = {
+  toValue: number;
+  config: { duration: number; easing: number[] };
+  delayMs?: number;
+};
 type StubAnimation = {
   initialValues: {
     opacity: number;
@@ -65,6 +71,19 @@ describe('sinkAndFloat', () => {
     expect(animation.animations.opacity.config.duration).toBe(FLOAT_IN_MS);
     expect(animation.animations.transform[0].translateY?.toValue).toBe(0);
     expect(animation.animations.transform[1].scale?.toValue).toBe(1);
+  });
+
+  it('splits the media: travel settles while the light returns on Beer–Lambert', () => {
+    const entering = floatEntering(false);
+    const animation = (entering as unknown as () => StubAnimation)();
+    // The light comes back slow-then-fast — the accelerating `sink` bezier,
+    // the vocabulary's closest shape to depthField's exp(-μ·depth).
+    expect(animation.animations.opacity.config.easing).toEqual(motionEasing.sink.native);
+    // The travel lands on `settle` — the Surfacing amount's damped, monotonic
+    // tail. No overshoot: nothing bounces in this water.
+    expect(animation.animations.transform[0].translateY?.config.easing).toEqual(
+      motionEasing.settle.native
+    );
   });
 
   it('sinks out: drops the same travel while the light goes — faster than it enters', () => {
@@ -106,8 +125,18 @@ describe('sinkAndFloat', () => {
     expect(FLOAT_DELAY_MS).toBeGreaterThan(SINK_OUT_MS);
   });
 
-  it('keeps the durations on the shared vocabulary', () => {
-    expect(FLOAT_IN_MS).toBe(motionMs.drift);
-    expect(SINK_OUT_MS).toBe(motionMs.ebb);
+  it('derives the durations from the water clock, not the generic-UI ramp', () => {
+    // Float: drift×2 — inside the owner's 450–650 band, between `rise` and `tide`.
+    expect(FLOAT_IN_MS).toBe(motionMs.drift * 2);
+    expect(FLOAT_IN_MS).toBeGreaterThanOrEqual(450);
+    expect(FLOAT_IN_MS).toBeLessThanOrEqual(650);
+    // Sink: tide/2 — inside the owner's 320–400 band.
+    expect(SINK_OUT_MS).toBe(motionMs.tide / 2);
+    expect(SINK_OUT_MS).toBeGreaterThanOrEqual(320);
+    expect(SINK_OUT_MS).toBeLessThanOrEqual(400);
+  });
+
+  it('inherits the band stagger from the Surfacing chrome', () => {
+    expect(SINK_FLOAT_STAGGER_MS).toBe(motionMs.stagger);
   });
 });

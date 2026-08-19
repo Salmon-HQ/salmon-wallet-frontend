@@ -166,8 +166,18 @@ export function GateContainer({
   // effect above so that on a same-commit change the concealment wins.
   // Reduce motion: `timing` resolves to a cut. Only the collapsed state
   // conceals — every other state owns translateY through the effect above.
+  //
+  // It may only touch translateY when `concealed` actually flips. This effect
+  // also re-runs on every collapsedY/gateHeight change and on the
+  // locked→collapsed transition, and reassigning a shared value cancels the
+  // animation in flight — which fired the unlock slideIn's completion
+  // callback with finished=false, so headerContentOpacity never faded in and
+  // the home header rendered as an empty dark band (owner bug, 2026-08-18).
+  const prevConcealedRef = useRef(false);
   useEffect(() => {
     if (state !== 'collapsed') return;
+    if (concealed === prevConcealedRef.current) return;
+    prevConcealedRef.current = concealed;
     if (concealed) {
       translateY.value = withTiming(
         -gateHeight,
@@ -240,6 +250,7 @@ export function GateContainer({
 
       {/* The Gate surface */}
       <Animated.View
+        testID="gate-root"
         style={[styles.gate, gateAnimatedStyle]}
         onLayout={(e) => setGateHeight(e.nativeEvent.layout.height)}
       >
@@ -318,6 +329,7 @@ export function GateContainer({
                 ]}
               />
               <Animated.View
+                testID="gate-header-bar"
                 style={[
                   styles.headerBar,
                   headerFadeStyle,

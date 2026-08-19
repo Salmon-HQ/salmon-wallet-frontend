@@ -112,7 +112,10 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   const stepEntering = floatEntering(isReduceMotionEnabled, { delayMs: stepDelayMs });
   const stepExiting = sinkExiting(isReduceMotionEnabled);
   // Inside the task window the wait already happened while the window stayed
-  // hidden (below) — a second delay there would read as lag.
+  // hidden (below) — a second delay there would read as lag. The Jupiter
+  // review does not use this: its entrance lives inside SwapReviewScreen,
+  // banded (title → exchange → details → warning → buttons on the
+  // Surfacing's stagger), so the wrapper there only carries the exit.
   const taskStepEntering = floatEntering(isReduceMotionEnabled);
 
   // The task window and the verb: review lives in an RN Modal — its own
@@ -250,7 +253,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
             logic.quote &&
             logic.inToken &&
             logic.outToken && (
-              <Animated.View style={styles.step} entering={taskStepEntering} exiting={stepExiting}>
+              <Animated.View style={styles.step} exiting={stepExiting}>
                 <SwapReviewScreen
                   quote={logic.quote}
                   inToken={logic.inToken}

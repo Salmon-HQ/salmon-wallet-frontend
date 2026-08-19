@@ -74,7 +74,7 @@ import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
-import { floatEntering } from '../../utils/sinkAndFloat';
+import { SINK_FLOAT_STAGGER_MS, floatEntering } from '../../utils/sinkAndFloat';
 import { BrandMark } from '../BrandMark';
 
 /**
@@ -112,14 +112,20 @@ import { BrandMark } from '../BrandMark';
  */
 const FLOAT_REGION_DELAY_MS = 90;
 
+/**
+ * The slots do not arrive as one slab: they surface in bands, each band one
+ * `SINK_FLOAT_STAGGER_MS` behind the last — the same 24ms step the
+ * Surfacing's chrome uses (owner's band: 24–40). Four steps for six slots
+ * (mark / title+description / body / assist+secondary), which keeps the
+ * group inside the system's 4–5-step ceiling.
+ */
 function FloatRegion({ children }: { children: ReactNode }) {
-  const isReduceMotionEnabled = useReducedMotion();
   const [arrival, setArrival] = useState(0);
   const isFirstFocus = useRef(true);
   useFocusEffect(
     useCallback(() => {
-      // Mount already runs `entering`; re-keying on the first focus would
-      // restart the float a frame in for no reason.
+      // Mount already runs the slots' `entering`; re-keying on the first
+      // focus would restart the float a frame in for no reason.
       if (isFirstFocus.current) {
         isFirstFocus.current = false;
         return;
@@ -127,14 +133,13 @@ function FloatRegion({ children }: { children: ReactNode }) {
       setArrival((count) => count + 1);
     }, [])
   );
+  // The key remounts the subtree on every non-initial focus, which is what
+  // re-fires each slot's own `entering` — the staggered floats live on the
+  // slots themselves (see `bandEntering` below).
   return (
-    <Animated.View
-      key={arrival}
-      style={styles.floatRegion}
-      entering={floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_REGION_DELAY_MS })}
-    >
+    <View key={arrival} style={styles.floatRegion}>
       {children}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -211,7 +216,11 @@ export function OnboardingLayout({
 
   // What the stack actually gets, and how much room is left to centre it in.
   const height =
-    available === undefined ? grid.stack : centersCluster ? available : Math.min(grid.stack, available);
+    available === undefined
+      ? grid.stack
+      : centersCluster
+        ? available
+        : Math.min(grid.stack, available);
   const slack = Math.max(0, (available ?? grid.stack) - grid.stack);
 
   /**
@@ -288,6 +297,19 @@ export function OnboardingLayout({
   // Everything between `chrome` and `action` — the region that travels when
   // `float` is on. Heights are all reserved per slot, so grouping them in a
   // wrapper changes no Y.
+  //
+  // Each slot floats in on its band's own delay: base beat plus
+  // `band × SINK_FLOAT_STAGGER_MS`. Bands, top to bottom: mark (0),
+  // title + description (1), body (2), assist + secondary (3). When `float`
+  // is off (or under reduce motion) `entering` is undefined and the slots
+  // render exactly as before.
+  const isReduceMotionEnabled = useReducedMotion();
+  const bandEntering = (band: number) =>
+    float
+      ? floatEntering(isReduceMotionEnabled, {
+          delayMs: FLOAT_REGION_DELAY_MS + band * SINK_FLOAT_STAGGER_MS,
+        })
+      : undefined;
   const slots = (
     <>
       {/*
@@ -298,28 +320,38 @@ export function OnboardingLayout({
       {lead > 0 && <View style={{ height: lead }} testID="onboarding-lead" />}
 
       {!dropMark && (
-        <View style={[styles.centered, { height: grid.mark }]} testID="onboarding-slot-mark">
+        <Animated.View
+          entering={bandEntering(0)}
+          style={[styles.centered, { height: grid.mark }]}
+          testID="onboarding-slot-mark"
+        >
           {mark ?? <BrandMark size={grid.markSize} />}
-        </View>
+        </Animated.View>
       )}
 
-      <View
+      <Animated.View
+        entering={bandEntering(1)}
         style={[styles.padded, styles.title, { minHeight: grid.title }]}
         testID="onboarding-slot-title"
       >
         {title}
-      </View>
+      </Animated.View>
 
       {!dropDescription && (
-        <View
+        <Animated.View
+          entering={bandEntering(1)}
           style={[styles.padded, styles.description, { minHeight: grid.description }]}
           testID="onboarding-slot-description"
         >
           {description}
-        </View>
+        </Animated.View>
       )}
 
-      <View style={[styles.body, { height: bodyHeight }]} testID="onboarding-slot-body">
+      <Animated.View
+        entering={bandEntering(2)}
+        style={[styles.body, { height: bodyHeight }]}
+        testID="onboarding-slot-body"
+      >
         {scrollBody ? (
           <ScrollView
             contentContainerStyle={styles.bodyScrollContent}
@@ -332,15 +364,23 @@ export function OnboardingLayout({
         ) : (
           body
         )}
-      </View>
+      </Animated.View>
 
-      <View style={[styles.padded, { height: grid.assist }]} testID="onboarding-slot-assist">
+      <Animated.View
+        entering={bandEntering(3)}
+        style={[styles.padded, { height: grid.assist }]}
+        testID="onboarding-slot-assist"
+      >
         {assist}
-      </View>
+      </Animated.View>
 
-      <View style={[styles.padded, { height: grid.secondary }]} testID="onboarding-slot-secondary">
+      <Animated.View
+        entering={bandEntering(3)}
+        style={[styles.padded, { height: grid.secondary }]}
+        testID="onboarding-slot-secondary"
+      >
         {secondary}
-      </View>
+      </Animated.View>
     </>
   );
 

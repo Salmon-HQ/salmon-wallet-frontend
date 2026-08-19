@@ -8,8 +8,24 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
+// Reanimated pulls the Worklets native module, which does not exist under
+// Jest; the banded floats only need a View and the reduce-motion flag.
+jest.mock('react-native-reanimated', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: { View },
+    useReducedMotion: () => false,
+    withTiming: (toValue: unknown) => toValue,
+    withDelay: (_delayMs: number, animation: unknown) => animation,
+    Easing: { bezier: () => () => 0 },
+  };
+});
+
 // The real barrel pulls in @solana/kit, which jest-expo cannot transform.
+// The motion vocabulary is real so the banded entrances can read it.
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/theme/durations'),
   formatAmountWithSymbol: (amount: string | number, symbol: string) => `${amount} ${symbol}`,
   formatSolFee: (value: number) => `${value} SOL`,
   formatPercent: (value: number) => `${value}%`,
