@@ -170,10 +170,14 @@ const SHALLOW_PANE_CSS = `linear-gradient(180deg, ${neutral[800]} 0%, ${neutral[
  * Tab-bar fade tunables — see `gradients.tabBarFade` below. Locations run
  * along the gradient axis, physical bottom edge (0) → top of the mask (1).
  */
-/** Fully opaque water floor from the bottom edge up to this fraction. */
-const TAB_BAR_FADE_SOLID_STOP = 0.45;
-/** High-opacity shoulder (alpha 0.85 in the stop itself) ends here. */
-const TAB_BAR_FADE_HEAVY_STOP = 0.72;
+/**
+ * Densest alpha of the fade. Deliberately < 1 (owner, on-device 2026-08-19):
+ * the floor must read as deep water content sinks into, not an opaque plate —
+ * tune within ~0.9–0.93.
+ */
+const TAB_BAR_FADE_MAX_ALPHA = 0.92;
+/** The dense band holds max alpha from the bottom edge up to this fraction (≈ the pill's zone). */
+const TAB_BAR_FADE_DENSE_STOP = 0.55;
 
 export const gradients = {
   /**
@@ -240,22 +244,24 @@ export const gradients = {
    * is the depth ramp's own floor (`semantic.water.gradient[1]`), so content
    * dissolves into the water darkening — never a flat black slab over it.
    *
-   * Stops (owner, on-device 2026-08-18): whatever passes under the pill must
-   * be near-illegible, so the floor holds SOLID from the physical bottom edge
-   * up through the pill, hands off through a heavy shoulder, and only the top
-   * of the mask is the soft water fade. Locations run along the gradient
-   * axis, bottom (0) → top (1). Tunables:
-   *  - TAB_BAR_FADE_SOLID_STOP: how far up the fully opaque zone reaches
-   *    (0.45 ≈ the pill's own band; lower it and rows read through the pill).
-   *  - TAB_BAR_FADE_HEAVY_STOP: where the high-opacity shoulder (alpha 0.85
-   *    in the stop itself) hands off to the fade — keeps the ramp from
-   *    thinning too fast above the solid zone.
-   * All stops stay on the water floor's hue — never #000000 (a test guards
-   * it): the top of the ramp must still read as water, not a plate.
+   * Shape (owner, on-device 2026-08-19): transparent at the top → dense by
+   * the pill's zone → dense sustained to the physical bottom edge. The dense
+   * band is NOT fully opaque — content under the pill should sink into the
+   * water, not vanish behind a plate. Locations run along the gradient axis,
+   * bottom (0) → top (1). Tunables:
+   *  - TAB_BAR_FADE_MAX_ALPHA: density of the sustained band (~0.9–0.93).
+   *  - TAB_BAR_FADE_DENSE_STOP: how far up the dense band holds before the
+   *    fade begins (lower it and rows read through the pill).
+   * All stops stay on the water floor's hue (`neutral[1000]` = #070911) —
+   * never #000000 (a test guards it): the ramp must still read as water.
    */
   tabBarFade: {
-    colors: [neutral[1000], neutral[1000], 'rgba(7, 9, 17, 0.85)', 'rgba(7, 9, 17, 0)'] as const,
-    locations: [0, TAB_BAR_FADE_SOLID_STOP, TAB_BAR_FADE_HEAVY_STOP, 1] as const,
+    colors: [
+      `rgba(7, 9, 17, ${TAB_BAR_FADE_MAX_ALPHA})`,
+      `rgba(7, 9, 17, ${TAB_BAR_FADE_MAX_ALPHA})`,
+      'rgba(7, 9, 17, 0)',
+    ] as const,
+    locations: [0, TAB_BAR_FADE_DENSE_STOP, 1] as const,
     start: { x: 0.5, y: 1 },
     end: { x: 0.5, y: 0 },
   },

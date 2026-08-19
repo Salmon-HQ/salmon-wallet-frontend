@@ -145,9 +145,10 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
       {/*
         Membrane bottom edge — conceptually the lower boundary of the future
         membrane material; the membrane batch should absorb this gradient.
-        It runs to the physical bottom edge so no raw list row shows in the
-        gap under the pill, and its opaque stop is the water's own floor so
-        it reads as depth, not a slab.
+        It starts above the pill's top edge and runs to the physical bottom
+        edge so no raw list row shows at pill level or in the gap under it;
+        its densest stop is the water's own floor at just-under-full alpha,
+        so it reads as depth, not a slab.
       */}
       <LinearGradient
         colors={gradients.tabBarFade.colors}
@@ -226,10 +227,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 50,
   },
-  // Spans the whole container, safe-area gap included — the water-colored
-  // stops are what keep the old opaque-black slab from coming back.
+  // Bottom pinned to the physical edge (safe-area gap included) on every
+  // device; top overshoots ABOVE the container so the fade starts before the
+  // pill's top edge instead of at it — rows must never read at pill level.
+  // Overshoot is tuneable, spacing.lg–2xl.
   membraneBottomEdge: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: -vs(spacing['2xl']),
   },
   content: {
     width: '100%',

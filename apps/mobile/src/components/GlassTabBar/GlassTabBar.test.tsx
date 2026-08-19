@@ -7,12 +7,12 @@
  *  - painted with an opaque *black* stop, it becomes a flat slab over the
  *    water instead of the water darkening.
  * These tests pin both: the mask mounts, it spans the container's full box,
- * and its opaque stop is the depth ramp's own floor.
+ * and its densest stop stays on the depth ramp's own hue, below full opacity.
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
-import { gradients, semantic } from '@salmon/shared/src/theme';
+import { gradients, spacing } from '@salmon/shared/src/theme';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 // The real theme tokens, without dragging the barrel's Solana ESM into Jest.
@@ -85,14 +85,17 @@ const props = {
 } as unknown as BottomTabBarProps;
 
 describe('GlassTabBar membrane bottom edge', () => {
-  it('mounts the fade mask spanning the whole container, safe-area gap included', () => {
+  it('covers from above the pill to the physical bottom edge, on every device', () => {
     const { getByTestId } = render(<GlassTabBar {...props} />);
 
     const fade = getByTestId('tab-bar-fade');
     const style = StyleSheet.flatten(fade.props.style);
-    // absoluteFillObject — bottom: 0 is what carries the fade across the
-    // safe-area gap to the physical bottom edge.
-    expect(style).toMatchObject({ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 });
+    // bottom: 0 carries the fade across the safe-area gap to the physical
+    // bottom edge; the negative top overshoots the container so the mask
+    // starts ABOVE the pill's top edge (owner: rows were reading at pill
+    // level) — at least spacing.lg above.
+    expect(style).toMatchObject({ position: 'absolute', bottom: 0, left: 0, right: 0 });
+    expect(style.top).toBeLessThanOrEqual(-spacing.lg);
     // It masks the list, never the taps.
     expect(fade.props.pointerEvents).toBe('none');
   });
@@ -102,38 +105,42 @@ describe('GlassTabBar membrane bottom edge', () => {
 
     const fade = getByTestId('tab-bar-fade');
     const stops: string[] = fade.props.colors;
-    // Bottom stops are the depth ramp's own floor, so the gradient reads as
-    // water darkening. Pure black is yesterday's slab — it must not return.
-    expect(stops[0]).toBe(semantic.water.gradient[1]);
+    // Every stop rides the water floor's hue (7, 9, 17 = neutral-1000), so
+    // the gradient reads as water darkening. Pure black is yesterday's slab —
+    // it must not return, at any alpha.
     expect(stops).not.toContain('#000000');
+    for (const stop of stops) {
+      expect(stop).toMatch(/^rgba\(7, 9, 17, /);
+    }
     // The transparent stop carries the same hue, so the fade never grays out
     // mid-ramp on platforms that interpolate through transparent black.
     expect(stops[stops.length - 1]).toBe('rgba(7, 9, 17, 0)');
-    // Bottom-to-top: the opaque stop sits at the physical bottom edge.
+    // Bottom-to-top: the densest stop sits at the physical bottom edge.
     expect(gradients.tabBarFade.start).toEqual({ x: 0.5, y: 1 });
     expect(gradients.tabBarFade.end).toEqual({ x: 0.5, y: 0 });
   });
 
-  it('holds a solid water floor under the pill before it starts fading', () => {
-    // Owner, on-device: whatever passes under the pill must be near-illegible.
-    // The floor stays fully opaque from the physical bottom edge up through
-    // at least 40% of the mask, hands off through a high-opacity shoulder,
-    // and only the top of the mask is the soft fade.
+  it('sustains a dense — but never fully opaque — band from the pill zone to the bottom', () => {
+    // Owner, on-device 2026-08-19: dense under the pill, but not a plate —
+    // the max alpha stays below 1 so content sinks into water instead of
+    // vanishing, and holds ≥0.85 so rows never read through the pill.
     const { getByTestId } = render(<GlassTabBar {...props} />);
     const fade = getByTestId('tab-bar-fade');
 
     const stops: string[] = fade.props.colors;
     const locations: number[] = fade.props.locations;
     expect(locations).toHaveLength(stops.length);
-    // Two identical opaque stops bracket the solid zone…
+    // Two identical dense stops bracket the sustained band…
     expect(stops[1]).toBe(stops[0]);
     expect(locations[0]).toBe(0);
-    // …and the zone reaches at least 40% up the mask.
+    // …and the band reaches at least 40% up the mask (≈ the pill's zone).
     expect(locations[1]).toBeGreaterThanOrEqual(0.4);
-    // The shoulder between the solid zone and the fade stays heavy (≥0.8
-    // alpha) and on the water's own hue.
-    expect(stops[2]).toMatch(/^rgba\(7, 9, 17, 0\.8[0-9]*\)$/);
-    expect(locations[2]).toBeGreaterThan(locations[1]);
     expect(locations[locations.length - 1]).toBe(1);
+    // The dense alpha: tuneable, but bounded — <1 (never opaque) and ≥0.85.
+    const alphaMatch = stops[0].match(/^rgba\(7, 9, 17, (0\.\d+)\)$/);
+    expect(alphaMatch).not.toBeNull();
+    const maxAlpha = Number(alphaMatch?.[1]);
+    expect(maxAlpha).toBeLessThan(1);
+    expect(maxAlpha).toBeGreaterThanOrEqual(0.85);
   });
 });
