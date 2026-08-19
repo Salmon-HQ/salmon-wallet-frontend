@@ -92,8 +92,14 @@ export interface ConversionRateDisplayProps {
   fromSymbol: string;
   /** Output token symbol */
   toSymbol: string;
-  /** The conversion rate (how many toTokens per 1 fromToken) */
-  rate: string;
+  /**
+   * The conversion rate (how many toTokens per 1 fromToken).
+   *
+   * A number wherever the caller computed one. The string form is only for
+   * the backend's raw numeric strings — never an already-formatted figure,
+   * whose separator would parse back wrong under a non-English language.
+   */
+  rate: number | string;
   /** Optional size variant */
   size?: 'small' | 'medium';
   /** Additional CSS class */

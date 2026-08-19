@@ -17,7 +17,7 @@ import {
   fontWeight,
   fontSize,
   formatLargeNumber,
-  formatPercentageCompact,
+  formatPercentage,
   formatDateString,
   useCurrencyContext,
   tabularNums,
@@ -291,7 +291,7 @@ export function TokenMarketData({
           {data.athChangePercentage !== undefined && (
             <MarketDataRow
               label={t('token.marketData.fromATH', 'From ATH')}
-              value={formatPercentageCompact(data.athChangePercentage)}
+              value={formatPercentage(data.athChangePercentage)}
               valueColor={athChangeColor}
             />
           )}
@@ -316,7 +316,7 @@ export function TokenMarketData({
           {data.atlChangePercentage !== undefined && (
             <MarketDataRow
               label={t('token.marketData.fromATL', 'From ATL')}
-              value={formatPercentageCompact(data.atlChangePercentage)}
+              value={formatPercentage(data.atlChangePercentage)}
               valueColor={atlChangeColor}
             />
           )}

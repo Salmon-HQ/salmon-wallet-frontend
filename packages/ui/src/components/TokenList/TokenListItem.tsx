@@ -21,7 +21,8 @@ import {
   s,
   vs,
   ms,
-  showPercentage,
+  formatPercentage,
+  formatFiatPrice,
   getLabelValue,
   formatTokenAmount,
   hiddenValue,
@@ -238,7 +239,7 @@ export function TokenListItem({
   className,
 }: TokenListItemProps) {
   const { t } = useTranslation();
-  const [, { formatValue, formatChange }] = useCurrencyContext();
+  const [{ currency, exchangeRate }, { formatValue, formatChange }] = useCurrencyContext();
   const { name, symbol, logo, price, uiAmount, usdBalance, last24HoursChange, tags } = token;
 
   const handlePress = useCallback(() => {
@@ -250,9 +251,16 @@ export function TokenListItem({
   const labelType = getLabelValue(percentageChange);
   const changeColor = colors.change[labelType];
 
-  const displayPrice = hiddenBalance ? hiddenValue : price != null ? formatValue(price) : null;
+  // A token price, not a balance: fixed cents below one unit would render
+  // every sub-cent asset as the same zero, so this takes the price role of the
+  // ratified number contract while the balance below keeps fixed cents.
+  const displayPrice = hiddenBalance
+    ? hiddenValue
+    : price != null
+      ? formatFiatPrice(price, currency, exchangeRate)
+      : null;
 
-  const displayPercentage = last24HoursChange ? showPercentage(percentageChange) : null;
+  const displayPercentage = last24HoursChange ? formatPercentage(percentageChange) : null;
   const displayAbsChange = absoluteChange != null ? formatChange(absoluteChange) : null;
 
   const displayUsdValue = hiddenBalance

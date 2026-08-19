@@ -94,6 +94,7 @@ export {
   isNegative,
   isNeutral,
   getLabelValue,
+  formatPercentage,
   showPercentage,
   // Currency formatting
   formatCurrency,
@@ -181,6 +182,7 @@ export {
   getCurrencySymbol,
   getCurrencyLabel,
   formatFiatValue,
+  formatFiatPrice,
   formatFiatLarge,
   formatFiatChange,
   formatFiatPrecise,

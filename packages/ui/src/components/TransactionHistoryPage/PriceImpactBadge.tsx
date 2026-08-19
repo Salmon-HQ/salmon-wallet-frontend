@@ -19,6 +19,7 @@ import {
   spacing,
   borderRadius,
   getPriceImpactSeverity,
+  formatPercent,
   type PriceImpactSeverity,
   fontSize,
   fontWeight,
@@ -99,6 +100,10 @@ export function PriceImpactBadge({
 }: PriceImpactBadgeProps) {
   const severity = getPriceImpactSeverity(value);
   const color = SEVERITY_COLORS[severity];
+  // A price impact has no direction to report, so it renders unsigned — but
+  // through the same percentage renderer as every other figure, rather than
+  // pasting a '%' onto the backend's raw string.
+  const displayValue = formatPercent(parseFloat(value));
   const sizeConfig = SIZE_CONFIG[size];
 
   return (
@@ -124,7 +129,7 @@ export function PriceImpactBadge({
           lineHeight: lineHeight.tight,
         }}
       >
-        {value}%
+        {displayValue}
       </Typography>
     </Container>
   );

@@ -1,11 +1,23 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import i18n from 'i18next';
 import {
+  formatAmountWithSymbol,
   formatBaseUnits,
+  formatConversionRate,
   formatEffectiveRate,
+  formatLargeNumber,
+  formatPercent,
+  formatPercentage,
+  formatRawAmount,
+  formatSolFee,
   formatTokenAmount,
   formatTokenBalance,
+  showPercentage,
 } from './formatting';
+import { formatFiatChange, formatFiatPrice, formatFiatValue } from './currencyFormatting';
+
+/** U+2212, the typographic minus the number contract renders negatives with. */
+const MINUS = '\u2212';
 
 describe('formatTokenAmount', () => {
   it('uses a point as decimal separator under en', () => {
@@ -99,12 +111,12 @@ describe('formatTokenBalance', () => {
 
 describe('formatEffectiveRate', () => {
   it('derives the unit rate from the two amounts', () => {
-    expect(formatEffectiveRate('1.1', 'USDC', '0.014', 'SOL')).toBe('1 USDC ≈ 0.0127 SOL');
+    expect(formatEffectiveRate('1.1', 'USDC', '0.014', 'SOL')).toBe('1 USDC ≈ 0.0127273 SOL');
   });
 
   it('handles rates above one and thousands compaction', () => {
     expect(formatEffectiveRate('0.014', 'SOL', '1.1', 'USDC')).toBe('1 SOL ≈ 78.5714 USDC');
-    expect(formatEffectiveRate('1', 'SOL', '2500000', 'BONK')).toBe('1 SOL ≈ 2500K BONK');
+    expect(formatEffectiveRate('1', 'SOL', '2500000', 'BONK')).toBe('1 SOL ≈ 2500000 BONK');
   });
 
   it('returns null rather than printing a made-up rate', () => {
@@ -140,5 +152,137 @@ describe('formatBaseUnits', () => {
 
   it('treats a zero-decimal mint as whole units', () => {
     expect(formatBaseUnits(42n, 0)).toBe('42');
+  });
+});
+
+describe('formatPercentage', () => {
+  it('renders a rise with a plus glyph and two fraction digits', () => {
+    expect(formatPercentage(3.87, 'en')).toBe('+3.87%');
+    expect(formatPercentage(3.87, 'es')).toBe('+3,87%');
+  });
+
+  it('renders a fall with the typographic minus, not the hyphen', () => {
+    expect(formatPercentage(-0.42, 'en')).toBe(`${MINUS}0.42%`);
+    expect(formatPercentage(-0.42, 'es')).toBe(`${MINUS}0,42%`);
+    expect(formatPercentage(-0.42, 'en')).not.toContain('-');
+  });
+
+  it('renders zero bare, because 0.00% claims a precision it does not have', () => {
+    expect(formatPercentage(0, 'en')).toBe('0%');
+    expect(formatPercentage(0, 'es')).toBe('0%');
+  });
+
+  it('sets no space before the percent sign', () => {
+    expect(formatPercentage(5.567, 'en')).toBe('+5.57%');
+    expect(formatPercentage(5.567, 'en')).not.toContain(' ');
+  });
+
+  it('does not group a percentage, which is not a money magnitude', () => {
+    expect(formatPercentage(1234.56, 'en')).toBe('+1234.56%');
+    expect(formatPercentage(1234.56, 'es')).toBe('+1234,56%');
+  });
+
+  it('shows a dash rather than inventing a figure when there is none', () => {
+    expect(formatPercentage(null, 'en')).toBe('-');
+    expect(formatPercentage(undefined, 'en')).toBe('-');
+    expect(formatPercentage(NaN, 'en')).toBe('-');
+  });
+
+  it('is what the retired percentage renderers now resolve to', () => {
+    expect(showPercentage(3.87)).toBe(formatPercentage(3.87));
+    expect(showPercentage(-3.87)).toBe(formatPercentage(-3.87));
+  });
+});
+
+describe('formatPercent', () => {
+  it('renders an undirected percentage without a sign', () => {
+    expect(formatPercent(0.4, 'en')).toBe('0.40%');
+    expect(formatPercent(0.4, 'es')).toBe('0,40%');
+    expect(formatPercent(0.4, 'en')).not.toContain('+');
+  });
+
+  it('shares the zero and empty forms with the signed renderer', () => {
+    expect(formatPercent(0, 'en')).toBe('0%');
+    expect(formatPercent(null, 'en')).toBe('-');
+  });
+});
+
+describe('formatConversionRate', () => {
+  it('renders a rate at six significant digits in the app language', () => {
+    expect(formatConversionRate(78.571428, 'en')).toBe('78.5714');
+    expect(formatConversionRate(78.571428, 'es')).toBe('78,5714');
+    expect(formatConversionRate(0.0127272727, 'en')).toBe('0.0127273');
+  });
+
+  it('does not group a rate, which is a token quantity', () => {
+    expect(formatConversionRate(2500000, 'en')).toBe('2500000');
+    expect(formatConversionRate(2500000, 'es')).toBe('2500000');
+  });
+
+  it('localizes the bounded form for rates below the display floor', () => {
+    expect(formatConversionRate(0.00001, 'en')).toBe('<0.0001');
+    expect(formatConversionRate(0.00001, 'es')).toBe('<0,0001');
+  });
+
+  it('still reads the backend\'s numeric strings', () => {
+    expect(formatConversionRate('78.571428', 'en')).toBe('78.5714');
+    expect(formatConversionRate('0', 'en')).toBe('0');
+    expect(formatConversionRate('abc', 'en')).toBe('0');
+  });
+});
+
+describe('token amount renderers', () => {
+  it('renders a raw amount in the app language', () => {
+    expect(formatRawAmount('1500000000', 9, undefined, 'en')).toBe('1.5');
+    expect(formatRawAmount('1500000000', 9, undefined, 'es')).toBe('1,5');
+  });
+
+  it('localizes the hand-built below-threshold form', () => {
+    expect(formatRawAmount('1', 9, 0.000001, 'en')).toBe('<0.000001');
+    expect(formatRawAmount('1', 9, 0.000001, 'es')).toBe('<0,000001');
+  });
+
+  it('renders an amount with its symbol in the app language', () => {
+    expect(formatAmountWithSymbol('1.5', 'SOL', 8, 'en')).toBe('1.5 SOL');
+    expect(formatAmountWithSymbol('1.5', 'SOL', 8, 'es')).toBe('1,5 SOL');
+  });
+
+  it('renders a fee in the app language', () => {
+    expect(formatSolFee(1_500_000, 'en')).toBe('0.0015 SOL');
+    expect(formatSolFee(1_500_000, 'es')).toBe('0,0015 SOL');
+  });
+
+  it('compacts a large count in the app language', () => {
+    expect(formatLargeNumber(2_500_000, 'en')).toBe('2.50M');
+    expect(formatLargeNumber(2_500_000, 'es')).toBe('2,50M');
+    expect(formatLargeNumber(null, 'en')).toBe('-');
+  });
+});
+
+describe('fiat renderers', () => {
+  it('groups thousands, unlike a token amount', () => {
+    expect(formatFiatValue(1234567.89, 'usd', 1, 'en')).toBe('$1,234,567.89');
+    expect(formatTokenAmount(1234567.89, 'en')).toBe('1234567.89');
+  });
+
+  it('follows the app language for both separators', () => {
+    expect(formatFiatValue(1234567.89, 'usd', 1, 'es')).toBe('$1.234.567,89');
+  });
+
+  it('holds a fiat value at two fraction digits', () => {
+    expect(formatFiatValue(1.5, 'usd', 1, 'en')).toBe('$1.50');
+    expect(formatFiatValue(0.001, 'usd', 1, 'en')).toBe('$0.00');
+  });
+
+  it('gives a token price more digits below one unit than a fiat value gets', () => {
+    expect(formatFiatPrice(0.00001234, 'usd', 1, 'en')).toBe('$0.000012');
+    expect(formatFiatPrice(1234.5, 'usd', 1, 'en')).toBe('$1,234.50');
+    expect(formatFiatPrice(null, 'usd', 1, 'en')).toBe('-');
+  });
+
+  it('signs a fiat change with the typographic minus', () => {
+    expect(formatFiatChange(10.5, 'usd', 1, 'en')).toBe('+$10.50');
+    expect(formatFiatChange(-5.25, 'usd', 1, 'en')).toBe(`${MINUS}$5.25`);
+    expect(formatFiatChange(-5.25, 'usd', 1, 'es')).toBe(`${MINUS}$5,25`);
   });
 });

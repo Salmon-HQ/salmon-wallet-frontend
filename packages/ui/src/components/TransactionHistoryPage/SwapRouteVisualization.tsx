@@ -342,7 +342,10 @@ const TransactionSummaryRows: React.FC<{ transaction: Transaction }> = ({ transa
         return {
           fromSymbol: fromToken.symbol,
           toSymbol: toToken.symbol,
-          rate: (toAmount / fromAmount).toFixed(6),
+          // Handed over as a number: rounding it into a string here and
+          // parsing it back in the display is how a rendered figure becomes
+          // an input, which the number contract forbids.
+          rate: toAmount / fromAmount,
         };
       }
     }

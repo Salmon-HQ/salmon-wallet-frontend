@@ -31,7 +31,7 @@ import {
   s,
   vs,
   ms,
-  showPercentage,
+  formatPercentage,
   getLabelValue,
   hiddenValue,
   useCurrencyContext,
@@ -417,7 +417,7 @@ export function BalanceCard({
   const changeColor = colors.change[labelType];
   const isPositive = changePercent >= 0;
 
-  const displayPercentage = showPercentage(changePercent);
+  const displayPercentage = formatPercentage(changePercent);
   const displayAbsChange = formatChange(changeAmount);
 
   const gradientCSS = getGradientCSSForBlockchain(shownBlockchain);
