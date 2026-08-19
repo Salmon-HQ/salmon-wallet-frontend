@@ -5,8 +5,8 @@
  * to add, edit, or remove entries.
  */
 
-import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { PencilSimpleIcon, PlusCircleIcon, TrashIcon, UserIcon, iconSize } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
@@ -23,6 +23,7 @@ import {
   semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { ConfirmSheet } from '../../ConfirmSheet';
 
 // ============================================================================
 // Component
@@ -38,27 +39,16 @@ export function AddressBookPanel({
   onRetry,
 }: AddressBookSelectorBaseProps) {
   const { t } = useTranslation();
+  const [contactToRemove, setContactToRemove] = useState<AddressBookItem | null>(null);
 
-  const handleRemove = useCallback(
-    (contact: AddressBookItem) => {
-      Alert.alert(
-        t('actions.remove', 'Remove'),
-        t('settings.addressbook.remove_confirmation', {
-          name: contact.name,
-          defaultValue: `Are you sure you want to remove ${contact.name} from your address book?`,
-        }),
-        [
-          { text: t('actions.cancel', 'Cancel'), style: 'cancel' },
-          {
-            text: t('actions.remove', 'Remove'),
-            style: 'destructive',
-            onPress: () => onRemoveContact(contact.address),
-          },
-        ]
-      );
-    },
-    [t, onRemoveContact]
-  );
+  const handleRemove = useCallback((contact: AddressBookItem) => {
+    setContactToRemove(contact);
+  }, []);
+
+  const handleRemoveConfirmed = useCallback(async () => {
+    if (!contactToRemove) return;
+    await onRemoveContact(contactToRemove.address);
+  }, [contactToRemove, onRemoveContact]);
 
   const renderContactItem = useCallback(
     (contact: AddressBookItem) => (
@@ -169,6 +159,19 @@ export function AddressBookPanel({
           </TouchableOpacity>
         </View>
       )}
+
+      <ConfirmSheet
+        visible={contactToRemove !== null}
+        onClose={() => setContactToRemove(null)}
+        title={t('actions.remove', 'Remove')}
+        message={t('settings.addressbook.remove_confirmation', {
+          name: contactToRemove?.name ?? '',
+          defaultValue: `Are you sure you want to remove ${contactToRemove?.name} from your address book?`,
+        })}
+        confirmText={t('actions.remove', 'Remove')}
+        isDanger
+        onConfirm={handleRemoveConfirmed}
+      />
     </SettingsScreenLayout>
   );
 }

@@ -35,6 +35,7 @@ import {
   semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { PrimaryButton } from '../../Button';
 
 // ============================================================================
 // Constants
@@ -240,18 +241,11 @@ export function AccountAvatarPanel({
         )}
 
         {/* Save Button */}
-        <TouchableOpacity
-          testID="avatar-save-button"
-          accessibilityRole="button"
-          style={[styles.saveButton, !hasChanged && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={!hasChanged}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.saveButtonText, !hasChanged && styles.saveButtonTextDisabled]}>
+        <View style={styles.saveButtonContainer}>
+          <PrimaryButton testID="avatar-save-button" onPress={handleSave} disabled={!hasChanged}>
             {t('actions.save')}
-          </Text>
-        </TouchableOpacity>
+          </PrimaryButton>
+        </View>
       </View>
     </SettingsScreenLayout>
   );
@@ -345,25 +339,8 @@ const styles = StyleSheet.create({
     color: semantic.text.secondary,
     textAlign: 'center',
   },
-  saveButton: {
-    backgroundColor: colors.accent.primary,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
+  saveButtonContainer: {
     marginTop: spacing.md,
-  },
-  // The salmon never dims: a disabled save drops the fill to `surface.crest`
-  // rather than fading the accent to a washed-out orange.
-  saveButtonDisabled: {
-    backgroundColor: semantic.surface.crest,
-  },
-  saveButtonText: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.bodyLg,
-    color: semantic.accent.onFill,
-  },
-  saveButtonTextDisabled: {
-    color: semantic.text.disabled,
   },
 });
 

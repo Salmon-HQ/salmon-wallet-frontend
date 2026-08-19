@@ -358,9 +358,6 @@ export function SettingsSheet({
             key={`toggle-${option.labelKey}`}
             testID={getSettingsItemTestId(option.id)}
             style={[styles.optionRow, styles.optionRowSurface, styles.optionRowNeutral]}
-            accessibilityRole="switch"
-            accessibilityLabel={label}
-            accessibilityState={{ checked }}
           >
             <View style={styles.iconContainer}>
               <option.icon size={iconSize.lg} color={semantic.text.primary} />
@@ -370,11 +367,17 @@ export function SettingsSheet({
               <Text style={styles.toggleDescription}>{t(descriptionKey)}</Text>
             </View>
             <View style={styles.toggleControl}>
+              {/* The switch semantics live on the Switch itself. A wrapper View
+                  carrying role="switch" around a real Switch announced twice. */}
               <Switch
                 testID={toggleTestId}
+                accessibilityLabel={label}
+                accessibilityHint={t(descriptionKey)}
                 value={checked}
                 onValueChange={(value) => onToggle?.(value)}
-                trackColor={{ false: colors.background.card, true: semantic.accent.ink }}
+                // Off-track on `border.default`: the card token vanished
+                // against the row's own card ground.
+                trackColor={{ false: semantic.border.default, true: semantic.accent.ink }}
                 thumbColor={semantic.text.primary}
               />
             </View>

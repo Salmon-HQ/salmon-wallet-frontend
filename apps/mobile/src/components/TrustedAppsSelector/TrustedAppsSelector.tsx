@@ -75,13 +75,16 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
             onPress={() => handleRevoke(app.domain)}
             disabled={isRevoking}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('settings.trusted_apps_revoke', 'Revoke')}
+            accessibilityState={{ disabled: isRevoking }}
           >
             <TrashIcon size={iconSize.sm} color={semantic.status.danger} />
           </TouchableOpacity>
         </View>
       );
     },
-    [revoking, handleRevoke]
+    [revoking, handleRevoke, t]
   );
 
   return (

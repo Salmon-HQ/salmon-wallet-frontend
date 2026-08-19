@@ -1,13 +1,10 @@
 import React from 'react';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
 
 const mockAddAccount = jest.fn();
 const mockScanDerivedAccounts = jest.fn();
 const mockCreateAccount = jest.fn();
 const mockHeaderOverride = jest.fn();
-
-jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -91,6 +88,30 @@ jest.mock('../../Button', () => ({
       TouchableOpacity,
       { onPress, disabled },
       React.createElement(Text, null, children)
+    );
+  },
+}));
+
+// The failure notice renders through ConfirmSheet; the stub shows its title
+// and message as plain text only while visible, like the real sheet does.
+jest.mock('../../ConfirmSheet', () => ({
+  ConfirmSheet: ({
+    visible,
+    title,
+    message,
+  }: {
+    visible: boolean;
+    title: string;
+    message: string;
+  }) => {
+    if (!visible) return null;
+    const React = require('react');
+    const { Text, View } = require('react-native');
+    return React.createElement(
+      View,
+      { testID: 'confirm-sheet' },
+      React.createElement(Text, null, title),
+      React.createElement(Text, null, message)
     );
   },
 }));
@@ -234,7 +255,7 @@ describe('AccountAddPanel', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the session_expired alert when addAccount throws EncryptionMaterialMissingError', async () => {
+  it('shows the session_expired notice when addAccount throws EncryptionMaterialMissingError', async () => {
     const { EncryptionMaterialMissingError } = jest.requireMock('@salmon/shared');
     mockAddAccount.mockRejectedValueOnce(new EncryptionMaterialMissingError());
 
@@ -250,14 +271,12 @@ describe('AccountAddPanel', () => {
     fireEvent.press(screen.getByText('settings.account_add.confirm'));
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'general.error',
-        'settings.account_add.session_expired'
-      );
+      expect(screen.getByTestId('confirm-sheet')).toBeTruthy();
+      expect(screen.getByText('settings.account_add.session_expired')).toBeTruthy();
     });
   });
 
-  it('falls back to the generic creation_error alert when addAccount throws another error', async () => {
+  it('falls back to the generic creation_error notice when addAccount throws another error', async () => {
     mockAddAccount.mockRejectedValueOnce(new Error('boom'));
 
     render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
@@ -272,10 +291,8 @@ describe('AccountAddPanel', () => {
     fireEvent.press(screen.getByText('settings.account_add.confirm'));
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'general.error',
-        'settings.account_add.creation_error'
-      );
+      expect(screen.getByTestId('confirm-sheet')).toBeTruthy();
+      expect(screen.getByText('settings.account_add.creation_error')).toBeTruthy();
     });
   });
 

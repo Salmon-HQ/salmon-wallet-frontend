@@ -16,7 +16,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { CaretRightIcon, FileTextIcon, TreeStructureIcon, iconSize } from '../../../icons';
 import { useTranslation } from 'react-i18next';
@@ -46,6 +45,7 @@ import {
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { useSettingsHeaderOverride } from '../../SettingsHeaderContext';
 import { PrimaryButton } from '../../Button';
+import { ConfirmSheet } from '../../ConfirmSheet';
 import { DerivedAccountCard } from '../../DerivedAccountCard';
 import { LoadingScreen } from '../../LoadingScreen';
 import { WarningNotice } from '../../WarningNotice';
@@ -79,6 +79,9 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
 
   // Loading state
   const [loading, setLoading] = useState(false);
+
+  // Creation-failure notice, surfaced as a sheet rather than an OS alert.
+  const [creationError, setCreationError] = useState<string | null>(null);
 
   // The wait's passage: the panel keeps the wait mounted until its closing
   // wave has left, and the completion handoff is parked behind that report —
@@ -197,10 +200,10 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     } catch (err) {
       setLoading(false);
       if (err instanceof EncryptionMaterialMissingError) {
-        Alert.alert(t('general.error'), t('settings.account_add.session_expired'));
+        setCreationError(t('settings.account_add.session_expired'));
         return;
       }
-      Alert.alert(t('general.error'), t('settings.account_add.creation_error'));
+      setCreationError(t('settings.account_add.creation_error'));
     }
   }, [
     loading,
@@ -406,6 +409,17 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         {step === 'import-seed' && renderImportSeed()}
         {step === 'set-name' && renderSetName()}
       </SettingsScreenLayout>
+
+      {/* Failure notice as a sheet: acknowledgment only, so both buttons
+          dismiss. Kept on ConfirmSheet to match the panel-sheet idiom. */}
+      <ConfirmSheet
+        visible={creationError !== null}
+        onClose={() => setCreationError(null)}
+        title={t('general.error')}
+        message={creationError ?? ''}
+        confirmText={t('actions.close')}
+        onConfirm={async () => {}}
+      />
     </>
   );
 }

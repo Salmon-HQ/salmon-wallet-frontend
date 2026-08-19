@@ -3,7 +3,7 @@
  */
 
 import React, { useCallback } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -14,10 +14,10 @@ import {
   useAddressBookForm,
   type AddressBookEditBaseProps,
   fontSize,
-  opacity,
   semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { PrimaryButton } from '../../Button';
 import { InputAddress } from '../../InputAddress';
 
 // ============================================================================
@@ -80,16 +80,15 @@ export function AddressEditPanel({
       </View>
 
       {/* Save Button */}
-      <TouchableOpacity
-        testID="address-book-save-button"
-        accessibilityRole="button"
-        style={[styles.saveButton, !form.canSave && styles.saveButtonDisabled]}
-        onPress={handleSave}
-        disabled={!form.canSave}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.saveButtonText}>{t('settings.addressbook.save', 'Save Address')}</Text>
-      </TouchableOpacity>
+      <View style={styles.saveButtonContainer}>
+        <PrimaryButton
+          testID="address-book-save-button"
+          onPress={handleSave}
+          disabled={!form.canSave}
+        >
+          {t('settings.addressbook.save', 'Save Address')}
+        </PrimaryButton>
+      </View>
     </SettingsScreenLayout>
   );
 }
@@ -129,19 +128,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
   },
-  saveButton: {
-    backgroundColor: colors.accent.primary,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    alignItems: 'center',
+  saveButtonContainer: {
     marginTop: spacing['2xl'],
-  },
-  saveButtonDisabled: {
-    opacity: opacity.faint,
-  },
-  saveButtonText: {
-    color: semantic.accent.onFill,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.bodyLg,
   },
 });

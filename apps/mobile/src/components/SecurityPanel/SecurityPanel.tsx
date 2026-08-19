@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, Switch } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -48,12 +48,14 @@ export function SecurityPanel({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const passwordValidation = validatePassword(newPassword);
 
   const handleChangePassword = useCallback(async () => {
     setError('');
+    setSuccess(false);
 
     if (newPassword !== confirmPassword) {
       setError(t('settings.security.password_mismatch'));
@@ -74,10 +76,12 @@ export function SecurityPanel({
 
     setLoading(true);
     try {
-      const success = await accountActions.changePassword(currentPassword, newPassword);
-      if (success) {
+      const changed = await accountActions.changePassword(currentPassword, newPassword);
+      if (changed) {
         await onPasswordChanged?.();
-        Alert.alert(t('settings.security.title'), t('settings.security.password_changed'));
+        // Quiet confirmation: an inline announced line in the feedback slot,
+        // matching how errors surface here, instead of a modal alert.
+        setSuccess(true);
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
@@ -111,6 +115,7 @@ export function SecurityPanel({
             onChangeText={(text: string) => {
               setCurrentPassword(text);
               if (error) setError('');
+              if (success) setSuccess(false);
             }}
             placeholder={t('settings.security.current_password')}
             testID="security-current-password-input"
@@ -120,7 +125,10 @@ export function SecurityPanel({
         <View style={styles.inputGroup}>
           <PasswordInput
             value={newPassword}
-            onChangeText={setNewPassword}
+            onChangeText={(text: string) => {
+              setNewPassword(text);
+              if (success) setSuccess(false);
+            }}
             placeholder={t('settings.security.new_password')}
             testID="security-new-password-input"
           />
@@ -133,13 +141,26 @@ export function SecurityPanel({
             onChangeText={(text: string) => {
               setConfirmPassword(text);
               if (error) setError('');
+              if (success) setSuccess(false);
             }}
             placeholder={t('settings.security.confirm_password')}
             testID="security-confirm-password-input"
           />
         </View>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error ? (
+          <Text style={styles.errorText} accessibilityLiveRegion="polite" testID="security-error">
+            {error}
+          </Text>
+        ) : success ? (
+          <Text
+            style={styles.successText}
+            accessibilityLiveRegion="polite"
+            testID="security-success"
+          >
+            {t('settings.security.password_changed')}
+          </Text>
+        ) : null}
 
         <View style={styles.buttonContainer}>
           <PrimaryButton
@@ -166,7 +187,9 @@ export function SecurityPanel({
               testID="security-biometric-toggle"
               value={isBiometricEnabled}
               onValueChange={onToggleBiometric}
-              trackColor={{ false: colors.background.card, true: semantic.accent.ink }}
+              // Off-track on `border.default`: the card token vanished against
+              // the row's own card ground, leaving the off state invisible.
+              trackColor={{ false: semantic.border.default, true: semantic.accent.ink }}
               thumbColor={semantic.text.primary}
             />
           </View>
@@ -199,6 +222,13 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: semantic.status.danger,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: fontSize.caption,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  successText: {
+    color: semantic.status.success,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.caption,
     marginTop: spacing.xs,
