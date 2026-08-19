@@ -54,11 +54,16 @@
  * and the column counts, so a keyboard that covers nothing moves nothing.
  */
 import Box from '@mui/material/Box';
+import { keyframes } from '@mui/material/styles';
 import {
   colors,
   contentPadding,
   identityClusterCenterOffset,
+  motionEasing,
+  reducedMotion,
   resolveOnboardingGrid,
+  SINK_FLOAT_TRAVEL,
+  SINK_OUT_MS,
   spacing,
   type OnboardingLayoutPropsBase,
 } from '@salmon/shared';
@@ -72,6 +77,15 @@ export interface OnboardingLayoutProps extends OnboardingLayoutPropsBase {
   backgroundColor?: string;
   /** Rendered behind the stack — the water column, on the screens that carry it. */
   background?: React.ReactNode;
+  /**
+   * The content has given way to a wait, and sinks (DESIGN.md §The sink and
+   * the float — the transition verb). Only the column travels: the ground
+   * passed as `background` is a sibling of it and stays where it is, because
+   * the water is the ground and the ground never travels (§Motion, "The wait
+   * owns its passage, end to end"). Transform and opacity, so no slot's
+   * reserved height and no slot's Y changes while it goes down.
+   */
+  sunk?: boolean;
 }
 
 /**
@@ -141,13 +155,30 @@ const Root = styled(Box)({
   overflow: 'hidden',
 });
 
-const Column = styled(Box)({
+/**
+ * The column leaving under a wait. It stays mounted while it goes down — the
+ * wait's overlay covers it — so a failure puts it back exactly where it was,
+ * and a success keeps it down: what the departing wave uncovers is the water
+ * alone, never the content that already left.
+ */
+const sinkAwayKeyframes = keyframes`
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(${SINK_FLOAT_TRAVEL}px); }
+`;
+
+const Column = styled(Box)<{ $sunk: boolean }>(({ $sunk }) => ({
   position: 'relative',
   flex: 1,
   minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
-});
+  animation: $sunk ? `${sinkAwayKeyframes} ${SINK_OUT_MS}ms ${motionEasing.sink.css} both` : 'none',
+  // Reduce motion is the same decision with no travel, never a hole.
+  [`@media ${reducedMotion.query}`]: {
+    animation: 'none',
+    opacity: $sunk ? 0 : 1,
+  },
+}));
 
 const Stack = styled(Box)({
   display: 'flex',
@@ -180,6 +211,7 @@ export function OnboardingLayout({
   scrollBody = false,
   backgroundColor,
   background,
+  sunk = false,
   testID,
 }: OnboardingLayoutProps): React.ReactElement {
   const columnRef = useRef<HTMLDivElement>(null);
@@ -201,7 +233,11 @@ export function OnboardingLayout({
   const centersCluster = variant === 'identity' || variant === 'lock';
 
   const height =
-    available === undefined ? grid.stack : centersCluster ? available : Math.min(grid.stack, available);
+    available === undefined
+      ? grid.stack
+      : centersCluster
+        ? available
+        : Math.min(grid.stack, available);
   const slack = Math.max(0, (available ?? grid.stack) - grid.stack);
 
   // What the stack is short by. Zero is the normal case and nothing collapses.
@@ -252,7 +288,7 @@ export function OnboardingLayout({
   return (
     <Root data-testid={testID} sx={backgroundColor ? { backgroundColor } : undefined}>
       {background}
-      <Column ref={columnRef} data-testid="onboarding-column">
+      <Column ref={columnRef} $sunk={sunk} data-testid="onboarding-column">
         <Stack
           style={{ height, marginTop: centersCluster ? 0 : slack / 2 }}
           data-testid="onboarding-stack"
@@ -267,7 +303,11 @@ export function OnboardingLayout({
             not centre their mark, and before first measurement.
           */}
           {lead > 0 && (
-            <Box style={{ height: lead, flexShrink: 0 }} data-testid="onboarding-lead" aria-hidden />
+            <Box
+              style={{ height: lead, flexShrink: 0 }}
+              data-testid="onboarding-lead"
+              aria-hidden
+            />
           )}
 
           {!dropMark && (

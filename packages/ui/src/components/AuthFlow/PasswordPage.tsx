@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { keyframes } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import {
   ApiError,
@@ -20,10 +19,6 @@ import {
   validatePassword,
   getPasswordIssue,
   componentSizes,
-  motionEasing,
-  reducedMotion,
-  SINK_FLOAT_TRAVEL,
-  SINK_OUT_MS,
   useWaitExit,
 } from '@salmon/shared';
 import { LockIcon } from '../../icons';
@@ -42,27 +37,6 @@ import {
 import { WaterColumn } from '../WaterColumn';
 import { CREATE_FLOW_STEPS } from './CreateWalletPage';
 import type { PasswordPageProps } from './types';
-
-/**
- * The form giving way to the wait: what leaves sinks (DESIGN.md §The sink and
- * the float — the transition verb; §Motion, "The wait owns its passage, end to
- * end"). It stays mounted while it goes down — the wait's overlay covers it —
- * so a failure puts it back exactly where it was, and a success keeps it down:
- * the departing wave uncovers water, not the screen the user already left.
- * Reduce motion is the same decision with no travel.
- */
-const sinkAwayKeyframes = keyframes`
-  from { opacity: 1; transform: none; }
-  to { opacity: 0; transform: translateY(${SINK_FLOAT_TRAVEL}px); }
-`;
-
-const Passage = styled('div')<{ $sunk: boolean }>(({ $sunk }) => ({
-  animation: $sunk ? `${sinkAwayKeyframes} ${SINK_OUT_MS}ms ${motionEasing.sink.css} both` : 'none',
-  [`@media ${reducedMotion.query}`]: {
-    animation: 'none',
-    opacity: $sunk ? 0 : 1,
-  },
-}));
 
 const InputContainer = styled(Box)({
   width: '100%',
@@ -269,120 +243,126 @@ export function PasswordPage({
 
   return (
     <>
-      <Passage $sunk={isLoading || submerged}>
-        <OnboardingLayout
-          testID="password-screen"
-          // `content`, not `credential` (owner, 2026-08-18): same bands as the
-          // recover step before it, so the hero cluster holds its Y across the
-          // flow and the first input starts at the seed grid's first-row Y.
-          // Mirrors the mobile twin.
-          variant="content"
-          background={<WaterColumn />}
-          scrollBody
-          // The lock: what the password buys. Mirrors mobile — one semantic
-          // glyph per flow step, the fish stays on welcome and the lock only.
-          mark={<LockIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
-          chrome={
-            <ScreenHeader
-              onBack={onBack}
-              stepIndicator={{
-                totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
-                currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
-              }}
-              backDisabled={isLoading || isChecking}
-            />
-          }
-          title={
-            <OnboardingTitle>
-              {showSingleInput
-                ? t('wallet.create.enter_your_password')
-                : t('wallet.create.choose_a_password')}
-            </OnboardingTitle>
-          }
-          description={
-            // The single-field variant used to delete this line, dropping 56px
-            // and moving everything below it. Reserved and left empty now.
-            showSingleInput ? undefined : (
-              <OnboardingDescription>
-                {t('wallet.create.choose_a_password_body')}
-              </OnboardingDescription>
-            )
-          }
-          body={
-            <>
+      <OnboardingLayout
+        testID="password-screen"
+        /*
+          The form gives way to the wait: what leaves sinks, and only the form
+          leaves — the water stays put behind it (DESIGN.md §Motion, "The wait
+          owns its passage, end to end"). A failure puts it back exactly where
+          it was; a success keeps it down, so the departing wave uncovers water
+          rather than the screen the user already left.
+        */
+        sunk={isLoading || submerged}
+        // `content`, not `credential` (owner, 2026-08-18): same bands as the
+        // recover step before it, so the hero cluster holds its Y across the
+        // flow and the first input starts at the seed grid's first-row Y.
+        // Mirrors the mobile twin.
+        variant="content"
+        background={<WaterColumn />}
+        scrollBody
+        // The lock: what the password buys. Mirrors mobile — one semantic
+        // glyph per flow step, the fish stays on welcome and the lock only.
+        mark={<LockIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
+        chrome={
+          <ScreenHeader
+            onBack={onBack}
+            stepIndicator={{
+              totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
+              currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
+            }}
+            backDisabled={isLoading || isChecking}
+          />
+        }
+        title={
+          <OnboardingTitle>
+            {showSingleInput
+              ? t('wallet.create.enter_your_password')
+              : t('wallet.create.choose_a_password')}
+          </OnboardingTitle>
+        }
+        description={
+          // The single-field variant used to delete this line, dropping 56px
+          // and moving everything below it. Reserved and left empty now.
+          showSingleInput ? undefined : (
+            <OnboardingDescription>
+              {t('wallet.create.choose_a_password_body')}
+            </OnboardingDescription>
+          )
+        }
+        body={
+          <>
+            <InputContainer>
+              <PasswordInput
+                testID="password-input"
+                value={password}
+                onChangeText={handlePasswordChange}
+                placeholder={
+                  showSingleInput
+                    ? t('wallet.create.enter_your_password')
+                    : t('wallet.create.passwordNew')
+                }
+                error={passwordError}
+                editable={!isLoading && !isChecking}
+                onSubmitEditing={showSingleInput ? handleSubmit : undefined}
+              />
+              {/* Slot reserved from the first frame — typing the first
+                character reveals the meter instead of shoving the
+                confirmation field down. */}
+              {!showSingleInput && (
+                <ReservedSlot visible={password.length > 0}>
+                  <StrengthContainer>
+                    <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
+                  </StrengthContainer>
+                </ReservedSlot>
+              )}
+            </InputContainer>
+
+            {!showSingleInput && (
               <InputContainer>
                 <PasswordInput
-                  testID="password-input"
-                  value={password}
-                  onChangeText={handlePasswordChange}
-                  placeholder={
-                    showSingleInput
-                      ? t('wallet.create.enter_your_password')
-                      : t('wallet.create.passwordNew')
-                  }
-                  error={passwordError}
+                  testID="password-confirm-input"
+                  value={confirmPassword}
+                  onChangeText={handleConfirmPasswordChange}
+                  placeholder={t('wallet.create.passwordRepeat')}
+                  error={confirmError}
                   editable={!isLoading && !isChecking}
-                  onSubmitEditing={showSingleInput ? handleSubmit : undefined}
+                  onSubmitEditing={handleSubmit}
                 />
-                {/* Slot reserved from the first frame — typing the first
-                  character reveals the meter instead of shoving the
-                  confirmation field down. */}
-                {!showSingleInput && (
-                  <ReservedSlot visible={password.length > 0}>
-                    <StrengthContainer>
-                      <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
-                    </StrengthContainer>
-                  </ReservedSlot>
-                )}
               </InputContainer>
+            )}
 
-              {!showSingleInput && (
-                <InputContainer>
-                  <PasswordInput
-                    testID="password-confirm-input"
-                    value={confirmPassword}
-                    onChangeText={handleConfirmPasswordChange}
-                    placeholder={t('wallet.create.passwordRepeat')}
-                    error={confirmError}
-                    editable={!isLoading && !isChecking}
-                    onSubmitEditing={handleSubmit}
-                  />
-                </InputContainer>
-              )}
-
-              {/* Reserved for the same reason as the strength bar: a failure
-                message must not shove the layout when it lands. */}
-              <ReservedSlot visible={!!error}>
-                <ErrorText>{error ?? ' '}</ErrorText>
-              </ReservedSlot>
-            </>
-          }
-          assist={
-            <TermsText>
-              {flowType === 'recover'
-                ? t('wallet.recover.terms_prefix')
-                : t('wallet.create.terms_prefix')}
-              <TermsLink
-                data-testid="password-terms-link"
-                onClick={() => window.open('https://salmonwallet.io/terms', '_blank')}
-              >
-                {t('general.terms_and_conditions')}
-              </TermsLink>
-            </TermsText>
-          }
-          action={
-            <PrimaryButton
-              onClick={handleSubmit}
-              disabled={!isFormValid() || wrongPassword}
-              loading={isLoading || isChecking}
-              fullWidth
-              testID="password-submit-button"
+            {/* Reserved for the same reason as the strength bar: a failure
+              message must not shove the layout when it lands. */}
+            <ReservedSlot visible={!!error}>
+              <ErrorText>{error ?? ' '}</ErrorText>
+            </ReservedSlot>
+          </>
+        }
+        assist={
+          <TermsText>
+            {flowType === 'recover'
+              ? t('wallet.recover.terms_prefix')
+              : t('wallet.create.terms_prefix')}
+            <TermsLink
+              data-testid="password-terms-link"
+              onClick={() => window.open('https://salmonwallet.io/terms', '_blank')}
             >
-              {buttonText}
-            </PrimaryButton>
-          }
-        />
-      </Passage>
+              {t('general.terms_and_conditions')}
+            </TermsLink>
+          </TermsText>
+        }
+        action={
+          <PrimaryButton
+            onClick={handleSubmit}
+            disabled={!isFormValid() || wrongPassword}
+            loading={isLoading || isChecking}
+            fullWidth
+            testID="password-submit-button"
+          >
+            {buttonText}
+          </PrimaryButton>
+        }
+      />
 
       {held && (
         <LoadingScreen

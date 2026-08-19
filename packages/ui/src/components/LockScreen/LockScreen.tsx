@@ -34,17 +34,12 @@
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
-import { keyframes } from '@mui/material/styles';
 import {
   colors,
   componentSizes,
   fontFamily,
   fontSize,
-  motionEasing,
-  reducedMotion,
   semantic,
-  SINK_FLOAT_TRAVEL,
-  SINK_OUT_MS,
   spacing,
   useUnlockThrottle,
   useWaitExit,
@@ -109,27 +104,6 @@ const ThrottleText = styled(Typography)({
   fontFamily: fontFamily.sans,
   textAlign: 'center',
 });
-
-/**
- * The form giving way to the wait: what leaves sinks (DESIGN.md §The sink and
- * the float — the transition verb). It stays mounted while it goes down — the
- * wait's overlay covers it — so a failed unlock puts it back exactly where it
- * was, and after a successful one it stays down: what the departing wave
- * uncovers is the water alone, never the fish, title and input that already
- * left. Reduce motion is the same decision with no travel.
- */
-const sinkAwayKeyframes = keyframes`
-  from { opacity: 1; transform: none; }
-  to { opacity: 0; transform: translateY(${SINK_FLOAT_TRAVEL}px); }
-`;
-
-const Passage = styled('div')<{ $sunk: boolean }>(({ $sunk }) => ({
-  animation: $sunk ? `${sinkAwayKeyframes} ${SINK_OUT_MS}ms ${motionEasing.sink.css} both` : 'none',
-  [`@media ${reducedMotion.query}`]: {
-    animation: 'none',
-    opacity: $sunk ? 0 : 1,
-  },
-}));
 
 const ForgotRow = styled(Box)({
   display: 'flex',
@@ -243,88 +217,94 @@ export function LockScreen({
 
   return (
     <>
-      <Passage $sunk={showLoadingScreen || submerged}>
-        <OnboardingLayout
-          testID="lock-screen"
-          /*
-          `lock`, not `credential`: the same cluster as the create flow's
-          password screen, but the always-empty description band collapses so
-          the title sits one title line above the input — the same air that
-          separates the fish from the title (owner decision, 2026-08-18). The
-          subtitle came off with it, mirroring mobile, which never carried one:
-          the collapsed band holds no line of copy.
+      <OnboardingLayout
+        testID="lock-screen"
+        /*
+          The form gives way to the wait: what leaves sinks, and only the form
+          leaves — the water stays put behind it (DESIGN.md §Motion, "The wait
+          owns its passage, end to end"). A failed unlock puts it back exactly
+          where it was; after a successful one it stays down, so the departing
+          wave uncovers water rather than the screen the user already left.
         */
-          variant="lock"
-          background={<WaterColumn />}
-          title={<OnboardingTitle>{t('lock.title')}</OnboardingTitle>}
-          body={
-            <Box sx={{ width: '100%' }}>
-              <StyledInput
-                type="password"
-                value={password}
-                onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                  setPassword(event.target.value);
-                  if (error) setError(null);
-                }}
-                onKeyDown={(event: KeyboardEvent) => {
-                  if (event.key === 'Enter') void handleSubmit();
-                }}
-                placeholder={t('lock.password_placeholder')}
-                $hasError={!!error}
-                disabled={isUnlocking || throttled}
-                autoFocus
-                fullWidth
-                inputProps={{
-                  'data-testid': 'lock-password-input',
-                  'aria-label': t('lock.password_placeholder'),
-                }}
-              />
-              {/* The escape hatch belongs to the field it escapes from, so it
-                sits directly under it rather than in a band of its own. */}
-              <ForgotRow>
-                <TextButton
-                  onClick={() => setShowResetDialog(true)}
-                  disabled={isUnlocking}
-                  testID="lock-forgot-password-button"
-                >
-                  {t('lock.forgot_password')}
-                </TextButton>
-              </ForgotRow>
-            </Box>
-          }
-          assist={
-            throttled ? (
-              <Box
-                ref={throttleRef}
-                tabIndex={-1}
-                aria-live="polite"
-                data-testid="lock-throttle-notice"
+        sunk={showLoadingScreen || submerged}
+        /*
+        `lock`, not `credential`: the same cluster as the create flow's
+        password screen, but the always-empty description band collapses so
+        the title sits one title line above the input — the same air that
+        separates the fish from the title (owner decision, 2026-08-18). The
+        subtitle came off with it, mirroring mobile, which never carried one:
+        the collapsed band holds no line of copy.
+      */
+        variant="lock"
+        background={<WaterColumn />}
+        title={<OnboardingTitle>{t('lock.title')}</OnboardingTitle>}
+        body={
+          <Box sx={{ width: '100%' }}>
+            <StyledInput
+              type="password"
+              value={password}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                setPassword(event.target.value);
+                if (error) setError(null);
+              }}
+              onKeyDown={(event: KeyboardEvent) => {
+                if (event.key === 'Enter') void handleSubmit();
+              }}
+              placeholder={t('lock.password_placeholder')}
+              $hasError={!!error}
+              disabled={isUnlocking || throttled}
+              autoFocus
+              fullWidth
+              inputProps={{
+                'data-testid': 'lock-password-input',
+                'aria-label': t('lock.password_placeholder'),
+              }}
+            />
+            {/* The escape hatch belongs to the field it escapes from, so it
+              sits directly under it rather than in a band of its own. */}
+            <ForgotRow>
+              <TextButton
+                onClick={() => setShowResetDialog(true)}
+                disabled={isUnlocking}
+                testID="lock-forgot-password-button"
               >
-                <ThrottleText>
-                  {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
-                </ThrottleText>
-              </Box>
-            ) : error ? (
-              <ErrorText aria-live="polite" data-testid="lock-error">
-                {error}
-              </ErrorText>
-            ) : null
-          }
-          action={
-            <Box ref={unlockRef} tabIndex={-1}>
-              <PrimaryButton
-                onClick={() => void handleSubmit()}
-                disabled={!password.trim() || throttled}
-                loading={isUnlocking}
-                fullWidth
-                testID="lock-unlock-button"
-              >
-                {t('lock.unlock')}
-              </PrimaryButton>
+                {t('lock.forgot_password')}
+              </TextButton>
+            </ForgotRow>
+          </Box>
+        }
+        assist={
+          throttled ? (
+            <Box
+              ref={throttleRef}
+              tabIndex={-1}
+              aria-live="polite"
+              data-testid="lock-throttle-notice"
+            >
+              <ThrottleText>
+                {t('lock.throttled_body', { seconds: throttleRemainingSeconds })}
+              </ThrottleText>
             </Box>
-          }
-        />
-      </Passage>
+          ) : error ? (
+            <ErrorText aria-live="polite" data-testid="lock-error">
+              {error}
+            </ErrorText>
+          ) : null
+        }
+        action={
+          <Box ref={unlockRef} tabIndex={-1}>
+            <PrimaryButton
+              onClick={() => void handleSubmit()}
+              disabled={!password.trim() || throttled}
+              loading={isUnlocking}
+              fullWidth
+              testID="lock-unlock-button"
+            >
+              {t('lock.unlock')}
+            </PrimaryButton>
+          </Box>
+        }
+      />
 
       <ConfirmDialog
         visible={showResetDialog}

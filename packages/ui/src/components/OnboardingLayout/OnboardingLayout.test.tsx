@@ -26,7 +26,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 // and stands in for the barrel.
 vi.mock('@salmon/shared', async () => {
   const theme = await import('../../../../shared/src/theme');
-  return { ...theme };
+  // The sink's own numbers live outside the theme subtree, and the column
+  // reads them to give way to a wait.
+  const sinkFloat = await import('../../../../shared/src/motion/sinkFloat');
+  return { ...theme, ...sinkFloat };
 });
 
 import {
@@ -196,6 +199,20 @@ describe('OnboardingLayout', () => {
     const mark = screen.getByTestId('brand-mark');
     expect(mark.tagName.toLowerCase()).toBe('svg');
     expect(mark.getAttribute('width')).toBe(String(onboardingIdentityGridFull.markSize));
+  });
+
+  it('sinks the column and leaves the ground where it is', () => {
+    // DESIGN.md §Motion, "The wait owns its passage, end to end": the water is
+    // the ground and the ground never travels. So `background` is a sibling of
+    // the travelling column, never a child of it — nesting it would sink the
+    // water along with the form.
+    render(<OnboardingLayout variant="lock" sunk background={<div data-testid="ground" />} />);
+
+    const ground = screen.getByTestId('ground');
+    const column = screen.getByTestId('onboarding-column');
+    expect(column.contains(ground)).toBe(false);
+    expect(getComputedStyle(column).animationName).not.toBe('none');
+    expect(getComputedStyle(ground).animationName).toBeFalsy();
   });
 
   it('hides a reserved control from assistive tech rather than merely fading it', () => {
