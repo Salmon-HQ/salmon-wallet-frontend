@@ -31,7 +31,12 @@ import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 import { CheckIcon } from '../../icons';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { ContentCopySvgIcon, SettingsSvgIcon, WalletSvgIcon } from '../Icon';
-import { floatEntering, sinkExiting, SINK_FLOAT_TRAVEL } from '../../utils/sinkAndFloat';
+import {
+  CHROME_SCALE,
+  floatEntering,
+  sinkExiting,
+  SINK_FLOAT_TRAVEL,
+} from '../../utils/sinkAndFloat';
 
 // ============================================================================
 // Props
@@ -138,11 +143,13 @@ export function HeaderContent({
             style={styles.accountTextWrapper}
             entering={floatEntering(isReduceMotionEnabled, {
               distance: SINK_FLOAT_TRAVEL / 2,
+              scale: CHROME_SCALE,
               durationMs: motionMs.drift,
               delayMs: addressSwap.hasPrior ? motionMs.ebb + motionMs.stagger : 0,
             })}
             exiting={sinkExiting(isReduceMotionEnabled, {
               distance: SINK_FLOAT_TRAVEL / 2,
+              scale: CHROME_SCALE,
               durationMs: motionMs.ebb,
             })}
           >

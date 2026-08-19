@@ -4,11 +4,24 @@
  *
  * The verb (DESIGN.md, §The sink and the float — the transition verb): when
  * one piece of content replaces another, **leaving is sinking** — the outgoing
- * content drops `SINK_FLOAT_TRAVEL` accelerating on the `sink` curve, its
- * opacity falling the way light falls with depth — and **arriving is
- * floating** — the incoming content rises the same distance and comes to rest
- * on `settle` (buoyancy running out: no overshoot, per the system rule that
- * nothing bounces), settling from `FLOAT_ENTER_SCALE`.
+ * content recedes to `SINK_EXIT_SCALE` and drops `SINK_FLOAT_TRAVEL`
+ * accelerating on the `sink` curve, its opacity falling the way light falls
+ * with depth — and **arriving is floating** — the incoming content rises the
+ * same distance from `FLOAT_ENTER_SCALE` and comes to rest on `settle`
+ * (buoyancy running out: no overshoot, per the system rule that nothing
+ * bounces).
+ *
+ * **The depth reading** (DESIGN.md, §The verb reads as depth, not as a
+ * slide): the geometry below is weighted so that **scale carries the Z and
+ * travel is only an accent**. The verb first shipped the other way round —
+ * 28dp of travel and no scale at all on the exit — and translation dominating
+ * meant the swap read as a Y-slide: content sliding off a shelf rather than
+ * content going away from the viewer. Scale is the Z cue every depth idiom
+ * uses (Material's shared-Z-axis, the iOS sheet push-back, aerial
+ * perspective), so the same verb was re-weighted onto it: the travel shrank to
+ * a buoyancy accent and both halves gained a real recession. **Only the
+ * geometry moved** — every clock, curve, beat and stagger below is the one the
+ * water's-clock recalibration already settled.
  *
  * The constants live here for the same reason the wavefront's and the crest's
  * timing does: the verb is drawn twice — Reanimated in `apps/mobile`, CSS
@@ -42,17 +55,45 @@
 import { motionMs } from '../theme/durations';
 
 /**
- * How far things travel — dp on mobile, px on the DOM. Band 24–40: 12–16 reads
- * as a nudge, not as depth. Chrome speaks the same verb at half this distance.
+ * How far things travel — dp on mobile, px on the DOM. The buoyancy accent,
+ * not the carrier: scale speaks the depth (see the two scales below), and
+ * travel only tips the eye which way the Z is going. Band 0–10: at 0 the swap
+ * is pure depth and can read as a crossfade-zoom; above ~10 the slide starts
+ * competing with the scale again and the verb slides instead of receding.
+ * Chrome speaks the same verb at half this distance.
  */
-export const SINK_FLOAT_TRAVEL = 28;
+export const SINK_FLOAT_TRAVEL = 8;
 
 /**
- * Where the incoming content settles from. 0.96 rather than the route
- * transition's 0.97 — a touch more pressure at depth, still felt rather than
- * seen; below ~0.95 it starts to read as zoom.
+ * Where the incoming content arrives from — small → full, an arrival *from*
+ * depth, the exact mirror of {@link SINK_EXIT_SCALE} so the two halves ride
+ * one continuous Z axis. Band 0.88–0.93: above ~0.93 the depth is too subtle
+ * to out-speak the travel; below ~0.88 it reads as a zoom, not a depth.
  */
-export const FLOAT_ENTER_SCALE = 0.96;
+export const FLOAT_ENTER_SCALE = 0.9;
+
+/**
+ * Where the outgoing content recedes to — the push-back itself, and the reason
+ * the exit is no longer a Y-slide: before this the sink animated translation
+ * and light only, so the swap read as content dropping off a shelf rather than
+ * as content going away from the viewer. Same band and same reasoning as
+ * {@link FLOAT_ENTER_SCALE}; equal to it by intent, not by coincidence.
+ */
+export const SINK_EXIT_SCALE = 0.9;
+
+/**
+ * Chrome's depth — a header line, a title, a back affordance — for both halves
+ * of the verb. Chrome has always spoken the verb at *half*, and that rule now
+ * translates into the medium that carries the depth: half the **depth**, not
+ * half the travel. Content recedes 0.10 from full, so chrome recedes 0.05 →
+ * 0.95. Band 0.93–0.97: the literal old reading (half the travel, 4dp) is not
+ * a gesture at all any more, and a chrome depth below ~0.93 stops being
+ * secondary to the content it frames.
+ *
+ * The travel override at half (`SINK_FLOAT_TRAVEL / 2`) still stands beside
+ * it: travel is the buoyant accent, and chrome's accent is still half.
+ */
+export const CHROME_SCALE = 0.95;
 
 /**
  * The float's length — `drift`×2 (560ms). Band 450–650: on the water's clock,

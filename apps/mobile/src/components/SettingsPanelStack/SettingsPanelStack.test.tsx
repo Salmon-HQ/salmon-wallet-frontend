@@ -35,10 +35,12 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
-// The stack only needs the motion vocabulary and one background token; the
-// real barrel pulls in the Solana client, which no panel here renders.
+// The stack only needs the motion vocabulary, the verb's constants (it
+// rebuilds the verb's shapes by hand, depth included) and one background
+// token; the real barrel pulls in the Solana client, which no panel renders.
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
+  ...jest.requireActual('@salmon/shared/src/motion/sinkFloat'),
   colors: { background: { primary: '#000' } },
 }));
 

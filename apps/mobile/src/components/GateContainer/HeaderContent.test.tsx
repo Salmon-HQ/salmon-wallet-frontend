@@ -33,7 +33,8 @@ jest.mock('react-native-reanimated', () => {
 // The real module pulls Reanimated worklets and shared easing tables; the
 // component only forwards its return values to `entering`/`exiting`.
 jest.mock('../../utils/sinkAndFloat', () => ({
-  SINK_FLOAT_TRAVEL: 28,
+  SINK_FLOAT_TRAVEL: 8,
+  CHROME_SCALE: 0.95,
   floatEntering: () => undefined,
   sinkExiting: () => undefined,
 }));

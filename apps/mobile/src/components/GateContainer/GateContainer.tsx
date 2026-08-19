@@ -46,6 +46,7 @@ import { Thermocline } from '../Thermocline';
 import type { GateContainerProps, GateState } from './types';
 import { curve, timing } from '../../utils/motion';
 import {
+  CHROME_SCALE,
   FLOAT_IN_MS,
   SINK_FLOAT_TRAVEL,
   SINK_OUT_MS,
@@ -307,11 +308,13 @@ export function GateContainer({
                       testID="gate-back-verb"
                       entering={floatEntering(isReduceMotionEnabled, {
                         distance: SINK_FLOAT_TRAVEL / 2,
+                        scale: CHROME_SCALE,
                         durationMs: motionMs.drift,
                         delayMs: titleSwap.hasPrior ? motionMs.ebb + motionMs.stagger : 0,
                       })}
                       exiting={sinkExiting(isReduceMotionEnabled, {
                         distance: SINK_FLOAT_TRAVEL / 2,
+                        scale: CHROME_SCALE,
                         durationMs: motionMs.ebb,
                       })}
                     >
@@ -338,11 +341,13 @@ export function GateContainer({
                     style={styles.expandedHeaderTitleWrapper}
                     entering={floatEntering(isReduceMotionEnabled, {
                       distance: SINK_FLOAT_TRAVEL / 2,
+                      scale: CHROME_SCALE,
                       durationMs: motionMs.drift,
                       delayMs: titleSwap.hasPrior ? motionMs.ebb + motionMs.stagger : 0,
                     })}
                     exiting={sinkExiting(isReduceMotionEnabled, {
                       distance: SINK_FLOAT_TRAVEL / 2,
+                      scale: CHROME_SCALE,
                       durationMs: motionMs.ebb,
                     })}
                   >

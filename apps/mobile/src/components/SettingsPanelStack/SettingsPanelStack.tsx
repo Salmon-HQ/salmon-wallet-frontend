@@ -24,7 +24,11 @@
  * The values are driven `withTiming`s rather than Reanimated entering/exiting
  * props because the sheet owns the mount/unmount clock (its `route`/`ebb`
  * bookkeeping timers): a layout `exiting` would only start at the unmount the
- * sheet schedules, adding one dead `ebb` of lag.
+ * sheet schedules, adding one dead `ebb` of lag. So the shapes here are
+ * rebuilt from the shared constants rather than borrowed from `floatEntering`
+ * / `sinkExiting`, and any re-weighting of the verb has to be applied to them
+ * by hand — including the depth reading (scale carries the Z, travel is the
+ * accent), which the panels speak at full content depth, not chrome's.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -52,6 +56,7 @@ import {
   FLOAT_DELAY_MS,
   FLOAT_ENTER_SCALE,
   FLOAT_IN_MS,
+  SINK_EXIT_SCALE,
   SINK_FLOAT_TRAVEL,
   SINK_OUT_MS,
 } from '../../utils/sinkAndFloat';
@@ -162,17 +167,24 @@ function PanelSlide({
   const scale = useSharedValue(startsSunk ? FLOAT_ENTER_SCALE : 1);
 
   const isReduceMotionEnabled = useReducedMotion();
-  // The float: travel and scale come to rest on `settle`, the light returns
-  // on `sink`'s accelerating bezier (Beer–Lambert) — floatEntering's shape,
-  // driven by hand because the sheet, not the mount, owns the clock here.
+  // The float: the panel arrives from depth — scale releases from
+  // FLOAT_ENTER_SCALE with the travel accent, both coming to rest on `settle`,
+  // while the light returns on `sink`'s accelerating bezier (Beer–Lambert).
+  // floatEntering's shape, driven by hand because the sheet, not the mount,
+  // owns the clock here.
   const floatTravel = timing(FLOAT_IN_MS, isReduceMotionEnabled, curve.settle);
   const floatLight = timing(FLOAT_IN_MS, isReduceMotionEnabled, curve.sink);
-  // The covered panel's sink — sinkExiting's shape on its own duration.
+  // The covered panel's sink — sinkExiting's shape on its own duration. The
+  // recession lands on `settle` while travel and light accelerate on `sink`,
+  // the same split the factory makes: the depth is where the panel comes to
+  // rest, the drop and the darkening are what it does on the way.
   const sinkOut = timing(SINK_OUT_MS, isReduceMotionEnabled, curve.sink);
+  const recedeOut = timing(SINK_OUT_MS, isReduceMotionEnabled, curve.settle);
   // The popped panel's sink is pinned to `ebb`, not SINK_OUT_MS: the owning
   // sheet unmounts the panel on its `ebb` bookkeeping timer (out of this
   // component's reach), and a 360ms sink would be cut mid-flight at 180.
   const popSink = timing(motionMs.ebb, isReduceMotionEnabled, curve.sink);
+  const popRecede = timing(motionMs.ebb, isReduceMotionEnabled, curve.settle);
 
   // Arriving: float up after the beat the sink left empty. Reduce motion has
   // no beat to keep — the delay is dropped and the timings resolve to a cut.
@@ -193,13 +205,14 @@ function PanelSlide({
   useEffect(() => {
     if (!sink) return;
     const config = sink === 'pop' ? popSink : sinkOut;
+    const recede = sink === 'pop' ? popRecede : recedeOut;
     translateY.value = withTiming(SINK_FLOAT_TRAVEL, config, () => {
       // Fires cut short as well as completed: a sink that was interrupted must
       // still hand over, or the stack would stay on the panel that left.
       'worklet';
       if (sink === 'push') runOnJS(onSinkEnd)();
     });
-    scale.value = withTiming(FLOAT_ENTER_SCALE, config);
+    scale.value = withTiming(SINK_EXIT_SCALE, recede);
     opacity.value = withTiming(0, config);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sink]);
