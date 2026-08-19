@@ -39,6 +39,7 @@
 
 import { motionMs } from '../theme/durations';
 import { componentSizes } from '../theme/spacing';
+import { CREST_COUNT, CREST_SPACING } from './crest';
 
 /** A point in the same coordinate system as the origin. Platform-measured. */
 export interface WavefrontPoint {
@@ -133,6 +134,19 @@ export const WAVEFRONT_REST_MS = 600;
  * front cannot silently start overlapping two fronts.
  */
 export const WAVEFRONT_PERIOD_MS = WAVEFRONT_CROSS_MS + WAVEFRONT_REST_MS;
+
+/**
+ * Time from the emission until the **last** crest of the train has left the
+ * screen. The trailing crest runs `(CREST_COUNT − 1) · CREST_SPACING` of a
+ * crossing behind the leading one, so "the water is calm" is this, not
+ * `WAVEFRONT_CROSS_MS`. Derived, never typed in: adding a crest to the train
+ * lengthens the exit hold with it (owner, 2026-08, on device: the wait must
+ * not cut until the last front leaves the viewport). With a train of one it
+ * is exactly one crossing.
+ */
+export const WAVEFRONT_TRAIN_CROSS_MS = Math.round(
+  WAVEFRONT_CROSS_MS * (1 + (CREST_COUNT - 1) * CREST_SPACING)
+);
 
 /**
  * How long the front takes to pass one passenger — `drift`.
@@ -254,9 +268,10 @@ export function planWavefront(
 
 /**
  * The hard upper bound on the handoff — how long the wait may take to leave,
- * whatever the animation does. **2180ms** at the current crossing.
+ * whatever the animation does. **2520ms** at the current crossing (sink +
+ * train crossing + ebb + {@link WAVEFRONT_EXIT_SLACK_MS} of guard headroom).
  *
- * It is one crossing plus an `ebb` because the exit waits for calm water, and
+ * It is the whole strike plus an `ebb` because the exit waits for calm water, and
  * that coupling was considered and kept when the crossing was slowed (2026-08).
  * The alternative — closing on a faster wave than the one that was emitted —
  * buys back the difference by making the front *accelerate* at the exact moment
@@ -271,16 +286,30 @@ export function planWavefront(
  *
  * A wallet may never be trapped on a loading screen by an animation that failed
  * to complete, so every caller arms a timer at this value and whichever of the
- * timer and the animation callback arrives first wins. It is the worst case of
- * {@link planWavefrontExit}: a front emitted the instant before the work
- * resolved has a whole crossing left to travel, and then the ground ebbs.
+ * timer and the animation callback arrives first wins. It bounds the worst
+ * case of {@link planWavefrontExit} — a mark that began its descent the
+ * instant the work resolved still has the sink, the whole train's crossing
+ * and the ebb ahead — plus slack, so the guard cannot race the animation it
+ * protects.
  *
  * Under reduce motion it is `ebb` alone: a user who cannot see the wave must
  * not be made to wait one out. The receipt arrives sooner, which is the point.
  */
 export function wavefrontExitMs(isReduceMotionEnabled: boolean): number {
-  return isReduceMotionEnabled ? motionMs.ebb : WAVEFRONT_CROSS_MS + motionMs.ebb;
+  if (isReduceMotionEnabled) return motionMs.ebb + WAVEFRONT_EXIT_SLACK_MS;
+  return WAVEFRONT_SINK_MS + WAVEFRONT_TRAIN_CROSS_MS + motionMs.ebb + WAVEFRONT_EXIT_SLACK_MS;
 }
+
+/**
+ * Headroom between the animated exit's true worst case and the hard timer
+ * armed at {@link wavefrontExitMs}. Without it the two could dead-heat: the
+ * worst-case plan (`holdMs` + `ebb`) used to equal the guard exactly, and the
+ * guard's JS timer — armed on a different clock than the UI-thread animation,
+ * with `runOnJS` latency in between — could fire first and cut the last
+ * frames of the very exit it exists to protect. The guard is a parachute, not
+ * a metronome: it must only ever fire when the animation genuinely failed.
+ */
+export const WAVEFRONT_EXIT_SLACK_MS = 250;
 
 /** How the wait leaves, given how long it has been on screen. */
 export interface WavefrontExitPlan {
@@ -326,16 +355,17 @@ export function planWavefrontExit(
 ): WavefrontExitPlan {
   if (isReduceMotionEnabled) return { holdMs: 0, exitMs: motionMs.ebb };
 
-  // The front is in flight over `[SINK, SINK + CROSS)` of the period, because
-  // it is emitted at the trough of the sink rather than at the top of the
-  // period. Before the trough there is no wave on the screen yet — the water is
-  // calm and the mark is on its way down — so that phase hands off at once,
-  // which also keeps the worst case at one whole crossing.
+  // The train is in flight over `[SINK, SINK + TRAIN_CROSS)` of the period —
+  // emitted at the trough of the sink, clear of the screen when its *last*
+  // crest passes the farthest corner. The descent (`phase < SINK`) holds too:
+  // nothing is cancelled on exit, so a mark already on its way down is a
+  // strike that *will* happen and a front that will cross — handing off there
+  // used to emit a fresh wave under the closing ebb and cut it mid-flight.
+  // Only the rest is truly calm water (owner, 2026-08, on device: the wait
+  // must not cut until the last front has left the viewport).
   const phase = elapsedMs > 0 ? elapsedMs % WAVEFRONT_PERIOD_MS : 0;
-  const holdMs =
-    phase < WAVEFRONT_SINK_MS
-      ? 0
-      : Math.max(0, Math.round(WAVEFRONT_SINK_MS + WAVEFRONT_CROSS_MS - phase));
+  const clearsAt = WAVEFRONT_SINK_MS + WAVEFRONT_TRAIN_CROSS_MS;
+  const holdMs = phase < clearsAt ? Math.round(clearsAt - phase) : 0;
 
   return { holdMs, exitMs: holdMs + motionMs.ebb };
 }

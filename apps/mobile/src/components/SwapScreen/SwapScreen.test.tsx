@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -22,6 +22,7 @@ jest.mock('react-native-reanimated', () => {
     default: { View },
     useReducedMotion: () => false,
     withTiming: (toValue: unknown) => toValue,
+    withDelay: (_delayMs: number, animation: unknown) => animation,
     Easing: { bezier: () => () => 0 },
   };
 });
@@ -90,6 +91,7 @@ jest.mock('../ScalesBackground', () => {
 });
 
 import { SwapScreen } from './SwapScreen';
+import { FLOAT_DELAY_MS } from '../../utils/sinkAndFloat';
 
 const setLogic = (overrides: Record<string, unknown>) => {
   for (const key of Object.keys(mockLogic)) delete mockLogic[key];
@@ -142,5 +144,87 @@ describe('SwapScreen task surface', () => {
     expect(screen.getByTestId('tx-success-screen')).toBeTruthy();
     expect(screen.getByTestId('depth-background')).toBeTruthy();
     expect(screen.getByTestId('scales-background').props.accessibilityLabel).toBe('deepField');
+  });
+});
+
+/**
+ * The task-window choreography. Review lives in an RN Modal — its own native
+ * window — so the sink and the float cannot animate across the boundary. The
+ * contract under test: the modal brings no animation of its own (its slide
+ * used to swallow the verb), and its visibility waits out whichever half of
+ * the verb plays on the other side — the input sink before it appears, the
+ * review sink before it vanishes. A success exit is a cut and waits nothing.
+ */
+describe('SwapScreen task window choreography', () => {
+  const reviewLogic = {
+    step: 'review',
+    quote: { outAmount: '1' },
+    inToken: { symbol: 'SOL', chain: 'solana' },
+    outToken: { symbol: 'USDC', chain: 'solana' },
+  };
+
+  const renderSwap = () =>
+    render(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('brings no window animation of its own — the verb owns the transition', () => {
+    setLogic(reviewLogic);
+    renderSwap();
+    expect(screen.getByTestId('swap-task-modal').props.animationType).toBe('none');
+  });
+
+  it('waits out the input sink plus the beat before the window appears', () => {
+    setLogic({ step: 'input' });
+    const view = renderSwap();
+
+    setLogic(reviewLogic);
+    view.rerender(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
+
+    // The shell's input step is sinking; the window must hold back.
+    expect(screen.queryByTestId('swap-review-screen')).toBeNull();
+
+    act(() => {
+      jest.advanceTimersByTime(FLOAT_DELAY_MS);
+    });
+    expect(screen.getByTestId('swap-review-screen')).toBeTruthy();
+  });
+
+  it('holds the window through the review sink, then hands the shell back', () => {
+    setLogic(reviewLogic);
+    const view = renderSwap();
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(screen.getByTestId('swap-review-screen')).toBeTruthy();
+
+    setLogic({ step: 'input' });
+    view.rerender(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
+
+    // Review's sink plays inside the still-open window. RN's Modal renders
+    // nothing at all when not visible, so presence in the tree IS visibility.
+    expect(screen.getByTestId('swap-task-modal')).toBeTruthy();
+
+    act(() => {
+      jest.advanceTimersByTime(FLOAT_DELAY_MS);
+    });
+    expect(screen.queryByTestId('swap-task-modal')).toBeNull();
+  });
+
+  it('cuts the window immediately after success — nothing sinks there', () => {
+    setLogic({ step: 'success' });
+    const view = renderSwap();
+    expect(screen.getByTestId('tx-success-screen')).toBeTruthy();
+
+    setLogic({ step: 'input' });
+    view.rerender(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
+
+    // No timer, no lingering window: the modal leaves the tree at once.
+    expect(screen.queryByTestId('swap-task-modal')).toBeNull();
   });
 });

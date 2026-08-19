@@ -121,6 +121,19 @@ export default function PasswordScreen() {
 
   // Refs
   const confirmPasswordRef = useRef<TextInput>(null);
+  /**
+   * Where to go once the wait has fully left the screen. Set on success
+   * instead of navigating immediately — navigation unmounts the wait, and an
+   * unmounted wait is a wave cut mid-crossing. Consumed exactly once by
+   * `handleWaitExited`.
+   */
+  const pendingRouteRef = useRef<'/(auth)/biometric-setup' | null>(null);
+  const handleWaitExited = useCallback(() => {
+    const route = pendingRouteRef.current;
+    if (!route) return;
+    pendingRouteRef.current = null;
+    router.replace(route);
+  }, []);
 
   // Password validation
   const passwordValidation = validatePassword(password);
@@ -250,8 +263,18 @@ export default function PasswordScreen() {
       // answered (fires on accept, discarded on decline).
       void trackOnboardingEvent(flowType === 'create' ? 'wallet_created' : 'wallet_recovered');
 
-      // Navigate to biometric setup (auto-skips to success if unavailable)
-      router.replace('/(auth)/biometric-setup');
+      // Navigate to biometric setup (auto-skips to success if unavailable) —
+      // but not yet. Navigating here unmounts the wait mid-wave: the overlay
+      // used to vanish with the front still crossing, a hard cut on the one
+      // transition that should close the gesture. The route is parked and the
+      // wait is handed its exit instead (`isLoading` flips false in the
+      // finally below): the last front leaves the screen, the content sinks
+      // with the departing wave, and `onExited` performs the navigation — the
+      // arriving screen then floats in through the auth layout's FloatRegion,
+      // one beat later. LoadingScreen's own watchdog guarantees `onExited`
+      // fires even if the animation callback is dropped, so the route cannot
+      // be stranded.
+      pendingRouteRef.current = '/(auth)/biometric-setup';
     } catch (err) {
       console.error('Failed to create account:', err);
       // Account setup calls the backend, so an unreachable server lands here
@@ -457,6 +480,7 @@ export default function PasswordScreen() {
         subtitle={t('wallet.create.securing_wallet')}
         showTips={true}
         tipInterval={4000}
+        onExited={handleWaitExited}
       />
     </>
   );

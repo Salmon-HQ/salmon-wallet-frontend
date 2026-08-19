@@ -19,6 +19,8 @@ import {
   WAVEFRONT_REST_MS,
   WAVEFRONT_RECOVER_MS,
   WAVEFRONT_SINK_MS,
+  WAVEFRONT_TRAIN_CROSS_MS,
+  WAVEFRONT_EXIT_SLACK_MS,
   planWavefront,
   planWavefrontExit,
   wavefrontCalmMs,
@@ -131,11 +133,13 @@ describe('planWavefront — reduce motion', () => {
 });
 
 describe('wavefrontExitMs — the hard upper bound', () => {
-  it('bounds the handoff at one whole crossing plus an ebb', () => {
-    expect(wavefrontExitMs(false)).toBe(WAVEFRONT_CROSS_MS + motionMs.ebb);
+  it('bounds the handoff at the whole strike plus an ebb, with guard slack', () => {
+    expect(wavefrontExitMs(false)).toBe(
+      WAVEFRONT_SINK_MS + WAVEFRONT_TRAIN_CROSS_MS + motionMs.ebb + WAVEFRONT_EXIT_SLACK_MS
+    );
     // Spelled out because it is the dead time a caller pays for the crossing:
     // slowing the front slows the receipt one for one. See WAVEFRONT_CROSS_MS.
-    expect(wavefrontExitMs(false)).toBe(2180);
+    expect(wavefrontExitMs(false)).toBe(2520);
   });
 
   it('is never shorter than any exit the wave can actually plan', () => {
@@ -147,8 +151,22 @@ describe('wavefrontExitMs — the hard upper bound', () => {
   });
 
   it('does not make a reduce-motion user wait out a wave they cannot see', () => {
-    expect(wavefrontExitMs(true)).toBe(motionMs.ebb);
+    expect(wavefrontExitMs(true)).toBe(motionMs.ebb + WAVEFRONT_EXIT_SLACK_MS);
     expect(wavefrontExitMs(true)).toBeLessThan(wavefrontExitMs(false));
+  });
+
+  it('always leaves the guard real headroom over the animated exit', () => {
+    // The guard is armed on the JS clock against a UI-thread animation: an
+    // exact tie is a race, and the guard losing it cuts the exit's last
+    // frames. Slack must be genuine, at every phase.
+    for (let elapsed = 0; elapsed <= WAVEFRONT_PERIOD_MS * 2; elapsed += 17) {
+      expect(planWavefrontExit(elapsed, false).exitMs + WAVEFRONT_EXIT_SLACK_MS).toBeLessThanOrEqual(
+        wavefrontExitMs(false)
+      );
+    }
+    expect(planWavefrontExit(0, true).exitMs + WAVEFRONT_EXIT_SLACK_MS).toBeLessThanOrEqual(
+      wavefrontExitMs(true)
+    );
   });
 });
 
@@ -158,19 +176,21 @@ describe('wavefrontExitMs — the hard upper bound', () => {
  * wave has left — *"justo cuando el agua está calma. Esto aplica siempre."*
  */
 describe('planWavefrontExit — hand off on calm water', () => {
-  it('waits out the whole crossing when the work resolves at the impact', () => {
+  it('waits out the whole train when the work resolves at the impact', () => {
     expect(planWavefrontExit(WAVEFRONT_SINK_MS, false)).toEqual({
-      holdMs: WAVEFRONT_CROSS_MS,
-      exitMs: WAVEFRONT_CROSS_MS + motionMs.ebb,
+      holdMs: WAVEFRONT_TRAIN_CROSS_MS,
+      exitMs: WAVEFRONT_TRAIN_CROSS_MS + motionMs.ebb,
     });
   });
 
-  it('hands off at once while the mark is still on its way down', () => {
-    // Before the trough there is no wave on the screen to wait out: the water
-    // is calm and the emission has not happened yet.
+  it('holds through the strike a descending mark has already committed to', () => {
+    // Nothing is cancelled on exit: a mark on its way down will hit the water
+    // and its front will cross. Handing off mid-descent used to emit a fresh
+    // wave under the closing ebb and cut it — the last front must leave the
+    // viewport first (owner, 2026-08, on device).
     expect(planWavefrontExit(WAVEFRONT_SINK_MS - 1, false)).toEqual({
-      holdMs: 0,
-      exitMs: motionMs.ebb,
+      holdMs: WAVEFRONT_TRAIN_CROSS_MS + 1,
+      exitMs: WAVEFRONT_TRAIN_CROSS_MS + 1 + motionMs.ebb,
     });
   });
 
@@ -199,7 +219,7 @@ describe('planWavefrontExit — hand off on calm water', () => {
     for (let elapsed = 0; elapsed <= WAVEFRONT_PERIOD_MS * 2; elapsed += 13) {
       const { holdMs } = planWavefrontExit(elapsed, false);
       expect(holdMs).toBeGreaterThanOrEqual(0);
-      expect(holdMs).toBeLessThanOrEqual(WAVEFRONT_CROSS_MS);
+      expect(holdMs).toBeLessThanOrEqual(WAVEFRONT_SINK_MS + WAVEFRONT_TRAIN_CROSS_MS);
     }
   });
 
@@ -209,9 +229,13 @@ describe('planWavefrontExit — hand off on calm water', () => {
     }
   });
 
-  it('treats an unmeasured elapsed time as calm water, never as a negative wait', () => {
-    // Phase 0 is the top of the sink: the mark has not hit the water yet.
-    expect(planWavefrontExit(-1, false).holdMs).toBe(0);
+  it('maps a negative elapsed time to the top of the descent, never a negative wait', () => {
+    // Phase 0 is the top of the sink: the strike and the whole train are
+    // still ahead, so the hold is the full strike — a caller whose loop truly
+    // has not started cancels it and passes the calm flag instead.
+    expect(planWavefrontExit(-1, false).holdMs).toBe(
+      WAVEFRONT_SINK_MS + WAVEFRONT_TRAIN_CROSS_MS
+    );
   });
 });
 

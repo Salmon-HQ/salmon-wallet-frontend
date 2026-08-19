@@ -11,6 +11,12 @@ const mockGetStashItem = jest.fn();
 const mockRemoveStashItem = jest.fn();
 const mockCreateAccount = jest.fn();
 const mockUseAccountsContext = jest.fn();
+/**
+ * The wait's exit handoff, captured instead of auto-fired: navigation now
+ * waits for the LoadingScreen's `onExited` (the wave must leave the screen
+ * first), so the tests drive that moment explicitly.
+ */
+const mockWaitOnExited: { current?: () => void } = {};
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -69,7 +75,10 @@ jest.mock('../../src/components', () => {
 
   return {
     ReservedSlot,
-    LoadingScreen: () => null,
+    LoadingScreen: ({ onExited }: { onExited?: () => void }) => {
+      mockWaitOnExited.current = onExited;
+      return null;
+    },
     OnboardingTitle: ({ children }: { children?: React.ReactNode }) =>
       React.createElement(Text, null, children),
     OnboardingDescription: ({ children }: { children?: React.ReactNode }) =>
@@ -212,6 +221,13 @@ describe('PasswordScreen', () => {
 
     expect(mockAddAccount).toHaveBeenCalledWith({ id: 'account-1' }, 'pw-fixture-valid');
     expect(mockUnlockAccounts).toHaveBeenCalledWith('pw-fixture-valid');
+
+    // The route is parked until the wait has fully left the screen — the wave
+    // finishes crossing and the content sinks before anything navigates.
+    expect(mockReplace).not.toHaveBeenCalled();
+    act(() => {
+      mockWaitOnExited.current?.();
+    });
     expect(mockReplace).toHaveBeenCalledWith('/(auth)/biometric-setup');
   });
 

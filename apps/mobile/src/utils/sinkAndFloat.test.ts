@@ -13,6 +13,7 @@ import { motionMs } from '@salmon/shared';
 jest.mock('react-native-reanimated', () => ({
   __esModule: true,
   withTiming: (toValue: unknown, config: unknown) => ({ toValue, config }),
+  withDelay: (delayMs: number, animation: Record<string, unknown>) => ({ delayMs, ...animation }),
   Easing: {
     bezier: (...coefficients: number[]) => coefficients,
   },
@@ -24,6 +25,7 @@ jest.mock('react-native-reanimated', () => ({
 jest.mock('@salmon/shared', () => jest.requireActual('@salmon/shared/src/theme/durations'));
 
 import {
+  FLOAT_DELAY_MS,
   FLOAT_ENTER_SCALE,
   FLOAT_IN_MS,
   SINK_FLOAT_TRAVEL,
@@ -32,7 +34,7 @@ import {
   sinkExiting,
 } from './sinkAndFloat';
 
-type StubTiming = { toValue: number; config: { duration: number } };
+type StubTiming = { toValue: number; config: { duration: number }; delayMs?: number };
 type StubAnimation = {
   initialValues: {
     opacity: number;
@@ -82,6 +84,26 @@ describe('sinkAndFloat', () => {
     const animation = (entering as unknown as () => StubAnimation)();
     expect(animation.initialValues.transform[0].translateY).toBe(16);
     expect(animation.animations.opacity.config.duration).toBe(motionMs.contentSwap);
+  });
+
+  it('floats without delay by default — an arrival with no prior sink must not lag', () => {
+    const entering = floatEntering(false);
+    const animation = (entering as unknown as () => StubAnimation)();
+    expect(animation.animations.opacity.delayMs).toBeUndefined();
+    expect(animation.animations.transform[0].translateY?.delayMs).toBeUndefined();
+  });
+
+  it('waits the beat when asked: every animated property starts after delayMs', () => {
+    const entering = floatEntering(false, { delayMs: FLOAT_DELAY_MS });
+    const animation = (entering as unknown as () => StubAnimation)();
+    expect(animation.animations.opacity.delayMs).toBe(FLOAT_DELAY_MS);
+    expect(animation.animations.transform[0].translateY?.delayMs).toBe(FLOAT_DELAY_MS);
+    expect(animation.animations.transform[1].scale?.delayMs).toBe(FLOAT_DELAY_MS);
+  });
+
+  it('sizes the beat to outlast the sink — the two halves must never overlap', () => {
+    expect(FLOAT_DELAY_MS).toBe(SINK_OUT_MS + 90);
+    expect(FLOAT_DELAY_MS).toBeGreaterThan(SINK_OUT_MS);
   });
 
   it('keeps the durations on the shared vocabulary', () => {

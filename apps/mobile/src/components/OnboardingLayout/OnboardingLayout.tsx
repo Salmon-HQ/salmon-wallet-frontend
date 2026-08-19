@@ -103,6 +103,15 @@ import { BrandMark } from '../BrandMark';
  * Reduce motion: `floatEntering` returns `undefined` and the step change is
  * the instant cut it was before.
  */
+/**
+ * The beat before an onboarding float. The exit here is the navigator's cut
+ * (see above), so there is no sink to wait out and `FLOAT_DELAY_MS` — sized
+ * to cover a full sink — would read as lag. A small beat of its own still
+ * separates the cut from the float so the arrival reads as a gesture, not a
+ * glitch. Owner-tunable; 0 is a legal value (float starts with the cut).
+ */
+const FLOAT_REGION_DELAY_MS = 90;
+
 function FloatRegion({ children }: { children: ReactNode }) {
   const isReduceMotionEnabled = useReducedMotion();
   const [arrival, setArrival] = useState(0);
@@ -122,7 +131,7 @@ function FloatRegion({ children }: { children: ReactNode }) {
     <Animated.View
       key={arrival}
       style={styles.floatRegion}
-      entering={floatEntering(isReduceMotionEnabled)}
+      entering={floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_REGION_DELAY_MS })}
     >
       {children}
     </Animated.View>

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,7 +23,7 @@ import { TokenSelectorModal } from '../TokenSelector';
 import { BridgeRecipientScreen } from '../BridgeScreen/BridgeRecipientScreen';
 import { BridgeReviewScreen } from '../BridgeScreen/BridgeReviewScreen';
 import { WarningNotice } from '../WarningNotice';
-import { floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
+import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
 import type { SwapScreenProps } from './types';
 
 /**
@@ -40,16 +40,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
 
   const { trackBridgeExchange, isStalled, retryNow } = useBridgeSettlement();
 
-  // Step changes speak the sink and the float: the outgoing step sinks as its
-  // light goes, the incoming one floats up into place. The ground under them —
-  // DepthBackground, ScalesBackground — is mounted outside the steps and never
-  // travels. The success step is the one exception: its entrance is The
-  // Surfacing, and the verb must not double it — review's sink is the only
-  // half that plays on that handoff. Under reduce motion both helpers return
-  // undefined and every step change is an instant cut.
   const isReduceMotionEnabled = useReducedMotion();
-  const stepEntering = floatEntering(isReduceMotionEnabled);
-  const stepExiting = sinkExiting(isReduceMotionEnabled);
 
   const logic = useSwapScreenLogic({
     ...props,
@@ -89,6 +80,62 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   const isTaskStep = logic.step === 'review' || logic.step === 'success';
   // Committed: signed and in flight, or settling. No exit at all.
   const isCommitted = logic.isConfirming || logic.settling;
+
+  // Step changes speak the sink and the float: the outgoing step sinks as its
+  // light goes, the incoming one floats up into place. The ground under them —
+  // DepthBackground, ScalesBackground — is mounted outside the steps and never
+  // travels. The success step is the one exception: its entrance is The
+  // Surfacing, and the verb must not double it — review's sink is the only
+  // half that plays on that handoff. Under reduce motion the helpers return
+  // undefined and every step change is an instant cut.
+  //
+  // The beat (owner, on-device): the float waits out the sink plus a short
+  // pause — but only when something actually sank. The previous step is
+  // tracked with the render-time setState pattern (not a ref: refs cannot be
+  // read during render), so the delay applies on the renders where a step
+  // swap happens, never on the screen's first mount. A success exit is a cut
+  // by design (nothing sinks), so it earns no beat either.
+  const [stepSwap, setStepSwap] = useState({
+    step: logic.step,
+    hasPrior: false,
+    fromSuccess: false,
+  });
+  if (stepSwap.step !== logic.step) {
+    setStepSwap({
+      step: logic.step,
+      hasPrior: true,
+      fromSuccess: stepSwap.step === 'success',
+    });
+  }
+  const stepDelayMs = stepSwap.hasPrior && !stepSwap.fromSuccess ? FLOAT_DELAY_MS : 0;
+  const stepEntering = floatEntering(isReduceMotionEnabled, { delayMs: stepDelayMs });
+  const stepExiting = sinkExiting(isReduceMotionEnabled);
+  // Inside the task window the wait already happened while the window stayed
+  // hidden (below) — a second delay there would read as lag.
+  const taskStepEntering = floatEntering(isReduceMotionEnabled);
+
+  // The task window and the verb: review lives in an RN Modal — its own
+  // native window — and entering/exiting cannot speak across a window
+  // boundary. The Modal's slide used to swallow the verb: input's sink played
+  // invisibly under the rising cover, and review mounted *with* the new
+  // window instead of floating into it. So the window itself is choreographed
+  // instead: `animationType="none"`, and visibility waits out whichever half
+  // of the verb is playing on the other side. Opening — input sinks in the
+  // shell, a beat, the window appears and review floats up inside it.
+  // Closing from review — review sinks inside the window, a beat, the window
+  // vanishes exactly as the shell's (delayed) input float begins. Closing
+  // from success is a cut, per the exception above. Reduce motion flips
+  // visibility immediately.
+  const [isTaskWindowVisible, setIsTaskWindowVisible] = useState(isTaskStep);
+  useEffect(() => {
+    if (isTaskStep === isTaskWindowVisible) return undefined;
+    if (isReduceMotionEnabled || (!isTaskStep && stepSwap.fromSuccess)) {
+      setIsTaskWindowVisible(isTaskStep);
+      return undefined;
+    }
+    const timer = setTimeout(() => setIsTaskWindowVisible(isTaskStep), FLOAT_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [isTaskStep, isTaskWindowVisible, isReduceMotionEnabled, stepSwap.fromSuccess]);
 
   const handleTaskDismiss = useCallback(() => {
     if (isCommitted) return;
@@ -171,8 +218,8 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
       )}
 
       <Modal
-        visible={isTaskStep}
-        animationType="slide"
+        visible={isTaskWindowVisible}
+        animationType="none"
         presentationStyle="fullScreen"
         onRequestClose={handleTaskDismiss}
         testID="swap-task-modal"
@@ -192,7 +239,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
             logic.quote &&
             logic.inToken &&
             logic.outToken && (
-              <Animated.View style={styles.step} entering={stepEntering} exiting={stepExiting}>
+              <Animated.View style={styles.step} entering={taskStepEntering} exiting={stepExiting}>
                 <SwapReviewScreen
                   quote={logic.quote}
                   inToken={logic.inToken}
@@ -213,7 +260,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
             logic.swapMode === 'stealthex' &&
             logic.bridgeInToken &&
             logic.bridgeOutToken && (
-              <Animated.View style={styles.step} entering={stepEntering} exiting={stepExiting}>
+              <Animated.View style={styles.step} entering={taskStepEntering} exiting={stepExiting}>
                 <BridgeReviewScreen
                   inToken={logic.bridgeInToken}
                   outToken={logic.bridgeOutToken}

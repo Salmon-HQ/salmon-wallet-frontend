@@ -87,7 +87,7 @@ import {
   type Transaction,
 } from '../../../src/components';
 import { useDeveloperMode } from '../../../src/contexts/DeveloperModeContext';
-import { floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
+import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 
 // Map blockchain to logo URL (outside component to avoid recreation)
@@ -377,6 +377,17 @@ export default function HomeScreen() {
     const activeBalance = blockchainBalances[activeBlockchainIndex];
     return activeBalance?.network.blockchain || 'solana';
   }, [activeBlockchainIndex, blockchainBalances]);
+
+  // The beat between sink and float (owner, on-device): the incoming chain's
+  // float waits out the outgoing chain's sink plus a short pause — but only
+  // once a chain has actually switched. On the screen's first mount nothing
+  // sinks, so a delay there would read as lag. Tracked with the render-time
+  // setState pattern (not a ref: refs cannot be read during render).
+  const [chainSwap, setChainSwap] = useState({ chain: currentBlockchain, hasPrior: false });
+  if (chainSwap.chain !== currentBlockchain) {
+    setChainSwap({ chain: currentBlockchain, hasPrior: true });
+  }
+  const chainFloatDelayMs = chainSwap.hasPrior ? FLOAT_DELAY_MS : 0;
 
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
   // in via `includeSpam` on `useBalance` above. Trust the BE list as-is.
@@ -850,7 +861,7 @@ export default function HomeScreen() {
         <Reanimated.View
           key={currentBlockchain}
           style={styles.chainContent}
-          entering={floatEntering(isReduceMotionEnabled)}
+          entering={floatEntering(isReduceMotionEnabled, { delayMs: chainFloatDelayMs })}
           exiting={sinkExiting(isReduceMotionEnabled)}
         >
           {currentBlockchain === 'bitcoin' ? (

@@ -24,7 +24,7 @@
  * layout animation at all — the swap is an instant cut.
  */
 import { motionMs } from '@salmon/shared';
-import { withTiming, type EntryExitAnimationFunction } from 'react-native-reanimated';
+import { withDelay, withTiming, type EntryExitAnimationFunction } from 'react-native-reanimated';
 
 import { curve, timing } from './motion';
 
@@ -40,6 +40,19 @@ export const FLOAT_ENTER_SCALE = 0.97;
 export const FLOAT_IN_MS = motionMs.drift;
 /** The sink's length — `ebb`, the system's element-exit window. Shorter than the float, always. */
 export const SINK_OUT_MS = motionMs.ebb;
+/**
+ * The beat between the sink and the float (owner, 2026-08-18): without it the
+ * two halves overlap and the eye never reads the double gesture. The float
+ * waits out the whole sink **plus** a short perceptible pause (90ms — under
+ * ~80 the beat vanishes, over ~150 it reads as lag). Tunable: the owner
+ * calibrates on the device.
+ *
+ * Pass it as `delayMs` **only where something actually sinks first** — a
+ * keyed content swap (home's chain switch), a step change with a real exit.
+ * On arrivals with no prior sink (first mount of a screen, the wait's own
+ * float) the same delay is pure lag; those sites pass nothing.
+ */
+export const FLOAT_DELAY_MS = SINK_OUT_MS + 90;
 
 /** Per-call overrides, for a consumer whose geometry wants its own numbers. */
 export interface SinkFloatOptions {
@@ -47,6 +60,11 @@ export interface SinkFloatOptions {
   distance?: number;
   /** Travel duration in ms — pass a `motionMs` token, never a literal. */
   durationMs?: number;
+  /**
+   * Wait this long before the float begins. Defaults to 0 — see
+   * {@link FLOAT_DELAY_MS} for when (and when not) to pass it.
+   */
+  delayMs?: number;
 }
 
 /**
@@ -58,20 +76,22 @@ export interface SinkFloatOptions {
  */
 export function floatEntering(
   isReduceMotionEnabled: boolean,
-  { distance = SINK_FLOAT_TRAVEL, durationMs = FLOAT_IN_MS }: SinkFloatOptions = {}
+  { distance = SINK_FLOAT_TRAVEL, durationMs = FLOAT_IN_MS, delayMs = 0 }: SinkFloatOptions = {}
 ): EntryExitAnimationFunction | undefined {
   if (isReduceMotionEnabled) return undefined;
   const config = timing(durationMs, false);
   return () => {
     'worklet';
+    const rise = (toValue: number) =>
+      delayMs > 0 ? withDelay(delayMs, withTiming(toValue, config)) : withTiming(toValue, config);
     return {
       initialValues: {
         opacity: 0,
         transform: [{ translateY: distance }, { scale: FLOAT_ENTER_SCALE }],
       },
       animations: {
-        opacity: withTiming(1, config),
-        transform: [{ translateY: withTiming(0, config) }, { scale: withTiming(1, config) }],
+        opacity: rise(1),
+        transform: [{ translateY: rise(0) }, { scale: rise(1) }],
       },
     };
   };

@@ -429,11 +429,21 @@ export function LoadingScreen({
     // that resolves during the rest has nothing to wait for and hands off on
     // `ebb` alone.
     const riding = waves && !isReduceMotionEnabled && geometry.origin !== null;
+    // Resolved while the content is still floating in: the loops are only
+    // *scheduled* (they wait out one FLOAT_IN_MS) and nothing has moved yet,
+    // so cancel them and leave on ebb alone — calm water for real. Once the
+    // descent has begun, nothing is cancelled: the plan holds through the
+    // committed strike and the whole train's crossing.
+    const preStart = riding && startedAtRef.current > 0 && Date.now() < startedAtRef.current;
+    if (preStart) {
+      cancelAnimation(sink);
+      cancelAnimation(ring);
+    }
     const { holdMs } = planWavefrontExit(
-      // Clamped: a wait that resolves while the content is still floating in
-      // has a start time in the future, and a negative phase is meaningless.
-      riding && startedAtRef.current ? Math.max(0, Date.now() - startedAtRef.current) : 0,
-      !riding
+      riding && !preStart && startedAtRef.current
+        ? Math.max(0, Date.now() - startedAtRef.current)
+        : 0,
+      !riding || preStart
     );
 
     // The content sinks with the wave that carries it out — mark, words and
