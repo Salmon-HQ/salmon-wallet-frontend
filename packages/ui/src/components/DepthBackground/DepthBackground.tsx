@@ -42,11 +42,17 @@
  * have repainted it every frame. The geometry is a constant, so the data URI
  * is computed once at module scope.
  *
+ * The drift's phase is **one module-level clock shared by every field on the
+ * page**, not each animation's own birth — see `driftOrigin`. The field is
+ * ambient: it must go on drifting exactly as it was whatever mounts over it,
+ * and a wait painting its own water column over the app's must not be an event
+ * the snow reports.
+ *
  * `prefers-reduced-motion: reduce` stops both the drift and the parallax, and
- * what is left is exactly the field as it shipped: still water. Nothing runs
- * while the tab or side panel is hidden — `visibilitychange` pauses the
- * animation rather than letting a background tab spend battery on water
- * nobody is looking at.
+ * what is left is exactly the field as it shipped: still water. Nothing ticks
+ * while the tab or side panel is hidden — the shared clock is frozen on
+ * `visibilitychange` and resumed where it stopped, rather than letting a
+ * background tab spend battery on water nobody is looking at.
  *
  * @example
  * ```tsx
@@ -90,6 +96,88 @@ const SNOW_URL = `url("data:image/svg+xml,${encodeURIComponent(blizzardSnowSvg(w
  * repeating background, and the browser only rasterises what is on screen.
  */
 const HEADROOM_TILES = 2;
+
+/**
+ * The field's own clock, and there is exactly **one** of it.
+ *
+ * Each mounted field used to call `el.animate()` and take whatever phase the
+ * document timeline happened to be at — which is phase 0 for that animation,
+ * every time. That was invisible while one field was mounted and wrong the
+ * moment two were: the wait paints its own water column over the one already
+ * behind it (DESIGN.md §The wait), so a wait opening mid-cycle started a
+ * second field at zero, and the wait's exit swapped it back for the field that
+ * had kept drifting. That swap is the snow *jumping* — up to one tile of
+ * displacement in a single frame — and it is not the parallax, which is
+ * derived from the scroll offset and is identical for every field on screen.
+ * The React Native twin was given one module-level clock for this reason; this
+ * is the same fix on the DOM's own primitive.
+ *
+ * A WAAPI animation's phase is `timeline.currentTime − startTime`, so one
+ * shared `startTime` is all it takes: every field, however late it mounts and
+ * however often it is re-laid-out, draws the same pixels. A field mounting or
+ * unmounting over another then stops being an event anyone can see, and the
+ * drift is continuous regardless of what the screen in front of it is doing.
+ */
+let driftOrigin: number | null = null;
+
+/** Every field currently drifting off {@link driftOrigin}. */
+const driftAnimations = new Set<Animation>();
+
+/** When the document went hidden, in timeline time. `null` while visible. */
+let hiddenAt: number | null = null;
+
+/** The one `visibilitychange` listener; bound on first use, never removed. */
+let visibilityBound = false;
+
+const timelineNow = (): number => Number(document.timeline?.currentTime ?? 0);
+
+/**
+ * Freeze the clock while nobody can see it, and resume it where it stopped —
+ * the same contract the native twin keeps on `AppState`. Advancing the shared
+ * origin by the hidden interval and re-stamping every live animation is what
+ * `pause()`/`play()` used to do per instance, except that it keeps all of them
+ * on one clock instead of giving each its own history.
+ */
+function bindDriftVisibility(): void {
+  if (visibilityBound) return;
+  visibilityBound = true;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      hiddenAt = timelineNow();
+      return;
+    }
+    if (hiddenAt === null || driftOrigin === null) return;
+    const resumed = driftOrigin + (timelineNow() - hiddenAt);
+    driftOrigin = resumed;
+    hiddenAt = null;
+    driftAnimations.forEach((animation) => {
+      animation.startTime = resumed;
+    });
+  });
+}
+
+/**
+ * The scroll offset every field parallaxes against, module-level for the same
+ * reason the drift's phase is: there is one water column behind the page, so
+ * there is one number, and a field that mounts over another has to inherit it
+ * rather than start from an unscrolled zero. The React Native twin holds this
+ * in `depthParallaxScroll` for the same reason.
+ */
+let parallaxScrollY = 0;
+
+/** Put one field's drift on the shared clock. */
+function joinDriftClock(animation: Animation): void {
+  if (driftOrigin === null) driftOrigin = timelineNow();
+  animation.startTime = driftOrigin;
+  driftAnimations.add(animation);
+  bindDriftVisibility();
+}
+
+/** Take it off again — on relayout, on unmount. */
+function leaveDriftClock(animation: Animation): void {
+  driftAnimations.delete(animation);
+  animation.cancel();
+}
 
 const Ground = styled(Box)({
   position: 'absolute',
@@ -139,14 +227,13 @@ export function DepthBackground({ snow = true, style, className }: DepthBackgrou
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
     let drift: Animation | null = null;
     let tile = 0;
-    let scrollY = 0;
     let frame = 0;
 
     const layout = () => {
       tile = depthFieldTileHeight(ground.clientWidth);
       if (tile <= 0) return;
       el.style.top = `${-HEADROOM_TILES * tile}px`;
-      drift?.cancel();
+      if (drift) leaveDriftClock(drift);
       drift = null;
       if (reduce.matches) {
         el.style.translate = '';
@@ -156,17 +243,20 @@ export function DepthBackground({ snow = true, style, className }: DepthBackgrou
         [{ transform: 'translate3d(0, 0, 0)' }, { transform: `translate3d(0, ${tile}px, 0)` }],
         { duration: depthFieldCycleMs(tile), iterations: Infinity, easing: 'linear' }
       );
-      if (document.hidden) drift.pause();
+      // The phase is the shared clock's, not this animation's own birth: a
+      // field created now — by a wait mounting over the app's ground, or by a
+      // relayout — lands exactly where every other field already is.
+      joinDriftClock(drift);
       applyParallax();
     };
 
     const applyParallax = () => {
       frame = 0;
       if (tile <= 0 || reduce.matches) return;
-      // Content scrolled down by `scrollY` moves up; the far plane follows it
-      // up, only a fifth as far. Wrapped into one tile so the offset always
-      // has field behind it.
-      el.style.translate = `0 ${wrapDepthOffset(-scrollY * depthDrift.parallaxFactor, tile)}px`;
+      // Content scrolled down by `parallaxScrollY` moves up; the far plane
+      // follows it up, only a fifth as far. Wrapped into one tile so the
+      // offset always has field behind it.
+      el.style.translate = `0 ${wrapDepthOffset(-parallaxScrollY * depthDrift.parallaxFactor, tile)}px`;
     };
 
     // Scroll events do not bubble, but they do capture, so one listener on the
@@ -174,13 +264,8 @@ export function DepthBackground({ snow = true, style, className }: DepthBackgrou
     // sites having to hand their scroller down to the background.
     const onScroll = (event: Event) => {
       const target = event.target;
-      scrollY = target instanceof HTMLElement ? target.scrollTop : window.scrollY;
+      parallaxScrollY = target instanceof HTMLElement ? target.scrollTop : window.scrollY;
       if (!frame) frame = requestAnimationFrame(applyParallax);
-    };
-
-    const onVisibility = () => {
-      if (document.hidden) drift?.pause();
-      else drift?.play();
     };
 
     layout();
@@ -188,15 +273,13 @@ export function DepthBackground({ snow = true, style, className }: DepthBackgrou
     resize.observe(ground);
     reduce.addEventListener('change', layout);
     document.addEventListener('scroll', onScroll, { capture: true, passive: true });
-    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       if (frame) cancelAnimationFrame(frame);
-      drift?.cancel();
+      if (drift) leaveDriftClock(drift);
       resize.disconnect();
       reduce.removeEventListener('change', layout);
       document.removeEventListener('scroll', onScroll, { capture: true });
-      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [snow]);
 

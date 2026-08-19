@@ -36,14 +36,26 @@ import { DepthBackground } from './DepthBackground';
 
 const COLUMN_WIDTH = 440;
 
+interface StubAnimation {
+  startTime: number | null;
+  cancel: ReturnType<typeof vi.fn>;
+}
+
 interface Stub {
   animate: ReturnType<typeof vi.fn>;
-  animation: { cancel: ReturnType<typeof vi.fn>; pause: ReturnType<typeof vi.fn>; play: () => void };
+  /** One entry per field created, in mount order. */
+  animations: StubAnimation[];
 }
 
 function stubDom(prefersReduce: boolean): Stub {
-  const animation = { cancel: vi.fn(), pause: vi.fn(), play: vi.fn() };
-  const animate = vi.fn(() => animation);
+  // A fresh object per call: the whole point of the shared clock is what
+  // *different* fields are stamped with, so they may not be the same object.
+  const animations: StubAnimation[] = [];
+  const animate = vi.fn(() => {
+    const animation: StubAnimation = { startTime: null, cancel: vi.fn() };
+    animations.push(animation);
+    return animation;
+  });
 
   vi.stubGlobal(
     'ResizeObserver',
@@ -69,7 +81,7 @@ function stubDom(prefersReduce: boolean): Stub {
     get: () => COLUMN_WIDTH,
   });
 
-  return { animate, animation };
+  return { animate, animations };
 }
 
 afterEach(() => {
@@ -132,6 +144,31 @@ describe('DepthBackground: the drift', () => {
       .map((tag) => tag.textContent)
       .join('');
     expect(css).toContain('radialGradient');
+  });
+
+  it('gives every field one clock, so a wait over the app is not an event', () => {
+    // The wait paints its own water column over the one already behind it
+    // (DESIGN.md §The wait). Each field used to start its own WAAPI animation,
+    // which begins at phase zero however long the field behind it has been
+    // drifting — so the wait's arrival and its departure each swapped the snow
+    // for a field at a different phase, and what that looks like is the dots
+    // jumping. The phase is `timeline.currentTime − startTime`, so one shared
+    // `startTime` is the whole fix.
+    const { animations } = stubDom(false);
+    render(<DepthBackground />);
+    render(<DepthBackground />);
+
+    expect(animations).toHaveLength(2);
+    expect(animations[0].startTime).not.toBeNull();
+    expect(animations[1].startTime).toBe(animations[0].startTime);
+
+    // And the clock outlives the fields: the last one going does not reset it,
+    // so the app's ground coming back after a wait picks the phase up where
+    // the water left it.
+    cleanup();
+    render(<DepthBackground />);
+    expect(animations).toHaveLength(3);
+    expect(animations[2].startTime).toBe(animations[0].startTime);
   });
 
   it('draws nothing to move when the snow is turned off', () => {
