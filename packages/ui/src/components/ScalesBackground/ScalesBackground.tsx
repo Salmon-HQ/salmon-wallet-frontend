@@ -23,15 +23,6 @@ const { scales } = semantic;
  * absent — tiled edge to edge as wallpaper. Each variant now has a job, a
  * distance, and a stroke that is actually visible at that distance.
  */
-/**
- * `#9FE0EF` at 10% — `water.light`'s ink. DESIGN.md §The Surfacing specifies
- * the caustic light by value and `scales` carries the motif's grounded
- * appearances, not a transient one. Kept here with the other strokes rather
- * than at the call site so the motif's ink stays in one file, mirroring the
- * mobile `ScalesBackground`.
- */
-const CAUSTIC_STROKE = 'rgba(159, 224, 239, 0.10)';
-
 const VARIANTS: Record<
   ScalesVariant,
   { stroke: string; scale: number; fade: boolean; fadeFloor: number }
@@ -50,15 +41,6 @@ const VARIANTS: Record<
     scale: scales.fishScale,
     fade: false,
     fadeFloor: 1,
-  },
-  caustic: {
-    stroke: CAUSTIC_STROKE,
-    // Same 0.5× as the refraction strip, because it is the same light seen
-    // moving instead of at rest. The caustic is the fade exception: it is a
-    // shaft of light with a leading edge, so it does go to nothing.
-    scale: scales.refractionScale,
-    fade: true,
-    fadeFloor: 0,
   },
   /**
    * The refraction strip — the top edge of every thermocline surface. The

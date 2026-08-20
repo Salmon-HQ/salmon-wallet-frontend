@@ -14,15 +14,7 @@ const { scales } = semantic;
  * compression noise rather than as water. Each variant now has a job, a
  * distance, and a stroke actually visible at that distance.
  */
-export type ScalesVariant = 'deepField' | 'fish' | 'caustic' | 'refraction' | 'membrane';
-
-/**
- * `#9FE0EF` at 10%. DESIGN.md §The Surfacing specifies the caustic light by
- * value and the theme has no token for it — `scales` carries the motif's three
- * grounded appearances, not a transient one. Kept here with the other strokes
- * rather than at the call site so the motif's ink stays in one file.
- */
-const CAUSTIC_STROKE = 'rgba(159, 224, 239, 0.10)';
+export type ScalesVariant = 'deepField' | 'fish' | 'refraction' | 'membrane';
 
 const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boolean }> = {
   /** The far water, in the balance card's upper region. Dissolves downward. */
@@ -33,24 +25,14 @@ const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boo
    */
   fish: { stroke: scales.fishStroke, scale: scales.fishScale, fade: false },
   /**
-   * The caustic band of The Surfacing — the transient one. Same 0.5× as the
-   * refraction strip, because it is the same light seen moving instead of at
-   * rest, and it fades downward so the band reads as a shaft with a leading
-   * edge rather than as a rectangle of pattern.
-   *
-   * Never mount it anywhere but the completed-transaction confirmation: it is
-   * the signature moment, and a signature used twice is a texture.
-   */
-  caustic: { stroke: CAUSTIC_STROKE, scale: scales.refractionScale, fade: true },
-  /**
    * The refraction strip — the top edge of every thermocline surface. Same
-   * 0.5× geometry as the caustic, but the stroke is the horizontal sweep
-   * (`scales.refractionSweep`) rather than a flat ink; the stroke value here
-   * is a placeholder the component replaces with a gradient reference. The
-   * band's 0.08 opacity is applied by the mounting container
-   * (`scales.refractionOpacity`), keeping this file about geometry and ink.
+   * 0.5× geometry as the membrane field, but the stroke is the horizontal
+   * sweep (`scales.refractionSweep`) rather than a flat ink; the white here
+   * is the mask ink the component paints the sweep through. The band's 0.08
+   * opacity is applied by the mounting container (`scales.refractionOpacity`),
+   * keeping this file about geometry and ink.
    */
-  refraction: { stroke: CAUSTIC_STROKE, scale: scales.refractionScale, fade: false },
+  refraction: { stroke: '#FFFFFF', scale: scales.refractionScale, fade: false },
   /**
    * The membrane field — the thermocline's own texture, edge to edge. Same
    * 0.5× geometry as the refraction strip but drawn as a flat *dark* ink
@@ -189,16 +171,10 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
             <>
               {/* Thins downward to a floor rather than to nothing. A motif
                   that reaches zero has an end, and an end partway down the
-                  column is what made the field read as cropped. The caustic
-                  is the exception: it is a shaft of light with a leading
-                  edge, so it does go to nothing. */}
+                  column is what made the field read as cropped. */}
               <LinearGradient id={fadeId} x1="0" y1="0" x2="0" y2="1">
                 <Stop offset="0" stopColor="#fff" stopOpacity="1" />
-                <Stop
-                  offset="1"
-                  stopColor="#fff"
-                  stopOpacity={variant === 'caustic' ? 0 : scales.deepFieldFloor}
-                />
+                <Stop offset="1" stopColor="#fff" stopOpacity={scales.deepFieldFloor} />
               </LinearGradient>
               <Mask id={maskId}>
                 <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${fadeId})`} />
