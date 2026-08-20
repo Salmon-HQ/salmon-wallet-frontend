@@ -384,6 +384,18 @@ export default function TabLayout() {
     [contacts]
   );
 
+  // What the three choosable rows currently read. Proper nouns and a currency
+  // code — they ship identical in both languages, so the settings list states
+  // the user's own choice without inventing any copy.
+  const settingsOptionValues = useMemo(
+    () => ({
+      language: LANGUAGE_NAMES[currentLanguage as LanguageCode] || currentLanguage,
+      currency: currency?.toUpperCase(),
+      explorer: explorer?.name,
+    }),
+    [currentLanguage, currency, explorer]
+  );
+
   // -- Panel Registry for SettingsPanelStack --
 
   const panelRegistry: MobilePanelRegistry = useMemo(
@@ -897,6 +909,7 @@ export default function TabLayout() {
             <SettingsSheet
               visible={settingsVisible}
               onClose={handleSettingsClose}
+              optionValues={settingsOptionValues}
               panelRegistry={panelRegistry}
               initialPanels={settingsInitialPanels}
               developerNetworksEnabled={developerNetworks}

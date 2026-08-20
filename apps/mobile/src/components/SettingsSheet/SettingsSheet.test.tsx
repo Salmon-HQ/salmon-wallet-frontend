@@ -201,11 +201,15 @@ describe('SettingsSheet', () => {
   });
 
   describe('the list is a table of contents, not a warning', () => {
-    const rowStyle = (label: string) =>
-      StyleSheet.flatten(screen.getByLabelText(label).props.style) as {
+    const flatStyle = (node: { props: { style?: unknown } }) =>
+      StyleSheet.flatten(node.props.style) as {
         backgroundColor?: string;
         borderColor?: string;
+        borderTopWidth?: number;
       };
+    const rowStyle = (label: string) => flatStyle(screen.getByLabelText(label));
+    const sectionStyle = (titleKey: string) =>
+      flatStyle(screen.getByTestId(`settings-section-${titleKey}`));
 
     it.each([['settings.backup'], ['settings.private_key']])(
       'gives %s the same ground as any other row',
@@ -214,18 +218,52 @@ describe('SettingsSheet', () => {
 
         // Amber on a row that only opens a screen reads as a fault report. The
         // warning lives on the destination, before the reveal it guards.
-        expect(rowStyle(label).backgroundColor).toBe('#111');
+        expect(rowStyle(label).backgroundColor).toBeUndefined();
         expect(rowStyle(label).borderColor).toBeUndefined();
         expect(screen.getByLabelText(label).props.accessibilityHint).toBeUndefined();
       }
     );
 
-    it('still lets a destroy action wear the danger tint', () => {
+    it('still lets a destroy action wear the danger tint — on the group', () => {
       render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
 
-      expect(rowStyle('settings.wallets.remove_all_wallets').backgroundColor).toBe(
+      expect(sectionStyle('settings.sections.danger_zone').backgroundColor).toBe(
         'rgba(239,68,68,0.1)'
       );
+      expect(sectionStyle('settings.sections.account').backgroundColor).toBe('#111');
+    });
+  });
+
+  describe('one card per section, and each row says what it reads', () => {
+    it('parts siblings with a hairline instead of a gap — never above the first', () => {
+      render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
+
+      const first = StyleSheet.flatten(
+        screen.getByLabelText('settings.accounts.title').props.style
+      ) as { borderTopWidth?: number };
+      const second = StyleSheet.flatten(
+        screen.getByLabelText('settings.profile_picture').props.style
+      ) as { borderTopWidth?: number };
+
+      expect(first.borderTopWidth).toBeUndefined();
+      expect(second.borderTopWidth).toBe(StyleSheet.hairlineWidth);
+    });
+
+    it('states the current value on the rows that have one', () => {
+      render(
+        <SettingsSheet
+          visible
+          onClose={jest.fn()}
+          panelRegistry={{} as any}
+          optionValues={{ language: 'Espanol', currency: 'EUR', explorer: 'Solscan' }}
+        />
+      );
+
+      expect(screen.getByTestId('settings-item-language-value').props.children).toBe('Espanol');
+      expect(screen.getByTestId('settings-item-currency-value').props.children).toBe('EUR');
+      expect(screen.getByTestId('settings-item-explorer-value').props.children).toBe('Solscan');
+      // A row with nothing to state stays a label alone.
+      expect(screen.queryByTestId('settings-item-security-value')).toBeNull();
     });
   });
 

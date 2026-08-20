@@ -15,7 +15,20 @@ import type {
 /**
  * Props for the SettingsSheet component (React Native specific)
  */
-export interface SettingsSheetProps extends SettingsSheetBaseProps {}
+export interface SettingsSheetProps extends SettingsSheetBaseProps {
+  /**
+   * What each row currently reads, keyed by option id — the language, the
+   * currency, the explorer. A settings row that only says its own name makes
+   * the user open a screen to learn what they already chose; the answer is
+   * the row's own right-hand side. Absent for rows that have no single value
+   * to state.
+   *
+   * Proper nouns and codes only (endonyms, ISO currency codes, explorer
+   * names): these ship identical in both languages, so nothing here is a
+   * translation the caller has to invent.
+   */
+  optionValues?: Partial<Record<string, string>>;
+}
 
 /**
  * Settings option item configuration (React Native specific)

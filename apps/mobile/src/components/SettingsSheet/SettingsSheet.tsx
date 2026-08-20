@@ -200,6 +200,7 @@ export function SettingsSheet({
   onRemoveWallet,
   onRemoveAllWallets,
   onHeaderChange,
+  optionValues,
 }: SettingsSheetWithPanelsProps): React.ReactElement {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -344,9 +345,10 @@ export function SettingsSheet({
   );
 
   const renderOption = useCallback(
-    (option: SettingsOption, sectionIsDanger?: boolean) => {
+    (option: SettingsOption, sectionIsDanger?: boolean, showDivider?: boolean) => {
       const label = t(option.labelKey) || option.labelKey;
       const isDanger = option.isDanger || sectionIsDanger;
+      const value = optionValues?.[option.id];
 
       if (option.isToggle) {
         const isAnalytics = option.id === 'analytics';
@@ -362,7 +364,7 @@ export function SettingsSheet({
           <View
             key={`toggle-${option.labelKey}`}
             testID={getSettingsItemTestId(option.id)}
-            style={[styles.optionRow, styles.optionRowSurface, styles.optionRowNeutral]}
+            style={[styles.optionRow, showDivider && styles.optionRowDivided]}
           >
             <View style={styles.iconContainer}>
               <option.icon size={iconSize.lg} color={semantic.text.primary} />
@@ -394,11 +396,7 @@ export function SettingsSheet({
         <TouchableOpacity
           key={option.id}
           testID={getSettingsItemTestId(option.id)}
-          style={[
-            styles.optionRow,
-            styles.optionRowSurface,
-            isDanger ? styles.optionRowDanger : styles.optionRowNeutral,
-          ]}
+          style={[styles.optionRow, showDivider && styles.optionRowDivided]}
           onPress={() => handleOptionPress(option)}
           activeOpacity={0.7}
           accessibilityRole="button"
@@ -413,6 +411,18 @@ export function SettingsSheet({
           {/* No chevron: the right-pointing caret promised a lateral slide,
               and the push now sinks and floats on the vertical. */}
           <Text style={[styles.optionLabel, isDanger && styles.optionLabelDanger]}>{label}</Text>
+          {/* What the row currently reads. It is the answer the user opened
+              the screen for, so the row states it instead of hiding it one
+              tap away. */}
+          {!!value && (
+            <Text
+              testID={`${getSettingsItemTestId(option.id)}-value`}
+              style={styles.optionValue}
+              numberOfLines={1}
+            >
+              {value}
+            </Text>
+          )}
         </TouchableOpacity>
       );
     },
@@ -423,14 +433,27 @@ export function SettingsSheet({
       onDeveloperNetworksToggle,
       analyticsEnabled,
       onAnalyticsToggle,
+      optionValues,
     ]
   );
 
+  // One card per section, not one per row. Eleven identically-sized chips
+  // separated by air read as noise, and the gaps were doing no work: the
+  // section label already says where one group ends. Grouped, the rows share a
+  // ground and are parted by a decorative hairline, which is the least ink
+  // that can say "these are siblings".
   const renderSection = useCallback(
     (section: SettingsSection, index: number) => (
       <View key={`section-${index}`} style={styles.section}>
         {renderSectionHeader(section)}
-        {section.options.map((option) => renderOption(option, section.isDanger))}
+        <View
+          testID={`settings-section-${section.titleKey}`}
+          style={[styles.sectionCard, section.isDanger && styles.sectionCardDanger]}
+        >
+          {section.options.map((option, optionIndex) =>
+            renderOption(option, section.isDanger, optionIndex > 0)
+          )}
+        </View>
       </View>
     ),
     [renderSectionHeader, renderOption]
@@ -593,30 +616,37 @@ const styles = StyleSheet.create({
   sectionHeaderTextDanger: {
     color: DANGER_COLORS.text,
   },
+  // The section's card, not the row's. `r4` is the card step; the row inside
+  // it is no longer a surface of its own, so the Control Radius Rule has
+  // nothing left to apply to here.
+  sectionCard: {
+    backgroundColor: NEUTRAL_OPTION_COLORS.background,
+    borderRadius: borderRadius.r4,
+    overflow: 'hidden',
+  },
+  sectionCardDanger: {
+    backgroundColor: DANGER_COLORS.background,
+  },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.md,
-    paddingHorizontal: 0,
-    // Control Radius Rule: a settings list row is a control — r3, not r2.
-    borderRadius: borderRadius.r3,
+    paddingHorizontal: spacing.md,
   },
-  optionRowSurface: {
-    marginHorizontal: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    marginVertical: spacing.xs / 2,
-  },
-  optionRowNeutral: {
-    backgroundColor: NEUTRAL_OPTION_COLORS.background,
-  },
-  optionRowDanger: {
-    backgroundColor: DANGER_COLORS.background,
+  // Decorative by rule: the grouping is already carried by the card, so
+  // nothing depends on this line being seen.
+  optionRowDivided: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: semantic.border.hairline,
   },
   iconContainer: {
     width: componentSizes.iconSize2XL,
     height: componentSizes.iconSize2XL,
     borderRadius: borderRadius.r2,
-    backgroundColor: colors.background.card,
+    // One step above the card it now sits on. At the row's old ink the tile
+    // and its ground were the same value, which is what made the list read as
+    // one grey field.
+    backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -632,6 +662,14 @@ const styles = StyleSheet.create({
   },
   optionLabelDanger: {
     color: DANGER_COLORS.text,
+  },
+  optionValue: {
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: fontSize.body,
+    marginLeft: spacing.sm,
+    maxWidth: '45%',
+    textAlign: 'right',
   },
   toggleLabelContainer: {
     flex: 1,
