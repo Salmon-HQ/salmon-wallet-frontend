@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
+import { keyframes } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import {
@@ -15,17 +16,27 @@ import {
   letterSpacing,
   lineHeight,
   componentSizes,
+  motionEasing,
+  reducedMotion,
+  resolveOnboardingBands,
+  resolveOnboardingGrid,
   tabularNums,
   useWaitGate,
   useWaitExit,
+  FLOAT_IN_MS,
+  FLOAT_ENTER_SCALE,
+  SINK_FLOAT_STAGGER_MS,
+  SINK_FLOAT_TRAVEL,
 } from '@salmon/shared';
+import { ArrowRightIcon, CheckIcon, iconSize } from '../../icons';
 import { LoadingScreen } from '../LoadingScreen';
 import { PrimaryButton, TextButton } from '../Button';
 import type { TransactionSuccessScreenProps } from './types';
 
-// The receipt has no entrance choreography: every element of it is there the
-// moment the screen mounts. Nothing on this screen travels, staggers or waits
-// for anything else.
+// An exchange receipt arrives in four beats — the marks, the arrow with its
+// tick, the amounts, the rows — on the float half of the transition verb
+// (DESIGN.md §The sink and the float — the transition verb). A receipt with a
+// single token has no graphic to sequence and keeps arriving whole.
 
 // ============================================================================
 // Styled Components
@@ -51,7 +62,20 @@ const Container = styled(Box)({
 const Receipt = styled(Container)({
   justifyContent: 'flex-start',
   paddingTop: spacing['5xl'],
+  // The bottom edge belongs to the action band, not to the column: the
+  // container's own padding was a second, invented reservation under the
+  // primary, so the button sat that much higher than the grid puts it.
+  paddingBottom: 0,
 });
+
+/**
+ * The ending's reserved heights, read from the onboarding grid rather than
+ * restated here (DESIGN.md §The ending borrows the onboarding ending's bands).
+ * The receipt offers no secondary action, so the band whose union is zero
+ * collapses and the assist sits directly over the primary —
+ * `resolveOnboardingBands`, the same rule both onboarding layouts read.
+ */
+const endingBands = resolveOnboardingBands(resolveOnboardingGrid('identity'), false);
 
 /**
  * The centred report. Stretched so the hero can use the full width, and
@@ -115,6 +139,118 @@ const AmountStage = styled(Box)({
   containerType: 'inline-size',
 });
 
+// ============================================================================
+// The arrival — the float half of the verb, in four beats
+// ============================================================================
+
+/** Buoyancy running out: the rise lands on `settle`, and never overshoots. */
+const riseTravel = keyframes`
+  from { transform: translateY(${SINK_FLOAT_TRAVEL}px) scale(${FLOAT_ENTER_SCALE}); }
+  to { transform: none; }
+`;
+
+/** Beer–Lambert: the light returns slowly at first and fast at the end. */
+const riseLight = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+/**
+ * The arrow crossing the gap between the two marks — the same float, turned on
+ * its side. It starts against the mark that left and comes to rest between the
+ * two; the distance is the runner's own width, so nothing here is a number.
+ */
+const crossTravel = keyframes`
+  from { transform: translateX(-50%); }
+  to { transform: none; }
+`;
+
+/**
+ * One beat of the arrival. The step is the band's place in the order a receipt
+ * answers its questions — between what, what happened, how much, the fine
+ * print — spent at the verb's own stagger. Travel on `settle`, light on the
+ * accelerating `sink`: one event, two media, so two animations.
+ *
+ * Reduce motion is a parallel mapping, not a hole: no travel and no stagger,
+ * and the whole receipt is simply there.
+ */
+const rising = (step: number, travel: string) => ({
+  animation: [
+    `${travel} ${FLOAT_IN_MS}ms ${motionEasing.settle.css} ${step * SINK_FLOAT_STAGGER_MS}ms both`,
+    `${riseLight} ${FLOAT_IN_MS}ms ${motionEasing.sink.css} ${step * SINK_FLOAT_STAGGER_MS}ms both`,
+  ].join(', '),
+  [`@media ${reducedMotion.query}`]: { animation: 'none' },
+});
+
+const Rise = styled(Box)<{ $step: number }>(({ $step }) => rising($step, riseTravel));
+
+/**
+ * The graphic that replaced the status sentence: the mark of what left, an
+ * arrow travelling to the mark of what arrived, and the tick over it. The
+ * marks are the subject, so they are drawn at the icon ramp's top step rather
+ * than at the punctuation size they had beside a line of text.
+ */
+const Graphic = styled(Box)({
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: spacing.sm,
+  marginBottom: spacing.lg,
+});
+
+/** The gap the arrow crosses, and the column that carries the tick over it. */
+const Track = styled(Box)({
+  flex: 1,
+  minWidth: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'stretch',
+  gap: spacing.xs,
+});
+
+const TickRow = styled(Rise)({
+  display: 'flex',
+  justifyContent: 'center',
+  color: semantic.status.success,
+  lineHeight: lineHeight.none,
+});
+
+/**
+ * Full-width, so the crossing's `-50%` is half the gap: the glyph starts over
+ * the mark that left and settles in the middle.
+ */
+const ArrowRunner = styled(Box)<{ $step: number }>(({ $step }) => ({
+  display: 'flex',
+  justifyContent: 'center',
+  color: colors.text.secondary,
+  lineHeight: lineHeight.none,
+  ...rising($step, crossTravel),
+}));
+
+/**
+ * The amounts, under the marks they belong to: what was spent on the side the
+ * arrow left, what arrived on the side it reached. Each cell is its own
+ * container, so `100cqw` in `Amount` is the budget that half actually has.
+ */
+const AmountsRow = styled(Rise)({
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'baseline',
+  gap: spacing.sm,
+  marginBottom: spacing.lg,
+});
+
+const AmountCell = styled(Box)({
+  flex: 1,
+  minWidth: 0,
+  display: 'flex',
+  justifyContent: 'center',
+  containerType: 'inline-size',
+});
+
 /**
  * Widest advance per character the summary can present, in em, measured off
  * DM Sans SemiBold with `tabular-nums` applied (all digits at one advance) across
@@ -124,12 +260,6 @@ const AmountStage = styled(Box)({
  * rather than a hopeful average.
  */
 const AMOUNT_CHAR_EM = 0.62;
-
-/**
- * What the exchange line's furniture — two marks, the arrow, the four gaps
- * between them — costs in the same units the character budget is measured in.
- */
-const EXCHANGE_FURNITURE_CHARS = 7;
 
 const Amount = styled(Typography)<{ $spent?: boolean }>(({ $spent }) => ({
   fontFamily: fontFamily.sans,
@@ -172,41 +302,10 @@ const Amount = styled(Typography)<{ $spent?: boolean }>(({ $spent }) => ({
 }));
 
 /**
- * The exchange hero: mark, sent amount, arrow, mark, received amount, on one
- * line and unboxed. Boxing it put a content surface around the thing the
- * receipt is about (DESIGN.md §The ending says what happened) — the one-line
- * summary *is* the hero, and it never wraps.
+ * The token marks are the graphic's subject now, not punctuation beside a line
+ * of text, so they are drawn at the icon ramp's largest illustrative step.
  */
-const ExchangeLine = styled('div')({
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: spacing.sm,
-  minWidth: 0,
-});
-
-/**
- * The arrow is not the subject: one rank down from the amounts and in
- * secondary ink, so the two figures stay the loudest things on the line. It is
- * data, not copy — the direction between two amounts, the same glyph the plain
- * summary string already prints.
- */
-const ExchangeArrow = styled('span')({
-  fontFamily: fontFamily.sans,
-  fontSize: fontSize.body,
-  color: colors.text.secondary,
-  lineHeight: lineHeight.none,
-  flexShrink: 0,
-});
-
-/**
- * The token marks on the hero line. Small enough to sit inside a line of text
- * as punctuation — the mark here is beside a number rather than being the
- * row's own subject.
- */
-const LOGO_SIZE = 20;
+const LOGO_SIZE = componentSizes.iconSize3XL;
 
 const LogoImg = styled('img')({
   width: LOGO_SIZE,
@@ -263,7 +362,7 @@ function TokenLogo({ uri, symbol }: { uri?: string; symbol: string }): React.Rea
  * The quiet receipt under the exchange: label left, value right, no card.
  * Secondary rank.
  */
-const ReceiptRows = styled(Box)({
+const ReceiptRows = styled(Rise)({
   width: '100%',
   display: 'flex',
   flexDirection: 'column',
@@ -307,23 +406,36 @@ const ActionGroup = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   alignSelf: 'stretch',
-  gap: spacing.lg,
   marginTop: 'auto',
-  paddingTop: spacing.xl,
 });
 
 /**
- * The assist band, reserved at the assist control's own height whether or not
- * a link is rendered — the onboarding grid's Nothing Moves Under the Finger
- * Rule applied outside onboarding. A Bitcoin receipt and a Solana receipt put
- * their primary at the same Y, so the button under the thumb never moves
- * because of what the chain happened to support.
+ * The assist band, at the grid's reserved height whether or not a link is
+ * rendered — the onboarding grid's Nothing Moves Under the Finger Rule applied
+ * outside onboarding. A Bitcoin receipt and a Solana receipt put their primary
+ * at the same Y, so the button under the thumb never moves because of what the
+ * chain happened to support.
  */
 const AssistBand = styled(Box)({
-  height: componentSizes.buttonHeightSmall,
+  height: endingBands.assist,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+});
+
+/**
+ * The action band, exactly as the onboarding layouts draw it: the grid's air
+ * over the primary and the grid's air under it, with the button on the bottom
+ * edge of the column. Nothing is reserved below it, which is what pins its Y.
+ */
+const ActionBand = styled(Box)({
+  height: endingBands.action,
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'flex-start',
+  paddingTop: spacing.lg,
+  paddingBottom: spacing['2xl'],
+  boxSizing: 'border-box',
 });
 
 /**
@@ -389,14 +501,6 @@ export function TransactionSuccessScreen({
   const { t } = useTranslation();
   const isBridge = !!bridgeDepositAddress;
 
-  // The exchange line's budget. The two marks, the arrow and the four gaps are
-  // not characters, but they eat the same inline space — together about seven
-  // characters at the hero's cap — so they are counted as such. The clamp this
-  // feeds is a lower bound on what fits, not an average.
-  const exchangeChars = exchange
-    ? exchange.send.amount.length + exchange.receive.amount.length + EXCHANGE_FURNITURE_CHARS
-    : 0;
-
   // The receipt's clock: local time, captured once when the receipt mounts —
   // the moment the transaction came back — so re-renders never move it.
   const [receiptTime] = useState(() =>
@@ -437,33 +541,57 @@ export function TransactionSuccessScreen({
   }
 
   return (
-    <Receipt>
+    <Receipt data-testid="tx-success-screen">
       {/* The report, centred in the corridor between the top padding and the
           actions on the bottom edge. */}
       <Cluster>
-      <StatusRow data-testid="tx-success-status">
-        <StatusGlyph aria-hidden>✓</StatusGlyph>
-        <StatusLabel>{title}</StatusLabel>
-      </StatusRow>
-      <AmountStage>
-        {exchange ? (
-          /* The exchange as the protagonist, unboxed: mark, sent amount,
-             arrow, mark, received amount. The marks are already on the
-             exchange the flow hands over, so they cost no fetch and no new
-             prop, and each one leading its amount is what makes the line read
-             as *this token to that token* rather than as two strings with an
-             arrow between them. */
-          <ExchangeLine
-            data-testid="tx-success-amount"
-            style={{ '--tx-amount-chars': exchangeChars } as React.CSSProperties}
-          >
+      {exchange ? (
+        /* The hero is the graphic. It answers *between what* — the mark of
+           the token that left, the arrow that travelled to the token that
+           arrived, and the tick over it, the same glyph the copy control
+           draws when something has landed. It carries the result as its
+           accessible name, because a graphic announces nothing on its own and
+           the sentence it replaced is what a screen reader used to hear. */
+        <Graphic role="img" aria-label={title} data-testid="tx-success-hero">
+          <Rise $step={0}>
             <TokenLogo uri={exchange.send.logo} symbol={exchange.send.symbol} />
-            <Amount $spent>{exchange.send.amount}</Amount>
-            <ExchangeArrow aria-hidden>→</ExchangeArrow>
+          </Rise>
+          <Track>
+            <TickRow $step={1} data-testid="tx-success-tick">
+              <CheckIcon weight="bold" size={iconSize.lg} />
+            </TickRow>
+            <ArrowRunner $step={1} data-testid="tx-success-arrow">
+              <ArrowRightIcon weight="bold" size={iconSize.lg} />
+            </ArrowRunner>
+          </Track>
+          <Rise $step={0}>
             <TokenLogo uri={exchange.receive.logo} symbol={exchange.receive.symbol} />
+          </Rise>
+        </Graphic>
+      ) : (
+        <StatusRow data-testid="tx-success-status">
+          <StatusGlyph aria-hidden>✓</StatusGlyph>
+          <StatusLabel>{title}</StatusLabel>
+        </StatusRow>
+      )}
+      {exchange ? (
+        /* How much, under what it happened between: the spent side on the
+           side the arrow left, the received side a rank louder where it
+           landed. */
+        <AmountsRow $step={2} data-testid="tx-success-amount">
+          <AmountCell
+            style={{ '--tx-amount-chars': exchange.send.amount.length } as React.CSSProperties}
+          >
+            <Amount $spent>{exchange.send.amount}</Amount>
+          </AmountCell>
+          <AmountCell
+            style={{ '--tx-amount-chars': exchange.receive.amount.length } as React.CSSProperties}
+          >
             <Amount>{exchange.receive.amount}</Amount>
-          </ExchangeLine>
-        ) : (
+          </AmountCell>
+        </AmountsRow>
+      ) : (
+        <AmountStage>
           <Amount
             data-testid="tx-success-amount"
             style={
@@ -475,12 +603,12 @@ export function TransactionSuccessScreen({
           >
             {summary}
           </Amount>
-        )}
-      </AmountStage>
-      {/* The receipt under the exchange: quiet rows for what the flow already
-          knows — effective rate, Salmon fee when it arrived, local time. */}
+        </AmountStage>
+      )}
+      {/* The fine print, last: quiet rows for what the flow already knows —
+          effective rate, Salmon fee when it arrived, local time. */}
       {exchange ? (
-        <ReceiptRows data-testid="tx-success-receipt">
+        <ReceiptRows $step={3} data-testid="tx-success-receipt">
           {exchangeRate ? (
             <ReceiptRow>
               <ReceiptLabel>{t('transactions.detail.rate', 'Rate')}</ReceiptLabel>
@@ -569,9 +697,11 @@ export function TransactionSuccessScreen({
             </TextButton>
           ) : null}
         </AssistBand>
-        <PrimaryButton onClick={onContinue} testID="tx-success-continue-button">
-          {t('transaction.continue')}
-        </PrimaryButton>
+        <ActionBand data-testid="tx-success-action">
+          <PrimaryButton onClick={onContinue} testID="tx-success-continue-button">
+            {t('transaction.continue')}
+          </PrimaryButton>
+        </ActionBand>
       </ActionGroup>
     </Receipt>
   );

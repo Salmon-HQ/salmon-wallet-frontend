@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
+import Animated, {
+  useReducedMotion,
+  withDelay,
+  withTiming,
+  type EntryAnimationsValues,
+  type EntryExitAnimationFunction,
+} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import {
@@ -14,12 +21,19 @@ import {
   vs,
   s,
   fontFamilyNative,
+  resolveOnboardingBands,
+  resolveOnboardingGrid,
   semantic,
   tabularNums,
   useWaitGate,
   useWaitExit,
+  FLOAT_IN_MS,
+  SINK_FLOAT_STAGGER_MS,
 } from '@salmon/shared';
 import type { TransactionSuccessScreenProps } from '@salmon/shared';
+import { ArrowRightIcon, CheckIcon } from '../../icons';
+import { curve, timing } from '../../utils/motion';
+import { floatEntering } from '../../utils/sinkAndFloat';
 import { PrimaryButton, TextButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import { TokenLogo } from '../TokenLogo';
@@ -37,12 +51,61 @@ const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 const MIN_AMOUNT_SCALE = fontSize.body / fontSize.title;
 
 /**
- * The token marks on the hero line. Small enough to sit inside a line of text
- * as punctuation — the same idiom the token selector uses at 32 and 48, one
- * step further down because here the mark is beside a number rather than being
- * the row's own subject.
+ * The token marks are the graphic's subject now, not punctuation beside a line
+ * of text, so they are drawn at the icon ramp's largest illustrative step.
  */
-const LOGO_SIZE = 20;
+const LOGO_SIZE = componentSizes.iconSize3XL;
+
+/** The tick and the arrow are chrome-sized glyphs, not illustrations. */
+const GRAPHIC_ICON_SIZE = componentSizes.iconSizeMedium;
+
+/**
+ * The ending's reserved heights, read from the onboarding grid rather than
+ * restated here (DESIGN.md §The ending borrows the onboarding ending's bands).
+ * The receipt offers no secondary action, so the band whose union is zero
+ * collapses and the assist sits directly over the primary —
+ * `resolveOnboardingBands`, the same rule both onboarding layouts read.
+ */
+const endingBands = resolveOnboardingBands(resolveOnboardingGrid('identity'), false);
+
+/**
+ * An exchange receipt arrives in four beats — the marks, the arrow with its
+ * tick, the amounts, the rows — in the order a receipt answers its questions:
+ * between what, what happened, how much, the fine print. One stagger step
+ * each, from the transition verb's own constant.
+ */
+const beat = (step: number) => step * SINK_FLOAT_STAGGER_MS;
+
+/**
+ * The arrow crossing the gap between the two marks — the float half of the
+ * verb (DESIGN.md §The sink and the float — the transition verb), turned on
+ * its side. It starts against the mark that left and comes to rest between the
+ * two; the distance is the runner's own width, which Reanimated hands the
+ * animation, so nothing here is a number. Travel on `settle` (buoyancy running
+ * out, no overshoot), light on the accelerating `sink`.
+ *
+ * Reduce motion returns `undefined`, which hands Reanimated no animation at
+ * all — the arrow is simply there, in its resting place.
+ */
+function crossEntering(
+  isReduceMotionEnabled: boolean,
+  delayMs: number
+): EntryExitAnimationFunction | undefined {
+  if (isReduceMotionEnabled) return undefined;
+  const travel = timing(FLOAT_IN_MS, false, curve.settle);
+  const light = timing(FLOAT_IN_MS, false, curve.sink);
+  const cross = (values: EntryAnimationsValues) => {
+    'worklet';
+    return {
+      initialValues: { opacity: 0, transform: [{ translateX: -values.targetWidth / 2 }] },
+      animations: {
+        opacity: withDelay(delayMs, withTiming(1, light)),
+        transform: [{ translateX: withDelay(delayMs, withTiming(0, travel)) }],
+      },
+    };
+  };
+  return cross satisfies EntryExitAnimationFunction;
+}
 
 // ============================================================================
 // Component
@@ -66,7 +129,8 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
 }) => {
   const isBridge = !!bridgeDepositAddress;
   const { t } = useTranslation();
-  const { floatingBottomOffset } = useTabChrome();
+  const { floatingBottomOffset, insets } = useTabChrome();
+  const isReduceMotionEnabled = useReducedMotion();
 
   // The receipt's clock: local time, captured once when the receipt mounts —
   // the moment the transaction came back — so re-renders never move it.
@@ -119,7 +183,11 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
 
   return (
     <View
-      style={[styles.container, styles.receipt, { paddingBottom: floatingBottomOffset }]}
+      // The bottom edge is the safe area's, and the air over it belongs to the
+      // action band. It used to reserve the whole floating tab bar — chrome
+      // that has already sunk away on every host this receipt appears in — so
+      // the primary sat a tab bar's height above the edge the grid puts it on.
+      style={[styles.container, styles.receipt, { paddingBottom: insets.bottom }]}
       testID="tx-success-screen"
     >
       {/* The cluster — status, amount, and the bridge details when there are
@@ -128,66 +196,103 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           on the bottom edge and the report sits in the middle of the water
           rather than leaving a void under it. */}
       <View style={styles.cluster} testID="tx-success-cluster">
-      {/* Status is a line of ink, not a 96px disc: `status.success` is
-          specified as ink (9.99:1), and the outcome the user came for is the
-          amount below it. Three channels are kept — colour, the ✓ glyph, and
-          the label — so the state never rides on hue alone. */}
-      <View style={styles.statusRow}>
-        <Text style={styles.statusGlyph}>✓</Text>
-        <Text style={styles.statusLabel} testID="tx-success-title">
-          {title}
-        </Text>
-      </View>
-
-      {/* The hero. The summary line is the protagonist on every ending — the
-          swap receipt used to box its exchange here as a card, and the ending
-          reads as an ending, not a second review. */}
-      <View style={styles.amountContainer} testID="tx-success-amount">
-        {/* One line, always. The receipt used to print the whole operation as
-            one 36px title and it broke over three lines — an amount that wraps
-            stops being an amount and becomes a sentence. It shrinks rather than
-            wrapping or truncating: a number on a wallet receipt may not be
-            elided.
-
-            On a swap the line carries the two tokens' own marks. The exchange
-            already reaches this screen with both logos on it, so the icons
-            cost no fetch and no new prop: each one leads its amount, which is
-            what makes the line read as *this token to that token* rather than
-            as two strings with an arrow between them. `summary` is the same
-            text either way — the two halves are its two halves — so a send
-            receipt, and any swap whose logos never arrived, prints exactly
-            the line it printed before. */}
-        {exchange ? (
-          <View style={styles.exchangeLine} testID="tx-success-summary">
-            <TokenLogo
-              uri={exchange.send.logo}
-              symbol={exchange.send.symbol}
-              size={LOGO_SIZE}
-            />
-            <Text
-              style={[styles.amount, styles.amountSpent]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={MIN_AMOUNT_SCALE}
+      {exchange ? (
+        /* The hero is the graphic. It answers *between what* — the mark of
+           the token that left, the arrow that travelled to the token that
+           arrived, and the tick over it, the same glyph the copy control
+           draws when something has landed. It carries the result as its
+           accessible name, because a graphic announces nothing on its own and
+           the sentence it replaced is what a screen reader used to hear. */
+        <View
+          style={styles.graphic}
+          testID="tx-success-hero"
+          accessible
+          accessibilityRole="image"
+          accessibilityLabel={title}
+        >
+          <Animated.View entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(0) })}>
+            <TokenLogo uri={exchange.send.logo} symbol={exchange.send.symbol} size={LOGO_SIZE} />
+          </Animated.View>
+          <View style={styles.track}>
+            <Animated.View
+              style={styles.trackRow}
+              testID="tx-success-tick"
+              entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(1) })}
             >
-              {exchange.send.amount}
-            </Text>
-            <Text style={styles.amountArrow}>→</Text>
+              <CheckIcon
+                weight="bold"
+                size={GRAPHIC_ICON_SIZE}
+                color={semantic.status.success}
+              />
+            </Animated.View>
+            <Animated.View
+              style={styles.trackRow}
+              testID="tx-success-arrow"
+              entering={crossEntering(isReduceMotionEnabled, beat(1))}
+            >
+              <ArrowRightIcon
+                weight="bold"
+                size={GRAPHIC_ICON_SIZE}
+                color={semantic.text.secondary}
+              />
+            </Animated.View>
+          </View>
+          <Animated.View entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(0) })}>
             <TokenLogo
               uri={exchange.receive.logo}
               symbol={exchange.receive.symbol}
               size={LOGO_SIZE}
             />
-            <Text
-              style={styles.amount}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={MIN_AMOUNT_SCALE}
-            >
-              {exchange.receive.amount}
-            </Text>
-          </View>
-        ) : (
+          </Animated.View>
+        </View>
+      ) : (
+        /* Status is a line of ink, not a 96px disc: `status.success` is
+           specified as ink (9.99:1), and the outcome the user came for is the
+           amount below it. Three channels are kept — colour, the ✓ glyph, and
+           the label — so the state never rides on hue alone. A single-token
+           receipt has nothing to draw an exchange between, so it keeps the
+           sentence that says what happened. */
+        <View style={styles.statusRow}>
+          <Text style={styles.statusGlyph}>✓</Text>
+          <Text style={styles.statusLabel} testID="tx-success-title">
+            {title}
+          </Text>
+        </View>
+      )}
+
+      {/* How much. One line, always: the receipt used to print the whole
+          operation as one 36px title and it broke over three lines — an amount
+          that wraps stops being an amount and becomes a sentence. It shrinks
+          rather than wrapping or truncating: a number on a wallet receipt may
+          not be elided. On an exchange each amount sits under the mark it
+          belongs to; a single-token receipt prints the summary it always
+          printed. */}
+      {exchange ? (
+        <Animated.View
+          style={styles.amountsRow}
+          testID="tx-success-amount"
+          entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(2) })}
+        >
+          <Text
+            style={[styles.amount, styles.amountSpent, styles.amountCell]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={MIN_AMOUNT_SCALE}
+          >
+            {exchange.send.amount}
+          </Text>
+          <Text
+            style={[styles.amount, styles.amountCell]}
+            testID="tx-success-summary"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={MIN_AMOUNT_SCALE}
+          >
+            {exchange.receive.amount}
+          </Text>
+        </Animated.View>
+      ) : (
+        <View style={styles.amountContainer} testID="tx-success-amount">
           <Text
             style={styles.amount}
             testID="tx-success-summary"
@@ -197,13 +302,17 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           >
             {summary}
           </Text>
-        )}
-      </View>
+        </View>
+      )}
 
-      {/* The receipt under the amount: quiet rows for what the flow already
-          knows — effective rate, Salmon fee when it arrived, local time. */}
+      {/* The fine print, last: quiet rows for what the flow already knows —
+          effective rate, Salmon fee when it arrived, local time. */}
       {exchange ? (
-        <View style={styles.receiptRows} testID="tx-success-receipt">
+        <Animated.View
+          style={styles.receiptRows}
+          testID="tx-success-receipt"
+          entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(3) })}
+        >
           {exchangeRate ? (
             <View style={styles.receiptRow}>
               <Text style={styles.receiptLabel}>{t('transactions.detail.rate', 'Rate')}</Text>
@@ -220,7 +329,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
             <Text style={styles.receiptLabel}>{t('transactions.detail.time', 'Time')}</Text>
             <Text style={[styles.receiptValue, TABULAR]}>{receiptTime}</Text>
           </View>
-        </View>
+        </Animated.View>
       ) : null}
 
       {isBridge ? (
@@ -277,7 +386,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           and the assist band keeps its reserved height even when there is no
           link, so the primary never moves. */}
       <View style={styles.actionGroup}>
-        <View style={styles.assistBand}>
+        <View style={styles.assistBand} testID="tx-success-assist">
           {!isBridge && explorerUrl ? (
             <TextButton
               onPress={handleExplorerPress}
@@ -289,7 +398,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           ) : null}
         </View>
 
-        <View style={styles.buttonContainer}>
+        <View style={styles.actionBand} testID="tx-success-action">
           <PrimaryButton
             onPress={onContinue}
             disabled={settling}
@@ -357,21 +466,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: vs(spacing['2xl']),
   },
-  // The hero as a line of tokens: mark, amount, arrow, mark, amount. It stays
-  // one row — each amount shrinks inside its own share of the width rather
-  // than wrapping.
-  exchangeLine: {
+  // The graphic: the mark of what left, the gap the arrow crosses with the
+  // tick over it, and the mark of what arrived. The marks are the subject, so
+  // they own the row's ends and the gap between them is the arrow's track.
+  graphic: {
+    alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: s(spacing.sm),
+    marginBottom: vs(spacing.lg),
   },
-  // The arrow is not the subject: one rank down and in secondary ink, so the
-  // two amounts stay the loudest things on the line.
-  amountArrow: {
-    fontSize: ms(fontSize.headline),
-    fontFamily: fontFamilyNative.regular,
-    color: semantic.text.secondary,
+  track: {
+    flex: 1,
+    gap: vs(spacing.xs),
+  },
+  // Full width, so the crossing's half-width start puts the glyph over the
+  // mark that left and its rest between the two.
+  trackRow: {
+    alignItems: 'center',
+  },
+  // The amounts, under the marks they belong to: what was spent on the side
+  // the arrow left, what arrived on the side it reached.
+  amountsRow: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: s(spacing.sm),
+    marginBottom: vs(spacing.lg),
+  },
+  amountCell: {
+    flex: 1,
   },
   // Secondary rank: one step down from the headline in size and one in weight.
   // It keeps `text.primary` — a number on a receipt may be smaller than the
@@ -451,17 +576,22 @@ const styles = StyleSheet.create({
   actionGroup: {
     marginTop: 'auto',
     alignSelf: 'stretch',
-    gap: vs(spacing.lg),
-    paddingTop: vs(spacing.xl),
   },
-  // Reserved at the assist band's control height whether or not a link is
-  // rendered, so the primary sits at one Y across every ending.
+  // Reserved at the grid's assist height whether or not a link is rendered,
+  // so the primary sits at one Y across every ending.
   assistBand: {
-    height: vs(componentSizes.buttonHeightSmall),
+    height: vs(endingBands.assist),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonContainer: {
+  // The action band, exactly as the onboarding layout draws it: the grid's air
+  // over the primary and the grid's air under it, with the button on the
+  // bottom edge of the column. Nothing is reserved below it, which is what
+  // pins its Y.
+  actionBand: {
     alignSelf: 'stretch',
+    height: vs(endingBands.action),
+    paddingTop: vs(spacing.lg),
+    paddingBottom: vs(spacing['2xl']),
   },
 });
