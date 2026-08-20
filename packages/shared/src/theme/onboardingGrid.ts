@@ -285,6 +285,9 @@ const collapsedDescription = titleLine - spacing.md;
  */
 const collapsedSecondary = 0;
 
+/** An assist band no screen is currently filling. Same idea as the secondary's. */
+const collapsedAssist = 0;
+
 /**
  * One cluster for the two screens the owner tunes as a pair — the welcome
  * mark and the lock mark share size and band by this shared constant, not by
@@ -415,18 +418,48 @@ export const onboardingCompactHeight = 640;
  * carry a secondary — including one held permanently reserved for an element
  * that appears on input — are returned unchanged.
  *
+ * **`assist` collapses on the same terms** (owner, on device). It was held at
+ * its full reserved height on every screen, filled or not, which is right when
+ * the reservation protects a *sibling* — but the band above the primary is the
+ * one place that argument does not reach, because collapsing it moves nothing:
+ * the freed height goes to `body`, the stack is unchanged, and every control
+ * keeps its Y. What it was buying was an empty band, and on a short surface an
+ * empty band is what pushes `body` past its floor and into a scroll. Found on a
+ * Galaxy S20 FE — 651dp of layout height against a Pixel 9 Pro's 876dp, the
+ * gap being mostly a three-button navigation bar — where the seed grid's last
+ * row fell off the screen behind sixty points of nothing.
+ *
+ * One consequence, stated rather than discovered later: a screen whose assist
+ * is *conditional* — recover's invalid-phrase line — now reflows `body` when
+ * that line arrives. The controls still do not move, so what changes is the
+ * height of the region above them, not the position of anything the user is
+ * about to press.
+ *
  * Read by both layouts so the rule is stated once rather than twice.
  *
  * @param grid - The variant's table, from `resolveOnboardingGrid`.
  * @param hasSecondary - Whether the screen passes anything for the slot.
+ * @param hasAssist - Whether the screen is currently filling the assist band.
+ *   Defaults to true, which is the reserving behaviour every caller had before
+ *   the band could collapse.
  */
 export const resolveOnboardingBands = (
   grid: OnboardingGrid,
-  hasSecondary: boolean
-): OnboardingGrid =>
-  hasSecondary || grid.secondary === 0
-    ? grid
-    : { ...grid, secondary: collapsedSecondary, body: grid.body + grid.secondary };
+  hasSecondary: boolean,
+  hasAssist: boolean = true
+): OnboardingGrid => {
+  const withSecondary =
+    hasSecondary || grid.secondary === 0
+      ? grid
+      : { ...grid, secondary: collapsedSecondary, body: grid.body + grid.secondary };
+  return hasAssist || withSecondary.assist === 0
+    ? withSecondary
+    : {
+        ...withSecondary,
+        assist: collapsedAssist,
+        body: withSecondary.body + withSecondary.assist,
+      };
+};
 
 /**
  * Picks the table for a variant and an available height.

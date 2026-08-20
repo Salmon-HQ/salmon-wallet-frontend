@@ -25,6 +25,10 @@
  *    the exception: a screen that passes no secondary at all hands that height
  *    to `body` and lets `assist` sit directly over the action — see
  *    `resolveOnboardingBands`. The stack is unchanged, so `action` is not.
+ *    **The assist band collapses on the same terms**: reserving it protects no
+ *    sibling, because giving its height back to `body` moves nothing, and an
+ *    empty band is what pushes a short screen's body past its floor and into a
+ *    scroll.
  * 2. **The stack is one fixed height, and it is centred in the viewport.** It
  *    used to be anchored to the top with the leftover space dumped below the
  *    action, which put a hole through the middle of every screen. Centring
@@ -211,7 +215,11 @@ export function OnboardingLayout({
   // to `body` and drops its assist onto the action, per
   // `resolveOnboardingBands`. The stack is the same either way, so `action`
   // does not move.
-  const grid = resolveOnboardingBands(resolveOnboardingGrid(variant, measured), secondary != null);
+  const grid = resolveOnboardingBands(
+    resolveOnboardingGrid(variant, measured),
+    secondary != null,
+    assist != null
+  );
 
   const onLayout = (event: LayoutChangeEvent) => {
     const height = event.nativeEvent.layout.height;

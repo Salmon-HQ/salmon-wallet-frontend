@@ -74,7 +74,13 @@ describe('OnboardingLayout', () => {
     (variant) => {
       // With a secondary, so the variant's own table is what is drawn: a
       // screen that passes none hands that band to `body` — asserted below.
-      render(<OnboardingLayout variant={variant} secondary={<button>Second</button>} />);
+      render(
+        <OnboardingLayout
+          variant={variant}
+          secondary={<button>Second</button>}
+          assist={<span>Assist</span>}
+        />
+      );
       const grid = tableFor(variant);
 
       expect(reservedHeights()).toEqual({
@@ -98,13 +104,18 @@ describe('OnboardingLayout', () => {
   it.each(['identity', 'content'] as const)(
     '%s: leaves an unused slot empty rather than collapsing it',
     (variant) => {
-      // The whole point. A screen with nothing in `assist`, and a `secondary`
-      // held reserved for a control that has not arrived, reserves exactly as
-      // much as one that fills both — so moving between them cannot move the
-      // primary action.
+      // The whole point. A `secondary` held reserved for a control that has
+      // not arrived reserves exactly as much as one that fills it, so moving
+      // between the two screens cannot move the primary action.
+      //
+      // `assist` is the documented exception and is passed on both sides here:
+      // it collapses when empty, because handing its height to `body` moves no
+      // control, and an empty band is what pushed a short screen's body past
+      // its floor and into a scroll. See `resolveOnboardingBands`.
       const bare = render(
         <OnboardingLayout
           variant={variant}
+          assist={<button>What is a derivable?</button>}
           secondary={
             <ReservedSlot visible={false}>
               <button>Check derivables</button>
@@ -176,7 +187,12 @@ describe('OnboardingLayout', () => {
 
   it('does not move a slot when an optional control is revealed', () => {
     // The Success screen's helper and the recover screen's Next: both arrive
-    // after first paint, and neither may shift anything.
+    // after first paint, and neither may move a control.
+    //
+    // `body` is the one slot allowed to change, and it changes by exactly the
+    // assist band: an empty assist collapses and pays its height to `body`, so
+    // when the line arrives `body` hands it straight back. Every other slot —
+    // and therefore every control the user is about to press — holds its Y.
     const before = render(
       <OnboardingLayout
         action={
@@ -200,7 +216,17 @@ describe('OnboardingLayout', () => {
       />
     );
 
-    expect(reservedHeights()).toEqual(beforeHeights);
+    const afterHeights = reservedHeights();
+    const assistBand = tableFor('identity').assist;
+    const px = (value: string | undefined) => parseFloat(String(value));
+
+    const { body: bodyBefore, assist: _aBefore, ...controlsBefore } = beforeHeights;
+    const { body: bodyAfter, assist: _aAfter, ...controlsAfter } = afterHeights;
+
+    expect(controlsAfter).toEqual(controlsBefore);
+    expect(px(bodyBefore) - px(bodyAfter)).toBe(assistBand);
+    expect(px(afterHeights.assist)).toBe(assistBand);
+    expect(px(beforeHeights.assist)).toBe(0);
   });
 
   it('holds the two families’ control bands at one height', () => {
