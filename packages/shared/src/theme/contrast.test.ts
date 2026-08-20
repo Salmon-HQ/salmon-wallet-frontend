@@ -353,6 +353,64 @@ describe('contrast: content that occludes the motif', () => {
 });
 
 /**
+ * The warning notice stays a wash on an opaque plane — it is not a membrane.
+ *
+ * DESIGN.md §The five planes puts "all lists, cards, inputs, content" on P2,
+ * opaque by default, and reserves translucency for the floating chrome of P3.
+ * A notice is content, and the 10% status tint it wears does not make it a
+ * membrane: §Colors' status entry defines the tints as washes that sit *under*
+ * status ink and "never carry text contrast of their own" — the opaque plane
+ * beneath still supplies the ratio.
+ *
+ * The arithmetic is what closes the argument, so it lives here rather than in
+ * a component comment. The notice's title is its status ink at `fontSize.sm`,
+ * which is small text under 1.4.3. Measured against the worst-case composites
+ * §The scrim floor derives each tier from — the tint over pure white — the
+ * danger step fails AA on the thick tier and both status steps fail on the
+ * thin one. Re-grounding the notice on the membrane material would therefore
+ * demote the one component whose job is that security state is impossible to
+ * miss.
+ */
+describe('contrast: why the warning notice is not a membrane', () => {
+  /** A straight-alpha composite of a translucent token over an opaque one. */
+  const composite = (translucent: string, backdrop: string): string => {
+    const [r, g, b, alpha] = translucent
+      .match(/rgba\((\d+), (\d+), (\d+), ([\d.]+)\)/)!
+      .slice(1)
+      .map(Number);
+    const base = [0, 2, 4].map((i) => parseInt(backdrop.replace('#', '').slice(i, i + 2), 16));
+    return `#${[r, g, b]
+      .map((channel, i) =>
+        Math.round(channel * alpha + base[i] * (1 - alpha))
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')}`;
+  };
+
+  const WHITE = '#FFFFFF';
+
+  it('keeps both status inks above AA on the tinted wash it wears today', () => {
+    expect(
+      contrast(status.danger, composite(status.dangerTint, surface.shelf))
+    ).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(
+      contrast(status.warning, composite(status.warningTint, surface.shelf))
+    ).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it('drops the danger ink below AA on the thick tier, which is the notice title', () => {
+    expect(contrast(status.danger, composite(surface.membraneThick, WHITE))).toBeLessThan(AA_TEXT);
+  });
+
+  it('drops both status inks below AA on the thin tier', () => {
+    const thin = composite(surface.membraneThin, WHITE);
+    expect(contrast(status.danger, thin)).toBeLessThan(AA_TEXT);
+    expect(contrast(status.warning, thin)).toBeLessThan(AA_TEXT);
+  });
+});
+
+/**
  * The tab bar on the thermocline. The membrane tiers only guarantee contrast
  * over their documented scrim, so every ink the tab bar wears is measured
  * against `membraneThick`'s worst-case composite — the tint over pure white,

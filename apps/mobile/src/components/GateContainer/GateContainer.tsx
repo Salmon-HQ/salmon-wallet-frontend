@@ -545,6 +545,26 @@ const styles = StyleSheet.create({
     backgroundColor: semantic.surface.crest,
     borderBottomLeftRadius: borderRadius['2xl'],
     borderBottomRightRadius: borderRadius['2xl'],
+    // The shadow lives here because this is the only opaque thing in the
+    // collapsed gate. `surface` still declares `shadows.topSheet`, but a shadow
+    // needs an opaque body to be cast from: once the gate went transparent and
+    // handed its ground to the material, that declaration stopped drawing
+    // anything. The header row's own shadow was the one still working, and
+    // removing it as a duplicate took the last one with it. Expanded, the gate
+    // is opaque again through `surfaceFloor`, so `surface`'s shadow draws and
+    // this floor is not mounted.
+    ...Platform.select({
+      ios: {
+        shadowColor: shadows.header.shadowColor,
+        shadowOffset: shadows.header.shadowOffset,
+        shadowOpacity: shadows.header.shadowOpacity,
+        shadowRadius: shadows.header.shadowRadius,
+      },
+      android: {
+        elevation: shadows.header.elevation,
+      },
+      default: {},
+    }),
   },
   expandedContentContainer: {
     flex: 1,
