@@ -207,7 +207,7 @@ export const scales = {
    */
   fishStroke: 'rgba(7, 9, 17, 0.10)',
   fishScale: 1,
-  /** Seigaiha tile scale shared by the caustic, refraction, and membrane variants. */
+  /** Seigaiha tile scale shared by the refraction and membrane variants. */
   refractionScale: 0.5,
   /**
    * The strip's horizontal sweep — caustic cyan through `salmon-300` to
