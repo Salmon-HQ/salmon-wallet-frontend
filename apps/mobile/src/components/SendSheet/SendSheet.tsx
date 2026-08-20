@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, Platform, BackHandler } from 'react-native';
+import ReAnimated, { useReducedMotion } from 'react-native-reanimated';
 import {
   useSendTransaction,
   getTransactionUrl,
@@ -9,6 +10,7 @@ import {
 import type { Blockchain, NetworkEnvironment } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 
+import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
 import { StepTokenSelect } from './StepTokenSelect';
@@ -55,9 +57,14 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   // Raised by StepConfirmation while the transfer is in flight. The sheet owns
   // every dismissal path, so it is the level that has to know.
   const [isSending, setIsSending] = useState(false);
+  // Whether a step change has happened in this opening. The step on screen
+  // floats in only once something has moved: on the sheet's own arrival the
+  // first step is simply already there.
+  const [stepped, setStepped] = useState(false);
   const previousVisibleRef = useRef(visible);
 
   const { t } = useTranslation();
+  const isReduceMotionEnabled = useReducedMotion();
 
   // Live balance for the selected token, derived from the reactive `tokens` prop
   // every render. RQ-backed parents update this list when funds arrive — passing
@@ -86,6 +93,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     setAmount('');
     setSuccessTxId(null);
     setIsSending(false);
+    setStepped(false);
     sendHook.reset();
   }, [sendHook, skipTokenSelect, tokens]);
 
@@ -104,6 +112,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     setAmount('');
     setSuccessTxId(null);
     setIsSending(false);
+    setStepped(false);
   }
 
   // sendHook.reset() is a side effect, so it cannot run during render.
@@ -128,6 +137,12 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   useEffect(() => {
     const wasVisible = previousVisibleRef.current;
     previousVisibleRef.current = visible;
+    if (visible && !wasVisible) {
+      // A reopening is the sheet arriving again. Whatever the flow state is
+      // (a fast reopen cancels the reset timer below and keeps it), the step
+      // on screen must not float in behind the sheet's own rise.
+      setStepped(false);
+    }
     if (!visible && wasVisible) {
       const timer = setTimeout(() => {
         resetFlowStateRef.current();
@@ -138,6 +153,14 @@ export const SendSheet: React.FC<SendSheetProps> = ({
 
     return undefined;
   }, [visible]);
+
+  // Step navigation handlers. Every one of them goes through `goToStep`: the
+  // step is what changes, and the fact that it changed is what the verb needs
+  // to know.
+  const goToStep = useCallback((next: SendStep) => {
+    setStepped(true);
+    setStep(next);
+  }, []);
 
   const handleSuccessContinue = useCallback(() => {
     if (successTxId) {
@@ -174,7 +197,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
       if (step === 'success') {
         handleSuccessContinue();
       } else if (previousStep) {
-        setStep(previousStep);
+        goToStep(previousStep);
       } else {
         // Nothing behind the first step: the hardware back leaves the sheet,
         // which is a destination the system gesture always has.
@@ -184,34 +207,33 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     });
 
     return () => backHandler.remove();
-  }, [visible, step, previousStep, handleClose, handleSuccessContinue, isSending]);
+  }, [visible, step, previousStep, handleClose, handleSuccessContinue, isSending, goToStep]);
 
-  // Step navigation handlers
   const handleSelectToken = useCallback((token: SendToken) => {
     setSelectedToken(token);
-    setStep('address-amount');
-  }, []);
+    goToStep('address-amount');
+  }, [goToStep]);
 
   const handleBackToTokenSelect = useCallback(() => {
-    setStep('token-select');
-  }, []);
+    goToStep('token-select');
+  }, [goToStep]);
 
   const handleReview = useCallback((address: string, amt: string, resolvedAddress?: string) => {
     setRecipientAddress(address);
     setResolvedRecipientAddress(resolvedAddress);
     setAmount(amt);
-    setStep('confirmation');
-  }, []);
+    goToStep('confirmation');
+  }, [goToStep]);
 
   const handleBackToAddressAmount = useCallback(() => {
-    setStep('address-amount');
+    goToStep('address-amount');
     sendHook.reset();
-  }, [sendHook]);
+  }, [goToStep, sendHook]);
 
   const handleSuccess = useCallback((txId: string) => {
     setSuccessTxId(txId);
-    setStep('success');
-  }, []);
+    goToStep('success');
+  }, [goToStep]);
 
   // Back button handler for the header
   const handleBackPress = useCallback(() => {
@@ -219,9 +241,9 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     if (step === 'confirmation') {
       handleBackToAddressAmount();
     } else {
-      setStep(previousStep);
+      goToStep(previousStep);
     }
-  }, [step, previousStep, handleBackToAddressAmount, isSending]);
+  }, [step, previousStep, handleBackToAddressAmount, isSending, goToStep]);
 
   // Drawn only when the step it would return to exists.
   const showBackButton = previousStep !== undefined && !isSending;
@@ -235,6 +257,29 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     />
   );
 
+  // A step change inside this sheet speaks the verb: the step that leaves
+  // sinks, the beat passes, and the step that arrives floats up in its place.
+  // Back is the mirror, and reduce motion resolves both halves to an instant
+  // cut with the step still changing.
+  //
+  // DESIGN.md §Motion's rule that a sheet's content never speaks the verb is
+  // about the sheet arriving and leaving — it rises from the bottom and ebbs
+  // the same way, and its content does not travel with it. That is why the
+  // first step of the flow has no entrance of its own: on the sheet's own
+  // arrival it is simply already there, and content that spoke the verb then
+  // would say it twice. `stepped` is what tells the two events apart.
+  //
+  // The success step is the one exception on the arriving side. The receipt
+  // owns its entrance — its bands float in one after another in reading order
+  // (DESIGN.md §The Surfacing) — so floating the whole step in as a unit would
+  // make it arrive twice, once as a block and once band by band. The
+  // confirmation still sinks away under it; what replaces it is the receipt's
+  // own sequence.
+  const stepExiting = sinkExiting(isReduceMotionEnabled);
+  const stepEntering = stepped
+    ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
+    : undefined;
+
   return (
     <BottomSheetContainer
       visible={visible}
@@ -246,59 +291,81 @@ export const SendSheet: React.FC<SendSheetProps> = ({
       {/* Content */}
       <View style={styles.content}>
         {step === 'token-select' && (
-          <StepTokenSelect
-            tokens={tokens}
-            onSelectToken={handleSelectToken}
-            showUnverifiedTokens={showUnverifiedTokens}
-            loading={loading}
-          />
+          <ReAnimated.View
+            key="send-step-token-select"
+            testID="send-step-token-select"
+            style={styles.step}
+            entering={stepEntering}
+            exiting={stepExiting}
+          >
+            <StepTokenSelect
+              tokens={tokens}
+              onSelectToken={handleSelectToken}
+              showUnverifiedTokens={showUnverifiedTokens}
+              loading={loading}
+            />
+          </ReAnimated.View>
         )}
 
         {step === 'address-amount' && selectedToken && (
-          <StepAddressAmount
-            token={selectedToken}
-            liveBalance={liveSelectedBalance}
-            blockchain={blockchain}
-            account={account}
-            onBack={stepSequence.includes('token-select') ? handleBackToTokenSelect : undefined}
-            onReview={handleReview}
-            onCancel={handleClose}
-          />
+          <ReAnimated.View
+            key="send-step-address-amount"
+            testID="send-step-address-amount"
+            style={styles.step}
+            entering={stepEntering}
+            exiting={stepExiting}
+          >
+            <StepAddressAmount
+              token={selectedToken}
+              liveBalance={liveSelectedBalance}
+              blockchain={blockchain}
+              account={account}
+              onBack={stepSequence.includes('token-select') ? handleBackToTokenSelect : undefined}
+              onReview={handleReview}
+              onCancel={handleClose}
+            />
+          </ReAnimated.View>
         )}
 
-        {/* Steps inside a sheet do not speak the sink and the float: the sheet
-            itself is the thing that rises and ebbs, and a step sinking inside
-            it is the verb said twice. The confirmation swaps plainly; the
-            success screen keeps The Surfacing as its entrance. */}
         {step === 'confirmation' && selectedToken && (
-          <StepConfirmation
-            token={selectedToken}
-            recipientAddress={recipientAddress}
-            resolvedRecipientAddress={resolvedRecipientAddress}
-            amount={amount}
-            blockchain={blockchain}
-            account={account}
-            onBack={handleBackToAddressAmount}
-            onCancel={handleClose}
-            onSuccess={handleSuccess}
-            onSendingChange={setIsSending}
-          />
+          <ReAnimated.View
+            key="send-step-confirmation"
+            testID="send-step-confirmation"
+            style={styles.step}
+            entering={stepEntering}
+            exiting={stepExiting}
+          >
+            <StepConfirmation
+              token={selectedToken}
+              recipientAddress={recipientAddress}
+              resolvedRecipientAddress={resolvedRecipientAddress}
+              amount={amount}
+              blockchain={blockchain}
+              account={account}
+              onBack={handleBackToAddressAmount}
+              onCancel={handleClose}
+              onSuccess={handleSuccess}
+              onSendingChange={setIsSending}
+            />
+          </ReAnimated.View>
         )}
 
         {step === 'success' && successTxId && selectedToken && (
-          <TransactionSuccessScreen
-            title={t('transaction.sendComplete')}
-            pendingTitle={t('transaction.pendingSend')}
-            summary={`${amount} ${selectedToken.symbol} to ${getShortAddress(recipientAddress) ?? recipientAddress}`}
-            explorerUrl={getTransactionUrl(
-              blockchain.toUpperCase() as Blockchain,
-              account.getNetworkId() as NetworkEnvironment,
-              getDefaultExplorer(blockchain.toUpperCase() as Blockchain),
-              successTxId
-            )}
-            onContinue={handleSuccessContinue}
-            settling={sendHook.settling}
-          />
+          <View testID="send-step-success" style={styles.step}>
+            <TransactionSuccessScreen
+              title={t('transaction.sendComplete')}
+              pendingTitle={t('transaction.pendingSend')}
+              summary={`${amount} ${selectedToken.symbol} to ${getShortAddress(recipientAddress) ?? recipientAddress}`}
+              explorerUrl={getTransactionUrl(
+                blockchain.toUpperCase() as Blockchain,
+                account.getNetworkId() as NetworkEnvironment,
+                getDefaultExplorer(blockchain.toUpperCase() as Blockchain),
+                successTxId
+              )}
+              onContinue={handleSuccessContinue}
+              settling={sendHook.settling}
+            />
+          </View>
         )}
       </View>
     </BottomSheetContainer>
@@ -312,6 +379,11 @@ export const SendSheet: React.FC<SendSheetProps> = ({
 const styles = StyleSheet.create({
   content: {
     flex: 1,
+  },
+  // The two halves of a step change overlap: one sinks while the other floats
+  // up in the same box, so the steps are stacked, not laid out in sequence.
+  step: {
+    ...StyleSheet.absoluteFillObject,
   },
 });
 
