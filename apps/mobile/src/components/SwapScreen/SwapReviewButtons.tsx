@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, StyleSheet } from 'react-native';
-import { spacing, vs, s, componentSizes } from '@salmon/shared';
+import { spacing, vs, componentSizes } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 
 export interface SwapReviewButtonsProps {
@@ -35,51 +35,52 @@ export const SwapReviewButtons: React.FC<SwapReviewButtonsProps> = ({
   const isBusy = isConfirming || isRefreshing;
   return (
     <View style={[styles.buttonsContainer, style]}>
-      <View style={styles.half}>
-        <SecondaryButton
-          onPress={onBack}
-          disabled={isBusy}
-          style={styles.backButton}
-          testID="swap-back-button"
-        >
-          {t('general.back')}
-        </SecondaryButton>
-      </View>
-      <View style={styles.half}>
-        <PrimaryButton
-          onPress={onConfirm}
-          loading={isRefreshing}
-          disabled={isBusy}
-          style={styles.confirmButton}
-          testID="swap-confirm-button"
-        >
-          {confirmLabel ?? t('general.confirm')}
-        </PrimaryButton>
-      </View>
+      <SecondaryButton
+        onPress={onBack}
+        disabled={isBusy}
+        style={styles.backButton}
+        testID="swap-back-button"
+      >
+        {t('general.back')}
+      </SecondaryButton>
+      <PrimaryButton
+        onPress={onConfirm}
+        loading={isRefreshing}
+        disabled={isBusy}
+        style={styles.confirmButton}
+        testID="swap-confirm-button"
+      >
+        {confirmLabel ?? t('general.confirm')}
+      </PrimaryButton>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  // The pair stacks, it does not share a line. Side by side each label had
+  // half a phone to live in, and the second action is the longest string this
+  // screen can show — it is not always "Confirm": an expired quote turns it
+  // into "Refresh Quote" / "Refresh Estimate", and the Spanish of those runs
+  // edge to edge inside a half-width button. Full width fits every state's
+  // copy without wrapping or clipping.
+  //
+  // The order is the app's, not this screen's: OnboardingLayout's ratified
+  // band order is assist / secondary / action with the full-width primary
+  // bottom-most, so Back sits above Confirm here too and the committing
+  // action lands where the thumb already expects it.
+  //
+  // Both buttons already carry `width: '100%'`, and a column stretches its
+  // children, so no wrapper is needed to make them full width — the halves
+  // that used to split the row are gone with the row.
   buttonsContainer: {
-    flexDirection: 'row',
-    gap: s(spacing.md),
+    flexDirection: 'column',
+    gap: vs(spacing.md),
   },
-  // The row is a symmetric pair: two halves of one decision, so they are the
-  // same width. `flex: 1` cannot live on the buttons themselves — Yoga floors a
-  // flex child's base size at its own horizontal padding and border
-  // (`max(flexBasis, paddingAndBorderAlongMainAxis)`), and SecondaryButton
-  // carries `paddingHorizontal: spacing.lg` while PrimaryButton carries none.
-  // Both said `flex: 1` and Back still came out `2 * spacing.lg` wider. These
-  // wrappers own the split instead: they have no padding, so the halves are
-  // exactly equal, and each button fills its half through its own `width: 100%`.
-  // They draw nothing — the same layout-only split the DOM half already uses.
-  half: {
-    flex: 1,
-  },
-  // Height is the only legal override on either button. Radius, fill, border
-  // and material belong to the button itself: the pair used to carry a local
-  // 12px radius and a salmon outline on Back, and a gradient wrapper that made
+  // Height is the only legal override on either button, and it is fixed on
+  // both — so the stack's own height is the same in every state and nothing
+  // above it moves when the confirm label changes. Radius, fill, border and
+  // material belong to the button itself: the pair used to carry a local 12px
+  // radius and a salmon outline on Back, and a gradient wrapper that made
   // Confirm transparent — which cancelled the flesh the fill is supposed to
   // show. They differ by material now, not by shape.
   backButton: {

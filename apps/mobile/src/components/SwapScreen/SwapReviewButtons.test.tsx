@@ -9,11 +9,10 @@ jest.mock('react-i18next', () => ({
 }));
 
 // The real barrel pulls in @solana/kit, which jest-expo cannot transform.
-// Only the four layout tokens this row reads are needed here.
+// Only the three layout tokens this pair reads are needed here.
 jest.mock('@salmon/shared', () => ({
   spacing: { md: 12 },
   componentSizes: { buttonHeightCompact: 42 },
-  s: (value: number) => value,
   vs: (value: number) => value,
 }));
 
@@ -42,48 +41,87 @@ jest.mock('../Button', () => {
 
 import { SwapReviewButtons } from './SwapReviewButtons';
 
-type Node = { props: { style?: unknown }; children?: unknown[] };
+type Node = { props: { style?: unknown; testID?: string }; children?: unknown[] };
 
-function renderRow() {
+function renderStack() {
   const tree = render(
     <SwapReviewButtons onBack={jest.fn()} onConfirm={jest.fn()} />
   ).toJSON() as unknown as Node;
-  const halves = (tree.children ?? []) as Node[];
-  return { row: tree, halves };
+  const actions = (tree.children ?? []) as Node[];
+  return { stack: tree, actions };
 }
 
-describe('SwapReviewButtons — the pair is symmetric', () => {
-  it('splits the row into two halves of equal flex', () => {
-    const { halves } = renderRow();
+describe('SwapReviewButtons — the pair stacks, full width', () => {
+  // This replaces the pair's old symmetry contract. The row used to split
+  // itself into two equal halves, and those tests guarded the split: `flex: 1`
+  // on both halves, no padding or border on whatever carried the flex (Yoga
+  // floors a flex child at its own horizontal padding, which once made Back
+  // `2 * spacing.lg` wider than Confirm), and no flex on the buttons
+  // themselves. There is no row and no halves any more, so there is nothing
+  // left for those assertions to protect — equal widths are now trivially
+  // true, both actions being the full width of the screen. What replaces them
+  // is the property the stack exists for: each action gets the whole width, so
+  // the longest label the screen can show has room.
 
-    expect(halves).toHaveLength(2);
-    for (const half of halves) {
-      expect(StyleSheet.flatten(half.props.style)).toMatchObject({ flex: 1 });
+  it('stacks the two actions in a column', () => {
+    const { stack } = renderStack();
+
+    expect(StyleSheet.flatten(stack.props.style)).toMatchObject({ flexDirection: 'column' });
+  });
+
+  it('gives each action the full width — nothing narrows it', () => {
+    // A column stretches its children by default, and both buttons carry
+    // `width: '100%'` of their own. The stack must not undo either: an
+    // `alignItems` other than `stretch`, or a width cap on a button, shrinks
+    // the action back to its label and the long Spanish copy clips again.
+    const { stack, actions } = renderStack();
+
+    const stackStyle = (StyleSheet.flatten(stack.props.style) ?? {}) as Record<string, unknown>;
+    expect(stackStyle.alignItems ?? 'stretch').toBe('stretch');
+
+    expect(actions).toHaveLength(2);
+    for (const action of actions) {
+      const style = (StyleSheet.flatten(action.props.style) ?? {}) as Record<string, unknown>;
+      expect(style.width ?? '100%').toBe('100%');
+      expect(style.maxWidth).toBeUndefined();
+      expect(style.flex).toBeUndefined();
+      expect(style.flexBasis).toBeUndefined();
     }
   });
 
-  it('keeps padding and border off the elements that carry the flex', () => {
-    // Yoga floors a flex child's base size at its own horizontal padding and
-    // border — `max(flexBasis, paddingAndBorderAlongMainAxis)` — so a padded
-    // flex child comes out wider than an unpadded sibling even when both say
-    // `flex: 1`. Back used to sit `2 * spacing.lg` wider than Confirm for
-    // exactly this reason. Whatever carries the flex must carry no padding.
-    const { halves } = renderRow();
+  it('puts the committing action at the bottom, as every other surface does', () => {
+    // OnboardingLayout's ratified band order is assist / secondary / action,
+    // with the full-width primary bottom-most. Back is the secondary here, so
+    // it sits above Confirm.
+    const { actions } = renderStack();
 
-    for (const half of halves) {
-      const style = StyleSheet.flatten(half.props.style) as Record<string, unknown>;
-      for (const key of [
-        'padding',
-        'paddingHorizontal',
-        'paddingLeft',
-        'paddingRight',
-        'borderWidth',
-        'borderLeftWidth',
-        'borderRightWidth',
-      ]) {
-        expect(style[key] ?? 0).toBe(0);
-      }
-    }
+    expect(actions.map((action) => action.props.testID)).toEqual([
+      'swap-back-button',
+      'swap-confirm-button',
+    ]);
+  });
+
+  it('reserves the same height in every state the pair can be in', () => {
+    // The second action is not always "Confirm" — an expired quote makes it
+    // "Refresh Quote", and a bridge "Refresh Estimate". Both buttons pin their
+    // height, so the stack occupies the same space whichever label it carries
+    // and nothing above it moves when the quote expires.
+    const heights = (label?: string) => {
+      const tree = render(
+        <SwapReviewButtons onBack={jest.fn()} onConfirm={jest.fn()} confirmLabel={label} />
+      ).toJSON() as unknown as Node;
+      return ((tree.children ?? []) as Node[]).map((action) => {
+        const style = (StyleSheet.flatten(action.props.style) ?? {}) as Record<string, unknown>;
+        return [style.height, style.minHeight];
+      });
+    };
+
+    const confirm = heights('Confirmar');
+    expect(confirm).toEqual([
+      [42, 42],
+      [42, 42],
+    ]);
+    expect(heights('Actualizar cotizacion')).toEqual(confirm);
   });
 
   it('never spins the confirm button for a confirm in flight — the wave wait owns that', () => {
@@ -104,18 +142,5 @@ describe('SwapReviewButtons — the pair is symmetric', () => {
     const state = getByTestId('swap-confirm-button').props.accessibilityState;
     expect(state.busy).toBe(true);
     expect(state.disabled).toBe(true);
-  });
-
-  it('does not put flex back on the buttons themselves', () => {
-    // A button carries its own horizontal padding, so the moment `flex` moves
-    // onto it the asymmetry returns.
-    const { halves } = renderRow();
-
-    for (const half of halves) {
-      const button = (half.children ?? [])[0] as Node;
-      const style = (StyleSheet.flatten(button.props.style) ?? {}) as Record<string, unknown>;
-      expect(style.flex).toBeUndefined();
-      expect(style.flexBasis).toBeUndefined();
-    }
   });
 });
