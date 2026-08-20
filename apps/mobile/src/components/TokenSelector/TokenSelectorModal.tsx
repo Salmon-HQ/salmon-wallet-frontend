@@ -231,7 +231,7 @@ export function TokenSelectorModal({
         </TouchableOpacity>
       );
     },
-    [handleSelect, hiddenBalance, showNetworkChip, showBalances]
+    [handleSelect, hiddenBalance, showNetworkChip, showBalances, t]
   );
 
   const renderFeaturedTokens = useCallback(() => {

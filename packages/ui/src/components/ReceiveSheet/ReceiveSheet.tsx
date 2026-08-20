@@ -25,7 +25,6 @@ import {
   fontSize,
   fontWeight,
   letterSpacing,
-  lineHeight,
   opacity,
   duration,
   easing,
