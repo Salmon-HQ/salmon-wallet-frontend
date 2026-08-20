@@ -33,7 +33,6 @@ import {
   TrashIcon,
   UserCircleIcon,
   UsersIcon,
-  WarningIcon,
   iconSize,
 } from '../../icons';
 import { useTranslation } from 'react-i18next';
@@ -73,17 +72,12 @@ const DANGER_COLORS = {
   iconBackground: semantic.status.dangerTint,
 } as const;
 
-// The caution rung of the same vocabulary the DANGER ZONE speaks, one step
-// quieter: these rows do not destroy anything, they *expose* key material.
-// Warning ink instead of danger ink, the label left in `text.primary`, and no
-// section banner — heavier than a preference row, quieter than a destroy
-// action. The state rides three channels, never colour alone: the tint and its
-// stroke, a trailing warning glyph, and the row's own accessibility hint.
-const CAUTION_COLORS = {
-  ink: semantic.status.warning,
-  background: semantic.status.warningTint,
-  border: semantic.status.warningTintBorder,
-} as const;
+// The key-material rows carry no weight of their own. A settings list is a
+// table of contents, and warning ink on a row that only opens a screen reads
+// as "something is wrong here" when nothing is. The caution belongs before the
+// decision it guards, and the decision is the reveal: both destinations open
+// with a full warning notice, and the seed adds the clipboard and screenshot
+// notices on top. See DESIGN.md §Components, the settings surface.
 
 const NEUTRAL_OPTION_COLORS = {
   background: colors.background.card,
@@ -119,18 +113,8 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
       { id: 'accounts', icon: UsersIcon, labelKey: 'settings.accounts.title' },
       { id: 'avatar', icon: UserCircleIcon, labelKey: 'settings.profile_picture' },
       { id: 'security', icon: ShieldCheckIcon, labelKey: 'settings.security.title' },
-      {
-        id: 'backup',
-        icon: KeyIcon,
-        labelKey: 'settings.backup',
-        cautionHintKey: 'settings.backup_warning_title',
-      },
-      {
-        id: 'privateKey',
-        icon: LockIcon,
-        labelKey: 'settings.private_key',
-        cautionHintKey: 'settings.private_key_warning',
-      },
+      { id: 'backup', icon: KeyIcon, labelKey: 'settings.backup' },
+      { id: 'privateKey', icon: LockIcon, labelKey: 'settings.private_key' },
     ],
   },
   {
@@ -363,9 +347,6 @@ export function SettingsSheet({
     (option: SettingsOption, sectionIsDanger?: boolean) => {
       const label = t(option.labelKey) || option.labelKey;
       const isDanger = option.isDanger || sectionIsDanger;
-      // Exposing key material is consequential, not destructive: the caution
-      // rung, and never on a danger row (nothing wears both).
-      const isCaution = !isDanger && !!option.cautionHintKey;
 
       if (option.isToggle) {
         const isAnalytics = option.id === 'analytics';
@@ -416,47 +397,22 @@ export function SettingsSheet({
           style={[
             styles.optionRow,
             styles.optionRowSurface,
-            isDanger
-              ? styles.optionRowDanger
-              : isCaution
-                ? styles.optionRowCaution
-                : styles.optionRowNeutral,
+            isDanger ? styles.optionRowDanger : styles.optionRowNeutral,
           ]}
           onPress={() => handleOptionPress(option)}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={label}
-          accessibilityHint={isCaution ? t(option.cautionHintKey as string) : undefined}
         >
-          <View
-            style={[
-              styles.iconContainer,
-              isDanger && styles.iconContainerDanger,
-              isCaution && styles.iconContainerCaution,
-            ]}
-          >
+          <View style={[styles.iconContainer, isDanger && styles.iconContainerDanger]}>
             <option.icon
               size={iconSize.lg}
-              color={
-                isDanger
-                  ? DANGER_COLORS.text
-                  : isCaution
-                    ? CAUTION_COLORS.ink
-                    : semantic.text.primary
-              }
+              color={isDanger ? DANGER_COLORS.text : semantic.text.primary}
             />
           </View>
           {/* No chevron: the right-pointing caret promised a lateral slide,
               and the push now sinks and floats on the vertical. */}
           <Text style={[styles.optionLabel, isDanger && styles.optionLabelDanger]}>{label}</Text>
-          {/* The glyph channel — the state may not ride on the tint alone. */}
-          {isCaution && (
-            <WarningIcon
-              testID={`${getSettingsItemTestId(option.id)}-caution`}
-              size={iconSize.md}
-              color={CAUTION_COLORS.ink}
-            />
-          )}
         </TouchableOpacity>
       );
     },
@@ -656,11 +612,6 @@ const styles = StyleSheet.create({
   optionRowDanger: {
     backgroundColor: DANGER_COLORS.background,
   },
-  optionRowCaution: {
-    backgroundColor: CAUTION_COLORS.background,
-    borderWidth: 1,
-    borderColor: CAUTION_COLORS.border,
-  },
   iconContainer: {
     width: componentSizes.iconSize2XL,
     height: componentSizes.iconSize2XL,
@@ -672,9 +623,6 @@ const styles = StyleSheet.create({
   },
   iconContainerDanger: {
     backgroundColor: DANGER_COLORS.iconBackground,
-  },
-  iconContainerCaution: {
-    backgroundColor: CAUTION_COLORS.background,
   },
   optionLabel: {
     flex: 1,

@@ -200,43 +200,32 @@ describe('SettingsSheet', () => {
     expect(mockPop).not.toHaveBeenCalled();
   });
 
-  describe('rows that expose key material carry the caution weight', () => {
+  describe('the list is a table of contents, not a warning', () => {
     const rowStyle = (label: string) =>
       StyleSheet.flatten(screen.getByLabelText(label).props.style) as {
         backgroundColor?: string;
         borderColor?: string;
       };
 
-    it.each([
-      ['settings.backup', 'settings-item-backup-caution', 'settings.backup_warning_title'],
-      ['settings.private_key', 'settings-item-privateKey-caution', 'settings.private_key_warning'],
-    ])('weights %s on three channels, never colour alone', (label, glyphTestId, hintKey) => {
-      render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
+    it.each([['settings.backup'], ['settings.private_key']])(
+      'gives %s the same ground as any other row',
+      (label) => {
+        render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
 
-      // Channel 1 — the tint and its edge.
-      expect(rowStyle(label).backgroundColor).toBe('rgba(255,171,0,0.1)');
-      expect(rowStyle(label).borderColor).toBe('rgba(255,171,0,0.3)');
-      // Channel 2 — the glyph.
-      expect(screen.getByTestId(glyphTestId)).toBeTruthy();
-      // Channel 3 — the announced consequence.
-      expect(screen.getByLabelText(label).props.accessibilityHint).toBe(hintKey);
-    });
+        // Amber on a row that only opens a screen reads as a fault report. The
+        // warning lives on the destination, before the reveal it guards.
+        expect(rowStyle(label).backgroundColor).toBe('#111');
+        expect(rowStyle(label).borderColor).toBeUndefined();
+        expect(screen.getByLabelText(label).props.accessibilityHint).toBeUndefined();
+      }
+    );
 
-    it('leaves a preference row unweighted', () => {
-      render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
-
-      expect(rowStyle('settings.currency').backgroundColor).toBe('#111');
-      expect(rowStyle('settings.currency').borderColor).toBeUndefined();
-      expect(screen.getByLabelText('settings.currency').props.accessibilityHint).toBeUndefined();
-    });
-
-    it('stays quieter than a destroy action — the danger rows keep the danger tint', () => {
+    it('still lets a destroy action wear the danger tint', () => {
       render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
 
       expect(rowStyle('settings.wallets.remove_all_wallets').backgroundColor).toBe(
         'rgba(239,68,68,0.1)'
       );
-      expect(screen.queryByTestId('settings-item-removeAll-caution')).toBeNull();
     });
   });
 
