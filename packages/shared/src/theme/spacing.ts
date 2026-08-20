@@ -242,7 +242,19 @@ export const componentSizes = {
 
   // Balance card elements
   logoContainer: 35,
+  /**
+   * @deprecated Larger than `logoContainer`, which is what it is drawn inside.
+   * Size the mark from its container with `blockchainMarkRatio` instead — a
+   * mark sized from its own token overflowed the box by eight points and
+   * clipped Bitcoin's glyph, which fills its viewBox more than Solana's does.
+   */
   blockchainIcon: 45,
+  /**
+   * The chain mark inside `logoContainer`. Under 1 by construction, so the
+   * mark can never reach the edge of the box that centres it whatever either
+   * value is retuned to. One rule, read by all three surfaces that draw it.
+   */
+  blockchainMarkRatio: 0.74,
   eyeIcon: 20,
   changeArrowIcon: 15,
   /** Inner header container height */

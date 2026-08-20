@@ -180,7 +180,9 @@ const getGradientForBlockchain = (blockchain: BlockchainId) => {
  * Render the blockchain logo using local SVG icons
  */
 const renderBlockchainLogo = (blockchain: BlockchainId) => {
-  const iconSize = s(componentSizes.blockchainIcon);
+  // Derived from the box, never from its own token — see
+  // `componentSizes.blockchainMarkRatio`.
+  const iconSize = s(componentSizes.logoContainer) * componentSizes.blockchainMarkRatio;
   switch (blockchain) {
     case 'solana':
     case 'solana-devnet':

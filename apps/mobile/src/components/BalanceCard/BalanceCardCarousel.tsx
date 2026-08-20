@@ -53,10 +53,6 @@ import { CaretDownIcon, CaretUpIcon, EyeIcon, EyeSlashIcon } from '../../icons';
 import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-/** The mark inside its box. Under 1 by construction: the mark can never reach
- *  the edge, so no glyph can be clipped by the container that centres it. */
-const BLOCKCHAIN_MARK_RATIO = 0.74;
-
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 // ============================================================================
@@ -387,7 +383,7 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
     // than the Solana mark does — came out clipped. Sizing from the container
     // makes overflow impossible whatever either token is retuned to, and the
     // ratio is what the owner asked to bring down.
-    const iconSize = s(componentSizes.logoContainer) * BLOCKCHAIN_MARK_RATIO;
+    const iconSize = s(componentSizes.logoContainer) * componentSizes.blockchainMarkRatio;
     // Map network variants to their base blockchain for icon selection
     if (blockchain.startsWith('solana')) {
       return <SolanaSvgIcon size={iconSize} color={colors.text.primary} />;

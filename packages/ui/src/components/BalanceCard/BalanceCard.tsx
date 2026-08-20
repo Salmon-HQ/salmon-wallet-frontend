@@ -77,7 +77,9 @@ const getGradientCSSForBlockchain = (blockchain: BlockchainId): string => {
  * Render the blockchain logo using SVG icons
  */
 const renderBlockchainLogo = (blockchain: BlockchainId) => {
-  const iconSize = s(componentSizes.blockchainIcon);
+  // Derived from the box, never from its own token — see
+  // `componentSizes.blockchainMarkRatio`.
+  const iconSize = s(componentSizes.logoContainer) * componentSizes.blockchainMarkRatio;
   const iconStyle = {
     width: iconSize,
     height: iconSize,
@@ -172,8 +174,10 @@ const LogoGroup = styled(ContentGroup)({
 const LogoContainer = styled(Box)({
   position: 'relative' as const,
   zIndex: 1,
+  // Both axes on `s()`: it was `s()` wide and `vs()` tall, two different
+  // ratios, so the box holding a round mark was not square.
   width: s(componentSizes.logoContainer),
-  height: vs(componentSizes.logoContainer),
+  height: s(componentSizes.logoContainer),
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
