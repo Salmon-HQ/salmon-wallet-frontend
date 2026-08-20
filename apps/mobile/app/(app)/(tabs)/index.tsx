@@ -77,7 +77,6 @@ import {
   TokenListItem,
   TokenListSkeleton,
   TokenMarketData,
-  TransactionDetailModal,
   TransactionHistorySheet,
   WarningNotice,
   depthParallaxScroll,
@@ -188,10 +187,6 @@ export default function HomeScreen() {
   // TransactionHistorySheet visibility
   const [transactionHistoryVisible, setTransactionHistoryVisible] = useState(false);
 
-  // TransactionDetailModal state
-  const [detailModalVisible, setDetailModalVisible] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-
   // Get account state and actions from shared context
   const [accountState, accountActions] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId, pathIndex, switchingNetwork } =
@@ -204,8 +199,6 @@ export default function HomeScreen() {
     setReceiveSheetVisible(false);
     setSendSheetVisible(false);
     setTransactionHistoryVisible(false);
-    setDetailModalVisible(false);
-    setSelectedTransaction(null);
   }, [accountState.locked]);
 
   // Developer mode — shared via context from _layout.tsx (single source of truth)
@@ -641,27 +634,13 @@ export default function HomeScreen() {
     setTransactionHistoryVisible(false);
   }, []);
 
-  // Handler for tap on transaction — close history sheet, open detail modal
-  const handleTransactionPress = useCallback((transaction: Transaction) => {
+  // Handler for tap on transaction. The detail is a step inside the activity
+  // sheet, so the sheet owns the step; this only marks the touch.
+  const handleTransactionPress = useCallback((_transaction: Transaction) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedTransaction(transaction);
-    setTransactionHistoryVisible(false);
-    // Wait for the history sheet Modal to unmount before opening the detail modal
-    setTimeout(() => {
-      setDetailModalVisible(true);
-    }, 350);
   }, []);
 
-  // Handler to close detail modal — re-open history sheet after
-  const handleDetailModalClose = useCallback(() => {
-    setDetailModalVisible(false);
-    setTimeout(() => {
-      setSelectedTransaction(null);
-      setTransactionHistoryVisible(true);
-    }, 350);
-  }, []);
-
-  // Handler to view transaction in explorer (from detail modal)
+  // Handler to view transaction in explorer (from the detail step)
   const handleViewExplorer = useCallback(
     (transaction: Transaction) => {
       const explorerUrl =
@@ -669,12 +648,11 @@ export default function HomeScreen() {
           ? `https://solscan.io/tx/${transaction.id}?cluster=devnet`
           : `https://solscan.io/tx/${transaction.id}`;
       Linking.openURL(explorerUrl);
-      handleDetailModalClose();
     },
-    [networkId, handleDetailModalClose]
+    [networkId]
   );
 
-  // Handler to share transaction (from detail modal)
+  // Handler to share transaction (from the detail step)
   const handleShareTransaction = useCallback(
     async (transaction: Transaction) => {
       const explorerUrl =
@@ -1022,13 +1000,6 @@ export default function HomeScreen() {
         onTransactionPress={handleTransactionPress}
         error={transactionsError}
         onRetry={transactionsRefresh}
-      />
-
-      {/* Transaction Detail Modal */}
-      <TransactionDetailModal
-        visible={detailModalVisible}
-        onClose={handleDetailModalClose}
-        transaction={selectedTransaction}
         onViewExplorer={handleViewExplorer}
         onShare={handleShareTransaction}
         developerMode={developerNetworks}

@@ -57,14 +57,13 @@ import {
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
-import { BottomSheetContainer } from '../BottomSheetContainer';
 import { BlurContainer } from '../BlurContainer';
 import { TokenLogo } from '../TokenLogo';
 import { AddressCopyRow } from '../TransactionHistorySheet/AddressCopyRow';
 import { ExplorerLinkButton } from '../TransactionHistorySheet/ExplorerLinkButton';
 import { PriceImpactBadge } from '../TransactionHistorySheet/PriceImpactBadge';
 import { ConversionRateDisplay } from '../TransactionHistorySheet/ConversionRateDisplay';
-import type { TransactionDetailModalProps } from './types';
+import type { TransactionDetailProps } from './types';
 import type {
   TransactionType,
   TransactionTokenAmount,
@@ -358,9 +357,7 @@ const ActionButton: React.FC<{
 // Main Component
 // ============================================================================
 
-export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
-  visible,
-  onClose,
+export const TransactionDetail: React.FC<TransactionDetailProps> = ({
   transaction,
   onViewExplorer,
   onCopyHash,
@@ -404,6 +401,26 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     return STATUS_CONFIG[transaction.status] || STATUS_CONFIG.completed;
   }, [transaction]);
 
+  // A swap with no route data still has a rate: one token in, one token out.
+  // The row's inline panel derived it, and the detail is now the only place
+  // that fact can live, so the derivation moves here with it.
+  const conversionRate = useMemo(() => {
+    if (!transaction) return null;
+    const { swapRoute, inputs, outputs } = transaction;
+    if (swapRoute?.conversionRate) return swapRoute.conversionRate;
+    if (inputs.length !== 1 || outputs.length !== 1) return null;
+    const fromToken = outputs[0];
+    const toToken = inputs[0];
+    const fromAmount = parseFloat(fromToken.amount) / Math.pow(10, fromToken.decimals);
+    const toAmount = parseFloat(toToken.amount) / Math.pow(10, toToken.decimals);
+    if (!(fromAmount > 0)) return null;
+    return {
+      fromSymbol: fromToken.symbol,
+      toSymbol: toToken.symbol,
+      rate: (toAmount / fromAmount).toFixed(6),
+    };
+  }, [transaction]);
+
   if (!transaction) {
     return null;
   }
@@ -416,7 +433,8 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   ).toUpperCase() as Blockchain;
   const explorerEnvironment = explorerNetworkId as NetworkEnvironment;
 
-  // Header content for the BottomSheetContainer drag area
+  // The transaction's own identity line, at the top of the detail's content.
+  // The sheet's chrome header keeps the surface's name and the way back.
   const headerContent = (
     <View style={styles.header}>
       <View style={[styles.typeIconContainer, { backgroundColor: `${typeConfig.color}20` }]}>
@@ -444,12 +462,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   );
 
   return (
-    <BottomSheetContainer
-      visible={visible}
-      onClose={onClose}
-      headerContent={headerContent}
-      style={[styles.sheetContainer, style]}
-    >
+    <View style={[styles.container, style]}>
+      {headerContent}
+
       {/* Content */}
       <ScrollView
         style={styles.content}
@@ -528,12 +543,12 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
               )}
             </View>
             <SwapVisualization outputs={transaction.outputs} inputs={transaction.inputs} />
-            {transaction.swapRoute?.conversionRate && (
+            {conversionRate && (
               <View style={styles.conversionRateContainer}>
                 <ConversionRateDisplay
-                  fromSymbol={transaction.swapRoute.conversionRate.fromSymbol}
-                  toSymbol={transaction.swapRoute.conversionRate.toSymbol}
-                  rate={transaction.swapRoute.conversionRate.rate}
+                  fromSymbol={conversionRate.fromSymbol}
+                  toSymbol={conversionRate.toSymbol}
+                  rate={conversionRate.rate}
                   size="medium"
                 />
               </View>
@@ -638,6 +653,18 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   </React.Fragment>
                 ) : null
               )}
+            </>
+          )}
+
+          {transaction.feePayer && (
+            <>
+              <View style={styles.sectionRow}>
+                <Text style={styles.sectionLabel}>
+                  {t('transactions.detail.feePayer', 'Fee Payer')}
+                </Text>
+                <Text style={styles.sectionValue}>{getShortAddress(transaction.feePayer, 4)}</Text>
+              </View>
+              <InternalDivider />
             </>
           )}
 
@@ -820,7 +847,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           </View>
         )}
       </View>
-    </BottomSheetContainer>
+    </View>
   );
 };
 
@@ -829,8 +856,8 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
 // ============================================================================
 
 const styles = StyleSheet.create({
-  sheetContainer: {
-    height: '70%',
+  container: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -1226,4 +1253,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TransactionDetailModal;
+export default TransactionDetail;

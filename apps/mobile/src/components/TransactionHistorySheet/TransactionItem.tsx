@@ -1,12 +1,10 @@
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
   ArrowsLeftRightIcon,
-  CaretDownIcon,
-  CaretUpIcon,
   ClockIcon,
   CubeIcon,
   FireIcon,
@@ -37,7 +35,6 @@ import {
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { TokenLogo } from '../TokenLogo';
-import { SwapRouteVisualization } from './SwapRouteVisualization';
 import type { TransactionItemProps, TransactionType, TransactionTokenAmount } from './types';
 
 // ============================================================================
@@ -224,7 +221,7 @@ const SourceBadge: React.FC<{ source: string }> = ({ source }) => {
  *
  * Features:
  * - Shows transaction type icon with token logos
- * - Collapses multiple amounts with expandable route visualization
+ * - Collapses multiple amounts to a count; the rest live in the detail
  * - Badge showing source protocol (Jupiter, etc.)
  *
  * @example
@@ -246,15 +243,9 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   const { type, timestamp, status, inputs, outputs, description, source } = transaction;
   const config = TRANSACTION_TYPE_CONFIG[type] || TRANSACTION_TYPE_CONFIG.unknown;
 
-  // Expanded state for route visualization
-  const [expanded, setExpanded] = useState(false);
-
   // Calculate if we should show collapsed view
   const totalAmounts = inputs.length + outputs.length;
   const isComplex = type === 'swap' && totalAmounts > MAX_VISIBLE_AMOUNTS;
-
-  // Check if this is a swap transaction (expandable)
-  const isSwap = type === 'swap';
 
   const handlePress = useCallback(() => {
     onPress?.(transaction);
@@ -333,7 +324,8 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
       );
     }
 
-    // Complex swap with expand toggle
+    // Complex swap: the row states the first leg of each side and how many
+    // more there are. The rest is one tap away, in the detail.
     if (isComplex) {
       const firstOutput = outputs[0];
       const firstInput = inputs[0];
@@ -343,25 +335,12 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
         <View style={styles.amountsContainer}>
           {firstOutput && <AmountDisplay token={firstOutput} sign="-" hidden={hiddenBalance} />}
           {firstInput && <AmountDisplay token={firstInput} sign="+" hidden={hiddenBalance} />}
-          <TouchableOpacity
-            style={styles.expandBadge}
-            onPress={() => setExpanded((prev) => !prev)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.expandText}>
-              {expanded
-                ? t('transactions.showLess', 'show less')
-                : t('transactions.detail.nMore', {
-                    count: hiddenCount,
-                    defaultValue: '+{{count}} more',
-                  })}
-            </Text>
-            {expanded ? (
-              <CaretUpIcon size={12} color={colors.text.tertiary} />
-            ) : (
-              <CaretDownIcon size={12} color={colors.text.tertiary} />
-            )}
-          </TouchableOpacity>
+          <Text style={styles.moreText}>
+            {t('transactions.detail.nMore', {
+              count: hiddenCount,
+              defaultValue: '+{{count}} more',
+            })}
+          </Text>
         </View>
       );
     }
@@ -417,18 +396,9 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
           {renderAmounts()}
           <View style={styles.timeRow}>
             <Text style={styles.timeText}>{formatRelativeTimeCompact(timestamp, t)}</Text>
-            {isSwap &&
-              (expanded ? (
-                <CaretUpIcon size={14} color={colors.text.tertiary} style={styles.expandChevron} />
-              ) : (
-                <CaretDownIcon size={14} color={colors.text.tertiary} style={styles.expandChevron} />
-              ))}
           </View>
         </View>
       </TouchableOpacity>
-
-      {/* Expandable route visualization for swaps */}
-      {type === 'swap' && <SwapRouteVisualization transaction={transaction} expanded={expanded} />}
     </BlurContainer>
   );
 };
@@ -564,9 +534,6 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     ...TABULAR,
   },
-  expandChevron: {
-    marginLeft: s(spacing.xs),
-  },
   failedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -591,21 +558,17 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.medium,
     color: semantic.status.warning,
   },
-  expandBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.xxs),
-    marginTop: vs(spacing.xs),
-  },
   /**
-   * One Living Thing Rule: the accent is a budget, and a list that repeats this
-   * toggle once per complex swap was spending it four times a screen on a
-   * disclosure control. A disclosure is chrome — it reads in quiet ink.
+   * One Living Thing Rule: the accent is a budget, and a count that repeats
+   * once per complex swap would spend it four times a screen. A remainder is
+   * chrome — it reads in quiet ink.
    */
-  expandText: {
+  moreText: {
     fontSize: ms(fontSize.xs),
     fontFamily: fontFamilyNative.medium,
     color: colors.text.tertiary,
+    textAlign: 'right',
+    marginTop: vs(spacing.xs),
   },
 });
 

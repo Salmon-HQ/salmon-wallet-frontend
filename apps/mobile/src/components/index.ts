@@ -230,8 +230,8 @@ export type {
   TransactionFee,
 } from './TransactionHistorySheet';
 
-export { TransactionDetailModal } from './TransactionDetailModal';
-export type { TransactionDetailModalProps } from './TransactionDetailModal';
+export { TransactionDetail } from './TransactionDetail';
+export type { TransactionDetailProps } from './TransactionDetail';
 
 export { TransactionSuccessScreen } from './TransactionSuccessScreen';
 

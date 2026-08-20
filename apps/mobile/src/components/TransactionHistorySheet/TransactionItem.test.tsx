@@ -51,10 +51,6 @@ jest.mock('../TokenLogo', () => ({
   TokenLogo: () => null,
 }));
 
-jest.mock('./SwapRouteVisualization', () => ({
-  SwapRouteVisualization: () => null,
-}));
-
 import { TransactionItem } from './TransactionItem';
 
 /** The longest protocol name the Helius source enum can produce. */

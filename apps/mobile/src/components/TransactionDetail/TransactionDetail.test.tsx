@@ -94,19 +94,6 @@ jest.mock('@salmon/shared', () => ({
   s: (value: number) => value,
 }));
 
-jest.mock('../BottomSheetContainer', () => ({
-  BottomSheetContainer: ({
-    children,
-    headerContent,
-  }: {
-    children?: React.ReactNode;
-    headerContent?: React.ReactNode;
-  }) => {
-    const React = require('react');
-    return React.createElement(React.Fragment, null, headerContent, children);
-  },
-}));
-
 jest.mock('../BlurContainer', () => ({
   BlurContainer: ({ children }: { children?: React.ReactNode }) => {
     const React = require('react');
@@ -175,7 +162,7 @@ jest.mock('../TransactionHistorySheet/ConversionRateDisplay', () => ({
   },
 }));
 
-import { TransactionDetailModal } from './TransactionDetailModal';
+import { TransactionDetail } from './TransactionDetail';
 
 const BASE_TRANSACTION = {
   id: 'tx-1234567890abcdef',
@@ -240,7 +227,7 @@ const BASE_TRANSACTION = {
   },
 } as any;
 
-describe('TransactionDetailModal', () => {
+describe('TransactionDetail', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
@@ -254,9 +241,7 @@ describe('TransactionDetailModal', () => {
   });
 
   it('does not render when transaction is missing', () => {
-    const { toJSON } = render(
-      <TransactionDetailModal visible onClose={jest.fn()} transaction={null} />
-    );
+    const { toJSON } = render(<TransactionDetail transaction={null} />);
 
     expect(toJSON()).toBeNull();
   });
@@ -266,13 +251,7 @@ describe('TransactionDetailModal', () => {
     const onShare = jest.fn();
 
     render(
-      <TransactionDetailModal
-        visible
-        onClose={jest.fn()}
-        transaction={BASE_TRANSACTION}
-        onCopyHash={onCopyHash}
-        onShare={onShare}
-      />
+      <TransactionDetail transaction={BASE_TRANSACTION} onCopyHash={onCopyHash} onShare={onShare} />
     );
 
     fireEvent.press(screen.getByLabelText('Copy transaction hash'));
@@ -297,14 +276,7 @@ describe('TransactionDetailModal', () => {
     const onCopyHash = jest.fn();
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
-    render(
-      <TransactionDetailModal
-        visible
-        onClose={jest.fn()}
-        transaction={BASE_TRANSACTION}
-        onCopyHash={onCopyHash}
-      />
-    );
+    render(<TransactionDetail transaction={BASE_TRANSACTION} onCopyHash={onCopyHash} />);
 
     fireEvent.press(screen.getByLabelText('Copy transaction hash'));
 
@@ -324,9 +296,7 @@ describe('TransactionDetailModal', () => {
     const onViewExplorer = jest.fn();
 
     render(
-      <TransactionDetailModal
-        visible
-        onClose={jest.fn()}
+      <TransactionDetail
         transaction={BASE_TRANSACTION}
         onViewExplorer={onViewExplorer}
         developerMode
@@ -344,14 +314,7 @@ describe('TransactionDetailModal', () => {
   });
 
   it('derives the explorer chain and environment from networkId', () => {
-    render(
-      <TransactionDetailModal
-        visible
-        onClose={jest.fn()}
-        transaction={BASE_TRANSACTION}
-        networkId="bitcoin-testnet"
-      />
-    );
+    render(<TransactionDetail transaction={BASE_TRANSACTION} networkId="bitcoin-testnet" />);
 
     expect(mockExplorerProps).toHaveBeenCalledWith(
       expect.objectContaining({ blockchain: 'BITCOIN', environment: 'bitcoin-testnet' })
@@ -359,7 +322,7 @@ describe('TransactionDetailModal', () => {
   });
 
   it('sets the transaction hash in mono at the address size', () => {
-    render(<TransactionDetailModal visible onClose={jest.fn()} transaction={BASE_TRANSACTION} />);
+    render(<TransactionDetail transaction={BASE_TRANSACTION} />);
 
     const hash = StyleSheet.flatten(screen.getByText(/^hash:/).props.style);
 
@@ -368,7 +331,7 @@ describe('TransactionDetailModal', () => {
   });
 
   it('renders the network fee row when the fee reaches the component', () => {
-    render(<TransactionDetailModal visible onClose={jest.fn()} transaction={BASE_TRANSACTION} />);
+    render(<TransactionDetail transaction={BASE_TRANSACTION} />);
 
     expect(screen.getByText('Network Fee')).toBeTruthy();
     // 5000 lamports at 9 decimals, per the formatRawAmount mock.
@@ -378,15 +341,13 @@ describe('TransactionDetailModal', () => {
   it('omits the network fee row when the transaction carries no fee', () => {
     const { fee: _fee, ...withoutFee } = BASE_TRANSACTION;
 
-    render(
-      <TransactionDetailModal visible onClose={jest.fn()} transaction={withoutFee as never} />
-    );
+    render(<TransactionDetail transaction={withoutFee as never} />);
 
     expect(screen.queryByText('Network Fee')).toBeNull();
   });
 
   it('carries tabular figures on every rendered value', () => {
-    render(<TransactionDetailModal visible onClose={jest.fn()} transaction={BASE_TRANSACTION} />);
+    render(<TransactionDetail transaction={BASE_TRANSACTION} />);
 
     const blockNumber = StyleSheet.flatten(screen.getByText('#123456').props.style);
 
@@ -394,7 +355,7 @@ describe('TransactionDetailModal', () => {
   });
 
   it('falls back to Solana mainnet when networkId is missing', () => {
-    render(<TransactionDetailModal visible onClose={jest.fn()} transaction={BASE_TRANSACTION} />);
+    render(<TransactionDetail transaction={BASE_TRANSACTION} />);
 
     expect(mockExplorerProps).toHaveBeenCalledWith(
       expect.objectContaining({ blockchain: 'SOLANA', environment: 'solana-mainnet' })
