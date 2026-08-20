@@ -289,10 +289,17 @@ export function useBalance({
     }
   }, [hiddenBalance]);
 
+  // Depends on `query.refetch`, which React Query keeps stable, rather than on
+  // the query object, which is a new value on every render. A refresh handler
+  // that changed identity every render replaced the props of whatever it was
+  // wired to — including a native pull-to-refresh control, which is stateful on
+  // the platform side and does not appreciate being handed a new callback
+  // mid-gesture.
+  const { refetch } = query;
   const refresh = useCallback(async () => {
     if (!enabled) return;
-    await query.refetch();
-  }, [enabled, query]);
+    await refetch();
+  }, [enabled, refetch]);
 
   const data = query.data;
   const tokens = data?.items ?? [];

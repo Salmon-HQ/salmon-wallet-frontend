@@ -129,6 +129,36 @@ describe('useBalance (react-query)', () => {
     expect(account.getBalance).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps the same refresh handler across a background refetch', async () => {
+    // A handler with a new identity every render replaces the props of whatever
+    // it is wired to. On mobile that is a native pull-to-refresh control, which
+    // holds its own state on the platform side.
+    const account = {
+      getReceiveAddress: vi.fn().mockReturnValue('wallet-1'),
+      getBalance: vi.fn().mockResolvedValue({ usdTotal: 100, last24HoursChange: 0, items: [] }),
+    };
+
+    const { wrapper } = makeWrapper();
+    const { result } = renderHook(
+      () => useBalance({ account: account as any, networkId: 'solana-mainnet' }),
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      expect(result.current.usdTotal).toBe(100);
+    });
+    const first = result.current.refresh;
+
+    await act(async () => {
+      await result.current.refresh();
+    });
+    await waitFor(() => {
+      expect(account.getBalance).toHaveBeenCalledTimes(2);
+    });
+
+    expect(result.current.refresh).toBe(first);
+  });
+
   it('refresh() does not refetch when the balance query is skipped', async () => {
     const account = {
       getReceiveAddress: vi.fn().mockReturnValue('wallet-skipped'),

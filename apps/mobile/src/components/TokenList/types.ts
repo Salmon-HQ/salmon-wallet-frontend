@@ -38,10 +38,12 @@ export interface TokenListProps {
   ListHeaderComponent?: React.ReactElement | null;
   /** Component to render when list is empty */
   ListEmptyComponent?: React.ReactElement | null;
-  /** Whether the list is currently refreshing */
-  refreshing?: boolean;
-  /** Callback when pull-to-refresh is triggered */
-  onRefresh?: () => void;
+  /**
+   * Called when the user pulls to refresh. The list raises its own refresh
+   * affordance for the duration of the returned promise and for nothing else —
+   * a background refetch the user did not ask for must never raise it.
+   */
+  onRefresh?: () => void | Promise<void>;
   /** Style for the list content container */
   contentContainerStyle?: object;
   /** Current blockchain for layout variations */

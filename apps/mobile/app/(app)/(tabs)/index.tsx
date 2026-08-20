@@ -921,7 +921,6 @@ export default function HomeScreen() {
               onTokenPress={handleTokenPress}
               hiddenBalance={hiddenBalance}
               ListEmptyComponent={ListEmptyComponent}
-              refreshing={refreshing}
               onRefresh={refresh}
               onScroll={handleScroll}
               scrollEventThrottle={16}
