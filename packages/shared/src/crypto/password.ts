@@ -173,10 +173,13 @@ export function getPasswordStrengthLabel(
   };
 
   if (t) {
-    const key = `password.strength.${strength}`;
-    const translated = t(key);
+    // The template is inlined into the call on purpose: `check:i18n` reads the
+    // argument to spot a dynamic prefix, and a key assembled into a variable
+    // first is invisible to it. That is how these three keys went missing —
+    // nothing failed, the English fallback below just answered every time.
+    const translated = t(`password.strength.${strength}`);
     // Return translated if different from key (meaning translation exists)
-    if (translated !== key) return translated;
+    if (translated !== `password.strength.${strength}`) return translated;
   }
 
   return labels[strength];

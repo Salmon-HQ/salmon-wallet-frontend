@@ -898,5 +898,12 @@
     },
     "expiredHint": "Nunca llegó a la red. No salió nada de tu billetera.",
     "dismiss": "Descartar"
+  },
+  "password": {
+    "strength": {
+      "weak": "Débil",
+      "medium": "Media",
+      "strong": "Fuerte"
+    }
   }
 }

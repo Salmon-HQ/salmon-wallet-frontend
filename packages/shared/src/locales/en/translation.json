@@ -898,5 +898,12 @@
     },
     "expiredHint": "It never reached the network. Nothing left your wallet.",
     "dismiss": "Dismiss"
+  },
+  "password": {
+    "strength": {
+      "weak": "Weak",
+      "medium": "Medium",
+      "strong": "Strong"
+    }
   }
 }
