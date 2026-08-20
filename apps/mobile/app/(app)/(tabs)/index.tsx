@@ -260,6 +260,7 @@ export default function HomeScreen() {
     loading,
     refreshing,
     hasData,
+    state: balanceState,
     refresh,
     error: balanceError,
     hiddenBalance,
@@ -766,12 +767,13 @@ export default function HomeScreen() {
 
   // Memoize the empty component
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
-  // The list only renders this once loading finished (TokenList shows the
-  // skeleton while `!hasData`), so there is no loading branch here. A failed
-  // load with zero tokens is an error state, never "No tokens found".
+  // The list only renders this once the load settled (TokenList shows the
+  // skeleton only while `balanceState` is 'loading'), so there is no loading
+  // branch here. A failed load with nothing cached is an error state, never
+  // "No tokens found" — PRODUCT.md keeps those two answers distinguishable.
   const ListEmptyComponent = useMemo(
     () =>
-      balanceError ? (
+      balanceState === 'error' ? (
         <View style={styles.emptyState} testID="token-list-error">
           <Text style={styles.emptyStateText}>
             {t('wallet.tokens_load_error', "Your tokens couldn't be loaded right now.")}
@@ -792,7 +794,7 @@ export default function HomeScreen() {
           </Text>
         </View>
       ),
-    [balanceError, refresh, t]
+    [balanceState, refresh, t]
   );
 
   // Loading state - wait for hook to be ready
@@ -833,8 +835,10 @@ export default function HomeScreen() {
       />
 
       {/* Partial-load failure: keep whatever data loaded visible;
-          retry is pull-to-refresh on the token list. */}
-      {balanceError && !switchingNetwork && (
+          retry is pull-to-refresh on the token list. Only 'ready' carries
+          data, so a total failure is left to the list's own error state
+          rather than told "shown data may be incomplete" over nothing. */}
+      {balanceError && balanceState === 'ready' && !switchingNetwork && (
         <View style={styles.balanceErrorBanner} testID="balance-load-error">
           <WarningNotice
             tone="warning"
@@ -884,8 +888,12 @@ export default function HomeScreen() {
               </View>
 
               {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
-              {!hasData ? (
+              {balanceState === 'loading' ? (
                 <TokenListSkeleton count={1} />
+              ) : balanceState === 'error' ? (
+                /* A load that failed with nothing cached owes the user the
+                   error state and its retry, never an endless skeleton. */
+                ListEmptyComponent
               ) : (
                 bitcoinToken && (
                   <TokenListItem
@@ -917,7 +925,7 @@ export default function HomeScreen() {
             // Normal token list for Solana/Ethereum
             <TokenList
               tokens={tokenListItems}
-              loading={!hasData}
+              loading={balanceState === 'loading'}
               onTokenPress={handleTokenPress}
               hiddenBalance={hiddenBalance}
               ListEmptyComponent={ListEmptyComponent}

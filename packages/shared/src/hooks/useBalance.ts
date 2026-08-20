@@ -45,6 +45,22 @@ export interface UseBalanceParams {
   includeSpam?: boolean;
 }
 
+/**
+ * The three states a balance surface can be in, resolved once here so the home
+ * screens cannot each re-derive it and drift apart.
+ *
+ * - `loading` — nothing to show yet and an attempt is pending or in flight.
+ * - `error`   — nothing to show and the last attempt failed; the surface owes
+ *               the user localized copy and a retry, per the PRODUCT.md
+ *               "Failure modes are visible, not silent" guarantee that
+ *               "you have none" and "we couldn't load this" stay distinct.
+ * - `ready`   — a balance is held (cached or fresh), including an empty one.
+ *               A refetch that fails on top of cached data stays `ready`; the
+ *               data the user can still read is not blown away, and `isError`
+ *               drives the stale-data notice beside it.
+ */
+export type BalanceLoadState = 'loading' | 'error' | 'ready';
+
 export interface UseBalanceResult {
   balance: WalletBalance | null;
   tokens: TokenBalanceWithPrice[];
@@ -61,6 +77,12 @@ export interface UseBalanceResult {
    * in-flight affordance. Skeletons belong to `!hasData`, never to `refreshing`.
    */
   hasData: boolean;
+  /**
+   * Resolved three-way state for skeleton / error / data. Prefer this over
+   * re-deriving from `hasData` and `isError`: `hasData` alone is false in the
+   * terminal error state too, so a `!hasData` skeleton never resolves.
+   */
+  state: BalanceLoadState;
   error: string | null;
   isError: boolean;
   refresh: () => Promise<void>;
@@ -303,6 +325,11 @@ export function useBalance({
 
   const data = query.data;
   const tokens = data?.items ?? [];
+  // Held data always wins, so a failed refetch keeps showing the balance.
+  // With nothing held, a fetch in flight (including a user-pressed retry) is a
+  // skeleton and a settled failure is the error state.
+  const state: BalanceLoadState =
+    data !== undefined ? 'ready' : query.isError && !query.isFetching ? 'error' : 'loading';
   const lastUpdated = query.dataUpdatedAt > 0 ? query.dataUpdatedAt : null;
 
   return {
@@ -314,6 +341,7 @@ export function useBalance({
     loading: query.isPending && enabled,
     refreshing: query.isFetching && !query.isPending,
     hasData: data !== undefined,
+    state,
     error: query.error?.message ?? null,
     isError: query.isError,
     refresh,

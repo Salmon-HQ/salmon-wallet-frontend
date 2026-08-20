@@ -32,6 +32,7 @@ function makeBalanceState(overrides: Record<string, any> = {}) {
     loading: false,
     refreshing: false,
     hasData: false,
+    state: 'loading' as const,
     error: null,
     isError: false,
     refresh: vi.fn().mockResolvedValue(undefined),

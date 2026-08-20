@@ -574,6 +574,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     changeAmount,
     refreshing,
     hasData,
+    state: balanceState,
     refresh,
     error: balanceError,
     hiddenBalance,
@@ -1507,17 +1508,18 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                     </TokenSection>
                   ) : (
                     <TokenSection onScroll={handleTokenListScroll}>
-                      {formattedTokens.length > 0 || !hasData ? (
+                      {balanceState === 'loading' || formattedTokens.length > 0 ? (
                         <TokenList
                           tokens={formattedTokens}
-                          loading={!hasData}
+                          loading={balanceState === 'loading'}
                           onTokenPress={handleTokenPress}
                           hiddenBalance={hiddenBalance}
                           blockchain={getBlockchainFromNetworkId(currentBlockchain)}
                         />
-                      ) : balanceError ? (
+                      ) : balanceState === 'error' ? (
                         /* Failed load with nothing to show is an error state,
-                           never "No tokens found". */
+                           never "No tokens found" and never an endless
+                           skeleton — PRODUCT.md keeps those answers distinct. */
                         <EmptyState data-testid="token-list-error">
                           <EmptyStateText>
                             {t(
