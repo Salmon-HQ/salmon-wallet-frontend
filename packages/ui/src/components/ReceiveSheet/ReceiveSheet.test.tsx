@@ -102,6 +102,14 @@ describe('ReceiveSheet chain identity', () => {
     );
   });
 
+  it('shows no written address — the code is the address, the button hands it over', () => {
+    render(<ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="solana" />);
+
+    expect(screen.queryByTestId('receive-address')).toBeNull();
+    expect(screen.queryByText(ADDRESS)).toBeNull();
+    expect(screen.getByTestId('receive-copy-button')).toBeTruthy();
+  });
+
   it('warns that only assets on that chain may be sent to this address', () => {
     render(<ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="bitcoin" />);
 

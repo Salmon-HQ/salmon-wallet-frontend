@@ -4,8 +4,7 @@
  * Migrated from packages/ui (React Native) to use MUI Dialog.
  * Features:
  * - QR code for wallet address
- * - Full address display (selectable)
- * - Copy address button
+ * - Copy address button (the only path to the address string)
  * - Responsive QR code sizing
  */
 
@@ -110,19 +109,6 @@ const ChainBadge = styled(Typography)({
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
   letterSpacing: letterSpacing.wide,
-});
-
-const AddressText = styled(Typography)({
-  fontSize: fontSize.base,
-  fontWeight: fontWeight.semibold,
-  color: colors.text.primary,
-  textAlign: 'center',
-  letterSpacing: letterSpacing.change,
-  lineHeight: lineHeight.condensed,
-  wordBreak: 'break-all',
-  userSelect: 'text',
-  cursor: 'text',
-  padding: `0 ${spacing.md}px`,
 });
 
 const CopyButton = styled(ButtonBase)({
@@ -291,9 +277,6 @@ export function ReceiveSheet({
             </QRContainer>
           </QRGroup>
 
-          {/* Full Address */}
-          <AddressText data-testid="receive-address">{address}</AddressText>
-
           {/* Wrong-network deposits are unrecoverable, so say so here rather
               than leaving the chain to be inferred from the address format. */}
           <WarningNotice
@@ -306,7 +289,7 @@ export function ReceiveSheet({
           {/* Copy Button */}
           <CopyButton
             onClick={handleCopy}
-            aria-label={t('token.receive.copyAddress')}
+            aria-label={copied ? t('token.receive.copied') : t('token.receive.copyAddress')}
             data-testid="receive-copy-button"
           >
             {/* The flesh: the myosepta of a cut fillet, pressed into the
@@ -319,7 +302,7 @@ export function ReceiveSheet({
                 copy={<CopyIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />}
                 tick={<CheckIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />}
               />
-              <CopyButtonText>
+              <CopyButtonText aria-live="polite">
                 {copied ? t('token.receive.copied') : t('token.receive.copyAddress')}
               </CopyButtonText>
             </OnFillContent>

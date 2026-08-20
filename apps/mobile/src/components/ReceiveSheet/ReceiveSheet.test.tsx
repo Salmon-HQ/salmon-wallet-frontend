@@ -122,19 +122,20 @@ describe('ReceiveSheet chain identity', () => {
 });
 
 describe('ReceiveSheet address', () => {
-  it('renders the address in mono, chunked, with leading derived from its size', () => {
+  it('shows no written address — the code is the address, the button hands it over', () => {
     render(<ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="solana" />);
 
-    const address = screen.getByTestId('receive-address');
-    const style = StyleSheet.flatten(address.props.style);
+    expect(screen.queryByTestId('receive-address')).toBeNull();
+    expect(screen.queryByText(ADDRESS)).toBeNull();
+    expect(screen.getByTestId('receive-qr-code')).toBeTruthy();
+    expect(screen.getByTestId('receive-copy-button')).toBeTruthy();
+  });
 
-    expect(address.props.children).toBe(
-      '7xKX tg2C W87d 97TX JSDp bD5j Bkhe TqA8 3TZR uJos gAsU'
-    );
-    expect(style.fontFamily).toBe('GeistMonoRegular');
-    expect(style.fontSize).toBe(13);
-    // Wrapped chunks collided when the leading was a literal unrelated to the size.
-    expect(style.lineHeight).toBeGreaterThan(style.fontSize);
+  it('announces the copied state, because the button is the only path to the string', () => {
+    render(<ReceiveSheet visible onClose={() => {}} address={ADDRESS} blockchain="solana" />);
+
+    const label = screen.getByText('token.receive.copyAddress');
+    expect(label.props.accessibilityLiveRegion).toBe('polite');
   });
 });
 

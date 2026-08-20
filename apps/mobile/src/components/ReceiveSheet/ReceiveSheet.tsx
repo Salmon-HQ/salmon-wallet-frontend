@@ -1,5 +1,4 @@
 import {
-  chunkAddress,
   colors,
   fontSize,
   getChainDisplayName,
@@ -53,8 +52,7 @@ const QR_LOGO_MARK_RATIO = 0.66; // of the knockout, so the mark never touches m
  * - Rounded top corners with border (26px radius)
  * - Drag handle indicator
  * - QR code for wallet address
- * - Full address display
- * - Copy address button
+ * - Copy address button (the only path to the address string)
  * - Backdrop with tap-to-dismiss
  *
  * @example
@@ -173,15 +171,6 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
           </View>
         </View>
 
-        {/* Address — mono in 4-character chunks, the same treatment the send
-            confirmation gives a full address: fixed-width chunks are what let
-            the eye compare a prefix and a suffix positionally. Not selectable,
-            because the chunk spaces are not part of the address; the copy
-            button below hands over the real string. */}
-        <Text style={styles.address} testID="receive-address">
-          {chunkAddress(address)}
-        </Text>
-
         {/* Wrong-network deposits are unrecoverable, so say so here rather
             than leaving the chain to be inferred from the address format. */}
         <WarningNotice
@@ -211,7 +200,15 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
           ) : (
             <CopyIcon weight="bold" size={ms(23)} color={semantic.accent.onFill} />
           )}
-          <Text style={styles.copyButtonText} numberOfLines={1} ellipsizeMode="tail">
+          {/* The written address is gone from the sheet, so this control is the
+              only path to the string: the copied state has to be announced,
+              not only painted. */}
+          <Text
+            style={styles.copyButtonText}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            accessibilityLiveRegion="polite"
+          >
             {copied ? t('token.receive.copied') : t('token.receive.copyAddress')}
           </Text>
         </TouchableOpacity>
@@ -284,15 +281,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.semiBold,
     color: semantic.text.primary,
     letterSpacing: letterSpacing.label,
-  },
-  address: {
-    fontSize: ms(fontSize.mono),
-    fontFamily: fontFamilyNative.mono,
-    color: colors.text.primary,
-    textAlign: 'center',
-    // Derived from the size the line actually renders at — a literal here let
-    // the wrapped chunks of a long address collide.
-    lineHeight: ms(fontSize.mono * lineHeight.snug),
   },
   copyButton: {
     flexDirection: 'row',
