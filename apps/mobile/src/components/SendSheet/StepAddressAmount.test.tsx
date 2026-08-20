@@ -220,6 +220,50 @@ describe('StepAddressAmount', () => {
     });
   });
 
+  // The selected-token card is a way back to token selection. A flow that has
+  // no token-selection step must not draw it as a control at all — not merely
+  // as a control whose handler does nothing.
+  it('makes the selected token card actionable only when there is a token-selection step', () => {
+    const onBack = jest.fn();
+
+    const { rerender } = render(
+      <StepAddressAmount
+        token={token}
+        blockchain="solana"
+        account={account}
+        onBack={onBack}
+        onReview={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+
+    const card = screen.getByTestId('send-selected-token');
+    expect(card.props.accessibilityLabel).toBe('accessibility.selected_token');
+    fireEvent.press(card);
+    expect(onBack).toHaveBeenCalledTimes(1);
+
+    // Single-token chain: same card, same testID, but inert — no press
+    // handler, no accessible name announcing it as actionable.
+    rerender(
+      <StepAddressAmount
+        token={token}
+        blockchain="bitcoin"
+        account={account}
+        onReview={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+
+    const inertCard = screen.getByTestId('send-selected-token');
+    expect(inertCard.props.accessibilityLabel).toBeUndefined();
+    expect(inertCard.props.onStartShouldSetResponder).toBeUndefined();
+    fireEvent.press(inertCard);
+    expect(onBack).toHaveBeenCalledTimes(1);
+
+    // The card still shows the token; it simply stopped being a control.
+    expect(inertCard.props.children).toBeTruthy();
+  });
+
   it('fills recipient from own wallets, quick-fills amount and reviews with resolved address', () => {
     const onReview = jest.fn();
 

@@ -100,6 +100,16 @@ const TokenCardButton = styled(ButtonBase)({
   },
 });
 
+// The same card with nothing to navigate to: no button element, no hover
+// feedback, no accessible name announcing it as actionable — it only reports
+// the token. Same rule as the header's back control (DESIGN.md §Motion, the
+// settings gate).
+const TokenCardStatic = styled(Box)({
+  width: '100%',
+  borderRadius: borderRadius.button,
+  marginBottom: spacing.xl,
+});
+
 const TokenCardContent = styled(Box)({
   display: 'flex',
   flexDirection: 'row',
@@ -490,13 +500,20 @@ export function StepAddressAmount({
     }
   }, [blockchain, t]);
 
+  // A control only while a token-selection step exists to return to.
+  const SelectedTokenCard = onBack ? TokenCardButton : TokenCardStatic;
+
   return (
     <Container>
       <ScrollContent>
         {/* Selected Token Card */}
-        <TokenCardButton
-          onClick={onBack}
-          aria-label={t('accessibility.selected_token', { name: token.name })}
+        <SelectedTokenCard
+          {...(onBack
+            ? {
+                onClick: onBack,
+                'aria-label': t('accessibility.selected_token', { name: token.name }),
+              }
+            : {})}
           data-testid="send-selected-token"
         >
           <BlurContainer style={{ borderRadius: borderRadius.button }}>
@@ -522,7 +539,7 @@ export function StepAddressAmount({
               <TokenCardBalance>{balanceDisplay}</TokenCardBalance>
             </TokenCardContent>
           </BlurContainer>
-        </TokenCardButton>
+        </SelectedTokenCard>
 
         {/* Recipient */}
         <FieldGroup>

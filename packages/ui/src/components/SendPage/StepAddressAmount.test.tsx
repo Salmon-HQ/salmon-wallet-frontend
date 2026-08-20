@@ -180,6 +180,44 @@ describe('StepAddressAmount', () => {
     expect(screen.queryByText('Solana')).toBeNull();
   });
 
+  // The selected-token card is a way back to token selection. A flow that has
+  // no token-selection step must not render it as a control at all.
+  it('makes the selected token card actionable only when there is a token-selection step', () => {
+    const onBack = vi.fn();
+
+    const { rerender } = render(
+      <StepAddressAmount
+        token={token}
+        blockchain="solana"
+        account={account}
+        onBack={onBack}
+        onReview={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    const card = screen.getByTestId('send-selected-token');
+    expect(card.tagName).toBe('BUTTON');
+    fireEvent.click(card);
+    expect(onBack).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <StepAddressAmount
+        token={token}
+        blockchain="bitcoin"
+        account={account}
+        onReview={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    const inertCard = screen.getByTestId('send-selected-token');
+    expect(inertCard.tagName).not.toBe('BUTTON');
+    expect(inertCard.getAttribute('aria-label')).toBeNull();
+    fireEvent.click(inertCard);
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
   it('uses quick fill to update amount and fiat conversion', () => {
     render(
       <StepAddressAmount

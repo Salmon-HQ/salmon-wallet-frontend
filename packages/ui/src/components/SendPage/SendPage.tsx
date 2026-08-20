@@ -197,7 +197,7 @@ export function SendPage({
             liveBalance={liveSelectedBalance}
             blockchain={blockchain}
             account={account}
-            onBack={handleBackToTokenSelect}
+            onBack={skipTokenSelect ? undefined : handleBackToTokenSelect}
             onReview={handleReview}
             onCancel={handleExit}
           />

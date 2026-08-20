@@ -187,6 +187,25 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
   const actionRowKeyboardPadding =
     keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : actionRowBottomPadding;
 
+  const selectedTokenCard = (
+    <BlurContainer style={styles.tokenCard}>
+      <View style={styles.tokenCardLeft}>
+        <TokenLogo
+          uri={token.logo || undefined}
+          symbol={token.symbol}
+          size={ms(36)}
+          style={{ marginRight: s(spacing.base) }}
+        />
+        <Text style={styles.tokenCardName} numberOfLines={1}>
+          {token.symbol}
+        </Text>
+      </View>
+      <Text style={styles.tokenCardBalance} numberOfLines={1}>
+        {balanceDisplay}
+      </Text>
+    </BlurContainer>
+  );
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -198,30 +217,24 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Selected Token Card */}
-        <TouchableOpacity
-          testID="send-selected-token"
-          onPress={onBack}
-          activeOpacity={0.7}
-          accessibilityLabel={t('accessibility.selected_token', { name: token.name })}
-        >
-          <BlurContainer style={styles.tokenCard}>
-            <View style={styles.tokenCardLeft}>
-              <TokenLogo
-                uri={token.logo || undefined}
-                symbol={token.symbol}
-                size={ms(36)}
-                style={{ marginRight: s(spacing.base) }}
-              />
-              <Text style={styles.tokenCardName} numberOfLines={1}>
-                {token.symbol}
-              </Text>
-            </View>
-            <Text style={styles.tokenCardBalance} numberOfLines={1}>
-              {balanceDisplay}
-            </Text>
-          </BlurContainer>
-        </TouchableOpacity>
+        {/* Selected Token Card. It is a control only while a token-selection
+            step exists to return to; otherwise it is a plain readout — no
+            button role, no press feedback, no accessible name announcing it
+            as actionable. Same rule as the header's back control: an
+            affordance that promises a step that does not exist is worse than
+            no affordance (DESIGN.md §Motion, the settings gate). */}
+        {onBack ? (
+          <TouchableOpacity
+            testID="send-selected-token"
+            onPress={onBack}
+            activeOpacity={0.7}
+            accessibilityLabel={t('accessibility.selected_token', { name: token.name })}
+          >
+            {selectedTokenCard}
+          </TouchableOpacity>
+        ) : (
+          <View testID="send-selected-token">{selectedTokenCard}</View>
+        )}
 
         {/* Recipient */}
         <View style={styles.fieldGroup}>

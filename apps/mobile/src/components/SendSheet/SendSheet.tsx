@@ -260,7 +260,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
             liveBalance={liveSelectedBalance}
             blockchain={blockchain}
             account={account}
-            onBack={handleBackToTokenSelect}
+            onBack={stepSequence.includes('token-select') ? handleBackToTokenSelect : undefined}
             onReview={handleReview}
             onCancel={handleClose}
           />
