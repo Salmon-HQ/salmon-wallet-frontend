@@ -243,6 +243,7 @@ export function LoadingScreen({
   waves = true,
   bottomOffset = 0,
   onExited,
+  onReady,
 }: LoadingScreenProps) {
   const { t } = useTranslation();
 
@@ -336,6 +337,35 @@ export function LoadingScreen({
     if (!origin) return 0;
     return 2 * wavefrontRadius(origin, frame);
   }, [geometry]);
+
+  /**
+   * The wait, reporting that it is running.
+   *
+   * The front is the only part of this screen that cannot draw until a
+   * measurement lands: `geometry.origin` comes from an `onLayout`, which is a
+   * JS-thread event. Everything else — the overlay's fade, the cluster's
+   * float, the sink and the ring — is already on the UI thread and survives a
+   * blocked JS thread. So a caller that is about to take the thread has
+   * exactly one thing to wait for, and this is it. Fired once per showing, and
+   * armed again when the wait comes back.
+   */
+  const onReadyRef = useRef(onReady);
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
+  const readyRef = useRef(false);
+  useEffect(() => {
+    if (!visible) {
+      readyRef.current = false;
+      return;
+    }
+    if (readyRef.current) return;
+    // A wait with no front has nothing to measure: it is running as soon as it
+    // is committed.
+    if (waves && (geometry.origin === null || ringSize <= 0)) return;
+    readyRef.current = true;
+    onReadyRef.current?.();
+  }, [visible, waves, geometry.origin, ringSize]);
 
   const measureFrame = useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;

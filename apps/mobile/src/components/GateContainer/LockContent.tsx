@@ -19,6 +19,8 @@ import {
   componentSizes,
   semantic,
   useUnlockThrottle,
+  FLOAT_DELAY_MS,
+  FLOAT_IN_MS,
 } from '@salmon/shared';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -291,6 +293,46 @@ export function LockContent({
     onUnlockExited?.();
   }, [onUnlockExited]);
 
+  /**
+   * The wait's own report that it is drawing, parked so the unlock can wait on
+   * it. See `waitForWait` below.
+   */
+  const waitReadyRef = useRef<(() => void) | null>(null);
+  const handleWaitReady = useCallback(() => {
+    const resolve = waitReadyRef.current;
+    waitReadyRef.current = null;
+    resolve?.();
+  }, []);
+  /**
+   * Hold the unlock until the wait is actually on screen and running.
+   *
+   * Deriving the vault key blocks the JS thread, and the front cannot draw
+   * until the emitter's `onLayout` has been processed — also on the JS thread.
+   * Starting the derivation on a fixed delay was a bet that the measurement
+   * had landed in time; when it had not, the whole derivation played out
+   * against a still mark and still words, and the water only appeared once the
+   * thread came back. So the derivation waits for the report instead of
+   * guessing at it.
+   *
+   * Bounded by the wait's own entrance, and the bound is a watchdog, not the
+   * mechanism: if the report never comes, the unlock proceeds rather than
+   * stranding the user on a screen that will not move on either.
+   */
+  const waitForWait = useCallback(
+    () =>
+      new Promise<void>((resolve) => {
+        const watchdog = setTimeout(() => {
+          waitReadyRef.current = null;
+          resolve();
+        }, FLOAT_DELAY_MS + FLOAT_IN_MS);
+        waitReadyRef.current = () => {
+          clearTimeout(watchdog);
+          resolve();
+        };
+      }),
+    []
+  );
+
   const handleUnlock = useCallback(async () => {
     if (!password.trim()) {
       setError(t('lock.enter_password_error'));
@@ -304,8 +346,9 @@ export function LockContent({
     // The wait, up before the work: unlocking derives the vault key on the JS
     // thread, and a screen that appears after the freeze has explained nothing.
     setShowLoadingScreen(true);
-    // Yield to UI thread so LoadingScreen renders before heavy crypto derivation
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Not a yield but a handshake: the wave has to be crossing before the
+    // crypto takes the thread, and only the wait knows when it is.
+    await waitForWait();
 
     try {
       const success = await onUnlock(password);
@@ -336,7 +379,7 @@ export function LockContent({
     } finally {
       setIsLoading(false);
     }
-  }, [password, onUnlock, t, refreshThrottle]);
+  }, [password, onUnlock, t, refreshThrottle, waitForWait]);
 
   // Forgot password
   const handleForgotPassword = useCallback(() => {
@@ -521,6 +564,7 @@ export function LockContent({
         showTips={true}
         tipInterval={3000}
         onExited={handleWaitExited}
+        onReady={handleWaitReady}
       />
     </>
   );

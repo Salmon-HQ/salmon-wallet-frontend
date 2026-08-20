@@ -13,7 +13,7 @@
  */
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { act, render, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 
 let mockReduceMotion = false;
 
@@ -202,6 +202,37 @@ describe('LoadingScreen', () => {
       const cluster = screen.getByTestId('loading-cluster', { includeHiddenElements: true });
       expect(screen.getByTestId('depth-background')).toBeTruthy();
       expect(within(cluster).queryByTestId('depth-background')).toBeNull();
+    });
+  });
+
+  describe('the report that the wait is running', () => {
+    // The front is the one part of this screen that cannot draw until a
+    // measurement lands, and `onLayout` is a JS-thread event. A caller about to
+    // take that thread (key derivation on unlock) waits for this report, so the
+    // water is already running when the crypto stops it — DESIGN.md §The wait.
+    it('waits for the emitter to be measured before reporting', () => {
+      const onReady = jest.fn();
+      render(<LoadingScreen visible title="Unlocking Wallet" waves onReady={onReady} />);
+
+      // Committed, but the front has no origin yet: nothing is crossing.
+      expect(onReady).not.toHaveBeenCalled();
+
+      act(() => {
+        fireEvent(
+          screen.getByTestId('loading-emitter', { includeHiddenElements: true }),
+          'layout',
+          { nativeEvent: { layout: { x: 100, y: 200, width: 48, height: 48 } } }
+        );
+      });
+
+      expect(onReady).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports at once for a wait with no front to measure', () => {
+      const onReady = jest.fn();
+      render(<LoadingScreen visible title="Unlocking Wallet" waves={false} onReady={onReady} />);
+
+      expect(onReady).toHaveBeenCalledTimes(1);
     });
   });
 
