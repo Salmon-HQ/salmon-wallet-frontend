@@ -40,7 +40,6 @@ import {
   motionMs,
   semantic,
   shadows,
-  vs,
 } from '@salmon/shared';
 import { Thermocline } from '../Thermocline';
 import type { GateContainerProps, GateState } from './types';
@@ -513,7 +512,17 @@ const styles = StyleSheet.create({
     // exposing `surface`'s own rounded-bottom-corner + shadow there — a
     // second card edge stacked under this one. Filling the slot makes this
     // row's bottom coincide with `surface`'s, so there is exactly one edge.
-    height: vs(componentSizes.headerHeight),
+    // NOT `vs()`. This is the one height in the collapsed-header path that was
+    // device-scaled, and every other expression defining the same slot is the
+    // raw token: the collapse math, the floor, the slot itself and
+    // `useTabChrome`'s `headerChromeHeight`. `vs` is a ratio against a 956dp
+    // reference, so on anything shorter the row underfilled its slot and the
+    // surplus pooled at the bottom — 9dp on a 360x800 phone — while on a taller
+    // one (a Pixel 9 Pro measures 1088) it overflowed and hung past the gate's
+    // own rounded corner. Both are the same line. The comment below says this
+    // row's bottom must coincide with `surface`'s; the scale is what stopped it
+    // from doing so anywhere except on the reference device.
+    height: componentSizes.headerHeight,
     // No fill, and no shadow of its own. Both were correct when `surface`
     // painted the gate's shelf; `surface` is transparent now and the
     // Thermocline carries the ground, so an opaque row here printed a flat

@@ -18,7 +18,7 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { semantic } from '@salmon/shared';
+import { componentSizes, semantic } from '@salmon/shared';
 
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
@@ -309,5 +309,22 @@ describe('the collapsed header stands on the same ground as the surface above it
     // already showing the material through. Same ground, or a seam.
     expect(headerBackground).toBe('transparent');
     expect(surfaceBackground()).toBe('transparent');
+  });
+
+  it('fills its slot exactly, on any screen height', () => {
+    renderGate('collapsed');
+
+    const height = (
+      StyleSheet.flatten(screen.getByTestId('gate-header-bar').props.style) as {
+        height?: number;
+      }
+    ).height;
+
+    // The raw token, never a device-scaled one. Everything else that defines
+    // this slot — the collapse math, the floor, the slot, `useTabChrome` — is
+    // unscaled, and a scaled row underfills the slot on a short screen and
+    // overflows the gate's rounded corner on a tall one. This has drifted
+    // silently in this file twice now.
+    expect(height).toBe(componentSizes.headerHeight);
   });
 });
