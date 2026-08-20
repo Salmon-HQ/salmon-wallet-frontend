@@ -727,6 +727,20 @@ export default function HomeScreen() {
     [topFadeOpacity]
   );
 
+  // The parallax offset is one value for the whole water column, and this list
+  // is the only surface that writes it. Nothing used to clear it, so a list
+  // that went away scrolled — a wait taking the screen, a tab change — left
+  // its last offset standing, and the next list mounting at the top displaced
+  // every field by a fifth of it in a single frame. The ground never travels
+  // on its own (DESIGN.md §The water column), so the writer gives the value
+  // back when it stops writing it.
+  useEffect(
+    () => () => {
+      depthParallaxScroll.value = 0;
+    },
+    []
+  );
+
   // Memoize the fixed header component (Balance Card + Action Buttons)
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
   const FixedHeaderComponent = useMemo(
