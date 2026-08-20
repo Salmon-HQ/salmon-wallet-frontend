@@ -293,3 +293,21 @@ describe('GateContainer collapsed header with the task context at rest', () => {
     expect(screen.queryByTestId('gate-back-verb')).toBeNull();
   });
 });
+
+describe('the collapsed header stands on the same ground as the surface above it', () => {
+  it('paints no fill of its own — the material behind it is the header', () => {
+    renderGate('collapsed');
+
+    const headerBackground = (
+      StyleSheet.flatten(screen.getByTestId('gate-header-bar').props.style) as {
+        backgroundColor?: string;
+      }
+    ).backgroundColor;
+
+    // An opaque row here printed a flat band across the thermocline, a
+    // different value from the inset strip directly above it — which was
+    // already showing the material through. Same ground, or a seam.
+    expect(headerBackground).toBe('transparent');
+    expect(surfaceBackground()).toBe('transparent');
+  });
+});

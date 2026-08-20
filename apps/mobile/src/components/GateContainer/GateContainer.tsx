@@ -285,6 +285,20 @@ export function GateContainer({
             DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.gateSurface },
           ]}
         >
+          {/* The collapsed header's scrim floor. Expanded, `surfaceFloor`
+              gives the whole gate a defined backdrop; collapsed, the gate is
+              full-height and an opaque fill would cover the screen, so the
+              floor is cut to the header's own slot. Mounted *under* the
+              material so the header reads as the same thermocline the
+              settings surface stands on — see DESIGN.md §The scrim floor. */}
+          {state !== 'locked' && !showExpanded && (
+            <View
+              style={[
+                styles.headerFloor,
+                { height: insets.top + componentSizes.headerHeight },
+              ]}
+            />
+          )}
           {state !== 'locked' && <Thermocline tier="thick" style={styles.thermocline} />}
 
           {/* Lock content — full screen */}
@@ -500,23 +514,28 @@ const styles = StyleSheet.create({
     // second card edge stacked under this one. Filling the slot makes this
     // row's bottom coincide with `surface`'s, so there is exactly one edge.
     height: vs(componentSizes.headerHeight),
-    // Same ground as `surface` above — the gate's own shelf.
-    backgroundColor: semantic.surface.shelf,
-    // 24, the header-corner off-scale one-off — deliberate, see `surface`.
-    borderBottomLeftRadius: borderRadius.header,
-    borderBottomRightRadius: borderRadius.header,
-    ...Platform.select({
-      ios: {
-        shadowColor: shadows.header.shadowColor,
-        shadowOffset: shadows.header.shadowOffset,
-        shadowOpacity: shadows.header.shadowOpacity,
-        shadowRadius: shadows.header.shadowRadius,
-      },
-      android: {
-        elevation: shadows.header.elevation,
-      },
-      default: {},
-    }),
+    // No fill, and no shadow of its own. Both were correct when `surface`
+    // painted the gate's shelf; `surface` is transparent now and the
+    // Thermocline carries the ground, so an opaque row here printed a flat
+    // band across the material — a different value from the inset strip
+    // directly above it, which was already showing the material through. The
+    // seam that produced is what this removes. The edge is `surface`'s own:
+    // this row's bottom coincides with it, so a second shadow drew the same
+    // line twice, and on iOS a shadow under a transparent background
+    // composites as a ghost band (see `surfaceLocked`).
+    backgroundColor: 'transparent',
+  },
+  // Cut to the header slot and pinned to the gate's bottom edge, which is
+  // where the collapsed gate ends. Carries the gate's corner so the floor
+  // never squares off under the material's rounded one.
+  headerFloor: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: semantic.surface.crest,
+    borderBottomLeftRadius: borderRadius['2xl'],
+    borderBottomRightRadius: borderRadius['2xl'],
   },
   expandedContentContainer: {
     flex: 1,
