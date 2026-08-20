@@ -1,11 +1,13 @@
 /**
- * TransactionDetailModal - Dialog for transaction details (web/extension version)
+ * TransactionDetail - one transaction's facts, as a step inside the activity
+ * surface (web/extension version).
  *
- * Migrated from packages/ui (React Native) to MUI Dialog.
+ * It is not a surface of its own: it owns no visibility and no close affordance,
+ * because the page that shows it decides when it is on screen and its header
+ * carries the way back (DESIGN.md §The sink and the float — the transition
+ * verb). This is the only place these facts are shown.
  *
  * Features:
- * - MUI Dialog container (replacing RN Modal + Reanimated)
- * - Scrollable content with DialogContent (replacing RN ScrollView)
  * - Transaction type header with icon and status badge
  * - Protocol/source badge
  * - Token inputs/outputs visualization
@@ -13,13 +15,11 @@
  * - NFT metadata with attributes grid
  * - Network fee
  * - Action buttons (View on Explorer, Copy Hash, Share)
- * - Reuses sub-components from TransactionHistorySheet
+ * - Reuses sub-components from TransactionHistoryPage
  *
  * @example
  * ```tsx
- * <TransactionDetailModal
- *   visible={isVisible}
- *   onClose={() => setIsVisible(false)}
+ * <TransactionDetail
  *   transaction={selectedTransaction}
  *   onViewExplorer={(tx) => openExplorer(tx.id)}
  *   onCopyHash={(hash) => copyToClipboard(hash)}
@@ -47,13 +47,10 @@ import {
   ShareNetworkIcon,
   WalletIcon,
   XCircleIcon,
-  XIcon,
   iconSize,
 } from '../../icons';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import {
@@ -81,12 +78,11 @@ import {
   type Blockchain,
   type NetworkEnvironment,
 } from '@salmon/shared';
-import React, { useCallback, useMemo, useState, type CSSProperties } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 
 import { BlurContainer } from '../BlurContainer';
-import { Thermocline } from '../Thermocline';
 import { AddressCopyRow } from '../TransactionHistoryPage/AddressCopyRow';
 import { ConversionRateDisplay } from '../TransactionHistoryPage/ConversionRateDisplay';
 import { ExplorerLinkButton } from '../TransactionHistoryPage/ExplorerLinkButton';
@@ -96,7 +92,7 @@ import type {
   TransactionTokenAmount,
   TransactionType,
 } from '../TransactionHistoryPage/types';
-import type { TransactionDetailModalProps } from './types';
+import type { TransactionDetailProps } from './types';
 
 // ============================================================================
 // Constants
@@ -218,35 +214,10 @@ const CONFIRMATION_LABEL_KEYS: Record<string, string> = {
 // Styled Components
 // ============================================================================
 
-/**
- * Geometry for the modal's ground: it fills the paper and sits behind
- * everything the modal holds. The paper's `overflow: hidden` clips the
- * material to the modal's corners, so the ground needs no radius of its own.
- */
-const GROUND_STYLE: CSSProperties = {
-  position: 'absolute',
-  inset: 0,
-  zIndex: 0,
-};
-
-const StyledDialog = styled(Dialog)({
-  '& .MuiDialog-paper': {
-    // The paper carries no fill of its own: the modal's ground is the material
-    // mounted inside it, and an opaque fill — or MUI's dark-mode elevation
-    // overlay, which is a background image — would paint over it. See
-    // DESIGN.md §The thermocline is the sheet material.
-    backgroundColor: 'transparent',
-    backgroundImage: 'none',
-    borderRadius: borderRadius.xl,
-    border: `${borderWidth.thin}px solid ${colors.border.default}`,
-    minWidth: `min(${componentSizes.sheetWidthMd}px, 95vw)`,
-    maxWidth: `min(${componentSizes.sheetWidthXl}px, 95vw)`,
-    maxHeight: '85vh',
-    overflow: 'hidden',
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-  },
+const StepRoot = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  minWidth: 0,
 });
 
 const HeaderContainer = styled(Box)({
@@ -254,8 +225,6 @@ const HeaderContainer = styled(Box)({
   flexDirection: 'column',
   padding: `${spacing.md}px ${spacing.xl}px`,
   borderBottom: `${borderWidth.thin}px solid ${colors.border.default}`,
-  position: 'relative',
-  zIndex: 1,
 });
 
 const HeaderRow = styled(Box)({
@@ -314,37 +283,12 @@ const StatusRow = styled(Box)({
   gap: spacing.xs,
 });
 
-const CloseButton = styled(IconButton)({
-  color: colors.text.secondary,
-  padding: spacing.xs,
-  marginLeft: 'auto',
-  flexShrink: 0,
-  '&:hover': {
-    backgroundColor: colors.background.card,
-  },
-});
-
-const StyledDialogContent = styled(DialogContent)({
+// The page this step lives in owns the scrolling, so the content only stacks.
+const StepContent = styled(Box)({
   padding: `${spacing.md}px ${spacing.lg}px ${spacing.md}px`,
-  overflowY: 'auto',
-  position: 'relative',
-  zIndex: 1,
   display: 'flex',
   flexDirection: 'column',
   gap: spacing.md,
-  '&::-webkit-scrollbar': {
-    width: componentSizes.scrollbarWidth,
-  },
-  '&::-webkit-scrollbar-track': {
-    backgroundColor: 'transparent',
-  },
-  '&::-webkit-scrollbar-thumb': {
-    backgroundColor: colors.card.border,
-    borderRadius: borderRadius.scrollbar,
-  },
-  '&::-webkit-scrollbar-thumb:hover': {
-    backgroundColor: colors.interactive.highlight,
-  },
 });
 
 const Section = styled(Box)({
@@ -589,8 +533,6 @@ const FixedBottomBar = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   gap: spacing.sm,
-  position: 'relative',
-  zIndex: 1,
 });
 
 // Action buttons
@@ -921,9 +863,7 @@ const NftMetadataSection: React.FC<{
 // Main Component
 // ============================================================================
 
-export function TransactionDetailModal({
-  visible,
-  onClose,
+export function TransactionDetail({
   transaction,
   onViewExplorer,
   onCopyHash,
@@ -932,7 +872,7 @@ export function TransactionDetailModal({
   networkId,
   className,
   style,
-}: TransactionDetailModalProps) {
+}: TransactionDetailProps) {
   const { t } = useTranslation();
   // Inline hash copy state
   const [hashCopied, setHashCopied] = useState(false);
@@ -966,6 +906,33 @@ export function TransactionDetailModal({
     return STATUS_CONFIG[transaction.status] || STATUS_CONFIG.completed;
   }, [transaction]);
 
+  /**
+   * The rate the backend reported, or the one the amounts already imply. A
+   * one-in, one-out swap carries its own rate, and the detail is the only
+   * place these facts are shown, so the fallback lives here rather than
+   * nowhere.
+   */
+  const conversionRate = useMemo(() => {
+    if (!transaction) return null;
+    if (transaction.swapRoute?.conversionRate) return transaction.swapRoute.conversionRate;
+    if (transaction.outputs.length !== 1 || transaction.inputs.length !== 1) return null;
+
+    const fromToken = transaction.outputs[0];
+    const toToken = transaction.inputs[0];
+    const fromAmount = parseFloat(fromToken.amount) / Math.pow(10, fromToken.decimals);
+    const toAmount = parseFloat(toToken.amount) / Math.pow(10, toToken.decimals);
+    if (!(fromAmount > 0)) return null;
+
+    return {
+      fromSymbol: fromToken.symbol,
+      toSymbol: toToken.symbol,
+      // Handed over as a number: rounding it into a string here and parsing
+      // it back in the display is how a rendered figure becomes an input,
+      // which the number contract forbids.
+      rate: toAmount / fromAmount,
+    };
+  }, [transaction]);
+
   if (!transaction) {
     return null;
   }
@@ -979,24 +946,12 @@ export function TransactionDetailModal({
   const explorerEnvironment = explorerNetworkId as NetworkEnvironment;
 
   return (
-    <StyledDialog
-      open={visible}
-      onClose={onClose}
-      data-testid="tx-detail-modal"
+    <StepRoot
+      data-testid="tx-detail"
       aria-labelledby="transaction-detail-title"
       className={className}
-      PaperProps={{ style }}
-      disableEnforceFocus
+      style={style}
     >
-      {/* A modal is the DOM's sheet, and the thermocline is what a sheet is
-          made of: this one grounds on the thick tier instead of an opaque
-          fill. Its texture is the membrane field, one dark scales layer the
-          material mounts itself. See DESIGN.md §The thermocline is the sheet
-          material and §The membrane field. Ground first: the header, the
-          content and the bottom bar are all positioned on z-index 1, so the
-          material stays behind everything the modal holds. */}
-      <Thermocline tier="thick" style={GROUND_STYLE} />
-
       {/* Header */}
       <HeaderContainer>
         <HeaderRow>
@@ -1040,20 +995,11 @@ export function TransactionDetailModal({
               </Typography>
             </StatusRow>
           </HeaderInfoBox>
-
-          {/* Close button */}
-          <CloseButton
-            onClick={onClose}
-            aria-label={t('general.close')}
-            data-testid="tx-detail-close-button"
-          >
-            <XIcon />
-          </CloseButton>
         </HeaderRow>
       </HeaderContainer>
 
       {/* Content */}
-      <StyledDialogContent>
+      <StepContent>
         {/* Card 1 — Details: Date/Time + Confirmation + Block */}
         <Section>
           <BlurContainer style={{ borderRadius: borderRadius.md, padding: spacing.md }}>
@@ -1120,12 +1066,12 @@ export function TransactionDetailModal({
               )}
             </SwapHeaderRow>
             <SwapVisualization outputs={transaction.outputs} inputs={transaction.inputs} />
-            {transaction.swapRoute?.conversionRate && (
+            {conversionRate && (
               <ConversionRateContainer>
                 <ConversionRateDisplay
-                  fromSymbol={transaction.swapRoute.conversionRate.fromSymbol}
-                  toSymbol={transaction.swapRoute.conversionRate.toSymbol}
-                  rate={transaction.swapRoute.conversionRate.rate}
+                  fromSymbol={conversionRate.fromSymbol}
+                  toSymbol={conversionRate.toSymbol}
+                  rate={conversionRate.rate}
                   size="medium"
                 />
               </ConversionRateContainer>
@@ -1361,7 +1307,7 @@ export function TransactionDetailModal({
             )}
           </Section>
         )}
-      </StyledDialogContent>
+      </StepContent>
 
       {/* Fixed Bottom Action Bar */}
       <FixedBottomBar>
@@ -1385,6 +1331,6 @@ export function TransactionDetailModal({
           </ActionsContainer>
         )}
       </FixedBottomBar>
-    </StyledDialog>
+    </StepRoot>
   );
 }

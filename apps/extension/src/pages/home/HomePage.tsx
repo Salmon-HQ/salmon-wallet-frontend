@@ -29,7 +29,6 @@ import {
   type Token,
   type NftData,
   type NftBlockchain,
-  type Transaction,
   type SendToken,
   type AddressBookItem,
   type NetworkAdapter,
@@ -73,7 +72,6 @@ import {
   NftDetailPage,
   NftSeeAllPage,
   TransactionHistoryPage,
-  TransactionDetailModal,
   ReceiveSheet,
   SettingsPanelStack,
   WalletSwitcherSheet,
@@ -431,7 +429,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [walletSwitcherVisible, setWalletSwitcherVisible] = useState(false);
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   // Settings panel stack state (for deep-linking from WalletSwitcher)
   const [settingsInitialPanels, setSettingsInitialPanels] = useState<
@@ -743,14 +740,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   const handleActivityBack = useCallback(() => {
     setCurrentPage('home');
-  }, []);
-
-  const handleTransactionPress = useCallback((transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-  }, []);
-
-  const handleTransactionDetailClick = useCallback((transaction: Transaction) => {
-    setSelectedTransaction(transaction);
   }, []);
 
   const handleTokenPress = useCallback((token: Token) => {
@@ -1352,28 +1341,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         );
       case 'activity':
         return (
-          <>
-            <TransactionHistoryPage
-              onBack={handleActivityBack}
-              transactions={transactions}
-              loading={transactionsLoading}
-              loadingMore={transactionsLoadingMore}
-              hasMore={transactionsHasMore}
-              onLoadMore={transactionsLoadMore}
-              hiddenBalance={hiddenBalance}
-              error={transactionsError}
-              onRetry={transactionsRefresh}
-              onTransactionPress={handleTransactionPress}
-              onTransactionDetailClick={handleTransactionDetailClick}
-            />
-            <TransactionDetailModal
-              visible={!!selectedTransaction}
-              onClose={() => setSelectedTransaction(null)}
-              transaction={selectedTransaction}
-              networkId={networkId}
-              developerMode={developerNetworks}
-            />
-          </>
+          <TransactionHistoryPage
+            onBack={handleActivityBack}
+            transactions={transactions}
+            loading={transactionsLoading}
+            loadingMore={transactionsLoadingMore}
+            hasMore={transactionsHasMore}
+            onLoadMore={transactionsLoadMore}
+            hiddenBalance={hiddenBalance}
+            error={transactionsError}
+            onRetry={transactionsRefresh}
+            networkId={networkId}
+            developerMode={developerNetworks}
+          />
         );
       default:
         return <PlaceholderPage title={t('general.page', 'Page')} onBack={handleBack} />;
@@ -1632,15 +1612,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         onClose={() => setReceiveSheetVisible(false)}
         address={accountAddress}
         blockchain={getBlockchainFromNetworkId(currentBlockchain)}
-      />
-
-      {/* Transaction Detail Modal */}
-      <TransactionDetailModal
-        visible={!!selectedTransaction}
-        onClose={() => setSelectedTransaction(null)}
-        transaction={selectedTransaction}
-        networkId={networkId}
-        developerMode={developerNetworks}
       />
     </Container>
   );

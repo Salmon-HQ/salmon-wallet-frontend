@@ -42,7 +42,6 @@ export {
   TokenListItem,
   TokenListSkeleton,
   TokenMarketData,
-  TransactionDetailModal,
   TransactionHistoryPage,
   TrustedAppsSelector,
   SolanaSvgIcon,

@@ -175,7 +175,7 @@ vi.mock('../TransactionHistoryPage/PriceImpactBadge', () => ({
   PriceImpactBadge: ({ value }: { value: string }) => <div>{`Price impact:${value}`}</div>,
 }));
 
-import { TransactionDetailModal } from './TransactionDetailModal';
+import { TransactionDetail } from './TransactionDetail';
 
 const BASE_TRANSACTION = {
   id: 'tx-1234567890abcdef',
@@ -243,19 +243,17 @@ const BASE_TRANSACTION = {
   },
 } as any;
 
-describe('TransactionDetailModal', () => {
+describe('TransactionDetail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  // The suite mounts the modal once per test into the same document; without
+  // The suite mounts the step once per test into the same document; without
   // an unmount between them a query for a single element sees every copy.
   afterEach(cleanup);
 
   it('does not render when transaction is missing', () => {
-    const { container } = render(
-      <TransactionDetailModal visible onClose={vi.fn()} transaction={null as any} />
-    );
+    const { container } = render(<TransactionDetail transaction={null as any} />);
 
     expect(container.innerHTML).toBe('');
   });
@@ -263,14 +261,7 @@ describe('TransactionDetailModal', () => {
   it('copies the transaction hash and calls onCopyHash', async () => {
     const onCopyHash = vi.fn();
 
-    render(
-      <TransactionDetailModal
-        visible
-        onClose={vi.fn()}
-        transaction={BASE_TRANSACTION}
-        onCopyHash={onCopyHash}
-      />
-    );
+    render(<TransactionDetail transaction={BASE_TRANSACTION} onCopyHash={onCopyHash} />);
 
     fireEvent.click(screen.getByLabelText('transactions.detail.copyTransactionHash'));
 
@@ -286,9 +277,7 @@ describe('TransactionDetailModal', () => {
     const onShare = vi.fn();
 
     render(
-      <TransactionDetailModal
-        visible
-        onClose={vi.fn()}
+      <TransactionDetail
         transaction={BASE_TRANSACTION}
         onViewExplorer={onViewExplorer}
         onShare={onShare}
@@ -303,54 +292,29 @@ describe('TransactionDetailModal', () => {
     expect(screen.getAllByText('Inner Swaps').length).toBeGreaterThan(0);
     expect(screen.getAllByText('SOL/USDC:2.5').length).toBeGreaterThan(0);
 
-    const dialog = screen.getByRole('dialog');
+    const step = screen.getByTestId('tx-detail');
 
-    fireEvent.click(within(dialog).getByText('Explorer'));
+    fireEvent.click(within(step).getByText('Explorer'));
     expect(mockExplorerOnPress).toHaveBeenCalledTimes(1);
     expect(onViewExplorer).toHaveBeenCalledWith(BASE_TRANSACTION);
 
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Share' }));
+    fireEvent.click(within(step).getByRole('button', { name: 'Share' }));
     expect(onShare).toHaveBeenCalledWith(BASE_TRANSACTION);
   });
 
   it('derives the explorer chain and environment from networkId', () => {
-    render(
-      <TransactionDetailModal
-        visible
-        onClose={vi.fn()}
-        transaction={BASE_TRANSACTION}
-        networkId="bitcoin-testnet"
-      />
-    );
+    render(<TransactionDetail transaction={BASE_TRANSACTION} networkId="bitcoin-testnet" />);
 
-    const explorerButton = within(screen.getByRole('dialog')).getByText('Explorer');
+    const explorerButton = within(screen.getByTestId('tx-detail')).getByText('Explorer');
     expect(explorerButton.getAttribute('data-blockchain')).toBe('BITCOIN');
     expect(explorerButton.getAttribute('data-environment')).toBe('bitcoin-testnet');
   });
 
   it('falls back to Solana mainnet when networkId is missing', () => {
-    render(<TransactionDetailModal visible onClose={vi.fn()} transaction={BASE_TRANSACTION} />);
+    render(<TransactionDetail transaction={BASE_TRANSACTION} />);
 
-    const explorerButton = within(screen.getByRole('dialog')).getByText('Explorer');
+    const explorerButton = within(screen.getByTestId('tx-detail')).getByText('Explorer');
     expect(explorerButton.getAttribute('data-blockchain')).toBe('SOLANA');
     expect(explorerButton.getAttribute('data-environment')).toBe('solana-mainnet');
-  });
-});
-
-describe('TransactionDetailModal ground', () => {
-  afterEach(cleanup);
-
-  // A modal is the DOM's sheet, so it is made of the material rather than of
-  // an opaque fill, and the material carries exactly one scales layer — a
-  // second copy reads as a band. See DESIGN.md §The thermocline is the sheet
-  // material and §The membrane field.
-  it('grounds on the material rather than on a fill', () => {
-    render(<TransactionDetailModal visible onClose={vi.fn()} transaction={BASE_TRANSACTION} />);
-    expect(screen.getByTestId('thermocline')).toBeTruthy();
-  });
-
-  it('carries exactly one scales layer', () => {
-    render(<TransactionDetailModal visible onClose={vi.fn()} transaction={BASE_TRANSACTION} />);
-    expect(screen.getAllByTestId('scales-background')).toHaveLength(1);
   });
 });

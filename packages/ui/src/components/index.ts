@@ -227,17 +227,16 @@ export type {
 export { ReceiveSheet } from './ReceiveSheet';
 export type { ReceiveSheetProps } from './ReceiveSheet';
 
-// TransactionDetailModal - Transaction detail dialog
-export { TransactionDetailModal } from './TransactionDetailModal';
-export type { TransactionDetailModalProps } from './TransactionDetailModal';
+// TransactionDetail - one transaction's facts, as a step inside the Activity page
+export { TransactionDetail } from './TransactionDetail';
+export type { TransactionDetailProps } from './TransactionDetail';
 
-// TransactionHistoryPage - Full-page transaction history with pagination
+// TransactionHistoryPage - the Activity page: list and detail steps
 export {
   AddressCopyRow,
   ConversionRateDisplay,
   ExplorerLinkButton,
   PriceImpactBadge,
-  SwapRouteVisualization,
   TransactionHistoryPage,
   TransactionItem,
 } from './TransactionHistoryPage';
@@ -248,7 +247,6 @@ export type {
   PriceImpactBadgeProps,
   SwapRoute,
   SwapRouteHop,
-  SwapRouteVisualizationProps,
   Transaction,
   TransactionFee,
   TransactionHistoryPageProps,

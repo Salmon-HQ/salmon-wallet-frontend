@@ -1,21 +1,23 @@
 /**
  * TransactionItem - Individual transaction row for the transaction list
  *
- * Migrated from packages/ui (React Native) to MUI styled components.
+ * A row is a row: it shows what happened and how much, and pressing it steps
+ * the activity surface into that transaction's detail. It has no second
+ * answer of its own — no disclosure, no chevrons, no route panel behind it —
+ * because the detail already holds those facts, and two surfaces answering
+ * one question drift apart by construction.
  *
  * Features:
  * - Transaction type icon with token logos
- * - Collapses multiple amounts with expandable route visualization
+ * - Collapses a complex swap's amounts to the first pair
  * - Badge showing source protocol (Jupiter, etc.)
- * - Click to expand swap routes, right-click or double-click for detail view
+ * - Press to step into the detail
  */
 
 import {
   ArrowDownIcon,
   ArrowUpIcon,
   ArrowsLeftRightIcon,
-  CaretDownIcon,
-  CaretUpIcon,
   ClockIcon,
   FireIcon,
   LockIcon,
@@ -53,7 +55,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import { BlurContainer } from '../BlurContainer';
-import { SwapRouteVisualization } from './SwapRouteVisualization';
 import type { TransactionItemProps, TransactionTokenAmount, TransactionType } from './types';
 
 // ============================================================================
@@ -345,26 +346,6 @@ const PendingText = styled(Typography)({
   color: semantic.status.warning,
 });
 
-const ExpandBadge = styled(Box)({
-  display: 'inline-flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: spacing.xxs,
-  marginTop: spacing.xs,
-  padding: `${spacing.xxs}px ${spacing.xs}px`,
-  borderRadius: borderRadius.sm,
-  cursor: 'pointer',
-  '&:hover': {
-    backgroundColor: colors.background.card,
-  },
-});
-
-const ExpandText = styled(Typography)({
-  fontSize: fontSize.xs,
-  fontWeight: fontWeight.medium,
-  color: colors.palette.amber,
-});
-
 // ============================================================================
 // Sub-components
 // ============================================================================
@@ -418,7 +399,6 @@ const AmountDisplay: React.FC<{
 export function TransactionItem({
   transaction,
   onPress,
-  onDetailClick,
   hiddenBalance = false,
   className,
   style,
@@ -427,23 +407,12 @@ export function TransactionItem({
   const { type, timestamp, status, inputs, outputs, description, source } = transaction;
   const config = getTypeConfig(type);
 
-  const [expanded, setExpanded] = useState(false);
-
   const totalAmounts = inputs.length + outputs.length;
   const isComplex = type === 'swap' && totalAmounts > MAX_VISIBLE_AMOUNTS;
-  const isSwap = type === 'swap';
 
   const handleClick = useCallback(() => {
-    if (isSwap) {
-      setExpanded((prev) => !prev);
-    } else {
-      onPress?.(transaction);
-    }
-  }, [isSwap, onPress, setExpanded, transaction]);
-
-  const handleDoubleClick = useCallback(() => {
-    onDetailClick?.(transaction);
-  }, [onDetailClick, transaction]);
+    onPress?.(transaction);
+  }, [onPress, transaction]);
 
   const descriptionText = useMemo(
     () => getTransactionDescription(type, inputs, outputs, source, description),
@@ -544,7 +513,6 @@ export function TransactionItem({
       >
         <ItemButton
           onClick={handleClick}
-          onDoubleClick={handleDoubleClick}
           aria-label={t('accessibility.transaction_row', '{{type}} transaction, {{description}}', {
             type: t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label),
             description: descriptionText,
@@ -571,34 +539,8 @@ export function TransactionItem({
             <TimeRow>
               <TimeText>{formatRelativeTimeCompact(timestamp, t)}</TimeText>
             </TimeRow>
-            {isComplex && (
-              <ExpandBadge
-                role="button"
-                tabIndex={0}
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  setExpanded((prev) => !prev);
-                }}
-              >
-                <ExpandText>
-                  {expanded
-                    ? t('transactions.showLess', 'show less')
-                    : t('transactions.showMore', 'show more')}
-                </ExpandText>
-                {expanded ? (
-                  <CaretUpIcon size={iconSize.sm} color={colors.palette.amber} />
-                ) : (
-                  <CaretDownIcon size={iconSize.sm} color={colors.palette.amber} />
-                )}
-              </ExpandBadge>
-            )}
           </RightSection>
         </ItemButton>
-
-        {/* Expandable route visualization for swaps */}
-        {type === 'swap' && (
-          <SwapRouteVisualization transaction={transaction} expanded={expanded} />
-        )}
       </BlurContainer>
     </ItemWrapper>
   );

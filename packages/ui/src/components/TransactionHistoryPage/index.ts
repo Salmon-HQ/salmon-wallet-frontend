@@ -1,6 +1,5 @@
 export { TransactionHistoryPage } from './TransactionHistoryPage';
 export { TransactionItem } from './TransactionItem';
-export { SwapRouteVisualization } from './SwapRouteVisualization';
 export { PriceImpactBadge } from './PriceImpactBadge';
 export { ConversionRateDisplay } from './ConversionRateDisplay';
 export { ExplorerLinkButton } from './ExplorerLinkButton';
@@ -16,7 +15,6 @@ export type {
   TransactionFee,
   SwapRouteHop,
   SwapRoute,
-  SwapRouteVisualizationProps,
   PriceImpactBadgeProps,
   ConversionRateDisplayProps,
   ExplorerLinkButtonProps,
