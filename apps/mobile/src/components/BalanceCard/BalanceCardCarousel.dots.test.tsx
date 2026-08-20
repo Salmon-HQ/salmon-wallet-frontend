@@ -46,18 +46,11 @@ jest.mock('react-native-reanimated', () => {
     default: {
       View: ({ children, ...props }: Record<string, unknown>) =>
         ReactActual.createElement(View, props, children),
-      // The edge light animates an SVG group; the mock renders it inert.
-      createAnimatedComponent: (Component: unknown) => Component,
     },
     useReducedMotion: () => false,
     useSharedValue: (value: unknown) => ({ value }),
     useAnimatedStyle: () => ({}),
     withTiming: (toValue: unknown) => toValue,
-    withSequence: (...steps: unknown[]) => steps[steps.length - 1],
-    withRepeat: (animation: unknown) => animation,
-    cancelAnimation: () => {},
-    makeMutable: (value: unknown) => ({ value }),
-    useAnimatedProps: () => ({}),
     Easing: { bezier: () => () => 0, linear: () => 0 },
     runOnJS: (fn: unknown) => fn,
   };

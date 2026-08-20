@@ -53,6 +53,10 @@ import { CaretDownIcon, CaretUpIcon, EyeIcon, EyeSlashIcon } from '../../icons';
 import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+/** The mark inside its box. Under 1 by construction: the mark can never reach
+ *  the edge, so no glyph can be clipped by the container that centres it. */
+const BLOCKCHAIN_MARK_RATIO = 0.74;
+
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 // ============================================================================
@@ -127,7 +131,7 @@ const CHAIN_LIGHT: Record<BlockchainId, readonly string[]> = {
  * wide, and past ~0.46 the two strips meet under it, which is the one place a
  * wash is not allowed to go. A test fails if they ever do.
  */
-const EDGE_LIGHT_REACH = 0.44;
+const EDGE_LIGHT_REACH = 0.46;
 
 /**
  * How much drag it takes to put the light out, in px. Shorter than
@@ -377,7 +381,13 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
 
   // Render blockchain logo (handles all network variants)
   const renderLogo = (blockchain: BlockchainId) => {
-    const iconSize = s(componentSizes.blockchainIcon);
+    // Derived from the box, never from its own token. `blockchainIcon` is 45
+    // against a `logoContainer` of 35, so the mark was eight points wider than
+    // the thing holding it and Bitcoin's glyph — which fills its viewBox more
+    // than the Solana mark does — came out clipped. Sizing from the container
+    // makes overflow impossible whatever either token is retuned to, and the
+    // ratio is what the owner asked to bring down.
+    const iconSize = s(componentSizes.logoContainer) * BLOCKCHAIN_MARK_RATIO;
     // Map network variants to their base blockchain for icon selection
     if (blockchain.startsWith('solana')) {
       return <SolanaSvgIcon size={iconSize} color={colors.text.primary} />;
@@ -617,8 +627,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   logoContainer: {
+    // Both axes on `s()`. It was `s()` wide and `vs()` tall, which are two
+    // different ratios, so the box that holds a round mark was not square.
     width: s(componentSizes.logoContainer),
-    height: vs(componentSizes.logoContainer),
+    height: s(componentSizes.logoContainer),
     alignItems: 'center',
     justifyContent: 'center',
     ...Platform.select({
