@@ -36,6 +36,10 @@ appId: io.salmonwallet.app
     visible:
       id: 'send-confirm-button'
     timeout: 10000
+# The step floats in — it is in the hierarchy, and tappable, before it has
+# finished lighting. Screenshotting on visibility alone catches it at opacity 0.
+- waitForAnimationToEnd:
+    timeout: 3000
 - takeScreenshot: screenshots/actions/send/send-confirm-screen
 - tapOn:
     id: 'send-confirm-button'
