@@ -22,7 +22,7 @@ import {
   semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useId } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AccessibilityActionEvent,
@@ -35,13 +35,6 @@ import {
   View,
 } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Svg, {
-  Defs,
-  LinearGradient as SvgLinearGradient,
-  Mask,
-  Rect,
-  Stop,
-} from 'react-native-svg';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -52,6 +45,7 @@ import Animated, {
 import { curve, timing } from '../../utils/motion';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import { DEBUG_LAYER_COLORS, DEBUG_LAYER_COLOR } from '../../debug/layerColors';
+import { EdgeLight } from './EdgeLight';
 import type { BalanceCardCarouselProps, BlockchainId } from './types';
 
 // Import the SVG icons from Icon component
@@ -120,28 +114,20 @@ const CHAIN_LIGHT: Record<BlockchainId, readonly string[]> = {
 };
 
 /**
- * Peak alpha at the outermost pixel. Band 0.14-0.30: below 0.14 a saturated
- * hue still disappears into a near-black pane, above 0.30 the edge stops
- * being light and becomes a painted border.
+ * How far the strip reaches inward, as a fraction of the card's width.
+ *
+ * This is not how far the light *shows* — the falloff decides that, and on an
+ * inverse-square curve most of the alpha is spent in the first fifth of the
+ * strip. What this buys is somewhere for the tail to die: at 0.3 the curve was
+ * still carrying visible alpha when it hit the strip's end, and a light that
+ * stops because it ran out of room has a boundary. Widening moves the end of
+ * the strip out past the end of the light.
+ *
+ * Band 0.30-0.46. The ceiling is not taste: the balance figure is centred and
+ * wide, and past ~0.46 the two strips meet under it, which is the one place a
+ * wash is not allowed to go. A test fails if they ever do.
  */
-const EDGE_LIGHT_ALPHA = 0.24;
-
-/**
- * How far the light reaches inward, as a fraction of the card's width. Band
- * 0.20-0.36. The ceiling is not taste: the balance figure is centred and wide,
- * and past ~0.36 the two edges meet under it, which is the one place a wash is
- * not allowed to go.
- */
-const EDGE_LIGHT_REACH = 0.3;
-
-/**
- * Where the fade spends its alpha along that reach. Front-loaded on purpose:
- * most of the light lives in the outer third, so the strip reads as something
- * spilling past the card's edge rather than as a gradient someone applied to
- * the card.
- */
-const EDGE_LIGHT_FALLOFF = [0, 0.32, 1];
-const EDGE_LIGHT_FALLOFF_ALPHA = [1, 0.38, 0];
+const EDGE_LIGHT_REACH = 0.44;
 
 /**
  * How much drag it takes to put the light out, in px. Shorter than
@@ -149,60 +135,6 @@ const EDGE_LIGHT_FALLOFF_ALPHA = [1, 0.38, 0];
  * commits — the switch itself must happen in the dark.
  */
 const EDGE_LIGHT_EXTINGUISH_PX = SWIPE_THRESHOLD * 0.6;
-
-/**
- * One edge's light.
- *
- * Two gradients on perpendicular axes, which is why this is SVG and not two
- * stacked `expo-linear-gradient`s: the colour runs *down* the edge and the
- * alpha runs *inward* from it, and no single linear gradient can do both. A
- * `<Mask>` composes them — the same construction `ScalesBackground` uses for
- * its own fade, including the explicit `maskUnits`, which on iOS Fabric is
- * what keeps the mask in user space instead of fraction space.
- *
- * `preserveAspectRatio="none"` so the 0-1 viewBox stretches to whatever slice
- * of the card the strip occupies, at any screen width.
- */
-function EdgeLight({ side, colors }: { side: 'left' | 'right'; colors: readonly string[] }) {
-  const rawId = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const hueId = `edge-hue-${rawId}`;
-  const maskId = `edge-mask-${rawId}`;
-  // The peak sits against the screen's outer edge, whichever side that is.
-  const fadeFrom = side === 'left' ? 0 : 1;
-
-  return (
-    <Svg width="100%" height="100%" viewBox="0 0 1 1" preserveAspectRatio="none">
-      <Defs>
-        <SvgLinearGradient id={hueId} x1="0" y1="0" x2="0" y2="1">
-          {colors.map((color, index) => (
-            <Stop
-              key={color}
-              offset={colors.length === 1 ? 0 : index / (colors.length - 1)}
-              stopColor={color}
-            />
-          ))}
-        </SvgLinearGradient>
-        <SvgLinearGradient id={maskId} x1={fadeFrom} y1="0" x2={1 - fadeFrom} y2="0">
-          {EDGE_LIGHT_FALLOFF.map((offset, index) => (
-            <Stop
-              key={offset}
-              offset={offset}
-              stopColor="#fff"
-              stopOpacity={EDGE_LIGHT_FALLOFF_ALPHA[index] * EDGE_LIGHT_ALPHA}
-            />
-          ))}
-        </SvgLinearGradient>
-        <Mask id={maskId + '-m'} maskUnits="userSpaceOnUse">
-          <Rect x="0" y="0" width="1" height="1" fill={`url(#${maskId})`} />
-        </Mask>
-      </Defs>
-      <Rect x="0" y="0" width="1" height="1" fill={`url(#${hueId})`} mask={`url(#${maskId}-m)`} />
-    </Svg>
-  );
-}
-
-
-
 
 // Pagination dot touch geometry. The dots' visible size, colour and spacing
 // are fixed by design, so the hit area is the only thing allowed to grow —
@@ -285,6 +217,8 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
 
   const translateX = useSharedValue(0);
   const isAnimating = useSharedValue(false);
+  // 0 dark, 1 lit. Separate from the drag on purpose — see `lightIgnite`.
+  const ignite = useSharedValue(0);
 
   // Swapping the card is a tab change: the incoming card arrives on `drift`,
   // the outgoing one leaves on `ebb`. Exit is shorter than enter on purpose —
@@ -292,14 +226,29 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
   const isReduceMotionEnabled = useReducedMotion();
   const cardIn = timing(motionMs.drift, isReduceMotionEnabled);
   const cardOut = timing(motionMs.ebb, isReduceMotionEnabled, curve.sink);
+  // The light comes up on `tide`, the water's long clock, and it is the one
+  // thing here allowed to be that slow. The card lands first and the water
+  // behind it lights afterwards, which is what puts the source *behind* the
+  // pane rather than on it: near things arrive, far things take their time.
+  // `settle` rather than `current` — this is a value coming to rest, not an
+  // element entering, and the monotonic tail is what keeps the bloom from
+  // arriving in a rush and then creeping.
+  const lightIgnite = timing(motionMs.tide, isReduceMotionEnabled, curve.settle);
 
   const updateIndex = useCallback(
     (newIndex: number) => {
       setInternalIndex(newIndex);
+      // The neighbour changed, so the light is a different colour on a
+      // different side: it is re-lit rather than revealed. Restarting from
+      // zero is what stops it appearing fully formed the instant the card
+      // lands. Every path in — swipe, dot, assistive action — comes through
+      // here, so none of them can skip it.
+      ignite.value = 0;
+      ignite.value = withTiming(1, lightIgnite);
       const blockchain = blockchains[newIndex];
       onBlockchainChange?.(blockchain.network.blockchain, newIndex);
     },
-    [blockchains, onBlockchainChange]
+    [blockchains, onBlockchainChange, ignite, lightIgnite]
   );
 
   // Screen-reader chain switching: swipe gestures are invisible to assistive
@@ -383,9 +332,25 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
   // which jumps `translateX` a full screen width before floating it back —
   // spends its whole swap at zero. That is the frame where the light changes
   // both side and colour, and it is the frame nobody sees.
-  const edgeLightStyle = useAnimatedStyle(() => ({
-    opacity: 1 - Math.min(Math.abs(translateX.value) / EDGE_LIGHT_EXTINGUISH_PX, 1),
-  }));
+  // Two gates, and the dimmer wins. The drag is immediate — it has to be, it
+  // is hiding the frame where the light swaps side and colour. The ignition is
+  // slow. On a swipe both run: the drag gate is already climbing back while
+  // the ignition is still near zero, so what the eye follows is the slow one.
+  // On an abandoned swipe the ignition is untouched at 1 and the drag gate
+  // alone brings the light home at the card's own speed.
+  const edgeLightStyle = useAnimatedStyle(() => {
+    const drag = 1 - Math.min(Math.abs(translateX.value) / EDGE_LIGHT_EXTINGUISH_PX, 1);
+    return { opacity: Math.min(drag, ignite.value) };
+  });
+
+  // The first light of the session comes up the same way a switch does, so the
+  // home screen is never painted with it already there.
+  useEffect(() => {
+    ignite.value = withTiming(1, lightIgnite);
+    // Mount only. Re-firing this on a prop change would make an ambient state
+    // flash every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Which sides have a neighbour. With two chains this is one side or the
   // other; the light never claims a direction the swipe cannot go.
