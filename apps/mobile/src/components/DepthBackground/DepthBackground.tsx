@@ -130,6 +130,25 @@ const depthDriftOffset = makeMutable(0);
 let depthDriftRunners = 0;
 
 /**
+ * The tile the clock is currently travelling, or `0` when nothing is running.
+ *
+ * The refcount alone was not enough to decide whether to start the drift. A
+ * field arriving while another is already mounted inherits the phase in
+ * flight, which is the point — but only while the clock is travelling the tile
+ * that field wraps by. The travel is `0 → tile` and the wrap in the animated
+ * style folds by `tile`, so if the two are different numbers the field steps by
+ * the difference once per cycle. A rotation is the case that gets there: the
+ * tile is derived from the window's width, the effect re-runs on the new one,
+ * and the refcount never returns to 1, so the clock was left running the old
+ * tile with every field wrapping by the new one.
+ *
+ * Keyed on the geometry instead, the clock restarts exactly when it has to and
+ * never when it does not — and `run()` always resumes from the value in
+ * flight, so restarting is continuous rather than a reset.
+ */
+let depthDriftTile = 0;
+
+/**
  * Feed a `ScrollView`/`FlatList`'s offset to the water column, on the UI
  * thread. Screens that already own an `onScroll` callback can skip this and
  * assign `depthParallaxScroll.value` from it instead.
@@ -150,7 +169,35 @@ export interface DepthBackgroundProps {
   style?: ViewStyle;
 }
 
-export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, style }) => {
+/**
+ * The field, and it does not repaint.
+ *
+ * `React.memo` is load-bearing rather than an optimisation. A field's phase is
+ * a transform on a layer that is already composited (DESIGN.md §The water
+ * column) — but a *React* re-render of an `Animated.View` re-commits the style
+ * props React knows about, and what React knows about an animated style is the
+ * value captured at mount, not the phase the UI thread has since driven it to
+ * (`createAnimatedComponent/PropsFilter`: after the first render the style
+ * resolves to the initial-props map). It also rebuilds the field's whole Svg
+ * subtree, ~220 nodes, in the commit.
+ *
+ * That matters only where something re-renders the field, and exactly one
+ * place does: the wait paints its own water column over the ground already
+ * behind it (DESIGN.md §The wait), and the wait re-renders — it measures its
+ * frame and its emitter on mount, and it cycles a tip every few seconds for as
+ * long as it stands. The ground behind it re-renders for none of that. So the
+ * only field the user is looking at during a wait was the only one being
+ * re-committed, which is why the snow's jump read as coupled to the wait
+ * rather than to the water: it was.
+ *
+ * Memoised, a parent's re-render cannot reach the field at all. The field
+ * re-renders for the two things that genuinely change it — its own props, and
+ * the window's dimensions — and for nothing else.
+ */
+export const DepthBackground: React.FC<DepthBackgroundProps> = React.memo(function DepthBackground({
+  snow = true,
+  style,
+}: DepthBackgroundProps) {
   const { width, height } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
 
@@ -184,7 +231,10 @@ export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, s
     // resumes from the current value, so re-running it — on a resume, or after
     // a rotation changed the tile — is continuous rather than a reset.
     depthDriftRunners += 1;
-    if (depthDriftRunners === 1) run();
+    if (depthDriftTile !== tile) {
+      depthDriftTile = tile;
+      run();
+    }
 
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') run();
@@ -194,7 +244,10 @@ export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, s
     return () => {
       subscription.remove();
       depthDriftRunners -= 1;
-      if (depthDriftRunners === 0) cancelAnimation(drift);
+      if (depthDriftRunners === 0) {
+        cancelAnimation(drift);
+        depthDriftTile = 0;
+      }
     };
   }, [snow, reducedMotion, tile, cycleMs, drift]);
 
@@ -219,11 +272,7 @@ export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, s
       <LinearGradient colors={water.gradient} style={StyleSheet.absoluteFill} />
       {snow && (
         <Animated.View
-          style={[
-            styles.field,
-            { top: -HEADROOM_TILES * tile, height: copies * tile },
-            fieldStyle,
-          ]}
+          style={[styles.field, { top: -HEADROOM_TILES * tile, height: copies * tile }, fieldStyle]}
           pointerEvents="none"
         >
           <Svg
@@ -245,12 +294,7 @@ export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, s
                   halves *and* the whole floc would land on the same pixels
                   and that floc would sit at double opacity. */}
               <ClipPath id={SNOW_CLIP_ID}>
-                <Rect
-                  x="0"
-                  y="0"
-                  width={depthFieldTile.width}
-                  height={depthFieldTile.height}
-                />
+                <Rect x="0" y="0" width={depthFieldTile.width} height={depthFieldTile.height} />
               </ClipPath>
               {SNOW_HEROES.length > 0 && (
                 // The heroes' soft edge: peak at the token to `heroCoreStop`,
@@ -299,7 +343,7 @@ export const DepthBackground: React.FC<DepthBackgroundProps> = ({ snow = true, s
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

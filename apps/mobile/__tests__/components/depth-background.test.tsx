@@ -12,9 +12,15 @@
  * them against a mocked Reanimated.
  */
 import React from 'react';
+import { Text } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { Ellipse, RadialGradient, Use } from 'react-native-svg';
-import { useReducedMotion, useSharedValue, withRepeat } from 'react-native-reanimated';
+import {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+} from 'react-native-reanimated';
 import {
   depthFieldTileHeight,
   marineSnowTiled,
@@ -47,7 +53,7 @@ jest.mock('react-native-reanimated', () => {
     default: { View },
     makeMutable: mutable,
     useSharedValue: jest.fn(mutable),
-    useAnimatedStyle: (fn: () => unknown) => fn(),
+    useAnimatedStyle: jest.fn((fn: () => unknown) => fn()),
     useAnimatedScrollHandler: (fn: unknown) => fn,
     useReducedMotion: jest.fn(() => false),
     withTiming: (to: number) => to,
@@ -67,11 +73,13 @@ const mockedUseReducedMotion = useReducedMotion as jest.MockedFunction<typeof us
 
 const mockedWithRepeat = withRepeat as unknown as jest.Mock;
 const mockedUseSharedValue = useSharedValue as unknown as jest.Mock;
+const mockedUseAnimatedStyle = useAnimatedStyle as unknown as jest.Mock;
 
 describe('DepthBackground', () => {
   beforeEach(() => {
     mockedWithRepeat.mockClear();
     mockedUseSharedValue.mockClear();
+    mockedUseAnimatedStyle.mockClear();
   });
 
   afterEach(() => {
@@ -105,6 +113,66 @@ describe('DepthBackground', () => {
 
     render(<DepthBackground />);
     expect(mockedWithRepeat).toHaveBeenCalledTimes(2);
+  });
+
+  it('draws the same phase in both fields, whatever the wait does between them', () => {
+    // The wait paints its own water column over the ground already behind it
+    // (DESIGN.md §The wait), so during a wait there are two fields on screen
+    // and they have to be the same pixels. The clock is shared, which is what
+    // keeps their *phase* the same — but the wait is also the only thing in
+    // the app that re-renders a field: it measures its frame on mount and it
+    // cycles a tip every few seconds for as long as it stands, and a wait now
+    // stands for the whole floor. A re-render re-commits the animated view
+    // with the style React knows about, which is the phase captured at mount,
+    // not the phase the UI thread has since driven it to — so the field the
+    // user is actually looking at snapped back while the ground behind it did
+    // not. That is the jump, and it is why it read as coupled to the wait.
+    //
+    // The field must therefore be unreachable from its parent's renders: the
+    // wait may re-render as often as it likes and the water may not notice.
+    // The wait, standing over the ground, showing whichever tip is current.
+    const Wait = ({ tip }: { tip: number }) => (
+      <>
+        <Text>{tip}</Text>
+        <DepthBackground />
+      </>
+    );
+
+    // Mount order is the app's: the ground first, the wait over it.
+    const ground = (
+      <>
+        <DepthBackground />
+        <Wait tip={0} />
+      </>
+    );
+    const { rerender } = render(ground);
+
+    const phaseOf = (call: number) =>
+      (mockedUseAnimatedStyle.mock.results[call].value as { transform: [{ translateY: number }] })
+        .transform[0].translateY;
+
+    expect(mockedUseAnimatedStyle).toHaveBeenCalledTimes(2);
+    expect(phaseOf(1)).toBe(phaseOf(0));
+    // One clock, so one loop, however many fields are on screen.
+    expect(mockedWithRepeat).toHaveBeenCalledTimes(1);
+
+    // The wait does what a wait does — a tip lands, twice — and the water is
+    // not repainted for it.
+    rerender(
+      <>
+        <DepthBackground />
+        <Wait tip={1} />
+      </>
+    );
+    rerender(
+      <>
+        <DepthBackground />
+        <Wait tip={2} />
+      </>
+    );
+
+    expect(mockedUseAnimatedStyle).toHaveBeenCalledTimes(2);
+    expect(mockedWithRepeat).toHaveBeenCalledTimes(1);
   });
 
   it('stacks enough field to cover the screen plus the tile the offset can consume', () => {
