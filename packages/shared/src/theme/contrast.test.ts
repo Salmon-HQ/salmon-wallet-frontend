@@ -237,9 +237,13 @@ describe('contrast: the water column', () => {
   };
 
   const [rampTop, rampFloor] = water.gradient;
-  /** `water.snow` is `rgba(199, 211, 232, 0.12)`. */
+  /**
+   * Read out of `water.snow` rather than restated. A copy of the alpha here
+   * goes stale silently the first time the token is tuned, and then this
+   * suite is asserting the ceiling against a value nothing renders.
+   */
   const SNOW_HEX = '#C7D3E8';
-  const SNOW_ALPHA = 0.12;
+  const SNOW_ALPHA = Number(/,\s*([\d.]+)\s*\)/.exec(water.snow)?.[1]);
 
   it('the ramp starts on the ground the apps already paint', () => {
     // A different top stop would seam against every header, overlay and sheet

@@ -276,8 +276,15 @@ export const flesh = {
 export const water = {
   /** Ground ramp, top → bottom. Nearer water above, abyss below. */
   gradient: [neutral[950], neutral[1000]] as const,
-  /** Marine snow, brightest floc. Particle opacities scale this down. */
-  snow: 'rgba(199, 211, 232, 0.12)',
+  /**
+   * Marine snow, brightest floc. Particle opacities scale this down.
+   *
+   * Lowered from 0.12 (owner, on device): the field was reading as weather
+   * rather than as water. The contrast argument is unchanged in direction and
+   * only gets safer — 1.20:1 on the ramp's lightest stop against the 1.4:1
+   * ceiling a non-informational stroke is held to.
+   */
+  snow: 'rgba(199, 211, 232, 0.09)',
   /**
    * Cold caustic light — what water returns when it catches a highlight.
    *
