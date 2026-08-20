@@ -507,6 +507,18 @@ const SwapRouteVisualizationContent: React.FC<SwapRouteVisualizationProps> = ({
   const contentHeight = useSharedValue(0);
   const [measured, setMeasured] = useState(false);
 
+  /**
+   * The panel is a disclosure: it is closed until the row is asked to open.
+   * Building it on mount made every swap row in the list carry a second,
+   * larger row behind it — logos, a route, a summary block, a copy control —
+   * laid out only to be clipped to zero height. In a list that is the cost of
+   * the whole visible window, paid on the JS thread in the frames the sheet is
+   * rising, which is exactly where DESIGN.md's motion section says the thread
+   * must be free. Once opened it stays mounted, so reopening is instant.
+   */
+  const [everExpanded, setEverExpanded] = useState(expanded);
+  if (expanded && !everExpanded) setEverExpanded(true);
+
   // Handle content layout measurement
   const handleContentLayout = useCallback((event: LayoutChangeEvent) => {
     const { height } = event.nativeEvent.layout;
@@ -528,7 +540,10 @@ const SwapRouteVisualizationContent: React.FC<SwapRouteVisualizationProps> = ({
     const opacity = withTiming(expanded ? 1 : 0, expandTiming);
 
     return {
-      height: measured ? height : expanded ? undefined : 0,
+      // Unmeasured means the panel has just mounted on its first open: it
+      // holds at zero until the layout pass reports a height, and then rises
+      // to it, rather than appearing at full size for a frame.
+      height: measured ? height : 0,
       opacity,
       overflow: 'hidden',
     };
@@ -536,12 +551,15 @@ const SwapRouteVisualizationContent: React.FC<SwapRouteVisualizationProps> = ({
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
-      <View style={styles.content} onLayout={handleContentLayout}>
-        {transaction.swapRoute ? (
-          <DetailedRouteView transaction={transaction} />
-        ) : (
-          <SimpleRouteView transaction={transaction} />
-        )}
+      {/* Measuring is only meaningful once there is content: an empty panel
+          would otherwise report its own padding as the height to open to. */}
+      <View style={styles.content} onLayout={everExpanded ? handleContentLayout : undefined}>
+        {everExpanded &&
+          (transaction.swapRoute ? (
+            <DetailedRouteView transaction={transaction} />
+          ) : (
+            <SimpleRouteView transaction={transaction} />
+          ))}
       </View>
     </Animated.View>
   );

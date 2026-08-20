@@ -108,7 +108,32 @@ export function formatNumber(
   options: Intl.NumberFormatOptions,
   locale?: string
 ): string {
-  return new Intl.NumberFormat(resolveLocale(locale), options).format(value);
+  return numberFormatFor(resolveLocale(locale), options).format(value);
+}
+
+/**
+ * The formatters this module has already built, keyed by locale and options.
+ *
+ * Constructing an `Intl.NumberFormat` is roughly an order of magnitude dearer
+ * than formatting with one — it resolves a locale and builds a native
+ * formatter — and this module is the choke point every rendered figure passes
+ * through. A transaction row alone renders several, so a list pays the
+ * construction once per figure per render on the JS thread, during the same
+ * frames a sheet is animating open.
+ *
+ * The set of (locale, options) pairs is fixed by the call sites in this
+ * module, so the map is bounded by the number of number *roles* the contract
+ * defines, not by anything the user or the data can grow.
+ */
+const numberFormatters = new Map<string, Intl.NumberFormat>();
+
+function numberFormatFor(locale: string, options: Intl.NumberFormatOptions): Intl.NumberFormat {
+  const key = `${locale}|${JSON.stringify(options)}`;
+  const cached = numberFormatters.get(key);
+  if (cached) return cached;
+  const formatter = new Intl.NumberFormat(locale, options);
+  numberFormatters.set(key, formatter);
+  return formatter;
 }
 
 // ============================================================================
