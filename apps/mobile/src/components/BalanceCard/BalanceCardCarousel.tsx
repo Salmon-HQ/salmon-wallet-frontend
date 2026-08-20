@@ -22,7 +22,7 @@ import {
   semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback } from 'react';
+import React, { useCallback, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AccessibilityActionEvent,
@@ -35,6 +35,13 @@ import {
   View,
 } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Svg, {
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Mask,
+  Rect,
+  Stop,
+} from 'react-native-svg';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -53,6 +60,149 @@ import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
+
+// ============================================================================
+// The neighbour light
+// ============================================================================
+
+/**
+ * The edge light — what says there is another chain beside this one, and which.
+ *
+ * The carousel's only affordance was the dot row, which says *how many* and
+ * *which one*, but never *where*. A card with nothing at its edges reads as the
+ * whole surface rather than as one of several. This lights the side a
+ * neighbour is on, in that neighbour's own colour, so the edge answers both
+ * questions at once: something is over there, and here is what it is.
+ *
+ * **It rests lit** (owner, on device). DESIGN.md §Overview says light is an
+ * event and never a state, and this is a state — the amendment is owed if this
+ * is adopted, and it is not written yet because the reading is still being
+ * judged. What the rule was protecting is intact either way: this is not light
+ * as *hierarchy*. It does not say "this is important". It says "the surface
+ * continues in this direction", which is a fact about the layout, not an
+ * emphasis, and no amount of staring at it makes the balance look more urgent.
+ *
+ * It still goes dark for the one moment it has to. On a swipe the light is
+ * extinguished by the travel itself — opacity falls out of the drag distance —
+ * because the light does not *travel* between sides: the neighbour on the
+ * right becomes the neighbour on the left the instant a swipe lands, and both
+ * the side and the colour change in the same frame. The fade is what hides that
+ * swap, and it is derived rather than sequenced, so a swipe abandoned halfway
+ * simply lights back up on its own.
+ *
+ * **Colour is the chain's own** (owner, reversing the cold-light reading).
+ * DESIGN.md §Chain identity says identity is carried by an opaque mark or a
+ * labelled chip and never by tinting a surface; the argument for the exception
+ * is that this tints nothing the user is reading — it is not the current
+ * chain's identity, it is a pointer at an adjacent one, and the card you land
+ * on still carries the mark and the label that actually identify it. Two things
+ * to watch on device, both real:
+ *
+ * 1. Bitcoin's orange sits between `salmon-500` and `warning-500`. On a dark
+ *    ground at low alpha those three converge, and this app spends orange on
+ *    the primary action and on caution. If the edge reads as either, the
+ *    exception is not worth it.
+ * 2. With developer networks on, two neighbours can be the same chain
+ *    (mainnet beside devnet), and the hue cannot tell them apart. It does not
+ *    lie — there *is* a Solana over there — and the distinction is carried
+ *    where it always was: the pane itself is `SHALLOW_PANE` on a test network
+ *    and `DEEP_PANE` on mainnet, plus the network label on the card.
+ */
+const CHAIN_LIGHT: Record<BlockchainId, readonly string[]> = {
+  // The brand's own gradient, purple through blue to green.
+  solana: ['#9945FF', '#00D1FF', '#14F195'],
+  'solana-devnet': ['#9945FF', '#00D1FF', '#14F195'],
+  // One hue, and the easy case.
+  bitcoin: ['#F7931A'],
+  'bitcoin-testnet': ['#F7931A'],
+  ethereum: ['#627EEA'],
+  'ethereum-sepolia': ['#627EEA'],
+};
+
+/**
+ * Peak alpha at the outermost pixel. Band 0.14-0.30: below 0.14 a saturated
+ * hue still disappears into a near-black pane, above 0.30 the edge stops
+ * being light and becomes a painted border.
+ */
+const EDGE_LIGHT_ALPHA = 0.24;
+
+/**
+ * How far the light reaches inward, as a fraction of the card's width. Band
+ * 0.20-0.36. The ceiling is not taste: the balance figure is centred and wide,
+ * and past ~0.36 the two edges meet under it, which is the one place a wash is
+ * not allowed to go.
+ */
+const EDGE_LIGHT_REACH = 0.3;
+
+/**
+ * Where the fade spends its alpha along that reach. Front-loaded on purpose:
+ * most of the light lives in the outer third, so the strip reads as something
+ * spilling past the card's edge rather than as a gradient someone applied to
+ * the card.
+ */
+const EDGE_LIGHT_FALLOFF = [0, 0.32, 1];
+const EDGE_LIGHT_FALLOFF_ALPHA = [1, 0.38, 0];
+
+/**
+ * How much drag it takes to put the light out, in px. Shorter than
+ * `SWIPE_THRESHOLD` so the light is already gone by the time the swipe
+ * commits — the switch itself must happen in the dark.
+ */
+const EDGE_LIGHT_EXTINGUISH_PX = SWIPE_THRESHOLD * 0.6;
+
+/**
+ * One edge's light.
+ *
+ * Two gradients on perpendicular axes, which is why this is SVG and not two
+ * stacked `expo-linear-gradient`s: the colour runs *down* the edge and the
+ * alpha runs *inward* from it, and no single linear gradient can do both. A
+ * `<Mask>` composes them — the same construction `ScalesBackground` uses for
+ * its own fade, including the explicit `maskUnits`, which on iOS Fabric is
+ * what keeps the mask in user space instead of fraction space.
+ *
+ * `preserveAspectRatio="none"` so the 0-1 viewBox stretches to whatever slice
+ * of the card the strip occupies, at any screen width.
+ */
+function EdgeLight({ side, colors }: { side: 'left' | 'right'; colors: readonly string[] }) {
+  const rawId = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const hueId = `edge-hue-${rawId}`;
+  const maskId = `edge-mask-${rawId}`;
+  // The peak sits against the screen's outer edge, whichever side that is.
+  const fadeFrom = side === 'left' ? 0 : 1;
+
+  return (
+    <Svg width="100%" height="100%" viewBox="0 0 1 1" preserveAspectRatio="none">
+      <Defs>
+        <SvgLinearGradient id={hueId} x1="0" y1="0" x2="0" y2="1">
+          {colors.map((color, index) => (
+            <Stop
+              key={color}
+              offset={colors.length === 1 ? 0 : index / (colors.length - 1)}
+              stopColor={color}
+            />
+          ))}
+        </SvgLinearGradient>
+        <SvgLinearGradient id={maskId} x1={fadeFrom} y1="0" x2={1 - fadeFrom} y2="0">
+          {EDGE_LIGHT_FALLOFF.map((offset, index) => (
+            <Stop
+              key={offset}
+              offset={offset}
+              stopColor="#fff"
+              stopOpacity={EDGE_LIGHT_FALLOFF_ALPHA[index] * EDGE_LIGHT_ALPHA}
+            />
+          ))}
+        </SvgLinearGradient>
+        <Mask id={maskId + '-m'} maskUnits="userSpaceOnUse">
+          <Rect x="0" y="0" width="1" height="1" fill={`url(#${maskId})`} />
+        </Mask>
+      </Defs>
+      <Rect x="0" y="0" width="1" height="1" fill={`url(#${hueId})`} mask={`url(#${maskId}-m)`} />
+    </Svg>
+  );
+}
+
+
+
 
 // Pagination dot touch geometry. The dots' visible size, colour and spacing
 // are fixed by design, so the hit area is the only thing allowed to grow —
@@ -227,6 +377,30 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
     transform: [{ translateX: translateX.value }],
   }));
 
+  // Lit at rest, put out by the travel itself. No timer and no sequence: the
+  // opacity is a function of how far the card has been dragged, so an
+  // abandoned swipe lights back up on the way home for free, and the commit —
+  // which jumps `translateX` a full screen width before floating it back —
+  // spends its whole swap at zero. That is the frame where the light changes
+  // both side and colour, and it is the frame nobody sees.
+  const edgeLightStyle = useAnimatedStyle(() => ({
+    opacity: 1 - Math.min(Math.abs(translateX.value) / EDGE_LIGHT_EXTINGUISH_PX, 1),
+  }));
+
+  // Which sides have a neighbour. With two chains this is one side or the
+  // other; the light never claims a direction the swipe cannot go.
+  // The light is the *neighbour's* colour, not this card's — it points at what
+  // is over there. `chainLight` falls back to Solana's for an id the palette
+  // does not know, which is the same default the gradients already take.
+  const chainLight = (index: number) => {
+    const id = blockchains[index]?.network.blockchain as BlockchainId | undefined;
+    return (id && CHAIN_LIGHT[id]) || CHAIN_LIGHT.solana;
+  };
+  const hasLeftNeighbour = activeIndex > 0;
+  const hasRightNeighbour = activeIndex < blockchains.length - 1;
+  const leftNeighbourLight = chainLight(activeIndex - 1);
+  const rightNeighbourLight = chainLight(activeIndex + 1);
+
   // Get current blockchain data
   const currentBlockchain = blockchains[activeIndex];
   const currentBlockchainId = currentBlockchain?.network.blockchain || 'solana';
@@ -297,6 +471,27 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
         end={{ x: 0.5, y: 1.3 }}
         style={[styles.gradient, { paddingTop: contentPaddingTop }]}
       >
+        {/* Mounted outside the sliding content on purpose: the content is what
+            travels, so a light glued to it would leave the screen with the
+            card it belongs to. The light belongs to the frame. */}
+        {hasLeftNeighbour && (
+          <Animated.View
+            testID="balance-carousel-edge-light-left"
+            pointerEvents="none"
+            style={[styles.edgeLight, styles.edgeLightLeft, edgeLightStyle]}
+          >
+            <EdgeLight side="left" colors={leftNeighbourLight} />
+          </Animated.View>
+        )}
+        {hasRightNeighbour && (
+          <Animated.View
+            testID="balance-carousel-edge-light-right"
+            pointerEvents="none"
+            style={[styles.edgeLight, styles.edgeLightRight, edgeLightStyle]}
+          >
+            <EdgeLight side="right" colors={rightNeighbourLight} />
+          </Animated.View>
+        )}
         <GestureDetector gesture={panGesture}>
           <Animated.View style={[styles.content, animatedContentStyle]}>
             {/* Group 1: Logo + Network tag. No motif here — it belongs to
@@ -424,6 +619,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(spacing['2xl']),
     paddingBottom: vs(spacing.lg),
     overflow: 'hidden',
+  },
+  // Full height of the card, a fraction of its width, clipped by the
+  // gradient's own `overflow: hidden` — so the light takes the card's corner
+  // instead of squaring off inside it.
+  edgeLight: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: `${EDGE_LIGHT_REACH * 100}%`,
+  },
+  edgeLightLeft: {
+    left: 0,
+  },
+  edgeLightRight: {
+    right: 0,
   },
   content: {
     alignItems: 'center',

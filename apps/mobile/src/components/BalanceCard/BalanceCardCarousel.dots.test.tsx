@@ -51,6 +51,7 @@ jest.mock('react-native-reanimated', () => {
     useSharedValue: (value: unknown) => ({ value }),
     useAnimatedStyle: () => ({}),
     withTiming: (toValue: unknown) => toValue,
+    withSequence: (...steps: unknown[]) => steps[steps.length - 1],
     runOnJS: (fn: unknown) => fn,
     Easing: { bezier: () => () => 0 },
   };
@@ -59,7 +60,7 @@ jest.mock('react-native-reanimated', () => {
 jest.mock('react-native-gesture-handler', () => {
   const { View: RNView } = jest.requireActual('react-native');
   const chainable: Record<string, unknown> = {};
-  for (const method of ['onUpdate', 'onEnd']) {
+  for (const method of ['onBegin', 'onUpdate', 'onEnd', 'onFinalize']) {
     chainable[method] = () => chainable;
   }
   return {
@@ -145,5 +146,49 @@ describe('BalanceCardCarousel pagination dots', () => {
     expect(second.props.accessibilityLabel).toContain('Bitcoin');
     expect(second.props.accessibilityState.selected).toBe(false);
     expect(view.getByTestId('balance-carousel-dot-0').props.accessibilityState.selected).toBe(true);
+  });
+});
+
+
+describe('the neighbour light', () => {
+  const renderAt = (activeIndex: number) =>
+    render(<BalanceCardCarousel blockchains={BLOCKCHAINS} activeIndex={activeIndex} />);
+
+  it('lights only the sides a swipe can actually go', () => {
+    // First card: nothing to the left.
+    const first = renderAt(0);
+    expect(first.queryByTestId('balance-carousel-edge-light-left')).toBeNull();
+    expect(first.getByTestId('balance-carousel-edge-light-right')).toBeTruthy();
+    first.unmount();
+
+    // Middle: a neighbour each way.
+    const middle = renderAt(1);
+    expect(middle.getByTestId('balance-carousel-edge-light-left')).toBeTruthy();
+    expect(middle.getByTestId('balance-carousel-edge-light-right')).toBeTruthy();
+    middle.unmount();
+
+    // Last card: nothing to the right.
+    const last = renderAt(2);
+    expect(last.getByTestId('balance-carousel-edge-light-left')).toBeTruthy();
+    expect(last.queryByTestId('balance-carousel-edge-light-right')).toBeNull();
+  });
+
+  it('leaves the middle of the card clear — the two edges may never meet', () => {
+    const view = renderAt(1);
+    const widthOf = (testID: string) =>
+      (StyleSheet.flatten(view.getByTestId(testID).props.style) as { width?: string }).width;
+
+    const left = parseFloat(String(widthOf('balance-carousel-edge-light-left')));
+    const right = parseFloat(String(widthOf('balance-carousel-edge-light-right')));
+
+    // The balance figure is centred and wide. Two edges that overlap stop
+    // being edges and become a wash under the one number on the screen.
+    expect(left + right).toBeLessThan(100);
+  });
+
+  it('never takes a touch — it is light, not a target', () => {
+    const view = renderAt(1);
+    expect(view.getByTestId('balance-carousel-edge-light-left').props.pointerEvents).toBe('none');
+    expect(view.getByTestId('balance-carousel-edge-light-right').props.pointerEvents).toBe('none');
   });
 });
