@@ -112,7 +112,7 @@ const ReviewValue = styled(Typography)({
 });
 
 /**
- * The Surfacing receipt is written for a full page; inside a dialog it needs
+ * The receipt is written for a full page; inside a dialog it needs
  * a stage with real height so the report reads from the top and the actions
  * sit at the bottom edge.
  */

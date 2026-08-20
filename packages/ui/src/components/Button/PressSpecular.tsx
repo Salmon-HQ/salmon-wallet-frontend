@@ -5,8 +5,7 @@
  * DESIGN.md §Shadow Vocabulary: "a 90ms 12%-opacity radial at the touch point,
  * 120px radius, `screen` blend, in a cold `#9FE0EF`. The only place a cold
  * light color touches a control, and it is transient." The ink is
- * `semantic.water.light` — the token the caustic band and the wait's crest
- * share.
+ * `semantic.water.light` — the token the wait's crest shares.
  *
  * Geometry matches mobile: a 240px circle whose falloff is the gradient
  * itself, centred on the pointer via two CSS variables the control sets in

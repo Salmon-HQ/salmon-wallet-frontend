@@ -16,13 +16,14 @@ import React, { useId } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
+import { semantic } from '@salmon/shared';
 
 /** DESIGN.md's 120px radius. */
 export const SPECULAR_RADIUS = 120;
 /** DESIGN.md's 12%. */
 export const SPECULAR_OPACITY = 0.12;
-/** The cold light. No theme token exists for it; see the caustic band. */
-const SPECULAR_INK = '#9FE0EF';
+/** The cold light — the token the wait's crest shares. */
+const SPECULAR_INK = semantic.water.light;
 
 const SIZE = SPECULAR_RADIUS * 2;
 

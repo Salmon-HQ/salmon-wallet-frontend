@@ -1,8 +1,8 @@
 /**
- * The wait, after the choreography: no spinning ring, no tips, and a descent
- * that exists under reduced motion too — a parallel mapping, not a hole.
+ * The wait, after the choreography: no spinning ring and no descent — the
+ * wave is what says the app is working, and the tips are back beside it.
  *
- * The mark is back (product decision, 2026-08) as the wave's emitter, and it is
+ * The mark is back as the wave's emitter, and it is
  * opt-in with the wave: a wait with nothing in the air does not get one. It
  * *sinks* rather than pulses, and the front is thrown at the bottom of the
  * sink — and that arithmetic is tested in `@salmon/shared`.

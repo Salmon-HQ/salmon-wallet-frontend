@@ -12,8 +12,7 @@
  * with `runtimeVersion.policy: appVersion`) for 3px of displacement.
  *
  * This module owns the arithmetic and nothing else, so the choreography is
- * testable without a renderer or a frame clock — the same pattern the mobile
- * Surfacing already uses in `surfacing.ts`. Each platform draws it twice:
+ * testable without a renderer or a frame clock. Each platform draws it twice:
  * Reanimated in `apps/mobile`, Emotion keyframes in `packages/ui`.
  *
  * The front no longer carries passengers. Product, 2026-08: *"Unlocking Wallet

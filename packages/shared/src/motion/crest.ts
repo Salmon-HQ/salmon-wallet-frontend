@@ -207,9 +207,8 @@ export const CREST_FADE_FROM = 0.85;
  * `water.light`, the cold caustic ink — **not** the brand salmon it was.
  * Product, 2026-08: *"las ondas siguen siendo naranjas."* A salmon ring crossing
  * the screen reads as a brand element travelling; this is light returning off
- * water, so it takes the colour of the material. It is the same ink The
- * Surfacing's caustic band and the press specular already use, which is where
- * DESIGN.md licenses cold light.
+ * water, so it takes the colour of the material. It is the same ink the press
+ * specular uses, which is where DESIGN.md licenses cold light (§The wait).
  */
 export const CREST_LIGHT_COLOR = water.light;
 

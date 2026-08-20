@@ -50,8 +50,8 @@ vi.mock('@salmon/shared', async () => ({
     flesh: { band: '#FFF1EE' },
     water: { light: '#9FE0EF' },
   },
-  // The Surfacing reads the motion vocabulary, the caustic band draws the
-  // scales tile, and the shared PrimaryButton now carries the press specular.
+  // The scales tile and the motion vocabulary are read by the ground the
+  // receipt sits on; the shared PrimaryButton carries the press specular.
   seigaihaTile: { width: 120, height: 60 },
   seigaihaTiledPaths: ['M0 0h1v1H0z'],
   motionMs: {

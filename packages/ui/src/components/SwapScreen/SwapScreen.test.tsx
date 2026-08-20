@@ -5,7 +5,7 @@
  * float"). At the confirm tap the review leaves immediately — no button loader
  * — and the canonical wave wait holds the screen while sign/submit/confirm (and
  * the settle) run. The receipt is allowed in only after the wave's own exit has
- * reported, so The Surfacing plays once, never over an unconfirmed
+ * reported, so the receipt arrives once, never over an unconfirmed
  * transaction, and never twice.
  */
 import React from 'react';

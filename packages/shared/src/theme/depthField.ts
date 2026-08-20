@@ -175,7 +175,7 @@ export const depthFieldTile = { width: 440, height: 960 } as const;
  * second and it has travelled 1.5 px, which is below the threshold for a
  * low-contrast target with no reference nearby. It is also ~1/60 of the
  * ~6°/s at which smooth motion starts to capture attention on its own, which
- * is the value that matters most here: The Surfacing is the system's only
+ * is the value that matters most here: the wave's ring is the system's only
  * light event and ambient motion must not compete with it.
  *
  * The speed is in **screen pixels**, not tile units, so it is the same

@@ -281,14 +281,14 @@ export const water = {
   /**
    * Cold caustic light — what water returns when it catches a highlight.
    *
-   * The one cold ink this system allows, and it was already in the app twice
-   * before it had a name: The Surfacing's caustic band and the press specular
-   * are both `#9FE0EF` hardcoded in `apps/mobile`. It is a token now because
-   * the wait's crest is the third use, and three copies of a colour is drift
-   * waiting to happen.
+   * The one cold ink this system allows. It was promoted to a token when the
+   * wait's crest became its third consumer and three copies of a literal is
+   * drift waiting to happen; the caustic band that was one of the three has
+   * since been deleted with the receipt's entrance, so the live consumers are
+   * the press specular and the crest (DESIGN.md §The wait).
    *
-   * It is deliberately **not** `accent.ink`. Product, 2026-08: *"las ondas
-   * siguen siendo naranjas."* Salmon on a travelling ring reads as a brand
+   * It is deliberately **not** `accent.ink` (DESIGN.md §The wait: *"las ondas
+   * siguen siendo naranjas"*). Salmon on a travelling ring reads as a brand
    * element crossing the screen; the crest is light returning off water, so it
    * takes the colour of the material rather than of the company.
    */

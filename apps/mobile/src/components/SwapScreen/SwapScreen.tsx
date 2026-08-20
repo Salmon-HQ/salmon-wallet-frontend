@@ -127,7 +127,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   // (LoadingScreen, the app's waiting language) holds while sign/submit/
   // confirm runs and, for a Jupiter swap, while the indexer settles. The wait
   // then exits on its last wave (useWaitExit), and only once the water is
-  // calm does the receipt mount, so The Surfacing plays exactly once — never
+  // calm does the receipt mount, so the receipt arrives exactly once — never
   // over an unconfirmed transaction, and never twice.
   const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
   // Render the wave while the outcome is pending, and keep it through its own
@@ -138,9 +138,10 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   // Step changes speak the sink and the float: the outgoing step sinks as its
   // light goes, the incoming one floats up into place. The ground under them —
   // DepthBackground, ScalesBackground — is mounted outside the steps and never
-  // travels. The success step is the one exception: its entrance is The
-  // Surfacing, and the verb must not double it — the wave wait's exit is the
-  // only thing that precedes it, so it mounts with no entering of its own.
+  // travels. The success step is the one exception: the receipt arrives whole
+  // (DESIGN.md §The receipt), so the verb has nothing to double — the wave
+  // wait's exit is the only thing that precedes it, and it mounts with no
+  // entering of its own.
   // Under reduce motion the helpers return undefined and every step change is
   // an instant cut.
   //
@@ -297,7 +298,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
               shell — and with it the water column the shell paints — so it
               mounts the same ground the DOM task steps sit over: the depth
               ramp, the marine snow, and the deep-field scales. The receipt is
-              not a wall; The Surfacing needs water to surface out of. */}
+              not a wall; it arrives over the same water as everything else. */}
           <DepthBackground />
           <ScalesBackground variant="deepField" />
           {stalledBanner}

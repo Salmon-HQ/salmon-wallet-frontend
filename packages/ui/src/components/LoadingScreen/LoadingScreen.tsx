@@ -4,9 +4,9 @@
  * Uses Emotion keyframes + styled() for consistency with the rest of @salmon/ui.
  *
  * The choreography, and the one idea it is built on: **the wait goes down and
- * the success comes up.** The Surfacing is the only climax this system has, so
- * a wait may not compete with it — it is given the opposite *direction*
- * instead, which costs nothing and makes the two screens read as one sequence.
+ * the success comes up.** A wait may not compete with the receipt — it is
+ * given the opposite *direction* instead, which costs nothing and makes the two
+ * screens read as one sequence.
  *
  * - **The mark is the emitter**, and it is pinned to the centre of whatever this
  *   overlay occupies, at `MARK_SIZE`. A wave with no visible source is four
@@ -374,10 +374,11 @@ const Emitter = styled('div')<{ $waves: boolean }>(({ $waves }) => ({
  * which is why a band costs what the hairline cost.
  *
  * This is a light event during a wait, which §Overview used to forbid outright
- * ("one light event, and it is The Surfacing"). That rule has been amended in
- * DESIGN.md rather than quietly broken here. The light is still rationed — it is
- * salmon ink at partial alpha, it lives only while the wait does, and it travels
- * outward and down while The Surfacing travels up.
+ * ("one light event"). That rule has been amended in DESIGN.md rather than
+ * quietly broken here: the ring is now the one event the system allows. The
+ * light is still rationed — cold `water.light` ink at low alpha, alive only
+ * while the wait is, travelling outward and down, and gone before the receipt
+ * mounts.
  */
 const Crest = styled('div')<{ $alpha: number; $lagMs: number; $waves: boolean }>(
   ({ $alpha, $lagMs, $waves }) => ({

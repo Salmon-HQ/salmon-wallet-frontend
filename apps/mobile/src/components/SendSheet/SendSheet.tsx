@@ -271,7 +271,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   //
   // The success step is the one exception on the arriving side. The receipt
   // owns its entrance — its bands float in one after another in reading order
-  // (DESIGN.md §The Surfacing) — so floating the whole step in as a unit would
+  // (DESIGN.md §The receipt) — so floating the whole step in as a unit would
   // make it arrive twice, once as a block and once band by band. The
   // confirmation still sinks away under it; what replaces it is the receipt's
   // own sequence.

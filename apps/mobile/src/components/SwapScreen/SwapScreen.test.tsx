@@ -353,7 +353,7 @@ describe('SwapScreen compuerta signal', () => {
  * The sink and the wave. At the confirm tap the review sinks immediately —
  * no button loader, no frozen review — and the canonical wave wait holds
  * while sign/submit/confirm (and the settle) run. The receipt is allowed in
- * only after the wave's own exit has reported, so The Surfacing plays once,
+ * only after the wave's own exit has reported, so the receipt arrives once,
  * never over an unconfirmed transaction, and never twice.
  */
 describe('SwapScreen confirm choreography — sink, wave, float', () => {

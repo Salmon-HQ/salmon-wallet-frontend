@@ -92,7 +92,7 @@ export function SwapScreen(props: SwapScreenProps): React.ReactElement {
   // immediately — no button loader — and the canonical wave wait holds the
   // screen while sign/submit/confirm runs and, for a Jupiter swap, while the
   // indexer settles. It then leaves on its own last wave (`useWaitExit`), and
-  // only once the water is calm does the receipt mount, so The Surfacing plays
+  // only once the water is calm does the receipt mount, so the receipt arrives
   // exactly once — never over an unconfirmed transaction, and never twice.
   const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
   // Keep the wave through its own exit on the way to the receipt. A failure is

@@ -71,6 +71,7 @@ jest.mock('@salmon/shared', () => ({
     surface: { crest: '#1B2233' },
     text: { primary: '#EDF1F7', disabled: '#6F7B95' },
     flesh: { band: '#FFF1EE' },
+    water: { light: '#9FE0EF' },
   },
   fleshTile: { width: 380, height: 40 },
   fleshFills: [],

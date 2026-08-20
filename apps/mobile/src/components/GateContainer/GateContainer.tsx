@@ -103,9 +103,9 @@ export function GateContainer({
   const headerContentOpacity = useSharedValue(state === 'collapsed' ? 1 : 0);
 
   // The gate is a sheet: it presents on `rise` and recedes on `ebb`. It ran at
-  // 800ms, which is longer than The Surfacing — the one thing in the app
-  // allowed to take that kind of time. The header swapping under it is a state
-  // change in place, so it crossfades on `swell`.
+  // 800ms, longer than `tide` — and nothing in the app is allowed to take that
+  // kind of time. The header swapping under it is a state change in place, so
+  // it crossfades on `swell`.
   const isReduceMotionEnabled = useReducedMotion();
   const slideIn = timing(motionMs.rise, isReduceMotionEnabled);
   const slideOut = timing(motionMs.ebb, isReduceMotionEnabled, curve.sink);

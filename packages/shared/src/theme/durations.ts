@@ -175,7 +175,7 @@ export const motionDuration = {
   rise: `${motionMs.rise}ms`,
   /** 420ms — route transition */
   route: `${motionMs.route}ms`,
-  /** 720ms — The Surfacing, and nothing else */
+  /** 720ms — the water's long clock; see `motionMs.tide` */
   tide: `${motionMs.tide}ms`,
 } as const;
 

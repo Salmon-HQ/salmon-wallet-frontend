@@ -36,9 +36,8 @@ import type { BalanceCardProps, BlockchainId } from './types';
  * The card is an opaque pane suspended in the column. Unlit it reads as a grey
  * rectangle, because a pane at depth with no light on it is exactly that. This
  * layer gives it the water's own light rather than the brand's: `water.light`
- * (`#9FE0EF`), the cold caustic ink The Surfacing's band and the press specular
- * already spend. Same rgba literal the two `ScalesBackground`s use for the
- * caustic stroke — the token is the source of truth, the literal is the
+ * (`#9FE0EF`), the cold caustic ink the press specular and the wave's crest
+ * already spend — the token is the source of truth, the literal below is the
  * platform's spelling of it.
  *
  * Two objections had to be answered before this could be light at all.
@@ -55,7 +54,7 @@ import type { BalanceCardProps, BlockchainId } from './types';
  *    reads against, and the two together model the card as a solid object.
  * 2. DESIGN.md refuses "ambient light shafts or resting caustics" and holds
  *    that light is an event, never a state. That refusal is about the *water* —
- *    the column must not glow, or The Surfacing stops meaning anything. This is
+ *    the column must not glow, or the wave's ring stops meaning anything. This is
  *    not the medium emitting; it is a surface's specularity, a material
  *    property in the same class as the thermocline's own frosted texture. It
  *    stays inside the card, it is static, and it never brightens: nothing about

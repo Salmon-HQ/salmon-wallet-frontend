@@ -92,6 +92,7 @@ jest.mock('@salmon/shared', () => ({
     status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
     state: { hover: 'rgba(199,211,232,0.06)', press: 'rgba(199,211,232,0.10)' },
     flesh: { band: '#FFF1EE' },
+    water: { light: '#9FE0EF' },
   },
   sanitizeDecimalInput: (text: string) => text.replace(/,/g, '.'),
   borderRadius: { lg: 16, sm: 8, button: 16, badge: 12 },

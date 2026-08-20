@@ -960,7 +960,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       {/* Steps inside a sheet do not speak the sink and the float: the sheet
           itself is the thing that rises and ebbs, and a step sinking inside it
           is the verb said twice. The flow keeps its own sliding-step
-          mechanism; the success screen keeps The Surfacing as its entrance. */}
+          mechanism; the success screen arrives whole, with no entrance. */}
       {(step === 'detail' ||
         step === 'send' ||
         step === 'review' ||

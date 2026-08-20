@@ -2,8 +2,8 @@
  * LoadingScreen — the wait, on the app's own ground. Native twin of
  * `packages/ui/src/components/LoadingScreen`; read that file's header for the
  * argument, which is one sentence: **the wait goes down and the success comes
- * up.** The Surfacing is the only climax this system has, so the wait is given
- * the opposite direction rather than a competing one.
+ * up.** The wait is given the direction opposite to the receipt's arrival
+ * rather than a competing one.
  *
  * - **The mark is the emitter**, and it is nailed to the centre of whatever the
  *   wait occupies, at `MARK_SIZE`. A front with no visible source reads as
