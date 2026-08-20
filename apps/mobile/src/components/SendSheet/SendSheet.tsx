@@ -146,6 +146,21 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     handleClose();
   }, [successTxId, onSuccess, handleClose]);
 
+  // The flow's step order, and from it the only honest answer to "is there a
+  // step behind this one?". Keying the back control on the sequence rather
+  // than on a chain name means any chain that skips token selection gets a
+  // correct header for free — the same reasoning that took the chevrons off
+  // the settings rows in DESIGN.md §Motion: an affordance that promises a
+  // step that does not exist is worse than no affordance.
+  const stepSequence = useMemo<SendStep[]>(
+    () =>
+      skipTokenSelect
+        ? ['address-amount', 'confirmation']
+        : ['token-select', 'address-amount', 'confirmation'],
+    [skipTokenSelect]
+  );
+  const previousStep: SendStep | undefined = stepSequence[stepSequence.indexOf(step) - 1];
+
   // Handle Android back button (step-aware)
   useEffect(() => {
     if (Platform.OS !== 'android' || !visible) return;
@@ -158,18 +173,18 @@ export const SendSheet: React.FC<SendSheetProps> = ({
       }
       if (step === 'success') {
         handleSuccessContinue();
-      } else if (step === 'confirmation') {
-        setStep('address-amount');
-      } else if (step === 'address-amount' && !skipTokenSelect) {
-        setStep('token-select');
+      } else if (previousStep) {
+        setStep(previousStep);
       } else {
+        // Nothing behind the first step: the hardware back leaves the sheet,
+        // which is a destination the system gesture always has.
         handleClose();
       }
       return true;
     });
 
     return () => backHandler.remove();
-  }, [visible, step, skipTokenSelect, handleClose, handleSuccessContinue, isSending]);
+  }, [visible, step, previousStep, handleClose, handleSuccessContinue, isSending]);
 
   // Step navigation handlers
   const handleSelectToken = useCallback((token: SendToken) => {
@@ -200,26 +215,16 @@ export const SendSheet: React.FC<SendSheetProps> = ({
 
   // Back button handler for the header
   const handleBackPress = useCallback(() => {
-    if (isSending) return;
+    if (isSending || !previousStep) return;
     if (step === 'confirmation') {
       handleBackToAddressAmount();
-    } else if (step === 'address-amount') {
-      if (skipTokenSelect) {
-        handleClose();
-      } else {
-        handleBackToTokenSelect();
-      }
+    } else {
+      setStep(previousStep);
     }
-  }, [
-    step,
-    skipTokenSelect,
-    handleBackToAddressAmount,
-    handleBackToTokenSelect,
-    handleClose,
-    isSending,
-  ]);
+  }, [step, previousStep, handleBackToAddressAmount, isSending]);
 
-  const showBackButton = (step !== 'token-select' || skipTokenSelect) && !isSending;
+  // Drawn only when the step it would return to exists.
+  const showBackButton = previousStep !== undefined && !isSending;
   const showHeader = step !== 'success';
 
   const headerContent = (
