@@ -142,6 +142,72 @@ export interface ApiClientConfig {
 // ============================================================================
 
 /**
+ * Longest `Retry-After` we will sleep through before handing the error to the
+ * caller. Beyond this the user is better served by an error they can act on
+ * than by a spinner that hides a minute-long wait.
+ */
+const MAX_RETRY_AFTER_MS = 5_000;
+
+/**
+ * Reads a `Retry-After` header expressed in seconds (what the backend's rate
+ * limiter sends) and returns it in milliseconds, or null when it is absent,
+ * unparseable, or longer than we are willing to wait.
+ */
+export function parseRetryAfter(headers: unknown): number | null {
+  const raw =
+    headers && typeof headers === 'object'
+      ? ((headers as Record<string, unknown>)['retry-after'] ??
+        (headers as Record<string, unknown>)['Retry-After'])
+      : undefined;
+
+  const seconds = Number(raw);
+  if (!Number.isFinite(seconds) || seconds <= 0) return null;
+
+  const ms = seconds * 1000;
+  return ms <= MAX_RETRY_AFTER_MS ? ms : null;
+}
+
+/**
+ * How long to wait before retrying a failed request, or null to give up.
+ *
+ * Only idempotent (GET) requests are retried, and only for failures a retry
+ * can plausibly fix: no response at all (status 0 — DNS, TLS, dropped
+ * connection, timeout), a 5xx, or a 429 from the backend's per-IP rate
+ * limiter.
+ *
+ * A 429 waits exactly as long as the server asked. Retrying earlier only
+ * consumes another slot in the same window, and a rate limiter that answers
+ * with `Retry-After` is telling us something more precise than our own
+ * backoff curve knows. Without a usable hint we do not retry at all, for the
+ * same reason.
+ *
+ * @returns delay in milliseconds, or null when the request must not be retried
+ */
+export function resolveRetryDelay({
+  method,
+  status,
+  attempt,
+  retries,
+  headers,
+}: {
+  method?: string;
+  status: number;
+  attempt: number;
+  retries: number;
+  headers?: unknown;
+}): number | null {
+  if (method?.toLowerCase() !== 'get') return null;
+  if (attempt >= retries) return null;
+
+  if (status === 429) return parseRetryAfter(headers);
+  if (status !== 0 && status < 500) return null;
+
+  // Jittered exponential backoff, so a backend hiccup does not turn every
+  // client into a synchronized retry storm.
+  return 500 * 2 ** attempt + Math.random() * 250;
+}
+
+/**
  * Create a configured axios instance with interceptors
  */
 export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
@@ -203,24 +269,34 @@ export function createApiClient(config: ApiClientConfig = {}): AxiosInstance {
   );
 
   // Bounded retry for idempotent requests that failed without a response
-  // (status 0: DNS, TLS, dropped connection, timeout) or with a 5xx. Backoff
-  // with jitter so a backend hiccup does not turn every client into a
-  // synchronized retry storm.
+  // (status 0: DNS, TLS, dropped connection, timeout), with a 5xx, or with a
+  // 429. Backoff with jitter so a backend hiccup does not turn every client
+  // into a synchronized retry storm.
+  //
+  // 429 is the backend's per-IP rate limiter, which now enforces rather than
+  // only counting. It answers with `Retry-After` in seconds, so that value is
+  // honoured instead of the generic backoff: retrying earlier than the server
+  // asked only burns another slot in the same window. The wait is still
+  // capped, because a long Retry-After is better surfaced to the user than
+  // slept through behind a spinner.
   client.interceptors.response.use(undefined, async (error: AxiosError<ApiErrorResponse>) => {
     const config = error.config as
       (InternalAxiosRequestConfig & { _retryCount?: number }) | undefined;
-    const method = config?.method?.toLowerCase();
-    const status = error.response?.status ?? 0;
-    const retryable = method === 'get' && (status === 0 || status >= 500);
-    const attempt = config?._retryCount ?? 0;
+    if (!config) return Promise.reject(error);
 
-    if (!config || !retryable || attempt >= retries) {
-      return Promise.reject(error);
-    }
+    const attempt = config._retryCount ?? 0;
+    const delay = resolveRetryDelay({
+      method: config.method,
+      status: error.response?.status ?? 0,
+      attempt,
+      retries,
+      headers: error.response?.headers,
+    });
+
+    if (delay === null) return Promise.reject(error);
 
     config._retryCount = attempt + 1;
-    const backoff = 500 * 2 ** attempt + Math.random() * 250;
-    await new Promise((resolve) => setTimeout(resolve, backoff));
+    await new Promise((resolve) => setTimeout(resolve, delay));
     return client.request(config);
   });
 
