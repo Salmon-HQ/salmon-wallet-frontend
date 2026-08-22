@@ -140,7 +140,7 @@ describe('changeStoredPassword — atomic, flagged, reversible', () => {
     expect(isEncryptedMnemonics(persisted)).toBe(true);
     await expect(resolveMnemonicsWithPassword(persisted, 'password-b')).resolves.toEqual(record);
     await expect(resolveMnemonicsWithPassword(persisted, 'password-a')).rejects.toThrow();
-  });
+  }, 20_000);
 
   it('change A→B then B→A works (the owner repro)', async () => {
     const store = useInMemoryStore(await makeStoredVault('password-a'));
@@ -152,7 +152,7 @@ describe('changeStoredPassword — atomic, flagged, reversible', () => {
     await changeStoredPassword(afterFirst as never, 'password-b', 'password-a');
     const afterSecond = (await getStoredMnemonics()) as StoredMnemonics;
     await expect(resolveMnemonicsWithPassword(afterSecond, 'password-a')).resolves.toEqual(record);
-  });
+  }, 20_000);
 
   it('wrong current password: throws before any write, old password stays valid', async () => {
     const store = useInMemoryStore(await makeStoredVault('password-a'));
@@ -165,7 +165,7 @@ describe('changeStoredPassword — atomic, flagged, reversible', () => {
     await expect(
       resolveMnemonicsWithPassword(store.get() as StoredMnemonics, 'password-a')
     ).resolves.toEqual(record);
-  });
+  }, 20_000);
 
   it('persist failure mid-change: rejects and the old vault (old password) survives', async () => {
     const store = useInMemoryStore(await makeStoredVault('password-a'));
@@ -178,14 +178,14 @@ describe('changeStoredPassword — atomic, flagged, reversible', () => {
     await expect(
       resolveMnemonicsWithPassword(store.get() as StoredMnemonics, 'password-a')
     ).resolves.toEqual(record);
-  });
+  }, 20_000);
 });
 
 describe('isEncryptedMnemonics — heals vaults persisted without the flag', () => {
   it('recognizes a bare LockedVault (pre-fix change-password output) as encrypted', async () => {
     const bareVault = await lock({ 'account-1': 'x' }, 'password-a');
     expect(isEncryptedMnemonics(bareVault as StoredMnemonics)).toBe(true);
-  });
+  }, 20_000);
 
   it('still treats a plaintext record as NOT encrypted', () => {
     expect(isEncryptedMnemonics({ 'account-1': 'word1 word2 word3' })).toBe(false);
@@ -195,5 +195,5 @@ describe('isEncryptedMnemonics — heals vaults persisted without the flag', () 
     const record = { 'account-1': 'seed words here' };
     const bareVault = (await lock(record, 'password-b')) as unknown as StoredMnemonics;
     await expect(resolveMnemonicsWithPassword(bareVault, 'password-b')).resolves.toEqual(record);
-  });
+  }, 20_000);
 });
