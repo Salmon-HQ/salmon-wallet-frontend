@@ -142,8 +142,7 @@ export const shadowsCSS = {
    * (`MIN_INSET_BOX_SHADOW_SDK_VERSION`); below that the bezel is absent and
    * nothing else changes.
    */
-  bezel:
-    'inset 0 1px 0 rgba(226, 236, 255, 0.14), inset 0 -1px 0 rgba(3, 6, 12, 0.50)',
+  bezel: 'inset 0 1px 0 rgba(226, 236, 255, 0.14), inset 0 -1px 0 rgba(3, 6, 12, 0.50)',
   /** Button / floating CTA shadow */
   button: '0 0 12px rgba(0, 0, 0, 0.64)',
 } as const;

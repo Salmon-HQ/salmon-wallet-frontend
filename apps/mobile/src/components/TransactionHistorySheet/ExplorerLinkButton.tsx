@@ -18,7 +18,6 @@ import {
   type NetworkEnvironment,
   fontFamilyNative,
   type ExplorerWithKey,
-
   semantic,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';

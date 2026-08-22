@@ -94,7 +94,12 @@ jest.mock('@salmon/shared', () => ({
   },
   fontSize: { sm: 14, bodyLg: 18, base: 16, headline: 24 },
   borderRadius: { badge: 12, iconContainer: 18, button: 16 },
-  fontFamilyNative: { bold: 'System', semiBold: 'DMSansSemiBold', medium: 'System', regular: 'System' },
+  fontFamilyNative: {
+    bold: 'System',
+    semiBold: 'DMSansSemiBold',
+    medium: 'System',
+    regular: 'System',
+  },
   gradients: { primaryButton: { colors: ['#0f0'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } },
   shadows: { imageHero: {} },
   componentSizes: { nftImageMaxWidth: 200, sheetFadeGradientHeight: 40 },

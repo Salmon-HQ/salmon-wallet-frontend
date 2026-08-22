@@ -148,7 +148,6 @@ describe('BalanceCardCarousel pagination dots', () => {
   });
 });
 
-
 describe('the neighbour light', () => {
   const renderAt = (activeIndex: number) =>
     render(<BalanceCardCarousel blockchains={BLOCKCHAINS} activeIndex={activeIndex} />);

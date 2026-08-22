@@ -238,9 +238,7 @@ describe('TransactionSuccessScreen', () => {
       );
       // The column's own bottom padding was a second reservation under the
       // primary; the action band owns that edge now.
-      expect(getComputedStyle(screen.getByTestId('tx-success-screen')).paddingBottom).toBe(
-        '0px'
-      );
+      expect(getComputedStyle(screen.getByTestId('tx-success-screen')).paddingBottom).toBe('0px');
     });
 
     it('replaces the status sentence with the graphic on an exchange', () => {

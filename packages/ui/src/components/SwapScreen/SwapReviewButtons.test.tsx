@@ -103,7 +103,9 @@ describe('SwapReviewButtons — the pair stacks, full width', () => {
     // "Refresh Estimate" — and the height stays pinned on both buttons, so the
     // stack reserves the same space whichever one it carries.
     for (const confirmLabel of ['Confirmar', 'Actualizar cotizacion']) {
-      render(<SwapReviewButtons onBack={vi.fn()} onConfirm={vi.fn()} confirmLabel={confirmLabel} />);
+      render(
+        <SwapReviewButtons onBack={vi.fn()} onConfirm={vi.fn()} confirmLabel={confirmLabel} />
+      );
       for (const testID of ['swap-back-button', 'swap-confirm-button']) {
         const button = screen.getByTestId(testID) as HTMLButtonElement;
         expect(button.style.width).toBe('100%');

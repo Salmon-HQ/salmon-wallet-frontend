@@ -30,7 +30,11 @@ vi.mock('@salmon/shared', async () => ({
   // leaves and the receipt is allowed in.
   ...(await vi.importActual<Record<string, unknown>>('@salmon/shared/src/hooks/useWaitExit')),
   useSwapScreenLogic: () => mockLogic,
-  useBridgeSettlement: () => ({ trackBridgeExchange: vi.fn(), isStalled: false, retryNow: vi.fn() }),
+  useBridgeSettlement: () => ({
+    trackBridgeExchange: vi.fn(),
+    isStalled: false,
+    retryNow: vi.fn(),
+  }),
   getTransactionUrl: () => 'https://explorer.test/tx',
   getDefaultExplorer: () => 'solscan',
   formatEffectiveRate: () => '1 SOL = 2 USDC',

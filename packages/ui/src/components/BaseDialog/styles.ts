@@ -194,7 +194,11 @@ export const StyledDialogActions: React.ComponentType<DialogActionsProps & { $st
     padding: `${spacing.md}px ${spacing.xl}px ${spacing.xl}px`,
     gap: spacing.md,
     ...($stacked
-      ? { flexDirection: 'column', alignItems: 'stretch', '& > :not(:first-of-type)': { margin: 0 } }
+      ? {
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          '& > :not(:first-of-type)': { margin: 0 },
+        }
       : null),
   }));
 

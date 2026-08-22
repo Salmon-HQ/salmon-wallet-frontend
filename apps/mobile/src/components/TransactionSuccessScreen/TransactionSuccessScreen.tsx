@@ -196,187 +196,183 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           on the bottom edge and the report sits in the middle of the water
           rather than leaving a void under it. */}
       <View style={styles.cluster} testID="tx-success-cluster">
-      {exchange ? (
-        /* The hero is the graphic. It answers *between what* — the mark of
+        {exchange ? (
+          /* The hero is the graphic. It answers *between what* — the mark of
            the token that left, the arrow that travelled to the token that
            arrived, and the tick over it, the same glyph the copy control
            draws when something has landed. It carries the result as its
            accessible name, because a graphic announces nothing on its own and
            the sentence it replaced is what a screen reader used to hear. */
-        <View
-          style={styles.graphic}
-          testID="tx-success-hero"
-          accessible
-          accessibilityRole="image"
-          accessibilityLabel={title}
-        >
-          <Animated.View entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(0) })}>
-            <TokenLogo uri={exchange.send.logo} symbol={exchange.send.symbol} size={LOGO_SIZE} />
-          </Animated.View>
-          <View style={styles.track}>
-            <Animated.View
-              style={styles.trackRow}
-              testID="tx-success-tick"
-              entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(1) })}
-            >
-              <CheckIcon
-                weight="bold"
-                size={GRAPHIC_ICON_SIZE}
-                color={semantic.status.success}
-              />
+          <View
+            style={styles.graphic}
+            testID="tx-success-hero"
+            accessible
+            accessibilityRole="image"
+            accessibilityLabel={title}
+          >
+            <Animated.View entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(0) })}>
+              <TokenLogo uri={exchange.send.logo} symbol={exchange.send.symbol} size={LOGO_SIZE} />
             </Animated.View>
-            <Animated.View
-              style={styles.trackRow}
-              testID="tx-success-arrow"
-              entering={crossEntering(isReduceMotionEnabled, beat(1))}
-            >
-              <ArrowRightIcon
-                weight="bold"
-                size={GRAPHIC_ICON_SIZE}
-                color={semantic.text.secondary}
+            <View style={styles.track}>
+              <Animated.View
+                style={styles.trackRow}
+                testID="tx-success-tick"
+                entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(1) })}
+              >
+                <CheckIcon weight="bold" size={GRAPHIC_ICON_SIZE} color={semantic.status.success} />
+              </Animated.View>
+              <Animated.View
+                style={styles.trackRow}
+                testID="tx-success-arrow"
+                entering={crossEntering(isReduceMotionEnabled, beat(1))}
+              >
+                <ArrowRightIcon
+                  weight="bold"
+                  size={GRAPHIC_ICON_SIZE}
+                  color={semantic.text.secondary}
+                />
+              </Animated.View>
+            </View>
+            <Animated.View entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(0) })}>
+              <TokenLogo
+                uri={exchange.receive.logo}
+                symbol={exchange.receive.symbol}
+                size={LOGO_SIZE}
               />
             </Animated.View>
           </View>
-          <Animated.View entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(0) })}>
-            <TokenLogo
-              uri={exchange.receive.logo}
-              symbol={exchange.receive.symbol}
-              size={LOGO_SIZE}
-            />
-          </Animated.View>
-        </View>
-      ) : (
-        /* Status is a line of ink, not a 96px disc: `status.success` is
+        ) : (
+          /* Status is a line of ink, not a 96px disc: `status.success` is
            specified as ink (9.99:1), and the outcome the user came for is the
            amount below it. Three channels are kept — colour, the ✓ glyph, and
            the label — so the state never rides on hue alone. A single-token
            receipt has nothing to draw an exchange between, so it keeps the
            sentence that says what happened. */
-        <View style={styles.statusRow}>
-          <Text style={styles.statusGlyph}>✓</Text>
-          <Text style={styles.statusLabel} testID="tx-success-title">
-            {title}
-          </Text>
-        </View>
-      )}
+          <View style={styles.statusRow}>
+            <Text style={styles.statusGlyph}>✓</Text>
+            <Text style={styles.statusLabel} testID="tx-success-title">
+              {title}
+            </Text>
+          </View>
+        )}
 
-      {/* How much. One line, always: the receipt used to print the whole
+        {/* How much. One line, always: the receipt used to print the whole
           operation as one 36px title and it broke over three lines — an amount
           that wraps stops being an amount and becomes a sentence. It shrinks
           rather than wrapping or truncating: a number on a wallet receipt may
           not be elided. On an exchange each amount sits under the mark it
           belongs to; a single-token receipt prints the summary it always
           printed. */}
-      {exchange ? (
-        <Animated.View
-          style={styles.amountsRow}
-          testID="tx-success-amount"
-          entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(2) })}
-        >
-          <Text
-            style={[styles.amount, styles.amountSpent, styles.amountCell]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={MIN_AMOUNT_SCALE}
+        {exchange ? (
+          <Animated.View
+            style={styles.amountsRow}
+            testID="tx-success-amount"
+            entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(2) })}
           >
-            {exchange.send.amount}
-          </Text>
-          <Text
-            style={[styles.amount, styles.amountCell]}
-            testID="tx-success-summary"
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={MIN_AMOUNT_SCALE}
-          >
-            {exchange.receive.amount}
-          </Text>
-        </Animated.View>
-      ) : (
-        <View style={styles.amountContainer} testID="tx-success-amount">
-          <Text
-            style={styles.amount}
-            testID="tx-success-summary"
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={MIN_AMOUNT_SCALE}
-          >
-            {summary}
-          </Text>
-        </View>
-      )}
-
-      {/* The fine print, last: quiet rows for what the flow already knows —
-          effective rate, Salmon fee when it arrived, local time. */}
-      {exchange ? (
-        <Animated.View
-          style={styles.receiptRows}
-          testID="tx-success-receipt"
-          entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(3) })}
-        >
-          {exchangeRate ? (
-            <View style={styles.receiptRow}>
-              <Text style={styles.receiptLabel}>{t('transactions.detail.rate', 'Rate')}</Text>
-              <Text style={[styles.receiptValue, TABULAR]}>{exchangeRate}</Text>
-            </View>
-          ) : null}
-          {exchangeFee ? (
-            <View style={styles.receiptRow}>
-              <Text style={styles.receiptLabel}>{t('swap.review.salmonFee', 'Salmon fee')}</Text>
-              <Text style={[styles.receiptValue, TABULAR]}>{exchangeFee}</Text>
-            </View>
-          ) : null}
-          <View style={styles.receiptRow}>
-            <Text style={styles.receiptLabel}>{t('transactions.detail.time', 'Time')}</Text>
-            <Text style={[styles.receiptValue, TABULAR]}>{receiptTime}</Text>
+            <Text
+              style={[styles.amount, styles.amountSpent, styles.amountCell]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={MIN_AMOUNT_SCALE}
+            >
+              {exchange.send.amount}
+            </Text>
+            <Text
+              style={[styles.amount, styles.amountCell]}
+              testID="tx-success-summary"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={MIN_AMOUNT_SCALE}
+            >
+              {exchange.receive.amount}
+            </Text>
+          </Animated.View>
+        ) : (
+          <View style={styles.amountContainer} testID="tx-success-amount">
+            <Text
+              style={styles.amount}
+              testID="tx-success-summary"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={MIN_AMOUNT_SCALE}
+            >
+              {summary}
+            </Text>
           </View>
-        </Animated.View>
-      ) : null}
+        )}
 
-      {isBridge ? (
-        <View style={styles.bridgeInfoBox}>
-          <Text style={styles.bridgeLabel}>{t('bridge.depositAddress', 'Send funds to')}</Text>
-          <Text style={styles.bridgeValue}>{bridgeDepositAddress}</Text>
-          {bridgeAmountIn && (
-            <>
-              <Text style={styles.bridgeLabel}>{t('bridge.amountToSend', 'Amount to send')}</Text>
-              <Text style={styles.bridgeValue}>{bridgeAmountIn}</Text>
-            </>
-          )}
-          {bridgeAmountOut && (
-            <>
-              <Text style={styles.bridgeLabel}>
-                {t('bridge.estimatedReceive', 'You will receive approximately')}
-              </Text>
-              <Text style={styles.bridgeValue}>{bridgeAmountOut}</Text>
-            </>
-          )}
-          {bridgeDepositTxId && (
-            <>
-              <Text style={styles.bridgeLabel}>
-                {t('bridge.depositTxId', 'Deposit Transaction')}
-              </Text>
-              <TouchableOpacity
-                onPress={() => Linking.openURL(`https://solscan.io/tx/${bridgeDepositTxId}`)}
-              >
-                <Text
-                  style={[
-                    styles.bridgeValue,
-                    { color: semantic.text.accent, textDecorationLine: 'underline' },
-                  ]}
-                >
-                  {bridgeDepositTxId.slice(0, 8)}...{bridgeDepositTxId.slice(-8)}
+        {/* The fine print, last: quiet rows for what the flow already knows —
+          effective rate, Salmon fee when it arrived, local time. */}
+        {exchange ? (
+          <Animated.View
+            style={styles.receiptRows}
+            testID="tx-success-receipt"
+            entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(3) })}
+          >
+            {exchangeRate ? (
+              <View style={styles.receiptRow}>
+                <Text style={styles.receiptLabel}>{t('transactions.detail.rate', 'Rate')}</Text>
+                <Text style={[styles.receiptValue, TABULAR]}>{exchangeRate}</Text>
+              </View>
+            ) : null}
+            {exchangeFee ? (
+              <View style={styles.receiptRow}>
+                <Text style={styles.receiptLabel}>{t('swap.review.salmonFee', 'Salmon fee')}</Text>
+                <Text style={[styles.receiptValue, TABULAR]}>{exchangeFee}</Text>
+              </View>
+            ) : null}
+            <View style={styles.receiptRow}>
+              <Text style={styles.receiptLabel}>{t('transactions.detail.time', 'Time')}</Text>
+              <Text style={[styles.receiptValue, TABULAR]}>{receiptTime}</Text>
+            </View>
+          </Animated.View>
+        ) : null}
+
+        {isBridge ? (
+          <View style={styles.bridgeInfoBox}>
+            <Text style={styles.bridgeLabel}>{t('bridge.depositAddress', 'Send funds to')}</Text>
+            <Text style={styles.bridgeValue}>{bridgeDepositAddress}</Text>
+            {bridgeAmountIn && (
+              <>
+                <Text style={styles.bridgeLabel}>{t('bridge.amountToSend', 'Amount to send')}</Text>
+                <Text style={styles.bridgeValue}>{bridgeAmountIn}</Text>
+              </>
+            )}
+            {bridgeAmountOut && (
+              <>
+                <Text style={styles.bridgeLabel}>
+                  {t('bridge.estimatedReceive', 'You will receive approximately')}
                 </Text>
-              </TouchableOpacity>
-            </>
-          )}
-          {bridgeExchangeId && (
-            <>
-              <Text style={styles.bridgeLabel}>{t('bridge.exchangeId', 'Exchange ID')}</Text>
-              <Text style={[styles.bridgeValue, { marginBottom: 0 }]}>{bridgeExchangeId}</Text>
-            </>
-          )}
-        </View>
-      ) : null}
+                <Text style={styles.bridgeValue}>{bridgeAmountOut}</Text>
+              </>
+            )}
+            {bridgeDepositTxId && (
+              <>
+                <Text style={styles.bridgeLabel}>
+                  {t('bridge.depositTxId', 'Deposit Transaction')}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(`https://solscan.io/tx/${bridgeDepositTxId}`)}
+                >
+                  <Text
+                    style={[
+                      styles.bridgeValue,
+                      { color: semantic.text.accent, textDecorationLine: 'underline' },
+                    ]}
+                  >
+                    {bridgeDepositTxId.slice(0, 8)}...{bridgeDepositTxId.slice(-8)}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+            {bridgeExchangeId && (
+              <>
+                <Text style={styles.bridgeLabel}>{t('bridge.exchangeId', 'Exchange ID')}</Text>
+                <Text style={[styles.bridgeValue, { marginBottom: 0 }]}>{bridgeExchangeId}</Text>
+              </>
+            )}
+          </View>
+        ) : null}
       </View>
 
       {/* The ending composes like the onboarding ending: a quiet text-button

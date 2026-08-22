@@ -40,7 +40,10 @@ export function PressSpecular({ x, y, opacity }: PressSpecularProps) {
 
   const style = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [{ translateX: x.value - SPECULAR_RADIUS }, { translateY: y.value - SPECULAR_RADIUS }],
+    transform: [
+      { translateX: x.value - SPECULAR_RADIUS },
+      { translateY: y.value - SPECULAR_RADIUS },
+    ],
   }));
 
   return (

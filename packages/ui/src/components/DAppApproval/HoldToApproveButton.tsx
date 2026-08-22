@@ -135,7 +135,8 @@ export function HoldToApproveButton({
         <Progress
           style={{
             width: `${Math.min(progress, 1) * 100}%`,
-            backgroundColor: variant === 'secondary' ? semantic.text.primary : semantic.text.onAccent,
+            backgroundColor:
+              variant === 'secondary' ? semantic.text.primary : semantic.text.onAccent,
           }}
           data-testid="hold-progress"
         />

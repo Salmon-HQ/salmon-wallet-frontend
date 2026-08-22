@@ -109,10 +109,13 @@ describe('seigaiha geometry', () => {
       for (let i = 0; i < p.length; i += SAMPLES + 1) out.push(p.slice(i, i + SAMPLES + 1));
       return out;
     };
-    const cuspsOf = (d: string) => arcs(d).map((a) => a[0]).concat([arcs(d).at(-1)![SAMPLES]]);
+    const cuspsOf = (d: string) =>
+      arcs(d)
+        .map((a) => a[0])
+        .concat([arcs(d).at(-1)![SAMPLES]]);
     const apexesOf = (d: string) =>
       arcs(d).map((a) => a.reduce((top, pt) => (pt[1] < top[1] ? pt : top)));
-    const wrap = (dx: number) => ((dx % W) + 1.5 * W) % W - W / 2;
+    const wrap = (dx: number) => (((dx % W) + 1.5 * W) % W) - W / 2;
 
     const rests = (cusps: Array<[number, number]>, apexes: Array<[number, number]>, dy: number) =>
       cusps.every(([cx, cy]) =>

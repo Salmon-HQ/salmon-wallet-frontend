@@ -91,8 +91,22 @@ export const TokenInfo: React.FC<TokenInfoProps> = ({
             <Rect x="0" y="0" rx="4" ry="4" width="80" height={fontSize.bodyLg} />
             {/* Description lines */}
             <Rect x="0" y={fontSize.bodyLg + spacing.sm} rx="4" ry="4" width="100%" height="14" />
-            <Rect x="0" y={fontSize.bodyLg + spacing.sm + 18} rx="4" ry="4" width="80%" height="14" />
-            <Rect x="0" y={fontSize.bodyLg + spacing.sm + 36} rx="4" ry="4" width="60%" height="14" />
+            <Rect
+              x="0"
+              y={fontSize.bodyLg + spacing.sm + 18}
+              rx="4"
+              ry="4"
+              width="80%"
+              height="14"
+            />
+            <Rect
+              x="0"
+              y={fontSize.bodyLg + spacing.sm + 36}
+              rx="4"
+              ry="4"
+              width="60%"
+              height="14"
+            />
           </ContentLoader>
         </View>
 

@@ -57,9 +57,8 @@ vi.mock('@salmon/shared', async () => ({
 import { WalletHeader } from './WalletHeader';
 
 const { motionMs } = await import('../../../../shared/src/theme/durations');
-const { CHROME_SCALE, SINK_EXIT_SCALE, SINK_FLOAT_TRAVEL } = await import(
-  '../../../../shared/src/motion/sinkFloat'
-);
+const { CHROME_SCALE, SINK_EXIT_SCALE, SINK_FLOAT_TRAVEL } =
+  await import('../../../../shared/src/motion/sinkFloat');
 const { SINK_FLOAT_STAGGER_MS } = await import('../../../../shared/src/motion/sinkFloat');
 
 const FIRST_ADDRESS = '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU';

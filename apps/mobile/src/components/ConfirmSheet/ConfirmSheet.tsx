@@ -129,9 +129,7 @@ export function ConfirmSheet({
       title={
         <View style={styles.titleRow}>
           {/* Colour is never the only channel: glyph, fill and label all say it */}
-          {isDanger && (
-            <WarningIcon size={fontSize.lg} color={semantic.status.danger} />
-          )}
+          {isDanger && <WarningIcon size={fontSize.lg} color={semantic.status.danger} />}
           <Text style={styles.title}>{title}</Text>
         </View>
       }

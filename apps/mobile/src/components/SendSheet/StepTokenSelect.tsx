@@ -221,7 +221,11 @@ export const StepTokenSelect: React.FC<StepTokenSelectProps> = ({
     <View style={styles.container}>
       {/* Search Input */}
       <BlurContainer style={styles.searchContainer}>
-        <MagnifyingGlassIcon size={ms(18)} color={colors.text.secondary} style={styles.searchIcon} />
+        <MagnifyingGlassIcon
+          size={ms(18)}
+          color={colors.text.secondary}
+          style={styles.searchIcon}
+        />
         <TextInput
           testID="send-token-search-input"
           style={styles.searchInput}

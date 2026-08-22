@@ -41,12 +41,7 @@ export function NftSeeAllPage({
   className,
 }: NftSeeAllPageProps): React.ReactElement {
   return (
-    <PageShell
-      title={title}
-      onBack={onBack}
-      style={style}
-      className={className}
-    >
+    <PageShell title={title} onBack={onBack} style={style} className={className}>
       <Grid>
         {nfts.map((nft, index) => (
           <NftCard

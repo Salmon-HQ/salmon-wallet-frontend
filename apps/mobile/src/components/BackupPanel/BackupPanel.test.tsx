@@ -50,7 +50,11 @@ jest.mock('../../../hooks/useSecretScreen', () => ({
 
 jest.mock('../SettingsScreenLayout', () => {
   const { View: RNView } = require('react-native');
-  return { SettingsScreenLayout: ({ children }: { children?: React.ReactNode }) => <RNView>{children}</RNView> };
+  return {
+    SettingsScreenLayout: ({ children }: { children?: React.ReactNode }) => (
+      <RNView>{children}</RNView>
+    ),
+  };
 });
 
 jest.mock('../Button', () => {

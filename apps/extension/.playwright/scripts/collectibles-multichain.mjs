@@ -35,7 +35,11 @@ const headings = await popup.locator('h1, h2').allInnerTexts();
 console.log(`▶ [${label}] headings: ${JSON.stringify(headings)}`);
 
 // restore
-await popup.getByTestId('tab-home').first().click({ timeout: 8000 }).catch(() => {});
+await popup
+  .getByTestId('tab-home')
+  .first()
+  .click({ timeout: 8000 })
+  .catch(() => {});
 await sleep(1000);
 await toggleDeveloperNetworks();
 console.log('▶ developer networks toggled back off');

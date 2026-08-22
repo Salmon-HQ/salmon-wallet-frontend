@@ -209,31 +209,40 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     return () => backHandler.remove();
   }, [visible, step, previousStep, handleClose, handleSuccessContinue, isSending, goToStep]);
 
-  const handleSelectToken = useCallback((token: SendToken) => {
-    setSelectedToken(token);
-    goToStep('address-amount');
-  }, [goToStep]);
+  const handleSelectToken = useCallback(
+    (token: SendToken) => {
+      setSelectedToken(token);
+      goToStep('address-amount');
+    },
+    [goToStep]
+  );
 
   const handleBackToTokenSelect = useCallback(() => {
     goToStep('token-select');
   }, [goToStep]);
 
-  const handleReview = useCallback((address: string, amt: string, resolvedAddress?: string) => {
-    setRecipientAddress(address);
-    setResolvedRecipientAddress(resolvedAddress);
-    setAmount(amt);
-    goToStep('confirmation');
-  }, [goToStep]);
+  const handleReview = useCallback(
+    (address: string, amt: string, resolvedAddress?: string) => {
+      setRecipientAddress(address);
+      setResolvedRecipientAddress(resolvedAddress);
+      setAmount(amt);
+      goToStep('confirmation');
+    },
+    [goToStep]
+  );
 
   const handleBackToAddressAmount = useCallback(() => {
     goToStep('address-amount');
     sendHook.reset();
   }, [goToStep, sendHook]);
 
-  const handleSuccess = useCallback((txId: string) => {
-    setSuccessTxId(txId);
-    goToStep('success');
-  }, [goToStep]);
+  const handleSuccess = useCallback(
+    (txId: string) => {
+      setSuccessTxId(txId);
+      goToStep('success');
+    },
+    [goToStep]
+  );
 
   // Back button handler for the header
   const handleBackPress = useCallback(() => {

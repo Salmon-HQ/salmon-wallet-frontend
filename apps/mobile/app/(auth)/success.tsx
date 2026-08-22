@@ -94,9 +94,7 @@ export default function SuccessScreen() {
             color={colors.text.secondary}
             // The glyph belongs to the component, not the string — it used to
             // ride inside the translation as a literal "ⓘ".
-            icon={
-              <InfoIcon size={componentSizes.iconSizeXs} color={colors.text.secondary} />
-            }
+            icon={<InfoIcon size={componentSizes.iconSizeXs} color={colors.text.secondary} />}
             testID="success-info-button"
           >
             {t('wallet.create.derivable_info_icon')}

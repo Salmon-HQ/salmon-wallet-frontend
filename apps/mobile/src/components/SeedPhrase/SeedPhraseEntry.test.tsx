@@ -52,7 +52,9 @@ function Harness({ initial = SHORT_PHRASE }: { initial?: number }) {
       words={words}
       onChange={setWords}
       onLengthChange={(length) =>
-        setWords((prev) => (prev.length === length ? prev : Array.from({ length }, (_, i) => prev[i] ?? '')))
+        setWords((prev) =>
+          prev.length === length ? prev : Array.from({ length }, (_, i) => prev[i] ?? '')
+        )
       }
     />
   );
@@ -160,7 +162,11 @@ describe('SeedPhraseEntry', () => {
     render(<Harness />);
     fireEvent.changeText(box(1), 'zzalpha ');
     fireEvent.changeText(box(2), 'zzbeta');
-    expect(boxes().map((b) => b.props.value).join(' ')).not.toContain('.');
+    expect(
+      boxes()
+        .map((b) => b.props.value)
+        .join(' ')
+    ).not.toContain('.');
     expect(box(1).props.value).toBe('zzalpha');
     expect(box(2).props.value).toBe('zzbeta');
   });
@@ -223,6 +229,9 @@ describe('distributePhrase', () => {
   });
 
   it('lowercases and collapses whitespace', () => {
-    expect(distributePhrase('  ZZ-ONE\n\tzz-two   ').words.slice(0, 2)).toEqual(['zz-one', 'zz-two']);
+    expect(distributePhrase('  ZZ-ONE\n\tzz-two   ').words.slice(0, 2)).toEqual([
+      'zz-one',
+      'zz-two',
+    ]);
   });
 });

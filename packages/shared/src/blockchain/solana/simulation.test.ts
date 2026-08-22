@@ -571,7 +571,7 @@ const rawSol = (lamports: bigint) => ({
  * `vi.fn()` returning `{ send }`.
  */
 function createRpc(overrides: Record<string, unknown> = {}): SolanaRpc {
-  const thunk = <T,>(value: T) => vi.fn().mockReturnValue({ send: async () => value });
+  const thunk = <T>(value: T) => vi.fn().mockReturnValue({ send: async () => value });
   return {
     // The transfer's three static accounts: wallet, recipient, system program.
     getMultipleAccounts: thunk({
@@ -639,9 +639,9 @@ describe('previewTransactionEffects', () => {
 
   it('reports undetermined when the node never executed the transaction', async () => {
     const rpc = createRpc({
-      simulateTransaction: vi
-        .fn()
-        .mockReturnValue({ send: async () => ({ value: { err: null, logs: null, accounts: null } }) }),
+      simulateTransaction: vi.fn().mockReturnValue({
+        send: async () => ({ value: { err: null, logs: null, accounts: null } }),
+      }),
     });
 
     const result = await preview(rpc);

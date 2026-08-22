@@ -170,9 +170,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   // no explicit `background` grounds on the thick tier — same fill-and-clip
   // geometry the Receive sheet pioneered. A caller with its own `background`
   // still wins.
-  const resolvedBackground = background ?? (
-    <Thermocline tier="thick" style={styles.thermocline} />
-  );
+  const resolvedBackground = background ?? <Thermocline tier="thick" style={styles.thermocline} />;
 
   // Reanimated shared values for the sheet and backdrop
   const translateY = useSharedValue(SCREEN_HEIGHT);
@@ -307,9 +305,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
           </TouchableWithoutFeedback>
 
           {/* Sheet */}
-          <Reanimated.View
-            style={[styles.sheetContainer, sheetAnimatedStyle, style]}
-          >
+          <Reanimated.View style={[styles.sheetContainer, sheetAnimatedStyle, style]}>
             {resolvedBackground}
             <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
               {/* No scales. Every sheet in the app mounts through here —

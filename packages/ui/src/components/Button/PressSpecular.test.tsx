@@ -39,7 +39,10 @@ vi.mock('@salmon/shared', () => ({
   motionEasing: { current: { css: 'cubic-bezier(0.32, 0.72, 0, 1)' } },
   fleshTile: { width: 380, height: 40 },
   fleshFills: [],
-  palette: { salmon: { 500: '#FF5C45', 600: '#E64A34' }, neutral: { 0: '#FFFFFF', 1000: '#070911' } },
+  palette: {
+    salmon: { 500: '#FF5C45', 600: '#E64A34' },
+    neutral: { 0: '#FFFFFF', 1000: '#070911' },
+  },
   colors: {
     button: {
       primaryBackground: '#fff',

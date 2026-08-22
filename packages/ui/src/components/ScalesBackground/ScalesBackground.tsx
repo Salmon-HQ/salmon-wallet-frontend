@@ -90,9 +90,12 @@ function refractionSweep(): string {
 function tileUrl(stroke: string, strokeWidth: number, scale: number, tile: number): string {
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${seigaihaTile.width * scale}" height="${tile * scale}" viewBox="0 0 ${seigaihaTile.width} ${tile}">` +
-    seigaihaTiledPaths.map(
-      (d) => `<path d="${d}" stroke="${stroke}" stroke-width="${strokeWidth / scale}" fill="none"/>`
-    ).join('') +
+    seigaihaTiledPaths
+      .map(
+        (d) =>
+          `<path d="${d}" stroke="${stroke}" stroke-width="${strokeWidth / scale}" fill="none"/>`
+      )
+      .join('') +
     `</svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }

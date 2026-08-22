@@ -109,7 +109,9 @@ live('previewTransactionEffects (live RPC contract)', () => {
     const rpc = createSolanaRpc(RPC_URL);
 
     let payer: Address | null;
-    let blockhash: Awaited<ReturnType<ReturnType<SolanaRpc['getLatestBlockhash']>['send']>>['value'];
+    let blockhash: Awaited<
+      ReturnType<ReturnType<SolanaRpc['getLatestBlockhash']>['send']>
+    >['value'];
     try {
       [payer, { value: blockhash }] = await Promise.all([
         discoverPayer(rpc),

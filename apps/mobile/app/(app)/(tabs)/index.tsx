@@ -780,9 +780,14 @@ export default function HomeScreen() {
         </View>
       ) : (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>{t('wallet.no_tokens_found', 'No tokens found')}</Text>
+          <Text style={styles.emptyStateText}>
+            {t('wallet.no_tokens_found', 'No tokens found')}
+          </Text>
           <Text style={styles.emptyStateSubtext}>
-            {t('wallet.tokens_empty_subtitle', 'Your tokens will appear here once you receive some')}
+            {t(
+              'wallet.tokens_empty_subtitle',
+              'Your tokens will appear here once you receive some'
+            )}
           </Text>
         </View>
       ),

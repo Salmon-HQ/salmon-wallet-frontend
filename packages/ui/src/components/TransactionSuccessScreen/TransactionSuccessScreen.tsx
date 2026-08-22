@@ -349,12 +349,7 @@ function TokenLogo({ uri, symbol }: { uri?: string; symbol: string }): React.Rea
   }
 
   return (
-    <LogoImg
-      src={uri}
-      alt=""
-      data-testid="tx-success-token-logo"
-      onError={() => setFailed(true)}
-    />
+    <LogoImg src={uri} alt="" data-testid="tx-success-token-logo" onError={() => setFailed(true)} />
   );
 }
 
@@ -545,140 +540,140 @@ export function TransactionSuccessScreen({
       {/* The report, centred in the corridor between the top padding and the
           actions on the bottom edge. */}
       <Cluster>
-      {exchange ? (
-        /* The hero is the graphic. It answers *between what* — the mark of
+        {exchange ? (
+          /* The hero is the graphic. It answers *between what* — the mark of
            the token that left, the arrow that travelled to the token that
            arrived, and the tick over it, the same glyph the copy control
            draws when something has landed. It carries the result as its
            accessible name, because a graphic announces nothing on its own and
            the sentence it replaced is what a screen reader used to hear. */
-        <Graphic role="img" aria-label={title} data-testid="tx-success-hero">
-          <Rise $step={0}>
-            <TokenLogo uri={exchange.send.logo} symbol={exchange.send.symbol} />
-          </Rise>
-          <Track>
-            <TickRow $step={1} data-testid="tx-success-tick">
-              <CheckIcon weight="bold" size={iconSize.lg} />
-            </TickRow>
-            <ArrowRunner $step={1} data-testid="tx-success-arrow">
-              <ArrowRightIcon weight="bold" size={iconSize.lg} />
-            </ArrowRunner>
-          </Track>
-          <Rise $step={0}>
-            <TokenLogo uri={exchange.receive.logo} symbol={exchange.receive.symbol} />
-          </Rise>
-        </Graphic>
-      ) : (
-        <StatusRow data-testid="tx-success-status">
-          <StatusGlyph aria-hidden>✓</StatusGlyph>
-          <StatusLabel>{title}</StatusLabel>
-        </StatusRow>
-      )}
-      {exchange ? (
-        /* How much, under what it happened between: the spent side on the
+          <Graphic role="img" aria-label={title} data-testid="tx-success-hero">
+            <Rise $step={0}>
+              <TokenLogo uri={exchange.send.logo} symbol={exchange.send.symbol} />
+            </Rise>
+            <Track>
+              <TickRow $step={1} data-testid="tx-success-tick">
+                <CheckIcon weight="bold" size={iconSize.lg} />
+              </TickRow>
+              <ArrowRunner $step={1} data-testid="tx-success-arrow">
+                <ArrowRightIcon weight="bold" size={iconSize.lg} />
+              </ArrowRunner>
+            </Track>
+            <Rise $step={0}>
+              <TokenLogo uri={exchange.receive.logo} symbol={exchange.receive.symbol} />
+            </Rise>
+          </Graphic>
+        ) : (
+          <StatusRow data-testid="tx-success-status">
+            <StatusGlyph aria-hidden>✓</StatusGlyph>
+            <StatusLabel>{title}</StatusLabel>
+          </StatusRow>
+        )}
+        {exchange ? (
+          /* How much, under what it happened between: the spent side on the
            side the arrow left, the received side a rank louder where it
            landed. */
-        <AmountsRow $step={2} data-testid="tx-success-amount">
-          <AmountCell
-            style={{ '--tx-amount-chars': exchange.send.amount.length } as React.CSSProperties}
-          >
-            <Amount $spent>{exchange.send.amount}</Amount>
-          </AmountCell>
-          <AmountCell
-            style={{ '--tx-amount-chars': exchange.receive.amount.length } as React.CSSProperties}
-          >
-            <Amount>{exchange.receive.amount}</Amount>
-          </AmountCell>
-        </AmountsRow>
-      ) : (
-        <AmountStage>
-          <Amount
-            data-testid="tx-success-amount"
-            style={
-              {
-                // The only thing CSS cannot know about the string: how long it is.
-                '--tx-amount-chars': Math.max(1, summary.length),
-              } as React.CSSProperties
-            }
-          >
-            {summary}
-          </Amount>
-        </AmountStage>
-      )}
-      {/* The fine print, last: quiet rows for what the flow already knows —
+          <AmountsRow $step={2} data-testid="tx-success-amount">
+            <AmountCell
+              style={{ '--tx-amount-chars': exchange.send.amount.length } as React.CSSProperties}
+            >
+              <Amount $spent>{exchange.send.amount}</Amount>
+            </AmountCell>
+            <AmountCell
+              style={{ '--tx-amount-chars': exchange.receive.amount.length } as React.CSSProperties}
+            >
+              <Amount>{exchange.receive.amount}</Amount>
+            </AmountCell>
+          </AmountsRow>
+        ) : (
+          <AmountStage>
+            <Amount
+              data-testid="tx-success-amount"
+              style={
+                {
+                  // The only thing CSS cannot know about the string: how long it is.
+                  '--tx-amount-chars': Math.max(1, summary.length),
+                } as React.CSSProperties
+              }
+            >
+              {summary}
+            </Amount>
+          </AmountStage>
+        )}
+        {/* The fine print, last: quiet rows for what the flow already knows —
           effective rate, Salmon fee when it arrived, local time. */}
-      {exchange ? (
-        <ReceiptRows $step={3} data-testid="tx-success-receipt">
-          {exchangeRate ? (
+        {exchange ? (
+          <ReceiptRows $step={3} data-testid="tx-success-receipt">
+            {exchangeRate ? (
+              <ReceiptRow>
+                <ReceiptLabel>{t('transactions.detail.rate', 'Rate')}</ReceiptLabel>
+                <ReceiptValue>{exchangeRate}</ReceiptValue>
+              </ReceiptRow>
+            ) : null}
+            {exchangeFee ? (
+              <ReceiptRow>
+                <ReceiptLabel>{t('swap.review.salmonFee', 'Salmon fee')}</ReceiptLabel>
+                <ReceiptValue>{exchangeFee}</ReceiptValue>
+              </ReceiptRow>
+            ) : null}
             <ReceiptRow>
-              <ReceiptLabel>{t('transactions.detail.rate', 'Rate')}</ReceiptLabel>
-              <ReceiptValue>{exchangeRate}</ReceiptValue>
+              <ReceiptLabel>{t('transactions.detail.time', 'Time')}</ReceiptLabel>
+              <ReceiptValue>{receiptTime}</ReceiptValue>
             </ReceiptRow>
-          ) : null}
-          {exchangeFee ? (
-            <ReceiptRow>
-              <ReceiptLabel>{t('swap.review.salmonFee', 'Salmon fee')}</ReceiptLabel>
-              <ReceiptValue>{exchangeFee}</ReceiptValue>
-            </ReceiptRow>
-          ) : null}
-          <ReceiptRow>
-            <ReceiptLabel>{t('transactions.detail.time', 'Time')}</ReceiptLabel>
-            <ReceiptValue>{receiptTime}</ReceiptValue>
-          </ReceiptRow>
-        </ReceiptRows>
-      ) : null}
-      {isBridge ? (
-        <BridgeInfoBox>
-          <BridgeLabel>{t('bridge.depositAddress', 'Send funds to')}</BridgeLabel>
-          <BridgeValue>{bridgeDepositAddress}</BridgeValue>
-          {bridgeAmountIn && (
-            <>
-              <BridgeLabel>{t('bridge.amountToSend', 'Amount to send')}</BridgeLabel>
-              <BridgeValue>{bridgeAmountIn}</BridgeValue>
-            </>
-          )}
-          {bridgeAmountOut && (
-            <>
-              <BridgeLabel>
-                {t('bridge.estimatedReceive', 'You will receive approximately')}
-              </BridgeLabel>
-              <BridgeValue>{bridgeAmountOut}</BridgeValue>
-            </>
-          )}
-          {bridgeDepositTxId && (
-            <>
-              <BridgeLabel>{t('bridge.depositTxId', 'Deposit Transaction')}</BridgeLabel>
-              <BridgeValue>
-                <BridgeTxLink
-                  href={`https://solscan.io/tx/${bridgeDepositTxId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {bridgeDepositTxId.slice(0, 8)}...{bridgeDepositTxId.slice(-8)}
-                </BridgeTxLink>
-              </BridgeValue>
-            </>
-          )}
-          {bridgeStatus && (
-            <>
-              <BridgeLabel>{t('bridge.currentStatus', 'Current status')}</BridgeLabel>
-              <BridgeValue>{bridgeStatus}</BridgeValue>
-            </>
-          )}
-          {bridgePayoutTxId && (
-            <>
-              <BridgeLabel>{t('bridge.payoutTxId', 'Payout Transaction')}</BridgeLabel>
-              <BridgeValue>{bridgePayoutTxId}</BridgeValue>
-            </>
-          )}
-          {bridgeExchangeId && (
-            <>
-              <BridgeLabel>{t('bridge.exchangeId', 'Exchange ID')}</BridgeLabel>
-              <BridgeValue style={{ marginBottom: 0 }}>{bridgeExchangeId}</BridgeValue>
-            </>
-          )}
-        </BridgeInfoBox>
-      ) : null}
+          </ReceiptRows>
+        ) : null}
+        {isBridge ? (
+          <BridgeInfoBox>
+            <BridgeLabel>{t('bridge.depositAddress', 'Send funds to')}</BridgeLabel>
+            <BridgeValue>{bridgeDepositAddress}</BridgeValue>
+            {bridgeAmountIn && (
+              <>
+                <BridgeLabel>{t('bridge.amountToSend', 'Amount to send')}</BridgeLabel>
+                <BridgeValue>{bridgeAmountIn}</BridgeValue>
+              </>
+            )}
+            {bridgeAmountOut && (
+              <>
+                <BridgeLabel>
+                  {t('bridge.estimatedReceive', 'You will receive approximately')}
+                </BridgeLabel>
+                <BridgeValue>{bridgeAmountOut}</BridgeValue>
+              </>
+            )}
+            {bridgeDepositTxId && (
+              <>
+                <BridgeLabel>{t('bridge.depositTxId', 'Deposit Transaction')}</BridgeLabel>
+                <BridgeValue>
+                  <BridgeTxLink
+                    href={`https://solscan.io/tx/${bridgeDepositTxId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {bridgeDepositTxId.slice(0, 8)}...{bridgeDepositTxId.slice(-8)}
+                  </BridgeTxLink>
+                </BridgeValue>
+              </>
+            )}
+            {bridgeStatus && (
+              <>
+                <BridgeLabel>{t('bridge.currentStatus', 'Current status')}</BridgeLabel>
+                <BridgeValue>{bridgeStatus}</BridgeValue>
+              </>
+            )}
+            {bridgePayoutTxId && (
+              <>
+                <BridgeLabel>{t('bridge.payoutTxId', 'Payout Transaction')}</BridgeLabel>
+                <BridgeValue>{bridgePayoutTxId}</BridgeValue>
+              </>
+            )}
+            {bridgeExchangeId && (
+              <>
+                <BridgeLabel>{t('bridge.exchangeId', 'Exchange ID')}</BridgeLabel>
+                <BridgeValue style={{ marginBottom: 0 }}>{bridgeExchangeId}</BridgeValue>
+              </>
+            )}
+          </BridgeInfoBox>
+        ) : null}
       </Cluster>
       {/* The ending composes like the onboarding ending: a quiet text-button
           assist band over the bottom-most full-width primary. The wallet's own

@@ -224,7 +224,7 @@ describe('formatConversionRate', () => {
     expect(formatConversionRate(0.00001, 'es')).toBe('<0,0001');
   });
 
-  it('still reads the backend\'s numeric strings', () => {
+  it("still reads the backend's numeric strings", () => {
     expect(formatConversionRate('78.571428', 'en')).toBe('78.5714');
     expect(formatConversionRate('0', 'en')).toBe('0');
     expect(formatConversionRate('abc', 'en')).toBe('0');

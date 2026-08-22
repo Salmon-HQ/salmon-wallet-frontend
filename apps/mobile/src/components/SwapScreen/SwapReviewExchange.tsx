@@ -59,11 +59,7 @@ const ExchangeSide: React.FC<SwapReviewExchangeSide> = ({
  * review screens: sent token logo, arrow, received token logo, with amounts
  * underneath. Replaces the two stacked You Send / You Receive cards.
  */
-export const SwapReviewExchange: React.FC<SwapReviewExchangeProps> = ({
-  send,
-  receive,
-  style,
-}) => {
+export const SwapReviewExchange: React.FC<SwapReviewExchangeProps> = ({ send, receive, style }) => {
   return (
     <BlurContainer style={[styles.container, style]}>
       <View style={styles.row} testID="swap-review-exchange">

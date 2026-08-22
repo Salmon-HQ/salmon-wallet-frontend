@@ -134,39 +134,39 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
 
           {/* QR Code Container */}
           <View style={styles.qrContainer} testID="receive-qr-code">
-          {/* The QR is data, not an accent. Painting it salmon put two warm
+            {/* The QR is data, not an accent. Painting it salmon put two warm
               objects on one sheet — the code and the copy button — and the
               accent belongs on the control that acts. Neutral also maximises
               module contrast for a scanner: 16.37:1 instead of 6.50:1. */}
-          <QRCode
-            value={address}
-            size={qrSize}
-            backgroundColor={semantic.text.primary}
-            color={semantic.depth.abyss}
-            // The centered mark hides modules, so the code carries level-H
-            // redundancy — a wallet QR must stay scannable before it looks good.
-            ecLevel="H"
-          />
-          {/* The salmon mark, centered on its own knockout so no module
+            <QRCode
+              value={address}
+              size={qrSize}
+              backgroundColor={semantic.text.primary}
+              color={semantic.depth.abyss}
+              // The centered mark hides modules, so the code carries level-H
+              // redundancy — a wallet QR must stay scannable before it looks good.
+              ecLevel="H"
+            />
+            {/* The salmon mark, centered on its own knockout so no module
               collides with it. Same inks as the code: knockout is the code's
               ground, mark is the module ink. */}
-          <View style={styles.qrLogoOverlay} pointerEvents="none">
-            <View
-              testID="receive-qr-logo"
-              style={[
-                styles.qrLogoKnockout,
-                {
-                  width: qrLogoKnockoutSize,
-                  height: qrLogoKnockoutSize,
-                  borderRadius: qrLogoKnockoutSize / 4,
-                },
-              ]}
-            >
-              <BrandMark
-                size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
-                color={semantic.depth.abyss}
-              />
-            </View>
+            <View style={styles.qrLogoOverlay} pointerEvents="none">
+              <View
+                testID="receive-qr-logo"
+                style={[
+                  styles.qrLogoKnockout,
+                  {
+                    width: qrLogoKnockoutSize,
+                    height: qrLogoKnockoutSize,
+                    borderRadius: qrLogoKnockoutSize / 4,
+                  },
+                ]}
+              >
+                <BrandMark
+                  size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
+                  color={semantic.depth.abyss}
+                />
+              </View>
             </View>
           </View>
         </View>

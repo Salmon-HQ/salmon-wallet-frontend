@@ -5,12 +5,15 @@ const mockScreen = jest.fn((_props: Record<string, unknown>) => null);
 const mockStack = jest.fn((_props: Record<string, unknown>) => null);
 
 jest.mock('expo-router', () => ({
-  Stack: Object.assign((props: { children?: React.ReactNode }) => {
-    mockStack(props as Record<string, unknown>);
-    return <>{props.children}</>;
-  }, {
-    Screen: (props: Record<string, unknown>) => mockScreen(props),
-  }),
+  Stack: Object.assign(
+    (props: { children?: React.ReactNode }) => {
+      mockStack(props as Record<string, unknown>);
+      return <>{props.children}</>;
+    },
+    {
+      Screen: (props: Record<string, unknown>) => mockScreen(props),
+    }
+  ),
 }));
 
 // Both ground layers reach @salmon/shared, which pulls @solana/kit into a

@@ -85,7 +85,8 @@ describe('the onboarding slot grid', () => {
     // zero: `contentTight` has one screen and it offers a single action, so
     // its `secondary` collapses rather than reserving a hole nothing can ever
     // fill. Asserted on its own below.
-    const bands = g.variant === 'contentTight' ? reserved(g).filter((_h, i) => i !== 6) : reserved(g);
+    const bands =
+      g.variant === 'contentTight' ? reserved(g).filter((_h, i) => i !== 6) : reserved(g);
     for (const height of bands) {
       expect(height).toBeGreaterThan(0);
     }
@@ -304,7 +305,17 @@ describe('the onboarding slot grid', () => {
   it('identity and credential agree on every band — welcome is the front door with fields', () => {
     const id = onboardingIdentityGridFull;
     const cred = onboardingCredentialGridFull;
-    for (const key of ['chrome', 'mark', 'markSize', 'title', 'description', 'body', 'assist', 'secondary', 'action'] as const) {
+    for (const key of [
+      'chrome',
+      'mark',
+      'markSize',
+      'title',
+      'description',
+      'body',
+      'assist',
+      'secondary',
+      'action',
+    ] as const) {
       expect(id[key]).toBe(cred[key]);
     }
   });
@@ -316,7 +327,16 @@ describe('the onboarding slot grid', () => {
   ])('%s: the compact rung reserves less, and only in the description', (_n, full, compact) => {
     expect(compact.stack).toBeLessThan(full.stack);
     expect(compact.description).toBeLessThan(full.description);
-    for (const key of ['chrome', 'mark', 'markSize', 'title', 'body', 'assist', 'secondary', 'action'] as const) {
+    for (const key of [
+      'chrome',
+      'mark',
+      'markSize',
+      'title',
+      'body',
+      'assist',
+      'secondary',
+      'action',
+    ] as const) {
       expect(compact[key]).toBe(full[key]);
     }
   });
@@ -324,16 +344,28 @@ describe('the onboarding slot grid', () => {
   it.each([
     ['lock', onboardingLockGridFull, onboardingLockGridCompact],
     ['contentTight', onboardingContentTightGridFull, onboardingContentTightGridCompact],
-  ])('%s: the compact rung pays out of body — its description is already collapsed', (_n, full, compact) => {
-    // A collapsed description is a fixed run of air, not copy, so the rung has
-    // no line to drop there; the height the siblings save on description these
-    // variants save on the body that had absorbed it. The stacks stay in step.
-    expect(compact.stack).toBeLessThan(full.stack);
-    expect(compact.body).toBeLessThan(full.body);
-    for (const key of ['chrome', 'mark', 'markSize', 'title', 'description', 'assist', 'secondary', 'action'] as const) {
-      expect(compact[key]).toBe(full[key]);
+  ])(
+    '%s: the compact rung pays out of body — its description is already collapsed',
+    (_n, full, compact) => {
+      // A collapsed description is a fixed run of air, not copy, so the rung has
+      // no line to drop there; the height the siblings save on description these
+      // variants save on the body that had absorbed it. The stacks stay in step.
+      expect(compact.stack).toBeLessThan(full.stack);
+      expect(compact.body).toBeLessThan(full.body);
+      for (const key of [
+        'chrome',
+        'mark',
+        'markSize',
+        'title',
+        'description',
+        'assist',
+        'secondary',
+        'action',
+      ] as const) {
+        expect(compact[key]).toBe(full[key]);
+      }
     }
-  });
+  );
 
   it('never shrinks the mark — its size is unconditional', () => {
     // A mark that changes size with the viewport changes size between two

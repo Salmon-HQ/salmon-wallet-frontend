@@ -11,7 +11,9 @@ vi.mock('../../utils/styled', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
-  semantic: { status: { warning: '#fc0', warningTint: '#fc02', danger: '#f43', dangerTint: '#f432' } },
+  semantic: {
+    status: { warning: '#fc0', warningTint: '#fc02', danger: '#f43', dangerTint: '#f432' },
+  },
   colors: {
     text: { primary: '#fff' },
   },

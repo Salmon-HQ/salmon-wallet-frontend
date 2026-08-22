@@ -23,11 +23,11 @@ The specific jump the product owner is describing is the arrival at the screen c
 
 **Quantified, and identically on both implementations:**
 
-| Measurement | Value | Derivation |
-| --- | --- | --- |
-| The helper's own footprint | **60 px** | `TextButton` height `componentSizes.buttonHeightSmall` = 44, plus the container's `gap: spacing.lg` = 16 |
+| Measurement                              | Value      | Derivation                                                                                                                                                                          |
+| ---------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The helper's own footprint               | **60 px**  | `TextButton` height `componentSizes.buttonHeightSmall` = 44, plus the container's `gap: spacing.lg` = 16                                                                            |
 | Primary action jump, arriving at Success | **132 px** | Success's action stack is `56 + 16 + 56 + 16 + 44 = 188` against the preceding screen's lone `56`. The helper is 60 of those 132; the "Check Derivables" secondary is the other 72. |
-| Primary action jump, leaving Success | **64 px** | loses the helper's 60, plus a 4 px gap-token change (`spacing.lg` 16 → `spacing.md` 12) |
+| Primary action jump, leaving Success     | **64 px**  | loses the helper's 60, plus a 4 px gap-token change (`spacing.lg` 16 → `spacing.md` 12)                                                                                             |
 
 So the button really does move a full button-height, twice, around a single screen — and 60 px of that is attributable to the helper alone, exactly as reported.
 
@@ -43,14 +43,14 @@ Unlock is not a variant of the onboarding password screen; it is three independe
 
 Against the onboarding password screen:
 
-| Slot | Mobile lock | Mobile onboarding | Δ | Web/ext lock | Web/ext onboarding | Δ |
-| --- | --- | --- | --- | --- | --- | --- |
-| Mark top | 226.74 | 115 | **+111.7** | 293.5 | 281 | +12.5 |
-| Mark box | 124.09 | 120 | +4.1 | 72 | 60 | +12 |
-| Title top | 378.20 | 259 | **+119.2** | 397.5 | 365 | +32.5 |
-| Description | **absent** | present | — | present | present | 0 |
-| Primary action top | 522.10 | 722 | **−199.9** | 560.5 | 868 | **−307.5** |
-| Primary action height | 45.91 | 56 | **−10.1** | 56 | 56 | 0 |
+| Slot                  | Mobile lock | Mobile onboarding | Δ          | Web/ext lock | Web/ext onboarding | Δ          |
+| --------------------- | ----------- | ----------------- | ---------- | ------------ | ------------------ | ---------- |
+| Mark top              | 226.74      | 115               | **+111.7** | 293.5        | 281                | +12.5      |
+| Mark box              | 124.09      | 120               | +4.1       | 72           | 60                 | +12        |
+| Title top             | 378.20      | 259               | **+119.2** | 397.5        | 365                | +32.5      |
+| Description           | **absent**  | present           | —          | present      | present            | 0          |
+| Primary action top    | 522.10      | 722               | **−199.9** | 560.5        | 868                | **−307.5** |
+| Primary action height | 45.91       | 56                | **−10.1**  | 56           | 56                 | 0          |
 
 The action delta is the structural one: onboarding pins its action (`marginTop: 'auto'`, or a container at the end of a flex column) while unlock floats it inside a vertically-centred block. No amount of token-nudging closes a 307 px gap; unlock needs a bottom-pinned action region, which is what the grid gives it.
 
@@ -66,7 +66,7 @@ This settles what the mark's white appearance on unlock means. `Logo.png` has a 
 
 Neither is a layout issue, but both are in scope for anyone touching these screens:
 
-- **`lock.title` is `"Enter your password"`, not "Welcome back".** Web (`:225`) and extension (`:262`) call `t('lock.title', 'Welcome Back')` — but i18next's second argument is only a *defaultValue*, and the key exists, so both surfaces render "Enter your password". The `'Welcome Back'` string is dead code. Only mobile renders `lock.welcome_back`. The screen the product owner calls "Welcome back" says that on one platform of three.
+- **`lock.title` is `"Enter your password"`, not "Welcome back".** Web (`:225`) and extension (`:262`) call `t('lock.title', 'Welcome Back')` — but i18next's second argument is only a _defaultValue_, and the key exists, so both surfaces render "Enter your password". The `'Welcome Back'` string is dead code. Only mobile renders `lock.welcome_back`. The screen the product owner calls "Welcome back" says that on one platform of three.
 - **`lock.wrong_password` ("Incorrect password. Please try again.") is used only by mobile.** Web and extension show `lock.error.invalid_password` = "Invalid password".
 
 ### Why it is like this
@@ -75,7 +75,7 @@ There is no shared onboarding shell anywhere. `apps/web/src/pages/auth/*` and `a
 
 Two further structural facts make this worse than a set of inconsistent numbers:
 
-- **Two incompatible spacing systems coexist in `packages/ui`.** `SelectOptionsPage`, `CreateWalletPage`, `RecoverWalletPage` and `PasswordPage` scale their vertical spacing through `vs()`/`ms()` from `packages/shared/src/utils/scaling.ts`; `SuccessPage`, `AnalyticsConsentPage` and `DerivedAccountsPage` use raw tokens. Meanwhile every *control* (`buttonHeight` 56, `inputHeight` 56, `headerHeight` 56) is raw on all of them. Because `vs()` is `min(innerHeight, 956)/956`, the divergence grows as the window shortens: at a 740 px viewport `vs() = 0.774`, so half the flow compresses by 23% while the other half and every control hold still. The misalignment is therefore viewport-dependent, and at some heights individual gaps change sign.
+- **Two incompatible spacing systems coexist in `packages/ui`.** `SelectOptionsPage`, `CreateWalletPage`, `RecoverWalletPage` and `PasswordPage` scale their vertical spacing through `vs()`/`ms()` from `packages/shared/src/utils/scaling.ts`; `SuccessPage`, `AnalyticsConsentPage` and `DerivedAccountsPage` use raw tokens. Meanwhile every _control_ (`buttonHeight` 56, `inputHeight` 56, `headerHeight` 56) is raw on all of them. Because `vs()` is `min(innerHeight, 956)/956`, the divergence grows as the window shortens: at a 740 px viewport `vs() = 0.774`, so half the flow compresses by 23% while the other half and every control hold still. The misalignment is therefore viewport-dependent, and at some heights individual gaps change sign.
 - **`scaling.ts:23-38` caches the viewport dimensions on first read and never invalidates them.** There is no resize listener. On a user-resizable extension side panel, and on any browser window that is resized or any phone that is rotated, every `s()`/`vs()`/`ms()` value stays frozen at its first-paint reading.
 
 ### Two findings that change the premise
@@ -93,13 +93,13 @@ So on the shipping Chrome build the flow renders in an action popup with a hard 
 
 **2. The brand mark is a raster image on every screen that matters, while a vector already exists.** `packages/shared/src/theme/brand.ts` exports `markPaths` (viewBox `0 0 253 236`) and `markToSvg(fill, size?)` on a single-`fill` tintable contract, generated to be the canonical mark. It is consumed by exactly two call sites — the two `LoadingScreen` components — and both draw the paths inline, which is what `brand.ts:53` instructs. Everything else uses `<img src="/images/Logo.png">`. There are **17 such call sites across 13 files**, and they include every onboarding screen:
 
-| Location | Sites |
-| --- | --- |
-| `packages/ui/src/components/AuthFlow/` | `SelectOptionsPage.tsx:100`, `CreateWalletPage.tsx:175,219,307`, `RecoverWalletPage.tsx:159`, `PasswordPage.tsx:274`, `SuccessPage.tsx:81`, `DerivedAccountsPage.tsx:331` |
-| `packages/ui/src/components/DAppApproval/` | `DAppConnectApprovalView.tsx:57`, `DAppSignMessageApprovalView.tsx:101`, `DAppTransactionApprovalView.tsx:70`, `DAppSignInApprovalView.tsx:114` |
-| `packages/ui/src/components/AboutPanel/` | `AboutPanel.tsx:231` |
-| `apps/web` | `pages/lock/LockPage.tsx:224`, `components/DAppApprovalGate.tsx:137,154` |
-| `apps/extension` | `pages/lock/LockPage.tsx:260` |
+| Location                                   | Sites                                                                                                                                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/ui/src/components/AuthFlow/`     | `SelectOptionsPage.tsx:100`, `CreateWalletPage.tsx:175,219,307`, `RecoverWalletPage.tsx:159`, `PasswordPage.tsx:274`, `SuccessPage.tsx:81`, `DerivedAccountsPage.tsx:331` |
+| `packages/ui/src/components/DAppApproval/` | `DAppConnectApprovalView.tsx:57`, `DAppSignMessageApprovalView.tsx:101`, `DAppTransactionApprovalView.tsx:70`, `DAppSignInApprovalView.tsx:114`                           |
+| `packages/ui/src/components/AboutPanel/`   | `AboutPanel.tsx:231`                                                                                                                                                      |
+| `apps/web`                                 | `pages/lock/LockPage.tsx:224`, `components/DAppApprovalGate.tsx:137,154`                                                                                                  |
+| `apps/extension`                           | `pages/lock/LockPage.tsx:260`                                                                                                                                             |
 
 `Logo.png` is **197×183 px** in all three copies (`apps/web/public/images/`, `apps/extension/public/images/`, `packages/assets/src/images/`). It is drawn into square boxes of 48, 60, 80 and 120 CSS px with `objectFit: 'contain'`, so it always letterboxes; and at 120 px on a 3× device it is asked for 360 device pixels of detail from 197, i.e. **1.8× undersampled**. That is the softness that is visible on a real phone. The vector's aspect ratio is 253/236 = 1.072 against the PNG's 197/183 = 1.077 — a 0.4% difference, so a swap is geometrically near-identical provided the slot drives width and lets height follow.
 
@@ -166,7 +166,7 @@ The salmon mark renders crisply at every size on every density, and takes its co
 
 ### Functional Requirements
 
-- **FR-001**: A single named slot grid MUST govern every screen listed in *Screens in scope*. Slots are, in order: `chrome`, `mark`, `title`, `description`, `body`, `assist`, `secondary`, `action`.
+- **FR-001**: A single named slot grid MUST govern every screen listed in _Screens in scope_. Slots are, in order: `chrome`, `mark`, `title`, `description`, `body`, `assist`, `secondary`, `action`.
 - **FR-002**: Every slot except `body` MUST have a reserved height expressed in existing design tokens, and MUST occupy that height whether or not it has content. A screen that does not use a slot leaves it empty; it does not collapse it.
 - **FR-003**: `body` is the single flexible slot. It absorbs all height difference between screens, and it is the only region permitted to scroll.
 - **FR-004**: The primary action's top edge MUST be identical across every screen in scope at a given viewport. This is the checkable form of the request.
@@ -185,14 +185,14 @@ The salmon mark renders crisply at every size on every density, and takes its co
 
 ### Ownership
 
-| Artifact | Package | Why |
-| --- | --- | --- |
-| Slot names, order, reserved-height tokens | `packages/shared/src/theme` | one set of numbers, read by all three apps |
-| Cross-platform layout contract (`OnboardingLayoutProps`) | `packages/shared/src/types/ui` | the repo's established home for `PropsBase`-style contracts |
-| DOM layout component + all `AuthFlow` screens | `packages/ui` | web and extension already share every one of these screens |
-| DOM lock screen (new; today duplicated per app) | `packages/ui` | the two app copies are near-verbatim and drift by construction |
-| React Native layout component + `app/(auth)/*` | `apps/mobile` | RN cannot live in `packages/shared` or `packages/ui` |
-| Vector mark component | one in `packages/ui` (inline `<svg>`), one in `apps/mobile` (`react-native-svg`) | both patterns already exist in the two `LoadingScreen` components and should be extracted from them, not rewritten |
+| Artifact                                                 | Package                                                                          | Why                                                                                                                |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Slot names, order, reserved-height tokens                | `packages/shared/src/theme`                                                      | one set of numbers, read by all three apps                                                                         |
+| Cross-platform layout contract (`OnboardingLayoutProps`) | `packages/shared/src/types/ui`                                                   | the repo's established home for `PropsBase`-style contracts                                                        |
+| DOM layout component + all `AuthFlow` screens            | `packages/ui`                                                                    | web and extension already share every one of these screens                                                         |
+| DOM lock screen (new; today duplicated per app)          | `packages/ui`                                                                    | the two app copies are near-verbatim and drift by construction                                                     |
+| React Native layout component + `app/(auth)/*`           | `apps/mobile`                                                                    | RN cannot live in `packages/shared` or `packages/ui`                                                               |
+| Vector mark component                                    | one in `packages/ui` (inline `<svg>`), one in `apps/mobile` (`react-native-svg`) | both patterns already exist in the two `LoadingScreen` components and should be extracted from them, not rewritten |
 
 Nothing browser-specific or RN-specific may move into `packages/shared`; `packages/shared` must stay importable from React Native, and `packages/ui` is DOM-only and must not be imported by `apps/mobile`.
 
@@ -200,37 +200,37 @@ Nothing browser-specific or RN-specific may move into `packages/shared`; `packag
 
 Expressed in existing tokens from `packages/shared/src/theme/spacing.ts`. "Reserved" is the height the slot occupies whether or not it is filled.
 
-| # | Slot | Reserved height | Token derivation | Holds |
-| --- | --- | --- | --- | --- |
-| 1 | `chrome` | 56 | `componentSizes.headerHeight` | back affordance and step dots; present and empty where there is neither |
-| 2 | `mark` | 80 + 24 = **104** | `componentSizes.logoSizeSmall` + `spacing['2xl']` | the salmon mark, one size, vector, aspect-corrected |
-| 3 | `title` | 2 × 32 + 12 = **76** | `fontSize['2xl']` at `lineHeight` 32, + `spacing.md` | the screen title; two lines reserved for Spanish |
-| 4 | `description` | 2 × 24 + 24 = **72** | `fontSize.md` at 24, + `spacing['2xl']` | the one-line description; two lines reserved for Spanish |
-| 5 | `body` | **flexible, min 0** | — | inputs, seed grid, account list, long warning copy, loading and empty states. The only scrolling region. |
-| 6 | `assist` | **60** | `componentSizes.buttonHeightSmall` 44 + `spacing.lg` 16 | the derivable helper, the terms line, error and throttle messages, retry links |
-| 7 | `secondary` | 56 + 16 = **72** | `componentSizes.buttonHeight` + `spacing.lg` | one secondary action |
-| 8 | `action` | 16 + 56 + 24 = **96** | `spacing.lg` + `componentSizes.buttonHeight` + `spacing['2xl']` | the primary action, bottom-pinned |
+| #   | Slot          | Reserved height       | Token derivation                                                | Holds                                                                                                    |
+| --- | ------------- | --------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 1   | `chrome`      | 56                    | `componentSizes.headerHeight`                                   | back affordance and step dots; present and empty where there is neither                                  |
+| 2   | `mark`        | 80 + 24 = **104**     | `componentSizes.logoSizeSmall` + `spacing['2xl']`               | the salmon mark, one size, vector, aspect-corrected                                                      |
+| 3   | `title`       | 2 × 32 + 12 = **76**  | `fontSize['2xl']` at `lineHeight` 32, + `spacing.md`            | the screen title; two lines reserved for Spanish                                                         |
+| 4   | `description` | 2 × 24 + 24 = **72**  | `fontSize.md` at 24, + `spacing['2xl']`                         | the one-line description; two lines reserved for Spanish                                                 |
+| 5   | `body`        | **flexible, min 0**   | —                                                               | inputs, seed grid, account list, long warning copy, loading and empty states. The only scrolling region. |
+| 6   | `assist`      | **60**                | `componentSizes.buttonHeightSmall` 44 + `spacing.lg` 16         | the derivable helper, the terms line, error and throttle messages, retry links                           |
+| 7   | `secondary`   | 56 + 16 = **72**      | `componentSizes.buttonHeight` + `spacing.lg`                    | one secondary action                                                                                     |
+| 8   | `action`      | 16 + 56 + 24 = **96** | `spacing.lg` + `componentSizes.buttonHeight` + `spacing['2xl']` | the primary action, bottom-pinned                                                                        |
 
 **Fixed total (everything but `body`): 56 + 104 + 76 + 72 + 60 + 72 + 96 = 536 px.** Plus the platform's bottom safe-area inset on mobile. (This sum is exactly what the `packages/shared` test in the test strategy must pin: the total and its parts have to be asserted together, or a change to one token silently desynchronises the grid.)
 
 The `assist` band is the direct answer to the product owner's constraint: it is 60 px, which is exactly the derivable helper's measured footprint, and it is present and empty on every other screen. Arriving at Success reveals the link inside space that was always there, and the button does not move.
 
-The `secondary` band is reserved at one control because six of the nine screens have exactly one. The welcome screen may offer up to three actions when `hasAccounts` is true; it is the sanctioned exception (see *Migration notes*).
+The `secondary` band is reserved at one control because six of the nine screens have exactly one. The welcome screen may offer up to three actions when `hasAccounts` is true; it is the sanctioned exception (see _Migration notes_).
 
 ### Available height, by surface
 
-| Surface | Available | `body` gets | Verdict |
-| --- | --- | --- | --- |
-| Phone, 844 pt frame less insets | 751 | 215 | fits the seed grid (180) and the account list; **too tight for the 3-input validate step (254)** |
-| Extension side panel at 956 | 956 | 420 | comfortable |
-| Extension side panel on a 1440×900 laptop | ~780 | ~244 | fits the seed grid; validate step needs rung 1 |
-| **Chrome action popup** | **600** | **64** | **does not fit** — the seed grid alone is 180 |
+| Surface                                   | Available | `body` gets | Verdict                                                                                          |
+| ----------------------------------------- | --------- | ----------- | ------------------------------------------------------------------------------------------------ |
+| Phone, 844 pt frame less insets           | 751       | 215         | fits the seed grid (180) and the account list; **too tight for the 3-input validate step (254)** |
+| Extension side panel at 956               | 956       | 420         | comfortable                                                                                      |
+| Extension side panel on a 1440×900 laptop | ~780      | ~244        | fits the seed grid; validate step needs rung 1                                                   |
+| **Chrome action popup**                   | **600**   | **64**      | **does not fit** — the seed grid alone is 180                                                    |
 
 ### Degradation ladder
 
 Triggered on available height, not on platform:
 
-1. **< 800 px** — `description` drops from two reserved lines to one (−24) and `mark` drops from 80 to `componentSizes.iconSize3XL` 48 (−32). Fixed total **480**; on a phone that gives `body` 271, which clears the validate step's 254. This rung is therefore the *normal* phone case, not an exception.
+1. **< 800 px** — `description` drops from two reserved lines to one (−24) and `mark` drops from 80 to `componentSizes.iconSize3XL` 48 (−32). Fixed total **480**; on a phone that gives `body` 271, which clears the validate step's 254. This rung is therefore the _normal_ phone case, not an exception.
 2. **< 640 px** — `mark` is omitted on the body-heavy screens (seed display, validate, derived accounts) (−104 more). Fixed total **376**. The mark's absence is a documented degradation applied to a named set of screens, not a per-screen judgement call.
 3. **Any height** — `body` scrolls internally. `chrome`, `mark`, `title` and `description` stay pinned above it and `assist`, `secondary` and `action` stay pinned below it, so the action is always reachable and always at the same Y. This is what makes FR-012 satisfiable on a clipped surface, and it is the rung that actually saves the Chrome popup.
 
@@ -244,7 +244,7 @@ Required behaviour, on both platforms:
 
 - `mark` and `description` collapse to zero while the keyboard is open. They are decorative and explanatory respectively, and neither is needed while typing.
 - `chrome`, `title`, `body`, `assist` and `action` hold. The field being typed into and the button that commits it must both remain visible without scrolling.
-- The collapse is the *only* sanctioned slot movement in this spec, it is symmetric on dismissal, and it is driven by a single shared keyboard-visibility signal rather than per screen.
+- The collapse is the _only_ sanctioned slot movement in this spec, it is symmetric on dismissal, and it is driven by a single shared keyboard-visibility signal rather than per screen.
 - Web and extension must measure the visual viewport rather than assume `100vh`.
 
 ### Accessibility and dynamic type
@@ -262,30 +262,16 @@ Onboarding currently applies no `maxFontSizeMultiplier` and no `allowFontScaling
 Implementation may not skip one. Mobile screens are `apps/mobile/app/(auth)/`; web and extension screens are the shared implementations in `packages/ui/src/components/AuthFlow/`, reached through thin adapters in `apps/web/src/pages/auth/` and `apps/extension/src/pages/auth/`.
 
 **Entry**
+
 1. Welcome / select options — `index.tsx` · `SelectOptionsPage.tsx`
 
-**Create path**
-2. Seed-safety message — `create.tsx` step `message` · `CreateWalletPage.tsx` `MessageStep`
-3. Seed display — `create.tsx` step `seedPhrase` · `CreateWalletPage.tsx` `SeedPhraseStep` *(capture-blocked)*
-4. Seed confirmation — `create.tsx` step `validate` · `CreateWalletPage.tsx` `ValidateStep`
+**Create path** 2. Seed-safety message — `create.tsx` step `message` · `CreateWalletPage.tsx` `MessageStep` 3. Seed display — `create.tsx` step `seedPhrase` · `CreateWalletPage.tsx` `SeedPhraseStep` _(capture-blocked)_ 4. Seed confirmation — `create.tsx` step `validate` · `CreateWalletPage.tsx` `ValidateStep`
 
-**Recover path**
-5. Seed entry — `recover.tsx` · `RecoverWalletPage.tsx` *(capture-blocked)*
+**Recover path** 5. Seed entry — `recover.tsx` · `RecoverWalletPage.tsx` _(capture-blocked)_
 
-**Shared tail**
-6. Password creation — `password.tsx` · `PasswordPage.tsx`, in both its two-field and single-field variants
-7. Creating/recovering wait state — the `LoadingScreen` overlay at `password.tsx:447` and `PasswordPage.tsx:352-362`
-8. Biometric opt-in — `biometric-setup.tsx` (mobile only; no web/extension equivalent)
-9. Analytics consent — `analytics-consent.tsx` · `AnalyticsConsentPage.tsx`
-10. Success, carrying the derivable helper — `success.tsx` · `SuccessPage.tsx`
-11. Derived accounts, in all three of its states (loading, empty, populated) and its partial-scan-failure variant — `derived-accounts.tsx` · `DerivedAccountsPage.tsx`
+**Shared tail** 6. Password creation — `password.tsx` · `PasswordPage.tsx`, in both its two-field and single-field variants 7. Creating/recovering wait state — the `LoadingScreen` overlay at `password.tsx:447` and `PasswordPage.tsx:352-362` 8. Biometric opt-in — `biometric-setup.tsx` (mobile only; no web/extension equivalent) 9. Analytics consent — `analytics-consent.tsx` · `AnalyticsConsentPage.tsx` 10. Success, carrying the derivable helper — `success.tsx` · `SuccessPage.tsx` 11. Derived accounts, in all three of its states (loading, empty, populated) and its partial-scan-failure variant — `derived-accounts.tsx` · `DerivedAccountsPage.tsx`
 
-**Unlock**
-12. Unlock, password variant — `apps/mobile/src/components/GateContainer/LockContent.tsx` · `apps/web/src/pages/lock/LockPage.tsx` · `apps/extension/src/pages/lock/LockPage.tsx`
-13. Unlock, biometric variant — mobile only today; web and extension have no such variant
-14. Unlock, wrong-password error state
-15. Unlock, throttled state
-16. Unlocking wait state — `LoadingScreen`, whose mark is currently centred independently of every other screen's
+**Unlock** 12. Unlock, password variant — `apps/mobile/src/components/GateContainer/LockContent.tsx` · `apps/web/src/pages/lock/LockPage.tsx` · `apps/extension/src/pages/lock/LockPage.tsx` 13. Unlock, biometric variant — mobile only today; web and extension have no such variant 14. Unlock, wrong-password error state 15. Unlock, throttled state 16. Unlocking wait state — `LoadingScreen`, whose mark is currently centred independently of every other screen's
 
 **Error and retry states within the above**: invalid seed phrase, recovery failure, recovery network failure, biometric enrolment failure, derivation partial failure. Each is an `assist`-band occupant, not a new screen.
 
@@ -304,22 +290,22 @@ Asserting a rendered Y across screens is the test that matches the requirement. 
 
 ## Migration notes, per screen
 
-| Screen | What has to change | Risk |
-| --- | --- | --- |
-| Welcome / select | Title currently renders *above* the mark — the only screen that does. It moves below. The "Salmon" wordmark becomes the `title` slot's content and the welcome line becomes the `description`. The conditional third action (`hasAccounts`) exceeds the reserved `secondary` band. | **Grid cannot be fully satisfied.** Sanctioned exception: this screen has no predecessor in the flow, so nothing shifts *into* it. Either the third action becomes a text affordance in `assist`, or the screen is documented as the one permitted overflow. Needs a decision. |
-| Create / message | The 12-16 line body copy moves from the description slot to `body`. The `\n\n` collapse bug is fixed or the copy is restructured. This screen already overflows on mobile — its content sums to 749 against 695 available, putting the action below the fold on first paint. | Medium. The copy is long enough that the grid alone will not save it; it likely needs shortening, which is a copy decision and therefore an i18n change. |
-| Create / seed display | Currently the only screen that top-packs rather than centring, leaving its commit button floating 173 pt (mobile) / 308 px (web) above the bottom. Moves to the grid; the seed grid becomes `body`. Two stacked button containers produce a 40 px inter-button gap instead of 16 — reconciled. | Medium. Capture-blocked, so verification is contract tests plus source review. A 24-word phrase doubles the grid to 8 rows and must be checked against `body` at every degradation rung. |
-| Create / validate | Straightforward. `autoFocus` means the keyboard opens on arrival, so this is the primary test case for the keyboard collapse rule. | Low. |
-| Recover | The conditional Next button adopts the reserved-slot pattern its own web twin already uses. This removes the 36 px mid-typing jump — the single worst defect found. The bulk `minHeight: 160` textarea is not the `inputHeight` token and needs a `body`-relative height. | Low, high value. Capture-blocked. |
-| Password | Hardcoded 28/36 type becomes the token. The description is currently *removed* in the single-field variant, dropping 56 px; it becomes reserved-and-empty. Strength meter, two field errors, form error and terms line all move into `assist` — their union is ~130 px against a 60 px band. | **Highest risk.** The `assist` band as specified does not hold everything this screen can show at once. Either the band is taller (at a cost to every other screen), or the strength meter moves into `body` below the fields where it belongs semantically. Needs a decision; the second option is preferred and is the cheaper change. |
-| Wait states | Full-screen overlays that replace the layout. They should adopt the `mark` and `title` slot positions so the mark does not jump when the overlay appears — the Unlocking Wallet screen currently centres its mark independently. | Low. |
-| Biometric opt-in | Carries an 80 px icon *between* mark and title that exists nowhere else; it moves into `body`. Two `marginTop: 'auto'` boundaries are replaced by the grid. Renders `null` until availability resolves, producing a blank frame then a full layout — must not move slots (FR-007). | Low. |
-| Analytics consent | Has no mark at all and no header; a 72 px chart icon stands in. It gains both. Title drops from 36 to the token. Its description is the longest in the flow at ~7 lines / 189-216 px and moves to `body`. The absolute close button reserves nothing and becomes the `chrome` back affordance. | Medium — this screen changes the most visibly. |
-| Success | Gains the `chrome` band it currently lacks. Mark drops from 80/137 to the token size. The derivable helper moves into the reserved `assist` band; the secondary into `secondary`. **This is the screen the request is about and the one whose acceptance is measured.** | Low. |
-| Derived accounts | Renders a 56 px header with an invisible disabled back button; it either gains a real back affordance or is documented as intentionally empty chrome. The conditional primary adopts the reserved pattern, removing the 68 px async shift. Mark grows from 48 to the token size. | Low. |
-| Unlock, all variants | Three independent implementations converge. The action becomes bottom-pinned (closing a 199.9 pt / 307.5 px gap against onboarding). The mark drops from 124.09 pt to the grid size and becomes the tinted vector. The biometric variant reserves the field and action slots instead of deleting them, removing the 115.25 pt mark jump. Error and throttle copy occupy `assist`. Mobile's overrides — 45.91 pt button, `borderRadius.badge` 9 field, the forgot link inheriting the title's 33.55 line-height — are removed. The four `lockScreen*` one-offs are retired. | **High.** The throttle notice at ±64.5 pt does not fit a 60 px `assist` band; it needs the ladder's `body` region or its own reserved height. Web and extension have no biometric variant to reserve for, so the reservation rule differs by platform there. |
-| Unlock — copy | `lock.title` renders "Enter your password" on web and extension because the `'Welcome Back'` argument is a defaultValue for a key that exists; and `lock.wrong_password` is mobile-only. Both need a decision, not a silent fix. | Low, but it is the screen's name. |
-| `biometric.tsx` | Unreachable duplicate with six divergent values. Delete, or bring onto the grid. | Low, but leaving it re-introduces the divergence this spec exists to remove. |
+| Screen                | What has to change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Risk                                                                                                                                                                                                                                                                                                                                     |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Welcome / select      | Title currently renders _above_ the mark — the only screen that does. It moves below. The "Salmon" wordmark becomes the `title` slot's content and the welcome line becomes the `description`. The conditional third action (`hasAccounts`) exceeds the reserved `secondary` band.                                                                                                                                                                                                                                                                                         | **Grid cannot be fully satisfied.** Sanctioned exception: this screen has no predecessor in the flow, so nothing shifts _into_ it. Either the third action becomes a text affordance in `assist`, or the screen is documented as the one permitted overflow. Needs a decision.                                                           |
+| Create / message      | The 12-16 line body copy moves from the description slot to `body`. The `\n\n` collapse bug is fixed or the copy is restructured. This screen already overflows on mobile — its content sums to 749 against 695 available, putting the action below the fold on first paint.                                                                                                                                                                                                                                                                                               | Medium. The copy is long enough that the grid alone will not save it; it likely needs shortening, which is a copy decision and therefore an i18n change.                                                                                                                                                                                 |
+| Create / seed display | Currently the only screen that top-packs rather than centring, leaving its commit button floating 173 pt (mobile) / 308 px (web) above the bottom. Moves to the grid; the seed grid becomes `body`. Two stacked button containers produce a 40 px inter-button gap instead of 16 — reconciled.                                                                                                                                                                                                                                                                             | Medium. Capture-blocked, so verification is contract tests plus source review. A 24-word phrase doubles the grid to 8 rows and must be checked against `body` at every degradation rung.                                                                                                                                                 |
+| Create / validate     | Straightforward. `autoFocus` means the keyboard opens on arrival, so this is the primary test case for the keyboard collapse rule.                                                                                                                                                                                                                                                                                                                                                                                                                                         | Low.                                                                                                                                                                                                                                                                                                                                     |
+| Recover               | The conditional Next button adopts the reserved-slot pattern its own web twin already uses. This removes the 36 px mid-typing jump — the single worst defect found. The bulk `minHeight: 160` textarea is not the `inputHeight` token and needs a `body`-relative height.                                                                                                                                                                                                                                                                                                  | Low, high value. Capture-blocked.                                                                                                                                                                                                                                                                                                        |
+| Password              | Hardcoded 28/36 type becomes the token. The description is currently _removed_ in the single-field variant, dropping 56 px; it becomes reserved-and-empty. Strength meter, two field errors, form error and terms line all move into `assist` — their union is ~130 px against a 60 px band.                                                                                                                                                                                                                                                                               | **Highest risk.** The `assist` band as specified does not hold everything this screen can show at once. Either the band is taller (at a cost to every other screen), or the strength meter moves into `body` below the fields where it belongs semantically. Needs a decision; the second option is preferred and is the cheaper change. |
+| Wait states           | Full-screen overlays that replace the layout. They should adopt the `mark` and `title` slot positions so the mark does not jump when the overlay appears — the Unlocking Wallet screen currently centres its mark independently.                                                                                                                                                                                                                                                                                                                                           | Low.                                                                                                                                                                                                                                                                                                                                     |
+| Biometric opt-in      | Carries an 80 px icon _between_ mark and title that exists nowhere else; it moves into `body`. Two `marginTop: 'auto'` boundaries are replaced by the grid. Renders `null` until availability resolves, producing a blank frame then a full layout — must not move slots (FR-007).                                                                                                                                                                                                                                                                                         | Low.                                                                                                                                                                                                                                                                                                                                     |
+| Analytics consent     | Has no mark at all and no header; a 72 px chart icon stands in. It gains both. Title drops from 36 to the token. Its description is the longest in the flow at ~7 lines / 189-216 px and moves to `body`. The absolute close button reserves nothing and becomes the `chrome` back affordance.                                                                                                                                                                                                                                                                             | Medium — this screen changes the most visibly.                                                                                                                                                                                                                                                                                           |
+| Success               | Gains the `chrome` band it currently lacks. Mark drops from 80/137 to the token size. The derivable helper moves into the reserved `assist` band; the secondary into `secondary`. **This is the screen the request is about and the one whose acceptance is measured.**                                                                                                                                                                                                                                                                                                    | Low.                                                                                                                                                                                                                                                                                                                                     |
+| Derived accounts      | Renders a 56 px header with an invisible disabled back button; it either gains a real back affordance or is documented as intentionally empty chrome. The conditional primary adopts the reserved pattern, removing the 68 px async shift. Mark grows from 48 to the token size.                                                                                                                                                                                                                                                                                           | Low.                                                                                                                                                                                                                                                                                                                                     |
+| Unlock, all variants  | Three independent implementations converge. The action becomes bottom-pinned (closing a 199.9 pt / 307.5 px gap against onboarding). The mark drops from 124.09 pt to the grid size and becomes the tinted vector. The biometric variant reserves the field and action slots instead of deleting them, removing the 115.25 pt mark jump. Error and throttle copy occupy `assist`. Mobile's overrides — 45.91 pt button, `borderRadius.badge` 9 field, the forgot link inheriting the title's 33.55 line-height — are removed. The four `lockScreen*` one-offs are retired. | **High.** The throttle notice at ±64.5 pt does not fit a 60 px `assist` band; it needs the ladder's `body` region or its own reserved height. Web and extension have no biometric variant to reserve for, so the reservation rule differs by platform there.                                                                             |
+| Unlock — copy         | `lock.title` renders "Enter your password" on web and extension because the `'Welcome Back'` argument is a defaultValue for a key that exists; and `lock.wrong_password` is mobile-only. Both need a decision, not a silent fix.                                                                                                                                                                                                                                                                                                                                           | Low, but it is the screen's name.                                                                                                                                                                                                                                                                                                        |
+| `biometric.tsx`       | Unreachable duplicate with six divergent values. Delete, or bring onto the grid.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Low, but leaving it re-introduces the divergence this spec exists to remove.                                                                                                                                                                                                                                                             |
 
 ## Success Criteria _(mandatory)_
 
@@ -354,7 +340,7 @@ sections above stand except where these override them.
    (open question 4). This pins its Y for free — no empty band has to be
    reserved above it — and the recover screen already orders it that way.
    The `assist` band still exists for the helper and the error messages,
-   but it now sits *above* the action rather than below it, so revealing
+   but it now sits _above_ the action rather than below it, so revealing
    the "What is a derivable?" link cannot move the button at all.
 
 2. **`lock.title` is corrected to "Welcome back" on all three platforms**
@@ -371,7 +357,7 @@ sections above stand except where these override them.
 
    - `wxt.config.ts` declares `side_panel.default_path` and **does not**
      declare `action.default_popup`.
-   - The *built* `dist/chrome-mv3/manifest.json` carries
+   - The _built_ `dist/chrome-mv3/manifest.json` carries
      `"action": {"default_popup": "popup.html"}` anyway. WXT synthesises
      it from the mere existence of `src/entrypoints/popup/`. Nobody wrote
      it.
@@ -421,8 +407,8 @@ sections above stand except where these override them.
 
 7. **The recovery-phrase warning gets its own screen, before the phrase
    is shown** (open question 6). The product owner's reasoning, and it
-   is the right one: *"psicológicamente, si muestro una pantalla para
-   esto doy a entender que es importante."* A warning that shares a
+   is the right one: _"psicológicamente, si muestro una pantalla para
+   esto doy a entender que es importante."_ A warning that shares a
    screen with the thing it warns about is read as boilerplate; a
    warning that costs its own step is read as a gate.
 
@@ -463,7 +449,7 @@ Only where the code and `DESIGN.md` genuinely could not settle it:
 
 1. **Should the Chrome action popup be removed** so the side panel opens as `DESIGN.md` describes? It is a one-line change to `wxt.config.ts` and it is what makes the vertical budget honest. It also changes how users open the wallet, which is a product and distribution decision, not a layout one.
 2. **What is the canonical mark size?** 80 (`logoSizeSmall`) is proposed as the median of the six in use and the one that survives the tightest budget. The welcome screen and the unlock screen are the two places a larger mark is arguably the point — unlock currently uses 140 on mobile.
-3. **What does the throttled unlock state do?** Its notice is ~94-96 px, well past the 60 px `assist` band, and it appears on a screen the user is already failing on. Either `assist` grows for this one screen, or the notice moves into `body` above the field. (The mark's white-versus-salmon question is *resolved*: it is the hardcoded `#FCFCFC` inside `Logo.png`, not a choice — see above. FR-013 fixes it.)
+3. **What does the throttled unlock state do?** Its notice is ~94-96 px, well past the 60 px `assist` band, and it appears on a screen the user is already failing on. Either `assist` grows for this one screen, or the notice moves into `body` above the field. (The mark's white-versus-salmon question is _resolved_: it is the hardcoded `#FCFCFC` inside `Logo.png`, not a choice — see above. FR-013 fixes it.)
 4. **Does the primary action stay the topmost control in its stack, or become the bottom-most?** Making it bottom-most pins its Y for free, without reserving any empty band, and the recover screen already orders it that way. It is a visual-hierarchy decision the product owner should make, and it would shrink this change considerably.
 5. **Where does the password strength meter live?** It does not fit `assist` alongside the terms line and the error messages. Moving it into `body`, directly under the field it describes, is proposed.
 6. **Is `wallet.create.messageBody` shortened?** At 12-16 lines it does not fit any grid on the tightest surface. Shortening it is a copy change requiring both locales and product sign-off.

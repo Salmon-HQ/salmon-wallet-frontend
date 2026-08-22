@@ -9,7 +9,14 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { WarningIcon, iconSize } from '../../icons';
-import { borderRadius, colors, fontFamilyNative, fontSize, spacing, semantic } from '@salmon/shared';
+import {
+  borderRadius,
+  colors,
+  fontFamilyNative,
+  fontSize,
+  spacing,
+  semantic,
+} from '@salmon/shared';
 import type { WarningNoticeProps } from './types';
 
 export function WarningNotice({
@@ -20,8 +27,7 @@ export function WarningNotice({
   style,
 }: WarningNoticeProps): React.ReactElement {
   const accent = tone === 'warning' ? semantic.status.warning : semantic.status.danger;
-  const background =
-    tone === 'warning' ? semantic.status.warningTint : semantic.status.dangerTint;
+  const background = tone === 'warning' ? semantic.status.warningTint : semantic.status.dangerTint;
 
   return (
     <View

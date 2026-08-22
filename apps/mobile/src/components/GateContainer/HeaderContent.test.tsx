@@ -125,9 +125,7 @@ describe('HeaderContent copy address', () => {
     });
 
     expect(screen.queryByLabelText('actions.copied')).toBeNull();
-    expect(
-      screen.getByLabelText('accessibility.copy_address:7xKX...gAsU')
-    ).toBeTruthy();
+    expect(screen.getByLabelText('accessibility.copy_address:7xKX...gAsU')).toBeTruthy();
   });
 });
 
@@ -185,10 +183,7 @@ describe('HeaderContent chain swap', () => {
     const mountIdBefore = screen.getByTestId('wallet-header-account-text').props.mountId;
 
     screen.rerender(
-      <HeaderContent
-        accountName="Renamed"
-        address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
-      />
+      <HeaderContent accountName="Renamed" address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" />
     );
 
     expect(screen.getByTestId('wallet-header-account-text').props.mountId).toBe(mountIdBefore);

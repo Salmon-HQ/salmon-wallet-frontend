@@ -134,7 +134,9 @@ export default function RecoverWalletScreen() {
       */
       scrollBody
       float
-      chrome={<ScreenHeader onBack={handleBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />}
+      chrome={
+        <ScreenHeader onBack={handleBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />
+      }
       /*
         The key: what this screen asks for is the thing that reopens the
         wallet. The fish leaves the flow screens — it stays on welcome and the
@@ -143,9 +145,7 @@ export default function RecoverWalletScreen() {
       */
       mark={<KeyIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
       title={<OnboardingTitle>{t('wallet.recover.messageTitle')}</OnboardingTitle>}
-      description={
-        <OnboardingDescription>{t('wallet.recover.messageBody')}</OnboardingDescription>
-      }
+      description={<OnboardingDescription>{t('wallet.recover.messageBody')}</OnboardingDescription>}
       body={
         <SeedPhraseEntry
           words={words}

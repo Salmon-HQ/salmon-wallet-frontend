@@ -249,29 +249,29 @@ export function ReceiveSheet({
 
             {/* QR Code */}
             <QRContainer data-testid="receive-qr-code">
-            <QRCode
-              value={address}
-              size={qrSize}
-              backgroundColor={palette.neutral[0]}
-              color={palette.neutral[1000]}
-              // The centered mark hides modules, so the code carries level-H
-              // redundancy — a wallet QR must stay scannable before it looks good.
-              ecLevel="H"
-            />
-            {/* The salmon mark on its own knockout: same inks as the code —
-                knockout is the code's ground, mark is the module ink. */}
-            <QRLogoKnockout
-              data-testid="receive-qr-logo"
-              style={{
-                width: qrLogoKnockoutSize,
-                height: qrLogoKnockoutSize,
-                borderRadius: qrLogoKnockoutSize / 4,
-              }}
-            >
-              <BrandMark
-                size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
+              <QRCode
+                value={address}
+                size={qrSize}
+                backgroundColor={palette.neutral[0]}
                 color={palette.neutral[1000]}
+                // The centered mark hides modules, so the code carries level-H
+                // redundancy — a wallet QR must stay scannable before it looks good.
+                ecLevel="H"
               />
+              {/* The salmon mark on its own knockout: same inks as the code —
+                knockout is the code's ground, mark is the module ink. */}
+              <QRLogoKnockout
+                data-testid="receive-qr-logo"
+                style={{
+                  width: qrLogoKnockoutSize,
+                  height: qrLogoKnockoutSize,
+                  borderRadius: qrLogoKnockoutSize / 4,
+                }}
+              >
+                <BrandMark
+                  size={Math.round(qrLogoKnockoutSize * QR_LOGO_MARK_RATIO)}
+                  color={palette.neutral[1000]}
+                />
               </QRLogoKnockout>
             </QRContainer>
           </QRGroup>
@@ -298,8 +298,12 @@ export function ReceiveSheet({
             <OnFillContent>
               <CopyTick
                 copied={copied}
-                copy={<CopyIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />}
-                tick={<CheckIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />}
+                copy={
+                  <CopyIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />
+                }
+                tick={
+                  <CheckIcon weight="bold" size={iconSize.md} color={colors.button.primaryText} />
+                }
               />
               <CopyButtonText aria-live="polite">
                 {copied ? t('token.receive.copied') : t('token.receive.copyAddress')}

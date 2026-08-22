@@ -15,17 +15,25 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 // the jsdom bundle. Everything under test here is structure and focus, so the
 // unstyled MUI primitives are a faithful stand-in.
 vi.mock('../BaseDialog/styles', async () => {
-  const [Dialog, DialogTitle, DialogContent, DialogActions, Button, IconButton, TextField, Typography] =
-    await Promise.all([
-      import('@mui/material/Dialog').then((m) => m.default),
-      import('@mui/material/DialogTitle').then((m) => m.default),
-      import('@mui/material/DialogContent').then((m) => m.default),
-      import('@mui/material/DialogActions').then((m) => m.default),
-      import('@mui/material/Button').then((m) => m.default),
-      import('@mui/material/IconButton').then((m) => m.default),
-      import('@mui/material/TextField').then((m) => m.default),
-      import('@mui/material/Typography').then((m) => m.default),
-    ]);
+  const [
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+    IconButton,
+    TextField,
+    Typography,
+  ] = await Promise.all([
+    import('@mui/material/Dialog').then((m) => m.default),
+    import('@mui/material/DialogTitle').then((m) => m.default),
+    import('@mui/material/DialogContent').then((m) => m.default),
+    import('@mui/material/DialogActions').then((m) => m.default),
+    import('@mui/material/Button').then((m) => m.default),
+    import('@mui/material/IconButton').then((m) => m.default),
+    import('@mui/material/TextField').then((m) => m.default),
+    import('@mui/material/Typography').then((m) => m.default),
+  ]);
   const passthrough = (Component: React.ElementType, name: string) => {
     const Passthrough = ({
       $isDanger: _d,

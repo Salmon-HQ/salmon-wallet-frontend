@@ -22,11 +22,7 @@ import Animated, {
 import { curve, timing } from '../../utils/motion';
 import type { PendingValueProps } from './types';
 
-export const PendingValue: React.FC<PendingValueProps> = ({
-  pending = false,
-  children,
-  style,
-}) => {
+export const PendingValue: React.FC<PendingValueProps> = ({ pending = false, children, style }) => {
   const value = useSharedValue<number>(opacity.full);
   const isReduceMotionEnabled = useReducedMotion();
 

@@ -503,7 +503,10 @@ export const BalanceCardCarousel: React.FC<BalanceCardCarouselProps> = ({
                   }
                 >
                   {hiddenBalance ? (
-                    <EyeSlashIcon size={ms(componentSizes.eyeIcon)} color={semantic.text.secondary} />
+                    <EyeSlashIcon
+                      size={ms(componentSizes.eyeIcon)}
+                      color={semantic.text.secondary}
+                    />
                   ) : (
                     <EyeIcon size={ms(componentSizes.eyeIcon)} color={semantic.text.secondary} />
                   )}

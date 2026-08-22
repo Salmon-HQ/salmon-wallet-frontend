@@ -19,7 +19,14 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, WalletIcon, iconSize } from '../../icons';
+import {
+  CheckCircleIcon,
+  PencilSimpleIcon,
+  PlusIcon,
+  TrashIcon,
+  WalletIcon,
+  iconSize,
+} from '../../icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {

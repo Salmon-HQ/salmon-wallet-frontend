@@ -66,8 +66,7 @@ describe('flesh: the baked tile wrap', () => {
           ([other, otherOpacity]) =>
             otherOpacity === fillOpacity &&
             points(other).every(
-              ([x, y], i) =>
-                Math.abs(x - (points(d)[i][0] + dx)) < 0.02 && y === points(d)[i][1]
+              ([x, y], i) => Math.abs(x - (points(d)[i][0] + dx)) < 0.02 && y === points(d)[i][1]
             )
         );
         expect(wrapped).toBe(true);

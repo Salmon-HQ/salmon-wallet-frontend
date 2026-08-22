@@ -292,10 +292,7 @@ export function GateContainer({
               settings surface stands on — see DESIGN.md §The scrim floor. */}
           {state !== 'locked' && !showExpanded && (
             <View
-              style={[
-                styles.headerFloor,
-                { height: insets.top + componentSizes.headerHeight },
-              ]}
+              style={[styles.headerFloor, { height: insets.top + componentSizes.headerHeight }]}
             />
           )}
           {state !== 'locked' && <Thermocline tier="thick" style={styles.thermocline} />}

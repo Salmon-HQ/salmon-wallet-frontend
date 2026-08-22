@@ -39,9 +39,9 @@ jest.mock('@salmon/shared', () => ({
 // persist-before-success ordering, not the inputs' rendering.
 jest.mock('../../src/components/SettingsScreenLayout', () => {
   const { View } = jest.requireActual('react-native');
-  return { SettingsScreenLayout: ({ children }: { children: React.ReactNode }) => (
-    <View>{children}</View>
-  ) };
+  return {
+    SettingsScreenLayout: ({ children }: { children: React.ReactNode }) => <View>{children}</View>,
+  };
 });
 jest.mock('../../src/components/PasswordInput', () => {
   const { TextInput, View } = jest.requireActual('react-native');
@@ -90,7 +90,14 @@ describe('SecurityPanel — success only after the change has persisted', () => 
       })
     );
 
-    const screen = render(<SecurityPanel onBack={jest.fn()} isBiometricAvailable={false} isBiometricEnabled={false} onToggleBiometric={jest.fn()} />);
+    const screen = render(
+      <SecurityPanel
+        onBack={jest.fn()}
+        isBiometricAvailable={false}
+        isBiometricEnabled={false}
+        onToggleBiometric={jest.fn()}
+      />
+    );
     fillAndSubmit(screen);
 
     // Pending: nothing may claim success yet.
@@ -108,7 +115,14 @@ describe('SecurityPanel — success only after the change has persisted', () => 
   it('shows the wrong-password error (never success) when the change did not persist', async () => {
     mockChangePassword.mockResolvedValue(false);
 
-    const screen = render(<SecurityPanel onBack={jest.fn()} isBiometricAvailable={false} isBiometricEnabled={false} onToggleBiometric={jest.fn()} />);
+    const screen = render(
+      <SecurityPanel
+        onBack={jest.fn()}
+        isBiometricAvailable={false}
+        isBiometricEnabled={false}
+        onToggleBiometric={jest.fn()}
+      />
+    );
     fillAndSubmit(screen);
 
     await waitFor(() => expect(screen.getByTestId('security-error')).toBeTruthy());
@@ -118,7 +132,14 @@ describe('SecurityPanel — success only after the change has persisted', () => 
   it('treats a thrown changePassword as failure, not success', async () => {
     mockChangePassword.mockRejectedValue(new Error('storage exploded'));
 
-    const screen = render(<SecurityPanel onBack={jest.fn()} isBiometricAvailable={false} isBiometricEnabled={false} onToggleBiometric={jest.fn()} />);
+    const screen = render(
+      <SecurityPanel
+        onBack={jest.fn()}
+        isBiometricAvailable={false}
+        isBiometricEnabled={false}
+        onToggleBiometric={jest.fn()}
+      />
+    );
     fillAndSubmit(screen);
 
     await waitFor(() => expect(screen.getByTestId('security-error')).toBeTruthy());

@@ -7,10 +7,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 
 vi.mock('../api/services/exchangeRates', async () => {
-  const actual =
-    await vi.importActual<typeof import('../api/services/exchangeRates')>(
-      '../api/services/exchangeRates'
-    );
+  const actual = await vi.importActual<typeof import('../api/services/exchangeRates')>(
+    '../api/services/exchangeRates'
+  );
 
   return { ...actual, getExchangeRates: vi.fn() };
 });

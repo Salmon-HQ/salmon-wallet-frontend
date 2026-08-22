@@ -24,10 +24,7 @@ export type PendingActivityBannerProps = PendingActivityBannerPropsBase<ViewStyl
  * opaque color, icon, and label — never hue alone (DESIGN.md, Three-Channel
  * State Rule). No salmon fill: the screen underneath owns the one fill.
  */
-const TONE: Record<
-  PendingActivityItem['status'],
-  { color: string; icon: IconComponent | null }
-> = {
+const TONE: Record<PendingActivityItem['status'], { color: string; icon: IconComponent | null }> = {
   pending: { color: semantic.text.secondary, icon: null },
   confirmed: { color: semantic.status.success, icon: CheckCircleIcon },
   failed: { color: semantic.status.danger, icon: WarningCircleIcon },

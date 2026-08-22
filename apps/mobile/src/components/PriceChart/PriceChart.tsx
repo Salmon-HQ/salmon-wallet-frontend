@@ -225,7 +225,10 @@ export const PriceChart: React.FC<PriceChartProps> = ({
   // Resample the series to a fixed point count so period-to-period curves
   // are interpolable, then morph between them on the UI thread.
   const isReduceMotionEnabled = useReducedMotion();
-  const targetYs = useMemo(() => resampleYs(data, chartHeight, bounds), [data, chartHeight, bounds]);
+  const targetYs = useMemo(
+    () => resampleYs(data, chartHeight, bounds),
+    [data, chartHeight, bounds]
+  );
 
   const fromYs = useSharedValue<number[]>(targetYs);
   const toYs = useSharedValue<number[]>(targetYs);
@@ -267,7 +270,10 @@ export const PriceChart: React.FC<PriceChartProps> = ({
 
   const lineAnimatedProps = useAnimatedProps(() => ({ d: lineD.value }));
   const areaAnimatedProps = useAnimatedProps(() => ({
-    d: lineD.value === '' ? '' : `${lineD.value} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z`,
+    d:
+      lineD.value === ''
+        ? ''
+        : `${lineD.value} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z`,
   }));
 
   // Handle period selection

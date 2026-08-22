@@ -20,9 +20,8 @@ vi.mock('@salmon/shared', async () => ({
 }));
 
 const { reducedMotion } = await import('../../../../shared/src/theme/durations');
-const { FLOAT_DELAY_MS, FLOAT_ENTER_SCALE, SINK_EXIT_SCALE, SINK_OUT_MS } = await import(
-  '../../../../shared/src/motion/sinkFloat'
-);
+const { FLOAT_DELAY_MS, FLOAT_ENTER_SCALE, SINK_EXIT_SCALE, SINK_OUT_MS } =
+  await import('../../../../shared/src/motion/sinkFloat');
 const { SinkFloat } = await import('./SinkFloat');
 
 function stubMatchMedia(matches: boolean) {

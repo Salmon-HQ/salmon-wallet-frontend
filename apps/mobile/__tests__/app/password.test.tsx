@@ -85,9 +85,7 @@ jest.mock('../../src/components', () => {
 
   // The real ReservedSlot: the reservation behavior is what the tests below
   // assert, so it must not be stubbed away.
-  const { ReservedSlot } = jest.requireActual(
-    '../../src/components/OnboardingLayout/ReservedSlot'
-  );
+  const { ReservedSlot } = jest.requireActual('../../src/components/OnboardingLayout/ReservedSlot');
 
   return {
     ReservedSlot,

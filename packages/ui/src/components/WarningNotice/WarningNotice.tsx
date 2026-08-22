@@ -30,8 +30,7 @@ export function WarningNotice({
   action,
 }: WarningNoticeProps): ReactNode {
   const accent = tone === 'warning' ? semantic.status.warning : semantic.status.danger;
-  const background =
-    tone === 'warning' ? semantic.status.warningTint : semantic.status.dangerTint;
+  const background = tone === 'warning' ? semantic.status.warningTint : semantic.status.dangerTint;
 
   return (
     <WarningBannerRoot sx={{ backgroundColor: background, borderColor: accent }}>

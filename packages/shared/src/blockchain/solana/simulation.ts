@@ -192,11 +192,7 @@ export interface EffectDetails {
  * "nothing will change". A user reads absence as safety, which makes a silent
  * failure worse than not shipping the feature at all.
  */
-export type TransactionEffects =
-  | NoEffect
-  | Effects
-  | TransactionWouldFail
-  | UndeterminedEffects;
+export type TransactionEffects = NoEffect | Effects | TransactionWouldFail | UndeterminedEffects;
 
 /** The transaction executes and leaves this account's balances untouched. */
 export interface NoEffect {
@@ -313,7 +309,11 @@ export type ResolveSymbolFn = (mint: Address) => string | undefined;
  * @param supply - The mint's total supply.
  * @returns The scope tier for this delegation.
  */
-export function classifyApprovalScope(amount: bigint, balance: bigint, supply: bigint): ApprovalScope {
+export function classifyApprovalScope(
+  amount: bigint,
+  balance: bigint,
+  supply: bigint
+): ApprovalScope {
   if (amount >= U64_MAX || (supply > 0n && amount >= supply)) {
     return 'unlimited';
   }
@@ -721,7 +721,8 @@ export async function previewTransactionEffects(
     before: beforeStates,
     after: afterStates,
     mints,
-    feeLamports: simulation.fee === null || simulation.fee === undefined ? null : BigInt(simulation.fee),
+    feeLamports:
+      simulation.fee === null || simulation.fee === undefined ? null : BigInt(simulation.fee),
     resolveSymbol: options.resolveSymbol,
   });
 }

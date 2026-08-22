@@ -138,13 +138,7 @@ export const ScalesBackground: React.FC<ScalesBackgroundProps> = ({
           >
             <G scale={config.scale}>
               {seigaihaTiledPaths.map((d, i) => (
-                <Path
-                  key={i}
-                  d={d}
-                  stroke={strokeColor}
-                  strokeWidth={strokeWidth}
-                  fill="none"
-                />
+                <Path key={i} d={d} stroke={strokeColor} strokeWidth={strokeWidth} fill="none" />
               ))}
             </G>
           </Pattern>

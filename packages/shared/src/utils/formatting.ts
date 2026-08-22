@@ -397,10 +397,7 @@ function formatPercentageMagnitude(value: number, locale?: string): string {
  * formatPercentage(null, 'en')   // '-'
  * ```
  */
-export function formatPercentage(
-  value: number | null | undefined,
-  locale?: string
-): string {
+export function formatPercentage(value: number | null | undefined, locale?: string): string {
   if (isNil(value) || !isFinite(value)) return '-';
   const magnitude = formatPercentageMagnitude(value, locale);
   if (isPositive(value)) return `+${magnitude}`;
@@ -492,10 +489,7 @@ export function showAbsoluteChange(
  * @param locale - Override locale; defaults to the active i18next language
  * @returns The compacted count, or '-' when there is no number to show
  */
-export function formatLargeNumber(
-  value: number | undefined | null,
-  locale?: string
-): string {
+export function formatLargeNumber(value: number | undefined | null, locale?: string): string {
   if (isNil(value)) return '-';
   const compact = (scaled: number, suffix: string) =>
     `${formatNumber(

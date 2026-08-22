@@ -133,8 +133,7 @@ jest.mock('../../../hooks/useTabChrome', () => ({
 jest.mock('../Button', () => ({
   PrimaryButton: (props: { children?: React.ReactNode; testID?: string }) =>
     mockPrimaryButton(props),
-  TextButton: (props: { children?: React.ReactNode; testID?: string }) =>
-    mockPrimaryButton(props),
+  TextButton: (props: { children?: React.ReactNode; testID?: string }) => mockPrimaryButton(props),
 }));
 
 jest.mock('../LoadingScreen', () => ({

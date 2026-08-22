@@ -29,7 +29,9 @@ jest.mock('../BlurContainer', () => {
 
 jest.mock('../PendingValue', () => {
   const { View: RNView } = require('react-native');
-  return { PendingValue: ({ children }: { children: React.ReactNode }) => <RNView>{children}</RNView> };
+  return {
+    PendingValue: ({ children }: { children: React.ReactNode }) => <RNView>{children}</RNView>,
+  };
 });
 
 jest.mock('../TokenLogo', () => {

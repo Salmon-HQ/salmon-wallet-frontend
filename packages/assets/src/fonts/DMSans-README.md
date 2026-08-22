@@ -6,13 +6,13 @@ upstream in exactly one way: the ten digits share one advance width per weight.
 
 ## Provenance
 
-| | |
-| --- | --- |
-| Source | `upstream/DMSans-4.004[opsz,wght].ttf`, from [google/fonts `ofl/dmsans`](https://github.com/google/fonts/tree/main/ofl/dmsans) |
-| Version | `Version 4.004;gftools[0.9.30]` |
-| Instances | `wght` 400 / 500 / 600 / 700, `opsz` pinned at 9 |
+|              |                                                                                                                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source       | `upstream/DMSans-4.004[opsz,wght].ttf`, from [google/fonts `ofl/dmsans`](https://github.com/google/fonts/tree/main/ofl/dmsans)                                                           |
+| Version      | `Version 4.004;gftools[0.9.30]`                                                                                                                                                          |
+| Instances    | `wght` 400 / 500 / 600 / 700, `opsz` pinned at 9                                                                                                                                         |
 | Modification | digit advances equalised to the widest digit, each outline shifted by half the difference so it stays optically centred; every GPOS kern pair touching a digit dropped (1079 per weight) |
-| Licence | SIL OFL 1.1 — `DMSans-OFL.txt`, shipped beside the binaries |
+| Licence      | SIL OFL 1.1 — `DMSans-OFL.txt`, shipped beside the binaries                                                                                                                              |
 
 The variable source is committed so the statics can be regenerated offline and
 byte-diffed. Nothing imports it; it is not bundled.
@@ -28,7 +28,7 @@ turn on a feature that exists; against this font they are silently no-ops. The
 fix has to be in the binary, so it is.
 
 Equal advances alone are not enough. The `kern` pairs were fitted to the
-original proportional shapes, and they are *conditional* — with advances
+original proportional shapes, and they are _conditional_ — with advances
 equalised but kerning intact, `$17.29` and `$17.30` still shaped 6 units apart
 and `1,234.56` and `9,999.99` 60 units apart, which is the jitter returning
 through the other door. Real tabular figures are not kerned, so the script drops
@@ -37,8 +37,7 @@ HarfBuzz and fails if any pair moves.
 
 Because the widths are baked into the advances rather than gated behind a
 feature, digits are tabular unconditionally, on all three surfaces, with no call
-site able to forget it. Digit width differs *between* weights (656 / 663 / 672 /
-678) — that is fine, no rendered number changes weight mid-update.
+site able to forget it. Digit width differs _between_ weights (656 / 663 / 672 / 678) — that is fine, no rendered number changes weight mid-update.
 
 ## Licence compliance
 

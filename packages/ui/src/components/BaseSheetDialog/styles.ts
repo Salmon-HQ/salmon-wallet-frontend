@@ -66,4 +66,3 @@ export const StyledDialog: ComponentType<
     position: 'relative',
   },
 }));
-

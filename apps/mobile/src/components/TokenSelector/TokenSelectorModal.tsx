@@ -318,9 +318,7 @@ export function TokenSelectorModal({
     <BottomSheetContainer
       visible={visible}
       onClose={handleClose}
-      headerContent={
-        <BottomSheetTitleHeader title={t('wallet.select_token', 'Select Token')} />
-      }
+      headerContent={<BottomSheetTitleHeader title={t('wallet.select_token', 'Select Token')} />}
       testID="token-selector-modal"
     >
       <View style={styles.content}>

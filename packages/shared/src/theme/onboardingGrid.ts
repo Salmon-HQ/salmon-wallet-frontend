@@ -328,9 +328,7 @@ const rung = (variant: OnboardingVariant, description: number): OnboardingGrid =
     description: resolvedDescription,
     secondary: resolvedSecondary,
     body:
-      constants.body +
-      (description - resolvedDescription) +
-      (shared.secondary - resolvedSecondary),
+      constants.body + (description - resolvedDescription) + (shared.secondary - resolvedSecondary),
   });
 };
 

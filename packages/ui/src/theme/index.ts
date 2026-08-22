@@ -187,7 +187,11 @@ export const salmonTheme: Theme = createTheme({
       lineHeight: lineHeight.condensed,
       fontWeight: fontWeight.semibold,
     },
-    h6: { fontSize: fontSize.bodyLg, lineHeight: lineHeight.normal, fontWeight: fontWeight.semibold },
+    h6: {
+      fontSize: fontSize.bodyLg,
+      lineHeight: lineHeight.normal,
+      fontWeight: fontWeight.semibold,
+    },
     subtitle1: {
       fontSize: fontSize.bodyLg,
       lineHeight: lineHeight.normal,
@@ -198,7 +202,11 @@ export const salmonTheme: Theme = createTheme({
       lineHeight: lineHeight.normal,
       fontWeight: fontWeight.medium,
     },
-    body1: { fontSize: fontSize.bodyLg, lineHeight: lineHeight.normal, fontWeight: fontWeight.regular },
+    body1: {
+      fontSize: fontSize.bodyLg,
+      lineHeight: lineHeight.normal,
+      fontWeight: fontWeight.regular,
+    },
     body2: {
       fontSize: fontSize.base,
       lineHeight: lineHeight.normal,
@@ -211,7 +219,11 @@ export const salmonTheme: Theme = createTheme({
       letterSpacing: letterSpacing.normal,
       textTransform: 'none',
     },
-    caption: { fontSize: fontSize.sm, lineHeight: lineHeight.normal, fontWeight: fontWeight.regular },
+    caption: {
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.normal,
+      fontWeight: fontWeight.regular,
+    },
     overline: {
       fontSize: fontSize.xs,
       lineHeight: lineHeight.normal,

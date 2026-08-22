@@ -132,9 +132,7 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
           activeOpacity={0.6}
           accessibilityRole="button"
           accessibilityLabel={
-            copied
-              ? t('actions.copied')
-              : t('transactions.detail.copyAddressLabel', { label })
+            copied ? t('actions.copied') : t('transactions.detail.copyAddressLabel', { label })
           }
           accessibilityHint={copied ? undefined : t('transactions.detail.copyAddressHint')}
         >

@@ -295,9 +295,7 @@ export function PrivateKeyPanel({
                     <EyeIcon size={iconSize.xl} color={semantic.text.primary} />
                     {/* Both branches now cost a proof of identity, so the
                         label no longer promises a free tap. */}
-                    <Text style={styles.revealText}>
-                      {t('settings.authenticate_to_reveal')}
-                    </Text>
+                    <Text style={styles.revealText}>{t('settings.authenticate_to_reveal')}</Text>
                   </TouchableOpacity>
                 )}
                 <Text style={styles.keyText} selectable={isRevealed}>

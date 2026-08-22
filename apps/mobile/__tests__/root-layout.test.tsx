@@ -48,7 +48,9 @@ jest.mock('@expo/vector-icons/FontAwesome', () => ({
 // without adding it below fails the whole suite with MODULE_NOT_FOUND.
 jest.mock('@salmon/assets/src/fonts/DMSans-Regular.ttf', () => 'DMSansRegular', { virtual: true });
 jest.mock('@salmon/assets/src/fonts/DMSans-Medium.ttf', () => 'DMSansMedium', { virtual: true });
-jest.mock('@salmon/assets/src/fonts/DMSans-SemiBold.ttf', () => 'DMSansSemiBold', { virtual: true });
+jest.mock('@salmon/assets/src/fonts/DMSans-SemiBold.ttf', () => 'DMSansSemiBold', {
+  virtual: true,
+});
 jest.mock('@salmon/assets/src/fonts/DMSans-Bold.ttf', () => 'DMSansBold', { virtual: true });
 jest.mock('@salmon/assets/src/fonts/GeistMono-Regular.ttf', () => 'GeistMonoRegular', {
   virtual: true,

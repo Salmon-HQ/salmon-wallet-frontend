@@ -120,7 +120,9 @@ export function BlurContainer({
           tint={blurTint}
           blurTarget={blurTarget}
           blurMethod="dimezisBlurView"
-          blurReductionFactor={Platform.OS === 'android' ? ANDROID_BLUR_REDUCTION_FACTOR : undefined}
+          blurReductionFactor={
+            Platform.OS === 'android' ? ANDROID_BLUR_REDUCTION_FACTOR : undefined
+          }
           pointerEvents="none"
           style={[StyleSheet.absoluteFill, { backgroundColor }]}
         />
