@@ -48,15 +48,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "@typescript-eslint/eslint-plugin": "^8.66.0",
-    "@typescript-eslint/parser": "^8.66.0",
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
     "eslint": "^9.39.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "~7.0.1",
-    "jscpd": "^5.0.14",
+    "jscpd": "^5.0.15",
     "patch-package": "^8.0.1",
     "prettier": "3.9.6",
-    "turbo": "^2.10.9"
+    "turbo": "^2.10.10"
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
