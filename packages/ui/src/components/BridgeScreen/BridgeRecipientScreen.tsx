@@ -11,13 +11,12 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
-  gradients,
   fontFamily,
   fontWeight,
   fontSize,
-  shadowsCSS,
   letterSpacing,
   lineHeight,
   componentSizes,
@@ -78,14 +77,10 @@ const AddressInput = styled('input')({
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.medium,
   letterSpacing: letterSpacing.normal,
-  outline: 'none',
   boxSizing: 'border-box',
   transition: `border-color ${duration.normal} ${easing.ease}`,
   '&::placeholder': {
     color: colors.text.tertiary,
-  },
-  '&:focus': {
-    borderColor: 'rgba(255, 92, 69, 0.6)',
   },
 });
 
@@ -93,7 +88,7 @@ const ErrorText = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
-  color: colors.status.error,
+  color: semantic.status.danger,
   marginTop: spacing.xs,
   letterSpacing: letterSpacing.normal,
 });
@@ -110,7 +105,7 @@ const InfoTitle = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
-  color: colors.status.warning,
+  color: semantic.status.warning,
   marginBottom: spacing.xs,
   letterSpacing: letterSpacing.normal,
 });
@@ -136,12 +131,11 @@ const BackButtonWrapper = styled('div')({
   flex: 1,
 });
 
+// Layout only. It used to paint a gradient the button was made transparent to
+// reveal, from when the primary button was a flat colour; the button owns its
+// fill, flesh and cavity now, and a second fill behind it showed through.
 const ContinueButtonGradient = styled('div')({
   flex: 1,
-  borderRadius: borderRadius.lg,
-  border: `${borderWidth.accent}px solid ${colors.accent.border}`,
-  boxShadow: shadowsCSS.button,
-  background: gradients.primaryCSS,
 });
 
 // ============================================================================
@@ -198,12 +192,8 @@ export function BridgeRecipientScreen({
         <BackButtonWrapper>
           <SecondaryButton
             onClick={onBack}
-            style={{
-              height: componentSizes.buttonHeightCompact,
-              border: `${borderWidth.accent}px solid ${colors.accent.border}`,
-              borderRadius: borderRadius.lg,
-              backgroundColor: colors.button.cancelBackground,
-            }}
+            // Height only — radius, fill and border belong to the button.
+            style={{ height: componentSizes.buttonHeightCompact }}
           >
             {t('general.back')}
           </SecondaryButton>
@@ -214,7 +204,6 @@ export function BridgeRecipientScreen({
             disabled={!canContinue}
             style={{
               height: componentSizes.buttonHeightCompact,
-              background: 'transparent',
             }}
           >
             {t('bridge.recipient.review')}

@@ -184,6 +184,202 @@ describe('useSwapScreenLogic', () => {
     expect(result.current.reviewWarning).toBeNull();
   });
 
+  it('discards a stale quote response that resolves after the inputs changed', async () => {
+    vi.useFakeTimers();
+
+    const NEW_QUOTE = {
+      output: { amount: '5000000', decimals: 6 },
+      custom: { priceImpact: 0.4 },
+    } as any;
+
+    let resolveStale!: (q: unknown) => void;
+    const staleQuotePromise = new Promise((resolve) => {
+      resolveStale = resolve;
+    });
+
+    const onGetQuote = vi
+      .fn()
+      // First request (amount '1') hangs until we resolve it manually.
+      .mockReturnValueOnce(staleQuotePromise)
+      // Second request (amount '2') resolves immediately.
+      .mockResolvedValueOnce(NEW_QUOTE);
+
+    const props = createProps({
+      initialInToken: SOL,
+      initialOutToken: USDC,
+      onGetQuote,
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    act(() => {
+      result.current.setInAmount('1');
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(onGetQuote).toHaveBeenCalledTimes(1);
+
+    // User edits the amount while the first request is still in flight.
+    act(() => {
+      result.current.setInAmount('2');
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(onGetQuote).toHaveBeenCalledTimes(2);
+    expect(result.current.quote).toBe(NEW_QUOTE);
+    expect(result.current.outAmount).toBe('5');
+
+    // The slow first response lands late: it must NOT overwrite the newer quote.
+    await act(async () => {
+      resolveStale(QUOTE);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(result.current.quote).toBe(NEW_QUOTE);
+    expect(result.current.outAmount).toBe('5');
+    expect(result.current.isLoadingQuote).toBe(false);
+  }, 10_000);
+
+  it('clears a stranded estimate loading flag when the pair switches to jupiter mid-flight', async () => {
+    vi.useFakeTimers();
+
+    let resolveEstimate!: (v: unknown) => void;
+    const hangingEstimate = new Promise((resolve) => {
+      resolveEstimate = resolve;
+    });
+    const onGetBridgeEstimate = vi.fn().mockReturnValueOnce(hangingEstimate);
+
+    const props = createProps({
+      initialInToken: SOL,
+      tokens: [SOL, USDC, BTC],
+      featuredTokens: [SOL, USDC, BTC],
+      jupiterTokens: [SOL, USDC],
+      onGetBridgeEstimate,
+      onGetAvailableTokens: vi.fn().mockResolvedValue(BRIDGE_AVAILABLE_TOKENS),
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.handleOutTokenSelect(BTC);
+    });
+    act(() => {
+      result.current.setInAmount('1');
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(onGetBridgeEstimate).toHaveBeenCalledTimes(1);
+    expect(result.current.isLoadingEstimate).toBe(true);
+
+    // While the estimate is still in flight, the user picks a Solana output:
+    // the pair is now jupiter, and the estimate response will be discarded as
+    // stale — its loading flag must not stay stuck on the screen.
+    act(() => {
+      result.current.handleOutTokenSelect(USDC);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+
+    expect(result.current.quote).toBe(QUOTE);
+    expect(result.current.outAmount).toBe('2.5');
+    expect(result.current.isLoadingQuote).toBe(false);
+    expect(result.current.isLoadingEstimate).toBe(false);
+
+    // The stale estimate landing late changes nothing.
+    await act(async () => {
+      resolveEstimate(BRIDGE_ESTIMATE);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.isLoadingEstimate).toBe(false);
+    expect(result.current.outAmount).toBe('2.5');
+  }, 10_000);
+
+  it('clears the quote loading flag when the amount is cleared mid-debounce', async () => {
+    vi.useFakeTimers();
+
+    const props = createProps({
+      initialInToken: SOL,
+      initialOutToken: USDC,
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    act(() => {
+      result.current.setInAmount('1');
+    });
+    expect(result.current.isLoadingQuote).toBe(true);
+
+    // Clearing the amount cancels the debounced request — nothing will ever
+    // resolve to clear the flag, so the effect itself must reset it.
+    act(() => {
+      result.current.setInAmount('');
+    });
+    expect(result.current.isLoadingQuote).toBe(false);
+  });
+
+  it('refreshes instead of executing when the quote countdown has expired on confirm', async () => {
+    vi.useFakeTimers();
+
+    const props = createProps({
+      initialInToken: SOL,
+      initialOutToken: USDC,
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    act(() => {
+      result.current.setInAmount('1');
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    act(() => {
+      result.current.handleReview();
+    });
+    expect(result.current.step).toBe('review');
+    expect(props.onGetQuote).toHaveBeenCalledTimes(1);
+
+    // Let the 15s quote countdown run out on the review screen.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+
+    await act(async () => {
+      await result.current.handleConfirmOrRefresh();
+    });
+
+    // Expired quote must not be executed — it must be re-quoted.
+    expect(props.onSwap).not.toHaveBeenCalled();
+    expect(props.onGetQuote).toHaveBeenCalledTimes(2);
+    expect(result.current.step).toBe('review');
+
+    // With a fresh quote and a running countdown, confirm now executes.
+    await act(async () => {
+      await result.current.handleConfirmOrRefresh();
+    });
+    expect(props.onSwap).toHaveBeenCalledWith(QUOTE);
+  }, 10_000);
+
   it('surfaces minimum USD guardrails before review', () => {
     const lowPriceSol = { ...SOL, usdPrice: 0.5 };
     const props = createProps({
@@ -348,6 +544,9 @@ describe('useSwapScreenLogic', () => {
       outSymbol: 'USDC',
       chain: 'solana',
       networkId: 'solana-mainnet',
+      inLogo: 'https://example.com/sol.png',
+      outLogo: 'https://example.com/usdc.png',
+      feePercent: undefined,
     });
 
     // Post-swap settling refreshes balances: the fully-spent input token drops
@@ -373,6 +572,9 @@ describe('useSwapScreenLogic', () => {
       outSymbol: 'USDC',
       chain: 'solana',
       networkId: 'solana-mainnet',
+      inLogo: 'https://example.com/sol.png',
+      outLogo: 'https://example.com/usdc.png',
+      feePercent: undefined,
     });
 
     act(() => {
@@ -780,7 +982,82 @@ describe('useSwapScreenLogic', () => {
       outSymbol: 'BTC',
       chain: 'solana',
       networkId: 'solana-mainnet',
+      inLogo: 'https://example.com/sol.png',
+      outLogo: 'https://example.com/btc.png',
+      feePercent: undefined,
     });
+  });
+
+  it('retains and registers the exchange id when the deposit fails after creation', async () => {
+    vi.useFakeTimers();
+
+    const onBridgeExchangeCreated = vi.fn();
+    const props = createProps({
+      initialInToken: SOL,
+      tokens: [SOL],
+      featuredTokens: [SOL],
+      jupiterTokens: [SOL, USDC],
+      onGetAvailableTokens: vi.fn().mockResolvedValue(BRIDGE_AVAILABLE_TOKENS),
+      // The exchange is created at StealthEX, then the deposit transfer throws.
+      onSendDeposit: vi.fn().mockRejectedValue(new Error('deposit broadcast failed')),
+      onBridgeExchangeCreated,
+    });
+
+    const { result } = renderHook((hookProps) => useSwapScreenLogic(hookProps), {
+      initialProps: props,
+      wrapper: makeWrapper(),
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.handleOutTokenSelect(BTC);
+      result.current.setInAmount('1');
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    act(() => {
+      result.current.handleReview();
+      result.current.setRecipientAddress('bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh');
+    });
+    act(() => {
+      result.current.handleContinueToReview();
+    });
+
+    await act(async () => {
+      await result.current.handleConfirmBridge();
+    });
+
+    // The order exists at the provider, so it must have been handed to the
+    // background poller BEFORE the deposit was attempted.
+    expect(onBridgeExchangeCreated).toHaveBeenCalledTimes(1);
+    expect(onBridgeExchangeCreated).toHaveBeenCalledWith(BRIDGE_EXCHANGE, {
+      sourceNetworkId: 'solana-mainnet',
+      destNetworkId: 'bitcoin-mainnet',
+      destinationAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    });
+    expect(props.onSendDeposit).toHaveBeenCalled();
+
+    // The failure still returns the user to input, but the reference number
+    // survives so it can be shown alongside the error.
+    expect(result.current.step).toBe('input');
+    expect(result.current.swapError).toBeTruthy();
+    expect(result.current.lastBridgeExchange).toBe(BRIDGE_EXCHANGE);
+    expect(result.current.lastBridgeExchange?.id).toBe('bridge-1');
+    expect(result.current.successExchange).toBeNull();
+
+    // Only leaving the flow clears it.
+    act(() => {
+      result.current.handleSuccessContinue();
+    });
+    expect(result.current.lastBridgeExchange).toBeNull();
   });
 
   it('surfaces the pair minimum from the estimate when the bridge rejects the amount', async () => {

@@ -11,7 +11,7 @@ import {
   NativeScrollEvent,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { MagnifyingGlassIcon } from '../../icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   colors,
@@ -20,6 +20,7 @@ import {
   Rect,
   Circle,
   fontFamilyNative,
+  formatTokenAmount,
   ms,
   vs,
   s,
@@ -49,8 +50,10 @@ const TokenRow: React.FC<TokenRowProps> = React.memo(({ token, onPress }) => {
   const balanceDisplay = useMemo(() => {
     const amount = typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount;
     if (amount === 0) return `0 ${token.symbol}`;
-    if (amount < 0.0001) return `<0.0001 ${token.symbol}`;
-    return `${Number(amount.toFixed(4))} ${token.symbol}`;
+    // The floor reads in the app's language too — a hardcoded '<0.0001' put an
+    // English decimal point next to a Spanish one in the row below it.
+    if (amount < 0.0001) return `<${formatTokenAmount(0.0001)} ${token.symbol}`;
+    return `${formatTokenAmount(amount)} ${token.symbol}`;
   }, [token.uiAmount, token.symbol]);
 
   return (
@@ -218,8 +221,7 @@ export const StepTokenSelect: React.FC<StepTokenSelectProps> = ({
     <View style={styles.container}>
       {/* Search Input */}
       <BlurContainer style={styles.searchContainer}>
-        <Ionicons
-          name="search"
+        <MagnifyingGlassIcon
           size={ms(18)}
           color={colors.text.secondary}
           style={styles.searchIcon}
@@ -255,6 +257,7 @@ export const StepTokenSelect: React.FC<StepTokenSelectProps> = ({
           onScroll={handleScroll}
           scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         />
 
         {/* Top fade gradient */}
@@ -301,7 +304,7 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   sectionHeader: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.bold,
     color: colors.text.primary,
     marginBottom: vs(spacing.md),

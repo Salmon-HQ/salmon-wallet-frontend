@@ -7,9 +7,12 @@ import {
   spacing,
   borderRadius,
   fontSize,
+  fontWeight,
   borderWidth,
   fontFamilyNative,
+  semantic,
 } from '@salmon/shared';
+import { useSecretScreen } from '../../../hooks/useSecretScreen';
 
 interface SeedWordGridProps {
   /** Array of mnemonic words */
@@ -19,11 +22,22 @@ interface SeedWordGridProps {
 }
 
 export function SeedWordGrid({ words, columns = 3 }: SeedWordGridProps) {
+  // Rendering a mnemonic is by definition a secret surface, so protection
+  // rides on this primitive rather than on each screen that uses it.
+  useSecretScreen('seed-word-grid');
+
   return (
     <View style={styles.container}>
       {words.map((word, index) => (
-        <View key={index} style={[styles.wordCard, { width: `${100 / columns - 2}%` }]}>
-          <Text style={styles.wordIndex}>{index + 1}</Text>
+        <View
+          key={index}
+          testID={`seed-word-cell-${index + 1}`}
+          style={[styles.wordCard, { width: `${100 / columns - 2}%` }]}
+        >
+          <Text style={styles.wordIndex} accessibilityLabel={String(index + 1)}>
+            {index + 1}
+            <Text style={styles.indexDot}>.</Text>
+          </Text>
           <Text style={styles.wordText}>{word}</Text>
         </View>
       ))}
@@ -38,10 +52,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
+  // The Bedrock Rule (DESIGN.md): a cell that exhibits a seed word is
+  // `surface.bedrock`, α 1.00 — never the translucent card that let the water
+  // column read through the first phrase a user ever sees.
   wordCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card.background,
+    backgroundColor: semantic.surface.bedrock,
     borderWidth: borderWidth.thin,
     borderColor: colors.card.border,
     borderRadius: borderRadius.md,
@@ -49,15 +66,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     gap: spacing.xs,
   },
-  wordIndex: {
+  /**
+   * The index's period. Decoration: the `accessibilityLabel` on the wrapping
+   * `Text` is the bare number, so it is never announced, and it is markup that
+   * never reaches the phrase. Nested inside the index's existing box so the
+   * word beside it does not move.
+   *
+   * As in the entry cell, the number is `text.tertiary` (Seed Phrase Rule:
+   * never mistakable for part of the phrase) and only the period carries the
+   * accent.
+   */
+  indexDot: {
     color: colors.accent.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.sm,
+  },
+  // Seed Phrase Rule (DESIGN.md): cell numbers are `text.tertiary` at label
+  // size so they are never mistaken for part of the phrase.
+  wordIndex: {
+    color: colors.text.tertiary,
+    fontFamily: fontFamilyNative.medium,
+    fontSize: fontSize.label,
     minWidth: 20,
   },
+  // Seed Phrase Rule: Geist Mono at the larger mono size, weight 500.
   wordText: {
     color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontFamily: fontFamilyNative.mono,
+    fontWeight: fontWeight.medium,
+    fontSize: fontSize.monoLg,
   },
 });

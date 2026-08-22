@@ -125,6 +125,32 @@ describe('useBridge', () => {
     });
   });
 
+  it('maps a no-route rejection to the pair-unavailable key', async () => {
+    mockGetBridgeEstimatedAmount.mockRejectedValueOnce(
+      new Error('Bridge fetch estimated amount failed: No exchange route available')
+    );
+    mockGetBridgeMinimalAmount.mockResolvedValueOnce({ min: 0.1, max: null });
+
+    const { result } = renderHook(() => useBridge());
+
+    let caughtError: unknown = null;
+    await act(async () => {
+      try {
+        await result.current.getEstimate('btc', 'pump', 0.5);
+      } catch (error) {
+        caughtError = error;
+      }
+    });
+
+    expect(caughtError).toBeInstanceOf(Error);
+    expect((caughtError as Error).message).toBe('bridge.errors.pairUnavailable');
+
+    await waitFor(() => {
+      expect(result.current.status).toBe('failed');
+      expect(result.current.error).toBe('bridge.errors.pairUnavailable');
+    });
+  });
+
   it('creates exchanges and exposes exchange-created state', async () => {
     mockCreateBridgeExchange.mockResolvedValueOnce({
       id: 'bridge-1',

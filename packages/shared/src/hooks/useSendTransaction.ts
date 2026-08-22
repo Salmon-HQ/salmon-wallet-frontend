@@ -23,7 +23,7 @@
  * ```
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 import type { BlockchainType, BlockchainAccount } from '../types/blockchain';
 import type {
@@ -32,6 +32,7 @@ import type {
   SendTransactionStatus,
 } from '../types/send';
 import { useSettleUntilChanged } from '../query/invalidation';
+import { usePendingTransactionsOptional } from '../contexts/PendingTransactionsContext';
 import { trackEvent, trackFirstTime } from '../analytics';
 import { STORAGE_KEYS } from '../storage';
 import { classifyTransactionError } from '../utils/transaction-errors';
@@ -93,6 +94,7 @@ export function useSendTransaction({
   const [error, setError] = useState<string | null>(null);
   const [feeEstimateFailed, setFeeEstimateFailed] = useState(false);
   const settleUntilChanged = useSettleUntilChanged();
+  const pendingTransactions = usePendingTransactionsOptional();
 
   const reset = useCallback(() => {
     setStatus('idle');
@@ -175,6 +177,20 @@ export function useSendTransaction({
         // success screen dwell until the user can return to a fresh balance.
         const accountId = account.getReceiveAddress();
         const networkId = account.getNetworkId();
+        // Record the signature globally before anything screen-owned runs, so
+        // the outcome survives the user leaving, locking, or killing the app.
+        pendingTransactions?.trackPendingTransaction({
+          signature: String(result.txId),
+          kind: 'send',
+          networkId,
+          accountId,
+          submittedAt: Date.now(),
+          summary: `${params.amount} ${params.token.symbol}`,
+        });
+        // This screen is now the one surface reporting this signature; the
+        // banner withholds it until the release below. Same guard as swap —
+        // see PendingTransactionsContext's module doc.
+        const releaseReport = pendingTransactions?.claimForegroundReport(String(result.txId));
         setSettling(true);
         settleUntilChanged({
           accountId,
@@ -186,6 +202,7 @@ export function useSendTransaction({
           })
           .finally(() => {
             setSettling(false);
+            releaseReport?.();
           });
         return result;
       } catch (err) {
@@ -203,17 +220,22 @@ export function useSendTransaction({
         throw err;
       }
     },
-    [account, settleUntilChanged]
+    [account, settleUntilChanged, pendingTransactions]
   );
 
-  return {
-    estimateFee,
-    sendTransaction,
-    status,
-    settling,
-    feeEstimateFailed,
-    error,
-    isError: error !== null,
-    reset,
-  };
+  // Stable return identity: consumers hang effects off this object (and off
+  // `reset`), so a fresh literal every render would re-trigger them each time.
+  return useMemo(
+    () => ({
+      estimateFee,
+      sendTransaction,
+      status,
+      settling,
+      feeEstimateFailed,
+      error,
+      isError: error !== null,
+      reset,
+    }),
+    [estimateFee, sendTransaction, status, settling, feeEstimateFailed, error, reset]
+  );
 }

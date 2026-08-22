@@ -4,21 +4,33 @@ import {
   componentSizes,
   fontFamilyNative,
   fontScaleCap,
+  fontSize,
+  lineHeight,
   ms,
   s,
   spacing,
   vs,
   borderWidth,
   gradients,
+  semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
-import { BlurContainer } from '../BlurContainer';
+import { Thermocline } from '../Thermocline';
 import { GridViewSvgIcon, HomeSvgIcon, SwapSvgIcon } from '../Icon';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+import { useTaskChrome } from '../../contexts/TaskChromeContext';
+import { curve, timing } from '../../utils/motion';
+import { FLOAT_IN_MS, SINK_FLOAT_TRAVEL, SINK_OUT_MS } from '../../utils/sinkAndFloat';
 import type { TabConfig } from './types';
 
 const TAB_CONFIG: Record<string, TabConfig> = {
@@ -63,8 +75,15 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
     return null;
   }
 
-  const iconColor = isFocused ? colors.tabBar.active : colors.tabBar.inactive;
-  const labelColor = isFocused ? colors.tabBar.active : colors.tabBar.inactive;
+  // The one-fill rule governs fills, not ink, so which tab you are on can be
+  // salmon — but the bar is a membrane, and ratios are measured against its
+  // worst-case composite (#3C3F47), not the app ground. Icons are graphics
+  // (1.4.11, 3:1): `accent.ink` at 3.44:1 and `text.tertiary` at 3.54:1 both
+  // clear it. Labels are small text (1.4.3, 4.5:1): the active one wears
+  // `accent.inkOnMembrane` (5.27:1), the rest `text.secondary` (4.88:1).
+  // Asserted in `packages/shared/src/theme/contrast.test.ts`.
+  const iconColor = isFocused ? semantic.accent.ink : semantic.text.tertiary;
+  const labelColor = isFocused ? semantic.accent.inkOnMembrane : semantic.text.secondary;
   const IconComponent = config.icon;
 
   return (
@@ -98,68 +117,110 @@ function TabItem({ routeName, isFocused, onPress, onLongPress }: TabItemProps) {
 export function GlassTabBar({ state, descriptors: _descriptors, navigation }: BottomTabBarProps) {
   const { tabBarBottomPadding } = useTabChrome();
 
+  // The pill is the shell's footer, and the verb owns it too (owner,
+  // on-device 2026-08-18): when the swap's task window takes the screen the
+  // whole bar sinks with the outgoing content — the normal sink, distance and
+  // duration from the shared verb — and floats back as the shell returns.
+  // Reduce motion: `timing` resolves to a cut.
+  const { isTaskEngaged } = useTaskChrome();
+  const isReduceMotionEnabled = useReducedMotion();
+  const sunk = useSharedValue(isTaskEngaged ? 1 : 0);
+  useEffect(() => {
+    sunk.value = withTiming(
+      isTaskEngaged ? 1 : 0,
+      isTaskEngaged
+        ? timing(SINK_OUT_MS, isReduceMotionEnabled, curve.sink)
+        : timing(FLOAT_IN_MS, isReduceMotionEnabled)
+    );
+  }, [isTaskEngaged, isReduceMotionEnabled, sunk]);
+  const sinkStyle = useAnimatedStyle(() => ({
+    opacity: 1 - sunk.value,
+    transform: [{ translateY: sunk.value * SINK_FLOAT_TRAVEL }],
+  }));
+
   // Filter and order routes to only show Home, Collectibles, and Swap
   const visibleRoutes = TAB_ORDER.map((tabName) =>
     state.routes.find((route) => route.name === tabName)
   ).filter((route): route is (typeof state.routes)[0] => route !== undefined);
 
   return (
-    <LinearGradient
-      colors={gradients.tabBarFade.colors}
-      start={gradients.tabBarFade.start}
-      end={gradients.tabBarFade.end}
-      style={[
-        styles.container,
-        {
-          paddingBottom: tabBarBottomPadding,
-        },
-      ]}
-      pointerEvents="box-none"
+    <Animated.View
+      style={[styles.container, sinkStyle]}
+      pointerEvents={isTaskEngaged ? 'none' : 'box-none'}
     >
-      <BlurContainer
-        style={styles.glassContainer}
-        blurIntensity={24}
-        backgroundColor={colors.background.glass}
-        borderColor={colors.border.subtle}
-        borderWidth={borderWidth.thin}
-        useGradientBorder
+      {/*
+        Membrane bottom edge — conceptually the lower boundary of the future
+        membrane material; the membrane batch should absorb this gradient.
+        It starts above the pill's top edge and runs to the physical bottom
+        edge so no raw list row shows at pill level or in the gap under it;
+        its densest stop is the water's own floor at just-under-full alpha,
+        so it reads as depth, not a slab.
+      */}
+      <LinearGradient
+        colors={gradients.tabBarFade.colors}
+        locations={[...gradients.tabBarFade.locations]}
+        start={gradients.tabBarFade.start}
+        end={gradients.tabBarFade.end}
+        style={styles.membraneBottomEdge}
+        pointerEvents="none"
+        testID="tab-bar-fade"
+      />
+      <View
+        style={[styles.content, { paddingBottom: tabBarBottomPadding }]}
+        pointerEvents="box-none"
       >
-        <View style={styles.bar}>
-          {visibleRoutes.map((route) => {
-            const isFocused = state.routes[state.index]?.name === route.name;
+        <View style={styles.glassContainer}>
+          {/*
+            The tab bar is the app's canonical thermocline, at the 12px
+            control radius. Tier is `thick` rather than `thin` because
+            `membraneThin` guarantees `text.primary` alone (DESIGN.md §The
+            scrim floor) and these labels wear secondary and salmon ink, which
+            only `thick`'s worst-case composite carries. The tabBarFade
+            gradient above is the material's own bottom edge and stays as it is.
+          */}
+          <Thermocline
+            tier="thick"
+            style={styles.glassBackgroundLayer}
+            borderColor={colors.border.subtle}
+            borderWidth={borderWidth.thin}
+          />
+          <View style={styles.bar}>
+            {visibleRoutes.map((route) => {
+              const isFocused = state.routes[state.index]?.name === route.name;
 
-            const onPress = () => {
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
+              const onPress = () => {
+                const event = navigation.emit({
+                  type: 'tabPress',
+                  target: route.key,
+                  canPreventDefault: true,
+                });
 
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name, route.params);
-              }
-            };
+                if (!isFocused && !event.defaultPrevented) {
+                  navigation.navigate(route.name, route.params);
+                }
+              };
 
-            const onLongPress = () => {
-              navigation.emit({
-                type: 'tabLongPress',
-                target: route.key,
-              });
-            };
+              const onLongPress = () => {
+                navigation.emit({
+                  type: 'tabLongPress',
+                  target: route.key,
+                });
+              };
 
-            return (
-              <TabItem
-                key={route.key}
-                routeName={route.name}
-                isFocused={isFocused}
-                onPress={onPress}
-                onLongPress={onLongPress}
-              />
-            );
-          })}
+              return (
+                <TabItem
+                  key={route.key}
+                  routeName={route.name}
+                  isFocused={isFocused}
+                  onPress={onPress}
+                  onLongPress={onLongPress}
+                />
+              );
+            })}
+          </View>
         </View>
-      </BlurContainer>
-    </LinearGradient>
+      </View>
+    </Animated.View>
   );
 }
 
@@ -170,18 +231,37 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
+    zIndex: 50,
+  },
+  // Bottom pinned to the physical edge (safe-area gap included) on every
+  // device; top overshoots ABOVE the container so the fade starts before the
+  // pill's top edge instead of at it — rows must never read at pill level.
+  // Overshoot is tuneable, spacing.lg–2xl.
+  membraneBottomEdge: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: -vs(spacing['2xl']),
+  },
+  content: {
+    width: '100%',
     paddingHorizontal: s(spacing.lg),
     paddingTop: vs(spacing.lg),
-    zIndex: 50,
   },
   glassContainer: {
     width: '100%',
-    borderRadius: 28,
+    borderRadius: componentSizes.tabBarRadius,
     overflow: 'hidden',
+    position: 'relative',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.22)',
+  },
+  glassBackgroundLayer: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: componentSizes.tabBarRadius,
     backgroundColor: colors.background.glass,
     borderColor: colors.border.subtle,
     borderWidth: borderWidth.thin,
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.22)',
   },
   bar: {
     flexDirection: 'row',
@@ -208,16 +288,18 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(11),
-    lineHeight: ms(13),
+    // `caption` (12) — the type scale's smallest non-uppercase step; the old
+    // 11px was an off-ramp one-off below the scale's floor.
+    fontSize: ms(fontSize.caption),
+    lineHeight: ms(fontSize.caption * lineHeight.tight),
     letterSpacing: ms(0.2, 0.3),
     textAlign: 'center',
   },
   tabLabelActive: {
-    color: colors.tabBar.active,
+    color: semantic.accent.inkOnMembrane,
   },
   tabLabelInactive: {
-    color: colors.tabBar.inactive,
+    color: semantic.text.secondary,
   },
 });
 

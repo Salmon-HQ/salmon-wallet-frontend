@@ -5,12 +5,24 @@ import type {
   SendSheetPropsBase,
   StepTokenSelectProps,
   StepAddressAmountPropsBase,
-  StepConfirmationProps,
+  StepConfirmationProps as StepConfirmationPropsBase,
   BlockchainType,
 } from '@salmon/shared';
 
 // Re-export shared types for convenience
-export type { SendStep, SendToken, BlockchainType, StepTokenSelectProps, StepConfirmationProps };
+export type { SendStep, SendToken, BlockchainType, StepTokenSelectProps };
+
+/**
+ * Props for the confirmation step (React Native).
+ *
+ * The send hook lives inside this step, so the sheet above it cannot see that
+ * a transfer is in flight — and the sheet is where the dismissal paths
+ * (backdrop, swipe, hardware back) are decided. This callback is the mobile
+ * shell's only way to learn it must stop being dismissible.
+ */
+export interface StepConfirmationProps extends StepConfirmationPropsBase {
+  onSendingChange?: (sending: boolean) => void;
+}
 
 /**
  * Props for the SendSheet component (React Native)

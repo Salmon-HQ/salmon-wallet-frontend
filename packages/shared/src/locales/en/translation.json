@@ -15,7 +15,6 @@
     "address": "Address",
     "name_or_address": "Name or \"{{token}}\" Address",
     "seed_phrase": "Seed Phrase",
-    "sending": "Sending...",
     "loading": "Loading...",
     "close": "Close",
     "max": "Max",
@@ -137,7 +136,28 @@
     "transaction_status": "Approval",
     "transaction_subtitle": "Review the transaction details before approving this request.",
     "transaction_title": "Approve Transaction",
-    "transaction_unavailable": "Review unavailable"
+    "transaction_unavailable": "Review unavailable",
+    "effects_title": "Balance changes",
+    "effects_loading": "Simulating this transaction…",
+    "effects_out": "Leaves your wallet",
+    "effects_in": "Enters your wallet",
+    "effects_fee_note": "Includes the {{fee}} SOL network fee.",
+    "effects_none_title": "No balance changes",
+    "effects_none_body": "This transaction runs without moving any of your balances.",
+    "effects_would_fail_title": "This transaction would fail",
+    "effects_would_fail_body": "Salmon simulated it and the network rejected it. Signing it would spend the fee and change nothing.",
+    "effects_undetermined_title": "Salmon could not determine what this does",
+    "effects_undetermined_body": "This is not the same as \"nothing happens\". Approve only if you trust this app and understand what you are asking it to do.",
+    "effects_reason_malformed": "The transaction could not be decoded.",
+    "effects_reason_unavailable": "The network could not be reached to simulate it.",
+    "effects_reason_not_executed": "The network did not run the simulation.",
+    "effects_reason_no_state": "The network did not return the balances after execution.",
+    "effects_reason_batch": "This request contains several transactions that run in sequence, and each one depends on the one before it.",
+    "effects_approval_title": "Spending permission",
+    "effects_approval_unlimited": "an unlimited amount of",
+    "effects_approval_body": "{{spender}} would be able to move {{amount}} {{token}} out of your wallet, now and in the future, until you revoke it.",
+    "hold_to_approve": "Hold to Approve",
+    "hold_to_approve_hint": "This request needs a deliberate approval. Hold the button to sign it."
   },
   "settings": {
     "title": "Settings",
@@ -150,6 +170,28 @@
     "no_trusted_apps": "No connected apps",
     "no_trusted_apps_hint": "Apps you connect to will appear here",
     "help_support": "Help & Support",
+    "support": {
+      "faq": {
+        "title": "Frequently Asked Questions",
+        "description": "Find answers to common questions"
+      },
+      "docs": {
+        "title": "Documentation",
+        "description": "Learn how to use Salmon Wallet"
+      },
+      "twitter": {
+        "title": "Twitter / X",
+        "description": "Get updates and reach out to us"
+      },
+      "discord": {
+        "title": "Discord Community",
+        "description": "Join our community for support"
+      },
+      "email": {
+        "title": "Email Support",
+        "description": "Contact us directly for help"
+      }
+    },
     "security_notice": "Salmon Wallet team will never ask for your seed phrase or private keys. Never share this information with anyone.",
     "currency": "Display Currency",
     "backup": "Backup Seed Phrase",
@@ -175,6 +217,7 @@
     "analytics_prompt_body": "Salmon gets better when we understand what works. Share <bold>pseudonymous usage data</bold> — only which features get used and whether they succeed. It's tied to a <bold>random identifier</bold>, never to your wallet: <bold>no addresses, no balances, no keys</bold>.",
     "analytics_prompt_footnote": "Turn it off any time in <bold>Settings</bold>.",
     "analytics_prompt_accept": "Accept",
+    "analytics_prompt_close": "Close without accepting",
     "app_version": "Version v{{version}}",
     "remove_wallet": "Remove Wallet",
     "remove_all_wallets": "Remove All Wallets",
@@ -252,8 +295,7 @@
       "confirm_import": "Import Account",
       "confirm": "Confirm",
       "creation_error": "Failed to create account. Please try again.",
-      "session_expired": "Your session expired. Unlock the wallet again to add an account.",
-      "seed_placeholder": "Enter your seed phrase..."
+      "session_expired": "Your session expired. Unlock the wallet again to add an account."
     },
     "security": {
       "title": "Security",
@@ -273,7 +315,14 @@
     "about_made_with_love": "Made with love by the Salmon team",
     "about_social": "Follow Us",
     "backup_warning_title": "Never share your recovery phrase",
-    "backup_warning_description": "Anyone with your recovery phrase can access your funds. Keep it stored securely and never enter it on websites.",
+    "backup_warning_description": "Anyone with your recovery phrase can take your funds, and if you lose it no one can restore your account — not even Salmon. Keep it stored securely and never enter it on websites.",
+    "reveal_phrase_title": "Confirm it is you",
+    "reveal_phrase_message": "Enter your password to show the recovery phrase. Anyone who sees it owns every account in this wallet, forever.",
+    "clipboard_warning_title": "The clipboard is not private",
+    "clipboard_warning_description": "Any other app on this device can read what you copy, and some systems keep a clipboard history. Prefer writing the phrase down on paper.",
+    "clipboard_key_warning_description": "Any other app on this device can read what you copy, and some systems keep a clipboard history. Paste the key only where you meant to, and clear the clipboard afterwards.",
+    "reveal_private_key_title": "Confirm it is you",
+    "reveal_private_key_message": "Enter your password to show the private key. Anyone who sees it can spend everything in this account, and there is no way to undo it.",
     "no_seed_phrase": "This account was imported using a private key and does not have a recovery phrase.",
     "recovery_phrase": "Recovery Phrase",
     "remove_all_wallets_description": "This will remove ALL wallets from this device. This action cannot be undone. Make sure you have backed up all recovery phrases.",
@@ -289,7 +338,9 @@
     "receive": {
       "title": "Receive",
       "copyAddress": "Copy address",
-      "copied": "Copied!"
+      "copied": "Copied!",
+      "networkOnlyTitle": "{{chain}} network only",
+      "networkOnlyBody": "Only send assets on the {{chain}} network to this address. Anything sent on another network is lost and cannot be recovered."
     },
     "send": {
       "myWallets": "My Wallets",
@@ -299,9 +350,10 @@
       "reviewAndSend": "Review & Send",
       "blockchainAddress": "{{blockchain}} Address",
       "networkFee": "Network Fee",
-      "sending": "Sending...",
+      "confirmAgain": "Confirm Again",
       "copyRecipientAddress": "Copy recipient address",
-      "networkFeeAmount": "Network Fee: ~{{fee}}"
+      "networkFeeAmount": "Network Fee: ~{{fee}}",
+      "resolvedFrom": "Resolved from {{domain}}"
     },
     "marketData": {
       "marketCap": "Market Cap",
@@ -318,7 +370,7 @@
       "allTimeLow": "All-Time Low",
       "fromATL": "From ATL",
       "atlDate": "ATL Date",
-      "title": "Info"
+      "title": "Market data"
     },
     "info": {
       "about": "About",
@@ -366,7 +418,7 @@
     }
   },
   "lock": {
-    "title": "Enter your password",
+    "title": "Welcome back",
     "forgot_password": "I forgot my password",
     "reset_wallet_title": "Reset Wallet",
     "reset_wallet_message": "If you forgot your password, you will need to reset your wallet. This will permanently delete all accounts and data from this device.\n\nYou can restore your wallet using your seed phrase after resetting.",
@@ -379,6 +431,7 @@
     "enter_password": "Enter Your Password",
     "unlock": "Unlock",
     "wrong_password": "Incorrect password. Please try again.",
+    "throttled_body": "Wait {{seconds}}s before trying again. Each wrong password makes the next wait longer. Your wallet is untouched.",
     "enter_password_error": "Please enter your password",
     "unlock_failed": "Failed to unlock wallet. Please try again.",
     "reset_failed": "Failed to reset wallet. Please try again.",
@@ -390,8 +443,6 @@
     "biometric_unlock_failed": "Biometric unlock failed",
     "biometric_prompt": "Authenticate to unlock your wallet",
     "biometric_enroll_prompt": "Confirm to enable biometric unlock",
-    "iris": "Iris",
-    "subtitle": "Enter your password to unlock your wallet",
     "password_placeholder": "Password",
     "error": {
       "empty_password": "Please enter your password",
@@ -425,11 +476,11 @@
     "select_token": "Select Token",
     "create": {
       "messageTitle": "Keep your seed phrase safe!",
-      "messageBody": "You will need these words to restore your account if your browser's storage is cleared or your device is damaged or lost. \n\n Never share your seed phrase (or your private keys) with anyone or enter it into any form, as it provides full control of your account. \n\n Salmon Team will never ask for your recovery phrase or private keys.",
+      "messageBody": "These words are the only way to restore your account. If you lose them, your funds are gone for good — no one can recover them, not even Salmon. \n\n Anyone who sees these words can take your funds. Never share them with anyone and never enter them into any form. \n\n Salmon Team will never ask for your recovery phrase or private keys.",
       "your_seed_phrase": "Your Seed Phrase",
       "your_seed_phrase_body": "Make sure you save the following words in a safe place. Also, keep in mind that the position of each word is important.",
-      "copy_key": "Copy Seed Phrase",
-      "ive_backed_up_seed_phrase": "I´ve backed up my phrase",
+      "hold_to_copy": "Hold to copy",
+      "ive_backed_up_seed_phrase": "I've backed up my phrase",
       "confirm_seed_phrase": "Confirm Seed Phrase",
       "confirm_seed_phrase_body": "Please re-enter the following words of the seed phrase to confirm that you have saved it.",
       "enter_word_number": "Enter word #{{position}}",
@@ -450,9 +501,9 @@
       "success_message_body": "Your account is now ready",
       "go_to_my_wallet": "Go to my Account!",
       "check_derivables": "Check Derivables",
-      "derivable_info_icon": "ⓘ  What is a derivable?",
+      "derivable_info_icon": "What is a derivable?",
       "derivable_info": "What is a derivable?",
-      "derivable_description": "Derivables are \"sub accounts\" that are born from the same seed phrase. Using cryptography, the seed phrase it combined with a derivation path to create these different accounts. It allows the generation of as many accounts as you wish to have under the same seed phrase.",
+      "derivable_description": "Derivables are \"sub accounts\" born from the same seed phrase. Using cryptography, the seed phrase is combined with a derivation path to create these different accounts. This lets you have as many accounts as you wish under the same seed phrase.",
       "invalidSeed": "Invalid seed phrase",
       "recovery_error": "Failed to recover account. Please check your seed phrase and try again.",
       "recovery_network_error": "Could not reach the server. Check your connection and try again. Your seed phrase is fine.",
@@ -461,20 +512,16 @@
       "biometric_setup_enable": "Enable Biometrics",
       "biometric_setup_skip": "Maybe Later",
       "biometric_setup_error": "Failed to enable biometrics. You can set it up later in Settings.",
-      "biometric_title": "Enable {{type}}",
-      "biometric_subtitle": "Unlock your wallet quickly and securely without typing your password",
-      "biometric_enable": "Enable {{type}}",
-      "biometric_skip": "Maybe Later",
-      "biometric_error": "Failed to enable biometric unlock. Please try again.",
       "creating_account": "Creating Account",
       "securing_wallet": "Please wait while we secure your wallet"
     },
     "recover": {
       "messageTitle": "Recover Existing Account",
-      "messageBody": "Recover your account using your 12/24 words seed phrase.",
+      "messageBody": "Recover your account using your 12- or 24-word seed phrase.",
+      "pastedWordCount_one": "You pasted {{count}} word. A recovery phrase has 12 or 24.",
+      "pastedWordCount_other": "You pasted {{count}} words. A recovery phrase has 12 or 24.",
       "pasteSeed": "Paste your seed phrase",
       "terms_prefix": "By recovering, you accept the ",
-      "placeholder": "Enter your seed phrase...",
       "recovering_account": "Recovering Account"
     },
     "derived": {
@@ -485,21 +532,16 @@
       "empty_subtitle": "Could not derive additional accounts from your seed phrase.",
       "found_one": "Found {{count}} derived account",
       "found_other": "Found {{count}} derived accounts",
-      "import_selected": "IMPORT SELECTED ({{count}})",
-      "continue": "CONTINUE",
-      "skip": "SKIP",
+      "import_selected": "Import selected ({{count}})",
+      "continue": "Continue",
+      "skip": "Skip",
       "scan_failed_title": "Couldn't scan for accounts",
       "scan_failed_body": "We couldn't reach the network. Your accounts are safe — try again.",
       "scan_partial": "Some networks couldn't be scanned. Results may be incomplete."
     },
-    "onboarding": {
-      "titleOnboarded": "Add New Account",
-      "titleWelcome": "Welcome"
-    },
-    "access_existing": "ACCESS EXISTING ACCOUNT",
     "no_tokens_found": "No tokens found",
+    "tokens_load_error": "Your tokens couldn't be loaded right now.",
     "loading_wallet": "Loading wallet...",
-    "loading_tokens": "Loading tokens...",
     "tokens_empty_subtitle": "Your tokens will appear here once you receive some",
     "no_account_found": "No account found",
     "unnamed_account": "Account",
@@ -509,13 +551,10 @@
     "unknown": "Unknown",
     "from": "From",
     "to": "To",
-    "historyTitle": "Transaction History",
     "noTransactions": "No Transactions",
     "emptySubtitle": "Your transaction history will appear here",
     "loadError": "Failed to load transactions",
     "tapToRetry": "Tap to retry",
-    "showMore": "show more",
-    "showLess": "show less",
     "detail": {
       "sent": "Sent",
       "received": "Received",
@@ -552,23 +591,11 @@
       "swapFees": "Swap Fees",
       "sentLabel": "Sent",
       "receivedLabel": "Received",
-      "priceImpact": "Price Impact",
       "rate": "Rate",
       "feePayer": "Fee Payer",
       "share": "Share",
-      "route": "Route",
-      "viaSource": "via {{source}}",
-      "hopCount_one": "{{count}} hop",
-      "hopCount_other": "{{count}} hops",
       "nMore": "+{{count}} more",
-      "totalFees": "Total Fees",
       "time": "Time",
-      "txHash": "Tx Hash",
-      "accounts": "Accounts",
-      "swapFeesNative": "Swap Fees (Native)",
-      "feeCount_one": "{{count}} fee",
-      "feeCount_other": "{{count}} fees",
-      "routeHops": "Route Hops",
       "viewOnExplorer": "View on Explorer",
       "viewOn": "View on {{name}}",
       "copyAddressLabel": "Copy {{label}} address",
@@ -604,6 +631,7 @@
     },
     "send": {
       "title": "Send NFT",
+      "reviewTitle": "Review Send",
       "sending": "Sending NFT...",
       "enterRecipientAddress": "Enter recipient address",
       "ordinalsNotSupported": "Ordinal transfers are not yet supported.",
@@ -628,7 +656,6 @@
       "notSupported": "Burning {{blockchain}} NFTs is not yet supported."
     },
     "ordinal_send_unsupported": "Ordinal transfers are not yet supported.",
-    "sending": "Sending NFT...",
     "unnamed": "Unnamed NFT",
     "emptyTitle": "No Collectibles",
     "emptySubtitle": "Your NFTs and Ordinals will appear here once you receive some",
@@ -654,11 +681,14 @@
       "title": "Swap Review",
       "salmonFee": "Salmon fee",
       "route": "Route",
+      "details": "Details",
       "totalPriceImpact": "Total Price Impact",
       "pleaseNote": "Please Note",
       "pleaseNoteText": "Swap rates are estimates. The actual amount you receive may differ due to slippage and market conditions. Transactions are irreversible once confirmed.",
       "confirmSwap": "Confirm",
-      "reviewAndSwap": "Review & Swap"
+      "confirmCountdown": "Confirm ({{seconds}})",
+      "refreshQuote": "Refresh Quote",
+      "reviewAndSwap": "Review"
     },
     "available_balance": "Available: {{balance}} {{symbol}}",
     "errors": {
@@ -684,7 +714,7 @@
       "belowMinimumWithAmount": "The minimum for this pair is {{min}}. Increase the amount and try again.",
       "unavailable": "The exchange service is temporarily unavailable. Try again in a few minutes.",
       "generic": "The exchange could not be created. Please try again.",
-      "pairUnavailable": "This trading pair is currently unavailable",
+      "pairUnavailable": "This token pair isn't available for bridging yet. Try a different token.",
       "aboveMaximum": "Amount exceeds the maximum for this pair",
       "aboveMaximumWithAmount": "Maximum for this pair is {{max}}",
       "networkError": "Network error: Unable to reach the server",
@@ -693,29 +723,34 @@
     "bridge": "Bridge",
     "recipient": {
       "title": "Recipient Address",
-      "description": "Enter the address where you want to receive your swapped tokens",
+      "description": "Enter the address where you want to receive your bridged tokens",
       "destinationAddress": "Destination Address",
       "enterRecipientAddress": "Enter recipient address",
       "important": "Important",
       "importantText": "Make sure the address is correct. Cross-chain transactions cannot be reversed once initiated.",
       "review": "Review",
-      "descriptionWithChain": "Enter the address where you want to receive your swapped tokens on {{chain}}.",
+      "descriptionWithChain": "Enter the address where you want to receive your bridged tokens on {{chain}}.",
       "enterDestinationAddress": "Enter destination address",
       "chainAddressHint": "({{chain}} address)",
       "helper": "Enter the {{chain}} address where you want to receive your {{symbol}}"
     },
     "review": {
-      "title": "Swap Review",
+      "title": "Bridge Review",
       "youReceiveEstimated": "You Receive (estimated)",
       "recipient": "Recipient",
       "fromNetwork": "From Network",
       "toNetwork": "To Network",
       "minimumAmount": "Minimum Amount",
       "estimatedOutput": "Estimated Output",
+      "salmonFee": "Salmon fee",
       "provider": "Provider",
       "pleaseNote": "Please Note",
-      "pleaseNoteText": "Cross-chain swaps typically take 10-30 minutes to complete. You will receive a deposit address after confirmation.",
-      "confirmSwap": "Confirm Swap"
+      "pleaseNoteText": "Cross-chain transfers typically take 10-30 minutes to complete. You will receive a deposit address after confirmation. The estimated amount above already has the Salmon fee deducted.",
+      "irreversible": "This cannot be undone",
+      "irreversibleText": "Confirming sends your funds to StealthEX, which holds them until the cross-chain transfer completes. Once confirmed there is no cancel and no way to reverse or recover the transfer — not by Salmon and not by you.",
+      "confirmSwap": "Confirm Bridge",
+      "confirmCountdown": "Confirm Bridge ({{seconds}})",
+      "refreshEstimate": "Refresh Estimate"
     },
     "amountToSend": "Amount to send",
     "currentStatus": "Current status",
@@ -723,6 +758,9 @@
     "depositTxId": "Deposit Transaction",
     "estimatedReceive": "You will receive approximately",
     "exchangeId": "Exchange ID",
+    "depositAddressLabel": "Deposit address",
+    "reference_title": "Keep this reference",
+    "reference_body": "This bridge did not complete, but the exchange was already created. Save these details — they are what support needs to look it up.",
     "initiated": "Bridge Initiated",
     "payoutTxId": "Payout Transaction",
     "settlement_stalled_title": "Can't check your bridge status",
@@ -744,7 +782,7 @@
       "generic": "The transaction failed. Please try again."
     },
     "viewOnExplorer": "View on Explorer",
-    "continue": "Continue"
+    "continue": "Back to wallet"
   },
   "qrScanner": {
     "title": "Scan QR Code",
@@ -768,17 +806,21 @@
     "selected_token": "Selected token: {{name}}",
     "loading_token_list": "Loading token list",
     "go_back": "Go back",
+    "step_progress": "Step {{current}} of {{total}}",
     "send_tokens": "Send tokens",
     "receive_tokens": "Receive tokens",
     "view_activity": "View activity",
     "show_balance": "Show balance",
     "hide_balance": "Hide balance",
+    "token_on_network": "{{token}} on {{network}}",
+    "select_blockchain": "Switch to {{name}}",
     "previous_blockchain": "Previous blockchain",
     "next_blockchain": "Next blockchain",
     "loading_token_info": "Loading token information",
     "token_balance": "{{name}} token, balance {{amount}} {{symbol}}",
     "token_price_balance": "{{name}} token, price {{price}}, balance {{amount}} {{symbol}}",
     "select_token": "Select {{name}}",
+    "select_token_on_network": "Select {{name}} on {{network}}",
     "copy_contract_address": "Copy contract address",
     "open_website": "Open website: {{url}}",
     "select_period": "Select {{period}} time period",
@@ -814,9 +856,6 @@
     "no_tokens_hint": "Your tokens will appear here once you receive some",
     "unnamed_account": "Account"
   },
-  "lock_screen": {
-    "use_biometric": "Biometrics"
-  },
   "send": {
     "fee_estimate_failed": "Fee could not be estimated",
     "enter_address": "Enter recipient address",
@@ -840,5 +879,31 @@
     "addAccount": "Add New Account",
     "deleteConfirmTitle": "Delete Account?",
     "deleteConfirmMessage": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+  },
+  "pending": {
+    "send": {
+      "pending": "Send in progress",
+      "confirmed": "Send confirmed",
+      "failed": "Send failed",
+      "expired": "Send expired"
+    },
+    "swap": {
+      "pending": "Swap in progress",
+      "confirmed": "Swap confirmed",
+      "failed": "Swap failed",
+      "expired": "Swap expired"
+    },
+    "bridge": {
+      "pending": "Bridge in progress"
+    },
+    "expiredHint": "It never reached the network. Nothing left your wallet.",
+    "dismiss": "Dismiss"
+  },
+  "password": {
+    "strength": {
+      "weak": "Weak",
+      "medium": "Medium",
+      "strong": "Strong"
+    }
   }
 }

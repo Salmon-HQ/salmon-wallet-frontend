@@ -8,20 +8,18 @@
  * 4. set-name: Choose account name
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
 import ListItemButton from '@mui/material/ListItemButton';
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import DescriptionIcon from '@mui/icons-material/Description';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { CaretRightIcon, FileTextIcon, TreeStructureIcon, iconSize } from '../../icons';
 import { styled } from '../../utils/styled';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   fontSize,
@@ -33,17 +31,20 @@ import {
   createAccount,
   NETWORK_DISPLAY,
   getScanNetworks,
+  SHORT_PHRASE,
   EncryptionMaterialMissingError,
   trackEvent,
   type AccountAddStep,
   type DerivedAccountInfo,
-  opacity,
   componentSizes,
+  useWaitExit,
 } from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
+import { PrimaryButton } from '../Button';
 import { DerivedAccountCard } from '../DerivedAccountCard';
 import { LoadingScreen } from '../LoadingScreen';
 import { WarningNotice } from '../WarningNotice';
+import { SeedPhraseEntry } from '../SeedPhrase';
 import type { AccountAddPanelProps } from './types';
 
 // ============================================================================
@@ -56,14 +57,15 @@ const MethodCard = styled(ListItemButton)({
   gap: spacing.md,
   padding: spacing.lg,
   backgroundColor: colors.interactive.surface,
-  borderRadius: borderRadius.lg,
+  // The control radius, by its scale name (DESIGN.md §The Control Radius Rule).
+  borderRadius: borderRadius.r3,
   marginBottom: spacing.md,
 });
 
 const MethodIcon = styled(Box)({
   width: componentSizes.iconSize3XL,
   height: componentSizes.iconSize3XL,
-  borderRadius: borderRadius.md,
+  borderRadius: borderRadius.r2,
   backgroundColor: colors.interactive.hoverSubtle,
   display: 'flex',
   alignItems: 'center',
@@ -76,30 +78,21 @@ const MethodInfo = styled(Box)({
   minWidth: 0,
 });
 
-const ConfirmButton = styled(Button)({
-  backgroundColor: colors.accent.primary,
-  color: colors.text.primary,
-  fontWeight: fontWeight.semibold,
-  textTransform: 'none',
-  borderRadius: borderRadius.md,
-  padding: `${spacing.md}px`,
-  marginTop: spacing.xl,
-  '&:hover': {
-    backgroundColor: colors.accent.primary,
-    opacity: opacity.soft,
-  },
-  '&.Mui-disabled': {
-    backgroundColor: colors.interactive.hoverStrong,
-    color: colors.text.disabled,
-  },
-});
+/**
+ * The committing action is the system's own primary button — the settings
+ * surface joined the system (DESIGN.md §Motion), so no panel hand-rolls the
+ * salmon fill any more. This only holds the gap above it.
+ */
+const CONFIRM_SLOT_STYLE = { marginTop: spacing.xl } as const;
 
 const StyledTextField = styled(TextField)({
   '& .MuiOutlinedInput-root': {
     backgroundColor: colors.interactive.surface,
-    borderRadius: borderRadius.md,
+    // The control radius: a field and the button under it are one shape
+    // (DESIGN.md §The Control Radius Rule). It was 8.
+    borderRadius: componentSizes.inputRadius,
     color: colors.text.primary,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     '& fieldset': {
       borderColor: colors.border.default,
     },
@@ -127,10 +120,34 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const [failedNetworks, setFailedNetworks] = useState<string[]>([]);
   const [selectedDerived, setSelectedDerived] = useState<DerivedAccountInfo | null>(null);
   const [scanning, setScanning] = useState(false);
-  const [seedPhrase, setSeedPhrase] = useState('');
+  // One entry per grid box. Twelve to begin with; a paste or a thirteenth
+  // typed word grows it to twenty-four.
+  const [seedWords, setSeedWords] = useState<string[]>(() => Array<string>(SHORT_PHRASE).fill(''));
+  // What was actually pasted when a paste did not fit. `null` = no rejection.
+  const [pastedCount, setPastedCount] = useState<number | null>(null);
   const [seedError, setSeedError] = useState('');
+  const seedPhrase = useMemo(() => normalizeMnemonic(seedWords.join(' ')), [seedWords]);
   const [confirmError, setConfirmError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  /**
+   * The wait's exit, held. This panel renders inside the settings panel stack,
+   * a drawer with its own choreography, so it takes only the half of the
+   * passage that is its own: the wait stays mounted with `visible={false}` —
+   * which is what starts its exit — and the completion handoff is parked
+   * behind `onExited`, because completing earlier unmounts the panel and cuts
+   * the closing wave mid-crossing (DESIGN.md §The wait). The wait's own
+   * watchdog guarantees the report, so the handoff cannot be stranded. It does
+   * not sink: a sheet's content never speaks the verb.
+   */
+  const { held, onExited } = useWaitExit(loading);
+  const pendingCompleteRef = useRef(false);
+  const handleWaitExited = useCallback(() => {
+    onExited();
+    if (!pendingCompleteRef.current) return;
+    pendingCompleteRef.current = false;
+    onComplete();
+  }, [onExited, onComplete]);
 
   const defaultName = useMemo(
     () => t('settings.account_add.default_name', { number: counter + 1 }),
@@ -175,14 +192,24 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     setStep('set-name');
   }, [selectedDerived, defaultName]);
 
+  const handleSeedWords = useCallback((next: string[]) => {
+    setSeedWords(next);
+    setPastedCount(null);
+    setSeedError('');
+  }, []);
+
+  const handleSeedLength = useCallback((length: number) => {
+    setSeedWords((prev) =>
+      prev.length === length ? prev : Array.from({ length }, (_, i) => prev[i] ?? '')
+    );
+  }, []);
+
   const handleSeedSubmit = useCallback(() => {
-    const normalized = normalizeMnemonic(seedPhrase);
-    if (!validateMnemonic(normalized)) {
+    if (!validateMnemonic(seedPhrase)) {
       setSeedError(t('wallet.create.invalidSeed'));
       return;
     }
     setSeedError('');
-    setSeedPhrase(normalized);
     setAccountName(defaultName);
     setStep('set-name');
   }, [seedPhrase, defaultName, t]);
@@ -206,7 +233,10 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       // derived account reuses the active seed (create); an imported seed is a
       // recovery. No seed, address or key material — just which flow completed.
       trackEvent(selectedDerived ? 'wallet_created' : 'wallet_recovered');
-      onComplete();
+      // Parked, not fired: dropping `loading` starts the wait's exit, and
+      // `handleWaitExited` completes once the last wave has left the screen.
+      pendingCompleteRef.current = true;
+      setLoading(false);
     } catch (err) {
       setLoading(false);
       if (err instanceof EncryptionMaterialMissingError) {
@@ -215,16 +245,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       }
       setConfirmError(t('settings.account_add.creation_error'));
     }
-  }, [
-    accountName,
-    defaultName,
-    selectedDerived,
-    activeAccount,
-    seedPhrase,
-    accountActions,
-    onComplete,
-    t,
-  ]);
+  }, [accountName, defaultName, selectedDerived, activeAccount, seedPhrase, accountActions, t]);
 
   const handleStepBack = useCallback(() => {
     if (step === 'set-name') {
@@ -246,65 +267,64 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
 
   return (
     <>
-      <LoadingScreen
-        visible={loading}
-        title={
-          selectedDerived
-            ? t('settings.account_add.confirm_create')
-            : t('settings.account_add.confirm_import')
-        }
-        subtitle={t('general.loading')}
-      />
+      {held && (
+        <LoadingScreen
+          visible={loading}
+          title={
+            selectedDerived
+              ? t('settings.account_add.confirm_create')
+              : t('settings.account_add.confirm_import')
+          }
+          subtitle={t('general.loading')}
+          onExited={handleWaitExited}
+        />
+      )}
       <SettingsPanelContent title={stepTitles[step]} onBack={handleStepBack}>
         <Box sx={{ padding: `0 ${spacing.lg}px` }}>
           {step === 'select-method' && (
             <>
               <MethodCard onClick={handleSelectDerive} data-testid="account-add-method-derive">
                 <MethodIcon>
-                  <AccountTreeIcon
-                    sx={{ color: colors.accent.primary, fontSize: fontSize.iconMd }}
-                  />
+                  <TreeStructureIcon color={colors.accent.primary} size={iconSize.xl} />
                 </MethodIcon>
                 <MethodInfo>
                   <Typography
                     sx={{
                       color: colors.text.primary,
                       fontWeight: fontWeight.semibold,
-                      fontSize: fontSize.base,
+                      fontSize: fontSize.body,
                       marginBottom: spacing.xxs,
                     }}
                   >
                     {t('settings.account_add.create_new')}
                   </Typography>
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.sm }}>
+                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
                     {t('settings.account_add.create_new_description')}
                   </Typography>
                 </MethodInfo>
-                <ChevronRightIcon sx={{ color: colors.text.secondary }} />
+                <CaretRightIcon color={colors.text.secondary} />
               </MethodCard>
 
               <MethodCard onClick={handleSelectImport} data-testid="account-add-method-import">
                 <MethodIcon>
-                  <DescriptionIcon
-                    sx={{ color: colors.accent.primary, fontSize: fontSize.iconMd }}
-                  />
+                  <FileTextIcon color={colors.accent.primary} size={iconSize.xl} />
                 </MethodIcon>
                 <MethodInfo>
                   <Typography
                     sx={{
                       color: colors.text.primary,
                       fontWeight: fontWeight.semibold,
-                      fontSize: fontSize.base,
+                      fontSize: fontSize.body,
                       marginBottom: spacing.xxs,
                     }}
                   >
                     {t('settings.account_add.import_seed')}
                   </Typography>
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.sm }}>
+                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
                     {t('settings.account_add.import_seed_description')}
                   </Typography>
                 </MethodInfo>
-                <ChevronRightIcon sx={{ color: colors.text.secondary }} />
+                <CaretRightIcon color={colors.text.secondary} />
               </MethodCard>
             </>
           )}
@@ -322,7 +342,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                   }}
                 >
                   <CircularProgress sx={{ color: colors.accent.primary }} />
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.base }}>
+                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.body }}>
                     {t('settings.account_add.scanning')}
                   </Typography>
                 </Box>
@@ -337,25 +357,25 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                   }}
                   data-testid="derived-scan-error"
                 >
-                  <Typography sx={{ color: colors.text.primary, fontSize: fontSize.base }}>
+                  <Typography sx={{ color: colors.text.primary, fontSize: fontSize.body }}>
                     {t('wallet.derived.scan_failed_title')}
                   </Typography>
                   <Typography
                     sx={{
                       color: colors.text.secondary,
-                      fontSize: fontSize.sm,
+                      fontSize: fontSize.caption,
                       textAlign: 'center',
                     }}
                   >
                     {t('wallet.derived.scan_failed_body')}
                   </Typography>
-                  <ConfirmButton
-                    variant="contained"
+                  <PrimaryButton
+                    fullWidth={false}
                     onClick={handleSelectDerive}
-                    data-testid="derived-scan-retry-button"
+                    testID="derived-scan-retry-button"
                   >
                     {t('transactions.tapToRetry')}
-                  </ConfirmButton>
+                  </PrimaryButton>
                 </Box>
               ) : (
                 <>
@@ -378,15 +398,14 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                       blockchain={NETWORK_DISPLAY[item.networkId]?.blockchain}
                     />
                   ))}
-                  <ConfirmButton
-                    fullWidth
-                    variant="contained"
+                  <PrimaryButton
+                    style={CONFIRM_SLOT_STYLE}
                     onClick={handleDerivedContinue}
                     disabled={!selectedDerived}
-                    data-testid="account-add-derive-continue-button"
+                    testID="account-add-derive-continue-button"
                   >
                     {t('actions.continue')}
-                  </ConfirmButton>
+                  </PrimaryButton>
                 </>
               )}
             </>
@@ -394,37 +413,33 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
 
           {step === 'import-seed' && (
             <>
-              <StyledTextField
-                fullWidth
-                multiline
-                minRows={4}
-                value={seedPhrase}
-                onChange={(e) => {
-                  setSeedPhrase(e.target.value);
-                  if (seedError) setSeedError('');
-                }}
-                placeholder={t(
-                  'settings.account_add.seed_placeholder',
-                  'Enter your seed phrase...'
-                )}
-                autoFocus
-                inputProps={{ 'data-testid': 'account-add-seed-input' }}
+              <SeedPhraseEntry
+                testID="account-add-seed"
+                words={seedWords}
+                onChange={handleSeedWords}
+                onLengthChange={handleSeedLength}
+                onPasteRejected={setPastedCount}
               />
-              {seedError && (
+              {(pastedCount !== null || seedError) && (
                 <Typography
-                  sx={{ color: colors.status.error, fontSize: fontSize.sm, marginTop: spacing.xs }}
+                  sx={{
+                    color: semantic.status.danger,
+                    fontSize: fontSize.caption,
+                    marginTop: spacing.xs,
+                  }}
                 >
-                  {seedError}
+                  {pastedCount !== null
+                    ? t('wallet.recover.pastedWordCount', { count: pastedCount })
+                    : seedError}
                 </Typography>
               )}
-              <ConfirmButton
-                fullWidth
-                variant="contained"
+              <PrimaryButton
+                style={CONFIRM_SLOT_STYLE}
                 onClick={handleSeedSubmit}
-                data-testid="account-add-seed-continue-button"
+                testID="account-add-seed-continue-button"
               >
                 {t('actions.continue')}
-              </ConfirmButton>
+              </PrimaryButton>
             </>
           )}
 
@@ -438,6 +453,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                   if (confirmError) setConfirmError('');
                 }}
                 placeholder={t('settings.account_add.set_name_placeholder')}
+                aria-label={t('settings.account_add.set_name')}
                 autoFocus
                 inputProps={{ maxLength: 32, 'data-testid': 'account-add-name-input' }}
                 onKeyDown={(e) => {
@@ -446,21 +462,24 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
               />
               {confirmError && (
                 <Typography
-                  sx={{ color: colors.status.error, fontSize: fontSize.sm, marginTop: spacing.xs }}
+                  sx={{
+                    color: semantic.status.danger,
+                    fontSize: fontSize.caption,
+                    marginTop: spacing.xs,
+                  }}
                 >
                   {confirmError}
                 </Typography>
               )}
-              <ConfirmButton
-                fullWidth
-                variant="contained"
+              <PrimaryButton
+                style={CONFIRM_SLOT_STYLE}
                 onClick={handleConfirm}
-                data-testid="account-add-confirm-button"
+                testID="account-add-confirm-button"
               >
                 {selectedDerived
                   ? t('settings.account_add.confirm_create')
                   : t('settings.account_add.confirm_import')}
-              </ConfirmButton>
+              </PrimaryButton>
             </>
           )}
         </Box>

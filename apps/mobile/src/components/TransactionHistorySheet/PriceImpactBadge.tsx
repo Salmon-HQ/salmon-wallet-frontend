@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCircleIcon, WarningCircleIcon, WarningIcon } from '../../icons';
+import type { IconComponent } from '../../icons';
 import {
-  colors,
   ms,
   vs,
   s,
@@ -12,6 +12,7 @@ import {
   fontFamilyNative,
   getPriceImpactSeverity,
   type PriceImpactSeverity,
+  semantic,
 } from '@salmon/shared';
 
 // ============================================================================
@@ -48,19 +49,19 @@ export interface PriceImpactBadgeProps {
 /**
  * Icon mapping for each severity level
  */
-const SEVERITY_ICONS: Record<PriceImpactSeverity, keyof typeof Ionicons.glyphMap> = {
-  safe: 'checkmark-circle',
-  warning: 'warning',
-  high: 'alert-circle',
+const SEVERITY_ICONS: Record<PriceImpactSeverity, IconComponent> = {
+  safe: CheckCircleIcon,
+  warning: WarningIcon,
+  high: WarningCircleIcon,
 };
 
 /**
  * Color mapping for each severity level
  */
 const SEVERITY_COLORS: Record<PriceImpactSeverity, string> = {
-  safe: colors.status.success,
-  warning: colors.status.warning,
-  high: colors.status.error,
+  safe: semantic.status.success,
+  warning: semantic.status.warning,
+  high: semantic.status.danger,
 };
 
 /**
@@ -84,7 +85,7 @@ const SIZE_CONFIG: Record<
   },
   large: {
     iconSize: 16,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     paddingH: spacing.md,
     paddingV: 6,
   },
@@ -122,7 +123,7 @@ export const PriceImpactBadge: React.FC<PriceImpactBadgeProps> = ({
 }) => {
   const severity = getPriceImpactSeverity(value);
   const color = SEVERITY_COLORS[severity];
-  const iconName = SEVERITY_ICONS[severity];
+  const SeverityIcon = SEVERITY_ICONS[severity];
   const sizeConfig = SIZE_CONFIG[size];
 
   return (
@@ -137,11 +138,11 @@ export const PriceImpactBadge: React.FC<PriceImpactBadgeProps> = ({
       ]}
     >
       {showIcon && (
-        <Ionicons
-          name={iconName}
+        <SeverityIcon
           size={ms(sizeConfig.iconSize)}
           color={color}
           style={styles.icon}
+          weight={severity === 'safe' ? 'fill' : 'regular'}
         />
       )}
       <Text

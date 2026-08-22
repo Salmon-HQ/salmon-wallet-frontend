@@ -22,25 +22,28 @@ import {
   colors,
   spacing,
   componentSizes,
-  gradients,
+  semantic,
   fontFamily,
   fontWeight,
   useAddressValidation,
   useCurrencyContext,
   useSendContacts,
   getShortAddress,
+  getNetworkName,
   borderRadius,
   borderWidth,
   fontSize,
-  shadowsCSS,
   lineHeight,
   opacity,
   duration,
   durationMs,
   easing,
   sanitizeDecimalInput,
+  tabularNums,
+  formatTokenAmount,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import type { StepAddressAmountProps } from './types';
 
 // ============================================================================
@@ -97,6 +100,16 @@ const TokenCardButton = styled(ButtonBase)({
   },
 });
 
+// The same card with nothing to navigate to: no button element, no hover
+// feedback, no accessible name announcing it as actionable — it only reports
+// the token. Same rule as the header's back control (DESIGN.md §Motion, the
+// settings gate).
+const TokenCardStatic = styled(Box)({
+  width: '100%',
+  borderRadius: borderRadius.button,
+  marginBottom: spacing.xl,
+});
+
 const TokenCardContent = styled(Box)({
   display: 'flex',
   flexDirection: 'row',
@@ -144,7 +157,7 @@ const TokenCardLogoFallbackText = styled(Typography)({
 });
 
 const TokenCardName = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -154,7 +167,8 @@ const TokenCardName = styled(Typography)({
 });
 
 const TokenCardBalance = styled(Typography)({
-  fontSize: fontSize.md,
+  ...tabularNums.css,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -176,9 +190,10 @@ const FieldLabel = styled(Typography)({
 });
 
 const StyledInput = styled(InputBase)({
+  ...tabularNums.css,
   width: '100%',
   color: colors.text.primary,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontFamily: fontFamily.sans,
   '& .MuiInputBase-input': {
     padding: `${spacing.md}px 0`,
@@ -214,9 +229,9 @@ const ValidationMessage = styled(Typography)<{
   marginTop: spacing.xs,
   color:
     $messageType === 'error'
-      ? colors.status.error
+      ? semantic.status.danger
       : $messageType === 'warning'
-        ? colors.status.warning
+        ? semantic.status.warning
         : colors.text.secondary,
 }));
 
@@ -245,16 +260,23 @@ const QuickFillButton = styled(ButtonBase)({
   },
 });
 
+/**
+ * Same shortcut affordance as Swap's quick-fill; same salmon ink, 6.07:1.
+ * No transform: these are controls, and a control label is never uppercase —
+ * Swap's identical chip prints "Max", so uppercasing here made one shortcut
+ * read as two different things.
+ */
 const QuickFillText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-  textTransform: 'uppercase',
+  color: semantic.text.accent,
 });
 
 // USD Conversion
 const UsdConversion = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.xl,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
@@ -274,60 +296,12 @@ const BottomButtons = styled(Box)({
   gap: spacing.md,
 });
 
-const CancelButton = styled(ButtonBase)({
+// Layout only. Cancel used to paint its own bordered fill with an outer glow
+// and Review its own `gradients.primaryCSS` box at `borderRadius.lg` — a flat
+// rectangle where the shared button draws a flesh-textured pill, and a second
+// disabled treatment next to the button's own.
+const ButtonSlot = styled('div')({
   flex: 1,
-  height: componentSizes.buttonHeightMedium,
-  borderRadius: borderRadius.lg,
-  border: `${borderWidth.thin}px solid ${colors.accent.border}`,
-  backgroundColor: colors.button.cancelBackground,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  boxShadow: shadowsCSS.button,
-  transition: `opacity ${duration.fast} ${easing.ease}`,
-  '&:hover': {
-    opacity: opacity.high,
-  },
-});
-
-const CancelButtonText = styled(Typography)({
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.semibold,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-});
-
-const ReviewButton = styled(ButtonBase)<{ disabled?: boolean }>(({ disabled }) => ({
-  flex: 1,
-  height: componentSizes.buttonHeightMedium,
-  borderRadius: borderRadius.lg,
-  overflow: 'hidden',
-  border: disabled
-    ? `${borderWidth.thin}px solid ${colors.border.default}`
-    : `${borderWidth.thin}px solid ${colors.accent.border}`,
-  opacity: disabled ? 0.5 : 1,
-  boxShadow: shadowsCSS.button,
-  transition: `opacity ${duration.fast} ${easing.ease}`,
-  cursor: disabled ? 'not-allowed' : 'pointer',
-  '&:hover': {
-    opacity: disabled ? 0.5 : 0.85,
-  },
-}));
-
-const ReviewButtonGradient = styled(Box)<{ $isDisabled?: boolean }>(({ $isDisabled }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: '100%',
-  height: '100%',
-  background: $isDisabled ? gradients.disabledCSS : gradients.primaryCSS,
-}));
-
-const ReviewButtonText = styled(Typography)({
-  fontSize: fontSize.md,
-  fontWeight: fontWeight.extraBold,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
 });
 
 // Contact / Wallet sections
@@ -398,6 +372,25 @@ const BlockchainBadgeText = styled(Typography)({
   color: colors.text.secondary,
 });
 
+/**
+ * The network a contact belongs to, environment included.
+ *
+ * A send contact carries the chain and the network name as separate fields and
+ * no canonical identifier, and only the name carries the environment — a devnet
+ * contact rendered from the chain alone reads "Solana", which is exactly the
+ * mistake DESIGN.md §Chain identity forbids on a surface where funds are about
+ * to leave. The chain is prefixed only when the name does not already carry it,
+ * because network names in the catalogue are inconsistent about that.
+ */
+function contactNetworkLabel(contact: { blockchain: string; networkName?: string }): string {
+  const chain = getNetworkName(contact.blockchain);
+  const network = contact.networkName ? getNetworkName(contact.networkName) : '';
+  if (!network) return chain;
+  return network.toLowerCase().includes(contact.blockchain.toLowerCase())
+    ? network
+    : `${chain} ${network}`;
+}
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -453,7 +446,10 @@ export function StepAddressAmount({
   // Balance display
   const balanceDisplay = useMemo(() => {
     if (tokenBalance === 0) return `0 ${token.symbol}`;
-    return `${Number(tokenBalance.toFixed(4))} ${token.symbol}`;
+    // Rounding unchanged; the separator follows the app's language rather than
+    // the host's, per PRODUCT.md's i18n constraint. Display only — the quick-fill
+    // and validation paths read `tokenBalance` itself, never this string.
+    return `${formatTokenAmount(Number(tokenBalance.toFixed(4)))} ${token.symbol}`;
   }, [tokenBalance, token.symbol]);
 
   // Validate form (address must be validated AND amount must be valid)
@@ -504,13 +500,20 @@ export function StepAddressAmount({
     }
   }, [blockchain, t]);
 
+  // A control only while a token-selection step exists to return to.
+  const SelectedTokenCard = onBack ? TokenCardButton : TokenCardStatic;
+
   return (
     <Container>
       <ScrollContent>
         {/* Selected Token Card */}
-        <TokenCardButton
-          onClick={onBack}
-          aria-label={t('accessibility.selected_token', { name: token.name })}
+        <SelectedTokenCard
+          {...(onBack
+            ? {
+                onClick: onBack,
+                'aria-label': t('accessibility.selected_token', { name: token.name }),
+              }
+            : {})}
           data-testid="send-selected-token"
         >
           <BlurContainer style={{ borderRadius: borderRadius.button }}>
@@ -536,7 +539,7 @@ export function StepAddressAmount({
               <TokenCardBalance>{balanceDisplay}</TokenCardBalance>
             </TokenCardContent>
           </BlurContainer>
-        </TokenCardButton>
+        </SelectedTokenCard>
 
         {/* Recipient */}
         <FieldGroup>
@@ -546,11 +549,11 @@ export function StepAddressAmount({
               borderRadius: borderRadius.lg,
               border:
                 validationState === 'invalid'
-                  ? `${borderWidth.thin}px solid ${colors.status.error}`
+                  ? `${borderWidth.thin}px solid ${semantic.status.danger}`
                   : validationState === 'warning'
-                    ? `${borderWidth.thin}px solid ${colors.status.warning}`
+                    ? `${borderWidth.thin}px solid ${semantic.status.warning}`
                     : validationState === 'valid'
-                      ? `${borderWidth.thin}px solid ${colors.status.success}`
+                      ? `${borderWidth.thin}px solid ${semantic.status.success}`
                       : undefined,
             }}
           >
@@ -576,21 +579,21 @@ export function StepAddressAmount({
               )}
               {address.length > 0 && !isValidating && validationState === 'valid' && (
                 <ValidationIndicatorBox>
-                  <span style={{ color: colors.status.success, fontSize: fontSize.md }}>
+                  <span style={{ color: semantic.status.success, fontSize: fontSize.bodyLg }}>
                     {'\u2713'}
                   </span>
                 </ValidationIndicatorBox>
               )}
               {address.length > 0 && !isValidating && validationState === 'invalid' && (
                 <ValidationIndicatorBox>
-                  <span style={{ color: colors.status.error, fontSize: fontSize.md }}>
+                  <span style={{ color: semantic.status.danger, fontSize: fontSize.bodyLg }}>
                     {'\u2715'}
                   </span>
                 </ValidationIndicatorBox>
               )}
               {address.length > 0 && !isValidating && validationState === 'warning' && (
                 <ValidationIndicatorBox>
-                  <span style={{ color: colors.status.warning, fontSize: fontSize.md }}>
+                  <span style={{ color: semantic.status.warning, fontSize: fontSize.bodyLg }}>
                     {'\u26A0'}
                   </span>
                 </ValidationIndicatorBox>
@@ -637,9 +640,7 @@ export function StepAddressAmount({
                   <ContactAddress>{getShortAddress(contact.address)}</ContactAddress>
                 </ContactInfo>
                 <BlockchainBadge>
-                  <BlockchainBadgeText>
-                    {contact.blockchain.charAt(0).toUpperCase() + contact.blockchain.slice(1)}
-                  </BlockchainBadgeText>
+                  <BlockchainBadgeText>{contactNetworkLabel(contact)}</BlockchainBadgeText>
                 </BlockchainBadge>
               </ContactRow>
             ))}
@@ -686,15 +687,27 @@ export function StepAddressAmount({
 
       {/* Bottom Buttons */}
       <BottomButtons>
-        <CancelButton onClick={onCancel} data-testid="send-cancel-button">
-          <CancelButtonText>{t('actions.cancel')}</CancelButtonText>
-        </CancelButton>
+        <ButtonSlot>
+          <SecondaryButton
+            onClick={onCancel}
+            testID="send-cancel-button"
+            // Height is the only legal override; the rest belongs to the button.
+            style={{ height: componentSizes.buttonHeightMedium }}
+          >
+            {t('actions.cancel')}
+          </SecondaryButton>
+        </ButtonSlot>
 
-        <ReviewButton onClick={handleReview} disabled={!isValid} data-testid="send-review-button">
-          <ReviewButtonGradient $isDisabled={!isValid}>
-            <ReviewButtonText>{t('token.send.reviewAndSend')}</ReviewButtonText>
-          </ReviewButtonGradient>
-        </ReviewButton>
+        <ButtonSlot>
+          <PrimaryButton
+            onClick={handleReview}
+            disabled={!isValid}
+            testID="send-review-button"
+            style={{ height: componentSizes.buttonHeightMedium, whiteSpace: 'nowrap' }}
+          >
+            {t('token.send.reviewAndSend')}
+          </PrimaryButton>
+        </ButtonSlot>
       </BottomButtons>
     </Container>
   );

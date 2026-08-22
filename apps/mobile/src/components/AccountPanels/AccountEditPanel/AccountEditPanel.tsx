@@ -7,10 +7,19 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { KeyIcon, LockIcon, TextTIcon, UserCircleIcon, iconSize } from '../../../icons';
+import type { IconComponent } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
-import { colors, spacing, borderRadius, fontSize, fontFamilyNative } from '@salmon/shared';
+import {
+  colors,
+  componentSizes,
+  spacing,
+  borderRadius,
+  fontSize,
+  fontFamilyNative,
+  semantic,
+} from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import type { AccountEditPanelProps } from './types';
 
@@ -20,7 +29,7 @@ import type { AccountEditPanelProps } from './types';
 
 interface SectionItem {
   labelKey: string;
-  icon: React.ComponentProps<typeof Ionicons>['name'];
+  icon: IconComponent;
   onPress: () => void;
   testID: string;
 }
@@ -42,25 +51,25 @@ export function AccountEditPanel({
   const sections: SectionItem[] = [
     {
       labelKey: 'settings.account_edit.name_section',
-      icon: 'text-outline',
+      icon: TextTIcon,
       onPress: onEditName,
       testID: 'account-edit-name',
     },
     {
       labelKey: 'settings.account_edit.avatar_section',
-      icon: 'person-circle-outline',
+      icon: UserCircleIcon,
       onPress: onEditAvatar,
       testID: 'account-edit-avatar',
     },
     {
       labelKey: 'settings.account_edit.backup_section',
-      icon: 'key-outline',
+      icon: KeyIcon,
       onPress: onBackupSeed,
       testID: 'account-edit-backup',
     },
     {
       labelKey: 'settings.account_edit.private_key_section',
-      icon: 'lock-closed-outline',
+      icon: LockIcon,
       onPress: onExportPrivateKey,
       testID: 'account-edit-private-key',
     },
@@ -84,10 +93,11 @@ export function AccountEditPanel({
             accessibilityLabel={t(item.labelKey)}
           >
             <View style={styles.iconContainer}>
-              <Ionicons name={item.icon} size={24} color={colors.text.primary} />
+              <item.icon size={iconSize.lg} color={semantic.text.primary} />
             </View>
+            {/* No chevron: these rows push a panel, and the push sinks and
+                floats on the vertical — a right caret would promise a slide. */}
             <Text style={styles.rowLabel}>{t(item.labelKey)}</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
           </TouchableOpacity>
         ))}
       </View>
@@ -102,7 +112,7 @@ export function AccountEditPanel({
 const styles = StyleSheet.create({
   sectionContainer: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     overflow: 'hidden',
   },
   row: {
@@ -113,12 +123,12 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.default,
+    borderBottomColor: semantic.border.default,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
+    width: componentSizes.iconSize2XL,
+    height: componentSizes.iconSize2XL,
+    borderRadius: borderRadius.r2,
     backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -126,8 +136,8 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     flex: 1,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
 });

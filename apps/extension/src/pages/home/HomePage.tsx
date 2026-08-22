@@ -14,6 +14,7 @@ import {
   AddressbookError,
   useCoinMarketData,
   colors,
+  semantic,
   spacing,
   fontSize,
   borderRadius,
@@ -28,7 +29,6 @@ import {
   type Token,
   type NftData,
   type NftBlockchain,
-  type Transaction,
   type SendToken,
   type AddressBookItem,
   type NetworkAdapter,
@@ -54,30 +54,29 @@ import {
   PERIOD_TO_DAYS,
   coinInfoToMarketData,
   useSettleAfterTx,
+  usePrefetchBalances,
   useNftBurn,
 } from '@salmon/shared';
 import { isSolanaAccount } from '@salmon/shared/utils/account';
 import { sessionArea } from '../../utils/storageCompat';
 import {
   WalletHeader,
+  TextButton,
   WarningNotice,
   BalanceCardCarousel,
   ActionButtonRow,
   TokenList,
-  TokenListItem,
-  TokenListSkeleton,
-  PriceChart,
-  TokenMarketData,
-  TokenAbout,
+  TokenDetailContent,
+  FadeThrough,
   TokenDetailPage,
   NftDetailPage,
   NftSeeAllPage,
   TransactionHistoryPage,
-  TransactionDetailModal,
   ReceiveSheet,
   SettingsPanelStack,
   WalletSwitcherSheet,
   ConfirmDialog,
+  DepthBackground,
   ScalesBackground,
   SendPage,
   NftSendDialog,
@@ -163,7 +162,9 @@ const BottomFadeGradient = styled(Box)({
   right: 0,
   bottom: 0,
   height: 180,
-  background: `linear-gradient(to bottom, transparent 0%, ${colors.background.primary} 60%)`,
+  // Ends on the depth ramp's own floor. Fading to the old flat ground would
+  // have lightened the abyss the ramp just arrived at.
+  background: `linear-gradient(to bottom, transparent 0%, ${semantic.water.gradient[1]} 60%)`,
   pointerEvents: 'none',
   zIndex: 1,
 });
@@ -252,7 +253,13 @@ const TabButton = styled('button', {
   padding: `${spacing.md}px 0`,
   background: 'none',
   border: 'none',
-  borderBottom: active ? `2px solid ${colors.accent.primary}` : '2px solid transparent',
+  // The scarcity rule governs *fills*, not ink: four salmon fills on a screen
+  // means no fill is primary, which is the failure it exists to prevent. A 2px
+  // rule is ink, so the active underline is salmon again (`accent.ink`,
+  // 6.07:1 on the app ground) while the label stays `text.primary` at
+  // 16.37:1 — the affordance keeps the contrast it gained and gets the warmth
+  // back. Send keeps the screen's one and only salmon fill.
+  borderBottom: active ? `2px solid ${semantic.accent.ink}` : '2px solid transparent',
   color: active ? colors.text.primary : colors.text.secondary,
   fontFamily: fontFamily.sans,
   fontWeight: active ? 600 : 400,
@@ -262,6 +269,10 @@ const TabButton = styled('button', {
   transition: 'all 0.2s ease',
   '&:hover': {
     color: colors.text.primary,
+  },
+  '&:disabled': {
+    cursor: 'default',
+    color: colors.text.disabled,
   },
 }));
 
@@ -333,7 +344,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     accounts,
     accountId,
     activeTrustedApps,
-    switchingNetwork,
   } = state;
 
   // User configuration (developer networks toggle, explorer selection)
@@ -378,6 +388,16 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   // not silently snap the user back to Home.
   const [activeTab, setActiveTabState] = useState<ActiveTab>('home');
 
+  // True from the moment a send/swap/bridge is signed until its outcome has
+  // been acknowledged. Before signing this stays false — backing out of a
+  // review costs nothing and must stay easy.
+  const [flowLocked, setFlowLocked] = useState(false);
+  // True while swap is a *task* (review onward). The chrome around it offers
+  // exits that do not know what step the user is on, so it stands down and the
+  // flow's own back arrow is the only way out. This is presentation, not a
+  // guard: `flowLocked` above still governs what is allowed once signed.
+  const [flowIsTask, setFlowIsTask] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     sessionArea
@@ -409,7 +429,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [walletSwitcherVisible, setWalletSwitcherVisible] = useState(false);
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   // Settings panel stack state (for deep-linking from WalletSwitcher)
   const [settingsInitialPanels, setSettingsInitialPanels] = useState<
@@ -550,8 +569,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     usdTotal,
     changePercent,
     changeAmount,
-    loading,
     refreshing,
+    hasData,
+    state: balanceState,
     refresh,
     error: balanceError,
     hiddenBalance,
@@ -564,15 +584,19 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     includeSpam: !!developerNetworks,
   });
 
+  // Warm the chains the user is not looking at, so the first arrow press of the
+  // session lands on a number instead of a skeleton. One request per inactive
+  // chain per app load — see the hook for why it is not per switch.
+  usePrefetchBalances({
+    account: activeAccount,
+    networkIds: allNetworks.map((network) => network.id as NetworkId),
+    activeNetworkId: networkId as NetworkId | undefined,
+    pathIndex: state.pathIndex,
+    includeSpam: !!developerNetworks,
+  });
+
   // RQ handles refetch-on-focus via QueryClient defaults (refetchOnWindowFocus).
   // dApp approval settlement is fired in App.tsx.
-
-  // Clear switching network flag once new data has loaded
-  useEffect(() => {
-    if (!loading && switchingNetwork) {
-      actions.clearSwitchingNetwork();
-    }
-  }, [loading, switchingNetwork, actions]);
 
   // Fetch transaction history (only when on activity page)
   const accountAddress = activeBlockchainAccount?.getReceiveAddress() || '';
@@ -718,14 +742,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     setCurrentPage('home');
   }, []);
 
-  const handleTransactionPress = useCallback((transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-  }, []);
-
-  const handleTransactionDetailClick = useCallback((transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-  }, []);
-
   const handleTokenPress = useCallback((token: Token) => {
     setSelectedTokenChartPeriod('1M');
     setSelectedToken(token);
@@ -750,6 +766,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     setCurrentPage('home');
     setSelectedNft(null);
   }, []);
+
+  const handleSeeAllPress = useCallback(
+    (data: { title: string; blockchain: NftBlockchain; nfts: NftData[] }) => {
+      setSeeAllData(data);
+      setCurrentPage('nftSeeAll');
+    },
+    []
+  );
 
   const handleSeeAllBack = useCallback(() => {
     setCurrentPage('home');
@@ -862,12 +886,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
       };
 
       if (isActiveNetwork) {
-        const showSkeleton = switchingNetwork || refreshing;
+        // Skeletons belong to the absence of data, never to a fetch in flight.
+        // `refreshing` used to blank the hero on every focus and every return
+        // to Home; the cache held the numbers the whole time.
         balanceData = {
-          usdTotal: showSkeleton ? undefined : usdTotal,
-          changePercent: showSkeleton ? undefined : changePercent,
-          changeAmount: showSkeleton ? undefined : changeAmount,
-          loading: showSkeleton || (loading && usdTotal === undefined),
+          usdTotal,
+          changePercent,
+          changeAmount,
+          loading: !hasData,
         };
       } else {
         balanceData = {
@@ -883,16 +909,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         ...balanceData,
       };
     });
-  }, [
-    allNetworks,
-    networkId,
-    switchingNetwork,
-    refreshing,
-    usdTotal,
-    changePercent,
-    changeAmount,
-    loading,
-  ]);
+  }, [allNetworks, networkId, hasData, usdTotal, changePercent, changeAmount]);
 
   // Handle blockchain change from carousel arrows
   const handleBlockchainChange = useCallback(
@@ -938,7 +955,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const {
     coinInfo: bitcoinCoinInfo,
     chartData: bitcoinChartDataRaw,
-    loading: bitcoinDataLoading,
+    infoLoading: bitcoinInfoLoading,
+    chartLoading: bitcoinChartLoading,
+    chartPending: bitcoinChartPending,
     error: bitcoinDataError,
   } = useCoinMarketData({
     coinId: bitcoinCoinId,
@@ -973,10 +992,6 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     };
   }, [bitcoinCoinInfo]);
 
-  const handleChartPeriodChange = useCallback((period: PriceChartPeriod) => {
-    setBitcoinChartPeriod(period);
-  }, []);
-
   // Selected token chart + coin info via shared React Query hook.
   // Tokens without a coingeckoId fall back to the contract-address chart
   // endpoint via their mint (handled inside the hook/service).
@@ -984,7 +999,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const {
     coinInfo: selectedTokenCoinInfo,
     chartData: selectedTokenChartDataRaw,
-    loading: selectedTokenLoading,
+    infoLoading: selectedTokenInfoLoading,
+    chartLoading: selectedTokenChartLoading,
+    chartPending: selectedTokenChartPending,
     error: selectedTokenError,
   } = useCoinMarketData({
     coinId: selectedTokenCoinId,
@@ -1236,7 +1253,9 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               onChartPeriodChange={handleSelectedTokenChartPeriodChange}
               coinInfo={selectedTokenCoinInfo}
               marketData={selectedTokenMarketData}
-              loading={selectedTokenLoading && selectedTokenChartData.length === 0}
+              chartLoading={selectedTokenChartLoading && selectedTokenChartData.length === 0}
+              chartPending={selectedTokenChartPending}
+              infoLoading={selectedTokenInfoLoading && !selectedTokenCoinInfo}
               chartError={!!selectedTokenError && selectedTokenChartData.length === 0}
               onBack={handleTokenDetailBack}
             />
@@ -1317,31 +1336,24 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
             account={activeBlockchainAccount}
             onBack={handleSendBack}
             onSuccess={handleSendSuccess}
+            onFlowLockChange={setFlowLocked}
           />
         );
       case 'activity':
         return (
-          <>
-            <TransactionHistoryPage
-              onBack={handleActivityBack}
-              transactions={transactions}
-              loading={transactionsLoading}
-              loadingMore={transactionsLoadingMore}
-              hasMore={transactionsHasMore}
-              onLoadMore={transactionsLoadMore}
-              hiddenBalance={hiddenBalance}
-              error={transactionsError}
-              onRetry={transactionsRefresh}
-              onTransactionPress={handleTransactionPress}
-              onTransactionDetailClick={handleTransactionDetailClick}
-            />
-            <TransactionDetailModal
-              visible={!!selectedTransaction}
-              onClose={() => setSelectedTransaction(null)}
-              transaction={selectedTransaction}
-              developerMode={developerNetworks}
-            />
-          </>
+          <TransactionHistoryPage
+            onBack={handleActivityBack}
+            transactions={transactions}
+            loading={transactionsLoading}
+            loadingMore={transactionsLoadingMore}
+            hasMore={transactionsHasMore}
+            onLoadMore={transactionsLoadMore}
+            hiddenBalance={hiddenBalance}
+            error={transactionsError}
+            onRetry={transactionsRefresh}
+            networkId={networkId}
+            developerMode={developerNetworks}
+          />
         );
       default:
         return <PlaceholderPage title={t('general.page', 'Page')} onBack={handleBack} />;
@@ -1350,47 +1362,61 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
   return (
     <Container data-testid="home-screen">
-      {/* Header */}
-      <WalletHeader
-        accountName={accountName}
-        address={accountAddress}
-        onCopyAddress={handleCopyAddress}
-        onSettingsPress={handleSettingsPress}
-        onRefreshPress={refresh}
-        refreshing={refreshing}
-        onWalletPress={handleWalletPress}
-        avatarUrl={activeAccount?.avatar}
-        accountId={activeAccount?.id}
-      />
+      {/* Header. Settings and the wallet switcher can change the account or
+          the network, which remounts the flow — both are withheld while a
+          signed transaction is still being reported. */}
+      {!flowIsTask && (
+        <WalletHeader
+          accountName={accountName}
+          address={accountAddress}
+          onCopyAddress={handleCopyAddress}
+          onSettingsPress={flowLocked ? undefined : handleSettingsPress}
+          onRefreshPress={refresh}
+          refreshing={refreshing}
+          onWalletPress={flowLocked ? undefined : handleWalletPress}
+          avatarUrl={activeAccount?.avatar}
+          accountId={activeAccount?.id}
+        />
+      )}
 
-      {/* Tab Bar */}
-      <TabBar>
-        <TabButton
-          active={activeTab === 'home'}
-          onClick={() => setActiveTab('home')}
-          data-testid="tab-home"
-        >
-          {t('tabs.home', 'Home')}
-        </TabButton>
-        <TabButton
-          active={activeTab === 'collectibles'}
-          onClick={() => setActiveTab('collectibles')}
-          data-testid="tab-collectibles"
-        >
-          {t('tabs.collectibles', 'Collectibles')}
-        </TabButton>
-        <TabButton
-          active={activeTab === 'swap'}
-          onClick={() => setActiveTab('swap')}
-          data-testid="tab-swap"
-        >
-          {t('tabs.swap', 'Swap')}
-        </TabButton>
-      </TabBar>
+      {/* Tab Bar — inert while a signed transaction is being reported, since a
+          stray tab tap is the cheapest way to lose the only outcome report. */}
+      {!flowIsTask && (
+        <TabBar>
+          <TabButton
+            active={activeTab === 'home'}
+            onClick={() => setActiveTab('home')}
+            disabled={flowLocked}
+            data-testid="tab-home"
+          >
+            {t('tabs.home', 'Home')}
+          </TabButton>
+          <TabButton
+            active={activeTab === 'collectibles'}
+            onClick={() => setActiveTab('collectibles')}
+            disabled={flowLocked}
+            data-testid="tab-collectibles"
+          >
+            {t('tabs.collectibles', 'Collectibles')}
+          </TabButton>
+          <TabButton
+            active={activeTab === 'swap'}
+            onClick={() => setActiveTab('swap')}
+            disabled={flowLocked}
+            data-testid="tab-swap"
+          >
+            {t('tabs.swap', 'Swap')}
+          </TabButton>
+        </TabBar>
+      )}
 
       <Main>
         {/* Background layers — shared across all three tabs */}
-        <ScalesBackground style={{ zIndex: 0 }} />
+        {/* The water column: a depth ramp darkening toward the abyss, plus the
+            marine snow the deep field's 3.2x scales are read through. Both are
+            spent before the token list. */}
+        <DepthBackground style={{ zIndex: 0 }} />
+        <ScalesBackground variant="deepField" style={{ zIndex: 0 }} />
         <BottomFadeGradient />
 
         <TabContent>
@@ -1416,7 +1442,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
 
               {/* Partial-load failure: keep whatever data loaded visible;
                   retry is the header refresh button. */}
-              {balanceError && !switchingNetwork && (
+              {balanceError && hasData && (
                 <Box
                   sx={{ padding: `0 ${spacing.lg}px`, marginBottom: `${spacing.md}px` }}
                   data-testid="balance-load-error"
@@ -1434,68 +1460,71 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               {/* Token List Section — only this area scrolls */}
               <TokenSectionWrapper>
                 <TopListFade ref={topFadeRef} />
-                {currentBlockchain === 'bitcoin' ? (
-                  <TokenSection onScroll={handleTokenListScroll}>
-                    <PriceChart
-                      data={bitcoinChartData}
-                      selectedPeriod={bitcoinChartPeriod}
-                      onPeriodChange={handleChartPeriodChange}
-                      loading={bitcoinDataLoading && bitcoinChartData.length === 0}
-                      error={!!bitcoinDataError && bitcoinChartData.length === 0}
-                      height={180}
-                      style={{ marginLeft: -spacing.lg, marginRight: -spacing.lg }}
-                    />
-                    {switchingNetwork || refreshing ? (
-                      <TokenListSkeleton count={1} />
-                    ) : (
-                      bitcoinToken && (
-                        <TokenListItem
-                          token={bitcoinToken}
-                          hiddenBalance={hiddenBalance}
-                          blockchain="bitcoin"
-                        />
-                      )
-                    )}
-                    <TokenMarketData
-                      data={bitcoinMarketData}
-                      symbol="BTC"
-                      loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                      style={{ marginTop: spacing.md }}
-                    />
-                    <TokenAbout
-                      description={bitcoinCoinInfo?.description}
-                      loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                      maxLines={4}
-                      style={{ marginTop: spacing.md }}
-                    />
-                  </TokenSection>
-                ) : (
-                  <TokenSection onScroll={handleTokenListScroll}>
-                    {formattedTokens.length > 0 || loading || switchingNetwork || refreshing ? (
-                      <TokenList
-                        tokens={switchingNetwork || refreshing ? [] : formattedTokens}
-                        loading={
-                          switchingNetwork ||
-                          refreshing ||
-                          (loading && formattedTokens.length === 0)
-                        }
-                        onTokenPress={handleTokenPress}
+                {/* Keyed by chain: switching chains swaps this whole area with
+                    a fade-through (enter with fade + settle from scale 0.97)
+                    instead of a hard cut; reduce motion keeps the cut. */}
+                <FadeThrough transitionKey={currentBlockchain}>
+                  {currentBlockchain === 'bitcoin' ? (
+                    <TokenSection onScroll={handleTokenListScroll}>
+                      {/* Bitcoin's home tab *is* the token detail screen — the
+                        same composition the pushed page renders, minus the
+                        push. It shares that component so the two cannot drift
+                        into different spacing, titles or chart heights again. */}
+                      <TokenDetailContent
+                        token={hasData ? bitcoinToken : undefined}
+                        blockchain="bitcoin"
                         hiddenBalance={hiddenBalance}
-                        blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+                        chartData={bitcoinChartData}
+                        chartPeriod={bitcoinChartPeriod}
+                        onChartPeriodChange={setBitcoinChartPeriod}
+                        chartLoading={bitcoinChartLoading && bitcoinChartData.length === 0}
+                        chartPending={bitcoinChartPending}
+                        chartError={!!bitcoinDataError && bitcoinChartData.length === 0}
+                        coinInfo={bitcoinCoinInfo}
+                        marketData={bitcoinMarketData}
+                        infoLoading={bitcoinInfoLoading && !bitcoinCoinInfo}
+                        bleed={spacing.lg}
                       />
-                    ) : (
-                      <EmptyState>
-                        <EmptyStateText>{t('home.no_tokens', 'No tokens found')}</EmptyStateText>
-                        <EmptyStateSubtext>
-                          {t(
-                            'home.no_tokens_hint',
-                            'Your tokens will appear here once you receive some'
-                          )}
-                        </EmptyStateSubtext>
-                      </EmptyState>
-                    )}
-                  </TokenSection>
-                )}
+                    </TokenSection>
+                  ) : (
+                    <TokenSection onScroll={handleTokenListScroll}>
+                      {balanceState === 'loading' || formattedTokens.length > 0 ? (
+                        <TokenList
+                          tokens={formattedTokens}
+                          loading={balanceState === 'loading'}
+                          onTokenPress={handleTokenPress}
+                          hiddenBalance={hiddenBalance}
+                          blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+                        />
+                      ) : balanceState === 'error' ? (
+                        /* Failed load with nothing to show is an error state,
+                           never "No tokens found" and never an endless
+                           skeleton — PRODUCT.md keeps those answers distinct. */
+                        <EmptyState data-testid="token-list-error">
+                          <EmptyStateText>
+                            {t(
+                              'wallet.tokens_load_error',
+                              "Your tokens couldn't be loaded right now."
+                            )}
+                          </EmptyStateText>
+                          <TextButton onClick={() => refresh()} testID="token-list-retry-button">
+                            {t('actions.retry', 'Retry')}
+                          </TextButton>
+                        </EmptyState>
+                      ) : (
+                        <EmptyState>
+                          <EmptyStateText>{t('home.no_tokens', 'No tokens found')}</EmptyStateText>
+                          <EmptyStateSubtext>
+                            {t(
+                              'home.no_tokens_hint',
+                              'Your tokens will appear here once you receive some'
+                            )}
+                          </EmptyStateSubtext>
+                        </EmptyState>
+                      )}
+                    </TokenSection>
+                  )}
+                </FadeThrough>
 
                 <BottomListFade ref={bottomFadeRef} />
               </TokenSectionWrapper>
@@ -1507,11 +1536,17 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
               activeAccount={activeAccount}
               developerNetworks={developerNetworks}
               onNftDetailPress={handleNftDetailPress}
-              // onSeeAllPress={handleSeeAllPress}
+              onSeeAllPress={handleSeeAllPress}
             />
           )}
 
-          {activeTab === 'swap' && <SwapPage onNavigateHome={() => setActiveTab('home')} />}
+          {activeTab === 'swap' && (
+            <SwapPage
+              onNavigateHome={() => setActiveTab('home')}
+              onFlowLockChange={setFlowLocked}
+              onTaskChange={setFlowIsTask}
+            />
+          )}
         </TabContent>
       </Main>
 
@@ -1576,14 +1611,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
         visible={receiveSheetVisible}
         onClose={() => setReceiveSheetVisible(false)}
         address={accountAddress}
-      />
-
-      {/* Transaction Detail Modal */}
-      <TransactionDetailModal
-        visible={!!selectedTransaction}
-        onClose={() => setSelectedTransaction(null)}
-        transaction={selectedTransaction}
-        developerMode={developerNetworks}
+        blockchain={getBlockchainFromNetworkId(currentBlockchain)}
       />
     </Container>
   );

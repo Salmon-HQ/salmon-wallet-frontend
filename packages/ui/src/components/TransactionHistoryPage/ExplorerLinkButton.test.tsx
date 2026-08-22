@@ -22,6 +22,11 @@ vi.mock('../../utils/styled', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
+  tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
+  semantic: {
+    text: { accent: '#FF5C45' },
+    accent: { ink: '#FF5C45', tint: 'rgba(255,92,69,0.10)', tintHover: 'rgba(255,92,69,0.15)' },
+  },
   colors: {
     palette: { amber: '#fc0' },
     border: { default: '#333' },
@@ -37,7 +42,7 @@ vi.mock('@salmon/shared', () => ({
     { key: 'explorer', name: 'Explorer' },
   ],
   getDefaultExplorer: () => 'solscan',
-  fontSize: { sm: 14, md: 16, base: 14, lg: 18 },
+  fontSize: { sm: 14, bodyLg: 16, base: 14, lg: 18 },
   fontWeight: { medium: 500 },
   opacity: { high: 0.9 },
   spacing: { sm: 8, md: 12, lg: 16 },

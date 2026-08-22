@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { RouterProvider } from 'react-router-dom';
-import { WalletLayout } from '@salmon/ui';
+import { PendingActivityBanner, WalletLayout } from '@salmon/ui';
 import {
   useAccountsContext,
   useInactivityTimeout,
   createQueryClient,
   QueryClientProvider,
   BridgeSettlementProvider,
+  PendingTransactionsProvider,
+  usePendingActivity,
 } from '@salmon/shared';
 import { router } from './router';
 import { clearSessionKey } from './utils/sessionKeyCache';
@@ -53,17 +55,29 @@ function InactivityGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Global in-flight surface. Mounted above the router so navigating — or
+ * locking — never costs the user the outcome of a transaction they signed.
+ */
+function PendingActivity(): React.ReactElement {
+  const { items, dismiss } = usePendingActivity();
+  return <PendingActivityBanner items={items} onDismiss={dismiss} />;
+}
+
 export function App(): React.ReactElement {
   const [queryClient] = useState(() => createQueryClient());
   return (
     <QueryClientProvider client={queryClient}>
       <BridgeSettlementProvider>
-        <DAppSettlementBridge />
-        <WalletLayout>
-          <InactivityGuard>
-            <RouterProvider router={router} />
-          </InactivityGuard>
-        </WalletLayout>
+        <PendingTransactionsProvider>
+          <DAppSettlementBridge />
+          <WalletLayout>
+            <PendingActivity />
+            <InactivityGuard>
+              <RouterProvider router={router} />
+            </InactivityGuard>
+          </WalletLayout>
+        </PendingTransactionsProvider>
       </BridgeSettlementProvider>
     </QueryClientProvider>
   );

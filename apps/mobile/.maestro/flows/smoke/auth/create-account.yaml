@@ -2,6 +2,11 @@ appId: io.salmonwallet.app
 ---
 # Walk the create-account flow up to the seed-reveal screen. Read-only —
 # capture screens, do NOT confirm. Stops before the password step.
+#
+# The consequences copy is its own screen now (`seed-warning`), sitting
+# between the welcome screen and the phrase, and its continue button only
+# arms once the warning has been scrolled to its end — advancing it has to
+# cost a deliberate act, so the flow has to make that act.
 - clearState
 - launchApp
 - runFlow: ../../../subflows/dev-launcher-pass.yaml
@@ -11,8 +16,18 @@ appId: io.salmonwallet.app
     id: 'select-create-button'
 - extendedWaitUntil:
     visible:
-      id: 'create-start-button'
+      id: 'seed-warning-continue-button'
     timeout: 10000
 - assertVisible: 'Keep your seed phrase safe!'
 - takeScreenshot: screenshots/smoke/auth/create-step1
+- swipe:
+    start: '50%, 60%'
+    end: '50%, 25%'
+- waitForAnimationToEnd:
+    timeout: 2000
+- tapOn:
+    id: 'seed-warning-continue-button'
+- extendedWaitUntil:
+    visible: 'Your Seed Phrase'
+    timeout: 10000
 - takeScreenshot: screenshots/smoke/auth/create-seed-reveal

@@ -17,7 +17,6 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
-  useRef,
   type ReactNode,
 } from 'react';
 
@@ -29,7 +28,8 @@ import {
   type CurrencyInfo,
   type ExchangeRates,
 } from '../types/currency';
-import { getExchangeRates } from '../api/services/exchangeRates';
+import { getExchangeRates, FALLBACK_RATES } from '../api/services/exchangeRates';
+import { AccountsContext } from './AccountsContext';
 import { getStorage, STORAGE_KEYS } from '../storage';
 import {
   formatFiatValue,
@@ -54,6 +54,12 @@ export interface CurrencyState {
   rates: ExchangeRates | null;
   /** Whether rates are being loaded */
   isLoading: boolean;
+  /**
+   * True when the rates in use are the offline fallback (USD only) rather
+   * than real quotes. Every non-USD amount is then a USD number wearing the
+   * wrong symbol, so the UI should say so instead of passing it off as real.
+   */
+  isFallback: boolean;
 }
 
 export interface CurrencyActions {
@@ -101,11 +107,23 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
   const [currency, setCurrency] = useState<CurrencyCode>(DEFAULT_CURRENCY);
   const [rates, setRates] = useState<ExchangeRates | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Rates are only worth fetching once the user can actually see amounts.
+  // While the wallet is locked there is nothing to convert, and a wallet
+  // should not make an outbound call before its owner has authenticated.
+  // `locked` starts false and only flips once init has read the vault, so
+  // `ready` has to gate too — otherwise the fetch races out the door during
+  // that window, which is exactly the boot path that lands on the lock
+  // screen. Read non-throwing: the provider stays usable without
+  // AccountsProvider (tests, storybooks, standalone mounts).
+  const accountsContext = useContext(AccountsContext);
+  const accountsState = accountsContext?.[0];
+  const shouldFetchRates = accountsState ? accountsState.ready && !accountsState.locked : true;
 
   // Derived values
   const exchangeRate = rates?.rates?.[currency] ?? 1;
   const currencyInfo = CURRENCY_MAP[currency];
+  const isFallback = rates === FALLBACK_RATES;
 
   // --------------------------------------------------
   // Load saved currency from storage
@@ -142,15 +160,17 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
   }, []);
 
   useEffect(() => {
+    if (!shouldFetchRates) {
+      return;
+    }
+
     fetchRates();
 
-    intervalRef.current = setInterval(fetchRates, REFRESH_INTERVAL_MS);
+    const intervalId = setInterval(fetchRates, REFRESH_INTERVAL_MS);
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      clearInterval(intervalId);
     };
-  }, [fetchRates]);
+  }, [fetchRates, shouldFetchRates]);
 
   // --------------------------------------------------
   // Actions
@@ -200,7 +220,7 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
   // --------------------------------------------------
   const value = useMemo<CurrencyContextValue>(
     () => [
-      { currency, currencyInfo, exchangeRate, rates, isLoading },
+      { currency, currencyInfo, exchangeRate, rates, isLoading, isFallback },
       {
         changeCurrency,
         convert,
@@ -218,6 +238,7 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
       exchangeRate,
       rates,
       isLoading,
+      isFallback,
       changeCurrency,
       convert,
       formatValue,

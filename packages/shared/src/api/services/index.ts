@@ -117,6 +117,8 @@ export {
 // ============================================================================
 
 export {
+  // Constants
+  BRIDGE_PARTNER_FEE_PERCENT,
   // Functions
   getBridgeAvailableTokens,
   getBridgeEstimatedAmount,

@@ -28,6 +28,9 @@ export type { TokenInfoPropsBase } from './token-info';
 // Price Chart
 export type { PriceChartPropsBase } from './price-chart';
 
+// Pending Value
+export type { PendingValuePropsBase } from './pending-value';
+
 // Send Sheet
 export type {
   SendStep,
@@ -152,3 +155,9 @@ export type {
 
 // About Panel
 export type { AboutPanelPropsBase } from './about-panel';
+
+// Pending Activity Banner
+export type { PendingActivityBannerPropsBase } from './pending-activity-banner';
+
+// Onboarding Layout
+export type { OnboardingLayoutPropsBase } from './onboarding-layout';

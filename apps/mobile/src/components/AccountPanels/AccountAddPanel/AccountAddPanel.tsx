@@ -8,7 +8,7 @@
  * 4. set-name: Choose account name
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,13 +16,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { CaretRightIcon, FileTextIcon, TreeStructureIcon, iconSize } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
   colors,
+  componentSizes,
   spacing,
   borderRadius,
   borderWidth,
@@ -35,17 +35,23 @@ import {
   createAccount,
   getScanNetworks,
   NETWORK_DISPLAY,
+  SHORT_PHRASE,
   EncryptionMaterialMissingError,
   trackEvent,
   type AccountAddStep,
   type DerivedAccountInfo,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { useSettingsHeaderOverride } from '../../SettingsHeaderContext';
 import { PrimaryButton } from '../../Button';
+import { ConfirmSheet } from '../../ConfirmSheet';
 import { DerivedAccountCard } from '../../DerivedAccountCard';
 import { LoadingScreen } from '../../LoadingScreen';
 import { WarningNotice } from '../../WarningNotice';
+import { SeedPhraseEntry } from '../../SeedPhrase';
+import { useSecretScreen } from '../../../../hooks/useSecretScreen';
+import { useWaitPassage } from '../../../utils/useWaitPassage';
 import type { AccountAddPanelProps } from './types';
 
 // ============================================================================
@@ -56,6 +62,10 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const { t } = useTranslation();
   const [accountState, accountActions] = useAccountsContext();
   const { accounts, activeAccount } = accountState;
+
+  // The imported seed lives in this panel's memory for its whole lifetime,
+  // not just while the grid is mounted (`SeedWordInput` covers those frames).
+  useSecretScreen('account-add-panel');
 
   // Step state
   const [step, setStep] = useState<AccountAddStep>('select-method');
@@ -70,9 +80,29 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   // Loading state
   const [loading, setLoading] = useState(false);
 
-  // Import flow state
-  const [seedPhrase, setSeedPhrase] = useState('');
+  // Creation-failure notice, surfaced as a sheet rather than an OS alert.
+  const [creationError, setCreationError] = useState<string | null>(null);
+
+  // The wait's passage: the panel keeps the wait mounted until its closing
+  // wave has left, and the completion handoff is parked behind that report —
+  // completing earlier unmounts the wait mid-wave. LoadingScreen's watchdog
+  // guarantees the report, so the handoff cannot be stranded.
+  const { onExited: waitExited } = useWaitPassage(loading);
+  const pendingCompleteRef = useRef(false);
+  const handleWaitExited = useCallback(() => {
+    waitExited();
+    if (!pendingCompleteRef.current) return;
+    pendingCompleteRef.current = false;
+    onComplete();
+  }, [waitExited, onComplete]);
+
+  // Import flow state — one entry per grid box. Twelve to begin with; a paste
+  // or a thirteenth typed word grows it to twenty-four.
+  const [seedWords, setSeedWords] = useState<string[]>(() => Array<string>(SHORT_PHRASE).fill(''));
+  // What was actually pasted when a paste did not fit. `null` = no rejection.
+  const [pastedCount, setPastedCount] = useState<number | null>(null);
   const [seedError, setSeedError] = useState('');
+  const seedPhrase = useMemo(() => normalizeMnemonic(seedWords.join(' ')), [seedWords]);
 
   // Name step state
   const defaultName = useMemo(
@@ -122,14 +152,24 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     setStep('set-name');
   }, [selectedDerived, defaultName]);
 
+  const handleSeedWords = useCallback((next: string[]) => {
+    setSeedWords(next);
+    setPastedCount(null);
+    setSeedError('');
+  }, []);
+
+  const handleSeedLength = useCallback((length: number) => {
+    setSeedWords((prev) =>
+      prev.length === length ? prev : Array.from({ length }, (_, i) => prev[i] ?? '')
+    );
+  }, []);
+
   const handleSeedSubmit = useCallback(() => {
-    const normalized = normalizeMnemonic(seedPhrase);
-    if (!validateMnemonic(normalized)) {
+    if (!validateMnemonic(seedPhrase)) {
       setSeedError(t('wallet.create.invalidSeed'));
       return;
     }
     setSeedError('');
-    setSeedPhrase(normalized);
     setAccountName(defaultName);
     setStep('set-name');
   }, [seedPhrase, defaultName, t]);
@@ -153,14 +193,17 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       // derived account reuses the active seed (create); an imported seed is a
       // recovery. No seed, address or key material — just which flow completed.
       trackEvent(selectedDerived ? 'wallet_created' : 'wallet_recovered');
-      onComplete();
+      // Parked, not fired: dropping `loading` starts the wait's exit, and
+      // `handleWaitExited` completes once the last wave has left the screen.
+      pendingCompleteRef.current = true;
+      setLoading(false);
     } catch (err) {
       setLoading(false);
       if (err instanceof EncryptionMaterialMissingError) {
-        Alert.alert(t('general.error'), t('settings.account_add.session_expired'));
+        setCreationError(t('settings.account_add.session_expired'));
         return;
       }
-      Alert.alert(t('general.error'), t('settings.account_add.creation_error'));
+      setCreationError(t('settings.account_add.creation_error'));
     }
   }, [
     loading,
@@ -170,7 +213,6 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     activeAccount,
     seedPhrase,
     accountActions,
-    onComplete,
     t,
   ]);
 
@@ -198,7 +240,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         activeOpacity={0.7}
       >
         <View style={styles.methodIcon}>
-          <Ionicons name="git-branch-outline" size={28} color={colors.accent.primary} />
+          <TreeStructureIcon size={iconSize.xl} color={semantic.accent.ink} />
         </View>
         <View style={styles.methodInfo}>
           <Text style={styles.methodTitle}>{t('settings.account_add.create_new')}</Text>
@@ -206,7 +248,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
             {t('settings.account_add.create_new_description')}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+        <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -217,7 +259,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         activeOpacity={0.7}
       >
         <View style={styles.methodIcon}>
-          <Ionicons name="document-text-outline" size={28} color={colors.accent.primary} />
+          <FileTextIcon size={iconSize.xl} color={semantic.accent.ink} />
         </View>
         <View style={styles.methodInfo}>
           <Text style={styles.methodTitle}>{t('settings.account_add.import_seed')}</Text>
@@ -225,7 +267,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
             {t('settings.account_add.import_seed_description')}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+        <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
       </TouchableOpacity>
     </View>
   );
@@ -234,7 +276,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     <View>
       {scanning ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent.primary} />
+          <ActivityIndicator size="large" color={semantic.accent.ink} />
           <Text style={styles.loadingText}>{t('settings.account_add.scanning')}</Text>
         </View>
       ) : derivedAccounts.length === 0 && failedNetworks.length > 0 ? (
@@ -286,23 +328,20 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const renderImportSeed = () => (
     <View>
       <Text style={styles.inputLabel}>{t('settings.account_add.import_seed')}</Text>
-      <TextInput
-        testID="account-add-seed-input"
-        style={styles.seedInput}
-        value={seedPhrase}
-        onChangeText={(text: string) => {
-          setSeedPhrase(text);
-          if (seedError) setSeedError('');
-        }}
-        placeholder={t('settings.account_add.seed_placeholder', 'Enter your seed phrase...')}
-        placeholderTextColor={colors.text.tertiary}
-        multiline
-        numberOfLines={4}
-        autoCapitalize="none"
-        autoCorrect={false}
-        textAlignVertical="top"
+      <SeedPhraseEntry
+        testID="account-add-seed"
+        words={seedWords}
+        onChange={handleSeedWords}
+        onLengthChange={handleSeedLength}
+        onPasteRejected={setPastedCount}
       />
-      {seedError ? <Text style={styles.errorText}>{seedError}</Text> : null}
+      {pastedCount !== null ? (
+        <Text style={styles.errorText}>
+          {t('wallet.recover.pastedWordCount', { count: pastedCount })}
+        </Text>
+      ) : seedError ? (
+        <Text style={styles.errorText}>{seedError}</Text>
+      ) : null}
       <View style={styles.buttonContainer}>
         <PrimaryButton onPress={handleSeedSubmit} testID="account-add-seed-continue-button">
           {t('actions.continue')}
@@ -320,7 +359,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         value={accountName}
         onChangeText={setAccountName}
         placeholder={t('settings.account_add.set_name_placeholder')}
-        placeholderTextColor={colors.text.tertiary}
+        placeholderTextColor={semantic.text.tertiary}
         autoFocus
         maxLength={32}
         returnKeyType="done"
@@ -362,6 +401,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
             : t('settings.account_add.confirm_import')
         }
         subtitle={t('general.loading')}
+        onExited={handleWaitExited}
       />
       <SettingsScreenLayout title={currentTitle} onBack={handleStepBack}>
         {step === 'select-method' && renderSelectMethod()}
@@ -369,6 +409,17 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         {step === 'import-seed' && renderImportSeed()}
         {step === 'set-name' && renderSetName()}
       </SettingsScreenLayout>
+
+      {/* Failure notice as a sheet: acknowledgment only, so both buttons
+          dismiss. Kept on ConfirmSheet to match the panel-sheet idiom. */}
+      <ConfirmSheet
+        visible={creationError !== null}
+        onClose={() => setCreationError(null)}
+        title={t('general.error')}
+        message={creationError ?? ''}
+        confirmText={t('actions.close')}
+        onConfirm={async () => {}}
+      />
     </>
   );
 }
@@ -385,13 +436,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     padding: spacing.lg,
   },
   methodIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
+    width: componentSizes.iconSize3XL,
+    height: componentSizes.iconSize3XL,
+    borderRadius: borderRadius.r2,
     backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -402,15 +453,15 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   methodTitle: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     marginBottom: spacing.xxs,
   },
   methodDescription: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
   },
   loadingContainer: {
     alignItems: 'center',
@@ -419,9 +470,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   loadingText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   buttonContainer: {
     marginTop: spacing.xl,
@@ -431,15 +482,15 @@ const styles = StyleSheet.create({
     paddingVertical: spacing['2xl'],
   },
   scanErrorTitle: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     textAlign: 'center',
   },
   scanErrorBody: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     textAlign: 'center',
     marginTop: spacing.sm,
   },
@@ -447,39 +498,27 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   errorText: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginTop: spacing.xs,
     marginLeft: spacing.xs,
   },
   inputLabel: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginBottom: spacing.sm,
   },
   input: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     borderWidth: borderWidth.thin,
-    borderColor: colors.border.default,
+    borderColor: semantic.border.default,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
-  },
-  seedInput: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
-    borderWidth: borderWidth.thin,
-    borderColor: colors.border.default,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
-    minHeight: 120,
+    fontSize: fontSize.bodyLg,
   },
 });

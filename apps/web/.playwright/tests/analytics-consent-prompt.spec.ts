@@ -2,11 +2,11 @@
  * First-run analytics consent SCREEN e2e (web).
  *
  * The opt-in consent is the final onboarding step (route `/auth/analytics-consent`),
- * shown once after password setup and before the Success screen. This proves:
- *  1. It appears once during onboarding, right after the password step.
- *  2. "Share anonymous data" (accept) advances to Success and turns the Settings
+ * shown once after the Success screen, on the way into the wallet. This proves:
+ *  1. It appears once during onboarding, right after leaving Success.
+ *  2. "Share anonymous data" (accept) enters the wallet and turns the Settings
  *     toggle ON; it does not reappear after a reload + unlock.
- *  3. "Not now" (decline) advances to Success and leaves the Settings toggle OFF.
+ *  3. "Not now" (decline) enters the wallet and leaves the Settings toggle OFF.
  *
  * The screen is engine-independent React/DOM while the recover flow is the slow,
  * flaky part — so this runs once on Chromium. Requires `SALMON_TEST_SEED_A` and
@@ -32,11 +32,14 @@ test.beforeAll(async () => {
 /** Drives recovery up to (but not through) the consent screen. */
 async function recoverToConsent(page: Page): Promise<void> {
   await page.getByTestId('select-recover-button').click({ timeout: 20_000 });
-  await page.getByTestId('recover-seed-input').fill(seedA());
+  await page.getByTestId('recover-word-input-1').fill(seedA());
   await page.getByTestId('recover-next-button').click({ timeout: 30_000 });
   await page.getByTestId('password-input').fill(password());
   await page.getByTestId('password-confirm-input').fill(password());
   await page.getByTestId('password-submit-button').click();
+  // Success comes first now; leaving it through "Go to my Account" is what
+  // presents the consent screen.
+  await page.getByTestId('success-go-to-wallet-button').click({ timeout: 60_000 });
   await page.getByTestId('analytics-consent-screen').waitFor({ state: 'visible', timeout: 60_000 });
 }
 
@@ -66,13 +69,12 @@ test('accept: consent screen appears once, opts in, and never reappears', async 
   await page.goto('/');
   await recoverToConsent(page);
 
-  // 1) Shown once during onboarding, after the password step.
+  // 1) Shown once during onboarding, after the Success screen.
   const screen = page.getByTestId('analytics-consent-screen');
   await expect(screen).toBeVisible();
 
-  // 2) Accept → advances to Success, then into the wallet.
+  // 2) Accept → enters the wallet.
   await page.getByTestId('analytics-consent-accept').click();
-  await page.getByTestId('success-go-to-wallet-button').click({ timeout: 60_000 });
   await waitHome(page);
   const home = page.getByTestId('home-screen');
   await expect(home).toBeVisible();
@@ -102,9 +104,8 @@ test('decline: consent screen advances to the wallet with analytics left off', a
   const screen = page.getByTestId('analytics-consent-screen');
   await expect(screen).toBeVisible();
 
-  // "Not now" → advances to Success, then into the wallet.
+  // "Not now" → enters the wallet.
   await page.getByTestId('analytics-consent-decline').click();
-  await page.getByTestId('success-go-to-wallet-button').click({ timeout: 60_000 });
   await waitHome(page);
   await expect(page.getByTestId('home-screen')).toBeVisible();
 

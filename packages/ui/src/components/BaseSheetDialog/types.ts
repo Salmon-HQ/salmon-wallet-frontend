@@ -16,12 +16,16 @@ export interface BaseSheetDialogProps {
   onClose: () => void;
   /** Dialog content (use BaseSheetDialog sub-components) */
   children: ReactNode;
+  /**
+   * Ground rendered behind the sheet's content. Defaults to the thick-tier
+   * thermocline; a sheet that passes its own ground wins, and the two never
+   * stack. See DESIGN.md §The thermocline is the sheet material.
+   */
+  background?: ReactNode;
   /** Dialog size preset */
   size?: 'small' | 'medium' | 'large';
   /** Color scheme for background and border */
   colorScheme?: 'dialog' | 'secondary';
-  /** Whether to show ScalesBackground decorative pattern */
-  showScalesBackground?: boolean;
   /** Optional additional className */
   className?: string;
   /** Optional inline styles for paper */

@@ -5,14 +5,22 @@
  */
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, componentSizes, contentPadding } from '@salmon/shared';
+import { CaretLeftIcon, XIcon } from '../../icons';
+import { colors, componentSizes, contentPadding, semantic } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 import { StepIndicator } from '../StepIndicator';
 
 export interface ScreenHeaderProps extends Testable {
   /** Callback when back button is pressed */
   onBack?: () => void;
+  /**
+   * Glyph for the leading affordance. `close` for screens the affordance
+   * exits rather than backs out of — declining advances, so a back chevron
+   * would describe the wrong direction.
+   */
+  glyph?: 'back' | 'close';
+  /** Accessible name for the affordance. Defaults to "Go back". */
+  backLabel?: string;
   /** Show step indicator */
   stepIndicator?: {
     totalSteps: number;
@@ -22,26 +30,41 @@ export interface ScreenHeaderProps extends Testable {
   backDisabled?: boolean;
 }
 
-export function ScreenHeader({ onBack, stepIndicator, backDisabled, testID }: ScreenHeaderProps) {
+export function ScreenHeader({
+  onBack,
+  glyph = 'back',
+  backLabel,
+  stepIndicator,
+  backDisabled,
+  testID,
+}: ScreenHeaderProps) {
   const { t } = useTranslation();
   return (
     <View style={styles.container}>
-      {/* Back button */}
+      {/* Leading affordance: back, or close where declining advances */}
       <TouchableOpacity
         testID={testID ?? 'screen-header-back-button'}
         accessibilityRole="button"
-        accessibilityLabel={t('accessibility.go_back', 'Go back')}
+        accessibilityLabel={backLabel ?? t('accessibility.go_back', 'Go back')}
         onPress={onBack}
         disabled={!onBack || backDisabled}
         style={styles.backButton}
+        // 40pt visual box + 2pt slop per side = the 44pt minimum target
+        // (DESIGN.md: hit-slop, never inflated visual size).
+        hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
       >
-        {onBack && (
-          <Ionicons
-            name="chevron-back"
-            size={componentSizes.iconSizeMedium}
-            color={backDisabled ? colors.text.muted : colors.text.primary}
-          />
-        )}
+        {onBack &&
+          (glyph === 'close' ? (
+            <XIcon
+              size={componentSizes.iconSizeMedium}
+              color={backDisabled ? semantic.text.secondary : colors.text.primary}
+            />
+          ) : (
+            <CaretLeftIcon
+              size={componentSizes.iconSizeMedium}
+              color={backDisabled ? semantic.text.secondary : colors.text.primary}
+            />
+          ))}
       </TouchableOpacity>
 
       {/* Step indicator (centered) */}

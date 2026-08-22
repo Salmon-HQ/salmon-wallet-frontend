@@ -38,7 +38,18 @@ vi.mock('axios', () => {
 });
 
 import axios from 'axios';
-import { ApiError, createApiClient, get, post, put, patch, del, apiClient } from './client';
+import {
+  ApiError,
+  createApiClient,
+  get,
+  post,
+  put,
+  patch,
+  del,
+  apiClient,
+  parseRetryAfter,
+  resolveRetryDelay,
+} from './client';
 const mockedAxios = vi.mocked(axios, { deep: true });
 
 describe('API Client Module', () => {
@@ -1395,6 +1406,81 @@ describe('API Client Module', () => {
         expect(error.status).toBe(404);
         expect(error.message).toBe('Not Found');
       });
+    });
+  });
+});
+
+describe('retry policy', () => {
+  const base = { method: 'get', attempt: 0, retries: 2, headers: {} };
+
+  describe('resolveRetryDelay', () => {
+    it('retries a GET that never got a response', () => {
+      expect(resolveRetryDelay({ ...base, status: 0 })).toBeGreaterThan(0);
+    });
+
+    it('retries a GET that failed with a 5xx', () => {
+      expect(resolveRetryDelay({ ...base, status: 503 })).toBeGreaterThan(0);
+    });
+
+    it.each([400, 404, 422])('does not retry a %s: nothing will change', (status) => {
+      expect(resolveRetryDelay({ ...base, status })).toBeNull();
+    });
+
+    it.each(['post', 'put', 'delete'])('never retries a %s request', (method) => {
+      // Retrying a mutation is how one bridge order becomes two.
+      expect(resolveRetryDelay({ ...base, method, status: 503 })).toBeNull();
+    });
+
+    it('stops once the attempt budget is spent', () => {
+      expect(resolveRetryDelay({ ...base, status: 503, attempt: 2 })).toBeNull();
+    });
+
+    it('waits exactly as long as a 429 asked', () => {
+      // The backend's rate limiter now enforces rather than only counting, and
+      // it answers with Retry-After in seconds. Retrying earlier than asked
+      // just consumes the next slot in the same window.
+      expect(resolveRetryDelay({ ...base, status: 429, headers: { 'retry-after': '3' } })).toBe(
+        3000
+      );
+    });
+
+    it('accepts the header in either casing', () => {
+      expect(resolveRetryDelay({ ...base, status: 429, headers: { 'Retry-After': '2' } })).toBe(
+        2000
+      );
+    });
+
+    it('gives up on a 429 with no usable hint rather than retrying blind', () => {
+      expect(resolveRetryDelay({ ...base, status: 429, headers: {} })).toBeNull();
+      expect(
+        resolveRetryDelay({ ...base, status: 429, headers: { 'retry-after': 'soon' } })
+      ).toBeNull();
+    });
+
+    it('gives up when the wait is longer than a user will sit through', () => {
+      // Better an error they can act on than a spinner hiding a minute.
+      expect(
+        resolveRetryDelay({ ...base, status: 429, headers: { 'retry-after': '60' } })
+      ).toBeNull();
+    });
+  });
+
+  describe('parseRetryAfter', () => {
+    it.each([
+      ['seconds as a string', { 'retry-after': '4' }, 4000],
+      ['seconds as a number', { 'retry-after': 4 }, 4000],
+    ])('reads %s', (_label, headers, expected) => {
+      expect(parseRetryAfter(headers)).toBe(expected);
+    });
+
+    it.each([
+      ['a missing header', {}],
+      ['a non-numeric value', { 'retry-after': 'Wed, 21 Oct 2026 07:28:00 GMT' }],
+      ['zero', { 'retry-after': '0' }],
+      ['a negative value', { 'retry-after': '-5' }],
+      ['no headers at all', undefined],
+    ])('rejects %s', (_label, headers) => {
+      expect(parseRetryAfter(headers)).toBeNull();
     });
   });
 });

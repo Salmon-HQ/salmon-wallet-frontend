@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAccountsContext } from '@salmon/shared';
+import { useAccountsContext, useWaitExit } from '@salmon/shared';
 import { LoadingScreen, WalletInitErrorScreen } from '@salmon/ui';
 
 /**
@@ -8,9 +8,12 @@ import { LoadingScreen, WalletInitErrorScreen } from '@salmon/ui';
  */
 export function RootRedirect(): React.ReactElement {
   const [state, actions] = useAccountsContext();
+  // Held until the boot wait's closing wave has left the screen — a redirect
+  // that fires the frame `ready` flips unmounts the wave mid-crossing.
+  const { held: waitHeld, onExited: onWaitExited } = useWaitExit(!state.ready);
 
-  if (!state.ready) {
-    return <LoadingScreen visible />;
+  if (waitHeld) {
+    return <LoadingScreen visible={!state.ready} onExited={onWaitExited} />;
   }
 
   // Init failed and nothing loaded — block instead of routing a user with

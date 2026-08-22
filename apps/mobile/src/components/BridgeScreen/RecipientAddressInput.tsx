@@ -15,6 +15,7 @@ import {
   fontFamilyNative,
   useAddressValidation,
   useAccountsContext,
+  semantic,
 } from '@salmon/shared';
 import type { RecipientAddressInputProps } from './types';
 
@@ -172,13 +173,13 @@ const styles = StyleSheet.create({
     paddingVertical: vs(spacing.sm),
   },
   inputContainerError: {
-    borderColor: colors.status.error,
+    borderColor: semantic.status.danger,
   },
   inputContainerWarning: {
-    borderColor: colors.status.warning,
+    borderColor: semantic.status.warning,
   },
   inputContainerValid: {
-    borderColor: colors.status.success,
+    borderColor: semantic.status.success,
   },
   input: {
     flex: 1,
@@ -192,15 +193,15 @@ const styles = StyleSheet.create({
   },
   validIcon: {
     fontSize: ms(fontSize.lg),
-    color: colors.status.success,
+    color: semantic.status.success,
   },
   invalidIcon: {
     fontSize: ms(fontSize.lg),
-    color: colors.status.error,
+    color: semantic.status.danger,
   },
   warningIcon: {
     fontSize: ms(fontSize.lg),
-    color: colors.status.warning,
+    color: semantic.status.warning,
   },
   messageText: {
     fontSize: ms(fontSize.sm),
@@ -210,10 +211,10 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   errorText: {
-    color: colors.status.error,
+    color: semantic.status.danger,
   },
   warningText: {
-    color: colors.status.warning,
+    color: semantic.status.warning,
   },
   helperText: {
     fontSize: ms(fontSize.xs),

@@ -12,9 +12,14 @@ import {
   fontSize,
   fontWeight,
   opacity,
+  tabularNums,
 } from '@salmon/shared';
 import { TokenSelectorModal } from './TokenSelectorModal';
 import type { TokenSelectorToken, TokenSelectorProps } from './types';
+
+// `tabularNums.native` types its array as readonly; RN's TextStyle wants a
+// mutable array, so spread once here (same idiom as TokenSelectorModal).
+const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 
 /**
  * TokenSelector component for selecting tokens and entering amounts
@@ -154,28 +159,29 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.scanner.background,
+    backgroundColor: colors.background.tokenItem,
     borderRadius: borderRadius.xl,
     padding: spacing.sm,
     borderWidth: borderWidth.thin,
-    borderColor: colors.scanner.surface,
+    borderColor: colors.border.subtle,
   },
   inputContainer: {
     flex: 1,
     marginRight: spacing.sm,
   },
   input: {
-    fontSize: fontSize['2xl'],
+    fontSize: fontSize.headline,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
+    color: colors.text.balance,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    ...TABULAR,
   },
   selectorButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.scanner.surface,
+    backgroundColor: colors.background.tertiary,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -191,13 +197,13 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   tokenIconPlaceholder: {
-    backgroundColor: colors.scanner.button,
+    backgroundColor: colors.skeleton.base,
   },
   tokenTextContainer: {
     flex: 1,
   },
   tokenName: {
-    color: colors.text.primary,
+    color: colors.text.balance,
     fontSize: fontSize.base,
     fontFamily: fontFamilyNative.medium,
     fontWeight: fontWeight.medium,
@@ -205,7 +211,7 @@ const styles = StyleSheet.create({
   },
   tokenAddress: {
     color: colors.text.secondary,
-    fontSize: 11,
+    fontSize: fontSize.caption,
     marginTop: 1,
     padding: 0,
   },

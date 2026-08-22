@@ -8,21 +8,19 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { PencilSimpleIcon, PlusCircleIcon, TrashIcon, UserIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
+  semantic,
   spacing,
   getShortAddress,
+  getNetworkName,
   AddressbookError,
   type AddressBookItem,
   fontSize,
@@ -41,11 +39,18 @@ const StyledList = styled(List)({
   padding: `${spacing.sm}px 0`,
 });
 
-const StyledListItemButton = styled(ListItemButton)({
+// The row itself does nothing — edit and remove beside it are the only
+// controls. It used to be a `ListItemButton` with no `onClick`, which is a
+// focusable `role="button"` that a keyboard user lands on and cannot act on,
+// so it is inert markup now (DESIGN.md §"The settings surface joined the
+// system"). The hover tint went with it: a highlight on a row that cannot be
+// pressed promises an action that is not there.
+const ContactRow = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  width: '100%',
   padding: `${spacing.sm}px ${spacing.lg}px`,
-  '&:hover': {
-    backgroundColor: colors.background.card,
-  },
+  minWidth: 0,
 });
 
 const ContactAvatar = styled(Avatar)({
@@ -65,7 +70,7 @@ const EmptyContainer = styled(Box)({
 
 const EmptyText = styled(Typography)({
   color: colors.text.secondary,
-  fontSize: fontSize.base,
+  fontSize: fontSize.body,
   textAlign: 'center',
   whiteSpace: 'pre-line',
 });
@@ -74,13 +79,13 @@ const AddButton = styled(Button)({
   color: colors.accent.primary,
   textTransform: 'none',
   fontWeight: fontWeight.medium,
-  fontSize: fontSize.base,
+  fontSize: fontSize.body,
   marginTop: spacing.sm,
 });
 
 const WriteErrorText = styled(Typography)({
-  color: colors.status.error,
-  fontSize: fontSize.sm,
+  color: semantic.status.danger,
+  fontSize: fontSize.caption,
   fontWeight: fontWeight.medium,
   textAlign: 'center',
   padding: `${spacing.sm}px ${spacing.lg}px`,
@@ -154,7 +159,7 @@ export function AddressBookPanel({
                         '&:hover': { backgroundColor: colors.background.card },
                       }}
                     >
-                      <EditOutlinedIcon fontSize="small" />
+                      <PencilSimpleIcon size={iconSize.md} />
                     </IconButton>
                     <IconButton
                       edge="end"
@@ -163,24 +168,19 @@ export function AddressBookPanel({
                       aria-label={t('actions.remove', 'Remove')}
                       data-testid={`address-book-remove-${contact.address}`}
                       sx={{
-                        color: colors.status.error,
-                        '&:hover': { backgroundColor: colors.status.errorBackground },
+                        color: semantic.status.danger,
+                        '&:hover': { backgroundColor: semantic.status.dangerTint },
                       }}
                     >
-                      <DeleteOutlineIcon fontSize="small" />
+                      <TrashIcon size={iconSize.md} />
                     </IconButton>
                   </Box>
                 }
               >
-                <StyledListItemButton
-                  disableRipple
-                  data-testid={`address-book-contact-${contact.address}`}
-                >
+                <ContactRow data-testid={`address-book-contact-${contact.address}`}>
                   <ListItemAvatar>
                     <ContactAvatar>
-                      <PersonOutlineIcon
-                        sx={{ fontSize: fontSize.xl, color: colors.text.secondary }}
-                      />
+                      <UserIcon size={iconSize.md} color={colors.text.secondary} />
                     </ContactAvatar>
                   </ListItemAvatar>
                   <ListItemText
@@ -189,15 +189,18 @@ export function AddressBookPanel({
                       <>
                         {contact.domain || getShortAddress(contact.address, 6)}
                         {' \u00B7 '}
-                        {contact.networkId.split('-')[0].charAt(0).toUpperCase() +
-                          contact.networkId.split('-')[0].slice(1)}
+                        {/* The whole network, environment included: this is the list a
+                            send destination is picked from, and a devnet contact that
+                            reads "Solana" is the confusion DESIGN.md §Chain identity
+                            exists to prevent. */}
+                        {getNetworkName(contact.networkId)}
                       </>
                     }
                     primaryTypographyProps={{
                       sx: {
                         color: colors.text.primary,
                         fontWeight: fontWeight.medium,
-                        fontSize: fontSize.base,
+                        fontSize: fontSize.body,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -206,20 +209,20 @@ export function AddressBookPanel({
                     secondaryTypographyProps={{
                       sx: {
                         color: colors.text.secondary,
-                        fontSize: fontSize.sm,
+                        fontSize: fontSize.caption,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                       },
                     }}
                   />
-                </StyledListItemButton>
+                </ContactRow>
               </ListItem>
             ))}
           </StyledList>
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <AddButton
-              startIcon={<AddCircleOutlineIcon />}
+              startIcon={<PlusCircleIcon />}
               onClick={onAddContact}
               data-testid="address-book-add-button"
             >
@@ -236,7 +239,7 @@ export function AddressBookPanel({
             )}
           </EmptyText>
           <AddButton
-            startIcon={<AddCircleOutlineIcon />}
+            startIcon={<PlusCircleIcon />}
             onClick={onAddContact}
             data-testid="address-book-add-button"
           >

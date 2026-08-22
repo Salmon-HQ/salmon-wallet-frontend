@@ -14,6 +14,7 @@ import {
   fontSize,
   fontWeight,
   componentSizes,
+  tabularNums,
 } from '@salmon/shared';
 import { NftCard } from '../NftCard';
 import { SolanaSvgIcon, BitcoinSvgIcon } from '../Icon';
@@ -44,8 +45,9 @@ const HeaderRow = styled(Box)({
   paddingRight: spacing.lg,
 });
 
-const Title = styled(Typography)({
-  fontSize: fontSize.md,
+const Title = styled('h2')({
+  margin: 0,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
   fontFamily: fontFamily.sans,
@@ -54,6 +56,7 @@ const Title = styled(Typography)({
 });
 
 const Count = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   color: colors.text.secondary,
@@ -102,6 +105,7 @@ export function NftCarouselSection({
   blockchain,
   nfts,
   loading,
+  showChainLabel = true,
   onNftPress,
   style,
   className,
@@ -114,12 +118,14 @@ export function NftCarouselSection({
 
   return (
     <Container style={style} className={className}>
-      {/* Header */}
-      <HeaderRow>
-        {getBlockchainIcon(blockchain)}
-        <Title>{title}</Title>
-        <Count>({nfts.length})</Count>
-      </HeaderRow>
+      {/* Header — only when the chain label distinguishes something */}
+      {showChainLabel && (
+        <HeaderRow>
+          {getBlockchainIcon(blockchain)}
+          <Title>{title}</Title>
+          <Count>({nfts.length})</Count>
+        </HeaderRow>
+      )}
 
       {/* Grid */}
       <Grid>

@@ -23,7 +23,6 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import {
-  colors,
   fontSize,
   mapToSwapToken,
   searchTokens,
@@ -37,6 +36,7 @@ import {
   type SolanaAccount,
   type SwapNetworkId,
   unifiedToSwapToken,
+  semantic,
 } from '@salmon/shared';
 import {
   SwapScreen,
@@ -430,8 +430,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingText: {
-    color: colors.text.muted,
-    fontSize: fontSize.md,
+    color: semantic.text.secondary,
+    fontSize: fontSize.bodyLg,
     marginTop: spacing.lg,
   },
 });

@@ -8,24 +8,35 @@
  * If the user has existing accounts stored, it also shows an option
  * to access them via the lock screen.
  *
- * Design: Dark gradient background with centered content, action buttons.
+ * Composed on the onboarding slot grid. The brand speaks in full here (owner,
+ * 2026-08-18, superseding "only the fish"): the fish in `mark`, the wordmark
+ * in `title` — its pinned gap is the grid's own fish→title air, the same
+ * distance success keeps to "Congratulations!" — and the slogan in
+ * `description`, so nothing below the pair moves.
+ * The third action, offered only when accounts already exist, is a text
+ * affordance in `assist`: the reserved `secondary` band holds one control, and
+ * a third button would be the one place in the flow where the grid overflows.
  */
 
-import { Logo } from '@salmon/assets';
 import {
-  colors,
-  componentSizes,
-  contentPadding,
   fontFamilyNative,
   fontSize,
-  spacing,
+  lineHeight,
+  onboardingIdentityGridFull,
+  semantic,
   useAccountsContext,
 } from '@salmon/shared';
-import { PrimaryButton, SecondaryButton } from '../../src/components';
+import {
+  BrandMark,
+  OnboardingLayout,
+  PrimaryButton,
+  SecondaryButton,
+  TextButton,
+  Wordmark,
+} from '../../src/components';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Image, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View } from 'react-native';
 
 // ============================================================================
 // Component
@@ -42,7 +53,7 @@ export default function WelcomeScreen() {
    * Navigate to account creation flow
    */
   const handleCreateAccount = () => {
-    router.push('/(auth)/create');
+    router.push('/(auth)/seed-warning');
   };
 
   /**
@@ -61,47 +72,56 @@ export default function WelcomeScreen() {
     router.replace('/(app)/(tabs)');
   };
 
-  // Determine title based on whether user has accounts
-  const title = hasAccounts
-    ? t('wallet.onboarding.titleOnboarded')
-    : t('wallet.onboarding.titleWelcome');
-
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <View style={styles.content}>
-        {/* Centered content: Welcome, Logo, Brand Name */}
-        <View style={styles.centerContent}>
-          <Text style={styles.welcomeText}>{title}</Text>
-          <View style={styles.logoContainer}>
-            <Image source={Logo} style={styles.logo} resizeMode="contain" />
-          </View>
-          <Text style={styles.brandName}>Salmon</Text>
+    <OnboardingLayout
+      testID="welcome-screen"
+      // Arrivals float — including backing out of recover/seed-warning to
+      // here. The fish stays: welcome and the lock are the identity pair, the
+      // only screens that keep the brand mark (owner, 2026-08-18).
+      float
+      /*
+        The fish, drawn at the grid's own size — this fish and the lock's are
+        the same fish at the same Y (markSize is identical at both rungs; the
+        full table is safe to read). No accessible name here: the wordmark
+        below is the screen's header and announces "Salmon" — labelling the
+        fish too would say it twice.
+      */
+      mark={
+        <View testID="welcome-brand-mark">
+          <BrandMark size={onboardingIdentityGridFull.markSize} />
         </View>
-
-        {/* Buttons Container - stays at bottom */}
-        <View style={styles.buttonsContainer}>
-          {/* Create Account Button (Primary - White) */}
-          <PrimaryButton onPress={handleCreateAccount} testID="select-create-button">
-            {t('wallet.create_wallet').toUpperCase()}
-          </PrimaryButton>
-
-          {/* Recover Account Button (Secondary - Dark) */}
-          <SecondaryButton onPress={handleRecoverAccount} testID="select-recover-button">
-            {t('wallet.recover_wallet').toUpperCase()}
-          </SecondaryButton>
-
-          {/* Access Existing Account Button (only if accounts exist) */}
-          {hasAccounts && (
-            <SecondaryButton
-              onPress={handleAccessExistingAccount}
-              testID="select-access-existing-button"
-            >
-              {t('wallet.access_existing_account').toUpperCase()}
-            </SecondaryButton>
-          )}
-        </View>
-      </View>
-    </SafeAreaView>
+      }
+      /*
+        The name and the lema (owner, 2026-08-18): the wordmark in the title
+        band — its own pinned gap puts it at the grid's fish→title distance —
+        and the slogan in the description band, so both live in bands the grid
+        already reserved and nothing below them moves.
+      */
+      title={<Wordmark />}
+      description={
+        // Brand line, not UI copy — deliberately untranslated, like the wordmark itself (PRODUCT.md §Positioning).
+        <Text style={styles.slogan} testID="welcome-slogan">
+          Open code. Open ownership.
+        </Text>
+      }
+      assist={
+        hasAccounts ? (
+          <TextButton onPress={handleAccessExistingAccount} testID="select-access-existing-button">
+            {t('wallet.access_existing_account')}
+          </TextButton>
+        ) : undefined
+      }
+      secondary={
+        <SecondaryButton onPress={handleRecoverAccount} testID="select-recover-button">
+          {t('wallet.recover_wallet')}
+        </SecondaryButton>
+      }
+      action={
+        <PrimaryButton onPress={handleCreateAccount} testID="select-create-button">
+          {t('wallet.create_wallet')}
+        </PrimaryButton>
+      }
+    />
   );
 }
 
@@ -110,43 +130,13 @@ export default function WelcomeScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: contentPadding.screen,
-    paddingBottom: spacing['3xl'],
-  },
-  centerContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  welcomeText: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize['2xl'],
-    lineHeight: 32,
+  // The slogan is a brand line at body size in secondary ink — quieter than
+  // the flow's description token, subordinate to the wordmark above it.
+  slogan: {
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.normal,
     textAlign: 'center',
-    marginBottom: spacing['3xl'],
-  },
-  logoContainer: {
-    marginBottom: spacing['2xl'],
-  },
-  logo: {
-    width: componentSizes.logoSizeMedium,
-    height: componentSizes.logoSizeMedium,
-  },
-  brandName: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: 32,
-    lineHeight: 40,
-    textAlign: 'center',
-  },
-  buttonsContainer: {
-    width: '100%',
-    gap: spacing.lg,
   },
 });

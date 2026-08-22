@@ -89,6 +89,27 @@ export type {
 export { WalletSwitcherSheet } from './WalletSwitcherSheet';
 export type { AccountListItemProps, WalletSwitcherSheetProps } from './WalletSwitcherSheet';
 
+// BrandMark - the salmon mark, drawn from the vector rather than Logo.png
+export { BrandMark, Wordmark } from './BrandMark';
+export type { BrandMarkProps, WordmarkProps } from './BrandMark';
+
+// OnboardingLayout - the DOM half of the onboarding slot grid
+export {
+  OnboardingLayout,
+  OnboardingTitle,
+  OnboardingDescription,
+  ReservedSlot,
+} from './OnboardingLayout';
+export type {
+  OnboardingLayoutProps,
+  OnboardingTextProps,
+  ReservedSlotProps,
+} from './OnboardingLayout';
+
+// LockScreen - the shared unlock screen for web and extension
+export { LockScreen } from './LockScreen';
+export type { LockScreenProps } from './LockScreen';
+
 // ScreenHeader - Common header for onboarding/auth screens
 export { ScreenHeader } from './ScreenHeader';
 export type { ScreenHeaderProps } from './ScreenHeader';
@@ -105,6 +126,22 @@ export type { GradientBackgroundProps } from './GradientBackground';
 export { BlurContainer } from './BlurContainer';
 export type { BlurContainerProps, BlurTint } from './BlurContainer';
 
+// FadeThrough - keyed top-level content swap under a persistent frame
+export { FadeThrough } from './FadeThrough';
+export type { FadeThroughProps } from './FadeThrough';
+
+// SinkFloat - keyed content swap that speaks the transition verb: sink, beat, float
+export { SinkFloat } from './SinkFloat';
+export type { SinkFloatProps } from './SinkFloat';
+
+// PendingValue - a value being recalculated inside a container that stays put
+export { PendingValue } from './PendingValue';
+export type { PendingValueProps } from './PendingValue';
+
+// PendingActivityBanner - Global in-flight transaction surface
+export { PendingActivityBanner } from './PendingActivityBanner';
+export type { PendingActivityBannerProps } from './PendingActivityBanner';
+
 // WarningNotice - Icon-led alert banner for security/failure states
 export { WarningNotice } from './WarningNotice';
 export type { WarningNoticeProps, WarningNoticeTone } from './WarningNotice';
@@ -115,11 +152,21 @@ export type { WalletInitErrorScreenProps } from './WalletInitErrorScreen';
 
 // ScalesBackground - Repeating fish scales pattern background
 export { ScalesBackground } from './ScalesBackground';
-export type { ScalesBackgroundProps } from './ScalesBackground';
+export type { ScalesBackgroundProps, ScalesVariant } from './ScalesBackground';
 
-// TexturedBackground - Tiled fish-scale texture pattern background
-export { TexturedBackground } from './TexturedBackground';
-export type { TexturedBackgroundProps } from './TexturedBackground';
+export { Thermocline } from './Thermocline';
+export type { ThermoclineProps, ThermoclineTier } from './Thermocline';
+
+// DepthBackground - the water column's ground: depth ramp plus marine snow
+export { DepthBackground } from './DepthBackground';
+export type { DepthBackgroundProps } from './DepthBackground';
+
+// WaterColumn - the ground the whole app stands in: ramp, snow, deep field
+export { WaterColumn, waterColumnHost } from './WaterColumn';
+
+// FleshBackground - the myoseptal texture inside a salmon fill
+export { FleshBackground } from './FleshBackground';
+export type { FleshBackgroundProps } from './FleshBackground';
 
 // PasswordInput - Secure password input with visibility toggle and strength indicator
 export { PasswordInput, PasswordStrengthBar } from './PasswordInput';
@@ -169,24 +216,27 @@ export type {
 } from './TokenSelector';
 
 // TokenDetailPage - Full-page token detail view with chart, market data, badges
-export { TokenBadgesSection, TokenDetailPage } from './TokenDetailPage';
-export type { TokenBadgesSectionProps, TokenDetailPageProps } from './TokenDetailPage';
+export { TokenBadgesSection, TokenDetailContent, TokenDetailPage } from './TokenDetailPage';
+export type {
+  TokenBadgesSectionProps,
+  TokenDetailContentProps,
+  TokenDetailPageProps,
+} from './TokenDetailPage';
 
 // ReceiveSheet - Receive address dialog with QR code
 export { ReceiveSheet } from './ReceiveSheet';
 export type { ReceiveSheetProps } from './ReceiveSheet';
 
-// TransactionDetailModal - Transaction detail dialog
-export { TransactionDetailModal } from './TransactionDetailModal';
-export type { TransactionDetailModalProps } from './TransactionDetailModal';
+// TransactionDetail - one transaction's facts, as a step inside the Activity page
+export { TransactionDetail } from './TransactionDetail';
+export type { TransactionDetailProps } from './TransactionDetail';
 
-// TransactionHistoryPage - Full-page transaction history with pagination
+// TransactionHistoryPage - the Activity page: list and detail steps
 export {
   AddressCopyRow,
   ConversionRateDisplay,
   ExplorerLinkButton,
   PriceImpactBadge,
-  SwapRouteVisualization,
   TransactionHistoryPage,
   TransactionItem,
 } from './TransactionHistoryPage';
@@ -197,7 +247,6 @@ export type {
   PriceImpactBadgeProps,
   SwapRoute,
   SwapRouteHop,
-  SwapRouteVisualizationProps,
   Transaction,
   TransactionFee,
   TransactionHistoryPageProps,
@@ -223,7 +272,7 @@ export {
   SwapAmountInput,
   SwapDetailRow,
   SwapInputScreen,
-  SwapReviewCard,
+  SwapReviewExchange,
   SwapReviewScreen,
   SwapScreen,
   SwapTabSelector,
@@ -237,7 +286,7 @@ export type {
   SwapDetailRowProps,
   SwapInputScreenProps,
   SwapQuote,
-  SwapReviewCardProps,
+  SwapReviewExchangeProps,
   SwapReviewScreenProps,
   SwapScreenProps,
   SwapStep,
@@ -318,7 +367,8 @@ export { NftSendDialog } from './NftSendDialog';
 export type { NftSendDialogProps } from './NftSendDialog';
 
 // SeedPhrase - Seed word display grid and validation input
-export { SeedWordGrid, SeedWordInput } from './SeedPhrase';
+export { SeedPhraseEntry, SeedWordGrid, SeedWordInput } from './SeedPhrase';
+export type { SeedPhraseEntryProps, SeedWordGridProps, SeedWordInputProps } from './SeedPhrase';
 
 // NetworkSelector - Network selection for settings
 export { NetworkSelector } from './NetworkSelector';

@@ -14,6 +14,7 @@ import {
   componentSizes,
   durationMs,
   easing,
+  reducedMotion,
 } from '@salmon/shared';
 import type { DerivedAccountCardSkeletonProps } from './types';
 
@@ -38,6 +39,13 @@ const SkeletonRect = styled(Box)({
   background: `linear-gradient(90deg, ${colors.skeleton?.base ?? 'rgba(255,255,255,0.05)'} 25%, ${colors.skeleton?.highlight ?? 'rgba(255,255,255,0.1)'} 50%, ${colors.skeleton?.base ?? 'rgba(255,255,255,0.05)'} 75%)`,
   backgroundSize: `${componentSizes.shimmerWidth}px 100%`,
   animation: `${shimmer} ${durationMs.shimmer}ms ${easing.easeInOut} infinite`,
+  // The calm form: the gradient stays as the resting placeholder, the sweep
+  // does not run. Same per-component guard the rest of the package carries
+  // (PendingValue, LoadingScreen) — the global CssBaseline collapse is a
+  // backstop, not the contract.
+  [`@media ${reducedMotion.query}`]: {
+    animation: 'none',
+  },
 });
 
 const DerivedAccountCardSkeletonComponent: React.FC<DerivedAccountCardSkeletonProps> = ({

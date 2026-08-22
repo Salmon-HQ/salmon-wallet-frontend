@@ -46,7 +46,7 @@ vi.mock('../../utils/styled', () => {
 vi.mock('@salmon/shared', () => ({
   colors: { text: { secondary: '#000' } },
   spacing: { lg: 16 },
-  fontSize: { md: 14 },
+  fontSize: { bodyLg: 14 },
   fontFamily: { sans: 'sans-serif' },
   useAccountsContext: () => mockUseAccountsContext(),
   useBridge: () => mockUseBridge(),

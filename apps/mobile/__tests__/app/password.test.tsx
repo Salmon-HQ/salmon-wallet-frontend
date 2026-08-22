@@ -11,6 +11,12 @@ const mockGetStashItem = jest.fn();
 const mockRemoveStashItem = jest.fn();
 const mockCreateAccount = jest.fn();
 const mockUseAccountsContext = jest.fn();
+/**
+ * The wait's exit handoff, captured instead of auto-fired: navigation now
+ * waits for the LoadingScreen's `onExited` (the wave must leave the screen
+ * first), so the tests drive that moment explicitly.
+ */
+const mockWaitOnExited: { current?: () => void } = {};
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -35,23 +41,32 @@ jest.mock('@salmon/assets', () => ({
   Logo: 1,
 }));
 
+// The passage into the wait pulls Reanimated, which has no native Worklets
+// under Jest; the mock only has to let the entering/exiting props exist.
+jest.mock('react-native-reanimated', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: { View },
+    useReducedMotion: () => false,
+    withTiming: (toValue: unknown) => toValue,
+    withDelay: (_delayMs: number, animation: unknown) => animation,
+    Easing: { bezier: (...coefficients: number[]) => coefficients },
+  };
+});
+
 jest.mock('@salmon/shared', () => ({
-  colors: {
-    text: { primary: '#fff', secondary: '#999' },
-    status: { error: '#f00' },
-    step: { active: '#f90' },
-  },
-  componentSizes: { logoSizeMedium: 120 },
-  contentPadding: { screen: 16 },
+  // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
+  ...jest.requireActual('../../test-utils/themeTokens'),
+  // The real wait-exit hook: the passage into the wait composes it.
+  ...jest.requireActual('../../../../packages/shared/src/hooks/useWaitExit'),
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
-  fontFamilyNative: { bold: 'System', regular: 'System' },
   generateAccountName: () => 'Account 3',
   getMirrorNetworks: jest.fn().mockResolvedValue({ 'solana-mainnet': 'solana-devnet' }),
   getScanNetworks: jest.fn().mockResolvedValue(['solana-mainnet']),
   getStashItem: (...args: unknown[]) => mockGetStashItem(...args),
   PASSWORD_CONSTRAINTS: { MIN_LENGTH: 12, MAX_LENGTH: 128 },
   removeStashItem: (...args: unknown[]) => mockRemoveStashItem(...args),
-  spacing: { xs: 4, sm: 8, lg: 16, '2xl': 24, '3xl': 32 },
   STASH_KEYS: { PENDING_MNEMONIC: 'pending-mnemonic' },
   trackOnboardingEvent: jest.fn(async () => undefined),
   useAccountsContext: () => mockUseAccountsContext(),
@@ -66,8 +81,34 @@ jest.mock('../../src/components', () => {
   const React = require('react');
   const { TextInput, Text, TouchableOpacity } = require('react-native');
 
+  const { View } = require('react-native');
+
+  // The real ReservedSlot: the reservation behavior is what the tests below
+  // assert, so it must not be stubbed away.
+  const { ReservedSlot } = jest.requireActual('../../src/components/OnboardingLayout/ReservedSlot');
+
   return {
-    LoadingScreen: () => null,
+    ReservedSlot,
+    LoadingScreen: ({ onExited }: { onExited?: () => void }) => {
+      mockWaitOnExited.current = onExited;
+      return null;
+    },
+    OnboardingTitle: ({ children }: { children?: React.ReactNode }) =>
+      React.createElement(Text, null, children),
+    OnboardingDescription: ({ children }: { children?: React.ReactNode }) =>
+      React.createElement(Text, null, children),
+    OnboardingLayout: (props: Record<string, React.ReactNode>) =>
+      React.createElement(
+        View,
+        null,
+        props.chrome,
+        props.title,
+        props.description,
+        props.body,
+        props.assist,
+        props.secondary,
+        props.action
+      ),
     PasswordInput: ({
       value,
       onChangeText,
@@ -194,6 +235,13 @@ describe('PasswordScreen', () => {
 
     expect(mockAddAccount).toHaveBeenCalledWith({ id: 'account-1' }, 'pw-fixture-valid');
     expect(mockUnlockAccounts).toHaveBeenCalledWith('pw-fixture-valid');
+
+    // The route is parked until the wait has fully left the screen — the wave
+    // finishes crossing and the content sinks before anything navigates.
+    expect(mockReplace).not.toHaveBeenCalled();
+    act(() => {
+      mockWaitOnExited.current?.();
+    });
     expect(mockReplace).toHaveBeenCalledWith('/(auth)/biometric-setup');
   });
 
@@ -227,5 +275,28 @@ describe('PasswordScreen', () => {
 
     expect(screen.getByText('wallet.create.invalid_password')).toBeTruthy();
     expect(mockCreateAccount).not.toHaveBeenCalled();
+  });
+
+  /**
+   * "Nothing moves under the finger": the strength meter's slot is reserved
+   * from the first frame (mounted but hidden inside ReservedSlot), so typing
+   * the first character reveals it in place instead of shoving the
+   * confirmation field down.
+   */
+  it('reserves the strength meter slot before the first keystroke', async () => {
+    render(<PasswordScreen />);
+
+    await waitFor(() => {
+      expect(mockGetStashItem).toHaveBeenCalled();
+    });
+
+    // Mounted from the first frame — hidden (out of the a11y tree), not absent.
+    expect(screen.getByText('strength:medium', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByText('strength:medium')).toBeNull();
+
+    fireEvent.changeText(screen.getByPlaceholderText('wallet.create.passwordNew'), 'a');
+
+    // The same slot, now revealed — nothing was added to the tree.
+    expect(screen.getByText('strength:medium')).toBeTruthy();
   });
 });

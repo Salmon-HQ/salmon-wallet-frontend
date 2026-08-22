@@ -48,21 +48,22 @@ test('first-run consent screen appears in onboarding and opts in', async ({ popu
 
   // Fresh profile → onboarding. Recover up to the consent screen.
   await popup.getByTestId('select-recover-button').click({ timeout: 20_000 });
-  await popup.getByTestId('recover-seed-input').fill(seedA());
+  await popup.getByTestId('recover-word-input-1').fill(seedA());
   await popup.getByTestId('recover-next-button').click({ timeout: 30_000 });
   await popup.getByTestId('password-input').fill(password());
   await popup.getByTestId('password-confirm-input').fill(password());
   await popup.getByTestId('password-submit-button').click();
 
-  // The consent screen is the final onboarding step, and offers both choices.
+  // Success comes first now; leaving it through "Go to my Account" presents
+  // the consent screen, which is the final onboarding step with both choices.
+  await popup.getByTestId('success-go-to-wallet-button').click({ timeout: 60_000 });
   const screen = popup.getByTestId('analytics-consent-screen');
   await expect(screen).toBeVisible({ timeout: 60_000 });
   await expect(popup.getByTestId('analytics-consent-accept')).toBeVisible();
   await expect(popup.getByTestId('analytics-consent-decline')).toBeVisible();
 
-  // Accept → advances to Success, then into the wallet.
+  // Accept → enters the wallet.
   await popup.getByTestId('analytics-consent-accept').click();
-  await popup.getByTestId('success-go-to-wallet-button').click({ timeout: 60_000 });
   await expect(popup.getByTestId('home-screen')).toBeVisible({ timeout: 15_000 });
 
   // Opting in turned analytics ON: the Settings toggle reads checked.

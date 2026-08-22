@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
@@ -10,113 +10,72 @@ import {
   fontSize,
   getMirrorNetworks,
   getScanNetworks,
-  ms,
+  lineHeight,
   PASSWORD_CONSTRAINTS,
-  s,
+  semantic,
   spacing,
   trackOnboardingEvent,
   useAccountsContext,
   validatePassword,
   getPasswordIssue,
-  vs,
+  componentSizes,
+  useWaitExit,
 } from '@salmon/shared';
+import { LockIcon } from '../../icons';
 import { generateAccountName } from '@salmon/shared/utils/account';
 import { styled } from '../../utils/styled';
 import { PrimaryButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
 import { PasswordInput, PasswordStrengthBar } from '../PasswordInput';
 import { ScreenHeader } from '../ScreenHeader';
-import { getAuthContainerStyles } from './common';
+import {
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
+  ReservedSlot,
+} from '../OnboardingLayout';
+import { WaterColumn } from '../WaterColumn';
+import { CREATE_FLOW_STEPS } from './CreateWalletPage';
 import type { PasswordPageProps } from './types';
-
-const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  backgroundColor: colors.background.primary,
-  ...getAuthContainerStyles($contained),
-}));
-
-const Content = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  padding: `0 ${s(spacing['2xl'])}px`,
-});
-
-const FormArea = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const LogoImage = styled('img')({
-  width: ms(60),
-  height: ms(60),
-  objectFit: 'contain',
-  marginBottom: vs(spacing['2xl']),
-});
-
-const Title = styled(Typography)({
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontWeight: 700,
-  fontSize: ms(fontSize['2xl']),
-  lineHeight: `${ms(36)}px`,
-  marginBottom: vs(spacing.sm),
-  textAlign: 'center',
-});
-
-const Subtitle = styled(Typography)({
-  color: colors.text.secondary,
-  fontFamily: fontFamily.sans,
-  fontSize: ms(fontSize.base),
-  lineHeight: `${ms(24)}px`,
-  marginBottom: vs(spacing['3xl']),
-  textAlign: 'center',
-});
 
 const InputContainer = styled(Box)({
   width: '100%',
-  marginBottom: vs(spacing.lg),
+  marginBottom: spacing.lg,
 });
 
+/**
+ * Feedback about the field above it, so it sits against that field rather than
+ * competing with the terms line for the `assist` band. It appears and
+ * disappears as the user types, which is exactly why it belongs in `body` —
+ * the give in the grid (spec 013, decision 6).
+ */
 const StrengthContainer = styled(Box)({
-  marginTop: vs(spacing.sm),
-  paddingLeft: s(spacing.xs),
-  paddingRight: s(spacing.xs),
+  marginTop: spacing.sm,
+  paddingLeft: spacing.xs,
+  paddingRight: spacing.xs,
 });
 
 const ErrorText = styled(Typography)({
-  color: colors.status.error,
+  color: semantic.status.danger,
   fontFamily: fontFamily.sans,
-  fontSize: ms(12),
-  lineHeight: `${ms(16)}px`,
-  marginBottom: vs(spacing.lg),
+  fontSize: fontSize.caption,
+  lineHeight: `${Math.round(fontSize.caption * lineHeight.snug)}px`,
+  marginBottom: spacing.lg,
   textAlign: 'center',
   width: '100%',
 });
 
 const TermsText = styled(Typography)({
-  color: colors.text.secondary,
+  color: semantic.text.secondary,
   fontFamily: fontFamily.sans,
-  fontSize: ms(12),
-  lineHeight: `${ms(18)}px`,
+  fontSize: fontSize.caption,
+  lineHeight: `${Math.round(fontSize.caption * lineHeight.normal)}px`,
   textAlign: 'center',
-  paddingLeft: s(spacing['2xl']),
-  paddingRight: s(spacing['2xl']),
 });
 
 const TermsLink = styled('span')({
   color: colors.step?.active ?? colors.accent.primary,
   cursor: 'pointer',
-});
-
-const ButtonContainer = styled(Box)({
-  width: '100%',
-  paddingBottom: vs(spacing['3xl']),
-  paddingTop: vs(spacing.lg),
 });
 
 export function PasswordPage({
@@ -125,7 +84,6 @@ export function PasswordPage({
   onCreating,
   onSuccess,
   onBack,
-  contained = false,
 }: PasswordPageProps): React.ReactElement {
   const { t } = useTranslation();
   const [state, actions] = useAccountsContext();
@@ -137,6 +95,28 @@ export function PasswordPage({
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wrongPassword, setWrongPassword] = useState(false);
+  /**
+   * Held from a successful setup: the form sank to make room for the wait and
+   * has no right to come back up while the last wave is still leaving.
+   */
+  const [submerged, setSubmerged] = useState(false);
+
+  // The wait stays mounted with `visible={false}` — which is what starts its
+  // exit — until it reports its closing wave has left the screen.
+  const { held, onExited } = useWaitExit(isLoading);
+  /**
+   * Set on success instead of handing over immediately: the caller's next step
+   * unmounts this page, and an unmounted wait is a wave cut mid-crossing.
+   * Consumed exactly once by `handleWaitExited`, whose arrival the wait's own
+   * watchdog guarantees, so the handoff cannot be stranded.
+   */
+  const pendingSuccessRef = useRef(false);
+  const handleWaitExited = useCallback(() => {
+    onExited();
+    if (!pendingSuccessRef.current) return;
+    pendingSuccessRef.current = false;
+    onSuccess();
+  }, [onExited, onSuccess]);
 
   const passwordValidation = validatePassword(password);
   const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
@@ -203,7 +183,10 @@ export function PasswordPage({
       // comes a step later, so this defers on-device until it is answered
       // (fires on accept, discarded on decline).
       void trackOnboardingEvent(flowType === 'create' ? 'wallet_created' : 'wallet_recovered');
-      onSuccess();
+      // Parked, not fired: dropping `isLoading` starts the wait's exit, and
+      // `handleWaitExited` hands over once the last wave has left the screen.
+      pendingSuccessRef.current = true;
+      setSubmerged(true);
     } catch (err) {
       console.error('Failed to create account:', err);
       // Account setup calls the backend, so an unreachable server lands here
@@ -225,7 +208,6 @@ export function PasswordPage({
     isFormValid,
     mnemonic,
     onCreating,
-    onSuccess,
     password,
     showSingleInput,
     state.counter,
@@ -261,29 +243,54 @@ export function PasswordPage({
 
   return (
     <>
-      <Container $contained={contained}>
-        <ScreenHeader
-          onBack={onBack}
-          stepIndicator={{ totalSteps: 2, currentStep: 2 }}
-          backDisabled={isLoading || isChecking}
-        />
-        <Content>
-          <FormArea>
-            <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
-
-            <Title>
-              {showSingleInput
-                ? t('wallet.create.enter_your_password') || 'Enter your password'
-                : t('wallet.create.choose_a_password') || 'Choose a Password'}
-            </Title>
-
-            {!showSingleInput && (
-              <Subtitle>
-                {t('wallet.create.choose_a_password_body') ||
-                  'You will need it to unlock your wallet'}
-              </Subtitle>
-            )}
-
+      <OnboardingLayout
+        testID="password-screen"
+        /*
+          The form gives way to the wait: what leaves sinks, and only the form
+          leaves — the water stays put behind it (DESIGN.md §Motion, "The wait
+          owns its passage, end to end"). A failure puts it back exactly where
+          it was; a success keeps it down, so the departing wave uncovers water
+          rather than the screen the user already left.
+        */
+        sunk={isLoading || submerged}
+        // `content`, not `credential` (owner, 2026-08-18): same bands as the
+        // recover step before it, so the hero cluster holds its Y across the
+        // flow and the first input starts at the seed grid's first-row Y.
+        // Mirrors the mobile twin.
+        variant="content"
+        background={<WaterColumn />}
+        scrollBody
+        // The lock: what the password buys. Mirrors mobile — one semantic
+        // glyph per flow step, the fish stays on welcome and the lock only.
+        mark={<LockIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
+        chrome={
+          <ScreenHeader
+            onBack={onBack}
+            stepIndicator={{
+              totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
+              currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : 2,
+            }}
+            backDisabled={isLoading || isChecking}
+          />
+        }
+        title={
+          <OnboardingTitle>
+            {showSingleInput
+              ? t('wallet.create.enter_your_password')
+              : t('wallet.create.choose_a_password')}
+          </OnboardingTitle>
+        }
+        description={
+          // The single-field variant used to delete this line, dropping 56px
+          // and moving everything below it. Reserved and left empty now.
+          showSingleInput ? undefined : (
+            <OnboardingDescription>
+              {t('wallet.create.choose_a_password_body')}
+            </OnboardingDescription>
+          )
+        }
+        body={
+          <>
             <InputContainer>
               <PasswordInput
                 testID="password-input"
@@ -291,17 +298,22 @@ export function PasswordPage({
                 onChangeText={handlePasswordChange}
                 placeholder={
                   showSingleInput
-                    ? t('wallet.create.enter_your_password') || 'Enter your password'
-                    : t('wallet.create.passwordNew') || 'New password'
+                    ? t('wallet.create.enter_your_password')
+                    : t('wallet.create.passwordNew')
                 }
                 error={passwordError}
                 editable={!isLoading && !isChecking}
                 onSubmitEditing={showSingleInput ? handleSubmit : undefined}
               />
-              {!showSingleInput && password.length > 0 && (
-                <StrengthContainer>
-                  <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
-                </StrengthContainer>
+              {/* Slot reserved from the first frame — typing the first
+                character reveals the meter instead of shoving the
+                confirmation field down. */}
+              {!showSingleInput && (
+                <ReservedSlot visible={password.length > 0}>
+                  <StrengthContainer>
+                    <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
+                  </StrengthContainer>
+                </ReservedSlot>
               )}
             </InputContainer>
 
@@ -311,7 +323,7 @@ export function PasswordPage({
                   testID="password-confirm-input"
                   value={confirmPassword}
                   onChangeText={handleConfirmPasswordChange}
-                  placeholder={t('wallet.create.passwordRepeat') || 'Repeat password'}
+                  placeholder={t('wallet.create.passwordRepeat')}
                   error={confirmError}
                   editable={!isLoading && !isChecking}
                   onSubmitEditing={handleSubmit}
@@ -319,45 +331,53 @@ export function PasswordPage({
               </InputContainer>
             )}
 
-            {error && <ErrorText>{error}</ErrorText>}
-
-            <TermsText>
-              {flowType === 'recover'
-                ? t('wallet.recover.terms_prefix')
-                : t('wallet.create.terms_prefix')}
-              <TermsLink
-                data-testid="password-terms-link"
-                onClick={() => window.open('https://salmonwallet.io/terms', '_blank')}
-              >
-                {t('general.terms_and_conditions')}
-              </TermsLink>
-            </TermsText>
-          </FormArea>
-
-          <ButtonContainer>
-            <PrimaryButton
-              onClick={handleSubmit}
-              disabled={!isFormValid() || wrongPassword}
-              loading={isLoading || isChecking}
-              testID="password-submit-button"
-            >
-              {buttonText}
-            </PrimaryButton>
-          </ButtonContainer>
-        </Content>
-      </Container>
-
-      <LoadingScreen
-        visible={isLoading}
-        title={
-          flowType === 'recover'
-            ? t('wallet.recover.recovering_account')
-            : t('wallet.create.creating_account')
+            {/* Reserved for the same reason as the strength bar: a failure
+              message must not shove the layout when it lands. */}
+            <ReservedSlot visible={!!error}>
+              <ErrorText>{error ?? ' '}</ErrorText>
+            </ReservedSlot>
+          </>
         }
-        subtitle={t('wallet.create.securing_wallet')}
-        showTips
-        tipInterval={4000}
+        assist={
+          <TermsText>
+            {flowType === 'recover'
+              ? t('wallet.recover.terms_prefix')
+              : t('wallet.create.terms_prefix')}
+            <TermsLink
+              data-testid="password-terms-link"
+              onClick={() => window.open('https://salmonwallet.io/terms', '_blank')}
+            >
+              {t('general.terms_and_conditions')}
+            </TermsLink>
+          </TermsText>
+        }
+        action={
+          <PrimaryButton
+            onClick={handleSubmit}
+            disabled={!isFormValid() || wrongPassword}
+            loading={isLoading || isChecking}
+            fullWidth
+            testID="password-submit-button"
+          >
+            {buttonText}
+          </PrimaryButton>
+        }
       />
+
+      {held && (
+        <LoadingScreen
+          visible={isLoading}
+          title={
+            flowType === 'recover'
+              ? t('wallet.recover.recovering_account')
+              : t('wallet.create.creating_account')
+          }
+          subtitle={t('wallet.create.securing_wallet')}
+          showTips
+          tipInterval={4000}
+          onExited={handleWaitExited}
+        />
+      )}
     </>
   );
 }

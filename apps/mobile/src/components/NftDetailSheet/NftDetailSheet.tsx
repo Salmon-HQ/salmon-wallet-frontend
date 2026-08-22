@@ -14,12 +14,15 @@ import {
   BackHandler,
   Dimensions,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { FireIcon } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useReducedMotion } from 'react-native-reanimated';
 import {
   colors,
+  motionMs,
+  resolveMotionMs,
   fontSize,
   borderRadius,
   fontFamilyNative,
@@ -47,17 +50,19 @@ import {
   type Blockchain,
   type NetworkEnvironment,
   type ValidationCallbackResult,
+  semantic,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
-import { CallMadeSvgIcon } from '../Icon/SvgIcons';
+import { ArrowUpRightIcon } from '../../icons';
 import { BlurContainer } from '../BlurContainer';
 import { BottomSheetContainer } from '../BottomSheetContainer';
+import { FleshBackground } from '../FleshBackground';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
 import { InputAddress } from '../InputAddress';
 import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
 import type { NftDetailSheetProps, NftAttribute } from './types';
 
-type NftDetailStep = 'detail' | 'send' | 'burn' | 'success';
+type NftDetailStep = 'detail' | 'send' | 'review' | 'burn' | 'success';
 type SuccessKind = 'send' | 'burn' | null;
 
 const FALLBACK_GRADIENT = {
@@ -171,8 +176,10 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     }
   }, [handleClose, onBurnSuccess, onSendSuccess, successKind, successTxId]);
 
+  const isReduceMotionEnabled = useReducedMotion();
+
   const startStepTransition = useCallback(
-    (nextStep: 'detail' | 'send' | 'burn', direction: 1 | -1) => {
+    (nextStep: 'detail' | 'send' | 'review' | 'burn', direction: 1 | -1) => {
       if (step === nextStep) return;
 
       setTransitionFromStep(step);
@@ -182,7 +189,8 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
 
       Animated.timing(stepTransitionProgress, {
         toValue: 1,
-        duration: 260,
+        // A step change inside a sheet is an in-place layout change: `drift`.
+        duration: resolveMotionMs(motionMs.drift, isReduceMotionEnabled),
         useNativeDriver: true,
       }).start(({ finished }) => {
         if (!finished) return;
@@ -193,7 +201,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
         stepTransitionProgress.setValue(1);
       });
     },
-    [step, stepTransitionProgress]
+    [step, stepTransitionProgress, isReduceMotionEnabled]
   );
 
   useEffect(() => {
@@ -202,6 +210,8 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       if (step === 'success') {
         handleSuccessContinue();
+      } else if (step === 'review') {
+        startStepTransition('send', -1);
       } else if (step === 'send' || step === 'burn') {
         startStepTransition('detail', -1);
         onBurnReset?.();
@@ -234,6 +244,16 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     setSending(false);
     setSendError(null);
     startStepTransition('detail', -1);
+  }, [startStepTransition]);
+
+  const handleOpenReviewStep = useCallback(() => {
+    setSendError(null);
+    startStepTransition('review', 1);
+  }, [startStepTransition]);
+
+  const handleBackToSend = useCallback(() => {
+    setSendError(null);
+    startStepTransition('send', -1);
   }, [startStepTransition]);
 
   const handleOpenBurnStep = useCallback(() => {
@@ -419,6 +439,14 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     />
   ) : null;
 
+  const reviewHeaderContent = nft ? (
+    <BottomSheetTitleHeader
+      title={t('nft.send.reviewTitle', 'Review Send')}
+      onBack={handleBackToSend}
+      backAccessibilityLabel={t('general.back', 'Back')}
+    />
+  ) : null;
+
   const burnHeaderContent = nft ? (
     <BottomSheetTitleHeader
       title={t('nft.burn.reviewTitle', 'Burn NFT')}
@@ -430,11 +458,13 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
   const headerContent =
     step === 'send'
       ? sendHeaderContent
-      : step === 'burn'
-        ? burnHeaderContent
-        : step === 'detail'
-          ? detailHeaderContent
-          : undefined;
+      : step === 'review'
+        ? reviewHeaderContent
+        : step === 'burn'
+          ? burnHeaderContent
+          : step === 'detail'
+            ? detailHeaderContent
+            : undefined;
   const canConfirmSend = addressValid && !sending && nft?.blockchain !== 'bitcoin';
   const canConfirmBurn = !burnPreparing && !burnError && !!burnPreview;
   const lutInfo = burnPreview?.lookupTable;
@@ -515,16 +545,25 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             end={gradients.primaryButton.end}
             style={styles.primaryButton}
           >
-            <CallMadeSvgIcon size={ms(15)} color={colors.text.balance} />
-            <Text style={styles.buttonText}>{t('actions.send', 'Send')}</Text>
+            {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+                fill. Every band is paler than the fill, so it can only raise
+                the luminance under the label. */}
+            <FleshBackground />
+            <ArrowUpRightIcon weight="bold" size={ms(15)} color={semantic.accent.onFill} />
+            <Text style={styles.primaryButtonText}>{t('actions.send', 'Send')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 
+        {/* Burn destroys the thing on screen and nothing brings it back, so
+            the trigger says so before the confirm step does — the same danger
+            vocabulary the review's `isDanger` speaks, on three channels: the
+            danger tint and its edge, the flame glyph, and the announced
+            irreversibility. Send stays the peer it is; this is not one. */}
         <BlurContainer
           style={styles.secondaryButtonWrapper}
           blurIntensity={2.5}
-          backgroundColor={colors.interactive.surface}
-          borderColor={colors.accent.border}
+          backgroundColor={semantic.status.dangerTint}
+          borderColor={semantic.status.danger}
           borderWidth={borderWidth.actionButton}
         >
           <TouchableOpacity
@@ -534,9 +573,15 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel={t('nft.burn.reviewTitle', 'Burn NFT')}
+            accessibilityHint={t(
+              'nft.burn.reviewBody',
+              'This action is irreversible. Confirm only if you want to permanently burn this NFT.'
+            )}
           >
-            <MaterialIcons name="local-fire-department" size={ms(18)} color={colors.text.balance} />
-            <Text style={styles.buttonText}>{t('nft.burn_nft', 'Burn')}</Text>
+            <FireIcon weight="fill" size={ms(18)} color={semantic.status.danger} />
+            <Text style={[styles.buttonText, styles.burnButtonText]}>
+              {t('nft.burn_nft', 'Burn')}
+            </Text>
           </TouchableOpacity>
         </BlurContainer>
       </View>
@@ -581,26 +626,17 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
                   placeholder={t('nft.send.enterRecipientAddress', 'Enter recipient address')}
                   label={t('token.send.recipient', 'Recipient')}
                 />
-
-                {sendError && <Text style={styles.errorText}>{t(sendError)}</Text>}
               </>
             )}
           </View>
         </BlurContainer>
-
-        {sending && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.accent.primary} />
-            <Text style={styles.loadingText}>{t('nft.send.sending', 'Sending NFT...')}</Text>
-          </View>
-        )}
 
         <View style={styles.actionButtonsContainer}>
           <BlurContainer
             style={styles.secondaryButtonWrapper}
             blurIntensity={2.5}
             backgroundColor={colors.interactive.surface}
-            borderColor={colors.accent.border}
+            borderColor={semantic.border.raised}
             borderWidth={borderWidth.actionButton}
           >
             <TouchableOpacity
@@ -616,13 +652,13 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
 
           {nft.blockchain !== 'bitcoin' && (
             <TouchableOpacity
-              testID="nft-send-confirm-button"
+              testID="nft-send-continue-button"
               style={styles.buttonWrapper}
-              onPress={handleConfirmSend}
+              onPress={handleOpenReviewStep}
               disabled={!canConfirmSend}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel={t('nft.send.title', 'Send NFT')}
+              accessibilityLabel={t('nft.send.reviewTitle', 'Review Send')}
             >
               <LinearGradient
                 colors={[...gradients.primaryButton.colors]}
@@ -630,14 +666,106 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
                 end={gradients.primaryButton.end}
                 style={[styles.primaryButton, !canConfirmSend && styles.primaryButtonDisabled]}
               >
-                <CallMadeSvgIcon size={ms(15)} color={colors.text.balance} />
-                <Text style={styles.buttonText}>{t('actions.send', 'Send')}</Text>
+                {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+                fill. Every band is paler than the fill, so it can only raise
+                the luminance under the label. */}
+                {canConfirmSend && <FleshBackground />}
+                <Text style={styles.primaryButtonText}>{t('actions.continue', 'Continue')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+
+  // The review step: everything the signature will move, on one card, before
+  // anything is signed — the NFT, its collection, and where it is going.
+  const renderReviewStep = () => (
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={[
+        styles.scrollViewContent,
+        { paddingBottom: spaciousContentBottomPadding },
+      ]}
+      showsVerticalScrollIndicator={false}
+      scrollIndicatorInsets={{ bottom: bottomInset }}
+    >
+      {renderNftImage()}
+
+      <BlurContainer blurIntensity={10} blurTint="dark" style={styles.sectionContainer}>
+        <View style={styles.sectionContent}>
+          <Text style={styles.sectionTitle} numberOfLines={2}>
+            {nft.name}
+          </Text>
+          {nft.collectionName && (
+            <Text style={styles.collectionName} numberOfLines={1}>
+              {nft.collectionName}
+            </Text>
+          )}
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>{t('token.send.recipient', 'Recipient')}</Text>
+            <Text style={styles.detailValue} testID="nft-send-review-recipient">
+              {getShortAddress(address) ?? address}
+            </Text>
+          </View>
+        </View>
+      </BlurContainer>
+
+      {sending && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.accent.primary} />
+          <Text style={styles.loadingText}>{t('nft.send.sending', 'Sending NFT...')}</Text>
+        </View>
+      )}
+
+      {sendError && <Text style={styles.errorText}>{t(sendError)}</Text>}
+
+      <View style={styles.actionButtonsContainer}>
+        <BlurContainer
+          style={styles.secondaryButtonWrapper}
+          blurIntensity={2.5}
+          backgroundColor={colors.interactive.surface}
+          borderColor={semantic.border.raised}
+          borderWidth={borderWidth.actionButton}
+        >
+          <TouchableOpacity
+            style={styles.secondaryButtonContent}
+            onPress={handleBackToSend}
+            disabled={sending}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={t('actions.back', 'Back')}
+          >
+            <Text style={styles.buttonText}>{t('actions.back', 'Back')}</Text>
+          </TouchableOpacity>
+        </BlurContainer>
+
+        <TouchableOpacity
+          testID="nft-send-confirm-button"
+          style={styles.buttonWrapper}
+          onPress={handleConfirmSend}
+          disabled={!canConfirmSend}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={t('nft.send.title', 'Send NFT')}
+        >
+          <LinearGradient
+            colors={[...gradients.primaryButton.colors]}
+            start={gradients.primaryButton.start}
+            end={gradients.primaryButton.end}
+            style={[styles.primaryButton, !canConfirmSend && styles.primaryButtonDisabled]}
+          >
+            {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+                fill. Every band is paler than the fill, so it can only raise
+                the luminance under the label. */}
+            {canConfirmSend && <FleshBackground />}
+            <ArrowUpRightIcon weight="bold" size={ms(15)} color={semantic.accent.onFill} />
+            <Text style={styles.primaryButtonText}>{t('actions.send', 'Send')}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 
   const renderBurnStep = () => (
@@ -724,7 +852,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           style={styles.secondaryButtonWrapper}
           blurIntensity={2.5}
           backgroundColor={colors.interactive.surface}
-          borderColor={colors.accent.border}
+          borderColor={semantic.border.raised}
           borderWidth={borderWidth.actionButton}
         >
           <TouchableOpacity
@@ -753,8 +881,12 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             end={gradients.primaryButton.end}
             style={[styles.primaryButton, !canConfirmBurn && styles.primaryButtonDisabled]}
           >
-            <MaterialIcons name="local-fire-department" size={ms(18)} color={colors.text.balance} />
-            <Text style={styles.buttonText}>{t('nft.burn_nft', 'Burn')}</Text>
+            {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+                fill. Every band is paler than the fill, so it can only raise
+                the luminance under the label. */}
+            {canConfirmBurn && <FleshBackground />}
+            <FireIcon size={ms(18)} color={semantic.accent.onFill} />
+            <Text style={styles.primaryButtonText}>{t('nft.burn_nft', 'Burn')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -765,6 +897,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
     if (!transitionFromStep || !transitionToStep) {
       if (step === 'detail') return renderDetailStep();
       if (step === 'send') return renderSendStep();
+      if (step === 'review') return renderReviewStep();
       return renderBurnStep();
     }
 
@@ -797,14 +930,18 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             ? renderDetailStep()
             : transitionFromStep === 'send'
               ? renderSendStep()
-              : renderBurnStep()}
+              : transitionFromStep === 'review'
+                ? renderReviewStep()
+                : renderBurnStep()}
         </Animated.View>
         <Animated.View style={[styles.stepTransitionPane, incomingStyle]}>
           {transitionToStep === 'detail'
             ? renderDetailStep()
             : transitionToStep === 'send'
               ? renderSendStep()
-              : renderBurnStep()}
+              : transitionToStep === 'review'
+                ? renderReviewStep()
+                : renderBurnStep()}
         </Animated.View>
       </View>
     );
@@ -818,11 +955,15 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
       showFadeGradient={step === 'detail'}
       fadeGradientTop={vs(12) + vs(8) + ms(24) + vs(16)}
       scrollOffsetValue={topFadeOpacity}
-      showTextureOverlay
       style={[styles.sheetContainer, style]}
     >
+      {/* Steps inside a sheet do not speak the sink and the float: the sheet
+          itself is the thing that rises and ebbs, and a step sinking inside it
+          is the verb said twice. The flow keeps its own sliding-step
+          mechanism; the success screen arrives whole, with no entrance. */}
       {(step === 'detail' ||
         step === 'send' ||
+        step === 'review' ||
         step === 'burn' ||
         transitionFromStep ||
         transitionToStep) &&
@@ -870,8 +1011,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   nftName: {
-    fontSize: ms(fontSize['2xl']),
-    fontFamily: fontFamilyNative.bold,
+    fontSize: ms(fontSize.headline),
+    fontFamily: fontFamilyNative.semiBold,
     color: colors.text.primary,
     textAlign: 'center',
     marginBottom: vs(spacing.sm),
@@ -951,18 +1092,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(spacing.xs),
     paddingVertical: vs(spacing.sm),
   },
+  // The trait name is the label and the trait is the information, so the
+  // emphasis runs the same way it does on a receipt row: quiet label, loud
+  // value.
   attributeName: {
     fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
+    fontFamily: fontFamilyNative.medium,
+    color: colors.text.tertiary,
     marginBottom: vs(spacing.xs),
     textTransform: 'uppercase',
     letterSpacing: letterSpacing.wider,
   },
   attributeValue: {
     fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.regular,
-    color: colors.text.secondary,
+    fontFamily: fontFamilyNative.bold,
+    color: colors.text.primary,
   },
   detailRow: {
     flexDirection: 'row',
@@ -1022,6 +1166,8 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     minHeight: vs(componentSizes.buttonHeight),
+    // The flesh is drawn at absolute-fill; clip it to the button's own radius.
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1052,6 +1198,20 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.text.balance,
   },
+  // The destructive trigger's label: danger ink, not the neutral balance ink
+  // every other secondary button wears.
+  burnButtonText: {
+    color: semantic.status.danger,
+  },
+  // Same type as `buttonText`, but for the labels that sit on the salmon fill:
+  // only `accent.onFill` clears AA there.
+  primaryButtonText: {
+    fontSize: ms(fontSize.base),
+    // Everything on a flesh fill is bold — label and glyph alike.
+    fontFamily: fontFamilyNative.bold,
+    fontWeight: fontWeight.bold,
+    color: semantic.accent.onFill,
+  },
   messageText: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.regular,
@@ -1062,7 +1222,7 @@ const styles = StyleSheet.create({
     marginTop: vs(spacing.sm),
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.medium,
-    color: colors.status.error,
+    color: semantic.status.danger,
   },
   loadingContainer: {
     alignItems: 'center',

@@ -17,7 +17,7 @@ import Typography from '@mui/material/Typography';
 import InputBase from '@mui/material/InputBase';
 import ButtonBase from '@mui/material/ButtonBase';
 import Skeleton from '@mui/material/Skeleton';
-import SearchIcon from '@mui/icons-material/Search';
+import { MagnifyingGlassIcon, iconSize } from '../../icons';
 import {
   colors,
   spacing,
@@ -30,6 +30,8 @@ import {
   opacity,
   duration,
   easing,
+  tabularNums,
+  formatTokenAmount,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { StepTokenSelectProps, SendToken } from './types';
@@ -65,14 +67,15 @@ const SearchInputStyled = styled(InputBase)({
   },
 });
 
-const SearchIconStyled = styled(SearchIcon)({
+const SearchIconStyled = styled(MagnifyingGlassIcon)({
   color: colors.text.secondary,
   marginRight: spacing.sm,
-  fontSize: fontSize.lg,
+  width: iconSize.md,
+  height: iconSize.md,
 });
 
 const SectionHeader = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -179,6 +182,7 @@ const TokenName = styled(Typography)({
 });
 
 const TokenBalance = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.base,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
@@ -222,6 +226,9 @@ const SkeletonText = styled(Skeleton)({
 // Token Row Component
 // ============================================================================
 
+/** Balances below this render as "less than", not as a row of leading zeros. */
+const MIN_DISPLAYED_BALANCE = 0.0001;
+
 interface TokenRowProps {
   token: SendToken;
   onPress: (token: SendToken) => void;
@@ -235,8 +242,11 @@ const TokenRow = React.memo(function TokenRow({ token, onPress }: TokenRowProps)
   const balanceDisplay = useMemo(() => {
     const amount = typeof token.uiAmount === 'string' ? parseFloat(token.uiAmount) : token.uiAmount;
     if (amount === 0) return `0 ${token.symbol}`;
-    if (amount < 0.0001) return `<0.0001 ${token.symbol}`;
-    return `${Number(amount.toFixed(4))} ${token.symbol}`;
+    // Same rounding as before; only the separator moves, and it follows the
+    // app's language per PRODUCT.md's i18n constraint.
+    if (amount < MIN_DISPLAYED_BALANCE)
+      return `<${formatTokenAmount(MIN_DISPLAYED_BALANCE)} ${token.symbol}`;
+    return `${formatTokenAmount(Number(amount.toFixed(4)))} ${token.symbol}`;
   }, [token.uiAmount, token.symbol]);
 
   return (

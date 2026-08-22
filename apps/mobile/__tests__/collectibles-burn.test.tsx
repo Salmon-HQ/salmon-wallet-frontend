@@ -42,6 +42,21 @@ const mockNftData = {
 };
 
 jest.mock('@salmon/shared', () => ({
+  semantic: {
+    accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45' },
+    text: {
+      primary: '#F6F8FB',
+      secondary: '#A7B1C4',
+      tertiary: '#8B96AD',
+      disabled: '#6F7B95',
+      accent: '#FF5C45',
+      onAccent: '#070911',
+    },
+    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
+    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
+    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+    state: { hover: 'rgba(199,211,232,0.06)', selectedEdge: '#FF5C45' },
+  },
   SECTION_TO_NETWORK: {
     solana: 'solana-mainnet',
     'solana-devnet': 'solana-devnet',
@@ -55,7 +70,7 @@ jest.mock('@salmon/shared', () => ({
   },
   createBurnTransaction: (...args: unknown[]) => mockCreateBurnTransaction(...args),
   fontFamilyNative: { semiBold: 'System', medium: 'System' },
-  fontSize: { md: 16, sm: 14, xl: 20 },
+  fontSize: { bodyLg: 16, sm: 14, xl: 20 },
   signAndSendPreparedSolanaTransactions: (...args: unknown[]) =>
     mockSignAndSendPreparedSolanaTransactions(...args),
   letterSpacing: { wide: 0, wider: 0 },

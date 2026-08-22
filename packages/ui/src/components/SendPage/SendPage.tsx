@@ -9,6 +9,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import {
@@ -20,6 +21,7 @@ import {
 import type { Blockchain, NetworkEnvironment } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
 import { PageShell } from '../PageShell';
+import { SinkFloat } from '../SinkFloat';
 import { StepTokenSelect } from './StepTokenSelect';
 import { StepAddressAmount } from './StepAddressAmount';
 import { StepConfirmation } from './StepConfirmation';
@@ -38,6 +40,18 @@ const ContentArea = styled(Box)({
   flexDirection: 'column',
 });
 
+/**
+ * The verb's frame sits between the page's column and the step's own, so it
+ * has to be transparent to the layout it was inserted into: the step still
+ * owns the corridor (`flex: 1`) and still scrolls inside it (`minHeight: 0`).
+ */
+const stepFrame: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  minHeight: 0,
+};
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -50,6 +64,7 @@ export function SendPage({
   onSuccess,
   showUnverifiedTokens,
   loading,
+  onFlowLockChange,
 }: SendPageProps) {
   // Bitcoin has only one token (BTC), so skip token selection
   const skipTokenSelect = blockchain === 'bitcoin';
@@ -65,6 +80,9 @@ export function SendPage({
   );
   const [amount, setAmount] = useState('');
   const [successTxId, setSuccessTxId] = useState<string | null>(null);
+  // Whether a step change has happened since this flow opened. The step on
+  // screen floats in only once something has actually moved.
+  const [stepped, setStepped] = useState(false);
 
   const { t } = useTranslation();
 
@@ -82,6 +100,18 @@ export function SendPage({
   // Send hook
   const sendHook = useSendTransaction({ account, blockchain });
 
+  // Two phases, two rules. Before signing, leaving costs nothing and stays
+  // easy. Once signed, this screen is the only place the user learns whether
+  // their money moved, so ambient navigation must not discard it.
+  const isSigning = sendHook.status === 'creating' || sendHook.status === 'sending';
+  const isSettling = isSigning || sendHook.settling;
+  const ownsScreen = isSettling || step === 'success';
+
+  useEffect(() => {
+    onFlowLockChange?.(ownsScreen);
+    return () => onFlowLockChange?.(false);
+  }, [ownsScreen, onFlowLockChange]);
+
   // Reset state on mount
   useEffect(() => {
     if (skipTokenSelect && tokens.length > 0) {
@@ -95,6 +125,7 @@ export function SendPage({
     setResolvedRecipientAddress(undefined);
     setAmount('');
     setSuccessTxId(null);
+    setStepped(false);
   }, [skipTokenSelect, tokens]);
 
   // Exit handler (navigates back to home)
@@ -103,32 +134,48 @@ export function SendPage({
     onBack();
   }, [onBack, sendHook]);
 
-  // Step navigation handlers
-  const handleSelectToken = useCallback((token: SendToken) => {
-    setSelectedToken(token);
-    setStep('address-amount');
+  // Step navigation handlers. Every one of them goes through `goToStep`: the
+  // step is what changes, and the fact that it changed is what the verb needs
+  // to know.
+  const goToStep = useCallback((next: SendStep) => {
+    setStepped(true);
+    setStep(next);
   }, []);
+
+  const handleSelectToken = useCallback(
+    (token: SendToken) => {
+      setSelectedToken(token);
+      goToStep('address-amount');
+    },
+    [goToStep]
+  );
 
   const handleBackToTokenSelect = useCallback(() => {
-    setStep('token-select');
-  }, []);
+    goToStep('token-select');
+  }, [goToStep]);
 
-  const handleReview = useCallback((address: string, amt: string, resolvedAddress?: string) => {
-    setRecipientAddress(address);
-    setResolvedRecipientAddress(resolvedAddress);
-    setAmount(amt);
-    setStep('confirmation');
-  }, []);
+  const handleReview = useCallback(
+    (address: string, amt: string, resolvedAddress?: string) => {
+      setRecipientAddress(address);
+      setResolvedRecipientAddress(resolvedAddress);
+      setAmount(amt);
+      goToStep('confirmation');
+    },
+    [goToStep]
+  );
 
   const handleBackToAddressAmount = useCallback(() => {
-    setStep('address-amount');
+    goToStep('address-amount');
     sendHook.reset();
-  }, [sendHook]);
+  }, [goToStep, sendHook]);
 
-  const handleSuccess = useCallback((txId: string) => {
-    setSuccessTxId(txId);
-    setStep('success');
-  }, []);
+  const handleSuccess = useCallback(
+    (txId: string) => {
+      setSuccessTxId(txId);
+      goToStep('success');
+    },
+    [goToStep]
+  );
 
   const handleSuccessContinue = useCallback(() => {
     if (successTxId) {
@@ -162,70 +209,83 @@ export function SendPage({
     handleExit,
   ]);
 
+  // A step change inside the open flow speaks the verb (DESIGN.md, §The sink
+  // and the float — the transition verb): the step that leaves sinks, the beat
+  // passes, and the step that arrives floats up in its place. Back is the
+  // mirror, and reduce motion resolves both halves to an instant cut with the
+  // step still changing — `SinkFloat` owns that mapping.
+  //
+  // The page's own arrival is not its content's event. The first step is
+  // simply there when the flow opens — `stepped` is what tells the two apart —
+  // and a single-token chain, which opens straight on the form, is that same
+  // arrival by another route rather than a step that moved.
+  //
+  // The receipt is the exception on the arriving side. It floats its own bands
+  // in reading order (DESIGN.md, §The ending says what happened), so floating
+  // the step in as a block would deliver it twice, once whole and once band by
+  // band. Only its entrance is dropped: the confirmation under it still sinks
+  // away, and the receipt's own sequence is what replaces it.
+  //
+  // A float of no length is exactly that arrival without an entrance — the
+  // content lands where the float would have ended, in the frame it mounts.
+  const entranceless = !stepped || step === 'success';
+
   return (
-    <PageShell
-      title={t('token.action.send')}
-      onBack={handleBackPress}
-      showScalesBackground
-      scalesBackgroundProps={{
-        strokeColor: 'rgba(255, 255, 255, 0.03)',
-        strokeWidth: 1,
-        patternHeight: 26,
-        style: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 },
-      }}
-    >
+    <PageShell title={t('token.action.send')} onBack={handleBackPress} backDisabled={isSettling}>
       <ContentArea>
-        {step === 'token-select' && (
-          <StepTokenSelect
-            tokens={tokens}
-            onSelectToken={handleSelectToken}
-            showUnverifiedTokens={showUnverifiedTokens}
-            loading={loading}
-          />
-        )}
+        <SinkFloat transitionKey={step} floatMs={entranceless ? 0 : undefined} style={stepFrame}>
+          {step === 'token-select' && (
+            <StepTokenSelect
+              tokens={tokens}
+              onSelectToken={handleSelectToken}
+              showUnverifiedTokens={showUnverifiedTokens}
+              loading={loading}
+            />
+          )}
 
-        {step === 'address-amount' && selectedToken && (
-          <StepAddressAmount
-            token={selectedToken}
-            liveBalance={liveSelectedBalance}
-            blockchain={blockchain}
-            account={account}
-            onBack={handleBackToTokenSelect}
-            onReview={handleReview}
-            onCancel={handleExit}
-          />
-        )}
+          {step === 'address-amount' && selectedToken && (
+            <StepAddressAmount
+              token={selectedToken}
+              liveBalance={liveSelectedBalance}
+              blockchain={blockchain}
+              account={account}
+              onBack={skipTokenSelect ? undefined : handleBackToTokenSelect}
+              onReview={handleReview}
+              onCancel={handleExit}
+            />
+          )}
 
-        {step === 'confirmation' && selectedToken && (
-          <StepConfirmation
-            token={selectedToken}
-            recipientAddress={recipientAddress}
-            resolvedRecipientAddress={resolvedRecipientAddress}
-            amount={amount}
-            blockchain={blockchain}
-            account={account}
-            onBack={handleBackToAddressAmount}
-            onCancel={handleExit}
-            onSuccess={handleSuccess}
-          />
-        )}
+          {step === 'confirmation' && selectedToken && (
+            <StepConfirmation
+              token={selectedToken}
+              recipientAddress={recipientAddress}
+              resolvedRecipientAddress={resolvedRecipientAddress}
+              amount={amount}
+              blockchain={blockchain}
+              account={account}
+              onBack={handleBackToAddressAmount}
+              onCancel={handleExit}
+              onSuccess={handleSuccess}
+            />
+          )}
 
-        {step === 'success' && successTxId && selectedToken && (
-          <TransactionSuccessScreen
-            title={t('transaction.sendComplete')}
-            pendingTitle={t('transaction.pendingSend')}
-            summary={`${amount} ${selectedToken.symbol} to ${getShortAddress(recipientAddress) ?? recipientAddress}`}
-            explorerUrl={getTransactionUrl(
-              blockchain.toUpperCase() as Blockchain,
-              (account as { network: { networkId: string } }).network
-                .networkId as NetworkEnvironment,
-              getDefaultExplorer(blockchain.toUpperCase() as Blockchain),
-              successTxId
-            )}
-            onContinue={handleSuccessContinue}
-            settling={sendHook.settling}
-          />
-        )}
+          {step === 'success' && successTxId && selectedToken && (
+            <TransactionSuccessScreen
+              title={t('transaction.sendComplete')}
+              pendingTitle={t('transaction.pendingSend')}
+              summary={`${amount} ${selectedToken.symbol} to ${getShortAddress(recipientAddress) ?? recipientAddress}`}
+              explorerUrl={getTransactionUrl(
+                blockchain.toUpperCase() as Blockchain,
+                (account as { network: { networkId: string } }).network
+                  .networkId as NetworkEnvironment,
+                getDefaultExplorer(blockchain.toUpperCase() as Blockchain),
+                successTxId
+              )}
+              onContinue={handleSuccessContinue}
+              settling={sendHook.settling}
+            />
+          )}
+        </SinkFloat>
       </ContentArea>
     </PageShell>
   );

@@ -12,6 +12,7 @@ import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   fontFamily,
@@ -24,11 +25,14 @@ import {
   duration,
   durationMs,
   easing,
+  tabularNums,
+  useCopyFeedback,
 } from '@salmon/shared';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, iconSize } from '../../icons';
 import { CopyIcon } from '../Icon';
 import type { TokenInfoProps } from './types';
 
+import { CopyTick } from '../CopyTick';
 const Container = styled(Box)({
   backgroundColor: colors.background.card,
   borderRadius: borderRadius.lg,
@@ -40,7 +44,7 @@ const Section = styled(Box)({
 });
 
 const SectionTitle = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -77,7 +81,8 @@ const StatLabel = styled(Typography)({
 });
 
 const StatValue = styled(Typography)({
-  fontSize: fontSize.md,
+  ...tabularNums.css,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -201,20 +206,19 @@ export function TokenInfo({
   const { t } = useTranslation();
   const [, { formatLarge }] = useCurrencyContext();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const handleCopyAddress = useCallback(async () => {
     if (contractAddress) {
       try {
         await navigator.clipboard.writeText(contractAddress);
         setSnackbarOpen(true);
-        setCopied(true);
-        setTimeout(() => setCopied(false), durationMs.feedbackLong);
+        showCopied();
       } catch (err) {
         console.error('Failed to copy address:', err);
       }
     }
-  }, [contractAddress]);
+  }, [contractAddress, showCopied]);
 
   const handleOpenWebsite = useCallback(() => {
     if (website) {
@@ -335,15 +339,19 @@ export function TokenInfo({
           <ContractRow
             onClick={handleCopyAddress}
             role="button"
-            aria-label={t('accessibility.copy_contract_address', 'Copy contract address')}
+            aria-label={
+              copied
+                ? t('actions.copied')
+                : t('accessibility.copy_contract_address', 'Copy contract address')
+            }
           >
             <ContractAddress>{getShortAddress(contractAddress, 6)}</ContractAddress>
             <CopyButton>
-              {copied ? (
-                <CheckIcon sx={{ color: colors.status.success, fontSize: fontSize.lg }} />
-              ) : (
-                <CopyIcon sx={{ color: colors.text.muted, fontSize: fontSize.lg }} />
-              )}
+              <CopyTick
+                copied={copied}
+                copy={<CopyIcon color={colors.text.muted} size={iconSize.md} />}
+                tick={<CheckIcon color={semantic.status.success} size={iconSize.md} />}
+              />
             </CopyButton>
           </ContractRow>
         </Section>

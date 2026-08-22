@@ -13,19 +13,19 @@ import React from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import WarningIcon from '@mui/icons-material/Warning';
-import ErrorIcon from '@mui/icons-material/Error';
+import { CheckCircleIcon, WarningCircleIcon, WarningIcon, iconSize } from '../../icons';
 import {
-  colors,
+  semantic,
   spacing,
   borderRadius,
   getPriceImpactSeverity,
+  formatPercent,
   type PriceImpactSeverity,
   fontSize,
   fontWeight,
   lineHeight,
   componentSizes,
+  tabularNums,
 } from '@salmon/shared';
 import type { PriceImpactBadgeProps } from './types';
 
@@ -34,9 +34,9 @@ import type { PriceImpactBadgeProps } from './types';
 // ============================================================================
 
 const SEVERITY_COLORS: Record<PriceImpactSeverity, string> = {
-  safe: colors.status.success,
-  warning: colors.status.warning,
-  high: colors.status.error,
+  safe: semantic.status.success,
+  warning: semantic.status.warning,
+  high: semantic.status.danger,
 };
 
 const SIZE_CONFIG = {
@@ -65,14 +65,16 @@ const SIZE_CONFIG = {
 // ============================================================================
 
 function getSeverityIcon(severity: PriceImpactSeverity, size: number) {
-  const sx = { fontSize: size };
+  const glyphSize = Math.max(iconSize.sm, size);
   switch (severity) {
+    // The only filled glyph on this badge: a success state, which the design
+    // system lets fill so "safe" reads before the label does.
     case 'safe':
-      return <CheckCircleIcon sx={sx} />;
+      return <CheckCircleIcon size={glyphSize} weight="fill" />;
     case 'warning':
-      return <WarningIcon sx={sx} />;
+      return <WarningIcon size={glyphSize} />;
     case 'high':
-      return <ErrorIcon sx={sx} />;
+      return <WarningCircleIcon size={glyphSize} />;
   }
 }
 
@@ -98,6 +100,10 @@ export function PriceImpactBadge({
 }: PriceImpactBadgeProps) {
   const severity = getPriceImpactSeverity(value);
   const color = SEVERITY_COLORS[severity];
+  // A price impact has no direction to report, so it renders unsigned — but
+  // through the same percentage renderer as every other figure, rather than
+  // pasting a '%' onto the backend's raw string.
+  const displayValue = formatPercent(parseFloat(value));
   const sizeConfig = SIZE_CONFIG[size];
 
   return (
@@ -116,13 +122,14 @@ export function PriceImpactBadge({
       <Typography
         component="span"
         sx={{
+          ...tabularNums.css,
           fontSize: sizeConfig.fontSize,
           fontWeight: fontWeight.medium,
           color: 'inherit',
           lineHeight: lineHeight.tight,
         }}
       >
-        {value}%
+        {displayValue}
       </Typography>
     </Container>
   );

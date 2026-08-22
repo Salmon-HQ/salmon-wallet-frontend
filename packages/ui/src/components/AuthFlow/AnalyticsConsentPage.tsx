@@ -1,69 +1,49 @@
-import React from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
-import InsightsIcon from '@mui/icons-material/Insights';
-import { Trans, useTranslation } from 'react-i18next';
-import { colors, fontFamily, fontSize, fontWeight, lineHeight, spacing } from '@salmon/shared';
-import { styled } from '../../utils/styled';
-import { PrimaryButton } from '../Button';
-import { getAuthContainerStyles } from './common';
-import type { AnalyticsConsentPageProps } from './types';
-
 /**
  * First-run, opt-in pseudonymous-analytics consent — the final onboarding step
  * before the wallet home (web + extension). Presentational only: the caller
  * wires accept/decline to `useAnalyticsConsent().resolveConsentPrompt` and then
- * advances the flow. Onboarding layout (themed icon + centered heading, like
- * SuccessPage); the body is one centered paragraph with bolded key phrases,
- * plus a Settings footnote. Declining is the standard close affordance: an X
- * in the top-right (same idiom as BaseSheetDialog's StandardHeader).
+ * advances the flow.
+ *
+ * On the grid, the metrics glyph is the screen's only icon and sits in the
+ * `mark` slot, where the fish sat before the owner restructured this screen
+ * (2026-08-18): glyph on top, title, then the body copy immediately after it
+ * — the hole between title and copy is gone — with the "turn it off any
+ * time" line in `assist` and Accept bottom-most. The close affordance is the
+ * `chrome` band's leading control — drawn as an X, not a back chevron,
+ * because declining advances the flow rather than backing out of it. Its
+ * description is the longest in the flow at roughly seven lines, so it is
+ * not a "mini description": it lives in `body`, which is the give, and the
+ * always-empty description band collapses (`contentTight`) so the copy starts
+ * one title line under the title instead of below a reserved void.
  */
-const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  position: 'relative',
-  backgroundColor: colors.background.primary,
-  padding: `0 ${spacing['2xl']}px`,
-  ...getAuthContainerStyles($contained),
-}));
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import {
+  componentSizes,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  lineHeight,
+  semantic,
+} from '@salmon/shared';
+import React from 'react';
+import { Trans, useTranslation } from 'react-i18next';
+import { ChartLineUpIcon } from '../../icons';
+import { styled } from '../../utils/styled';
+import { PrimaryButton } from '../Button';
+import { OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
+import { ScreenHeader } from '../ScreenHeader';
+import { WaterColumn } from '../WaterColumn';
+import type { AnalyticsConsentPageProps } from './types';
 
-const CloseButton = styled(IconButton)({
-  position: 'absolute',
-  top: spacing.lg,
-  right: spacing.lg,
-  color: colors.text.secondary,
-  padding: spacing.xs,
-  '&:hover': {
-    backgroundColor: colors.background.card,
-  },
-});
-
-const TopSpacer = styled(Box)({ flex: 1 });
-
-const CenterContent = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const Title = styled(Typography)({
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontWeight: fontWeight.bold,
-  fontSize: fontSize['4xl'],
-  lineHeight: lineHeight.tight,
-  marginBottom: spacing.md,
-  textAlign: 'center',
-});
+/** The glyph fills the top slot: the grid's own mark size for `content`. */
+const ICON_SIZE = componentSizes.logoSizeSmall;
 
 const Body = styled(Typography)({
-  color: colors.text.primary,
+  color: semantic.text.primary,
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.lg,
-  lineHeight: lineHeight.relaxed,
+  fontSize: fontSize.bodyLg,
+  lineHeight: `${Math.round(fontSize.bodyLg * lineHeight.normal)}px`,
   textAlign: 'center',
 });
 
@@ -72,59 +52,63 @@ const Bold = styled('strong')({
 });
 
 const Footnote = styled(Typography)({
-  color: colors.text.secondary,
+  color: semantic.text.secondary,
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.base,
-  lineHeight: lineHeight.normal,
-  marginTop: spacing.xl,
+  fontSize: fontSize.body,
+  lineHeight: `${Math.round(fontSize.body * lineHeight.normal)}px`,
   textAlign: 'center',
-});
-
-const ButtonsContainer = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'flex-end',
-  paddingBottom: spacing['2xl'],
-  gap: spacing.lg,
 });
 
 export function AnalyticsConsentPage({
   onAccept,
   onDecline,
-  contained = false,
 }: AnalyticsConsentPageProps): React.ReactElement {
   const { t } = useTranslation();
 
   return (
-    <Container $contained={contained} data-testid="analytics-consent-screen">
-      <CloseButton
-        onClick={onDecline}
-        aria-label={t('general.close', 'Close')}
-        data-testid="analytics-consent-decline"
-      >
-        <CloseIcon />
-      </CloseButton>
-      <TopSpacer />
-
-      <CenterContent>
-        <InsightsIcon
-          sx={{ fontSize: 72, color: colors.text.primary, marginBottom: `${spacing.xl}px` }}
+    <OnboardingLayout
+      testID="analytics-consent-screen"
+      variant="contentTight"
+      background={<WaterColumn />}
+      scrollBody
+      chrome={
+        <ScreenHeader
+          onBack={onDecline}
+          glyph="close"
+          backLabel={t('settings.analytics_prompt_close')}
+          testID="analytics-consent-decline"
         />
-        <Title>{t('settings.analytics_prompt_title')}</Title>
-        <Body>
-          <Trans i18nKey="settings.analytics_prompt_body" components={{ bold: <Bold /> }} />
-        </Body>
+      }
+      /*
+        The metrics glyph takes the top slot the fish used to hold — one icon
+        on the screen, not two, and the same asset the body carried before.
+      */
+      mark={<ChartLineUpIcon size={ICON_SIZE} color={semantic.text.primary} />}
+      title={<OnboardingTitle>{t('settings.analytics_prompt_title')}</OnboardingTitle>}
+      body={
+        /*
+          `marginY: 'auto'` centres the copy in the body slot. This is the one
+          screen of its variant and `body` now holds every point the collapsed
+          description and secondary bands gave back, so pinning the copy to the
+          top left the icon, title and copy clustered high over a hole. The band
+          already owns the space — the copy is centred in it, not padded down.
+        */
+        <Box sx={{ textAlign: 'center', marginY: 'auto' }}>
+          <Body>
+            <Trans i18nKey="settings.analytics_prompt_body" components={{ bold: <Bold /> }} />
+          </Body>
+        </Box>
+      }
+      assist={
         <Footnote>
           <Trans i18nKey="settings.analytics_prompt_footnote" components={{ bold: <Bold /> }} />
         </Footnote>
-      </CenterContent>
-
-      <ButtonsContainer>
-        <PrimaryButton onClick={onAccept} testID="analytics-consent-accept">
+      }
+      action={
+        <PrimaryButton onClick={onAccept} fullWidth testID="analytics-consent-accept">
           {t('settings.analytics_prompt_accept')}
         </PrimaryButton>
-      </ButtonsContainer>
-    </Container>
+      }
+    />
   );
 }

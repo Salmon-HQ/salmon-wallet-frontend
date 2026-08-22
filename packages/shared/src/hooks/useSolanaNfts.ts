@@ -33,8 +33,16 @@ export interface UseSolanaNftsParams {
 export interface UseSolanaNftsResult {
   /** Canonical NFT list (already filtered by the BE for spam unless includeSpam=true) */
   nfts: Nft[];
-  /** Whether the initial fetch is in flight */
+  /** True only while there is nothing to show yet (no cached list for this key). */
   loading: boolean;
+  /** True while a fetch is in flight *and* a cached list is already on screen. */
+  refreshing: boolean;
+  /**
+   * True when this hook holds an NFT list for the current owner+network — cached
+   * or fresh. Render the list whenever this is true; use `refreshing` for a quiet
+   * in-flight affordance. Skeletons belong to `!hasData`, never to `refreshing`.
+   */
+  hasData: boolean;
   /** Error message if the fetch failed */
   error: string | null;
   /** Whether an error occurred */
@@ -66,6 +74,8 @@ export function useSolanaNfts(params: UseSolanaNftsParams): UseSolanaNftsResult 
   return {
     nfts: query.data ?? [],
     loading: query.isPending && isEnabled,
+    refreshing: query.isFetching && !query.isPending,
+    hasData: query.data !== undefined,
     error: query.error?.message ?? null,
     isError: query.isError,
     refresh: () => query.refetch().then(() => undefined),

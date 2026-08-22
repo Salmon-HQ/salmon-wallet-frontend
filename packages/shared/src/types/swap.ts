@@ -369,6 +369,12 @@ export interface SwapSuccessSummary {
   chain?: SwapChainType;
   /** Input token network id — drives the explorer URL environment */
   networkId?: string;
+  /** Input token logo URL, captured at confirm time for the success receipt */
+  inLogo?: string;
+  /** Output token logo URL, captured at confirm time for the success receipt */
+  outLogo?: string;
+  /** Salmon fee percent from the confirmed quote (Jupiter only) */
+  feePercent?: number;
 }
 
 /**
@@ -471,20 +477,85 @@ export interface SwapDetailRowProps<StyleType> {
   label: string;
   /** Value on the right */
   value: string;
+  /**
+   * Whether this row's value is being recalculated. Pass it only for rows a
+   * re-quote can actually change — the row itself never becomes a skeleton,
+   * and a row whose value is fixed (router, provider, network) must show
+   * nothing.
+   */
+  pending?: boolean;
   /** Custom style */
   style?: StyleType;
 }
 
 /**
- * Props for SwapReviewCard component
+ * One row of the grouped review-details card: what `SwapDetailRowProps`
+ * carries, minus the style — the card owns the row chrome.
  */
-export interface SwapReviewCardProps<StyleType> {
-  /** Card label (e.g., "You Send", "You Receive") */
+export interface SwapDetailItem {
+  /** Label on the left */
   label: string;
+  /** Value on the right */
+  value: string;
+  /** Whether this row's value is being recalculated (see `SwapDetailRowProps.pending`) */
+  pending?: boolean;
+}
+
+/**
+ * Props for SwapDetailsCard — the review screens' detail rows grouped into
+ * ONE card with compact rows and hairline separators, instead of a pill per
+ * row (the pill stack alone overflowed the viewport). Advanced rows fold
+ * behind a "Details" disclosure, collapsed by default, so the critical rows
+ * and the warning stay on screen without scrolling.
+ */
+export interface SwapDetailsCardProps<StyleType> {
+  /** Rows that are always visible (the critical ones). */
+  rows: SwapDetailItem[];
+  /**
+   * Rows folded behind the "Details" disclosure. Omit (or pass empty) to
+   * render a plain grouped card with no disclosure — the bridge review does.
+   */
+  advancedRows?: SwapDetailItem[];
+  /** Custom style */
+  style?: StyleType;
+}
+
+/**
+ * One side of the SwapReviewExchange graphic: the token being sent or received.
+ */
+export interface SwapReviewExchangeSide {
+  /** Microcopy above the side (e.g., "You Send", "You Receive (estimated)") */
+  label: string;
+  /** Token logo URL; the symbol renders as fallback when missing */
+  logo?: string;
+  /** Token symbol, used for the logo fallback */
+  symbol: string;
   /** Amount with symbol (e.g., "0.009 SOL") */
   amount: string;
   /** USD equivalent (e.g., "~$84.65") */
   usdValue?: string;
+  /** Whether the amount is being recalculated (see `SwapDetailRowProps.pending`) */
+  pendingAmount?: boolean;
+  /** Whether the USD equivalent is being recalculated */
+  pendingUsdValue?: boolean;
+  /**
+   * Render this side's amount one rank up (success receipts give the
+   * received amount the greater hierarchy).
+   */
+  emphasis?: boolean;
+}
+
+/**
+ * Props for SwapReviewExchange component - the single graphic block on the
+ * swap and bridge review screens: sent token logo, arrow, received token
+ * logo, with amounts and USD values underneath. Replaces the two stacked
+ * You Send / You Receive cards.
+ */
+export interface SwapReviewExchangeProps<StyleType> {
+  /** The side being sent */
+  send: SwapReviewExchangeSide;
+  /** The side being received */
+  receive: SwapReviewExchangeSide;
   /** Custom style */
   style?: StyleType;
 }
@@ -509,6 +580,12 @@ export interface SwapReviewScreenProps<StyleType> {
   onConfirm: () => void;
   /** Whether confirm is in progress */
   isConfirming?: boolean;
+  /**
+   * Whether a fresh quote is in flight. The screen stays exactly as it is —
+   * same cards, same rows — and only the values the new quote can change
+   * report that they are being recalculated.
+   */
+  isRefreshing?: boolean;
   /** Override label for the confirm button (e.g. countdown or refresh) */
   confirmLabel?: string;
   /** Custom style */

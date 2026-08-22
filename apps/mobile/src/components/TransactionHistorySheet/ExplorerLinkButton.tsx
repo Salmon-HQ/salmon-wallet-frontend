@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, StyleSheet, TouchableOpacity, Linking, Modal, Pressable } from 'react-native';
 import type { ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowSquareOutIcon, CaretDownIcon, GlobeIcon, iconSize } from '../../icons';
 import {
   colors,
   ms,
@@ -18,6 +18,7 @@ import {
   type NetworkEnvironment,
   fontFamilyNative,
   type ExplorerWithKey,
+  semantic,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 
@@ -149,7 +150,18 @@ export function ExplorerLinkButton({
 
   return (
     <>
-      <BlurContainer borderColor={colors.palette.amber} style={[styles.blurWrapper, style]}>
+      {/* `BlurContainer`'s default border is the glassy radial sheen: opaque
+          near two opposite corners, fully transparent across the middle band.
+          On a card that reads as light catching an edge; on a short, full-width
+          button it erases the long top and bottom runs and leaves the two short
+          side runs standing alone — the broken border. A link affordance needs
+          a border that closes, so this one opts out of the sheen and draws
+          solid. */}
+      <BlurContainer
+        borderColor={semantic.text.accent}
+        useGradientBorder={false}
+        style={[styles.blurWrapper, style]}
+      >
         <TouchableOpacity
           testID="tx-detail-explorer-link"
           style={styles.button}
@@ -159,20 +171,10 @@ export function ExplorerLinkButton({
           accessibilityLabel={buttonText}
           accessibilityHint={t('transactions.detail.explorerHint')}
         >
-          <Ionicons
-            name="open-outline"
-            size={16}
-            color={colors.palette.amber}
-            style={styles.icon}
-          />
+          <ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.accent} style={styles.icon} />
           <Text style={styles.buttonText}>{buttonText}</Text>
           {showMenu && availableExplorers.length > 1 && (
-            <Ionicons
-              name="chevron-down"
-              size={14}
-              color={colors.palette.amber}
-              style={styles.chevron}
-            />
+            <CaretDownIcon size={14} color={semantic.text.accent} style={styles.chevron} />
           )}
         </TouchableOpacity>
       </BlurContainer>
@@ -196,14 +198,9 @@ export function ExplorerLinkButton({
                     onPress={() => openExplorer(explorer)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons
-                      name="globe-outline"
-                      size={18}
-                      color={colors.text.primary}
-                      style={styles.menuItemIcon}
-                    />
+                    <GlobeIcon size={18} color={colors.text.primary} style={styles.menuItemIcon} />
                     <Text style={styles.menuItemText}>{explorer.name}</Text>
-                    <Ionicons name="open-outline" size={16} color={colors.text.tertiary} />
+                    <ArrowSquareOutIcon size={iconSize.sm} color={colors.text.tertiary} />
                   </TouchableOpacity>
                 ))}
               </BlurContainer>
@@ -233,10 +230,16 @@ const styles = StyleSheet.create({
   icon: {
     marginRight: s(spacing.sm),
   },
+  /**
+   * A link off to an explorer. It was reading `palette.amber` — a decorative
+   * badge hue with no semantic meaning, close enough to salmon to be mistaken
+   * for it and not close enough to be it. Links are the textbook case for
+   * accent ink: `text.accent`, 6.07:1.
+   */
   buttonText: {
     fontSize: ms(fontSize.base),
     fontFamily: fontFamilyNative.medium,
-    color: colors.palette.amber,
+    color: semantic.text.accent,
   },
   chevron: {
     marginLeft: s(spacing.xs),

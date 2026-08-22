@@ -21,22 +21,27 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckIcon from '@mui/icons-material/Check';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import KeyIcon from '@mui/icons-material/Key';
-import PublicIcon from '@mui/icons-material/Public';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import {
+  CaretRightIcon,
+  CheckIcon,
+  CopyIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  GlobeIcon,
+  KeyIcon,
+  WarningIcon,
+  iconSize,
+} from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   borderWidth,
   useAccountsContext,
   getShortAddress,
+  getNetworkName,
   type AccountKeyInfo,
   fontFamily,
   fontSize,
@@ -45,15 +50,18 @@ import {
   letterSpacing,
   componentSizes,
   duration,
-  durationMs,
+  useCopyFeedback,
 } from '@salmon/shared';
 import {
   buildNetworkListFromAccount,
   getAccountKeysForNetwork,
 } from '@salmon/shared/utils/account';
+import { ConfirmDialog } from '../ConfirmDialog';
 import { SettingsPanelContent } from '../SettingsPanelContent';
+import { WarningNotice } from '../WarningNotice';
 import type { PrivateKeyPanelProps } from './types';
 
+import { CopyTick } from '../CopyTick';
 // ============================================================================
 // Styled Components
 // ============================================================================
@@ -66,52 +74,56 @@ const PageContent = styled(Box)({
 });
 
 const WarningAlert = styled(Alert)({
-  backgroundColor: colors.status.warningBackground,
-  border: `${borderWidth.thin}px solid ${colors.status.warningBorder}`,
+  backgroundColor: semantic.status.warningTint,
+  border: `${borderWidth.thin}px solid ${semantic.status.warningTintBorder}`,
   '& .MuiAlert-icon': {
-    color: colors.status.warning,
+    color: semantic.status.warning,
   },
   '& .MuiAlert-message': {
     color: colors.text.primary,
   },
 });
 
+// The key is exhibited here, so this panel is bedrock at full alpha — no
+// translucent card, no motif (DESIGN.md §The Bedrock Rule).
 const PrivateKeyCard = styled(Paper)({
-  backgroundColor: colors.background.card,
+  backgroundColor: semantic.surface.bedrock,
   padding: spacing.lg,
-  borderRadius: borderRadius.lg,
+  borderRadius: borderRadius.r3,
   border: `${borderWidth.thin}px solid ${colors.border.default}`,
   position: 'relative',
 });
 
+// The most position-critical string in the app: Geist Mono at the larger mono
+// size (DESIGN.md §The Bedrock Rule, the private key's exhibition).
 const KeyText = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.monoLg,
   fontWeight: fontWeight.medium,
   color: colors.text.primary,
   fontFamily: fontFamily.mono,
   wordBreak: 'break-all',
-  lineHeight: lineHeight.relaxed,
+  lineHeight: lineHeight.normal,
   minHeight: componentSizes.backButtonSize,
 });
 
 const PathLabel = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.label,
   fontWeight: fontWeight.semibold,
   color: colors.text.secondary,
   textTransform: 'uppercase',
-  letterSpacing: letterSpacing.wider,
+  letterSpacing: letterSpacing.label,
   marginBottom: spacing.sm,
 });
 
 const PathValue = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.mono,
   fontWeight: fontWeight.medium,
   color: colors.text.primary,
   fontFamily: fontFamily.mono,
 });
 
 const AddressValue = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.caption,
   color: colors.text.secondary,
   marginTop: spacing.xxs,
 });
@@ -127,7 +139,7 @@ const BlurOverlay = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   backgroundColor: colors.overlay.dark,
-  borderRadius: borderRadius.lg,
+  borderRadius: borderRadius.r3,
   gap: spacing.xxs,
   cursor: 'pointer',
   transition: `background-color ${duration.normal}`,
@@ -137,7 +149,7 @@ const BlurOverlay = styled(Box)({
 });
 
 const RevealText = styled(Typography)({
-  fontSize: fontSize.base,
+  fontSize: fontSize.body,
   fontWeight: fontWeight.medium,
   color: colors.text.secondary,
 });
@@ -152,7 +164,7 @@ const ActionButton = styled(Button)({
   flex: 1,
   textTransform: 'none',
   fontWeight: fontWeight.medium,
-  borderRadius: borderRadius.md,
+  borderRadius: borderRadius.r3,
 });
 
 const CopyButton = styled(ActionButton)({
@@ -179,20 +191,33 @@ const NetworkListItemIcon = styled(ListItemIcon)({
 
 const NetworkListItemText = styled(ListItemText)({
   '& .MuiListItemText-primary': {
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     fontWeight: fontWeight.medium,
     color: colors.text.primary,
   },
   '& .MuiListItemText-secondary': {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     color: colors.text.secondary,
   },
 });
 
-const ChevronIcon = styled(ChevronRightIcon)({
+const ChevronIcon = styled(CaretRightIcon)({
   color: colors.text.secondary,
-  fontSize: fontSize.xl,
+  width: iconSize.md,
+  height: iconSize.md,
 });
+
+/**
+ * A styled div carrying only an onClick is invisible to the keyboard. The
+ * reveal gate is an interactive control, so it answers to Enter and Space.
+ */
+function activateOnKey(activate: () => void) {
+  return (event: React.KeyboardEvent<HTMLElement>): void => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    activate();
+  };
+}
 
 // ============================================================================
 // Component
@@ -200,13 +225,15 @@ const ChevronIcon = styled(ChevronRightIcon)({
 
 export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactElement {
   const { t } = useTranslation();
-  const [state] = useAccountsContext();
+  const [state, actions] = useAccountsContext();
   const { activeAccount } = state;
 
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
   const [revealedIndexes, setRevealedIndexes] = useState<Set<number>>(new Set());
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const { copiedKey: copiedIndex, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
   const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
+  // Which key the password dialog is currently standing in front of.
+  const [reauthIndex, setReauthIndex] = useState<number | null>(null);
 
   // Build network list from the active account
   const networks = useMemo(() => buildNetworkListFromAccount(activeAccount), [activeAccount]);
@@ -220,20 +247,33 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
     [effectiveNetworkId, activeAccount]
   );
 
-  const handleSelectNetwork = useCallback((networkId: string) => {
-    setSelectedNetworkId(networkId);
-    setRevealedIndexes(new Set());
-    setCopiedIndex(null);
-    setCopyFailedIndex(null);
+  const handleSelectNetwork = useCallback(
+    (networkId: string) => {
+      setSelectedNetworkId(networkId);
+      setRevealedIndexes(new Set());
+      resetCopied();
+      setCopyFailedIndex(null);
+      setReauthIndex(null);
+    },
+    [resetCopied]
+  );
+
+  // An unlocked session is not proof of identity — it only proves the laptop
+  // was left open. The password is asked again before a private key, which is
+  // full spending control of the account and one click away from a clipboard,
+  // comes into view.
+  const handleReveal = useCallback((index: number) => {
+    setReauthIndex(index);
   }, []);
 
-  const handleReveal = useCallback((index: number) => {
+  const handleReauthenticated = useCallback(async () => {
     setRevealedIndexes((prev) => {
+      if (reauthIndex === null) return prev;
       const next = new Set(prev);
-      next.add(index);
+      next.add(reauthIndex);
       return next;
     });
-  }, []);
+  }, [reauthIndex]);
 
   const handleHide = useCallback((index: number) => {
     setRevealedIndexes((prev) => {
@@ -250,22 +290,22 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
       try {
         await navigator.clipboard.writeText(privateKey);
         setCopyFailedIndex(null);
-        setCopiedIndex(index);
-        setTimeout(() => setCopiedIndex(null), durationMs.feedbackLong);
+        showCopied(index);
       } catch {
         // Surface the failure — a silent no-op looks like a successful copy.
         setCopyFailedIndex(index);
       }
     },
-    [revealedIndexes]
+    [revealedIndexes, showCopied]
   );
 
   const handleBackToNetworks = useCallback(() => {
     setSelectedNetworkId(null);
     setRevealedIndexes(new Set());
-    setCopiedIndex(null);
+    resetCopied();
     setCopyFailedIndex(null);
-  }, []);
+    setReauthIndex(null);
+  }, [resetCopied]);
 
   // ========================================================================
   // Step 1: Network Selection
@@ -286,13 +326,14 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                   data-testid={`private-key-network-option-${network.id}`}
                 >
                   <NetworkListItemIcon>
-                    <PublicIcon />
+                    <GlobeIcon />
                   </NetworkListItemIcon>
                   <NetworkListItemText
                     primary={network.name}
-                    secondary={
-                      network.blockchain.charAt(0).toUpperCase() + network.blockchain.slice(1)
-                    }
+                    /* Chain only, deliberately: the primary line above is the
+                       network name, which already carries the environment, so
+                       repeating it here would say the same thing twice. */
+                    secondary={getNetworkName(network.blockchain)}
                   />
                   <ChevronIcon />
                 </NetworkListItemButton>
@@ -314,7 +355,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
       onBack={networks.length > 1 ? handleBackToNetworks : onBack}
     >
       <PageContent>
-        <WarningAlert severity="warning" icon={<WarningAmberIcon />}>
+        <WarningAlert severity="warning" icon={<WarningIcon />}>
           <Typography variant="body2" sx={{ fontWeight: fontWeight.medium }}>
             {t('settings.private_key_warning')}
           </Typography>
@@ -348,25 +389,40 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
 
                   {!isRevealed && (
                     <BlurOverlay
+                      role="button"
+                      tabIndex={0}
+                      aria-label={t('settings.tap_to_reveal', 'Tap to reveal')}
                       onClick={() => handleReveal(index)}
+                      onKeyDown={activateOnKey(() => handleReveal(index))}
                       data-testid={`private-key-reveal-overlay-${index}`}
                     >
-                      <KeyIcon sx={{ fontSize: fontSize.iconLg, color: colors.text.secondary }} />
+                      <KeyIcon size={fontSize.iconLg} color={colors.text.secondary} />
                       <RevealText>{t('settings.tap_to_reveal', 'Tap to reveal')}</RevealText>
                     </BlurOverlay>
                   )}
                 </PrivateKeyCard>
+
+                {isRevealed && (
+                  <Box
+                    sx={{ marginTop: `${spacing.md}px` }}
+                    data-testid={`private-key-clipboard-warning-${index}`}
+                  >
+                    <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
+                      {t('settings.clipboard_key_warning_description')}
+                    </WarningNotice>
+                  </Box>
+                )}
 
                 <ActionRow>
                   <Tooltip title={isCopied ? t('wallet.copied', 'Copied!') : ''} open={isCopied}>
                     <CopyButton
                       variant="outlined"
                       startIcon={
-                        isCopied ? (
-                          <CheckIcon sx={{ color: colors.status.success }} />
-                        ) : (
-                          <ContentCopyIcon />
-                        )
+                        <CopyTick
+                          copied={isCopied}
+                          copy={<CopyIcon />}
+                          tick={<CheckIcon color={semantic.status.success} />}
+                        />
                       }
                       onClick={() => handleCopy(accountKey.privateKey, index)}
                       disabled={!isRevealed}
@@ -377,7 +433,7 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                   </Tooltip>
                   <ActionButton
                     variant="outlined"
-                    startIcon={isRevealed ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    startIcon={isRevealed ? <EyeSlashIcon /> : <EyeIcon />}
                     onClick={() => (isRevealed ? handleHide(index) : handleReveal(index))}
                     data-testid={`private-key-reveal-button-${index}`}
                     sx={{
@@ -400,8 +456,8 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
                   <Typography
                     data-testid={`private-key-copy-error-${index}`}
                     sx={{
-                      color: colors.status.error,
-                      fontSize: fontSize.sm,
+                      color: semantic.status.danger,
+                      fontSize: fontSize.caption,
                       fontWeight: fontWeight.medium,
                       marginTop: `${spacing.sm}px`,
                     }}
@@ -414,6 +470,18 @@ export function PrivateKeyPanel({ onBack }: PrivateKeyPanelProps): React.ReactEl
           })
         )}
       </PageContent>
+
+      <ConfirmDialog
+        visible={reauthIndex !== null}
+        onClose={() => setReauthIndex(null)}
+        title={t('settings.reveal_private_key_title')}
+        message={t('settings.reveal_private_key_message')}
+        confirmText={t('actions.reveal', 'Reveal')}
+        requirePassword
+        validatePassword={actions.checkPassword}
+        onConfirm={handleReauthenticated}
+        confirmTestID="private-key-reauth-confirm"
+      />
     </SettingsPanelContent>
   );
 }

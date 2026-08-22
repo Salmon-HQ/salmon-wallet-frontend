@@ -36,6 +36,12 @@ export interface SendPageProps {
   showUnverifiedTokens?: boolean;
   /** Whether token data is still loading */
   loading?: boolean;
+  /**
+   * Reports whether the flow currently owns the screen: true once the
+   * transaction has been signed and while its outcome is being reported.
+   * Hosts use it to disable navigation that would discard that report.
+   */
+  onFlowLockChange?: (locked: boolean) => void;
 }
 
 /**

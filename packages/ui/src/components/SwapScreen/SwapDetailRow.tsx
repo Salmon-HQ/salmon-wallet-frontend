@@ -17,8 +17,10 @@ import {
   letterSpacing,
   lineHeight,
   componentSizes,
+  tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
+import { PendingValue } from '../PendingValue';
 import type { SwapDetailRowProps } from './types';
 
 // ============================================================================
@@ -35,21 +37,22 @@ const BlurContent = styled('div')({
 });
 
 const Label = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
   letterSpacing: letterSpacing.slight,
-  lineHeight: `${fontSize.md * lineHeight.normal}px`,
+  lineHeight: `${fontSize.bodyLg * lineHeight.normal}px`,
 });
 
 const Value = styled(Typography)({
-  fontSize: fontSize.md,
+  ...tabularNums.css,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
   letterSpacing: letterSpacing.slight,
-  lineHeight: `${fontSize.md * lineHeight.normal}px`,
+  lineHeight: `${fontSize.bodyLg * lineHeight.normal}px`,
 });
 
 // ============================================================================
@@ -60,7 +63,12 @@ const Value = styled(Typography)({
  * SwapDetailRow - A single row in the swap details section
  * Displays label on left and value on right with glassmorphism effect
  */
-export function SwapDetailRow({ label, value, style }: SwapDetailRowProps): React.ReactElement {
+export function SwapDetailRow({
+  label,
+  value,
+  pending = false,
+  style,
+}: SwapDetailRowProps): React.ReactElement {
   return (
     <BlurContainer
       style={{
@@ -71,7 +79,9 @@ export function SwapDetailRow({ label, value, style }: SwapDetailRowProps): Reac
     >
       <BlurContent>
         <Label>{label}</Label>
-        <Value>{value}</Value>
+        <Value>
+          <PendingValue pending={pending}>{value}</PendingValue>
+        </Value>
       </BlurContent>
     </BlurContainer>
   );

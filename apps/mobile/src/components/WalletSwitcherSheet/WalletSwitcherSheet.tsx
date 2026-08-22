@@ -19,7 +19,14 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  CheckCircleIcon,
+  PencilSimpleIcon,
+  PlusIcon,
+  TrashIcon,
+  WalletIcon,
+  iconSize,
+} from '../../icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -37,6 +44,7 @@ import {
   fontFamilyNative,
   borderWidth,
   opacity,
+  semantic,
 } from '@salmon/shared';
 
 import type { WalletSwitcherSheetProps, AccountListItemProps } from './types';
@@ -120,7 +128,7 @@ function AccountListItem({
             accessibilityRole="button"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="create-outline" size={20} color={colors.text.secondary} />
+            <PencilSimpleIcon size={iconSize.md} color={colors.text.secondary} />
           </TouchableOpacity>
         )}
 
@@ -137,10 +145,9 @@ function AccountListItem({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             disabled={!canDelete}
           >
-            <Ionicons
-              name="trash-outline"
-              size={20}
-              color={canDelete ? colors.status.error : colors.text.disabled}
+            <TrashIcon
+              size={iconSize.md}
+              color={canDelete ? semantic.status.danger : semantic.text.disabled}
             />
           </TouchableOpacity>
         )}
@@ -148,7 +155,7 @@ function AccountListItem({
         {/* Active Indicator */}
         {isActive && (
           <View style={styles.checkmarkContainer}>
-            <Ionicons name="checkmark-circle" size={24} color={colors.status.success} />
+            <CheckCircleIcon size={iconSize.lg} color={semantic.status.success} />
           </View>
         )}
       </View>
@@ -299,7 +306,7 @@ export function WalletSwitcherSheet({
         accessibilityRole="button"
       >
         <View style={styles.addAccountIcon}>
-          <Ionicons name="add" size={24} color={colors.text.primary} />
+          <PlusIcon size={iconSize.lg} color={colors.text.primary} />
         </View>
         <Text style={styles.addAccountText}>{t('settings.wallets.add_new_wallet')}</Text>
       </TouchableOpacity>
@@ -313,7 +320,7 @@ export function WalletSwitcherSheet({
   const ListEmpty = useMemo(
     () => (
       <View style={styles.emptyState}>
-        <Ionicons name="wallet-outline" size={48} color={colors.text.secondary} />
+        <WalletIcon size={48} color={colors.text.secondary} />
         <Text style={styles.emptyStateText}>{t('settings.wallets.your_wallets')}</Text>
       </View>
     ),
@@ -395,8 +402,8 @@ const styles = StyleSheet.create({
   avatarText: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.md,
-    lineHeight: fontSize.md * lineHeight.none,
+    fontSize: fontSize.bodyLg,
+    lineHeight: fontSize.bodyLg * lineHeight.none,
   },
   accountInfo: {
     flex: 1,
@@ -406,8 +413,8 @@ const styles = StyleSheet.create({
   accountName: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
-    lineHeight: fontSize.md * lineHeight.normal,
+    fontSize: fontSize.bodyLg,
+    lineHeight: fontSize.bodyLg * lineHeight.normal,
   },
   accountAddress: {
     color: colors.text.secondary,
@@ -462,8 +469,8 @@ const styles = StyleSheet.create({
   addAccountText: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
-    lineHeight: fontSize.md * lineHeight.normal,
+    fontSize: fontSize.bodyLg,
+    lineHeight: fontSize.bodyLg * lineHeight.normal,
     marginLeft: spacing.md,
   },
   emptyState: {
@@ -474,8 +481,8 @@ const styles = StyleSheet.create({
   emptyStateText: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
-    lineHeight: fontSize.md * lineHeight.normal,
+    fontSize: fontSize.bodyLg,
+    lineHeight: fontSize.bodyLg * lineHeight.normal,
     marginTop: spacing.md,
     textAlign: 'center',
   },

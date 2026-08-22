@@ -30,8 +30,6 @@ export interface TransactionItemProps {
   transaction: Transaction;
   /** Callback when the transaction is pressed */
   onPress?: (transaction: Transaction) => void;
-  /** Click handler to open detail view */
-  onDetailClick?: (transaction: Transaction) => void;
   /** Whether balance values should be hidden */
   hiddenBalance?: boolean;
   /** Optional custom styles */
@@ -58,10 +56,18 @@ export interface TransactionHistoryPageProps {
   hasMore?: boolean;
   /** Whether balance values should be hidden */
   hiddenBalance?: boolean;
-  /** Callback when a transaction is pressed */
+  /** Callback when a transaction is pressed, before the detail step opens */
   onTransactionPress?: (transaction: Transaction) => void;
-  /** Callback when a transaction detail is requested */
-  onTransactionDetailClick?: (transaction: Transaction) => void;
+  /** Callback when the detail step's explorer action is used */
+  onViewExplorer?: (transaction: Transaction) => void;
+  /** Callback when the detail step's hash is copied */
+  onCopyHash?: (hash: string) => void;
+  /** Callback when the detail step's share action is used */
+  onShare?: (transaction: Transaction) => void;
+  /** Whether the detail step shows chain internals */
+  developerMode?: boolean;
+  /** Active network ID, used by the detail step to pick a block explorer */
+  networkId?: string | null;
   /** Error message to display */
   error?: string | null;
   /** Callback to retry loading after an error */
@@ -92,8 +98,14 @@ export interface ConversionRateDisplayProps {
   fromSymbol: string;
   /** Output token symbol */
   toSymbol: string;
-  /** The conversion rate (how many toTokens per 1 fromToken) */
-  rate: string;
+  /**
+   * The conversion rate (how many toTokens per 1 fromToken).
+   *
+   * A number wherever the caller computed one. The string form is only for
+   * the backend's raw numeric strings — never an already-formatted figure,
+   * whose separator would parse back wrong under a non-English language.
+   */
+  rate: number | string;
   /** Optional size variant */
   size?: 'small' | 'medium';
   /** Additional CSS class */
@@ -132,14 +144,4 @@ export interface ExplorerLinkButtonProps {
   onPress?: (url: string, explorerName: string) => void;
   /** Additional CSS class */
   className?: string;
-}
-
-/**
- * Props for SwapRouteVisualization component
- */
-export interface SwapRouteVisualizationProps {
-  /** Transaction data */
-  transaction: Transaction;
-  /** Whether the visualization is expanded */
-  expanded: boolean;
 }

@@ -12,26 +12,30 @@ import Switch from '@mui/material/Switch';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 
-import SecurityIcon from '@mui/icons-material/Security';
-import BackupIcon from '@mui/icons-material/Key';
-import LanguageIcon from '@mui/icons-material/Language';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import ExploreIcon from '@mui/icons-material/Explore';
-import ContactsIcon from '@mui/icons-material/Contacts';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import CodeIcon from '@mui/icons-material/Code';
-import InsightsIcon from '@mui/icons-material/Insights';
-import DeleteIcon from '@mui/icons-material/Delete';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import InfoIcon from '@mui/icons-material/Info';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import VpnKeyIcon from '@mui/icons-material/VpnKey';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import CloseIcon from '@mui/icons-material/Close';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import {
+  AddressBookIcon,
+  CaretRightIcon,
+  ChartLineUpIcon,
+  CodeIcon,
+  CompassIcon,
+  CurrencyDollarIcon,
+  GlobeIcon,
+  InfoIcon,
+  KeyIcon,
+  PlugsConnectedIcon,
+  QuestionIcon,
+  ShieldCheckIcon,
+  TrashIcon,
+  TrashSimpleIcon,
+  UserCircleIcon,
+  VaultIcon,
+  XIcon,
+  iconSize,
+} from '../../icons';
 
 import {
   colors,
+  semantic,
   spacing,
   useSettingsPanelStack,
   getSettingsItemTestId,
@@ -39,6 +43,7 @@ import {
   fontSize,
   fontWeight,
   letterSpacing,
+  borderWidth,
   shadowsCSS,
   opacity,
   componentSizes,
@@ -72,22 +77,22 @@ const PUSH_DURATION = durationMs.medium;
 const POP_DURATION = durationMs.normal;
 
 const ICON_MAP: Record<string, React.ReactNode> = {
-  avatar: <AccountCircleIcon />,
-  security: <SecurityIcon />,
-  backup: <BackupIcon />,
-  privateKey: <VpnKeyIcon />,
-  language: <LanguageIcon />,
-  currency: <AttachMoneyIcon />,
-  explorer: <ExploreIcon />,
-  addressBook: <ContactsIcon />,
-  trustedApps: <VerifiedUserIcon />,
+  avatar: <UserCircleIcon />,
+  security: <ShieldCheckIcon />,
+  backup: <VaultIcon />,
+  privateKey: <KeyIcon />,
+  language: <GlobeIcon />,
+  currency: <CurrencyDollarIcon />,
+  explorer: <CompassIcon />,
+  addressBook: <AddressBookIcon />,
+  trustedApps: <PlugsConnectedIcon />,
   developerNetworks: <CodeIcon />,
-  analytics: <InsightsIcon />,
-  removeWallet: <DeleteIcon />,
-  removeAll: <DeleteForeverIcon />,
+  analytics: <ChartLineUpIcon />,
+  removeWallet: <TrashIcon />,
+  removeAll: <TrashSimpleIcon />,
   about: <InfoIcon />,
-  support: <HelpOutlineIcon />,
-  accounts: <AccountCircleIcon />,
+  support: <QuestionIcon />,
+  accounts: <UserCircleIcon />,
 };
 
 const SETTINGS_SECTIONS: SettingsSection[] = [
@@ -159,12 +164,12 @@ const Header = styled(Box)({
   alignItems: 'center',
   justifyContent: 'space-between',
   padding: `${spacing.lg}px ${spacing.lg}px`,
-  borderBottom: `1px solid ${colors.border.default}`,
+  borderBottom: `${borderWidth.thin}px solid ${colors.border.default}`,
   flexShrink: 0,
 });
 
 const HeaderTitle = styled(Typography)({
-  fontSize: fontSize.lg,
+  fontSize: fontSize.heading,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
 });
@@ -183,11 +188,11 @@ const MenuContent = styled(Box)({
 });
 
 const SectionTitle = styled(Typography)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.label,
   fontWeight: fontWeight.semibold,
   textTransform: 'uppercase',
-  letterSpacing: letterSpacing.wider,
-  color: $isDanger ? colors.status.error : colors.text.secondary,
+  letterSpacing: letterSpacing.label,
+  color: $isDanger ? semantic.status.danger : colors.text.secondary,
   padding: `${spacing.md}px ${spacing.lg}px ${spacing.sm}px`,
   marginTop: spacing.sm,
 }));
@@ -199,23 +204,35 @@ const StyledListItem = styled(ListItem)({
 const StyledListItemButton = styled(ListItemButton)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
   padding: `${spacing.md}px ${spacing.lg}px`,
   '&:hover': {
-    backgroundColor: $isDanger ? colors.status.errorBackground : colors.background.card,
+    backgroundColor: $isDanger ? semantic.status.dangerTint : colors.background.card,
   },
 }));
 
+// A toggle row is not a button. The row used to be a `ListItemButton`
+// (role button) wrapping a `Switch` (role checkbox), so a screen reader
+// announced the same setting twice; the switch is the only control here and
+// the row is the layout around it — the same collapse the mobile surface made
+// (DESIGN.md §"The settings surface joined the system").
+const ToggleRow = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  width: '100%',
+  padding: `${spacing.md}px ${spacing.lg}px`,
+});
+
 const StyledListItemIcon = styled(ListItemIcon)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
   minWidth: componentSizes.backButtonSize,
-  color: $isDanger ? colors.status.error : colors.text.secondary,
+  color: $isDanger ? semantic.status.danger : colors.text.secondary,
 }));
 
 const StyledListItemText = styled(ListItemText)<{ $isDanger?: boolean }>(({ $isDanger }) => ({
   '& .MuiListItemText-primary': {
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     fontWeight: fontWeight.medium,
-    color: $isDanger ? colors.status.error : colors.text.primary,
+    color: $isDanger ? semantic.status.danger : colors.text.primary,
   },
   '& .MuiListItemText-secondary': {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     color: colors.text.secondary,
     marginTop: spacing.xxs,
   },
@@ -241,9 +258,10 @@ const StyledDivider = styled(Divider)({
   margin: `${spacing.sm}px ${spacing.lg}px`,
 });
 
-const ChevronIcon = styled(ChevronRightIcon)({
+const ChevronIcon = styled(CaretRightIcon)({
   color: colors.text.secondary,
-  fontSize: fontSize.xl,
+  width: iconSize.md,
+  height: iconSize.md,
 });
 
 // ============================================================================
@@ -386,25 +404,29 @@ export function SettingsPanelStack({
       if (item.type === 'toggle') {
         const toggle = toggleConfigFor(item.id);
         const checked = toggle?.checked ?? false;
-        const fireToggle = () => toggle?.onToggle?.(!checked);
+        const descriptionId = description ? `${item.id}-description` : undefined;
         return (
           <StyledListItem key={item.id}>
-            <StyledListItemButton data-testid={getSettingsItemTestId(item.id)} onClick={fireToggle}>
+            <ToggleRow data-testid={getSettingsItemTestId(item.id)}>
               <StyledListItemIcon>{icon}</StyledListItemIcon>
-              <StyledListItemText primary={label} secondary={description} />
+              <StyledListItemText
+                primary={label}
+                secondary={description}
+                secondaryTypographyProps={descriptionId ? { id: descriptionId } : undefined}
+              />
               <StyledSwitch
                 edge="end"
                 checked={checked}
-                onChange={fireToggle}
-                onClick={(e) => e.stopPropagation()}
+                onChange={() => toggle?.onToggle?.(!checked)}
                 slotProps={{
                   input: {
                     'data-testid': toggle?.testId ?? getSettingsItemTestId(item.id),
                     'aria-label': label,
+                    'aria-describedby': descriptionId,
                   } as React.InputHTMLAttributes<HTMLInputElement>,
                 }}
               />
-            </StyledListItemButton>
+            </ToggleRow>
           </StyledListItem>
         );
       }
@@ -471,7 +493,7 @@ export function SettingsPanelStack({
             aria-label={t('actions.close', 'Close')}
             data-testid="settings-close-button"
           >
-            <CloseIcon />
+            <XIcon />
           </CloseButton>
         </Header>
         <MenuContent>{SETTINGS_SECTIONS.map(renderSection)}</MenuContent>

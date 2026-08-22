@@ -72,7 +72,12 @@ export function writeReport(name, body) {
   fs.writeFileSync(path.join(reportsRoot, name), body);
 }
 
-export async function launch() {
+/**
+ * @param {Parameters<typeof chromium.launchPersistentContext>[1]} [overrides]
+ *   Extra context options. Used by capture scripts that need a higher
+ *   `deviceScaleFactor` to judge fine detail; leave empty for normal runs.
+ */
+export async function launch(overrides = {}) {
   if (!fs.existsSync(extDist)) throw new Error('Missing extension dist at ' + extDist);
   fs.mkdirSync(profileDir, { recursive: true });
 
@@ -80,6 +85,7 @@ export async function launch() {
     channel: 'chromium',
     headless: false,
     viewport: { width: 1280, height: 900 },
+    ...overrides,
     args: [
       `--disable-extensions-except=${extDist}`,
       `--load-extension=${extDist}`,
@@ -142,7 +148,7 @@ function loadSecrets() {
   return map;
 }
 export const SECRETS = loadSecrets();
-const PASSWORD = SECRETS.SALMON_TEST_PASSWORD;
+export const PASSWORD = SECRETS.SALMON_TEST_PASSWORD;
 const SEED_A = SECRETS.SALMON_TEST_SEED_A;
 export const SEED_B = SECRETS.SALMON_TEST_SEED_B;
 if (!PASSWORD || !SEED_A || !SEED_B) {
@@ -173,7 +179,7 @@ export async function unlockOrRecover(page) {
   if (await recoverBtn.count()) {
     await recoverBtn.click();
     await sleep(1500);
-    await page.getByTestId('recover-seed-input').fill(SEED_A);
+    await page.getByTestId('recover-word-input-1').fill(SEED_A);
     await sleep(500);
     await page.getByTestId('recover-next-button').click();
     await sleep(1500);

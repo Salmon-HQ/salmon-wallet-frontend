@@ -1,9 +1,12 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react-native';
 import { Alert, AppState } from 'react-native';
 
 const mockAlert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 const mockAddEventListener = jest.fn();
+
+// Mutable so a test can put the screen into its throttled state.
+const mockThrottle = { failedAttempts: 0, remainingMs: 0, remainingSeconds: 0, refresh: jest.fn() };
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -15,6 +18,25 @@ jest.mock('@salmon/assets', () => ({
   Logo: 1,
 }));
 
+// The action row is the shared PrimaryButton / SecondaryButton now, which
+// pulls Reanimated for its press motion. Jest has no native Worklets, so stand
+// the module up with the handful of primitives those buttons touch.
+jest.mock('react-native-reanimated', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: {
+      View,
+      createAnimatedComponent: (Component: unknown) => Component,
+    },
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: (fn: () => unknown) => fn(),
+    useReducedMotion: () => false,
+    withTiming: (toValue: unknown) => toValue,
+    Easing: { bezier: () => () => 0 },
+  };
+});
+
 jest.mock('expo-linear-gradient', () => ({
   LinearGradient: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
@@ -23,44 +45,58 @@ jest.mock('expo-status-bar', () => ({
   StatusBar: () => null,
 }));
 
+// OnboardingLayout's float region reads the focus signal; the lock renders
+// outside any navigator and never passes `float`.
+jest.mock('expo-router', () => ({ useFocusEffect: () => {} }));
+
 jest.mock('@salmon/shared', () => ({
-  borderRadius: { badge: 12, xl: 20 },
-  borderWidth: { sheet: 1, thin: 1 },
-  colors: {
-    text: { primary: '#fff', secondary: '#999' },
-    status: { error: '#f00' },
-    accent: { primary: '#0f0', border: '#0f0' },
-    input: { border: '#444', background: '#111' },
-    button: { disabledOpacity: 0.5 },
-  },
-  componentSizes: { lockScreenLogoSize: 120, iconSize5XL: 56, iconSize4XL: 48 },
-  fontFamilyNative: { bold: 'System', medium: 'System', regular: 'System' },
-  fontSize: { sm: 14, md: 18, lg: 20, '2xl': 28 },
-  gradients: { primary: { colors: ['#0f0', '#0c0'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } },
-  letterSpacing: { balance: 1 },
-  lineHeight: { normal: 1.4 },
-  shadows: { button: {} },
+  // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
+  // The lock screen and the shared buttons under it read a wide slice of the
+  // theme, and listing that slice by hand meant every new token read broke
+  // this file with "cannot read properties of undefined".
+  ...jest.requireActual('../../../test-utils/themeTokens'),
+  // The real wait-exit hook: the passage into the unlock wait composes it,
+  // and a stub here would let this file pass while the hold contract drifted.
+  ...jest.requireActual('../../../../../packages/shared/src/hooks/useWaitExit'),
+  resolveMotionMs: (ms: number) => ms,
+  useUnlockThrottle: () => mockThrottle,
   ms: (value: number) => value,
   s: (value: number) => value,
-  spacing: {
-    sm: 8,
-    md: 12,
-    lg: 16,
-    lockScreenPadding: 20,
-    lockScreenSectionGap: 20,
-    lockScreenGap: 16,
-    '4xl': 40,
-  },
   vs: (value: number) => value,
 }));
 
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+// Captured so the tests can drive the wait's contract: `visible` says whether
+// the wave is up, and invoking `onExited` stands in for the wave leaving the
+// screen (the real component's watchdog guarantees it fires).
+const mockLoadingScreenProps: { visible?: boolean; onExited?: () => void } = {};
 jest.mock('../LoadingScreen', () => ({
-  LoadingScreen: () => null,
+  LoadingScreen: (props: { visible: boolean; onExited?: () => void }) => {
+    mockLoadingScreenProps.visible = props.visible;
+    mockLoadingScreenProps.onExited = props.onExited;
+    return null;
+  },
 }));
+
+// The water column's two layers lean on react-native-svg and the full
+// Reanimated runtime. What this file must prove is that the lock *mounts*
+// them — the drawing has its own tests.
+jest.mock('../DepthBackground', () => {
+  const { View } = jest.requireActual('react-native');
+  return { DepthBackground: () => <View testID="depth-background" /> };
+});
+jest.mock('../ScalesBackground', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    ScalesBackground: ({ variant }: { variant?: string }) => (
+      <View testID="scales-background" accessibilityLabel={variant} />
+    ),
+  };
+});
 
 import { LockContent } from './LockContent';
 
@@ -73,8 +109,13 @@ describe('LockContent', () => {
       value: 'active',
       writable: true,
     });
+    mockThrottle.failedAttempts = 0;
+    mockThrottle.remainingMs = 0;
+    mockThrottle.remainingSeconds = 0;
     mockAddEventListener.mockReturnValue({ remove: jest.fn() });
     AppState.addEventListener = mockAddEventListener as any;
+    mockLoadingScreenProps.visible = undefined;
+    mockLoadingScreenProps.onExited = undefined;
   });
 
   afterEach(() => {
@@ -171,6 +212,257 @@ describe('LockContent', () => {
     await secondAlertActions?.[1]?.onPress?.();
 
     expect(onRemoveAllAccounts).toHaveBeenCalledTimes(1);
+  });
+
+  it('says why the password field stopped accepting attempts', async () => {
+    mockThrottle.failedAttempts = 4;
+    mockThrottle.remainingMs = 5000;
+    mockThrottle.remainingSeconds = 5;
+
+    render(
+      <LockContent
+        locked
+        onUnlock={jest.fn().mockResolvedValue(false)}
+        onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
+        biometric={{
+          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
+          authenticateWithBiometric: jest.fn(),
+          storeKeyForBiometric: jest.fn(),
+          enableBiometric: false,
+          refreshState: jest.fn().mockResolvedValue(undefined),
+        }}
+      />
+    );
+
+    await act(async () => {});
+
+    // Label, not just a dead control.
+    await waitFor(() => {
+      expect(screen.getByTestId('lock-throttle-notice')).toBeTruthy();
+    });
+    expect(screen.getByTestId('lock-password-input').props.editable).toBe(false);
+
+    // The notice lands in the assist band — the slot spec 013 FR-005 reserves
+    // for exactly this — and the button stays put, disabled, so nothing moves.
+    const assist = within(screen.getByTestId('onboarding-slot-assist'));
+    expect(assist.getByText('lock.throttled_body')).toBeTruthy();
+    const unlockButton = screen.getByTestId('lock-unlock-button');
+    expect(unlockButton.props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('mounts the water column behind the lock, and keeps its feedback in the bands', async () => {
+    render(
+      <LockContent
+        locked
+        onUnlock={jest.fn().mockResolvedValue(false)}
+        onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
+        biometric={{
+          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
+          authenticateWithBiometric: jest.fn(),
+          storeKeyForBiometric: jest.fn(),
+          enableBiometric: false,
+          refreshState: jest.fn().mockResolvedValue(undefined),
+        }}
+      />
+    );
+
+    await act(async () => {});
+    await waitFor(() => {
+      expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    });
+
+    // The lock carries the water (DESIGN.md): both layers, mounted outside
+    // the layout — the ground never travels when the form sinks into the wait.
+    expect(screen.getByTestId('depth-background')).toBeTruthy();
+    expect(screen.getByTestId('scales-background')).toBeTruthy();
+
+    // The forgot affordance sits in `body`, against the field it escapes from.
+    const body = within(screen.getByTestId('onboarding-slot-body'));
+    expect(body.getByTestId('lock-forgot-password-button')).toBeTruthy();
+
+    // The wrong-password error lands in `assist`, not against the input. The
+    // form gives way to the wait while the attempt runs (its subtree
+    // unmounts), so the attempt has to finish — one 100ms yield — before the
+    // bands are back to be queried.
+    fireEvent.changeText(screen.getByTestId('lock-password-input'), 'nope');
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('lock-unlock-button'));
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
+    const assist = within(screen.getByTestId('onboarding-slot-assist'));
+    await waitFor(() => {
+      expect(assist.getByText('lock.wrong_password')).toBeTruthy();
+    });
+  });
+
+  it('shows the unlock wait and releases the gate only after the wave exits', async () => {
+    let resolveUnlock: (value: boolean) => void = () => {};
+    const onUnlock = jest.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveUnlock = resolve;
+        })
+    );
+    const onUnlockExited = jest.fn();
+
+    render(
+      <LockContent
+        locked
+        onUnlock={onUnlock}
+        onUnlockExited={onUnlockExited}
+        onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
+        biometric={{
+          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
+          authenticateWithBiometric: jest.fn(),
+          storeKeyForBiometric: jest.fn(),
+          enableBiometric: false,
+          refreshState: jest.fn().mockResolvedValue(undefined),
+        }}
+      />
+    );
+
+    await act(async () => {});
+    await waitFor(() => {
+      expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    });
+
+    fireEvent.changeText(screen.getByTestId('lock-password-input'), 'correct-horse');
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('lock-unlock-button'));
+    });
+
+    // The wait is up before the work: the screen yields one beat so the wave
+    // can render before the derivation blocks the JS thread.
+    expect(mockLoadingScreenProps.visible).toBe(true);
+    expect(onUnlock).not.toHaveBeenCalled();
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
+    expect(onUnlock).toHaveBeenCalledWith('correct-horse');
+
+    await act(async () => {
+      resolveUnlock(true);
+    });
+
+    // Success starts the wave's exit but parks the gate release...
+    expect(mockLoadingScreenProps.visible).toBe(false);
+    expect(onUnlockExited).not.toHaveBeenCalled();
+
+    // ...and what the departing wave uncovers is the water column alone. The
+    // form sank to make room for the wait; it does not come back up to ride
+    // the gate.
+    expect(screen.queryByTestId('lock-screen')).toBeNull();
+    expect(screen.queryByTestId('lock-password-input')).toBeNull();
+    expect(screen.queryByTestId('lock-unlock-button')).toBeNull();
+    expect(screen.getByTestId('depth-background')).toBeTruthy();
+    expect(screen.getByTestId('scales-background')).toBeTruthy();
+
+    // ...which fires exactly once when the wave reports it has left.
+    await act(async () => {
+      mockLoadingScreenProps.onExited?.();
+    });
+    expect(onUnlockExited).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      mockLoadingScreenProps.onExited?.();
+    });
+    expect(onUnlockExited).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns a failed unlock to the input instead of stranding it on the wave', async () => {
+    const onUnlockExited = jest.fn();
+
+    render(
+      <LockContent
+        locked
+        onUnlock={jest.fn().mockResolvedValue(false)}
+        onUnlockExited={onUnlockExited}
+        onRemoveAllAccounts={jest.fn().mockResolvedValue(undefined)}
+        biometric={{
+          state: { isAvailable: false, hasStoredKey: false, biometricType: null },
+          authenticateWithBiometric: jest.fn(),
+          storeKeyForBiometric: jest.fn(),
+          enableBiometric: false,
+          refreshState: jest.fn().mockResolvedValue(undefined),
+        }}
+      />
+    );
+
+    await act(async () => {});
+    await waitFor(() => {
+      expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    });
+
+    fireEvent.changeText(screen.getByTestId('lock-password-input'), 'wrong');
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('lock-unlock-button'));
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
+
+    // The wave is dismissed, the error lands in the assist band, and the
+    // parked release never fires — the gate stays locked on the input.
+    expect(mockLoadingScreenProps.visible).toBe(false);
+    const assist = within(screen.getByTestId('onboarding-slot-assist'));
+    await waitFor(() => {
+      expect(assist.getByText('lock.wrong_password')).toBeTruthy();
+    });
+    // Nothing submerges on a failure: the form is there when the wave leaves,
+    // which is the whole point of returning to it.
+    expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    expect(screen.getByTestId('lock-unlock-button')).toBeTruthy();
+    await act(async () => {
+      mockLoadingScreenProps.onExited?.();
+    });
+    expect(onUnlockExited).not.toHaveBeenCalled();
+    expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+  });
+
+  it('brings the form back on the next lock', async () => {
+    const props = {
+      onUnlock: jest.fn().mockResolvedValue(true),
+      onUnlockExited: jest.fn(),
+      onRemoveAllAccounts: jest.fn().mockResolvedValue(undefined),
+      biometric: {
+        state: { isAvailable: false, hasStoredKey: false, biometricType: null },
+        authenticateWithBiometric: jest.fn(),
+        storeKeyForBiometric: jest.fn(),
+        enableBiometric: false,
+        refreshState: jest.fn().mockResolvedValue(undefined),
+      },
+    } as const;
+
+    const { rerender } = render(<LockContent locked {...props} />);
+
+    await act(async () => {});
+    await waitFor(() => {
+      expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    });
+
+    fireEvent.changeText(screen.getByTestId('lock-password-input'), 'correct-horse');
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('lock-unlock-button'));
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
+    expect(screen.queryByTestId('lock-password-input')).toBeNull();
+
+    // The gate opens, then the wallet locks again — a fresh lock session gets
+    // the whole form back, empty.
+    rerender(<LockContent locked={false} {...props} />);
+    await act(async () => {});
+    expect(screen.queryByTestId('lock-password-input')).toBeNull();
+
+    rerender(<LockContent locked {...props} />);
+    await act(async () => {});
+    await waitFor(() => {
+      expect(screen.getByTestId('lock-password-input')).toBeTruthy();
+    });
+    expect(screen.getByTestId('lock-password-input').props.value).toBe('');
+    expect(screen.getByTestId('lock-unlock-button')).toBeTruthy();
   });
 
   // Regression guard for the e2e test-label contract (Maestro `id` selectors).

@@ -25,6 +25,7 @@ import {
   fontFamilyNative,
   opacity,
   componentSizes,
+  semantic,
 } from '@salmon/shared';
 import { TokenLogo } from '../TokenLogo';
 import { BlurContainer } from '../BlurContainer';
@@ -83,7 +84,7 @@ export const SwapAmountInput: React.FC<SwapAmountInputProps> = ({
 
       {/* Input Row */}
       <BlurContainer
-        borderColor={value ? colors.accent.primary : undefined}
+        borderColor={value ? semantic.border.raised : undefined}
         style={styles.inputContainer}
       >
         {isLoading ? (
@@ -184,10 +185,14 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
+    // The spinner stands where the resolved value will sit: left-aligned,
+    // like the input text. Centered, it floats in the middle of the field
+    // and the value appears to jump when it lands.
+    alignItems: 'flex-start',
   },
   input: {
     flex: 1,
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.bold,
     color: colors.text.primary,
     paddingVertical: 0,
@@ -258,7 +263,6 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.bold,
     color: colors.text.primary,
-    textTransform: 'uppercase',
   },
 });
 

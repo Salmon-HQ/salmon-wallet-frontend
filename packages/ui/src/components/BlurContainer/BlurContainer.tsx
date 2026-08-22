@@ -5,14 +5,19 @@
  * Renders a radial gradient border (Figma "Glassy_BORDER") by default
  * via an inline SVG overlay with <radialGradient> stroke.
  * When a custom borderColor is provided, the gradient uses that color.
+ *
+ * The blur is conditional on the fill being translucent. The default fill is
+ * `colors.background.tokenItem`, which is opaque — a list row is content, and
+ * DESIGN.md gives translucency only to floating chrome — so the common case
+ * is now an opaque surface with a glassy edge and no backdrop filter at all.
+ * Pass a translucent `backgroundColor` and the blur comes back.
  */
 import { useEffect, useId, useRef, useState } from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
-import { colors } from '@salmon/shared';
+import { colors, isOpaqueColor } from '@salmon/shared';
+import { focusRingNone, focusRingOnWrapper } from '../../theme';
 import type { BlurContainerProps } from './types';
-
-const WEB_DEFAULT_BG = 'rgba(56, 63, 82, 0.10)';
 
 /** Radial gradient stops for glassy border effect (Figma "Glassy_BORDER") */
 const GLASSY_BORDER_STOPS = [
@@ -91,11 +96,30 @@ const BlurBox = styled(Box)<{
   $borderWidth: number;
   $useGradientBorder: boolean;
 }>(({ $blurIntensity, $backgroundColor, $borderColor, $borderWidth, $useGradientBorder }) => ({
-  backdropFilter: `blur(${$blurIntensity}px)`,
-  WebkitBackdropFilter: `blur(${$blurIntensity}px)`,
+  // A backdrop blur behind an opaque fill blurs nothing and still costs a
+  // compositor layer, and DESIGN.md's degradation ladder bans `backdrop-filter`
+  // on a list row in the extension outright. Now that the default fill is
+  // opaque, most of these containers are rows and skip it.
+  ...(isOpaqueColor($backgroundColor)
+    ? {}
+    : {
+        backdropFilter: `blur(${$blurIntensity}px)`,
+        WebkitBackdropFilter: `blur(${$blurIntensity}px)`,
+      }),
   backgroundColor: $backgroundColor,
   overflow: 'hidden',
   position: 'relative',
+  // When a text field inside this container takes focus, *this* is the
+  // field's visible boundary — the `InputBase` in Send, Swap and the token
+  // search is a bare flex child with no border, fill or radius of its own.
+  // Ring the container so the ring follows the rounded blurred surface the
+  // user actually sees, and stand the theme's input ring down inside it so
+  // the field is never outlined twice. The ring is inset, so the
+  // `overflow: hidden` above cannot clip it.
+  '&:has(.MuiInputBase-root:focus-within)': {
+    ...focusRingOnWrapper,
+    '& .MuiInputBase-root.MuiInputBase-root': focusRingNone,
+  },
   ...(!$useGradientBorder && {
     borderColor: $borderColor,
     borderWidth: $borderWidth,
@@ -108,7 +132,7 @@ export function BlurContainer({
   style,
   blurIntensity = 2,
   blurTint: _blurTint = 'dark',
-  backgroundColor = WEB_DEFAULT_BG,
+  backgroundColor = colors.background.tokenItem,
   borderColor = colors.border.default,
   borderWidth = 1,
   useGradientBorder = true,

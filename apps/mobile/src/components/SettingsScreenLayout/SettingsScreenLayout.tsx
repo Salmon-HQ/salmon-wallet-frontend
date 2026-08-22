@@ -19,19 +19,23 @@ import {
   ScrollView,
   View,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { CaretLeftIcon } from '../../icons';
 
 import {
-  colors,
   spacing,
   contentPadding,
   fontSize,
   fontFamilyNative,
   componentSizes,
+  letterSpacing,
+  lineHeight,
+  semantic,
 } from '@salmon/shared';
 
 // ============================================================================
@@ -74,58 +78,70 @@ export function SettingsScreenLayout({
   const { t } = useTranslation();
   return (
     <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-        {showHeader && (
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={onBack}
-              style={styles.backButton}
-              accessibilityLabel={t('accessibility.go_back', 'Go back')}
-              accessibilityRole="button"
-            >
-              <Ionicons
-                name="chevron-back"
-                size={componentSizes.iconSizeMedium}
-                color={colors.text.primary}
-              />
-            </TouchableOpacity>
-            <Text style={styles.title} numberOfLines={2}>
-              {title}
+      {/*
+        Settings panels host the label, address, seed and password fields.
+        iOS floats the keyboard over the app, so the fields and their save
+        buttons need padding pushed in from below; Android already shrinks the
+        window via `windowSoftInputMode="adjustResize"`, so it opts out.
+      */}
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoider}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+          {showHeader && (
+            <View style={styles.header}>
+              <TouchableOpacity
+                onPress={onBack}
+                style={styles.backButton}
+                // backButtonSize is 40 — the slop takes the touch target
+                // past the 44pt minimum.
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityLabel={t('accessibility.go_back', 'Go back')}
+                accessibilityRole="button"
+              >
+                <CaretLeftIcon size={componentSizes.iconSizeMedium} color={semantic.text.primary} />
+              </TouchableOpacity>
+              <Text style={styles.title} numberOfLines={2}>
+                {title}
+              </Text>
+            </View>
+          )}
+
+          {subtitle && (
+            <Text style={[styles.subtitle, !showHeader && styles.subtitleStandalone]}>
+              {subtitle}
             </Text>
-          </View>
-        )}
+          )}
 
-        {subtitle && (
-          <Text style={[styles.subtitle, !showHeader && styles.subtitleStandalone]}>
-            {subtitle}
-          </Text>
-        )}
-
-        {scrollable ? (
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={[
-              styles.scrollContent,
-              !showHeader && styles.scrollContentHeaderless,
-              contentContainerStyle,
-            ]}
-            showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-          >
-            {children}
-          </ScrollView>
-        ) : (
-          <View
-            style={[
-              styles.staticContent,
-              styles.scrollContent,
-              !showHeader && styles.scrollContentHeaderless,
-              contentContainerStyle,
-            ]}
-          >
-            {children}
-          </View>
-        )}
-      </SafeAreaView>
+          {scrollable ? (
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={[
+                styles.scrollContent,
+                !showHeader && styles.scrollContentHeaderless,
+                contentContainerStyle,
+              ]}
+              showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+            >
+              {children}
+            </ScrollView>
+          ) : (
+            <View
+              style={[
+                styles.staticContent,
+                styles.scrollContent,
+                !showHeader && styles.scrollContentHeaderless,
+                contentContainerStyle,
+              ]}
+            >
+              {children}
+            </View>
+          )}
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -136,6 +152,9 @@ export function SettingsScreenLayout({
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  keyboardAvoider: {
     flex: 1,
   },
   safeArea: {
@@ -154,17 +173,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: spacing.sm,
   },
+  // The `title` role (600, 20, −0.12): a panel title is a card/panel-level
+  // heading on the type scale, not the 18/bold one-off it used to be.
   title: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.lg,
+    color: semantic.text.primary,
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.title,
+    letterSpacing: letterSpacing.snug,
     flex: 1,
   },
   subtitle: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
-    lineHeight: 20,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.snug,
     paddingHorizontal: contentPadding.screen,
     marginBottom: spacing.lg,
   },

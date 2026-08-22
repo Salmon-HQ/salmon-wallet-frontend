@@ -18,6 +18,26 @@ Refines the repo-root `AGENTS.md` (canonical rules) for this app.
 - Do not import DOM-only UI from `packages/ui` — it cannot run in React
   Native.
 
+## Screen-capture protection for key material
+
+Any component that renders or accepts secret material (mnemonic, private
+key, recovery phrase) must call `useSecretScreen(label)` from
+`apps/mobile/hooks/useSecretScreen.ts`. It blocks screenshots and screen
+recording, and keeps the screen out of the OS app-switcher thumbnail — the
+snapshot the OS takes before JS can react, which lock-on-background cannot
+prevent.
+
+The `SeedWordGrid` and `SeedWordInput` primitives already call it, so any
+screen built from them inherits protection with no extra step. Build seed UI
+from those primitives. Only a screen that renders key material with bespoke
+markup (as `BackupPanel`, `PrivateKeyPanel`, and `app/(auth)/recover.tsx`
+do) needs to call the hook itself.
+
+Protect the whole component, not just the revealed state — the secret is in
+memory and one tap away for the panel's entire lifetime. Do not extend this
+to balances, addresses, or receipts: users legitimately screenshot those for
+support, and blanket protection trains people to work around it.
+
 ## Testing
 
 - Add or update mobile tests when RN behavior or mobile-only flows change.
@@ -37,6 +57,25 @@ Agent guardrails:
 - Never regenerate, overwrite, or "fix" the Android keystore through
   `eas credentials` autonomously — losing a published keystore permanently
   removes the ability to update the Play Store listing. Ask the human first.
+
+## OTA updates cannot carry native modules
+
+`runtimeVersion.policy` is `appVersion`, so an OTA reaches every installed
+binary sharing that version string. A JS bundle that imports a native module
+the installed binary does not contain **hard-crashes the app at launch**, for
+every user on that version, with no way back in — the update ships, the app
+dies, and the user cannot receive the fix that follows.
+
+`expo-screen-capture` is the live example: `useSecretScreen` is reached from
+`_layout.tsx` through a barrel, so publishing it as an update to binaries
+built before it was added bricks them.
+
+Before publishing any OTA, check whether the diff adds or newly reaches a
+native module. If it does, it is a **binary release with a bumped version**,
+not an update. Adding a silent fallback to make such a module optional is
+usually the wrong answer where the module enforces a security property: a
+no-op ships the protection turned off, which is worse than a crash in
+testing.
 
 Pre-build checklist — run in order before `eas build --profile production`:
 

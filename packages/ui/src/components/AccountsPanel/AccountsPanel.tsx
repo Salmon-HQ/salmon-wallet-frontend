@@ -12,13 +12,11 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../icons';
 import { styled } from '../../utils/styled';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   borderWidth,
@@ -45,7 +43,9 @@ const AccountItem = styled(ListItemButton)<{ $isActive?: boolean }>(({ $isActive
   alignItems: 'center',
   gap: spacing.md,
   padding: `${spacing.md}px ${spacing.lg}px`,
-  borderRadius: borderRadius.md,
+  // The control radius (DESIGN.md §The Control Radius Rule): a list row is
+  // the shape every other control in the system is measured against.
+  borderRadius: borderRadius.r3,
   backgroundColor: $isActive ? colors.interactive.hoverSubtle : 'transparent',
   '&:hover': {
     backgroundColor: colors.background.tertiary,
@@ -155,6 +155,21 @@ export function AccountsPanel({
               key={account.id}
               $isActive={isActive}
               onClick={() => handleSelectAccount(account.id)}
+              // Which account is active is state, and state is never carried by
+              // the fill alone (DESIGN.md §Colors, The Three-Channel State
+              // Rule). The check glyph carries it for the eye; `aria-current`
+              // and the name carry it for a screen reader.
+              //
+              // `aria-current` rather than `aria-selected`: the latter is only
+              // legal on an option, tab, row or treeitem, and these rows cannot
+              // be options — each one nests its own edit and delete controls,
+              // and an option may not contain interactive children. What is
+              // being expressed is "the current item in a set", which is what
+              // `aria-current` is for.
+              aria-current={isActive}
+              aria-label={
+                isActive ? t('accessibility.active_account', { name: account.name }) : account.name
+              }
               data-testid={`account-item-${account.id}`}
             >
               {account.avatar ? (
@@ -165,7 +180,7 @@ export function AccountsPanel({
                     sx={{
                       color: colors.text.primary,
                       fontWeight: fontWeight.bold,
-                      fontSize: fontSize.base,
+                      fontSize: fontSize.body,
                     }}
                   >
                     {initials}
@@ -179,7 +194,7 @@ export function AccountsPanel({
                   sx={{
                     color: colors.text.primary,
                     fontWeight: fontWeight.semibold,
-                    fontSize: fontSize.base,
+                    fontSize: fontSize.body,
                   }}
                 >
                   {account.name}
@@ -189,7 +204,7 @@ export function AccountsPanel({
                     noWrap
                     sx={{
                       color: colors.text.secondary,
-                      fontSize: fontSize.sm,
+                      fontSize: fontSize.caption,
                     }}
                   >
                     {truncated}
@@ -204,11 +219,11 @@ export function AccountsPanel({
                     e.stopPropagation();
                     onEditAccount(account.id);
                   }}
-                  aria-label={t('actions.edit', 'Edit')}
+                  aria-label={t('accessibility.edit_account')}
                   data-testid={`account-edit-${account.id}`}
                   sx={{ color: colors.text.secondary }}
                 >
-                  <EditIcon fontSize="small" />
+                  <PencilSimpleIcon size={iconSize.md} />
                 </IconButton>
 
                 {canDelete && (
@@ -218,19 +233,15 @@ export function AccountsPanel({
                       e.stopPropagation();
                       handleDeleteClick(account);
                     }}
-                    aria-label={t('actions.remove', 'Remove')}
+                    aria-label={t('accessibility.delete_account')}
                     data-testid={`account-remove-${account.id}`}
-                    sx={{ color: colors.status.error }}
+                    sx={{ color: semantic.status.danger }}
                   >
-                    <DeleteIcon fontSize="small" />
+                    <TrashIcon size={iconSize.md} />
                   </IconButton>
                 )}
 
-                {isActive && (
-                  <CheckCircleIcon
-                    sx={{ color: colors.status.success, fontSize: fontSize['2xl'] }}
-                  />
-                )}
+                {isActive && <CheckCircleIcon color={semantic.status.success} size={iconSize.lg} />}
               </ActionButtons>
             </AccountItem>
           );
@@ -239,13 +250,13 @@ export function AccountsPanel({
 
       <AddAccountButton onClick={onAddAccount} data-testid="account-add-button">
         <AddAccountIcon>
-          <AddIcon sx={{ color: colors.text.primary }} />
+          <PlusIcon color={colors.text.primary} />
         </AddAccountIcon>
         <Typography
           sx={{
             color: colors.text.primary,
             fontWeight: fontWeight.semibold,
-            fontSize: fontSize.base,
+            fontSize: fontSize.body,
           }}
         >
           {t('settings.account_add.title')}

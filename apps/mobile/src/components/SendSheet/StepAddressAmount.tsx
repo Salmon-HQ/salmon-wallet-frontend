@@ -7,18 +7,13 @@ import {
   ActivityIndicator,
   StyleSheet,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { QrCodeIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
-  gradients,
-  shadows,
   fontFamilyNative,
-  fontScaleCap,
+  formatTokenAmount,
   ms,
   vs,
   s,
@@ -30,12 +25,15 @@ import {
   borderRadius,
   borderWidth,
   spacing,
-  opacity,
   componentSizes,
   sanitizeDecimalInput,
+  semantic,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 import { BlurContainer } from '../BlurContainer';
+import { ReservedSlot } from '../OnboardingLayout/ReservedSlot';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import { TokenLogo } from '../TokenLogo';
 import { QRScanner } from '../QRScanner';
 import type { QRScanResult } from '../QRScanner';
@@ -67,6 +65,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
   const { t } = useTranslation();
   const [{ currency }, { formatPrecise }] = useCurrencyContext();
   const { actionRowBottomPadding, compactContentBottomPadding } = useBottomSheetChrome();
+  const keyboardHeight = useKeyboardHeight();
   const [address, setAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [showScanner, setShowScanner] = useState(false);
@@ -113,11 +112,13 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
     return `${formatPrecise(numAmount * token.price)} ${currency.toUpperCase()}`;
   }, [amount, token.price, formatPrecise, currency]);
 
-  // Balance display
-  const balanceDisplay = useMemo(() => {
-    if (tokenBalance === 0) return `0 ${token.symbol}`;
-    return `${Number(tokenBalance.toFixed(4))} ${token.symbol}`;
-  }, [tokenBalance, token.symbol]);
+  // Balance display. Display only — the quick-fill percentages and the
+  // validity check keep reading `tokenBalance` as a number, so the balance
+  // that decides a transfer never round-trips through a formatted string.
+  const balanceDisplay = useMemo(
+    () => `${formatTokenAmount(tokenBalance)} ${token.symbol}`,
+    [tokenBalance, token.symbol]
+  );
 
   // Validate form (address must be validated AND amount must be valid)
   const isValid = useMemo(() => {
@@ -168,12 +169,45 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
     }
   }, [blockchain, t]);
 
+  // The action row and the keyboard.
+  //
+  // This step used to wrap itself in a `KeyboardAvoidingView` with a hardcoded
+  // `keyboardVerticalOffset` of 100, which is the amount by which the lift fell
+  // short of the keyboard: Cancel and Review ended up entirely behind it, so
+  // with the address field focused there was no way to commit and no way to
+  // back out. On Android there was no behavior at all, and the window does not
+  // resize under the edge-to-edge display the platform now forces, so the row
+  // never moved there either.
+  //
+  // The sheet's bottom edge is the screen's bottom edge, so the keyboard's own
+  // measured height is exactly the distance the row has to clear — the same
+  // idiom every other keyboarded surface in the app uses. It is one number for
+  // both platforms, it needs no measurement inside the modal, and it leaves the
+  // sheet's drag handle and its dismiss gesture untouched.
+  const actionRowKeyboardPadding =
+    keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : actionRowBottomPadding;
+
+  const selectedTokenCard = (
+    <BlurContainer style={styles.tokenCard}>
+      <View style={styles.tokenCardLeft}>
+        <TokenLogo
+          uri={token.logo || undefined}
+          symbol={token.symbol}
+          size={ms(36)}
+          style={{ marginRight: s(spacing.base) }}
+        />
+        <Text style={styles.tokenCardName} numberOfLines={1}>
+          {token.symbol}
+        </Text>
+      </View>
+      <Text style={styles.tokenCardBalance} numberOfLines={1}>
+        {balanceDisplay}
+      </Text>
+    </BlurContainer>
+  );
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={100}
-    >
+    <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -183,30 +217,24 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Selected Token Card */}
-        <TouchableOpacity
-          testID="send-selected-token"
-          onPress={onBack}
-          activeOpacity={0.7}
-          accessibilityLabel={t('accessibility.selected_token', { name: token.name })}
-        >
-          <BlurContainer style={styles.tokenCard}>
-            <View style={styles.tokenCardLeft}>
-              <TokenLogo
-                uri={token.logo || undefined}
-                symbol={token.symbol}
-                size={ms(36)}
-                style={{ marginRight: s(spacing.base) }}
-              />
-              <Text style={styles.tokenCardName} numberOfLines={1}>
-                {token.symbol}
-              </Text>
-            </View>
-            <Text style={styles.tokenCardBalance} numberOfLines={1}>
-              {balanceDisplay}
-            </Text>
-          </BlurContainer>
-        </TouchableOpacity>
+        {/* Selected Token Card. It is a control only while a token-selection
+            step exists to return to; otherwise it is a plain readout — no
+            button role, no press feedback, no accessible name announcing it
+            as actionable. Same rule as the header's back control: an
+            affordance that promises a step that does not exist is worse than
+            no affordance (DESIGN.md §Motion, the settings gate). */}
+        {onBack ? (
+          <TouchableOpacity
+            testID="send-selected-token"
+            onPress={onBack}
+            activeOpacity={0.7}
+            accessibilityLabel={t('accessibility.selected_token', { name: token.name })}
+          >
+            {selectedTokenCard}
+          </TouchableOpacity>
+        ) : (
+          <View testID="send-selected-token">{selectedTokenCard}</View>
+        )}
 
         {/* Recipient */}
         <View style={styles.fieldGroup}>
@@ -239,7 +267,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
               style={styles.scanButton}
               activeOpacity={0.7}
             >
-              <Ionicons name="qr-code-outline" size={ms(20)} color={colors.text.secondary} />
+              <QrCodeIcon size={ms(iconSize.md)} color={colors.text.secondary} />
             </TouchableOpacity>
             {/* Validation indicator */}
             {address.length > 0 && isValidating && (
@@ -259,18 +287,22 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
               <Text style={[styles.validationIndicator, styles.warningIcon]}>{'\u26A0'}</Text>
             )}
           </BlurContainer>
-          {/* Validation message */}
-          {addressMessage && (
+          {/* Validation message. Its line is reserved from the first frame —
+              nothing moves under the finger: a rejected address used to push
+              the whole Amount block down while the user was still typing into
+              the field above it. */}
+          <ReservedSlot visible={!!addressMessage}>
             <Text
+              testID="send-recipient-message"
               style={[
                 styles.validationMessage,
                 addressMessageType === 'error' && styles.validationMessageError,
                 addressMessageType === 'warning' && styles.validationMessageWarning,
               ]}
             >
-              {t(addressMessage)}
+              {addressMessage ? t(addressMessage) : ' '}
             </Text>
-          )}
+          </ReservedSlot>
         </View>
 
         {/* My Wallets */}
@@ -361,46 +393,22 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
       </ScrollView>
 
       {/* Bottom Buttons */}
-      <View style={[styles.bottomButtons, { paddingBottom: actionRowBottomPadding }]}>
-        <TouchableOpacity
-          testID="send-cancel-button"
-          style={styles.cancelButton}
-          onPress={onCancel}
-          activeOpacity={0.7}
-        >
-          <Text
-            style={styles.cancelButtonText}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            maxFontSizeMultiplier={fontScaleCap.chrome}
-          >
-            {t('actions.cancel', 'Cancel')}
-          </Text>
-        </TouchableOpacity>
+      <View
+        testID="send-action-row"
+        style={[styles.bottomButtons, { paddingBottom: actionRowKeyboardPadding }]}
+      >
+        <SecondaryButton testID="send-cancel-button" style={styles.rowButton} onPress={onCancel}>
+          {t('actions.cancel', 'Cancel')}
+        </SecondaryButton>
 
-        <TouchableOpacity
+        <PrimaryButton
           testID="send-review-button"
-          style={[styles.reviewButton, !isValid && styles.reviewButtonDisabled]}
+          style={styles.rowButton}
           onPress={handleReview}
-          activeOpacity={0.7}
           disabled={!isValid}
         >
-          <LinearGradient
-            colors={isValid ? [...gradients.primary.colors] : [...gradients.disabled.colors]}
-            style={styles.reviewButtonGradient}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.4 }}
-          >
-            <Text
-              style={styles.reviewButtonText}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              maxFontSizeMultiplier={fontScaleCap.chrome}
-            >
-              {t('token.send.reviewAndSend', 'Review & Send')}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
+          {t('token.send.reviewAndSend', 'Review & Send')}
+        </PrimaryButton>
       </View>
 
       <QRScanner
@@ -409,7 +417,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
         onScan={handleScan}
         onClose={() => setShowScanner(false)}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -443,12 +451,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tokenCardName: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.medium,
     color: colors.text.primary,
   },
   tokenCardBalance: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.medium,
     color: colors.text.primary,
   },
@@ -471,20 +479,24 @@ const styles = StyleSheet.create({
   },
   inputContainerError: {
     borderWidth: borderWidth.thin,
-    borderColor: colors.status.error,
+    borderColor: semantic.status.danger,
   },
   inputContainerWarning: {
     borderWidth: borderWidth.thin,
-    borderColor: colors.status.warning,
+    borderColor: semantic.status.warning,
   },
   inputContainerSuccess: {
     borderWidth: borderWidth.thin,
-    borderColor: colors.status.success,
+    borderColor: semantic.status.success,
   },
+  // An address is a position-critical string: every character carries a place,
+  // and a proportional face lets two of them look alike. Geist Mono at the
+  // system's address size, the same face the confirmation step already prints
+  // the destination in.
   textInput: {
     flex: 1,
-    fontSize: ms(fontSize.md),
-    fontFamily: fontFamilyNative.regular,
+    fontSize: ms(fontSize.mono),
+    fontFamily: fontFamilyNative.mono,
     color: colors.text.primary,
     paddingVertical: 0,
   },
@@ -496,16 +508,16 @@ const styles = StyleSheet.create({
     marginLeft: s(spacing.sm),
   },
   validIcon: {
-    fontSize: ms(fontSize.md),
-    color: colors.status.success,
+    fontSize: ms(fontSize.bodyLg),
+    color: semantic.status.success,
   },
   invalidIcon: {
-    fontSize: ms(fontSize.md),
-    color: colors.status.error,
+    fontSize: ms(fontSize.bodyLg),
+    color: semantic.status.danger,
   },
   warningIcon: {
-    fontSize: ms(fontSize.md),
-    color: colors.status.warning,
+    fontSize: ms(fontSize.bodyLg),
+    color: semantic.status.warning,
   },
   validationMessage: {
     fontSize: ms(fontSize.sm),
@@ -514,10 +526,10 @@ const styles = StyleSheet.create({
     marginTop: vs(spacing.xs),
   },
   validationMessageError: {
-    color: colors.status.error,
+    color: semantic.status.danger,
   },
   validationMessageWarning: {
-    color: colors.status.warning,
+    color: semantic.status.warning,
   },
   // Contact / Wallet sections
   contactSection: {
@@ -549,8 +561,8 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   contactAddress: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.regular,
+    fontSize: ms(fontSize.mono),
+    fontFamily: fontFamilyNative.mono,
     color: colors.text.secondary,
     marginTop: vs(spacing.xxs),
   },
@@ -576,7 +588,7 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     flex: 1,
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.regular,
     color: colors.text.primary,
     paddingVertical: 0,
@@ -592,10 +604,12 @@ const styles = StyleSheet.create({
     paddingVertical: vs(spacing.xs),
   },
   quickFillText: {
+    // A shortcut you can act on, so it takes salmon ink at 6.07:1. The amount
+    // it fills stays neutral. No transform: these are controls, and a control
+    // label is never uppercase — Swap's identical chip prints "Max".
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
-    textTransform: 'uppercase',
+    color: semantic.text.accent,
   },
   // USD
   usdConversion: {
@@ -612,45 +626,14 @@ const styles = StyleSheet.create({
     paddingTop: vs(spacing.md),
     gap: s(spacing.md),
   },
-  cancelButton: {
+  // Size only. Radius, fill, border, bezel, material and the disabled
+  // treatment belong to the button: this row used to paint a bordered cancel
+  // fill and a `gradients.primary` box at `borderRadius.lg`, plus its own
+  // opacity-dimmed disabled state on top of the button's own.
+  rowButton: {
     flex: 1,
     minHeight: vs(componentSizes.buttonHeightMedium),
-    borderRadius: ms(borderRadius.lg),
-    borderWidth: borderWidth.thin,
-    borderColor: colors.accent.border,
-    backgroundColor: colors.button.cancelBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.button,
-  },
-  cancelButtonText: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
-  },
-  reviewButton: {
-    flex: 1,
-    minHeight: vs(componentSizes.buttonHeightMedium),
-    borderRadius: ms(borderRadius.lg),
-    overflow: 'hidden',
-    borderWidth: borderWidth.thin,
-    borderColor: colors.accent.border,
-    ...shadows.button,
-  },
-  reviewButtonDisabled: {
-    opacity: opacity.disabled,
-    borderColor: colors.border.default,
-  },
-  reviewButtonGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: s(spacing.sm),
-  },
-  reviewButtonText: {
-    fontSize: ms(fontSize.md),
-    fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
+    height: vs(componentSizes.buttonHeightMedium),
   },
 });
 

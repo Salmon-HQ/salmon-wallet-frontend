@@ -17,9 +17,10 @@ import {
   fontWeight,
   fontSize,
   formatLargeNumber,
-  formatPercentageCompact,
+  formatPercentage,
   formatDateString,
   useCurrencyContext,
+  tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { TokenMarketDataProps } from './types';
@@ -31,7 +32,7 @@ const ContentContainer = styled(Box)({
 });
 
 const Title = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -58,6 +59,7 @@ const RowLabel = styled(Typography)({
 });
 
 const RowValue = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
@@ -130,7 +132,10 @@ export function TokenMarketData({
 }: TokenMarketDataProps) {
   const { t } = useTranslation();
   const [, { formatLarge }] = useCurrencyContext();
-  const displayTitle = title ?? t('token.marketData.marketCap', 'Info');
+  // The section holds rank, volume, highs and supply — market cap is one row
+  // in it, not its name. The fallback used to point at the `marketCap` key,
+  // which is how the Bitcoin screen ended up titled "Capitalización".
+  const displayTitle = title ?? t('token.marketData.title', 'Market data');
 
   if (loading) {
     return (
@@ -286,7 +291,7 @@ export function TokenMarketData({
           {data.athChangePercentage !== undefined && (
             <MarketDataRow
               label={t('token.marketData.fromATH', 'From ATH')}
-              value={formatPercentageCompact(data.athChangePercentage)}
+              value={formatPercentage(data.athChangePercentage)}
               valueColor={athChangeColor}
             />
           )}
@@ -311,7 +316,7 @@ export function TokenMarketData({
           {data.atlChangePercentage !== undefined && (
             <MarketDataRow
               label={t('token.marketData.fromATL', 'From ATL')}
-              value={formatPercentageCompact(data.atlChangePercentage)}
+              value={formatPercentage(data.atlChangePercentage)}
               valueColor={atlChangeColor}
             />
           )}

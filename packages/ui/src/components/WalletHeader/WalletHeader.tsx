@@ -5,12 +5,13 @@
  */
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { keyframes } from '@emotion/react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import MuiAvatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, iconSize } from '../../icons';
 import {
   colors,
   spacing,
@@ -24,10 +25,41 @@ import {
   opacity,
   componentSizes,
   durationMs,
+  motionMs,
+  semantic,
+  useCopyFeedback,
+  CHROME_SCALE,
+  SINK_FLOAT_STAGGER_MS,
+  SINK_FLOAT_TRAVEL,
 } from '@salmon/shared';
 import { CopyIcon, RefreshIcon, SettingsIcon } from '../Icon';
 import type { WalletHeaderProps } from './types';
 
+import { CopyTick } from '../CopyTick';
+import { SinkFloat } from '../SinkFloat';
+
+/**
+ * The verb at chrome scale (DESIGN.md, "Chrome speaks the verb at chrome
+ * scale"): the account line travels like the content below it, but shallower
+ * and quicker — in on `drift`, out on `ebb`, and a float delay of one sink
+ * plus a stagger-beat. Keyed on the address, so a chain switch and an account
+ * switch ride the same gesture; on first mount nothing sank, so the line
+ * simply floats.
+ *
+ * "Half" is spent on the **depth**, which is what carries the verb since it
+ * was re-weighted (DESIGN.md, §The verb reads as depth, not as a slide), and
+ * it is `CHROME_SCALE` — a shared, named number — rather than a division done
+ * here, because a depth derived at a call site is exactly how the exit's
+ * missing recession stayed hidden. The travel keeps its own half, since travel
+ * is still only the accent.
+ */
+const accountLineVerb = {
+  distance: SINK_FLOAT_TRAVEL / 2,
+  scale: CHROME_SCALE,
+  floatMs: motionMs.drift,
+  sinkMs: motionMs.ebb,
+  holdMs: motionMs.ebb + SINK_FLOAT_STAGGER_MS,
+} as const;
 const Container = styled(Box)({
   display: 'flex',
   flexDirection: 'row',
@@ -56,7 +88,7 @@ const AccountTextContainer = styled(Box)({
 });
 
 const AccountName = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -81,10 +113,26 @@ const Address = styled(Typography)({
   whiteSpace: 'nowrap',
 });
 
+/**
+ * The copy affordance, not the address. Salmon ink at 6.07:1 on the header
+ * ground marks the one thing in this block you can act on; the address itself
+ * stays neutral mono because it is data to read, not a control.
+ */
+const spinKeyframes = keyframes`
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+`;
+
+/** The refresh glyph turns only while a refresh is in flight. */
+const RefreshIconStyled = styled(RefreshIcon)<{ $spinning?: boolean }>(({ $spinning }) => ({
+  animation: $spinning ? `${spinKeyframes} ${durationMs.spin}ms linear infinite` : undefined,
+}));
+
 const CopyIconStyled = styled(CopyIcon)({
   marginLeft: spacing.sm,
-  fontSize: fontSize.base,
-  color: colors.text.muted,
+  width: iconSize.sm,
+  height: iconSize.sm,
+  color: semantic.text.accent,
 });
 
 const ActionButtons = styled(Box)({
@@ -140,13 +188,12 @@ export function WalletHeader({
   className,
 }: WalletHeaderProps) {
   const [imgError, setImgError] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const handleCopyPress = useCallback(() => {
     onCopyAddress?.();
-    setCopied(true);
-    setTimeout(() => setCopied(false), durationMs.feedbackShort);
-  }, [onCopyAddress]);
+    showCopied();
+  }, [onCopyAddress, showCopied]);
 
   const handleSettingsPress = useCallback(() => {
     onSettingsPress?.();
@@ -172,7 +219,11 @@ export function WalletHeader({
       <AccountInfo
         onClick={handleCopyPress}
         role="button"
-        aria-label={t('accessibility.copy_address', { address: truncatedAddress })}
+        aria-label={
+          copied
+            ? t('actions.copied')
+            : t('accessibility.copy_address', { address: truncatedAddress })
+        }
         data-testid="wallet-header-copy-address"
       >
         {/* Avatar */}
@@ -217,20 +268,29 @@ export function WalletHeader({
           </MuiAvatar>
         ) : null}
         <AccountTextContainer>
-          <AccountName>{accountName}</AccountName>
+          {/* Only the text travels. `CopyTick` stays outside the animated
+              wrappers and stays mounted, so a swap can never reset the tick
+              mid-hold — which is also why the address and the name each carry
+              their own wrapper instead of sharing one around the row that
+              holds the copy control. */}
+          <SinkFloat transitionKey={address} {...accountLineVerb}>
+            <AccountName>{accountName}</AccountName>
+          </SinkFloat>
           <AddressContainer>
-            <Address>{truncatedAddress}</Address>
-            {copied ? (
-              <CheckIcon
-                sx={{
-                  marginLeft: `${spacing.sm}px`,
-                  fontSize: fontSize.base,
-                  color: colors.status.success,
-                }}
-              />
-            ) : (
-              <CopyIconStyled />
-            )}
+            <SinkFloat transitionKey={address} {...accountLineVerb}>
+              <Address>{truncatedAddress}</Address>
+            </SinkFloat>
+            <CopyTick
+              copied={copied}
+              copy={<CopyIconStyled />}
+              tick={
+                <CheckIcon
+                  size={iconSize.sm}
+                  color={semantic.status.success}
+                  style={{ marginLeft: `${spacing.sm}px` }}
+                />
+              }
+            />
           </AddressContainer>
         </AccountTextContainer>
       </AccountInfo>
@@ -243,18 +303,10 @@ export function WalletHeader({
             aria-label={t('accessibility.refresh_balance', 'Refresh balance')}
             data-testid="wallet-header-refresh-button"
           >
-            <RefreshIcon
-              sx={{
-                color: colors.text.primary,
-                fontSize: fontSize['2xl'],
-                ...(refreshing && {
-                  animation: `spin ${durationMs.spin}ms linear infinite`,
-                  '@keyframes spin': {
-                    from: { transform: 'rotate(0deg)' },
-                    to: { transform: 'rotate(360deg)' },
-                  },
-                }),
-              }}
+            <RefreshIconStyled
+              $spinning={refreshing}
+              size={iconSize.lg}
+              color={colors.text.primary}
             />
           </HeaderButton>
         )}
@@ -263,7 +315,7 @@ export function WalletHeader({
           aria-label={t('accessibility.open_settings')}
           data-testid="wallet-header-settings-button"
         >
-          <SettingsIcon sx={{ color: colors.text.primary, fontSize: fontSize['2xl'] }} />
+          <SettingsIcon color={colors.text.primary} size={iconSize.lg} />
         </HeaderButton>
       </ActionButtons>
     </Container>

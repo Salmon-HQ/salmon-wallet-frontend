@@ -1,27 +1,60 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+/**
+ * The create path, on the onboarding slot grid: warning, phrase, confirm.
+ *
+ * ## The warning is a step, not a preamble
+ *
+ * `wallet.create.messageBody` used to share the screen with nothing and then
+ * hand straight over to the phrase. The product owner's reasoning for giving
+ * it its own step: "psicológicamente, si muestro una pantalla para esto doy a
+ * entender que es importante." A warning that shares a screen with the thing
+ * it warns about reads as boilerplate; a warning that costs its own step reads
+ * as a gate. So the copy is not shortened, it gets `body` — the flexible slot,
+ * and the only one that scrolls — and the action stays disabled until it has
+ * actually been scrolled to its end. Advancing costs a deliberate act rather
+ * than a thumb landing on a button that was already under it.
+ *
+ * ## Bedrock, and no water
+ *
+ * The two screens that carry the recovery phrase paint on
+ * `semantic.surface.bedrock`, opaque: no scales, no caustic, no iridescence,
+ * nothing alive moving behind the one secret that cannot be reissued. That is
+ * a security decision, not a stylistic one.
+ */
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { useTranslation } from 'react-i18next';
 import {
-  colors,
+  componentSizes,
   fontFamily,
   fontSize,
   generateMnemonic,
   generateValidationPositions,
-  ms,
-  s,
+  lineHeight,
+  motionMs,
+  semantic,
   spacing,
   validateMnemonicWords,
-  vs,
 } from '@salmon/shared';
+import { SparkleIcon, WarningIcon } from '../../icons';
+import { useCallback, useEffect, useMemo, useRef, useState, type UIEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
-import { PrimaryButton, SecondaryButton } from '../Button';
+import { PrimaryButton } from '../Button';
+import { HoldToApproveButton } from '../DAppApproval/HoldToApproveButton';
+import { OnboardingDescription, OnboardingLayout, OnboardingTitle } from '../OnboardingLayout';
 import { ScreenHeader } from '../ScreenHeader';
 import { SeedWordGrid, SeedWordInput } from '../SeedPhrase';
-import { getAuthContainerStyles } from './common';
 import type { CreateWalletPageProps } from './types';
 
 type Step = 'message' | 'seedPhrase' | 'validate';
+
+/** Warning, phrase, confirm, password — the password screen is the fourth. */
+export const CREATE_FLOW_STEPS = 4;
+
+/** Slop, in px, so a scroll that stops a hair short of the end still counts. */
+const END_SLOP = 8;
+
+/** The step glyph fills the top slot: the grid's own mark size for `content`. */
+const ICON_SIZE = componentSizes.logoSizeSmall;
 
 interface ValidationWord {
   position: number;
@@ -29,151 +62,100 @@ interface ValidationWord {
   userInput: string;
 }
 
-const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  backgroundColor: colors.background.primary,
-  ...getAuthContainerStyles($contained),
-}));
-
-const Content = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  padding: `0 ${s(spacing['2xl'])}px`,
-});
-
-const FormArea = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const ScrollContent = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  padding: `0 ${s(spacing['2xl'])}px`,
-  overflowY: 'auto',
-});
-
-const LogoImage = styled('img')({
-  width: ms(60),
-  height: ms(60),
-  objectFit: 'contain',
-  marginBottom: vs(spacing.lg),
-  marginTop: vs(spacing.lg),
-});
-
-const Title = styled(Typography)({
-  color: colors.text.primary,
+const WarningCopy = styled(Typography)({
+  color: semantic.text.secondary,
   fontFamily: fontFamily.sans,
-  fontWeight: 700,
-  fontSize: ms(fontSize['2xl']),
-  lineHeight: `${ms(32)}px`,
-  marginBottom: vs(spacing.md),
+  fontSize: fontSize.bodyLg,
+  lineHeight: `${Math.round(fontSize.bodyLg * lineHeight.normal)}px`,
   textAlign: 'center',
-});
-
-const Subtitle = styled(Typography)({
-  color: colors.text.secondary,
-  fontFamily: fontFamily.sans,
-  fontSize: ms(fontSize.base),
-  lineHeight: `${ms(20)}px`,
-  marginBottom: vs(spacing['2xl']),
-  textAlign: 'center',
-  paddingLeft: s(spacing.lg),
-  paddingRight: s(spacing.lg),
-});
-
-const BodyText = styled(Typography)({
-  color: colors.text.secondary,
-  fontFamily: fontFamily.sans,
-  fontSize: ms(fontSize.md),
-  lineHeight: `${ms(24)}px`,
-  marginBottom: vs(spacing['3xl']),
-  textAlign: 'center',
-  paddingLeft: s(spacing.lg),
-  paddingRight: s(spacing.lg),
-});
-
-const ButtonContainer = styled(Box)({
-  width: '100%',
-  paddingBottom: vs(spacing['2xl']),
-  paddingTop: vs(spacing.lg),
-});
-
-const SeedGridContainer = styled(Box)({
-  width: '100%',
-  marginBottom: vs(spacing['2xl']),
+  // The copy carries two literal paragraph breaks that MUI's default
+  // `white-space: normal` collapsed, so three intended paragraphs rendered as
+  // one block.
+  whiteSpace: 'pre-line',
 });
 
 const ValidationInputs = styled(Box)({
   width: '100%',
   display: 'flex',
   flexDirection: 'column',
-  gap: vs(spacing.lg),
-});
-
-const ToastOverlay = styled(Box)({
-  position: 'fixed',
-  bottom: vs(100),
-  left: 0,
-  right: 0,
-  display: 'flex',
-  justifyContent: 'center',
-  zIndex: 1000,
+  gap: spacing.lg,
 });
 
 const Toast = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-  paddingLeft: s(spacing.lg),
-  paddingRight: s(spacing.lg),
-  paddingTop: vs(spacing.md),
-  paddingBottom: vs(spacing.md),
-  borderRadius: ms(24),
-  gap: s(spacing.sm),
-});
-
-const ToastText = styled(Typography)({
-  color: colors.text.primary,
+  position: 'fixed',
+  bottom: 100,
+  left: '50%',
+  transform: 'translateX(-50%)',
+  zIndex: 1000,
+  backgroundColor: semantic.surface.crest,
+  padding: `${spacing.md}px ${spacing.lg}px`,
+  borderRadius: spacing['2xl'],
+  color: semantic.text.primary,
   fontFamily: fontFamily.sans,
-  fontSize: ms(fontSize.base),
+  fontSize: fontSize.body,
 });
 
 function MessageStep({
   onNext,
   onBack,
   t,
-  contained,
 }: {
   onNext: () => void;
   onBack: () => void;
   t: (key: string) => string;
-  contained?: boolean;
 }) {
+  const [read, setRead] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  /** Copy that fits without scrolling has already been shown in full. */
+  const settle = useCallback(() => {
+    const node = bodyRef.current;
+    if (!node) return;
+    if (node.scrollHeight <= node.clientHeight + END_SLOP) setRead(true);
+  }, []);
+
+  useEffect(settle, [settle]);
+
+  const handleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
+    const node = event.currentTarget;
+    if (node.scrollTop + node.clientHeight >= node.scrollHeight - END_SLOP) setRead(true);
+  }, []);
+
   return (
-    <Container $contained={contained}>
-      <ScreenHeader onBack={onBack} />
-      <Content>
-        <FormArea>
-          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
-          <Title>{t('wallet.create.messageTitle')}</Title>
-          <BodyText>{t('wallet.create.messageBody')}</BodyText>
-        </FormArea>
-        <ButtonContainer>
-          <PrimaryButton onClick={onNext} testID="create-start-button">
-            {(t('actions.start') || 'START').toUpperCase()}
-          </PrimaryButton>
-        </ButtonContainer>
-      </Content>
-    </Container>
+    <OnboardingLayout
+      testID="seed-warning-screen"
+      variant="content"
+      backgroundColor={semantic.surface.bedrock}
+      /*
+        The warning glyph, in the mark slot — the gate names itself. Mirrors
+        the mobile flow (owner, 2026-08-18): the fish stays on welcome and the
+        lock only; each flow step wears one semantic glyph, the consent
+        screen's pattern and size.
+      */
+      mark={<WarningIcon size={ICON_SIZE} color={semantic.text.primary} />}
+      chrome={
+        <ScreenHeader
+          onBack={onBack}
+          stepIndicator={{ totalSteps: CREATE_FLOW_STEPS, currentStep: 1 }}
+        />
+      }
+      title={<OnboardingTitle>{t('wallet.create.messageTitle')}</OnboardingTitle>}
+      body={
+        <Box ref={bodyRef} onScroll={handleScroll} sx={{ overflowY: 'auto', minHeight: 0 }}>
+          <WarningCopy>{t('wallet.create.messageBody')}</WarningCopy>
+        </Box>
+      }
+      action={
+        <PrimaryButton
+          onClick={onNext}
+          disabled={!read}
+          fullWidth
+          testID="seed-warning-continue-button"
+        >
+          {t('actions.start')}
+        </PrimaryButton>
+      }
+    />
   );
 }
 
@@ -182,13 +164,11 @@ function SeedPhraseStep({
   onNext,
   onBack,
   t,
-  contained,
 }: {
   mnemonic: string;
   onNext: () => void;
   onBack: () => void;
   t: (key: string) => string;
-  contained?: boolean;
 }) {
   const [showToast, setShowToast] = useState(false);
   const words = mnemonic.split(' ');
@@ -197,41 +177,56 @@ function SeedPhraseStep({
     try {
       await navigator.clipboard.writeText(mnemonic);
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 2000);
+      setTimeout(() => setShowToast(false), motionMs.feedbackHold);
     } catch {
       // Clipboard API may not be available
     }
   }, [mnemonic]);
 
   return (
-    <Container $contained={contained}>
-      <ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 3, currentStep: 1 }} />
-      <ScrollContent>
-        <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
-        <Title>{t('wallet.create.your_seed_phrase')}</Title>
-        <Subtitle>{t('wallet.create.your_seed_phrase_body')}</Subtitle>
-        <SeedGridContainer>
-          <SeedWordGrid words={words} columns={3} />
-        </SeedGridContainer>
-        <ButtonContainer>
-          <SecondaryButton onClick={handleCopy} testID="create-copy-seed-button">
-            {t('wallet.create.copy_key').toUpperCase()}
-          </SecondaryButton>
-        </ButtonContainer>
-        <ButtonContainer>
-          <PrimaryButton onClick={onNext} testID="create-backed-up-button">
-            {t('wallet.create.ive_backed_up_seed_phrase').toUpperCase()}
+    <>
+      <OnboardingLayout
+        testID="create-seed-screen"
+        variant="content"
+        backgroundColor={semantic.surface.bedrock}
+        scrollBody
+        // The sparkle: something new coming into being. See the warning
+        // phase's mark note above.
+        mark={<SparkleIcon size={ICON_SIZE} color={semantic.text.primary} />}
+        chrome={
+          <ScreenHeader
+            onBack={onBack}
+            stepIndicator={{ totalSteps: CREATE_FLOW_STEPS, currentStep: 2 }}
+          />
+        }
+        title={<OnboardingTitle>{t('wallet.create.your_seed_phrase')}</OnboardingTitle>}
+        description={
+          <OnboardingDescription>{t('wallet.create.your_seed_phrase_body')}</OnboardingDescription>
+        }
+        body={<SeedWordGrid words={words} columns={3} />}
+        secondary={
+          /*
+            Held, not tapped: the phrase lands on the clipboard, where anything
+            can read it, so the copy costs the same deliberate half-second as
+            signing does. The keyboard path commits immediately per WCAG, as
+            the hold control already provides.
+          */
+          <HoldToApproveButton
+            onApprove={handleCopy}
+            variant="secondary"
+            testID="create-copy-seed-button"
+          >
+            {t('wallet.create.hold_to_copy')}
+          </HoldToApproveButton>
+        }
+        action={
+          <PrimaryButton onClick={onNext} fullWidth testID="create-backed-up-button">
+            {t('wallet.create.ive_backed_up_seed_phrase')}
           </PrimaryButton>
-        </ButtonContainer>
-      </ScrollContent>
-      {showToast && (
-        <ToastOverlay>
-          <Toast>
-            <ToastText>{t('wallet.copied')}</ToastText>
-          </Toast>
-        </ToastOverlay>
-      )}
-    </Container>
+        }
+      />
+      {showToast && <Toast>{t('wallet.copied')}</Toast>}
+    </>
   );
 }
 
@@ -240,13 +235,11 @@ function ValidateStep({
   onComplete,
   onBack,
   t,
-  contained,
 }: {
   mnemonic: string;
   onComplete: () => void;
   onBack: () => void;
   t: (key: string, params?: Record<string, unknown>) => string;
-  contained?: boolean;
 }) {
   const words = useMemo(() => mnemonic.split(' '), [mnemonic]);
   const [validationWords, setValidationWords] = useState<ValidationWord[]>([]);
@@ -291,60 +284,68 @@ function ValidateStep({
   );
 
   return (
-    <Container $contained={contained}>
-      <ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 3, currentStep: 2 }} />
-      <Content>
-        <FormArea>
-          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
-          <Title>{t('wallet.create.confirm_seed_phrase')}</Title>
-          <Subtitle>{t('wallet.create.confirm_seed_phrase_body')}</Subtitle>
-          <ValidationInputs>
-            {validationWords.map((word, index) => (
-              <SeedWordInput
-                key={`word-${word.position}`}
-                testID={`create-confirm-word-input-${word.position}`}
-                position={word.position}
-                value={word.userInput}
-                onChangeText={(value) => handleInputChange(index, value)}
-                validationState={getValidationState(index)}
-                autoFocus={index === 0}
-                onSubmitEditing={() => {
-                  if (index === validationWords.length - 1 && validationResult.isValid) {
-                    onComplete();
-                  }
-                }}
-              />
-            ))}
-          </ValidationInputs>
-        </FormArea>
-        <ButtonContainer>
-          <PrimaryButton
-            onClick={onComplete}
-            disabled={!validationResult.isValid}
-            testID="create-next-button"
-          >
-            {(t('actions.next') || 'NEXT').toUpperCase()}
-          </PrimaryButton>
-        </ButtonContainer>
-      </Content>
-    </Container>
+    <OnboardingLayout
+      testID="create-validate-screen"
+      variant="content"
+      backgroundColor={semantic.surface.bedrock}
+      scrollBody
+      // Same glyph as the phrase it confirms — the step dots carry which half
+      // of the creation this is.
+      mark={<SparkleIcon size={ICON_SIZE} color={semantic.text.primary} />}
+      chrome={
+        <ScreenHeader
+          onBack={onBack}
+          stepIndicator={{ totalSteps: CREATE_FLOW_STEPS, currentStep: 3 }}
+        />
+      }
+      title={<OnboardingTitle>{t('wallet.create.confirm_seed_phrase')}</OnboardingTitle>}
+      description={
+        <OnboardingDescription>{t('wallet.create.confirm_seed_phrase_body')}</OnboardingDescription>
+      }
+      body={
+        <ValidationInputs>
+          {validationWords.map((word, index) => (
+            <SeedWordInput
+              key={`word-${word.position}`}
+              testID={`create-confirm-word-input-${word.position}`}
+              position={word.position}
+              value={word.userInput}
+              onChangeText={(value) => handleInputChange(index, value)}
+              validationState={getValidationState(index)}
+              autoFocus={index === 0}
+              onSubmitEditing={() => {
+                if (index === validationWords.length - 1 && validationResult.isValid) {
+                  onComplete();
+                }
+              }}
+            />
+          ))}
+        </ValidationInputs>
+      }
+      action={
+        <PrimaryButton
+          onClick={onComplete}
+          disabled={!validationResult.isValid}
+          fullWidth
+          testID="create-next-button"
+        >
+          {t('actions.next')}
+        </PrimaryButton>
+      }
+    />
   );
 }
 
 export function CreateWalletPage({
   onComplete,
   onBack,
-  contained = false,
 }: CreateWalletPageProps): React.ReactElement {
   const { t } = useTranslation();
   const [step, setStep] = useState<Step>('message');
-  const [mnemonic, setMnemonic] = useState('');
-
-  const handleStart = useCallback(() => {
-    const newMnemonic = generateMnemonic(128);
-    setMnemonic(newMnemonic);
-    setStep('seedPhrase');
-  }, []);
+  // Generated once, on arrival. It used to be generated by the "Start" press
+  // on the warning step; generating here keeps the phrase shown and the phrase
+  // handed on the same one regardless of how the steps are re-entered.
+  const [mnemonic] = useState<string>(() => generateMnemonic(128));
 
   const handleBack = useCallback(() => {
     switch (step) {
@@ -360,26 +361,17 @@ export function CreateWalletPage({
     }
   }, [onBack, step]);
 
-  const handleProceedToValidation = useCallback(() => {
-    setStep('validate');
-  }, []);
-
-  const handleValidationComplete = useCallback(() => {
-    onComplete(mnemonic);
-  }, [mnemonic, onComplete]);
-
   if (step === 'message') {
-    return <MessageStep onNext={handleStart} onBack={handleBack} t={t} contained={contained} />;
+    return <MessageStep onNext={() => setStep('seedPhrase')} onBack={handleBack} t={t} />;
   }
 
   if (step === 'seedPhrase') {
     return (
       <SeedPhraseStep
         mnemonic={mnemonic}
-        onNext={handleProceedToValidation}
+        onNext={() => setStep('validate')}
         onBack={handleBack}
         t={t}
-        contained={contained}
       />
     );
   }
@@ -387,10 +379,9 @@ export function CreateWalletPage({
   return (
     <ValidateStep
       mnemonic={mnemonic}
-      onComplete={handleValidationComplete}
+      onComplete={() => onComplete(mnemonic)}
       onBack={handleBack}
       t={t}
-      contained={contained}
     />
   );
 }

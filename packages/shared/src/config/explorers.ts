@@ -20,7 +20,15 @@ export type Blockchain = 'SOLANA' | 'BITCOIN' | 'ETHEREUM';
  * Supported network environments.
  */
 export type NetworkEnvironment =
-  'mainnet' | 'solana-mainnet' | 'testnet' | 'solana-devnet' | 'sepolia';
+  | 'mainnet'
+  | 'testnet'
+  | 'sepolia'
+  | 'solana-mainnet'
+  | 'solana-devnet'
+  | 'bitcoin-mainnet'
+  | 'bitcoin-testnet'
+  | 'ethereum-mainnet'
+  | 'ethereum-sepolia';
 
 /**
  * Explorer configuration with name and URL template.
@@ -141,10 +149,14 @@ export const EXPLORERS: ExplorersConfig = {
   BITCOIN: {
     mainnet: BITCOIN_MAINNET_EXPLORERS,
     testnet: BITCOIN_TESTNET_EXPLORERS,
+    'bitcoin-mainnet': BITCOIN_MAINNET_EXPLORERS,
+    'bitcoin-testnet': BITCOIN_TESTNET_EXPLORERS,
   },
   ETHEREUM: {
     mainnet: ETHEREUM_MAINNET_EXPLORERS,
     sepolia: ETHEREUM_SEPOLIA_EXPLORERS,
+    'ethereum-mainnet': ETHEREUM_MAINNET_EXPLORERS,
+    'ethereum-sepolia': ETHEREUM_SEPOLIA_EXPLORERS,
   },
 };
 

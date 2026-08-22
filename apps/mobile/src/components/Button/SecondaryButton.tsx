@@ -4,6 +4,7 @@
  * Dark background with white text, used for secondary actions.
  */
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
+import Animated from 'react-native-reanimated';
 import {
   colors,
   componentSizes,
@@ -11,8 +12,13 @@ import {
   fontSize,
   letterSpacing,
   spacing,
+  semantic,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
+import { PressSpecular } from '../PressSpecular';
+import { usePressMotion } from '../../../hooks/usePressMotion';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 interface SecondaryButtonProps extends Testable {
   onPress: () => void;
@@ -31,9 +37,10 @@ export function SecondaryButton({
   testID,
 }: SecondaryButtonProps) {
   const isDisabled = disabled || loading;
+  const { pressStyle, pressHandlers, specular } = usePressMotion();
 
   return (
-    <TouchableOpacity
+    <AnimatedTouchable
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={children}
@@ -41,14 +48,16 @@ export function SecondaryButton({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
-      style={[styles.button, isDisabled && styles.disabled, style]}
+      {...pressHandlers}
+      style={[styles.button, isDisabled && styles.disabled, style, pressStyle]}
     >
       {loading ? (
-        <ActivityIndicator color={colors.button.secondaryText} />
+        <ActivityIndicator color={semantic.text.primary} />
       ) : (
         <Text style={styles.text}>{children}</Text>
       )}
-    </TouchableOpacity>
+      {!isDisabled && <PressSpecular {...specular} />}
+    </AnimatedTouchable>
   );
 }
 
@@ -62,14 +71,16 @@ const styles = StyleSheet.create({
     borderRadius: componentSizes.buttonRadius,
     alignItems: 'center',
     justifyContent: 'center',
+    // Clip the press specular to the control's own radius.
+    overflow: 'hidden',
   },
   disabled: {
     opacity: colors.button.disabledOpacity,
   },
   text: {
-    color: colors.button.secondaryText,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     letterSpacing: letterSpacing.widest,
     textAlign: 'center',
   },

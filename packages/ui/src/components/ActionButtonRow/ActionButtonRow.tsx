@@ -14,7 +14,7 @@ import {
   colors,
   spacing,
   borderWidth,
-  gradients,
+  semantic,
   fontFamily,
   fontSize,
   componentSizes,
@@ -25,8 +25,10 @@ import {
   opacity,
   duration,
   easing,
+  palette,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
+import { FleshBackground } from '../FleshBackground';
 import { SendIcon, ReceiveIcon, ActivityIcon } from '../Icon';
 import type { ActionButtonRowProps } from './types';
 
@@ -50,7 +52,20 @@ const ButtonWrapper = styled(Box)<{ $disabled?: boolean }>(({ $disabled }) => ({
   transition: `opacity ${duration.normal} ${easing.ease}`,
 }));
 
+/**
+ * Send. The screen's one living thing.
+ *
+ * The One Living Thing Rule says salmon appears once per screen; it does not
+ * say where. It was spent on the active tab underline — the brand's single
+ * warm element sitting on "you are on Home" while the action that moves money
+ * looked identical to the two beside it. It is spent here now: a `accent.fill`
+ * pill with `accent.onFill` ink at 6.50:1 — never white, which is 3.06:1 and
+ * banned — and the flesh's myoseptal bands pressed into the fill, the same
+ * body the `PrimaryButton` has. The tab underline went neutral in return.
+ */
 const PrimaryButton = styled(Button)({
+  position: 'relative',
+  overflow: 'hidden',
   width: '100%',
   height: '100%',
   display: 'flex',
@@ -58,18 +73,22 @@ const PrimaryButton = styled(Button)({
   alignItems: 'center',
   justifyContent: 'center',
   gap: s(spacing.sm),
-  background: gradients.primaryCSS,
+  backgroundColor: semantic.accent.fill,
+  border: `${borderWidth.thin}px solid ${semantic.accent.fill}`,
   borderRadius: ms(componentSizes.actionButtonRadius),
   textTransform: 'none',
   minWidth: 0,
   padding: 0,
   '&:hover': {
-    background: gradients.primaryCSS,
-    opacity: opacity.soft,
+    backgroundColor: palette.salmon[600],
+    borderColor: palette.salmon[600],
   },
+  // Disabled is `surface.crest` with disabled ink: the salmon never dims,
+  // it is either alive or absent — and so is the flesh inside it.
   '&.Mui-disabled': {
-    background: gradients.disabledCSS,
-    color: colors.text.primary,
+    backgroundColor: semantic.surface.crest,
+    borderColor: semantic.border.raised,
+    color: semantic.text.disabled,
   },
 });
 
@@ -97,11 +116,22 @@ const SecondaryButton = styled(Button)({
 });
 
 const ButtonText = styled(Typography)<{ $disabled?: boolean }>(({ $disabled }) => ({
-  fontSize: ms(fontSize.actionButton),
+  fontSize: ms(fontSize.body),
   fontWeight: fontWeight.regular,
   fontFamily: fontFamily.sans,
   color: $disabled ? colors.button.disabledText : colors.text.balance,
 }));
+
+/** Sits above the flesh, never under it. Decoration is never a hit target. */
+const OnFillContent = styled(Box)({
+  position: 'relative',
+  zIndex: 1,
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: s(spacing.sm),
+});
 
 export function ActionButtonRow({
   onSendPress,
@@ -145,15 +175,33 @@ export function ActionButtonRow({
           aria-label={t('accessibility.send_tokens', 'Send tokens')}
           data-testid="home-send-button"
         >
-          <SendIcon sx={{ fontSize: iconSize, color: colors.text.balance }} />
-          <ButtonText>{t('actions.send', 'Send')}</ButtonText>
+          {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+              fill and nowhere else on this screen. Absent when the fill is
+              absent. */}
+          {!sendDisabled && <FleshBackground />}
+          <OnFillContent>
+            {/* Bold, like the label: everything on a flesh fill is bold. */}
+            <SendIcon
+              weight="bold"
+              size={iconSize}
+              color={sendDisabled ? semantic.text.disabled : semantic.accent.onFill}
+            />
+            <ButtonText
+              sx={{
+                color: sendDisabled ? semantic.text.disabled : semantic.accent.onFill,
+                fontWeight: fontWeight.bold,
+              }}
+            >
+              {t('actions.send', 'Send')}
+            </ButtonText>
+          </OnFillContent>
         </PrimaryButton>
       </ButtonWrapper>
 
       {/* Receive Button - Secondary with BlurContainer */}
       <ButtonWrapper $disabled={receiveDisabled}>
         <BlurContainer
-          borderColor={colors.accent.primary}
+          borderColor={semantic.border.raised}
           borderWidth={borderWidth.actionButton}
           style={{ borderRadius: ms(componentSizes.actionButtonRadius), height: '100%' }}
         >
@@ -164,10 +212,8 @@ export function ActionButtonRow({
             data-testid="home-receive-button"
           >
             <ReceiveIcon
-              sx={{
-                fontSize: iconSize,
-                color: receiveDisabled ? colors.button.disabledText : colors.text.balance,
-              }}
+              size={iconSize}
+              color={receiveDisabled ? colors.button.disabledText : colors.text.balance}
             />
             <ButtonText $disabled={receiveDisabled}>{t('actions.receive', 'Receive')}</ButtonText>
           </SecondaryButton>
@@ -177,7 +223,7 @@ export function ActionButtonRow({
       {/* Activity Button - Secondary with BlurContainer */}
       <ButtonWrapper $disabled={activityDisabled}>
         <BlurContainer
-          borderColor={colors.accent.primary}
+          borderColor={semantic.border.raised}
           borderWidth={borderWidth.actionButton}
           style={{ borderRadius: ms(componentSizes.actionButtonRadius), height: '100%' }}
         >
@@ -188,10 +234,8 @@ export function ActionButtonRow({
             data-testid="home-activity-button"
           >
             <ActivityIcon
-              sx={{
-                fontSize: iconSize,
-                color: activityDisabled ? colors.button.disabledText : colors.text.balance,
-              }}
+              size={iconSize}
+              color={activityDisabled ? colors.button.disabledText : colors.text.balance}
             />
             <ButtonText $disabled={activityDisabled}>
               {t('actions.activity', 'Activity')}

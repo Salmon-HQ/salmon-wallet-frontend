@@ -17,6 +17,7 @@ export type {
   // UI types
   SwapToken,
   SwapTab,
+  SwapDetailItem,
   SwapStepBase,
   SwapScreenStep,
   BridgeTokenSimple,
@@ -29,7 +30,8 @@ import type {
   SwapTabSelectorProps as SwapTabSelectorPropsBase,
   SwapAmountInputProps as SwapAmountInputPropsBase,
   SwapDetailRowProps as SwapDetailRowPropsBase,
-  SwapReviewCardProps as SwapReviewCardPropsBase,
+  SwapDetailsCardProps as SwapDetailsCardPropsBase,
+  SwapReviewExchangeProps as SwapReviewExchangePropsBase,
   SwapReviewScreenProps as SwapReviewScreenPropsBase,
   SwapInputScreenProps as SwapInputScreenPropsBase,
   SwapScreenProps as SwapScreenPropsBase,
@@ -58,9 +60,14 @@ export interface SwapAmountInputProps extends SwapAmountInputPropsBase<ViewStyle
 export interface SwapDetailRowProps extends SwapDetailRowPropsBase<ViewStyle> {}
 
 /**
- * Props for SwapReviewCard component (React Native)
+ * Props for SwapDetailsCard component (React Native)
  */
-export interface SwapReviewCardProps extends SwapReviewCardPropsBase<ViewStyle> {}
+export interface SwapDetailsCardProps extends SwapDetailsCardPropsBase<ViewStyle> {}
+
+/**
+ * Props for SwapReviewExchange component (React Native)
+ */
+export interface SwapReviewExchangeProps extends SwapReviewExchangePropsBase<ViewStyle> {}
 
 /**
  * Props for SwapReviewScreen sub-component (React Native)
@@ -70,7 +77,16 @@ export interface SwapReviewScreenProps extends SwapReviewScreenPropsBase<ViewSty
 /**
  * Props for SwapInputScreen sub-component (React Native)
  */
-export interface SwapInputScreenProps extends SwapInputScreenPropsBase<ViewStyle> {}
+export interface SwapInputScreenProps extends SwapInputScreenPropsBase<ViewStyle> {
+  /**
+   * The exchange a failed bridge left behind. The shared layer now registers
+   * the exchange the moment it is created, before the deposit that can fail,
+   * so a failure has an id and a deposit address the user can quote to
+   * support. Rendering it is the app's job; it belongs beside the error the
+   * failure produced, because that is where the user is looking.
+   */
+  bridgeReference?: { id: string; depositAddress: string } | null;
+}
 
 /**
  * Props for main SwapScreen component (React Native)

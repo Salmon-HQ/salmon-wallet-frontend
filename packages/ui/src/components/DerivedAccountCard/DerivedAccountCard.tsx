@@ -7,7 +7,7 @@ import React from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, iconSize } from '../../icons';
 import {
   colors,
   spacing,
@@ -19,6 +19,7 @@ import {
   fontSize,
   duration,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import { SolanaSvgIcon, BitcoinSvgIcon, EthereumSvgIcon } from '../Icon';
 import type { DerivedAccountCardProps } from './types';
@@ -80,7 +81,7 @@ const Info = styled(Box)({
 const Address = styled(Typography)({
   color: colors.text.primary,
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
 });
 
 const NetworkRow = styled(Box)({
@@ -92,6 +93,7 @@ const NetworkRow = styled(Box)({
 });
 
 const PathText = styled(Typography)({
+  ...tabularNums.css,
   color: colors.text.tertiary,
   fontFamily: fontFamily.sans,
   fontWeight: fontWeight.medium,
@@ -105,6 +107,7 @@ const BalanceContainer = styled(Box)({
 });
 
 const Balance = styled(Typography)<{ $dimmed: boolean }>(({ $dimmed }) => ({
+  ...tabularNums.css,
   color: colors.text.primary,
   fontFamily: fontFamily.sans,
   fontSize: fontSize.base,
@@ -133,7 +136,7 @@ const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
       data-testid={testID}
     >
       <Checkbox $selected={selected}>
-        {selected && <CheckIcon sx={{ fontSize: fontSize.md, color: colors.text.primary }} />}
+        {selected && <CheckIcon size={iconSize.sm} color={colors.text.primary} />}
       </Checkbox>
 
       <Info>

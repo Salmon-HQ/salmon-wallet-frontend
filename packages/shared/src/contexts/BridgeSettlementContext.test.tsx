@@ -292,4 +292,74 @@ describe('BridgeSettlementProvider', () => {
     });
     expect(isInvalidated(client, destKey)).toBe(true);
   });
+
+  // The mirror of registering on creation: an exchange whose deposit never left
+  // the wallet has nothing to settle and never reaches a terminal status, so it
+  // must age out instead of being polled — and shown as in flight — forever.
+  it('stops tracking an exchange that never resolved past the tracking ceiling', async () => {
+    const getStatus = vi
+      .fn<(id: string) => Promise<BridgeTransaction | null>>()
+      .mockResolvedValue({ status: 'inProgress' } as BridgeTransaction);
+
+    const { result } = setup(getStatus);
+
+    vi.useFakeTimers();
+
+    act(() => {
+      result.current.trackBridgeExchange({
+        id: 'ex-unfunded',
+        sourceNetworkId: SRC_NET,
+        sourceAccountId: SRC_ACCT,
+        destNetworkId: DEST_NET,
+        destAccountId: DEST_ACCT,
+        // Created just over a day ago: the deposit transfer threw right after
+        // StealthEX handed us the order, and nothing has changed since.
+        createdAt: Date.now() - 25 * 60 * 60 * 1000,
+      });
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Never polled: the first sweep drops it instead of asking about an order
+    // that cannot move.
+    expect(getStatus).not.toHaveBeenCalled();
+    expect(result.current.pendingExchanges).toHaveLength(0);
+  });
+
+  it('drops an expired persisted exchange on hydrate instead of resuming it', async () => {
+    initStorage({ platform: 'web', adapter: createLocalStorageAdapter() });
+    await setStorageItem(STORAGE_KEYS.PENDING_BRIDGES, [
+      {
+        id: 'ex-stale',
+        sourceNetworkId: SRC_NET,
+        sourceAccountId: SRC_ACCT,
+        destNetworkId: DEST_NET,
+        destAccountId: DEST_ACCT,
+        createdAt: Date.now() - 25 * 60 * 60 * 1000,
+      },
+      {
+        id: 'ex-fresh',
+        sourceNetworkId: SRC_NET,
+        sourceAccountId: SRC_ACCT,
+        destNetworkId: DEST_NET,
+        destAccountId: DEST_ACCT,
+        createdAt: Date.now() - 60 * 1000,
+      },
+    ]);
+
+    const getStatus = vi
+      .fn<(id: string) => Promise<BridgeTransaction | null>>()
+      .mockResolvedValue({ status: 'inProgress' } as BridgeTransaction);
+
+    const { result } = setup(getStatus);
+
+    await waitFor(() => {
+      expect(getStatus).toHaveBeenCalledWith('ex-fresh');
+    });
+    expect(getStatus).not.toHaveBeenCalledWith('ex-stale');
+    expect(result.current.pendingExchanges.map((ex) => ex.id)).toEqual(['ex-fresh']);
+  });
 });

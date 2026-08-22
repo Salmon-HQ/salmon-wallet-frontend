@@ -8,7 +8,7 @@
  * Web version using MUI Dialog and @emotion/styled for browser extension.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Dialog from '@mui/material/Dialog';
@@ -20,8 +20,10 @@ import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import InputBase from '@mui/material/InputBase';
 import CircularProgress from '@mui/material/CircularProgress';
-import CloseIcon from '@mui/icons-material/Close';
-import SearchIcon from '@mui/icons-material/Search';
+import type { SvgIconProps } from '@mui/material/SvgIcon';
+import { MagnifyingGlassIcon, XIcon, iconSize } from '../../icons';
+import { BitcoinSvgIcon, EthereumSvgIcon } from '../Icon';
+import { Thermocline } from '../Thermocline';
 import {
   colors,
   spacing,
@@ -31,6 +33,7 @@ import {
   fontFamily,
   fontWeight,
   getShortAddress,
+  getNetworkName,
   getTokenKey,
   ContentLoader,
   Rect,
@@ -39,6 +42,7 @@ import {
   opacity,
   duration,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 
 import { useTokenSearch } from '@salmon/shared';
@@ -50,20 +54,50 @@ const HIDDEN_VALUE = '******';
 // Styled Components
 // ============================================================================
 
+/**
+ * Geometry for the modal's ground: it fills the paper and sits behind
+ * everything the modal holds. The paper's `overflow: hidden` clips the
+ * material to the modal's corners, so the ground needs no radius of its own.
+ */
+const GROUND_STYLE: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  zIndex: 0,
+};
+
+/**
+ * The modal's sections sit above the ground. They have to be positioned to do
+ * it: the material is an absolutely positioned layer, and an unpositioned
+ * sibling paints beneath one whatever its z-index says.
+ */
+const ABOVE_GROUND = {
+  position: 'relative' as const,
+  zIndex: 1,
+};
+
 const StyledDialog = styled(Dialog)({
   '& .MuiDialog-paper': {
-    backgroundColor: colors.background.primary,
+    // The paper carries no fill of its own: the modal's ground is the material
+    // mounted inside it, and an opaque fill — or MUI's dark-mode elevation
+    // overlay, which is a background image — would paint over it. The radius,
+    // the border and the clip stay, so the material follows the modal's
+    // corners. See DESIGN.md §The thermocline is the sheet material.
+    backgroundColor: 'transparent',
+    backgroundImage: 'none',
     borderRadius: borderRadius.xl,
     border: `${borderWidth.thin}px solid ${colors.border.default}`,
     minWidth: `min(${componentSizes.sheetWidthSm}px, 95vw)`,
     maxWidth: `min(${componentSizes.sheetWidthLg}px, 95vw)`,
     maxHeight: '85vh',
+    overflow: 'hidden',
+    position: 'relative',
     display: 'flex',
     flexDirection: 'column',
   },
 });
 
 const StyledDialogTitle = styled(DialogTitle)({
+  ...ABOVE_GROUND,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -89,6 +123,7 @@ const CloseButton = styled(IconButton)({
 });
 
 const SearchContainer = styled(Box)({
+  ...ABOVE_GROUND,
   padding: `${spacing.md}px ${spacing.xl}px`,
 });
 
@@ -98,7 +133,7 @@ const SearchInput = styled(InputBase)({
   borderRadius: borderRadius.lg,
   padding: `${spacing.sm}px ${spacing.md}px`,
   color: colors.text.primary,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontFamily: fontFamily.sans,
   border: `${borderWidth.thin}px solid ${colors.input.border}`,
   transition: `border-color ${duration.normal} ${easing.ease}`,
@@ -111,13 +146,15 @@ const SearchInput = styled(InputBase)({
   },
 });
 
-const SearchIconStyled = styled(SearchIcon)({
+const SearchIconStyled = styled(MagnifyingGlassIcon)({
   color: colors.text.secondary,
   marginRight: spacing.sm,
-  fontSize: fontSize.xl,
+  width: iconSize.md,
+  height: iconSize.md,
 });
 
 const StyledDialogContent = styled(DialogContent)({
+  ...ABOVE_GROUND,
   padding: 0,
   overflowY: 'auto',
   flex: 1,
@@ -158,7 +195,7 @@ const TokenIconPlaceholder = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   color: colors.text.secondary,
 });
 
@@ -175,7 +212,7 @@ const TokenNameRow = styled(Box)({
 });
 
 const TokenName = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -200,7 +237,14 @@ const NetworkChipText = styled(Typography)({
   textTransform: 'uppercase',
 });
 
+const ChainMark = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  marginLeft: spacing.sm,
+});
+
 const TokenBalance = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.base,
   fontFamily: fontFamily.sans,
   color: colors.text.secondary,
@@ -284,7 +328,7 @@ const LoadMoreButton = styled(Button)({
   padding: `${spacing.md}px`,
   textTransform: 'none',
   color: colors.text.primary,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   marginTop: spacing.sm,
@@ -301,12 +345,13 @@ const EmptyContainer = styled(Box)({
 });
 
 const EmptyText = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontFamily: fontFamily.sans,
   color: colors.text.secondary,
 });
 
 const FooterContainer = styled(Box)({
+  ...ABOVE_GROUND,
   padding: `${spacing.md}px ${spacing.xl}px`,
   borderTop: `${borderWidth.thin}px solid ${colors.border.default}`,
 });
@@ -318,13 +363,61 @@ const CloseActionButton = styled(Button)({
   padding: `${spacing.md}px`,
   textTransform: 'none',
   color: colors.text.primary,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
   '&:hover': {
     backgroundColor: colors.button.dangerHover,
   },
 });
+
+// ============================================================================
+// Chain identity
+// ============================================================================
+
+// DESIGN.md, §Chain identity. Mainnet is the silent default: Solana rows carry
+// nothing (in a Solana-first wallet a badge on every row says "you are where
+// you always are"), and a non-Solana mainnet token gets only its quiet chain
+// mark — the brand's own glyph, the same one BalanceCard and DerivedAccountCard
+// draw, never a redrawn interface icon. Anything that is NOT mainnet keeps the
+// loud text chip, so a devnet or testnet token can never be mistaken for the
+// real thing; the chip stays a machine identifier and is deliberately not
+// translated.
+const CHAIN_MARKS: Record<string, React.ComponentType<SvgIconProps>> = {
+  bitcoin: BitcoinSvgIcon,
+  ethereum: EthereumSvgIcon,
+};
+
+const CHAIN_MARK_SIZE = componentSizes.iconSizeXxsm;
+
+const chainMarkStyle = {
+  fontSize: CHAIN_MARK_SIZE,
+  width: CHAIN_MARK_SIZE,
+  height: CHAIN_MARK_SIZE,
+  color: colors.text.tertiary,
+};
+
+const NetworkIdentity: React.FC<{ network: string }> = ({ network }) => {
+  // Network values arrive either as canonical ids ('bitcoin-mainnet',
+  // 'solana-devnet') or as bare chain names ('Bitcoin') from the swap logic's
+  // chain fallback; a bare chain name carries no environment, so it counts as
+  // mainnet.
+  const [chain, env] = network.toLowerCase().split('-');
+  if (env && env !== 'mainnet') {
+    return (
+      <NetworkChip data-testid="network-chip">
+        <NetworkChipText>{network.toUpperCase()}</NetworkChipText>
+      </NetworkChip>
+    );
+  }
+  const Mark = CHAIN_MARKS[chain];
+  if (!Mark) return null;
+  return (
+    <ChainMark data-testid={`chain-mark-${chain}`}>
+      <Mark style={chainMarkStyle} />
+    </ChainMark>
+  );
+};
 
 // ============================================================================
 // TokenSelectorModal Component
@@ -364,6 +457,7 @@ export function TokenSelectorModal({
   showNetworkChip = false,
   showVerifiedDisclaimer = false,
   loading = false,
+  showBalances = true,
 }: TokenSelectorModalProps): React.ReactElement {
   const { t } = useTranslation();
 
@@ -406,11 +500,20 @@ export function TokenSelectorModal({
       aria-labelledby="token-selector-title"
       disableEnforceFocus
     >
+      {/* A modal is the DOM's sheet, and the thermocline is what a sheet is
+          made of: this one grounds on the thick tier instead of an opaque
+          fill. Its texture is the membrane field, one dark scales layer the
+          material mounts itself. See DESIGN.md §The thermocline is the sheet
+          material and §The membrane field. Ground first: every section below
+          is positioned above it, so the material stays behind everything the
+          modal holds. */}
+      <Thermocline tier="thick" style={GROUND_STYLE} />
+
       {/* Header */}
       <StyledDialogTitle id="token-selector-title">
         <TitleText>{t('wallet.select_token', 'Select Token')}</TitleText>
         <CloseButton onClick={handleClose} aria-label={t('general.close', 'Close')}>
-          <CloseIcon />
+          <XIcon />
         </CloseButton>
       </StyledDialogTitle>
 
@@ -518,18 +621,35 @@ export function TokenSelectorModal({
           ) : (
             paginatedTokens.map((token) => {
               const tokenName = token.name || getShortAddress(token.mint || token.address, 4) || '';
-              const balanceText = token.uiAmount
-                ? `${hiddenBalance ? HIDDEN_VALUE : token.uiAmount} ${token.symbol || ''}`
-                : token.symbol || '';
+              // With balances hidden the right column falls back to the symbol
+              // alone — identity stays, holdings go.
+              const balanceText =
+                showBalances && token.uiAmount
+                  ? `${hiddenBalance ? HIDDEN_VALUE : token.uiAmount} ${token.symbol || ''}`
+                  : token.symbol || '';
 
               return (
                 <TokenItemContainer
                   key={getTokenKey(token)}
                   onClick={() => handleSelect(token)}
                   role="button"
-                  aria-label={t('accessibility.select_token', 'Select {{name}}', {
-                    name: tokenName,
-                  })}
+                  // DESIGN.md, §Chain identity: the visual channel may stay
+                  // quiet, the announced one never does — the label speaks the
+                  // full human network whatever the row happens to draw.
+                  aria-label={
+                    token.network
+                      ? t(
+                          'accessibility.select_token_on_network',
+                          'Select {{name}} on {{network}}',
+                          {
+                            name: tokenName,
+                            network: getNetworkName(token.network),
+                          }
+                        )
+                      : t('accessibility.select_token', 'Select {{name}}', {
+                          name: tokenName,
+                        })
+                  }
                   data-testid={`token-select-${token.symbol || tokenName}`}
                 >
                   {/* Token Icon */}
@@ -550,9 +670,7 @@ export function TokenSelectorModal({
                     <TokenNameRow>
                       <TokenName>{tokenName}</TokenName>
                       {showNetworkChip && token.network && (
-                        <NetworkChip>
-                          <NetworkChipText>{token.network.toUpperCase()}</NetworkChipText>
-                        </NetworkChip>
+                        <NetworkIdentity network={token.network} />
                       )}
                     </TokenNameRow>
                     <TokenBalance>{balanceText}</TokenBalance>

@@ -1,12 +1,13 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { CaretLeftIcon } from '../../icons';
 import {
   colors,
   componentSizes,
   fontFamilyNative,
   fontSize,
+  letterSpacing,
   ms,
   s,
   spacing,
@@ -37,11 +38,7 @@ export function BottomSheetTitleHeader({
           accessibilityLabel={resolvedBackLabel}
           accessibilityRole="button"
         >
-          <Ionicons
-            name="chevron-back"
-            size={ms(componentSizes.iconSizeMedium)}
-            color={colors.text.primary}
-          />
+          <CaretLeftIcon size={ms(componentSizes.iconSizeMedium)} color={colors.text.primary} />
         </TouchableOpacity>
       )}
       <View pointerEvents="none" style={styles.titleContainer}>
@@ -74,10 +71,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: ms(fontSize['2xl']),
-    fontFamily: fontFamilyNative.bold,
+    fontSize: ms(fontSize.headline),
+    fontFamily: fontFamilyNative.semiBold,
     color: colors.text.primary,
     textAlign: 'center',
-    letterSpacing: ms(-0.12, 0.3),
+    letterSpacing: ms(letterSpacing.snug, 0.3),
   },
 });

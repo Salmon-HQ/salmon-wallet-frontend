@@ -1,21 +1,23 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Animated, View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from '../../utils/haptics';
 import {
+  borderRadius,
   borderWidth,
   colors,
-  ms,
-  vs,
-  s,
-  fontSize,
   fontFamilyNative,
-  borderRadius,
+  fontSize,
   getShortAddress,
+  ms,
+  s,
+  semantic,
   spacing,
+  vs,
 } from '@salmon/shared';
+import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 
 // ============================================================================
 // Types
@@ -42,9 +44,6 @@ const TRUNCATE_CHARS: Record<'short' | 'medium' | 'long', number> = {
   medium: 6,
   long: 8,
 };
-
-/** Duration to show the copied state (ms) */
-const COPIED_FEEDBACK_DURATION = 1500;
 
 // ============================================================================
 // Helper Functions
@@ -95,7 +94,7 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
   style,
 }) => {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
 
   const displayAddress = getTruncatedAddress(address, truncate);
 
@@ -107,18 +106,13 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
       // Trigger haptic feedback
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      // Show visual feedback
-      setCopied(true);
-
-      // Reset after duration
-      setTimeout(() => {
-        setCopied(false);
-      }, COPIED_FEEDBACK_DURATION);
+      // Show visual feedback (auto-reverts after motionMs.feedbackHold)
+      showCopied();
     } catch (error) {
       // Silently fail - clipboard might not be available in some environments
       console.warn('Failed to copy address:', error);
     }
-  }, [address]);
+  }, [address, showCopied]);
 
   return (
     <View style={[styles.container, style]}>
@@ -137,14 +131,20 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
           style={[styles.copyButton, copied && styles.copyButtonCopied]}
           activeOpacity={0.6}
           accessibilityRole="button"
-          accessibilityLabel={t('transactions.detail.copyAddressLabel', { label })}
-          accessibilityHint={t('transactions.detail.copyAddressHint')}
+          accessibilityLabel={
+            copied ? t('actions.copied') : t('transactions.detail.copyAddressLabel', { label })
+          }
+          accessibilityHint={copied ? undefined : t('transactions.detail.copyAddressHint')}
         >
-          <Ionicons
-            name={copied ? 'checkmark' : 'copy-outline'}
-            size={16}
-            color={copied ? colors.status.success : colors.text.secondary}
-          />
+          {/* The copy control is the affordance in this row; the address beside it
+              is data to read and stays neutral mono. */}
+          {copied ? (
+            <Animated.View style={{ transform: [{ scale: tickScale }] }}>
+              <CheckIcon size={iconSize.sm} color={semantic.status.success} />
+            </Animated.View>
+          ) : (
+            <CopyIcon size={iconSize.sm} color={semantic.text.accent} />
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -179,9 +179,14 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     marginLeft: s(spacing.md),
   },
+  /**
+   * Monospace-Is-For-Scanning Rule: an address is read positionally, prefix
+   * against suffix, so its characters must hold a fixed width — Geist Mono at
+   * the address size.
+   */
   address: {
-    fontSize: ms(fontSize.base),
-    fontFamily: fontFamilyNative.regular,
+    fontSize: ms(fontSize.mono),
+    fontFamily: fontFamilyNative.mono,
     color: colors.text.primary,
     marginRight: s(spacing.sm),
     flexShrink: 1,
@@ -195,7 +200,7 @@ const styles = StyleSheet.create({
     backgroundColor: `${colors.background.card}80`,
   },
   copyButtonCopied: {
-    backgroundColor: `${colors.status.success}20`,
+    backgroundColor: `${semantic.status.success}20`,
   },
 });
 

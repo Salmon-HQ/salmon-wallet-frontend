@@ -16,34 +16,38 @@ import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
 
 // MUI Icons - mapped from Ionicons equivalents
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ShieldIcon from '@mui/icons-material/Shield';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import GroupIcon from '@mui/icons-material/Group';
-import PanToolIcon from '@mui/icons-material/PanTool';
-import WaterDropIcon from '@mui/icons-material/WaterDrop';
-import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import ViewInArIcon from '@mui/icons-material/ViewInAr';
-import AnalyticsIcon from '@mui/icons-material/Analytics';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import SchoolIcon from '@mui/icons-material/School';
-import SavingsIcon from '@mui/icons-material/Savings';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import PieChartIcon from '@mui/icons-material/PieChart';
-import DescriptionIcon from '@mui/icons-material/Description';
-import SearchIcon from '@mui/icons-material/Search';
-import LinkIcon from '@mui/icons-material/Link';
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import WarningIcon from '@mui/icons-material/Warning';
-import LockIcon from '@mui/icons-material/Lock';
+import {
+  ChartBarIcon,
+  ChartLineIcon,
+  ChartPieIcon,
+  CheckCircleIcon,
+  CopyIcon,
+  CubeIcon,
+  CurrencyDollarIcon,
+  DropIcon,
+  FileTextIcon,
+  GraduationCapIcon,
+  HandPalmIcon,
+  LinkIcon,
+  LockIcon,
+  MagnifyingGlassIcon,
+  MedalIcon,
+  MoonIcon,
+  PiggyBankIcon,
+  RocketLaunchIcon,
+  ShieldCheckIcon,
+  ShieldIcon,
+  TreeStructureIcon,
+  TrendUpIcon,
+  TrophyIcon,
+  UsersIcon,
+  WarningIcon,
+  iconSize,
+} from '../../icons';
 
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   fontSize,
@@ -87,13 +91,13 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     labelKey: 'token.badges.strict',
   },
   major: {
-    icon: EmojiEventsIcon,
+    icon: TrophyIcon,
     color: colors.palette.amber,
     label: 'Major',
     labelKey: 'token.badges.major',
   },
   'moonshot-verified': {
-    icon: VerifiedUserIcon,
+    icon: ShieldCheckIcon,
     color: colors.palette.cyan,
     label: 'Moonshot',
     labelKey: 'token.badges.moonshot',
@@ -101,13 +105,13 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
 
   // Community tags
   community: {
-    icon: GroupIcon,
+    icon: UsersIcon,
     color: colors.palette.blue,
     label: 'Community',
     labelKey: 'token.badges.community',
   },
   'community-assist': {
-    icon: PanToolIcon,
+    icon: HandPalmIcon,
     color: colors.palette.blue,
     label: 'Community Assist',
     labelKey: 'token.badges.communityAssist',
@@ -115,29 +119,29 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
 
   // Token types
   lst: {
-    icon: WaterDropIcon,
+    icon: DropIcon,
     color: colors.palette.cyan,
     label: 'LST',
   },
   'original-lst': {
-    icon: MilitaryTechIcon,
+    icon: MedalIcon,
     color: colors.palette.cyan,
     label: 'Original LST',
     labelKey: 'token.badges.originalLst',
   },
   stable: {
-    icon: AttachMoneyIcon,
+    icon: CurrencyDollarIcon,
     color: colors.palette.green,
     label: 'Stablecoin',
     labelKey: 'token.badges.stablecoin',
   },
   'token-2022': {
-    icon: ViewInArIcon,
+    icon: CubeIcon,
     color: colors.palette.purple,
     label: 'Token-2022',
   },
   yb: {
-    icon: AnalyticsIcon,
+    icon: ChartLineIcon,
     color: colors.palette.indigo,
     label: 'Yield Bearing',
     labelKey: 'token.badges.yieldBearing',
@@ -151,37 +155,37 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     labelKey: 'token.badges.launchpad',
   },
   moonshot: {
-    icon: DarkModeIcon,
+    icon: MoonIcon,
     color: colors.palette.purple,
     label: 'Moonshot',
     labelKey: 'token.badges.moonshot',
   },
   'birdeye-trending': {
-    icon: TrendingUpIcon,
+    icon: TrendUpIcon,
     color: colors.palette.orange,
     label: 'Trending',
     labelKey: 'token.badges.trending',
   },
   'pumpfun-graduates': {
-    icon: SchoolIcon,
+    icon: GraduationCapIcon,
     color: colors.palette.pink,
     label: 'Pump.fun',
   },
 
   // Financial products
   'jup-lend-earn': {
-    icon: SavingsIcon,
+    icon: PiggyBankIcon,
     color: colors.palette.green,
     label: 'Jupiter Lend',
   },
   prestocks: {
-    icon: BarChartIcon,
+    icon: ChartBarIcon,
     color: colors.palette.blue,
     label: 'Pre-stocks',
     labelKey: 'token.badges.preStocks',
   },
   xstocks: {
-    icon: PieChartIcon,
+    icon: ChartPieIcon,
     color: colors.palette.indigo,
     label: 'X-stocks',
     labelKey: 'token.badges.xStocks',
@@ -189,13 +193,13 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
 
   // Registry & metadata
   'old-registry': {
-    icon: DescriptionIcon,
+    icon: FileTextIcon,
     color: colors.text.secondary,
     label: 'Legacy Registry',
     labelKey: 'token.badges.legacyRegistry',
   },
   'solana-fm': {
-    icon: SearchIcon,
+    icon: MagnifyingGlassIcon,
     color: colors.palette.indigo,
     label: 'Solana FM',
   },
@@ -205,20 +209,20 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
     label: 'Wormhole',
   },
   deduplicated: {
-    icon: AccountTreeIcon,
+    icon: TreeStructureIcon,
     color: colors.text.tertiary,
     label: 'Deduplicated',
     labelKey: 'token.badges.deduplicated',
   },
   duplicate: {
-    icon: ContentCopyIcon,
+    icon: CopyIcon,
     color: colors.text.tertiary,
     label: 'Duplicate',
     labelKey: 'token.badges.duplicate',
   },
   deprecated: {
     icon: WarningIcon,
-    color: colors.status.error,
+    color: semantic.status.danger,
     label: 'Deprecated',
     labelKey: 'token.badges.deprecated',
   },
@@ -310,7 +314,7 @@ const BadgeItem: React.FC<{ tag: string }> = ({ tag }) => {
   return (
     <BadgeItemContainer>
       <BadgeIconWrapper $badgeColor={config.color}>
-        <IconComponent sx={{ fontSize: fontSize.lg, color: config.color }} />
+        <IconComponent size={iconSize.md} color={config.color} />
       </BadgeIconWrapper>
       <BadgeLabel $badgeColor={config.color} noWrap>
         {config.labelKey ? t(config.labelKey, config.label) : config.label}

@@ -20,10 +20,10 @@ appId: io.salmonwallet.app
     id: 'account-add-method-import'
 - extendedWaitUntil:
     visible:
-      id: 'account-add-seed-input'
+      id: 'account-add-seed-word-input-1'
     timeout: 10000
 - tapOn:
-    id: 'account-add-seed-input'
+    id: 'account-add-seed-word-input-1'
 - inputText: ${SALMON_TEST_SEED_B}
 - waitForAnimationToEnd:
     timeout: 2000

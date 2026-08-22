@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { CaretDownIcon, CaretUpIcon, EyeIcon, EyeSlashIcon } from '../../icons';
 import {
   borderRadius,
   colors,
@@ -16,19 +16,143 @@ import {
   spacing,
   useCurrencyContext,
   vs,
-  getScalesColorForBlockchain,
   getNetworkLabel,
   fontWeight,
   opacity,
+  semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { cardLight } from '../../debug/cardLight';
 import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
-import { ScalesBackground } from '../ScalesBackground';
 import { ShimmerRect } from '../ShimmerRect';
 import type { BalanceCardProps, BlockchainId } from './types';
+
+/* ------------------------------------------------------------------------ *
+ * The caustic — the water's light on the card's face
+ *
+ * The card is an opaque pane suspended in the column. Unlit it reads as a grey
+ * rectangle, because a pane at depth with no light on it is exactly that. This
+ * layer gives it the water's own light rather than the brand's: `water.light`
+ * (`#9FE0EF`), the cold caustic ink the press specular and the wave's crest
+ * already spend — the token is the source of truth, the literal below is the
+ * platform's spelling of it.
+ *
+ * Two objections had to be answered before this could be light at all.
+ *
+ * 1. The gate hangs above this card and casts a shadow onto it, so light
+ *    arriving from directly overhead is occluded before it lands — a spotlight
+ *    here would contradict the geometry the shadow already states. So this is
+ *    not incident light. It is a *reflection on the card's own face*: the pane
+ *    returns the rippling surface far above it toward the viewer, and where a
+ *    reflection sits is decided by the viewer's angle, not the source's. An
+ *    awning over your head does not remove the sky from a window in front of
+ *    you. The gate's shadow and this reflection are therefore not rivals; the
+ *    dark band the gate lays across the top edge is what the light beneath it
+ *    reads against, and the two together model the card as a solid object.
+ * 2. DESIGN.md refuses "ambient light shafts or resting caustics" and holds
+ *    that light is an event, never a state. That refusal is about the *water* —
+ *    the column must not glow, or the wave's ring stops meaning anything. This is
+ *    not the medium emitting; it is a surface's specularity, a material
+ *    property in the same class as the thermocline's own frosted texture. It
+ *    stays inside the card, it is static, and it never brightens: nothing about
+ *    it can be mistaken for something having just happened.
+ *
+ * The Scales Exclusion Rule is untouched — no motif enters the card, and the
+ * card's ground stays fully opaque over the water. The rule is about the
+ * motif, not about light.
+ *
+ * Cost: two static `LinearGradient`s inside a layer the card already
+ * composites. No blur, no native module, no clock. Deliberately *not*
+ * `mixBlendMode: 'screen'` like the press specular: over a ground this dark the
+ * two composite within a level or two of each other, and screen would buy a
+ * separate compositing group for nothing.
+ * ------------------------------------------------------------------------ */
+
+/** `water.light`, in the alpha-carrying spelling `expo-linear-gradient` needs. */
+const causticInk = (alpha: number) => `rgba(159, 224, 239, ${alpha})`;
+
+/**
+ * The three readings the debug switch offers, and what each is for.
+ *
+ * `peak` is the opacity of the brightest filament; `reach` is how far the light
+ * survives along its own axis; `cross` is what the second filament carries as a
+ * fraction of the peak. Those are the only three levers, and each reading is
+ * the same light seen at a different strength — not three different ideas.
+ *
+ * The earlier 0.07 opacity ceiling assumed the light could arrive at the change
+ * row. It cannot: the axis runs down-right, and at these reaches the change row
+ * sits past the end of the gradient, so its alpha is exactly zero at every
+ * reading here. The ceiling that actually binds is the amount, whose leftmost
+ * glyphs the light grazes because the axis is diagonal — and even the `bold`
+ * graze leaves the amount at 7.65:1 on the lightest of the two panes, well over
+ * AA. Contrast is therefore not what limits this layer; the register is. The
+ * numbers below were re-derived from the card's measured geometry, not carried
+ * over.
+ *
+ * Worst-case measured ratios over the lighter `SHALLOW_PANE` ground (the
+ * unfavourable of the two), taken at the brightest point inside each text box:
+ *
+ * | reading | peak | reach | cross | amount `#DDE3ED`   | change `#FF6B85` |
+ * | ------- | ---- | ----- | ----- | ------------------ | ---------------- |
+ * | none    | —    | —     | —     | 11.62:1            | 6.21:1           |
+ * | subtle  | 0.05 | 0.30  | 0.60  | 10.89:1 (α 0.027)  | 6.21:1 (α 0)     |
+ * | present | 0.11 | 0.32  | 0.70  |  9.50:1 (α 0.082)  | 6.21:1 (α 0)     |
+ * | bold    | 0.18 | 0.34  | 0.75  |  7.65:1 (α 0.164)  | 6.21:1 (α 0)     |
+ *
+ * `reach` stays well under 0.40 at every reading — the amount's cap-height sits
+ * there, and the light must never gather on the number. It is nudged rather
+ * than pushed between readings because reach is what turns a gathered
+ * reflection into a header treatment; `peak` is the lever that buys visibility
+ * without spreading the shape. `cross` rises with `peak` for the same reason a
+ * brighter caustic needs a stronger second filament: one filament alone reads
+ * as a wash the moment it is bright enough to see.
+ */
+const CAUSTIC_READINGS = {
+  /** The first pass, kept verbatim. Judged invisible; on the dial as the floor. */
+  subtle: { peak: 0.05, reach: 0.3, cross: 0.6 },
+  /** The intended reading: the same shape, opened until it is actually there. */
+  present: { peak: 0.11, reach: 0.32, cross: 0.7 },
+  /** Past comfort on purpose, to bracket the answer from above. */
+  bold: { peak: 0.18, reach: 0.34, cross: 0.75 },
+} as const;
+
+/**
+ * Where the light enters and which way it runs. The shoulder, not the crown:
+ * the top edge is where the gate's shadow is densest, and a reflection that
+ * starts off-centre reads as gathered rather than as a header treatment.
+ */
+const CAUSTIC_AXIS = { start: { x: 0.05, y: 0 }, end: { x: 0.75, y: 1 } } as const;
+/** The crossing filament: shallower, nearly lateral, so the two actually cross. */
+const CAUSTIC_CROSS_AXIS = { start: { x: 0, y: 0.14 }, end: { x: 1, y: 0.44 } } as const;
+
+/** The reflection on the card's face. Static, non-interactive, clipped to the card. */
+const BalanceCardCaustic = ({ reading }: { reading: keyof typeof CAUSTIC_READINGS }) => {
+  const { peak, reach, cross } = CAUSTIC_READINGS[reading];
+
+  return (
+    <View style={styles.causticLayer} pointerEvents="none" testID="balance-card-caustic">
+      <LinearGradient
+        colors={[causticInk(0), causticInk(peak * 0.5), causticInk(peak), causticInk(0)]}
+        // Rises fast off the edge and decays slowly — a filament has a bright
+        // core and a long tail, which is what separates it from a linear fade.
+        locations={[0, reach * 0.22, reach * 0.52, reach]}
+        start={CAUSTIC_AXIS.start}
+        end={CAUSTIC_AXIS.end}
+        style={StyleSheet.absoluteFill}
+      />
+      <LinearGradient
+        colors={[causticInk(0), causticInk(peak * cross), causticInk(0)]}
+        locations={[0, reach * 0.45, reach * 1.1]}
+        start={CAUSTIC_CROSS_AXIS.start}
+        end={CAUSTIC_CROSS_AXIS.end}
+        style={StyleSheet.absoluteFill}
+      />
+    </View>
+  );
+};
 
 /**
  * Get gradient configuration for a blockchain
@@ -56,7 +180,9 @@ const getGradientForBlockchain = (blockchain: BlockchainId) => {
  * Render the blockchain logo using local SVG icons
  */
 const renderBlockchainLogo = (blockchain: BlockchainId) => {
-  const iconSize = s(componentSizes.blockchainIcon);
+  // Derived from the box, never from its own token — see
+  // `componentSizes.blockchainMarkRatio`.
+  const iconSize = s(componentSizes.logoContainer) * componentSizes.blockchainMarkRatio;
   switch (blockchain) {
     case 'solana':
     case 'solana-devnet':
@@ -125,9 +251,8 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   const displayPercentage = showPercentage(changePercent);
   const displayAbsChange = formatChange(changeAmount);
 
-  // Get gradient and scales color for current blockchain
+  // Get gradient for current blockchain
   const gradient = getGradientForBlockchain(blockchain);
-  const scalesColor = getScalesColorForBlockchain(blockchain);
 
   // Get network label — in developer mode, always show (including "Mainnet")
   const networkLabel = showNetworkLabel
@@ -154,7 +279,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
             accessibilityRole="button"
             accessibilityLabel={t('accessibility.show_balance', 'Show balance')}
           >
-            <Ionicons name="eye-off" size={ms(componentSizes.eyeIcon)} color={colors.text.muted} />
+            <EyeSlashIcon size={ms(componentSizes.eyeIcon)} color={semantic.text.secondary} />
           </TouchableOpacity>
         </View>
       );
@@ -179,7 +304,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
           accessibilityRole="button"
           accessibilityLabel={t('accessibility.hide_balance', 'Hide balance')}
         >
-          <Ionicons name="eye" size={ms(componentSizes.eyeIcon)} color={colors.text.muted} />
+          <EyeIcon size={ms(componentSizes.eyeIcon)} color={semantic.text.secondary} />
         </TouchableOpacity>
       </View>
     );
@@ -201,12 +326,19 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
     return (
       <View style={styles.changeRow}>
         <Text style={[styles.changeText, { color: changeColor }]}>{displayPercentage}</Text>
-        <Ionicons
-          name={isPositive ? 'chevron-up' : 'chevron-down'}
-          size={ms(componentSizes.changeArrowIcon)}
-          color={changeColor}
-          style={styles.trendingIcon}
-        />
+        {isPositive ? (
+          <CaretUpIcon
+            size={ms(componentSizes.changeArrowIcon)}
+            color={changeColor}
+            style={styles.trendingIcon}
+          />
+        ) : (
+          <CaretDownIcon
+            size={ms(componentSizes.changeArrowIcon)}
+            color={changeColor}
+            style={styles.trendingIcon}
+          />
+        )}
         {displayAbsChange && (
           <Text style={[styles.changeText, { color: changeColor }]}>({displayAbsChange})</Text>
         )}
@@ -221,16 +353,18 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
       start={gradient.start}
       end={gradient.end}
       style={[styles.container, style]}
+      testID="balance-card-root"
     >
-      {/* Scales pattern overlay - color based on blockchain */}
-      <ScalesBackground
-        strokeColor={scalesColor}
-        strokeWidth={1}
-        patternHeight={26}
-        style={styles.scalesOverlay}
-      />
-      {/* Group 1: Logo + Network tag */}
-      <View style={styles.contentGroup}>
+      {cardLight !== 'none' && <BalanceCardCaustic reading={cardLight} />}
+
+      {/* Group 1: Logo + Network tag. No motif: the motif belongs to the
+          water, and this card is content — it carries the balance figure, and
+          the scales never go behind a numeric value. Confining the field to
+          this band was how the card kept the rule while the ground had no
+          field of its own; the ground now runs the whole column, so a field
+          inside the card would be wallpaper. Asserted in
+          BalanceCard.scales.test.tsx. */}
+      <View style={styles.logoGroup} testID="balance-card-logo-group">
         <View style={styles.logoContainer}>{renderBlockchainLogo(blockchain)}</View>
         {networkLabel && (
           <View style={styles.networkLabelContainer}>
@@ -278,14 +412,6 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  scalesOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: ms(borderRadius.card),
-  },
   container: {
     borderRadius: ms(borderRadius.card),
     paddingTop: vs(spacing['2xl']),
@@ -306,9 +432,30 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  /**
+   * Clips the reflection to the card's own rounded face. It carries the clip
+   * rather than the container so the container keeps its drop shadow — on iOS
+   * `overflow: 'hidden'` sets `masksToBounds` and would erase it.
+   */
+  causticLayer: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: ms(borderRadius.card),
+    overflow: 'hidden',
+  },
   contentGroup: {
     alignItems: 'center',
     gap: vs(spacing.xs),
+  },
+  /**
+   * Stretches to the card's full width so the motif reads as a band rather
+   * than a patch, and clips it to this group's own box.
+   */
+  logoGroup: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: vs(spacing.xs),
+    position: 'relative',
+    overflow: 'hidden',
   },
   logoContainer: {
     width: s(componentSizes.logoContainer),
@@ -342,7 +489,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.text.primary,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.label,
   },
   balanceContainer: {
     alignItems: 'center',
@@ -410,7 +557,7 @@ const styles = StyleSheet.create({
   },
   changeHidden: {
     fontSize: ms(fontSize.sm),
-    color: colors.text.muted,
+    color: semantic.text.secondary,
   },
   pagination: {
     flexDirection: 'row',
@@ -426,7 +573,9 @@ const styles = StyleSheet.create({
     marginHorizontal: s(spacing.xxs + 1),
   },
   paginationDotActive: {
-    backgroundColor: colors.text.primary,
+    // Which chain you are looking at is a selected state, so the active dot is
+    // salmon ink (6.07:1) against inactive neutral — a 4px mark, not a fill.
+    backgroundColor: semantic.accent.ink,
   },
 });
 

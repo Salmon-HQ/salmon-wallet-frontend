@@ -21,7 +21,7 @@ import {
   hintIconSx,
   Label,
   LogoWrap,
-  LogoImage,
+  MARK_SIZE,
   MonoValue,
   ScrollArea,
   SectionHeader,
@@ -31,6 +31,7 @@ import {
   Value,
   WarningNotice,
 } from './common';
+import { BrandMark } from '../BrandMark';
 import type { DAppConnectApprovalViewProps } from './types';
 
 export function DAppConnectApprovalView({
@@ -54,7 +55,7 @@ export function DAppConnectApprovalView({
       <Content>
         <Header>
           <LogoWrap>
-            <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
+            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
           </LogoWrap>
           <Title>{t('dapp.connect_title', 'Connect to dApp')}</Title>
           <Subtitle>

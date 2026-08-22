@@ -10,6 +10,7 @@ import {
   ms,
   s,
   fontFamilyNative,
+  semantic,
 } from '@salmon/shared';
 import type { SwapTabSelectorProps, SwapTab } from './types';
 
@@ -94,14 +95,14 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: ms(fontSize.lg),
     fontFamily: fontFamilyNative.bold,
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.label,
     lineHeight: ms(18 * lineHeight.condensed),
   },
   tabTextActive: {
     color: colors.text.primary,
   },
   tabTextInactive: {
-    color: colors.text.disabled,
+    color: semantic.text.disabled,
   },
   tabIndicator: {
     width: '100%',

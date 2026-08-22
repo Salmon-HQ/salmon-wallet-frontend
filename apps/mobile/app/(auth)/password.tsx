@@ -31,12 +31,9 @@
  * - If valid, proceed to create account
  */
 
-import { Logo } from '@salmon/assets';
 import {
   ApiError,
   colors,
-  componentSizes,
-  contentPadding,
   createAccount,
   fontFamilyNative,
   generateAccountName,
@@ -44,6 +41,9 @@ import {
   getScanNetworks,
   getStashItem,
   PASSWORD_CONSTRAINTS,
+  fontScaleCap,
+  fontSize,
+  lineHeight,
   removeStashItem,
   spacing,
   STASH_KEYS,
@@ -51,32 +51,33 @@ import {
   useAccountsContext,
   validatePassword,
   getPasswordIssue,
+  semantic,
+  componentSizes,
 } from '@salmon/shared';
+import { LockIcon } from '../../src/icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Keyboard, Linking, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { useWaitPassage } from '../../src/utils/useWaitPassage';
 import {
   LoadingScreen,
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
   PasswordInput,
   PasswordStrengthBar,
   PrimaryButton,
+  ReservedSlot,
   ScreenHeader,
 } from '../../src/components';
+
+/** Warning, phrase, confirmation, password. */
+const CREATE_FLOW_STEPS = 4;
+/** Phrase, password. */
+const RECOVER_FLOW_STEPS = 2;
 
 // ============================================================================
 // Component
@@ -120,8 +121,26 @@ export default function PasswordScreen() {
   const [error, setError] = useState<string | null>(null);
   const [wrongPassword, setWrongPassword] = useState(false);
 
+  // The passage into the wait: when the wait rises, the form sinks under it.
+  // The auth layout owns the ground, so the whole layout may travel; the wait
+  // itself owns the beat on its way in.
+  const { exiting: waitExiting } = useWaitPassage(isLoading);
+
   // Refs
   const confirmPasswordRef = useRef<TextInput>(null);
+  /**
+   * Where to go once the wait has fully left the screen. Set on success
+   * instead of navigating immediately — navigation unmounts the wait, and an
+   * unmounted wait is a wave cut mid-crossing. Consumed exactly once by
+   * `handleWaitExited`.
+   */
+  const pendingRouteRef = useRef<'/(auth)/biometric-setup' | null>(null);
+  const handleWaitExited = useCallback(() => {
+    const route = pendingRouteRef.current;
+    if (!route) return;
+    pendingRouteRef.current = null;
+    router.replace(route);
+  }, []);
 
   // Password validation
   const passwordValidation = validatePassword(password);
@@ -251,8 +270,18 @@ export default function PasswordScreen() {
       // answered (fires on accept, discarded on decline).
       void trackOnboardingEvent(flowType === 'create' ? 'wallet_created' : 'wallet_recovered');
 
-      // Navigate to biometric setup (auto-skips to success if unavailable)
-      router.replace('/(auth)/biometric-setup');
+      // Navigate to biometric setup (auto-skips to success if unavailable) —
+      // but not yet. Navigating here unmounts the wait mid-wave: the overlay
+      // used to vanish with the front still crossing, a hard cut on the one
+      // transition that should close the gesture. The route is parked and the
+      // wait is handed its exit instead (`isLoading` flips false in the
+      // finally below): the last front leaves the screen, the content sinks
+      // with the departing wave, and `onExited` performs the navigation — the
+      // arriving screen then floats in through the auth layout's FloatRegion,
+      // one beat later. LoadingScreen's own watchdog guarantees `onExited`
+      // fires even if the animation callback is dropped, so the route cannot
+      // be stranded.
+      pendingRouteRef.current = '/(auth)/biometric-setup';
     } catch (err) {
       console.error('Failed to create account:', err);
       // Account setup calls the backend, so an unreachable server lands here
@@ -316,100 +345,121 @@ export default function PasswordScreen() {
   return (
     <>
       <StatusBar style="light" />
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <KeyboardAvoidingView
-            style={styles.keyboardView}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          >
-            {/* Header with Step Indicator */}
-            <ScreenHeader
-              onBack={handleBack}
-              stepIndicator={{
-                totalSteps: flowType === 'create' ? 3 : 2,
-                currentStep: flowType === 'create' ? 3 : 2,
-              }}
-              backDisabled={isLoading || isChecking}
-            />
-
-            {/* Content */}
-            <ScrollView
-              style={styles.scrollView}
-              contentContainerStyle={styles.content}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Logo */}
-              <View style={styles.logoContainer}>
-                <Image source={Logo} style={styles.logo} resizeMode="contain" />
-              </View>
-
-              {/* Title - Different for showSingleInput */}
-              <Text style={styles.title}>
+      {/* The form gives way to the wait with the passage's sink. On a failure
+          it returns under the wait's own ebb, exactly where it was; on
+          success the parked route navigates before it can reappear. */}
+      {!isLoading && (
+        <Animated.View style={styles.passage} exiting={waitExiting}>
+          <OnboardingLayout
+            testID="password-screen"
+            /*
+          `content`, not `credential` (owner, 2026-08-18): recover → password
+          are consecutive steps of one flow, and `credential`'s hero-sized
+          mark band (201pt vs content's 96) dropped this screen's cluster
+          ~105pt below recover's — the lock landed far under where the key had
+          just been. On `content` every band — chrome, mark, title,
+          description, body — is the same constant as recover's, so the hero
+          holds its Y across the step and the first input starts at the same
+          band top as the seed grid's first row. The sink-and-float transition
+          is what makes the still hero read: the content travels, the cluster
+          does not jump.
+        */
+            variant="content"
+            scrollBody
+            float
+            /*
+          The lock: what the password buys. The fish leaves the flow screens
+          — one semantic glyph per step, consent's pattern and size.
+        */
+            mark={<LockIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+            chrome={
+              <ScreenHeader
+                onBack={handleBack}
+                stepIndicator={{
+                  totalSteps: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
+                  currentStep: flowType === 'create' ? CREATE_FLOW_STEPS : RECOVER_FLOW_STEPS,
+                }}
+                backDisabled={isLoading || isChecking}
+              />
+            }
+            title={
+              <OnboardingTitle>
                 {showSingleInput
-                  ? t('wallet.create.enter_your_password') || 'Enter your password'
-                  : t('wallet.create.choose_a_password') || 'Choose a Password'}
-              </Text>
-
-              {/* Subtitle - Only show when not showSingleInput */}
-              {!showSingleInput && (
-                <Text style={styles.subtitle}>
-                  {t('wallet.create.choose_a_password_body') ||
-                    'You will need it to unlock your wallet'}
-                </Text>
-              )}
-
-              {/* Password Input */}
-              <View style={styles.inputContainer}>
-                <PasswordInput
-                  testID="password-input"
-                  value={password}
-                  onChangeText={handlePasswordChange}
-                  placeholder={
-                    showSingleInput
-                      ? t('wallet.create.enter_your_password') || 'Enter your password'
-                      : t('wallet.create.passwordNew') || 'New password'
-                  }
-                  error={passwordError}
-                  editable={!isLoading && !isChecking}
-                  onSubmitEditing={() => {
-                    if (showSingleInput) {
-                      handleSubmit();
-                    } else {
-                      confirmPasswordRef.current?.focus();
-                    }
-                  }}
-                />
-
-                {/* Password Strength Indicator - Only for new password */}
-                {!showSingleInput && password.length > 0 && (
-                  <View style={styles.strengthContainer}>
-                    <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
-                  </View>
-                )}
-              </View>
-
-              {/* Confirm Password Input - Only when not showSingleInput */}
-              {!showSingleInput && (
+                  ? t('wallet.create.enter_your_password')
+                  : t('wallet.create.choose_a_password')}
+              </OnboardingTitle>
+            }
+            description={
+              // The single-field variant used to delete this line, dropping 56px
+              // and moving everything below it. Reserved and left empty now.
+              showSingleInput ? undefined : (
+                <OnboardingDescription>
+                  {t('wallet.create.choose_a_password_body')}
+                </OnboardingDescription>
+              )
+            }
+            body={
+              <>
                 <View style={styles.inputContainer}>
                   <PasswordInput
-                    testID="password-confirm-input"
-                    value={confirmPassword}
-                    onChangeText={handleConfirmPasswordChange}
-                    placeholder={t('wallet.create.passwordRepeat') || 'Repeat password'}
-                    error={confirmError}
+                    testID="password-input"
+                    value={password}
+                    onChangeText={handlePasswordChange}
+                    placeholder={
+                      showSingleInput
+                        ? t('wallet.create.enter_your_password')
+                        : t('wallet.create.passwordNew')
+                    }
+                    error={passwordError}
                     editable={!isLoading && !isChecking}
-                    onSubmitEditing={handleSubmit}
+                    onSubmitEditing={() => {
+                      if (showSingleInput) {
+                        handleSubmit();
+                      } else {
+                        confirmPasswordRef.current?.focus();
+                      }
+                    }}
                   />
+
+                  {/*
+                Feedback about the field above it, so it sits against that
+                field rather than competing with the terms line for the assist
+                band. Its slot is reserved from the first frame — "nothing
+                moves under the finger": typing the first character reveals
+                the meter instead of shoving the confirmation field down.
+              */}
+                  {!showSingleInput && (
+                    <ReservedSlot visible={password.length > 0}>
+                      <View style={styles.strengthContainer}>
+                        <PasswordStrengthBar strength={passwordValidation.strength} t={t} />
+                      </View>
+                    </ReservedSlot>
+                  )}
                 </View>
-              )}
 
-              {/* General Error */}
-              {error && <Text style={styles.generalError}>{error}</Text>}
+                {!showSingleInput && (
+                  <View style={styles.inputContainer}>
+                    <PasswordInput
+                      testID="password-confirm-input"
+                      value={confirmPassword}
+                      onChangeText={handleConfirmPasswordChange}
+                      placeholder={t('wallet.create.passwordRepeat')}
+                      error={confirmError}
+                      editable={!isLoading && !isChecking}
+                      onSubmitEditing={handleSubmit}
+                    />
+                  </View>
+                )}
 
-              {/* Terms Text */}
-              <Text style={styles.termsText}>
+                {/* Reserved for the same reason as the strength bar: a failure
+                message must not shove the layout when it lands. */}
+                <ReservedSlot visible={!!error}>
+                  <Text style={styles.generalError}>{error ?? ' '}</Text>
+                </ReservedSlot>
+              </>
+            }
+            assist={
+              <Text style={styles.termsText} maxFontSizeMultiplier={fontScaleCap.chrome}>
                 {flowType === 'recover'
                   ? t('wallet.recover.terms_prefix')
                   : t('wallet.create.terms_prefix')}
@@ -422,22 +472,20 @@ export default function PasswordScreen() {
                   {t('general.terms_and_conditions')}
                 </Text>
               </Text>
-
-              {/* Submit Button */}
-              <View style={styles.buttonContainer}>
-                <PrimaryButton
-                  onPress={handleSubmit}
-                  disabled={!isFormValid() || wrongPassword}
-                  loading={isLoading || isChecking}
-                  testID="password-submit-button"
-                >
-                  {getButtonText()}
-                </PrimaryButton>
-              </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </TouchableWithoutFeedback>
-      </SafeAreaView>
+            }
+            action={
+              <PrimaryButton
+                onPress={handleSubmit}
+                disabled={!isFormValid() || wrongPassword}
+                loading={isLoading || isChecking}
+                testID="password-submit-button"
+              >
+                {getButtonText()}
+              </PrimaryButton>
+            }
+          />
+        </Animated.View>
+      )}
 
       {/* Loading Screen Overlay */}
       <LoadingScreen
@@ -446,6 +494,7 @@ export default function PasswordScreen() {
         subtitle={t('wallet.create.securing_wallet')}
         showTips={true}
         tipInterval={4000}
+        onExited={handleWaitExited}
       />
     </>
   );
@@ -456,42 +505,9 @@ export default function PasswordScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  safeArea: {
+  /** The form's travel frame for the passage into the wait. */
+  passage: {
     flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    alignItems: 'center',
-    paddingHorizontal: contentPadding.screen,
-  },
-  logoContainer: {
-    marginBottom: spacing['2xl'],
-  },
-  logo: {
-    width: componentSizes.logoSizeMedium,
-    height: componentSizes.logoSizeMedium,
-  },
-  title: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: 28,
-    lineHeight: 36,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: spacing['3xl'],
-    textAlign: 'center',
   },
   inputContainer: {
     width: '100%',
@@ -502,10 +518,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
   },
   generalError: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: fontSize.caption,
+    lineHeight: fontSize.caption * lineHeight.snug,
     marginBottom: spacing.lg,
     textAlign: 'center',
     width: '100%',
@@ -513,18 +529,11 @@ const styles = StyleSheet.create({
   termsText: {
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: fontSize.caption,
+    lineHeight: fontSize.caption * lineHeight.normal,
     textAlign: 'center',
-    marginBottom: spacing['2xl'],
-    paddingHorizontal: spacing['2xl'],
   },
   termsHighlight: {
     color: colors.step.active,
-  },
-  buttonContainer: {
-    width: '100%',
-    marginTop: 'auto',
-    marginBottom: spacing['3xl'],
   },
 });

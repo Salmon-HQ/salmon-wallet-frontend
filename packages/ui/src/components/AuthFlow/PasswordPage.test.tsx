@@ -10,6 +10,11 @@ import { PasswordPage } from './PasswordPage';
 
 // Hoisted so the vi.mock factory below can reference it — vi.mock is lifted
 // above every top-level statement in this file.
+// Mutable so individual tests can flip requiredLock (single- vs two-input).
+const { accountsState } = vi.hoisted(() => ({
+  accountsState: { requiredLock: true, counter: 0 },
+}));
+
 const { MockApiError } = vi.hoisted(() => {
   class MockApiError extends Error {
     status: number;
@@ -50,6 +55,13 @@ vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual('../../../../shared/src/theme')),
   ...(await vi.importActual('../../../../shared/src/utils/scaling')),
   ...(await vi.importActual('../../../../shared/src/types/ui')),
+  // The wave's arithmetic, pulled in whole for the same reason as the tokens:
+  // it is runtime-agnostic and the LoadingScreen this page mounts reads it.
+  ...(await vi.importActual('../../../../shared/src/motion')),
+  // The hook that keeps the wait mounted until its closing wave has left: the
+  // page parks its handoff behind that report, so a stub here would test a
+  // passage the product does not have.
+  ...(await vi.importActual('../../../../shared/src/hooks/useWaitExit')),
   PASSWORD_CONSTRAINTS: { MIN_LENGTH: 12, MAX_LENGTH: 128 },
   ApiError: MockApiError,
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
@@ -57,11 +69,12 @@ vi.mock('@salmon/shared', async () => ({
   getMirrorNetworks: async () => ({}),
   trackOnboardingEvent: async () => undefined,
   useAccountsContext: () => [
-    { requiredLock: true, counter: 0 },
+    accountsState,
     { checkPassword: mockCheckPassword, addAccount: mockAddAccount },
   ],
   validatePassword: () => ({ isValid: true, strength: 'strong' }),
   getPasswordIssue: () => null,
+  getPasswordStrengthLabel: (strength: string) => `strength-${strength}`,
 }));
 
 vi.mock('../../utils/styled', async () => {
@@ -95,6 +108,7 @@ const SEED_KEY = 'wallet.create.recovery_error';
 describe('PasswordPage account setup errors', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    accountsState.requiredLock = true;
     mockCheckPassword.mockResolvedValue(true);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });
@@ -137,5 +151,40 @@ describe('PasswordPage account setup errors', () => {
       expect(screen.getByText(SEED_KEY)).toBeTruthy();
     });
     expect(screen.queryByText(NETWORK_KEY)).toBeNull();
+  });
+});
+
+/**
+ * "Nothing moves under the finger": the strength meter's and the general
+ * error's slots are reserved from the first frame (ReservedSlot renders them
+ * hidden via `inert` + `visibility: hidden`), so typing the first character
+ * or a submit failure reveals content instead of shoving the layout.
+ */
+describe('PasswordPage reserved slots', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    accountsState.requiredLock = false;
+    mockCheckPassword.mockResolvedValue(true);
+  });
+
+  afterEach(cleanup);
+
+  it('reserves the strength meter and error slots before the first keystroke', () => {
+    const { container } = renderPage();
+
+    // Both slots exist, hidden — only ReservedSlot uses `inert` in this tree.
+    expect(container.querySelectorAll('div[inert]')).toHaveLength(2);
+    // The meter itself is already mounted inside its hidden slot.
+    expect(screen.getByText('strength-strong')).toBeTruthy();
+  });
+
+  it('reveals the strength meter in place on the first character', () => {
+    const { container } = renderPage();
+
+    fireEvent.change(screen.getByTestId('password-input'), { target: { value: 'a' } });
+
+    // The strength slot flipped visible; the error slot is still reserved.
+    expect(container.querySelectorAll('div[inert]')).toHaveLength(1);
+    expect(screen.getByText('strength-strong')).toBeTruthy();
   });
 });

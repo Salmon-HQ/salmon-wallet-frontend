@@ -8,8 +8,15 @@
 
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { borderRadius, colors, fontFamilyNative, fontSize, spacing } from '@salmon/shared';
+import { WarningIcon, iconSize } from '../../icons';
+import {
+  borderRadius,
+  colors,
+  fontFamilyNative,
+  fontSize,
+  spacing,
+  semantic,
+} from '@salmon/shared';
 import type { WarningNoticeProps } from './types';
 
 export function WarningNotice({
@@ -19,16 +26,15 @@ export function WarningNotice({
   action,
   style,
 }: WarningNoticeProps): React.ReactElement {
-  const accent = tone === 'warning' ? colors.status.warning : colors.status.error;
-  const background =
-    tone === 'warning' ? colors.status.warningBackground : colors.status.errorBackground;
+  const accent = tone === 'warning' ? semantic.status.warning : semantic.status.danger;
+  const background = tone === 'warning' ? semantic.status.warningTint : semantic.status.dangerTint;
 
   return (
     <View
       style={[styles.container, { backgroundColor: background, borderColor: accent }, style]}
       accessibilityRole="alert"
     >
-      <Ionicons name="warning-outline" size={20} color={accent} style={styles.icon} />
+      <WarningIcon size={iconSize.md} color={accent} style={styles.icon} />
       <View style={styles.textColumn}>
         <Text style={[styles.title, { color: accent }]}>{title}</Text>
         {children != null && <Text style={styles.body}>{children}</Text>}

@@ -12,9 +12,20 @@
  * completion it settles the destination balance; on failure/refund it settles
  * the source.
  *
- * In-memory only: a bridge that outlives the session is not resumed after an
- * app restart (a persistence layer would be a follow-up). The user can still
- * see the result via refetch-on-focus / manual refresh once they reopen.
+ * Persisted: the pending list is hydrated from and written to
+ * `STORAGE_KEYS.PENDING_BRIDGES`, so a bridge that outlives the session IS
+ * resumed and re-polled after an app restart or an extension side-panel close.
+ *
+ * Exchanges are registered the moment StealthEX creates them — before the
+ * deposit transfer is attempted — so an order that exists at the provider is
+ * never lost to a mid-sequence failure. That makes this list the durable record
+ * of every exchange id the wallet has ever created but not yet seen settle,
+ * which is also the reference number a user needs for support.
+ *
+ * Registering that early means an exchange can be tracked whose deposit never
+ * left — so tracking has a ceiling (`BRIDGE_TRACKING_TTL_MS`): an exchange that
+ * has not reached a terminal status within it is dropped rather than polled, and
+ * reported as pending, forever.
  *
  * @module contexts/BridgeSettlementContext
  */
@@ -44,6 +55,13 @@ export interface PendingBridgeExchange {
   /** Chain the payout arrives on (settled when the exchange completes). */
   destNetworkId?: NetworkId;
   destAccountId?: string;
+  /**
+   * When the wallet started tracking this exchange, in epoch ms. Stamped by
+   * `trackBridgeExchange` (and backfilled on hydrate for records persisted
+   * before this field existed) so an exchange that never resolves can age out
+   * instead of being reported as in flight forever.
+   */
+  createdAt?: number;
 }
 
 interface BridgeSettlementContextValue {
@@ -100,6 +118,29 @@ const DEFAULT_BRIDGE_POLL_INTERVAL_MS = 20_000;
 /** Consecutive failed status polls before the provider reports `isStalled`. */
 const STALLED_AFTER_CONSECUTIVE_POLL_FAILURES = 3;
 
+/**
+ * How long an unresolved exchange stays tracked before it is dropped.
+ *
+ * Registering on creation (before the deposit) is what stops a mid-sequence
+ * failure from orphaning a live order, but it opens the mirror case: an
+ * exchange whose deposit never left the wallet — the transfer threw, or the app
+ * died between the two steps — has nothing to settle and will never reach a
+ * terminal status, so without a ceiling it would be polled forever and listed
+ * as in flight forever. A resolved exchange is removed by the poll long before
+ * this, and the bridge copy quotes 10-30 minutes, so a day sits far past any
+ * real settlement while still bounding how long the wallet can be wrong.
+ *
+ * Age is the only signal used, deliberately. Asking StealthEX whether a deposit
+ * was ever seen would be exact, but it means letting a third-party passthrough
+ * field decide whether to stop watching money — dropping a still-live order on
+ * a missing field is worse than watching a dead one for a day.
+ */
+const BRIDGE_TRACKING_TTL_MS = 24 * 60 * 60 * 1000;
+
+function isExpired(exchange: PendingBridgeExchange, now: number): boolean {
+  return exchange.createdAt != null && now - exchange.createdAt > BRIDGE_TRACKING_TTL_MS;
+}
+
 export interface BridgeSettlementProviderProps {
   children: React.ReactNode;
   /** Injectable for tests; defaults to the salmon-api bridge status endpoint. */
@@ -129,8 +170,9 @@ export function BridgeSettlementProvider({
   }, [pendingExchanges]);
 
   const trackBridgeExchange = useCallback((exchange: PendingBridgeExchange) => {
+    const stamped = { ...exchange, createdAt: exchange.createdAt ?? Date.now() };
     setPendingExchanges((prev) =>
-      prev.some((p) => p.id === exchange.id) ? prev : [...prev, exchange]
+      prev.some((p) => p.id === stamped.id) ? prev : [...prev, stamped]
     );
   }, []);
 
@@ -150,7 +192,15 @@ export function BridgeSettlementProvider({
             STORAGE_KEYS.PENDING_BRIDGES
           );
           if (active && Array.isArray(stored) && stored.length > 0) {
-            setPendingExchanges(stored);
+            // Records written before `createdAt` existed get stamped now, so
+            // they age out from this session rather than never — and anything
+            // already past the ceiling is dropped instead of resumed.
+            const now = Date.now();
+            setPendingExchanges(
+              stored
+                .map((ex) => (ex.createdAt == null ? { ...ex, createdAt: now } : ex))
+                .filter((ex) => !isExpired(ex, now))
+            );
           }
         } catch (err) {
           console.warn('[BridgeSettlement] hydrate failed:', err);
@@ -177,7 +227,15 @@ export function BridgeSettlementProvider({
 
     const poll = async () => {
       // Snapshot so removals mid-loop don't skip entries.
+      const now = Date.now();
       for (const ex of [...pendingRef.current]) {
+        // An exchange the provider never resolves (usually because our deposit
+        // never left) stops being watched and stops being reported as pending.
+        if (isExpired(ex, now)) {
+          console.warn('[BridgeSettlement] exchange unresolved past the tracking ceiling:', ex.id);
+          remove(ex.id);
+          continue;
+        }
         let tx: BridgeTransaction | null = null;
         try {
           tx = await getStatus(ex.id);
@@ -261,6 +319,8 @@ export function BridgeSettlementProvider({
     <BridgeSettlementContext.Provider value={value}>{children}</BridgeSettlementContext.Provider>
   );
 }
+
+export { BridgeSettlementContext };
 
 export function useBridgeSettlement(): BridgeSettlementContextValue {
   const ctx = useContext(BridgeSettlementContext);

@@ -3,9 +3,19 @@
  * Extracted from the route file for use in the SettingsPanelStack.
  */
 
-import React, { useCallback, type ComponentProps } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  ArrowSquareOutIcon,
+  BookOpenIcon,
+  FileIcon,
+  FileTextIcon,
+  GithubLogoIcon,
+  GlobeIcon,
+  XLogoIcon,
+  iconSize,
+} from '../../icons';
+import type { IconComponent } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
 
@@ -18,11 +28,11 @@ import {
   useOpenLink,
   fontSize,
   letterSpacing,
+  lineHeight,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
-import { Logo } from '@salmon/assets';
-
-type IoniconsName = ComponentProps<typeof Ionicons>['name'];
+import { BrandMark, Wordmark } from '../BrandMark';
 
 const LINKS = {
   website: 'https://www.salmonwallet.io',
@@ -49,7 +59,7 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
     '';
 
   const renderLinkItem = useCallback(
-    (icon: IoniconsName, label: string, url: string, id: string) => (
+    (Icon: IconComponent, label: string, url: string, id: string) => (
       <TouchableOpacity
         testID={`about-link-${id}`}
         accessibilityRole="button"
@@ -58,17 +68,17 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
         activeOpacity={0.7}
       >
         <View style={styles.linkIconContainer}>
-          <Ionicons name={icon} size={20} color={colors.text.primary} />
+          <Icon size={iconSize.md} color={semantic.text.primary} />
         </View>
         <Text style={styles.linkLabel}>{label}</Text>
-        <Ionicons name="open-outline" size={18} color={colors.text.secondary} />
+        <ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.secondary} />
       </TouchableOpacity>
     ),
     [openLink]
   );
 
   const renderSocialButton = useCallback(
-    (icon: IoniconsName, url: string, id: string) => (
+    (Icon: IconComponent, url: string, id: string) => (
       <TouchableOpacity
         testID={`about-link-${id}`}
         accessibilityRole="button"
@@ -76,7 +86,7 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
         onPress={() => openLink(url)}
         activeOpacity={0.7}
       >
-        <Ionicons name={icon} size={24} color={colors.text.primary} />
+        <Icon size={iconSize.lg} color={semantic.text.primary} />
       </TouchableOpacity>
     ),
     [openLink]
@@ -85,8 +95,11 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
   return (
     <SettingsScreenLayout title={t('settings.about')} onBack={onBack}>
       <View style={styles.appInfoSection}>
-        <Image source={Logo} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.appName}>Salmon Wallet</Text>
+        {/* The drawn mark and name — BrandMark's own docs retired the raster
+            Logo.png, and the Wordmark keeps the product's name a graphic at
+            the same mark→name air the welcome and success screens use. */}
+        <BrandMark size={componentSizes.logoSizeMedium} />
+        <Wordmark />
         <Text style={styles.versionText}>{t('settings.app_version', { version: appVersion })}</Text>
         <Text style={styles.buildText}>{t('settings.about_build', { build: buildNumber })}</Text>
       </View>
@@ -94,27 +107,27 @@ export function AboutPanel({ onBack }: AboutPanelProps) {
       <View style={styles.socialSection}>
         <Text style={styles.sectionLabel}>{t('actions.follow_us')}</Text>
         <View style={styles.socialButtons}>
-          {renderSocialButton('logo-twitter', LINKS.twitter, 'twitter')}
-          {renderSocialButton('logo-github', LINKS.github, 'github')}
-          {renderSocialButton('book-outline', LINKS.medium, 'medium')}
+          {renderSocialButton(XLogoIcon, LINKS.twitter, 'twitter')}
+          {renderSocialButton(GithubLogoIcon, LINKS.github, 'github')}
+          {renderSocialButton(BookOpenIcon, LINKS.medium, 'medium')}
         </View>
       </View>
 
       <View style={styles.linksSection}>
         {renderLinkItem(
-          'globe-outline',
+          GlobeIcon,
           t('settings.about_website', 'Website'),
           LINKS.website,
           'website'
         )}
         {renderLinkItem(
-          'document-text-outline',
+          FileTextIcon,
           t('settings.about_privacy', 'Privacy Policy'),
           LINKS.privacy,
           'privacy'
         )}
         {renderLinkItem(
-          'document-outline',
+          FileIcon,
           t('settings.about_terms', 'Terms of Service'),
           LINKS.terms,
           'terms'
@@ -133,40 +146,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing['2xl'],
   },
-  logo: {
-    width: componentSizes.logoSizeMedium,
-    height: componentSizes.logoSizeMedium,
-    marginBottom: spacing.lg,
-  },
-  appName: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize['2xl'],
-    marginBottom: spacing.xs,
-  },
   versionText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
+    // The Wordmark above pins its own top gap and carries no bottom margin.
+    marginTop: spacing.xs,
     marginBottom: spacing.xxs,
   },
   buildText: {
-    color: colors.text.tertiary,
+    color: semantic.text.tertiary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
   },
   socialSection: {
     width: '100%',
     marginBottom: spacing.xl,
   },
+  // The `label` role: 10/600/uppercase/+0.3px, as the other on-system
+  // surfaces render section labels.
   sectionLabel: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.base,
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.label,
     textAlign: 'center',
     marginBottom: spacing.md,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wider,
+    letterSpacing: letterSpacing.label,
   },
   socialButtons: {
     flexDirection: 'row',
@@ -174,17 +180,18 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   socialButton: {
-    width: 48,
-    height: 48,
+    width: componentSizes.iconSize3XL,
+    height: componentSizes.iconSize3XL,
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.full,
+    // Control Radius Rule: a square link button is a control — r3, not a pill.
+    borderRadius: borderRadius.r3,
     alignItems: 'center',
     justifyContent: 'center',
   },
   linksSection: {
     width: '100%',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     marginBottom: spacing.xl,
     overflow: 'hidden',
   },
@@ -194,12 +201,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.default,
+    // Per-Plane Border Rule: this divider sits above the shelf, where
+    // `border.default` drops under 3:1 — `raised` clears it.
+    borderBottomColor: semantic.border.raised,
   },
   linkIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.sm,
+    width: componentSizes.iconSizeLarge,
+    height: componentSizes.iconSizeLarge,
+    borderRadius: borderRadius.r1,
     backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -207,16 +216,16 @@ const styles = StyleSheet.create({
   },
   linkLabel: {
     flex: 1,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   copyright: {
-    color: colors.text.tertiary,
+    color: semantic.text.tertiary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: fontSize.caption * lineHeight.normal,
   },
 });
 

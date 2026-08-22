@@ -6,8 +6,13 @@
 // Foundation
 // ---------------------------------------------------------------------------
 
-export { PrimaryButton, SecondaryButton, TextButton } from './Button';
-export type { PrimaryButtonProps, SecondaryButtonProps, TextButtonProps } from './Button';
+export { HoldToCopyButton, PrimaryButton, SecondaryButton, TextButton } from './Button';
+export type {
+  HoldToCopyButtonProps,
+  PrimaryButtonProps,
+  SecondaryButtonProps,
+  TextButtonProps,
+} from './Button';
 
 export {
   WalletSvgIcon,
@@ -26,6 +31,17 @@ export { PasswordInput, PasswordStrengthBar } from './PasswordInput';
 export { StepIndicator } from './StepIndicator';
 export type { StepIndicatorProps } from './StepIndicator';
 
+export { BrandMark, Wordmark } from './BrandMark';
+export type { BrandMarkProps, WordmarkProps } from './BrandMark';
+
+export {
+  OnboardingLayout,
+  ReservedSlot,
+  OnboardingTitle,
+  OnboardingDescription,
+} from './OnboardingLayout';
+export type { OnboardingLayoutProps, ReservedSlotProps } from './OnboardingLayout';
+
 export { ScreenHeader } from './ScreenHeader';
 export type { ScreenHeaderProps } from './ScreenHeader';
 
@@ -33,6 +49,9 @@ export { LoadingScreen } from './LoadingScreen';
 export type { LoadingScreenProps } from './LoadingScreen';
 
 export { ShimmerRect } from './ShimmerRect';
+
+export { PendingValue } from './PendingValue';
+export type { PendingValueProps } from './PendingValue';
 
 export { default as QRCode } from './QRCode';
 export type { QRCodeProps } from './QRCode';
@@ -51,7 +70,8 @@ export {
   type UseAddressValidationParams,
 } from './InputAddress';
 
-export { SeedWordGrid, SeedWordInput } from './SeedPhrase';
+export { SeedWordGrid, SeedWordInput, SeedPhraseEntry } from './SeedPhrase';
+export type { SeedPhraseEntryProps } from './SeedPhrase';
 
 export { DerivedAccountCard, DerivedAccountCardSkeleton } from './DerivedAccountCard';
 export type {
@@ -78,6 +98,16 @@ export type { GradientBackgroundProps } from './GradientBackground';
 export { ScalesBackground } from './ScalesBackground';
 export type { ScalesBackgroundProps } from './ScalesBackground';
 
+export {
+  DepthBackground,
+  depthParallaxScroll,
+  useDepthParallaxScrollHandler,
+} from './DepthBackground';
+export type { DepthBackgroundProps } from './DepthBackground';
+
+export { FleshBackground } from './FleshBackground';
+export type { FleshBackgroundProps } from './FleshBackground';
+
 export { BlurContainer, BlurTargetProvider } from './BlurContainer';
 export type { BlurContainerProps, BlurTint } from './BlurContainer';
 
@@ -86,6 +116,9 @@ export type { BottomSheetTitleHeaderProps } from './BottomSheetTitleHeader';
 
 export { GlassTabBar } from './GlassTabBar';
 export type { GlassTabBarProps, TabConfig } from './GlassTabBar';
+
+export { Thermocline } from './Thermocline';
+export type { ThermoclineProps, ThermoclineTier } from './Thermocline';
 
 // ---------------------------------------------------------------------------
 // Sheets & Modals
@@ -182,9 +215,6 @@ export type {
 export { NftSeeAllSheet } from './NftSeeAllSheet';
 export type { NftSeeAllSheetProps } from './NftSeeAllSheet';
 
-export { NftSendSheet } from './NftSendSheet';
-export type { NftSendSheetProps } from './NftSendSheet';
-
 // ---------------------------------------------------------------------------
 // Transaction
 // ---------------------------------------------------------------------------
@@ -200,8 +230,8 @@ export type {
   TransactionFee,
 } from './TransactionHistorySheet';
 
-export { TransactionDetailModal } from './TransactionDetailModal';
-export type { TransactionDetailModalProps } from './TransactionDetailModal';
+export { TransactionDetail } from './TransactionDetail';
+export type { TransactionDetailProps } from './TransactionDetail';
 
 export { TransactionSuccessScreen } from './TransactionSuccessScreen';
 
@@ -222,7 +252,7 @@ export {
   SwapTabSelector,
   SwapAmountInput,
   SwapDetailRow,
-  SwapReviewCard,
+  SwapReviewExchange,
   SwapInputScreen,
   SwapReviewScreen,
 } from './SwapScreen';
@@ -236,7 +266,7 @@ export type {
   SwapTabSelectorProps,
   SwapAmountInputProps,
   SwapDetailRowProps,
-  SwapReviewCardProps,
+  SwapReviewExchangeProps,
   SwapInputScreenProps,
   SwapReviewScreenProps,
   BridgeTokenSimple,
@@ -330,3 +360,6 @@ export type { PrivateKeyPanelProps } from './PrivateKeyPanel';
 
 export { BackupPanel } from './BackupPanel';
 export { AboutPanel } from './AboutPanel';
+
+export { PendingActivityBanner } from './PendingActivityBanner';
+export type { PendingActivityBannerProps } from './PendingActivityBanner';

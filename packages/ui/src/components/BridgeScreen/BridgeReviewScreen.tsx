@@ -3,7 +3,7 @@
  *
  * Web version using MUI and @emotion/styled for browser extension.
  * Shows bridge details and confirm/back buttons.
- * Reuses SwapDetailRow and SwapReviewCard components from SwapScreen.
+ * Reuses SwapDetailsCard and SwapReviewExchange components from SwapScreen.
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,19 +12,23 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   borderWidth,
   fontFamily,
   fontWeight,
   formatAmountWithSymbol,
+  formatPercent,
   getShortAddress,
+  getNetworkName,
+  BRIDGE_PARTNER_FEE_PERCENT,
   fontSize,
   letterSpacing,
   lineHeight,
 } from '@salmon/shared';
-import { SwapDetailRow } from '../SwapScreen/SwapDetailRow';
-import { SwapReviewCard } from '../SwapScreen/SwapReviewCard';
+import { SwapDetailsCard } from '../SwapScreen/SwapDetailsCard';
+import { SwapReviewExchange } from '../SwapScreen/SwapReviewExchange';
 import { SwapReviewButtons } from '../SwapScreen/SwapReviewButtons';
 import type { BridgeReviewScreenProps } from './types';
 
@@ -73,26 +77,36 @@ const CardsContainer = styled(Box)({
   marginBottom: spacing['2xl'],
 });
 
-const DetailsContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: spacing.md - 3,
-  marginBottom: spacing['2xl'],
-});
-
 const WarningBox = styled(Box)({
-  backgroundColor: colors.status.warningBackground,
+  backgroundColor: semantic.status.warningTint,
   borderRadius: borderRadius.md,
-  border: `${borderWidth.thin}px solid ${colors.status.warningBorder}`,
+  border: `${borderWidth.thin}px solid ${semantic.status.warningTintBorder}`,
   padding: spacing.base,
   marginBottom: spacing.lg,
+});
+
+const IrreversibleBox = styled(Box)({
+  backgroundColor: semantic.status.dangerTint,
+  borderRadius: borderRadius.md,
+  border: `${borderWidth.thin}px solid ${semantic.status.danger}`,
+  padding: spacing.base,
+  marginBottom: spacing.md,
+});
+
+const IrreversibleTitle = styled(Typography)({
+  fontSize: fontSize.sm,
+  fontWeight: fontWeight.semibold,
+  fontFamily: fontFamily.sans,
+  color: semantic.status.danger,
+  marginBottom: spacing.xs,
+  letterSpacing: letterSpacing.normal,
 });
 
 const WarningTitle = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
-  color: colors.status.warning,
+  color: semantic.status.warning,
   marginBottom: spacing.xs,
   letterSpacing: letterSpacing.normal,
 });
@@ -124,6 +138,7 @@ export function BridgeReviewScreen({
   onBack,
   onConfirm,
   isConfirming = false,
+  isRefreshing = false,
   confirmLabel,
   style,
 }: BridgeReviewScreenProps) {
@@ -136,46 +151,79 @@ export function BridgeReviewScreen({
       {/* Scrollable Content */}
       <ScrollContainer>
         <ScrollContent>
-          {/* Send/Receive Cards */}
+          {/* Exchange graphic: sent token → arrow → received token */}
           <CardsContainer>
-            <SwapReviewCard
-              label={t('swap.you_send')}
-              amount={formatAmountWithSymbol(inAmount, inToken.symbol)}
-            />
-            <SwapReviewCard
-              label={t('bridge.review.youReceiveEstimated')}
-              amount={formatAmountWithSymbol(outAmount, outToken.symbol)}
+            <SwapReviewExchange
+              send={{
+                label: t('swap.you_send'),
+                logo: inToken.logo,
+                symbol: inToken.symbol,
+                amount: formatAmountWithSymbol(inAmount, inToken.symbol),
+              }}
+              receive={{
+                label: t('bridge.review.youReceiveEstimated'),
+                logo: outToken.logo,
+                symbol: outToken.symbol,
+                amount: formatAmountWithSymbol(outAmount, outToken.symbol),
+                pendingAmount: isRefreshing,
+              }}
             />
           </CardsContainer>
 
-          {/* Details Section */}
-          <DetailsContainer>
-            <SwapDetailRow
-              label={t('bridge.review.recipient')}
-              value={getShortAddress(recipientAddress, 8) ?? ''}
-            />
-            <SwapDetailRow
-              label={t('bridge.review.fromNetwork')}
-              value={inToken.network || 'Solana'}
-            />
-            <SwapDetailRow
-              label={t('bridge.review.toNetwork')}
-              value={outToken.network || t('transactions.unknown')}
-            />
-            {estimate && (
-              <>
-                <SwapDetailRow
-                  label={t('bridge.review.minimumAmount')}
-                  value={formatAmountWithSymbol(estimate.minAmount, inToken.symbol)}
-                />
-                <SwapDetailRow
-                  label={t('bridge.review.estimatedOutput')}
-                  value={formatAmountWithSymbol(estimate.estimatedAmount, outToken.symbol)}
-                />
-              </>
-            )}
-            <SwapDetailRow label={t('bridge.review.provider')} value="StealthEX" />
-          </DetailsContainer>
+          {/* Details Section — one grouped card, same treatment as the swap
+              review (no disclosure: every bridge row is commit-relevant). */}
+          <SwapDetailsCard
+            style={{ marginBottom: spacing['2xl'] }}
+            rows={[
+              {
+                label: t('bridge.review.recipient'),
+                value: getShortAddress(recipientAddress, 8) ?? '',
+              },
+              {
+                label: t('bridge.review.fromNetwork'),
+                // `network` carries the canonical networkId, so it is formatted
+                // rather than printed: a review row approving a transfer must not
+                // show `solana-devnet` as a machine string, nor hide the
+                // environment (DESIGN.md §Chain identity).
+                value: inToken.network ? getNetworkName(inToken.network) : 'Solana',
+              },
+              {
+                label: t('bridge.review.toNetwork'),
+                value: outToken.network
+                  ? getNetworkName(outToken.network)
+                  : t('transactions.unknown'),
+              },
+              ...(estimate
+                ? [
+                    {
+                      label: t('bridge.review.minimumAmount'),
+                      value: formatAmountWithSymbol(estimate.minAmount, inToken.symbol),
+                      pending: isRefreshing,
+                    },
+                    {
+                      label: t('bridge.review.estimatedOutput'),
+                      value: formatAmountWithSymbol(estimate.estimatedAmount, outToken.symbol),
+                      pending: isRefreshing,
+                    },
+                  ]
+                : []),
+              // The swap names its cut ("Salmon fee"); the bridge netted 0.4%
+              // into the estimate above and said nothing. Same cut, same row.
+              {
+                label: t('bridge.review.salmonFee'),
+                value: formatPercent(BRIDGE_PARTNER_FEE_PERCENT),
+              },
+              { label: t('bridge.review.provider'), value: 'StealthEX' },
+            ]}
+          />
+
+          {/* The commit point. Duration is a convenience note; the custody
+              and no-recovery facts are the ones that cost money, so they get
+              their own box in danger ink directly above the confirm button. */}
+          <IrreversibleBox>
+            <IrreversibleTitle>{t('bridge.review.irreversible')}</IrreversibleTitle>
+            <WarningText>{t('bridge.review.irreversibleText')}</WarningText>
+          </IrreversibleBox>
 
           {/* Warning Box */}
           <WarningBox>
@@ -190,6 +238,7 @@ export function BridgeReviewScreen({
         onBack={onBack}
         onConfirm={onConfirm}
         isConfirming={isConfirming}
+        isRefreshing={isRefreshing}
         confirmLabel={confirmLabel ?? t('bridge.review.confirmSwap')}
       />
     </Container>

@@ -4,9 +4,9 @@ import { DAppTransactionApprovalView } from '@salmon/ui';
 import {
   approveSolanaTransactionRequest,
   getDAppTransactionRequestSummary,
-  loadSolanaTransactionApprovalDetails,
   useDAppMetadata,
   useAccountsContext,
+  useSolanaTransactionApproval,
   type DAppTransactionRequest,
 } from '@salmon/shared';
 import { getActiveSolanaApprovalAccount } from '@salmon/shared/utils/account';
@@ -20,11 +20,6 @@ export function SignTransactionApprovalPage(): React.ReactElement {
   const [request, setRequest] = useState<DAppTransactionRequest | null>(null);
   const [loading, setLoading] = useState(false);
   const { metadata } = useDAppMetadata(origin);
-  const [parsingError, setParsingError] = useState<string | null>(null);
-  const [feeLamports, setFeeLamports] = useState<number | null>(null);
-  const [instructionCount, setInstructionCount] = useState<number | null>(null);
-  const [feePayer, setFeePayer] = useState<string | null>(null);
-  const [recentBlockhash, setRecentBlockhash] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onRequest((incoming) => {
@@ -51,38 +46,10 @@ export function SignTransactionApprovalPage(): React.ReactElement {
     [state.activeAccount, state.activeBlockchainAccount, state.pathIndex]
   );
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      setParsingError(null);
-      setFeeLamports(null);
-      setInstructionCount(null);
-      setFeePayer(null);
-      setRecentBlockhash(null);
-
-      if (!solanaAccount || !request) return;
-
-      try {
-        const details = await loadSolanaTransactionApprovalDetails(solanaAccount, request);
-        if (cancelled) return;
-
-        setFeeLamports(details.feeLamports);
-        setInstructionCount(details.instructionCount);
-        setFeePayer(details.feePayer);
-        setRecentBlockhash(details.recentBlockhash);
-      } catch {
-        if (cancelled) return;
-        setParsingError('Failed to decode transaction');
-      }
-    }
-
-    void run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [request, solanaAccount]);
+  const { details, feeSol, parsingError, effects, effectsLoading } = useSolanaTransactionApproval({
+    account: solanaAccount,
+    request,
+  });
 
   const handleApprove = useCallback(async () => {
     if (!solanaAccount || !request) return;
@@ -121,11 +88,6 @@ export function SignTransactionApprovalPage(): React.ReactElement {
     window.close();
   }, [requestId]);
 
-  const feeSol = useMemo(() => {
-    if (feeLamports == null) return null;
-    return (feeLamports / 1_000_000_000).toFixed(9).replace(/0+$/, '').replace(/\.$/, '');
-  }, [feeLamports]);
-
   return (
     <DAppTransactionApprovalView
       origin={origin}
@@ -134,10 +96,12 @@ export function SignTransactionApprovalPage(): React.ReactElement {
       requestSummary={
         request ? getDAppTransactionRequestSummary(request.method) : 'signTransaction'
       }
+      effects={effects}
+      effectsLoading={effectsLoading}
       feeSol={feeSol}
-      instructionCount={instructionCount}
-      feePayer={feePayer}
-      recentBlockhash={recentBlockhash}
+      instructionCount={details?.instructionCount ?? null}
+      feePayer={details?.feePayer ?? null}
+      recentBlockhash={details?.recentBlockhash ?? null}
       parsingError={parsingError}
       disabled={!solanaAccount || !request}
       loading={loading}

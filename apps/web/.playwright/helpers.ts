@@ -43,18 +43,19 @@ export async function unlockOrRecover(
   const recoverButton = page.getByTestId('select-recover-button');
   if (await recoverButton.count()) {
     await recoverButton.click();
-    await page.getByTestId('recover-seed-input').fill(seedA());
+    await page.getByTestId('recover-word-input-1').fill(seedA());
     await page.getByTestId('recover-next-button').click({ timeout: 30_000 });
     await page.getByTestId('password-input').fill(password());
     await page.getByTestId('password-confirm-input').fill(password());
     await page.getByTestId('password-submit-button').click();
-    // First-run analytics consent is the final onboarding step.
+    // Success comes first; leaving it presents the first-run analytics
+    // consent, which is the final onboarding step.
     await page
-      .getByTestId(`analytics-consent-${consent}`)
+      .getByTestId('success-go-to-wallet-button')
       .click({ timeout: 60_000 })
       .catch(() => {});
     await page
-      .getByTestId('success-go-to-wallet-button')
+      .getByTestId(`analytics-consent-${consent}`)
       .click({ timeout: 60_000 })
       .catch(() => {});
     return 'recovered';

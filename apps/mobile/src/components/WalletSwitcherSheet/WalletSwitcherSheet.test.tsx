@@ -12,10 +12,6 @@ jest.mock('expo-image', () => ({
   Image: () => null,
 }));
 
-jest.mock('@expo/vector-icons', () => ({
-  Ionicons: () => null,
-}));
-
 jest.mock('expo-linear-gradient', () => ({
   LinearGradient: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
@@ -25,6 +21,24 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // "Deep Water" semantic tokens. Components read these directly now; the
+  // legacy `colors` map below still covers everything not yet migrated.
+  semantic: {
+    accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45', tint: 'rgba(255,92,69,0.1)' },
+    text: {
+      primary: '#F6F8FB',
+      secondary: '#A7B1C4',
+      tertiary: '#8B96AD',
+      disabled: '#6F7B95',
+      accent: '#FF5C45',
+      onAccent: '#070911',
+      onGlass: '#F6F8FB',
+    },
+    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
+    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
+    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+    state: { hover: 'rgba(199,211,232,0.06)', press: 'rgba(199,211,232,0.10)' },
+  },
   colors: {
     background: { primary: '#000', card: '#111' },
     text: { primary: '#fff', secondary: '#999', disabled: '#666' },
@@ -45,7 +59,7 @@ jest.mock('@salmon/shared', () => ({
   },
   fontSize: {
     sm: 14,
-    md: 18,
+    bodyLg: 18,
   },
   lineHeight: {
     none: 1,

@@ -3,7 +3,7 @@
  */
 
 import React, { useCallback } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -14,9 +14,10 @@ import {
   useAddressBookForm,
   type AddressBookEditBaseProps,
   fontSize,
-  opacity,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { PrimaryButton } from '../../Button';
 import { InputAddress } from '../../InputAddress';
 
 // ============================================================================
@@ -53,7 +54,7 @@ export function AddressEditPanel({
         value={form.label}
         onChangeText={form.setLabel}
         placeholder={t('settings.addressbook.label', 'Label')}
-        placeholderTextColor={colors.text.tertiary}
+        placeholderTextColor={semantic.text.tertiary}
         autoCapitalize="words"
         autoCorrect={false}
       />
@@ -79,16 +80,15 @@ export function AddressEditPanel({
       </View>
 
       {/* Save Button */}
-      <TouchableOpacity
-        testID="address-book-save-button"
-        accessibilityRole="button"
-        style={[styles.saveButton, !form.canSave && styles.saveButtonDisabled]}
-        onPress={handleSave}
-        disabled={!form.canSave}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.saveButtonText}>{t('settings.addressbook.save', 'Save Address')}</Text>
-      </TouchableOpacity>
+      <View style={styles.saveButtonContainer}>
+        <PrimaryButton
+          testID="address-book-save-button"
+          onPress={handleSave}
+          disabled={!form.canSave}
+        >
+          {t('settings.addressbook.save', 'Save Address')}
+        </PrimaryButton>
+      </View>
     </SettingsScreenLayout>
   );
 }
@@ -101,46 +101,34 @@ export default AddressEditPanel;
 
 const styles = StyleSheet.create({
   fieldLabel: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     marginBottom: spacing.sm,
     marginTop: spacing.lg,
   },
   textInput: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   addressSection: {
     marginTop: spacing.lg,
   },
   networkDisplay: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
   },
   networkText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
-  saveButton: {
-    backgroundColor: colors.accent.primary,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    alignItems: 'center',
+  saveButtonContainer: {
     marginTop: spacing['2xl'],
-  },
-  saveButtonDisabled: {
-    opacity: opacity.faint,
-  },
-  saveButtonText: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
   },
 });

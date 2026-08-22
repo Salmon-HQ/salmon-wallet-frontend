@@ -15,14 +15,42 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@salmon/shared', () => ({
+vi.mock('@salmon/shared', async () => ({
+  ...(await vi.importActual('../../../../shared/src/hooks/useCopyFeedback')),
+  // CopyTick reads the real motion vocabulary.
+  ...(await vi.importActual('../../../../shared/src/theme/durations')),
+  // The approval header draws the mark from the vector rather than Logo.png.
+  markPaths: ['M0 0H1V1H0Z'],
+  markViewBoxAttr: '0 0 253 236',
+  markAspectRatio: 253 / 236,
+  tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
+  semantic: {
+    status: { danger: '#f00', dangerTint: '#500' },
+    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
+    text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
+    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
+    scales: {
+      deepFieldStroke: 'rgba(199, 211, 232, 0.06)',
+      deepFieldScale: 3.2,
+      deepFieldHeight: 180,
+      fishStroke: 'rgba(7, 9, 17, 0.10)',
+      fishScale: 1,
+    },
+    flesh: { band: '#FFF1EE' },
+    water: { light: '#9FE0EF' },
+  },
+  fleshTile: { width: 380, height: 40 },
+  fleshFills: [],
+  palette: {
+    salmon: { 500: '#FF5C45', 600: '#E64A34' },
+    neutral: { 0: '#FFFFFF', 1000: '#070911' },
+  },
   borderRadius: { full: 999, md: 8, lg: 12, xl: 16 },
   colors: {
     background: { primary: '#000', secondary: '#111', card: '#050505' },
     border: { subtle: '#222', default: '#333' },
     text: { primary: '#fff', secondary: '#ccc' },
     interactive: { surface: '#444' },
-    status: { error: '#f00', errorBackground: '#500' },
     button: {
       primaryBackground: '#fff',
       primaryText: '#000',
@@ -34,12 +62,14 @@ vi.mock('@salmon/shared', () => ({
   componentSizes: { buttonMinWidth: 64, buttonHeight: 48, buttonRadius: 12 },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 },
   fontFamily: { sans: 'sans-serif', mono: 'monospace' },
-  fontSize: { xs: 10, sm: 12, base: 14, md: 16, title: 20 },
+  fontSize: { xs: 10, sm: 12, base: 14, bodyLg: 16, title: 20 },
   fontWeight: { medium: 500, semibold: 600, bold: 700 },
   letterSpacing: { widest: '1px' },
   shadowsCSS: { none: 'none' },
   opacity: { soft: 0.8 },
   duration: { normal: '200ms', fastest: '80ms' },
+  motionDuration: { flick: '90ms' },
+  motionEasing: { current: { css: 'cubic-bezier(0.32, 0.72, 0, 1)' } },
   easing: { ease: 'ease' },
   copyToClipboard: vi.fn().mockResolvedValue(undefined),
   formatDateTime: (ts: number) => String(ts),

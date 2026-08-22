@@ -7,7 +7,7 @@
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { ArrowLeftIcon, XIcon, iconSize } from '../../icons';
 import { colors, componentSizes, contentPadding, opacity } from '@salmon/shared';
 import { StepIndicator } from '../StepIndicator';
 import type { ScreenHeaderProps } from './types';
@@ -27,6 +27,17 @@ const BackButton = styled(IconButton)({
   width: componentSizes.backButtonSize,
   height: componentSizes.backButtonSize,
   padding: 0,
+  position: 'relative',
+  // 40px visual box + 2px per side of invisible slop = the 44px minimum
+  // click target (DESIGN.md: hit-slop, never inflated visual size).
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    bottom: -2,
+    left: -2,
+  },
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-start',
@@ -77,6 +88,8 @@ const Spacer = styled(Box)({
  */
 export function ScreenHeader({
   onBack,
+  glyph = 'back',
+  backLabel,
   stepIndicator,
   backDisabled,
   className,
@@ -84,21 +97,20 @@ export function ScreenHeader({
   testID,
 }: ScreenHeaderProps) {
   const { t } = useTranslation();
+  const Glyph = glyph === 'close' ? XIcon : ArrowLeftIcon;
   return (
     <Container style={style} className={className}>
-      {/* Back button */}
+      {/* Leading affordance: back, or close where declining advances */}
       <BackButton
         onClick={onBack}
         disabled={!onBack || backDisabled}
-        aria-label={t('accessibility.go_back', 'Go back')}
+        aria-label={backLabel ?? t('accessibility.go_back', 'Go back')}
         data-testid={testID ?? 'screen-header-back-button'}
       >
         {onBack && (
-          <ArrowBackIcon
-            sx={{
-              fontSize: componentSizes.iconSizeMedium,
-              color: backDisabled ? colors.text.muted : colors.text.primary,
-            }}
+          <Glyph
+            size={iconSize.lg}
+            color={backDisabled ? colors.text.muted : colors.text.primary}
           />
         )}
       </BackButton>

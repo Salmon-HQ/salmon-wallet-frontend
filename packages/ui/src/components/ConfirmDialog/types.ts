@@ -8,5 +8,8 @@ export interface ConfirmDialogProps {
   isDanger?: boolean;
   requirePassword?: boolean;
   validatePassword?: (password: string) => Promise<boolean>;
-  onConfirm: () => Promise<void>;
+  /** Awaited, so a synchronous handler is equally welcome */
+  onConfirm: () => void | Promise<void>;
+  /** Test id for the confirm button, so e2e and unit tests can select it. */
+  confirmTestID?: string;
 }

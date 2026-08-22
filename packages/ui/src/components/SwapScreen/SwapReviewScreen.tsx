@@ -12,6 +12,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   fontFamily,
@@ -27,10 +28,11 @@ import {
   componentSizes,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
-import { SwapReviewCard } from './SwapReviewCard';
-import { SwapDetailRow } from './SwapDetailRow';
+import { SwapReviewExchange } from './SwapReviewExchange';
+import { SwapDetailsCard } from './SwapDetailsCard';
 import { SwapReviewButtons } from './SwapReviewButtons';
 import type { SwapReviewScreenProps } from './types';
+import type { SwapDetailItem } from '@salmon/shared';
 
 // ============================================================================
 // Styled Components
@@ -87,17 +89,6 @@ const CardsContainer = styled(Box)({
   marginBottom: spacing['2xl'],
 });
 
-const DetailsContainer = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: spacing.md - 3,
-  marginBottom: spacing['3xl'],
-});
-
-const PriceImpactContainer = styled(Box)({
-  marginBottom: spacing.lg,
-});
-
 const WarningContent = styled(Box)({
   padding: spacing.base,
 });
@@ -106,7 +97,7 @@ const WarningTitle = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
-  color: colors.status.warning,
+  color: semantic.status.warning,
   marginBottom: spacing.xs,
   letterSpacing: letterSpacing.normal,
 });
@@ -137,6 +128,7 @@ export function SwapReviewScreen({
   onBack,
   onConfirm,
   isConfirming = false,
+  isRefreshing = false,
   confirmLabel,
   style,
 }: SwapReviewScreenProps): React.ReactElement {
@@ -174,79 +166,87 @@ export function SwapReviewScreen({
       {/* Scrollable Content */}
       <ScrollContainer>
         <ScrollContent>
-          {/* Send/Receive Cards */}
+          {/* Exchange graphic: sent token → arrow → received token */}
           <CardsContainer>
-            <SwapReviewCard
-              label={t('swap.you_send')}
-              amount={formatAmountWithSymbol(displayInAmount, inSymbol)}
-              usdValue={formatUsd(details?.inUsdValue)}
-            />
-            <SwapReviewCard
-              label={t('swap.you_receive')}
-              amount={formatAmountWithSymbol(displayOutAmount, outSymbol)}
-              usdValue={formatUsd(details?.outUsdValue)}
+            {/* The amount being sent is what the user typed: a new quote
+                cannot change it, so it never reports loading. Its dollar
+                value can, and so can everything on the receive side. */}
+            <SwapReviewExchange
+              send={{
+                label: t('swap.you_send'),
+                logo: inToken.logo,
+                symbol: inSymbol,
+                amount: formatAmountWithSymbol(displayInAmount, inSymbol),
+                usdValue: formatUsd(details?.inUsdValue),
+                pendingUsdValue: isRefreshing,
+              }}
+              receive={{
+                label: t('swap.you_receive'),
+                logo: outToken.logo,
+                symbol: outSymbol,
+                amount: formatAmountWithSymbol(displayOutAmount, outSymbol),
+                usdValue: formatUsd(details?.outUsdValue),
+                pendingAmount: isRefreshing,
+                pendingUsdValue: isRefreshing,
+              }}
             />
           </CardsContainer>
 
-          {/* Details Section */}
-          <DetailsContainer>
-            {fee && (
-              <SwapDetailRow
-                label={t('swap.review.salmonFee')}
-                value={formatPercent(fee.percent)}
-              />
-            )}
-            {details?.router && <SwapDetailRow label={t('swap.router')} value={details.router} />}
-            {routeNames && routeNames.length > 0 && (
-              <SwapDetailRow label={t('swap.review.route')} value={routeNames.join(' → ')} />
-            )}
-            {details?.gasless && <SwapDetailRow label={t('swap.gasless')} value={t('swap.yes')} />}
-            {details?.prioritizationFeeLamports != null && (
-              <SwapDetailRow
-                label={t('swap.priority_fee')}
-                value={formatSolFee(details.prioritizationFeeLamports)}
-              />
-            )}
-            {details?.rentFeeLamports != null && (
-              <SwapDetailRow
-                label={t('swap.rent_fee')}
-                value={formatSolFee(details.rentFeeLamports)}
-              />
-            )}
-            {details?.slippageBps != null && (
-              <SwapDetailRow
-                label={t('swap.slippage_tolerance')}
-                value={formatPercent(details.slippageBps / 100)}
-              />
-            )}
-            {details?.otherAmountThreshold != null && (
-              <SwapDetailRow
-                label={t('swap.minimum_received')}
-                value={formatAmountWithSymbol(
+          {/* Details Section — one grouped card, mirroring mobile: the
+              critical rows stay visible; the advanced ones fold behind the
+              "Details" disclosure inside the card. */}
+          <SwapDetailsCard
+            style={{ marginBottom: spacing['3xl'] }}
+            rows={[
+              fee && {
+                label: t('swap.review.salmonFee'),
+                value: formatPercent(fee.percent),
+              },
+              details?.slippageBps != null && {
+                label: t('swap.slippage_tolerance'),
+                value: formatPercent(details.slippageBps / 100),
+              },
+              details?.otherAmountThreshold != null && {
+                label: t('swap.minimum_received'),
+                value: formatAmountWithSymbol(
                   Number(details.otherAmountThreshold) / 10 ** outDecimals,
                   outSymbol
-                )}
-              />
-            )}
-            {details?.swapMode && (
-              <SwapDetailRow label={t('swap.swap_mode')} value={details.swapMode} />
-            )}
-          </DetailsContainer>
-
-          {/* Price Impact (highlighted) */}
-          {details?.priceImpact != null && (
-            <PriceImpactContainer>
-              <SwapDetailRow
-                label={t('swap.review.totalPriceImpact')}
-                value={formatPercent(details.priceImpact)}
-              />
-            </PriceImpactContainer>
-          )}
+                ),
+                pending: isRefreshing,
+              },
+              details?.priceImpact != null && {
+                label: t('swap.review.totalPriceImpact'),
+                value: formatPercent(details.priceImpact),
+                pending: isRefreshing,
+              },
+            ].filter((row): row is SwapDetailItem => Boolean(row))}
+            advancedRows={[
+              details?.router && { label: t('swap.router'), value: details.router },
+              routeNames &&
+                routeNames.length > 0 && {
+                  label: t('swap.review.route'),
+                  value: routeNames.join(' → '),
+                  pending: isRefreshing,
+                },
+              details?.gasless && { label: t('swap.gasless'), value: t('swap.yes') },
+              details?.prioritizationFeeLamports != null && {
+                label: t('swap.priority_fee'),
+                value: formatSolFee(details.prioritizationFeeLamports),
+                pending: isRefreshing,
+              },
+              details?.rentFeeLamports != null && {
+                label: t('swap.rent_fee'),
+                value: formatSolFee(details.rentFeeLamports),
+                pending: isRefreshing,
+              },
+              details?.swapMode && { label: t('swap.swap_mode'), value: details.swapMode },
+            ].filter((row): row is SwapDetailItem => Boolean(row))}
+          />
 
           {/* Warning Box */}
           <BlurContainer
             borderColor={colors.palette.amber}
-            backgroundColor={colors.status.warningBackground}
+            backgroundColor={semantic.status.warningTint}
             style={{ borderRadius: borderRadius.md, marginBottom: spacing.lg }}
           >
             <WarningContent>
@@ -262,6 +262,7 @@ export function SwapReviewScreen({
         onBack={onBack}
         onConfirm={onConfirm}
         isConfirming={isConfirming}
+        isRefreshing={isRefreshing}
         confirmLabel={confirmLabel}
       />
     </Container>

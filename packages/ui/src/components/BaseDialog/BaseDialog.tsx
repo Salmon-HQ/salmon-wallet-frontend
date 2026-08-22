@@ -20,7 +20,8 @@
  */
 
 import React, { createContext, useContext } from 'react';
-import { StyledDialog } from './styles';
+import { Thermocline } from '../Thermocline';
+import { DIALOG_GROUND_STYLE, StyledDialog } from './styles';
 import type { BaseDialogProps } from './types';
 
 // ============================================================================
@@ -29,6 +30,7 @@ import type { BaseDialogProps } from './types';
 
 interface BaseDialogContextValue {
   onClose: () => void;
+  dismissible: boolean;
 }
 
 const BaseDialogContext = createContext<BaseDialogContextValue | null>(null);
@@ -54,19 +56,37 @@ export function useBaseDialog(): BaseDialogContextValue {
 export function BaseDialog({
   visible,
   onClose,
+  dismissible = true,
   children,
   ariaLabelledBy,
 }: BaseDialogProps): React.ReactElement {
-  const contextValue: BaseDialogContextValue = { onClose };
+  const contextValue: BaseDialogContextValue = { onClose, dismissible };
+
+  // MUI fires onClose for backdrop clicks and Escape as well as explicit
+  // controls. While an irreversible action is in flight those two paths must
+  // not unmount the dialog — the user would lose the only report of it.
+  const handleClose = (_event: object, reason: string): void => {
+    if (!dismissible && (reason === 'backdropClick' || reason === 'escapeKeyDown')) return;
+    onClose();
+  };
 
   return (
     <BaseDialogContext.Provider value={contextValue}>
       <StyledDialog
         open={visible}
-        onClose={onClose}
+        onClose={handleClose}
         aria-labelledby={ariaLabelledBy}
         disableEnforceFocus
       >
+        {/* A modal is the DOM's sheet, and the thermocline is what a sheet is
+            made of: the dialog grounds on the thick tier instead of an opaque
+            fill. Its texture is the membrane field, one dark scales layer the
+            material mounts itself, so nothing stacks a second one on top. See
+            DESIGN.md §The thermocline is the sheet material and §The membrane
+            field. Ground first: the sections above it are positioned, so the
+            material stays behind everything the dialog holds. */}
+        <Thermocline tier="thick" style={DIALOG_GROUND_STYLE} />
+
         {children}
       </StyledDialog>
     </BaseDialogContext.Provider>

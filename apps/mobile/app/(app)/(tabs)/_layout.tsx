@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, Alert } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { BlurTargetView } from 'expo-blur';
 import { Tabs, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -22,6 +23,7 @@ import {
   SUPPORT_OPTIONS,
   LANGUAGE_NAMES,
   colors,
+  semantic,
   getStashItem,
   type SettingsPanelEntry,
   type AddressBookItem,
@@ -37,10 +39,11 @@ import {
   type BlockchainType,
 } from '@salmon/shared';
 import {
+  DepthBackground,
+  ScalesBackground,
   GlassTabBar,
   SettingsSheet,
   WalletSwitcherSheet,
-  ScalesBackground,
   LanguageSelector,
   CurrencySelector,
   ExplorerSelector,
@@ -65,12 +68,15 @@ import {
 import { useLanguage } from '../../../src/i18n';
 import { useBiometricAuth } from '../../../hooks/useBiometricAuth';
 import { DeveloperModeProvider } from '../../../src/contexts/DeveloperModeContext';
+import { TaskChromeProvider } from '../../../src/contexts/TaskChromeContext';
 import { GateContainer } from '../../../src/components/GateContainer';
 import { LockContent } from '../../../src/components/GateContainer/LockContent';
 import { HeaderContent } from '../../../src/components/GateContainer/HeaderContent';
 import type { DerivedKeyCache } from '@salmon/shared';
 import type { GateState, GateExpandedHeader } from '../../../src/components/GateContainer/types';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+import { FLOAT_DELAY_MS } from '../../../src/utils/sinkAndFloat';
+import { DEBUG_LAYER_COLORS, DEBUG_LAYER_COLOR } from '../../../src/debug/layerColors';
 
 /**
  * Tab Layout for Salmon Wallet
@@ -81,7 +87,7 @@ import { useTabChrome } from '../../../hooks/useTabChrome';
 export default function TabLayout() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { headerChromeHeight, topInset } = useTabChrome();
+  const { topInset } = useTabChrome();
   const openLink = useOpenLink();
   const blurTargetRef = useRef<View>(null);
 
@@ -201,35 +207,97 @@ export default function TabLayout() {
     refreshState: refreshBiometricState,
   } = useBiometricAuth();
 
+  // Locking discards any open panel. `locked` already wins over them in
+  // `gateState`, but leaving the flags set means SettingsSheet keeps its panel
+  // stack across the lock and unlock drops the user back into whatever screen
+  // was open (Private Key, Backup Seed Phrase) instead of the wallet.
+  useEffect(() => {
+    if (!accountState.locked) return;
+    setSettingsVisible(false);
+    setSettingsInitialPanels(undefined);
+    setWalletSwitcherVisible(false);
+  }, [accountState.locked]);
+
+  // The parked gate release. A password unlock flips `locked` the instant the
+  // crypto resolves, and the gate leaving 'locked' unmounts LockContent — and
+  // with it the unlock wait, cutting its wave mid-crossing. The hold keeps the
+  // gate rendered as locked until LockContent reports the wave has left the
+  // screen (`onUnlockExited`, watchdog-backed), the same parked pattern the
+  // password screen uses for its route.
+  const [unlockHeld, setUnlockHeld] = useState(false);
+  const isReduceMotionEnabled = useReducedMotion();
+  const unlockReleaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (unlockReleaseTimer.current !== null) clearTimeout(unlockReleaseTimer.current);
+    },
+    []
+  );
+
   // Compute gate state
-  const gateState: GateState = accountState.locked
-    ? 'locked'
-    : settingsVisible
-      ? 'settings'
-      : walletSwitcherVisible
-        ? 'wallets'
-        : 'collapsed';
+  const gateState: GateState =
+    accountState.locked || unlockHeld
+      ? 'locked'
+      : settingsVisible
+        ? 'settings'
+        : walletSwitcherVisible
+          ? 'wallets'
+          : 'collapsed';
 
   // Lock handlers (moved from root _layout.tsx)
   const handleLockUnlock = useCallback(
     async (password: string): Promise<boolean> => {
+      // Held *before* the await: `locked` flips inside unlockAccounts, in an
+      // earlier microtask than any state set after it, so holding afterwards
+      // leaves one frame where the gate collapses and the wait unmounts.
+      setUnlockHeld(true);
       try {
-        return await accountActions.unlockAccounts(password);
+        const success = await accountActions.unlockAccounts(password);
+        if (!success) setUnlockHeld(false);
+        return success;
       } catch (err) {
         console.error('Unlock failed:', err);
+        setUnlockHeld(false);
         return false;
       }
     },
     [accountActions]
   );
 
+  // The unlock passage is sequential: hold → the wait's sink (`onUnlockExited`
+  // fires as it completes) → one beat of calm water → the gate's rise. The
+  // beat is `FLOAT_DELAY_MS`, the same pause every sink in this water earns
+  // before what follows it moves. Under reduce motion the whole passage is a
+  // cut, so the release is immediate.
+  const handleUnlockExited = useCallback(() => {
+    if (isReduceMotionEnabled) {
+      setUnlockHeld(false);
+      return;
+    }
+    if (unlockReleaseTimer.current !== null) clearTimeout(unlockReleaseTimer.current);
+    unlockReleaseTimer.current = setTimeout(() => {
+      unlockReleaseTimer.current = null;
+      setUnlockHeld(false);
+    }, FLOAT_DELAY_MS);
+  }, [isReduceMotionEnabled]);
+
   const handleLockUnlockWithKey = useCallback(
     async (keyJson: string): Promise<boolean> => {
+      // Parked like the password path: `locked` flips inside
+      // unlockWithCachedKey, in an earlier microtask than the awaited return,
+      // and an unparked gate starts rising while LockContent is still
+      // settling — a cut. There is no wave here (the key is fast), so on
+      // success the release is immediate and the gate rises through its own
+      // choreography instead of mid-commit.
+      setUnlockHeld(true);
       try {
         const keyCache: DerivedKeyCache = JSON.parse(keyJson);
-        return await accountActions.unlockWithCachedKey(keyCache);
+        const success = await accountActions.unlockWithCachedKey(keyCache);
+        setUnlockHeld(false);
+        return success;
       } catch (error) {
         console.error('Biometric unlock failed:', error);
+        setUnlockHeld(false);
         return false;
       }
     },
@@ -314,6 +382,18 @@ export default function TabLayout() {
         domain: c.domain,
       })),
     [contacts]
+  );
+
+  // What the three choosable rows currently read. Proper nouns and a currency
+  // code — they ship identical in both languages, so the settings list states
+  // the user's own choice without inventing any copy.
+  const settingsOptionValues = useMemo(
+    () => ({
+      language: LANGUAGE_NAMES[currentLanguage as LanguageCode] || currentLanguage,
+      currency: currency?.toUpperCase(),
+      explorer: explorer?.name,
+    }),
+    [currentLanguage, currency, explorer]
   );
 
   // -- Panel Registry for SettingsPanelStack --
@@ -729,120 +809,139 @@ export default function TabLayout() {
   }, [accountState, activeAccount, accountActions, handleRemoveAllWallets, t]);
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <TaskChromeProvider>
+      <View style={styles.container}>
+        <StatusBar style="light" />
 
-      {/* Background layers wrapped in BlurTargetView for Android blur targeting */}
-      <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
-        {/* Layer 1: Solid background for status bar area and entire screen */}
-        <View style={styles.solidBackground} />
+        {/* Background layers wrapped in BlurTargetView for Android blur targeting */}
+        <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
+          {/* Layer 1: the water column — a depth ramp that darkens toward the
+            bottom, plus the marine snow field across the top. The ramp starts
+            at the ground the app already painted, so nothing above it seams;
+            the snow is spent before the first token row, which is what keeps
+            it on the right side of The Scales Exclusion Rule. */}
+          <DepthBackground />
 
-        {/* Layer 2: Bottom fade gradient - rendered before scales so it's underneath */}
-        <LinearGradient
-          colors={['transparent', colors.background.primary]}
-          style={styles.bottomFadeGradient}
+          {/* Layer 2: the deep field. It belongs here and only here — on the
+            ground, in the same plane as the ramp and the snow. It used to
+            tile behind whole tabs *and* live inside the balance card; the
+            card is content and has lost it, because the motif belongs to the
+            water and content stays plain. Here it is safe for the reason the
+            snow is: everything that carries a value — rows, cards, inputs —
+            is opaque and covers it. The snow is what gives the 3.2× scale
+            something to be large against rather than merely near. */}
+          <ScalesBackground variant="deepField" />
+
+          {/* Layer 3: Bottom fade gradient. Ends on the ramp's own floor rather
+            than the old flat ground, which would have lightened the abyss. */}
+          <LinearGradient
+            colors={['transparent', semantic.water.gradient[1]]}
+            style={styles.bottomFadeGradient}
+            pointerEvents="none"
+          />
+        </BlurTargetView>
+
+        {/* Tab screens fill the remaining space */}
+        <DeveloperModeProvider value={{ developerNetworks }}>
+          <BlurTargetProvider value={blurTargetRef}>
+            <Tabs
+              tabBar={(props) => <GlassTabBar {...props} />}
+              screenOptions={{
+                headerShown: false,
+                tabBarStyle: { display: 'none' },
+              }}
+            >
+              <Tabs.Screen name="index" options={{ title: t('tabs.home', 'Home') }} />
+              <Tabs.Screen
+                name="collectibles"
+                options={{ title: t('tabs.collectibles', 'Collectibles') }}
+              />
+              <Tabs.Screen name="swap" options={{ title: t('tabs.swap', 'Swap') }} />
+              <Tabs.Screen
+                name="settings"
+                options={{ href: null, title: t('tabs.settings', 'Settings') }}
+              />
+            </Tabs>
+          </BlurTargetProvider>
+        </DeveloperModeProvider>
+
+        <View
           pointerEvents="none"
+          style={[
+            styles.topSafeAreaOverlay,
+            { height: topInset },
+            DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.topSafeAreaOverlay },
+          ]}
         />
 
-        {/* Layer 3: Scales pattern background - starts below header */}
-        <ScalesBackground topOffset={headerChromeHeight} />
-      </BlurTargetView>
-
-      {/* Tab screens fill the remaining space */}
-      <DeveloperModeProvider value={{ developerNetworks }}>
-        <BlurTargetProvider value={blurTargetRef}>
-          <Tabs
-            tabBar={(props) => <GlassTabBar {...props} />}
-            screenOptions={{
-              headerShown: false,
-              tabBarStyle: { display: 'none' },
-            }}
-          >
-            <Tabs.Screen name="index" options={{ title: t('tabs.home', 'Home') }} />
-            <Tabs.Screen
-              name="collectibles"
-              options={{ title: t('tabs.collectibles', 'Collectibles') }}
+        {/* Unified Gate — lock screen, header, settings, wallet switcher */}
+        <GateContainer
+          state={gateState}
+          expandedHeader={expandedHeader}
+          onBackdropPress={() => {
+            if (settingsVisible) handleSettingsClose();
+            if (walletSwitcherVisible) handleWalletSwitcherClose();
+          }}
+          lockContent={
+            <LockContent
+              locked={accountState.locked}
+              onUnlock={handleLockUnlock}
+              onUnlockWithKey={handleLockUnlockWithKey}
+              onGetDerivedKey={handleGetDerivedKey}
+              onUnlockExited={handleUnlockExited}
+              onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
+              biometric={lockBiometricConfig}
             />
-            <Tabs.Screen name="swap" options={{ title: t('tabs.swap', 'Swap') }} />
-            <Tabs.Screen
-              name="settings"
-              options={{ href: null, title: t('tabs.settings', 'Settings') }}
+          }
+          headerContent={
+            <HeaderContent
+              accountName={accountName}
+              address={address}
+              onCopyAddress={handleCopyAddress}
+              onSettingsPress={() => setSettingsVisible(true)}
+              onWalletPress={() => setWalletSwitcherVisible(true)}
+              developerMode={developerNetworks}
+              avatarUrl={activeAccount?.avatar}
+              accountId={activeAccount?.id}
             />
-          </Tabs>
-        </BlurTargetProvider>
-      </DeveloperModeProvider>
-
-      <View pointerEvents="none" style={[styles.topSafeAreaOverlay, { height: topInset }]} />
-
-      {/* Unified Gate — lock screen, header, settings, wallet switcher */}
-      <GateContainer
-        state={gateState}
-        expandedHeader={expandedHeader}
-        onBackdropPress={() => {
-          if (settingsVisible) handleSettingsClose();
-          if (walletSwitcherVisible) handleWalletSwitcherClose();
-        }}
-        lockContent={
-          <LockContent
-            locked={accountState.locked}
-            onUnlock={handleLockUnlock}
-            onUnlockWithKey={handleLockUnlockWithKey}
-            onGetDerivedKey={handleGetDerivedKey}
-            onRemoveAllAccounts={handleRemoveAllAccountsFromLock}
-            biometric={lockBiometricConfig}
-          />
-        }
-        headerContent={
-          <HeaderContent
-            accountName={accountName}
-            address={address}
-            onCopyAddress={handleCopyAddress}
-            onSettingsPress={() => setSettingsVisible(true)}
-            onWalletPress={() => setWalletSwitcherVisible(true)}
-            developerMode={developerNetworks}
-            avatarUrl={activeAccount?.avatar}
-            accountId={activeAccount?.id}
-          />
-        }
-        settingsContent={
-          <SettingsSheet
-            visible={settingsVisible}
-            onClose={handleSettingsClose}
-            panelRegistry={panelRegistry}
-            initialPanels={settingsInitialPanels}
-            developerNetworksEnabled={developerNetworks}
-            onDeveloperNetworksToggle={toggleDeveloperNetworks}
-            analyticsEnabled={analyticsConsent}
-            onAnalyticsToggle={setAnalyticsConsent}
-            onRemoveWallet={handleRemoveWallet}
-            onRemoveAllWallets={handleRemoveAllWallets}
-            onHeaderChange={handleSettingsHeaderChange}
-          />
-        }
-        walletsContent={
-          <WalletSwitcherSheet
-            visible={walletSwitcherVisible}
-            onClose={handleWalletSwitcherClose}
-            accounts={accounts}
-            activeAccountId={accountId ?? ''}
-            onSelectAccount={handleSelectAccount}
-            onAddAccount={handleAddAccount}
-            onEditAccount={handleEditAccount}
-            onDeleteAccount={handleDeleteAccount}
-          />
-        }
-      />
-    </View>
+          }
+          settingsContent={
+            <SettingsSheet
+              visible={settingsVisible}
+              onClose={handleSettingsClose}
+              optionValues={settingsOptionValues}
+              panelRegistry={panelRegistry}
+              initialPanels={settingsInitialPanels}
+              developerNetworksEnabled={developerNetworks}
+              onDeveloperNetworksToggle={toggleDeveloperNetworks}
+              analyticsEnabled={analyticsConsent}
+              onAnalyticsToggle={setAnalyticsConsent}
+              onRemoveWallet={handleRemoveWallet}
+              onRemoveAllWallets={handleRemoveAllWallets}
+              onHeaderChange={handleSettingsHeaderChange}
+            />
+          }
+          walletsContent={
+            <WalletSwitcherSheet
+              visible={walletSwitcherVisible}
+              onClose={handleWalletSwitcherClose}
+              accounts={accounts}
+              activeAccountId={accountId ?? ''}
+              onSelectAccount={handleSelectAccount}
+              onAddAccount={handleAddAccount}
+              onEditAccount={handleEditAccount}
+              onDeleteAccount={handleDeleteAccount}
+            />
+          }
+        />
+      </View>
+    </TaskChromeProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  solidBackground: {
-    ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.background.primary,
   },
   bottomFadeGradient: {

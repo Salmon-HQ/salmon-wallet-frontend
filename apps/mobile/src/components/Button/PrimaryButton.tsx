@@ -1,11 +1,29 @@
 /**
  * PrimaryButton - Main call-to-action button
  *
- * White background with dark text, used for primary actions.
+ * A salmon fill carrying `accent.onFill` ink at 6.50:1 — the only legal ink
+ * on a salmon fill. Disabled swaps the whole object to `surface.crest` with
+ * disabled ink rather than dimming the fill: at 50% opacity the near-black
+ * ink sat on a muddy red and read as neither alive nor disabled. The salmon
+ * is either alive or absent — and so is the flesh inside it.
  */
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
-import { colors, componentSizes, fontFamilyNative, fontSize, letterSpacing } from '@salmon/shared';
+import Animated from 'react-native-reanimated';
+import {
+  colors,
+  componentSizes,
+  fontFamilyNative,
+  fontSize,
+  letterSpacing,
+  semantic,
+  shadowsCSS,
+} from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
+import { FleshBackground } from '../FleshBackground';
+import { PressSpecular } from '../PressSpecular';
+import { usePressMotion } from '../../../hooks/usePressMotion';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 interface PrimaryButtonProps extends Testable {
   onPress: () => void;
@@ -24,9 +42,10 @@ export function PrimaryButton({
   testID,
 }: PrimaryButtonProps) {
   const isDisabled = disabled || loading;
+  const { pressStyle, pressHandlers, specular } = usePressMotion();
 
   return (
-    <TouchableOpacity
+    <AnimatedTouchable
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={children}
@@ -34,16 +53,32 @@ export function PrimaryButton({
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
-      style={[styles.button, isDisabled && styles.disabled, style]}
+      {...pressHandlers}
+      style={[styles.button, isDisabled && styles.disabled, style, pressStyle]}
     >
+      {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+          fill. A filled button is mass, not surface, so the material it shows
+          is the inside of the fish rather than its skin. Every band is paler
+          than the fill, so the 6.50:1 ink composite is a floor here, not a
+          budget. Absent when the fill is absent. */}
+      {!isDisabled && <FleshBackground scale={componentSizes.buttonFleshScale} />}
       {loading ? (
-        <ActivityIndicator color={colors.button.primaryText} />
+        <ActivityIndicator
+          color={isDisabled ? semantic.text.disabled : colors.button.primaryText}
+        />
       ) : (
-        <Text style={styles.text} numberOfLines={1} adjustsFontSizeToFit>
+        <Text
+          style={[styles.text, isDisabled && styles.textDisabled]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
           {children}
         </Text>
       )}
-    </TouchableOpacity>
+      {/* The specular is drawn last so it sits over the flesh, and the pill's
+          `overflow: 'hidden'` clips it to the control's own radius. */}
+      {!isDisabled && <PressSpecular {...specular} />}
+    </AnimatedTouchable>
   );
 }
 
@@ -55,14 +90,25 @@ const styles = StyleSheet.create({
     borderRadius: componentSizes.buttonRadius,
     alignItems: 'center',
     justifyContent: 'center',
+    // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
+    overflow: 'hidden',
+    // The same bezel string the DOM half uses. React Native parses CSS
+    // box-shadow syntax since the new renderer and clips inset shadows to the
+    // view's border radius, so no 1px overlay views are needed and the two
+    // platforms cannot drift. Android draws inset shadows from API 29 up; below
+    // that the bezel is simply absent.
+    boxShadow: shadowsCSS.bezel,
   },
   disabled: {
-    opacity: colors.button.disabledOpacity,
+    backgroundColor: semantic.surface.crest,
+  },
+  textDisabled: {
+    color: semantic.text.disabled,
   },
   text: {
     color: colors.button.primaryText,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     letterSpacing: letterSpacing.widest,
     // `adjustsFontSizeToFit` stretches the Text to the full button width, so
     // without an explicit center the label left-aligns (visible on short labels

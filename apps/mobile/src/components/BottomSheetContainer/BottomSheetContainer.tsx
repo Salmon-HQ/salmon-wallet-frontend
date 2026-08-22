@@ -15,9 +15,9 @@ import { BlurTargetView } from 'expo-blur';
 import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
+  useReducedMotion,
   withTiming,
   withSpring,
-  Easing,
   runOnJS,
   interpolate,
 } from 'react-native-reanimated';
@@ -29,13 +29,14 @@ import {
   borderRadius,
   borderWidth,
   componentSizes,
+  motionMs,
   vs,
   s,
   spacing,
-  opacity,
 } from '@salmon/shared';
 import { BlurTargetProvider } from '../BlurContainer';
-import { ScalesBackground } from '../ScalesBackground';
+import { Thermocline } from '../Thermocline';
+import { curve, timing } from '../../utils/motion';
 
 // ============================================================================
 // Constants
@@ -43,7 +44,6 @@ import { ScalesBackground } from '../ScalesBackground';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const ANIMATION_DURATION = 300;
 const BACKDROP_OPACITY = 0.8;
 const DRAG_THRESHOLD = 150;
 const SPRING_CONFIG = {
@@ -90,12 +90,29 @@ export interface BottomSheetContainerProps {
    * Only meaningful when showFadeGradient is true.
    */
   fadeGradientTop?: number;
-  /** Whether to show the fish scale texture overlay (NFT sheets) */
-  showTextureOverlay?: boolean;
   /** Additional style for the sheet container */
   style?: StyleProp<ViewStyle>;
+  /**
+   * Optional background element that replaces the sheet's default
+   * thermocline ground — mounted absolutely behind everything else in the
+   * sheet. Used when a sheet carries its own variant of the material
+   * (e.g. the Receive sheet).
+   */
+  background?: React.ReactNode;
   /** Additional style for the drag area */
   dragAreaStyle?: StyleProp<ViewStyle>;
+  /**
+   * Whether the sheet may be dismissed by backdrop tap, swipe-down, or the
+   * Android hardware back button. Defaults to `true`.
+   *
+   * Set it to `false` while an irreversible operation is in flight. The
+   * sheet's own Cancel/Confirm controls already disable themselves, but the
+   * three dismissal paths live here and knew nothing about that state — so a
+   * backdrop tap during signing unmounted the only screen that would ever
+   * report whether the money moved. One guard here covers every sheet in the
+   * app instead of each caller re-deriving it.
+   */
+  dismissible?: boolean;
   /** For testing */
   testID?: string;
 }
@@ -115,8 +132,8 @@ export interface BottomSheetContainerProps {
  *  - Drag handle bar
  *  - Optional title / custom header content
  *  - Optional top fade gradient (for scrollable content)
- *  - Optional fish scale texture overlay (NFT sheets)
- *  - ScalesBackground fish scale pattern
+ *  - Thermocline ground (thick tier) unless the caller passes its own
+ *    `background`
  *
  * @example
  * ```tsx
@@ -140,19 +157,35 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   showFadeGradient = false,
   scrollOffsetValue,
   fadeGradientTop,
-  showTextureOverlay = false,
   style,
+  background,
   dragAreaStyle,
+  dismissible = true,
   testID,
 }) => {
   const blurTargetRef = useRef<View>(null);
   const [isRendered, setIsRendered] = useState(visible);
+
+  // The thermocline is the sheet material: every sheet whose caller passes
+  // no explicit `background` grounds on the thick tier — same fill-and-clip
+  // geometry the Receive sheet pioneered. A caller with its own `background`
+  // still wins.
+  const resolvedBackground = background ?? <Thermocline tier="thick" style={styles.thermocline} />;
 
   // Reanimated shared values for the sheet and backdrop
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacity = useSharedValue(0);
   const dragY = useSharedValue(0);
   const isDragging = useSharedValue(false);
+
+  // A sheet is a `rise`; its dismissal is an `ebb`, deliberately shorter,
+  // because an exit is latency between a decision and its result. Under
+  // reduce motion both resolve to 0 and the sheet is simply there or gone —
+  // and the backdrop goes straight to its final scrim rather than sliding to
+  // it, which is the parallel mapping, not a hole.
+  const isReduceMotionEnabled = useReducedMotion();
+  const enter = timing(motionMs.rise, isReduceMotionEnabled);
+  const exit = timing(motionMs.ebb, isReduceMotionEnabled, curve.sink);
 
   // Worklet-safe close reference
   const closeSheet = useCallback(() => {
@@ -170,31 +203,15 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     if (visible) {
       setIsRendered(true);
       dragY.value = 0;
-      translateY.value = withTiming(0, {
-        duration: ANIMATION_DURATION,
-        easing: Easing.out(Easing.cubic),
-      });
-      backdropOpacity.value = withTiming(BACKDROP_OPACITY, {
-        duration: ANIMATION_DURATION,
-        easing: Easing.out(Easing.cubic),
-      });
+      translateY.value = withTiming(0, enter);
+      backdropOpacity.value = withTiming(BACKDROP_OPACITY, enter);
     } else if (isRendered) {
-      translateY.value = withTiming(
-        SCREEN_HEIGHT,
-        {
-          duration: ANIMATION_DURATION,
-          easing: Easing.in(Easing.cubic),
-        },
-        (finished) => {
-          if (finished) {
-            runOnJS(completeClose)();
-          }
+      translateY.value = withTiming(SCREEN_HEIGHT, exit, (finished) => {
+        if (finished) {
+          runOnJS(completeClose)();
         }
-      );
-      backdropOpacity.value = withTiming(0, {
-        duration: ANIMATION_DURATION,
-        easing: Easing.in(Easing.cubic),
       });
+      backdropOpacity.value = withTiming(0, exit);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, isRendered, completeClose]);
@@ -204,15 +221,17 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     if (Platform.OS !== 'android' || !visible) return;
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      onClose();
+      if (dismissible) onClose();
+      // Swallow the event either way: while non-dismissible the sheet stays.
       return true;
     });
 
     return () => backHandler.remove();
-  }, [visible, onClose]);
+  }, [visible, onClose, dismissible]);
 
   // Pan gesture – drag handle area only
   const panGesture = Gesture.Pan()
+    .enabled(dismissible)
     .onStart(() => {
       isDragging.value = true;
     })
@@ -230,11 +249,8 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     .onEnd((event) => {
       isDragging.value = false;
       if (event.translationY > DRAG_THRESHOLD || event.velocityY > 500) {
-        translateY.value = withTiming(SCREEN_HEIGHT, {
-          duration: 200,
-          easing: Easing.out(Easing.cubic),
-        });
-        backdropOpacity.value = withTiming(0, { duration: 200 });
+        translateY.value = withTiming(SCREEN_HEIGHT, exit);
+        backdropOpacity.value = withTiming(0, exit);
         runOnJS(closeSheet)();
       } else {
         dragY.value = withSpring(0, SPRING_CONFIG);
@@ -243,8 +259,14 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
     });
 
   const handleBackdropPress = useCallback(() => {
+    if (!dismissible) return;
     onClose();
-  }, [onClose]);
+  }, [onClose, dismissible]);
+
+  const handleRequestClose = useCallback(() => {
+    if (!dismissible) return;
+    onClose();
+  }, [onClose, dismissible]);
 
   // Animated styles
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
@@ -264,8 +286,12 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
       visible={isRendered}
       transparent
       animationType="none"
-      onRequestClose={onClose}
+      onRequestClose={handleRequestClose}
       statusBarTranslucent
+      // targetSdk 36 makes edge-to-edge mandatory, but an RN Modal is its own
+      // window and does not inherit it: without this the sheet is inset by the
+      // navigation bar and its backdrop stops short of the bottom edge.
+      navigationBarTranslucent
       testID={testID}
     >
       <GestureHandlerRootView style={styles.gestureRoot}>
@@ -280,12 +306,12 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
 
           {/* Sheet */}
           <Reanimated.View style={[styles.sheetContainer, sheetAnimatedStyle, style]}>
+            {resolvedBackground}
             <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
-              {/* Fish scale background */}
-              <ScalesBackground />
-
-              {/* Optional texture overlay (NFT sheets) */}
-              {showTextureOverlay && <View style={styles.textureOverlay} />}
+              {/* No scales. Every sheet in the app mounts through here —
+                  send, receive, seed backup, approval, settings — so this one
+                  call site was painting the motif behind addresses, seed
+                  words, inputs and amounts at once. */}
             </BlurTargetView>
 
             <BlurTargetProvider value={blurTargetRef}>
@@ -350,7 +376,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.sheet.backdrop,
   },
   sheetContainer: {
-    backgroundColor: colors.background.primary,
+    // The background element (thermocline by default) carries the material;
+    // the container itself stays transparent.
     borderTopLeftRadius: borderRadius.card,
     borderTopRightRadius: borderRadius.card,
     borderTopWidth: borderWidth.sheet,
@@ -359,14 +386,12 @@ const styles = StyleSheet.create({
     maxHeight: '92%',
     ...shadows.sheet,
   },
-  textureOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.interactive.surface,
-    opacity: opacity.faint,
+  // The material fills the sheet and clips itself to the sheet's own top
+  // corners.
+  thermocline: {
+    ...StyleSheet.absoluteFillObject,
+    borderTopLeftRadius: borderRadius.card,
+    borderTopRightRadius: borderRadius.card,
   },
   dragArea: {
     // Gesture is attached here; keep it empty so consumers can add dragAreaStyle

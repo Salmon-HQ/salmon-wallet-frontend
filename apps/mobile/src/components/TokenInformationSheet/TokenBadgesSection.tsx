@@ -1,4 +1,31 @@
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowElbowUpRightIcon,
+  ChartBarIcon,
+  ChartLineIcon,
+  ChartPieIcon,
+  CheckCircleIcon,
+  CopyIcon,
+  CubeIcon,
+  CurrencyCircleDollarIcon,
+  CurrencyDollarIcon,
+  DropIcon,
+  FileTextIcon,
+  GraduationCapIcon,
+  HandPalmIcon,
+  LinkIcon,
+  LockIcon,
+  MagnifyingGlassIcon,
+  MedalIcon,
+  MoonIcon,
+  RocketLaunchIcon,
+  ShieldCheckIcon,
+  ShieldIcon,
+  TrendUpIcon,
+  TrophyIcon,
+  UsersIcon,
+  WarningIcon,
+} from '../../icons';
+import type { IconComponent } from '../../icons';
 import {
   colors,
   fontFamilyNative,
@@ -9,6 +36,7 @@ import {
   spacing,
   vs,
   borderRadius,
+  semantic,
 } from '@salmon/shared';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,7 +54,7 @@ interface TokenBadgesSectionProps {
  * Badge configuration with icon, color, and human-readable label
  */
 interface BadgeConfig {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconComponent;
   color: string;
   label: string;
   /** i18n key; proper-noun badges (LST, Token-2022, Pump.fun, ...) stay literal */
@@ -39,25 +67,25 @@ interface BadgeConfig {
 const BADGE_CONFIG: Record<string, BadgeConfig> = {
   // Verification & trust tags
   verified: {
-    icon: 'checkmark-circle',
+    icon: CheckCircleIcon,
     color: colors.palette.green,
     label: 'Verified',
     labelKey: 'token.badges.verified',
   },
   strict: {
-    icon: 'shield',
+    icon: ShieldIcon,
     color: colors.palette.amber,
     label: 'Strict',
     labelKey: 'token.badges.strict',
   },
   major: {
-    icon: 'trophy',
+    icon: TrophyIcon,
     color: colors.palette.amber,
     label: 'Major',
     labelKey: 'token.badges.major',
   },
   'moonshot-verified': {
-    icon: 'shield-checkmark',
+    icon: ShieldCheckIcon,
     color: colors.palette.cyan,
     label: 'Moonshot',
     labelKey: 'token.badges.moonshot',
@@ -65,13 +93,13 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
 
   // Community tags
   community: {
-    icon: 'people',
+    icon: UsersIcon,
     color: colors.palette.blue,
     label: 'Community',
     labelKey: 'token.badges.community',
   },
   'community-assist': {
-    icon: 'hand-right',
+    icon: HandPalmIcon,
     color: colors.palette.blue,
     label: 'Community Assist',
     labelKey: 'token.badges.communityAssist',
@@ -79,29 +107,29 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
 
   // Token types
   lst: {
-    icon: 'water',
+    icon: DropIcon,
     color: colors.palette.cyan,
     label: 'LST',
   },
   'original-lst': {
-    icon: 'medal',
+    icon: MedalIcon,
     color: colors.palette.cyan,
     label: 'Original LST',
     labelKey: 'token.badges.originalLst',
   },
   stable: {
-    icon: 'logo-usd',
+    icon: CurrencyDollarIcon,
     color: colors.palette.green,
     label: 'Stablecoin',
     labelKey: 'token.badges.stablecoin',
   },
   'token-2022': {
-    icon: 'cube',
+    icon: CubeIcon,
     color: colors.palette.purple,
     label: 'Token-2022',
   },
   yb: {
-    icon: 'analytics',
+    icon: ChartLineIcon,
     color: colors.palette.indigo,
     label: 'Yield Bearing',
     labelKey: 'token.badges.yieldBearing',
@@ -109,43 +137,43 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
 
   // Launchpad & trading
   launchpad: {
-    icon: 'rocket',
+    icon: RocketLaunchIcon,
     color: colors.palette.pink,
     label: 'Launchpad',
     labelKey: 'token.badges.launchpad',
   },
   moonshot: {
-    icon: 'moon',
+    icon: MoonIcon,
     color: colors.palette.purple,
     label: 'Moonshot',
     labelKey: 'token.badges.moonshot',
   },
   'birdeye-trending': {
-    icon: 'trending-up',
+    icon: TrendUpIcon,
     color: colors.palette.orange,
     label: 'Trending',
     labelKey: 'token.badges.trending',
   },
   'pumpfun-graduates': {
-    icon: 'school',
+    icon: GraduationCapIcon,
     color: colors.palette.pink,
     label: 'Pump.fun',
   },
 
   // Financial products
   'jup-lend-earn': {
-    icon: 'cash',
+    icon: CurrencyCircleDollarIcon,
     color: colors.palette.green,
     label: 'Jupiter Lend',
   },
   prestocks: {
-    icon: 'bar-chart',
+    icon: ChartBarIcon,
     color: colors.palette.blue,
     label: 'Pre-stocks',
     labelKey: 'token.badges.preStocks',
   },
   xstocks: {
-    icon: 'pie-chart',
+    icon: ChartPieIcon,
     color: colors.palette.indigo,
     label: 'X-stocks',
     labelKey: 'token.badges.xStocks',
@@ -153,41 +181,41 @@ const BADGE_CONFIG: Record<string, BadgeConfig> = {
 
   // Registry & metadata
   'old-registry': {
-    icon: 'document-text',
+    icon: FileTextIcon,
     color: colors.text.secondary,
     label: 'Legacy Registry',
     labelKey: 'token.badges.legacyRegistry',
   },
   'solana-fm': {
-    icon: 'search',
+    icon: MagnifyingGlassIcon,
     color: colors.palette.indigo,
     label: 'Solana FM',
   },
   wormhole: {
-    icon: 'link',
+    icon: LinkIcon,
     color: colors.palette.purple,
     label: 'Wormhole',
   },
   deduplicated: {
-    icon: 'git-branch',
+    icon: ArrowElbowUpRightIcon,
     color: colors.text.tertiary,
     label: 'Deduplicated',
     labelKey: 'token.badges.deduplicated',
   },
   duplicate: {
-    icon: 'copy',
+    icon: CopyIcon,
     color: colors.text.tertiary,
     label: 'Duplicate',
     labelKey: 'token.badges.duplicate',
   },
   deprecated: {
-    icon: 'warning',
-    color: colors.status.error,
+    icon: WarningIcon,
+    color: semantic.status.danger,
     label: 'Deprecated',
     labelKey: 'token.badges.deprecated',
   },
   internal: {
-    icon: 'lock-closed',
+    icon: LockIcon,
     color: colors.text.secondary,
     label: 'Internal',
     labelKey: 'token.badges.internal',
@@ -208,7 +236,7 @@ const BadgeItem: React.FC<{ tag: string }> = ({ tag }) => {
   return (
     <View style={styles.badgeItem}>
       <View style={[styles.badgeIcon, { backgroundColor: `${config.color}15` }]}>
-        <Ionicons name={config.icon} size={ms(18)} color={config.color} />
+        <config.icon size={ms(18)} color={config.color} />
       </View>
       <Text style={[styles.badgeLabel, { color: config.color }]} numberOfLines={1}>
         {config.labelKey ? t(config.labelKey, config.label) : config.label}

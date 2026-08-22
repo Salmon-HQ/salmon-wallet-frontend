@@ -118,12 +118,61 @@ export interface LoadingScreenBaseProps {
   tips?: string[];
   /** Interval in ms to change tips (default: 4000) */
   tipInterval?: number;
-  /** Whether to show tips (default: true) */
+  /**
+   * Whether to cycle wallet tips at the bottom (default: **true**).
+   *
+   * _Reversal._ The default was `false`, and the argument for it was that a
+   * caution belongs before the decision it guards: "always check the
+   * transaction details before signing" on the screen that *follows* signing
+   * teaches the user to skip security copy. Tips were opt-in, and only unlock
+   * and wallet creation/recovery opted in.
+   *
+   * The owner reversed it: the tips are shown on every wait, on both
+   * platforms. A wait is the one screen with nothing else to read, and a wait
+   * that speaks only its own title is the bare screen DESIGN.md §The wait
+   * already refused once when the wave was made unconditional. The prop
+   * survives so a surface with a reason to suppress them still can — it is
+   * the exception now, not the rule.
+   */
   showTips?: boolean;
   /** Custom logo size (default: 100) */
   logoSize?: number;
   /** Custom spinner size (default: 140) */
   spinnerSize?: number;
+  /**
+   * Emit the wave — the mark pulses, every pulse launches a front, and the
+   * screen's contents are displaced as the front reaches them, each with a
+   * delay proportional to its distance from the mark (default: **`true`**).
+   *
+   * _Reversal, 2026-08._ This was `false`, and the transaction wait was the only
+   * caller that passed it, on the argument that a boot or a key derivation has
+   * nothing in the air and so deserves no choreography. Product then hit the
+   * account-recovery wait and found it bare — a title over an empty screen while
+   * the app does the single most consequential thing it will ever do with the
+   * user's keys. Every wait is water now; the prop survives so a surface that
+   * must show nothing living through itself can still opt out, which on the DOM
+   * is what `bedrock` does.
+   *
+   * The origin is the centre of **whatever the wait occupies**, measured, not
+   * the centre of the viewport — a wait rendered into a panel gets its own
+   * centre with no special case.
+   *
+   * It **loops for as long as the wait lasts** and stops on a closing wave that
+   * carries the screen off — see `onExited`. Nothing accumulates across the
+   * loop: the emission is one compositor animation per element (`infinite` on
+   * the DOM, `withRepeat(-1)` on the UI thread in React Native), not a timer.
+   */
+  waves?: boolean;
+  /**
+   * Called once the closing wave has left the screen, `wavefrontExitMs()` after
+   * `visible` goes false. This is the handoff: a caller that must not show the
+   * next screen until the water is empty keeps this one mounted until it fires.
+   *
+   * The duration is fixed and does not wait out the pulse in flight — a wallet
+   * may not put a whole `pulseCycle` between a decision and its receipt — and
+   * under reduce motion it collapses to `ebb`.
+   */
+  onExited?: () => void;
 }
 
 /**

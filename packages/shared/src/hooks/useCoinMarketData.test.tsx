@@ -68,6 +68,51 @@ describe('useCoinMarketData', () => {
     ]);
   });
 
+  it('changing the period refetches only the chart, and keeps the previous series drawn', async () => {
+    mockGetTokenCoinInfo.mockResolvedValue({ id: 'solana', symbol: 'sol', name: 'Solana' } as any);
+    mockGetTokenMarketChart.mockResolvedValue({
+      prices: [[1, 100] as [number, number]],
+      marketCaps: [],
+      totalVolumes: [],
+    });
+
+    const { result, rerender } = renderWithClient(
+      ({ days }: { days: 1 | 7 | 30 | 90 | 365 }) =>
+        useCoinMarketData({ coinId: 'solana', currency: 'usd', days }),
+      { days: 7 } as { days: 1 | 7 | 30 | 90 | 365 }
+    );
+
+    await waitFor(() => expect(result.current.chartLoading).toBe(false));
+    expect(mockGetTokenCoinInfo).toHaveBeenCalledTimes(1);
+
+    let pendingResolve: (value: any) => void = () => {};
+    mockGetTokenMarketChart.mockReturnValueOnce(
+      new Promise((resolve) => {
+        pendingResolve = resolve;
+      })
+    );
+
+    rerender({ days: 30 });
+
+    // The info half is untouched: no second call, no skeleton.
+    await waitFor(() => expect(result.current.chartPending).toBe(true));
+    expect(mockGetTokenCoinInfo).toHaveBeenCalledTimes(1);
+    expect(result.current.infoLoading).toBe(false);
+    expect(result.current.coinInfo?.id).toBe('solana');
+    // The chart half keeps the old series on screen rather than emptying.
+    expect(result.current.chartLoading).toBe(false);
+    expect(result.current.chartData).toEqual([{ timestamp: 1, price: 100 }]);
+
+    pendingResolve({
+      prices: [[9, 900] as [number, number]],
+      marketCaps: [],
+      totalVolumes: [],
+    });
+
+    await waitFor(() => expect(result.current.chartData).toEqual([{ timestamp: 9, price: 900 }]));
+    expect(result.current.chartPending).toBe(false);
+  });
+
   it('skips fetching when coinId and contractAddress are undefined', () => {
     const { result } = renderWithClient(
       () => useCoinMarketData({ coinId: undefined, currency: 'usd', days: 7 }),

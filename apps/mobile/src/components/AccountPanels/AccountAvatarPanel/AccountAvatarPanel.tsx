@@ -32,9 +32,10 @@ import {
   useAvatarNfts,
   type NftAvatarItem,
   type AvatarPickerPropsBase,
-  opacity,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { PrimaryButton } from '../../Button';
 
 // ============================================================================
 // Constants
@@ -219,7 +220,7 @@ export function AccountAvatarPanel({
           />
         ) : nftsLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.accent.primary} />
+            <ActivityIndicator size="large" color={semantic.accent.ink} />
           </View>
         ) : nfts.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -240,18 +241,11 @@ export function AccountAvatarPanel({
         )}
 
         {/* Save Button */}
-        <TouchableOpacity
-          testID="avatar-save-button"
-          accessibilityRole="button"
-          style={[styles.saveButton, !hasChanged && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={!hasChanged}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.saveButtonText, !hasChanged && styles.saveButtonTextDisabled]}>
+        <View style={styles.saveButtonContainer}>
+          <PrimaryButton testID="avatar-save-button" onPress={handleSave} disabled={!hasChanged}>
             {t('actions.save')}
-          </Text>
-        </TouchableOpacity>
+          </PrimaryButton>
+        </View>
       </View>
     </SettingsScreenLayout>
   );
@@ -277,19 +271,23 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.sm,
     alignItems: 'center',
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     backgroundColor: colors.background.card,
   },
+  // The panel's one accent is spent on Save. An active tab is chrome, and a
+  // salmon tab beside a salmon Save put two of them on one panel.
   tabActive: {
-    backgroundColor: colors.accent.primary,
+    backgroundColor: semantic.surface.crest,
+    borderWidth: borderWidth.thin,
+    borderColor: semantic.border.raised,
   },
   tabText: {
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    fontSize: fontSize.caption,
+    color: semantic.text.secondary,
   },
   tabTextActive: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
   },
   gridContent: {
     paddingBottom: spacing.lg,
@@ -304,20 +302,20 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   presetItemSelected: {
-    borderColor: colors.accent.primary,
+    borderColor: semantic.state.selectedEdge,
   },
   presetImage: {
     width: '100%',
     height: '100%',
   },
   nftItem: {
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     overflow: 'hidden',
     borderWidth: borderWidth.medium,
     borderColor: 'transparent',
   },
   nftItemSelected: {
-    borderColor: colors.accent.primary,
+    borderColor: semantic.state.selectedEdge,
   },
   nftImage: {
     width: '100%',
@@ -337,27 +335,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
-    color: colors.text.secondary,
+    fontSize: fontSize.bodyLg,
+    color: semantic.text.secondary,
     textAlign: 'center',
   },
-  saveButton: {
-    backgroundColor: colors.accent.primary,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
+  saveButtonContainer: {
     marginTop: spacing.md,
-  },
-  saveButtonDisabled: {
-    opacity: opacity.faint,
-  },
-  saveButtonText: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.md,
-    color: colors.text.primary,
-  },
-  saveButtonTextDisabled: {
-    color: colors.text.secondary,
   },
 });
 

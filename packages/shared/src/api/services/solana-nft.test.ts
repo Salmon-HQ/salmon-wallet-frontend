@@ -44,7 +44,7 @@ describe('solana-nft service', () => {
     const result = await getSolanaNfts('solana-mainnet', 'Owner111', true);
 
     expect(mockApiClientGet).toHaveBeenCalledWith('/v1/solana-mainnet/nft', {
-      params: { publicKey: 'Owner111', noCache: true },
+      params: { publicKey: 'Owner111', noCache: true, limit: 100, offset: 0 },
       timeout: 15000,
     });
     expect(result).toEqual([
@@ -81,6 +81,36 @@ describe('solana-nft service', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]?.mint.address).toBe('Mint111');
+  });
+
+  it('walks every page so wallets holding more than one page are not truncated', async () => {
+    const page = (mints: string[], pagination: Record<string, unknown>) => ({
+      data: {
+        data: mints.map((mint) => ({
+          mint,
+          owner: 'Owner111',
+          media: `https://example.com/${mint}.png`,
+        })),
+        pagination,
+      },
+    });
+
+    mockApiClientGet
+      .mockResolvedValueOnce(
+        page(['Mint111'], { total: 2, limit: 100, offset: 0, hasMore: true, nextOffset: 100 })
+      )
+      .mockResolvedValueOnce(
+        page(['Mint222'], { total: 2, limit: 100, offset: 100, hasMore: false, nextOffset: null })
+      );
+
+    const result = await getSolanaNfts('solana-mainnet', 'Owner111', false);
+
+    expect(mockApiClientGet).toHaveBeenCalledTimes(2);
+    expect(mockApiClientGet).toHaveBeenLastCalledWith('/v1/solana-mainnet/nft', {
+      params: { publicKey: 'Owner111', noCache: false, limit: 100, offset: 100 },
+      timeout: 15000,
+    });
+    expect(result.map((nft) => nft.mint.address)).toEqual(['Mint111', 'Mint222']);
   });
 });
 

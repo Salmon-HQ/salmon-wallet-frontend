@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getShortAddress, truncateHash } from './address';
+import { chunkAddress, getShortAddress, truncateHash } from './address';
 
 describe('address utils', () => {
   it('returns undefined for empty addresses', () => {
@@ -31,5 +31,20 @@ describe('address utils', () => {
 
   it('returns short hashes untouched', () => {
     expect(truncateHash('abc123')).toBe('abc123');
+  });
+
+  it('groups an address into 4-character chunks for positional scanning', () => {
+    expect(chunkAddress('7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU')).toBe(
+      '7xKX tg2C W87d 97TX JSDp bD5j Bkhe TqA8 3TZR uJos gAsU'
+    );
+  });
+
+  it('leaves a trailing partial chunk unpadded and adds no trailing space', () => {
+    expect(chunkAddress('abcdefg')).toBe('abcd efg');
+  });
+
+  it('returns an empty string for a missing address', () => {
+    expect(chunkAddress(undefined)).toBe('');
+    expect(chunkAddress('')).toBe('');
   });
 });

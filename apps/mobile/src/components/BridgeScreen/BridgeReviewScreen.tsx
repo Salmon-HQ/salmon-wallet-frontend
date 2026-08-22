@@ -14,10 +14,13 @@ import {
   s,
   fontFamilyNative,
   formatAmountWithSymbol,
+  formatPercent,
   getShortAddress,
+  semantic,
+  BRIDGE_PARTNER_FEE_PERCENT,
 } from '@salmon/shared';
-import { SwapDetailRow } from '../SwapScreen/SwapDetailRow';
-import { SwapReviewCard } from '../SwapScreen/SwapReviewCard';
+import { SwapDetailsCard } from '../SwapScreen/SwapDetailsCard';
+import { SwapReviewExchange } from '../SwapScreen/SwapReviewExchange';
 import { SwapReviewButtons } from '../SwapScreen/SwapReviewButtons';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 import type { BridgeReviewScreenProps } from './types';
@@ -25,7 +28,7 @@ import type { BridgeReviewScreenProps } from './types';
 /**
  * BridgeReviewScreen - Third step of bridge flow
  * Shows bridge details and confirm/back buttons
- * Reuses SwapDetailRow and SwapReviewCard components from SwapScreen
+ * Reuses SwapDetailsCard and SwapReviewExchange components from SwapScreen
  */
 export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
   inToken,
@@ -37,6 +40,7 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
   onBack,
   onConfirm,
   isConfirming = false,
+  isRefreshing = false,
   confirmLabel,
   style,
 }) => {
@@ -46,7 +50,7 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
   return (
     <View style={[styles.container, { paddingBottom: floatingBottomOffset }, style]}>
       {/* Title */}
-      <Text style={styles.title}>{t('bridge.review.title', 'Swap Review')}</Text>
+      <Text style={styles.title}>{t('bridge.review.title', 'Bridge Review')}</Text>
 
       {/* Scrollable Content */}
       <ScrollView
@@ -54,45 +58,80 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Send/Receive Cards */}
+        {/* Exchange graphic: sent token → arrow → received token */}
         <View style={styles.cardsContainer}>
-          <SwapReviewCard
-            label={t('swap.you_send', 'You Send')}
-            amount={formatAmountWithSymbol(inAmount, inToken.symbol)}
-          />
-          <SwapReviewCard
-            label={t('bridge.review.youReceiveEstimated', 'You Receive (estimated)')}
-            amount={formatAmountWithSymbol(outAmount, outToken.symbol)}
+          <SwapReviewExchange
+            send={{
+              label: t('swap.you_send', 'You Send'),
+              logo: inToken.logo,
+              symbol: inToken.symbol,
+              amount: formatAmountWithSymbol(inAmount, inToken.symbol),
+            }}
+            receive={{
+              label: t('bridge.review.youReceiveEstimated', 'You Receive (estimated)'),
+              logo: outToken.logo,
+              symbol: outToken.symbol,
+              amount: formatAmountWithSymbol(outAmount, outToken.symbol),
+              pendingAmount: isRefreshing,
+            }}
           />
         </View>
 
-        {/* Details Section */}
-        <View style={styles.detailsContainer}>
-          <SwapDetailRow
-            label={t('bridge.review.recipient', 'Recipient')}
-            value={getShortAddress(recipientAddress, 8) ?? ''}
-          />
-          <SwapDetailRow
-            label={t('bridge.review.fromNetwork', 'From Network')}
-            value={inToken.network || 'Solana'}
-          />
-          <SwapDetailRow
-            label={t('bridge.review.toNetwork', 'To Network')}
-            value={outToken.network || t('transactions.unknown')}
-          />
-          {estimate && (
-            <>
-              <SwapDetailRow
-                label={t('bridge.review.minimumAmount', 'Minimum Amount')}
-                value={formatAmountWithSymbol(estimate.minAmount, inToken.symbol)}
-              />
-              <SwapDetailRow
-                label={t('bridge.review.estimatedOutput', 'Estimated Output')}
-                value={formatAmountWithSymbol(estimate.estimatedAmount, outToken.symbol)}
-              />
-            </>
-          )}
-          <SwapDetailRow label={t('bridge.review.provider', 'Provider')} value="StealthEX" />
+        {/* Details Section — one grouped card, same treatment as the swap
+            review (no disclosure: every bridge row is commit-relevant). */}
+        <SwapDetailsCard
+          style={styles.detailsContainer}
+          rows={[
+            {
+              label: t('bridge.review.recipient', 'Recipient'),
+              value: getShortAddress(recipientAddress, 8) ?? '',
+            },
+            {
+              label: t('bridge.review.fromNetwork', 'From Network'),
+              value: inToken.network || 'Solana',
+            },
+            {
+              label: t('bridge.review.toNetwork', 'To Network'),
+              value: outToken.network || t('transactions.unknown'),
+            },
+            ...(estimate
+              ? [
+                  {
+                    label: t('bridge.review.minimumAmount', 'Minimum Amount'),
+                    value: formatAmountWithSymbol(estimate.minAmount, inToken.symbol),
+                    pending: isRefreshing,
+                  },
+                  {
+                    label: t('bridge.review.estimatedOutput', 'Estimated Output'),
+                    value: formatAmountWithSymbol(estimate.estimatedAmount, outToken.symbol),
+                    pending: isRefreshing,
+                  },
+                ]
+              : []),
+            // The swap names its cut ("Salmon fee"); the bridge netted 0.4%
+            // into the estimate above and said nothing. Same cut, same row.
+            {
+              label: t('bridge.review.salmonFee', 'Salmon fee'),
+              value: formatPercent(BRIDGE_PARTNER_FEE_PERCENT),
+            },
+            { label: t('bridge.review.provider', 'Provider'), value: 'StealthEX' },
+          ]}
+        />
+
+        {/* The swap warns about irreversibility on the flow that settles in
+            thirteen seconds; the bridge, which genuinely cannot be stopped,
+            warned only about duration. This is the commit point, so the thing
+            that cannot be undone is stated here. */}
+        <View style={styles.dangerBox} testID="bridge-irreversible-notice">
+          <Text style={styles.dangerTitle}>
+            {t('bridge.review.irreversible', 'This cannot be undone')}
+          </Text>
+          <Text style={styles.warningText}>
+            {t(
+              'bridge.review.irreversibleText',
+              'Confirming sends your funds to StealthEX, which holds them until the cross-chain transfer completes. Once confirmed there is no cancel and no way to reverse or recover the transfer — not by Salmon and not by you.'
+            )}
+          </Text>
         </View>
 
         {/* Warning Box */}
@@ -101,7 +140,7 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
           <Text style={styles.warningText}>
             {t(
               'bridge.review.pleaseNoteText',
-              'Cross-chain swaps typically take 10-30 minutes to complete. You will receive a deposit address after confirmation.'
+              'Cross-chain transfers typically take 10-30 minutes to complete. You will receive a deposit address after confirmation. The estimated amount above already has the Salmon fee deducted.'
             )}
           </Text>
         </View>
@@ -112,7 +151,8 @@ export const BridgeReviewScreen: React.FC<BridgeReviewScreenProps> = ({
         onBack={onBack}
         onConfirm={onConfirm}
         isConfirming={isConfirming}
-        confirmLabel={confirmLabel ?? t('bridge.review.confirmSwap', 'Confirm Swap')}
+        isRefreshing={isRefreshing}
+        confirmLabel={confirmLabel ?? t('bridge.review.confirmSwap', 'Confirm Bridge')}
       />
     </View>
   );
@@ -125,11 +165,11 @@ const styles = StyleSheet.create({
     paddingTop: vs(spacing['2xl']),
   },
   title: {
-    fontSize: ms(fontSize['2xl']),
-    fontFamily: fontFamilyNative.bold,
+    fontSize: ms(fontSize.headline),
+    fontFamily: fontFamilyNative.semiBold,
     color: colors.text.primary,
     textAlign: 'center',
-    letterSpacing: letterSpacing.wide,
+    letterSpacing: letterSpacing.snug,
     lineHeight: ms(24 * lineHeight.condensed),
     marginBottom: vs(spacing['2xl']),
   },
@@ -144,21 +184,35 @@ const styles = StyleSheet.create({
     marginBottom: vs(spacing['2xl']),
   },
   detailsContainer: {
-    gap: vs(spacing.md - 3),
     marginBottom: vs(spacing['2xl']),
   },
-  warningBox: {
-    backgroundColor: colors.status.warningBackground,
+  dangerBox: {
+    backgroundColor: semantic.status.dangerTint,
     borderRadius: borderRadius.md,
     borderWidth: borderWidth.thin,
-    borderColor: colors.status.warningBorder,
+    borderColor: semantic.status.danger,
+    padding: s(spacing.base),
+    marginBottom: vs(spacing.md),
+  },
+  dangerTitle: {
+    fontSize: ms(fontSize.sm),
+    fontFamily: fontFamilyNative.bold,
+    color: semantic.status.danger,
+    marginBottom: vs(spacing.xs),
+    letterSpacing: letterSpacing.normal,
+  },
+  warningBox: {
+    backgroundColor: semantic.status.warningTint,
+    borderRadius: borderRadius.md,
+    borderWidth: borderWidth.thin,
+    borderColor: semantic.status.warningTintBorder,
     padding: s(spacing.base),
     marginBottom: vs(spacing.lg),
   },
   warningTitle: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.bold,
-    color: colors.status.warning,
+    color: semantic.status.warning,
     marginBottom: vs(spacing.xs),
     letterSpacing: letterSpacing.normal,
   },

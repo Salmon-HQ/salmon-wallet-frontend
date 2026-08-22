@@ -1,6 +1,14 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { borderRadius, colors, fontFamily, fontSize, fontWeight, spacing } from '@salmon/shared';
+import {
+  borderRadius,
+  colors,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  spacing,
+  tabularNums,
+} from '@salmon/shared';
 import { styled } from '../../utils/styled';
 
 export const Container = styled(Box)({
@@ -51,11 +59,17 @@ export const LogoWrap = styled(Box)({
   boxShadow: '0 18px 48px rgba(0, 0, 0, 0.3)',
 });
 
-export const LogoImage = styled('img')({
-  width: 38,
-  height: 38,
-  objectFit: 'contain',
-});
+/**
+ * The wallet's own mark inside the approval header.
+ *
+ * This is a security surface: the mark is how a user tells the real wallet
+ * from a page dressed up as one, so it is drawn from the vector rather than
+ * fetched as a 197x183 raster and letterboxed into a square. Crispness is not
+ * decoration here — a soft or wrong mark on an approval prompt is closer to a
+ * phishing problem than an aesthetic one. `MARK_SIZE` is the drawn width the
+ * PNG's square box produced after `objectFit: contain`, so nothing moves.
+ */
+export const MARK_SIZE = 38;
 
 export const Title = styled(Typography)({
   fontSize: fontSize.title,
@@ -113,7 +127,7 @@ export const Label = styled(Typography)({
 });
 
 export const Value = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
   wordBreak: 'break-word',
@@ -145,7 +159,7 @@ export const AppIdentityText = styled(Box)({
 });
 
 export const AppIdentityName = styled(Typography)({
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.semibold,
   color: colors.text.primary,
   wordBreak: 'break-word',
@@ -202,6 +216,7 @@ export const SummaryLabel = styled(Typography)({
 });
 
 export const SummaryValue = styled(Typography)({
+  ...tabularNums.css,
   minWidth: 0,
   fontSize: fontSize.base,
   color: colors.text.primary,

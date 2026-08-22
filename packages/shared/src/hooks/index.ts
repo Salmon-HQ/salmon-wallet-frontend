@@ -32,19 +32,45 @@ export type {
   UseInactivityTimeoutResult,
 } from './useInactivityTimeout';
 
+// Unlock throttling (failed-password backoff, for the lock screens)
+export { useUnlockThrottle } from './useUnlockThrottle';
+export type { UseUnlockThrottleResult } from './useUnlockThrottle';
+
 // Available networks hook
 export { useAvailableNetworks, fetchAndMergeNetworkConfigs } from './useAvailableNetworks';
 export type { UseAvailableNetworksResult } from './useAvailableNetworks';
 
 // Balance hook
 export { useBalance } from './useBalance';
-export type { UseBalanceParams, UseBalanceResult } from './useBalance';
+export type { UseBalanceParams, UseBalanceResult, BalanceLoadState } from './useBalance';
+export { usePrefetchBalances } from './usePrefetchBalances';
+export type { UsePrefetchBalancesParams } from './usePrefetchBalances';
 
 // Transactions hook
 export { useTransactions } from './useTransactions';
 export type { UseTransactionsParams, UseTransactionsResult } from './useTransactions';
 
+// Wait-screen gate — 400ms before a wait screen may mount, 600ms minimum once
+// it has. Keeps a short wait from flickering a screen at the user.
+export { useWaitGate } from './useWaitGate';
+export type { UseWaitGateOptions } from './useWaitGate';
+export { useWaitExit } from './useWaitExit';
+export type { WaitExit } from './useWaitExit';
+
+// Copied-confirmation state for copy buttons — the call site does the actual
+// clipboard write, then calls trigger(); the hook holds `copied` for
+// motionMs.feedbackHold and reverts.
+export { useCopyFeedback } from './useCopyFeedback';
+export type { CopyFeedbackKey, UseCopyFeedbackResult } from './useCopyFeedback';
+
 // Send transaction hook
+export { usePendingActivity } from './usePendingActivity';
+export type {
+  PendingActivityItem,
+  PendingActivityKind,
+  UsePendingActivityResult,
+} from './usePendingActivity';
+
 export { useSendTransaction } from './useSendTransaction';
 export type { UseSendTransactionParams, UseSendTransactionResult } from './useSendTransaction';
 
@@ -58,6 +84,12 @@ export type { UseBridgeParams, UseBridgeResult } from './useBridge';
 
 export { useDAppMetadata } from './useDAppMetadata';
 export type { UseDAppMetadataResult } from './useDAppMetadata';
+
+export { useSolanaTransactionApproval } from './useSolanaTransactionApproval';
+export type {
+  UseSolanaTransactionApprovalParams,
+  UseSolanaTransactionApprovalResult,
+} from './useSolanaTransactionApproval';
 
 // Coin market data hook (BTC + selected token detail in web/extension)
 export { useCoinMarketData } from './useCoinMarketData';

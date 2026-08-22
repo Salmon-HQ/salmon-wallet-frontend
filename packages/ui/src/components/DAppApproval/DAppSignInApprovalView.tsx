@@ -17,7 +17,9 @@ import {
   fontFamily,
   fontSize,
   getShortAddress,
+  semantic,
   spacing,
+  useCopyFeedback,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import {
@@ -35,7 +37,7 @@ import {
   hintIconSx,
   Label,
   LogoWrap,
-  LogoImage,
+  MARK_SIZE,
   MessageSurface,
   MessageText,
   MonoValue,
@@ -51,8 +53,10 @@ import {
   Value,
   WarningNotice,
 } from './common';
+import { BrandMark } from '../BrandMark';
 import type { DAppSignInApprovalViewProps } from './types';
 
+import { CopyTick } from '../CopyTick';
 const monoValueSx = {
   fontFamily: fontFamily.mono,
   fontSize: fontSize.xs,
@@ -92,7 +96,7 @@ export function DAppSignInApprovalView({
   const hasIdentity = !!appName || !!appIcon;
 
   const [showRaw, setShowRaw] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const issuedAtDisplay = useMemo(() => formatTimestamp(siws?.issuedAt), [siws]);
   const expiresDisplay = useMemo(() => formatTimestamp(siws?.expirationTime), [siws]);
@@ -100,8 +104,7 @@ export function DAppSignInApprovalView({
   const handleCopyAccount = () => {
     if (!siws?.address) return;
     void copyToClipboard(siws.address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    showCopied();
   };
 
   const canApprove = !disabled && !loading && !domainMismatch && !!siws;
@@ -111,7 +114,7 @@ export function DAppSignInApprovalView({
       <Content>
         <Header>
           <LogoWrap>
-            <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
+            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
           </LogoWrap>
           <Title>{t('dapp.sign_in_title', 'Sign In')}</Title>
           <Subtitle>
@@ -205,15 +208,16 @@ export function DAppSignInApprovalView({
                       sx={{ ...monoValueSx, display: 'flex', alignItems: 'center', gap: '6px' }}
                     >
                       {getShortAddress(siws.address)}
-                      {copied ? (
-                        <CheckIcon
-                          sx={{ fontSize: 14, color: colors.status.success, flexShrink: 0 }}
-                        />
-                      ) : (
-                        <ContentCopyOutlinedIcon
-                          sx={{ fontSize: 14, color: colors.text.secondary, flexShrink: 0 }}
-                        />
-                      )}
+                      <CopyTick
+                        copied={copied}
+                        style={{ flexShrink: 0 }}
+                        copy={
+                          <ContentCopyOutlinedIcon
+                            sx={{ fontSize: 14, color: colors.text.secondary }}
+                          />
+                        }
+                        tick={<CheckIcon sx={{ fontSize: 14, color: semantic.status.success }} />}
+                      />
                     </SummaryValue>
                   </SummaryItem>
 

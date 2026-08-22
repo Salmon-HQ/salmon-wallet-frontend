@@ -1,23 +1,23 @@
 import React from 'react';
 import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   colors,
   spacing,
   borderRadius,
-  gradients,
-  shadows,
   componentSizes,
   fontFamilyNative,
   vs,
   s,
   fontSize,
+  lineHeight,
   borderWidth,
+  semantic,
 } from '@salmon/shared';
 import { SwapAmountInput } from './SwapAmountInput';
 import { PrimaryButton } from '../Button';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 import type { SwapInputScreenProps } from './types';
 
 /**
@@ -37,11 +37,20 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
   canReview,
   reviewWarning,
   swapError,
+  bridgeReference,
   onReview,
   style,
 }) => {
   const { t } = useTranslation();
   const { floatingBottomOffset, stickyCtaScrollPadding } = useTabChrome();
+  const keyboardHeight = useKeyboardHeight();
+
+  // The review CTA is absolutely positioned, so KeyboardAvoidingView cannot
+  // reach it. While the amount keyboard is open, anchor it just above the
+  // keyboard instead of above the tab bar so the user can still act on the
+  // amount they just typed.
+  const ctaBottomOffset =
+    keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
 
   return (
     <Pressable
@@ -65,19 +74,30 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
           placeholder={t('swap.enter_amount', 'Enter an amount')}
         />
 
-        {swapError ? (
-          <Text testID="swap-error-text" style={styles.errorText}>
-            {typeof swapError === 'string' ? t(swapError) : t(swapError.key, swapError.params)}
-          </Text>
-        ) : null}
+        {/* The notice slot, reserved. Every message that can appear here does
+            so while the user is still typing the amount — a minimum-amount
+            notice, a stale or failed quote, an insufficient balance — so the
+            slot holds one line of height from the first frame and fills it
+            when it has something to say. Without the reservation the whole
+            "You Receive" block travelled down the screen the moment the
+            amount crossed the minimum, which is the field moving under the
+            finger that the layout rule exists to forbid. Same technique as
+            `ReservedSlot`: keep the space, not the content. */}
+        <View style={styles.noticeSlot} testID="swap-notice-slot">
+          {swapError ? (
+            <Text testID="swap-error-text" style={styles.errorText}>
+              {typeof swapError === 'string' ? t(swapError) : t(swapError.key, swapError.params)}
+            </Text>
+          ) : null}
 
-        {reviewWarning ? (
-          <Text style={styles.warningText}>
-            {typeof reviewWarning === 'string'
-              ? t(reviewWarning)
-              : t(reviewWarning.key, reviewWarning.params)}
-          </Text>
-        ) : null}
+          {reviewWarning ? (
+            <Text testID="swap-warning-text" style={styles.warningText}>
+              {typeof reviewWarning === 'string'
+                ? t(reviewWarning)
+                : t(reviewWarning.key, reviewWarning.params)}
+            </Text>
+          ) : null}
+        </View>
 
         {/* You Receive */}
         <SwapAmountInput
@@ -95,38 +115,48 @@ export const SwapInputScreen: React.FC<SwapInputScreenProps> = ({
         <Text style={styles.disclaimerText}>
           {t('swap.platform_fee_disclaimer', 'Includes 0.5% platform fee')}
         </Text>
+
+        {/* A bridge that failed after its exchange was created leaves the user
+            with an order they cannot see and no way to name it. This is the
+            only reference that exists — a reference number, not debug output.
+            It sits below the amounts rather than between them: it is far too
+            tall to reserve a slot for, so the only way it can never displace
+            the "You Receive" block is to live underneath it. */}
+        {bridgeReference && (swapError || reviewWarning) ? (
+          <View style={styles.referenceBox} testID="bridge-failure-reference">
+            <Text style={styles.referenceTitle}>
+              {t('bridge.reference_title', 'Keep this reference')}
+            </Text>
+            <Text style={styles.referenceBody}>
+              {t(
+                'bridge.reference_body',
+                'This bridge did not complete, but the exchange was already created. Save these details — they are what support needs to look it up.'
+              )}
+            </Text>
+            <Text style={styles.referenceLabel}>{t('bridge.exchangeId', 'Exchange ID')}</Text>
+            <Text style={styles.referenceValue} selectable>
+              {bridgeReference.id}
+            </Text>
+            <Text style={styles.referenceLabel}>
+              {t('bridge.depositAddressLabel', 'Deposit address')}
+            </Text>
+            <Text style={styles.referenceValue} selectable>
+              {bridgeReference.depositAddress}
+            </Text>
+          </View>
+        ) : null}
       </View>
 
       {/* Review Button */}
-      <View style={[styles.buttonContainer, { bottom: floatingBottomOffset }]}>
-        {canReview ? (
-          <LinearGradient
-            colors={gradients.primaryButton.colors}
-            start={gradients.primaryButton.start}
-            end={gradients.primaryButton.end}
-            style={[styles.buttonGradient, styles.buttonGradientActive]}
-          >
-            <PrimaryButton
-              onPress={onReview}
-              disabled={false}
-              style={styles.button}
-              testID="swap-review-button"
-            >
-              {t('swap.review.reviewAndSwap', 'Review & Swap')}
-            </PrimaryButton>
-          </LinearGradient>
-        ) : (
-          <View style={[styles.buttonGradient, styles.buttonGradientInactive]}>
-            <PrimaryButton
-              onPress={onReview}
-              disabled={true}
-              style={styles.button}
-              testID="swap-review-button"
-            >
-              {t('swap.review.reviewAndSwap', 'Review & Swap')}
-            </PrimaryButton>
-          </View>
-        )}
+      <View style={[styles.buttonContainer, { bottom: ctaBottomOffset }]}>
+        <PrimaryButton
+          onPress={onReview}
+          disabled={!canReview}
+          style={styles.button}
+          testID="swap-review-button"
+        >
+          {t('swap.review.reviewAndSwap', 'Review')}
+        </PrimaryButton>
       </View>
     </Pressable>
   );
@@ -147,19 +177,59 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
+  // One line of the notice type, always. The messages are single-line by
+  // construction; a longer one grows the slot rather than being clipped,
+  // which is the honest trade — an unreadable notice is worse than a shift
+  // that only a rare message can cause.
+  noticeSlot: {
+    minHeight: vs(fontSize.sm * lineHeight.normal),
+    justifyContent: 'center',
+  },
   errorText: {
     fontSize: fontSize.sm,
+    lineHeight: fontSize.sm * lineHeight.normal,
     fontFamily: fontFamilyNative.medium,
-    color: colors.status.error,
+    color: semantic.status.danger,
     textAlign: 'center',
-    marginBottom: spacing.sm,
   },
   warningText: {
     fontSize: fontSize.sm,
+    lineHeight: fontSize.sm * lineHeight.normal,
     fontFamily: fontFamilyNative.medium,
-    color: colors.status.warning,
+    color: semantic.status.warning,
     textAlign: 'center',
+  },
+  referenceBox: {
+    backgroundColor: semantic.surface.raised,
+    borderRadius: borderRadius.md,
+    borderWidth: borderWidth.thin,
+    borderColor: semantic.border.raised,
+    padding: spacing.base,
     marginBottom: spacing.sm,
+  },
+  referenceTitle: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamilyNative.bold,
+    color: semantic.status.warning,
+    marginBottom: spacing.xs,
+  },
+  referenceBody: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamilyNative.regular,
+    color: semantic.text.secondary,
+    marginBottom: spacing.sm,
+  },
+  referenceLabel: {
+    fontSize: fontSize.micro,
+    fontFamily: fontFamilyNative.semiBold,
+    color: semantic.text.tertiary,
+    textTransform: 'uppercase',
+  },
+  referenceValue: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamilyNative.medium,
+    color: semantic.text.primary,
+    marginBottom: spacing.xs,
   },
   disclaimerText: {
     fontSize: 11,
@@ -167,23 +237,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xs,
   },
-  buttonGradient: {
-    borderRadius: borderRadius.lg,
-    borderWidth: borderWidth.accent,
-    borderColor: 'transparent',
-    ...shadows.button,
-  },
-  buttonGradientActive: {
-    borderColor: colors.accent.border,
-  },
-  buttonGradientInactive: {
-    backgroundColor: colors.button.inactiveBackground,
-    borderColor: 'transparent',
-  },
+  // Size only. Radius, fill, border, bezel and material belong to the button:
+  // this CTA used to sit inside a gradient wrapper carrying a 12px radius, a
+  // salmon outline and a glow, with the button's own fill forced transparent —
+  // a second, squarer shape behind the pill that read as two stacked buttons.
   button: {
-    minWidth: s(componentSizes.copyButtonWidth),
+    // One fixed width, in both states. DESIGN.md's Buttons section makes a
+    // screen's committing action full-width, but a control pinned to both
+    // edges of this screen reads as a bar rather than a button, so this CTA
+    // is the qualified case: narrower than the screen, and a fixed step
+    // rather than `auto` — sizing it to its label made the geometry a
+    // function of its state, and the one target the user is waiting to
+    // become pressable shrank and moved while they typed. Width is not a
+    // state.
+    width: s(componentSizes.copyButtonWidth),
     height: vs(componentSizes.buttonHeightCompact),
-    backgroundColor: 'transparent',
   },
 });
 

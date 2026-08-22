@@ -11,21 +11,10 @@
 import React, { useCallback, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import ButtonBase from '@mui/material/ButtonBase';
-import CircularProgress from '@mui/material/CircularProgress';
 import { useTranslation } from 'react-i18next';
-import {
-  borderRadius,
-  borderWidth,
-  colors,
-  componentSizes,
-  fontFamily,
-  fontSize,
-  fontWeight,
-  gradients,
-  spacing,
-} from '@salmon/shared';
+import { colors, componentSizes, fontFamily, fontSize, fontWeight, spacing } from '@salmon/shared';
 import { styled } from '../../utils/styled';
+import { PrimaryButton } from '../Button';
 
 export interface WalletInitErrorScreenProps {
   /** Re-runs wallet initialization. The gate stays up until it succeeds. */
@@ -59,22 +48,6 @@ const Body = styled(Typography)({
   maxWidth: 320,
 });
 
-const RetryButton = styled(ButtonBase)({
-  minWidth: 200,
-  height: componentSizes.buttonHeightMedium,
-  borderRadius: borderRadius.lg,
-  overflow: 'hidden',
-  border: `${borderWidth.thin}px solid ${colors.accent.border}`,
-  background: gradients.primaryCSS,
-});
-
-const RetryButtonText = styled(Typography)({
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.semibold,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-});
-
 export function WalletInitErrorScreen({ onRetry }: WalletInitErrorScreenProps): React.ReactElement {
   const { t } = useTranslation();
   const [retrying, setRetrying] = useState(false);
@@ -94,13 +67,21 @@ export function WalletInitErrorScreen({ onRetry }: WalletInitErrorScreenProps): 
       <Body>
         {t('wallet.init_failed_body', 'Your accounts and funds are safe. Please try again.')}
       </Body>
-      <RetryButton onClick={handleRetry} disabled={retrying} data-testid="wallet-init-retry">
-        {retrying ? (
-          <CircularProgress size={18} sx={{ color: colors.text.primary }} />
-        ) : (
-          <RetryButtonText>{t('actions.retry', 'Retry').toUpperCase()}</RetryButtonText>
-        )}
-      </RetryButton>
+      {/* The one action on this screen is the screen's committing action, so
+          it is the shared button: it used to be a hand-painted
+          `gradients.primaryCSS` box at `borderRadius.lg`, which made the only
+          button here the only button in the app without the flesh in it.
+          Height is the only override. */}
+      <PrimaryButton
+        onClick={handleRetry}
+        loading={retrying}
+        disabled={retrying}
+        fullWidth={false}
+        testID="wallet-init-retry"
+        style={{ height: componentSizes.buttonHeightMedium }}
+      >
+        {t('actions.retry', 'Retry')}
+      </PrimaryButton>
     </Container>
   );
 }

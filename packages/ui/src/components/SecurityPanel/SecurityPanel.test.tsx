@@ -5,6 +5,7 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import '@testing-library/jest-dom/vitest';
 
 import { SecurityPanel } from './SecurityPanel';
 
@@ -17,24 +18,11 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@salmon/shared', () => ({
-  colors: {
-    text: { secondary: '#999', primary: '#fff', disabled: '#666' },
-    accent: { primary: '#0f0' },
-    interactive: { hoverStrong: '#222' },
-    status: {
-      errorBackground: '#300',
-      error: '#f00',
-      successBackground: '#030',
-      success: '#0f0',
-    },
-  },
-  spacing: { xs: 4, md: 16, lg: 20, xl: 24 },
-  borderRadius: { md: 8 },
-  fontSize: { sm: 14 },
-  fontWeight: { semibold: 600 },
-  letterSpacing: { wider: '0.08em' },
-  opacity: { soft: 0.9 },
+// The real @salmon/shared barrel pulls in react-native, which Vite cannot
+// parse, so the module is stubbed with the runtime-agnostic theme tokens (the
+// primary button reads a good part of them) plus the accounts context.
+vi.mock('@salmon/shared', async () => ({
+  ...(await vi.importActual('../../../../shared/src/theme')),
   useAccountsContext: () => [null, { changePassword: mockChangePassword }],
   validatePassword: () => ({ isValid: true, strength: 'strong' }),
 }));
@@ -85,13 +73,13 @@ describe('SecurityPanel', () => {
     render(<SecurityPanel onBack={() => {}} onPasswordChanged={mockOnPasswordChanged} />);
 
     fireEvent.change(screen.getByPlaceholderText('settings.security.current_password'), {
-      target: { value: 'old-password' },
+      target: { value: 'test-password-000' },
     });
     fireEvent.change(screen.getByPlaceholderText('settings.security.new_password'), {
-      target: { value: 'new-password-123' },
+      target: { value: 'test-password-111' },
     });
     fireEvent.change(screen.getByPlaceholderText('settings.security.confirm_password'), {
-      target: { value: 'new-password-123' },
+      target: { value: 'test-password-111' },
     });
 
     fireEvent.click(
@@ -99,9 +87,73 @@ describe('SecurityPanel', () => {
     );
 
     await waitFor(() => {
-      expect(mockChangePassword).toHaveBeenCalledWith('old-password', 'new-password-123');
+      expect(mockChangePassword).toHaveBeenCalledWith('test-password-000', 'test-password-111');
     });
 
     expect(mockOnPasswordChanged).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the change-password control disabled until all three fields are filled', () => {
+    render(<SecurityPanel onBack={() => {}} />);
+
+    const button = screen.getByRole('button', {
+      name: 'settings.security.change_password_button',
+    });
+    expect(button).toBeDisabled();
+
+    fireEvent.change(screen.getByPlaceholderText('settings.security.current_password'), {
+      target: { value: 'test-password-000' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('settings.security.new_password'), {
+      target: { value: 'test-password-111' },
+    });
+    expect(button).toBeDisabled();
+
+    fireEvent.change(screen.getByPlaceholderText('settings.security.confirm_password'), {
+      target: { value: 'test-password-111' },
+    });
+    expect(button).toBeEnabled();
+  });
+
+  it('announces the success message politely rather than assertively', async () => {
+    render(<SecurityPanel onBack={() => {}} onPasswordChanged={mockOnPasswordChanged} />);
+
+    fireEvent.change(screen.getByPlaceholderText('settings.security.current_password'), {
+      target: { value: 'test-password-000' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('settings.security.new_password'), {
+      target: { value: 'test-password-111' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('settings.security.confirm_password'), {
+      target: { value: 'test-password-111' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'settings.security.change_password_button' })
+    );
+
+    const message = await screen.findByText('settings.security.password_changed');
+    expect(message.closest('[role]')).toHaveAttribute('role', 'status');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('announces a validation error politely rather than assertively', async () => {
+    render(<SecurityPanel onBack={() => {}} />);
+
+    fireEvent.change(screen.getByPlaceholderText('settings.security.current_password'), {
+      target: { value: 'test-password-000' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('settings.security.new_password'), {
+      target: { value: 'test-password-111' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('settings.security.confirm_password'), {
+      target: { value: 'test-password-222' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'settings.security.change_password_button' })
+    );
+
+    const message = await screen.findByText('settings.security.password_mismatch');
+    expect(message.closest('[role]')).toHaveAttribute('role', 'status');
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

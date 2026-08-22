@@ -64,7 +64,7 @@ const recoverBtn = page.getByTestId('select-recover-button');
 if (await recoverBtn.count()) {
   await recoverBtn.click();
   await sleep(1500);
-  await page.getByTestId('recover-seed-input').fill(SECRETS.SALMON_TEST_SEED_A);
+  await page.getByTestId('recover-word-input-1').fill(SECRETS.SALMON_TEST_SEED_A);
   await sleep(500);
   await page.getByTestId('recover-next-button').click({ timeout: 30000 });
   await sleep(1500);
@@ -99,7 +99,7 @@ await step('swap', async () => {
     await sleep(3000);
     await pageB.getByTestId('select-recover-button').click({ timeout: 15000 });
     await sleep(1500);
-    await pageB.getByTestId('recover-seed-input').fill(SECRETS.SALMON_TEST_SEED_B);
+    await pageB.getByTestId('recover-word-input-1').fill(SECRETS.SALMON_TEST_SEED_B);
     await sleep(500);
     await pageB.getByTestId('recover-next-button').click({ timeout: 30000 });
     await sleep(1500);

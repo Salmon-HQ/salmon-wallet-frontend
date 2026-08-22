@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { PasswordPage as AuthPasswordPage } from '@salmon/ui';
 import { DerivedKeyCache, getStashItem, STASH_KEYS, useAccountsContext } from '@salmon/shared';
 import { useAuthFlow } from './AuthFlowContext';
@@ -32,13 +32,21 @@ export function PasswordPage(): React.ReactElement {
         console.warn('Failed to finalize onboarding session:', error);
       }
 
-      navigate('/auth/analytics-consent');
+      navigate('/auth/success');
     })();
   }, [actions, navigate]);
 
   const handleBack = useCallback(() => {
     navigate(flowType === 'create' ? '/auth/create' : '/auth/recover');
   }, [flowType, navigate]);
+
+  // The mnemonic lives in memory only, so a reload, a bookmark, or browser-back
+  // can land here holding nothing — and this screen writes the vault. Creating a
+  // wallet from an empty phrase would produce one whose recovery phrase was
+  // never shown, so send the user back to the start of the flow instead.
+  if (!mnemonic) {
+    return <Navigate to="/auth/select" replace />;
+  }
 
   return (
     <AuthPasswordPage

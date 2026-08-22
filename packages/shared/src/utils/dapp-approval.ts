@@ -11,6 +11,7 @@ import {
 } from '@solana/kit';
 import type {
   Address,
+  Base64EncodedWireTransaction,
   Commitment,
   CompiledTransactionMessage,
   CompiledTransactionMessageWithLifetime,
@@ -25,10 +26,16 @@ import { fetchAndMergeNetworkConfigs } from '../hooks/useAvailableNetworks';
 import {
   buildOffchainMessageV1,
   parseOffchainMessageV1,
+  previewTransactionEffects,
   signOffchainMessage,
   signSiwsMessage,
 } from '../blockchain/solana';
-import type { SolanaAccount, SolanaSignInInputFields } from '../blockchain/solana';
+import type {
+  ResolveSymbolFn,
+  SolanaAccount,
+  SolanaSignInInputFields,
+  TransactionEffects,
+} from '../blockchain/solana';
 import type {
   DAppSignAllTransactionsApprovalPayload,
   DAppSignInApprovalPayload,
@@ -232,6 +239,79 @@ export async function loadSolanaTransactionApprovalDetails(
     feePayer: parsed.message.staticAccounts[0] ?? null,
     recentBlockhash: parsed.message.lifetimeToken ?? null,
   };
+}
+
+/**
+ * Previews what a dApp's transaction request would do to the approving
+ * account's balances, before anything is signed.
+ *
+ * This is the answer to blind signing: fee, instruction count and blockhash
+ * describe the *shape* of a transaction, and an unlimited USDC approval to an
+ * attacker has the same shape as a swap. The preview describes the *effect*.
+ *
+ * The transaction is assembled with every signature slot empty and simulated
+ * with `sigVerify: false`, so no key is touched and nothing is broadcast.
+ *
+ * @param account - The account being asked to sign, and the account the deltas
+ * are reported for.
+ * @param request - The dApp request, exactly as received over the bridge.
+ * @param options - Optional ticker lookup for the mints in the preview.
+ * @returns One of the four {@link TransactionEffects} variants. Anything other
+ * than `effects` must never be rendered as an empty list of changes.
+ */
+export async function previewSolanaApprovalEffects(
+  account: SolanaAccount,
+  request: DAppTransactionRequest,
+  options: { resolveSymbol?: ResolveSymbolFn } = {}
+): Promise<TransactionEffects> {
+  const previewedAccount = address(account.getReceiveAddress());
+
+  const encodedMessages =
+    request.method === 'signAllTransactions'
+      ? (request.params?.messages ?? [])
+      : [request.params?.message ?? ''];
+
+  // Each transaction in a batch executes against the state the previous one
+  // left, so previewing them one by one would produce numbers that are right
+  // only for the first. Saying so is the honest outcome.
+  if (encodedMessages.length > 1) {
+    return {
+      kind: 'undetermined',
+      account: previewedAccount,
+      reason: 'batch-not-previewable',
+      detail: `This request contains ${encodedMessages.length} transactions that run in sequence, so their combined effect cannot be previewed.`,
+    };
+  }
+
+  const encodedMessage = encodedMessages[0] ?? '';
+  if (!encodedMessage) {
+    return {
+      kind: 'undetermined',
+      account: previewedAccount,
+      reason: 'malformed-transaction',
+      detail: 'The request carries no transaction message.',
+    };
+  }
+
+  let wireTransaction: Base64EncodedWireTransaction;
+  try {
+    const { messageBytes, message } = buildTransactionFromEncodedMessage(encodedMessage);
+    const unsigned = getTransactionEncoder().encode({
+      messageBytes: messageBytes as ReadonlyUint8Array as TransactionMessageBytes,
+      signatures: emptySignatureMap(message),
+    });
+    wireTransaction = getBase64Decoder().decode(unsigned) as Base64EncodedWireTransaction;
+  } catch (error) {
+    return {
+      kind: 'undetermined',
+      account: previewedAccount,
+      reason: 'malformed-transaction',
+      detail: error instanceof Error ? error.message : String(error),
+    };
+  }
+
+  await fetchAndMergeNetworkConfigs();
+  return previewTransactionEffects(account.getRpc(), wireTransaction, previewedAccount, options);
 }
 
 export async function approveSolanaSignMessage(

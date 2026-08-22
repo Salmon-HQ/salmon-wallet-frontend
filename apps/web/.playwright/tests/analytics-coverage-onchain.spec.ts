@@ -265,7 +265,9 @@ test('every on-chain event in the catalog actually fires', async ({ page, browse
   await page.getByTestId('settings-item-accounts').click();
   await page.getByTestId('account-add-button').click();
   await page.getByTestId('account-add-method-import').click();
-  await page.getByTestId('account-add-seed-input').fill(process.env.SALMON_TEST_SEED_B ?? '');
+  await page
+    .getByTestId('account-add-seed-word-input-1')
+    .fill(process.env.SALMON_TEST_SEED_B ?? '');
   await page.getByTestId('account-add-seed-continue-button').click({ timeout: 30_000 });
   await page.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
   await expect(page.getByTestId('account-add-button')).toBeVisible({ timeout: 120_000 });

@@ -14,7 +14,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import InputBase from '@mui/material/InputBase';
 import ButtonBase from '@mui/material/ButtonBase';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { CaretRightIcon, iconSize } from '../../icons';
 import {
   colors,
   spacing,
@@ -28,8 +28,10 @@ import {
   componentSizes,
   duration,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 
+import { focusRingNone, focusRingOnWrapper } from '../../theme';
 import { TokenSelectorModal } from './TokenSelectorModal';
 import type { TokenSelectorToken, TokenSelectorProps } from './types';
 
@@ -45,6 +47,10 @@ const Container = styled(Box)({
   borderRadius: borderRadius.xl,
   padding: spacing.sm,
   border: `${borderWidth.thin}px solid ${colors.border.default}`,
+  '&:has(:focus-visible)': {
+    ...focusRingOnWrapper,
+    '& .MuiInputBase-root.MuiInputBase-root': focusRingNone,
+  },
 });
 
 const InputContainer = styled(Box)({
@@ -53,6 +59,7 @@ const InputContainer = styled(Box)({
 });
 
 const AmountInput = styled(InputBase)({
+  ...tabularNums.css,
   width: '100%',
   fontSize: fontSize['2xl'],
   fontWeight: fontWeight.semibold,
@@ -126,9 +133,10 @@ const ChevronContainer = styled(Box)({
   alignItems: 'center',
 });
 
-const StyledChevron = styled(ChevronRightIcon)({
+const StyledChevron = styled(CaretRightIcon)({
   color: colors.text.secondary,
-  fontSize: fontSize.lg,
+  width: iconSize.md,
+  height: iconSize.md,
 });
 
 // ============================================================================

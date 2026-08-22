@@ -1,315 +1,45 @@
-import React, {
-  useState,
-  useCallback,
-  useEffect,
-  useRef,
-  type FormEvent,
-  type ChangeEvent,
-} from 'react';
-import { useTranslation } from 'react-i18next';
-import { styled } from '../../utils/styled';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import InputBase from '@mui/material/InputBase';
-import { PrimaryButton, ConfirmDialog, LoadingScreen } from '../../components';
-import {
-  colors,
-  fontFamily,
-  fontSize,
-  fontWeight,
-  spacing,
-  componentSizes,
-  DerivedKeyCache,
-  getStashItem,
-  STASH_KEYS,
-} from '@salmon/shared';
-import { storeSessionKey, clearSessionKey } from '../../utils/sessionKeyCache';
-
-// ============================================================================
-// Types
-// ============================================================================
+/**
+ * The extension unlock screen — an adapter now, not an implementation.
+ *
+ * The screen itself is `LockScreen` in `@salmon/ui`; this file supplies only
+ * what is genuinely the extension's: the unlock callback the popup passes in,
+ * and the session-key cache. It and the web twin used to be near-verbatim
+ * copies of the same 350 lines, diverging in exactly two places — both of
+ * which were the web copy hardcoding a number the extension read from a token.
+ */
+import React, { useCallback } from 'react';
+import { LockScreen } from '../../components';
+import { getStashItem, STASH_KEYS, type DerivedKeyCache } from '@salmon/shared';
+import { clearSessionKey, storeSessionKey } from '../../utils/sessionKeyCache';
 
 interface LockPageProps {
   onUnlock: (password: string) => Promise<boolean>;
-  onUnlockWithCachedKey: (keyCache: DerivedKeyCache) => Promise<boolean>;
+  /**
+   * Accepted and discarded. Biometric unlock is mobile-only (spec 013,
+   * decision 8): WebAuthn/passkey unlock here is separate work with its own
+   * key-storage implications, not a layout decision.
+   */
+  onUnlockWithCachedKey?: (keyCache: DerivedKeyCache) => Promise<boolean>;
   onRemoveAllAccounts: () => Promise<void>;
 }
 
-// ============================================================================
-// Styled Components
-// ============================================================================
-
-const Container = styled(Box)({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  minHeight: '100vh',
-  padding: spacing['2xl'],
-  background: `linear-gradient(180deg, ${colors.background.primary} 0%, ${colors.background.secondary} 100%)`,
-  fontFamily: fontFamily.sans,
-});
-
-const Content = styled(Box)({
-  width: '100%',
-  maxWidth: 320,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-});
-
-const LogoImage = styled('img')({
-  width: componentSizes.lockScreenLogoSizeExtension,
-  height: componentSizes.lockScreenLogoSizeExtension,
-  objectFit: 'contain',
-  marginBottom: spacing['3xl'],
-});
-
-const Title = styled(Typography)({
-  fontSize: fontSize['2xl'],
-  fontWeight: fontWeight.semibold,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-  textAlign: 'center',
-  marginBottom: spacing.sm,
-});
-
-const Subtitle = styled(Typography)({
-  fontSize: fontSize.sm,
-  fontFamily: fontFamily.sans,
-  color: colors.text.secondary,
-  textAlign: 'center',
-  marginBottom: spacing['3xl'],
-});
-
-const Form = styled('form')({
-  width: '100%',
-});
-
-const InputContainer = styled(Box)({
-  marginBottom: spacing.lg,
-});
-
-const StyledInput = styled(InputBase)<{
-  $hasError: boolean;
-}>(({ $hasError }) => ({
-  width: '100%',
-  padding: `${componentSizes.inputPaddingVertical}px ${spacing.lg}px`,
-  fontSize: fontSize.md,
-  fontFamily: fontFamily.sans,
-  backgroundColor: colors.input.background,
-  border: `1px solid ${$hasError ? colors.status.error : colors.input.border}`,
-  borderRadius: componentSizes.inputRadius,
-  color: colors.text.primary,
-  transition: 'border-color 0.15s ease',
-  '&.Mui-focused': {
-    borderColor: $hasError ? colors.status.error : colors.accent.primary,
-  },
-}));
-
-const ErrorText = styled(Typography)({
-  color: colors.status.error,
-  fontSize: fontSize.xs,
-  fontFamily: fontFamily.sans,
-  marginTop: spacing.sm,
-  marginLeft: spacing.xs,
-});
-
-const ForgotPasswordButton = styled('button')({
-  marginTop: spacing.lg,
-  padding: spacing.sm,
-  background: 'none',
-  border: 'none',
-  color: colors.text.secondary,
-  fontSize: fontSize.sm,
-  fontFamily: fontFamily.sans,
-  cursor: 'pointer',
-  width: '100%',
-  textAlign: 'center',
-  transition: 'color 0.15s ease',
-  '&:hover:not(:disabled)': {
-    color: colors.text.primary,
-  },
-});
-
-// ============================================================================
-// Component
-// ============================================================================
-
-export function LockPage({
-  onUnlock,
-  onUnlockWithCachedKey: _onUnlockWithCachedKey,
-  onRemoveAllAccounts,
-}: LockPageProps) {
-  const { t } = useTranslation();
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isUnlocking, setIsUnlocking] = useState(false);
-  const [showResetDialog, setShowResetDialog] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [showLoadingScreen, setShowLoadingScreen] = useState(false);
-  const sessionKeyClearRef = useRef(false);
-
-  useEffect(() => {
-    if (sessionKeyClearRef.current) return;
-    sessionKeyClearRef.current = true;
-
-    void clearSessionKey();
-  }, []);
-
-  const handlePasswordChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      setPassword(e.target.value);
-      if (error) setError(null);
-    },
-    [error]
-  );
-
-  const handleSubmit = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault();
-
-      if (!password.trim()) {
-        setError(t('lock.error.empty_password', 'Please enter your password'));
-        return;
-      }
-
-      setShowLoadingScreen(true);
-      setIsUnlocking(true);
-      setError(null);
-
-      try {
-        const success = await onUnlock(password);
-        if (!success) {
-          setError(t('lock.error.invalid_password', 'Invalid password'));
-          setPassword('');
-          setShowLoadingScreen(false);
-        } else {
-          try {
-            const derivedKey = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
-            if (derivedKey) {
-              await storeSessionKey(derivedKey);
-            }
-          } catch (cacheError) {
-            console.warn('Failed to cache session key:', cacheError);
-          }
-        }
-      } catch {
-        setError(t('lock.error.unlock_failed', 'Failed to unlock wallet'));
-        setShowLoadingScreen(false);
-      } finally {
-        setIsUnlocking(false);
-      }
-    },
-    [password, onUnlock, t]
-  );
-
-  const handleForgotPassword = useCallback(() => {
-    setShowResetDialog(true);
-  }, []);
-
-  const handleResetConfirm = useCallback(async () => {
-    setShowResetDialog(false);
-    setShowConfirmDialog(true);
-  }, []);
-
-  const handleFinalConfirm = useCallback(async () => {
+export function LockPage({ onUnlock, onRemoveAllAccounts }: LockPageProps): React.ReactElement {
+  const handleUnlocked = useCallback(async () => {
     try {
-      await onRemoveAllAccounts();
-    } catch (err) {
-      console.error('Failed to reset wallet:', err);
-      setError(t('lock.error.reset_failed', 'Failed to reset wallet. Please try again.'));
+      const derivedKey = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
+      if (derivedKey) await storeSessionKey(derivedKey);
+    } catch (cacheError) {
+      console.warn('Failed to cache session key:', cacheError);
     }
-  }, [onRemoveAllAccounts, t]);
+  }, []);
 
   return (
-    <>
-      <Container>
-        <Content>
-          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
-
-          <Title>{t('lock.title', 'Welcome Back')}</Title>
-
-          <Subtitle>{t('lock.subtitle', 'Enter your password to unlock your wallet')}</Subtitle>
-
-          <Form onSubmit={handleSubmit}>
-            <InputContainer>
-              <StyledInput
-                type="password"
-                value={password}
-                onChange={handlePasswordChange}
-                placeholder={t('lock.password_placeholder', 'Password')}
-                $hasError={!!error}
-                disabled={isUnlocking}
-                autoFocus
-                fullWidth
-                inputProps={{
-                  'data-testid': 'lock-password-input',
-                  'aria-label': t('lock.password_placeholder', 'Password'),
-                }}
-              />
-              {error && <ErrorText>{error}</ErrorText>}
-            </InputContainer>
-
-            <PrimaryButton
-              type="submit"
-              disabled={!password.trim()}
-              loading={isUnlocking}
-              fullWidth
-              testID="lock-unlock-button"
-            >
-              {t('lock.unlock', 'Unlock')}
-            </PrimaryButton>
-
-            <ForgotPasswordButton
-              type="button"
-              onClick={handleForgotPassword}
-              disabled={isUnlocking}
-              data-testid="lock-forgot-password-button"
-            >
-              {t('lock.forgot_password', 'I forgot my password')}
-            </ForgotPasswordButton>
-          </Form>
-        </Content>
-
-        {/* Reset Wallet Dialog - Step 1 */}
-        <ConfirmDialog
-          visible={showResetDialog}
-          onClose={() => setShowResetDialog(false)}
-          title={t('lock.reset_wallet.title', 'Reset Wallet')}
-          message={t(
-            'lock.reset_wallet.message',
-            'If you forgot your password, you will need to reset your wallet. This will permanently delete all accounts and data. You can restore your wallet using your seed phrase after resetting.'
-          )}
-          confirmText={t('lock.reset_wallet.reset', 'Reset Wallet')}
-          cancelText={t('lock.reset_wallet.cancel', 'Cancel')}
-          isDanger
-          onConfirm={handleResetConfirm}
-        />
-
-        {/* Final Confirmation Dialog - Step 2 */}
-        <ConfirmDialog
-          visible={showConfirmDialog}
-          onClose={() => setShowConfirmDialog(false)}
-          title={t('lock.confirm_reset.title', 'Are you sure?')}
-          message={t(
-            'lock.confirm_reset.message',
-            'This action cannot be undone. All wallet data will be permanently deleted.'
-          )}
-          confirmText={t('lock.confirm_reset.confirm', 'Delete All Data')}
-          cancelText={t('lock.confirm_reset.cancel', 'Cancel')}
-          isDanger
-          onConfirm={handleFinalConfirm}
-        />
-      </Container>
-
-      <LoadingScreen
-        visible={showLoadingScreen}
-        title={t('lock.unlocking')}
-        showTips={true}
-        tipInterval={3000}
-      />
-    </>
+    <LockScreen
+      onUnlock={onUnlock}
+      onUnlocked={handleUnlocked}
+      onMount={clearSessionKey}
+      onRemoveAllAccounts={onRemoveAllAccounts}
+    />
   );
 }
 

@@ -99,7 +99,7 @@ export function TokenListSkeleton({ count = 5 }: TokenListSkeletonProps) {
                 <SkeletonText
                   variant="text"
                   width="60%"
-                  height={ms(fontSize.md)}
+                  height={ms(fontSize.bodyLg)}
                   sx={{ mb: `${spacing.xs}px` }}
                 />
                 <SkeletonText variant="text" width="40%" height={ms(fontSize.base)} />
@@ -108,7 +108,7 @@ export function TokenListSkeleton({ count = 5 }: TokenListSkeletonProps) {
                 <SkeletonText
                   variant="text"
                   width={s(spacing['5.5xl'])}
-                  height={ms(fontSize.md)}
+                  height={ms(fontSize.bodyLg)}
                   sx={{ mb: `${spacing.xs}px` }}
                 />
                 <SkeletonText variant="text" width={s(spacing['4xl'])} height={ms(fontSize.base)} />

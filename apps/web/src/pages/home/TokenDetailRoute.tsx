@@ -1,19 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   useAccountsContext,
   useBalance,
   useCurrencyContext,
-  getTokenMarketChart,
-  getTokenCoinInfo,
+  useCoinMarketData,
   coinInfoToMarketData,
   getBlockchainFromNetworkId,
   PERIOD_TO_DAYS,
   type NetworkId,
   type PriceChartPeriod,
   type PriceDataPoint,
-  type CoinInfo,
   type MarketData,
   type Token,
 } from '@salmon/shared';
@@ -56,69 +54,32 @@ export function TokenDetailRoute(): React.ReactElement {
     };
   }, [tokens, tokenAddress]);
 
-  // Chart & market data state
-  const [chartData, setChartData] = useState<PriceDataPoint[]>([]);
   const [chartPeriod, setChartPeriod] = useState<PriceChartPeriod>('1M');
-  const [coinInfo, setCoinInfo] = useState<CoinInfo | null>(null);
-  const [marketData, setMarketData] = useState<MarketData | undefined>(undefined);
-  const [chartLoading, setChartLoading] = useState(false);
-  const [chartError, setChartError] = useState(false);
 
-  // Fetch chart data (classic endpoint by coingeckoId, contract-address
-  // fallback by mint for SPL tokens without one; null means "no chart")
-  const tokenCoingeckoId = token?.coingeckoId ?? undefined;
-  const tokenContractAddress = token?.address;
-  useEffect(() => {
-    if (!tokenCoingeckoId && !tokenContractAddress) return;
-    let cancelled = false;
-    setChartLoading(true);
-    setChartError(false);
-
-    const days = PERIOD_TO_DAYS[chartPeriod];
-    getTokenMarketChart(
-      { coingeckoId: tokenCoingeckoId, address: tokenContractAddress },
-      days,
-      currency
-    )
-      .then((res) => {
-        if (cancelled) return;
-        if (res?.prices) {
-          setChartData(
-            res.prices.map(([ts, price]: [number, number]) => ({ timestamp: ts, price }))
-          );
-        }
-      })
-      .catch((e) => {
-        console.error('Failed to load chart data:', e);
-        if (!cancelled) setChartError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setChartLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tokenCoingeckoId, tokenContractAddress, chartPeriod, currency]);
-
-  // Fetch coin info (once per token; contract-address fallback for tokens
-  // without a coingeckoId — null means "no info" and keeps sections hidden)
-  useEffect(() => {
-    if (!tokenCoingeckoId && !tokenContractAddress) return;
-    let cancelled = false;
-
-    getTokenCoinInfo({ coingeckoId: tokenCoingeckoId, address: tokenContractAddress }, currency)
-      .then((info) => {
-        if (cancelled || !info) return;
-        setCoinInfo(info);
-        setMarketData(coinInfoToMarketData(info));
-      })
-      .catch((e) => console.error('Failed to load coin info:', e));
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tokenCoingeckoId, tokenContractAddress, currency]);
+  // Same shared hook the extension and the Bitcoin tab use: one cache, one
+  // definition of what "loading" means for the chart versus for the info
+  // sections. This route used to hand-roll the two fetches with
+  // useState/useEffect, which is how a period change here blanked the whole
+  // page while the extension's Bitcoin tab did not.
+  const {
+    coinInfo,
+    chartData: chartDataRaw,
+    infoLoading,
+    chartLoading,
+    chartPending,
+    error: chartFetchError,
+  } = useCoinMarketData({
+    coinId: token?.coingeckoId ?? undefined,
+    contractAddress: token?.address,
+    currency,
+    days: PERIOD_TO_DAYS[chartPeriod],
+    enabled: !!token,
+  });
+  const chartData: PriceDataPoint[] = chartDataRaw ?? [];
+  const marketData: MarketData | undefined = useMemo(
+    () => (coinInfo ? coinInfoToMarketData(coinInfo) : undefined),
+    [coinInfo]
+  );
 
   const handleBack = useCallback(() => navigate('/home'), [navigate]);
   const handleChartPeriodChange = useCallback(
@@ -147,7 +108,8 @@ export function TokenDetailRoute(): React.ReactElement {
         onChartPeriodChange={handleChartPeriodChange}
         coinInfo={null}
         marketData={undefined}
-        loading
+        chartLoading
+        infoLoading
         onBack={handleBack}
       />
     );
@@ -162,8 +124,10 @@ export function TokenDetailRoute(): React.ReactElement {
       onChartPeriodChange={handleChartPeriodChange}
       coinInfo={coinInfo}
       marketData={marketData}
-      loading={chartLoading && chartData.length === 0}
-      chartError={chartError && chartData.length === 0}
+      chartLoading={chartLoading && chartData.length === 0}
+      chartPending={chartPending}
+      infoLoading={infoLoading && !coinInfo}
+      chartError={!!chartFetchError && chartData.length === 0}
       onBack={handleBack}
     />
   );

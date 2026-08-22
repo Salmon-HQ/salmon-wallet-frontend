@@ -23,19 +23,26 @@ import {
   fontSize,
   shadowsCSS,
   durationMs,
+  tabularNums,
+  semantic,
+  opacity,
+  motionDuration,
+  motionEasing,
+  resolveMotionDuration,
 } from '@salmon/shared';
 import { useCallback, useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { styled } from '../../utils/styled';
+import { useReducedMotion } from '../../utils/useReducedMotion';
 import type { PriceChartProps } from './types';
 
 /**
  * Default colors for positive/negative performance
  */
 const CHART_COLORS = {
-  positive: colors.status.success,
-  negative: colors.status.error,
+  positive: semantic.status.success,
+  negative: semantic.status.danger,
 } as const;
 
 // formatPrice is defined inside the component to use currency context
@@ -57,13 +64,19 @@ const Container = styled(Box)({
   backgroundColor: 'transparent',
 });
 
-const ChartContainer = styled(Box)<{ $height: number }>(({ $height }) => ({
-  width: '100%',
-  height: $height,
-  marginBottom: spacing.lg,
-  borderRadius: borderRadius.md,
-  overflow: 'hidden',
-}));
+const ChartContainer = styled(Box)<{ $height: number; $pending: boolean; $motion: string }>(
+  ({ $height, $pending, $motion }) => ({
+    width: '100%',
+    height: $height,
+    marginBottom: spacing.lg,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    // A period press is a state change in place, so the old series attenuates
+    // over `swell` and the new one comes back up — it is never taken away.
+    opacity: $pending ? opacity.faint : opacity.full,
+    transition: `opacity ${$motion} ${motionEasing.current.css}`,
+  })
+);
 
 const PeriodContainer = styled(Box)({
   display: 'flex',
@@ -74,17 +87,22 @@ const PeriodContainer = styled(Box)({
 });
 
 const PeriodButton = styled(Button)<{ $selected?: boolean }>(({ $selected }) => ({
+  ...tabularNums.css,
   minWidth: componentSizes.backButtonSize,
   padding: `${spacing.sm}px ${spacing.md}px`,
   borderRadius: borderRadius.full,
-  backgroundColor: $selected ? colors.text.primary : 'transparent',
-  color: $selected ? colors.background.primary : colors.text.secondary,
+  // The selected period is a *state*, so it takes warm ink on the accent tint
+  // rather than a hard white puck. `accent.tint` is a tinted ground that sits
+  // under salmon ink (5.29:1 composite), not a salmon fill — the one-fill rule
+  // is untouched and the chart keeps its own fill budget free.
+  backgroundColor: $selected ? semantic.accent.tint : 'transparent',
+  color: $selected ? semantic.text.accent : colors.text.secondary,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   textTransform: 'none',
   '&:hover': {
-    backgroundColor: $selected ? colors.text.primary : colors.card.border,
+    backgroundColor: $selected ? semantic.accent.tintHover : colors.card.border,
   },
 }));
 
@@ -118,6 +136,7 @@ const TooltipContainer = styled(Box)({
 });
 
 const TooltipPrice = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.base,
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
@@ -126,6 +145,7 @@ const TooltipPrice = styled(Typography)({
 });
 
 const TooltipDate = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontFamily: fontFamily.sans,
   color: colors.text.secondary,
@@ -227,6 +247,7 @@ export function PriceChart({
   selectedPeriod,
   onPeriodChange,
   loading = false,
+  pending = false,
   error = false,
   color,
   height = componentSizes.chartHeight,
@@ -234,6 +255,7 @@ export function PriceChart({
   className,
 }: PriceChartProps) {
   const { t } = useTranslation();
+  const reduceMotion = useReducedMotion();
   // Determine chart color based on performance
   const chartColor = useMemo(() => {
     if (color) return color;
@@ -254,7 +276,12 @@ export function PriceChart({
   return (
     <Container style={style} className={className}>
       {/* Chart area */}
-      <ChartContainer $height={height}>
+      <ChartContainer
+        $height={height}
+        $pending={pending && !loading}
+        $motion={resolveMotionDuration(motionDuration.swell, reduceMotion)}
+        aria-busy={pending || loading}
+      >
         {loading ? (
           <ChartSkeleton height={height} />
         ) : data.length > 0 ? (

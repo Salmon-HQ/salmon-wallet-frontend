@@ -7,11 +7,12 @@
 
 import React, { useCallback, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { GlobeIcon, TrashIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
   colors,
+  componentSizes,
   spacing,
   borderRadius,
   fontFamilyNative,
@@ -19,6 +20,7 @@ import {
   type TrustedAppItem,
   fontSize,
   opacity,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 
@@ -53,7 +55,7 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
               <Image source={{ uri: app.icon }} style={styles.appIcon} />
             ) : (
               <View style={styles.appIconPlaceholder}>
-                <Ionicons name="globe-outline" size={20} color={colors.text.secondary} />
+                <GlobeIcon size={iconSize.md} color={semantic.text.secondary} />
               </View>
             )}
             <View style={styles.appText}>
@@ -73,13 +75,16 @@ export function TrustedAppsSelector({ apps, onRevokeApp, onBack }: TrustedAppsSe
             onPress={() => handleRevoke(app.domain)}
             disabled={isRevoking}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('settings.trusted_apps_revoke', 'Revoke')}
+            accessibilityState={{ disabled: isRevoking }}
           >
-            <Ionicons name="trash-outline" size={18} color={colors.status.error} />
+            <TrashIcon size={iconSize.sm} color={semantic.status.danger} />
           </TouchableOpacity>
         </View>
       );
     },
-    [revoking, handleRevoke]
+    [revoking, handleRevoke, t]
   );
 
   return (
@@ -110,7 +115,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    // Control Radius Rule: a settings list row is a control — r3, not r2.
+    borderRadius: borderRadius.r3,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -121,14 +127,14 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   appIcon: {
-    width: 36,
-    height: 36,
+    width: componentSizes.iconSizeXL,
+    height: componentSizes.iconSizeXL,
     borderRadius: borderRadius.iconContainer,
     backgroundColor: colors.card.border,
   },
   appIconPlaceholder: {
-    width: 36,
-    height: 36,
+    width: componentSizes.iconSizeXL,
+    height: componentSizes.iconSizeXL,
     borderRadius: borderRadius.iconContainer,
     backgroundColor: colors.card.border,
     alignItems: 'center',
@@ -140,14 +146,14 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   appName: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   appDomain: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
+    fontSize: fontSize.mono,
   },
   revokeButton: {
     padding: spacing.sm,
@@ -163,15 +169,15 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   emptyText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     textAlign: 'center',
   },
   emptySubtext: {
-    color: colors.text.disabled,
+    color: semantic.text.disabled,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     textAlign: 'center',
   },
 });

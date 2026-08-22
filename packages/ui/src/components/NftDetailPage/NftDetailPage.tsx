@@ -15,11 +15,11 @@ import { styled } from '../../utils/styled';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
-import CallMadeIcon from '@mui/icons-material/CallMade';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import { ArrowUpRightIcon, FireIcon, iconSize } from '../../icons';
 
 import {
   colors,
+  semantic,
   spacing,
   gradients,
   fontFamily,
@@ -40,9 +40,11 @@ import {
   blur,
   borderWidth,
   trackEvent,
+  tabularNums,
 } from '@salmon/shared';
 
 import { BlurContainer } from '../BlurContainer';
+import { FleshBackground } from '../FleshBackground';
 import { PageShell } from '../PageShell';
 import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
 import type { NftDetailPageProps, NftAttribute } from './types';
@@ -125,6 +127,7 @@ const AttributeName = styled(Typography)({
 });
 
 const AttributeValue = styled(Typography)({
+  ...tabularNums.css,
   fontFamily: fontFamily.sans,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.regular,
@@ -152,6 +155,7 @@ const DetailLabel = styled(Typography)({
 });
 
 const DetailValue = styled(Typography)({
+  ...tabularNums.css,
   fontFamily: fontFamily.sans,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
@@ -179,6 +183,17 @@ const ActionButtonsContainer = styled(Box)({
   justifyContent: 'center',
   gap: spacing.lg,
   marginTop: spacing.lg,
+});
+
+/** Sits above the flesh, never under it. Decoration is never a hit target. */
+const OnFillContent = styled('span')({
+  position: 'relative',
+  zIndex: 1,
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: spacing.base,
 });
 
 const PrimaryButtonBase = styled(ButtonBase)({
@@ -212,13 +227,15 @@ const SecondaryButtonInner = styled(ButtonBase)({
   '&:active': { opacity: opacity.medium },
 });
 
-const ButtonText = styled(Typography)({
+const ButtonText = styled(Typography)<{ $onAccent?: boolean }>(({ $onAccent }) => ({
   fontFamily: fontFamily.sans,
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontWeight: fontWeight.medium,
-  color: colors.text.balance,
+  // On the salmon fill the only legal ink is `neutral-1000` (6.50:1). The
+  // outlined sibling keeps the light label it already had.
+  color: $onAccent ? colors.button.primaryText : colors.text.balance,
   lineHeight: lineHeight.normal,
-});
+}));
 
 // ============================================================================
 // NftDetailPage Component
@@ -368,7 +385,6 @@ export function NftDetailPage({
       onBack={
         isBurnReviewStep ? handleBurnBack : isBurnSuccessStep ? handleBurnSuccessContinue : onBack
       }
-      showScalesBackground
       style={style}
       className={className}
     >
@@ -515,7 +531,7 @@ export function NftDetailPage({
                 {burnPreparing && <DescriptionText>{burnBusyLabel}</DescriptionText>}
 
                 {burnError && (
-                  <DescriptionText sx={{ color: colors.status.error }}>
+                  <DescriptionText sx={{ color: semantic.status.danger }}>
                     {t(burnError)}
                   </DescriptionText>
                 )}
@@ -551,10 +567,17 @@ export function NftDetailPage({
                       opacity: burnPreparing || !burnPreview || !!burnError ? opacity.medium : 1,
                     }}
                   >
-                    <LocalFireDepartmentIcon
-                      sx={{ fontSize: fontSize.md, color: colors.text.balance }}
-                    />
-                    <ButtonText>{t('nft.burn_nft', 'Burn')}</ButtonText>
+                    {/* The flesh: the myosepta of a cut fillet, pressed into the
+                        salmon fill. Every band is paler than the fill, so it
+                        can only raise the luminance under the label. */}
+                    <FleshBackground />
+                    <OnFillContent>
+                      {/* Bold, like the label: everything on a flesh fill is bold. */}
+                      <FireIcon weight="bold" size={iconSize.sm} color={colors.text.balance} />
+                      <ButtonText sx={{ fontWeight: fontWeight.bold }}>
+                        {t('nft.burn_nft', 'Burn')}
+                      </ButtonText>
+                    </OnFillContent>
                   </PrimaryButtonBase>
                 </ActionButtonsContainer>
               </>
@@ -565,8 +588,21 @@ export function NftDetailPage({
                   aria-label={t('nft.send.title', 'Send NFT')}
                   data-testid="nft-detail-send-button"
                 >
-                  <CallMadeIcon sx={{ fontSize: fontSize.md, color: colors.text.balance }} />
-                  <ButtonText>{t('actions.send', 'Send')}</ButtonText>
+                  {/* The flesh: the myosepta of a cut fillet, pressed into the
+                      salmon fill. Every band is paler than the fill, so it can
+                      only raise the luminance under the label. */}
+                  <FleshBackground />
+                  <OnFillContent>
+                    {/* Bold, like the label: everything on a flesh fill is bold. */}
+                    <ArrowUpRightIcon
+                      weight="bold"
+                      size={iconSize.sm}
+                      color={colors.button.primaryText}
+                    />
+                    <ButtonText $onAccent sx={{ fontWeight: fontWeight.bold }}>
+                      {t('actions.send', 'Send')}
+                    </ButtonText>
+                  </OnFillContent>
                 </PrimaryButtonBase>
 
                 <BlurContainer
@@ -586,9 +622,7 @@ export function NftDetailPage({
                     aria-label={t('nft.burn.reviewTitle', 'Burn NFT')}
                     data-testid="nft-detail-burn-button"
                   >
-                    <LocalFireDepartmentIcon
-                      sx={{ fontSize: fontSize.md, color: colors.text.balance }}
-                    />
+                    <FireIcon size={iconSize.sm} color={colors.text.balance} />
                     <ButtonText>{t('nft.burn_nft', 'Burn')}</ButtonText>
                   </SecondaryButtonInner>
                 </BlurContainer>

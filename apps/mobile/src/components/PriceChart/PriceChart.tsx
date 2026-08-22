@@ -1,7 +1,14 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Animated, {
+  useAnimatedProps,
+  useDerivedValue,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { ContentLoader, Rect } from '@salmon/shared';
 import {
   colors,
@@ -12,8 +19,11 @@ import {
   isPositivePerformance,
   PRICE_CHART_PERIODS,
   fontSize,
+  motionMs,
   opacity,
+  semantic,
 } from '@salmon/shared';
+import { timing } from '../../utils/motion';
 import type { PriceChartPeriod, PriceDataPoint } from '@salmon/shared';
 import type { PriceChartProps } from './types';
 
@@ -23,8 +33,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
  * Default colors for positive/negative performance
  */
 const CHART_COLORS = {
-  positive: colors.status.success,
-  negative: colors.status.error,
+  positive: semantic.status.success,
+  negative: semantic.status.danger,
 } as const;
 
 /**
@@ -50,51 +60,62 @@ const getDataBounds = (data: PriceDataPoint[]): { min: number; max: number } => 
 };
 
 /**
- * Generate SVG path from data points
+ * Fixed sample count for the animated curve. Every period's series is
+ * resampled to this many points so two periods always yield same-length
+ * arrays — which is what makes the curve *interpolable* when the range
+ * changes, instead of a hard swap.
  */
-const generatePath = (
+const RESAMPLE_POINTS = 64;
+
+/**
+ * Resample a series to `RESAMPLE_POINTS` y-pixel values (linear interpolation
+ * over the index space, already scaled into chart coordinates).
+ */
+export const resampleYs = (
   data: PriceDataPoint[],
-  width: number,
   height: number,
   bounds: { min: number; max: number }
-): string => {
-  if (data.length === 0) return '';
+): number[] => {
+  if (data.length === 0) return [];
 
   const { min, max } = bounds;
   const range = max - min || 1;
+  const ys: number[] = [];
 
-  const points = data.map((point, index) => {
-    const x = (index / (data.length - 1)) * width;
-    const y = height - ((point.price - min) / range) * height;
-    return { x, y };
-  });
-
-  // Create smooth curve using quadratic bezier
-  let path = `M ${points[0].x} ${points[0].y}`;
-
-  for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1];
-    const curr = points[i];
-    const midX = (prev.x + curr.x) / 2;
-    path += ` Q ${prev.x} ${prev.y} ${midX} ${(prev.y + curr.y) / 2}`;
+  for (let i = 0; i < RESAMPLE_POINTS; i++) {
+    const pos = data.length === 1 ? 0 : (i / (RESAMPLE_POINTS - 1)) * (data.length - 1);
+    const lo = Math.floor(pos);
+    const hi = Math.min(lo + 1, data.length - 1);
+    const frac = pos - lo;
+    const price = data[lo].price + (data[hi].price - data[lo].price) * frac;
+    ys.push(height - ((price - min) / range) * height);
   }
 
-  // Final line to last point
-  if (points.length > 1) {
-    const lastPoint = points[points.length - 1];
-    path += ` L ${lastPoint.x} ${lastPoint.y}`;
-  }
-
-  return path;
+  return ys;
 };
 
 /**
- * Generate area fill path (extends line path to bottom)
+ * Build the smooth quadratic-bezier line path from resampled y values.
+ * Runs on the UI thread during the period transition, hence the worklet.
  */
-const generateAreaPath = (linePath: string, width: number, height: number): string => {
-  if (!linePath) return '';
-  return `${linePath} L ${width} ${height} L 0 ${height} Z`;
+export const buildLinePath = (ys: number[], width: number): string => {
+  'worklet';
+  if (ys.length === 0) return '';
+
+  const step = width / (ys.length - 1);
+  let path = `M 0 ${ys[0]}`;
+
+  for (let i = 1; i < ys.length; i++) {
+    const prevX = (i - 1) * step;
+    const midX = prevX + step / 2;
+    path += ` Q ${prevX} ${ys[i - 1]} ${midX} ${(ys[i - 1] + ys[i]) / 2}`;
+  }
+
+  path += ` L ${width} ${ys[ys.length - 1]}`;
+  return path;
 };
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 /**
  * ChartSkeleton - Loading placeholder for the chart
@@ -201,16 +222,59 @@ export const PriceChart: React.FC<PriceChartProps> = ({
   // Calculate data bounds
   const bounds = useMemo(() => getDataBounds(data), [data]);
 
-  // Generate SVG paths
-  const linePath = useMemo(
-    () => generatePath(data, chartWidth, chartHeight, bounds),
-    [data, chartWidth, chartHeight, bounds]
+  // Resample the series to a fixed point count so period-to-period curves
+  // are interpolable, then morph between them on the UI thread.
+  const isReduceMotionEnabled = useReducedMotion();
+  const targetYs = useMemo(
+    () => resampleYs(data, chartHeight, bounds),
+    [data, chartHeight, bounds]
   );
 
-  const areaPath = useMemo(
-    () => generateAreaPath(linePath, chartWidth, chartHeight),
-    [linePath, chartWidth, chartHeight]
-  );
+  const fromYs = useSharedValue<number[]>(targetYs);
+  const toYs = useSharedValue<number[]>(targetYs);
+  const progress = useSharedValue(1);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (targetYs.length === 0 || toYs.value.length !== targetYs.length) {
+      // Nothing to morph between (empty ↔ data): snap.
+      fromYs.value = targetYs;
+      toYs.value = targetYs;
+      progress.value = 1;
+      return;
+    }
+    fromYs.value = toYs.value;
+    toYs.value = targetYs;
+    progress.value = 0;
+    // A period change is an in-place layout change of the same element, so it
+    // takes `drift` on the default curve. Reduce motion resolves it to 0ms —
+    // the previous hard swap.
+    progress.value = withTiming(1, timing(motionMs.drift, isReduceMotionEnabled));
+  }, [targetYs, isReduceMotionEnabled, fromYs, toYs, progress]);
+
+  const lineD = useDerivedValue(() => {
+    const to = toYs.value;
+    if (to.length === 0) return '';
+    const from = fromYs.value.length === to.length ? fromYs.value : to;
+    const p = progress.value;
+    const ys = new Array<number>(to.length);
+    for (let i = 0; i < to.length; i++) {
+      ys[i] = from[i] + (to[i] - from[i]) * p;
+    }
+    return buildLinePath(ys, chartWidth);
+  });
+
+  const lineAnimatedProps = useAnimatedProps(() => ({ d: lineD.value }));
+  const areaAnimatedProps = useAnimatedProps(() => ({
+    d:
+      lineD.value === ''
+        ? ''
+        : `${lineD.value} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z`,
+  }));
 
   // Handle period selection
   const handlePeriodPress = useCallback(
@@ -235,12 +299,12 @@ export const PriceChart: React.FC<PriceChartProps> = ({
               </LinearGradient>
             </Defs>
 
-            {/* Area fill */}
-            <Path d={areaPath} fill="url(#areaGradient)" />
+            {/* Area fill — morphs with the line so the gradient never flickers */}
+            <AnimatedPath animatedProps={areaAnimatedProps} fill="url(#areaGradient)" />
 
             {/* Line */}
-            <Path
-              d={linePath}
+            <AnimatedPath
+              animatedProps={lineAnimatedProps}
               stroke={chartColor}
               strokeWidth={2}
               fill="none"
@@ -317,7 +381,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   periodButtonSelected: {
-    backgroundColor: colors.accent.primary,
+    // A selected period is a state, not an action: `accent.tint` is a tinted
+    // ground under salmon ink (5.29:1 composite), not a fill, so the chart no
+    // longer spends the screen's one salmon fill on a 35px puck.
+    backgroundColor: semantic.accent.tint,
   },
   periodButtonText: {
     fontSize: 13,
@@ -327,8 +394,10 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.bold,
   },
   periodButtonTextSelected: {
-    color: colors.text.primary,
-    opacity: opacity.soft,
+    // Full opacity: `opacity.soft` here would drag the ink below the 5.29:1
+    // salmon measures on the tint composite.
+    color: semantic.text.accent,
+    opacity: 1,
   },
   emptyState: {
     flex: 1,

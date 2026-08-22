@@ -35,7 +35,7 @@ import { IconHome, IconWallet, Images } from '@salmon/assets/images';
 ### Using Fonts
 
 ```typescript
-import { DMSansBold, DMSansMedium, DMSansRegular, SpaceMonoRegular } from '@salmon/assets';
+import { DMSansBold, DMSansMedium, DMSansRegular, GeistMonoRegular } from '@salmon/assets';
 
 // Or use the Fonts object
 import { Fonts } from '@salmon/assets';
@@ -84,13 +84,14 @@ Assets are organized into the following categories:
 
 ## Fonts Included
 
-- **DM Sans**: Primary font family
-  - Bold
-  - Medium
-  - Regular
+- **DM Sans**: Primary interface font family (modified — digit advances equalised; see `src/fonts/DMSans-README.md`)
+  - Regular (400)
+  - Medium (500)
+  - SemiBold (600)
+  - Bold (700)
 
-- **Space Mono**: Monospace font for addresses and technical text
-  - Regular
+- **Geist Mono**: Monospace font for addresses, hashes, keys, and seed phrases
+  - Regular (400)
 
 ## File Structure
 

@@ -35,7 +35,11 @@
         "backgroundColor": "#FF6F5B"
       },
       "backgroundColor": "#10131c",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": true,
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES"
+      ]
     },
     "web": {
       "bundler": "metro",

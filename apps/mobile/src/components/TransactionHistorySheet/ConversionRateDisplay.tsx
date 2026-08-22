@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, type ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowsLeftRightIcon } from '../../icons';
 import {
   colors,
   ms,
@@ -69,12 +69,7 @@ export const ConversionRateDisplay: React.FC<ConversionRateDisplayProps> = ({
     // Compact format: "1:150.25"
     return (
       <View style={[styles.container, styles.containerSmall, style]}>
-        <Ionicons
-          name="swap-horizontal"
-          size={12}
-          color={colors.text.secondary}
-          style={styles.iconSmall}
-        />
+        <ArrowsLeftRightIcon size={12} color={colors.text.secondary} style={styles.iconSmall} />
         <Text style={styles.compactText}>1:{formattedRate}</Text>
       </View>
     );
@@ -83,12 +78,7 @@ export const ConversionRateDisplay: React.FC<ConversionRateDisplayProps> = ({
   // Full format: "1 SOL = 150.25 USDC"
   return (
     <View style={[styles.container, style]}>
-      <Ionicons
-        name="swap-horizontal"
-        size={14}
-        color={colors.text.secondary}
-        style={styles.icon}
-      />
+      <ArrowsLeftRightIcon size={14} color={colors.text.secondary} style={styles.icon} />
       <Text style={styles.text}>
         <Text style={styles.symbolText}>1 {fromSymbol}</Text>
         <Text style={styles.equalsText}> = </Text>

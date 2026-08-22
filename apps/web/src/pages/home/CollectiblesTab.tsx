@@ -15,7 +15,7 @@ import {
   type NftSectionKey,
   type NftSection,
 } from '@salmon/shared';
-import { NftCarouselSection, WarningNotice } from '@salmon/ui';
+import { NftCarouselSection, TextButton, WarningNotice, visuallyHidden } from '@salmon/ui';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -116,10 +116,28 @@ export function CollectiblesTab({
     return keys;
   }, [developerNetworks]);
 
+  // Sections that actually render. Mainnet and devnet count as distinct
+  // chains: same base chain, different networks and different assets.
+  const renderedKeys = useMemo(
+    () =>
+      visibleKeys.filter(
+        (key) => nftsBySections[key].loading || nftsBySections[key].nfts.length > 0
+      ),
+    [visibleKeys, nftsBySections]
+  );
+  const showChainLabel = renderedKeys.length > 1;
+
   const isLoading = visibleKeys.some((key) => nftsBySections[key].loading);
-  const isEmpty = !isLoading && visibleKeys.every((key) => nftsBySections[key].nfts.length === 0);
   const loadError =
     mainnetQuery.error !== null || (developerNetworks && devnetQuery.error !== null);
+  // A failed load is not "you have no collectibles" — the error state owns it.
+  const isEmpty =
+    !isLoading && !loadError && visibleKeys.every((key) => nftsBySections[key].nfts.length === 0);
+
+  const handleRetry = useCallback(() => {
+    void mainnetQuery.refresh();
+    if (developerNetworks) void devnetQuery.refresh();
+  }, [mainnetQuery, devnetQuery, developerNetworks]);
 
   const handleNftPress = useCallback(
     (nft: NftData) => {
@@ -137,11 +155,22 @@ export function CollectiblesTab({
 
   return (
     <ScrollContainer>
+      {/* Visually hidden: the tab bar carries the visible label, but screen
+          reader users still need a heading to orient by. */}
+      <Typography component="h1" sx={visuallyHidden}>
+        {t('collectibles.title', 'Collectibles')}
+      </Typography>
+
       {loadError && (
         <Box sx={{ marginBottom: `${spacing.md}px` }} data-testid="collectibles-load-error">
           <WarningNotice
             tone="warning"
             title={t('collectibles.load_error', "Your collectibles couldn't be loaded right now.")}
+            action={
+              <TextButton onClick={handleRetry} testID="collectibles-retry-button">
+                {t('actions.retry', 'Retry')}
+              </TextButton>
+            }
           />
         </Box>
       )}
@@ -152,10 +181,8 @@ export function CollectiblesTab({
         </EmptyState>
       )}
 
-      {visibleKeys.map((key) => {
+      {renderedKeys.map((key) => {
         const section = nftsBySections[key];
-        if (!section.loading && section.nfts.length === 0) return null;
-
         const title = getNftSectionTitle(key, section as NftSection);
 
         return (
@@ -165,6 +192,7 @@ export function CollectiblesTab({
             blockchain="solana"
             nfts={section.nfts}
             loading={section.loading}
+            showChainLabel={showChainLabel}
             onNftPress={handleNftPress}
             onSeeAllPress={() => handleSeeAll(key, title, section.nfts)}
           />

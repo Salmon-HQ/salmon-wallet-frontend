@@ -83,27 +83,69 @@ function normalizeBackendNft(raw: BackendNft, owner: string): Nft {
 // API Functions
 // ============================================================================
 
+interface BackendPagination {
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+  nextOffset: number | null;
+}
+
+type BackendNftResponse = { data: BackendNft[]; pagination?: BackendPagination } | BackendNft[];
+
+/**
+ * The backend caps a page at 100 NFTs (`MAX_LIMIT`) and defaults to 50 when
+ * no `limit` is sent. Requesting a single default page silently truncates
+ * every wallet holding more than 50 assets, so this walks all pages.
+ */
+const PAGE_LIMIT = 100;
+
+/** Safety stop so a misbehaving `hasMore` cannot spin forever. */
+const MAX_PAGES = 25;
+
 export async function getSolanaNfts(
   networkId: string,
   publicKey: string,
   noCache: boolean,
   opts: { includeSpam?: boolean } = {}
 ): Promise<Nft[]> {
-  const params: Record<string, string | boolean> = { publicKey, noCache };
-  if (opts.includeSpam) {
-    params.includeSpam = 'true';
-  }
+  const raw: BackendNft[] = [];
+  let offset = 0;
 
-  const { data } = await apiClient.get<{ data: BackendNft[] } | BackendNft[]>(
-    `/v1/${networkId}/nft`,
-    {
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    const params: Record<string, string | number | boolean> = {
+      publicKey,
+      noCache,
+      limit: PAGE_LIMIT,
+      offset,
+    };
+    if (opts.includeSpam) {
+      params.includeSpam = 'true';
+    }
+
+    const { data } = await apiClient.get<BackendNftResponse>(`/v1/${networkId}/nft`, {
       params,
       timeout: 15000,
+    });
+
+    // Older/array-shaped responses carry no pagination envelope — one page is all there is.
+    if (Array.isArray(data)) {
+      raw.push(...data);
+      break;
     }
-  );
+
+    raw.push(...(data.data ?? []));
+
+    // The spam filter runs after the page slice on the backend, so `pagination`
+    // describes the unfiltered list and its offsets stay consistent across pages.
+    const nextOffset = data.pagination?.nextOffset;
+    if (!data.pagination?.hasMore || nextOffset == null) {
+      break;
+    }
+    offset = nextOffset;
+  }
 
   // Backend already drops blacklisted / spamScore>0 NFTs unless `?includeSpam=true`.
-  const raw = Array.isArray(data) ? data : data.data;
   const normalized = raw.map((nft) => normalizeBackendNft(nft, publicKey));
   return normalized.filter((nft) => nft.media);
 }

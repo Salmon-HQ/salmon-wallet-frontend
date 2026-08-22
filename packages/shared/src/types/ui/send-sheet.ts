@@ -71,8 +71,12 @@ export interface StepAddressAmountPropsBase {
   blockchain: BlockchainType;
   /** The active blockchain account (provides getConnection/getProvider) */
   account: BlockchainAccount;
-  /** Navigate back to token selection */
-  onBack: () => void;
+  /**
+   * Navigate back to token selection. Absent when the flow has no
+   * token-selection step (single-token chains open straight on this step), so
+   * the platform implementations must not offer a way back that leads nowhere.
+   */
+  onBack?: () => void;
   /** Proceed to confirmation */
   onReview: (address: string, amount: string, resolvedRecipientAddress?: string) => void;
   /** Cancel and close the sheet */

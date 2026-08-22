@@ -14,16 +14,20 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import DescriptionIcon from '@mui/icons-material/Description';
-import TwitterIcon from '@mui/icons-material/Twitter';
-import ForumIcon from '@mui/icons-material/Forum';
-import EmailIcon from '@mui/icons-material/Email';
-import ShieldIcon from '@mui/icons-material/Shield';
+import {
+  ArrowSquareOutIcon,
+  ChatsCircleIcon,
+  EnvelopeIcon,
+  FileTextIcon,
+  QuestionIcon,
+  ShieldIcon,
+  XLogoIcon,
+  iconSize,
+} from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   colors,
+  semantic,
   spacing,
   borderRadius,
   type SupportOptionItem,
@@ -40,11 +44,11 @@ import type { SupportSelectorProps } from './types';
 // ============================================================================
 
 const ICON_MAP: Record<string, React.ReactNode> = {
-  faq: <HelpOutlineIcon />,
-  docs: <DescriptionIcon />,
-  twitter: <TwitterIcon />,
-  discord: <ForumIcon />,
-  email: <EmailIcon />,
+  faq: <QuestionIcon />,
+  docs: <FileTextIcon />,
+  twitter: <XLogoIcon />,
+  discord: <ChatsCircleIcon />,
+  email: <EnvelopeIcon />,
 };
 
 // ============================================================================
@@ -67,29 +71,31 @@ const StyledListItemIcon = styled(ListItemIcon)({
   color: colors.accent.primary,
 });
 
-const ExternalIcon = styled(OpenInNewIcon)({
+const ExternalIcon = styled(ArrowSquareOutIcon)({
   color: colors.text.secondary,
-  fontSize: fontSize.md,
+  width: iconSize.sm,
+  height: iconSize.sm,
 });
 
 const SecurityNotice = styled(Box)({
   display: 'flex',
   alignItems: 'flex-start',
   gap: spacing.sm,
-  backgroundColor: colors.status.warningBackground,
+  backgroundColor: semantic.status.warningTint,
   borderRadius: borderRadius.md,
   padding: spacing.md,
   margin: `${spacing.lg}px ${spacing.lg}px`,
 });
 
 const SecurityIcon = styled(ShieldIcon)({
-  color: colors.status.warning,
-  fontSize: fontSize.xl,
+  color: semantic.status.warning,
+  width: iconSize.md,
+  height: iconSize.md,
   marginTop: spacing.xxs,
 });
 
 const SecurityText = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.caption,
   color: colors.text.secondary,
   lineHeight: lineHeight.tokenListItem,
   flex: 1,
@@ -109,22 +115,26 @@ export function SupportSelector({
   const renderOption = useCallback(
     (option: SupportOptionItem) => (
       <ListItem key={option.id} disablePadding>
-        <StyledListItemButton onClick={() => onOpenLink(option.url)}>
-          <StyledListItemIcon>{ICON_MAP[option.id] || <HelpOutlineIcon />}</StyledListItemIcon>
+        {/* Every row leaves the app for an external URL (docs, social, mailto),
+            so each one announces as a link, not a button — the same reading the
+            mobile surface gives them (DESIGN.md §"The settings surface joined
+            the system"). */}
+        <StyledListItemButton role="link" onClick={() => onOpenLink(option.url)}>
+          <StyledListItemIcon>{ICON_MAP[option.id] || <QuestionIcon />}</StyledListItemIcon>
           <ListItemText
-            primary={option.title}
-            secondary={option.description}
+            primary={t(option.title)}
+            secondary={t(option.description)}
             primaryTypographyProps={{
               sx: {
                 color: colors.text.primary,
-                fontSize: fontSize.base,
+                fontSize: fontSize.body,
                 fontWeight: fontWeight.medium,
               },
             }}
             secondaryTypographyProps={{
               sx: {
                 color: colors.text.secondary,
-                fontSize: fontSize.sm,
+                fontSize: fontSize.caption,
               },
             }}
           />
@@ -132,21 +142,16 @@ export function SupportSelector({
         </StyledListItemButton>
       </ListItem>
     ),
-    [onOpenLink]
+    [onOpenLink, t]
   );
 
   return (
-    <SettingsPanelContent title={t('settings.help_support', 'Help & Support')} onBack={onBack}>
+    <SettingsPanelContent title={t('settings.help_support')} onBack={onBack}>
       <StyledList>{options.map(renderOption)}</StyledList>
 
       <SecurityNotice>
         <SecurityIcon />
-        <SecurityText>
-          {t(
-            'settings.security_notice',
-            'Salmon Wallet team will never ask for your seed phrase or private keys. Never share this information with anyone.'
-          )}
-        </SecurityText>
+        <SecurityText>{t('settings.security_notice')}</SecurityText>
       </SecurityNotice>
     </SettingsPanelContent>
   );

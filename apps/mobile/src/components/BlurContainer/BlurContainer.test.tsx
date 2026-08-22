@@ -8,9 +8,12 @@ const mockUseBlurTarget = jest.fn();
 
 jest.mock('@salmon/shared', () => ({
   colors: {
-    background: { tokenItem: 'rgba(56, 63, 82, 0.1)' },
+    // Opaque, as the shipped token is: a list row is content, and DESIGN.md
+    // gives translucency only to floating chrome.
+    background: { tokenItem: '#161C2D' },
     border: { default: '#404962' },
   },
+  isOpaqueColor: (color: string) => color.startsWith('#'),
 }));
 
 jest.mock('expo-blur', () => ({
@@ -33,9 +36,21 @@ describe('BlurContainer', () => {
     });
   });
 
-  it('uses BlurView with the Android blur target instead of a solid fallback surface', () => {
+  it('spends no blur on an opaque fill', () => {
+    // A backdrop blur behind an opaque surface samples pixels nobody sees and
+    // still costs a surface per row on Android.
     render(
       <BlurContainer style={{ borderRadius: 12 }}>
+        <>child</>
+      </BlurContainer>
+    );
+
+    expect(mockBlurView).not.toHaveBeenCalled();
+  });
+
+  it('uses BlurView with the Android blur target when the fill is translucent', () => {
+    render(
+      <BlurContainer style={{ borderRadius: 12 }} backgroundColor="rgba(11, 15, 25, 0.62)">
         <>child</>
       </BlurContainer>
     );

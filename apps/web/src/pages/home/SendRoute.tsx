@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useBlocker, useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
@@ -18,6 +18,19 @@ import { SendPage } from '@salmon/ui';
 
 export function SendRoute(): React.ReactElement {
   const navigate = useNavigate();
+
+  // On web, Send is a route, so the browser back button is a dismissal path the
+  // in-page controls know nothing about. Block it once the transaction has been
+  // signed — before that, leaving is free and stays unblocked.
+  const [flowLocked, setFlowLocked] = useState(false);
+  const blocker = useBlocker(flowLocked);
+
+  useEffect(() => {
+    // The lock is transient: as soon as the outcome is acknowledged, let the
+    // pending navigation through rather than stranding the user.
+    if (blocker.state === 'blocked' && !flowLocked) blocker.reset();
+  }, [blocker, flowLocked]);
+
   const [state] = useAccountsContext();
   const { ready, activeBlockchainAccount, networkId } = state;
   const { developerNetworks } = useUserConfig({
@@ -98,6 +111,7 @@ export function SendRoute(): React.ReactElement {
       onBack={handleBack}
       onSuccess={handleSuccess}
       showUnverifiedTokens={developerNetworks}
+      onFlowLockChange={setFlowLocked}
     />
   );
 }

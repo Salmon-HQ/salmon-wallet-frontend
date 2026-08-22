@@ -5,7 +5,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { QrCodeIcon, iconSize } from '../../../icons';
 
 import {
   colors,
@@ -16,9 +16,10 @@ import {
   type AddressBookAddBaseProps,
   type BlockchainType,
   fontSize,
-  opacity,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { PrimaryButton } from '../../Button';
 import { InputAddress } from '../../InputAddress';
 import { QRScanner } from '../../QRScanner';
 import type { QRScanResult } from '../../QRScanner';
@@ -61,7 +62,7 @@ export function AddressAddPanel({
         value={form.label}
         onChangeText={form.setLabel}
         placeholder={t('settings.addressbook.label', 'Label')}
-        placeholderTextColor={colors.text.tertiary}
+        placeholderTextColor={semantic.text.tertiary}
         autoCapitalize="words"
         autoCorrect={false}
       />
@@ -87,7 +88,7 @@ export function AddressAddPanel({
           onPress={() => setShowScanner(true)}
           activeOpacity={0.7}
         >
-          <Ionicons name="qr-code-outline" size={18} color={colors.accent.primary} />
+          <QrCodeIcon size={iconSize.sm} color={semantic.accent.ink} />
           <Text style={styles.scanButtonText}>{t('qrScanner.scanButton', 'Scan QR code')}</Text>
         </TouchableOpacity>
       </View>
@@ -101,16 +102,15 @@ export function AddressAddPanel({
       </View>
 
       {/* Save Button */}
-      <TouchableOpacity
-        testID="address-book-save-button"
-        accessibilityRole="button"
-        style={[styles.saveButton, !form.canSave && styles.saveButtonDisabled]}
-        onPress={handleSave}
-        disabled={!form.canSave}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.saveButtonText}>{t('settings.addressbook.save', 'Save Address')}</Text>
-      </TouchableOpacity>
+      <View style={styles.saveButtonContainer}>
+        <PrimaryButton
+          testID="address-book-save-button"
+          onPress={handleSave}
+          disabled={!form.canSave}
+        >
+          {t('settings.addressbook.save', 'Save Address')}
+        </PrimaryButton>
+      </View>
 
       <QRScanner
         visible={showScanner}
@@ -130,19 +130,19 @@ export default AddressAddPanel;
 
 const styles = StyleSheet.create({
   fieldLabel: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     marginBottom: spacing.sm,
     marginTop: spacing.lg,
   },
   textInput: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   addressSection: {
     marginTop: spacing.lg,
@@ -156,33 +156,21 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
   scanButtonText: {
-    color: colors.accent.primary,
+    color: semantic.accent.ink,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
   },
   networkDisplay: {
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
   },
   networkText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
-  saveButton: {
-    backgroundColor: colors.accent.primary,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    alignItems: 'center',
+  saveButtonContainer: {
     marginTop: spacing['2xl'],
-  },
-  saveButtonDisabled: {
-    opacity: opacity.faint,
-  },
-  saveButtonText: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
   },
 });

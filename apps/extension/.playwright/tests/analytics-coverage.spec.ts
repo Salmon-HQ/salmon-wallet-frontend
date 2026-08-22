@@ -177,7 +177,9 @@ test('every non-on-chain event in the catalog actually fires', async ({ popup })
   // ── wallet_recovered — an IMPORTED seed is a recovery.
   await popup.getByTestId('account-add-button').click();
   await popup.getByTestId('account-add-method-import').click();
-  await popup.getByTestId('account-add-seed-input').fill(process.env.SALMON_TEST_SEED_B ?? '');
+  await popup
+    .getByTestId('account-add-seed-word-input-1')
+    .fill(process.env.SALMON_TEST_SEED_B ?? '');
   await popup.getByTestId('account-add-seed-continue-button').click({ timeout: 30_000 });
   await popup.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
   await expect(popup.getByTestId('account-add-button')).toBeVisible({ timeout: 90_000 });

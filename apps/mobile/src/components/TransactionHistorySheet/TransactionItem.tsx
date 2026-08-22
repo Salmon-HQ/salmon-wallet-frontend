@@ -1,7 +1,21 @@
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ArrowsLeftRightIcon,
+  ClockIcon,
+  CubeIcon,
+  FireIcon,
+  LockIcon,
+  MoneyIcon,
+  PlusCircleIcon,
+  QuestionIcon,
+  XCircleIcon,
+  iconSize,
+} from '../../icons';
+import type { IconComponent } from '../../icons';
 import {
   borderWidth,
   colors,
@@ -16,20 +30,31 @@ import {
   fontFamilyNative,
   spacing,
   letterSpacing,
+  semantic,
+  tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { TokenLogo } from '../TokenLogo';
-import { SwapRouteVisualization } from './SwapRouteVisualization';
 import type { TransactionItemProps, TransactionType, TransactionTokenAmount } from './types';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
+// `tabularNums.native` types its array as readonly; RN's TextStyle wants a
+// mutable one, so copy it once here.
+const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
+
 const HIDDEN_VALUE = '****';
 
 /** Maximum amounts to show before collapsing */
 const MAX_VISIBLE_AMOUNTS = 2;
+
+/** Widest the protocol chip may grow, in design px, before it truncates */
+const SOURCE_BADGE_MAX_WIDTH = 116;
+
+/** The amount column reserves this width, so the chip can never reach it */
+const AMOUNT_COLUMN_MIN_WIDTH = 104;
 
 /**
  * Transaction type display configuration
@@ -38,53 +63,53 @@ const TRANSACTION_TYPE_CONFIG: Record<
   TransactionType,
   {
     label: string;
-    icon: keyof typeof Ionicons.glyphMap;
+    icon: IconComponent;
     color: string;
   }
 > = {
   send: {
     label: 'Sent',
-    icon: 'arrow-up-outline',
+    icon: ArrowUpIcon,
     color: colors.change.negative,
   },
   receive: {
     label: 'Received',
-    icon: 'arrow-down-outline',
+    icon: ArrowDownIcon,
     color: colors.change.positive,
   },
   swap: {
     label: 'Swapped',
-    icon: 'swap-horizontal-outline',
+    icon: ArrowsLeftRightIcon,
     color: colors.palette.purple,
   },
   mint: {
     label: 'Minted',
-    icon: 'add-circle-outline',
+    icon: PlusCircleIcon,
     color: colors.palette.cyan,
   },
   burn: {
     label: 'Burned',
-    icon: 'flame-outline',
+    icon: FireIcon,
     color: colors.palette.orange,
   },
   stake: {
     label: 'Staked',
-    icon: 'lock-closed-outline',
+    icon: LockIcon,
     color: colors.palette.green,
   },
   loan: {
     label: 'Loan',
-    icon: 'cash-outline',
+    icon: MoneyIcon,
     color: colors.palette.amber,
   },
   interaction: {
     label: 'Interaction',
-    icon: 'cube-outline',
+    icon: CubeIcon,
     color: colors.palette.blue,
   },
   unknown: {
     label: 'Unknown',
-    icon: 'help-circle-outline',
+    icon: QuestionIcon,
     color: colors.text.secondary,
   },
 };
@@ -114,9 +139,9 @@ const SwapTokenLogos: React.FC<{
   fromSymbol?: string;
   toLogo?: string | null;
   toSymbol?: string;
-  typeIcon: keyof typeof Ionicons.glyphMap;
+  typeIcon: IconComponent;
   typeColor: string;
-}> = ({ fromLogo, fromSymbol, toLogo, toSymbol, typeIcon, typeColor }) => {
+}> = ({ fromLogo, fromSymbol, toLogo, toSymbol, typeIcon: TypeIcon, typeColor }) => {
   return (
     <View style={styles.swapLogosContainer}>
       <TokenLogo uri={fromLogo || undefined} symbol={fromSymbol} size={34} />
@@ -125,7 +150,7 @@ const SwapTokenLogos: React.FC<{
       </View>
       {/* Type badge */}
       <View style={[styles.typeBadge, { backgroundColor: typeColor }]}>
-        <Ionicons name={typeIcon} size={10} color={colors.text.primary} />
+        <TypeIcon size={10} color={colors.text.primary} />
       </View>
     </View>
   );
@@ -137,14 +162,14 @@ const SwapTokenLogos: React.FC<{
 const TokenLogoWithBadge: React.FC<{
   uri?: string | null;
   symbol?: string;
-  typeIcon: keyof typeof Ionicons.glyphMap;
+  typeIcon: IconComponent;
   typeColor: string;
-}> = ({ uri, symbol, typeIcon, typeColor }) => {
+}> = ({ uri, symbol, typeIcon: TypeIcon, typeColor }) => {
   return (
     <View style={styles.logoWithBadgeContainer}>
       <TokenLogo uri={uri || undefined} symbol={symbol} size={40} />
       <View style={[styles.typeBadge, styles.typeBadgeSingle, { backgroundColor: typeColor }]}>
-        <Ionicons name={typeIcon} size={10} color={colors.text.primary} />
+        <TypeIcon size={10} color={colors.text.primary} />
       </View>
     </View>
   );
@@ -165,7 +190,7 @@ const AmountDisplay: React.FC<{
   const color = sign === '+' ? colors.change.positive : colors.change.negative;
 
   return (
-    <Text style={[styles.amountText, { color }]} numberOfLines={1}>
+    <Text testID="tx-row-amount" style={[styles.amountText, { color }]} numberOfLines={1}>
       {displayAmount}
     </Text>
   );
@@ -176,8 +201,13 @@ const AmountDisplay: React.FC<{
  */
 const SourceBadge: React.FC<{ source: string }> = ({ source }) => {
   return (
-    <View style={styles.sourceBadge}>
-      <Text style={styles.sourceText}>{source}</Text>
+    <View testID="tx-row-source" style={styles.sourceBadge}>
+      {/* A protocol name is raw upstream data of unbounded length
+          (`SOLANA_PROGRAM_LIBRARY`). It is bounded here so it can never grow
+          past its own column and paint over the amount beside it. */}
+      <Text style={styles.sourceText} numberOfLines={1} ellipsizeMode="tail">
+        {source}
+      </Text>
     </View>
   );
 };
@@ -191,7 +221,7 @@ const SourceBadge: React.FC<{ source: string }> = ({ source }) => {
  *
  * Features:
  * - Shows transaction type icon with token logos
- * - Collapses multiple amounts with expandable route visualization
+ * - Collapses multiple amounts to a count; the rest live in the detail
  * - Badge showing source protocol (Jupiter, etc.)
  *
  * @example
@@ -213,15 +243,9 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   const { type, timestamp, status, inputs, outputs, description, source } = transaction;
   const config = TRANSACTION_TYPE_CONFIG[type] || TRANSACTION_TYPE_CONFIG.unknown;
 
-  // Expanded state for route visualization
-  const [expanded, setExpanded] = useState(false);
-
   // Calculate if we should show collapsed view
   const totalAmounts = inputs.length + outputs.length;
   const isComplex = type === 'swap' && totalAmounts > MAX_VISIBLE_AMOUNTS;
-
-  // Check if this is a swap transaction (expandable)
-  const isSwap = type === 'swap';
 
   const handlePress = useCallback(() => {
     onPress?.(transaction);
@@ -267,7 +291,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     // Fallback to type icon only (no badge needed)
     return (
       <View style={[styles.iconContainer, { backgroundColor: `${config.color}20` }]}>
-        <Ionicons name={config.icon} size={22} color={config.color} />
+        <config.icon size={22} color={config.color} />
       </View>
     );
   };
@@ -285,7 +309,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     if (status === 'failed') {
       return (
         <View style={styles.failedBadge}>
-          <Ionicons name="close-circle" size={16} color={colors.status.error} />
+          <XCircleIcon size={iconSize.sm} color={semantic.status.danger} />
           <Text style={styles.failedText}>{t('transactions.detail.failed', 'Failed')}</Text>
         </View>
       );
@@ -294,13 +318,14 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     if (status === 'pending') {
       return (
         <View style={styles.pendingBadge}>
-          <Ionicons name="time-outline" size={14} color={colors.status.warning} />
+          <ClockIcon size={14} color={semantic.status.warning} />
           <Text style={styles.pendingText}>{t('transactions.detail.pending', 'Pending')}</Text>
         </View>
       );
     }
 
-    // Complex swap with expand toggle
+    // Complex swap: the row states the first leg of each side and how many
+    // more there are. The rest is one tap away, in the detail.
     if (isComplex) {
       const firstOutput = outputs[0];
       const firstInput = inputs[0];
@@ -310,25 +335,12 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
         <View style={styles.amountsContainer}>
           {firstOutput && <AmountDisplay token={firstOutput} sign="-" hidden={hiddenBalance} />}
           {firstInput && <AmountDisplay token={firstInput} sign="+" hidden={hiddenBalance} />}
-          <TouchableOpacity
-            style={styles.expandBadge}
-            onPress={() => setExpanded((prev) => !prev)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.expandText}>
-              {expanded
-                ? t('transactions.showLess', 'show less')
-                : t('transactions.detail.nMore', {
-                    count: hiddenCount,
-                    defaultValue: '+{{count}} more',
-                  })}
-            </Text>
-            <Ionicons
-              name={expanded ? 'chevron-up' : 'chevron-down'}
-              size={12}
-              color={colors.accent.primary}
-            />
-          </TouchableOpacity>
+          <Text style={styles.moreText}>
+            {t('transactions.detail.nMore', {
+              count: hiddenCount,
+              defaultValue: '+{{count}} more',
+            })}
+          </Text>
         </View>
       );
     }
@@ -384,20 +396,9 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
           {renderAmounts()}
           <View style={styles.timeRow}>
             <Text style={styles.timeText}>{formatRelativeTimeCompact(timestamp, t)}</Text>
-            {isSwap && (
-              <Ionicons
-                name={expanded ? 'chevron-up' : 'chevron-down'}
-                size={14}
-                color={colors.text.tertiary}
-                style={styles.expandChevron}
-              />
-            )}
           </View>
         </View>
       </TouchableOpacity>
-
-      {/* Expandable route visualization for swaps */}
-      {type === 'swap' && <SwapRouteVisualization transaction={transaction} expanded={expanded} />}
     </BlurContainer>
   );
 };
@@ -462,6 +463,10 @@ const styles = StyleSheet.create({
   },
   infoSection: {
     flex: 1,
+    // A flex item's default minimum size is its content, so an over-long type
+    // label or protocol chip would push this box wider than its flex share and
+    // paint over the amount column. Zero it and let the children shrink.
+    minWidth: 0,
     justifyContent: 'center',
   },
   typeRow: {
@@ -474,12 +479,17 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.lg),
     fontFamily: fontFamilyNative.medium,
     color: colors.text.primary,
+    flexShrink: 1,
   },
   sourceBadge: {
     paddingHorizontal: s(spacing.xs),
     paddingVertical: vs(spacing.xxs),
     backgroundColor: colors.background.card,
     borderRadius: borderRadius.sm,
+    // The chip is bounded twice: it may shrink, and it may never claim more
+    // than this much of the row however long the upstream protocol name is.
+    flexShrink: 1,
+    maxWidth: s(SOURCE_BADGE_MAX_WIDTH),
   },
   sourceText: {
     fontSize: ms(fontSize.xs),
@@ -496,14 +506,22 @@ const styles = StyleSheet.create({
   rightSection: {
     alignItems: 'flex-end',
     marginLeft: s(spacing.sm),
+    // The amount column: it reserves its width before the row's left half is
+    // laid out, and it never gives it back. The chip cannot reach into it.
+    minWidth: s(AMOUNT_COLUMN_MIN_WIDTH),
+    flexShrink: 0,
   },
   amountsContainer: {
-    alignItems: 'flex-end',
+    alignSelf: 'stretch',
   },
   amountText: {
     fontSize: ms(fontSize.base),
     fontFamily: fontFamilyNative.medium,
     marginBottom: vs(spacing.xxs),
+    // Money Composition Rule: amounts right-aligned in a fixed column, on
+    // tabular figures, so the column edge is the same on every row.
+    textAlign: 'right',
+    ...TABULAR,
   },
   timeRow: {
     flexDirection: 'row',
@@ -514,9 +532,7 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.regular,
     color: colors.text.tertiary,
-  },
-  expandChevron: {
-    marginLeft: s(spacing.xs),
+    ...TABULAR,
   },
   failedBadge: {
     flexDirection: 'row',
@@ -526,7 +542,7 @@ const styles = StyleSheet.create({
   failedText: {
     fontSize: ms(fontSize.base),
     fontFamily: fontFamilyNative.medium,
-    color: colors.status.error,
+    color: semantic.status.danger,
   },
   pendingBadge: {
     flexDirection: 'row',
@@ -534,24 +550,25 @@ const styles = StyleSheet.create({
     gap: s(spacing.xs),
     paddingHorizontal: s(spacing.sm),
     paddingVertical: vs(spacing.xs),
-    backgroundColor: `${colors.status.warning}15`,
+    backgroundColor: `${semantic.status.warning}15`,
     borderRadius: borderRadius.sm,
   },
   pendingText: {
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.medium,
-    color: colors.status.warning,
+    color: semantic.status.warning,
   },
-  expandBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.xxs),
-    marginTop: vs(spacing.xs),
-  },
-  expandText: {
+  /**
+   * One Living Thing Rule: the accent is a budget, and a count that repeats
+   * once per complex swap would spend it four times a screen. A remainder is
+   * chrome — it reads in quiet ink.
+   */
+  moreText: {
     fontSize: ms(fontSize.xs),
     fontFamily: fontFamilyNative.medium,
-    color: colors.accent.primary,
+    color: colors.text.tertiary,
+    textAlign: 'right',
+    marginTop: vs(spacing.xs),
   },
 });
 

@@ -1,45 +1,50 @@
 /**
  * RecoverWalletScreen - Recover existing wallet using seed phrase
  *
- * This screen allows users to recover their wallet by entering their
- * 12 or 24 word seed phrase. It validates the mnemonic and navigates
- * to the password setup screen upon successful validation.
+ * The phrase is typed one word per box (`SeedPhraseEntry`) rather than into a
+ * single textarea: space commits a word and moves to the next box, a paste
+ * fills every box at once, and backspace in an empty box steps back. A free
+ * textarea hid a missing or transposed word behind a wall of text, and let the
+ * keyboard "correct" a valid word into an invalid mnemonic.
  *
- * Design: Dark gradient background with centered content, step indicator,
- * and orange accent buttons.
+ * Composed on the onboarding slot grid. The "Next" action used to be mounted
+ * conditionally inside a vertically centred column, so the moment the twelfth
+ * valid word was typed the mark, title, description and input all jumped 36pt
+ * at once. The action now lives in its reserved band whether or not the phrase
+ * is valid; only its visibility changes.
  */
 
-import { Logo } from '@salmon/assets';
 import {
-  borderRadius,
-  colors,
   componentSizes,
-  contentPadding,
   fontFamilyNative,
+  fontScaleCap,
+  fontSize,
+  lineHeight,
   normalizeMnemonic,
+  semantic,
   setStashItem,
   spacing,
   STASH_KEYS,
   validateMnemonic,
 } from '@salmon/shared';
-import { PrimaryButton, ScreenHeader, SecondaryButton } from '../../src/components';
+import {
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
+  PrimaryButton,
+  ReservedSlot,
+  ScreenHeader,
+  SecondaryButton,
+  SeedPhraseEntry,
+} from '../../src/components';
+import { SHORT_PHRASE, distributePhrase } from '../../src/components/SeedPhrase';
+import { KeyIcon } from '../../src/icons';
+import { useSecretScreen } from '../../hooks/useSecretScreen';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text } from 'react-native';
 
 // ============================================================================
 // Component
@@ -49,18 +54,32 @@ export default function RecoverWalletScreen() {
   // Hooks
   const { t } = useTranslation();
 
-  // State
-  const [seedPhrase, setSeedPhrase] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
+  // `SeedWordInput` already opts every box in; this covers the screen itself
+  // for the frames where no box is mounted yet.
+  useSecretScreen('recover-wallet');
 
-  /**
-   * Check if the seed phrase is valid
-   */
-  const isValidSeedPhrase = useCallback((): boolean => {
-    const normalized = normalizeMnemonic(seedPhrase);
-    if (!normalized) return false;
-    return validateMnemonic(normalized);
-  }, [seedPhrase]);
+  // State — one entry per box. Twelve to begin with; a paste or a thirteenth
+  // typed word grows it to twenty-four.
+  const [words, setWords] = useState<string[]>(() => Array<string>(SHORT_PHRASE).fill(''));
+  // The count of what was actually pasted, so the screen can say what happened
+  // rather than only that something is wrong. `null` means nothing was rejected.
+  const [pastedCount, setPastedCount] = useState<number | null>(null);
+
+  const phrase = useMemo(() => normalizeMnemonic(words.join(' ')), [words]);
+  const isComplete = words.every((word) => word.length > 0);
+  const isValidSeedPhrase = isComplete && validateMnemonic(phrase);
+
+  const handleWords = useCallback((next: string[]) => {
+    setWords(next);
+    setPastedCount(null);
+  }, []);
+
+  const handleLength = useCallback((length: number) => {
+    setWords((prev) => {
+      if (prev.length === length) return prev;
+      return Array.from({ length }, (_, i) => prev[i] ?? '');
+    });
+  }, []);
 
   /**
    * Handle back navigation
@@ -70,14 +89,16 @@ export default function RecoverWalletScreen() {
   }, []);
 
   /**
-   * Handle paste from clipboard
+   * Paste from the clipboard. Goes through the same fill the grid uses, so the
+   * button and an in-box paste cannot behave differently.
    */
   const handlePaste = useCallback(async () => {
     try {
       const clipboardContent = await Clipboard.getStringAsync();
-      if (clipboardContent) {
-        setSeedPhrase(clipboardContent);
-      }
+      if (!clipboardContent) return;
+      const { words: pasted, fits, count } = distributePhrase(clipboardContent);
+      setPastedCount(fits ? null : count);
+      setWords(pasted);
     } catch (error) {
       console.error('Failed to paste from clipboard:', error);
     }
@@ -87,92 +108,78 @@ export default function RecoverWalletScreen() {
    * Handle next button press - navigate to password screen
    */
   const handleNext = useCallback(async () => {
-    if (!isValidSeedPhrase()) return;
+    if (!isValidSeedPhrase) return;
 
-    const normalized = normalizeMnemonic(seedPhrase);
-
-    await setStashItem(STASH_KEYS.PENDING_MNEMONIC, normalized);
+    await setStashItem(STASH_KEYS.PENDING_MNEMONIC, phrase);
     router.push({
       pathname: '/(auth)/password',
     });
-  }, [seedPhrase, isValidSeedPhrase]);
+  }, [isValidSeedPhrase, phrase]);
 
-  /**
-   * Determine input border color based on state
-   */
-  const getInputBorderColor = () => {
-    if (isFocused) return colors.accent.primary;
-    return colors.input.border;
-  };
-
-  const showNextButton = isValidSeedPhrase();
+  // Only once every box is filled — telling someone their phrase is invalid
+  // while they are still typing it is noise.
+  const showInvalid = pastedCount !== null || (isComplete && !isValidSeedPhrase);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <KeyboardAvoidingView
-          style={styles.keyboardView}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          {/* Header with step indicator */}
-          <ScreenHeader onBack={handleBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />
-
-          {/* Content */}
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+    <OnboardingLayout
+      testID="recover-screen"
+      variant="content"
+      /*
+        No bedrock here (owner, 2026-08-18): the Bedrock Rule narrowed to the
+        EXHIBITION of a seed — create's warning/display/validate. Entering an
+        existing phrase is not the ceremonial moment of its birth, so recover
+        stands in the same water as the rest of the stack (the layout's
+        DepthBackground + ScalesBackground show through the transparent
+        content). The capture protection (`useSecretScreen`) is unchanged.
+      */
+      scrollBody
+      float
+      chrome={
+        <ScreenHeader onBack={handleBack} stepIndicator={{ totalSteps: 2, currentStep: 1 }} />
+      }
+      /*
+        The key: what this screen asks for is the thing that reopens the
+        wallet. The fish leaves the flow screens — it stays on welcome and the
+        lock only — and each step names itself with the consent screen's
+        pattern: one semantic glyph in the mark slot, same size, same ink.
+      */
+      mark={<KeyIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
+      title={<OnboardingTitle>{t('wallet.recover.messageTitle')}</OnboardingTitle>}
+      description={<OnboardingDescription>{t('wallet.recover.messageBody')}</OnboardingDescription>}
+      body={
+        <SeedPhraseEntry
+          words={words}
+          onChange={handleWords}
+          onLengthChange={handleLength}
+          onPasteRejected={setPastedCount}
+        />
+      }
+      assist={
+        showInvalid ? (
+          <Text
+            style={styles.invalid}
+            maxFontSizeMultiplier={fontScaleCap.chrome}
+            testID="recover-invalid-phrase"
           >
-            {/* Logo */}
-            <View style={styles.logoContainer}>
-              <Image source={Logo} style={styles.logo} resizeMode="contain" />
-            </View>
-
-            {/* Title */}
-            <Text style={styles.title}>{t('wallet.recover.messageTitle')}</Text>
-
-            {/* Subtitle */}
-            <Text style={styles.subtitle}>{t('wallet.recover.messageBody')}</Text>
-
-            {/* Seed Phrase Input */}
-            <View style={styles.inputContainer}>
-              <TextInput
-                testID="recover-seed-input"
-                style={[styles.textarea, { borderColor: getInputBorderColor() }]}
-                placeholder={t('wallet.recover.placeholder')}
-                placeholderTextColor={colors.text.tertiary}
-                value={seedPhrase}
-                onChangeText={setSeedPhrase}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                multiline
-                textAlignVertical="center"
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </View>
-
-            {/* Buttons */}
-            <View style={styles.buttonContainer}>
-              {/* Paste Button - Always visible */}
-              <SecondaryButton onPress={handlePaste} testID="recover-paste-button">
-                {t('wallet.recover.pasteSeed').toUpperCase()}
-              </SecondaryButton>
-
-              {/* Next Button - Only visible when seed phrase is valid */}
-              {showNextButton && (
-                <PrimaryButton onPress={handleNext} testID="recover-next-button">
-                  {t('actions.next').toUpperCase()}
-                </PrimaryButton>
-              )}
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
-    </SafeAreaView>
+            {pastedCount !== null
+              ? t('wallet.recover.pastedWordCount', { count: pastedCount })
+              : t('wallet.create.invalidSeed')}
+          </Text>
+        ) : undefined
+      }
+      secondary={
+        <SecondaryButton onPress={handlePaste} testID="recover-paste-button">
+          {t('wallet.recover.pasteSeed')}
+        </SecondaryButton>
+      }
+      action={
+        <ReservedSlot visible={isValidSeedPhrase}>
+          <PrimaryButton onPress={handleNext} testID="recover-next-button">
+            {t('actions.next')}
+          </PrimaryButton>
+        </ReservedSlot>
+      }
+    />
   );
 }
 
@@ -181,64 +188,12 @@ export default function RecoverWalletScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: contentPadding.screen,
-  },
-  logoContainer: {
-    marginBottom: spacing['2xl'],
-  },
-  logo: {
-    width: componentSizes.logoSizeMedium,
-    height: componentSizes.logoSizeMedium,
-  },
-  title: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: 24,
-    lineHeight: 32,
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: colors.text.secondary,
+  invalid: {
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: spacing['3xl'],
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.snug,
+    paddingHorizontal: spacing.sm,
     textAlign: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  inputContainer: {
-    width: '100%',
-    marginBottom: spacing['2xl'],
-  },
-  textarea: {
-    width: '100%',
-    minHeight: 160,
-    backgroundColor: colors.input.background,
-    borderWidth: 1,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  buttonContainer: {
-    width: '100%',
-    gap: spacing.lg,
   },
 });

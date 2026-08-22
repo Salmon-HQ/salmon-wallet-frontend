@@ -16,10 +16,29 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  AddressBookIcon,
+  ArrowSquareOutIcon,
+  ChartBarIcon,
+  CodeIcon,
+  InfoIcon,
+  KeyIcon,
+  LockIcon,
+  MoneyIcon,
+  QuestionIcon,
+  ShieldCheckIcon,
+  SignOutIcon,
+  SquaresFourIcon,
+  TranslateIcon,
+  TrashIcon,
+  UserCircleIcon,
+  UsersIcon,
+  iconSize,
+} from '../../icons';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useReducedMotion } from 'react-native-reanimated';
 import { SettingsPanelStack } from '../SettingsPanelStack';
 import { SettingsHeaderContext, type SettingsHeaderState } from '../SettingsHeaderContext';
 import {
@@ -35,6 +54,9 @@ import {
   type SettingsScreen,
   type SettingsPanelEntry,
   letterSpacing,
+  motionMs,
+  resolveMotionMs,
+  semantic,
 } from '@salmon/shared';
 
 import type { SettingsSheetProps, SettingsOption, SettingsSection } from './types';
@@ -45,16 +67,21 @@ import type { MobilePanelRegistry } from '../SettingsPanelStack';
 // ============================================================================
 
 const DANGER_COLORS = {
-  text: colors.status.error,
-  background: colors.status.errorBackground,
-  iconBackground: colors.status.errorBackground,
+  text: semantic.status.danger,
+  background: semantic.status.dangerTint,
+  iconBackground: semantic.status.dangerTint,
 } as const;
+
+// The key-material rows carry no weight of their own. A settings list is a
+// table of contents, and warning ink on a row that only opens a screen reads
+// as "something is wrong here" when nothing is. The caution belongs before the
+// decision it guards, and the decision is the reveal: both destinations open
+// with a full warning notice, and the seed adds the clipboard and screenshot
+// notices on top. See DESIGN.md §Components, the settings surface.
 
 const NEUTRAL_OPTION_COLORS = {
   background: colors.background.card,
 } as const;
-const PUSH_DURATION = 300;
-const POP_DURATION = 200;
 
 const SCREEN_TITLE_KEYS: Partial<Record<SettingsScreen, string>> = {
   accounts: 'settings.accounts.title',
@@ -83,35 +110,35 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     titleKey: 'settings.sections.account',
     options: [
-      { id: 'accounts', icon: 'people-outline', labelKey: 'settings.accounts.title' },
-      { id: 'avatar', icon: 'person-circle-outline', labelKey: 'settings.profile_picture' },
-      { id: 'security', icon: 'shield-checkmark-outline', labelKey: 'settings.security.title' },
-      { id: 'backup', icon: 'key-outline', labelKey: 'settings.backup' },
-      { id: 'privateKey', icon: 'lock-closed-outline', labelKey: 'settings.private_key' },
+      { id: 'accounts', icon: UsersIcon, labelKey: 'settings.accounts.title' },
+      { id: 'avatar', icon: UserCircleIcon, labelKey: 'settings.profile_picture' },
+      { id: 'security', icon: ShieldCheckIcon, labelKey: 'settings.security.title' },
+      { id: 'backup', icon: KeyIcon, labelKey: 'settings.backup' },
+      { id: 'privateKey', icon: LockIcon, labelKey: 'settings.private_key' },
     ],
   },
   {
     titleKey: 'settings.sections.preferences',
     options: [
-      { id: 'language', icon: 'language-outline', labelKey: 'settings.display_language' },
-      { id: 'currency', icon: 'cash-outline', labelKey: 'settings.currency' },
-      { id: 'explorer', icon: 'open-outline', labelKey: 'settings.select_explorer' },
+      { id: 'language', icon: TranslateIcon, labelKey: 'settings.display_language' },
+      { id: 'currency', icon: MoneyIcon, labelKey: 'settings.currency' },
+      { id: 'explorer', icon: ArrowSquareOutIcon, labelKey: 'settings.select_explorer' },
     ],
   },
   {
     titleKey: 'settings.sections.advanced',
     options: [
-      { id: 'addressBook', icon: 'book-outline', labelKey: 'settings.address_book' },
-      { id: 'trustedApps', icon: 'apps-outline', labelKey: 'settings.trusted_apps' },
+      { id: 'addressBook', icon: AddressBookIcon, labelKey: 'settings.address_book' },
+      { id: 'trustedApps', icon: SquaresFourIcon, labelKey: 'settings.trusted_apps' },
       {
         id: 'network',
-        icon: 'code-slash-outline',
+        icon: CodeIcon,
         labelKey: 'settings.developer_networks',
         isToggle: true,
       },
       {
         id: 'analytics',
-        icon: 'stats-chart-outline',
+        icon: ChartBarIcon,
         labelKey: 'settings.analytics',
         isToggle: true,
       },
@@ -120,8 +147,8 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     titleKey: 'settings.sections.support',
     options: [
-      { id: 'support', icon: 'help-circle-outline', labelKey: 'settings.help_support' },
-      { id: 'about', icon: 'information-circle-outline', labelKey: 'settings.about' },
+      { id: 'support', icon: QuestionIcon, labelKey: 'settings.help_support' },
+      { id: 'about', icon: InfoIcon, labelKey: 'settings.about' },
     ],
   },
   {
@@ -130,14 +157,14 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
     options: [
       {
         id: 'removeWallet',
-        icon: 'trash-outline',
+        icon: TrashIcon,
         labelKey: 'settings.wallets.remove_wallet',
         isDanger: true,
         isAction: true,
       },
       {
         id: 'removeAll',
-        icon: 'log-out-outline',
+        icon: SignOutIcon,
         labelKey: 'settings.wallets.remove_all_wallets',
         isDanger: true,
         isAction: true,
@@ -173,6 +200,7 @@ export function SettingsSheet({
   onRemoveWallet,
   onRemoveAllWallets,
   onHeaderChange,
+  optionValues,
 }: SettingsSheetWithPanelsProps): React.ReactElement {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -181,6 +209,14 @@ export function SettingsSheet({
   const headerOverrideBackRef = React.useRef<(() => void) | null>(null);
   const headerOverrideOwnerRef = React.useRef<symbol | null>(null);
   const [animating, setAnimating] = React.useState(false);
+
+  // These are bookkeeping timers, not animations: they clear the `animating`
+  // flag once the panel stack has finished moving. They read the same two
+  // tokens the stack animates on — `route` in, `ebb` out — so the gate cannot
+  // outlast (or undercut) the motion it is gating.
+  const isReduceMotionEnabled = useReducedMotion();
+  const pushDurationMs = resolveMotionMs(motionMs.route, isReduceMotionEnabled);
+  const popDurationMs = resolveMotionMs(motionMs.ebb, isReduceMotionEnabled);
   const [slideDirection, setSlideDirection] = React.useState<'in' | 'out' | 'idle'>('idle');
   const animationTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -198,10 +234,10 @@ export function SettingsSheet({
         setAnimating(false);
         setSlideDirection('idle');
         reset();
-      }, PUSH_DURATION);
+      }, pushDurationMs);
       return () => clearTimeout(timer);
     }
-  }, [visible, reset]);
+  }, [visible, reset, pushDurationMs]);
 
   useEffect(() => {
     return () => {
@@ -228,9 +264,9 @@ export function SettingsSheet({
       push(screen, props);
       animationTimerRef.current = setTimeout(() => {
         finishAnimation();
-      }, PUSH_DURATION);
+      }, pushDurationMs);
     },
-    [animating, finishAnimation, push]
+    [animating, finishAnimation, push, pushDurationMs]
   );
 
   const handlePop = useCallback(() => {
@@ -243,8 +279,8 @@ export function SettingsSheet({
     animationTimerRef.current = setTimeout(() => {
       pop();
       finishAnimation();
-    }, POP_DURATION);
-  }, [animating, canGoBack, finishAnimation, pop]);
+    }, popDurationMs);
+  }, [animating, canGoBack, finishAnimation, pop, popDurationMs]);
 
   // Push initial panels when drawer opens
   const initialPanelsPushedRef = React.useRef(false);
@@ -309,9 +345,10 @@ export function SettingsSheet({
   );
 
   const renderOption = useCallback(
-    (option: SettingsOption, sectionIsDanger?: boolean) => {
+    (option: SettingsOption, sectionIsDanger?: boolean, showDivider?: boolean) => {
       const label = t(option.labelKey) || option.labelKey;
       const isDanger = option.isDanger || sectionIsDanger;
+      const value = optionValues?.[option.id];
 
       if (option.isToggle) {
         const isAnalytics = option.id === 'analytics';
@@ -327,25 +364,28 @@ export function SettingsSheet({
           <View
             key={`toggle-${option.labelKey}`}
             testID={getSettingsItemTestId(option.id)}
-            style={[styles.optionRow, styles.optionRowSurface, styles.optionRowNeutral]}
-            accessibilityRole="switch"
-            accessibilityLabel={label}
-            accessibilityState={{ checked }}
+            style={[styles.optionRow, showDivider && styles.optionRowDivided]}
           >
             <View style={styles.iconContainer}>
-              <Ionicons name={option.icon} size={24} color={colors.text.primary} />
+              <option.icon size={iconSize.lg} color={semantic.text.primary} />
             </View>
             <View style={styles.toggleLabelContainer}>
               <Text style={styles.optionLabel}>{label}</Text>
               <Text style={styles.toggleDescription}>{t(descriptionKey)}</Text>
             </View>
             <View style={styles.toggleControl}>
+              {/* The switch semantics live on the Switch itself. A wrapper View
+                  carrying role="switch" around a real Switch announced twice. */}
               <Switch
                 testID={toggleTestId}
+                accessibilityLabel={label}
+                accessibilityHint={t(descriptionKey)}
                 value={checked}
                 onValueChange={(value) => onToggle?.(value)}
-                trackColor={{ false: colors.background.card, true: colors.accent.primary }}
-                thumbColor={colors.text.primary}
+                // Off-track on `border.default`: the card token vanished
+                // against the row's own card ground.
+                trackColor={{ false: semantic.border.default, true: semantic.accent.ink }}
+                thumbColor={semantic.text.primary}
               />
             </View>
           </View>
@@ -356,30 +396,32 @@ export function SettingsSheet({
         <TouchableOpacity
           key={option.id}
           testID={getSettingsItemTestId(option.id)}
-          style={[
-            styles.optionRow,
-            styles.optionRowSurface,
-            isDanger ? styles.optionRowDanger : styles.optionRowNeutral,
-          ]}
+          style={[styles.optionRow, showDivider && styles.optionRowDivided]}
           onPress={() => handleOptionPress(option)}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={label}
         >
           <View style={[styles.iconContainer, isDanger && styles.iconContainerDanger]}>
-            <Ionicons
-              name={option.icon}
-              size={24}
-              color={isDanger ? DANGER_COLORS.text : colors.text.primary}
+            <option.icon
+              size={iconSize.lg}
+              color={isDanger ? DANGER_COLORS.text : semantic.text.primary}
             />
           </View>
+          {/* No chevron: the right-pointing caret promised a lateral slide,
+              and the push now sinks and floats on the vertical. */}
           <Text style={[styles.optionLabel, isDanger && styles.optionLabelDanger]}>{label}</Text>
-          {!option.isAction && (
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={isDanger ? DANGER_COLORS.text : colors.text.secondary}
-            />
+          {/* What the row currently reads. It is the answer the user opened
+              the screen for, so the row states it instead of hiding it one
+              tap away. */}
+          {!!value && (
+            <Text
+              testID={`${getSettingsItemTestId(option.id)}-value`}
+              style={styles.optionValue}
+              numberOfLines={1}
+            >
+              {value}
+            </Text>
           )}
         </TouchableOpacity>
       );
@@ -391,14 +433,27 @@ export function SettingsSheet({
       onDeveloperNetworksToggle,
       analyticsEnabled,
       onAnalyticsToggle,
+      optionValues,
     ]
   );
 
+  // One card per section, not one per row. Eleven identically-sized chips
+  // separated by air read as noise, and the gaps were doing no work: the
+  // section label already says where one group ends. Grouped, the rows share a
+  // ground and are parted by a decorative hairline, which is the least ink
+  // that can say "these are siblings".
   const renderSection = useCallback(
     (section: SettingsSection, index: number) => (
       <View key={`section-${index}`} style={styles.section}>
         {renderSectionHeader(section)}
-        {section.options.map((option) => renderOption(option, section.isDanger))}
+        <View
+          testID={`settings-section-${section.titleKey}`}
+          style={[styles.sectionCard, section.isDanger && styles.sectionCardDanger]}
+        >
+          {section.options.map((option, optionIndex) =>
+            renderOption(option, section.isDanger, optionIndex > 0)
+          )}
+        </View>
       </View>
     ),
     [renderSectionHeader, renderOption]
@@ -483,8 +538,12 @@ export function SettingsSheet({
           style={[styles.topFadeGradient, { opacity: topFadeOpacity }]}
           pointerEvents="none"
         >
+          {/* The fade must read the ground it fades over. That ground is now
+              the thick thermocline, so the fade is the same membrane ink
+              laid on twice at the top and thinning to nothing — the material
+              densifying, not an opaque band pasted over it. */}
           <LinearGradient
-            colors={[colors.background.secondary, 'transparent']}
+            colors={[semantic.surface.membraneThick, 'transparent']}
             style={StyleSheet.absoluteFill}
           />
         </Animated.View>
@@ -542,42 +601,52 @@ const styles = StyleSheet.create({
   sectionHeaderDanger: {
     marginTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.status.errorBackground,
+    borderTopColor: semantic.status.dangerTint,
     paddingTop: spacing.md,
   },
+  // The `label` role: 10/600/uppercase/+0.3px, as the other on-system
+  // surfaces render section and plane labels.
   sectionHeaderText: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.label,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wider,
+    letterSpacing: letterSpacing.label,
   },
   sectionHeaderTextDanger: {
     color: DANGER_COLORS.text,
+  },
+  // The section's card, not the row's. `r4` is the card step; the row inside
+  // it is no longer a surface of its own, so the Control Radius Rule has
+  // nothing left to apply to here.
+  sectionCard: {
+    backgroundColor: NEUTRAL_OPTION_COLORS.background,
+    borderRadius: borderRadius.r4,
+    overflow: 'hidden',
+  },
+  sectionCardDanger: {
+    backgroundColor: DANGER_COLORS.background,
   },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.md,
-    paddingHorizontal: 0,
-    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
   },
-  optionRowSurface: {
-    marginHorizontal: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    marginVertical: spacing.xs / 2,
-  },
-  optionRowNeutral: {
-    backgroundColor: NEUTRAL_OPTION_COLORS.background,
-  },
-  optionRowDanger: {
-    backgroundColor: DANGER_COLORS.background,
+  // Decorative by rule: the grouping is already carried by the card, so
+  // nothing depends on this line being seen.
+  optionRowDivided: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: semantic.border.hairline,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.background.card,
+    width: componentSizes.iconSize2XL,
+    height: componentSizes.iconSize2XL,
+    borderRadius: borderRadius.r2,
+    // One step above the card it now sits on. At the row's old ink the tile
+    // and its ground were the same value, which is what made the list read as
+    // one grey field.
+    backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -587,12 +656,20 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     flex: 1,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   optionLabelDanger: {
     color: DANGER_COLORS.text,
+  },
+  optionValue: {
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: fontSize.body,
+    marginLeft: spacing.sm,
+    maxWidth: '45%',
+    textAlign: 'right',
   },
   toggleLabelContainer: {
     flex: 1,
@@ -604,9 +681,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleDescription: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginTop: spacing.xxs,
   },
   topFadeGradient: {

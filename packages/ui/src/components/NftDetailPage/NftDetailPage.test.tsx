@@ -38,10 +38,31 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
+  tabularNums: { css: { fontVariantNumeric: 'tabular-nums' } },
+  semantic: {
+    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233', bedrock: '#0B0F19' },
+    text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
+    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
+    scales: {
+      deepFieldStroke: 'rgba(199, 211, 232, 0.06)',
+      deepFieldScale: 3.2,
+      deepFieldHeight: 180,
+      fishStroke: 'rgba(7, 9, 17, 0.10)',
+      fishScale: 1,
+    },
+    flesh: { band: '#FFF1EE' },
+  },
+  fleshTile: { width: 380, height: 40 },
+  fleshFills: [],
+  palette: {
+    salmon: { 500: '#FF5C45', 600: '#E64A34' },
+    neutral: { 0: '#FFFFFF', 1000: '#070911' },
+  },
   blur: { md: 12, xs: 4 },
   borderRadius: { md: 12, sm: 8, button: 16, iconContainer: 18 },
   borderWidth: { thin: 1, actionButton: 1 },
   colors: {
+    button: { primaryBackground: '#FF5C45', primaryText: '#070911', disabledOpacity: 0.5 },
     text: { primary: '#fff', secondary: '#999', balance: '#fff' },
     background: { tokenItem: '#111' },
     interactive: { surface: '#222' },
@@ -54,7 +75,7 @@ vi.mock('@salmon/shared', () => ({
   durationMs: { feedbackShort: 0 },
   easing: { ease: 'ease' },
   fontFamily: { sans: 'Inter, sans-serif' },
-  fontSize: { xs: 12, sm: 14, md: 18 },
+  fontSize: { xs: 12, sm: 14, bodyLg: 18 },
   fontWeight: { regular: 400, medium: 500, bold: 700, black: 900 },
   formatRawAmount: (amount: string | number, decimals: number) =>
     `${Number(amount) / 10 ** decimals}`,

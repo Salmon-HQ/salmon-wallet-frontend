@@ -6,6 +6,7 @@ import {
   fontFamilyNative,
   fontScaleCap,
   fontSize,
+  formatTokenAmount,
   getLabelValue,
   hiddenValue,
   lineHeight,
@@ -15,6 +16,7 @@ import {
   spacing,
   useCurrencyContext,
   vs,
+  semantic,
 } from '@salmon/shared';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -100,7 +102,9 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
       ? formatValue(usdBalance)
       : null;
 
-  const displayTokenAmount = hiddenBalance ? hiddenValue : `${uiAmount} ${symbol || ''}`;
+  const displayTokenAmount = hiddenBalance
+    ? hiddenValue
+    : `${formatTokenAmount(uiAmount)} ${symbol || ''}`;
 
   // Bitcoin has a different layout showing price, change, and BTC amount
   if (blockchain === 'bitcoin') {
@@ -282,12 +286,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   name: {
-    fontSize: ms(fontSize.tokenNamePrice),
+    fontSize: ms(fontSize.body),
     fontFamily: fontFamilyNative.medium,
     color: colors.text.balance,
     flexShrink: 1,
     minWidth: 0,
-    lineHeight: ms(fontSize.tokenNamePrice) * lineHeight.tokenListItem,
+    lineHeight: ms(fontSize.body) * lineHeight.tokenListItem,
     letterSpacing: ms(-0.07, 0.3),
   },
   priceRow: {
@@ -297,19 +301,19 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   price: {
-    fontSize: ms(fontSize.tokenNamePrice),
+    fontSize: ms(fontSize.body),
     fontFamily: fontFamilyNative.semiBold,
-    color: colors.text.muted,
-    lineHeight: ms(fontSize.tokenNamePrice) * lineHeight.tokenListItem,
+    color: semantic.text.secondary,
+    lineHeight: ms(fontSize.body) * lineHeight.tokenListItem,
     letterSpacing: ms(-0.07, 0.3),
     flexShrink: 0,
   },
   changeArrow: {
-    fontSize: ms(fontSize.tokenNamePrice),
+    fontSize: ms(fontSize.body),
   },
   changeText: {
-    fontSize: ms(fontSize.tokenChange),
-    fontFamily: fontFamilyNative.light,
+    fontSize: ms(fontSize.caption),
+    fontFamily: fontFamilyNative.regular,
     letterSpacing: ms(-0.06, 0.3),
     flexShrink: 1,
   },
@@ -355,7 +359,7 @@ const styles = StyleSheet.create({
     gap: s(spacing.xxs),
   },
   bitcoinChangeText: {
-    fontSize: ms(fontSize.tokenChange),
+    fontSize: ms(fontSize.caption),
     fontFamily: fontFamilyNative.light,
     letterSpacing: ms(-0.06, 0.3),
   },
@@ -366,7 +370,7 @@ const styles = StyleSheet.create({
   bitcoinAmount: {
     fontSize: ms(fontSize.xl),
     fontFamily: fontFamilyNative.semiBold,
-    color: colors.text.muted,
+    color: semantic.text.secondary,
     letterSpacing: ms(-0.095, 0.3),
   },
 });

@@ -7,13 +7,14 @@
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { CheckCircleIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
   colors,
+  componentSizes,
   spacing,
   borderRadius,
   borderWidth,
@@ -25,8 +26,10 @@ import {
   getInitials,
   getAccountAddress,
   type Account,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { ConfirmSheet } from '../../ConfirmSheet';
 import type { AccountsPanelProps } from './types';
 
 // ============================================================================
@@ -106,7 +109,7 @@ function AccountListItem({
           accessibilityRole="button"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="create-outline" size={20} color={colors.text.secondary} />
+          <PencilSimpleIcon size={iconSize.md} color={semantic.text.secondary} />
         </TouchableOpacity>
 
         {canDelete && (
@@ -119,13 +122,16 @@ function AccountListItem({
             accessibilityRole="button"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="trash-outline" size={20} color={colors.status.error} />
+            <TrashIcon size={iconSize.md} color={semantic.status.danger} />
           </TouchableOpacity>
         )}
 
         {isActive && (
           <View style={styles.checkmarkContainer}>
-            <Ionicons name="checkmark-circle" size={24} color={colors.status.success} />
+            {/* Selection is salmon, not green: green is a status ink (an
+                outcome), and a selected row is not an outcome. Same
+                vocabulary the settings selectors use. */}
+            <CheckCircleIcon size={iconSize.lg} color={semantic.accent.ink} />
           </View>
         )}
       </View>
@@ -148,24 +154,16 @@ export function AccountsPanel({
 }: AccountsPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const canDelete = accounts.length > 1;
+  const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
 
-  const handleDelete = useCallback(
-    (accountId: string, accountName: string) => {
-      Alert.alert(
-        t('settings.wallets.delete_confirm_title'),
-        t('settings.wallets.delete_confirm_message', { name: accountName }),
-        [
-          { text: t('actions.cancel'), style: 'cancel' },
-          {
-            text: t('actions.remove'),
-            style: 'destructive',
-            onPress: () => onDeleteAccount(accountId),
-          },
-        ]
-      );
-    },
-    [onDeleteAccount, t]
-  );
+  const handleDelete = useCallback((account: Account) => {
+    setAccountToDelete(account);
+  }, []);
+
+  const handleDeleteConfirmed = useCallback(async () => {
+    if (!accountToDelete) return;
+    await onDeleteAccount(accountToDelete.id);
+  }, [accountToDelete, onDeleteAccount]);
 
   const renderItem = useCallback(
     (item: Account) => (
@@ -174,7 +172,7 @@ export function AccountsPanel({
         isActive={item.id === activeAccountId}
         onPress={() => onSelectAccount(item.id)}
         onEdit={() => onEditAccount(item.id)}
-        onDelete={() => handleDelete(item.id, item.name)}
+        onDelete={() => handleDelete(item)}
         canDelete={canDelete}
       />
     ),
@@ -192,7 +190,7 @@ export function AccountsPanel({
         accessibilityRole="button"
       >
         <View style={styles.addAccountIcon}>
-          <Ionicons name="add" size={24} color={colors.text.primary} />
+          <PlusIcon size={iconSize.lg} color={semantic.text.primary} />
         </View>
         <Text style={styles.addAccountText}>{t('settings.account_add.title')}</Text>
       </TouchableOpacity>
@@ -208,6 +206,18 @@ export function AccountsPanel({
         ))}
         {ListFooter}
       </View>
+
+      <ConfirmSheet
+        visible={accountToDelete !== null}
+        onClose={() => setAccountToDelete(null)}
+        title={t('settings.wallets.delete_confirm_title')}
+        message={t('settings.wallets.delete_confirm_message', {
+          name: accountToDelete?.name ?? '',
+        })}
+        confirmText={t('actions.remove')}
+        isDanger
+        onConfirm={handleDeleteConfirmed}
+      />
     </SettingsScreenLayout>
   );
 }
@@ -223,25 +233,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.card,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
+    // Control Radius Rule: a settings list row is a control — r3, not r2.
+    borderRadius: borderRadius.r3,
     marginBottom: spacing.sm,
   },
   accountItemActive: {
     borderWidth: borderWidth.thin,
-    borderColor: colors.accent.primary,
+    borderColor: semantic.state.selectedEdge,
   },
   avatar: {
     width: 44,
     height: 44,
-    borderRadius: borderRadius.tokenIcon,
+    borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.md,
-    lineHeight: fontSize.md * lineHeight.none,
+    fontSize: fontSize.bodyLg,
+    lineHeight: fontSize.bodyLg * lineHeight.none,
   },
   accountInfo: {
     flex: 1,
@@ -249,16 +260,17 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   accountName: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
-    lineHeight: fontSize.md * lineHeight.normal,
+    fontSize: fontSize.bodyLg,
+    lineHeight: fontSize.bodyLg * lineHeight.normal,
   },
   accountAddress: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
-    lineHeight: fontSize.sm * lineHeight.normal,
+    color: semantic.text.secondary,
+    // An address is position-critical, so it reads in mono at the mono step.
+    fontFamily: fontFamilyNative.mono,
+    fontSize: fontSize.mono,
+    lineHeight: fontSize.mono * lineHeight.snug,
     marginTop: spacing.xxs,
   },
   actionButtons: {
@@ -267,14 +279,14 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   actionButton: {
-    width: 32,
-    height: 32,
+    width: componentSizes.iconSizeLarge,
+    height: componentSizes.iconSizeLarge,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.r1,
   },
   checkmarkContainer: {
-    width: 32,
+    width: componentSizes.iconSizeLarge,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -285,24 +297,26 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     marginTop: spacing.md,
-    borderRadius: borderRadius.md,
+    // Control Radius Rule: a settings list row is a control — r3, not r2.
+    borderRadius: borderRadius.r3,
   },
   addAccountIcon: {
     width: 44,
     height: 44,
-    borderRadius: borderRadius.tokenIcon,
+    // Sits in the avatar slot, so it shares the avatar's `full` radius.
+    borderRadius: borderRadius.full,
     backgroundColor: colors.background.card,
     borderWidth: borderWidth.thin,
-    borderColor: colors.border.default,
+    borderColor: semantic.border.default,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
   },
   addAccountText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
-    lineHeight: fontSize.md * lineHeight.normal,
+    fontSize: fontSize.bodyLg,
+    lineHeight: fontSize.bodyLg * lineHeight.normal,
     marginLeft: spacing.md,
   },
 });

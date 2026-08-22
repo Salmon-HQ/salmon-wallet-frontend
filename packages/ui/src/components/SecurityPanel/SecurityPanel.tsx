@@ -11,20 +11,19 @@ import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import { styled } from '../../utils/styled';
 import {
   colors,
+  semantic,
   spacing,
-  borderRadius,
   fontSize,
   fontWeight,
   letterSpacing,
   useAccountsContext,
   validatePassword,
-  opacity,
 } from '@salmon/shared';
+import { PrimaryButton } from '../Button';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { PasswordInput } from '../PasswordInput';
 import { PasswordStrengthBar } from '../PasswordInput/PasswordStrengthBar';
@@ -41,32 +40,14 @@ const Section = styled(Box)({
 const SectionTitle = styled(Typography)({
   color: colors.text.secondary,
   fontWeight: fontWeight.semibold,
-  fontSize: fontSize.sm,
+  fontSize: fontSize.label,
   textTransform: 'uppercase',
-  letterSpacing: letterSpacing.wider,
+  letterSpacing: letterSpacing.label,
   marginBottom: spacing.md,
 });
 
 const InputGroup = styled(Box)({
   marginBottom: spacing.md,
-});
-
-const SubmitButton = styled(Button)({
-  backgroundColor: colors.accent.primary,
-  color: colors.text.primary,
-  fontWeight: fontWeight.semibold,
-  textTransform: 'none',
-  borderRadius: borderRadius.md,
-  padding: `${spacing.md}px`,
-  marginTop: spacing.md,
-  '&:hover': {
-    backgroundColor: colors.accent.primary,
-    opacity: opacity.soft,
-  },
-  '&.Mui-disabled': {
-    backgroundColor: colors.interactive.hoverStrong,
-    color: colors.text.disabled,
-  },
 });
 
 // ============================================================================
@@ -174,13 +155,19 @@ export function SecurityPanel({
             />
           </InputGroup>
 
+          {/* Both messages announce politely. An inline validation error and a
+              password-changed confirmation are status, not emergency, so
+              neither interrupts a screen reader mid-sentence — MUI's Alert
+              would otherwise default to the assertive `role="alert"`
+              (PRODUCT.md: WCAG 2.2 AA at full scope). */}
           {error && (
             <Alert
               severity="error"
+              role="status"
               sx={{
                 marginBottom: spacing.md,
-                backgroundColor: colors.status.errorBackground,
-                color: colors.status.error,
+                backgroundColor: semantic.status.dangerTint,
+                color: semantic.status.danger,
               }}
             >
               {error}
@@ -190,25 +177,30 @@ export function SecurityPanel({
           {success && (
             <Alert
               severity="success"
+              role="status"
               sx={{
                 marginBottom: spacing.md,
-                backgroundColor: colors.status.successBackground,
-                color: colors.status.success,
+                backgroundColor: semantic.status.successTint,
+                color: semantic.status.success,
               }}
             >
               {success}
             </Alert>
           )}
 
-          <SubmitButton
+          {/* The one committing action on the panel, on the system's own
+              primary button (DESIGN.md §Components/Buttons) — the salmon is
+              never dimmed, only absent, and the disabled fill is
+              `surface.crest`. */}
+          <PrimaryButton
             fullWidth
-            variant="contained"
             onClick={handleChangePassword}
             disabled={loading || !currentPassword || !newPassword || !confirmPassword}
-            data-testid="security-change-password-button"
+            testID="security-change-password-button"
+            style={{ marginTop: spacing.md }}
           >
             {t('settings.security.change_password_button')}
-          </SubmitButton>
+          </PrimaryButton>
         </Section>
       </Box>
     </SettingsPanelContent>

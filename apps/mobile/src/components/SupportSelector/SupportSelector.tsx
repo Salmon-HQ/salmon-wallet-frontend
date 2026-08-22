@@ -5,19 +5,32 @@
  * with a security notice about seed phrase protection.
  */
 
-import React, { useCallback, type ComponentProps } from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowSquareOutIcon,
+  BookOpenIcon,
+  DiscordLogoIcon,
+  EnvelopeIcon,
+  QuestionIcon,
+  ShieldCheckIcon,
+  XLogoIcon,
+  iconSize,
+} from '../../icons';
+import type { IconComponent } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
   colors,
+  componentSizes,
   spacing,
   borderRadius,
   fontFamilyNative,
   type SupportSelectorBaseProps,
   type SupportOptionItem,
   fontSize,
+  lineHeight,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 
@@ -25,14 +38,12 @@ import { SettingsScreenLayout } from '../SettingsScreenLayout';
 // Icon mapping
 // ============================================================================
 
-type IoniconsName = ComponentProps<typeof Ionicons>['name'];
-
-const ICON_MAP: Record<string, IoniconsName> = {
-  faq: 'help-circle-outline',
-  docs: 'book-outline',
-  twitter: 'logo-twitter',
-  discord: 'logo-discord',
-  email: 'mail-outline',
+const ICON_MAP: Record<string, IconComponent> = {
+  faq: QuestionIcon,
+  docs: BookOpenIcon,
+  twitter: XLogoIcon,
+  discord: DiscordLogoIcon,
+  email: EnvelopeIcon,
 };
 
 // ============================================================================
@@ -49,36 +60,40 @@ export function SupportSelector({ options, onOpenLink, onBack }: SupportSelector
         style={styles.optionCard}
         onPress={() => onOpenLink(option.url)}
         activeOpacity={0.7}
+        // Every row leaves the app for an external URL (docs, social, mailto),
+        // so each one is a link, not a button.
+        accessibilityRole="link"
       >
         <View style={styles.optionIconContainer}>
-          <Ionicons
-            name={ICON_MAP[option.id] || 'help-circle-outline'}
-            size={24}
-            color={colors.accent.primary}
-          />
+          {React.createElement(ICON_MAP[option.id] || QuestionIcon, {
+            size: iconSize.lg,
+            // A list where nothing commits has no living element to spend the
+            // accent on. Row glyphs take the same quiet ink and neutral tile
+            // the settings rows use.
+            color: semantic.text.primary,
+          })}
         </View>
         <View style={styles.optionContent}>
-          <Text style={styles.optionTitle}>{option.title}</Text>
-          <Text style={styles.optionDescription}>{option.description}</Text>
+          <Text style={styles.optionTitle}>{t(option.title)}</Text>
+          <Text style={styles.optionDescription}>{t(option.description)}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+        {/* Leaving the app is not the same promise as pushing a panel: the
+            right-pointing caret means "slides in from there", which internal
+            navigation no longer does and this row never did. The external
+            glyph says the destination is outside the wallet. */}
+        <ArrowSquareOutIcon size={iconSize.md} color={semantic.text.tertiary} />
       </TouchableOpacity>
     ),
-    [onOpenLink]
+    [onOpenLink, t]
   );
 
   return (
-    <SettingsScreenLayout title={t('settings.help_support', 'Help & Support')} onBack={onBack}>
+    <SettingsScreenLayout title={t('settings.help_support')} onBack={onBack}>
       {options.map(renderOption)}
 
       <View style={styles.securityNotice}>
-        <Ionicons name="shield-checkmark-outline" size={20} color={colors.status.warning} />
-        <Text style={styles.securityText}>
-          {t(
-            'settings.security_notice',
-            'Salmon Wallet team will never ask for your seed phrase or private keys. Never share this information with anyone.'
-          )}
-        </Text>
+        <ShieldCheckIcon size={iconSize.md} color={semantic.status.warning} />
+        <Text style={styles.securityText}>{t('settings.security_notice')}</Text>
       </View>
     </SettingsScreenLayout>
   );
@@ -95,15 +110,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     padding: spacing.md,
     marginBottom: spacing.md,
   },
   optionIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.accent.tint,
+    width: componentSizes.iconSize3XL,
+    height: componentSizes.iconSize3XL,
+    borderRadius: borderRadius.r2,
+    backgroundColor: colors.background.card,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -112,30 +127,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionTitle: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     marginBottom: spacing.xxs,
   },
   optionDescription: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
+    fontSize: fontSize.mono,
   },
   securityNotice: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: colors.status.warningBackground,
-    borderRadius: borderRadius.md,
+    backgroundColor: semantic.status.warningTint,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
     marginTop: spacing.lg,
     gap: spacing.sm,
   },
   securityText: {
     flex: 1,
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: fontSize.mono,
+    lineHeight: fontSize.mono * lineHeight.snug,
   },
 });

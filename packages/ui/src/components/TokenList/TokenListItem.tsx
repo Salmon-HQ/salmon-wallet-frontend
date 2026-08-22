@@ -21,13 +21,16 @@ import {
   s,
   vs,
   ms,
-  showPercentage,
+  formatPercentage,
+  formatFiatPrice,
   getLabelValue,
+  formatTokenAmount,
   hiddenValue,
   useCurrencyContext,
   opacity,
   duration,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import { TokenBadges } from './TokenBadges';
@@ -69,7 +72,8 @@ const BitcoinInfoContainer = styled(Box)({
 });
 
 const BitcoinPrice = styled(Typography)({
-  fontSize: ms(fontSize.tokenNamePrice),
+  ...tabularNums.css,
+  fontSize: ms(fontSize.body),
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -84,7 +88,8 @@ const BitcoinChangeRow = styled(Box)({
 });
 
 const BitcoinChangeText = styled(Typography)<{ $changeColor?: string }>(({ $changeColor }) => ({
-  fontSize: ms(fontSize.tokenChange),
+  ...tabularNums.css,
+  fontSize: ms(fontSize.caption),
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: $changeColor || colors.text.muted,
@@ -98,9 +103,11 @@ const BitcoinAmountContainer = styled(Box)({
 });
 
 const BitcoinAmount = styled(Typography)({
+  ...tabularNums.css,
   fontSize: ms(fontSize.lg),
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
+  // Neutral for the same reason as `TokenAmount` above.
   color: colors.text.primary,
 });
 
@@ -153,7 +160,7 @@ const NameRow = styled(Box)({
 });
 
 const TokenName = styled(Typography)({
-  fontSize: ms(fontSize.tokenNamePrice),
+  fontSize: ms(fontSize.body),
   fontWeight: fontWeight.semibold,
   fontFamily: fontFamily.sans,
   color: colors.text.primary,
@@ -172,18 +179,20 @@ const PriceRow = styled(Box)({
 });
 
 const Price = styled(Typography)({
-  fontSize: ms(fontSize.tokenNamePrice),
+  ...tabularNums.css,
+  fontSize: ms(fontSize.body),
   fontFamily: fontFamily.sans,
   color: colors.text.muted,
 });
 
 const BulletSeparator = styled(Typography)({
-  fontSize: ms(fontSize.tokenNamePrice),
+  fontSize: ms(fontSize.body),
   color: 'rgba(255, 255, 255, 0.5)',
 });
 
 const ChangeText = styled(Typography)<{ $changeColor?: string }>(({ $changeColor }) => ({
-  fontSize: ms(fontSize.tokenChange),
+  ...tabularNums.css,
+  fontSize: ms(fontSize.caption),
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: $changeColor || colors.text.muted,
@@ -198,6 +207,7 @@ const ValueContainer = styled(Box)({
 });
 
 const UsdValue = styled(Typography)({
+  ...tabularNums.css,
   fontSize: ms(fontSize.lg),
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
@@ -205,7 +215,16 @@ const UsdValue = styled(Typography)({
   marginBottom: vs(spacing.xxs),
 });
 
+/**
+ * Deliberately neutral. This was tried in salmon ink — it is the quantity you
+ * actually hold, so it looked like the row's subject — and it failed on screen:
+ * it lands one column away from the 24h change, which is `danger-500` rose
+ * whenever the token is down, and two warm reds on one 44px row is exactly the
+ * collision the ramps were hue-separated to avoid. The row already carries
+ * colour, and it belongs to price movement.
+ */
 const TokenAmount = styled(Typography)({
+  ...tabularNums.css,
   fontSize: ms(fontSize.sm),
   fontFamily: fontFamily.sans,
   color: colors.text.muted,
@@ -220,7 +239,7 @@ export function TokenListItem({
   className,
 }: TokenListItemProps) {
   const { t } = useTranslation();
-  const [, { formatValue, formatChange }] = useCurrencyContext();
+  const [{ currency, exchangeRate }, { formatValue, formatChange }] = useCurrencyContext();
   const { name, symbol, logo, price, uiAmount, usdBalance, last24HoursChange, tags } = token;
 
   const handlePress = useCallback(() => {
@@ -232,9 +251,16 @@ export function TokenListItem({
   const labelType = getLabelValue(percentageChange);
   const changeColor = colors.change[labelType];
 
-  const displayPrice = hiddenBalance ? hiddenValue : price != null ? formatValue(price) : null;
+  // A token price, not a balance: fixed cents below one unit would render
+  // every sub-cent asset as the same zero, so this takes the price role of the
+  // ratified number contract while the balance below keeps fixed cents.
+  const displayPrice = hiddenBalance
+    ? hiddenValue
+    : price != null
+      ? formatFiatPrice(price, currency, exchangeRate)
+      : null;
 
-  const displayPercentage = last24HoursChange ? showPercentage(percentageChange) : null;
+  const displayPercentage = last24HoursChange ? formatPercentage(percentageChange) : null;
   const displayAbsChange = absoluteChange != null ? formatChange(absoluteChange) : null;
 
   const displayUsdValue = hiddenBalance
@@ -243,7 +269,12 @@ export function TokenListItem({
       ? formatValue(usdBalance)
       : null;
 
-  const displayTokenAmount = hiddenBalance ? hiddenValue : `${uiAmount} ${symbol || ''}`;
+  // The separator follows the app's language, not the host's — see PRODUCT.md's
+  // i18n constraint. The mobile row already renders through this formatter.
+  const displayTokenAmount = hiddenBalance
+    ? hiddenValue
+    : `${formatTokenAmount(uiAmount)} ${symbol || ''}`;
+  const accessibleAmount = formatTokenAmount(uiAmount);
 
   const blurContainerStyle = {
     borderRadius: ms(borderRadius.lg),
@@ -261,7 +292,7 @@ export function TokenListItem({
           aria-label={t(
             'accessibility.token_balance',
             '{{name}} token, balance {{amount}} {{symbol}}',
-            { name, amount: uiAmount, symbol }
+            { name, amount: accessibleAmount, symbol }
           )}
           data-testid={`token-row-${symbol}`}
         >
@@ -310,7 +341,7 @@ export function TokenListItem({
         aria-label={t(
           'accessibility.token_balance',
           '{{name}} token, balance {{amount}} {{symbol}}',
-          { name, amount: uiAmount, symbol }
+          { name, amount: accessibleAmount, symbol }
         )}
         data-testid={`token-row-${symbol}`}
       >

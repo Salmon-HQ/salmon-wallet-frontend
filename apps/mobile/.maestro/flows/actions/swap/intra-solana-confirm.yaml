@@ -64,6 +64,10 @@ appId: io.salmonwallet.app
     visible:
       id: 'swap-confirm-button'
     timeout: 40000
+# The review's blocks float in on a stagger — visible in the hierarchy well
+# before they are lit. Without this the shot can land blank.
+- waitForAnimationToEnd:
+    timeout: 3000
 - takeScreenshot: screenshots/actions/swap/swap-review
 # Point of no return — spends real funds.
 - tapOn:
@@ -71,4 +75,7 @@ appId: io.salmonwallet.app
 - extendedWaitUntil:
     visible: '(?i)Swap Complete|Complete'
     timeout: 120000
+# The exchange receipt arrives band by band in reading order.
+- waitForAnimationToEnd:
+    timeout: 3000
 - takeScreenshot: screenshots/actions/swap/swap-success

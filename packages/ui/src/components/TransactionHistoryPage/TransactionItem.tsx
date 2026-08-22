@@ -1,28 +1,34 @@
 /**
  * TransactionItem - Individual transaction row for the transaction list
  *
- * Migrated from packages/ui (React Native) to MUI styled components.
+ * A row is a row: it shows what happened and how much, and pressing it steps
+ * the activity surface into that transaction's detail. It has no second
+ * answer of its own — no disclosure, no chevrons, no route panel behind it —
+ * because the detail already holds those facts, and two surfaces answering
+ * one question drift apart by construction.
  *
  * Features:
  * - Transaction type icon with token logos
- * - Collapses multiple amounts with expandable route visualization
+ * - Collapses a complex swap's amounts to the first pair
  * - Badge showing source protocol (Jupiter, etc.)
- * - Click to expand swap routes, right-click or double-click for detail view
+ * - Press to step into the detail
  */
 
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import CancelIcon from '@mui/icons-material/Cancel';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
-import LockIcon from '@mui/icons-material/Lock';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import WidgetsIcon from '@mui/icons-material/Widgets';
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ArrowsLeftRightIcon,
+  ClockIcon,
+  FireIcon,
+  LockIcon,
+  PlusCircleIcon,
+  QuestionIcon,
+  SquaresFourIcon,
+  WalletIcon,
+  XCircleIcon,
+  iconSize,
+} from '../../icons';
+import type { IconComponent } from '../../icons';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Chip from '@mui/material/Chip';
@@ -39,15 +45,16 @@ import {
   fontSize,
   letterSpacing,
   opacity,
+  semantic,
   spacing,
   duration,
   easing,
+  tabularNums,
 } from '@salmon/shared';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import { BlurContainer } from '../BlurContainer';
-import { SwapRouteVisualization } from './SwapRouteVisualization';
 import type { TransactionItemProps, TransactionTokenAmount, TransactionType } from './types';
 
 // ============================================================================
@@ -63,34 +70,34 @@ const MAX_VISIBLE_AMOUNTS = 2;
 
 interface TypeConfig {
   label: string;
-  IconComponent: React.ComponentType<{ sx?: Record<string, unknown> }>;
+  IconComponent: IconComponent;
   color: string;
 }
 
 const TYPE_CONFIGS: Record<TransactionType, TypeConfig> = {
   send: {
     label: 'Sent',
-    IconComponent: ArrowUpwardIcon,
+    IconComponent: ArrowUpIcon,
     color: colors.change.negative,
   },
   receive: {
     label: 'Received',
-    IconComponent: ArrowDownwardIcon,
+    IconComponent: ArrowDownIcon,
     color: colors.change.positive,
   },
   swap: {
     label: 'Swapped',
-    IconComponent: SwapHorizIcon,
+    IconComponent: ArrowsLeftRightIcon,
     color: colors.palette.purple,
   },
   mint: {
     label: 'Minted',
-    IconComponent: AddCircleOutlineIcon,
+    IconComponent: PlusCircleIcon,
     color: colors.palette.cyan,
   },
   burn: {
     label: 'Burned',
-    IconComponent: LocalFireDepartmentIcon,
+    IconComponent: FireIcon,
     color: colors.palette.orange,
   },
   stake: {
@@ -100,17 +107,17 @@ const TYPE_CONFIGS: Record<TransactionType, TypeConfig> = {
   },
   loan: {
     label: 'Loan',
-    IconComponent: AccountBalanceWalletIcon,
+    IconComponent: WalletIcon,
     color: colors.palette.amber,
   },
   interaction: {
     label: 'Interaction',
-    IconComponent: WidgetsIcon,
+    IconComponent: SquaresFourIcon,
     color: colors.palette.blue,
   },
   unknown: {
     label: 'Unknown',
-    IconComponent: HelpOutlineIcon,
+    IconComponent: QuestionIcon,
     color: colors.text.secondary,
   },
 };
@@ -135,8 +142,8 @@ function getTypeConfig(
 
   return {
     ...config,
-    icon: <IconComponent sx={{ fontSize: fontSize.title }} />,
-    badgeIcon: <IconComponent sx={{ fontSize: fontSize.xs, color: colors.text.primary }} />,
+    icon: <IconComponent size={iconSize.md} />,
+    badgeIcon: <IconComponent size={iconSize.sm} color={colors.text.primary} />,
   };
 }
 
@@ -290,6 +297,7 @@ const AmountsContainer = styled(Box)({
 });
 
 const AmountText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   marginBottom: spacing.xxs,
@@ -304,6 +312,7 @@ const TimeRow = styled(Box)({
 });
 
 const TimeText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.xs,
   color: colors.text.tertiary,
 });
@@ -318,7 +327,7 @@ const FailedBadge = styled(Box)({
 const FailedText = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
-  color: colors.status.error,
+  color: semantic.status.danger,
 });
 
 const PendingBadge = styled(Box)({
@@ -327,34 +336,14 @@ const PendingBadge = styled(Box)({
   alignItems: 'center',
   gap: spacing.xs,
   padding: `${spacing.xs}px ${spacing.sm}px`,
-  backgroundColor: `${colors.status.warning}15`,
+  backgroundColor: `${semantic.status.warning}15`,
   borderRadius: borderRadius.sm,
 });
 
 const PendingText = styled(Typography)({
   fontSize: fontSize.xs,
   fontWeight: fontWeight.medium,
-  color: colors.status.warning,
-});
-
-const ExpandBadge = styled(Box)({
-  display: 'inline-flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: spacing.xxs,
-  marginTop: spacing.xs,
-  padding: `${spacing.xxs}px ${spacing.xs}px`,
-  borderRadius: borderRadius.sm,
-  cursor: 'pointer',
-  '&:hover': {
-    backgroundColor: colors.background.card,
-  },
-});
-
-const ExpandText = styled(Typography)({
-  fontSize: fontSize.xs,
-  fontWeight: fontWeight.medium,
-  color: colors.palette.amber,
+  color: semantic.status.warning,
 });
 
 // ============================================================================
@@ -380,7 +369,7 @@ const TokenLogo: React.FC<{ uri?: string | null; size?: number }> = ({
 
   return (
     <TokenLogoPlaceholder style={{ width: size, height: size }}>
-      <HelpOutlineIcon sx={{ fontSize: size * 0.6, color: colors.text.secondary }} />
+      <QuestionIcon size={size * 0.6} color={colors.text.secondary} />
     </TokenLogoPlaceholder>
   );
 };
@@ -410,7 +399,6 @@ const AmountDisplay: React.FC<{
 export function TransactionItem({
   transaction,
   onPress,
-  onDetailClick,
   hiddenBalance = false,
   className,
   style,
@@ -419,23 +407,12 @@ export function TransactionItem({
   const { type, timestamp, status, inputs, outputs, description, source } = transaction;
   const config = getTypeConfig(type);
 
-  const [expanded, setExpanded] = useState(false);
-
   const totalAmounts = inputs.length + outputs.length;
   const isComplex = type === 'swap' && totalAmounts > MAX_VISIBLE_AMOUNTS;
-  const isSwap = type === 'swap';
 
   const handleClick = useCallback(() => {
-    if (isSwap) {
-      setExpanded((prev) => !prev);
-    } else {
-      onPress?.(transaction);
-    }
-  }, [isSwap, onPress, setExpanded, transaction]);
-
-  const handleDoubleClick = useCallback(() => {
-    onDetailClick?.(transaction);
-  }, [onDetailClick, transaction]);
+    onPress?.(transaction);
+  }, [onPress, transaction]);
 
   const descriptionText = useMemo(
     () => getTransactionDescription(type, inputs, outputs, source, description),
@@ -488,7 +465,7 @@ export function TransactionItem({
     if (status === 'failed') {
       return (
         <FailedBadge>
-          <CancelIcon sx={{ fontSize: fontSize.md, color: colors.status.error }} />
+          <XCircleIcon size={iconSize.sm} color={semantic.status.danger} />
           <FailedText>{t('transactions.detail.failed', 'Failed')}</FailedText>
         </FailedBadge>
       );
@@ -497,7 +474,7 @@ export function TransactionItem({
     if (status === 'pending') {
       return (
         <PendingBadge>
-          <AccessTimeIcon sx={{ fontSize: fontSize.base, color: colors.status.warning }} />
+          <ClockIcon size={iconSize.sm} color={semantic.status.warning} />
           <PendingText>{t('transactions.detail.pending', 'Pending')}</PendingText>
         </PendingBadge>
       );
@@ -536,7 +513,6 @@ export function TransactionItem({
       >
         <ItemButton
           onClick={handleClick}
-          onDoubleClick={handleDoubleClick}
           aria-label={t('accessibility.transaction_row', '{{type}} transaction, {{description}}', {
             type: t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label),
             description: descriptionText,
@@ -563,34 +539,8 @@ export function TransactionItem({
             <TimeRow>
               <TimeText>{formatRelativeTimeCompact(timestamp, t)}</TimeText>
             </TimeRow>
-            {isComplex && (
-              <ExpandBadge
-                role="button"
-                tabIndex={0}
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  setExpanded((prev) => !prev);
-                }}
-              >
-                <ExpandText>
-                  {expanded
-                    ? t('transactions.showLess', 'show less')
-                    : t('transactions.showMore', 'show more')}
-                </ExpandText>
-                {expanded ? (
-                  <ExpandLessIcon sx={{ fontSize: fontSize.sm, color: colors.palette.amber }} />
-                ) : (
-                  <ExpandMoreIcon sx={{ fontSize: fontSize.sm, color: colors.palette.amber }} />
-                )}
-              </ExpandBadge>
-            )}
           </RightSection>
         </ItemButton>
-
-        {/* Expandable route visualization for swaps */}
-        {type === 'swap' && (
-          <SwapRouteVisualization transaction={transaction} expanded={expanded} />
-        )}
       </BlurContainer>
     </ItemWrapper>
   );

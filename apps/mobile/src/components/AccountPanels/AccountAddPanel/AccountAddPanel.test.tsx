@@ -1,13 +1,10 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
 const mockAddAccount = jest.fn();
 const mockScanDerivedAccounts = jest.fn();
 const mockCreateAccount = jest.fn();
 const mockHeaderOverride = jest.fn();
-
-jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -20,11 +17,16 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@expo/vector-icons', () => ({
-  Ionicons: () => null,
-}));
-
 jest.mock('@salmon/shared', () => ({
+  semantic: {
+    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+    text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', accent: '#FF5C45' },
+    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
+    depth: { column: '#0B0F19', abyss: '#070911' },
+    accent: { fill: '#FF5C45', ink: '#FF5C45', tint: 'rgba(255,92,69,0.10)' },
+    border: { default: '#58637B', raised: '#6F7B95' },
+  },
+  tabularNums: { native: { fontVariant: ['tabular-nums'] }, css: {} },
   colors: {
     accent: { primary: '#0f0' },
     background: { card: '#111', tertiary: '#222' },
@@ -33,9 +35,10 @@ jest.mock('@salmon/shared', () => ({
     text: { primary: '#fff', secondary: '#999', tertiary: '#777' },
   },
   spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '3xl': 32 },
-  borderRadius: { lg: 16, md: 12 },
+  borderRadius: { r2: 8, r3: 12 },
   borderWidth: { thin: 1 },
-  fontSize: { sm: 14, md: 18 },
+  componentSizes: { iconSize3XL: 48 },
+  fontSize: { caption: 12, bodyLg: 18 },
   fontFamilyNative: { medium: 'System', regular: 'System' },
   useAccountsContext: () => [
     {
@@ -45,6 +48,7 @@ jest.mock('@salmon/shared', () => ({
     { addAccount: mockAddAccount },
   ],
   getScanNetworks: jest.fn().mockResolvedValue(['solana-mainnet']),
+  SHORT_PHRASE: 12,
   scanDerivedAccounts: (...args: unknown[]) => mockScanDerivedAccounts(...args),
   validateMnemonic: (value: string) => value === 'valid seed phrase',
   normalizeMnemonic: (value: string) => value.trim().replace(/\s+/g, ' '),
@@ -88,6 +92,30 @@ jest.mock('../../Button', () => ({
   },
 }));
 
+// The failure notice renders through ConfirmSheet; the stub shows its title
+// and message as plain text only while visible, like the real sheet does.
+jest.mock('../../ConfirmSheet', () => ({
+  ConfirmSheet: ({
+    visible,
+    title,
+    message,
+  }: {
+    visible: boolean;
+    title: string;
+    message: string;
+  }) => {
+    if (!visible) return null;
+    const React = require('react');
+    const { Text, View } = require('react-native');
+    return React.createElement(
+      View,
+      { testID: 'confirm-sheet' },
+      React.createElement(Text, null, title),
+      React.createElement(Text, null, message)
+    );
+  },
+}));
+
 jest.mock('../../DerivedAccountCard', () => ({
   DerivedAccountCard: ({ address, onToggle }: { address: string; onToggle?: () => void }) => {
     const React = require('react');
@@ -100,8 +128,53 @@ jest.mock('../../DerivedAccountCard', () => ({
   },
 }));
 
+// Captured so the tests can drive the wait's contract: `visible` says whether
+// the wave is up, and invoking `onExited` stands in for the wave leaving the
+// screen (the real component's watchdog guarantees it fires).
+const mockLoadingScreenProps: { visible?: boolean; onExited?: () => void } = {};
 jest.mock('../../LoadingScreen', () => ({
-  LoadingScreen: () => null,
+  LoadingScreen: (props: { visible: boolean; onExited?: () => void }) => {
+    mockLoadingScreenProps.visible = props.visible;
+    mockLoadingScreenProps.onExited = props.onExited;
+    return null;
+  },
+}));
+
+// The passage hook pulls Reanimated and the motion vocabulary, neither of
+// which this file's narrow `@salmon/shared` mock carries. Its composition has
+// its own unit test (`src/utils/useWaitPassage.test.ts`); here it only has to
+// hand back the exit-report callback the panel parks `onComplete` behind.
+jest.mock('../../../utils/useWaitPassage', () => ({
+  useWaitPassage: (showWait: boolean) => ({
+    held: showWait,
+    onExited: jest.fn(),
+    exiting: undefined,
+    entering: undefined,
+  }),
+}));
+
+jest.mock('../../../../hooks/useSecretScreen', () => ({
+  useSecretScreen: jest.fn(),
+}));
+
+// The seed is entered through the shared grid, not a free-text field. The stub
+// exposes one input that splits its text into the grid's words array — the
+// panel only consumes the joined result.
+jest.mock('../../SeedPhrase', () => ({
+  SeedPhraseEntry: ({
+    testID,
+    onChange,
+  }: {
+    testID?: string;
+    onChange: (words: string[]) => void;
+  }) => {
+    const React = require('react');
+    const { TextInput } = require('react-native');
+    return React.createElement(TextInput, {
+      testID: `${testID}-entry`,
+      onChangeText: (text: string) => onChange(text.split(' ')),
+    });
+  },
 }));
 
 import { AccountAddPanel } from './AccountAddPanel';
@@ -131,10 +204,11 @@ describe('AccountAddPanel', () => {
     render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
 
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
-    fireEvent.changeText(
-      screen.getByPlaceholderText('settings.account_add.seed_placeholder'),
-      'bad seed'
-    );
+
+    // The free-text seed field is gone — the grid is the only entry surface.
+    expect(screen.queryByTestId('account-add-seed-input')).toBeNull();
+
+    fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), 'bad seed');
     fireEvent.press(screen.getByText('actions.continue'));
 
     expect(screen.getByText('wallet.create.invalidSeed')).toBeTruthy();
@@ -146,10 +220,7 @@ describe('AccountAddPanel', () => {
     render(<AccountAddPanel onComplete={onComplete} onBack={jest.fn()} />);
 
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
-    fireEvent.changeText(
-      screen.getByPlaceholderText('settings.account_add.seed_placeholder'),
-      '  valid   seed phrase  '
-    );
+    fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), '  valid   seed phrase  ');
     fireEvent.press(screen.getByText('actions.continue'));
 
     await waitFor(() => {
@@ -169,19 +240,28 @@ describe('AccountAddPanel', () => {
     });
 
     expect(mockAddAccount).toHaveBeenCalledWith({ id: 'account-1' });
+
+    // The completion is parked behind the wait's exit: dropping `loading`
+    // starts the wave's exit, and only its report hands the panel back.
+    expect(mockLoadingScreenProps.visible).toBe(false);
+    expect(onComplete).not.toHaveBeenCalled();
+    await act(async () => {
+      mockLoadingScreenProps.onExited?.();
+    });
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      mockLoadingScreenProps.onExited?.();
+    });
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the session_expired alert when addAccount throws EncryptionMaterialMissingError', async () => {
+  it('shows the session_expired notice when addAccount throws EncryptionMaterialMissingError', async () => {
     const { EncryptionMaterialMissingError } = jest.requireMock('@salmon/shared');
     mockAddAccount.mockRejectedValueOnce(new EncryptionMaterialMissingError());
 
     render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
-    fireEvent.changeText(
-      screen.getByPlaceholderText('settings.account_add.seed_placeholder'),
-      'valid seed phrase'
-    );
+    fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), 'valid seed phrase');
     fireEvent.press(screen.getByText('actions.continue'));
 
     await waitFor(() => {
@@ -191,22 +271,17 @@ describe('AccountAddPanel', () => {
     fireEvent.press(screen.getByText('settings.account_add.confirm'));
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'general.error',
-        'settings.account_add.session_expired'
-      );
+      expect(screen.getByTestId('confirm-sheet')).toBeTruthy();
+      expect(screen.getByText('settings.account_add.session_expired')).toBeTruthy();
     });
   });
 
-  it('falls back to the generic creation_error alert when addAccount throws another error', async () => {
+  it('falls back to the generic creation_error notice when addAccount throws another error', async () => {
     mockAddAccount.mockRejectedValueOnce(new Error('boom'));
 
     render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
     fireEvent.press(screen.getByText('settings.account_add.import_seed'));
-    fireEvent.changeText(
-      screen.getByPlaceholderText('settings.account_add.seed_placeholder'),
-      'valid seed phrase'
-    );
+    fireEvent.changeText(screen.getByTestId('account-add-seed-entry'), 'valid seed phrase');
     fireEvent.press(screen.getByText('actions.continue'));
 
     await waitFor(() => {
@@ -216,10 +291,8 @@ describe('AccountAddPanel', () => {
     fireEvent.press(screen.getByText('settings.account_add.confirm'));
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'general.error',
-        'settings.account_add.creation_error'
-      );
+      expect(screen.getByTestId('confirm-sheet')).toBeTruthy();
+      expect(screen.getByText('settings.account_add.creation_error')).toBeTruthy();
     });
   });
 

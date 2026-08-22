@@ -9,7 +9,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
-import Dialog from '@mui/material/Dialog';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
@@ -18,18 +17,13 @@ import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
-import CheckIcon from '@mui/icons-material/Check';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
+import { CheckIcon, PencilSimpleIcon, PlusIcon, TrashIcon, iconSize } from '../../icons';
 import {
   colors,
+  semantic,
   spacing,
-  borderRadius,
-  borderWidth,
   getShortAddress,
   getAvatarColor,
   getInitials,
@@ -41,6 +35,7 @@ import {
   easing,
 } from '@salmon/shared';
 import { BaseSheetDialog } from '../BaseSheetDialog';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 import type { WalletSwitcherSheetProps, AccountListItemProps } from './types';
 
@@ -104,9 +99,9 @@ const ActionIconButton = styled(IconButton)({
 
 const DeleteIconButton = styled(IconButton)({
   padding: spacing.xs,
-  color: colors.status.error,
+  color: semantic.status.danger,
   '&:hover': {
-    backgroundColor: colors.status.errorBackground,
+    backgroundColor: semantic.status.dangerTint,
   },
 });
 
@@ -125,60 +120,6 @@ const AddAccountButton = styled(Button)({
   fontWeight: fontWeightTokens.semibold,
   '&:hover': {
     backgroundColor: colors.accent.tint,
-  },
-});
-
-// Confirmation Dialog Styles
-const ConfirmDialogPaper = styled(Box)({
-  backgroundColor: colors.background.primary,
-  borderRadius: borderRadius.lg,
-  border: `${borderWidth.thin}px solid ${colors.border.default}`,
-  padding: spacing.xl,
-  textAlign: 'center',
-});
-
-const ConfirmTitle = styled(Typography)({
-  fontSize: fontSizeTokens.md,
-  fontWeight: fontWeightTokens.semibold,
-  color: colors.text.primary,
-  marginBottom: spacing.md,
-});
-
-const ConfirmMessage = styled(Typography)({
-  fontSize: fontSizeTokens.base,
-  color: colors.text.secondary,
-  marginBottom: spacing.xl,
-});
-
-const ConfirmButtonsRow = styled(Box)({
-  display: 'flex',
-  gap: spacing.md,
-  justifyContent: 'center',
-});
-
-const CancelButton = styled(Button)({
-  flex: 1,
-  backgroundColor: colors.button.secondaryBackground,
-  color: colors.button.secondaryText,
-  textTransform: 'none',
-  fontWeight: fontWeightTokens.semibold,
-  padding: `${spacing.sm}px ${spacing.lg}px`,
-  borderRadius: borderRadius.md,
-  '&:hover': {
-    backgroundColor: colors.card.border,
-  },
-});
-
-const DeleteButton = styled(Button)({
-  flex: 1,
-  backgroundColor: colors.status.error,
-  color: colors.text.primary,
-  textTransform: 'none',
-  fontWeight: fontWeightTokens.semibold,
-  padding: `${spacing.sm}px ${spacing.lg}px`,
-  borderRadius: borderRadius.md,
-  '&:hover': {
-    backgroundColor: colors.button.destructiveHover,
   },
 });
 
@@ -261,7 +202,7 @@ function AccountListItem({ account, isActive, onSelect, onEdit, onDelete }: Acco
       />
       <ListItemSecondaryAction>
         <ActionButtonsContainer>
-          {isActive && <CheckIconStyled fontSize="small" />}
+          {isActive && <CheckIconStyled size={iconSize.md} />}
           {onEdit && (
             <ActionIconButton
               size="small"
@@ -269,7 +210,7 @@ function AccountListItem({ account, isActive, onSelect, onEdit, onDelete }: Acco
               aria-label={t('accessibility.edit_account')}
               data-testid={`wallet-switcher-edit-${account.id}`}
             >
-              <EditIcon fontSize="small" />
+              <PencilSimpleIcon size={iconSize.md} />
             </ActionIconButton>
           )}
           {onDelete && (
@@ -279,7 +220,7 @@ function AccountListItem({ account, isActive, onSelect, onEdit, onDelete }: Acco
               aria-label={t('accessibility.delete_account')}
               data-testid={`wallet-switcher-delete-${account.id}`}
             >
-              <DeleteIcon fontSize="small" />
+              <TrashIcon size={iconSize.md} />
             </DeleteIconButton>
           )}
         </ActionButtonsContainer>
@@ -372,7 +313,6 @@ export function WalletSwitcherSheet({
         onClose={onClose}
         size="small"
         colorScheme="dialog"
-        showScalesBackground={false}
         ariaLabelledBy="wallet-switcher-title"
       >
         <BaseSheetDialog.StandardHeader title={t('walletSwitcher.title', 'Your Wallets')} />
@@ -394,7 +334,7 @@ export function WalletSwitcherSheet({
           <Divider sx={{ borderColor: colors.border.default }} />
 
           <AddAccountButton
-            startIcon={<AddIcon />}
+            startIcon={<PlusIcon />}
             onClick={handleAddAccount}
             data-testid="wallet-switcher-add-account"
           >
@@ -404,24 +344,21 @@ export function WalletSwitcherSheet({
       </BaseSheetDialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteConfirmAccountId !== null}
+      <ConfirmDialog
+        visible={deleteConfirmAccountId !== null}
         onClose={handleDeleteCancel}
-        PaperComponent={({ children }) => <ConfirmDialogPaper>{children}</ConfirmDialogPaper>}
-      >
-        <ConfirmTitle>{t('walletSwitcher.deleteConfirmTitle', 'Delete Account?')}</ConfirmTitle>
-        <ConfirmMessage>
-          {t(
-            'walletSwitcher.deleteConfirmMessage',
-            'Are you sure you want to delete "{{name}}"? This action cannot be undone.',
-            { name: accountToDelete?.name || '' }
-          )}
-        </ConfirmMessage>
-        <ConfirmButtonsRow>
-          <CancelButton onClick={handleDeleteCancel}>{t('common.cancel', 'Cancel')}</CancelButton>
-          <DeleteButton onClick={handleDeleteConfirm}>{t('common.delete', 'Delete')}</DeleteButton>
-        </ConfirmButtonsRow>
-      </Dialog>
+        onConfirm={handleDeleteConfirm}
+        isDanger
+        title={t('walletSwitcher.deleteConfirmTitle', 'Delete Account?')}
+        message={t(
+          'walletSwitcher.deleteConfirmMessage',
+          'Are you sure you want to delete "{{name}}"? This action cannot be undone.',
+          { name: accountToDelete?.name || '' }
+        )}
+        cancelText={t('common.cancel', 'Cancel')}
+        confirmText={t('common.delete', 'Delete')}
+        confirmTestID="wallet-switcher-delete-confirm"
+      />
     </>
   );
 }

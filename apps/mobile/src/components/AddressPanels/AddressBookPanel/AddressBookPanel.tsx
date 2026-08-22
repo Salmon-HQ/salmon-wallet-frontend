@@ -5,22 +5,26 @@
  * to add, edit, or remove entries.
  */
 
-import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { PencilSimpleIcon, PlusCircleIcon, TrashIcon, UserIcon, iconSize } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
   colors,
+  componentSizes,
   spacing,
   borderRadius,
   fontFamilyNative,
+  getNetworkName,
   getShortAddress,
   type AddressBookSelectorBaseProps,
   type AddressBookItem,
   fontSize,
+  semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { ConfirmSheet } from '../../ConfirmSheet';
 
 // ============================================================================
 // Component
@@ -36,27 +40,16 @@ export function AddressBookPanel({
   onRetry,
 }: AddressBookSelectorBaseProps) {
   const { t } = useTranslation();
+  const [contactToRemove, setContactToRemove] = useState<AddressBookItem | null>(null);
 
-  const handleRemove = useCallback(
-    (contact: AddressBookItem) => {
-      Alert.alert(
-        t('actions.remove', 'Remove'),
-        t('settings.addressbook.remove_confirmation', {
-          name: contact.name,
-          defaultValue: `Are you sure you want to remove ${contact.name} from your address book?`,
-        }),
-        [
-          { text: t('actions.cancel', 'Cancel'), style: 'cancel' },
-          {
-            text: t('actions.remove', 'Remove'),
-            style: 'destructive',
-            onPress: () => onRemoveContact(contact.address),
-          },
-        ]
-      );
-    },
-    [t, onRemoveContact]
-  );
+  const handleRemove = useCallback((contact: AddressBookItem) => {
+    setContactToRemove(contact);
+  }, []);
+
+  const handleRemoveConfirmed = useCallback(async () => {
+    if (!contactToRemove) return;
+    await onRemoveContact(contactToRemove.address);
+  }, [contactToRemove, onRemoveContact]);
 
   const renderContactItem = useCallback(
     (contact: AddressBookItem) => (
@@ -67,7 +60,7 @@ export function AddressBookPanel({
       >
         <View style={styles.contactInfo}>
           <View style={styles.contactIconPlaceholder}>
-            <Ionicons name="person-outline" size={20} color={colors.text.secondary} />
+            <UserIcon size={iconSize.md} color={semantic.text.secondary} />
           </View>
           <View style={styles.contactText}>
             <Text style={styles.contactName} numberOfLines={1}>
@@ -77,8 +70,7 @@ export function AddressBookPanel({
               {contact.domain || getShortAddress(contact.address, 6)}
             </Text>
             <Text style={styles.contactNetwork} numberOfLines={1}>
-              {contact.networkId.split('-')[0].charAt(0).toUpperCase() +
-                contact.networkId.split('-')[0].slice(1)}
+              {getNetworkName(contact.networkId)}
             </Text>
           </View>
         </View>
@@ -92,7 +84,7 @@ export function AddressBookPanel({
             accessibilityRole="button"
             accessibilityLabel={t('actions.edit', 'Edit')}
           >
-            <Ionicons name="create-outline" size={18} color={colors.text.secondary} />
+            <PencilSimpleIcon size={iconSize.sm} color={semantic.text.secondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
@@ -102,7 +94,7 @@ export function AddressBookPanel({
             accessibilityRole="button"
             accessibilityLabel={t('actions.remove', 'Remove')}
           >
-            <Ionicons name="trash-outline" size={18} color={colors.status.error} />
+            <TrashIcon size={iconSize.sm} color={semantic.status.danger} />
           </TouchableOpacity>
         </View>
       </View>
@@ -139,7 +131,7 @@ export function AddressBookPanel({
             testID="address-book-add-button"
             accessibilityRole="button"
           >
-            <Ionicons name="add-circle-outline" size={20} color={colors.accent.primary} />
+            <PlusCircleIcon size={iconSize.md} color={semantic.accent.ink} />
             <Text style={styles.addButtonText}>
               {t('settings.addressbook.addnew', 'Add New Address')}
             </Text>
@@ -160,13 +152,26 @@ export function AddressBookPanel({
             testID="address-book-add-button"
             accessibilityRole="button"
           >
-            <Ionicons name="add-circle-outline" size={20} color={colors.accent.primary} />
+            <PlusCircleIcon size={iconSize.md} color={semantic.accent.ink} />
             <Text style={styles.addButtonText}>
               {t('settings.addressbook.addnew', 'Add New Address')}
             </Text>
           </TouchableOpacity>
         </View>
       )}
+
+      <ConfirmSheet
+        visible={contactToRemove !== null}
+        onClose={() => setContactToRemove(null)}
+        title={t('actions.remove', 'Remove')}
+        message={t('settings.addressbook.remove_confirmation', {
+          name: contactToRemove?.name ?? '',
+          defaultValue: `Are you sure you want to remove ${contactToRemove?.name} from your address book?`,
+        })}
+        confirmText={t('actions.remove', 'Remove')}
+        isDanger
+        onConfirm={handleRemoveConfirmed}
+      />
     </SettingsScreenLayout>
   );
 }
@@ -183,7 +188,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    // Control Radius Rule: a settings list row is a control — r3, not r2.
+    borderRadius: borderRadius.r3,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -194,8 +200,8 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   contactIconPlaceholder: {
-    width: 36,
-    height: 36,
+    width: componentSizes.iconSizeXL,
+    height: componentSizes.iconSizeXL,
     borderRadius: borderRadius.iconContainer,
     backgroundColor: colors.card.border,
     alignItems: 'center',
@@ -207,19 +213,19 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   contactName: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   contactAddress: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
+    fontSize: fontSize.mono,
   },
   contactNetwork: {
-    color: colors.text.disabled,
+    color: semantic.text.disabled,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 11,
+    fontSize: fontSize.caption,
   },
   actions: {
     flexDirection: 'row',
@@ -236,9 +242,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   addButtonText: {
-    color: colors.accent.primary,
+    color: semantic.accent.ink,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -248,9 +254,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   emptyText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     textAlign: 'center',
   },
 });

@@ -18,13 +18,16 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import LanguageIcon from '@mui/icons-material/Language';
-import SecurityIcon from '@mui/icons-material/Security';
-import PolicyIcon from '@mui/icons-material/Policy';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import TwitterIcon from '@mui/icons-material/Twitter';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
+import {
+  ArrowSquareOutIcon,
+  BookOpenIcon,
+  FileTextIcon,
+  GithubLogoIcon,
+  GlobeIcon,
+  ShieldCheckIcon,
+  XLogoIcon,
+  iconSize,
+} from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
   APP_VERSION,
@@ -36,9 +39,11 @@ import {
   letterSpacing,
   opacity,
   componentSizes,
+  tabularNums,
 } from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import type { AboutPanelProps } from './types';
+import { BrandMark } from '../BrandMark';
 
 interface LinkItem {
   id: string;
@@ -58,7 +63,7 @@ const GENERAL_LINKS: LinkItem[] = [
   {
     id: 'website',
     labelKey: 'settings.about_website',
-    icon: <LanguageIcon />,
+    icon: <GlobeIcon />,
     url: 'https://www.salmonwallet.io',
   },
 ];
@@ -67,13 +72,13 @@ const LEGAL_LINKS: LinkItem[] = [
   {
     id: 'terms',
     labelKey: 'settings.about_terms',
-    icon: <PolicyIcon />,
+    icon: <FileTextIcon />,
     url: 'https://www.salmonwallet.io/terms',
   },
   {
     id: 'privacy',
     labelKey: 'settings.about_privacy',
-    icon: <SecurityIcon />,
+    icon: <ShieldCheckIcon />,
     url: 'https://www.salmonwallet.io/privacy',
   },
 ];
@@ -82,19 +87,19 @@ const SOCIAL_LINKS: LinkItem[] = [
   {
     id: 'twitter',
     labelKey: 'X (Twitter)',
-    icon: <TwitterIcon />,
+    icon: <XLogoIcon />,
     url: 'https://x.com/salmonwallet',
   },
   {
     id: 'github',
     labelKey: 'GitHub',
-    icon: <GitHubIcon />,
+    icon: <GithubLogoIcon />,
     url: 'https://github.com/salmon-wallet',
   },
   {
     id: 'medium',
     labelKey: 'Medium',
-    icon: <MenuBookIcon />,
+    icon: <BookOpenIcon />,
     url: 'https://medium.com/@salmonwallet',
   },
 ];
@@ -123,21 +128,22 @@ const LogoContainer = styled(Box)({
 });
 
 const AppName = styled(Typography)({
-  fontSize: fontSize.xl,
+  fontSize: fontSize.title,
   fontWeight: fontWeight.bold,
   color: colors.text.primary,
 });
 
 const VersionText = styled(Typography)({
-  fontSize: fontSize.sm,
+  ...tabularNums.css,
+  fontSize: fontSize.caption,
   color: colors.text.secondary,
 });
 
 const SectionTitle = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.label,
   fontWeight: fontWeight.semibold,
   textTransform: 'uppercase',
-  letterSpacing: letterSpacing.wider,
+  letterSpacing: letterSpacing.label,
   color: colors.text.secondary,
   padding: `${spacing.md}px ${spacing.lg}px ${spacing.sm}px`,
   marginTop: spacing.sm,
@@ -159,9 +165,10 @@ const StyledListItemIcon = styled(ListItemIcon)({
   color: colors.text.secondary,
 });
 
-const ExternalIcon = styled(OpenInNewIcon)({
+const ExternalIcon = styled(ArrowSquareOutIcon)({
   color: colors.text.secondary,
-  fontSize: fontSize.md,
+  width: iconSize.sm,
+  height: iconSize.sm,
 });
 
 const StyledDivider = styled(Divider)({
@@ -170,7 +177,7 @@ const StyledDivider = styled(Divider)({
 });
 
 const FooterText = styled(Typography)({
-  fontSize: fontSize.sm,
+  fontSize: fontSize.caption,
   color: colors.text.secondary,
   textAlign: 'center',
   padding: `${spacing.lg}px`,
@@ -191,7 +198,11 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
   const renderLinkItem = useCallback(
     (link: LinkItem) => (
       <ListItem key={link.id} disablePadding>
+        {/* Every row here opens an external destination in a new tab, so it
+            announces as a link rather than a button (DESIGN.md §"The settings
+            surface joined the system"). */}
         <StyledListItemButton
+          role="link"
           onClick={() => handleLinkClick(link.url)}
           data-testid={`about-link-${link.id}`}
         >
@@ -205,7 +216,7 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
             primaryTypographyProps={{
               sx: {
                 color: colors.text.primary,
-                fontSize: fontSize.base,
+                fontSize: fontSize.body,
                 fontWeight: fontWeight.medium,
               },
             }}
@@ -221,11 +232,7 @@ export function AboutPanel({ onBack }: AboutPanelProps): React.ReactElement {
     <SettingsPanelContent title={t('settings.about', 'About')} onBack={onBack}>
       <LogoSection>
         <LogoContainer>
-          <img
-            src="/images/Logo.png"
-            alt="Salmon Wallet"
-            style={{ width: componentSizes.iconSize3XL, height: componentSizes.iconSize3XL }}
-          />
+          <BrandMark size={componentSizes.iconSize3XL} title="Salmon Wallet" />
         </LogoContainer>
         <AppName>Salmon Wallet</AppName>
         <VersionText>{t('settings.app_version', { version: APP_VERSION })}</VersionText>

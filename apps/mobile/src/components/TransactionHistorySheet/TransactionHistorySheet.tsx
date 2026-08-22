@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,12 @@ import {
   StyleSheet,
   ActivityIndicator,
   Animated,
+  BackHandler,
+  Platform,
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
+import ReAnimated, { useReducedMotion } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { ContentLoader, Rect } from '@salmon/shared';
 import {
@@ -21,10 +24,14 @@ import {
   fontSize,
   fontFamilyNative,
   borderRadius,
+  semantic,
 } from '@salmon/shared';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
 import { BottomSheetContainer } from '../BottomSheetContainer';
+import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
+import { TransactionDetail } from '../TransactionDetail';
 import { TransactionItem } from './TransactionItem';
 import type { TransactionHistorySheetProps, Transaction } from './types';
 
@@ -119,12 +126,21 @@ const ErrorState: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => {
 // ============================================================================
 
 /**
- * TransactionHistorySheet - Bottom sheet modal for transaction history
+ * TransactionHistorySheet - the Activity sheet
+ *
+ * Two steps in one sheet: the list, and one transaction's detail. Tapping a
+ * row does not open a second sheet on top — the list sinks and the detail
+ * floats up in its place, and back is the mirror. DESIGN.md §Motion's rule
+ * that a sheet's content never speaks the verb is about the sheet arriving
+ * and leaving; a step change inside a sheet that is already on screen is the
+ * other event, and it does speak it — the settings panel stack is the
+ * precedent.
  *
  * Features:
  * - Slide-up animation from bottom
  * - Drag to dismiss
  * - Paginated transaction list with infinite scroll
+ * - In-place detail step with a mirrored back
  * - Loading skeletons
  * - Empty and error states
  *
@@ -152,20 +168,65 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
   onTransactionPress,
   error = null,
   onRetry,
+  onViewExplorer,
+  onCopyHash,
+  onShare,
+  developerMode,
+  networkId,
   style,
 }) => {
   const { t } = useTranslation();
+  const isReduceMotionEnabled = useReducedMotion();
   // Top fade gradient opacity (driven by scroll offset)
   const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
   const { bottomInset, standardContentBottomPadding } = useBottomSheetChrome();
 
-  // Handle transaction press
+  // Which step is on screen: the list, or one transaction's detail.
+  const [detail, setDetail] = useState<Transaction | null>(null);
+  // Whether a step has happened in this opening. The list floats in only when
+  // it is coming back from the detail — on the sheet's own arrival it is
+  // already there, and content that spoke the verb then would say it twice.
+  const [stepped, setStepped] = useState(false);
+
+  // A fresh opening always starts on the list. Reset on the open transition
+  // (not the close one) so nothing swaps behind a sheet that is still ebbing.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (wasVisible !== visible) {
+    setWasVisible(visible);
+    if (visible) {
+      setDetail(null);
+      setStepped(false);
+    }
+  }
+
+  // Handle transaction press — step into the detail, in place
   const handleTransactionPress = useCallback(
     (transaction: Transaction) => {
       onTransactionPress?.(transaction);
+      // The gradient tracks the list's scroll; a step starts at the top.
+      topFadeOpacity.setValue(0);
+      setStepped(true);
+      setDetail(transaction);
     },
-    [onTransactionPress]
+    [onTransactionPress, topFadeOpacity]
   );
+
+  const handleBackToList = useCallback(() => {
+    topFadeOpacity.setValue(0);
+    setDetail(null);
+  }, [topFadeOpacity]);
+
+  // Android hardware back returns to the list before it leaves the sheet.
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !visible || !detail) return undefined;
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setDetail(null);
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [visible, detail]);
 
   // Handle scroll to show/hide top fade gradient dynamically
   const handleScroll = useCallback(
@@ -206,48 +267,90 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
     );
   }, [loadingMore]);
 
-  const title = <Text style={styles.title}>{t('transactions.historyTitle')}</Text>;
+  const headerContent = (
+    <BottomSheetTitleHeader
+      title={t('actions.activity')}
+      onBack={detail ? handleBackToList : undefined}
+      backAccessibilityLabel={t('general.back')}
+    />
+  );
+
+  // The verb, at content depth: what leaves sinks, what arrives floats one
+  // beat later, and reduce motion resolves both to an instant cut.
+  const stepEntering = floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS });
+  const stepExiting = sinkExiting(isReduceMotionEnabled);
 
   return (
     <BottomSheetContainer
       visible={visible}
       onClose={onClose}
-      title={title}
+      headerContent={headerContent}
       showFadeGradient
-      fadeGradientTop={vs(12) + vs(8) + ms(fontSize['2xl']) + vs(18)}
+      fadeGradientTop={vs(12) + vs(8) + ms(fontSize.headline) + vs(18)}
       scrollOffsetValue={topFadeOpacity}
       style={style}
     >
       {/* Content */}
-      <View style={styles.content}>
-        {/* Error State */}
-        {error && !loading && <ErrorState onRetry={onRetry} />}
+      <View style={styles.stack}>
+        {!detail && (
+          <ReAnimated.View
+            key="activity-list-step"
+            testID="activity-list-step"
+            style={styles.step}
+            entering={stepped ? stepEntering : undefined}
+            exiting={stepExiting}
+          >
+            <View style={styles.content}>
+              {/* Error State */}
+              {error && !loading && <ErrorState onRetry={onRetry} />}
 
-        {/* Loading State */}
-        {loading && !error && <TransactionListSkeleton count={6} />}
+              {/* Loading State */}
+              {loading && !error && <TransactionListSkeleton count={6} />}
 
-        {/* Empty State */}
-        {!loading && !error && transactions.length === 0 && <EmptyState />}
+              {/* Empty State */}
+              {!loading && !error && transactions.length === 0 && <EmptyState />}
 
-        {/* Transaction List */}
-        {!loading && !error && transactions.length > 0 && (
-          <FlatList
-            testID="activity-list"
-            data={transactions}
-            renderItem={renderTransaction}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={[
-              styles.listContent,
-              { paddingBottom: standardContentBottomPadding },
-            ]}
-            showsVerticalScrollIndicator={false}
-            scrollIndicatorInsets={{ bottom: bottomInset }}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            onEndReached={handleEndReached}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={renderFooter}
-          />
+              {/* Transaction List */}
+              {!loading && !error && transactions.length > 0 && (
+                <FlatList
+                  testID="activity-list"
+                  data={transactions}
+                  renderItem={renderTransaction}
+                  keyExtractor={(item) => item.id}
+                  contentContainerStyle={[
+                    styles.listContent,
+                    { paddingBottom: standardContentBottomPadding },
+                  ]}
+                  showsVerticalScrollIndicator={false}
+                  scrollIndicatorInsets={{ bottom: bottomInset }}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
+                  onEndReached={handleEndReached}
+                  onEndReachedThreshold={0.5}
+                  ListFooterComponent={renderFooter}
+                />
+              )}
+            </View>
+          </ReAnimated.View>
+        )}
+
+        {detail && (
+          <ReAnimated.View
+            key={`activity-detail-step-${detail.id}`}
+            testID="activity-detail-step"
+            style={styles.step}
+            entering={stepEntering}
+            exiting={stepExiting}
+          >
+            <TransactionDetail
+              transaction={detail}
+              onViewExplorer={onViewExplorer}
+              onCopyHash={onCopyHash}
+              onShare={onShare}
+              developerMode={developerMode}
+              networkId={networkId}
+            />
+          </ReAnimated.View>
         )}
       </View>
     </BottomSheetContainer>
@@ -259,13 +362,11 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
 // ============================================================================
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: ms(fontSize['2xl']),
-    fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
-    textAlign: 'center',
-    marginBottom: vs(spacing.headerPadding),
-    letterSpacing: ms(-0.12, 0.3),
+  stack: {
+    flex: 1,
+  },
+  step: {
+    ...StyleSheet.absoluteFillObject,
   },
   content: {
     flex: 1,
@@ -298,7 +399,7 @@ const styles = StyleSheet.create({
     marginBottom: vs(spacing.base),
   },
   emptySubtitle: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.regular,
     color: colors.text.secondary,
     textAlign: 'center',
@@ -323,9 +424,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   retryText: {
-    fontSize: ms(fontSize.md),
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.medium,
-    color: colors.text.primary,
+    color: semantic.accent.onFill,
   },
   // Loading more
   loadingMoreContainer: {

@@ -1,44 +1,137 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
-  Modal,
   View,
   Text,
   TextInput,
   FlatList,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   StyleSheet,
   ActivityIndicator,
+  Animated,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
   type ListRenderItem,
 } from 'react-native';
-import { BlurTargetView } from 'expo-blur';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   useTokenSearch,
   colors,
+  componentSizes,
   spacing,
   borderRadius,
   ContentLoader,
   Rect,
   Circle,
+  formatTokenAmount,
   getShortAddress,
   getTokenKey,
   fontFamilyNative,
   fontSize,
   fontWeight,
+  tabularNums,
+  ms,
+  vs,
+  s,
 } from '@salmon/shared';
-import { BlurContainer, BlurTargetProvider } from '../BlurContainer';
-import { ScalesBackground } from '../ScalesBackground';
+import { MagnifyingGlassIcon } from '../../icons';
+import { BitcoinSvgIcon, EthereumSvgIcon } from '../Icon/SvgIcons';
+import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
+import { BottomSheetContainer } from '../BottomSheetContainer';
+import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
+import { BlurContainer } from '../BlurContainer';
 import { TokenLogo } from '../TokenLogo';
 import type { TokenSelectorToken, TokenSelectorModalProps } from './types';
 
 const HIDDEN_VALUE = '******';
 
+// `tabularNums.native` types its array as readonly; RN's TextStyle wants a
+// mutable array, so spread once here.
+const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
+
+// Skeleton geometry mirrors the token rows it stands in for
+// (same idiom as SendSheet's StepTokenSelect).
+const SKELETON_COUNT = 5;
+const SKELETON_ROW_HEIGHT = vs(12) * 2 + ms(32); // paddingVertical * 2 + logo height
+const SKELETON_ROW_WIDTH = 280; // approximate inner width
+
+// Chain identity on token rows. Mainnet is the silent default: Solana rows
+// carry no marker at all (in a Solana-first wallet the chip is redundant on
+// every row), and a non-Solana mainnet token gets only its quiet chain mark —
+// the same glyphs BalanceCard and DerivedAccountCard use for chain identity.
+// Anything that is NOT mainnet keeps the loud text chip, so a devnet/testnet
+// token can never be mistaken for a mainnet one in developer mode.
+const CHAIN_MARKS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
+  bitcoin: BitcoinSvgIcon,
+  ethereum: EthereumSvgIcon,
+};
+
+const NetworkIdentity: React.FC<{ network: string }> = ({ network }) => {
+  // Network values arrive either as canonical ids ('bitcoin-mainnet',
+  // 'solana-devnet') or as bare chain names ('Bitcoin') from the swap logic's
+  // chain fallback; a bare chain name carries no environment, so it counts as
+  // mainnet.
+  const [chain, env] = network.toLowerCase().split('-');
+  if (env && env !== 'mainnet') {
+    return (
+      <View style={styles.networkChip}>
+        <Text style={styles.networkChipText}>{network.toUpperCase()}</Text>
+      </View>
+    );
+  }
+  const Mark = CHAIN_MARKS[chain];
+  if (!Mark) return null;
+  return (
+    <View style={styles.chainMark} testID={`chain-mark-${chain}`}>
+      <Mark size={ms(14)} color={colors.text.tertiary} />
+    </View>
+  );
+};
+
+const TokenListSkeleton: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.skeletonList} accessibilityLabel={t('accessibility.loading_token_list')}>
+      {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+        <BlurContainer key={i} style={styles.tokenRow}>
+          <ContentLoader
+            speed={1.5}
+            width={SKELETON_ROW_WIDTH}
+            height={SKELETON_ROW_HEIGHT}
+            viewBox={`0 0 ${SKELETON_ROW_WIDTH} ${SKELETON_ROW_HEIGHT}`}
+            backgroundColor={colors.skeleton.base}
+            foregroundColor={colors.skeleton.highlight}
+          >
+            <Circle cx={ms(16)} cy={SKELETON_ROW_HEIGHT / 2} r={ms(16)} />
+            <Rect
+              x={ms(40)}
+              y={SKELETON_ROW_HEIGHT / 2 - ms(8)}
+              rx="4"
+              ry="4"
+              width="100"
+              height={ms(16)}
+            />
+            <Rect
+              x={SKELETON_ROW_WIDTH - 80}
+              y={SKELETON_ROW_HEIGHT / 2 - ms(8)}
+              rx="4"
+              ry="4"
+              width="70"
+              height={ms(16)}
+            />
+          </ContentLoader>
+        </BlurContainer>
+      ))}
+    </View>
+  );
+};
+
 /**
- * Modal component for selecting tokens
+ * Modal component for selecting tokens.
+ *
+ * Mounts through BottomSheetContainer like every other sheet in the app, so
+ * dismissal is the shared vocabulary: drag handle, backdrop tap, Android back.
  */
 export function TokenSelectorModal({
   visible,
@@ -51,9 +144,19 @@ export function TokenSelectorModal({
   showNetworkChip = false,
   showVerifiedDisclaimer = false,
   loading = false,
-}: TokenSelectorModalProps): React.ReactElement {
+  showBalances = true,
+}: TokenSelectorModalProps & {
+  /**
+   * Whether rows show the user's holdings. The You Send selector keeps them
+   * (they're load-bearing there); the You Receive selector hides them —
+   * how much you already hold is noise when choosing what to receive.
+   * Mobile-local prop until another platform needs it.
+   */
+  showBalances?: boolean;
+}): React.ReactElement {
   const { t } = useTranslation();
-  const blurTargetRef = useRef<View>(null);
+  const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
+  const { standardContentBottomPadding } = useBottomSheetChrome();
 
   const {
     searchQuery,
@@ -80,48 +183,55 @@ export function TokenSelectorModal({
     [onSelect, reset]
   );
 
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = event.nativeEvent.contentOffset.y;
+      topFadeOpacity.setValue(Math.min(offsetY / 30, 1));
+    },
+    [topFadeOpacity]
+  );
+
   const renderTokenItem: ListRenderItem<TokenSelectorToken> = useCallback(
     ({ item: token }) => {
       const tokenName = token.name || getShortAddress(token.mint || token.address);
-      const balanceText = token.uiAmount
-        ? `${hiddenBalance ? HIDDEN_VALUE : token.uiAmount} ${token.symbol || ''}`
-        : token.symbol || '';
+      // With balances hidden the right column falls back to the symbol alone —
+      // identity stays, holdings go.
+      const balanceText =
+        showBalances && token.uiAmount
+          ? `${hiddenBalance ? HIDDEN_VALUE : formatTokenAmount(token.uiAmount)} ${token.symbol || ''}`
+          : token.symbol || '';
 
       return (
-        <BlurContainer style={styles.tokenItemShell} backgroundColor={colors.background.tokenItem}>
-          <TouchableOpacity
-            testID={`token-row-${token.symbol}`}
-            accessibilityRole="button"
-            accessibilityLabel={`${tokenName}${token.network ? ` ${token.network}` : ''}`}
-            style={styles.tokenItem}
-            onPress={() => handleSelect(token)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.tokenIconContainer}>
-              <TokenLogo uri={token.logo || undefined} symbol={token.symbol} size={40} />
+        <TouchableOpacity
+          testID={`token-row-${token.symbol}`}
+          accessibilityRole="button"
+          accessibilityLabel={
+            token.network
+              ? t('accessibility.token_on_network', {
+                  token: tokenName,
+                  network: token.network,
+                })
+              : tokenName
+          }
+          onPress={() => handleSelect(token)}
+          activeOpacity={0.7}
+        >
+          <BlurContainer style={styles.tokenRow}>
+            <View style={styles.tokenLogoContainer}>
+              <TokenLogo uri={token.logo || undefined} symbol={token.symbol} size={ms(32)} />
             </View>
-            <View style={styles.tokenInfo}>
-              <View style={styles.tokenNameRow}>
-                <View style={styles.tokenNameContainer}>
-                  <Text style={styles.tokenName} numberOfLines={1}>
-                    {tokenName}
-                  </Text>
-                </View>
-                {showNetworkChip && token.network && (
-                  <View style={styles.networkChip}>
-                    <Text style={styles.networkChipText}>{token.network.toUpperCase()}</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.tokenBalance} numberOfLines={1}>
-                {balanceText}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </BlurContainer>
+            <Text style={styles.tokenName} numberOfLines={1}>
+              {tokenName}
+            </Text>
+            {showNetworkChip && token.network && <NetworkIdentity network={token.network} />}
+            <Text style={styles.tokenBalance} numberOfLines={1}>
+              {balanceText}
+            </Text>
+          </BlurContainer>
+        </TouchableOpacity>
       );
     },
-    [handleSelect, hiddenBalance, showNetworkChip]
+    [handleSelect, hiddenBalance, showNetworkChip, showBalances, t]
   );
 
   const renderFeaturedTokens = useCallback(() => {
@@ -170,11 +280,11 @@ export function TokenSelectorModal({
     if (!hasMore) return null;
 
     return (
-      <BlurContainer style={styles.loadMoreButton} backgroundColor={colors.background.tokenItem}>
-        <TouchableOpacity style={styles.loadMoreButtonInner} onPress={loadMore}>
+      <TouchableOpacity onPress={loadMore} activeOpacity={0.7} accessibilityRole="button">
+        <BlurContainer style={[styles.tokenRow, styles.loadMoreRow]}>
           <Text style={styles.loadMoreText}>{t('actions.view_more', 'View More')}</Text>
-        </TouchableOpacity>
-      </BlurContainer>
+        </BlurContainer>
+      </TouchableOpacity>
     );
   }, [hasMore, loadMore, t]);
 
@@ -205,194 +315,147 @@ export function TokenSelectorModal({
   }, [isSearching, isError, retry, t]);
 
   return (
-    <Modal
+    <BottomSheetContainer
       visible={visible}
-      animationType="fade"
-      transparent
-      onRequestClose={handleClose}
-      statusBarTranslucent
+      onClose={handleClose}
+      headerContent={<BottomSheetTitleHeader title={t('wallet.select_token', 'Select Token')} />}
+      testID="token-selector-modal"
     >
-      <GestureHandlerRootView style={styles.modalRoot}>
-        <TouchableWithoutFeedback onPress={handleClose}>
-          <View style={styles.backdrop} />
-        </TouchableWithoutFeedback>
+      <View style={styles.content}>
+        <BlurContainer style={styles.searchContainer}>
+          <MagnifyingGlassIcon
+            size={ms(18)}
+            color={colors.text.secondary}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            testID="token-search-input"
+            style={styles.searchInput}
+            placeholder={t('actions.search_placeholder', 'Search...')}
+            placeholderTextColor={colors.text.secondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+          />
+        </BlurContainer>
 
-        <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
-          <View style={styles.backgroundBase} />
-          <ScalesBackground />
-        </BlurTargetView>
+        {loading ? (
+          <TokenListSkeleton />
+        ) : (
+          <View style={styles.listWrapper}>
+            <FlatList
+              data={paginatedTokens}
+              keyExtractor={getTokenKey}
+              renderItem={renderTokenItem}
+              ListHeaderComponent={renderHeader}
+              ListFooterComponent={renderFooter}
+              ListEmptyComponent={renderEmpty}
+              contentContainerStyle={[
+                styles.listContent,
+                { paddingBottom: standardContentBottomPadding },
+              ]}
+              showsVerticalScrollIndicator={false}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              // Without this, a tap on a result while the search input still
+              // holds focus is spent dismissing the keyboard instead of
+              // selecting the token, so searching always costs two taps.
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+            />
 
-        <BlurTargetProvider value={blurTargetRef}>
-          <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-            <View style={styles.content}>
-              <View style={styles.header}>
-                <Text style={styles.title}>{t('wallet.select_token', 'Select Token')}</Text>
-              </View>
-
-              <BlurContainer
-                style={styles.searchContainer}
-                backgroundColor={colors.background.tokenItem}
-              >
-                <TextInput
-                  testID="token-search-input"
-                  style={styles.searchInput}
-                  placeholder={t('actions.search_placeholder', 'Search tokens...')}
-                  placeholderTextColor={colors.text.tertiary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </BlurContainer>
-
-              {loading ? (
-                <View style={styles.skeletonContainer}>
-                  {Array.from({ length: 5 }, (_, i) => (
-                    <BlurContainer
-                      key={i}
-                      style={styles.tokenItemShell}
-                      backgroundColor={colors.background.tokenItem}
-                    >
-                      <View style={styles.tokenItem}>
-                        <ContentLoader
-                          speed={1.5}
-                          width={320}
-                          height={40}
-                          viewBox="0 0 320 40"
-                          backgroundColor={colors.skeleton.base}
-                          foregroundColor={colors.skeleton.highlight}
-                        >
-                          <Circle cx="20" cy="20" r="20" />
-                          <Rect x="52" y="4" rx="4" ry="4" width="100" height="14" />
-                          <Rect x="52" y="24" rx="4" ry="4" width="140" height="12" />
-                        </ContentLoader>
-                      </View>
-                    </BlurContainer>
-                  ))}
-                </View>
-              ) : (
-                <FlatList
-                  data={paginatedTokens}
-                  keyExtractor={getTokenKey}
-                  renderItem={renderTokenItem}
-                  ListHeaderComponent={renderHeader}
-                  ListFooterComponent={renderFooter}
-                  ListEmptyComponent={renderEmpty}
-                  contentContainerStyle={styles.listContent}
-                  showsVerticalScrollIndicator={false}
-                  // Without this, a tap on a result while the search input still
-                  // holds focus is spent dismissing the keyboard instead of
-                  // selecting the token, so searching always costs two taps.
-                  keyboardShouldPersistTaps="handled"
-                  style={styles.list}
-                />
-              )}
-
-              <View style={styles.footer}>
-                <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-                  <Text style={styles.closeButtonText}>{t('actions.close', 'Close')}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </SafeAreaView>
-        </BlurTargetProvider>
-      </GestureHandlerRootView>
-    </Modal>
+            {/* Top fade gradient */}
+            <Animated.View
+              style={[styles.topFadeGradient, { opacity: topFadeOpacity }]}
+              pointerEvents="none"
+            >
+              <LinearGradient
+                colors={[colors.background.secondary, 'transparent']}
+                style={StyleSheet.absoluteFill}
+              />
+            </Animated.View>
+          </View>
+        )}
+      </View>
+    </BottomSheetContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  modalRoot: {
-    flex: 1,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.sheet.backdrop,
-  },
-  backgroundBase: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.background.primary,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
   content: {
     flex: 1,
-  },
-  header: {
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-  title: {
-    color: colors.text.primary,
-    fontSize: fontSize.lg,
-    fontFamily: fontFamilyNative.semiBold,
-    fontWeight: fontWeight.semibold,
-    textAlign: 'center',
+    paddingHorizontal: s(spacing.headerPadding),
   },
   searchContainer: {
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
-    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: ms(borderRadius.md),
+    paddingHorizontal: s(spacing.lg),
+    minHeight: vs(componentSizes.tokenIcon),
+    paddingVertical: vs(spacing.xs),
+    marginBottom: vs(spacing.headerPadding),
+  },
+  searchIcon: {
+    marginRight: s(spacing.sm),
   },
   searchInput: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    flex: 1,
+    fontSize: ms(fontSize.sm),
+    fontFamily: fontFamilyNative.bold,
     color: colors.text.primary,
-    fontSize: fontSize.md,
+    paddingVertical: 0,
   },
-  skeletonContainer: {
-    paddingTop: spacing.sm,
-  },
-  list: {
+  listWrapper: {
     flex: 1,
   },
   listContent: {
-    paddingBottom: spacing.lg,
+    gap: vs(spacing.base),
   },
-  tokenItemShell: {
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.sm,
-    overflow: 'hidden',
+  topFadeGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: componentSizes.sheetFadeGradientHeight,
+    zIndex: 1,
   },
-  tokenItem: {
+  skeletonList: {
+    gap: vs(spacing.base),
+  },
+  tokenRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
+    borderRadius: ms(borderRadius.badge),
+    paddingVertical: vs(spacing.md),
+    paddingHorizontal: s(spacing.md),
   },
-  tokenIconContainer: {
-    marginRight: spacing.md,
-  },
-  tokenInfo: {
-    flex: 1,
-  },
-  tokenNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  tokenNameContainer: {
-    flex: 1,
+  tokenLogoContainer: {
+    marginRight: s(spacing.md),
   },
   tokenName: {
-    color: colors.text.primary,
-    fontSize: fontSize.md,
+    flex: 1,
+    fontSize: ms(fontSize.base),
     fontFamily: fontFamilyNative.medium,
-    fontWeight: fontWeight.medium,
+    color: colors.text.balance,
   },
   tokenBalance: {
-    color: colors.text.secondary,
-    fontSize: fontSize.base,
-    marginTop: spacing.xxs,
+    fontSize: ms(fontSize.base),
+    fontFamily: fontFamilyNative.medium,
+    color: colors.text.balance,
+    marginLeft: s(spacing.sm),
+    ...TABULAR,
+  },
+  chainMark: {
+    marginLeft: s(spacing.sm),
   },
   networkChip: {
     backgroundColor: `${colors.border.default}CC`,
     borderRadius: borderRadius.sm,
     paddingHorizontal: 6,
     paddingVertical: spacing.xxs,
-    marginLeft: spacing.sm,
+    marginLeft: s(spacing.sm),
   },
   networkChipText: {
     color: colors.text.secondary,
@@ -403,78 +466,55 @@ const styles = StyleSheet.create({
   featuredContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: spacing.lg,
-    marginBottom: spacing.sm,
+    paddingVertical: vs(spacing.lg),
+    marginBottom: vs(spacing.sm),
   },
   featuredToken: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.sm,
+    padding: s(spacing.sm),
+  },
+  loadMoreRow: {
+    justifyContent: 'center',
+  },
+  loadMoreText: {
+    color: colors.text.primary,
+    fontSize: ms(fontSize.base),
+    fontFamily: fontFamilyNative.medium,
   },
   disclaimerContainer: {
     alignItems: 'center',
-    paddingVertical: spacing.sm,
+    paddingVertical: vs(spacing.sm),
   },
   disclaimerText: {
     color: colors.text.secondary,
-    fontSize: fontSize.sm,
+    fontSize: ms(fontSize.sm),
     textAlign: 'center',
   },
   searchingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: vs(spacing.md),
   },
   searchingText: {
     color: colors.text.secondary,
-    fontSize: fontSize.base,
-    marginLeft: spacing.sm,
-  },
-  loadMoreButton: {
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    marginTop: spacing.sm,
-  },
-  loadMoreButtonInner: {
-    padding: spacing.lg,
-    alignItems: 'center',
-  },
-  loadMoreText: {
-    color: colors.text.primary,
-    fontSize: fontSize.md,
-    fontFamily: fontFamilyNative.medium,
-    fontWeight: fontWeight.medium,
+    fontSize: ms(fontSize.base),
+    marginLeft: s(spacing.sm),
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: spacing['3xl'],
+    paddingVertical: vs(spacing['3xl']),
   },
   emptyText: {
     color: colors.text.secondary,
-    fontSize: fontSize.md,
+    fontSize: ms(fontSize.bodyLg),
   },
   retryText: {
     color: colors.accent.primary,
-    fontSize: fontSize.md,
+    fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.medium,
-    fontWeight: fontWeight.medium,
-    marginTop: spacing.md,
-    padding: spacing.sm,
-  },
-  footer: {
-    paddingVertical: spacing.md,
-  },
-  closeButton: {
-    backgroundColor: colors.accent.primary,
-    borderRadius: borderRadius.md,
-    padding: spacing.lg,
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: colors.text.primary,
-    fontSize: fontSize.md,
-    fontFamily: fontFamilyNative.semiBold,
-    fontWeight: fontWeight.semibold,
+    marginTop: vs(spacing.md),
+    padding: s(spacing.sm),
   },
 });

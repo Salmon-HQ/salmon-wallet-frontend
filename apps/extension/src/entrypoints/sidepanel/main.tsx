@@ -4,8 +4,15 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import '../../assets/fonts.css';
 
+// Theme — MUI needs an explicit dark theme; its default is light. The theme
+// object itself is pulled in below, after layout, because it is exported from
+// the `@salmon/ui` barrel alongside styled components that read the viewport
+// at module-evaluation time.
+import { CssBaseline, ThemeProvider } from '@mui/material';
+
 // Initialize i18n configuration - must be imported before App
 import i18n from '../../i18n/config';
+import { PendingActivityLayer } from '../../components/PendingActivityLayer';
 import { I18nextProvider } from 'react-i18next';
 
 // Initialize storage and stash for extension platform
@@ -53,22 +60,30 @@ const waitForLayout = (): Promise<void> =>
 
   // Dynamic import so styled components see real viewport dimensions
   const { default: App } = await import('../popup/App');
+  const { IconDefaults, salmonTheme } = await import('@salmon/ui');
 
   function Root() {
     const [queryClient] = React.useState(() => createQueryClient());
     return (
       <React.StrictMode>
-        <QueryClientProvider client={queryClient}>
-          <BridgeSettlementProvider>
-            <I18nextProvider i18n={i18n}>
-              <AccountsProvider>
-                <CurrencyProvider>
-                  <App />
-                </CurrencyProvider>
-              </AccountsProvider>
-            </I18nextProvider>
-          </BridgeSettlementProvider>
-        </QueryClientProvider>
+        <ThemeProvider theme={salmonTheme}>
+          <CssBaseline />
+          <IconDefaults>
+            <QueryClientProvider client={queryClient}>
+              <BridgeSettlementProvider>
+                <I18nextProvider i18n={i18n}>
+                  <AccountsProvider>
+                    <CurrencyProvider>
+                      <PendingActivityLayer>
+                        <App />
+                      </PendingActivityLayer>
+                    </CurrencyProvider>
+                  </AccountsProvider>
+                </I18nextProvider>
+              </BridgeSettlementProvider>
+            </QueryClientProvider>
+          </IconDefaults>
+        </ThemeProvider>
       </React.StrictMode>
     );
   }

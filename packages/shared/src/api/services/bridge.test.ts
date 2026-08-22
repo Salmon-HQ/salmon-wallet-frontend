@@ -15,12 +15,14 @@ vi.mock('../client', async () => {
 
 import { apiClient, createApiClient } from '../client';
 import {
+  BRIDGE_PARTNER_FEE_PERCENT,
   createBridgeExchange,
   getBridgeAvailableTokens,
   getBridgeEstimatedAmount,
   getBridgeMinimalAmount,
   getBridgeTransaction,
 } from './bridge';
+import { formatPercent } from '../../utils/formatting';
 
 const mockApiClientGet = vi.mocked(apiClient.get);
 const mockApiClientPost = vi.mocked(apiClient.post);
@@ -313,4 +315,39 @@ describe('bridge service integration', () => {
     expect(response.data.id).toBe(exchangeResponse.data.id);
     expect(response.data.status).toBeTruthy();
   }, 20000);
+});
+
+// ============================================================================
+// Partner fee disclosure
+// ============================================================================
+
+describe('bridge partner fee disclosure', () => {
+  it('states the rate the backend actually charges', () => {
+    expect(BRIDGE_PARTNER_FEE_PERCENT).toBe(0.4);
+    // Rendered by both bridge review screens with the swap's own formatter,
+    // so the two disclosures read identically ("0.50%" / "0.40%").
+    expect(formatPercent(BRIDGE_PARTNER_FEE_PERCENT)).toBe('0.40%');
+  });
+
+  it('matches STEALTHEX_PARTNER_FEE in the sibling salmon-api repo', async () => {
+    // The fee lives in the backend; this constant only discloses it. If the
+    // sibling repo is not checked out next to this one, there is nothing to
+    // compare against — skip rather than fail (CI has no salmon-api).
+    const { readFileSync, existsSync } = await import('node:fs');
+    const servicePath = new URL(
+      '../../../../../../salmon-api/src/services/shared/bridge-service.js',
+      import.meta.url
+    ).pathname;
+
+    if (!existsSync(servicePath)) {
+      console.log('Skipping partner-fee drift check: ../salmon-api not present');
+      return;
+    }
+
+    const source = readFileSync(servicePath, 'utf8');
+    const match = source.match(/STEALTHEX_PARTNER_FEE\s*=\s*'([\d.]+)'/);
+
+    expect(match).not.toBeNull();
+    expect(Number(match?.[1])).toBe(BRIDGE_PARTNER_FEE_PERCENT);
+  });
 });

@@ -3,6 +3,7 @@
  *
  * Used for tertiary actions or links.
  */
+import type { ReactNode } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import {
   colors,
@@ -21,6 +22,8 @@ interface TextButtonProps extends Testable {
   loading?: boolean;
   style?: ViewStyle;
   color?: string;
+  /** Optional glyph rendered before the label. The label stays the accessible name. */
+  icon?: ReactNode;
 }
 
 export function TextButton({
@@ -30,6 +33,7 @@ export function TextButton({
   loading,
   style,
   color,
+  icon,
   testID,
 }: TextButtonProps) {
   const isDisabled = disabled || loading;
@@ -48,7 +52,10 @@ export function TextButton({
       {loading ? (
         <ActivityIndicator color={color || colors.text.primary} />
       ) : (
-        <Text style={[styles.text, color ? { color } : undefined]}>{children}</Text>
+        <>
+          {icon}
+          <Text style={[styles.text, color ? { color } : undefined]}>{children}</Text>
+        </>
       )}
     </TouchableOpacity>
   );
@@ -57,8 +64,10 @@ export function TextButton({
 const styles = StyleSheet.create({
   button: {
     height: componentSizes.buttonHeightSmall,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: spacing.xs,
     paddingHorizontal: spacing.lg,
   },
   disabled: {

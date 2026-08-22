@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../query/keys';
 import { getTokenCoinInfo, getTokenMarketChart } from '../api/services';
 import type { CoinInfo } from '../types/price';
@@ -32,7 +32,23 @@ export interface UseCoinMarketDataParams {
 export interface UseCoinMarketDataResult {
   coinInfo: CoinInfo | null;
   chartData: MarketChartPoint[] | null;
+  /**
+   * Either half is still on its first fetch.
+   *
+   * @deprecated Read `infoLoading` and `chartLoading` instead. The period
+   * selector only re-keys the chart query, so a combined flag turns a chart
+   * refresh into a whole-screen skeleton — the bug this pair exists to fix.
+   */
   loading: boolean;
+  /** Coin info has never resolved for this token+currency. */
+  infoLoading: boolean;
+  /** No price series has ever resolved for this token+currency. */
+  chartLoading: boolean;
+  /**
+   * The series in hand belongs to the previously selected `days` while the
+   * newly selected one is in flight (react-query `keepPreviousData`).
+   */
+  chartPending: boolean;
   error: string | null;
   refresh: () => Promise<void>;
 }
@@ -45,30 +61,36 @@ export function useCoinMarketData(params: UseCoinMarketDataParams): UseCoinMarke
   const isEnabled = enabled && !!tokenId;
   const queryClient = useQueryClient();
 
-  const results = useQueries({
-    queries: [
-      {
-        queryKey: tokenId
-          ? queryKeys.coinInfo({ coinId: tokenId, currency })
-          : ['coin-info', 'disabled'],
-        queryFn: () =>
-          getTokenCoinInfo({ coingeckoId: coinId, address: contractAddress }, currency),
-        enabled: isEnabled,
-        staleTime: 60_000,
-      },
-      {
-        queryKey: tokenId
-          ? queryKeys.marketChart({ coinId: tokenId, currency, days })
-          : ['market-chart', 'disabled'],
-        queryFn: () =>
-          getTokenMarketChart({ coingeckoId: coinId, address: contractAddress }, days, currency),
-        enabled: isEnabled,
-        staleTime: 60_000,
-      },
-    ],
+  // Two separate `useQuery` calls rather than one `useQueries`: only the chart
+  // takes `placeholderData`, and `useQueries` builds its observers from a fresh
+  // array on every render, so `keepPreviousData` there has no previous result
+  // to hand back and the series comes out empty anyway.
+  const infoQuery = useQuery({
+    queryKey: tokenId
+      ? queryKeys.coinInfo({ coinId: tokenId, currency })
+      : ['coin-info', 'disabled'],
+    queryFn: () => getTokenCoinInfo({ coingeckoId: coinId, address: contractAddress }, currency),
+    enabled: isEnabled,
+    staleTime: 60_000,
   });
 
-  const [infoQuery, chartQuery] = results;
+  const chartQuery = useQuery({
+    queryKey: tokenId
+      ? queryKeys.marketChart({ coinId: tokenId, currency, days })
+      : ['market-chart', 'disabled'],
+    queryFn: () =>
+      getTokenMarketChart({ coingeckoId: coinId, address: contractAddress }, days, currency),
+    enabled: isEnabled,
+    staleTime: 60_000,
+    // `days` is part of this key, so every period press is a cache miss.
+    // Handing back the previous period's series keeps a drawn chart on screen
+    // while the new one arrives, instead of a skeleton. The chart is one
+    // request per period by necessity — the endpoint is `?days=N` and its
+    // granularity changes with N (5-minute points at days=1, hourly at 7-90,
+    // daily at 365), so no range can be derived from another and there is
+    // nothing to batch.
+    placeholderData: keepPreviousData,
+  });
 
   const chartData = useMemo<MarketChartPoint[] | null>(() => {
     const data = chartQuery.data;
@@ -95,6 +117,9 @@ export function useCoinMarketData(params: UseCoinMarketDataParams): UseCoinMarke
     coinInfo: infoQuery.data ?? null,
     chartData,
     loading: isEnabled && (infoQuery.isPending || chartQuery.isPending),
+    infoLoading: isEnabled && infoQuery.isPending,
+    chartLoading: isEnabled && chartQuery.isPending,
+    chartPending: isEnabled && chartQuery.isPlaceholderData,
     error,
     refresh,
   };

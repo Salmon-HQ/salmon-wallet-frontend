@@ -11,14 +11,13 @@
  * - Visual feedback (checkmark) after copying
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import {
   colors,
   borderRadius,
@@ -26,14 +25,16 @@ import {
   fontFamily,
   getShortAddress,
   copyToClipboard,
+  semantic,
   spacing,
   fontSize,
   fontWeight,
-  durationMs,
+  useCopyFeedback,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { AddressCopyRowProps } from './types';
 
+import { CopyTick } from '../CopyTick';
 // ============================================================================
 // Constants
 // ============================================================================
@@ -43,8 +44,6 @@ const TRUNCATE_CHARS: Record<'short' | 'medium' | 'long', number> = {
   medium: 6,
   long: 8,
 };
-
-const COPIED_FEEDBACK_DURATION = durationMs.feedbackShort;
 
 // ============================================================================
 // Styled Components
@@ -105,7 +104,7 @@ export function AddressCopyRow({
   className,
 }: AddressCopyRowProps) {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const displayAddress =
     truncate === false ? address : (getShortAddress(address, TRUNCATE_CHARS[truncate]) ?? address);
@@ -113,12 +112,11 @@ export function AddressCopyRow({
   const handleCopy = useCallback(async () => {
     try {
       await copyToClipboard(address);
-      setCopied(true);
-      setTimeout(() => setCopied(false), COPIED_FEEDBACK_DURATION);
+      showCopied();
     } catch (error) {
       console.warn('Failed to copy address:', error);
     }
-  }, [address]);
+  }, [address, showCopied]);
 
   return (
     <BlurContainer
@@ -131,17 +129,21 @@ export function AddressCopyRow({
           <CopyButton
             onClick={handleCopy}
             size="small"
-            aria-label={t('transactions.detail.copyAddressLabel', 'Copy {{label}} address', {
-              label,
-            })}
+            aria-label={
+              copied
+                ? t('actions.copied')
+                : t('transactions.detail.copyAddressLabel', 'Copy {{label}} address', {
+                    label,
+                  })
+            }
             data-testid={`tx-detail-copy-address-${label}`}
-            sx={copied ? { backgroundColor: `${colors.status.success}20` } : undefined}
+            sx={copied ? { backgroundColor: `${semantic.status.success}20` } : undefined}
           >
-            {copied ? (
-              <CheckIcon sx={{ fontSize: fontSize.base, color: colors.status.success }} />
-            ) : (
-              <ContentCopyIcon sx={{ fontSize: fontSize.base, color: colors.text.secondary }} />
-            )}
+            <CopyTick
+              copied={copied}
+              copy={<CopyIcon size={iconSize.sm} color={colors.text.secondary} />}
+              tick={<CheckIcon size={iconSize.sm} color={semantic.status.success} />}
+            />
           </CopyButton>
         </RightSection>
       </Container>

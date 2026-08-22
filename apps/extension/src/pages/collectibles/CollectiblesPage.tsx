@@ -16,23 +16,16 @@ import {
   fontSize,
   borderRadius,
   fontFamily,
-  componentSizes,
   canonicalNftToSolanaNftData,
   getNftSectionTitle,
   useSolanaNfts,
   type Account,
+  type NftBlockchain,
   type NftData,
   type NftSectionKey,
   type NftSection,
 } from '@salmon/shared';
-import {
-  // NftCarouselSection,
-  // NftCarouselSectionSkeleton,
-  NftCard,
-  NftCardSkeleton,
-  SolanaSvgIcon,
-  WarningNotice,
-} from '@/components';
+import { NftCarouselSection, TextButton, WarningNotice, visuallyHidden } from '@/components';
 
 // ============================================================================
 // Props
@@ -43,8 +36,8 @@ interface CollectiblesPageProps {
   developerNetworks: boolean;
   /** Callback when an NFT is pressed — navigates to detail page */
   onNftDetailPress?: (nft: NftData) => void;
-  // /** Callback when "See All" is pressed — navigates to see-all page */
-  // onSeeAllPress?: (title: string, blockchain: string, nfts: NftData[]) => void;
+  /** Callback when "See All" is pressed — navigates to see-all page */
+  onSeeAllPress?: (data: { title: string; blockchain: NftBlockchain; nfts: NftData[] }) => void;
 }
 
 // ============================================================================
@@ -59,15 +52,6 @@ const Container = styled(Box)({
   paddingBottom: spacing.lg,
   overflowY: 'auto',
   gap: spacing.lg,
-});
-
-const SectionTitle = styled(Typography)({
-  fontSize: fontSize.lg,
-  fontWeight: 600,
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  paddingLeft: spacing.lg,
-  paddingRight: spacing.lg,
 });
 
 const EmptyState = styled(Box)({
@@ -93,47 +77,6 @@ const EmptyStateSubtext = styled(Typography)({
   fontFamily: fontFamily.sans,
 });
 
-const SectionHeaderRow = styled(Box)({
-  display: 'flex',
-  alignItems: 'center',
-  gap: spacing.sm,
-  paddingLeft: spacing.lg,
-  paddingRight: spacing.lg,
-});
-
-const SectionTitleText = styled(Typography)({
-  fontSize: fontSize.md,
-  fontWeight: 600,
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  flex: 1,
-});
-
-const SectionCount = styled(Typography)({
-  fontSize: 13,
-  fontWeight: 500,
-  color: colors.text.secondary,
-  fontFamily: fontFamily.sans,
-});
-
-const Grid = styled(Box)({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: spacing.md,
-  justifyItems: 'center',
-  paddingLeft: spacing.lg,
-  paddingRight: spacing.lg,
-});
-
-const SkeletonGrid = styled(Box)({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: spacing.md,
-  justifyItems: 'center',
-  paddingLeft: spacing.lg,
-  paddingRight: spacing.lg,
-});
-
 // ============================================================================
 // Component
 // ============================================================================
@@ -142,7 +85,7 @@ export function CollectiblesPage({
   activeAccount,
   developerNetworks,
   onNftDetailPress,
-  /* , onSeeAllPress */
+  onSeeAllPress,
 }: CollectiblesPageProps) {
   const { t } = useTranslation();
 
@@ -198,12 +141,29 @@ export function CollectiblesPage({
     [developerNetworks]
   );
 
-  const isLoading = visibleKeys.some((key) => nftsBySections[key].loading);
+  // Sections that actually render. Mainnet and devnet count as distinct
+  // chains: same base chain, different networks and different assets.
+  const renderedKeys = useMemo(
+    () =>
+      visibleKeys.filter(
+        (key) => nftsBySections[key].loading || nftsBySections[key].nfts.length > 0
+      ),
+    [visibleKeys, nftsBySections]
+  );
+  const showChainLabel = renderedKeys.length > 1;
 
-  const isEmpty = !isLoading && visibleKeys.every((key) => nftsBySections[key].nfts.length === 0);
+  const isLoading = visibleKeys.some((key) => nftsBySections[key].loading);
 
   const loadError =
     mainnetQuery.error !== null || (developerNetworks && devnetQuery.error !== null);
+  // A failed load is not "you have no collectibles" — the error state owns it.
+  const isEmpty =
+    !isLoading && !loadError && visibleKeys.every((key) => nftsBySections[key].nfts.length === 0);
+
+  const handleRetry = useCallback(() => {
+    void mainnetQuery.refresh();
+    if (developerNetworks) void devnetQuery.refresh();
+  }, [mainnetQuery, devnetQuery, developerNetworks]);
 
   // Handlers
   const handleNftPress = useCallback(
@@ -213,15 +173,20 @@ export function CollectiblesPage({
     [onNftDetailPress]
   );
 
-  // const handleSeeAllPress = useCallback((sectionKey: NftSectionKey) => {
-  //   const section = nftsBySections[sectionKey];
-  //   const title = getNftSectionTitle(sectionKey, section);
-  //   onSeeAllPress?.(title, section.blockchain, section.nfts);
-  // }, [nftsBySections, onSeeAllPress]);
+  const handleSeeAll = useCallback(
+    (title: string, nfts: NftData[]) => {
+      onSeeAllPress?.({ title, blockchain: 'solana', nfts });
+    },
+    [onSeeAllPress]
+  );
 
   return (
     <Container>
-      <SectionTitle>{t('collectibles.title', 'Collectibles')}</SectionTitle>
+      {/* Visually hidden: the tab bar carries the visible label, but screen
+          reader users still need a heading to orient by. */}
+      <Typography component="h1" sx={visuallyHidden}>
+        {t('collectibles.title', 'Collectibles')}
+      </Typography>
 
       {loadError && (
         <Box
@@ -231,6 +196,11 @@ export function CollectiblesPage({
           <WarningNotice
             tone="warning"
             title={t('collectibles.load_error', "Your collectibles couldn't be loaded right now.")}
+            action={
+              <TextButton onClick={handleRetry} testID="collectibles-retry-button">
+                {t('actions.retry', 'Retry')}
+              </TextButton>
+            }
           />
         </Box>
       )}
@@ -245,64 +215,24 @@ export function CollectiblesPage({
         </EmptyState>
       )}
 
-      {/* NFT sections — Solana only, grid layout */}
-      {visibleKeys.map((key) => {
+      {/* NFT sections — Solana only, shared carousel (mirrors web's CollectiblesTab) */}
+      {renderedKeys.map((key) => {
         const section = nftsBySections[key];
-        if (section.nfts.length === 0 && !section.loading) return null;
-        return (
-          <Box key={key} sx={{ display: 'flex', flexDirection: 'column', gap: `${spacing.md}px` }}>
-            {/* Section header */}
-            <SectionHeaderRow>
-              <SolanaSvgIcon
-                sx={{
-                  width: componentSizes.iconSizeMedium,
-                  height: componentSizes.iconSizeMedium,
-                  color: colors.text.primary,
-                }}
-              />
-              <SectionTitleText>{getNftSectionTitle(key, section)}</SectionTitleText>
-              <SectionCount>({section.nfts.length})</SectionCount>
-            </SectionHeaderRow>
+        const title = getNftSectionTitle(key, section);
 
-            {/* Grid or Skeleton */}
-            {section.loading ? (
-              <SkeletonGrid>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <NftCardSkeleton key={i} />
-                ))}
-              </SkeletonGrid>
-            ) : (
-              <Grid>
-                {section.nfts.map((nft, index) => (
-                  <NftCard
-                    key={`${nft.mint}-${index}`}
-                    nft={nft}
-                    onPress={handleNftPress ? () => handleNftPress(nft) : undefined}
-                  />
-                ))}
-              </Grid>
-            )}
-          </Box>
-        );
-      })}
-
-      {/* Original carousel rendering (commented out):
-      {visibleKeys.map((key) => {
-        const section = nftsBySections[key];
-        if (section.nfts.length === 0 && !section.loading) return null;
         return (
           <NftCarouselSection
             key={key}
-            title={getNftSectionTitle(key, section)}
-            blockchain={section.blockchain}
+            title={title}
+            blockchain="solana"
             nfts={section.nfts}
             loading={section.loading}
+            showChainLabel={showChainLabel}
             onNftPress={handleNftPress}
-            onSeeAllPress={() => handleSeeAllPress(key)}
+            onSeeAllPress={() => handleSeeAll(title, section.nfts)}
           />
         );
       })}
-      */}
     </Container>
   );
 }

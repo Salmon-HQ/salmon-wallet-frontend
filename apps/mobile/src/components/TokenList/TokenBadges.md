@@ -1,138 +1,100 @@
 # TokenBadges Component
 
-A component that displays small icon badges for token characteristics and metadata tags.
+Compact icon badges for a token's tags, at **list-row volume**. The full,
+labelled inventory of every tag lives on the token detail sheet
+(`TokenInformationSheet/TokenBadgesSection`); this component is deliberately
+quieter.
 
 ## Usage
 
 ```tsx
 import { TokenBadges } from '../components';
 
-// Basic usage
-<TokenBadges tags={['verified', 'community']} />
-
-// With token data
-<TokenBadges tags={token.tags} />
+<TokenBadges tags={token.tags} />;
 ```
 
-## Supported Tags
+## The rules this component encodes
 
-### Verification & Trust
+Source of truth for tag meaning: [`tokenTagMeta.ts`](./tokenTagMeta.ts) — a
+port of the same table in `packages/ui` (`apps/mobile` must not import
+`@salmon/ui`, which is DOM-only). Keep the two in step when a tag is added.
 
-| Tag                 | Icon             | Color | Description                    |
-| ------------------- | ---------------- | ----- | ------------------------------ |
-| `verified`          | checkmark-circle | Green | Officially verified by Jupiter |
-| `strict`            | star             | Amber | Token in Jupiter strict list   |
-| `major`             | trophy           | Green | Major token (high market cap)  |
-| `moonshot-verified` | shield-checkmark | Cyan  | Verified by Moonshot platform  |
+### 1. Colour is spent, not sprayed
 
-### Community
+Every tag has a `weight`. Only a **signal** — a verification or risk fact that
+changes what a user does next — takes a status ramp. The other 23 tags are
+monochrome `semantic.text.tertiary` on `semantic.state.hover`.
 
-| Tag                | Icon       | Color | Description            |
-| ------------------ | ---------- | ----- | ---------------------- |
-| `community`        | people     | Blue  | Community-driven token |
-| `community-assist` | hand-right | Blue  | Community assist token |
+| Tag             | Weight      | Ink                       |
+| --------------- | ----------- | ------------------------- |
+| `verified`      | signal      | `semantic.status.success` |
+| `strict`        | signal      | `semantic.status.success` |
+| `duplicate`     | signal      | `semantic.status.warning` |
+| `deprecated`    | signal      | `semantic.status.danger`  |
+| everything else | descriptive | `semantic.text.tertiary`  |
 
-### Token Types
+`duplicate` is a caution rather than a category because it signals a mint
+impersonating another one.
 
-| Tag            | Icon      | Color  | Description                   |
-| -------------- | --------- | ------ | ----------------------------- |
-| `lst`          | water     | Cyan   | Liquid staking token          |
-| `original-lst` | water     | Cyan   | Original liquid staking token |
-| `stable`       | logo-usd  | Green  | Stablecoin                    |
-| `token-2022`   | cube      | Purple | Uses Token-2022 program       |
-| `yb`           | analytics | Indigo | Yield bearing token           |
+### 2. A cap of two, plus a `+N` overflow
 
-### Launchpad & Trading
+Two chips render inline; the rest collapse into one `+N` chip. Past two, the
+token name starts eating its own ellipsis in the narrow column.
 
-| Tag                 | Icon        | Color  | Description             |
-| ------------------- | ----------- | ------ | ----------------------- |
-| `launchpad`         | rocket      | Pink   | Launchpad token         |
-| `moonshot`          | moon        | Purple | Moonshot platform token |
-| `birdeye-trending`  | trending-up | Orange | Trending on Birdeye     |
-| `pumpfun-graduates` | school      | Pink   | Graduated from Pump.fun |
+Tags are sorted **signals first** (`sortTagsBySignalFirst`), so a risk tag is
+structurally incapable of being the one collapsed.
 
-### Financial Products
+### 3. Every chip has an accessible name
 
-| Tag             | Icon      | Color  | Description             |
-| --------------- | --------- | ------ | ----------------------- |
-| `jup-lend-earn` | cash      | Green  | Jupiter lend/earn token |
-| `prestocks`     | bar-chart | Blue   | Pre-stocks token        |
-| `xstocks`       | pie-chart | Indigo | X-stocks token          |
+React Native has no DOM `role`/`aria-label`, so each chip is
+`accessible` + `accessibilityRole="image"` + `accessibilityLabel={label}`,
+which makes it one node to TalkBack/VoiceOver instead of an unnamed glyph.
+The overflow chip announces the names of everything it collapsed, joined by
+commas — the chip is a density affordance, not a place information goes to
+die.
 
-### Registry & Metadata
-
-| Tag            | Icon          | Color     | Description                |
-| -------------- | ------------- | --------- | -------------------------- |
-| `old-registry` | document-text | Secondary | From legacy token registry |
-| `solana-fm`    | search        | Indigo    | Listed on Solana FM        |
-| `wormhole`     | link          | Purple    | Cross-chain via Wormhole   |
-| `deduplicated` | git-branch    | Tertiary  | Deduplicated token entry   |
-| `duplicate`    | copy          | Tertiary  | Duplicate token entry      |
-| `deprecated`   | warning       | Error     | Deprecated token           |
-| `internal`     | lock-closed   | Secondary | Internal use token         |
+Labels come from the existing `token.badges.*` translation keys (present in
+both `en` and `es`); proper nouns (LST, Token-2022, Pump.fun, Jupiter Lend,
+Solana FM, Wormhole) stay literal by design.
 
 ## Design
 
-- **Size**: 18x18px compact badges
-- **Border Radius**: 4px (borderRadius.sm)
-- **Background**: 15% opacity of the icon color
-- **Icon Size**: 10px
-- **Spacing**: 4px gap between badges (spacing.xs)
-- **Layout**: Horizontal row with flex wrap
-
-## Integration with TokenListItem
-
-To add badges to a token in the TokenListItem component:
-
-```tsx
-<View style={styles.nameRow}>
-  <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
-    {name}
-  </Text>
-  <TokenBadges tags={token.tags} />
-</View>
-```
+- **Size**: `componentSizes.iconSizeXSmall`
+- **Border radius**: `borderRadius.sm`
+- **Background**: `semantic.state.hover` — the same neutral overlay for every
+  chip, so separation does not depend on hue
+- **Icon size**: `fontSize.xs`
+- **Gap**: `spacing.xxs`
+- **Layout**: single row, `flexWrap: 'nowrap'` (the cap replaces wrapping)
 
 ## Props
 
-### `TokenBadgesProps`
+| Prop   | Type       | Default     | Description                   |
+| ------ | ---------- | ----------- | ----------------------------- |
+| `tags` | `string[]` | `undefined` | Tag strings from `Token.tags` |
 
-| Prop   | Type       | Default     | Description                               |
-| ------ | ---------- | ----------- | ----------------------------------------- |
-| `tags` | `string[]` | `undefined` | Array of tag strings to display as badges |
+## Behaviour
 
-## Features
-
-- Automatically filters out unknown/unsupported tags
-- Returns null if no tags provided (no empty container)
-- Uses existing Ionicons from @expo/vector-icons
-- Follows design system colors and spacing tokens
-- Fully typed with TypeScript
-- Supports flex wrap for long tag lists
+- Unknown tags are filtered out before the cap is applied, so an undrawable
+  tag never consumes one of the two inline slots.
+- Renders `null` for no tags, an empty array, or only-unknown tags.
 
 ## Examples
 
-### Single Badge
-
 ```tsx
+// signals sort first, two inline, the rest collapse
+<TokenBadges tags={['community', 'verified', 'birdeye-trending', 'lst']} />
+// -> [verified] [community] [+2]   ("Trending, LST" on the +2)
+
 <TokenBadges tags={['verified']} />
-```
+// -> [verified]
 
-### Multiple Badges
-
-```tsx
-<TokenBadges tags={['verified', 'community', 'lst', 'birdeye-trending']} />
-```
-
-### Real Token Example (mSOL)
-
-```tsx
-<TokenBadges tags={['verified', 'community', 'lst', 'original-lst', 'strict']} />
-```
-
-### No Badges (renders nothing)
-
-```tsx
 <TokenBadges tags={[]} />
 <TokenBadges tags={undefined} />
+// -> nothing
 ```
+
+## Test IDs
+
+- `token-badge-<tag>` per inline chip
+- `token-badge-overflow` for the `+N` chip

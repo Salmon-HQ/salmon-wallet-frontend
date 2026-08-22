@@ -141,3 +141,39 @@ export type {
   SignedSignInMessage,
   SolanaSignInInputFields,
 } from './sign-in';
+
+// Pre-signature transaction effect preview (balance/approval derivation)
+export {
+  U64_MAX,
+  classifyApprovalScope,
+  decodeAccountState,
+  deriveEffects,
+  previewTransactionEffects,
+} from './simulation';
+export type {
+  AccountState,
+  ApprovalGrant,
+  ApprovalScope,
+  DerivationInput,
+  EffectDetails,
+  Effects,
+  MintState,
+  NoEffect,
+  PreviewOptions,
+  ResolveSymbolFn,
+  SolChange,
+  TokenAccountState,
+  TokenChange,
+  TransactionEffects,
+  TransactionWouldFail,
+  UndeterminedEffects,
+  UndeterminedReason,
+} from './simulation';
+
+// Cold-start-safe signature status lookup (background pending-transaction poller)
+export { getSolanaSignatureOutcomes, BLOCKHASH_EXPIRY_CEILING_MS } from './signature-status';
+export type {
+  SignatureOutcome,
+  SignatureOutcomeLookup,
+  SignatureOutcomeQuery,
+} from './signature-status';

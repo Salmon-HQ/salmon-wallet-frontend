@@ -1,35 +1,41 @@
 /**
- * CreateWalletScreen - Create new wallet with seed phrase backup
+ * CreateWalletScreen - Show and confirm the recovery phrase
  *
- * This screen guides users through the wallet creation process:
- * 1. Message - Explains importance of backing up seed phrase
- * 2. Show seed phrase - Generates and displays 12-word mnemonic
- * 3. Validate backup - User enters 3 random words to confirm backup
- * 4. Navigate to password screen to complete setup
+ * Two steps, both on the onboarding slot grid:
+ * 1. Show seed phrase - Generates and displays the 12-word mnemonic
+ * 2. Validate backup - User enters 3 random words to confirm backup
  *
- * Design: Dark gradient background with centered content, step indicator,
- * and orange accent buttons. Seed phrase displayed in 3-column grid.
+ * The consequences copy that used to be a third step in front of these now
+ * has a screen of its own (`seed-warning.tsx`), which is what navigates here.
+ * The mnemonic is generated on arrival rather than on a button press, so the
+ * phrase this screen shows is the phrase the flow stashes.
  */
 
-import { Ionicons } from '@expo/vector-icons';
-import { Logo } from '@salmon/assets';
+import { CheckCircleIcon, SparkleIcon, iconSize } from '../../src/icons';
 import {
   borderRadius,
   colors,
   componentSizes,
   contentPadding,
   fontFamilyNative,
+  fontSize,
   generateMnemonic,
   generateValidationPositions,
+  lineHeight,
+  motionMs,
+  semantic,
   setStashItem,
   spacing,
   STASH_KEYS,
   validateMnemonicWords,
 } from '@salmon/shared';
 import {
+  HoldToCopyButton,
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
   PrimaryButton,
   ScreenHeader,
-  SecondaryButton,
   SeedWordGrid,
   SeedWordInput,
 } from '../../src/components';
@@ -37,28 +43,22 @@ import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View } from 'react-native';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type Step = 'message' | 'seedPhrase' | 'validate';
+type Step = 'seedPhrase' | 'validate';
 
 interface ValidationWord {
   position: number;
   expectedWord: string;
   userInput: string;
 }
+
+/** Warning, phrase, confirmation, password. */
+const CREATE_FLOW_STEPS = 4;
 
 // ============================================================================
 // Toast Component
@@ -75,7 +75,7 @@ function Toast({ message, visible }: ToastProps) {
   return (
     <View style={styles.toastContainer}>
       <View style={styles.toast}>
-        <Ionicons name="checkmark-circle" size={20} color={colors.status.success} />
+        <CheckCircleIcon size={iconSize.md} color={semantic.status.success} />
         <Text style={styles.toastText}>{message}</Text>
       </View>
     </View>
@@ -83,51 +83,7 @@ function Toast({ message, visible }: ToastProps) {
 }
 
 // ============================================================================
-// Step 1: Message Component
-// ============================================================================
-
-interface MessageStepProps {
-  onNext: () => void;
-  onBack: () => void;
-  t: (key: string) => string;
-}
-
-function MessageStep({ onNext, onBack, t }: MessageStepProps) {
-  return (
-    <>
-      <ScreenHeader onBack={onBack} />
-
-      {/* Content */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <Image source={Logo} style={styles.logo} resizeMode="contain" />
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>{t('wallet.create.messageTitle')}</Text>
-
-        {/* Body */}
-        <Text style={styles.bodyText}>{t('wallet.create.messageBody')}</Text>
-
-        {/* Spacer */}
-        <View style={styles.flexSpacer} />
-
-        {/* Start Button */}
-        <PrimaryButton onPress={onNext} style={styles.button} testID="create-start-button">
-          {t('actions.start').toUpperCase()}
-        </PrimaryButton>
-      </ScrollView>
-    </>
-  );
-}
-
-// ============================================================================
-// Step 2: Seed Phrase Component
+// Step 1: Seed Phrase Component
 // ============================================================================
 
 interface SeedPhraseStepProps {
@@ -139,13 +95,13 @@ interface SeedPhraseStepProps {
 
 function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
   const [showToast, setShowToast] = useState(false);
-  const words = mnemonic.split(' ');
+  const words = mnemonic ? mnemonic.split(' ') : [];
 
   const handleCopy = useCallback(async () => {
     try {
       await Clipboard.setStringAsync(mnemonic);
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 2000);
+      setTimeout(() => setShowToast(false), motionMs.feedbackHold);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
     }
@@ -153,46 +109,45 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
 
   return (
     <>
-      <ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 3, currentStep: 1 }} />
-
-      {/* Content */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Logo */}
-        <View style={styles.logoContainerSmall}>
-          <Image source={Logo} style={styles.logoSmall} resizeMode="contain" />
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>{t('wallet.create.your_seed_phrase')}</Text>
-
-        {/* Subtitle */}
-        <Text style={styles.subtitle}>{t('wallet.create.your_seed_phrase_body')}</Text>
-
-        {/* Seed Word Grid */}
-        <View style={styles.seedGridContainer}>
-          <SeedWordGrid words={words} columns={3} />
-        </View>
-
-        {/* Copy Button */}
-        <View style={styles.copyButtonContainer}>
-          <SecondaryButton
-            onPress={handleCopy}
-            style={styles.button}
-            testID="create-copy-seed-button"
-          >
-            {t('wallet.create.copy_key').toUpperCase()}
-          </SecondaryButton>
-        </View>
-
-        {/* Backed Up Button */}
-        <PrimaryButton onPress={onNext} style={styles.button} testID="create-backed-up-button">
-          {t('wallet.create.ive_backed_up_seed_phrase').toUpperCase()}
-        </PrimaryButton>
-      </ScrollView>
+      <OnboardingLayout
+        testID="create-seed-screen"
+        variant="content"
+        backgroundColor={semantic.surface.bedrock}
+        scrollBody
+        float
+        /*
+          The sparkle: something new coming into being. The fish leaves the
+          flow screens (welcome and the lock keep it); each step wears one
+          semantic glyph in the mark slot, consent's pattern and size.
+        */
+        mark={<SparkleIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+        chrome={
+          <ScreenHeader
+            onBack={onBack}
+            stepIndicator={{ totalSteps: CREATE_FLOW_STEPS, currentStep: 2 }}
+          />
+        }
+        title={<OnboardingTitle>{t('wallet.create.your_seed_phrase')}</OnboardingTitle>}
+        description={
+          <OnboardingDescription>{t('wallet.create.your_seed_phrase_body')}</OnboardingDescription>
+        }
+        body={<SeedWordGrid words={words} columns={3} />}
+        secondary={
+          /*
+            Held, not tapped: the phrase lands on the clipboard, where anything
+            can read it, so the copy costs the same deliberate half-second as
+            signing does.
+          */
+          <HoldToCopyButton onCopy={handleCopy} testID="create-copy-seed-button">
+            {t('wallet.create.hold_to_copy')}
+          </HoldToCopyButton>
+        }
+        action={
+          <PrimaryButton onPress={onNext} testID="create-backed-up-button">
+            {t('wallet.create.ive_backed_up_seed_phrase')}
+          </PrimaryButton>
+        }
+      />
 
       {/* Toast */}
       <Toast message={t('wallet.copied')} visible={showToast} />
@@ -201,7 +156,7 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
 }
 
 // ============================================================================
-// Step 3: Validate Seed Phrase Component
+// Step 2: Validate Seed Phrase Component
 // ============================================================================
 
 interface ValidateStepProps {
@@ -212,11 +167,12 @@ interface ValidateStepProps {
 }
 
 function ValidateStep({ mnemonic, onComplete, onBack, t }: ValidateStepProps) {
-  const words = useMemo(() => mnemonic.split(' '), [mnemonic]);
+  const words = useMemo(() => (mnemonic ? mnemonic.split(' ') : []), [mnemonic]);
   const [validationWords, setValidationWords] = useState<ValidationWord[]>([]);
 
   // Generate random positions on mount using shared utility
   useEffect(() => {
+    if (words.length === 0) return;
     const positions = generateValidationPositions(words.length, 3);
     setValidationWords(
       positions.map((pos) => ({
@@ -255,67 +211,55 @@ function ValidateStep({ mnemonic, onComplete, onBack, t }: ValidateStepProps) {
   );
 
   return (
-    <>
-      <ScreenHeader onBack={onBack} stepIndicator={{ totalSteps: 3, currentStep: 2 }} />
-
-      {/* Content */}
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          showsVerticalScrollIndicator={false}
+    <OnboardingLayout
+      testID="create-validate-screen"
+      variant="content"
+      backgroundColor={semantic.surface.bedrock}
+      scrollBody
+      float
+      // Same glyph as the phrase it confirms — the step dots carry which half
+      // of the creation this is.
+      mark={<SparkleIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+      chrome={
+        <ScreenHeader
+          onBack={onBack}
+          stepIndicator={{ totalSteps: CREATE_FLOW_STEPS, currentStep: 3 }}
+        />
+      }
+      title={<OnboardingTitle>{t('wallet.create.confirm_seed_phrase')}</OnboardingTitle>}
+      description={
+        <OnboardingDescription>{t('wallet.create.confirm_seed_phrase_body')}</OnboardingDescription>
+      }
+      body={
+        <View style={styles.validationInputs}>
+          {validationWords.map((vw, index) => (
+            <SeedWordInput
+              key={`word-${vw.position}`}
+              testID={`create-confirm-word-input-${vw.position}`}
+              position={vw.position}
+              value={vw.userInput}
+              onChangeText={(value) => handleInputChange(index, value)}
+              validationState={getValidationState(index)}
+              autoFocus={index === 0}
+              onSubmitEditing={() => {
+                if (index === validationWords.length - 1 && validationResult.isValid) {
+                  onComplete();
+                }
+              }}
+            />
+          ))}
+        </View>
+      }
+      action={
+        <PrimaryButton
+          onPress={onComplete}
+          disabled={!validationResult.isValid}
+          testID="create-next-button"
         >
-          {/* Logo */}
-          <View style={styles.logoContainerSmall}>
-            <Image source={Logo} style={styles.logoSmall} resizeMode="contain" />
-          </View>
-
-          {/* Title */}
-          <Text style={styles.title}>{t('wallet.create.confirm_seed_phrase')}</Text>
-
-          {/* Subtitle */}
-          <Text style={styles.subtitle}>{t('wallet.create.confirm_seed_phrase_body')}</Text>
-
-          {/* Validation Inputs */}
-          <View style={styles.validationInputs}>
-            {validationWords.map((vw, index) => (
-              <SeedWordInput
-                key={`word-${vw.position}`}
-                testID={`create-confirm-word-input-${vw.position}`}
-                position={vw.position}
-                value={vw.userInput}
-                onChangeText={(value) => handleInputChange(index, value)}
-                validationState={getValidationState(index)}
-                autoFocus={index === 0}
-                onSubmitEditing={() => {
-                  if (index === validationWords.length - 1 && validationResult.isValid) {
-                    onComplete();
-                  }
-                }}
-              />
-            ))}
-          </View>
-
-          {/* Spacer */}
-          <View style={styles.flexSpacer} />
-
-          {/* Next Button */}
-          <PrimaryButton
-            onPress={onComplete}
-            disabled={!validationResult.isValid}
-            style={styles.button}
-            testID="create-next-button"
-          >
-            {t('actions.next').toUpperCase()}
-          </PrimaryButton>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </>
+          {t('actions.next')}
+        </PrimaryButton>
+      }
+    />
   );
 }
 
@@ -325,34 +269,21 @@ function ValidateStep({ mnemonic, onComplete, onBack, t }: ValidateStepProps) {
 
 export default function CreateWalletScreen() {
   const { t } = useTranslation();
-  const [step, setStep] = useState<Step>('message');
-  const [mnemonic, setMnemonic] = useState<string>('');
-
-  /**
-   * Handle starting the creation flow - generate mnemonic
-   */
-  const handleStart = useCallback(() => {
-    // Generate a new 12-word mnemonic (128 bits)
-    const newMnemonic = generateMnemonic(128);
-    setMnemonic(newMnemonic);
-    setStep('seedPhrase');
-  }, []);
+  const [step, setStep] = useState<Step>('seedPhrase');
+  // Generated once, on arrival. It used to be generated by the "Start" press
+  // on the message step; that step is its own screen now, and generating here
+  // keeps the phrase shown and the phrase stashed the same one.
+  const [mnemonic] = useState<string>(() => generateMnemonic(128));
 
   /**
    * Handle back navigation based on current step
    */
   const handleBack = useCallback(() => {
-    switch (step) {
-      case 'message':
-        router.back();
-        break;
-      case 'seedPhrase':
-        setStep('message');
-        break;
-      case 'validate':
-        setStep('seedPhrase');
-        break;
+    if (step === 'validate') {
+      setStep('seedPhrase');
+      return;
     }
+    router.back();
   }, [step]);
 
   /**
@@ -373,28 +304,24 @@ export default function CreateWalletScreen() {
     });
   }, [mnemonic]);
 
+  if (step === 'validate') {
+    return (
+      <ValidateStep
+        mnemonic={mnemonic}
+        onComplete={handleValidationComplete}
+        onBack={handleBack}
+        t={t}
+      />
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      {step === 'message' && <MessageStep onNext={handleStart} onBack={handleBack} t={t} />}
-
-      {step === 'seedPhrase' && (
-        <SeedPhraseStep
-          mnemonic={mnemonic}
-          onNext={handleProceedToValidation}
-          onBack={handleBack}
-          t={t}
-        />
-      )}
-
-      {step === 'validate' && (
-        <ValidateStep
-          mnemonic={mnemonic}
-          onComplete={handleValidationComplete}
-          onBack={handleBack}
-          t={t}
-        />
-      )}
-    </SafeAreaView>
+    <SeedPhraseStep
+      mnemonic={mnemonic}
+      onNext={handleProceedToValidation}
+      onBack={handleBack}
+      t={t}
+    />
   );
 }
 
@@ -403,81 +330,6 @@ export default function CreateWalletScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: contentPadding.screen,
-    paddingBottom: spacing['2xl'],
-  },
-  content: {
-    flexGrow: 1,
-    alignItems: 'center',
-    paddingHorizontal: contentPadding.screen,
-  },
-  logoContainer: {
-    marginBottom: spacing['2xl'],
-    marginTop: spacing['5xl'],
-  },
-  logoContainerSmall: {
-    marginBottom: spacing.lg,
-    marginTop: spacing.lg,
-  },
-  logo: {
-    width: componentSizes.logoSizeLarge,
-    height: componentSizes.logoSizeLarge,
-  },
-  logoSmall: {
-    width: componentSizes.logoSizeSmall,
-    height: componentSizes.logoSizeSmall,
-  },
-  title: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: 24,
-    lineHeight: 32,
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: spacing['2xl'],
-    textAlign: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  bodyText: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: spacing['3xl'],
-    textAlign: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  flexSpacer: {
-    flex: 1,
-  },
-  button: {
-    marginBottom: spacing['2xl'],
-  },
-  seedGridContainer: {
-    width: '100%',
-    marginBottom: spacing['2xl'],
-  },
-  copyButtonContainer: {
-    width: '100%',
-    marginBottom: spacing.lg,
-  },
   validationInputs: {
     width: '100%',
     gap: spacing.lg,
@@ -490,11 +342,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
+    paddingHorizontal: contentPadding.screen,
   },
   toast: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: colors.dialog.overlay,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: borderRadius['2xl'],
@@ -503,7 +356,7 @@ const styles = StyleSheet.create({
   toastText: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.snug,
   },
 });

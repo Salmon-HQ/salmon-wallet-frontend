@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   useAccountsContext,
@@ -6,9 +6,8 @@ import {
   useTransactions,
   useUserConfig,
   type NetworkId,
-  type Transaction,
 } from '@salmon/shared';
-import { TransactionHistoryPage, TransactionDetailModal } from '@salmon/ui';
+import { TransactionHistoryPage } from '@salmon/ui';
 
 export function ActivityRoute(): React.ReactElement {
   const navigate = useNavigate();
@@ -40,39 +39,21 @@ export function ActivityRoute(): React.ReactElement {
     }
   );
 
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-
   const handleBack = useCallback(() => navigate('/home'), [navigate]);
 
-  const handleTransactionPress = useCallback((transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-  }, []);
-
-  const handleTransactionDetailClick = useCallback((transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-  }, []);
-
   return (
-    <>
-      <TransactionHistoryPage
-        onBack={handleBack}
-        transactions={transactions}
-        loading={loading}
-        loadingMore={loadingMore}
-        hasMore={hasMore}
-        onLoadMore={loadMore}
-        hiddenBalance={hiddenBalance}
-        error={error}
-        onRetry={refresh}
-        onTransactionPress={handleTransactionPress}
-        onTransactionDetailClick={handleTransactionDetailClick}
-      />
-      <TransactionDetailModal
-        visible={!!selectedTransaction}
-        onClose={() => setSelectedTransaction(null)}
-        transaction={selectedTransaction}
-        developerMode={developerNetworks}
-      />
-    </>
+    <TransactionHistoryPage
+      onBack={handleBack}
+      transactions={transactions}
+      loading={loading}
+      loadingMore={loadingMore}
+      hasMore={hasMore}
+      onLoadMore={loadMore}
+      hiddenBalance={hiddenBalance}
+      error={error}
+      onRetry={refresh}
+      networkId={networkId}
+      developerMode={developerNetworks}
+    />
   );
 }

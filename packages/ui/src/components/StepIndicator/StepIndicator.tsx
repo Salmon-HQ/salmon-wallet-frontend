@@ -5,6 +5,7 @@
  * Web version using @emotion/styled for browser extension.
  */
 import { styled } from '../../utils/styled';
+import { useTranslation } from 'react-i18next';
 import { colors, componentSizes, duration, easing } from '@salmon/shared';
 import type { StepIndicatorProps } from './types';
 
@@ -25,10 +26,19 @@ const Dot = styled('div')<{ $isActive: boolean }>(({ $isActive }) => ({
 }));
 
 export function StepIndicator({ totalSteps, currentStep }: StepIndicatorProps) {
+  const { t } = useTranslation();
   return (
-    <Container>
+    // One accessible element: the dots are decoration, the position is the
+    // content — a screen reader hears "Step 2 of 4", not a row of empty divs.
+    <Container
+      role="progressbar"
+      aria-valuemin={1}
+      aria-valuemax={totalSteps}
+      aria-valuenow={currentStep}
+      aria-label={t('accessibility.step_progress', { current: currentStep, total: totalSteps })}
+    >
       {Array.from({ length: totalSteps }, (_, index) => (
-        <Dot key={index} $isActive={index + 1 === currentStep} />
+        <Dot key={index} $isActive={index + 1 === currentStep} aria-hidden="true" />
       ))}
     </Container>
   );

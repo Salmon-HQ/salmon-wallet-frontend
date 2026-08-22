@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { CheckIcon, iconSize } from '../../icons';
 import {
   borderRadius,
   borderWidth,
@@ -8,6 +8,7 @@ import {
   fontSize,
   fontFamilyNative,
   opacity,
+  semantic,
 } from '@salmon/shared';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -50,7 +51,7 @@ const DerivedAccountCardComponent: React.FC<DerivedAccountCardProps> = ({
     >
       {/* Checkbox */}
       <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
-        {selected && <Ionicons name="checkmark" size={16} color={colors.text.primary} />}
+        {selected && <CheckIcon size={iconSize.sm} color={semantic.accent.onFill} />}
       </View>
 
       {/* Account Info */}
@@ -86,7 +87,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   cardSelected: {
-    borderColor: colors.card.borderActive,
+    borderColor: semantic.state.selectedEdge,
   },
   checkbox: {
     width: componentSizes.checkboxSize,
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
   address: {
     color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   networkRow: {
     flexDirection: 'row',

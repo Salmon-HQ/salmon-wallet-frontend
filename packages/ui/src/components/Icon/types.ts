@@ -16,5 +16,5 @@ export interface UnifiedIconProps {
   style?: React.CSSProperties;
 }
 
-// Re-export SvgIconProps for external use (backward compatibility)
-export type { SvgIconProps as IconProps } from '@mui/material/SvgIcon';
+// Props accepted by the individual glyph components exported alongside `Icon`.
+export type { IconProps } from '../../icons';

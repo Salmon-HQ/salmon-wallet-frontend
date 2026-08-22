@@ -29,8 +29,10 @@ import {
   Share,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 
 import {
   borderRadius,
@@ -47,6 +49,7 @@ import {
   useAccountsContext,
   useAvailableNetworks,
   useBalance,
+  usePrefetchBalances,
   useCurrencyContext,
   useTransactions,
   vs,
@@ -59,6 +62,7 @@ import {
   type PriceChartPeriod,
   type PriceDataPoint,
   type Token,
+  semantic,
 } from '@salmon/shared';
 import {
   ActionButtonRow,
@@ -73,9 +77,9 @@ import {
   TokenListItem,
   TokenListSkeleton,
   TokenMarketData,
-  TransactionDetailModal,
   TransactionHistorySheet,
   WarningNotice,
+  depthParallaxScroll,
   type BlockchainBalance,
   type BlockchainId,
   type MarketData,
@@ -83,23 +87,8 @@ import {
   type Transaction,
 } from '../../../src/components';
 import { useDeveloperMode } from '../../../src/contexts/DeveloperModeContext';
+import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
 import { useTabChrome } from '../../../hooks/useTabChrome';
-
-// Map blockchain to logo URL (outside component to avoid recreation)
-const BLOCKCHAIN_LOGOS: Record<BlockchainId, string> = {
-  solana:
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-  'solana-devnet':
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-  bitcoin:
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
-  'bitcoin-testnet':
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png',
-  ethereum:
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
-  'ethereum-sepolia':
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',
-};
 
 /**
  * Maps context networkId to transaction API networkId format.
@@ -155,6 +144,7 @@ function mapBalanceToToken(item: {
 export default function HomeScreen() {
   const { t } = useTranslation();
   const { scrollBottomPadding } = useTabChrome();
+  const isReduceMotionEnabled = useReducedMotion();
   const [{ currency }] = useCurrencyContext();
 
   // Top fade gradient opacity - animated based on scroll position
@@ -197,10 +187,6 @@ export default function HomeScreen() {
   // TransactionHistorySheet visibility
   const [transactionHistoryVisible, setTransactionHistoryVisible] = useState(false);
 
-  // TransactionDetailModal state
-  const [detailModalVisible, setDetailModalVisible] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-
   // Get account state and actions from shared context
   const [accountState, accountActions] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId, pathIndex, switchingNetwork } =
@@ -213,8 +199,6 @@ export default function HomeScreen() {
     setReceiveSheetVisible(false);
     setSendSheetVisible(false);
     setTransactionHistoryVisible(false);
-    setDetailModalVisible(false);
-    setSelectedTransaction(null);
   }, [accountState.locked]);
 
   // Developer mode — shared via context from _layout.tsx (single source of truth)
@@ -268,6 +252,8 @@ export default function HomeScreen() {
     changeAmount,
     loading,
     refreshing,
+    hasData,
+    state: balanceState,
     refresh,
     error: balanceError,
     hiddenBalance,
@@ -278,6 +264,17 @@ export default function HomeScreen() {
     skip: !ready || !activeBlockchainAccount,
     // Surface unverified tokens only in developer mode; BE filters
     // unknown-only-tagged SPL entries by default.
+    includeSpam: developerNetworks,
+  });
+
+  // Warm the chains the user is not looking at, so the first swipe of the
+  // session lands on a number instead of a skeleton. One request per inactive
+  // chain per app load — see the hook for why it is not per switch.
+  usePrefetchBalances({
+    account: activeAccount,
+    networkIds: allNetworks.map((network) => network.id as NetworkId),
+    activeNetworkId: (networkId ?? undefined) as NetworkId | undefined,
+    pathIndex,
     includeSpam: developerNetworks,
   });
 
@@ -322,13 +319,16 @@ export default function HomeScreen() {
       };
 
       if (isActiveNetwork) {
-        const isSwitching = switchingSubAccount || switchingNetwork;
-        const showSkeleton = isSwitching || refreshing;
+        // A skeleton means "there is nothing to show", never "a request is in
+        // flight". `hasData` is true for cached data too, so returning to a
+        // chain visited earlier in the session paints its last-known balance
+        // immediately; `refreshing` gets the quiet affordance instead.
+        const showSkeleton = !hasData;
         balanceData = {
           usdTotal: showSkeleton ? undefined : usdTotal,
           changePercent: showSkeleton ? undefined : changePercent,
           changeAmount: showSkeleton ? undefined : changeAmount,
-          loading: showSkeleton || (loading && !refreshing),
+          loading: showSkeleton,
         };
       } else {
         balanceData = {
@@ -344,28 +344,28 @@ export default function HomeScreen() {
           id: network.id,
           name: network.name,
           blockchain,
-          logo: BLOCKCHAIN_LOGOS[blockchain],
         },
         ...balanceData,
       };
     });
-  }, [
-    allNetworks,
-    networkId,
-    switchingSubAccount,
-    switchingNetwork,
-    usdTotal,
-    changePercent,
-    changeAmount,
-    loading,
-    refreshing,
-  ]);
+  }, [allNetworks, networkId, usdTotal, changePercent, changeAmount, hasData]);
 
   // Get current blockchain type for TokenList styling
   const currentBlockchain = useMemo(() => {
     const activeBalance = blockchainBalances[activeBlockchainIndex];
     return activeBalance?.network.blockchain || 'solana';
   }, [activeBlockchainIndex, blockchainBalances]);
+
+  // The beat between sink and float (owner, on-device): the incoming chain's
+  // float waits out the outgoing chain's sink plus a short pause — but only
+  // once a chain has actually switched. On the screen's first mount nothing
+  // sinks, so a delay there would read as lag. Tracked with the render-time
+  // setState pattern (not a ref: refs cannot be read during render).
+  const [chainSwap, setChainSwap] = useState({ chain: currentBlockchain, hasPrior: false });
+  if (chainSwap.chain !== currentBlockchain) {
+    setChainSwap({ chain: currentBlockchain, hasPrior: true });
+  }
+  const chainFloatDelayMs = chainSwap.hasPrior ? FLOAT_DELAY_MS : 0;
 
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
   // in via `includeSpam` on `useBalance` above. Trust the BE list as-is.
@@ -634,27 +634,13 @@ export default function HomeScreen() {
     setTransactionHistoryVisible(false);
   }, []);
 
-  // Handler for tap on transaction — close history sheet, open detail modal
-  const handleTransactionPress = useCallback((transaction: Transaction) => {
+  // Handler for tap on transaction. The detail is a step inside the activity
+  // sheet, so the sheet owns the step; this only marks the touch.
+  const handleTransactionPress = useCallback((_transaction: Transaction) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedTransaction(transaction);
-    setTransactionHistoryVisible(false);
-    // Wait for the history sheet Modal to unmount before opening the detail modal
-    setTimeout(() => {
-      setDetailModalVisible(true);
-    }, 350);
   }, []);
 
-  // Handler to close detail modal — re-open history sheet after
-  const handleDetailModalClose = useCallback(() => {
-    setDetailModalVisible(false);
-    setTimeout(() => {
-      setSelectedTransaction(null);
-      setTransactionHistoryVisible(true);
-    }, 350);
-  }, []);
-
-  // Handler to view transaction in explorer (from detail modal)
+  // Handler to view transaction in explorer (from the detail step)
   const handleViewExplorer = useCallback(
     (transaction: Transaction) => {
       const explorerUrl =
@@ -662,12 +648,11 @@ export default function HomeScreen() {
           ? `https://solscan.io/tx/${transaction.id}?cluster=devnet`
           : `https://solscan.io/tx/${transaction.id}`;
       Linking.openURL(explorerUrl);
-      handleDetailModalClose();
     },
-    [networkId, handleDetailModalClose]
+    [networkId]
   );
 
-  // Handler to share transaction (from detail modal)
+  // Handler to share transaction (from the detail step)
   const handleShareTransaction = useCallback(
     async (transaction: Transaction) => {
       const explorerUrl =
@@ -712,8 +697,26 @@ export default function HomeScreen() {
       // Fade in when scrolled down, fade out when at top
       const opacity = Math.min(offsetY / 30, 1); // Fully visible after 30px scroll
       topFadeOpacity.setValue(opacity);
+      // The water column parallaxes against this list. Writing the shared
+      // value is the only thing that crosses to the UI thread — the field's
+      // own drift and the parallax transform both run there.
+      depthParallaxScroll.value = offsetY;
     },
     [topFadeOpacity]
+  );
+
+  // The parallax offset is one value for the whole water column, and this list
+  // is the only surface that writes it. Nothing used to clear it, so a list
+  // that went away scrolled — a wait taking the screen, a tab change — left
+  // its last offset standing, and the next list mounting at the top displaced
+  // every field by a fifth of it in a single frame. The ground never travels
+  // on its own (DESIGN.md §The water column), so the writer gives the value
+  // back when it stops writing it.
+  useEffect(
+    () => () => {
+      depthParallaxScroll.value = 0;
+    },
+    []
   );
 
   // Memoize the fixed header component (Balance Card + Action Buttons)
@@ -756,20 +759,39 @@ export default function HomeScreen() {
 
   // Memoize the empty component
   // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
+  // The list only renders this once the load settled (TokenList shows the
+  // skeleton only while `balanceState` is 'loading'), so there is no loading
+  // branch here. A failed load with nothing cached is an error state, never
+  // "No tokens found" — PRODUCT.md keeps those two answers distinguishable.
   const ListEmptyComponent = useMemo(
-    () => (
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyStateText}>
-          {loading
-            ? t('wallet.loading_tokens', 'Loading tokens...')
-            : t('wallet.no_tokens_found', 'No tokens found')}
-        </Text>
-        <Text style={styles.emptyStateSubtext}>
-          {t('wallet.tokens_empty_subtitle', 'Your tokens will appear here once you receive some')}
-        </Text>
-      </View>
-    ),
-    [loading, t]
+    () =>
+      balanceState === 'error' ? (
+        <View style={styles.emptyState} testID="token-list-error">
+          <Text style={styles.emptyStateText}>
+            {t('wallet.tokens_load_error', "Your tokens couldn't be loaded right now.")}
+          </Text>
+          <TouchableOpacity
+            onPress={refresh}
+            accessibilityRole="button"
+            testID="token-list-retry-button"
+          >
+            <Text style={styles.retryText}>{t('actions.retry', 'Retry')}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>
+            {t('wallet.no_tokens_found', 'No tokens found')}
+          </Text>
+          <Text style={styles.emptyStateSubtext}>
+            {t(
+              'wallet.tokens_empty_subtitle',
+              'Your tokens will appear here once you receive some'
+            )}
+          </Text>
+        </View>
+      ),
+    [balanceState, refresh, t]
   );
 
   // Loading state - wait for hook to be ready
@@ -810,8 +832,10 @@ export default function HomeScreen() {
       />
 
       {/* Partial-load failure: keep whatever data loaded visible;
-          retry is pull-to-refresh on the token list. */}
-      {balanceError && !switchingNetwork && (
+          retry is pull-to-refresh on the token list. Only 'ready' carries
+          data, so a total failure is left to the list's own error state
+          rather than told "shown data may be incomplete" over nothing. */}
+      {balanceError && balanceState === 'ready' && !switchingNetwork && (
         <View style={styles.balanceErrorBanner} testID="balance-load-error">
           <WarningNotice
             tone="warning"
@@ -823,78 +847,93 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Scrollable Token List or Bitcoin View */}
+      {/* Scrollable Token List or Bitcoin View.
+          Keyed by chain so switching chains swaps the whole container with
+          the sink and the float: the outgoing chain's content sinks 12dp as
+          its light goes, the incoming one floats up into place — the
+          fade-through it upgrades, given the vertical the rest of the system
+          already speaks. The frame above (balance card, chain selector) holds
+          still; only the content travels. Under reduce motion both props are
+          undefined and the swap stays instant. */}
       <View style={styles.listContainer}>
-        {currentBlockchain === 'bitcoin' ? (
-          // Bitcoin view with chart, about, and market data
-          <ScrollView
-            style={styles.bitcoinScrollView}
-            contentContainerStyle={[styles.bitcoinContent, { paddingBottom: scrollBottomPadding }]}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Price Chart */}
-            <View style={styles.bitcoinSection}>
-              <PriceChart
-                data={bitcoinChartData}
-                selectedPeriod={bitcoinChartPeriod}
-                onPeriodChange={handleChartPeriodChange}
-                loading={bitcoinDataLoading && bitcoinChartData.length === 0}
-                error={bitcoinChartError && bitcoinChartData.length === 0}
-                height={180}
-              />
-            </View>
-
-            {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
-            {switchingNetwork || refreshing ? (
-              <TokenListSkeleton count={1} />
-            ) : (
-              bitcoinToken && (
-                <TokenListItem
-                  token={bitcoinToken}
-                  hiddenBalance={hiddenBalance}
-                  blockchain="bitcoin"
+        <Reanimated.View
+          key={currentBlockchain}
+          style={styles.chainContent}
+          entering={floatEntering(isReduceMotionEnabled, { delayMs: chainFloatDelayMs })}
+          exiting={sinkExiting(isReduceMotionEnabled)}
+        >
+          {currentBlockchain === 'bitcoin' ? (
+            // Bitcoin view with chart, about, and market data
+            <ScrollView
+              style={styles.bitcoinScrollView}
+              contentContainerStyle={[
+                styles.bitcoinContent,
+                { paddingBottom: scrollBottomPadding },
+              ]}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Price Chart */}
+              <View style={styles.bitcoinSection}>
+                <PriceChart
+                  data={bitcoinChartData}
+                  selectedPeriod={bitcoinChartPeriod}
+                  onPeriodChange={handleChartPeriodChange}
+                  loading={bitcoinDataLoading && bitcoinChartData.length === 0}
+                  error={bitcoinChartError && bitcoinChartData.length === 0}
+                  height={180}
                 />
-              )
-            )}
+              </View>
 
-            {/* Market Data */}
-            <View style={styles.bitcoinSection}>
-              <TokenMarketData
-                data={bitcoinMarketData}
-                symbol="BTC"
-                loading={bitcoinDataLoading && !bitcoinCoinInfo}
-              />
-            </View>
+              {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
+              {balanceState === 'loading' ? (
+                <TokenListSkeleton count={1} />
+              ) : balanceState === 'error' ? (
+                /* A load that failed with nothing cached owes the user the
+                   error state and its retry, never an endless skeleton. */
+                ListEmptyComponent
+              ) : (
+                bitcoinToken && (
+                  <TokenListItem
+                    token={bitcoinToken}
+                    hiddenBalance={hiddenBalance}
+                    blockchain="bitcoin"
+                  />
+                )
+              )}
 
-            {/* About Section - at the end */}
-            <View style={styles.bitcoinSection}>
-              <TokenAbout
-                description={bitcoinCoinInfo?.description}
-                loading={bitcoinDataLoading && !bitcoinCoinInfo}
-              />
-            </View>
-          </ScrollView>
-        ) : (
-          // Normal token list for Solana/Ethereum
-          <TokenList
-            tokens={switchingSubAccount || switchingNetwork || refreshing ? [] : tokenListItems}
-            loading={
-              switchingSubAccount ||
-              switchingNetwork ||
-              refreshing ||
-              (loading && tokenListItems.length === 0)
-            }
-            onTokenPress={handleTokenPress}
-            hiddenBalance={hiddenBalance}
-            ListEmptyComponent={ListEmptyComponent}
-            refreshing={refreshing}
-            onRefresh={refresh}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            contentContainerStyle={[styles.listContent, { paddingBottom: scrollBottomPadding }]}
-            blockchain={getBlockchainFromNetworkId(currentBlockchain)}
-          />
-        )}
+              {/* Market Data */}
+              <View style={styles.bitcoinSection}>
+                <TokenMarketData
+                  data={bitcoinMarketData}
+                  symbol="BTC"
+                  loading={bitcoinDataLoading && !bitcoinCoinInfo}
+                />
+              </View>
+
+              {/* About Section - at the end */}
+              <View style={styles.bitcoinSection}>
+                <TokenAbout
+                  description={bitcoinCoinInfo?.description}
+                  loading={bitcoinDataLoading && !bitcoinCoinInfo}
+                />
+              </View>
+            </ScrollView>
+          ) : (
+            // Normal token list for Solana/Ethereum
+            <TokenList
+              tokens={tokenListItems}
+              loading={balanceState === 'loading'}
+              onTokenPress={handleTokenPress}
+              hiddenBalance={hiddenBalance}
+              ListEmptyComponent={ListEmptyComponent}
+              onRefresh={refresh}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              contentContainerStyle={[styles.listContent, { paddingBottom: scrollBottomPadding }]}
+              blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+            />
+          )}
+        </Reanimated.View>
         {/* Top fade gradient - shows only when scrolled, fades in dynamically */}
         <Animated.View
           style={[styles.topFadeGradient, { opacity: topFadeOpacity }]}
@@ -913,7 +952,10 @@ export default function HomeScreen() {
           visible={tokenSheetVisible}
           onClose={handleTokenSheetClose}
           token={selectedToken}
-          blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+          // networkId is the single chain source for sheet props — the
+          // carousel index (currentBlockchain) can lag behind it during a
+          // chain switch. Same rule as SendSheet below.
+          blockchain={getBlockchainFromNetworkId(networkId ?? 'solana-mainnet')}
           chartData={selectedTokenChartData}
           chartPeriod={selectedTokenChartPeriod}
           onChartPeriodChange={handleSelectedTokenChartPeriodChange}
@@ -929,6 +971,9 @@ export default function HomeScreen() {
         visible={receiveSheetVisible}
         onClose={handleReceiveSheetClose}
         address={address}
+        // networkId is the single chain source for sheet props — `address`
+        // already derives from it. Same rule as SendSheet below.
+        blockchain={getBlockchainFromNetworkId(networkId ?? 'solana-mainnet')}
         onCopy={handleReceiveSheetCopy}
       />
 
@@ -937,7 +982,11 @@ export default function HomeScreen() {
         visible={sendSheetVisible}
         onClose={handleSendSheetClose}
         tokens={tokens}
-        blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+        // networkId is the single chain source here: `tokens` and `account`
+        // already derive from it, and the carousel index can lag behind it
+        // during a chain switch — mixing the two hands the sheet
+        // cross-chain props.
+        blockchain={getBlockchainFromNetworkId(networkId ?? 'solana-mainnet')}
         account={activeBlockchainAccount}
         onSuccess={handleSendSuccess}
         showUnverifiedTokens={developerNetworks}
@@ -956,16 +1005,10 @@ export default function HomeScreen() {
         onTransactionPress={handleTransactionPress}
         error={transactionsError}
         onRetry={transactionsRefresh}
-      />
-
-      {/* Transaction Detail Modal */}
-      <TransactionDetailModal
-        visible={detailModalVisible}
-        onClose={handleDetailModalClose}
-        transaction={selectedTransaction}
         onViewExplorer={handleViewExplorer}
         onShare={handleShareTransaction}
         developerMode={developerNetworks}
+        networkId={networkId}
       />
     </View>
   );
@@ -983,8 +1026,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingText: {
-    color: colors.text.muted,
-    fontSize: fontSize.md,
+    color: semantic.text.secondary,
+    fontSize: fontSize.bodyLg,
     marginTop: spacing.lg,
   },
   fixedHeader: {
@@ -994,6 +1037,9 @@ const styles = StyleSheet.create({
     marginBottom: vs(spacing.md),
   },
   listContainer: {
+    flex: 1,
+  },
+  chainContent: {
     flex: 1,
   },
   balanceErrorBanner: {
@@ -1031,10 +1077,10 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
   },
   emptyStateText: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     fontFamily: fontFamilyNative.medium,
     fontWeight: '500',
-    color: colors.text.muted,
+    color: semantic.text.secondary,
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
@@ -1042,6 +1088,13 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     color: colors.text.disabled,
     textAlign: 'center',
+  },
+  retryText: {
+    fontSize: fontSize.base,
+    fontFamily: fontFamilyNative.semiBold,
+    color: colors.accent.primary,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
   },
   // Bitcoin view styles
   bitcoinScrollView: {

@@ -3,6 +3,7 @@ import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
 import { removeStashItem } from '../storage';
 import { migrateLegacyWallets } from '../utils/legacy-migration';
+import { clearUnlockPenalty, getUnlockPenalty, recordFailedUnlock } from '../utils/unlock-throttle';
 import type { Account, StoredAccount } from '../types/account';
 import {
   getStoredMnemonics,
@@ -112,6 +113,14 @@ export function useAccountsSecurity({
   const unlockAccounts = useCallback(
     async (password: string): Promise<boolean> => {
       try {
+        // The prompt is the only place an attacker can guess for free. Refuse
+        // to even touch the vault while a penalty from earlier failures stands.
+        const penalty = await getUnlockPenalty();
+        if (penalty.remainingMs > 0) {
+          setError('unlock-throttled');
+          return false;
+        }
+
         await runUpgrades(password);
 
         const storedMnemonics = await getStoredMnemonics();
@@ -120,9 +129,19 @@ export function useAccountsSecurity({
           return true;
         }
 
-        const mnemonics = await resolveMnemonicsWithPassword(storedMnemonics, password, {
-          upgradeOutdatedVault: true,
-        });
+        let mnemonics: Record<string, string>;
+        try {
+          mnemonics = await resolveMnemonicsWithPassword(storedMnemonics, password, {
+            upgradeOutdatedVault: true,
+          });
+        } catch (err) {
+          // Only a rejected password counts against the user — a storage or
+          // migration failure must not lock a legitimate owner out.
+          await recordFailedUnlock();
+          throw err;
+        }
+
+        await clearUnlockPenalty();
         await finalizeUnlockedAccounts(mnemonics, loadAccounts, setLocked);
 
         return true;

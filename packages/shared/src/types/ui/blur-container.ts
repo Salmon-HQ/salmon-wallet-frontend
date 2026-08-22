@@ -1,7 +1,13 @@
 /**
  * Blur tint options
  */
-export type BlurTint = 'light' | 'dark' | 'default';
+/**
+ * `systemThickMaterialDark` is the tint the degradation ladder pins for the
+ * thermocline's blur rung (DESIGN.md, rung 2); the rest are the generic
+ * expo-blur tints the pre-material call sites already used. Additive only —
+ * three apps read this union.
+ */
+export type BlurTint = 'light' | 'dark' | 'default' | 'systemThickMaterialDark';
 
 /**
  * Props for the BlurContainer component (base - platform-agnostic)

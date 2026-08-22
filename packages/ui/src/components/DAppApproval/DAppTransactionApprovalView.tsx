@@ -1,7 +1,7 @@
 import React from 'react';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
-import { colors, formatOrigin, fontFamily, fontSize } from '@salmon/shared';
+import { colors, formatOrigin, fontFamily, fontSize, semantic } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import {
   AppIdentityIcon,
@@ -16,7 +16,7 @@ import {
   Header,
   Label,
   LogoWrap,
-  LogoImage,
+  MARK_SIZE,
   MonoValue,
   ScrollArea,
   Subtitle,
@@ -27,6 +27,9 @@ import {
   Title,
   Value,
 } from './common';
+import { BrandMark } from '../BrandMark';
+import { HoldToApproveButton } from './HoldToApproveButton';
+import { TransactionEffectsCard } from './TransactionEffectsCard';
 import type { DAppTransactionApprovalViewProps } from './types';
 
 export function DAppTransactionApprovalView({
@@ -34,6 +37,8 @@ export function DAppTransactionApprovalView({
   appName,
   appIcon,
   requestSummary,
+  effects,
+  effectsLoading,
   feeSol,
   instructionCount,
   feePayer,
@@ -48,12 +53,22 @@ export function DAppTransactionApprovalView({
   const displayOrigin = formatOrigin(origin);
   const hasIdentity = !!appName || !!appIcon;
 
+  // A delegation, a failing transaction and an unreadable one are the three
+  // things a reflex tap should not be able to sign. A plain send that the
+  // preview understood keeps the ordinary button — friction everywhere is
+  // friction nowhere.
+  const requiresHold =
+    effects != null &&
+    (effects.kind === 'undetermined' ||
+      effects.kind === 'transaction-would-fail' ||
+      (effects.kind === 'effects' && effects.approvals.length > 0));
+
   return (
     <Container>
       <Content>
         <Header>
           <LogoWrap>
-            <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
+            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
           </LogoWrap>
           <Title>{t('dapp.transaction_title', 'Approve Transaction')}</Title>
           <Subtitle>
@@ -85,6 +100,8 @@ export function DAppTransactionApprovalView({
               )}
             </FooterNote>
           </Card>
+
+          <TransactionEffectsCard effects={effects} loading={effectsLoading} />
 
           <Card>
             <Label>{t('dapp.transaction_overview', 'Transaction overview')}</Label>
@@ -138,11 +155,11 @@ export function DAppTransactionApprovalView({
               {parsingError && (
                 <SummaryItem
                   sx={{
-                    backgroundColor: colors.status.errorBackground,
-                    borderColor: colors.status.error,
+                    backgroundColor: semantic.status.dangerTint,
+                    borderColor: semantic.status.danger,
                   }}
                 >
-                  <SummaryLabel sx={{ color: colors.status.error }}>
+                  <SummaryLabel sx={{ color: semantic.status.danger }}>
                     {t('dapp.error', 'Error')}
                   </SummaryLabel>
                   <Typography
@@ -164,13 +181,28 @@ export function DAppTransactionApprovalView({
         </ScrollArea>
 
         <ButtonsContainer>
-          <PrimaryButton
-            onClick={onApprove}
-            loading={loading}
-            disabled={disabled || loading || !!parsingError}
-          >
-            {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
-          </PrimaryButton>
+          {requiresHold ? (
+            <>
+              <FooterNote sx={{ marginBottom: 1 }}>
+                {t('dapp.hold_to_approve_hint', 'Hold the button to approve this request.')}
+              </FooterNote>
+              <HoldToApproveButton
+                onApprove={onApprove}
+                loading={loading}
+                disabled={disabled || loading || !!parsingError}
+              >
+                {t('dapp.hold_to_approve', 'Hold to Approve').toUpperCase()}
+              </HoldToApproveButton>
+            </>
+          ) : (
+            <PrimaryButton
+              onClick={onApprove}
+              loading={loading}
+              disabled={disabled || loading || !!parsingError}
+            >
+              {t('dapp.approve_and_sign', 'Approve & Sign').toUpperCase()}
+            </PrimaryButton>
+          )}
           <SecondaryButton onClick={onReject} disabled={loading}>
             {t('dapp.reject', 'Reject').toUpperCase()}
           </SecondaryButton>

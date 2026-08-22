@@ -70,6 +70,37 @@ describe('getTransactionUrl for Ethereum', () => {
 });
 
 // ============================================================================
+// getTransactionUrl keyed by full networkId
+// ============================================================================
+
+describe('getTransactionUrl keyed by full networkId', () => {
+  const btcTxId = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2';
+
+  it('resolves a bitcoin-mainnet transaction to a valid explorer URL', () => {
+    const url = getTransactionUrl('BITCOIN', 'bitcoin-mainnet', 'BLOCKCYPHER', btcTxId);
+
+    expect(url).toBe(`https://live.blockcypher.com/btc/tx/${btcTxId}`);
+  });
+
+  it('resolves a bitcoin-testnet transaction to a valid explorer URL', () => {
+    const url = getTransactionUrl('BITCOIN', 'bitcoin-testnet', 'BLOCKCYPHER', btcTxId);
+
+    expect(url).toBe(`https://live.blockcypher.com/btc-testnet/tx/${btcTxId}`);
+  });
+
+  it('resolves ethereum full networkIds to the same explorers as the short keys', () => {
+    const txId = '0xabc';
+
+    expect(getTransactionUrl('ETHEREUM', 'ethereum-mainnet', 'ETHERSCAN', txId)).toBe(
+      getTransactionUrl('ETHEREUM', 'mainnet', 'ETHERSCAN', txId)
+    );
+    expect(getTransactionUrl('ETHEREUM', 'ethereum-sepolia', 'ETHERSCAN', txId)).toBe(
+      getTransactionUrl('ETHEREUM', 'sepolia', 'ETHERSCAN', txId)
+    );
+  });
+});
+
+// ============================================================================
 // DEFAULT_EXPLORERS Tests
 // ============================================================================
 

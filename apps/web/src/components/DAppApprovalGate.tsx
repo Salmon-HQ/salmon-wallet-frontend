@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
-import { LoadingScreen, PrimaryButton, styled } from '@salmon/ui';
+import { BrandMark, LoadingScreen, PrimaryButton, styled } from '@salmon/ui';
 import {
   useAccountsContext,
   colors,
@@ -13,6 +13,7 @@ import {
   fontWeight,
   spacing,
   componentSizes,
+  semantic,
 } from '@salmon/shared';
 
 /**
@@ -46,10 +47,15 @@ const Content = styled(Box)({
   alignItems: 'center',
 });
 
-const LogoImage = styled('img')({
-  width: 64,
-  height: 64,
-  objectFit: 'contain',
+/**
+ * A security surface: the mark is how a user tells the real wallet from a page
+ * dressed up as one, so it is drawn from the vector rather than fetched as a
+ * 197x183 raster and letterboxed into a square. 64 is the drawn width the
+ * square box produced after `objectFit: contain`, so nothing moves.
+ */
+const MARK_SIZE = 64;
+
+const Mark = styled(Box)({
   marginBottom: spacing.xl,
 });
 
@@ -73,20 +79,20 @@ const Form = styled('form')({ width: '100%' });
 const StyledInput = styled(InputBase)<{ $hasError: boolean }>(({ $hasError }) => ({
   width: '100%',
   padding: '14px 16px',
-  fontSize: fontSize.md,
+  fontSize: fontSize.bodyLg,
   fontFamily: fontFamily.sans,
   backgroundColor: colors.input.background,
-  border: `1px solid ${$hasError ? colors.status.error : colors.input.border}`,
+  border: `1px solid ${$hasError ? semantic.status.danger : colors.input.border}`,
   borderRadius: componentSizes.inputRadius,
   color: colors.text.primary,
   marginBottom: spacing.lg,
   '&.Mui-focused': {
-    borderColor: $hasError ? colors.status.error : colors.accent.primary,
+    borderColor: $hasError ? semantic.status.danger : colors.accent.primary,
   },
 }));
 
 const ErrorText = styled(Typography)({
-  color: colors.status.error,
+  color: semantic.status.danger,
   fontSize: fontSize.xs,
   fontFamily: fontFamily.sans,
   marginBottom: spacing.md,
@@ -124,14 +130,19 @@ export function DAppApprovalGate(): React.ReactElement {
   );
 
   if (!state.ready) {
-    return <LoadingScreen visible />;
+    // Every other wait in the app stands in the water; this one does not.
+    // It is the first frame of the dApp approval flow, and the Bedrock Rule
+    // covers the whole flow rather than only the screen with the button on it.
+    return <LoadingScreen visible bedrock />;
   }
 
   if (state.accounts.length === 0) {
     return (
       <Container>
         <Content>
-          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
+          <Mark>
+            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
+          </Mark>
           <Title>{t('dapp.no_wallet_title', 'No wallet found')}</Title>
           <Subtitle>
             {t(
@@ -148,7 +159,9 @@ export function DAppApprovalGate(): React.ReactElement {
     return (
       <Container>
         <Content>
-          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
+          <Mark>
+            <BrandMark size={MARK_SIZE} title="Salmon Wallet" />
+          </Mark>
           <Title>{t('lock.title', 'Welcome Back')}</Title>
           <Subtitle>
             {t('dapp.unlock_subtitle', 'Enter your password to approve this request')}

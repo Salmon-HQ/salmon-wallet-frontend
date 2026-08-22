@@ -43,6 +43,26 @@ export const getShortAddress = (
   return `${start}...${end}`;
 };
 
+/**
+ * Groups an address into 4-character chunks so the eye can compare a prefix or
+ * suffix positionally (DESIGN.md, "The Monospace-Is-For-Scanning Rule").
+ *
+ * This is a scanning aid, not an anti-homoglyph measure: base58 already
+ * excludes `0`, `O`, `I` and `l`, so those confusions cannot occur in a Solana
+ * address. Render the result in Geist Mono or the chunks will not line up.
+ *
+ * @example
+ * chunkAddress('7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU')
+ * // Returns: "7xKX tg2C W87d 97TX JSDp bD5j Bkhe TqA8 3TZR uJos gAsU"
+ */
+export function chunkAddress(address: string | null | undefined): string {
+  if (!address) {
+    return '';
+  }
+
+  return address.replace(/(.{4})/g, '$1 ').trim();
+}
+
 export function truncateHash(hash: string, chars: number = 6): string {
   if (!hash || hash.length < chars * 2 + 3) return hash;
   return `${hash.slice(0, chars)}...${hash.slice(-chars)}`;

@@ -1,17 +1,19 @@
 /**
- * Font Face Declarations for DM Sans
+ * Font Face Declarations
  *
- * Import this file in your main CSS/SCSS or in your component to use the DM Sans fonts.
- * Example: import '@/assets/fonts.css';
+ * DM Sans for the interface, Geist Mono for values the user reads character by
+ * character — addresses, transaction hashes, private keys, seed phrases.
+ *
+ * Four weights ship, not seven: 400/500/600/700 cover every call site in the
+ * codebase. An earlier family shipped a 900 with no usages at all.
+ *
+ * These DM Sans files are modified: `scripts/dmsans.py` equalises the ten digit
+ * advances, because DM Sans has no `tnum` for `font-variant-numeric` to switch
+ * on and balances would otherwise reflow on every repoll. Provenance and OFL
+ * clearance: `packages/assets/src/fonts/DMSans-README.md`.
+ *
+ * Import from the entry point: `import '@/assets/fonts.css';`
  */
-
-@font-face {
-  font-family: 'DM Sans';
-  src: url('/fonts/DMSans-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
 
 @font-face {
   font-family: 'DM Sans';
@@ -46,17 +48,9 @@
 }
 
 @font-face {
-  font-family: 'DM Sans';
-  src: url('/fonts/DMSans-ExtraBold.ttf') format('truetype');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'DM Sans';
-  src: url('/fonts/DMSans-Black.ttf') format('truetype');
-  font-weight: 900;
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Regular.ttf') format('truetype');
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }

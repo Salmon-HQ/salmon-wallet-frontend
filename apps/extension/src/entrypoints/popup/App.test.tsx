@@ -39,6 +39,11 @@ vi.mock('@salmon/shared', () => ({
   ],
   useInactivityTimeout: (config: unknown) => mockUseInactivityTimeout(config),
   useSettleAfterTx: () => vi.fn(),
+  // The boot wait goes through the shared `LoadingScreen` now: the gate
+  // decides whether it is worth mounting, the exit keeps it on screen until
+  // the closing wave has left.
+  useWaitGate: (active: boolean) => active,
+  useWaitExit: (showWait: boolean) => ({ held: showWait, onExited: vi.fn() }),
   useAnalyticsConsent: () => ({ resolveConsentPrompt: vi.fn() }),
 }));
 
@@ -48,6 +53,9 @@ vi.mock('@salmon/shared/utils/account', () => ({
 
 vi.mock('@salmon/ui', () => ({
   WalletInitErrorScreen: () => null,
+  // The popup's first frame names the water column itself, so the mock has to
+  // carry the host class the real barrel exports.
+  waterColumnHost: 'water-column-host',
 }));
 
 vi.mock('../../utils/sessionKeyCache', () => ({

@@ -30,7 +30,7 @@ vi.mock('@salmon/shared', () => ({
     accent: { primary: '#0f0' },
   },
   fontFamily: { sans: 'sans-serif' },
-  fontSize: { lg: 18, md: 16 },
+  fontSize: { lg: 18, bodyLg: 16 },
   spacing: { '2xl': 24, md: 12 },
   useAccountsContext: () => [
     {

@@ -6,16 +6,25 @@
  */
 
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { CheckCircleIcon, iconSize } from '../../../icons';
 import {
   colors,
+  contentPadding,
+  ContentLoader,
+  Rect,
   spacing,
   borderRadius,
   borderWidth,
   fontFamilyNative,
   fontSize,
+  semantic,
 } from '@salmon/shared';
+
+// Mirrors a rendered row: bodyLg text plus `spacing.md` padding either side.
+const SKELETON_ROW_HEIGHT = 56;
+const SKELETON_ROW_COUNT = 3;
 
 // ============================================================================
 // Types
@@ -63,6 +72,9 @@ export function SettingsSelectorList<T>({
   emptyMessage,
   testIdPrefix,
 }: SettingsSelectorListProps<T>) {
+  const { t } = useTranslation();
+  const { width: windowWidth } = useWindowDimensions();
+
   const renderItem = useCallback(
     (item: T) => {
       const selected = isSelected(item);
@@ -74,6 +86,8 @@ export function SettingsSelectorList<T>({
           style={[styles.option, selected && styles.optionSelected]}
           onPress={() => onSelect(item)}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityState={{ selected }}
         >
           <View style={styles.info}>
             {renderLeadingElement?.(item)}
@@ -89,7 +103,7 @@ export function SettingsSelectorList<T>({
             </View>
           </View>
 
-          {selected && <Ionicons name="checkmark-circle" size={24} color={colors.accent.primary} />}
+          {selected && <CheckCircleIcon size={iconSize.lg} color={semantic.accent.ink} />}
         </TouchableOpacity>
       );
     },
@@ -105,10 +119,33 @@ export function SettingsSelectorList<T>({
   );
 
   if (loading) {
+    // The app's skeleton idiom: row-shaped ContentLoader rects in place of
+    // the rows they stand in for, as the token list and chart already do.
+    const skeletonWidth = windowWidth - contentPadding.screen * 2;
+    const skeletonHeight =
+      SKELETON_ROW_COUNT * SKELETON_ROW_HEIGHT + (SKELETON_ROW_COUNT - 1) * spacing.sm;
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="small" color={colors.accent.primary} />
-      </View>
+      <ContentLoader
+        speed={1.5}
+        width={skeletonWidth}
+        height={skeletonHeight}
+        viewBox={`0 0 ${skeletonWidth} ${skeletonHeight}`}
+        backgroundColor={colors.skeleton.base}
+        foregroundColor={colors.skeleton.highlight}
+        accessibilityLabel={t('general.loading')}
+      >
+        {Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
+          <Rect
+            key={index}
+            x="0"
+            y={index * (SKELETON_ROW_HEIGHT + spacing.sm)}
+            rx={borderRadius.r3}
+            ry={borderRadius.r3}
+            width={skeletonWidth}
+            height={SKELETON_ROW_HEIGHT}
+          />
+        ))}
+      </ContentLoader>
     );
   }
 
@@ -131,13 +168,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.md,
+    // Control Radius Rule: a settings list row is a control — r3, not r2.
+    borderRadius: borderRadius.r3,
     padding: spacing.md,
     marginBottom: spacing.sm,
+    // Constant border; selection only swaps its color. A border that appears
+    // on selection shifted every row's content by 1px.
+    borderWidth: borderWidth.thin,
+    borderColor: 'transparent',
   },
   optionSelected: {
-    borderWidth: borderWidth.thin,
-    borderColor: colors.accent.primary,
+    borderColor: semantic.state.selectedEdge,
   },
   info: {
     flexDirection: 'row',
@@ -152,23 +193,19 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   primaryText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   secondaryText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
-  },
-  loadingContainer: {
-    padding: spacing.xl,
-    alignItems: 'center',
+    fontSize: fontSize.body,
   },
   emptyText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     textAlign: 'center',
     padding: spacing.xl,
   },

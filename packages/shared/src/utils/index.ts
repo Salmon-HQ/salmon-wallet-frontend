@@ -12,10 +12,12 @@ export {
   isTransactionLookalike,
   loadSolanaTransactionApprovalDetails,
   parseOffchainMessageForApproval,
+  previewSolanaApprovalEffects,
   serializeSignedTransactionFromApproval,
   serializeSignedTransactionsFromApproval,
   TransactionLookalikeMessageError,
 } from './dapp-approval';
+export type { SolanaTransactionApprovalDetails } from './dapp-approval';
 
 // Account utilities
 export {
@@ -47,10 +49,15 @@ export {
 } from './avatar';
 
 // Address utilities
-export { getShortAddress, truncateHash } from './address';
+export { chunkAddress, getShortAddress, truncateHash } from './address';
 export { classifyTransactionError } from './transaction-errors';
 export { classifyBridgeError } from './bridge-errors';
 export { sanitizeDecimalInput } from './decimal-input';
+
+// How a pasted recovery phrase lays out across one-word boxes. Shared so the
+// mobile grid, the DOM grid and both paste buttons cannot disagree.
+export { distributePhrase, splitPhrase, LONG_PHRASE, SHORT_PHRASE } from './seed-phrase';
+export type { DistributedPhrase } from './seed-phrase';
 
 // Clipboard utilities (web only - use expo-clipboard for native)
 export { copyToClipboard, pasteFromClipboard } from './clipboard';
@@ -78,6 +85,8 @@ export {
   hiddenValue,
   // Amount formatting
   formatAmount,
+  formatBaseUnits,
+  formatTokenAmount,
   showAmount,
   showValue,
   // Percentage utilities
@@ -85,6 +94,7 @@ export {
   isNegative,
   isNeutral,
   getLabelValue,
+  formatPercentage,
   showPercentage,
   // Currency formatting
   formatCurrency,
@@ -101,6 +111,7 @@ export {
   formatPercent,
   formatSolFee,
   formatConversionRate,
+  formatEffectiveRate,
   // Balance/price display formatting
   formatBalance,
   formatUsdValue,
@@ -171,6 +182,7 @@ export {
   getCurrencySymbol,
   getCurrencyLabel,
   formatFiatValue,
+  formatFiatPrice,
   formatFiatLarge,
   formatFiatChange,
   formatFiatPrecise,
@@ -216,6 +228,7 @@ export {
   sortNetworks,
   filterNetworks,
   getNetworkLabel,
+  getNetworkName,
 } from './network';
 
 // Validation utilities
@@ -261,6 +274,17 @@ export {
   SECTION_TO_NETWORK,
   INITIAL_NFT_SECTIONS,
 } from './nft';
+
+// Unlock throttling (failed-password backoff)
+export {
+  getUnlockPenalty,
+  recordFailedUnlock,
+  clearUnlockPenalty,
+  unlockDelayMs,
+  UNLOCK_FREE_ATTEMPTS,
+  UNLOCK_DELAY_SCHEDULE_MS,
+} from './unlock-throttle';
+export type { UnlockPenalty } from './unlock-throttle';
 
 // Legacy migration (v2 -> v3)
 export { migrateLegacyWallets } from './legacy-migration';

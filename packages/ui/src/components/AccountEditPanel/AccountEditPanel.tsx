@@ -10,11 +10,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
 import ListItemButton from '@mui/material/ListItemButton';
-import TextFieldsIcon from '@mui/icons-material/TextFields';
-import PersonIcon from '@mui/icons-material/Person';
-import VpnKeyIcon from '@mui/icons-material/VpnKey';
-import LockIcon from '@mui/icons-material/Lock';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { CaretRightIcon, KeyIcon, LockIcon, TextTIcon, UserIcon } from '../../icons';
 import { styled } from '../../utils/styled';
 import {
   colors,
@@ -37,7 +33,9 @@ import type { AccountEditPanelProps } from './types';
 
 const SectionContainer = styled(Box)({
   backgroundColor: colors.interactive.surface,
-  borderRadius: borderRadius.lg,
+  // The control radius, by its scale name (DESIGN.md §The Control Radius Rule);
+  // `borderRadius.lg` is the deprecated alias for the same 12.
+  borderRadius: borderRadius.r3,
   overflow: 'hidden',
 });
 
@@ -51,7 +49,7 @@ const Row = styled(ListItemButton)({
 const IconContainer = styled(Box)({
   width: componentSizes.iconSize2XL,
   height: componentSizes.iconSize2XL,
-  borderRadius: borderRadius.md,
+  borderRadius: borderRadius.r2,
   backgroundColor: colors.interactive.hoverSubtle,
   display: 'flex',
   alignItems: 'center',
@@ -69,6 +67,21 @@ const Divider = styled(Box)({
 // ============================================================================
 // Component
 // ============================================================================
+
+/**
+ * The profile avatar tracks the column it sits in and stops at its token
+ * ceiling. The extension is a resizable narrow column, so a fixed size would
+ * either crowd the narrow end or look stranded at the wide one; the ceiling
+ * is the token and the growth is the surface's own.
+ */
+const AVATAR_SIZE = `min(45vw, ${componentSizes.avatarProfileMax}px)`;
+/**
+ * The initials are a proportion of the box that holds them, not a step on the
+ * type scale: they are the avatar's content rather than the screen's copy, so
+ * they must stay centred in the circle at every width it takes.
+ */
+const AVATAR_INITIALS_RATIO = 0.31;
+const AVATAR_INITIALS_SIZE = `calc(${AVATAR_SIZE} * ${AVATAR_INITIALS_RATIO})`;
 
 export function AccountEditPanel({
   accountId,
@@ -89,25 +102,25 @@ export function AccountEditPanel({
   const sections = [
     {
       labelKey: 'settings.account_edit.name_section',
-      icon: <TextFieldsIcon sx={{ color: colors.text.primary }} />,
+      icon: <TextTIcon color={colors.text.primary} />,
       onPress: () => onEditName(accountId),
       testId: 'account-edit-name',
     },
     {
       labelKey: 'settings.account_edit.avatar_section',
-      icon: <PersonIcon sx={{ color: colors.text.primary }} />,
+      icon: <UserIcon color={colors.text.primary} />,
       onPress: onEditAvatar,
       testId: 'account-edit-avatar',
     },
     {
       labelKey: 'settings.account_edit.backup_section',
-      icon: <VpnKeyIcon sx={{ color: colors.text.primary }} />,
+      icon: <KeyIcon color={colors.text.primary} />,
       onPress: onBackupSeed,
       testId: 'account-edit-backup',
     },
     {
       labelKey: 'settings.account_edit.private_key_section',
-      icon: <LockIcon sx={{ color: colors.text.primary }} />,
+      icon: <LockIcon color={colors.text.primary} />,
       onPress: onExportPrivateKey,
       testId: 'account-edit-private-key',
     },
@@ -128,16 +141,16 @@ export function AccountEditPanel({
           {account.avatar && !imgError ? (
             <Avatar
               src={account.avatar}
-              sx={{ width: 'min(45vw, 180px)', height: 'min(45vw, 180px)' }}
+              sx={{ width: AVATAR_SIZE, height: AVATAR_SIZE }}
               imgProps={{ alt: '', onError: () => setImgError(true) }}
             />
           ) : (
             <Avatar
               sx={{
-                width: 'min(45vw, 180px)',
-                height: 'min(45vw, 180px)',
+                width: AVATAR_SIZE,
+                height: AVATAR_SIZE,
                 backgroundColor: avatarColor,
-                fontSize: 'clamp(2rem, 8vw, 3.5rem)',
+                fontSize: AVATAR_INITIALS_SIZE,
                 fontWeight: fontWeight.semibold,
                 color: colors.text.primary,
               }}
@@ -148,7 +161,7 @@ export function AccountEditPanel({
           <Typography
             sx={{
               color: colors.text.secondary,
-              fontSize: fontSize.lg,
+              fontSize: fontSize.heading,
               fontWeight: fontWeight.semibold,
               textAlign: 'center',
             }}
@@ -168,12 +181,12 @@ export function AccountEditPanel({
                   flex: 1,
                   color: colors.text.primary,
                   fontWeight: fontWeight.semibold,
-                  fontSize: fontSize.base,
+                  fontSize: fontSize.body,
                 }}
               >
                 {t(item.labelKey)}
               </Typography>
-              <ChevronRightIcon sx={{ color: colors.text.secondary }} />
+              <CaretRightIcon color={colors.text.secondary} />
             </Row>
             {index < sections.length - 1 && <Divider />}
           </React.Fragment>

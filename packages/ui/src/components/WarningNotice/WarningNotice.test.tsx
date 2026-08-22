@@ -11,13 +11,10 @@ vi.mock('../../utils/styled', () => ({
 }));
 
 vi.mock('@salmon/shared', () => ({
+  semantic: {
+    status: { warning: '#fc0', warningTint: '#fc02', danger: '#f43', dangerTint: '#f432' },
+  },
   colors: {
-    status: {
-      warning: '#fc0',
-      warningBackground: '#fc02',
-      error: '#f43',
-      errorBackground: '#f432',
-    },
     text: { primary: '#fff' },
   },
   borderRadius: { lg: 16 },

@@ -70,6 +70,7 @@ export function ConfirmDialog({
   requirePassword = false,
   validatePassword,
   onConfirm,
+  confirmTestID,
 }: ConfirmDialogProps): React.ReactElement {
   const { t } = useTranslation();
   const [password, setPassword] = useState('');
@@ -144,7 +145,7 @@ export function ConfirmDialog({
 
   return (
     <BaseDialog visible={visible} onClose={onClose} ariaLabelledBy="confirm-dialog-title">
-      <BaseDialog.Header title={title} showWarning={isDanger} />
+      <BaseDialog.Header title={title} showWarning={isDanger} showClose={!isDanger} />
 
       <BaseDialog.Content>
         <MessageText>{message}</MessageText>
@@ -166,8 +167,20 @@ export function ConfirmDialog({
         )}
       </BaseDialog.Content>
 
-      <BaseDialog.Actions>
-        <BaseDialog.CancelButton onClick={onClose} disabled={loading}>
+      {/*
+        On a danger dialog the buttons stack and the safe one comes first — in
+        reading order, in tab order, and in weight. The destructive action is
+        still one click away; it just stops being the click the layout invites.
+      */}
+      <BaseDialog.Actions stacked={isDanger}>
+        <BaseDialog.CancelButton
+          onClick={onClose}
+          disabled={loading}
+          prominent={isDanger}
+          // Only when nothing else claims the caret: with a password field the
+          // field is the friction and deserves the focus.
+          autoFocus={isDanger && !requirePassword}
+        >
           {cancelText || t('actions.cancel', 'Cancel')}
         </BaseDialog.CancelButton>
         <BaseDialog.ActionButton
@@ -175,6 +188,7 @@ export function ConfirmDialog({
           onClick={handleConfirm}
           disabled={!canConfirm}
           loading={loading}
+          testID={confirmTestID}
         >
           {confirmText || t('actions.confirm', 'Confirm')}
         </BaseDialog.ActionButton>

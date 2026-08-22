@@ -17,6 +17,9 @@ const VALID_ENVIRONMENTS: Environment[] = ['local', 'staging', 'production'];
 
 // Default ports and hosts for local development
 const DEFAULT_LOCAL_HOST = 'localhost';
+
+/** What the Android emulator maps to the host machine's loopback interface. */
+const ANDROID_EMULATOR_HOST = '10.0.2.2';
 const DEFAULT_LOCAL_PORT = 3000;
 
 // API URL configuration by environment
@@ -111,17 +114,24 @@ export function getLocalApiUrl(host?: string, port?: number): string {
   const envHost = getEnvVar('API_HOST');
   const envPort = getEnvVar('API_PORT');
 
-  let finalHost = host ?? envHost ?? DEFAULT_LOCAL_HOST;
+  const explicitHost = host ?? envHost;
+  let finalHost = explicitHost ?? DEFAULT_LOCAL_HOST;
   const finalPort = port ?? (envPort ? parseInt(envPort, 10) : DEFAULT_LOCAL_PORT);
 
-  // Android emulator runs in a VM where localhost/127.0.0.1 refers to the
-  // emulator itself, not the host machine. 10.0.2.2 is the special alias
-  // that Android emulator maps to the host's loopback interface.
+  // The Android emulator runs in a VM where localhost/127.0.0.1 is the
+  // emulator itself, not the host machine; 10.0.2.2 is the alias it maps to
+  // the host's loopback. A physical Android device reports the same
+  // `EXPO_OS`, and there 10.0.2.2 resolves to nothing at all — while
+  // 127.0.0.1 is exactly right, because `adb reverse tcp:3001 tcp:3001`
+  // makes it reach the host. So the rewrite only applies to the default: a
+  // host someone typed into `.env` or passed as an argument is a decision,
+  // and silently replacing it is how a device build ends up unable to reach
+  // a backend that is running fine.
   // Note: process.env.EXPO_OS (without optional chaining) is required for
   // babel-preset-expo to inline it at build time.
   const expoOS = typeof process !== 'undefined' && process.env ? process.env.EXPO_OS : undefined;
-  if ((finalHost === 'localhost' || finalHost === '127.0.0.1') && expoOS === 'android') {
-    finalHost = '10.0.2.2';
+  if (explicitHost === undefined && expoOS === 'android') {
+    finalHost = ANDROID_EMULATOR_HOST;
   }
 
   // Note: /local prefix is required because serverless-offline adds it to all routes

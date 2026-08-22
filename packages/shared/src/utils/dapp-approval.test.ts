@@ -18,6 +18,7 @@ import {
   isTransactionLookalike,
   loadSolanaTransactionApprovalDetails,
   parseOffchainMessageForApproval,
+  previewSolanaApprovalEffects,
   serializeSignedTransactionFromApproval,
   TransactionLookalikeMessageError,
 } from './dapp-approval';
@@ -709,5 +710,83 @@ describe('parseOffchainMessageForApproval', () => {
 
     // Act & Assert
     expect(() => parseOffchainMessageForApproval(data, ['not-a-valid-address'])).toThrow();
+  });
+});
+
+describe('previewSolanaApprovalEffects', () => {
+  const payer = testKeypair(7);
+  const BLOCKHASH = '11111111111111111111111111111111';
+
+  const encodedMessage = () => {
+    const message = new TransactionMessage({
+      payerKey: payer.publicKey,
+      recentBlockhash: BLOCKHASH,
+      instructions: [
+        SystemProgram.transfer({
+          fromPubkey: payer.publicKey,
+          toPubkey: testKeypair(8).publicKey,
+          lamports: 1,
+        }),
+      ],
+    }).compileToV0Message();
+    return bs58.encode(message.serialize());
+  };
+
+  const account = (rpc: Record<string, unknown> = {}) =>
+    ({
+      getReceiveAddress: () => payer.publicKey.toBase58(),
+      getRpc: () => rpc,
+    }) as never;
+
+  it('refuses to preview a batch instead of previewing only its first transaction', async () => {
+    const simulateTransaction = vi.fn();
+
+    const effects = await previewSolanaApprovalEffects(account({ simulateTransaction }), {
+      id: 'req-batch',
+      method: 'signAllTransactions',
+      params: { messages: [encodedMessage(), encodedMessage()] },
+    });
+
+    expect(effects.kind).toBe('undetermined');
+    expect(effects.kind === 'undetermined' && effects.reason).toBe('batch-not-previewable');
+    expect(simulateTransaction).not.toHaveBeenCalled();
+  });
+
+  it('reports a request with no message as undetermined, never as no-effect', async () => {
+    const effects = await previewSolanaApprovalEffects(account(), {
+      id: 'req-empty',
+      method: 'signTransaction',
+      params: {},
+    });
+
+    expect(effects.kind).toBe('undetermined');
+    expect(effects.kind === 'undetermined' && effects.reason).toBe('malformed-transaction');
+  });
+
+  it('simulates the dApp message unsigned, with signature verification off', async () => {
+    const message = encodedMessage();
+    const simulateTransaction = vi
+      .fn()
+      .mockReturnValue({ send: async () => ({ value: { err: null, logs: [], accounts: null } }) });
+    const getMultipleAccounts = vi.fn().mockReturnValue({ send: async () => ({ value: [] }) });
+
+    const effects = await previewSolanaApprovalEffects(
+      account({ simulateTransaction, getMultipleAccounts }),
+      { id: 'req-1', method: 'signTransaction', params: { message } }
+    );
+
+    const [wireTransaction, config] = simulateTransaction.mock.calls[0];
+    const submitted = VersionedTransaction.deserialize(
+      new Uint8Array(Buffer.from(wireTransaction as string, 'base64'))
+    );
+
+    expect(config).toMatchObject({ sigVerify: false, replaceRecentBlockhash: true });
+    expect(bs58.encode(submitted.message.serialize())).toBe(message);
+    expect(submitted.signatures.every((signature) => signature.every((byte) => byte === 0))).toBe(
+      true
+    );
+    // The node returned no post-execution state, which is uncertainty and must
+    // never collapse into "nothing happens".
+    expect(effects.kind).toBe('undetermined');
   });
 });

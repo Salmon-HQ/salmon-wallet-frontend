@@ -1,118 +1,96 @@
-import React from 'react';
-import Box from '@mui/material/Box';
+/**
+ * Welcome — the flow's entry point, on the onboarding slot grid.
+ *
+ * The brand speaks in full here (owner, 2026-08-18, superseding "only the
+ * fish"), mirroring mobile: the fish in `mark`, the wordmark in `title` — its
+ * pinned gap is the grid's own fish→title air, the same distance success
+ * keeps to "Congratulations!" — and the slogan in `description`, so nothing
+ * below the pair moves. The primary action is bottom-most (spec 013,
+ * decision 1), which pins its Y for free.
+ *
+ * The third action, offered only when accounts already exist, is a text
+ * affordance in `assist`: the reserved `secondary` band holds one control, and
+ * a third button would be the one place in the flow where the grid overflows.
+ */
 import Typography from '@mui/material/Typography';
-import { useTranslation } from 'react-i18next';
 import {
-  colors,
-  componentSizes,
-  contentPadding,
   fontFamily,
   fontSize,
-  ms,
-  s,
-  spacing,
-  vs,
+  lineHeight,
+  onboardingIdentityGridFull,
+  semantic,
 } from '@salmon/shared';
-import { styled } from '../../utils/styled';
-import { PrimaryButton, SecondaryButton } from '../Button';
-import { getAuthContainerStyles } from './common';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { BrandMark, Wordmark } from '../BrandMark';
+import { PrimaryButton, SecondaryButton, TextButton } from '../Button';
+import { OnboardingLayout } from '../OnboardingLayout';
+import { WaterColumn } from '../WaterColumn';
 import type { SelectOptionsPageProps } from './types';
-import { ScreenHeader } from '../ScreenHeader';
-
-const Container = styled(Box)<{ $contained?: boolean }>(({ $contained = false }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  backgroundColor: colors.background.primary,
-  ...getAuthContainerStyles($contained),
-}));
-
-const Content = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  padding: `0 ${s(contentPadding.screen)}px`,
-});
-
-const CenterContent = styled(Box)({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const WelcomeText = styled(Typography)({
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontWeight: 700,
-  fontSize: ms(fontSize['2xl']),
-  lineHeight: `${ms(32)}px`,
-  textAlign: 'center',
-  marginBottom: vs(spacing['3xl']),
-});
-
-const LogoImage = styled('img')({
-  width: s(componentSizes.logoSizeMedium),
-  height: s(componentSizes.logoSizeMedium),
-  objectFit: 'contain',
-  marginBottom: vs(spacing['2xl']),
-});
-
-const BrandName = styled(Typography)({
-  color: colors.text.primary,
-  fontFamily: fontFamily.sans,
-  fontWeight: 700,
-  fontSize: ms(32),
-  lineHeight: `${ms(40)}px`,
-  textAlign: 'center',
-});
-
-const ButtonsContainer = styled(Box)({
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: vs(spacing.lg),
-  paddingTop: vs(spacing.lg),
-  paddingBottom: vs(spacing['3xl']),
-});
 
 export function SelectOptionsPage({
   onCreateWallet,
   onRecoverWallet,
   hasAccounts,
   onAccessExisting,
-  contained = false,
 }: SelectOptionsPageProps): React.ReactElement {
   const { t } = useTranslation();
 
   return (
-    <Container $contained={contained}>
-      <ScreenHeader />
-      <Content>
-        <CenterContent>
-          <WelcomeText>
-            {hasAccounts
-              ? t('wallet.onboarding.titleOnboarded', 'Add Account')
-              : t('wallet.onboarding.titleWelcome', 'Welcome')}
-          </WelcomeText>
-          <LogoImage src="/images/Logo.png" alt="Salmon Wallet" />
-          <BrandName>Salmon</BrandName>
-        </CenterContent>
-
-        <ButtonsContainer>
-          <PrimaryButton onClick={onCreateWallet} testID="select-create-button">
-            {t('wallet.create_wallet', 'CREATE ACCOUNT').toUpperCase()}
-          </PrimaryButton>
-          <SecondaryButton onClick={onRecoverWallet} testID="select-recover-button">
-            {t('wallet.recover_wallet', 'RECOVER ACCOUNT').toUpperCase()}
-          </SecondaryButton>
-          {hasAccounts && onAccessExisting && (
-            <SecondaryButton onClick={onAccessExisting} testID="select-access-existing-button">
-              {t('wallet.access_existing', 'ACCESS EXISTING ACCOUNT').toUpperCase()}
-            </SecondaryButton>
-          )}
-        </ButtonsContainer>
-      </Content>
-    </Container>
+    <OnboardingLayout
+      testID="welcome-screen"
+      background={<WaterColumn />}
+      /*
+        The fish, drawn at the grid's own size — this fish and the lock's are
+        the same fish at the same Y (markSize is identical at both rungs; the
+        full table is safe to read). No accessible name here: the wordmark
+        below is the screen's heading and announces "Salmon" — labelling the
+        fish too would say it twice.
+      */
+      mark={
+        <div data-testid="welcome-brand-mark">
+          <BrandMark size={onboardingIdentityGridFull.markSize} />
+        </div>
+      }
+      /*
+        The name and the lema (owner, 2026-08-18): the wordmark in the title
+        band — its own pinned gap puts it at the grid's fish→title distance —
+        and the slogan in the description band, so both live in bands the grid
+        already reserved and nothing below them moves.
+      */
+      title={<Wordmark />}
+      description={
+        // Brand line, not UI copy — deliberately untranslated, like the wordmark itself (PRODUCT.md §Positioning).
+        <Typography
+          data-testid="welcome-slogan"
+          sx={{
+            color: semantic.text.secondary,
+            fontFamily: fontFamily.sans,
+            fontSize: fontSize.body,
+            lineHeight: `${Math.round(fontSize.body * lineHeight.normal)}px`,
+            textAlign: 'center',
+          }}
+        >
+          Open code. Open ownership.
+        </Typography>
+      }
+      assist={
+        hasAccounts && onAccessExisting ? (
+          <TextButton onClick={onAccessExisting} testID="select-access-existing-button">
+            {t('wallet.access_existing_account')}
+          </TextButton>
+        ) : undefined
+      }
+      secondary={
+        <SecondaryButton onClick={onRecoverWallet} fullWidth testID="select-recover-button">
+          {t('wallet.recover_wallet')}
+        </SecondaryButton>
+      }
+      action={
+        <PrimaryButton onClick={onCreateWallet} fullWidth testID="select-create-button">
+          {t('wallet.create_wallet')}
+        </PrimaryButton>
+      }
+    />
   );
 }

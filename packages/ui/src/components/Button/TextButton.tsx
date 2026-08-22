@@ -15,7 +15,6 @@ import {
   fontWeight,
   letterSpacing,
   spacing,
-  borderRadius,
   shadowsCSS,
   opacity,
   duration,
@@ -29,7 +28,10 @@ const StyledButton = styled(Button)<{ $customColor?: string }>(({ $customColor }
   paddingLeft: spacing.lg,
   paddingRight: spacing.lg,
   background: 'transparent',
-  borderRadius: borderRadius.none,
+  // The control radius. Nothing is filled here, but the focus ring is drawn
+  // inset and inherits this, so a square ring on a text button was the one
+  // place a control did not look like a control.
+  borderRadius: componentSizes.buttonRadius,
   fontFamily: fontFamily.sans,
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,

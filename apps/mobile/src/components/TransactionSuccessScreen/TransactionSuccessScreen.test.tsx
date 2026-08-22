@@ -1,6 +1,6 @@
 import React from 'react';
-import { Text } from 'react-native';
-import { render, screen } from '@testing-library/react-native';
+import { StyleSheet, Text } from 'react-native';
+import { render, screen, within } from '@testing-library/react-native';
 
 const mockNotificationAsync = jest.fn();
 
@@ -18,20 +18,6 @@ const mockLoadingScreen = ({ title, bottomOffset }: { title?: string; bottomOffs
   </Text>
 );
 
-jest.mock('react-native-reanimated', () => {
-  const { View, Text } = require('react-native');
-  return {
-    __esModule: true,
-    default: { View, Text },
-    useSharedValue: (value: unknown) => ({ value }),
-    useAnimatedStyle: () => ({}),
-    withSpring: (value: unknown) => value,
-    withDelay: (_delay: number, value: unknown) => value,
-    withTiming: (value: unknown) => value,
-    Easing: { out: (fn: unknown) => fn, cubic: (t: number) => t },
-  };
-});
-
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: string) => fallback ?? key,
@@ -47,42 +33,136 @@ jest.mock('expo-linear-gradient', () => ({
   LinearGradient: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
 
+// Reanimated pulls the Worklets native module, which does not exist under
+// Jest. The arrival only needs a View to hang the entering animation on, the
+// reduce-motion flag, and the two timing helpers the verb spends.
+jest.mock('react-native-reanimated', () => {
+  const { View } = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: { View },
+    useReducedMotion: () => false,
+    withDelay: (delayMs: number, animation: unknown) => ({ delayMs, animation }),
+    withTiming: (toValue: unknown) => toValue,
+    Easing: { bezier: () => () => 0 },
+  };
+});
+
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('@salmon/shared/src/theme/durations'),
+  ...jest.requireActual('@salmon/shared/src/theme/scales'),
+  // The ending's bands and the verb's constants are the real ones: this screen
+  // reads the onboarding grid rather than restating it, so a test that mocked
+  // the table would be asserting its own numbers.
+  ...jest.requireActual('@salmon/shared/src/theme/onboardingGrid'),
+  ...jest.requireActual('@salmon/shared/src/motion/sinkFloat'),
+  letterSpacing: { normal: 0, wide: 0.3, snug: -0.12 },
+  // The real gate is `useWaitGate` and it is tested where it lives
+  // (packages/shared). Transparent here, so these cases stay about what the
+  // screen renders in each state rather than about timing.
+  useWaitGate: (active: boolean) => active,
+  // Likewise the hold that keeps the wait mounted until its closing wave has
+  // left. Transparent here: `useWaitExit` is tested in packages/shared, and
+  // these cases are about what the screen renders in each state.
+  useWaitExit: (showWait: boolean) => ({ held: showWait, onExited: () => {} }),
+  tabularNums: { native: { fontVariant: ['tabular-nums'] }, css: {} },
+  semantic: {
+    accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45', tint: 'rgba(255,92,69,0.1)' },
+    text: {
+      primary: '#F6F8FB',
+      secondary: '#A7B1C4',
+      tertiary: '#8B96AD',
+      disabled: '#6F7B95',
+      accent: '#FF5C45',
+      onAccent: '#070911',
+      onGlass: '#F6F8FB',
+    },
+    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
+    surface: {
+      shelf: '#10131C',
+      raised: '#161C2D',
+      crest: '#1B2233',
+      bedrock: '#0B0F19',
+      membraneThick: 'rgba(11, 15, 25, 0.80)',
+    },
+    scales: {
+      refractionScale: 0.5,
+      deepFieldStroke: 'rgba(199,211,232,0.06)',
+      deepFieldScale: 3.2,
+      fishStroke: 'rgba(7,9,17,0.10)',
+      fishScale: 1,
+    },
+    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+    state: { hover: 'rgba(199,211,232,0.06)', press: 'rgba(199,211,232,0.10)' },
+  },
   colors: {
     text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
     accent: { primary: '#0f0', border: '#0c0' },
     background: { tertiary: '#111' },
     status: { success: '#0f0' },
   },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, '4xl': 40 },
+  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, '4xl': 40, '5xl': 48 },
   borderRadius: { lg: 16, full: 999, card: 12 },
-  fontSize: { sm: 14, base: 16, md: 18, title: 22, '4xl': 36 },
+  fontSize: { sm: 12, base: 14, body: 14, bodyLg: 16, title: 20, headline: 24, '4xl': 36 },
   fontWeight: { semibold: '600', bold: '700' },
   gradients: { primaryButton: { colors: ['#0f0'], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } },
   shadows: { imageHero: {} },
-  componentSizes: { logoSizeSmall: 80, buttonHeightCompact: 48, buttonMinWidthLg: 200 },
+  componentSizes: {
+    logoSizeSmall: 80,
+    buttonHeight: 56,
+    buttonHeightSmall: 44,
+    buttonHeightCompact: 48,
+    buttonMinWidthLg: 200,
+    // The token marks are the graphic's subject; the tick and the arrow are
+    // chrome-sized glyphs.
+    iconSize3XL: 48,
+    iconSizeMedium: 24,
+  },
   ms: (value: number) => value,
   vs: (value: number) => value,
   s: (value: number) => value,
-  fontFamilyNative: { bold: 'System', medium: 'System', regular: 'System' },
+  fontFamilyNative: { bold: 'System', semiBold: 'System', medium: 'System', regular: 'System' },
   borderWidth: { accent: 1 },
-  lineHeight: { none: 1 },
+  lineHeight: { none: 1, tight: 1.25, condensed: 1.25, normal: 1.5 },
 }));
 
 jest.mock('../../../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ floatingBottomOffset: 96 }),
+  useTabChrome: () => ({ floatingBottomOffset: 96, insets: { top: 0, bottom: 34 } }),
 }));
 
 jest.mock('../Button', () => ({
   PrimaryButton: (props: { children?: React.ReactNode; testID?: string }) =>
     mockPrimaryButton(props),
+  TextButton: (props: { children?: React.ReactNode; testID?: string }) => mockPrimaryButton(props),
 }));
 
 jest.mock('../LoadingScreen', () => ({
   LoadingScreen: (props: { title?: string }) => mockLoadingScreen(props),
 }));
 
+// The real one reaches expo-image; what matters here is which token each mark
+// was asked to draw and how big.
+jest.mock('../TokenLogo', () => {
+  const { Text } = require('react-native');
+  return {
+    TokenLogo: ({ uri, symbol, size }: { uri?: string; symbol?: string; size: number }) => (
+      <Text testID={`token-logo-${symbol}`} accessibilityLabel={`${uri ?? 'none'}:${size}`}>
+        {symbol}
+      </Text>
+    ),
+  };
+});
+
+import { resolveOnboardingBands, resolveOnboardingGrid } from '@salmon/shared';
 import { TransactionSuccessScreen } from './TransactionSuccessScreen';
+
+/** The bands the receipt reads: the onboarding ending's, with no secondary. */
+const endingBands = resolveOnboardingBands(resolveOnboardingGrid('identity'), false);
+
+const exchange = {
+  send: { label: 'Sent', symbol: 'USDC', amount: '1.1 USDC', logo: 'https://u/usdc.png' },
+  receive: { label: 'Received', symbol: 'SOL', amount: '0.0132 SOL', logo: 'https://u/sol.png' },
+};
 
 const baseProps = {
   title: 'Swap Complete',
@@ -147,11 +227,103 @@ describe('TransactionSuccessScreen', () => {
       expect(screen.queryByTestId('loading-screen')).toBeNull();
     });
 
+    it('composes like the onboarding ending — the quiet explorer link over the bottom-most primary', () => {
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      const tree = JSON.stringify(screen.toJSON());
+      expect(tree.indexOf('tx-success-explorer-link')).toBeGreaterThan(-1);
+      expect(tree.indexOf('tx-success-explorer-link')).toBeLessThan(
+        tree.indexOf('tx-success-continue-button')
+      );
+    });
+
+    it('centres the report cluster in the corridor above the actions', () => {
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      const cluster = screen.getByTestId('tx-success-cluster');
+      const style = StyleSheet.flatten(cluster.props.style);
+      expect(style.flex).toBe(1);
+      expect(style.justifyContent).toBe('center');
+    });
+
     it('omits the explorer link when no url is available', () => {
       render(<TransactionSuccessScreen {...baseProps} explorerUrl={null} />);
 
       expect(screen.queryByTestId('tx-success-explorer-link')).toBeNull();
       expect(screen.getByTestId('tx-success-continue-button')).toBeTruthy();
+    });
+
+    it('replaces the status sentence with the graphic on an exchange', () => {
+      render(<TransactionSuccessScreen {...baseProps} exchange={exchange} />);
+
+      // The graphic says what happened: the marks, the arrow between them and
+      // the tick over it. No sentence is printed.
+      expect(screen.queryByTestId('tx-success-title')).toBeNull();
+      expect(screen.queryByText('Swap Complete')).toBeNull();
+      const hero = screen.getByTestId('tx-success-hero');
+      // A graphic announces nothing on its own, so the result the sentence
+      // used to carry is the graphic's accessible name.
+      expect(hero.props.accessibilityLabel).toBe('Swap Complete');
+      expect(hero.props.accessibilityRole).toBe('image');
+      expect(screen.getByTestId('tx-success-tick')).toBeTruthy();
+      expect(screen.getByTestId('tx-success-arrow')).toBeTruthy();
+    });
+
+    it('keeps the status sentence on a receipt with a single token', () => {
+      // A send has one token, not two: an arrow between two marks would be
+      // meaningless, so the sentence stays and is the only thing that says
+      // what happened.
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      expect(screen.getByTestId('tx-success-title')).toBeTruthy();
+      expect(screen.queryByTestId('tx-success-hero')).toBeNull();
+    });
+
+    it('puts the amounts under the graphic and the quiet rows under the amounts', () => {
+      render(
+        <TransactionSuccessScreen
+          {...baseProps}
+          exchange={exchange}
+          exchangeRate="1 USDC ≈ 0.0127 SOL"
+          exchangeFee="0.85%"
+        />
+      );
+
+      const amounts = screen.getByTestId('tx-success-amount');
+      expect(within(amounts).getByText('1.1 USDC')).toBeTruthy();
+      expect(within(amounts).getByText('0.0132 SOL')).toBeTruthy();
+      expect(screen.getByTestId('tx-success-receipt')).toBeTruthy();
+      expect(screen.getByText('1 USDC ≈ 0.0127 SOL')).toBeTruthy();
+      expect(screen.getByText('0.85%')).toBeTruthy();
+      expect(screen.getByText('Time')).toBeTruthy();
+    });
+
+    it('puts each token mark on the graphic, at the size that makes it the subject', () => {
+      render(<TransactionSuccessScreen {...baseProps} exchange={exchange} />);
+
+      const hero = screen.getByTestId('tx-success-hero');
+      expect(within(hero).getByTestId('token-logo-USDC').props.accessibilityLabel).toBe(
+        'https://u/usdc.png:48'
+      );
+      expect(within(hero).getByTestId('token-logo-SOL').props.accessibilityLabel).toBe(
+        'https://u/sol.png:48'
+      );
+    });
+
+    it('falls back to the plain summary line when there is no exchange', () => {
+      // A send receipt has one amount and no second token; nothing to flank.
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      expect(screen.getByTestId('tx-success-summary')).toHaveTextContent('1 SOL → 200 USDC');
+      expect(screen.queryByTestId('token-logo-SOL')).toBeNull();
+    });
+
+    it('omits rate and fee rows when the flow did not have the data', () => {
+      render(<TransactionSuccessScreen {...baseProps} exchange={exchange} />);
+
+      expect(screen.queryByText('Rate')).toBeNull();
+      expect(screen.queryByText('Salmon fee')).toBeNull();
+      expect(screen.getByText('Time')).toBeTruthy();
     });
 
     it('keeps the bridge deposit instructions', () => {
@@ -166,6 +338,74 @@ describe('TransactionSuccessScreen', () => {
 
       expect(screen.getByText('bc1qdeposit')).toBeTruthy();
       expect(screen.getByText('33 USDC')).toBeTruthy();
+    });
+  });
+
+  it('keeps the amount on one line — a receipt prints an amount, not a sentence', () => {
+    render(<TransactionSuccessScreen {...baseProps} summary="0.0512345 SOL → 8.1234567 USDC" />);
+
+    const amount = screen.getByTestId('tx-success-summary');
+    expect(amount.props.numberOfLines).toBe(1);
+    expect(amount.props.adjustsFontSizeToFit).toBe(true);
+  });
+
+  describe('the ending, and the arrival', () => {
+    it('takes both bottom bands from the grid instead of restating them', () => {
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      // The receipt does not approximate the onboarding ending — it reads the
+      // same table, so the primary lands on the bottom edge the grid defines.
+      const assist = StyleSheet.flatten(screen.getByTestId('tx-success-assist').props.style);
+      const action = StyleSheet.flatten(screen.getByTestId('tx-success-action').props.style);
+      expect(assist.height).toBe(endingBands.assist);
+      expect(action.height).toBe(endingBands.action);
+    });
+
+    it('reserves the safe area under the action band, not a tab bar that has sunk away', () => {
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      const column = StyleSheet.flatten(screen.getByTestId('tx-success-screen').props.style);
+      expect(column.paddingBottom).toBe(34);
+    });
+
+    it('holds nothing back on a receipt with no graphic to sequence', () => {
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      for (const testID of [
+        'tx-success-title',
+        'tx-success-amount',
+        'tx-success-explorer-link',
+        'tx-success-continue-button',
+      ]) {
+        const style = StyleSheet.flatten(screen.getByTestId(testID).props.style) ?? {};
+        expect(style.opacity ?? 1).toBe(1);
+        expect(style.transform).toBeUndefined();
+      }
+    });
+
+    it('floats an exchange up in the order a receipt answers its questions', () => {
+      render(
+        <TransactionSuccessScreen
+          {...baseProps}
+          exchange={exchange}
+          exchangeRate="1 USDC ≈ 0.0127 SOL"
+        />
+      );
+
+      // Each band carries its own entering animation; what the order has to
+      // prove is that the amounts are the answer and the rows the footnote, so
+      // they may not arrive together.
+      const entering = (testID: string) => screen.getByTestId(testID).props.entering;
+      expect(entering('tx-success-tick')).toBeDefined();
+      expect(entering('tx-success-arrow')).toBeDefined();
+      expect(entering('tx-success-amount')).toBeDefined();
+      expect(entering('tx-success-receipt')).toBeDefined();
+    });
+
+    it('still confirms the arrival with the success haptic', () => {
+      render(<TransactionSuccessScreen {...baseProps} />);
+
+      expect(mockNotificationAsync).toHaveBeenCalledTimes(1);
     });
   });
 });

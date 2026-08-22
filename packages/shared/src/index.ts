@@ -9,6 +9,7 @@ export * from './factories';
 export * from './hooks';
 export * from './query';
 export * from './locales';
+export * from './motion';
 export * from './storage';
 export * from './theme';
 export * from './types';

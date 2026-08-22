@@ -1,52 +1,60 @@
 /**
  * BiometricSetupScreen - Prompt to enable biometric unlock during onboarding
  *
- * Shown after password setup and before the success screen. If the device
- * does not support biometrics the screen auto-skips to success.
+ * Shown after password setup and before the analytics consent step. If the
+ * device does not support biometrics the screen auto-skips.
  *
- * Design: Same centered layout as success.tsx — logo, icon, title, subtitle,
- * and action buttons at the bottom.
+ * Composed on the onboarding slot grid. The biometric glyph is the screen's
+ * only icon and sits in the `mark` slot, where the fish sat before the fish
+ * was pulled back to welcome and the lock (owner, 2026-08-18) — the consent
+ * screen's pattern, one glyph per step. The enrolment error occupies the
+ * reserved `assist` band instead of pushing the buttons down when it appears.
  */
 
-import { Logo } from '@salmon/assets';
 import {
-  colors,
   componentSizes,
-  contentPadding,
   fontFamilyNative,
+  fontScaleCap,
+  fontSize,
   getStashItem,
-  spacing,
+  lineHeight,
   type DerivedKeyCache,
+  semantic,
 } from '@salmon/shared';
-import { PrimaryButton, SecondaryButton } from '../../src/components';
+import {
+  OnboardingDescription,
+  OnboardingLayout,
+  OnboardingTitle,
+  PrimaryButton,
+  SecondaryButton,
+} from '../../src/components';
 import { useBiometricAuth } from '../../hooks/useBiometricAuth';
-import { Ionicons } from '@expo/vector-icons';
+import { EyeIcon, FingerprintIcon, ScanIcon } from '../../src/icons';
+import type { IconComponent } from '../../src/icons';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text } from 'react-native';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-const ICON_SIZE = 80;
+/** The glyph fills the top slot: the grid's own mark size for flow steps. */
+const ICON_SIZE = componentSizes.logoSizeSmall;
 
 // ============================================================================
 // Helpers
 // ============================================================================
 
-function getBiometricIcon(
-  type: 'fingerprint' | 'facial' | 'iris' | null
-): 'finger-print-outline' | 'scan-outline' | 'eye-outline' {
+function getBiometricIcon(type: 'fingerprint' | 'facial' | 'iris' | null): IconComponent {
   switch (type) {
     case 'facial':
-      return 'scan-outline';
+      return ScanIcon;
     case 'iris':
-      return 'eye-outline';
+      return EyeIcon;
     default:
-      return 'finger-print-outline';
+      return FingerprintIcon;
   }
 }
 
@@ -67,7 +75,7 @@ export default function BiometricSetupScreen() {
     if (!state.isReady || hasSkipped.current) return;
     if (!state.isAvailable) {
       hasSkipped.current = true;
-      router.replace('/(auth)/analytics-consent');
+      router.replace('/(auth)/success');
     }
   }, [state.isReady, state.isAvailable]);
 
@@ -80,7 +88,7 @@ export default function BiometricSetupScreen() {
       const keyCache = await getStashItem<DerivedKeyCache>('derived_key_cache');
       if (!keyCache) {
         // Key not available — skip gracefully
-        router.replace('/(auth)/analytics-consent');
+        router.replace('/(auth)/success');
         return;
       }
 
@@ -89,7 +97,7 @@ export default function BiometricSetupScreen() {
 
       if (result === 'stored') {
         await setEnableBiometric(true);
-        router.replace('/(auth)/analytics-consent');
+        router.replace('/(auth)/success');
       } else if (result === 'failed') {
         setError(t('wallet.create.biometric_setup_error'));
       }
@@ -102,8 +110,10 @@ export default function BiometricSetupScreen() {
   };
 
   const handleSkip = () => {
-    router.replace('/(auth)/analytics-consent');
+    router.replace('/(auth)/success');
   };
+
+  const BiometricIcon = getBiometricIcon(state.biometricType);
 
   // Render nothing while checking availability to avoid a flash
   if (!state.isReady || !state.isAvailable) {
@@ -111,56 +121,39 @@ export default function BiometricSetupScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Centered content */}
-        <View style={styles.centerContent}>
-          {/* Logo */}
-          <View style={styles.logoContainer}>
-            <Image source={Logo} style={styles.logo} resizeMode="contain" />
-          </View>
-
-          {/* Biometric icon */}
-          <View style={styles.iconContainer}>
-            <Ionicons
-              name={getBiometricIcon(state.biometricType)}
-              size={ICON_SIZE}
-              color={colors.text.primary}
-            />
-          </View>
-
-          {/* Title */}
-          <Text style={styles.title}>{t('wallet.create.biometric_setup_title')}</Text>
-
-          {/* Subtitle */}
-          <Text style={styles.subtitle}>{t('wallet.create.biometric_setup_subtitle')}</Text>
-
-          {/* Error message */}
-          {error && <Text style={styles.error}>{error}</Text>}
-        </View>
-
-        {/* Bottom buttons */}
-        <View style={styles.buttonsContainer}>
-          <PrimaryButton
-            onPress={handleEnable}
-            loading={isStoring}
-            disabled={isStoring}
-            style={styles.buttonSpacing}
-            testID="biometric-enable-button"
-          >
-            {buttonLabel}
-          </PrimaryButton>
-
-          <SecondaryButton onPress={handleSkip} disabled={isStoring} testID="biometric-skip-button">
-            {t('wallet.create.biometric_setup_skip')}
-          </SecondaryButton>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <OnboardingLayout
+      testID="biometric-setup-screen"
+      float
+      // One icon on the screen, not two: the biometric glyph moves up into
+      // the mark slot the fish vacated, and `body` goes empty.
+      mark={<BiometricIcon size={ICON_SIZE} color={semantic.text.primary} />}
+      title={<OnboardingTitle>{t('wallet.create.biometric_setup_title')}</OnboardingTitle>}
+      description={
+        <OnboardingDescription>{t('wallet.create.biometric_setup_subtitle')}</OnboardingDescription>
+      }
+      assist={
+        error ? (
+          <Text style={styles.error} maxFontSizeMultiplier={fontScaleCap.chrome}>
+            {error}
+          </Text>
+        ) : undefined
+      }
+      secondary={
+        <SecondaryButton onPress={handleSkip} disabled={isStoring} testID="biometric-skip-button">
+          {t('wallet.create.biometric_setup_skip')}
+        </SecondaryButton>
+      }
+      action={
+        <PrimaryButton
+          onPress={handleEnable}
+          loading={isStoring}
+          disabled={isStoring}
+          testID="biometric-enable-button"
+        >
+          {buttonLabel}
+        </PrimaryButton>
+      }
+    />
   );
 }
 
@@ -169,60 +162,11 @@ export default function BiometricSetupScreen() {
 // ============================================================================
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: contentPadding.screen,
-  },
-  centerContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 'auto',
-  },
-  logoContainer: {
-    marginBottom: spacing['2xl'],
-  },
-  logo: {
-    width: componentSizes.logoSizeLarge,
-    height: componentSizes.logoSizeLarge,
-  },
-  iconContainer: {
-    marginBottom: spacing['2xl'],
-  },
-  title: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: 32,
-    lineHeight: 40,
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: 'center',
-  },
   error: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.snug,
     textAlign: 'center',
-    marginTop: spacing.lg,
-  },
-  buttonsContainer: {
-    marginTop: 'auto',
-    paddingTop: spacing['2xl'],
-    paddingBottom: spacing['2xl'],
-  },
-  buttonSpacing: {
-    marginBottom: spacing.lg,
   },
 });

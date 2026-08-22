@@ -3,7 +3,8 @@ export { SwapScreen } from './SwapScreen';
 export { SwapTabSelector } from './SwapTabSelector';
 export { SwapAmountInput } from './SwapAmountInput';
 export { SwapDetailRow } from './SwapDetailRow';
-export { SwapReviewCard } from './SwapReviewCard';
+export { SwapDetailsCard } from './SwapDetailsCard';
+export { SwapReviewExchange } from './SwapReviewExchange';
 export { SwapReviewButtons } from './SwapReviewButtons';
 export { SwapInputScreen } from './SwapInputScreen';
 export { SwapReviewScreen } from './SwapReviewScreen';
@@ -19,7 +20,9 @@ export type {
   SwapTabSelectorProps,
   SwapAmountInputProps,
   SwapDetailRowProps,
-  SwapReviewCardProps,
+  SwapDetailItem,
+  SwapDetailsCardProps,
+  SwapReviewExchangeProps,
   SwapInputScreenProps,
   SwapReviewScreenProps,
   // Bridge types used in SwapScreen

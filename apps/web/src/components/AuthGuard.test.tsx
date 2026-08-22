@@ -17,6 +17,10 @@ const mockRetryInit = vi.fn();
 
 vi.mock('@salmon/shared', () => ({
   useAccountsContext: (...args: unknown[]) => mockUseAccountsContext(...args),
+  // The hold that keeps the boot wait mounted until its closing wave has left.
+  // Transparent here — it is tested in packages/shared, and these cases are
+  // about which screen the guard picks, not about how long the wave takes.
+  useWaitExit: (showWait: boolean) => ({ held: showWait, onExited: () => {} }),
 }));
 
 vi.mock('@salmon/ui', () => ({

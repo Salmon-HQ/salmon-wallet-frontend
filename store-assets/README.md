@@ -55,17 +55,49 @@ canvas — that would be the phone UI blown up):
    listing whose phone screenshots read $4,307.89 while its tablet screenshots read $0.00
    looks broken.
 
+## Icons are generated, not drawn — `make-icons.py`
+
+Every application and store icon is rendered from the vector master
+(`packages/shared/src/theme/brand.ts`, the same three paths the apps draw at
+runtime) by `python3 store-assets/make-icons.py`. Each target is rasterized by
+`rsvg-convert` at its own native pixel size; nothing is produced by shrinking a
+larger PNG. Edit the table in that script, re-run it, and commit the output —
+do not retouch the PNGs by hand, or the next run silently reverts the retouch.
+
+    python3 store-assets/make-icons.py            # every target
+    python3 store-assets/make-icons.py extension  # extension | web | store
+
+It owns `apps/extension/public/icon-*.png`, `apps/web/public/` icons, both
+128 store icons, and `play/icon-512.png`, and it strips the alpha from
+`play/feature-graphic.png`. It does **not** own the screenshots — those stay
+with `compose.py`.
+
+**16px is deliberately not the same artwork.** At 16 the fins land on ~2px and
+the eye counters fall under 1.5px, so a faithful reduction is a pale blob. The
+16px icon therefore draws only the body path (eyes included, as counters) and
+scales it up into the room the fins were wasting. Same path data, no geometry
+edited — see the `PX16` note in the script.
+
 ## Two icons, two behaviors, easy to mix up
 
-- `play/icon-512.png` is full-bleed with square edges — Play rounds it itself when
-  it renders the listing.
-- `chrome-web-store/store-icon-128.png` carries an alpha channel, and the Chrome
-  Web Store only applies its 12px rounded frame to images *without* alpha. So the
-  rounding has to be baked into the artwork there.
+- `play/icon-512.png` is full-bleed with square edges and fully opaque, inside a
+  32-bit (alpha-bearing) PNG — Play requires that container, applies its own 30%
+  rounding mask and shadow, and warns that transparency shows through as Play's
+  own UI background.
+  <https://developer.android.com/google-play/resources/icon-design-specifications>
+- `chrome-web-store/store-icon-128.png` is 96×96 of art with 16px of transparent
+  padding per side, which is the store's published rule. Because it *has* alpha
+  the store will not draw its own 12px frame ("If you upload an image that has no
+  alpha, it will be placed in a frame with rounded corners"), so the rounding is
+  baked into the artwork at the same 12/128 ratio.
+  <https://developer.chrome.com/docs/webstore/images>
 
-Neither is the launcher icon: that one is compiled into the app (`apps/mobile`
-adaptive icon, `apps/extension` manifest icons). Stores do not derive the listing
-icon from the binary — it is uploaded by hand alongside the screenshots.
+The Chrome one is **not** a separate upload: the Web Store takes the listing icon
+from the 128 inside the extension ZIP ("You must provide a 128x128-pixel
+extension icon image in the ZIP file of your extension"), so
+`chrome-web-store/store-icon-128.png` is a byte-identical copy of
+`apps/extension/public/icon-128.png` kept here for reference. Play and the App
+Store *are* uploaded by hand alongside the screenshots.
 
 Framing/captions (optional, when wanted): `npx appshots frame <dir> --device <preset> --out <dir>` —
 validates store dimensions too (`npx appshots validate <dir>`). Capture stays on

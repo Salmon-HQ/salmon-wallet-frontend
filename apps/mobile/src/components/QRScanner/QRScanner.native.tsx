@@ -9,6 +9,7 @@ import {
   fontFamilyNative,
   fontSize,
   fontWeight,
+  semantic,
 } from '@salmon/shared';
 import { classifyScanPayload } from './scan-payload';
 import type { QRScannerProps } from './types';
@@ -157,14 +158,14 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
-    color: colors.scanner.text,
+    color: semantic.text.primary,
   },
   closeButton: {
     padding: spacing.sm,
   },
   closeButtonText: {
     color: colors.scanner.textSecondary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   content: {
     flex: 1,
@@ -182,12 +183,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xl,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
-    color: colors.scanner.text,
+    color: semantic.text.primary,
     marginBottom: spacing.md,
     textAlign: 'center',
   },
   messageText: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
     color: colors.scanner.textSecondary,
     textAlign: 'center',
     marginBottom: spacing['2xl'],
@@ -200,8 +201,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   settingsButtonText: {
-    color: colors.scanner.text,
-    fontSize: fontSize.md,
+    color: semantic.text.primary,
+    fontSize: fontSize.bodyLg,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
   },
@@ -215,8 +216,8 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   rejectionText: {
-    color: colors.scanner.text,
-    fontSize: fontSize.md,
+    color: semantic.text.primary,
+    fontSize: fontSize.bodyLg,
     textAlign: 'center',
   },
 });

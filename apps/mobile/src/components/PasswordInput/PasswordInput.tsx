@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { EyeIcon, EyeSlashIcon } from '../../icons';
 import {
   colors,
   componentSizes,
@@ -12,6 +12,7 @@ import {
   borderWidth,
   fontSize,
   fontFamilyNative,
+  semantic,
 } from '@salmon/shared';
 
 interface PasswordInputProps {
@@ -40,7 +41,7 @@ export function PasswordInput({
   const [isFocused, setIsFocused] = useState(false);
 
   const getBorderColor = () => {
-    if (error) return colors.status.error;
+    if (error) return semantic.status.danger;
     if (isFocused) return colors.accent.primary;
     return colors.input.border;
   };
@@ -74,11 +75,11 @@ export function PasswordInput({
           onPress={() => setShowPassword(!showPassword)}
           style={styles.toggleButton}
         >
-          <Ionicons
-            name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-            size={componentSizes.iconSizeMedium}
-            color={colors.text.secondary}
-          />
+          {showPassword ? (
+            <EyeSlashIcon size={componentSizes.iconSizeMedium} color={colors.text.secondary} />
+          ) : (
+            <EyeIcon size={componentSizes.iconSizeMedium} color={colors.text.secondary} />
+          )}
         </TouchableOpacity>
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -104,13 +105,13 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   toggleButton: {
     padding: spacing.xs,
   },
   errorText: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.sm,
     marginTop: spacing.xs,

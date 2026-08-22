@@ -31,7 +31,6 @@
 
 export { TransactionHistorySheet, default } from './TransactionHistorySheet';
 export { TransactionItem } from './TransactionItem';
-export { SwapRouteVisualization } from './SwapRouteVisualization';
 export { PriceImpactBadge } from './PriceImpactBadge';
 export { ConversionRateDisplay } from './ConversionRateDisplay';
 export { ExplorerLinkButton } from './ExplorerLinkButton';

@@ -174,7 +174,7 @@ export function NftDetailRoute(): React.ReactElement {
           sx={{
             color: colors.accent.primary,
             fontFamily: fontFamily.sans,
-            fontSize: fontSize.md,
+            fontSize: fontSize.bodyLg,
             cursor: 'pointer',
             textDecoration: 'underline',
           }}

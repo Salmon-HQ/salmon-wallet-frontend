@@ -16,15 +16,14 @@ import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import ButtonBase from '@mui/material/ButtonBase';
-import CircularProgress from '@mui/material/CircularProgress';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, CopyIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 import {
+  chunkAddress,
   colors,
+  semantic,
   spacing,
   componentSizes,
-  gradients,
   fontFamily,
   fontWeight,
   useSendTransaction,
@@ -32,21 +31,18 @@ import {
   borderRadius,
   borderWidth,
   fontSize,
-  shadowsCSS,
   opacity,
   duration,
-  durationMs,
   easing,
+  tabularNums,
+  useCopyFeedback,
+  formatTokenAmount,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
+import { PrimaryButton, SecondaryButton } from '../Button';
 import type { StepConfirmationProps } from './types';
 
-// ============================================================================
-// Constants
-// ============================================================================
-
-const COPY_FEEDBACK_DURATION = durationMs.feedbackLong;
-
+import { CopyTick } from '../CopyTick';
 // ============================================================================
 // Styled Components
 // ============================================================================
@@ -101,6 +97,7 @@ const TokenIconFallbackText = styled(Typography)({
 
 // Amount
 const AmountText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.title,
   fontWeight: fontWeight.bold,
   fontFamily: fontFamily.sans,
@@ -129,19 +126,35 @@ const AddressContent = styled(Box)({
   maxWidth: '100%',
 });
 
-const AddressText = styled(Typography)({
+const AddressColumn = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: '2px',
   flex: 1,
+  minWidth: 0,
+});
+
+const AddressText = styled(Typography)({
   fontSize: fontSize.sm,
-  fontWeight: fontWeight.bold,
-  fontFamily: fontFamily.sans,
+  fontWeight: fontWeight.regular,
+  fontFamily: fontFamily.mono,
   color: colors.text.primary,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
+  textAlign: 'left',
+  overflowWrap: 'anywhere',
+});
+
+const ResolvedFromText = styled(Typography)({
+  fontSize: fontSize.xs,
+  fontFamily: fontFamily.sans,
+  color: colors.text.secondary,
+  textAlign: 'left',
+  overflowWrap: 'anywhere',
 });
 
 // Fee
 const FeeText = styled(Typography)({
+  ...tabularNums.css,
   fontSize: fontSize.sm,
   fontFamily: fontFamily.sans,
   color: colors.text.secondary,
@@ -154,7 +167,7 @@ const ErrorText = styled(Typography)({
   fontSize: fontSize.sm,
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
-  color: colors.status.error,
+  color: semantic.status.danger,
   marginTop: spacing.md,
   textAlign: 'center',
 });
@@ -170,67 +183,13 @@ const BottomButtons = styled(Box)({
   gap: spacing.md,
 });
 
-const CancelButton = styled(ButtonBase)<{ disabled?: boolean }>(({ disabled }) => ({
+// Layout only. The two controls in this row used to paint themselves: Cancel
+// carried a salmon outline, a cancel fill and an outer glow, and Confirm was a
+// `gradients.primaryCSS` box at `borderRadius.lg` — a flat rectangle where the
+// shared button draws a flesh-textured pill. They differ by material now, not
+// by shape.
+const ButtonSlot = styled('div')({
   flex: 1,
-  height: componentSizes.buttonHeightMedium,
-  borderRadius: borderRadius.lg,
-  border: `${borderWidth.thin}px solid ${colors.accent.border}`,
-  backgroundColor: colors.button.cancelBackground,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  boxShadow: shadowsCSS.button,
-  opacity: disabled ? 0.5 : 1,
-  cursor: disabled ? 'not-allowed' : 'pointer',
-  transition: `opacity ${duration.fast} ${easing.ease}`,
-  '&:hover': {
-    opacity: disabled ? 0.5 : 0.85,
-  },
-}));
-
-const CancelButtonText = styled(Typography)({
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.semibold,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-});
-
-const ConfirmButton = styled(ButtonBase)<{ disabled?: boolean }>(({ disabled }) => ({
-  flex: 1,
-  height: componentSizes.buttonHeightMedium,
-  borderRadius: borderRadius.lg,
-  overflow: 'hidden',
-  border: `${borderWidth.thin}px solid ${colors.accent.border}`,
-  opacity: disabled ? 0.7 : 1,
-  boxShadow: shadowsCSS.button,
-  cursor: disabled ? 'not-allowed' : 'pointer',
-  transition: `opacity ${duration.fast} ${easing.ease}`,
-  '&:hover': {
-    opacity: disabled ? 0.7 : 0.85,
-  },
-}));
-
-const ConfirmButtonGradient = styled(Box)({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: '100%',
-  height: '100%',
-  background: gradients.primaryCSS,
-});
-
-const ConfirmButtonText = styled(Typography)({
-  fontSize: fontSize.sm,
-  fontWeight: fontWeight.semibold,
-  fontFamily: fontFamily.sans,
-  color: colors.text.primary,
-});
-
-const SendingRow = styled(Box)({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: spacing.sm,
 });
 
 // ============================================================================
@@ -250,13 +209,25 @@ export function StepConfirmation({
 }: StepConfirmationProps) {
   const { t } = useTranslation();
   const [estimatedFee, setEstimatedFee] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const { copied, trigger: showCopied } = useCopyFeedback();
 
   const sendHook = useSendTransaction({ account, blockchain });
+
+  // What the transfer will actually pay. When a `.sol` domain was typed, the
+  // resolved address is the destination — showing the domain here would ask
+  // the user to sign for something this screen never displayed.
+  const destinationAddress = resolvedRecipientAddress || recipientAddress;
+  const resolvedFromDomain =
+    resolvedRecipientAddress && resolvedRecipientAddress !== recipientAddress
+      ? recipientAddress
+      : null;
+
   // Amount display
   const amountDisplay = useMemo(() => {
     const numAmount = parseFloat(amount);
-    return `${Number(numAmount.toFixed(6))} ${token.symbol}`;
+    // Rounding unchanged; the separator follows the app's language rather than
+    // the host's, per PRODUCT.md's i18n constraint.
+    return `${formatTokenAmount(Number(numAmount.toFixed(6)))} ${token.symbol}`;
   }, [amount, token.symbol]);
 
   // Estimate fee on mount
@@ -299,16 +270,17 @@ export function StepConfirmation({
     }
   }, [sendHook, token, recipientAddress, resolvedRecipientAddress, amount, onSuccess]);
 
-  // Handle copy address
+  // Handle copy address — copies the address the transfer will actually pay,
+  // not the domain that was typed.
   const handleCopy = useCallback(async () => {
-    const success = await copyToClipboard(recipientAddress);
+    const success = await copyToClipboard(destinationAddress);
     if (success) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION);
+      showCopied();
     }
-  }, [recipientAddress]);
+  }, [destinationAddress, showCopied]);
 
-  // Handle retry
+  // Clears the failure and re-arms the confirm button. It does not resend on its
+  // own, which is why the label reads "Confirm Again" rather than "Retry".
   const handleRetry = useCallback(() => {
     sendHook.reset();
   }, [sendHook]);
@@ -345,31 +317,50 @@ export function StepConfirmation({
         {/* Recipient Address */}
         <AddressButton
           onClick={handleCopy}
-          aria-label={t('token.send.copyRecipientAddress')}
+          // The tick is the only confirmation a sighted user gets; without the
+          // label changing with it, a screen-reader user presses copy and is
+          // told nothing happened.
+          aria-label={copied ? t('actions.copied') : t('token.send.copyRecipientAddress')}
           data-testid="send-confirm-copy-address"
         >
           <BlurContainer style={{ borderRadius: borderRadius.md }}>
             <AddressContent>
-              <AddressText title={recipientAddress}>{recipientAddress}</AddressText>
-              {copied ? (
-                <CheckIcon
-                  sx={{ fontSize: fontSize.xl, color: colors.status.success, flexShrink: 0 }}
-                />
-              ) : (
-                <ContentCopyIcon
-                  sx={{ fontSize: fontSize.xl, color: colors.text.secondary, flexShrink: 0 }}
-                />
-              )}
+              <AddressColumn>
+                {/* Mono in 4-character chunks: fixed-width chunks are what let
+                    the eye compare a prefix and suffix positionally. */}
+                <AddressText title={destinationAddress} data-testid="send-confirm-address">
+                  {chunkAddress(destinationAddress)}
+                </AddressText>
+                {resolvedFromDomain !== null && (
+                  <ResolvedFromText data-testid="send-confirm-resolved-from">
+                    {t('token.send.resolvedFrom', { domain: resolvedFromDomain })}
+                  </ResolvedFromText>
+                )}
+              </AddressColumn>
+              <CopyTick
+                copied={copied}
+                style={{ flexShrink: 0 }}
+                copy={<CopyIcon size={iconSize.md} color={colors.text.secondary} />}
+                tick={<CheckIcon size={iconSize.md} color={semantic.status.success} />}
+              />
             </AddressContent>
           </BlurContainer>
         </AddressButton>
 
         {/* Fee Display — on estimation failure keep the row visible as a
-            warning instead of hiding it; confirming stays enabled. */}
+            warning instead of hiding it; confirming stays enabled.
+
+            The estimate arrives as a canonical numeric string from the chain
+            layer, which is where it has to stay canonical — a fee that other
+            code may compare or carry must not be language-shaped at the
+            source. The language is applied here, at the one place it is read
+            by a person, per PRODUCT.md's i18n constraint. */}
         {estimatedFee ? (
-          <FeeText>{t('token.send.networkFeeAmount', { fee: estimatedFee })}</FeeText>
+          <FeeText>
+            {t('token.send.networkFeeAmount', { fee: formatTokenAmount(estimatedFee) })}
+          </FeeText>
         ) : sendHook.feeEstimateFailed ? (
-          <FeeText sx={{ color: colors.status.error }} data-testid="send-fee-estimate-failed">
+          <FeeText sx={{ color: semantic.status.danger }} data-testid="send-fee-estimate-failed">
             {t('send.fee_estimate_failed', 'Fee could not be estimated')}
           </FeeText>
         ) : null}
@@ -380,32 +371,31 @@ export function StepConfirmation({
 
       {/* Bottom Buttons */}
       <BottomButtons>
-        <CancelButton
-          onClick={isFailed ? onBack : onCancel}
-          disabled={isSending}
-          data-testid="send-confirm-cancel-button"
-        >
-          <CancelButtonText>{t('actions.cancel').toUpperCase()}</CancelButtonText>
-        </CancelButton>
+        <ButtonSlot>
+          <SecondaryButton
+            onClick={isFailed ? onBack : onCancel}
+            disabled={isSending}
+            testID="send-confirm-cancel-button"
+            // Height is the only legal override: this row is shorter than a
+            // screen's committing action. Radius, fill, border and bezel
+            // belong to the button.
+            style={{ height: componentSizes.buttonHeightMedium }}
+          >
+            {t('actions.cancel')}
+          </SecondaryButton>
+        </ButtonSlot>
 
-        <ConfirmButton
-          onClick={isFailed ? handleRetry : handleConfirm}
-          disabled={isSending}
-          data-testid="send-confirm-button"
-        >
-          <ConfirmButtonGradient>
-            {isSending ? (
-              <SendingRow>
-                <CircularProgress size={16} sx={{ color: colors.text.primary }} />
-                <ConfirmButtonText>{t('general.sending')}</ConfirmButtonText>
-              </SendingRow>
-            ) : (
-              <ConfirmButtonText>
-                {(isFailed ? t('actions.retry') : t('actions.confirm')).toUpperCase()}
-              </ConfirmButtonText>
-            )}
-          </ConfirmButtonGradient>
-        </ConfirmButton>
+        <ButtonSlot>
+          <PrimaryButton
+            onClick={isFailed ? handleRetry : handleConfirm}
+            loading={isSending}
+            disabled={isSending}
+            testID="send-confirm-button"
+            style={{ height: componentSizes.buttonHeightMedium, whiteSpace: 'nowrap' }}
+          >
+            {isFailed ? t('token.send.confirmAgain') : t('actions.confirm')}
+          </PrimaryButton>
+        </ButtonSlot>
       </BottomButtons>
     </Container>
   );

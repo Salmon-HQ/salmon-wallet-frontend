@@ -1,0 +1,21 @@
+appId: io.salmonwallet.app
+---
+# Regression: the wallet header's copy-address button must confirm the
+# copy with a checkmark, on the real mounting path (GateContainer inside
+# app/(app)/(tabs)/_layout.tsx), not just in a component-level Jest render.
+#
+# Jest cannot catch this class of bug — a prior fix (de0be9f1) passed its
+# unit test while, on device, the icon swap silently failed to paint for
+# the entire feedback hold, even though the underlying `copied` state
+# flipped and held correctly. Only a real mount + real screenshot proves
+# the pixel actually changes.
+- runFlow: ../../../subflows/onboard-walletA.yaml
+- tapOn:
+    id: 'wallet-header-copy-address'
+- assertVisible:
+    text: 'Copied!'
+- takeScreenshot: screenshots/smoke/home/copy-address-checkmark
+- extendedWaitUntil:
+    notVisible:
+      text: 'Copied!'
+    timeout: 3000

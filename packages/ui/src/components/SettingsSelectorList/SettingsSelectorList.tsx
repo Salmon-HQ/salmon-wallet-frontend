@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -7,7 +8,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import CircularProgress from '@mui/material/CircularProgress';
-import CheckIcon from '@mui/icons-material/Check';
+import { CheckIcon, iconSize } from '../../icons';
 import { colors, spacing, fontSize, fontWeight } from '@salmon/shared';
 import type { SettingsSelectorListProps } from './types';
 
@@ -29,7 +30,8 @@ const StyledListItemButton = styled(ListItemButton)<{ $selected?: boolean }>(({ 
 
 const CheckIconStyled = styled(CheckIcon)({
   color: colors.accent.primary,
-  fontSize: fontSize.xl,
+  width: iconSize.md,
+  height: iconSize.md,
 });
 
 const LoadingContainer = styled(Box)({
@@ -41,7 +43,7 @@ const LoadingContainer = styled(Box)({
 
 const EmptyState = styled(Typography)({
   color: colors.text.secondary,
-  fontSize: fontSize.base,
+  fontSize: fontSize.body,
   textAlign: 'center',
   padding: spacing.xl,
 });
@@ -59,10 +61,16 @@ export function SettingsSelectorList<T>({
   emptyMessage,
   testIdPrefix,
 }: SettingsSelectorListProps<T>): React.ReactElement {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <LoadingContainer>
-        <CircularProgress size={24} sx={{ color: colors.accent.primary }} />
+        <CircularProgress
+          size={iconSize.lg}
+          aria-label={t('general.loading')}
+          sx={{ color: colors.accent.primary }}
+        />
       </LoadingContainer>
     );
   }
@@ -72,13 +80,20 @@ export function SettingsSelectorList<T>({
   }
 
   return (
-    <StyledList>
+    // Listbox semantics, not a list of buttons: MUI's `selected` prop is a CSS
+    // class and emits neither a role nor `aria-selected`, so without this a
+    // screen reader cannot tell which language, currency or network is active.
+    // The `li` takes `role="none"` so each option is owned directly by the
+    // listbox, as the pattern requires.
+    <StyledList role="listbox">
       {items.map((item) => {
         const selected = isSelected(item);
 
         return (
-          <ListItem key={getKey(item)} disablePadding>
+          <ListItem key={getKey(item)} disablePadding role="none">
             <StyledListItemButton
+              role="option"
+              aria-selected={selected}
               selected={selected}
               $selected={selected}
               onClick={() => onSelect(item)}
@@ -92,7 +107,7 @@ export function SettingsSelectorList<T>({
                   sx: {
                     color: colors.text.primary,
                     fontWeight: selected ? fontWeight.semibold : fontWeight.medium,
-                    fontSize: fontSize.base,
+                    fontSize: fontSize.body,
                   },
                 }}
                 secondaryTypographyProps={
@@ -100,7 +115,7 @@ export function SettingsSelectorList<T>({
                     ? {
                         sx: {
                           color: colors.text.secondary,
-                          fontSize: fontSize.sm,
+                          fontSize: fontSize.caption,
                           ...(secondaryTypographyProps || {}),
                         },
                       }

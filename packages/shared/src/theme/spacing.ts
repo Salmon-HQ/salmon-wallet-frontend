@@ -52,39 +52,77 @@ export const spacing = {
 } as const;
 
 /**
- * Border radius tokens
+ * The radius scale — seven steps plus `full` (DESIGN.md §Shapes).
+ *
+ * Kept as a named const so the legacy aliases below can reference the steps
+ * instead of repeating the numbers.
+ */
+const radiusScale = {
+  /** 0px */
+  r0: 0,
+  /** 4px - chips, tags */
+  r1: 4,
+  /** 8px - icons */
+  r2: 8,
+  /**
+   * 12px — the control radius.
+   *
+   * Every interactive control in the system sits here: buttons, text inputs,
+   * action buttons, list rows, small cards. A control is not a pill.
+   */
+  r3: 12,
+  /** 16px - cards */
+  r4: 16,
+  /** 22px - the inner core of a bezel */
+  r5: 22,
+  /** 28px - bezel outer, sheets, the balance card (consolidated from 26) */
+  r6: 28,
+  /** 9999px - fully rounded: avatars, toggles */
+  full: 9999,
+} as const;
+
+/**
+ * Border radius tokens.
+ *
+ * `r0`–`r6` + `full` are the scale; everything else is a legacy alias
+ * (soft-deprecated — prefer the `rN` step named in each tag) or an off-scale
+ * one-off the scale does not yet consolidate.
  */
 export const borderRadius = {
-  /** 0px */
-  none: 0,
-  /** 2px - Scrollbar thumb */
+  ...radiusScale,
+  /** 0px @deprecated use `r0` */
+  none: radiusScale.r0,
+  /** 2px - Scrollbar thumb (off-scale one-off) */
   scrollbar: 2,
-  /** 4px */
-  sm: 4,
-  /** 8px */
-  md: 8,
-  /** 9px - NFT card badges */
+  /** 4px @deprecated use `r1` */
+  sm: radiusScale.r1,
+  /** 8px @deprecated use `r2` */
+  md: radiusScale.r2,
+  /** 9px - NFT card badges (off-scale one-off) */
   badge: 9,
-  /** 12px */
-  lg: 12,
-  /** 14px - Medium button corners */
-  button: 14,
-  /** 16px */
-  xl: 16,
-  /** 18px - Icon containers */
+  /** 12px — the control radius. @deprecated use `r3` */
+  lg: radiusScale.r3,
+  /**
+   * 12px — alias of `r3`, kept because ~15 call sites across three apps import
+   * it by this name. It used to be 14; it was never a distinct step, only the
+   * legacy scale's separate value for "button". Pinned by
+   * `controlRadius.test.ts`.
+   */
+  button: radiusScale.r3,
+  /** 16px @deprecated use `r4` */
+  xl: radiusScale.r4,
+  /** 18px - Icon containers (off-scale one-off) */
   iconContainer: 18,
-  /** 20px - Large icon/avatar corners */
+  /** 20px - Large icon/avatar corners (off-scale one-off) */
   iconLg: 20,
-  /** 22px - Token icon corners */
-  tokenIcon: 22,
-  /** 24px - Header corners */
+  /** 22px - Token icon corners @deprecated use `r5` */
+  tokenIcon: radiusScale.r5,
+  /** 24px - Header corners (off-scale one-off) */
   header: 24,
-  /** 24px */
+  /** 24px (off-scale one-off) */
   '2xl': 24,
-  /** 26px - Balance card corners */
-  card: 26,
-  /** 9999px - fully rounded */
-  full: 9999,
+  /** 28px - Balance card / sheet corners @deprecated use `r6` (was 26) */
+  card: radiusScale.r6,
 } as const;
 
 /**
@@ -97,21 +135,52 @@ export const componentSizes = {
   buttonHeightSmall: 44,
   /** 42px - Compact action buttons (swap, bridge, receive, success) */
   buttonHeightCompact: 42,
-  buttonRadius: 28,
+  /**
+   * The control radius. It was 28, which on a 56px control is a pill, and the
+   * product owner does not want pills: a button must read with the same
+   * roundness as a token list row and a text input. All three now resolve to
+   * `borderRadius.lg` (12) — one number, so a call site cannot drift.
+   */
+  buttonRadius: borderRadius.lg,
+  /**
+   * Tile scale for the flesh texture inside a filled control.
+   *
+   * The drawing is authored on a 138×88 tile, which at 1:1 puts its bands
+   * ~13.8px apart — four or five of them across a full-width pill, each one a
+   * broad streak wider than a letter stroke.
+   *
+   * Shrinking to 0.55 lands the bands ~7.6px apart and reads as grain rather
+   * than as streaks. It was tried and the product owner preferred the bands at
+   * their authored size, so 1 is the shipped value. Contrast is not what
+   * decides this: every band is paler than the fill, so the ink's worst case is
+   * the flat fill's 6.50:1 either way (`flesh.test.ts`) — the choice is purely
+   * how large the material reads.
+   */
+  buttonFleshScale: 1,
 
   // ActionButtonRow
   actionButtonWidth: 112,
   actionButtonHeight: 47,
-  actionButtonRadius: 14,
+  /** The control radius — see `buttonRadius`. Was 14. */
+  actionButtonRadius: borderRadius.lg,
   actionButtonIcon: 16,
 
   // Inputs
   inputHeight: 56,
   /** 58px - Swap amount input */
   inputHeightLg: 58,
-  inputRadius: 12,
+  /** The control radius — see `buttonRadius`. Already 12; now bound to it. */
+  inputRadius: borderRadius.lg,
   /** 14px - Input vertical padding */
   inputPaddingVertical: 14,
+
+  /**
+   * 180px - the ceiling of the account's profile avatar, the one place an
+   * avatar is a hero rather than an identity chip. It is a ceiling and not a
+   * size: the surface it sits on is a resizable narrow column, so the avatar
+   * tracks the column's width and stops growing here.
+   */
+  avatarProfileMax: 180,
 
   // Logo
   logoSizeLarge: 137,
@@ -164,16 +233,40 @@ export const componentSizes = {
   /** 44px - Header action buttons */
   headerButtonSize: 44,
   backButtonSize: 40,
+  /**
+   * 38px - one compact row inside the grouped review-details card (owner's
+   * band is 36-40; tune here and every review screen moves together). The
+   * per-row pill it replaces sat at `backButtonSize` + 9px of gap each.
+   */
+  swapDetailRowHeight: 38,
 
   // Balance card elements
   logoContainer: 35,
+  /**
+   * @deprecated Larger than `logoContainer`, which is what it is drawn inside.
+   * Size the mark from its container with `blockchainMarkRatio` instead — a
+   * mark sized from its own token overflowed the box by eight points and
+   * clipped Bitcoin's glyph, which fills its viewBox more than Solana's does.
+   */
   blockchainIcon: 45,
+  /**
+   * The chain mark inside `logoContainer`. Under 1 by construction, so the
+   * mark can never reach the edge of the box that centres it whatever either
+   * value is retuned to. One rule, read by all three surfaces that draw it.
+   */
+  blockchainMarkRatio: 0.74,
   eyeIcon: 20,
   changeArrowIcon: 15,
   /** Inner header container height */
   headerInnerHeight: 63,
 
   // Tab Bar (GlassTabBar)
+  /**
+   * The tab bar's corner radius. Product-owner decision: the bar is a control,
+   * not a pill — it sits on the control radius (was 28). Pinned by
+   * `controlRadius.test.ts`.
+   */
+  tabBarRadius: borderRadius.lg,
   tabBarPaddingTop: 32,
   tabBarMinBottomPadding: 16,
   /** 60px - Tab bar item container height */
@@ -227,6 +320,20 @@ export const componentSizes = {
   buttonMinWidth: 120,
   buttonMinWidthLg: 160,
 
+  // The descent — the wait indicator that replaced the spinning ring. A track
+  // and a segment of salmon *ink* that runs down it: it travels downward, which
+  // is the opposite direction to The Surfacing, so a wait and a success can
+  // never be confused for each other; and being ink rather than a fill it does
+  // not spend the one living salmon element a screen is allowed.
+  /** 2px — the track is a hairline, not a bar. */
+  descentTrackWidth: 2,
+  /** 120px — one full pass, long enough for the deceleration to be legible. */
+  descentTrackHeight: 120,
+  /** 44px — the moving segment; a bit over a third of the track. */
+  descentSegmentHeight: 44,
+  /** 3px — wave displacement. Perceptible if you look, invisible if you don't. */
+  waveAmplitude: 3,
+
   // Swap
   swapSelectorMinWidth: 100,
   swapReviewCardMinHeight: 75,
@@ -254,6 +361,11 @@ export const componentSizes = {
 
   // Dialog / Sheet widths
   dialogWidthSm: 340,
+  /**
+   * Minimum height for a full-screen-style stage (e.g. the transaction
+   * success receipt) when it plays inside a dialog instead of a page.
+   */
+  dialogStageMinHeight: 420,
   sheetWidthSm: 360,
   sheetWidthMd: 380,
   sheetWidthBase: 400,

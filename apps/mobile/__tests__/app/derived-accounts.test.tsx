@@ -22,10 +22,6 @@ jest.mock('expo-status-bar', () => ({
   StatusBar: () => null,
 }));
 
-jest.mock('@expo/vector-icons', () => ({
-  Ionicons: () => null,
-}));
-
 jest.mock('@salmon/assets', () => ({
   Logo: 1,
 }));
@@ -38,14 +34,8 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 jest.mock('@salmon/shared', () => ({
-  colors: {
-    text: { primary: '#fff', secondary: '#aaa', tertiary: '#888' },
-    accent: { primary: '#0f0' },
-  },
-  componentSizes: { logoSizeSmall: 80 },
-  contentPadding: { screen: 16 },
-  fontFamilyNative: { bold: 'System', regular: 'System' },
-  spacing: { sm: 8, md: 12, lg: 16 },
+  // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
+  ...jest.requireActual('../../test-utils/themeTokens'),
   NETWORK_DISPLAY: {},
   deriveBlockchainAccount: jest.fn(),
   getMirrorNetworkId: jest.fn(),
@@ -58,13 +48,32 @@ jest.mock('@salmon/shared', () => ({
   ],
 }));
 
-jest.mock('../../src/components', () => ({
-  DerivedAccountCard: () => null,
-  DerivedAccountCardSkeleton: () => null,
-  PrimaryButton: () => null,
-  SecondaryButton: () => null,
-  ScreenHeader: (props: Record<string, unknown>) => mockScreenHeader(props),
-}));
+jest.mock('../../src/components', () => {
+  const { View } = require('react-native');
+  return {
+    DerivedAccountCard: () => null,
+    DerivedAccountCardSkeleton: () => null,
+    PrimaryButton: () => null,
+    SecondaryButton: () => null,
+    ReservedSlot: ({ children }: { children?: React.ReactNode }) => <View>{children}</View>,
+    OnboardingTitle: ({ children }: { children?: React.ReactNode }) => <View>{children}</View>,
+    OnboardingDescription: ({ children }: { children?: React.ReactNode }) => (
+      <View>{children}</View>
+    ),
+    OnboardingLayout: (props: Record<string, React.ReactNode>) => (
+      <View>
+        {props.chrome}
+        {props.title}
+        {props.description}
+        {props.body}
+        {props.assist}
+        {props.secondary}
+        {props.action}
+      </View>
+    ),
+    ScreenHeader: (props: Record<string, unknown>) => mockScreenHeader(props),
+  };
+});
 
 import DerivedAccountsScreen from '../../app/(auth)/derived-accounts';
 

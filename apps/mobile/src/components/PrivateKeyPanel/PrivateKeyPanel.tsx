@@ -10,24 +10,47 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { Ionicons } from '@expo/vector-icons';
+import { EyeIcon, GlobeIcon, WarningIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
-  colors,
-  spacing,
   borderRadius,
+  colors,
+  componentSizes,
   fontFamilyNative,
-  getShortAddress,
+  fontSize,
   getAccountKeysForNetwork,
+  getShortAddress,
+  letterSpacing,
+  lineHeight,
+  semantic,
+  spacing,
+  useAccountsContext,
   type Account,
   type AccountKeyInfo,
-  fontSize,
-  letterSpacing,
 } from '@salmon/shared';
 import { PrimaryButton, SecondaryButton } from '../Button';
+import { ConfirmSheet } from '../ConfirmSheet';
+import { WarningNotice } from '../WarningNotice';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { useSettingsHeaderOverride } from '../SettingsHeaderContext';
+import { useSecretScreen } from '../../../hooks/useSecretScreen';
+import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
+import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
+
+// ============================================================================
+// Chain identity
+// ============================================================================
+
+// The chain marks the rest of the app already uses for identity (BalanceCard,
+// DerivedAccountCard, the swap's token selector) — the icon migration's
+// declared exception. Four identical globes told the reader nothing about
+// which chain's key they were about to expose.
+const CHAIN_MARKS: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
+  solana: SolanaSvgIcon,
+  bitcoin: BitcoinSvgIcon,
+  ethereum: EthereumSvgIcon,
+};
 
 // ============================================================================
 // Types
@@ -60,6 +83,12 @@ export function PrivateKeyPanel({
 }: PrivateKeyPanelProps): React.ReactElement | null {
   const { t } = useTranslation();
 
+  // A private key is a full spending credential; protect the panel from the
+  // network picker onward so backgrounding mid-flow is never a gap.
+  useSecretScreen('private-key-panel');
+
+  const [, accountActions] = useAccountsContext();
+
   // Step management: 'selectNetwork' or 'displayKeys'
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(
     networks.length === 1 ? networks[0].id : null
@@ -67,8 +96,10 @@ export function PrivateKeyPanel({
 
   // Track which account indexes have been revealed (by index)
   const [revealedIndexes, setRevealedIndexes] = useState<Set<number>>(new Set());
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const { copiedKey: copiedIndex, trigger: showCopied, reset: resetCopied } = useCopyFeedback();
   const [copyFailedIndex, setCopyFailedIndex] = useState<number | null>(null);
+  // Which key the password sheet is currently standing in front of.
+  const [reauthIndex, setReauthIndex] = useState<number | null>(null);
 
   // Get accounts for the selected network
   const accountKeys: AccountKeyInfo[] = useMemo(
@@ -79,31 +110,50 @@ export function PrivateKeyPanel({
   /**
    * Handle network selection
    */
-  const handleSelectNetwork = useCallback((networkId: string) => {
-    setSelectedNetworkId(networkId);
-    setRevealedIndexes(new Set());
-    setCopiedIndex(null);
-    setCopyFailedIndex(null);
+  const handleSelectNetwork = useCallback(
+    (networkId: string) => {
+      setSelectedNetworkId(networkId);
+      setRevealedIndexes(new Set());
+      resetCopied();
+      setCopyFailedIndex(null);
+      setReauthIndex(null);
+    },
+    [resetCopied]
+  );
+
+  const revealKey = useCallback((index: number) => {
+    setRevealedIndexes((prev) => {
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
   }, []);
 
   /**
-   * Handle tap-to-reveal with optional biometric gate
+   * Handle tap-to-reveal. An unlocked session is not proof of identity — it
+   * only proves the phone was left open. Biometrics count as the same proof as
+   * the password, so a device with Face ID keeps its one-prompt flow; a device
+   * without one now falls back to typing the password rather than to nothing
+   * at all. A private key is worse than the phrase: one tap copies full
+   * spending control of the account.
    */
   const handleReveal = useCallback(
     async (index: number) => {
       if (biometricAvailable) {
         const result = await authenticateWithBiometric();
         if (result === null) return; // Auth failed, don't reveal
+        revealKey(index);
+        return;
       }
 
-      setRevealedIndexes((prev) => {
-        const next = new Set(prev);
-        next.add(index);
-        return next;
-      });
+      setReauthIndex(index);
     },
-    [biometricAvailable, authenticateWithBiometric]
+    [biometricAvailable, authenticateWithBiometric, revealKey]
   );
+
+  const handleReauthenticated = useCallback(async () => {
+    if (reauthIndex !== null) revealKey(reauthIndex);
+  }, [reauthIndex, revealKey]);
 
   /**
    * Copy private key to clipboard
@@ -115,15 +165,14 @@ export function PrivateKeyPanel({
       try {
         await Clipboard.setStringAsync(privateKey);
         setCopyFailedIndex(null);
-        setCopiedIndex(index);
-        setTimeout(() => setCopiedIndex(null), 2000);
+        showCopied(index);
       } catch (error) {
         // Surface the failure — a silent no-op looks like a successful copy.
         console.error('Failed to copy private key:', error);
         setCopyFailedIndex(index);
       }
     },
-    [revealedIndexes]
+    [revealedIndexes, showCopied]
   );
 
   /**
@@ -132,9 +181,10 @@ export function PrivateKeyPanel({
   const handleBackToNetworks = useCallback(() => {
     setSelectedNetworkId(null);
     setRevealedIndexes(new Set());
-    setCopiedIndex(null);
+    resetCopied();
     setCopyFailedIndex(null);
-  }, []);
+    setReauthIndex(null);
+  }, [resetCopied]);
   const currentTitle = selectedNetworkId ? t('settings.private_key') : t('settings.select_network');
   const currentBackAction =
     selectedNetworkId && networks.length > 1 ? handleBackToNetworks : onBack;
@@ -156,27 +206,48 @@ export function PrivateKeyPanel({
         onBack={onBack}
       >
         <View style={styles.networkList}>
-          {networks.map((network) => (
-            <TouchableOpacity
-              key={network.id}
-              testID={`private-key-network-option-${network.id}`}
-              accessibilityRole="button"
-              style={styles.networkCard}
-              onPress={() => handleSelectNetwork(network.id)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.networkIconContainer}>
-                <Ionicons name="globe-outline" size={24} color={colors.text.primary} />
-              </View>
-              <View style={styles.networkInfo}>
-                <Text style={styles.networkName}>{network.name}</Text>
-                <Text style={styles.networkBlockchain}>
-                  {network.blockchain.charAt(0).toUpperCase() + network.blockchain.slice(1)}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-            </TouchableOpacity>
-          ))}
+          {networks.map((network) => {
+            // Ids arrive canonical ('solana-mainnet', 'bitcoin-testnet'), so
+            // the environment is the second segment; an id without one counts
+            // as mainnet, the same reading the token selector does.
+            const [chain, env] = network.id.toLowerCase().split('-');
+            const Mark = CHAIN_MARKS[chain] ?? GlobeIcon;
+            const isNonMainnet = Boolean(env) && env !== 'mainnet';
+
+            return (
+              <TouchableOpacity
+                key={network.id}
+                testID={`private-key-network-option-${network.id}`}
+                accessibilityRole="button"
+                style={styles.networkCard}
+                onPress={() => handleSelectNetwork(network.id)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.networkIconContainer}>
+                  <Mark size={iconSize.lg} color={semantic.text.primary} />
+                </View>
+                <View style={styles.networkInfo}>
+                  <Text style={styles.networkName}>{network.name}</Text>
+                  <Text style={styles.networkBlockchain}>
+                    {network.blockchain.charAt(0).toUpperCase() + network.blockchain.slice(1)}
+                  </Text>
+                </View>
+                {/* Chain identity: a non-mainnet environment always keeps its
+                    loud text chip, so a testnet key can never be read as a
+                    mainnet one. Mainnet stays silent — the quiet chain mark
+                    on the left already carries it. The row no longer carries
+                    a caret: selecting a network does not slide a panel in. */}
+                {isNonMainnet && (
+                  <View
+                    style={styles.networkChip}
+                    testID={`private-key-network-chip-${network.id}`}
+                  >
+                    <Text style={styles.networkChipText}>{env.toUpperCase()}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </SettingsScreenLayout>
     );
@@ -190,7 +261,7 @@ export function PrivateKeyPanel({
     <SettingsScreenLayout title={t('settings.private_key')} onBack={currentBackAction}>
       {/* Warning */}
       <View style={styles.warningContainer}>
-        <Ionicons name="warning-outline" size={20} color={colors.status.warning} />
+        <WarningIcon size={iconSize.md} color={semantic.status.warning} />
         <Text style={styles.warningText}>{t('settings.private_key_warning')}</Text>
       </View>
 
@@ -221,12 +292,10 @@ export function PrivateKeyPanel({
                     testID={`private-key-reveal-overlay-${index}`}
                     accessibilityRole="button"
                   >
-                    <Ionicons name="eye-outline" size={32} color={colors.text.primary} />
-                    <Text style={styles.revealText}>
-                      {biometricAvailable
-                        ? t('settings.authenticate_to_reveal')
-                        : t('settings.wallets.tap_to_reveal')}
-                    </Text>
+                    <EyeIcon size={iconSize.xl} color={semantic.text.primary} />
+                    {/* Both branches now cost a proof of identity, so the
+                        label no longer promises a free tap. */}
+                    <Text style={styles.revealText}>{t('settings.authenticate_to_reveal')}</Text>
                   </TouchableOpacity>
                 )}
                 <Text style={styles.keyText} selectable={isRevealed}>
@@ -234,13 +303,23 @@ export function PrivateKeyPanel({
                 </Text>
               </View>
 
+              {/* The clipboard is not private, and the warning has to be up
+                  before the key goes into it, not as a toast afterwards. */}
+              {isRevealed && (
+                <View testID={`private-key-clipboard-warning-${index}`}>
+                  <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
+                    {t('settings.clipboard_key_warning_description')}
+                  </WarningNotice>
+                </View>
+              )}
+
               {/* Copy button */}
               <SecondaryButton
                 onPress={() => handleCopy(accountKey.privateKey, index)}
                 disabled={!isRevealed}
                 testID={`private-key-copy-button-${index}`}
               >
-                {isCopied ? t('wallet.copied') : t('actions.copy').toUpperCase()}
+                {isCopied ? t('wallet.copied') : t('actions.copy')}
               </SecondaryButton>
               {copyFailedIndex === index && (
                 <Text style={styles.copyFailedText} testID={`private-key-copy-error-${index}`}>
@@ -255,9 +334,20 @@ export function PrivateKeyPanel({
       {/* Done button */}
       <View style={styles.doneContainer}>
         <PrimaryButton onPress={onBack} testID="private-key-done-button">
-          {t('actions.done').toUpperCase()}
+          {t('actions.done')}
         </PrimaryButton>
       </View>
+
+      <ConfirmSheet
+        visible={reauthIndex !== null}
+        onClose={() => setReauthIndex(null)}
+        title={t('settings.reveal_private_key_title')}
+        message={t('settings.reveal_private_key_message')}
+        confirmText={t('actions.reveal')}
+        requirePassword
+        validatePassword={accountActions.checkPassword}
+        onConfirm={handleReauthenticated}
+      />
     </SettingsScreenLayout>
   );
 }
@@ -275,13 +365,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     padding: spacing.lg,
   },
   networkIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
+    width: componentSizes.iconSize2XL,
+    height: componentSizes.iconSize2XL,
+    borderRadius: borderRadius.r2,
     backgroundColor: colors.background.tertiary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -291,32 +381,45 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   networkName: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   networkBlockchain: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
+    fontSize: fontSize.mono,
     marginTop: spacing.xxs,
+  },
+  // Same chip the token selector paints on non-mainnet rows.
+  networkChip: {
+    backgroundColor: `${colors.border.default}CC`,
+    borderRadius: borderRadius.r1,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxs,
+    marginLeft: spacing.sm,
+  },
+  networkChipText: {
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.xs,
   },
   // Warning
   warningContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: colors.status.warningBackground,
-    borderRadius: borderRadius.md,
+    backgroundColor: semantic.status.warningTint,
+    borderRadius: borderRadius.r2,
     padding: spacing.md,
     marginBottom: spacing.xl,
     gap: spacing.sm,
   },
   warningText: {
     flex: 1,
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
-    lineHeight: 20,
+    fontSize: fontSize.body,
+    lineHeight: fontSize.body * lineHeight.snug,
   },
   // Key card
   keyCard: {
@@ -326,38 +429,45 @@ const styles = StyleSheet.create({
   keyHeader: {
     gap: spacing.xs,
   },
+  // The `label` role: 10/600/uppercase/+0.3px, as the other on-system
+  // surfaces render section labels.
   pathLabel: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.label,
     textTransform: 'uppercase',
-    letterSpacing: letterSpacing.wider,
+    letterSpacing: letterSpacing.label,
   },
   pathValue: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
   },
   addressValue: {
-    color: colors.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: 13,
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.mono,
+    fontSize: fontSize.mono,
     marginTop: spacing.xxs,
   },
+  // The Bedrock Rule (DESIGN.md): a private key is a bedrock surface like the
+  // seed — its exhibiting ground is `surface.bedrock`, α 1.00, never a
+  // translucent card that lets the water show through the key.
   keyContainer: {
     position: 'relative',
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.lg,
+    backgroundColor: semantic.surface.bedrock,
+    borderRadius: borderRadius.r3,
     padding: spacing.lg,
     minHeight: 80,
     justifyContent: 'center',
   },
+  // Geist Mono, as every value read character by character renders — the key
+  // is the most position-critical string in the app. Mono is fixed-pitch, so
+  // no added tracking.
   keyText: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
-    lineHeight: 22,
-    letterSpacing: letterSpacing.wider,
+    color: semantic.text.primary,
+    fontFamily: fontFamilyNative.mono,
+    fontSize: fontSize.monoLg,
+    lineHeight: fontSize.monoLg * lineHeight.normal,
   },
   revealOverlay: {
     position: 'absolute',
@@ -366,21 +476,21 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: colors.overlay.dark,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.r3,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
     gap: spacing.sm,
   },
   revealText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.md,
+    fontSize: fontSize.bodyLg,
   },
   emptyText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     textAlign: 'center',
     marginVertical: spacing.xl,
   },
@@ -388,9 +498,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   copyFailedText: {
-    color: colors.status.error,
+    color: semantic.status.danger,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginTop: spacing.sm,
     textAlign: 'center',
   },

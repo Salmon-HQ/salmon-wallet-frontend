@@ -4,6 +4,7 @@
  * Web version using MUI and @emotion/styled for browser extension.
  * Provides a password field with show/hide toggle and optional error message.
  */
+import { iconSize } from '../../icons';
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
@@ -14,6 +15,7 @@ import Typography from '@mui/material/Typography';
 import {
   colors,
   componentSizes,
+  semantic,
   spacing,
   fontFamily,
   fontSize as fontSizeTokens,
@@ -22,6 +24,7 @@ import {
   duration,
   easing,
 } from '@salmon/shared';
+import { focusRingNone, focusRingOnWrapper } from '../../theme';
 import { EyeIcon, EyeOffIcon } from '../Icon';
 import type { PasswordInputProps } from './types';
 
@@ -29,6 +32,8 @@ const Container = styled(Box)({
   width: '100%',
 });
 
+// This wrapper — not the InputBase inside it — is the field's visual
+// boundary, so it is what carries the keyboard focus ring.
 const InputWrapper = styled(Box)<{
   $borderColor: string;
 }>(({ $borderColor }) => ({
@@ -42,13 +47,19 @@ const InputWrapper = styled(Box)<{
   paddingLeft: spacing.lg,
   paddingRight: spacing.lg,
   transition: `border-color ${duration.normal} ${easing.ease}`,
+  '&:has(:focus-visible)': {
+    ...focusRingOnWrapper,
+    '& .MuiInputBase-root.MuiInputBase-root': focusRingNone,
+  },
 }));
 
+// Bare flex child: no border, no radius. Ringing it is what drew the
+// hard-cornered rectangle inside the rounded wrapper. InputWrapper rings it.
 const StyledInput = styled(InputBase)({
   flex: 1,
   color: colors.text.primary,
   fontFamily: fontFamily.sans,
-  fontSize: fontSizeTokens.md,
+  fontSize: fontSizeTokens.bodyLg,
   '& .MuiInputBase-input': {
     padding: 0,
     '&::placeholder': {
@@ -66,7 +77,7 @@ const ToggleButton = styled(IconButton)({
 });
 
 const ErrorText = styled(Typography)({
-  color: colors.status.error,
+  color: semantic.status.danger,
   fontFamily: fontFamily.sans,
   fontSize: fontSizeTokens.xs,
   marginTop: spacing.xs,
@@ -111,7 +122,7 @@ export function PasswordInput({
   const [isFocused, setIsFocused] = useState(false);
 
   const getBorderColor = () => {
-    if (error) return colors.status.error;
+    if (error) return semantic.status.danger;
     if (isFocused) return colors.accent.primary;
     return colors.input.border;
   };
@@ -153,19 +164,9 @@ export function PasswordInput({
           tabIndex={-1}
         >
           {showPassword ? (
-            <EyeOffIcon
-              sx={{
-                fontSize: componentSizes.iconSizeMedium,
-                color: colors.text.secondary,
-              }}
-            />
+            <EyeOffIcon size={iconSize.lg} color={colors.text.secondary} />
           ) : (
-            <EyeIcon
-              sx={{
-                fontSize: componentSizes.iconSizeMedium,
-                color: colors.text.secondary,
-              }}
-            />
+            <EyeIcon size={iconSize.lg} color={colors.text.secondary} />
           )}
         </ToggleButton>
       </InputWrapper>

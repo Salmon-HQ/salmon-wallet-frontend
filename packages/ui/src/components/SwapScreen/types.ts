@@ -29,7 +29,8 @@ import type {
   SwapTabSelectorProps as SwapTabSelectorPropsBase,
   SwapAmountInputProps as SwapAmountInputPropsBase,
   SwapDetailRowProps as SwapDetailRowPropsBase,
-  SwapReviewCardProps as SwapReviewCardPropsBase,
+  SwapDetailsCardProps as SwapDetailsCardPropsBase,
+  SwapReviewExchangeProps as SwapReviewExchangePropsBase,
   SwapReviewScreenProps as SwapReviewScreenPropsBase,
   SwapInputScreenProps as SwapInputScreenPropsBase,
   SwapScreenProps as SwapScreenPropsBase,
@@ -58,9 +59,14 @@ export interface SwapAmountInputProps extends SwapAmountInputPropsBase<CSSProper
 export interface SwapDetailRowProps extends SwapDetailRowPropsBase<CSSProperties> {}
 
 /**
- * Props for SwapReviewCard component (Web)
+ * Props for SwapDetailsCard component (web)
  */
-export interface SwapReviewCardProps extends SwapReviewCardPropsBase<CSSProperties> {}
+export interface SwapDetailsCardProps extends SwapDetailsCardPropsBase<CSSProperties> {}
+
+/**
+ * Props for SwapReviewExchange component (Web)
+ */
+export interface SwapReviewExchangeProps extends SwapReviewExchangePropsBase<CSSProperties> {}
 
 /**
  * Props for SwapReviewButtons component (Web)
@@ -69,6 +75,8 @@ export interface SwapReviewButtonsProps {
   onBack: () => void;
   onConfirm: () => void;
   isConfirming?: boolean;
+  /** Whether a fresh quote/estimate is in flight (see SwapReviewScreenProps) */
+  isRefreshing?: boolean;
   confirmLabel?: string;
   style?: CSSProperties;
 }
@@ -86,4 +94,24 @@ export interface SwapInputScreenProps extends SwapInputScreenPropsBase<CSSProper
 /**
  * Props for main SwapScreen component (Web)
  */
-export interface SwapScreenProps extends SwapScreenPropsBase<CSSProperties> {}
+export interface SwapScreenProps extends SwapScreenPropsBase<CSSProperties> {
+  /**
+   * Reports whether the flow currently owns the screen: true from the moment
+   * the swap or bridge is signed until its outcome has been acknowledged.
+   * Hosts use it to disable navigation that would discard that report.
+   */
+  onFlowLockChange?: (locked: boolean) => void;
+  /**
+   * Reports when the flow becomes a **task** rather than tab content — review
+   * onward. A task has one way out (its own back arrow, which knows the step
+   * the user is on); the app chrome around it offers exits that do not, so the
+   * host hides the header and tab bar while this is true. Mobile has always
+   * done this by presenting review and success in a `Modal`; the DOM apps had
+   * no equivalent, which is finding #3 of the flow audit.
+   *
+   * Separate from `onFlowLockChange`, which starts later (at signature) and
+   * governs whether ambient navigation is *allowed*. Hiding chrome must not be
+   * mistaken for a guard: the in-flight state still owns the back button.
+   */
+  onTaskChange?: (isTask: boolean) => void;
+}
