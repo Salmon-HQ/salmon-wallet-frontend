@@ -42,6 +42,20 @@ const UNAVAILABLE_PATTERNS = [
   'temporarily disabled',
 ];
 
+// No route exists for this pair and retrying will not fix it (StealthEX
+// hasn't enabled it, or has explicitly blocked/disabled it) — distinct from
+// UNAVAILABLE_PATTERNS above, which covers transient provider outages.
+const PAIR_UNAVAILABLE_PATTERNS = [
+  'no exchange route',
+  'route is disabled',
+  'routeisdisabled',
+  'market unavailable',
+  'marketunavailable',
+  'not allowed',
+  'notallowed',
+  'pair is disabled',
+];
+
 /**
  * @param minimum - the pair minimum from the provider's estimate, when one was
  *   fetched. The create-exchange failure itself only carries free text, so the
@@ -88,6 +102,12 @@ export function classifyBridgeError(
       return { key: 'bridge.errors.aboveMaximumWithAmount', params: { max } };
     }
     return 'bridge.errors.aboveMaximum';
+  }
+
+  // Checked before UNAVAILABLE_PATTERNS: "market unavailable" would otherwise
+  // match the generic 'unavailable' substring below and suggest retrying.
+  if (PAIR_UNAVAILABLE_PATTERNS.some((pattern) => haystack.includes(pattern))) {
+    return 'bridge.errors.pairUnavailable';
   }
 
   if (UNAVAILABLE_PATTERNS.some((pattern) => haystack.includes(pattern))) {

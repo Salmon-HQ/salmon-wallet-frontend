@@ -81,6 +81,19 @@ describe('classifyBridgeError', () => {
     expect(classifyBridgeError(undefined)).toBe('bridge.errors.generic');
   });
 
+  it('maps a no-route provider rejection to the pair-unavailable message', () => {
+    expect(
+      classifyBridgeError(
+        new Error('Bridge fetch estimated amount failed: No exchange route available')
+      )
+    ).toBe('bridge.errors.pairUnavailable');
+    expect(classifyBridgeError(new Error('RouteIsDisabled'))).toBe('bridge.errors.pairUnavailable');
+    expect(classifyBridgeError(new Error('MarketUnavailable'))).toBe(
+      'bridge.errors.pairUnavailable'
+    );
+    expect(classifyBridgeError(new Error('NotAllowed'))).toBe('bridge.errors.pairUnavailable');
+  });
+
   it('never reads a provider error as a chain fee problem', () => {
     expect(classifyBridgeError(new Error('insufficient funds for the requested exchange'))).toBe(
       'bridge.errors.generic'

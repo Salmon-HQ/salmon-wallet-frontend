@@ -714,7 +714,7 @@
       "belowMinimumWithAmount": "The minimum for this pair is {{min}}. Increase the amount and try again.",
       "unavailable": "The exchange service is temporarily unavailable. Try again in a few minutes.",
       "generic": "The exchange could not be created. Please try again.",
-      "pairUnavailable": "This trading pair is currently unavailable",
+      "pairUnavailable": "This token pair isn't available for bridging yet. Try a different token.",
       "aboveMaximum": "Amount exceeds the maximum for this pair",
       "aboveMaximumWithAmount": "Maximum for this pair is {{max}}",
       "networkError": "Network error: Unable to reach the server",

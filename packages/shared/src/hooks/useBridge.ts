@@ -135,7 +135,11 @@ export interface UseBridgeResult {
 function parseBridgeErrorMessage(raw: string): string {
   const stripped = raw.replace(/^Bridge fetch \w[\w\s]* failed:\s*/i, '').trim();
 
-  if (/pair is disabled|pair is unavailable/i.test(stripped)) {
+  if (
+    /pair is disabled|pair is unavailable|no exchange route|route is disabled|market unavailable|not allowed/i.test(
+      stripped
+    )
+  ) {
     return 'bridge.errors.pairUnavailable';
   }
   if (/amount.*too small|less than minimal/i.test(stripped)) {

@@ -714,7 +714,7 @@
       "belowMinimumWithAmount": "El mínimo para este par es {{min}}. Aumentá el monto y volvé a intentarlo.",
       "unavailable": "El servicio de intercambio no está disponible por el momento. Volvé a intentarlo en unos minutos.",
       "generic": "No se pudo crear el intercambio. Volvé a intentarlo.",
-      "pairUnavailable": "Este par de intercambio no está disponible por el momento",
+      "pairUnavailable": "Este par de tokens todavía no está disponible para el bridge. Probá con otro token.",
       "aboveMaximum": "El monto supera el máximo para este par",
       "aboveMaximumWithAmount": "El máximo para este par es {{max}}",
       "networkError": "Error de red: no se pudo conectar con el servidor",
