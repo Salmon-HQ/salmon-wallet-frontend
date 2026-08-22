@@ -14,7 +14,7 @@
 
 A user confirms a swap that fails — no SOL for the fee, slippage exceeded, route gone — and reads what happened and what to do, in their language, on the screen they were using.
 
-**Why this priority**: Swaps are where the product earns money and where users move the largest amounts. A failure that answers with a blank screen and an RPC dump reads as a broken or untrustworthy app at the exact moment trust matters most. This is also review surface: a reviewer with the funded test wallet can hit it.
+**Why this priority**: Swaps are where the product earns money and where users move the largest amounts. A failure that answers with a blank screen and an RPC dump reads as a broken or untrustworthy app at the exact moment trust matters most. This is also review surface: a reviewer with a funded test wallet can hit it.
 
 **Independent Test**: Force each failure class (insufficient fee SOL, slippage, generic) against the confirm flow and read what appears.
 

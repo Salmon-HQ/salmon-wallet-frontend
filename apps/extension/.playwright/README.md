@@ -91,8 +91,9 @@ these scripts.
 Before running anything beyond `lock.spec.ts` or read-only Phase 1
 scripts, check what Wallet A / Wallet B actually hold — `state-check.mjs`,
 a quick RPC query (`solana balance <addr>`, `getTokenAccountsByOwner`), or
-opening the popup and looking at Home/Collectibles. This is real mainnet
-money — know the balance before a script spends it.
+opening the popup and looking at Home/Collectibles. These are wallets you
+create and fund yourself in your gitignored `.env.test`, holding real
+mainnet money — know the balance before a script spends it.
 
 Per-flow prerequisites:
 
@@ -101,7 +102,7 @@ Per-flow prerequisites:
 | `lock.spec.ts`, `dapp-providers.mjs`, connect/sign flows | nothing — no funds required                  |
 | `state-modifying.mjs` (Send, Address Book)               | Wallet A: SOL for fee + the 0.001 SOL amount |
 | `nft-transfer.mjs`                                       | Wallet A: an NFT to send                     |
-| `burn-cnft.mjs`                                          | Wallet B: the target scam cNFT               |
+| `burn-cnft.mjs`                                          | Wallet B: a scam/spam cNFT to burn           |
 
 Repo policy: a spec/script that finds its prerequisite missing skips (or
 stops, for legacy `.mjs` scripts) with a clear message, never a cryptic
@@ -166,7 +167,7 @@ tail -f apps/extension/.playwright/reports/PHASE1-WALKTHROUGH.md
 | Script                     | Purpose                                                                                                                                                                                                                                |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `discover-wallet-addr.mjs` | Wipes profile, recovers with `SEED_B`, captures the Solana receive address, writes it to `fixtures/wallet-b-addr.txt`, then wipes profile so subsequent runs default back to `SEED_A`. **Run this once** before any cross-wallet test. |
-| `nft-spam-filter.mjs`      | Validates that toggling Developer Networks reveals scam cNFTs that the spam filter (`packages/shared/src/utils/nft-spam-filter.ts`) hides by default. Uses Wallet B which has known scam airdrops.                                     |
+| `nft-spam-filter.mjs`      | Validates that toggling Developer Networks reveals scam cNFTs that the spam filter (`packages/shared/src/utils/nft-spam-filter.ts`) hides by default. Requires Wallet B to hold scam-flagged cNFT airdrops.                                     |
 
 ### Phase 2 — state-modifying / on-chain
 
@@ -174,7 +175,7 @@ tail -f apps/extension/.playwright/reports/PHASE1-WALKTHROUGH.md
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `state-modifying.mjs` | Address Book Save (Wallet B), Send 0.001 SOL Wallet A → Wallet B (real on-chain mainnet). Waits for async address validation before clicking Save/Send.                                                                          |
 | `nft-transfer.mjs`    | Send a Solana NFT from Wallet A to Wallet B. The dialog shows a Confirm modal directly (no Review step) and may trigger a password prompt that the driver does not currently handle — outcome inconclusive when fully automated. |
-| `burn-cnft.mjs`       | Burn the `JUP.PRO Drop Pass` scam cNFT from Wallet B (mainnet). Verified on-chain success. Selector targets `aria-label="Burn NFT"` — see lessons learned in `AGENTS.md`.                                                        |
+| `burn-cnft.mjs`       | Burn a scam cNFT from Wallet B — a real, irreversible on-chain mainnet burn. Selector targets `aria-label="Burn NFT"` — see lessons learned in `AGENTS.md`.                                                                      |
 
 ## Reports
 
