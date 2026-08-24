@@ -99,3 +99,18 @@ export async function encryptMnemonics(
 
   throw new EncryptionMaterialMissingError();
 }
+
+/**
+ * Whether the vault can be re-encrypted right now without asking for the
+ * password.
+ *
+ * The derived key is cached for a few minutes of inactivity (KEY_CACHE_TTL).
+ * Callers
+ * that are about to build something expensive — an account, a set of derived
+ * accounts — use this to ask for the password *before* the work rather than
+ * failing at the write and having to explain a dead end afterwards.
+ */
+export async function isVaultKeyCached(): Promise<boolean> {
+  const cachedKey = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
+  return isKeyCacheValid(cachedKey);
+}

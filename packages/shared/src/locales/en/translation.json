@@ -297,7 +297,11 @@
       "creation_error": "Failed to create account. Please try again.",
       "session_expired": "Your session expired. Unlock the wallet again to add an account.",
       "import_private_key": "Import private key",
-      "import_private_key_description": "Add a wallet you already own using its private key"
+      "import_private_key_description": "Add a wallet you already own using its private key",
+      "session_expired_title": "Session expired",
+      "reauth_title": "Confirm your password",
+      "reauth_body": "Your wallet has been idle for a few minutes, so the key that encrypts it is no longer held in memory. Enter your password to finish adding this account — nothing you entered is lost.",
+      "reauth_confirm": "Confirm and add"
     },
     "security": {
       "title": "Security",

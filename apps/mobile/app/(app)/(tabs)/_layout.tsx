@@ -398,6 +398,11 @@ export default function TabLayout() {
 
   // -- Panel Registry for SettingsPanelStack --
 
+  const handleSettingsClose = useCallback(() => {
+    setSettingsVisible(false);
+    setSettingsInitialPanels(undefined);
+  }, []);
+
   const panelRegistry: MobilePanelRegistry = useMemo(
     () => ({
       avatar: ({ onBack }) => {
@@ -651,7 +656,12 @@ export default function TabLayout() {
           />
         );
       },
-      'account-add': ({ onBack }) => <AccountAddPanel onComplete={onBack} onBack={onBack} />,
+      // A finished add lands on Home, not back on the settings list: the
+      // account it just created is already the active one, so the useful next
+      // screen is the wallet showing it.
+      'account-add': ({ onBack }) => (
+        <AccountAddPanel onComplete={handleSettingsClose} onBack={onBack} />
+      ),
       backup: ({ onBack }) => (
         <BackupPanel
           onBack={onBack}
@@ -693,6 +703,7 @@ export default function TabLayout() {
       editingContact,
       editingAccountId,
       activeTrustedApps,
+      handleSettingsClose,
       openLink,
       t,
     ]
@@ -706,11 +717,6 @@ export default function TabLayout() {
       await Clipboard.setStringAsync(addr);
     }
   }, [activeBlockchainAccount]);
-
-  const handleSettingsClose = useCallback(() => {
-    setSettingsVisible(false);
-    setSettingsInitialPanels(undefined);
-  }, []);
 
   // -- Wallet Switcher handlers --
 

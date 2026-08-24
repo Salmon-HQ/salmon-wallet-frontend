@@ -34,6 +34,7 @@ import {
   normalizeMnemonic,
   createAccount,
   importAccountFromPrivateKey,
+  isVaultKeyCached,
   useImportPrivateKey,
   getAccountMnemonic,
   getShortAddress,
@@ -42,6 +43,7 @@ import {
   SHORT_PHRASE,
   EncryptionMaterialMissingError,
   trackEvent,
+  type Account,
   type AccountAddStep,
   type DerivedAccountInfo,
   semantic,
@@ -86,7 +88,17 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const [loading, setLoading] = useState(false);
 
   // Creation-failure notice, surfaced as a sheet rather than an OS alert.
-  const [creationError, setCreationError] = useState<string | null>(null);
+  // Title and body together: the failure is named in the heading rather than
+  // filed under "unexpected", which is wrong for a cause the code detected on
+  // purpose and leaves the user with nothing to act on.
+  const [creationError, setCreationError] = useState<{ title: string; message: string } | null>(
+    null
+  );
+  // Re-auth step state. The password lives here only for the moment between
+  // typing and the verified write.
+  const [reauthPassword, setReauthPassword] = useState('');
+  const [reauthError, setReauthError] = useState('');
+  const [reauthChecking, setReauthChecking] = useState(false);
 
   // The wait's passage: the panel keeps the wait mounted until its closing
   // wave has left, and the completion handoff is parked behind that report —
@@ -194,29 +206,19 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     setStep('set-name');
   }, [seedPhrase, defaultName, t]);
 
-  const handleConfirm = useCallback(async () => {
-    if (loading) return;
-    const name = accountName.trim() || defaultName;
-    setLoading(true);
-    try {
-      // A private key owns one address and derives nothing, so it takes the
-      // import factory instead of the mnemonic fan-out across networks.
-      const { account } = privateKeyImport.privateKey
-        ? await importAccountFromPrivateKey({
-            name,
-            privateKey: privateKeyImport.privateKey,
-            networkId: privateKeyImport.networkId,
-          })
-        : await createAccount({
-            name,
-            mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
-            networkIds: await getScanNetworks(),
-            startIndex: selectedDerived ? selectedDerived.index : 0,
-          });
-      await accountActions.addAccount(account);
+  /**
+   * Stores a freshly built account, reporting completion through the wait.
+   *
+   * Split out of `handleConfirm` because the re-auth retry needs exactly this
+   * half: the account is already built, only the encrypted write is missing.
+   */
+  const persistAccount = useCallback(
+    async (account: Account, password?: string) => {
+      await accountActions.addAccount(account, password);
       // Anonymous funnel event: an account was added from inside the app. A
-      // derived account reuses the active seed (create); an imported seed is a
-      // recovery. No seed, address or key material — just which flow completed.
+      // derived account reuses the active seed (create); an imported seed or
+      // private key is a recovery. No seed, address or key material leaves
+      // here — just which flow completed.
       trackEvent(selectedDerived ? 'wallet_created' : 'wallet_recovered');
       // The key has done its job; drop it from component state rather than
       // leaving it resident until the panel happens to unmount.
@@ -225,27 +227,117 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       // `handleWaitExited` completes once the last wave has left the screen.
       pendingCompleteRef.current = true;
       setLoading(false);
+    },
+    [accountActions, selectedDerived, privateKeyImport]
+  );
+
+  /**
+   * Builds the account the current flow describes. Cheap enough to run twice
+   * (once per confirm attempt) and free of side effects, so the re-auth path
+   * can rebuild rather than park key material in component state.
+   */
+  const buildAccount = useCallback(async () => {
+    const name = accountName.trim() || defaultName;
+    // A private key owns one address and derives nothing, so it takes the
+    // import factory instead of the mnemonic fan-out across networks.
+    return privateKeyImport.privateKey
+      ? importAccountFromPrivateKey({
+          name,
+          privateKey: privateKeyImport.privateKey,
+          networkId: privateKeyImport.networkId,
+        })
+      : createAccount({
+          name,
+          mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
+          networkIds: await getScanNetworks(),
+          startIndex: selectedDerived ? selectedDerived.index : 0,
+        });
+  }, [accountName, defaultName, privateKeyImport, selectedDerived, activeAccount, seedPhrase]);
+
+  const reportFailure = useCallback(
+    (err: unknown) => {
+      console.error('Failed to add account:', err);
+      setCreationError({
+        title: t('general.error'),
+        message: t('settings.account_add.creation_error'),
+      });
+    },
+    [t]
+  );
+
+  const handleConfirm = useCallback(async () => {
+    if (loading) return;
+
+    // Asked before the work, not after it fails: the vault key expires on
+    // inactivity, and finding out at the write means showing a wait, then a
+    // dead end, for something that was knowable up front.
+    if (!(await isVaultKeyCached())) {
+      setStep('reauth');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { account } = await buildAccount();
+      await persistAccount(account);
     } catch (err) {
       setLoading(false);
+      // The cache can still lapse between the check and the write.
       if (err instanceof EncryptionMaterialMissingError) {
-        setCreationError(t('settings.account_add.session_expired'));
+        setStep('reauth');
         return;
       }
-      setCreationError(t('settings.account_add.creation_error'));
+      reportFailure(err);
     }
-  }, [
-    loading,
-    accountName,
-    defaultName,
-    selectedDerived,
-    activeAccount,
-    seedPhrase,
-    accountActions,
-    privateKeyImport,
-    t,
-  ]);
+  }, [loading, buildAccount, persistAccount, reportFailure]);
+
+  /**
+   * Completes the add with a password the user just supplied, after the vault
+   * key had expired. Verifies it first: re-encrypting the vault under an
+   * unverified password would lock the user out of every account they own.
+   */
+  const handleReauthConfirm = useCallback(async () => {
+    if (loading) return;
+    if (!reauthPassword) {
+      setReauthError(t('errors.password_required'));
+      return;
+    }
+
+    setReauthChecking(true);
+    let valid = false;
+    try {
+      valid = await accountActions.checkPassword(reauthPassword);
+    } catch {
+      setReauthChecking(false);
+      setReauthError(t('errors.password_check_failed'));
+      return;
+    }
+    setReauthChecking(false);
+
+    if (!valid) {
+      setReauthError(t('errors.invalid_password'));
+      return;
+    }
+
+    setReauthError('');
+    setLoading(true);
+    try {
+      const { account } = await buildAccount();
+      await persistAccount(account, reauthPassword);
+      setReauthPassword('');
+    } catch (err) {
+      setLoading(false);
+      reportFailure(err);
+    }
+  }, [loading, reauthPassword, accountActions, buildAccount, persistAccount, reportFailure, t]);
 
   const handleStepBack = useCallback(() => {
+    if (step === 'reauth') {
+      setReauthPassword('');
+      setReauthError('');
+      setStep('set-name');
+      return;
+    }
     if (step === 'set-name') {
       if (selectedDerived) setStep('derive-scan');
       else if (privateKeyImport.privateKey) setStep('import-private-key');
@@ -439,6 +531,34 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     </View>
   );
 
+  const renderReauth = () => (
+    <View>
+      <Text style={styles.methodDescription}>{t('settings.account_add.reauth_body')}</Text>
+      <Text style={styles.inputLabel}>{t('lock.password_label', 'Password')}</Text>
+      <PasswordInput
+        testID="account-add-reauth-password"
+        value={reauthPassword}
+        onChangeText={(value) => {
+          setReauthPassword(value);
+          if (reauthError) setReauthError('');
+        }}
+        placeholder={t('lock.password_placeholder')}
+        error={reauthError || undefined}
+        onSubmitEditing={handleReauthConfirm}
+        autoFocus
+      />
+      <View style={styles.buttonContainer}>
+        <PrimaryButton
+          onPress={handleReauthConfirm}
+          disabled={!reauthPassword || reauthChecking}
+          testID="account-add-reauth-confirm-button"
+        >
+          {t('settings.account_add.reauth_confirm')}
+        </PrimaryButton>
+      </View>
+    </View>
+  );
+
   const renderSetName = () => (
     <View>
       <Text style={styles.inputLabel}>{t('settings.account_add.set_name')}</Text>
@@ -472,6 +592,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     'import-seed': t('settings.account_add.import_seed'),
     'import-private-key': t('wallet.import.title'),
     'set-name': t('settings.account_add.set_name'),
+    reauth: t('settings.account_add.reauth_title'),
     complete: t('settings.account_add.title'),
   };
   const currentTitle = stepTitles[step];
@@ -499,15 +620,18 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         {step === 'import-seed' && renderImportSeed()}
         {step === 'import-private-key' && renderImportPrivateKey()}
         {step === 'set-name' && renderSetName()}
+        {step === 'reauth' && renderReauth()}
       </SettingsScreenLayout>
 
-      {/* Failure notice as a sheet: acknowledgment only, so both buttons
-          dismiss. Kept on ConfirmSheet to match the panel-sheet idiom. */}
+      {/* Failure notice as a sheet: there is nothing to confirm here, so it
+          carries one dismiss button instead of a cancel/confirm pair that both
+          did the same thing. */}
       <ConfirmSheet
         visible={creationError !== null}
         onClose={() => setCreationError(null)}
-        title={t('general.error')}
-        message={creationError ?? ''}
+        title={creationError?.title ?? ''}
+        message={creationError?.message ?? ''}
+        acknowledgeOnly
         confirmText={t('actions.close')}
         onConfirm={async () => {}}
       />

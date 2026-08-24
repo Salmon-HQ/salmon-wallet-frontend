@@ -297,7 +297,11 @@
       "creation_error": "Error al crear la cuenta. Por favor, intentalo de nuevo.",
       "session_expired": "Tu sesión expiró. Volvé a desbloquear la billetera para agregar una cuenta.",
       "import_private_key": "Importar clave privada",
-      "import_private_key_description": "Agregá una wallet que ya tenés usando su clave privada"
+      "import_private_key_description": "Agregá una wallet que ya tenés usando su clave privada",
+      "session_expired_title": "Sesión expirada",
+      "reauth_title": "Confirmá tu contraseña",
+      "reauth_body": "La billetera estuvo inactiva unos minutos, así que la clave que la cifra ya no está en memoria. Ingresá tu contraseña para terminar de agregar esta cuenta — no se pierde nada de lo que cargaste.",
+      "reauth_confirm": "Confirmar y agregar"
     },
     "security": {
       "title": "Seguridad",

@@ -35,12 +35,27 @@ export interface ConfirmSheetProps {
   cancelText?: string;
   /** Whether this is a destructive action (red confirm button) */
   isDanger?: boolean;
+  /**
+   * Renders a single dismiss button instead of the cancel/confirm pair.
+   *
+   * For a sheet that only reports something — a failure the user can do
+   * nothing about here — two buttons that both dismiss read as a choice that
+   * does not exist, and "Cancel" invites the user to think the thing might
+   * still be undone.
+   */
+  acknowledgeOnly?: boolean;
   /** Whether to require password confirmation */
   requirePassword?: boolean;
   /** Password validation function */
   validatePassword?: (password: string) => Promise<boolean>;
-  /** Async callback when user confirms */
-  onConfirm: () => Promise<void>;
+  /**
+   * Async callback when the user confirms.
+   *
+   * Receives the entered password when `requirePassword` is set, so a caller
+   * can hand it to an operation that needs it — the sheet has already checked
+   * it with `validatePassword` by then.
+   */
+  onConfirm: (password?: string) => Promise<void>;
 }
 
 // ============================================================================
@@ -55,6 +70,7 @@ export function ConfirmSheet({
   confirmText,
   cancelText,
   isDanger = false,
+  acknowledgeOnly = false,
   requirePassword = false,
   validatePassword,
   onConfirm,
@@ -101,7 +117,7 @@ export function ConfirmSheet({
 
     setLoading(true);
     try {
-      await onConfirm();
+      await onConfirm(requirePassword ? password : undefined);
       onClose();
     } catch (err) {
       console.error('Confirm action failed:', err);
@@ -167,7 +183,11 @@ export function ConfirmSheet({
             thumb that is already travelling toward the primary.
           */}
           <View style={styles.actions}>
-            {isDanger ? (
+            {acknowledgeOnly ? (
+              <PrimaryButton onPress={onClose} disabled={loading}>
+                {confirmText || t('actions.close', 'Close')}
+              </PrimaryButton>
+            ) : isDanger ? (
               <>
                 <PrimaryButton onPress={onClose} disabled={loading}>
                   {cancelText || t('actions.cancel', 'Cancel')}
