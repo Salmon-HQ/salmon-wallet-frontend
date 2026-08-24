@@ -74,6 +74,10 @@ export type {
 export { useSendTransaction } from './useSendTransaction';
 export type { UseSendTransactionParams, UseSendTransactionResult } from './useSendTransaction';
 
+// Private-key import hook
+export { useImportPrivateKey } from './useImportPrivateKey';
+export type { UseImportPrivateKeyParams, UseImportPrivateKeyResult } from './useImportPrivateKey';
+
 // Swap hook
 export { useSwap } from './useSwap';
 export type { UseSwapParams, UseSwapResult } from './useSwap';

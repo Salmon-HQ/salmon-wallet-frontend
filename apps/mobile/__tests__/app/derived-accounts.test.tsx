@@ -36,6 +36,7 @@ jest.mock('react-native-safe-area-context', () => {
 jest.mock('@salmon/shared', () => ({
   // Real tokens rather than a hand-listed subset — see test-utils/themeTokens.
   ...jest.requireActual('../../test-utils/themeTokens'),
+  ...jest.requireActual('@salmon/shared/src/utils/account-secret'),
   NETWORK_DISPLAY: {},
   deriveBlockchainAccount: jest.fn(),
   getMirrorNetworkId: jest.fn(),
@@ -43,7 +44,12 @@ jest.mock('@salmon/shared', () => ({
   getShortAddress: () => 'Addr...1111',
   scanDerivedAccounts: (...args: unknown[]) => mockScanDerivedAccounts(...args),
   useAccountsContext: () => [
-    { activeAccount: { mnemonic: 'test mnemonic', networksAccounts: {} } },
+    {
+      activeAccount: {
+        secret: { kind: 'mnemonic', mnemonic: 'test mnemonic' },
+        networksAccounts: {},
+      },
+    },
     {},
   ],
 }));

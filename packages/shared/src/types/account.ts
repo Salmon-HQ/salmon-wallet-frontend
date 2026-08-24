@@ -46,11 +46,35 @@ export interface StoredAccount {
 }
 
 /**
+ * The key material an account is built from.
+ *
+ * A wallet has two ways to own an address, and they are not interchangeable:
+ * a BIP39 mnemonic derives a whole tree of addresses across every supported
+ * chain, while an imported private key owns exactly one address on one chain.
+ * Modelling both as "the mnemonic" is what makes an imported account look
+ * derivable and silently vanish on the next unlock, so the difference is
+ * carried in the type instead of being inferred at each call site.
+ */
+export type AccountSecret =
+  | {
+      kind: 'mnemonic';
+      /** BIP39 mnemonic phrase */
+      mnemonic: string;
+    }
+  | {
+      kind: 'privateKey';
+      /** Base58-encoded 64-byte ed25519 secret key (`seed ‖ publicKey`) */
+      privateKey: string;
+      /** The single network this key owns an address on */
+      networkId: string;
+    };
+
+/**
  * Full account with loaded blockchain account instances.
  */
 export interface Account extends StoredAccount {
-  /** The mnemonic phrase for this account */
-  mnemonic: string;
+  /** The key material this account is built from */
+  secret: AccountSecret;
   /** Loaded blockchain account instances by network */
   networksAccounts: NetworksAccounts;
 }
@@ -95,8 +119,28 @@ export interface CreateAccountResult {
 export interface RestoreAccountOptions {
   name?: string;
   avatar?: string;
-  mnemonic: string;
+  secret: AccountSecret;
   pathIndexes?: NetworkPathIndexes;
+}
+
+/**
+ * Options for importing an account from a private key.
+ *
+ * Deliberately separate from {@link CreateAccountOptions}: an import has no
+ * derivation index and no multi-network fan-out, so sharing one options bag
+ * would mean two thirds of the fields being meaningless in either direction.
+ */
+export interface ImportAccountOptions {
+  /** Optional custom ID (generates UUID if not provided) */
+  id?: string;
+  /** Account name (e.g., "Account #2") */
+  name: string;
+  /** Avatar URL (generates random if not provided) */
+  avatar?: string;
+  /** Base58-encoded 64-byte ed25519 secret key */
+  privateKey: string;
+  /** Network to import the key on (defaults to 'solana-mainnet') */
+  networkId?: string;
 }
 
 // ============================================================================

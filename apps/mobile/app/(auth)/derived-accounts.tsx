@@ -30,6 +30,7 @@ import {
   getShortAddress,
   spacing,
   useAccountsContext,
+  getAccountMnemonic,
   NETWORK_DISPLAY,
   scanDerivedAccounts,
   getMirrorNetworkId,
@@ -87,7 +88,8 @@ export default function DerivedAccountsScreen() {
   // Mnemonic comes from the unlocked active account in memory; never from
   // route params, which can be serialized by Expo Router into navigation
   // state or deep-link URLs.
-  const mnemonic = activeAccount?.mnemonic;
+  // Only a mnemonic account has a derivation tree to scan.
+  const mnemonic = getAccountMnemonic(activeAccount);
 
   /**
    * Search for derived accounts across scan networks only.

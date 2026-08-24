@@ -26,6 +26,7 @@ import {
   borderRadius,
   borderWidth,
   useAccountsContext,
+  getAccountMnemonic,
   fontFamily,
   fontSize,
   fontWeight,
@@ -191,10 +192,9 @@ export function BackupPanel({ onBack }: BackupPanelProps): React.ReactElement {
   const { copied, trigger: showCopied } = useCopyFeedback();
   const [copyFailed, setCopyFailed] = useState(false);
 
-  // Get the mnemonic from the active account
-  const mnemonic = useMemo(() => {
-    return activeAccount?.mnemonic || '';
-  }, [activeAccount]);
+  // Get the mnemonic from the active account. An account imported from a
+  // private key has none — there is no seed phrase behind it to back up.
+  const mnemonic = useMemo(() => getAccountMnemonic(activeAccount) ?? '', [activeAccount]);
 
   const words = useMemo(() => {
     return mnemonic.split(' ').filter((w) => w.length > 0);

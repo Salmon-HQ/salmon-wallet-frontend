@@ -1,8 +1,9 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 
 import { clearSeedCache } from '../crypto/mnemonic';
+import { toAccountSecret, type SecretVault } from '../utils/account-secret';
 import { getStorageItem, setStorageItem, STORAGE_KEYS } from '../storage';
-import type { Account, StoredAccount } from '../types/account';
+import type { Account, AccountSecret, StoredAccount } from '../types/account';
 import type { TrustedApps } from '../types/trusted-app';
 import type { CustomTokens } from '../types/token';
 
@@ -15,12 +16,14 @@ interface UseAccountsLoaderParams {
   setPathIndex: Dispatch<SetStateAction<number>>;
   setTrustedApps: Dispatch<SetStateAction<TrustedApps>>;
   setTokens: Dispatch<SetStateAction<CustomTokens>>;
-  restoreManyAccounts: (data: Array<StoredAccount & { mnemonic: string }>) => Promise<Account[]>;
+  restoreManyAccounts: (
+    data: Array<StoredAccount & { secret: AccountSecret }>
+  ) => Promise<Account[]>;
 }
 
 interface UseAccountsLoaderResult {
   loadMetadata: () => Promise<void>;
-  loadAccounts: (mnemonics: Record<string, string>) => Promise<void>;
+  loadAccounts: (mnemonics: SecretVault) => Promise<void>;
 }
 
 export function useAccountsLoader({
@@ -43,7 +46,10 @@ export function useAccountsLoader({
 
     const accountsWithMetadata: Account[] = storedAccounts.map((stored) => ({
       ...stored,
-      mnemonic: '',
+      // Pre-unlock placeholder: the vault has not been decrypted yet, so no
+      // real secret exists in memory. Every consumer that reads key material
+      // runs after unlock, when loadAccounts replaces these entries.
+      secret: { kind: 'mnemonic', mnemonic: '' } as AccountSecret,
       networksAccounts: {},
     }));
 
@@ -74,7 +80,7 @@ export function useAccountsLoader({
   ]);
 
   const loadAccounts = useCallback(
-    async (mnemonics: Record<string, string>): Promise<void> => {
+    async (mnemonics: SecretVault): Promise<void> => {
       const storedAccounts = await getStorageItem<StoredAccount[]>(STORAGE_KEYS.ACCOUNTS);
       if (!storedAccounts) {
         setLoaded(true);
@@ -83,7 +89,7 @@ export function useAccountsLoader({
 
       const data = storedAccounts.map((account) => ({
         ...account,
-        mnemonic: mnemonics[account.id],
+        secret: toAccountSecret(mnemonics[account.id]),
       }));
 
       const storedCounter = await getStorageItem<number>(STORAGE_KEYS.COUNTER);

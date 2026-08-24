@@ -15,7 +15,7 @@ import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
 import ListItemButton from '@mui/material/ListItemButton';
-import { CaretRightIcon, FileTextIcon, TreeStructureIcon, iconSize } from '../../icons';
+import { CaretRightIcon, FileTextIcon, KeyIcon, TreeStructureIcon, iconSize } from '../../icons';
 import { styled } from '../../utils/styled';
 import {
   colors,
@@ -29,6 +29,10 @@ import {
   validateMnemonic,
   normalizeMnemonic,
   createAccount,
+  importAccountFromPrivateKey,
+  useImportPrivateKey,
+  getShortAddress,
+  getAccountMnemonic,
   NETWORK_DISPLAY,
   getScanNetworks,
   SHORT_PHRASE,
@@ -45,6 +49,7 @@ import { DerivedAccountCard } from '../DerivedAccountCard';
 import { LoadingScreen } from '../LoadingScreen';
 import { WarningNotice } from '../WarningNotice';
 import { SeedPhraseEntry } from '../SeedPhrase';
+import { PasswordInput } from '../PasswordInput';
 import type { AccountAddPanelProps } from './types';
 
 // ============================================================================
@@ -112,7 +117,7 @@ const StyledTextField = styled(TextField)({
 export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const [accountState, accountActions] = useAccountsContext();
-  const { activeAccount, counter } = accountState;
+  const { activeAccount, accounts, counter } = accountState;
 
   const [step, setStep] = useState<AccountAddStep>('select-method');
   const [derivedAccounts, setDerivedAccounts] = useState<DerivedAccountInfo[]>([]);
@@ -129,6 +134,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const seedPhrase = useMemo(() => normalizeMnemonic(seedWords.join(' ')), [seedWords]);
   const [confirmError, setConfirmError] = useState('');
   const [loading, setLoading] = useState(false);
+  const privateKeyImport = useImportPrivateKey({ accounts });
 
   /**
    * The wait's exit, held. This panel renders inside the settings panel stack,
@@ -156,17 +162,18 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const [accountName, setAccountName] = useState('');
 
   const handleSelectDerive = useCallback(async () => {
-    if (!activeAccount?.mnemonic) return;
+    const mnemonic = getAccountMnemonic(activeAccount);
+    if (!mnemonic) return;
     setStep('derive-scan');
     setScanning(true);
     setFailedNetworks([]);
     try {
       const scanNetworks = await getScanNetworks();
-      const { accounts, failedNetworks: failed } = await scanDerivedAccounts(
-        activeAccount.mnemonic,
+      const { accounts: derived, failedNetworks: failed } = await scanDerivedAccounts(
+        mnemonic,
         scanNetworks
       );
-      setDerivedAccounts(accounts);
+      setDerivedAccounts(derived);
       setFailedNetworks(failed);
     } catch {
       // Total failure (network catalog unreachable) — mark the scan as failed
@@ -181,6 +188,17 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const handleSelectImport = useCallback(() => {
     setStep('import-seed');
   }, []);
+
+  const handleSelectImportPrivateKey = useCallback(() => {
+    privateKeyImport.reset();
+    setStep('import-private-key');
+  }, [privateKeyImport]);
+
+  const handlePrivateKeySubmit = useCallback(async () => {
+    if (!(await privateKeyImport.validate())) return;
+    setAccountName(defaultName);
+    setStep('set-name');
+  }, [privateKeyImport, defaultName]);
 
   const handleDerivedSelect = useCallback((account: DerivedAccountInfo) => {
     setSelectedDerived((prev) => (prev?.address === account.address ? null : account));
@@ -219,20 +237,29 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     setConfirmError('');
     setLoading(true);
     try {
-      const mnemonic = selectedDerived ? activeAccount?.mnemonic || '' : seedPhrase;
-      const startIndex = selectedDerived ? selectedDerived.index : 0;
-      const scanNetworks = await getScanNetworks();
-      const { account } = await createAccount({
-        name,
-        mnemonic,
-        networkIds: scanNetworks,
-        startIndex,
-      });
+      // A private key owns one address and derives nothing, so it takes the
+      // import factory instead of the mnemonic fan-out across networks.
+      const { account } = privateKeyImport.privateKey
+        ? await importAccountFromPrivateKey({
+            name,
+            privateKey: privateKeyImport.privateKey,
+            networkId: privateKeyImport.networkId,
+          })
+        : await createAccount({
+            name,
+            mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
+            networkIds: await getScanNetworks(),
+            startIndex: selectedDerived ? selectedDerived.index : 0,
+          });
       await accountActions.addAccount(account);
       // Anonymous funnel event: an account was added from inside the app. A
-      // derived account reuses the active seed (create); an imported seed is a
-      // recovery. No seed, address or key material — just which flow completed.
+      // derived account reuses the active seed (create); an imported seed or
+      // private key is a recovery. No seed, address or key material leaves
+      // here — just which flow completed.
       trackEvent(selectedDerived ? 'wallet_created' : 'wallet_recovered');
+      // The key has done its job; drop it from component state rather than
+      // leaving it resident until the panel happens to unmount.
+      privateKeyImport.reset();
       // Parked, not fired: dropping `loading` starts the wait's exit, and
       // `handleWaitExited` completes once the last wave has left the screen.
       pendingCompleteRef.current = true;
@@ -245,22 +272,35 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       }
       setConfirmError(t('settings.account_add.creation_error'));
     }
-  }, [accountName, defaultName, selectedDerived, activeAccount, seedPhrase, accountActions, t]);
+  }, [
+    accountName,
+    defaultName,
+    selectedDerived,
+    activeAccount,
+    seedPhrase,
+    accountActions,
+    privateKeyImport,
+    t,
+  ]);
 
   const handleStepBack = useCallback(() => {
     if (step === 'set-name') {
-      setStep(selectedDerived ? 'derive-scan' : 'import-seed');
-    } else if (step === 'derive-scan' || step === 'import-seed') {
+      if (selectedDerived) setStep('derive-scan');
+      else if (privateKeyImport.privateKey) setStep('import-private-key');
+      else setStep('import-seed');
+    } else if (step === 'derive-scan' || step === 'import-seed' || step === 'import-private-key') {
+      if (step === 'import-private-key') privateKeyImport.reset();
       setStep('select-method');
     } else {
       onBack();
     }
-  }, [step, selectedDerived, onBack]);
+  }, [step, selectedDerived, privateKeyImport, onBack]);
 
   const stepTitles: Record<AccountAddStep, string> = {
     'select-method': t('settings.account_add.title'),
     'derive-scan': t('settings.account_add.create_new'),
     'import-seed': t('settings.account_add.import_seed'),
+    'import-private-key': t('wallet.import.title'),
     'set-name': t('settings.account_add.set_name'),
     complete: t('settings.account_add.title'),
   };
@@ -326,6 +366,80 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                 </MethodInfo>
                 <CaretRightIcon color={colors.text.secondary} />
               </MethodCard>
+
+              <MethodCard
+                onClick={handleSelectImportPrivateKey}
+                data-testid="account-add-method-private-key"
+              >
+                <MethodIcon>
+                  <KeyIcon color={colors.accent.primary} size={iconSize.xl} />
+                </MethodIcon>
+                <MethodInfo>
+                  <Typography
+                    sx={{
+                      color: colors.text.primary,
+                      fontWeight: fontWeight.semibold,
+                      fontSize: fontSize.body,
+                      marginBottom: spacing.xxs,
+                    }}
+                  >
+                    {t('settings.account_add.import_private_key')}
+                  </Typography>
+                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
+                    {t('settings.account_add.import_private_key_description')}
+                  </Typography>
+                </MethodInfo>
+                <CaretRightIcon color={colors.text.secondary} />
+              </MethodCard>
+            </>
+          )}
+
+          {step === 'import-private-key' && (
+            <>
+              <WarningNotice tone="warning" title={t('wallet.import.warning_title')}>
+                {t('wallet.import.warning_body')}
+              </WarningNotice>
+              <Box sx={{ marginTop: `${spacing.lg}px` }}>
+                <PasswordInput
+                  value={privateKeyImport.value}
+                  onChangeText={privateKeyImport.setValue}
+                  placeholder={t('wallet.import.placeholder')}
+                  error={privateKeyImport.error ? t(privateKeyImport.error) : undefined}
+                  onSubmitEditing={handlePrivateKeySubmit}
+                  autoFocus
+                  testID="account-add-private-key-input"
+                />
+              </Box>
+              <Typography
+                sx={{
+                  color: colors.text.secondary,
+                  fontSize: fontSize.caption,
+                  marginTop: spacing.xs,
+                }}
+              >
+                {t('wallet.import.help')}
+              </Typography>
+              {privateKeyImport.address && (
+                <Box
+                  sx={{ marginTop: `${spacing.lg}px` }}
+                  data-testid="account-add-private-key-address"
+                >
+                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
+                    {t('wallet.import.resolved_address')}
+                  </Typography>
+                  <Typography sx={{ color: colors.text.primary, fontSize: fontSize.body }}>
+                    {getShortAddress(privateKeyImport.address)}
+                  </Typography>
+                </Box>
+              )}
+              <PrimaryButton
+                style={CONFIRM_SLOT_STYLE}
+                onClick={handlePrivateKeySubmit}
+                disabled={!privateKeyImport.hasInput || privateKeyImport.validating}
+                testID="account-add-private-key-continue-button"
+              >
+                {t('actions.continue')}
+              </PrimaryButton>
             </>
           )}
 

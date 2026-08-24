@@ -31,11 +31,22 @@ export {
   generateAccountId,
   generateAccountName,
   createBlockchainAccountForNetwork,
+  createBlockchainAccountFromPrivateKey,
   buildNetworkListFromAccount,
   getAccountKeysForNetwork,
   getAccountAddress,
   getActiveSolanaApprovalAccount,
 } from './account';
+
+// Account secret / vault serialization
+export {
+  toAccountSecret,
+  toStoredSecret,
+  buildSecretVault,
+  getAccountMnemonic,
+  isImportedAccount,
+} from './account-secret';
+export type { StoredSecret, SecretVault } from './account-secret';
 
 // Avatar utilities
 export {

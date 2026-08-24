@@ -295,7 +295,9 @@
       "confirm_import": "Importar Cuenta",
       "confirm": "Confirmar",
       "creation_error": "Error al crear la cuenta. Por favor, intentalo de nuevo.",
-      "session_expired": "Tu sesión expiró. Volvé a desbloquear la billetera para agregar una cuenta."
+      "session_expired": "Tu sesión expiró. Volvé a desbloquear la billetera para agregar una cuenta.",
+      "import_private_key": "Importar clave privada",
+      "import_private_key_description": "Agregá una wallet que ya tenés usando su clave privada"
     },
     "security": {
       "title": "Seguridad",
@@ -323,7 +325,7 @@
     "clipboard_key_warning_description": "Cualquier otra app de este dispositivo puede leer lo que copiás, y algunos sistemas guardan un historial del portapapeles. Pegá la clave solo donde querías, y limpiá el portapapeles después.",
     "reveal_private_key_title": "Confirmá que sos vos",
     "reveal_private_key_message": "Ingresá tu contraseña para mostrar la clave privada. Cualquiera que la vea puede gastar todo lo que hay en esta cuenta, y no hay forma de revertirlo.",
-    "no_seed_phrase": "Esta cuenta fue importada con una private key y no tiene frase de recuperación.",
+    "no_seed_phrase": "Esta cuenta se importó con una clave privada y no tiene frase de recuperación.",
     "recovery_phrase": "Frase de Recuperación",
     "remove_all_wallets_description": "Esto eliminará TODAS las billeteras de este dispositivo. Esta acción no se puede deshacer. Asegurate de haber respaldado todas las frases de recuperación.",
     "remove_wallet_description": "¿Estás seguro de que querés eliminar esta billetera? Asegurate de haber respaldado tu frase de recuperación antes de eliminarla.",
@@ -545,7 +547,27 @@
     "tokens_empty_subtitle": "Tus tokens van a aparecer acá cuando recibas alguno",
     "no_account_found": "No se encontró ninguna cuenta",
     "unnamed_account": "Cuenta",
-    "token_search_failed": "La búsqueda no está disponible en este momento. Intentá de nuevo."
+    "token_search_failed": "La búsqueda no está disponible en este momento. Intentá de nuevo.",
+    "import": {
+      "title": "Importar clave privada",
+      "label": "Clave privada",
+      "placeholder": "Pegá tu clave privada",
+      "help": "Base58 o array de bytes, como la exportan Salmon, Phantom o la CLI de Solana.",
+      "show": "Mostrar clave privada",
+      "hide": "Ocultar clave privada",
+      "warning_title": "Nunca compartas tu clave privada",
+      "warning_body": "Quien la tenga puede mover todos los activos de esta wallet. Salmon nunca te la va a pedir.",
+      "resolved_address": "Wallet a importar",
+      "continue": "Continuar",
+      "errors": {
+        "empty": "Ingresá tu clave privada para continuar.",
+        "format": "Eso no parece una clave privada. Pegala en base58 o como array de bytes.",
+        "length": "Esa clave no tiene el largo correcto. Una clave privada de Solana es de 64 bytes.",
+        "seedOnly": "Eso es una semilla de 32 bytes, no una clave privada. Pegá la clave completa de 64 bytes.",
+        "invalidKey": "Esa clave no es válida. Fijate que la hayas copiado entera.",
+        "duplicate": "Esta wallet ya está en tu lista."
+      }
+    }
   },
   "transactions": {
     "unknown": "Desconocido",

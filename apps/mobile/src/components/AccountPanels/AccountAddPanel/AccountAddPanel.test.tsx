@@ -4,6 +4,31 @@ import { act, render, screen, fireEvent, waitFor } from '@testing-library/react-
 const mockAddAccount = jest.fn();
 const mockScanDerivedAccounts = jest.fn();
 const mockCreateAccount = jest.fn();
+const mockImportAccountFromPrivateKey = jest.fn();
+const mockValidatePrivateKey = jest.fn();
+const mockPrivateKeyImport: {
+  value: string;
+  setValue: jest.Mock;
+  error: string | null;
+  address: string | null;
+  privateKey: string | null;
+  validating: boolean;
+  hasInput: boolean;
+  validate: jest.Mock;
+  reset: jest.Mock;
+  networkId: string;
+} = {
+  value: '',
+  setValue: jest.fn(),
+  error: null,
+  address: null,
+  privateKey: null,
+  validating: false,
+  hasInput: false,
+  validate: mockValidatePrivateKey,
+  reset: jest.fn(),
+  networkId: 'solana-mainnet',
+};
 const mockHeaderOverride = jest.fn();
 
 jest.mock('react-i18next', () => ({
@@ -18,32 +43,14 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
-  semantic: {
-    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
-    text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD', accent: '#FF5C45' },
-    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
-    depth: { column: '#0B0F19', abyss: '#070911' },
-    accent: { fill: '#FF5C45', ink: '#FF5C45', tint: 'rgba(255,92,69,0.10)' },
-    border: { default: '#58637B', raised: '#6F7B95' },
-  },
-  tabularNums: { native: { fontVariant: ['tabular-nums'] }, css: {} },
-  colors: {
-    accent: { primary: '#0f0' },
-    background: { card: '#111', tertiary: '#222' },
-    border: { default: '#444' },
-    status: { error: '#f00' },
-    text: { primary: '#fff', secondary: '#999', tertiary: '#777' },
-  },
-  spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '3xl': 32 },
-  borderRadius: { r2: 8, r3: 12 },
-  borderWidth: { thin: 1 },
-  componentSizes: { iconSize3XL: 48 },
-  fontSize: { caption: 12, bodyLg: 18 },
-  fontFamilyNative: { medium: 'System', regular: 'System' },
+  // The real design tokens: hand-listing the subset a screen happens to read
+  // breaks this test whenever the panel starts reading one more (see
+  // test-utils/themeTokens).
+  ...jest.requireActual('../../../../test-utils/themeTokens'),
   useAccountsContext: () => [
     {
       accounts: [{ id: 'a1' }, { id: 'a2' }],
-      activeAccount: { mnemonic: 'owner mnemonic' },
+      activeAccount: { secret: { kind: 'mnemonic', mnemonic: 'owner mnemonic' } },
     },
     { addAccount: mockAddAccount },
   ],
@@ -53,6 +60,13 @@ jest.mock('@salmon/shared', () => ({
   validateMnemonic: (value: string) => value === 'valid seed phrase',
   normalizeMnemonic: (value: string) => value.trim().replace(/\s+/g, ' '),
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
+  importAccountFromPrivateKey: (...args: unknown[]) => mockImportAccountFromPrivateKey(...args),
+  ...jest.requireActual('@salmon/shared/src/utils/account-secret'),
+  // Stubbed rather than requireActual'd: the real hook reaches @solana/kit,
+  // whose ESM build Jest cannot parse here. Its own behaviour (parsing,
+  // duplicate rejection) is covered in packages/shared.
+  useImportPrivateKey: () => mockPrivateKeyImport,
+  getShortAddress: (address: string) => `${address.slice(0, 4)}...${address.slice(-4)}`,
   trackEvent: jest.fn(),
   NETWORK_DISPLAY: { 'solana-mainnet': { blockchain: 'solana' } },
   EncryptionMaterialMissingError: class EncryptionMaterialMissingError extends Error {
@@ -197,7 +211,63 @@ describe('AccountAddPanel', () => {
       failedNetworks: [],
     });
     mockCreateAccount.mockResolvedValue({ account: { id: 'account-1' } });
+    mockImportAccountFromPrivateKey.mockResolvedValue({ account: { id: 'imported-1' } });
     mockAddAccount.mockResolvedValue(undefined);
+    mockPrivateKeyImport.value = '';
+    mockPrivateKeyImport.error = null;
+    mockPrivateKeyImport.address = null;
+    mockPrivateKeyImport.privateKey = null;
+    mockPrivateKeyImport.hasInput = false;
+    mockValidatePrivateKey.mockResolvedValue(true);
+  });
+
+  it('keeps the user on the key step when the key does not validate', async () => {
+    mockPrivateKeyImport.hasInput = true;
+    mockValidatePrivateKey.mockResolvedValue(false);
+
+    render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+
+    fireEvent.press(screen.getByText('settings.account_add.import_private_key'));
+    fireEvent.press(screen.getByText('actions.continue'));
+
+    await waitFor(() => {
+      expect(mockValidatePrivateKey).toHaveBeenCalled();
+    });
+    // No name step: an unusable key must not reach the point of being stored.
+    expect(screen.queryByTestId('account-add-name-input')).toBeNull();
+  });
+
+  it('imports a wallet from a private key without going through createAccount', async () => {
+    mockPrivateKeyImport.hasInput = true;
+
+    render(<AccountAddPanel onComplete={jest.fn()} onBack={jest.fn()} />);
+
+    fireEvent.press(screen.getByText('settings.account_add.import_private_key'));
+    // The field is masked by default — PasswordInput owns the reveal toggle.
+    expect(screen.getByTestId('account-add-private-key-input')).toBeTruthy();
+
+    mockPrivateKeyImport.privateKey = 'base58-secret-key';
+    fireEvent.press(screen.getByText('actions.continue'));
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Account 3')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('settings.account_add.confirm'));
+
+    await waitFor(() => {
+      expect(mockImportAccountFromPrivateKey).toHaveBeenCalledWith({
+        name: 'Account 3',
+        privateKey: 'base58-secret-key',
+        networkId: 'solana-mainnet',
+      });
+    });
+
+    // A private key derives nothing, so the mnemonic fan-out must stay out of it.
+    expect(mockCreateAccount).not.toHaveBeenCalled();
+    expect(mockAddAccount).toHaveBeenCalledWith({ id: 'imported-1' });
+    // The key does not linger in component state after the account is stored.
+    expect(mockPrivateKeyImport.reset).toHaveBeenCalled();
   });
 
   it('shows validation error for invalid seed phrase', async () => {

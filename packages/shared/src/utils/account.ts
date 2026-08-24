@@ -5,7 +5,12 @@
 import type { SolanaAccount } from '../blockchain/solana';
 import type { BitcoinAccount } from '../blockchain/bitcoin';
 import type { EthereumAccount } from '../blockchain/ethereum';
-import { createSolanaAccount, SOLANA_NETWORKS } from '../blockchain/solana';
+import bs58 from 'bs58';
+import {
+  createSolanaAccount,
+  createSolanaAccountFromSecretKey,
+  SOLANA_NETWORKS,
+} from '../blockchain/solana';
 import { createBitcoinAccount, BITCOIN_NETWORKS } from '../blockchain/bitcoin';
 import { createEthereumAccount, ETHEREUM_NETWORKS } from '../blockchain/ethereum';
 import { bitcoinApiFunctions } from '../api/services/bitcoin';
@@ -179,6 +184,41 @@ export async function createBlockchainAccountForNetwork(
       return createSolanaAccount({ network, mnemonic, index, apiFunctions: solanaApiFunctions });
     }
   }
+}
+
+/**
+ * Builds a blockchain account from an imported private key.
+ *
+ * Only Solana is supported: Bitcoin and Ethereum export key material in
+ * formats of their own (WIF, 32-byte hex) that the import UI does not accept,
+ * so pretending to handle them here would produce an account that fails at
+ * signing time rather than at import time.
+ *
+ * @param networkId - Solana network the key is being imported on
+ * @param privateKey - Base58-encoded 64-byte ed25519 secret key
+ * @returns The Solana account controlled by that key
+ * @throws When the network is unknown, not a Solana network, or disabled
+ */
+export async function createBlockchainAccountFromPrivateKey(
+  networkId: string,
+  privateKey: string
+): Promise<BlockchainAccount> {
+  await fetchAndMergeNetworkConfigs();
+
+  if (getBlockchainFromNetworkId(networkId) !== 'solana') {
+    throw new Error(`Private key import is not supported for network: ${networkId}`);
+  }
+
+  const network = SOLANA_NETWORKS[networkId];
+  if (!network) {
+    throw new Error(`Unknown Solana network: ${networkId}`);
+  }
+
+  // The key is stored base58-encoded (the same form the wallet exports), so it
+  // is decoded here rather than kept as bytes in the vault — bytes would
+  // serialise to a JSON object of numbered keys and quietly change the vault
+  // format for every existing user.
+  return createSolanaAccountFromSecretKey(network, bs58.decode(privateKey), 0, solanaApiFunctions);
 }
 
 // ============================================================================

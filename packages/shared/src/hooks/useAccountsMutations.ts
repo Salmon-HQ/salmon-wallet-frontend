@@ -6,7 +6,7 @@ import type { Account, EditAccountParams, StoredAccount } from '../types/account
 import type { CustomTokens } from '../types/token';
 import type { TrustedApps } from '../types/trusted-app';
 import {
-  buildMnemonicMap,
+  buildSecretVault,
   clearAccountsStorage,
   getPreferredNetworkId,
   persistAccounts,
@@ -86,13 +86,13 @@ export function useAccountsMutations({
       const newAccounts = [...accounts, account];
       const newAccountId = account.id;
       const newNetworkId = getPreferredNetworkId(account, networkId);
-      const newMnemonics = buildMnemonicMap(newAccounts);
+      const newVault = buildSecretVault(newAccounts);
 
       // Re-encrypt first. If we cannot produce an encrypted vault (e.g. the
       // cached derived key has expired and no password was supplied), abort
       // before touching any state — runtime and storage stay consistent and
       // the caller can surface the error to prompt the user for a password.
-      const encryptResult = await encryptMnemonics(newMnemonics, password, {
+      const encryptResult = await encryptMnemonics(newVault, password, {
         cacheNewKey: !!password,
       });
 
@@ -169,12 +169,12 @@ export function useAccountsMutations({
         return;
       }
 
-      const newMnemonics = buildMnemonicMap(newAccounts);
+      const newVault = buildSecretVault(newAccounts);
 
       // Re-encrypt first. If we cannot produce an encrypted vault, abort
       // before mutating state so runtime, persisted accounts, and the
       // active selection do not drift apart from storage.
-      const encryptResult = await encryptMnemonics(newMnemonics, password, { cacheNewKey: false });
+      const encryptResult = await encryptMnemonics(newVault, password, { cacheNewKey: false });
 
       setAccounts(newAccounts);
 

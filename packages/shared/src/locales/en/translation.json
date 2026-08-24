@@ -295,7 +295,9 @@
       "confirm_import": "Import Account",
       "confirm": "Confirm",
       "creation_error": "Failed to create account. Please try again.",
-      "session_expired": "Your session expired. Unlock the wallet again to add an account."
+      "session_expired": "Your session expired. Unlock the wallet again to add an account.",
+      "import_private_key": "Import private key",
+      "import_private_key_description": "Add a wallet you already own using its private key"
     },
     "security": {
       "title": "Security",
@@ -545,7 +547,27 @@
     "tokens_empty_subtitle": "Your tokens will appear here once you receive some",
     "no_account_found": "No account found",
     "unnamed_account": "Account",
-    "token_search_failed": "Search isn't available right now. Try again."
+    "token_search_failed": "Search isn't available right now. Try again.",
+    "import": {
+      "title": "Import private key",
+      "label": "Private key",
+      "placeholder": "Paste your private key",
+      "help": "Base58 or a byte array, as exported by Salmon, Phantom or the Solana CLI.",
+      "show": "Show private key",
+      "hide": "Hide private key",
+      "warning_title": "Never share your private key",
+      "warning_body": "Anyone who has it can move every asset in this wallet. Salmon will never ask you for it.",
+      "resolved_address": "Wallet to import",
+      "continue": "Continue",
+      "errors": {
+        "empty": "Enter your private key to continue.",
+        "format": "That does not look like a private key. Paste it as base58 or as a byte array.",
+        "length": "That key is not the right length. A Solana private key is 64 bytes.",
+        "seedOnly": "That is a 32-byte seed, not a private key. Paste the full 64-byte key.",
+        "invalidKey": "That key is not valid. Check you copied all of it.",
+        "duplicate": "This wallet is already in your list."
+      }
+    }
   },
   "transactions": {
     "unknown": "Unknown",

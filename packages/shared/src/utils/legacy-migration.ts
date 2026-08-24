@@ -248,7 +248,8 @@ export async function migrateLegacyWallets(
     const account = await deps.restoreAccount({
       name,
       avatar,
-      mnemonic,
+      // V2 only ever stored mnemonics — private-key import did not exist there.
+      secret: { kind: 'mnemonic', mnemonic },
       pathIndexes,
     });
 

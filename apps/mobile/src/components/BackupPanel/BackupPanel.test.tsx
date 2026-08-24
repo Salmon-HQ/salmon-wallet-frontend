@@ -15,8 +15,13 @@ jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn(async () => true),
 }));
 
+const mockActiveAccount: { secret: { kind: string; mnemonic?: string } } = {
+  secret: { kind: 'mnemonic', mnemonic: TEST_PHRASE },
+};
+
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
+  ...jest.requireActual('@salmon/shared/src/utils/account-secret'),
   // The mobile wrapper hook reads the real motion vocabulary.
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
   borderRadius: { r1: 4, r2: 8, r3: 12 },
@@ -39,7 +44,7 @@ jest.mock('@salmon/shared', () => ({
   },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20 },
   useAccountsContext: () => [
-    { activeAccount: { mnemonic: TEST_PHRASE } },
+    { activeAccount: mockActiveAccount },
     { checkPassword: mockCheckPassword },
   ],
 }));
@@ -167,5 +172,21 @@ describe('BackupPanel', () => {
     });
     expect(authenticateWithBiometric).toHaveBeenCalledTimes(1);
     expect(mockCheckPassword).not.toHaveBeenCalled();
+  });
+});
+
+describe('BackupPanel for an imported account', () => {
+  it('says there is no phrase instead of rendering an empty grid', () => {
+    // An account imported from a private key has no seed behind it; the grid
+    // would otherwise render zero words under a "tap to reveal" overlay.
+    mockActiveAccount.secret = { kind: 'privateKey' };
+
+    render(<BackupPanel onBack={jest.fn()} />);
+
+    expect(screen.getByTestId('backup-no-seed-phrase')).toBeTruthy();
+    expect(screen.queryByTestId('backup-seed-phrase')).toBeNull();
+    expect(screen.queryByTestId('backup-seed-reveal-overlay')).toBeNull();
+
+    mockActiveAccount.secret = { kind: 'mnemonic', mnemonic: TEST_PHRASE };
   });
 });
