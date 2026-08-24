@@ -14,7 +14,6 @@ import {
   s,
   semantic,
   spacing,
-  useSendTransaction,
   vs,
 } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
@@ -34,19 +33,15 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
   recipientAddress,
   resolvedRecipientAddress,
   amount,
-  blockchain,
-  account,
   onBack,
   onCancel,
   onSuccess,
-  onSendingChange,
+  sendHook,
 }) => {
   const { t } = useTranslation();
   const { actionRowBottomPadding } = useBottomSheetChrome();
   const [estimatedFee, setEstimatedFee] = useState<string | null>(null);
   const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
-
-  const sendHook = useSendTransaction({ account, blockchain });
 
   // What the transfer will actually pay. When a `.sol` domain was typed, the
   // resolved address is the destination — showing the domain here would ask
@@ -129,11 +124,6 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
   const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
   const isFailed = sendHook.status === 'failed';
 
-  // Tell the sheet above us, which owns backdrop/swipe/back dismissal.
-  useEffect(() => {
-    onSendingChange?.(isSending);
-  }, [isSending, onSendingChange]);
-
   return (
     <View style={styles.container}>
       {/* Center content */}
@@ -214,7 +204,10 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
           testID="send-confirm-button"
           style={styles.rowButton}
           onPress={isFailed ? handleRetry : handleConfirm}
-          loading={isSending}
+          // No spinner: the confirm tap hands the screen to the wait, and the
+          // passage is the answer. DESIGN.md makes send the second deliberate
+          // exception to the button-loader rule — a loader on a button that is
+          // leaving the screen says the same thing twice.
           disabled={isSending}
         >
           {isFailed

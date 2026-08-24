@@ -21,10 +21,16 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-// `@salmon/shared` pulls React Native through its barrel; this page reads four
-// functions from it, and none of them is what these assertions are about.
-vi.mock('@salmon/shared', () => ({
-  useSendTransaction: () => ({ status: 'idle', settling: false, reset: vi.fn() }),
+/** What the send hook reports this render. Mutable so a test can move it. */
+const sendState = { status: 'idle' as string, settling: false };
+
+// `@salmon/shared` pulls React Native through its barrel; this page reads five
+// things from it, and only one of them — the hold that keeps the wait mounted
+// until its closing wave has left — is part of what these assertions are
+// about, so that one is the real (pure React) implementation.
+vi.mock('@salmon/shared', async () => ({
+  ...(await vi.importActual<Record<string, unknown>>('@salmon/shared/src/hooks/useWaitExit')),
+  useSendTransaction: () => ({ ...sendState, reset: vi.fn() }),
   getTransactionUrl: () => 'https://explorer.example/tx',
   getDefaultExplorer: () => 'explorer',
   getShortAddress: (address: string) => address,
@@ -76,6 +82,17 @@ vi.mock('./StepConfirmation', () => ({
   ),
 }));
 
+vi.mock('../LoadingScreen', () => ({
+  // Stand-in that keeps the exit contract without a frame clock: it reports
+  // `onExited` only when the test says the last wave has left, which is what
+  // the real screen does once its final front is off the screen.
+  LoadingScreen: ({ visible, onExited }: { visible?: boolean; onExited?: () => void }) => (
+    <div data-testid="send-wave-screen" data-visible={String(visible)}>
+      <button data-testid="wave-last-front-gone" onClick={() => onExited?.()} />
+    </div>
+  ),
+}));
+
 vi.mock('../TransactionSuccessScreen', () => ({
   TransactionSuccessScreen: () => <div data-testid="success-screen" />,
 }));
@@ -104,6 +121,8 @@ const renderPage = (props: Record<string, unknown> = {}) =>
 
 beforeEach(() => {
   verbProps.length = 0;
+  sendState.status = 'idle';
+  sendState.settling = false;
 });
 
 afterEach(() => {
@@ -152,5 +171,68 @@ describe('SendPage — the steps speak the sink and the float', () => {
     // sequence arrive twice. The confirmation under it still sinks: the key
     // changed, so the outgoing half is spoken as it is on every other step.
     expect(lastVerb()).toEqual({ transitionKey: 'success', floatMs: 0 });
+  });
+});
+
+describe('SendPage — the wait, and what it holds back', () => {
+  /** Walk the flow to the confirmation step, with the send hook still idle. */
+  const reachConfirmation = () => {
+    const view = renderPage();
+    fireEvent.click(screen.getByTestId('step-token-select'));
+    fireEvent.click(screen.getByTestId('step-address-amount'));
+    return view;
+  };
+
+  it('shows the wave wait while the transaction is in flight', () => {
+    const { rerender } = reachConfirmation();
+
+    sendState.status = 'sending';
+    rerender(
+      <SendPage
+        tokens={solTokens as never}
+        blockchain={'solana' as never}
+        account={account as never}
+        onBack={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('send-wave-screen').getAttribute('data-visible')).toBe('true');
+    expect(screen.queryByTestId('success-screen')).toBeNull();
+  });
+
+  it('holds the receipt back until the wait reports its last wave has left', () => {
+    const { rerender } = reachConfirmation();
+
+    // Signed and in flight: the wait owns the screen.
+    sendState.status = 'sending';
+    const rerenderPage = () =>
+      rerender(
+        <SendPage
+          tokens={solTokens as never}
+          blockchain={'solana' as never}
+          account={account as never}
+          onBack={vi.fn()}
+        />
+      );
+    rerenderPage();
+
+    // The transaction lands: the step is the receipt's, but the water is not
+    // calm yet, so the receipt must not be on screen.
+    fireEvent.click(screen.getByTestId('step-confirmation'));
+    expect(screen.getByTestId('send-wave-screen')).toBeTruthy();
+    expect(screen.queryByTestId('success-screen')).toBeNull();
+
+    // The work is done, so the wait starts leaving — and is still mounted,
+    // playing its closing wave. The receipt still waits.
+    sendState.status = 'idle';
+    sendState.settling = false;
+    rerenderPage();
+    expect(screen.getByTestId('send-wave-screen').getAttribute('data-visible')).toBe('false');
+    expect(screen.queryByTestId('success-screen')).toBeNull();
+
+    // Last front off the screen: only now does the receipt arrive.
+    fireEvent.click(screen.getByTestId('wave-last-front-gone'));
+    expect(screen.queryByTestId('send-wave-screen')).toBeNull();
+    expect(screen.getByTestId('success-screen')).toBeTruthy();
   });
 });

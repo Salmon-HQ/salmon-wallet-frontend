@@ -18,6 +18,7 @@ import {
   getTransactionUrl,
   getDefaultExplorer,
   getShortAddress,
+  useWaitExit,
 } from '@salmon/shared';
 import type { Blockchain, NetworkEnvironment } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +27,7 @@ import { SinkFloat } from '../SinkFloat';
 import { StepTokenSelect } from './StepTokenSelect';
 import { StepAddressAmount } from './StepAddressAmount';
 import { StepConfirmation } from './StepConfirmation';
+import { LoadingScreen } from '../LoadingScreen';
 import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
 import type { SendPageProps, SendStep, SendToken } from './types';
 
@@ -115,6 +117,19 @@ export function SendPage({
   const isSigning = sendHook.status === 'creating' || sendHook.status === 'sending';
   const isSettling = isSigning || sendHook.settling;
   const ownsScreen = isSettling || step === 'success';
+
+  // The wait between the decision and the receipt (DESIGN.md, §The wait). The
+  // canonical wave wait holds the screen while sign/submit/confirm runs and
+  // while the indexer settles, then leaves on its own last wave — product,
+  // 2026-08: "que no se pase a la siguiente screen hasta que la última onda
+  // salga de la pantalla, es decir, justo cuando el agua está calma. Esto
+  // aplica siempre." Only once `useWaitExit` reports the water is calm may the
+  // receipt mount. Same mechanism the swap screen uses on this platform.
+  const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isSettling);
+  // Keep the wave through its own exit on the way to the receipt. A failure is
+  // the exception: the flow stays on confirmation (the error surfaces there),
+  // so the wave is not held.
+  const showWave = isSettling || (isWaveHeld && step === 'success');
 
   useEffect(() => {
     onFlowLockChange?.(ownsScreen);
@@ -239,6 +254,12 @@ export function SendPage({
   // content lands where the float would have ended, in the frame it mounts.
   const entranceless = !stepped || step === 'success';
 
+  // What moved, in one line. The wait announces it and the receipt repeats it,
+  // so the two read as the same event rather than two reports of it.
+  const transferSummary = selectedToken
+    ? `${amount} ${selectedToken.symbol} to ${getShortAddress(recipientAddress) ?? recipientAddress}`
+    : '';
+
   return (
     <PageShell title={t('token.action.send')} onBack={handleBackPress} backDisabled={isSettling}>
       <ContentArea>
@@ -279,11 +300,11 @@ export function SendPage({
             />
           )}
 
-          {step === 'success' && successTxId && selectedToken && (
+          {step === 'success' && successTxId && selectedToken && !isWaveHeld && (
             <TransactionSuccessScreen
               title={t('transaction.sendComplete')}
               pendingTitle={t('transaction.pendingSend')}
-              summary={`${amount} ${selectedToken.symbol} to ${getShortAddress(recipientAddress) ?? recipientAddress}`}
+              summary={transferSummary}
               explorerUrl={getTransactionUrl(
                 blockchain.toUpperCase() as Blockchain,
                 (account as { network: { networkId: string } }).network
@@ -296,6 +317,20 @@ export function SendPage({
             />
           )}
         </SinkFloat>
+
+        {/* The wave wait. Its overlay covers the viewport, so it stands over
+            whatever step is still mounted underneath. It holds while the
+            transaction is in flight and leaves on its own last wave; the
+            receipt above waits for that report. */}
+        {showWave && (
+          <LoadingScreen
+            visible={isSettling}
+            waves
+            title={t('transaction.pendingSend')}
+            subtitle={transferSummary}
+            onExited={onWaveGone}
+          />
+        )}
       </ContentArea>
     </PageShell>
   );

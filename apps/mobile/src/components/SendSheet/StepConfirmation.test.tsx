@@ -154,6 +154,16 @@ const baseProps = {
   onBack: () => {},
   onCancel: () => {},
   onSuccess: () => {},
+  // The hook is the sheet's now: the step unmounts mid-flight, so it cannot
+  // be the transaction's only observer.
+  sendHook: {
+    status: 'idle',
+    error: null,
+    feeEstimateFailed: false,
+    estimateFee: mockEstimateFee,
+    sendTransaction: jest.fn(),
+    reset: jest.fn(),
+  },
 } as never as React.ComponentProps<typeof StepConfirmation>;
 
 describe('StepConfirmation destination address', () => {

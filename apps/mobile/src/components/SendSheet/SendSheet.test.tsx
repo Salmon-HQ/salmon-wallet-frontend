@@ -45,36 +45,114 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
+/**
+ * Drives the one send hook the sheet owns. The hook is the sheet's only report
+ * on the transfer — the confirmation step unmounts the moment the screen is
+ * handed over — so a test moves the transaction, not the step.
+ */
+let sendController: { commit: () => void; land: () => void; fail: () => void } | null = null;
+
 jest.mock('@salmon/shared', () => ({
   SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
-  useSendTransaction: () => ({
-    estimateFee: jest.fn(),
-    sendTransaction: jest.fn(),
-    status: 'idle',
-    settling: false,
-    feeEstimateFailed: false,
-    error: null,
-    isError: false,
-    reset: mockSendHookReset,
-  }),
+  useSendTransaction: () => {
+    const RealReact = require('react');
+    const [status, setStatus] = RealReact.useState('idle');
+    sendController = {
+      commit: () => setStatus('sending'),
+      land: () => setStatus('success'),
+      fail: () => setStatus('failed'),
+    };
+    return {
+      estimateFee: jest.fn(),
+      sendTransaction: jest.fn(),
+      status,
+      settling: false,
+      feeEstimateFailed: false,
+      error: null,
+      isError: false,
+      reset: () => {
+        mockSendHookReset();
+        setStatus('idle');
+      },
+    };
+  },
   getTransactionUrl: () => 'https://example.com/tx',
   getDefaultExplorer: () => 'explorer',
   getShortAddress: (addr?: string) => addr,
+  semantic: { depth: { column: '#000000' } },
+  // The real hook keeps the wait mounted until it reports its last wave has
+  // left. The mock keeps that contract — held goes true with the wait and only
+  // `onExited` clears it — so the receipt's gate is exercised for real.
+  useWaitExit: (show: boolean) => {
+    const RealReact = require('react');
+    const [held, setHeld] = RealReact.useState(show);
+    RealReact.useEffect(() => {
+      if (show) setHeld(true);
+    }, [show]);
+    return { held, onExited: RealReact.useCallback(() => setHeld(false), []) };
+  },
 }));
+
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+
+jest.mock('../DepthBackground', () => ({ DepthBackground: () => null }));
+jest.mock('../ScalesBackground', () => ({ ScalesBackground: () => null }));
+
+/** Every wait rendered, so a test can drive its departure. */
+jest.mock('../LoadingScreen', () => {
+  const { Text: RNText } = jest.requireActual('react-native');
+  return {
+    LoadingScreen: ({ onExited }: { onExited?: () => void }) => (
+      <RNText testID="send-wait" onPress={() => onExited?.()}>
+        wait
+      </RNText>
+    ),
+  };
+});
+
+/** Every engagement the sheet publishes, in order. */
+const chromeClaims: boolean[] = [];
+
+jest.mock('../../contexts/TaskChromeContext', () => ({
+  useTaskChromeClaim: () => (engaged: boolean) => {
+    chromeClaims.push(engaged);
+  },
+}));
+
+/** Every `visible` the sheet has been given, in render order. */
+const sheetVisible: boolean[] = [];
 
 jest.mock('../BottomSheetContainer', () => ({
   BottomSheetContainer: ({
     children,
     headerContent,
+    visible,
+    onClosed,
   }: {
     children?: React.ReactNode;
     headerContent?: React.ReactNode;
-  }) => (
-    <>
-      {headerContent}
-      {children}
-    </>
-  ),
+    visible?: boolean;
+    onClosed?: () => void;
+  }) => {
+    const RealReact = require('react');
+    sheetVisible.push(!!visible);
+    // The real container reports a departure once the exit has played. Firing
+    // it on the visible -> false edge is the same event, one frame earlier.
+    const wasVisible = RealReact.useRef(visible);
+    RealReact.useEffect(() => {
+      if (wasVisible.current && !visible) onClosed?.();
+      wasVisible.current = visible;
+    }, [visible, onClosed]);
+    if (!visible) return null;
+    return (
+      <>
+        {headerContent}
+        {children}
+      </>
+    );
+  },
 }));
 
 const headerProps: Record<string, unknown>[] = [];
@@ -120,21 +198,33 @@ jest.mock('./StepAddressAmount', () => {
   };
 });
 
+/** The step's own report that the transfer landed, kept across its unmount. */
+let lastConfirmationSuccess: ((txId: string) => void) | null = null;
+
 jest.mock('./StepConfirmation', () => {
   const { Text: RNText } = jest.requireActual('react-native');
   return {
-    StepConfirmation: ({ onSuccess }: { onSuccess: (txId: string) => void }) => (
-      <RNText testID="step-confirmation" onPress={() => onSuccess('tx-1')}>
-        confirmation
-      </RNText>
-    ),
+    StepConfirmation: ({ onSuccess }: { onSuccess: (txId: string) => void }) => {
+      lastConfirmationSuccess = onSuccess;
+      return (
+        <RNText testID="step-confirmation" onPress={() => onSuccess('tx-1')}>
+          confirmation
+        </RNText>
+      );
+    },
   };
 });
+
+/** Every props object the receipt has been rendered with. */
+const successProps: Record<string, any>[] = [];
 
 jest.mock('../TransactionSuccessScreen', () => {
   const { Text: RNText } = jest.requireActual('react-native');
   return {
-    TransactionSuccessScreen: () => <RNText testID="success-screen">success</RNText>,
+    TransactionSuccessScreen: (props: Record<string, unknown>) => {
+      successProps.push(props);
+      return <RNText testID="success-screen">success</RNText>;
+    },
   };
 });
 
@@ -150,6 +240,13 @@ const solToken = { address: 'sol', symbol: 'SOL', decimals: 9, uiAmount: 1 } as 
 
 const lastHeaderProps = () => headerProps[headerProps.length - 1];
 
+/** Confirm, then the transaction lands: the hook and the step both report. */
+const land = () =>
+  act(() => {
+    sendController!.land();
+    lastConfirmationSuccess!('tx-1');
+  });
+
 /** The `entering` / `exiting` last handed to a given step. */
 const lastLayout = (key: string) => {
   const entries = layoutByKey.filter(([testID]) => testID === key);
@@ -160,6 +257,8 @@ describe('SendSheet', () => {
   beforeEach(() => {
     headerProps.length = 0;
     layoutByKey.length = 0;
+    sheetVisible.length = 0;
+    chromeClaims.length = 0;
     mockReduceMotion = false;
   });
 
@@ -338,11 +437,106 @@ describe('SendSheet — the steps speak the sink and the float', () => {
     fireEvent.press(screen.getByTestId('step-token-select'));
     // Straight to the confirmation, then through it.
     fireEvent.press(screen.getByTestId('step-address-amount'));
-    fireEvent.press(screen.getByTestId('step-confirmation'));
+    act(() => sendController!.commit());
+    land();
+    fireEvent.press(screen.getByTestId('send-wait'));
 
     expect(screen.getByTestId('success-screen')).toBeTruthy();
-    // The success step is not one of the animated steps: floating it in as a
-    // block would make the receipt's own band sequence arrive twice.
+    // The receipt is not one of the animated steps: floating it in as a block
+    // would make the receipt's own content arrive twice.
     expect(lastLayout('send-step-success')).toBeUndefined();
+  });
+});
+
+/**
+ * The passage: confirm hands the screen over, and the sheet leaves as a sheet.
+ *
+ * DESIGN.md §The wait — "que no se pase a la siguiente screen hasta que la
+ * última onda salga de la pantalla … Esto aplica siempre" — and §The receipt,
+ * "A send or NFT receipt arrives whole".
+ */
+describe('SendSheet — the send passage', () => {
+  beforeEach(() => {
+    headerProps.length = 0;
+    layoutByKey.length = 0;
+    sheetVisible.length = 0;
+    chromeClaims.length = 0;
+    mockReduceMotion = false;
+  });
+
+  const commit = (onClose = jest.fn()) => {
+    const utils = render(
+      <SendSheet
+        visible
+        onClose={onClose}
+        tokens={[solToken]}
+        blockchain="solana"
+        account={account}
+      />
+    );
+    fireEvent.press(screen.getByTestId('step-token-select'));
+    fireEvent.press(screen.getByTestId('step-address-amount'));
+    // Confirm: the transfer is signed and in flight.
+    act(() => sendController!.commit());
+    return utils;
+  };
+
+  it('closes the sheet and claims the chrome in the same commit', () => {
+    commit();
+    // The sheet leaves as a sheet, and the home disassembles behind it —
+    // simultaneously, because the sheet's backdrop is opaque.
+    expect(sheetVisible[sheetVisible.length - 1]).toBe(false);
+    expect(chromeClaims[chromeClaims.length - 1]).toBe(true);
+    expect(screen.getByTestId('send-wait')).toBeTruthy();
+  });
+
+  it('does not mount the receipt until the wait reports it has left', () => {
+    commit();
+    land();
+
+    // The transaction has landed, but the last wave is still on screen.
+    expect(screen.queryByTestId('success-screen')).toBeNull();
+    expect(screen.getByTestId('send-wait')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('send-wait'));
+
+    expect(screen.queryByTestId('send-wait')).toBeNull();
+    expect(screen.getByTestId('success-screen')).toBeTruthy();
+  });
+
+  it('does not reset the flow out from under the receipt', () => {
+    commit();
+    land();
+    fireEvent.press(screen.getByTestId('send-wait'));
+
+    // The sheet's own close fired while the task owned the screen. If that
+    // departure reset the flow, the receipt would have been torn out.
+    expect(screen.getByTestId('success-screen')).toBeTruthy();
+    expect(screen.queryByTestId('step-token-select')).toBeNull();
+  });
+
+  it('releases the chrome and clears the flow on "view wallet"', () => {
+    const onClose = jest.fn();
+    const { rerender } = commit(onClose);
+    land();
+    fireEvent.press(screen.getByTestId('send-wait'));
+
+    act(() => successProps[successProps.length - 1].onContinue());
+    expect(onClose).toHaveBeenCalled();
+
+    // The parent takes the sheet away; that is the flow ending.
+    rerender(
+      <SendSheet
+        visible={false}
+        onClose={onClose}
+        tokens={[solToken]}
+        blockchain="solana"
+        account={account}
+      />
+    );
+
+    expect(chromeClaims[chromeClaims.length - 1]).toBe(false);
+    expect(screen.queryByTestId('success-screen')).toBeNull();
+    expect(mockSendHookReset).toHaveBeenCalled();
   });
 });
