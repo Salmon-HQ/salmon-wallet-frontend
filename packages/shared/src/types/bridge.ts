@@ -129,17 +129,22 @@ export interface BridgeEstimateResponse {
  * Minimal amount response from bridge.
  *
  * Wire contract (salmon-api `GET /v1/bridge/minimal`): both amounts arrive as
- * decimal STRINGS (StealthEX sends strings, e.g. "0.39359748097612175282"),
- * and `max_amount` is additive — omitted when the pair has no upstream cap.
- * Convention: the service boundary (`getBridgeMinimalAmount`) coerces both
- * fields with `Number()` + NaN guard, so the rest of the app only ever sees
- * numbers (`null` when absent or unparsable).
+ * JSON NUMBERS, and `max_amount` is additive — omitted when the pair has no
+ * upstream cap. They were decimal strings until salmon-api moved from
+ * StealthEX API v2 to v4; v4 sends numbers and the backend passes the upstream
+ * value through, so the type changed with that deploy.
+ *
+ * The service boundary (`getBridgeMinimalAmount`) coerces both fields with
+ * `Number()` + NaN guard and accepts either form, so this repo survived the
+ * switch without a runtime change and would survive a rollback the same way.
+ * The rest of the app only ever sees numbers (`null` when absent or
+ * unparsable).
  */
 export interface BridgeMinimalResponse {
-  /** Minimum required input amount (decimal string) */
-  min_amount: string;
-  /** Maximum allowed input amount (decimal string); omitted when the pair has no cap */
-  max_amount?: string;
+  /** Minimum required input amount */
+  min_amount: number;
+  /** Maximum allowed input amount; omitted when the pair has no cap */
+  max_amount?: number;
   /** Input symbol */
   from?: string;
   /** Output symbol */
