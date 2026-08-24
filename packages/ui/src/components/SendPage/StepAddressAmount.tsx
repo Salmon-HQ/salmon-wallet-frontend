@@ -19,6 +19,8 @@ import ButtonBase from '@mui/material/ButtonBase';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useTranslation } from 'react-i18next';
 import {
+  getSolShortfall,
+  SOL_CONSTANTS,
   colors,
   spacing,
   componentSizes,
@@ -43,6 +45,7 @@ import {
   formatTokenAmount,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
+import { WarningNotice } from '../WarningNotice';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import type { StepAddressAmountProps } from './types';
 
@@ -397,9 +400,15 @@ function contactNetworkLabel(contact: { blockchain: string; networkName?: string
 // Component
 // ============================================================================
 
+/** Prints a small SOL amount plainly — 0.000005, never 5e-6. */
+function formatSolAmount(value: number): string {
+  return value.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+}
+
 export function StepAddressAmount({
   token,
   liveBalance,
+  nativeBalance,
   blockchain,
   account,
   onBack,
@@ -455,11 +464,23 @@ export function StepAddressAmount({
   }, [tokenBalance, token.symbol]);
 
   // Validate form (address must be validated AND amount must be valid)
+  // Every Solana transfer pays its fee in SOL, so a wallet holding this token
+  // and no SOL cannot send it — the token balance alone says otherwise.
+  const solShortfall = useMemo(() => {
+    if (blockchain !== 'solana' || nativeBalance === undefined) return null;
+    return getSolShortfall({
+      nativeBalanceSol: nativeBalance,
+      isTokenTransfer: token.address !== SOL_CONSTANTS.ADDRESS,
+    });
+  }, [blockchain, nativeBalance, token.address]);
+
   const isValid = useMemo(() => {
     const numAmount = parseFloat(amount);
     const amountValid = !isNaN(numAmount) && numAmount > 0 && numAmount <= tokenBalance;
-    return isAddressValid && !isValidating && amountValid;
-  }, [isAddressValid, isValidating, amount, tokenBalance]);
+    // Blocked rather than warned: without the fee the network refuses the
+    // transfer outright, so letting it through only spends the user's time.
+    return isAddressValid && !isValidating && amountValid && !solShortfall;
+  }, [isAddressValid, isValidating, amount, tokenBalance, solShortfall]);
 
   // Handle quick fill
   const handleQuickFill = useCallback(
@@ -508,6 +529,16 @@ export function StepAddressAmount({
   return (
     <Container>
       <ScrollContent>
+        {/* Said before the form, not after it is filled in: without SOL there
+            is no transfer to compose. */}
+        {solShortfall !== null && (
+          <Box sx={{ marginBottom: `${spacing.md}px` }} data-testid="send-no-sol-notice">
+            <WarningNotice tone="warning" title={t('token.send.no_sol_title')}>
+              {t('token.send.no_sol_body', { amount: formatSolAmount(solShortfall) })}
+            </WarningNotice>
+          </Box>
+        )}
+
         {/* Selected Token Card */}
         <SelectedTokenCard
           {...(onBack

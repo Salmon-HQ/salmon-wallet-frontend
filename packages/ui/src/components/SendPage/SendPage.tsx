@@ -13,6 +13,7 @@ import type { CSSProperties } from 'react';
 import { styled } from '../../utils/styled';
 import Box from '@mui/material/Box';
 import {
+  SOL_CONSTANTS,
   useSendTransaction,
   getTransactionUrl,
   getDefaultExplorer,
@@ -96,6 +97,14 @@ export function SendPage({
     if (!live) return undefined;
     return typeof live.uiAmount === 'string' ? parseFloat(live.uiAmount) : live.uiAmount;
   }, [selectedToken, tokens]);
+
+  // The native token's own balance, which pays the fee for every transfer on
+  // this chain regardless of what is being sent.
+  const nativeBalance = useMemo(() => {
+    const native = tokens.find((tok) => tok.address === SOL_CONSTANTS.ADDRESS);
+    if (!native) return undefined;
+    return typeof native.uiAmount === 'string' ? parseFloat(native.uiAmount) : native.uiAmount;
+  }, [tokens]);
 
   // Send hook
   const sendHook = useSendTransaction({ account, blockchain });
@@ -247,6 +256,7 @@ export function SendPage({
             <StepAddressAmount
               token={selectedToken}
               liveBalance={liveSelectedBalance}
+              nativeBalance={nativeBalance}
               blockchain={blockchain}
               account={account}
               onBack={skipTokenSelect ? undefined : handleBackToTokenSelect}

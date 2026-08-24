@@ -48,6 +48,15 @@ export {
 } from './account-secret';
 export type { StoredSecret, SecretVault } from './account-secret';
 
+// Native-fee requirements
+export {
+  getRequiredSol,
+  getSolShortfall,
+  SOLANA_BASE_FEE_LAMPORTS,
+  SOLANA_TOKEN_ACCOUNT_RENT_LAMPORTS,
+} from './sol-fees';
+export type { SolRequirementParams } from './sol-fees';
+
 // Avatar utilities
 export {
   getAvatar,

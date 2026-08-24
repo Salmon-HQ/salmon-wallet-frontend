@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, StyleSheet, Platform, BackHandler } from 'react-native';
 import ReAnimated, { useReducedMotion } from 'react-native-reanimated';
 import {
+  SOL_CONSTANTS,
   useSendTransaction,
   getTransactionUrl,
   getDefaultExplorer,
@@ -76,6 +77,14 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     if (!live) return undefined;
     return typeof live.uiAmount === 'string' ? parseFloat(live.uiAmount) : live.uiAmount;
   }, [selectedToken, tokens]);
+
+  // The native token's own balance, which pays the fee for every transfer on
+  // this chain regardless of what is being sent.
+  const nativeBalance = useMemo(() => {
+    const native = tokens.find((tok) => tok.address === SOL_CONSTANTS.ADDRESS);
+    if (!native) return undefined;
+    return typeof native.uiAmount === 'string' ? parseFloat(native.uiAmount) : native.uiAmount;
+  }, [tokens]);
 
   // Send hook
   const sendHook = useSendTransaction({ account, blockchain });
@@ -327,6 +336,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
             <StepAddressAmount
               token={selectedToken}
               liveBalance={liveSelectedBalance}
+              nativeBalance={nativeBalance}
               blockchain={blockchain}
               account={account}
               onBack={stepSequence.includes('token-select') ? handleBackToTokenSelect : undefined}

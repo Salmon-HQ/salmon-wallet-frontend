@@ -67,6 +67,14 @@ export interface StepAddressAmountPropsBase {
    * inbound funds while the user is on this step.
    */
   liveBalance?: number;
+  /**
+   * The account's native-token balance (SOL on Solana), in whole units.
+   *
+   * Every Solana transaction pays its fee in SOL whatever asset it moves, so a
+   * wallet holding tokens and no SOL cannot send them. The step needs this to
+   * say so before the user fills in a transfer that the network will refuse.
+   */
+  nativeBalance?: number;
   /** Blockchain type for address validation */
   blockchain: BlockchainType;
   /** The active blockchain account (provides getConnection/getProvider) */

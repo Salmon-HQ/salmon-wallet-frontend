@@ -28,6 +28,7 @@ vi.mock('@salmon/shared', () => ({
   getTransactionUrl: () => 'https://explorer.example/tx',
   getDefaultExplorer: () => 'explorer',
   getShortAddress: (address: string) => address,
+  SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
 }));
 
 /** Every `transitionKey` / `floatMs` the page has handed the verb, in order. */

@@ -46,6 +46,7 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
   useSendTransaction: () => ({
     estimateFee: jest.fn(),
     sendTransaction: jest.fn(),
