@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
-import Animated, {
-  useReducedMotion,
-  withDelay,
-  withTiming,
-  type EntryAnimationsValues,
-  type EntryExitAnimationFunction,
-} from 'react-native-reanimated';
+import Animated, { useReducedMotion } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import {
@@ -27,12 +21,10 @@ import {
   tabularNums,
   useWaitGate,
   useWaitExit,
-  FLOAT_IN_MS,
   SINK_FLOAT_STAGGER_MS,
 } from '@salmon/shared';
 import type { TransactionSuccessScreenProps } from '@salmon/shared';
-import { ArrowRightIcon, CheckIcon } from '../../icons';
-import { curve, timing } from '../../utils/motion';
+import { ArrowDownIcon, CheckIcon } from '../../icons';
 import { floatEntering } from '../../utils/sinkAndFloat';
 import { PrimaryButton, TextButton } from '../Button';
 import { LoadingScreen } from '../LoadingScreen';
@@ -69,43 +61,14 @@ const GRAPHIC_ICON_SIZE = componentSizes.iconSizeMedium;
 const endingBands = resolveOnboardingBands(resolveOnboardingGrid('identity'), false);
 
 /**
- * An exchange receipt arrives in four beats — the marks, the arrow with its
- * tick, the amounts, the rows — in the order a receipt answers its questions:
- * between what, what happened, how much, the fine print. One stagger step
- * each, from the transition verb's own constant.
+ * A receipt reveals its own content top to bottom, one beat per element, on
+ * the float half of the transition verb (DESIGN.md §The sink and the float).
+ * The *screen* still arrives whole (§The receipt) — nothing travels behind it
+ * and it has no entrance of its own; what is sequenced is what is already
+ * inside it, in the order it is read. One stagger step each, from the verb's
+ * own constant.
  */
 const beat = (step: number) => step * SINK_FLOAT_STAGGER_MS;
-
-/**
- * The arrow crossing the gap between the two marks — the float half of the
- * verb (DESIGN.md §The sink and the float — the transition verb), turned on
- * its side. It starts against the mark that left and comes to rest between the
- * two; the distance is the runner's own width, which Reanimated hands the
- * animation, so nothing here is a number. Travel on `settle` (buoyancy running
- * out, no overshoot), light on the accelerating `sink`.
- *
- * Reduce motion returns `undefined`, which hands Reanimated no animation at
- * all — the arrow is simply there, in its resting place.
- */
-function crossEntering(
-  isReduceMotionEnabled: boolean,
-  delayMs: number
-): EntryExitAnimationFunction | undefined {
-  if (isReduceMotionEnabled) return undefined;
-  const travel = timing(FLOAT_IN_MS, false, curve.settle);
-  const light = timing(FLOAT_IN_MS, false, curve.sink);
-  const cross = (values: EntryAnimationsValues) => {
-    'worklet';
-    return {
-      initialValues: { opacity: 0, transform: [{ translateX: -values.targetWidth / 2 }] },
-      animations: {
-        opacity: withDelay(delayMs, withTiming(1, light)),
-        transform: [{ translateX: withDelay(delayMs, withTiming(0, travel)) }],
-      },
-    };
-  };
-  return cross satisfies EntryExitAnimationFunction;
-}
 
 // ============================================================================
 // Component
@@ -128,6 +91,15 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
   exchangeFee,
 }) => {
   const isBridge = !!bridgeDepositAddress;
+
+  // Every receipt reveals itself top to bottom, one stagger step per element.
+  // The two shapes are one rhythm at different lengths: an exchange reads
+  // sent -> arrow -> received -> rows, a send or NFT reads status -> amount,
+  // and on both, the bridge instructions when there are any and then the
+  // actions close it. Only what renders takes a beat, so nothing waits on a
+  // gap left by a band this receipt does not have.
+  const bridgeStep = exchange ? 4 : 2;
+  const actionStep = isBridge ? bridgeStep + 1 : bridgeStep;
   const { t } = useTranslation();
   const { floatingBottomOffset, insets } = useTabChrome();
   const isReduceMotionEnabled = useReducedMotion();
@@ -197,48 +169,69 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           rather than leaving a void under it. */}
       <View style={styles.cluster} testID="tx-success-cluster">
         {exchange ? (
-          /* The hero is the graphic. It answers *between what* — the mark of
-           the token that left, the arrow that travelled to the token that
-           arrived, and the tick over it, the same glyph the copy control
-           draws when something has landed. It carries the result as its
-           accessible name, because a graphic announces nothing on its own and
-           the sentence it replaced is what a screen reader used to hear. */
-          <View
-            style={styles.graphic}
-            testID="tx-success-hero"
-            accessible
-            accessibilityRole="image"
-            accessibilityLabel={title}
-          >
-            <Animated.View entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(0) })}>
+          /* The hero is the graphic, and it reads down: the mark of the token
+           that left with its amount on top, an arrow travelling downward from
+           it, and the token that arrived below — its amount beside it and the
+           tick attached to it, the same glyph the copy control draws when
+           something has landed. The tick belongs to what was received, not to
+           the block. The lines are the accessibility elements; the arrow and
+           the tick are decoration and are hidden from the reader, so the
+           result the sentence used to carry rides on the received line. */
+          <View style={styles.exchangeBlock} testID="tx-success-hero">
+            <Animated.View
+              style={styles.tokenLine}
+              testID="tx-success-sent"
+              accessible
+              entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(0) })}
+            >
               <TokenLogo uri={exchange.send.logo} symbol={exchange.send.symbol} size={LOGO_SIZE} />
+              <Text
+                style={[styles.amount, styles.amountSpent, styles.amountCell]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={MIN_AMOUNT_SCALE}
+              >
+                {exchange.send.amount}
+              </Text>
+              <View style={styles.tickSlot} />
             </Animated.View>
-            <View style={styles.track}>
-              <Animated.View
-                style={styles.trackRow}
-                testID="tx-success-tick"
-                entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(1) })}
-              >
-                <CheckIcon weight="bold" size={GRAPHIC_ICON_SIZE} color={semantic.status.success} />
-              </Animated.View>
-              <Animated.View
-                style={styles.trackRow}
-                testID="tx-success-arrow"
-                entering={crossEntering(isReduceMotionEnabled, beat(1))}
-              >
-                <ArrowRightIcon
-                  weight="bold"
-                  size={GRAPHIC_ICON_SIZE}
-                  color={semantic.text.secondary}
-                />
-              </Animated.View>
-            </View>
-            <Animated.View entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(0) })}>
+            <Animated.View
+              style={styles.trackRow}
+              testID="tx-success-arrow"
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(1) })}
+            >
+              <ArrowDownIcon
+                weight="bold"
+                size={GRAPHIC_ICON_SIZE}
+                color={semantic.text.secondary}
+              />
+            </Animated.View>
+            <Animated.View
+              style={styles.tokenLine}
+              testID="tx-success-received"
+              accessible
+              accessibilityLabel={`${exchange.receive.amount}, ${title}`}
+              entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(2) })}
+            >
               <TokenLogo
                 uri={exchange.receive.logo}
                 symbol={exchange.receive.symbol}
                 size={LOGO_SIZE}
               />
+              <Text
+                style={[styles.amount, styles.amountCell]}
+                testID="tx-success-summary"
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={MIN_AMOUNT_SCALE}
+              >
+                {exchange.receive.amount}
+              </Text>
+              <View style={styles.tickSlot} testID="tx-success-tick">
+                <CheckIcon weight="bold" size={GRAPHIC_ICON_SIZE} color={semantic.status.success} />
+              </View>
             </Animated.View>
           </View>
         ) : (
@@ -248,47 +241,31 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
            the label — so the state never rides on hue alone. A single-token
            receipt has nothing to draw an exchange between, so it keeps the
            sentence that says what happened. */
-          <View style={styles.statusRow}>
+          <Animated.View
+            style={styles.statusRow}
+            testID="tx-success-status"
+            entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(0) })}
+          >
             <Text style={styles.statusGlyph}>✓</Text>
             <Text style={styles.statusLabel} testID="tx-success-title">
               {title}
             </Text>
-          </View>
+          </Animated.View>
         )}
 
         {/* How much. One line, always: the receipt used to print the whole
           operation as one 36px title and it broke over three lines — an amount
           that wraps stops being an amount and becomes a sentence. It shrinks
           rather than wrapping or truncating: a number on a wallet receipt may
-          not be elided. On an exchange each amount sits under the mark it
-          belongs to; a single-token receipt prints the summary it always
-          printed. */}
-        {exchange ? (
+          not be elided. On an exchange each amount travels with the mark it
+          belongs to, up in the block above; a single-token receipt prints the
+          summary it always printed. */}
+        {exchange ? null : (
           <Animated.View
-            style={styles.amountsRow}
+            style={styles.amountContainer}
             testID="tx-success-amount"
-            entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(2) })}
+            entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(1) })}
           >
-            <Text
-              style={[styles.amount, styles.amountSpent, styles.amountCell]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={MIN_AMOUNT_SCALE}
-            >
-              {exchange.send.amount}
-            </Text>
-            <Text
-              style={[styles.amount, styles.amountCell]}
-              testID="tx-success-summary"
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={MIN_AMOUNT_SCALE}
-            >
-              {exchange.receive.amount}
-            </Text>
-          </Animated.View>
-        ) : (
-          <View style={styles.amountContainer} testID="tx-success-amount">
             <Text
               style={styles.amount}
               testID="tx-success-summary"
@@ -298,7 +275,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
             >
               {summary}
             </Text>
-          </View>
+          </Animated.View>
         )}
 
         {/* The fine print, last: quiet rows for what the flow already knows —
@@ -329,7 +306,10 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
         ) : null}
 
         {isBridge ? (
-          <View style={styles.bridgeInfoBox}>
+          <Animated.View
+            style={styles.bridgeInfoBox}
+            entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(bridgeStep) })}
+          >
             <Text style={styles.bridgeLabel}>{t('bridge.depositAddress', 'Send funds to')}</Text>
             <Text style={styles.bridgeValue}>{bridgeDepositAddress}</Text>
             {bridgeAmountIn && (
@@ -371,7 +351,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
                 <Text style={[styles.bridgeValue, { marginBottom: 0 }]}>{bridgeExchangeId}</Text>
               </>
             )}
-          </View>
+          </Animated.View>
         ) : null}
       </View>
 
@@ -381,7 +361,11 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
           that leaves for a block explorer, and what says so is the position —
           and the assist band keeps its reserved height even when there is no
           link, so the primary never moves. */}
-      <View style={styles.actionGroup}>
+      <Animated.View
+        style={styles.actionGroup}
+        testID="tx-success-actions"
+        entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(actionStep) })}
+      >
         <View style={styles.assistBand} testID="tx-success-assist">
           {!isBridge && explorerUrl ? (
             <TextButton
@@ -403,7 +387,7 @@ export const TransactionSuccessScreen: React.FC<TransactionSuccessScreenProps> =
             {t('transaction.continue', 'Back to wallet')}
           </PrimaryButton>
         </View>
-      </View>
+      </Animated.View>
     </View>
   );
 };
@@ -462,34 +446,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: vs(spacing['2xl']),
   },
-  // The graphic: the mark of what left, the gap the arrow crosses with the
-  // tick over it, and the mark of what arrived. The marks are the subject, so
-  // they own the row's ends and the gap between them is the arrow's track.
-  graphic: {
+  // The exchange, read down the screen: what left on top, the arrow between,
+  // what arrived below with its tick. Each amount travels with its own mark.
+  exchangeBlock: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: vs(spacing.xs),
+    marginBottom: vs(spacing.lg),
+  },
+  tokenLine: {
     alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: s(spacing.sm),
-    marginBottom: vs(spacing.lg),
   },
-  track: {
-    flex: 1,
-    gap: vs(spacing.xs),
-  },
-  // Full width, so the crossing's half-width start puts the glyph over the
-  // mark that left and its rest between the two.
   trackRow: {
     alignItems: 'center',
   },
-  // The amounts, under the marks they belong to: what was spent on the side
-  // the arrow left, what arrived on the side it reached.
-  amountsRow: {
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: s(spacing.sm),
-    marginBottom: vs(spacing.lg),
+  // The tick's place, reserved on both lines so the two amounts sit on one
+  // vertical axis — the same reservation the assist band makes below, for the
+  // same reason. Only the received line puts a glyph in it.
+  tickSlot: {
+    width: s(GRAPHIC_ICON_SIZE),
+    alignItems: 'center',
   },
   amountCell: {
     flex: 1,

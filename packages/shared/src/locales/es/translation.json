@@ -359,7 +359,9 @@
       "confirmAgain": "Confirmar de nuevo",
       "copyRecipientAddress": "Copiar la dirección del destinatario",
       "networkFeeAmount": "Comisión de Red: ~{{fee}}",
-      "resolvedFrom": "Resuelta desde {{domain}}"
+      "resolvedFrom": "Resuelta desde {{domain}}",
+      "no_sol_title": "Necesitás SOL para enviar",
+      "no_sol_body": "Cada transacción en Solana cuesta una pequeña comisión en SOL, sin importar qué estés enviando. Agregá al menos {{amount}} SOL a esta billetera primero."
     },
     "marketData": {
       "marketCap": "Capitalización",
@@ -795,6 +797,7 @@
   },
   "transaction": {
     "sendComplete": "Envio Completado",
+    "sendFailed": "No se pudo enviar",
     "swapComplete": "Swap Completado",
     "pendingSend": "Enviando fondos",
     "pendingSwap": "Procesando swap",

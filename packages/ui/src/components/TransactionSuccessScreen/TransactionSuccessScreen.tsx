@@ -28,15 +28,16 @@ import {
   SINK_FLOAT_STAGGER_MS,
   SINK_FLOAT_TRAVEL,
 } from '@salmon/shared';
-import { ArrowRightIcon, CheckIcon, iconSize } from '../../icons';
+import { ArrowDownIcon, CheckIcon, iconSize } from '../../icons';
 import { LoadingScreen } from '../LoadingScreen';
 import { PrimaryButton, TextButton } from '../Button';
 import type { TransactionSuccessScreenProps } from './types';
 
-// An exchange receipt arrives in four beats — the marks, the arrow with its
-// tick, the amounts, the rows — on the float half of the transition verb
-// (DESIGN.md §The sink and the float — the transition verb). A receipt with a
-// single token has no graphic to sequence and keeps arriving whole.
+// A receipt reveals its own content top to bottom, one beat per element, on
+// the float half of the transition verb (DESIGN.md §The sink and the float —
+// the transition verb). The *screen* still arrives whole (§The receipt):
+// nothing travels behind it and it has no entrance of its own — what is
+// sequenced is what is already inside it, in the order it is read.
 
 // ============================================================================
 // Styled Components
@@ -91,6 +92,41 @@ const Cluster = styled(Box)({
   justifyContent: 'center',
 });
 
+// ============================================================================
+// The arrival — the float half of the verb, one beat per element, top to bottom
+// ============================================================================
+
+/** Buoyancy running out: the rise lands on `settle`, and never overshoots. */
+const riseTravel = keyframes`
+  from { transform: translateY(${SINK_FLOAT_TRAVEL}px) scale(${FLOAT_ENTER_SCALE}); }
+  to { transform: none; }
+`;
+
+/** Beer–Lambert: the light returns slowly at first and fast at the end. */
+const riseLight = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+/**
+ * One beat of the arrival. The step is the element's place *down the screen* —
+ * every receipt reveals itself in the order it is read, each part after the one
+ * above it — spent at the verb's own stagger. Travel on `settle`, light on the
+ * accelerating `sink`: one event, two media, so two animations.
+ *
+ * Reduce motion is a parallel mapping, not a hole: no travel and no stagger,
+ * and the whole receipt is simply there. It cuts, it never reorders.
+ */
+const rising = (step: number) => ({
+  animation: [
+    `${riseTravel} ${FLOAT_IN_MS}ms ${motionEasing.settle.css} ${step * SINK_FLOAT_STAGGER_MS}ms both`,
+    `${riseLight} ${FLOAT_IN_MS}ms ${motionEasing.sink.css} ${step * SINK_FLOAT_STAGGER_MS}ms both`,
+  ].join(', '),
+  [`@media ${reducedMotion.query}`]: { animation: 'none' },
+});
+
+const Rise = styled(Box)<{ $step: number }>(({ $step }) => rising($step));
+
 /**
  * Status line — the headline of the screen.
  *
@@ -101,7 +137,7 @@ const Cluster = styled(Box)({
  * same time. `status.success` stays ink, not a fill, and the state keeps all
  * three channels (colour on the glyph, the glyph itself, the label).
  */
-const StatusRow = styled(Box)({
+const StatusRow = styled(Rise)({
   display: 'flex',
   alignItems: 'center',
   gap: spacing.sm,
@@ -131,7 +167,7 @@ const StatusLabel = styled(Typography)({
  * web app it is capped at `webContainerMaxWidth` and centred, and `9vw`
  * answered neither.
  */
-const AmountStage = styled(Box)({
+const AmountStage = styled(Rise)({
   width: '100%',
   display: 'flex',
   justifyContent: 'center',
@@ -139,108 +175,52 @@ const AmountStage = styled(Box)({
   containerType: 'inline-size',
 });
 
-// ============================================================================
-// The arrival — the float half of the verb, in four beats
-// ============================================================================
-
-/** Buoyancy running out: the rise lands on `settle`, and never overshoots. */
-const riseTravel = keyframes`
-  from { transform: translateY(${SINK_FLOAT_TRAVEL}px) scale(${FLOAT_ENTER_SCALE}); }
-  to { transform: none; }
-`;
-
-/** Beer–Lambert: the light returns slowly at first and fast at the end. */
-const riseLight = keyframes`
-  from { opacity: 0; }
-  to { opacity: 1; }
-`;
-
 /**
- * The arrow crossing the gap between the two marks — the same float, turned on
- * its side. It starts against the mark that left and comes to rest between the
- * two; the distance is the runner's own width, so nothing here is a number.
- */
-const crossTravel = keyframes`
-  from { transform: translateX(-50%); }
-  to { transform: none; }
-`;
-
-/**
- * One beat of the arrival. The step is the band's place in the order a receipt
- * answers its questions — between what, what happened, how much, the fine
- * print — spent at the verb's own stagger. Travel on `settle`, light on the
- * accelerating `sink`: one event, two media, so two animations.
- *
- * Reduce motion is a parallel mapping, not a hole: no travel and no stagger,
- * and the whole receipt is simply there.
- */
-const rising = (step: number, travel: string) => ({
-  animation: [
-    `${travel} ${FLOAT_IN_MS}ms ${motionEasing.settle.css} ${step * SINK_FLOAT_STAGGER_MS}ms both`,
-    `${riseLight} ${FLOAT_IN_MS}ms ${motionEasing.sink.css} ${step * SINK_FLOAT_STAGGER_MS}ms both`,
-  ].join(', '),
-  [`@media ${reducedMotion.query}`]: { animation: 'none' },
-});
-
-const Rise = styled(Box)<{ $step: number }>(({ $step }) => rising($step, riseTravel));
-
-/**
- * The graphic that replaced the status sentence: the mark of what left, an
- * arrow travelling to the mark of what arrived, and the tick over it. The
+ * The exchange, read *down* the screen: the token that left on top, an arrow
+ * travelling downward from it, and the token that arrived below with its tick
+ * attached — the tick belongs to what was received, not to the block. The
  * marks are the subject, so they are drawn at the icon ramp's top step rather
  * than at the punctuation size they had beside a line of text.
  */
-const Graphic = styled(Box)({
+const ExchangeBlock = styled(Box)({
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: spacing.xs,
+  marginBottom: spacing.lg,
+});
+
+/** One token: its mark, its amount, and the tick slot that keeps the two lines aligned. */
+const TokenLine = styled(Rise)({
   width: '100%',
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'center',
   justifyContent: 'center',
   gap: spacing.sm,
-  marginBottom: spacing.lg,
 });
 
-/** The gap the arrow crosses, and the column that carries the tick over it. */
-const Track = styled(Box)({
-  flex: 1,
-  minWidth: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'stretch',
-  gap: spacing.xs,
-});
-
-const TickRow = styled(Rise)({
+/**
+ * The tick's place, reserved on both lines so the two amounts sit on one
+ * vertical axis — the same reservation the assist band makes below, for the
+ * same reason. Only the received line puts a glyph in it.
+ */
+const TickSlot = styled(Box)({
+  width: iconSize.lg,
   display: 'flex',
   justifyContent: 'center',
+  flexShrink: 0,
   color: semantic.status.success,
   lineHeight: lineHeight.none,
 });
 
-/**
- * Full-width, so the crossing's `-50%` is half the gap: the glyph starts over
- * the mark that left and settles in the middle.
- */
-const ArrowRunner = styled(Box)<{ $step: number }>(({ $step }) => ({
+/** The arrow between the two lines, pointing at what arrived. Decorative. */
+const ArrowRow = styled(Rise)({
   display: 'flex',
   justifyContent: 'center',
   color: colors.text.secondary,
   lineHeight: lineHeight.none,
-  ...rising($step, crossTravel),
-}));
-
-/**
- * The amounts, under the marks they belong to: what was spent on the side the
- * arrow left, what arrived on the side it reached. Each cell is its own
- * container, so `100cqw` in `Amount` is the budget that half actually has.
- */
-const AmountsRow = styled(Rise)({
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'baseline',
-  gap: spacing.sm,
-  marginBottom: spacing.lg,
 });
 
 const AmountCell = styled(Box)({
@@ -397,7 +377,7 @@ const ReceiptValue = styled(Typography)({
  * scales, so they are not two layouts. The auto margin separates the report
  * from the actions without inventing a spacer.
  */
-const ActionGroup = styled(Box)({
+const ActionGroup = styled(Rise)({
   display: 'flex',
   flexDirection: 'column',
   alignSelf: 'stretch',
@@ -447,7 +427,7 @@ const BridgeTxLink = styled(Link)({
   cursor: 'pointer',
 });
 
-const BridgeInfoBox = styled(Box)({
+const BridgeInfoBox = styled(Rise)({
   width: '100%',
   backgroundColor: colors.background.tertiary,
   borderRadius: borderRadius.card,
@@ -496,6 +476,13 @@ export function TransactionSuccessScreen({
   const { t } = useTranslation();
   const isBridge = !!bridgeDepositAddress;
 
+  // Every receipt reveals itself top to bottom, one stagger step per element.
+  // The two shapes are one rhythm at different lengths: an exchange reads
+  // sent → arrow → received → rows, a send or NFT reads status → amount, and
+  // on both the bridge instructions and then the actions close the sequence.
+  const bridgeStep = exchange ? 4 : 2;
+  const actionStep = isBridge ? bridgeStep + 1 : bridgeStep;
+
   // The receipt's clock: local time, captured once when the receipt mounts —
   // the moment the transaction came back — so re-renders never move it.
   const [receiptTime] = useState(() =>
@@ -541,52 +528,48 @@ export function TransactionSuccessScreen({
           actions on the bottom edge. */}
       <Cluster>
         {exchange ? (
-          /* The hero is the graphic. It answers *between what* — the mark of
-           the token that left, the arrow that travelled to the token that
-           arrived, and the tick over it, the same glyph the copy control
-           draws when something has landed. It carries the result as its
-           accessible name, because a graphic announces nothing on its own and
-           the sentence it replaced is what a screen reader used to hear. */
-          <Graphic role="img" aria-label={title} data-testid="tx-success-hero">
-            <Rise $step={0}>
+          /* The hero is the graphic, and it reads down: what left on top, the
+           arrow travelling to what arrived, and the tick attached to the
+           token that arrived — the same glyph the copy control draws when
+           something has landed. Each amount stays with its own mark. The
+           block carries the result as its group label, because the sentence
+           it replaced is what a screen reader used to hear; the marks and the
+           amounts inside it are still read in the order they are drawn. */
+          <ExchangeBlock role="group" aria-label={title} data-testid="tx-success-hero">
+            <TokenLine $step={0} data-testid="tx-success-sent">
               <TokenLogo uri={exchange.send.logo} symbol={exchange.send.symbol} />
-            </Rise>
-            <Track>
-              <TickRow $step={1} data-testid="tx-success-tick">
-                <CheckIcon weight="bold" size={iconSize.lg} />
-              </TickRow>
-              <ArrowRunner $step={1} data-testid="tx-success-arrow">
-                <ArrowRightIcon weight="bold" size={iconSize.lg} />
-              </ArrowRunner>
-            </Track>
-            <Rise $step={0}>
+              <AmountCell
+                style={{ '--tx-amount-chars': exchange.send.amount.length } as React.CSSProperties}
+              >
+                <Amount $spent>{exchange.send.amount}</Amount>
+              </AmountCell>
+              <TickSlot aria-hidden />
+            </TokenLine>
+            <ArrowRow $step={1} aria-hidden data-testid="tx-success-arrow">
+              <ArrowDownIcon weight="bold" size={iconSize.lg} />
+            </ArrowRow>
+            <TokenLine $step={2} data-testid="tx-success-received">
               <TokenLogo uri={exchange.receive.logo} symbol={exchange.receive.symbol} />
-            </Rise>
-          </Graphic>
+              <AmountCell
+                style={
+                  { '--tx-amount-chars': exchange.receive.amount.length } as React.CSSProperties
+                }
+              >
+                <Amount>{exchange.receive.amount}</Amount>
+              </AmountCell>
+              <TickSlot aria-hidden data-testid="tx-success-tick">
+                <CheckIcon weight="bold" size={iconSize.lg} />
+              </TickSlot>
+            </TokenLine>
+          </ExchangeBlock>
         ) : (
-          <StatusRow data-testid="tx-success-status">
+          <StatusRow $step={0} data-testid="tx-success-status">
             <StatusGlyph aria-hidden>✓</StatusGlyph>
             <StatusLabel>{title}</StatusLabel>
           </StatusRow>
         )}
-        {exchange ? (
-          /* How much, under what it happened between: the spent side on the
-           side the arrow left, the received side a rank louder where it
-           landed. */
-          <AmountsRow $step={2} data-testid="tx-success-amount">
-            <AmountCell
-              style={{ '--tx-amount-chars': exchange.send.amount.length } as React.CSSProperties}
-            >
-              <Amount $spent>{exchange.send.amount}</Amount>
-            </AmountCell>
-            <AmountCell
-              style={{ '--tx-amount-chars': exchange.receive.amount.length } as React.CSSProperties}
-            >
-              <Amount>{exchange.receive.amount}</Amount>
-            </AmountCell>
-          </AmountsRow>
-        ) : (
-          <AmountStage>
+        {exchange ? null : (
+          <AmountStage $step={1}>
             <Amount
               data-testid="tx-success-amount"
               style={
@@ -623,7 +606,7 @@ export function TransactionSuccessScreen({
           </ReceiptRows>
         ) : null}
         {isBridge ? (
-          <BridgeInfoBox>
+          <BridgeInfoBox $step={bridgeStep}>
             <BridgeLabel>{t('bridge.depositAddress', 'Send funds to')}</BridgeLabel>
             <BridgeValue>{bridgeDepositAddress}</BridgeValue>
             {bridgeAmountIn && (
@@ -680,7 +663,7 @@ export function TransactionSuccessScreen({
           action still outranks a link that leaves it for a block explorer, and
           what says so is the position. The band keeps its reserved height with
           no link in it, so the primary lands at one Y on every ending. */}
-      <ActionGroup>
+      <ActionGroup $step={actionStep}>
         <AssistBand data-testid="tx-success-assist">
           {!isBridge && explorerUrl ? (
             <TextButton

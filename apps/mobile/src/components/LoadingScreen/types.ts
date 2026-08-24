@@ -27,4 +27,13 @@ export interface LoadingScreenProps extends LoadingScreenBaseProps {
    * crypto stops it — see DESIGN.md §The wait.
    */
   onReady?: () => void;
+  /**
+   * Present the wait in its own window, above every chrome on screen.
+   *
+   * A wait rendered inline only covers its own parent. Inside the settings
+   * gate that leaves the panel header — chevron, title, close — sitting on top
+   * of it, still inviting taps on a flow that is mid-flight. This is off by
+   * default: a wait that already fills its surface does not need a window.
+   */
+  fullScreen?: boolean;
 }

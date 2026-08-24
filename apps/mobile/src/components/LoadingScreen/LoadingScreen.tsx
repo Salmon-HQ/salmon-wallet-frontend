@@ -46,7 +46,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, type LayoutChangeEvent } from 'react-native';
+import { Modal, View, Text, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
@@ -141,6 +141,19 @@ const CONTENT_LANDS_MS = FLOAT_DELAY_MS + FLOAT_IN_MS;
 const CRESTS = crestTrain();
 
 /**
+ * The tip block's reserved geometry.
+ *
+ * Tips rotate, and they are not all the same length. Sized by its content the
+ * block grew upward from its bottom anchor, so the label above it travelled
+ * every time the text changed line count. Reserving the tallest case keeps the
+ * label still and lets the sentence use the room below it.
+ */
+const TIP_LINE_HEIGHT = 20;
+const MAX_TIP_LINES = 3;
+/** The label's own line plus the gap under it. */
+const TIP_LABEL_BLOCK_HEIGHT = 16 + spacing.sm;
+
+/**
  * Side of the box each crest is *rasterised* into, pt.
  *
  * The DOM twin can lay the crest out at the front's full final diameter because
@@ -230,6 +243,7 @@ function centreOf(
 
 export function LoadingScreen({
   visible,
+  fullScreen = false,
   title,
   subtitle,
   tips = DEFAULT_WALLET_TIP_KEYS as unknown as string[],
@@ -678,7 +692,7 @@ export function LoadingScreen({
   // Don't render if not visible
   if (!isVisible) return null;
 
-  return (
+  const wait = (
     <Animated.View style={[styles.overlay, overlayStyle]}>
       <LinearGradient
         colors={[colors.background.primary, colors.background.secondary]}
@@ -778,7 +792,7 @@ export function LoadingScreen({
             {showTips && resolvedTips.length > 0 && (
               <View style={[styles.tipsContainer, { bottom: 80 + bottomOffset }]}>
                 <Text style={styles.tipLabel}>{t('general.tip', 'Tip')}</Text>
-                <Animated.Text style={[styles.tipText, tipStyle]}>
+                <Animated.Text style={[styles.tipText, tipStyle]} numberOfLines={MAX_TIP_LINES}>
                   {resolvedTips[currentTipIndex]}
                 </Animated.Text>
               </View>
@@ -787,6 +801,25 @@ export function LoadingScreen({
         </View>
       </LinearGradient>
     </Animated.View>
+  );
+
+  if (!fullScreen) return wait;
+
+  // Its own window, so the wait covers chrome that is drawn outside this
+  // component's parent — the gate header above a settings panel, for one.
+  // `animationType="none"` because the wait animates itself; letting the
+  // window animate too would double the entrance.
+  return (
+    <Modal
+      visible
+      transparent
+      animationType="none"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={() => undefined}
+    >
+      {wait}
+    </Modal>
   );
 }
 
@@ -898,6 +931,13 @@ const styles = StyleSheet.create({
     left: 24,
     right: 24,
     alignItems: 'center',
+    // The word "Tip" is a fixed landmark, so the block reserves room for the
+    // longest tip instead of being sized by the current one. Anchored from the
+    // bottom and sized by content, a two-line tip pushed the label up and a
+    // one-line tip dropped it back down — the label moved every rotation,
+    // which is the one thing on this screen that should not.
+    height: TIP_LABEL_BLOCK_HEIGHT + TIP_LINE_HEIGHT * MAX_TIP_LINES,
+    justifyContent: 'flex-start',
   },
   tipLabel: {
     color: colors.accent.primary,
@@ -912,7 +952,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.base,
-    lineHeight: 20,
+    lineHeight: TIP_LINE_HEIGHT,
     textAlign: 'center',
     paddingHorizontal: spacing.lg,
   },

@@ -51,6 +51,13 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+// The sheet is a base screen now: the stack lives in the host above it, and
+// the sheet asks that host to push. Mocking the navigation is what stands in
+// for "there is a host around me".
+jest.mock('../PanelHost', () => ({
+  usePanelNavigation: () => ({ push: mockPush, pop: mockPop, canGoBack: false }),
+}));
+
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
   semantic: {
@@ -191,12 +198,12 @@ describe('SettingsSheet', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('pushes a settings panel for navigable options when a registry is available', () => {
-    render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
+  it('asks the host to push a panel for a navigable option', () => {
+    render(<SettingsSheet visible onClose={jest.fn()} />);
 
     fireEvent.press(screen.getByLabelText('settings.currency'));
 
-    expect(mockPush).toHaveBeenCalledWith('currency', undefined);
+    expect(mockPush).toHaveBeenCalledWith('currency');
     expect(mockPop).not.toHaveBeenCalled();
   });
 
@@ -214,7 +221,7 @@ describe('SettingsSheet', () => {
     it.each([['settings.backup'], ['settings.private_key']])(
       'gives %s the same ground as any other row',
       (label) => {
-        render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
+        render(<SettingsSheet visible onClose={jest.fn()} />);
 
         // Amber on a row that only opens a screen reads as a fault report. The
         // warning lives on the destination, before the reveal it guards.
@@ -225,7 +232,7 @@ describe('SettingsSheet', () => {
     );
 
     it('still lets a destroy action wear the danger tint — on the group', () => {
-      render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
+      render(<SettingsSheet visible onClose={jest.fn()} />);
 
       expect(sectionStyle('settings.sections.danger_zone').backgroundColor).toBe(
         'rgba(239,68,68,0.1)'
@@ -236,7 +243,7 @@ describe('SettingsSheet', () => {
 
   describe('one card per section, and each row says what it reads', () => {
     it('parts siblings with a hairline instead of a gap — never above the first', () => {
-      render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
+      render(<SettingsSheet visible onClose={jest.fn()} />);
 
       const first = StyleSheet.flatten(
         screen.getByLabelText('settings.accounts.title').props.style
@@ -254,7 +261,7 @@ describe('SettingsSheet', () => {
         <SettingsSheet
           visible
           onClose={jest.fn()}
-          panelRegistry={{} as any}
+
           optionValues={{ language: 'Espanol', currency: 'EUR', explorer: 'Solscan' }}
         />
       );
@@ -269,7 +276,7 @@ describe('SettingsSheet', () => {
 
   it('renders push rows without a right chevron — the push sinks and floats, it does not slide', () => {
     const { CaretRightIcon } = jest.requireActual('../../icons');
-    const view = render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
+    const view = render(<SettingsSheet visible onClose={jest.fn()} />);
 
     expect(view.UNSAFE_queryAllByType(CaretRightIcon)).toHaveLength(0);
   });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 
 // The material itself is pinned by Thermocline's own tests; here it only has
 // to be identifiable and carry its props through.
@@ -117,5 +117,77 @@ describe('BottomSheetContainer sheet material', () => {
 
     expect(getByTestId('custom-bg')).toBeTruthy();
     expect(queryByTestId('thermocline')).toBeNull();
+  });
+});
+
+describe('BottomSheetContainer departure', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  function renderSheet(visible: boolean, onClosed: () => void) {
+    return render(
+      <BottomSheetContainer visible={visible} onClose={jest.fn()} onClosed={onClosed}>
+        <Text>content</Text>
+      </BottomSheetContainer>
+    );
+  }
+
+  it('reports the arrival, not just the request, once the sheet has left', () => {
+    // `onClose` fires when leaving is asked for; a caller sequencing chrome
+    // behind the sheet needs to know when it is actually gone.
+    const onClosed = jest.fn();
+    const { rerender } = renderSheet(true, onClosed);
+
+    expect(onClosed).not.toHaveBeenCalled();
+
+    rerender(
+      <BottomSheetContainer visible={false} onClose={jest.fn()} onClosed={onClosed}>
+        <Text>content</Text>
+      </BottomSheetContainer>
+    );
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    expect(onClosed).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports once even though the watchdog and the animation both land', () => {
+    // The exit callback only runs on `finished === true`, so a watchdog covers
+    // a cancelled animation. Whichever arrives second must stay quiet.
+    const onClosed = jest.fn();
+    const { rerender } = renderSheet(true, onClosed);
+
+    rerender(
+      <BottomSheetContainer visible={false} onClose={jest.fn()} onClosed={onClosed}>
+        <Text>content</Text>
+      </BottomSheetContainer>
+    );
+    act(() => {
+      jest.runAllTimers();
+      jest.runAllTimers();
+    });
+
+    expect(onClosed).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports again on a second departure', () => {
+    const onClosed = jest.fn();
+    const { rerender } = renderSheet(true, onClosed);
+
+    const show = (visible: boolean) =>
+      rerender(
+        <BottomSheetContainer visible={visible} onClose={jest.fn()} onClosed={onClosed}>
+          <Text>content</Text>
+        </BottomSheetContainer>
+      );
+
+    show(false);
+    act(() => jest.runAllTimers());
+    show(true);
+    show(false);
+    act(() => jest.runAllTimers());
+
+    expect(onClosed).toHaveBeenCalledTimes(2);
   });
 });

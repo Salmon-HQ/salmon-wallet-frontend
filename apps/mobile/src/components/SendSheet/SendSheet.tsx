@@ -1,11 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, StyleSheet, Platform, BackHandler } from 'react-native';
+import { View, StyleSheet, Platform, BackHandler, Modal } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ReAnimated, { useReducedMotion } from 'react-native-reanimated';
 import {
+  SOL_CONSTANTS,
   useSendTransaction,
   getTransactionUrl,
   getDefaultExplorer,
   getShortAddress,
+  useWaitExit,
+  semantic,
 } from '@salmon/shared';
 import type { Blockchain, NetworkEnvironment } from '@salmon/shared';
 import { useTranslation } from 'react-i18next';
@@ -13,17 +17,20 @@ import { useTranslation } from 'react-i18next';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
+import { DepthBackground } from '../DepthBackground';
+import { ScalesBackground } from '../ScalesBackground';
+import { LoadingScreen } from '../LoadingScreen';
+import { useTaskChromeClaim } from '../../contexts/TaskChromeContext';
 import { StepTokenSelect } from './StepTokenSelect';
 import { StepAddressAmount } from './StepAddressAmount';
 import { StepConfirmation } from './StepConfirmation';
+import { SendFailure } from './SendFailure';
 import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
 import type { SendSheetProps, SendStep, SendToken } from './types';
 
 // ============================================================================
 // Constants
 // ============================================================================
-
-const ANIMATION_DURATION = 300;
 
 // ============================================================================
 // Component
@@ -54,9 +61,6 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   );
   const [amount, setAmount] = useState('');
   const [successTxId, setSuccessTxId] = useState<string | null>(null);
-  // Raised by StepConfirmation while the transfer is in flight. The sheet owns
-  // every dismissal path, so it is the level that has to know.
-  const [isSending, setIsSending] = useState(false);
   // Whether a step change has happened in this opening. The step on screen
   // floats in only once something has moved: on the sheet's own arrival the
   // first step is simply already there.
@@ -65,6 +69,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
 
   const { t } = useTranslation();
   const isReduceMotionEnabled = useReducedMotion();
+  const insets = useSafeAreaInsets();
 
   // Live balance for the selected token, derived from the reactive `tokens` prop
   // every render. RQ-backed parents update this list when funds arrive — passing
@@ -77,8 +82,25 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     return typeof live.uiAmount === 'string' ? parseFloat(live.uiAmount) : live.uiAmount;
   }, [selectedToken, tokens]);
 
-  // Send hook
+  // The native token's own balance, which pays the fee for every transfer on
+  // this chain regardless of what is being sent.
+  const nativeBalance = useMemo(() => {
+    const native = tokens.find((tok) => tok.address === SOL_CONSTANTS.ADDRESS);
+    if (!native) return undefined;
+    return typeof native.uiAmount === 'string' ? parseFloat(native.uiAmount) : native.uiAmount;
+  }, [tokens]);
+
+  // The send hook lives here, not in the confirmation step: the step unmounts
+  // the moment the transfer is committed (the wait takes the screen), and a
+  // hook owned there would take the in-flight transaction's only observer with
+  // it. The sheet owns every dismissal path too, so it is the level that has
+  // to know a transfer is in flight.
   const sendHook = useSendTransaction({ account, blockchain });
+  const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
+  // A failure the user can still act on. It is only ever reached from
+  // `sendTransaction` — a fee estimate that fails sets `feeEstimateFailed`, not
+  // this — so `failed` always means the passage is already under way.
+  const sendFailed = sendHook.status === 'failed';
 
   const resetFlowState = useCallback(() => {
     if (skipTokenSelect && tokens.length > 0) {
@@ -92,7 +114,6 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     setResolvedRecipientAddress(undefined);
     setAmount('');
     setSuccessTxId(null);
-    setIsSending(false);
     setStepped(false);
     sendHook.reset();
   }, [sendHook, skipTokenSelect, tokens]);
@@ -111,7 +132,6 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     setResolvedRecipientAddress(undefined);
     setAmount('');
     setSuccessTxId(null);
-    setIsSending(false);
     setStepped(false);
   }
 
@@ -120,6 +140,53 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     sendHook.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blockchain]);
+
+  /**
+   * A send in flight, and the receipt that follows it, own the screen.
+   *
+   * Up to that point the sheet is a card the user is filling in over their
+   * wallet, and the wallet behind it is worth seeing. Once the transaction is
+   * signed there is nothing to go back to and nothing else to look at, so the
+   * flow stops being a card: the sheet leaves the way a sheet always leaves
+   * (its own ebb), and the wait and the receipt take the whole screen in their
+   * own windows.
+   *
+   * The two movements are deliberately simultaneous. The sheet's backdrop is
+   * opaque, so closing it first would reveal an assembled home for a beat and
+   * then sink it — a flash, not a passage. Publishing the task-chrome claim in
+   * the same commit that hides the sheet means the home disassembles behind
+   * the sheet's ebb (DESIGN.md §The sink and the float).
+   *
+   * **A failure keeps the screen.** Letting `failed` fall out of this
+   * predicate rewound the whole passage — the sheet rose, the home
+   * reassembled, and the next attempt wound all of it up again; on a flaky
+   * network that read as the UI breaking. The work is no longer in flight, so
+   * the wait stops (see `showWait`), but the surface it stood on does not go
+   * anywhere: the failure is reported on it, retry is fired from it, and the
+   * only thing that unwinds the passage is the user leaving the flow.
+   */
+  const taskOwnsScreen = isSending || sendFailed || step === 'success';
+  const taskOwnsScreenRef = useRef(taskOwnsScreen);
+  taskOwnsScreenRef.current = taskOwnsScreen;
+
+  const engageTaskChrome = useTaskChromeClaim();
+  useEffect(() => {
+    engageTaskChrome(visible && taskOwnsScreen);
+  }, [visible, taskOwnsScreen, engageTaskChrome]);
+
+  // The wait between the decision and the receipt. `useWaitExit` keeps the
+  // wait mounted through its own departure, so the receipt mounts only once
+  // the closing wave has actually left the screen (DESIGN.md §The wait: "que
+  // no se pase a la siguiente screen hasta que la última onda salga de la
+  // pantalla … Esto aplica siempre").
+  // One wait spans the whole commit, signature through settle, the way swap
+  // does it. Gated on `isSending` alone it ended at the signature, and the
+  // receipt then raised a second wait of its own for the indexer — two waits
+  // back to back, identical but for where their tips sat.
+  const isCommitted = isSending || sendHook.settling;
+  const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
+  const showWait = isCommitted || (isWaveHeld && step === 'success');
+  const showReceipt = step === 'success' && !isWaveHeld && !!successTxId && !!selectedToken;
 
   // Handle close; state reset is driven by the visible -> false transition so
   // external closes (for example, on lock) clear the flow too.
@@ -143,16 +210,31 @@ export const SendSheet: React.FC<SendSheetProps> = ({
       // on screen must not float in behind the sheet's own rise.
       setStepped(false);
     }
-    if (!visible && wasVisible) {
-      const timer = setTimeout(() => {
-        resetFlowStateRef.current();
-      }, ANIMATION_DURATION);
-
-      return () => clearTimeout(timer);
+    if (!visible && wasVisible && taskOwnsScreenRef.current) {
+      // The sheet is already unmounted while the task owns the screen, so its
+      // `onClosed` can never report *this* departure. "View wallet" and an
+      // external close (lock) both land here, and this is where the flow —
+      // and with it the chrome claim — is handed back.
+      resetFlowStateRef.current();
     }
-
     return undefined;
   }, [visible]);
+
+  /**
+   * Reset when the sheet has actually gone, not on a guess.
+   *
+   * This used to run on a blind 300ms timer that did not match the sheet's
+   * real exit, so the flow could be torn out from under a receipt still on
+   * screen — or reset early enough to be visible.
+   */
+  const handleSheetClosed = useCallback(() => {
+    // The sheet also closes when the task takes the screen — that departure is
+    // the passage starting, not the flow ending. Resetting there would tear
+    // the wait or the receipt out from under the user. The visible -> false
+    // transition above is what ends the flow in that case.
+    if (taskOwnsScreenRef.current) return;
+    resetFlowStateRef.current();
+  }, []);
 
   // Step navigation handlers. Every one of them goes through `goToStep`: the
   // step is what changes, and the fact that it changed is what the verb needs
@@ -194,6 +276,14 @@ export const SendSheet: React.FC<SendSheetProps> = ({
       if (isSending) {
         return true;
       }
+      // The failure surface has exactly one way out, and it is the same one
+      // its own control offers: leave the flow. Falling through to the step
+      // handlers would change the step underneath a surface that is still on
+      // screen, because `sendFailed` — not the step — is what holds it there.
+      if (sendFailed) {
+        handleClose();
+        return true;
+      }
       if (step === 'success') {
         handleSuccessContinue();
       } else if (previousStep) {
@@ -207,7 +297,16 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     });
 
     return () => backHandler.remove();
-  }, [visible, step, previousStep, handleClose, handleSuccessContinue, isSending, goToStep]);
+  }, [
+    visible,
+    step,
+    previousStep,
+    handleClose,
+    handleSuccessContinue,
+    isSending,
+    sendFailed,
+    goToStep,
+  ]);
 
   const handleSelectToken = useCallback(
     (token: SendToken) => {
@@ -244,6 +343,36 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     [goToStep]
   );
 
+  /**
+   * Commit the transfer. It lives here rather than in the confirmation step
+   * for the same reason the hook does: the step unmounts the instant the
+   * screen is handed over, and retry has to be able to fire the *same*
+   * transaction from the task surface the step is no longer on.
+   *
+   * Firing it straight into the hook is also what keeps retry from flashing:
+   * `sendFailed` holds the task surface right up to the commit in which
+   * `creating` replaces it, so the predicate above never dips false and
+   * neither the sheet nor the home gets a frame to reassemble in.
+   */
+  const submitSend = useCallback(async () => {
+    if (!selectedToken) return;
+    try {
+      const result = await sendHook.sendTransaction({
+        token: {
+          address: selectedToken.address,
+          decimals: selectedToken.decimals ?? 9,
+          symbol: selectedToken.symbol,
+        },
+        recipientAddress,
+        resolvedRecipientAddress,
+        amount: parseFloat(amount),
+      });
+      handleSuccess(result.txId);
+    } catch {
+      // The hook's `failed` status is the report; the task surface renders it.
+    }
+  }, [sendHook, selectedToken, recipientAddress, resolvedRecipientAddress, amount, handleSuccess]);
+
   // Back button handler for the header
   const handleBackPress = useCallback(() => {
     if (isSending || !previousStep) return;
@@ -256,7 +385,11 @@ export const SendSheet: React.FC<SendSheetProps> = ({
 
   // Drawn only when the step it would return to exists.
   const showBackButton = previousStep !== undefined && !isSending;
-  const showHeader = step !== 'success';
+  const showHeader = step !== 'success' && !isSending;
+
+  const summary = selectedToken
+    ? `${amount} ${selectedToken.symbol} to ${getShortAddress(recipientAddress) ?? recipientAddress}`
+    : '';
 
   const headerContent = (
     <BottomSheetTitleHeader
@@ -278,93 +411,160 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   // arrival it is simply already there, and content that spoke the verb then
   // would say it twice. `stepped` is what tells the two events apart.
   //
-  // The success step is the one exception on the arriving side. The receipt
-  // owns its entrance — its bands float in one after another in reading order
-  // (DESIGN.md §The receipt) — so floating the whole step in as a unit would
-  // make it arrive twice, once as a block and once band by band. The
-  // confirmation still sinks away under it; what replaces it is the receipt's
-  // own sequence.
+  // The receipt is no longer a step in here at all: it has its own window
+  // below, and it arrives whole (DESIGN.md §The receipt: "A send or NFT
+  // receipt arrives whole"), with no entrance of its own.
   const stepExiting = sinkExiting(isReduceMotionEnabled);
   const stepEntering = stepped
     ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
     : undefined;
 
   return (
-    <BottomSheetContainer
-      visible={visible}
-      onClose={handleClose}
-      dismissible={!isSending}
-      headerContent={showHeader ? headerContent : undefined}
-      style={style}
-    >
-      {/* Content */}
-      <View style={styles.content}>
-        {step === 'token-select' && (
+    <>
+      <BottomSheetContainer
+        visible={visible && !taskOwnsScreen}
+        onClose={handleClose}
+        onClosed={handleSheetClosed}
+        dismissible={!isSending}
+        headerContent={showHeader ? headerContent : undefined}
+        style={style}
+      >
+        {/* Content */}
+        <View style={styles.content}>
+          {step === 'token-select' && (
+            <ReAnimated.View
+              key="send-step-token-select"
+              testID="send-step-token-select"
+              style={styles.step}
+              entering={stepEntering}
+              exiting={stepExiting}
+            >
+              <StepTokenSelect
+                tokens={tokens}
+                onSelectToken={handleSelectToken}
+                showUnverifiedTokens={showUnverifiedTokens}
+                loading={loading}
+              />
+            </ReAnimated.View>
+          )}
+
+          {step === 'address-amount' && selectedToken && (
+            <ReAnimated.View
+              key="send-step-address-amount"
+              testID="send-step-address-amount"
+              style={styles.step}
+              entering={stepEntering}
+              exiting={stepExiting}
+            >
+              <StepAddressAmount
+                token={selectedToken}
+                liveBalance={liveSelectedBalance}
+                nativeBalance={nativeBalance}
+                blockchain={blockchain}
+                account={account}
+                onBack={stepSequence.includes('token-select') ? handleBackToTokenSelect : undefined}
+                onReview={handleReview}
+                onCancel={handleClose}
+              />
+            </ReAnimated.View>
+          )}
+
+          {step === 'confirmation' && selectedToken && (
+            <ReAnimated.View
+              key="send-step-confirmation"
+              testID="send-step-confirmation"
+              style={styles.step}
+              entering={stepEntering}
+              exiting={stepExiting}
+            >
+              <StepConfirmation
+                token={selectedToken}
+                recipientAddress={recipientAddress}
+                resolvedRecipientAddress={resolvedRecipientAddress}
+                amount={amount}
+                blockchain={blockchain}
+                account={account}
+                onBack={handleBackToAddressAmount}
+                onCancel={handleClose}
+                onSuccess={handleSuccess}
+                onConfirm={submitSend}
+                sendHook={sendHook}
+              />
+            </ReAnimated.View>
+          )}
+        </View>
+      </BottomSheetContainer>
+
+      {/* The wave wait, in its own window above every piece of chrome. Its
+          entry beat is intrinsic to LoadingScreen, so the sheet's ebb and the
+          home's sink play under it. It leaves on its own last wave, and the
+          receipt below waits for that report. */}
+      {showWait && (
+        <LoadingScreen
+          fullScreen
+          visible={isSending}
+          waves
+          title={t('transaction.pendingSend')}
+          subtitle={summary}
+          bottomOffset={insets.bottom}
+          onExited={onWaveGone}
+        />
+      )}
+
+      {/* The failure, on the very surface the wait was standing on. Its own
+          window for the same reason the receipt has one: the sheet is gone and
+          the home is disassembled, and this is what the passage shows instead.
+          The wave cut rather than ebbing (DESIGN.md §The wait: on a failure
+          "nothing surfaces"), so the report floats up into the space it left —
+          the verb's arriving half, and the only movement here. */}
+      <Modal
+        visible={sendFailed}
+        animationType="none"
+        presentationStyle="fullScreen"
+        onRequestClose={handleClose}
+        testID="send-failure-modal"
+      >
+        <View style={[styles.taskSurface, { paddingTop: insets.top }]}>
+          <DepthBackground />
+          <ScalesBackground variant="deepField" />
           <ReAnimated.View
-            key="send-step-token-select"
-            testID="send-step-token-select"
-            style={styles.step}
-            entering={stepEntering}
-            exiting={stepExiting}
+            key="send-failure-surface"
+            testID="send-failure-surface"
+            style={styles.failureSurface}
+            entering={floatEntering(isReduceMotionEnabled)}
           >
-            <StepTokenSelect
-              tokens={tokens}
-              onSelectToken={handleSelectToken}
-              showUnverifiedTokens={showUnverifiedTokens}
-              loading={loading}
+            <SendFailure
+              title={t('transaction.sendFailed')}
+              // The hook hands back a translation key, never a raw chain error.
+              message={t(sendHook.error ?? 'transaction.errors.generic')}
+              retryLabel={t('actions.retry')}
+              dismissLabel={t('transaction.continue')}
+              onRetry={submitSend}
+              onDismiss={handleClose}
+              bottomInset={insets.bottom}
             />
           </ReAnimated.View>
-        )}
+        </View>
+      </Modal>
 
-        {step === 'address-amount' && selectedToken && (
-          <ReAnimated.View
-            key="send-step-address-amount"
-            testID="send-step-address-amount"
-            style={styles.step}
-            entering={stepEntering}
-            exiting={stepExiting}
-          >
-            <StepAddressAmount
-              token={selectedToken}
-              liveBalance={liveSelectedBalance}
-              blockchain={blockchain}
-              account={account}
-              onBack={stepSequence.includes('token-select') ? handleBackToTokenSelect : undefined}
-              onReview={handleReview}
-              onCancel={handleClose}
-            />
-          </ReAnimated.View>
-        )}
-
-        {step === 'confirmation' && selectedToken && (
-          <ReAnimated.View
-            key="send-step-confirmation"
-            testID="send-step-confirmation"
-            style={styles.step}
-            entering={stepEntering}
-            exiting={stepExiting}
-          >
-            <StepConfirmation
-              token={selectedToken}
-              recipientAddress={recipientAddress}
-              resolvedRecipientAddress={resolvedRecipientAddress}
-              amount={amount}
-              blockchain={blockchain}
-              account={account}
-              onBack={handleBackToAddressAmount}
-              onCancel={handleClose}
-              onSuccess={handleSuccess}
-              onSendingChange={setIsSending}
-            />
-          </ReAnimated.View>
-        )}
-
-        {step === 'success' && successTxId && selectedToken && (
-          <View testID="send-step-success" style={styles.step}>
+      {/* The receipt. Its own window, but the same water as everything else —
+          the depth ramp and the deep-field scales, exactly as the swap task
+          window mounts them. `animationType="none"`: it arrives whole. */}
+      <Modal
+        visible={showReceipt}
+        animationType="none"
+        presentationStyle="fullScreen"
+        onRequestClose={handleSuccessContinue}
+        testID="send-receipt-modal"
+      >
+        <View style={[styles.taskSurface, { paddingTop: insets.top }]}>
+          <DepthBackground />
+          <ScalesBackground variant="deepField" />
+          {selectedToken && successTxId && (
             <TransactionSuccessScreen
               title={t('transaction.sendComplete')}
               pendingTitle={t('transaction.pendingSend')}
-              summary={`${amount} ${selectedToken.symbol} to ${getShortAddress(recipientAddress) ?? recipientAddress}`}
+              summary={summary}
               explorerUrl={getTransactionUrl(
                 blockchain.toUpperCase() as Blockchain,
                 account.getNetworkId() as NetworkEnvironment,
@@ -372,12 +572,11 @@ export const SendSheet: React.FC<SendSheetProps> = ({
                 successTxId
               )}
               onContinue={handleSuccessContinue}
-              settling={sendHook.settling}
             />
-          </View>
-        )}
-      </View>
-    </BottomSheetContainer>
+          )}
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -387,6 +586,15 @@ export const SendSheet: React.FC<SendSheetProps> = ({
 
 const styles = StyleSheet.create({
   content: {
+    flex: 1,
+  },
+  /** The receipt's window: the same water column the task shell paints. */
+  taskSurface: {
+    flex: 1,
+    backgroundColor: semantic.depth.column,
+  },
+  /** The failure's report fills the task surface it inherited from the wait. */
+  failureSurface: {
     flex: 1,
   },
   // The two halves of a step change overlap: one sinks while the other floats

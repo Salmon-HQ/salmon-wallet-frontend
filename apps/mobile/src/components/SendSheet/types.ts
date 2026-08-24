@@ -8,6 +8,7 @@ import type {
   StepConfirmationProps as StepConfirmationPropsBase,
   BlockchainType,
 } from '@salmon/shared';
+import type { useSendTransaction } from '@salmon/shared';
 
 // Re-export shared types for convenience
 export type { SendStep, SendToken, BlockchainType, StepTokenSelectProps };
@@ -15,13 +16,20 @@ export type { SendStep, SendToken, BlockchainType, StepTokenSelectProps };
 /**
  * Props for the confirmation step (React Native).
  *
- * The send hook lives inside this step, so the sheet above it cannot see that
- * a transfer is in flight — and the sheet is where the dismissal paths
- * (backdrop, swipe, hardware back) are decided. This callback is the mobile
- * shell's only way to learn it must stop being dismissible.
+ * The send hook is the sheet's, not this step's. Once the transfer is
+ * committed the sheet hands the screen to the wait and this step unmounts, so
+ * a hook owned here would take the in-flight transaction's only observer with
+ * it — the outcome (success *and* failure) would never reach the level that
+ * has to report it.
  */
 export interface StepConfirmationProps extends StepConfirmationPropsBase {
-  onSendingChange?: (sending: boolean) => void;
+  sendHook: ReturnType<typeof useSendTransaction>;
+  /**
+   * Commit the transfer. The call is the sheet's, not this step's: retry has
+   * to fire the same transaction from the task surface this step has already
+   * been unmounted from, so both entry points go through one function.
+   */
+  onConfirm: () => void;
 }
 
 /**

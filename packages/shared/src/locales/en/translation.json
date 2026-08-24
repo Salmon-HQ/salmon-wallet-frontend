@@ -359,7 +359,9 @@
       "confirmAgain": "Confirm Again",
       "copyRecipientAddress": "Copy recipient address",
       "networkFeeAmount": "Network Fee: ~{{fee}}",
-      "resolvedFrom": "Resolved from {{domain}}"
+      "resolvedFrom": "Resolved from {{domain}}",
+      "no_sol_title": "You need SOL to send",
+      "no_sol_body": "Every transaction on Solana costs a small SOL fee, whatever you are sending. Add at least {{amount}} SOL to this wallet first."
     },
     "marketData": {
       "marketCap": "Market Cap",
@@ -795,6 +797,7 @@
   },
   "transaction": {
     "sendComplete": "Send Complete",
+    "sendFailed": "Send failed",
     "swapComplete": "Swap Complete",
     "pendingSend": "Sending funds",
     "pendingSwap": "Processing swap",

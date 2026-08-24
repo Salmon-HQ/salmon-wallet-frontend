@@ -13,6 +13,8 @@ import { useTranslation } from 'react-i18next';
 import {
   colors,
   fontFamilyNative,
+  getSolShortfall,
+  SOL_CONSTANTS,
   formatTokenAmount,
   ms,
   vs,
@@ -32,6 +34,7 @@ import {
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 import { BlurContainer } from '../BlurContainer';
+import { WarningNotice } from '../WarningNotice';
 import { ReservedSlot } from '../OnboardingLayout/ReservedSlot';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { TokenLogo } from '../TokenLogo';
@@ -53,9 +56,15 @@ const QUICK_FILL_OPTIONS = [
 // Component
 // ============================================================================
 
+/** Prints a small SOL amount plainly — 0.000005, never 5e-6. */
+function formatSolAmount(value: number): string {
+  return value.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+}
+
 export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
   token,
   liveBalance,
+  nativeBalance,
   blockchain,
   account,
   onBack,
@@ -121,11 +130,23 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
   );
 
   // Validate form (address must be validated AND amount must be valid)
+  // Every Solana transfer pays its fee in SOL, so a wallet holding this token
+  // and no SOL cannot send it — the token balance alone says otherwise.
+  const solShortfall = useMemo(() => {
+    if (blockchain !== 'solana' || nativeBalance === undefined) return null;
+    return getSolShortfall({
+      nativeBalanceSol: nativeBalance,
+      isTokenTransfer: token.address !== SOL_CONSTANTS.ADDRESS,
+    });
+  }, [blockchain, nativeBalance, token.address]);
+
   const isValid = useMemo(() => {
     const numAmount = parseFloat(amount);
     const amountValid = !isNaN(numAmount) && numAmount > 0 && numAmount <= tokenBalance;
-    return isAddressValid && !isValidating && amountValid;
-  }, [isAddressValid, isValidating, amount, tokenBalance]);
+    // Blocked rather than warned: without the fee the network refuses the
+    // transfer outright, so letting it through only spends the user's time.
+    return isAddressValid && !isValidating && amountValid && !solShortfall;
+  }, [isAddressValid, isValidating, amount, tokenBalance, solShortfall]);
 
   // Handle quick fill
   const handleQuickFill = useCallback(
@@ -217,6 +238,17 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Said before the form, not after it is filled in: without SOL there
+            is no transfer to compose. */}
+        {solShortfall !== null && (
+          <WarningNotice
+            tone="warning"
+            title={t('token.send.no_sol_title')}
+            style={styles.noSolNotice}
+          >
+            {t('token.send.no_sol_body', { amount: formatSolAmount(solShortfall) })}
+          </WarningNotice>
+        )}
         {/* Selected Token Card. It is a control only while a token-selection
             step exists to return to; otherwise it is a plain readout — no
             button role, no press feedback, no accessible name announcing it
@@ -426,6 +458,9 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
 // ============================================================================
 
 const styles = StyleSheet.create({
+  noSolNotice: {
+    marginBottom: spacing.md,
+  },
   container: {
     flex: 1,
   },

@@ -2,6 +2,16 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
+// The switcher asks its host to push account panels. The host itself pulls in
+// Reanimated and the whole panel stack, neither of which this suite needs:
+// what matters here is which screen the switcher asks for. Null stands for
+// "mounted without a host", the fallback the props still cover.
+const mockPanelPush = jest.fn();
+let mockPanelNavigation: { push: jest.Mock; pop: jest.Mock; canGoBack: boolean } | null = null;
+jest.mock('../PanelHost', () => ({
+  usePanelNavigation: () => mockPanelNavigation,
+}));
+
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
@@ -126,7 +136,9 @@ describe('WalletSwitcherSheet', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('closes the sheet and triggers add account from the footer CTA', () => {
+  it('falls back to the caller when mounted without a panel host', () => {
+    mockPanelNavigation = null;
+    mockPanelPush.mockClear();
     const onAddAccount = jest.fn();
     const onClose = jest.fn();
 
@@ -145,6 +157,32 @@ describe('WalletSwitcherSheet', () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onAddAccount).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the add-account flow in place when there is a host', () => {
+    mockPanelNavigation = { push: mockPanelPush, pop: jest.fn(), canGoBack: false };
+    mockPanelPush.mockClear();
+    const onAddAccount = jest.fn();
+    const onClose = jest.fn();
+
+    render(
+      <WalletSwitcherSheet
+        visible
+        onClose={onClose}
+        accounts={ACCOUNTS}
+        activeAccountId="wallet-1"
+        onSelectAccount={jest.fn().mockResolvedValue(undefined)}
+        onAddAccount={onAddAccount}
+      />
+    );
+
+    fireEvent.press(screen.getByLabelText('settings.wallets.add_new_wallet'));
+
+    expect(mockPanelPush).toHaveBeenCalledWith('account-add');
+    // The surface the user is on stays put: it used to close and hand over to
+    // settings for a flow that has nothing to do with settings.
+    expect(onClose).not.toHaveBeenCalled();
+    expect(onAddAccount).not.toHaveBeenCalled();
   });
 
   it('disables deletion when only one account remains', () => {

@@ -238,3 +238,24 @@ describe('HeaderContent touch targets', () => {
     expect(height).toBeGreaterThanOrEqual(MIN_HIT_TARGET);
   });
 });
+
+describe('HeaderContent account name', () => {
+  it('opens the account switcher from the name, not only the avatar', () => {
+    // The name is what the user reads and reaches for; leaving it inert made
+    // the small avatar the only way in.
+    const onWalletPress = jest.fn();
+
+    render(
+      <HeaderContent
+        accountName="Vault"
+        address="Vault11111111111111111111111111111"
+        onCopyAddress={jest.fn()}
+        onWalletPress={onWalletPress}
+      />
+    );
+
+    fireEvent.press(screen.getByTestId('wallet-header-account-name'));
+
+    expect(onWalletPress).toHaveBeenCalledTimes(1);
+  });
+});

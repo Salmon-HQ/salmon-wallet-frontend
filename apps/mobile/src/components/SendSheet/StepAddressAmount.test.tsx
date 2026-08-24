@@ -56,6 +56,9 @@ const mockI18n = { language: 'en' };
 jest.mock('i18next', () => ({ __esModule: true, default: mockI18n }));
 
 jest.mock('@salmon/shared', () => ({
+  // Real helper: what it computes IS the behaviour under test here.
+  ...jest.requireActual('@salmon/shared/src/utils/sol-fees'),
+  SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
   // The shared token renderer's own body. It cannot be pulled in with
   // `requireActual` — the module it lives in imports lodash-es, which this
   // preset leaves untransformed — so its two contract terms are restated:
@@ -184,43 +187,43 @@ const token = {
   price: 2,
 } as any;
 
-describe('StepAddressAmount', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockI18n.language = 'en';
-    mockKeyboardHeight.mockReturnValue(0);
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockI18n.language = 'en';
+  mockKeyboardHeight.mockReturnValue(0);
 
-    mockUseSendContacts.mockReturnValue({
-      contacts: [
-        { name: 'Alice', address: 'Alice11111111111111111111111111111', blockchain: 'solana' },
-      ],
-      ownWallets: [{ accountName: 'Vault', address: 'Vault11111111111111111111111111111' }],
-      isLoading: false,
-    });
-
-    mockUseAddressValidation.mockImplementation((address: string) => {
-      if (address.trim() === 'Vault11111111111111111111111111111') {
-        return {
-          validationState: 'valid',
-          isValidating: false,
-          isValid: true,
-          resolvedAddress: 'ResolvedVault11111111111111111111111',
-          message: null,
-          messageType: null,
-        };
-      }
-
-      return {
-        validationState: address ? 'invalid' : 'idle',
-        isValidating: false,
-        isValid: false,
-        resolvedAddress: null,
-        message: address ? 'Invalid recipient' : null,
-        messageType: address ? 'error' : null,
-      };
-    });
+  mockUseSendContacts.mockReturnValue({
+    contacts: [
+      { name: 'Alice', address: 'Alice11111111111111111111111111111', blockchain: 'solana' },
+    ],
+    ownWallets: [{ accountName: 'Vault', address: 'Vault11111111111111111111111111111' }],
+    isLoading: false,
   });
 
+  mockUseAddressValidation.mockImplementation((address: string) => {
+    if (address.trim() === 'Vault11111111111111111111111111111') {
+      return {
+        validationState: 'valid',
+        isValidating: false,
+        isValid: true,
+        resolvedAddress: 'ResolvedVault11111111111111111111111',
+        message: null,
+        messageType: null,
+      };
+    }
+
+    return {
+      validationState: address ? 'invalid' : 'idle',
+      isValidating: false,
+      isValid: false,
+      resolvedAddress: null,
+      message: address ? 'Invalid recipient' : null,
+      messageType: address ? 'error' : null,
+    };
+  });
+});
+
+describe('StepAddressAmount', () => {
   // The selected-token card is a way back to token selection. A flow that has
   // no token-selection step must not draw it as a control at all — not merely
   // as a control whose handler does nothing.
@@ -462,5 +465,81 @@ describe('StepAddressAmount', () => {
     expect(screen.getByDisplayValue('Scanned11111111111111111111111111111')).toBeTruthy();
     expect(screen.getByDisplayValue('2')).toBeTruthy();
     expect(mockScannerProps.visible).toBe(false);
+  });
+});
+
+describe('StepAddressAmount without SOL for fees', () => {
+  const solToken = { ...token, address: 'So11111111111111111111111111111111111111112' };
+
+  it('says so before the form, and blocks review even when everything else is valid', () => {
+    // A wallet holding this token and no SOL cannot send it: the fee is paid in
+    // SOL whatever moves. The token balance alone says the transfer is fine.
+    const view = render(
+      <StepAddressAmount
+        token={token}
+        nativeBalance={0}
+        blockchain="solana"
+        account={account}
+        onReview={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+
+    expect(screen.getByText('token.send.no_sol_title')).toBeTruthy();
+
+    fireEvent.changeText(
+      screen.getByPlaceholderText('Solana Address'),
+      'Vault11111111111111111111111111111'
+    );
+    fireEvent.changeText(screen.getByPlaceholderText('0'), '1');
+
+    const touchables = view.UNSAFE_getAllByType(TouchableOpacity);
+    expect(touchables.at(-1)?.props.disabled).toBe(true);
+  });
+
+  it('stays quiet when the wallet can cover the fee', () => {
+    render(
+      <StepAddressAmount
+        token={token}
+        nativeBalance={1}
+        blockchain="solana"
+        account={account}
+        onReview={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+
+    expect(screen.queryByText('token.send.no_sol_title')).toBeNull();
+  });
+
+  it('asks for less when sending SOL itself, which funds no token account', () => {
+    // Enough for the signature fee, not for token-account rent.
+    render(
+      <StepAddressAmount
+        token={solToken}
+        nativeBalance={0.000005}
+        blockchain="solana"
+        account={account}
+        onReview={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+
+    expect(screen.queryByText('token.send.no_sol_title')).toBeNull();
+  });
+
+  it('leaves non-Solana chains alone', () => {
+    render(
+      <StepAddressAmount
+        token={token}
+        nativeBalance={0}
+        blockchain="bitcoin"
+        account={account}
+        onReview={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+
+    expect(screen.queryByText('token.send.no_sol_title')).toBeNull();
   });
 });

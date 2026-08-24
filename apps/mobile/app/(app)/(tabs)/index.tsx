@@ -87,6 +87,7 @@ import {
   type Transaction,
 } from '../../../src/components';
 import { useDeveloperMode } from '../../../src/contexts/DeveloperModeContext';
+import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
 import { useTabChrome } from '../../../hooks/useTabChrome';
 
@@ -144,6 +145,9 @@ function mapBalanceToToken(item: {
 export default function HomeScreen() {
   const { t } = useTranslation();
   const { scrollBottomPadding } = useTabChrome();
+  // A task that takes the screen owns it: the home content leaves with the
+  // same verb the chrome does, so the flow finds empty water behind it.
+  const { isTaskEngaged } = useTaskChrome();
   const isReduceMotionEnabled = useReducedMotion();
   const [{ currency }] = useCurrencyContext();
 
@@ -361,11 +365,19 @@ export default function HomeScreen() {
   // once a chain has actually switched. On the screen's first mount nothing
   // sinks, so a delay there would read as lag. Tracked with the render-time
   // setState pattern (not a ref: refs cannot be read during render).
-  const [chainSwap, setChainSwap] = useState({ chain: currentBlockchain, hasPrior: false });
-  if (chainSwap.chain !== currentBlockchain) {
-    setChainSwap({ chain: currentBlockchain, hasPrior: true });
+  // A task disengaging is the same shape of event: the content really sank
+  // when the task took the screen, so its return owes the beat too. Both
+  // triggers feed one flag and one delay, so a chain switch that lands on a
+  // task hand-back still waits exactly one beat instead of two.
+  const [contentSwap, setContentSwap] = useState({
+    chain: currentBlockchain,
+    engaged: isTaskEngaged,
+    hasPrior: false,
+  });
+  if (contentSwap.chain !== currentBlockchain || contentSwap.engaged !== isTaskEngaged) {
+    setContentSwap({ chain: currentBlockchain, engaged: isTaskEngaged, hasPrior: true });
   }
-  const chainFloatDelayMs = chainSwap.hasPrior ? FLOAT_DELAY_MS : 0;
+  const contentFloatDelayMs = contentSwap.hasPrior ? FLOAT_DELAY_MS : 0;
 
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
   // in via `includeSpam` on `useBalance` above. Trust the BE list as-is.
@@ -819,17 +831,33 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container} testID="home-screen">
-      {/* Fixed Header: Balance Card + Action Buttons */}
-      {FixedHeaderComponent}
+      {/* The balance card, the actions and the sub-account selector are
+          CONTENT, not chrome: when a task engages the shell they leave with
+          the verb at full depth (the chrome's half depth is GateContainer's
+          and the tab bar's business, not theirs). Conditional render is the
+          mechanism — the same one the swap's step changes use — so unmount
+          plays the sink and remount plays the float. The wrapper sits inside
+          the screen, which is itself a sibling of the mounted ground in
+          `(tabs)/_layout.tsx`: the water never travels with it. */}
+      {!isTaskEngaged && (
+        <Reanimated.View
+          testID="home-content"
+          entering={floatEntering(isReduceMotionEnabled, { delayMs: contentFloatDelayMs })}
+          exiting={sinkExiting(isReduceMotionEnabled)}
+        >
+          {/* Fixed Header: Balance Card + Action Buttons */}
+          {FixedHeaderComponent}
 
-      {/* Sub-account selector — only visible with 2+ derived accounts */}
-      <SubAccountSelector
-        accounts={subAccounts}
-        activeIndex={pathIndex}
-        onSelect={handleSubAccountChange}
-        pendingIndex={pendingSubAccountIndex}
-        style={styles.subAccountSelector}
-      />
+          {/* Sub-account selector — only visible with 2+ derived accounts */}
+          <SubAccountSelector
+            accounts={subAccounts}
+            activeIndex={pathIndex}
+            onSelect={handleSubAccountChange}
+            pendingIndex={pendingSubAccountIndex}
+            style={styles.subAccountSelector}
+          />
+        </Reanimated.View>
+      )}
 
       {/* Partial-load failure: keep whatever data loaded visible;
           retry is pull-to-refresh on the token list. Only 'ready' carries
@@ -856,84 +884,86 @@ export default function HomeScreen() {
           still; only the content travels. Under reduce motion both props are
           undefined and the swap stays instant. */}
       <View style={styles.listContainer}>
-        <Reanimated.View
-          key={currentBlockchain}
-          style={styles.chainContent}
-          entering={floatEntering(isReduceMotionEnabled, { delayMs: chainFloatDelayMs })}
-          exiting={sinkExiting(isReduceMotionEnabled)}
-        >
-          {currentBlockchain === 'bitcoin' ? (
-            // Bitcoin view with chart, about, and market data
-            <ScrollView
-              style={styles.bitcoinScrollView}
-              contentContainerStyle={[
-                styles.bitcoinContent,
-                { paddingBottom: scrollBottomPadding },
-              ]}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Price Chart */}
-              <View style={styles.bitcoinSection}>
-                <PriceChart
-                  data={bitcoinChartData}
-                  selectedPeriod={bitcoinChartPeriod}
-                  onPeriodChange={handleChartPeriodChange}
-                  loading={bitcoinDataLoading && bitcoinChartData.length === 0}
-                  error={bitcoinChartError && bitcoinChartData.length === 0}
-                  height={180}
-                />
-              </View>
-
-              {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
-              {balanceState === 'loading' ? (
-                <TokenListSkeleton count={1} />
-              ) : balanceState === 'error' ? (
-                /* A load that failed with nothing cached owes the user the
-                   error state and its retry, never an endless skeleton. */
-                ListEmptyComponent
-              ) : (
-                bitcoinToken && (
-                  <TokenListItem
-                    token={bitcoinToken}
-                    hiddenBalance={hiddenBalance}
-                    blockchain="bitcoin"
+        {!isTaskEngaged && (
+          <Reanimated.View
+            key={currentBlockchain}
+            style={styles.chainContent}
+            entering={floatEntering(isReduceMotionEnabled, { delayMs: contentFloatDelayMs })}
+            exiting={sinkExiting(isReduceMotionEnabled)}
+          >
+            {currentBlockchain === 'bitcoin' ? (
+              // Bitcoin view with chart, about, and market data
+              <ScrollView
+                style={styles.bitcoinScrollView}
+                contentContainerStyle={[
+                  styles.bitcoinContent,
+                  { paddingBottom: scrollBottomPadding },
+                ]}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* Price Chart */}
+                <View style={styles.bitcoinSection}>
+                  <PriceChart
+                    data={bitcoinChartData}
+                    selectedPeriod={bitcoinChartPeriod}
+                    onPeriodChange={handleChartPeriodChange}
+                    loading={bitcoinDataLoading && bitcoinChartData.length === 0}
+                    error={bitcoinChartError && bitcoinChartData.length === 0}
+                    height={180}
                   />
-                )
-              )}
+                </View>
 
-              {/* Market Data */}
-              <View style={styles.bitcoinSection}>
-                <TokenMarketData
-                  data={bitcoinMarketData}
-                  symbol="BTC"
-                  loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                />
-              </View>
+                {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
+                {balanceState === 'loading' ? (
+                  <TokenListSkeleton count={1} />
+                ) : balanceState === 'error' ? (
+                  /* A load that failed with nothing cached owes the user the
+                   error state and its retry, never an endless skeleton. */
+                  ListEmptyComponent
+                ) : (
+                  bitcoinToken && (
+                    <TokenListItem
+                      token={bitcoinToken}
+                      hiddenBalance={hiddenBalance}
+                      blockchain="bitcoin"
+                    />
+                  )
+                )}
 
-              {/* About Section - at the end */}
-              <View style={styles.bitcoinSection}>
-                <TokenAbout
-                  description={bitcoinCoinInfo?.description}
-                  loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                />
-              </View>
-            </ScrollView>
-          ) : (
-            // Normal token list for Solana/Ethereum
-            <TokenList
-              tokens={tokenListItems}
-              loading={balanceState === 'loading'}
-              onTokenPress={handleTokenPress}
-              hiddenBalance={hiddenBalance}
-              ListEmptyComponent={ListEmptyComponent}
-              onRefresh={refresh}
-              onScroll={handleScroll}
-              scrollEventThrottle={16}
-              contentContainerStyle={[styles.listContent, { paddingBottom: scrollBottomPadding }]}
-              blockchain={getBlockchainFromNetworkId(currentBlockchain)}
-            />
-          )}
-        </Reanimated.View>
+                {/* Market Data */}
+                <View style={styles.bitcoinSection}>
+                  <TokenMarketData
+                    data={bitcoinMarketData}
+                    symbol="BTC"
+                    loading={bitcoinDataLoading && !bitcoinCoinInfo}
+                  />
+                </View>
+
+                {/* About Section - at the end */}
+                <View style={styles.bitcoinSection}>
+                  <TokenAbout
+                    description={bitcoinCoinInfo?.description}
+                    loading={bitcoinDataLoading && !bitcoinCoinInfo}
+                  />
+                </View>
+              </ScrollView>
+            ) : (
+              // Normal token list for Solana/Ethereum
+              <TokenList
+                tokens={tokenListItems}
+                loading={balanceState === 'loading'}
+                onTokenPress={handleTokenPress}
+                hiddenBalance={hiddenBalance}
+                ListEmptyComponent={ListEmptyComponent}
+                onRefresh={refresh}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                contentContainerStyle={[styles.listContent, { paddingBottom: scrollBottomPadding }]}
+                blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+              />
+            )}
+          </Reanimated.View>
+        )}
         {/* Top fade gradient - shows only when scrolled, fades in dynamically */}
         <Animated.View
           style={[styles.topFadeGradient, { opacity: topFadeOpacity }]}

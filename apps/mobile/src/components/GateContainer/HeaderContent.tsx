@@ -153,14 +153,26 @@ export function HeaderContent({
               durationMs: motionMs.ebb,
             })}
           >
-            <Text
-              style={styles.accountText}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              maxFontSizeMultiplier={fontScaleCap.chrome}
+            {/* The name is the same affordance as the avatar beside it: both
+                open the account switcher. Only the avatar was tappable, which
+                left the obvious target — the name the user is reading — inert. */}
+            <TouchableOpacity
+              testID="wallet-header-account-name"
+              onPress={handleWalletPress}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.switch_wallet')}
+              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
             >
-              {displayText}
-            </Text>
+              <Text
+                style={styles.accountText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                maxFontSizeMultiplier={fontScaleCap.chrome}
+              >
+                {displayText}
+              </Text>
+            </TouchableOpacity>
           </Reanimated.View>
           <TouchableOpacity
             testID="wallet-header-copy-address"

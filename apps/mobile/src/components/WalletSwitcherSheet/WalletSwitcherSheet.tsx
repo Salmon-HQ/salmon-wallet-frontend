@@ -28,6 +28,7 @@ import {
   iconSize,
 } from '../../icons';
 import { useTranslation } from 'react-i18next';
+import { usePanelNavigation } from '../PanelHost';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   colors,
@@ -179,6 +180,7 @@ export function WalletSwitcherSheet({
 }: WalletSwitcherSheetProps): React.ReactElement {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const panelNavigation = usePanelNavigation();
 
   // Top fade gradient opacity
   const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
@@ -214,19 +216,31 @@ export function WalletSwitcherSheet({
    * Handle add account button press
    */
   const handleAddAccount = useCallback(() => {
+    // In place, on the surface the user is already on. This used to close the
+    // switcher and open settings, which answered "add an account" by showing
+    // an unrelated screen. `onAddAccount` remains the fallback for a surface
+    // that mounts the switcher without a panel host.
+    if (panelNavigation) {
+      panelNavigation.push('account-add');
+      return;
+    }
     onClose();
     onAddAccount();
-  }, [onClose, onAddAccount]);
+  }, [panelNavigation, onClose, onAddAccount]);
 
   /**
    * Handle edit account button press
    */
   const handleEditAccount = useCallback(
     (accountId: string) => {
+      if (panelNavigation) {
+        panelNavigation.push('account-edit', { accountId });
+        return;
+      }
       onClose();
       onEditAccount?.(accountId);
     },
-    [onClose, onEditAccount]
+    [panelNavigation, onClose, onEditAccount]
   );
 
   /**
