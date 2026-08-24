@@ -124,7 +124,11 @@ vi.mock('../LoadingScreen', () => ({
   LoadingScreen: ({ title }: { title?: string }) => <div data-testid="loading-screen">{title}</div>,
 }));
 
-import { resolveOnboardingBands, resolveOnboardingGrid } from '@salmon/shared';
+import {
+  resolveOnboardingBands,
+  resolveOnboardingGrid,
+  SINK_FLOAT_STAGGER_MS,
+} from '@salmon/shared';
 import { TransactionSuccessScreen } from './TransactionSuccessScreen';
 
 /** The bands the receipt reads: the onboarding ending's, with no secondary. */
@@ -244,17 +248,23 @@ describe('TransactionSuccessScreen', () => {
     it('replaces the status sentence with the graphic on an exchange', () => {
       render(<TransactionSuccessScreen {...baseProps} exchange={exchange} />);
 
-      // The graphic says what happened: the marks, the arrow between them and
-      // the tick over it. No sentence is printed.
+      // The graphic says what happened: the mark of what left, the arrow down
+      // to what arrived, and the tick on it. No sentence is printed.
       expect(screen.queryByTestId('tx-success-status')).toBeNull();
       expect(screen.queryByText('Swap Complete')).toBeNull();
       const hero = screen.getByTestId('tx-success-hero');
-      expect(hero.getAttribute('role')).toBe('img');
-      // A graphic announces nothing on its own, so the result the sentence
-      // used to carry is the graphic's accessible name.
+      // A group, not an image: the amounts inside it have to stay readable,
+      // and the result the sentence used to carry is the group's label.
+      expect(hero.getAttribute('role')).toBe('group');
       expect(hero.getAttribute('aria-label')).toBe('Swap Complete');
-      expect(screen.getByTestId('tx-success-tick')).toBeTruthy();
-      expect(screen.getByTestId('tx-success-arrow')).toBeTruthy();
+      // The arrow is decoration — it is neither announced nor focusable.
+      const arrow = screen.getByTestId('tx-success-arrow');
+      expect(arrow.getAttribute('aria-hidden')).toBe('true');
+      expect(arrow.getAttribute('tabindex')).toBeNull();
+      // And the tick belongs to the token that arrived, not to the block.
+      const received = screen.getByTestId('tx-success-received');
+      expect(received.contains(screen.getByTestId('tx-success-tick'))).toBe(true);
+      expect(screen.getByTestId('tx-success-sent').querySelector('svg')).toBeNull();
     });
 
     it('keeps the status sentence on a receipt with a single token', () => {
@@ -267,7 +277,7 @@ describe('TransactionSuccessScreen', () => {
       expect(screen.queryByTestId('tx-success-hero')).toBeNull();
     });
 
-    it('puts the amounts under the graphic and the rows under the amounts', () => {
+    it('reads the exchange down the screen, each amount with its own token', () => {
       render(
         <TransactionSuccessScreen
           {...baseProps}
@@ -277,15 +287,21 @@ describe('TransactionSuccessScreen', () => {
         />
       );
 
-      const hero = screen.getByTestId('tx-success-hero');
-      const amounts = screen.getByTestId('tx-success-amount');
+      const sent = screen.getByTestId('tx-success-sent');
+      const arrow = screen.getByTestId('tx-success-arrow');
+      const received = screen.getByTestId('tx-success-received');
       const rows = screen.getByTestId('tx-success-receipt');
 
-      // Between what, how much, the fine print — in that order.
-      expect(hero.compareDocumentPosition(amounts) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-      expect(amounts.compareDocumentPosition(rows) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-      expect(amounts.textContent).toContain('1.1 USDC');
-      expect(amounts.textContent).toContain('0.014 SOL');
+      // What left, the arrow down from it, what arrived, the fine print — and
+      // the reading order is the visual order, because it is the DOM order.
+      const follows = (a: Element, b: Element) =>
+        !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+      expect(follows(sent, arrow)).toBe(true);
+      expect(follows(arrow, received)).toBe(true);
+      expect(follows(received, rows)).toBe(true);
+      // The amounts stay with their tokens.
+      expect(sent.textContent).toContain('1.1 USDC');
+      expect(received.textContent).toContain('0.014 SOL');
       expect(screen.getByText('1 USDC ≈ 0.0127 SOL')).toBeTruthy();
       expect(screen.getByText('0.85%')).toBeTruthy();
       expect(screen.getByText('Time')).toBeTruthy();
@@ -326,22 +342,27 @@ describe('TransactionSuccessScreen', () => {
   });
 
   describe('the arrival', () => {
-    it('holds nothing back on a receipt with no graphic to sequence', () => {
+    // jsdom resolves the shorthand but not `animationDelay`, so the beat is
+    // read off the declaration: it is the ms that follows the easing.
+    const delayOf = (node: Element) =>
+      Number(getComputedStyle(node).animation.match(/\)\s+(\d+)ms\s+both/)?.[1]);
+
+    it('reveals a send receipt top to bottom — status, amount, actions', () => {
       render(<TransactionSuccessScreen {...baseProps} />);
 
-      for (const testID of [
-        'tx-success-status',
-        'tx-success-amount',
-        'tx-success-assist',
-        'tx-success-continue-button',
-      ]) {
-        const style = getComputedStyle(screen.getByTestId(testID));
-        expect(style.opacity === '' || style.opacity === '1').toBe(true);
-        expect(style.animationName === '' || style.animationName === 'none').toBe(true);
-      }
+      const status = delayOf(screen.getByTestId('tx-success-status'));
+      const amount = delayOf(screen.getByTestId('tx-success-amount').parentElement!);
+      const actions = delayOf(screen.getByTestId('tx-success-assist').parentElement!);
+
+      // The plain shape is the same rhythm as the exchange, not a second one:
+      // each element after the one above it, one stagger step apart.
+      expect(status).toBeLessThan(amount);
+      expect(amount).toBeLessThan(actions);
+      expect(amount - status).toBe(SINK_FLOAT_STAGGER_MS);
+      expect(actions - amount).toBe(SINK_FLOAT_STAGGER_MS);
     });
 
-    it('floats an exchange up in the order a receipt answers its questions', () => {
+    it('reveals an exchange receipt top to bottom — sent, arrow, received, rows, actions', () => {
       render(
         <TransactionSuccessScreen
           {...baseProps}
@@ -350,27 +371,46 @@ describe('TransactionSuccessScreen', () => {
         />
       );
 
-      // jsdom resolves the shorthand but not `animationDelay`, so the beat is
-      // read off the declaration: it is the ms that follows the easing.
-      const delayOf = (node: Element) =>
-        Number(getComputedStyle(node).animation.match(/\)\s+(\d+)ms\s+both/)?.[1]);
-
-      const marks = delayOf(screen.getAllByTestId('tx-success-token-logo')[0].parentElement!);
+      const sent = delayOf(screen.getByTestId('tx-success-sent'));
       const arrow = delayOf(screen.getByTestId('tx-success-arrow'));
-      const tick = delayOf(screen.getByTestId('tx-success-tick'));
-      const amounts = delayOf(screen.getByTestId('tx-success-amount'));
+      const received = delayOf(screen.getByTestId('tx-success-received'));
       const rows = delayOf(screen.getByTestId('tx-success-receipt'));
+      const actions = delayOf(screen.getByTestId('tx-success-assist').parentElement!);
 
-      // The marks first, then the arrow with its tick, then the amounts, then
-      // the details — the amounts are the answer and the rows are the
-      // footnote, so they may not arrive together.
-      expect(arrow).toBe(tick);
-      expect(marks).toBeLessThan(arrow);
-      expect(arrow).toBeLessThan(amounts);
-      expect(amounts).toBeLessThan(rows);
+      // Never all at once and never bottom-up: the order down the screen is
+      // the order the parts arrive in.
+      expect(sent).toBeLessThan(arrow);
+      expect(arrow).toBeLessThan(received);
+      expect(received).toBeLessThan(rows);
+      expect(rows).toBeLessThan(actions);
+      // The tick rides with the token that arrived, so it is that beat.
+      expect(delayOf(screen.getByTestId('tx-success-tick').parentElement!)).toBe(received);
       // Every step is one of the verb's own staggers, never a minted number.
-      expect(rows - amounts).toBe(amounts - arrow);
-      expect(amounts - arrow).toBe(arrow - marks);
+      for (const [after, before] of [
+        [arrow, sent],
+        [received, arrow],
+        [rows, received],
+        [actions, rows],
+      ]) {
+        expect(after - before).toBe(SINK_FLOAT_STAGGER_MS);
+      }
+    });
+
+    it('cuts rather than reorders under reduced motion', () => {
+      render(<TransactionSuccessScreen {...baseProps} exchange={exchange} />);
+
+      // The mapping is parallel, not a hole: every band that carries a beat
+      // carries the same escape, so nothing is staggered and nothing is
+      // resequenced — the receipt is simply there.
+      const css = Array.from(document.querySelectorAll('style'))
+        .map((tag) => tag.textContent ?? '')
+        .join('');
+      const reduced = css.match(/@media \(prefers-reduced-motion: reduce\)\{[^}]*\}/g) ?? [];
+
+      expect(reduced.length).toBeGreaterThan(0);
+      for (const block of reduced) {
+        expect(block).toContain('animation:none');
+      }
     });
   });
 });
