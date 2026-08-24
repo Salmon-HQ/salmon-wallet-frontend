@@ -224,8 +224,6 @@ jest.mock('../../SeedPhrase', () => ({
 }));
 
 import { AccountAddPanel } from './AccountAddPanel';
-// The mocked barrel's own error class, so `instanceof` matches what the panel checks.
-import { EncryptionMaterialMissingError } from '@salmon/shared';
 
 beforeEach(() => {
   jest.clearAllMocks();

@@ -89,7 +89,9 @@ const ErrorText = styled(Typography)({
   fontWeight: fontWeight.medium,
   fontFamily: fontFamily.sans,
   color: semantic.status.danger,
-  marginTop: spacing.xs,
+  marginTop: spacing.sm,
+  paddingLeft: spacing.xs,
+  paddingRight: spacing.xs,
   letterSpacing: letterSpacing.normal,
 });
 

@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.caption,
-    marginTop: spacing.xs,
+    marginTop: spacing.sm,
     marginLeft: spacing.xs,
   },
   disclaimer: {

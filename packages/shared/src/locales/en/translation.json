@@ -556,7 +556,7 @@
       "title": "Import private key",
       "label": "Private key",
       "placeholder": "Paste your private key",
-      "help": "Base58 or a byte array, as exported by Salmon, Phantom or the Solana CLI.",
+      "help": "Paste the key exactly as your other wallet gave it to you.",
       "show": "Show private key",
       "hide": "Hide private key",
       "warning_title": "Never share your private key",
@@ -565,9 +565,9 @@
       "continue": "Continue",
       "errors": {
         "empty": "Enter your private key to continue.",
-        "format": "That does not look like a private key. Paste it as base58 or as a byte array.",
-        "length": "That key is not the right length. A Solana private key is 64 bytes.",
-        "seedOnly": "That is a 32-byte seed, not a private key. Paste the full 64-byte key.",
+        "format": "That does not look like a private key. Copy it again from the wallet you are moving it from.",
+        "length": "That key is incomplete. Copy the whole thing and try again.",
+        "seedOnly": "That is only part of a private key. Copy the whole thing and try again.",
         "invalidKey": "That key is not valid. Check you copied all of it.",
         "duplicate": "This wallet is already in your list."
       }

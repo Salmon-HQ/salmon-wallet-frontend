@@ -30,6 +30,7 @@ import {
   normalizeMnemonic,
   createAccount,
   importAccountFromPrivateKey,
+  isVaultKeyCached,
   useImportPrivateKey,
   getShortAddress,
   getAccountMnemonic,
@@ -133,6 +134,11 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const [seedError, setSeedError] = useState('');
   const seedPhrase = useMemo(() => normalizeMnemonic(seedWords.join(' ')), [seedWords]);
   const [confirmError, setConfirmError] = useState('');
+  // Re-auth step state. The password lives here only for the moment between
+  // typing and the verified write.
+  const [reauthPassword, setReauthPassword] = useState('');
+  const [reauthError, setReauthError] = useState('');
+  const [reauthChecking, setReauthChecking] = useState(false);
   const [loading, setLoading] = useState(false);
   const privateKeyImport = useImportPrivateKey({ accounts });
 
@@ -232,26 +238,31 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     setStep('set-name');
   }, [seedPhrase, defaultName, t]);
 
-  const handleConfirm = useCallback(async () => {
+  /**
+   * Builds the account the current flow describes. Cheap and side-effect free,
+   * so the re-auth path can rebuild rather than park key material in state.
+   */
+  const buildAccount = useCallback(async () => {
     const name = accountName.trim() || defaultName;
-    setConfirmError('');
-    setLoading(true);
-    try {
-      // A private key owns one address and derives nothing, so it takes the
-      // import factory instead of the mnemonic fan-out across networks.
-      const { account } = privateKeyImport.privateKey
-        ? await importAccountFromPrivateKey({
-            name,
-            privateKey: privateKeyImport.privateKey,
-            networkId: privateKeyImport.networkId,
-          })
-        : await createAccount({
-            name,
-            mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
-            networkIds: await getScanNetworks(),
-            startIndex: selectedDerived ? selectedDerived.index : 0,
-          });
-      await accountActions.addAccount(account);
+    // A private key owns one address and derives nothing, so it takes the
+    // import factory instead of the mnemonic fan-out across networks.
+    return privateKeyImport.privateKey
+      ? importAccountFromPrivateKey({
+          name,
+          privateKey: privateKeyImport.privateKey,
+          networkId: privateKeyImport.networkId,
+        })
+      : createAccount({
+          name,
+          mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
+          networkIds: await getScanNetworks(),
+          startIndex: selectedDerived ? selectedDerived.index : 0,
+        });
+  }, [accountName, defaultName, privateKeyImport, selectedDerived, activeAccount, seedPhrase]);
+
+  const persistAccount = useCallback(
+    async (account: Awaited<ReturnType<typeof buildAccount>>['account'], password?: string) => {
+      await accountActions.addAccount(account, password);
       // Anonymous funnel event: an account was added from inside the app. A
       // derived account reuses the active seed (create); an imported seed or
       // private key is a recovery. No seed, address or key material leaves
@@ -264,26 +275,84 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       // `handleWaitExited` completes once the last wave has left the screen.
       pendingCompleteRef.current = true;
       setLoading(false);
+    },
+    [accountActions, selectedDerived, privateKeyImport]
+  );
+
+  const handleConfirm = useCallback(async () => {
+    setConfirmError('');
+
+    // Asked before the work, not after it fails: the vault key expires on
+    // inactivity, and finding out at the write means showing a wait and then a
+    // dead end for something that was knowable up front.
+    if (!(await isVaultKeyCached())) {
+      setStep('reauth');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { account } = await buildAccount();
+      await persistAccount(account);
     } catch (err) {
       setLoading(false);
+      // The cache can still lapse between the check and the write.
       if (err instanceof EncryptionMaterialMissingError) {
-        setConfirmError(t('settings.account_add.session_expired'));
+        setStep('reauth');
         return;
       }
+      console.error('Failed to add account:', err);
       setConfirmError(t('settings.account_add.creation_error'));
     }
-  }, [
-    accountName,
-    defaultName,
-    selectedDerived,
-    activeAccount,
-    seedPhrase,
-    accountActions,
-    privateKeyImport,
-    t,
-  ]);
+  }, [buildAccount, persistAccount, t]);
+
+  /**
+   * Completes the add with a password the user just supplied. Verifies it
+   * first: re-encrypting the vault under an unverified password would lock the
+   * user out of every account they own.
+   */
+  const handleReauthConfirm = useCallback(async () => {
+    if (!reauthPassword) {
+      setReauthError(t('errors.password_required'));
+      return;
+    }
+
+    setReauthChecking(true);
+    let valid = false;
+    try {
+      valid = await accountActions.checkPassword(reauthPassword);
+    } catch {
+      setReauthChecking(false);
+      setReauthError(t('errors.password_check_failed'));
+      return;
+    }
+    setReauthChecking(false);
+
+    if (!valid) {
+      setReauthError(t('errors.invalid_password'));
+      return;
+    }
+
+    setReauthError('');
+    setLoading(true);
+    try {
+      const { account } = await buildAccount();
+      await persistAccount(account, reauthPassword);
+      setReauthPassword('');
+    } catch (err) {
+      setLoading(false);
+      console.error('Failed to add account after re-auth:', err);
+      setConfirmError(t('settings.account_add.creation_error'));
+    }
+  }, [reauthPassword, accountActions, buildAccount, persistAccount, t]);
 
   const handleStepBack = useCallback(() => {
+    if (step === 'reauth') {
+      setReauthPassword('');
+      setReauthError('');
+      setStep('set-name');
+      return;
+    }
     if (step === 'set-name') {
       if (selectedDerived) setStep('derive-scan');
       else if (privateKeyImport.privateKey) setStep('import-private-key');
@@ -302,6 +371,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     'import-seed': t('settings.account_add.import_seed'),
     'import-private-key': t('wallet.import.title'),
     'set-name': t('settings.account_add.set_name'),
+    reauth: t('settings.account_add.reauth_title'),
     complete: t('settings.account_add.title'),
   };
 
@@ -410,15 +480,22 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                   testID="account-add-private-key-input"
                 />
               </Box>
-              <Typography
-                sx={{
-                  color: colors.text.secondary,
-                  fontSize: fontSize.caption,
-                  marginTop: spacing.xs,
-                }}
-              >
-                {t('wallet.import.help')}
-              </Typography>
+              {/* One slot under the field: the hint stands where the error
+                  will stand, so the layout does not shift when a message
+                  replaces it. Matches PasswordInput's own error text. */}
+              {!privateKeyImport.error && (
+                <Typography
+                  sx={{
+                    color: colors.text.secondary,
+                    fontSize: fontSize.caption,
+                    marginTop: `${spacing.sm}px`,
+                    paddingLeft: `${spacing.xs}px`,
+                    paddingRight: `${spacing.xs}px`,
+                  }}
+                >
+                  {t('wallet.import.help')}
+                </Typography>
+              )}
               {privateKeyImport.address && (
                 <Box
                   sx={{ marginTop: `${spacing.lg}px` }}
@@ -539,7 +616,9 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                   sx={{
                     color: semantic.status.danger,
                     fontSize: fontSize.caption,
-                    marginTop: spacing.xs,
+                    marginTop: `${spacing.sm}px`,
+                    paddingLeft: `${spacing.xs}px`,
+                    paddingRight: `${spacing.xs}px`,
                   }}
                 >
                   {pastedCount !== null
@@ -553,6 +632,36 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                 testID="account-add-seed-continue-button"
               >
                 {t('actions.continue')}
+              </PrimaryButton>
+            </>
+          )}
+
+          {step === 'reauth' && (
+            <>
+              <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
+                {t('settings.account_add.reauth_body')}
+              </Typography>
+              <Box sx={{ marginTop: `${spacing.lg}px` }}>
+                <PasswordInput
+                  value={reauthPassword}
+                  onChangeText={(value) => {
+                    setReauthPassword(value);
+                    if (reauthError) setReauthError('');
+                  }}
+                  placeholder={t('lock.password_placeholder')}
+                  error={reauthError || undefined}
+                  onSubmitEditing={handleReauthConfirm}
+                  autoFocus
+                  testID="account-add-reauth-password"
+                />
+              </Box>
+              <PrimaryButton
+                style={CONFIRM_SLOT_STYLE}
+                onClick={handleReauthConfirm}
+                disabled={!reauthPassword || reauthChecking}
+                testID="account-add-reauth-confirm-button"
+              >
+                {t('settings.account_add.reauth_confirm')}
               </PrimaryButton>
             </>
           )}
@@ -579,7 +688,9 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
                   sx={{
                     color: semantic.status.danger,
                     fontSize: fontSize.caption,
-                    marginTop: spacing.xs,
+                    marginTop: `${spacing.sm}px`,
+                    paddingLeft: `${spacing.xs}px`,
+                    paddingRight: `${spacing.xs}px`,
                   }}
                 >
                   {confirmError}

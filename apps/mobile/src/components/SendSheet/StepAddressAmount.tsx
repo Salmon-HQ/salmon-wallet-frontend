@@ -523,7 +523,8 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.regular,
     color: colors.text.secondary,
-    marginTop: vs(spacing.xs),
+    marginTop: vs(spacing.sm),
+    paddingHorizontal: s(spacing.xs),
   },
   validationMessageError: {
     color: semantic.status.danger,

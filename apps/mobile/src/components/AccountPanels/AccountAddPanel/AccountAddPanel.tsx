@@ -512,7 +512,9 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         onSubmitEditing={handlePrivateKeySubmit}
         autoFocus
       />
-      <Text style={styles.methodDescription}>{t('wallet.import.help')}</Text>
+      {/* One slot under the field: the hint stands where the error will stand,
+          so the layout does not shift when a message replaces it. */}
+      {!privateKeyImport.error && <Text style={styles.inputHint}>{t('wallet.import.help')}</Text>}
       {privateKeyImport.address && (
         <View style={styles.resolvedAddress} testID="account-add-private-key-address">
           <Text style={styles.methodDescription}>{t('wallet.import.resolved_address')}</Text>
@@ -647,6 +649,14 @@ const styles = StyleSheet.create({
   methodContainer: {
     gap: spacing.md,
   },
+  /** Matches PasswordInput's own error text, so hint and error share a slot. */
+  inputHint: {
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: fontSize.sm,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.xs,
+  },
   resolvedAddress: {
     marginTop: spacing.lg,
     gap: spacing.xxs,
@@ -720,7 +730,7 @@ const styles = StyleSheet.create({
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.caption,
-    marginTop: spacing.xs,
+    marginTop: spacing.sm,
     marginLeft: spacing.xs,
   },
   inputLabel: {

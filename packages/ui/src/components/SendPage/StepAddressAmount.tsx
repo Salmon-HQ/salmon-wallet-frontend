@@ -226,7 +226,9 @@ const ValidationMessage = styled(Typography)<{
   fontSize: fontSize.sm,
   lineHeight: `${fontSize.sm * lineHeight.condensed}px`,
   fontFamily: fontFamily.sans,
-  marginTop: spacing.xs,
+  marginTop: spacing.sm,
+  paddingLeft: spacing.xs,
+  paddingRight: spacing.xs,
   color:
     $messageType === 'error'
       ? semantic.status.danger

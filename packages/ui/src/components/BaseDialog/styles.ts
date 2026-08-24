@@ -172,6 +172,7 @@ export const StyledTextField: React.ComponentType<TextFieldProps> = styled(TextF
   },
   '& .MuiFormHelperText-root': {
     color: semantic.status.danger,
+    margin: `${spacing.sm}px ${spacing.xs}px 0`,
   },
 });
 

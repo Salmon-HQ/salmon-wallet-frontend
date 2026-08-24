@@ -137,7 +137,13 @@ export function SecurityPanel({
               testID="security-new-password-input"
             />
             {newPassword.length > 0 && (
-              <Box sx={{ marginTop: spacing.xs }}>
+              <Box
+                sx={{
+                  marginTop: `${spacing.sm}px`,
+                  paddingLeft: `${spacing.xs}px`,
+                  paddingRight: `${spacing.xs}px`,
+                }}
+              >
                 <PasswordStrengthBar strength={passwordValidation.strength} />
               </Box>
             )}
