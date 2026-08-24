@@ -51,6 +51,13 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+// The sheet is a base screen now: the stack lives in the host above it, and
+// the sheet asks that host to push. Mocking the navigation is what stands in
+// for "there is a host around me".
+jest.mock('../PanelHost', () => ({
+  usePanelNavigation: () => ({ push: mockPush, pop: mockPop, canGoBack: false }),
+}));
+
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
   semantic: {
@@ -191,12 +198,12 @@ describe('SettingsSheet', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('pushes a settings panel for navigable options when a registry is available', () => {
+  it('asks the host to push a panel for a navigable option', () => {
     render(<SettingsSheet visible onClose={jest.fn()} panelRegistry={{} as any} />);
 
     fireEvent.press(screen.getByLabelText('settings.currency'));
 
-    expect(mockPush).toHaveBeenCalledWith('currency', undefined);
+    expect(mockPush).toHaveBeenCalledWith('currency');
     expect(mockPop).not.toHaveBeenCalled();
   });
 

@@ -40,7 +40,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReducedMotion } from 'react-native-reanimated';
 import { SettingsPanelStack } from '../SettingsPanelStack';
-import { SettingsHeaderContext, type SettingsHeaderState } from '../SettingsHeaderContext';
+import { usePanelNavigation } from '../PanelHost';
 import {
   colors,
   spacing,
@@ -83,7 +83,7 @@ const NEUTRAL_OPTION_COLORS = {
   background: colors.background.card,
 } as const;
 
-const SCREEN_TITLE_KEYS: Partial<Record<SettingsScreen, string>> = {
+export const SCREEN_TITLE_KEYS: Partial<Record<SettingsScreen, string>> = {
   accounts: 'settings.accounts.title',
   avatar: 'settings.profile_picture',
   security: 'settings.security.title',
@@ -104,7 +104,7 @@ const SCREEN_TITLE_KEYS: Partial<Record<SettingsScreen, string>> = {
   'account-add': 'settings.account_add.title',
 };
 
-const DYNAMIC_HEADER_SCREENS = new Set<SettingsScreen>(['account-add', 'privateKey']);
+export const DYNAMIC_HEADER_SCREENS = new Set<SettingsScreen>(['account-add', 'privateKey']);
 
 const SETTINGS_SECTIONS: SettingsSection[] = [
   {
@@ -204,100 +204,10 @@ export function SettingsSheet({
 }: SettingsSheetWithPanelsProps): React.ReactElement {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { stack, push, pop, reset, canGoBack } = useSettingsPanelStack();
-  const [headerOverride, setHeaderOverride] = React.useState<SettingsHeaderState | null>(null);
-  const headerOverrideBackRef = React.useRef<(() => void) | null>(null);
-  const headerOverrideOwnerRef = React.useRef<symbol | null>(null);
-  const [animating, setAnimating] = React.useState(false);
-
-  // These are bookkeeping timers, not animations: they clear the `animating`
-  // flag once the panel stack has finished moving. They read the same two
-  // tokens the stack animates on — `route` in, `ebb` out — so the gate cannot
-  // outlast (or undercut) the motion it is gating.
-  const isReduceMotionEnabled = useReducedMotion();
-  const pushDurationMs = resolveMotionMs(motionMs.route, isReduceMotionEnabled);
-  const popDurationMs = resolveMotionMs(motionMs.ebb, isReduceMotionEnabled);
-  const [slideDirection, setSlideDirection] = React.useState<'in' | 'out' | 'idle'>('idle');
-  const animationTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // Top fade gradient opacity
   const topFadeOpacity = useMemo(() => new Animated.Value(0), []);
 
-  // Reset stack when sheet closes
-  useEffect(() => {
-    if (!visible) {
-      const timer = setTimeout(() => {
-        if (animationTimerRef.current) {
-          clearTimeout(animationTimerRef.current);
-          animationTimerRef.current = null;
-        }
-        setAnimating(false);
-        setSlideDirection('idle');
-        reset();
-      }, pushDurationMs);
-      return () => clearTimeout(timer);
-    }
-  }, [visible, reset, pushDurationMs]);
-
-  useEffect(() => {
-    return () => {
-      if (animationTimerRef.current) {
-        clearTimeout(animationTimerRef.current);
-      }
-    };
-  }, []);
-
-  const finishAnimation = useCallback(() => {
-    setAnimating(false);
-    setSlideDirection('idle');
-    animationTimerRef.current = null;
-  }, []);
-
-  const handlePush = useCallback(
-    (screen: SettingsScreen, props?: Record<string, unknown>) => {
-      if (animating) return;
-      if (animationTimerRef.current) {
-        clearTimeout(animationTimerRef.current);
-      }
-      setSlideDirection('in');
-      setAnimating(true);
-      push(screen, props);
-      animationTimerRef.current = setTimeout(() => {
-        finishAnimation();
-      }, pushDurationMs);
-    },
-    [animating, finishAnimation, push, pushDurationMs]
-  );
-
-  const handlePop = useCallback(() => {
-    if (animating || !canGoBack) return;
-    if (animationTimerRef.current) {
-      clearTimeout(animationTimerRef.current);
-    }
-    setSlideDirection('out');
-    setAnimating(true);
-    animationTimerRef.current = setTimeout(() => {
-      pop();
-      finishAnimation();
-    }, popDurationMs);
-  }, [animating, canGoBack, finishAnimation, pop, popDurationMs]);
-
-  /**
-   * Seed the stack for a drawer that opens straight onto a panel.
-   *
-   * Done at render time, not in an effect: an effect runs after the first
-   * paint, so the settings root — the list with its sub-tabs — flashed past on
-   * the way to the panel the user actually asked for. Opening on an edit
-   * screen showed two of them. Setting state during render of the same commit
-   * means the first frame is already the right screen.
-   */
-  const [openStateSeeded, setOpenStateSeeded] = React.useState(visible);
-  if (visible !== openStateSeeded) {
-    setOpenStateSeeded(visible);
-    if (visible) {
-      reset(initialPanels ?? []);
-    }
-  }
+  const panelNavigation = usePanelNavigation();
 
   const handleOptionPress = useCallback(
     (option: SettingsOption) => {
@@ -312,11 +222,11 @@ export function SettingsSheet({
       }
 
       // Push panel instead of navigating
-      if (!option.isToggle && option.id !== 'developerNetworks' && panelRegistry) {
-        handlePush(option.id as SettingsScreen);
+      if (!option.isToggle && option.id !== 'developerNetworks') {
+        panelNavigation?.push(option.id as SettingsScreen);
       }
     },
-    [handlePush, onClose, onRemoveAllWallets, onRemoveWallet, panelRegistry]
+    [panelNavigation, onClose, onRemoveAllWallets, onRemoveWallet]
   );
 
   const handleScroll = useCallback(
@@ -462,110 +372,39 @@ export function SettingsSheet({
     [renderSectionHeader, renderOption]
   );
 
-  const hasPanels = panelRegistry && stack.length > 0;
-  const currentPanel = stack.length > 0 ? stack[stack.length - 1] : null;
-  const fallbackTitle = currentPanel
-    ? t(SCREEN_TITLE_KEYS[currentPanel.screen] || 'settings.title')
-    : t('settings.title');
-  const currentTitle = headerOverride?.title || fallbackTitle;
-  const currentBackAction = currentPanel ? headerOverride?.onBack || handlePop : undefined;
-  const invokeHeaderOverrideBack = useCallback(() => {
-    headerOverrideBackRef.current?.();
-  }, []);
-  const handleHeaderStateChange = useCallback(
-    (ownerId: symbol, nextState: SettingsHeaderState | null) => {
-      if (!nextState) {
-        if (headerOverrideOwnerRef.current !== ownerId) {
-          return;
-        }
-        headerOverrideOwnerRef.current = null;
-        headerOverrideBackRef.current = null;
-        setHeaderOverride((previousState) => (previousState === null ? previousState : null));
-        return;
-      }
-
-      headerOverrideOwnerRef.current = ownerId;
-      headerOverrideBackRef.current = nextState.onBack;
-      setHeaderOverride((previousState) => {
-        const hasSameTitle = previousState?.title === nextState.title;
-        if (hasSameTitle && previousState !== null) {
-          return previousState;
-        }
-
-        return {
-          title: nextState.title,
-          onBack: invokeHeaderOverrideBack,
-        };
-      });
-    },
-    [invokeHeaderOverrideBack]
-  );
-  const headerContextValue = useMemo(
-    () => ({ setHeaderState: handleHeaderStateChange }),
-    [handleHeaderStateChange]
-  );
-  // Report header state to parent (GateContainer)
-  useEffect(() => {
-    onHeaderChange?.(currentTitle, currentBackAction ?? undefined);
-  }, [currentTitle, currentBackAction, onHeaderChange]);
-
-  useEffect(() => {
-    if (!currentPanel || !DYNAMIC_HEADER_SCREENS.has(currentPanel.screen)) {
-      headerOverrideOwnerRef.current = null;
-      headerOverrideBackRef.current = null;
-      setHeaderOverride(null);
-    }
-  }, [currentPanel]);
-
   return (
-    <SettingsHeaderContext.Provider value={headerContextValue}>
-      <View style={styles.container}>
-        {/* Base: Settings Menu (panel 0) */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: insets.bottom + spacing['2xl'] },
-          ]}
-          scrollEnabled
-          alwaysBounceVertical
-          showsVerticalScrollIndicator={false}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-        >
-          {SETTINGS_SECTIONS.map(renderSection)}
-        </ScrollView>
+    <View style={styles.container}>
+      {/* Base: Settings Menu (panel 0) */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + spacing['2xl'] },
+        ]}
+        scrollEnabled
+        alwaysBounceVertical
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
+        {SETTINGS_SECTIONS.map(renderSection)}
+      </ScrollView>
 
-        {/* Top fade gradient */}
-        <Animated.View
-          style={[styles.topFadeGradient, { opacity: topFadeOpacity }]}
-          pointerEvents="none"
-        >
-          {/* The fade must read the ground it fades over. That ground is now
+      {/* Top fade gradient */}
+      <Animated.View
+        style={[styles.topFadeGradient, { opacity: topFadeOpacity }]}
+        pointerEvents="none"
+      >
+        {/* The fade must read the ground it fades over. That ground is now
               the thick thermocline, so the fade is the same membrane ink
               laid on twice at the top and thinning to nothing — the material
               densifying, not an opaque band pasted over it. */}
-          <LinearGradient
-            colors={[semantic.surface.membraneThick, 'transparent']}
-            style={StyleSheet.absoluteFill}
-          />
-        </Animated.View>
-
-        {/* Stacked panels overlay */}
-        {hasPanels && panelRegistry && (
-          <View style={styles.panelOverlay}>
-            <SettingsPanelStack
-              panelRegistry={panelRegistry}
-              stack={stack}
-              onNavigate={handlePush}
-              onBack={handlePop}
-              animating={animating}
-              slideDirection={slideDirection}
-            />
-          </View>
-        )}
-      </View>
-    </SettingsHeaderContext.Provider>
+        <LinearGradient
+          colors={[semantic.surface.membraneThick, 'transparent']}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
+    </View>
   );
 }
 

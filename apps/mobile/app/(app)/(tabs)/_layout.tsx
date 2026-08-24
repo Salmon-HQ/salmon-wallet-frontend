@@ -70,6 +70,12 @@ import { useBiometricAuth } from '../../../hooks/useBiometricAuth';
 import { DeveloperModeProvider } from '../../../src/contexts/DeveloperModeContext';
 import { TaskChromeProvider } from '../../../src/contexts/TaskChromeContext';
 import { GateContainer } from '../../../src/components/GateContainer';
+import { PanelHost } from '../../../src/components/PanelHost';
+import type { SettingsScreen } from '@salmon/shared';
+import {
+  SCREEN_TITLE_KEYS,
+  DYNAMIC_HEADER_SCREENS,
+} from '../../../src/components/SettingsSheet/SettingsSheet';
 import { LockContent } from '../../../src/components/GateContainer/LockContent';
 import { HeaderContent } from '../../../src/components/GateContainer/HeaderContent';
 import type { DerivedKeyCache } from '@salmon/shared';
@@ -105,6 +111,10 @@ export default function TabLayout() {
     t('settings.title', 'Settings')
   );
   const [settingsHeaderBack, setSettingsHeaderBack] = useState<(() => void) | undefined>(undefined);
+  const [walletsHeaderTitle, setWalletsHeaderTitle] = useState(() =>
+    t('settings.wallets.your_wallets')
+  );
+  const [walletsHeaderBack, setWalletsHeaderBack] = useState<(() => void) | undefined>(undefined);
 
   // Account context
   const [accountState, accountActions] = useAccountsContext();
@@ -338,6 +348,19 @@ export default function TabLayout() {
   );
 
   // Settings header change handler
+  const resolvePanelTitle = useCallback(
+    (screen: SettingsScreen) => t(SCREEN_TITLE_KEYS[screen] || 'settings.title'),
+    [t]
+  );
+
+  const handleWalletsHeaderChange = useCallback(
+    (title: string, onBack: (() => void) | undefined) => {
+      setWalletsHeaderTitle(title);
+      setWalletsHeaderBack(() => onBack);
+    },
+    []
+  );
+
   const handleSettingsHeaderChange = useCallback(
     (title: string, onBack: (() => void) | undefined) => {
       setSettingsHeaderTitle(title);
@@ -359,13 +382,24 @@ export default function TabLayout() {
       };
     }
     if (gateState === 'wallets') {
+      // The switcher hosts account panels of its own now, so its chrome
+      // follows the panel stack the same way settings does — a title that
+      // tracks the open panel, and a back that pops it.
       return {
-        title: t('settings.wallets.your_wallets'),
+        title: walletsHeaderTitle,
+        onBack: walletsHeaderBack || null,
         onClose: () => setWalletSwitcherVisible(false),
       };
     }
     return undefined;
-  }, [gateState, settingsHeaderTitle, settingsHeaderBack, t]);
+  }, [
+    gateState,
+    settingsHeaderTitle,
+    settingsHeaderBack,
+    walletsHeaderTitle,
+    walletsHeaderBack,
+    t,
+  ]);
 
   // Derived values
   const accountName = activeAccount?.name || t('wallet.unnamed_account', 'Account');
@@ -401,6 +435,19 @@ export default function TabLayout() {
   const handleSettingsClose = useCallback(() => {
     setSettingsVisible(false);
     setSettingsInitialPanels(undefined);
+  }, []);
+
+  /**
+   * Leaves a finished account flow, whichever surface it ran on.
+   *
+   * The panel is reachable from settings and from the wallet switcher, and it
+   * does not know which one is above it — so completing closes both, landing
+   * on home with the account it just created already active.
+   */
+  const handleAccountFlowComplete = useCallback(() => {
+    setSettingsVisible(false);
+    setSettingsInitialPanels(undefined);
+    setWalletSwitcherVisible(false);
   }, []);
 
   const panelRegistry: MobilePanelRegistry = useMemo(
@@ -660,7 +707,7 @@ export default function TabLayout() {
       // account it just created is already the active one, so the useful next
       // screen is the wallet showing it.
       'account-add': ({ onBack }) => (
-        <AccountAddPanel onComplete={handleSettingsClose} onBack={onBack} />
+        <AccountAddPanel onComplete={handleAccountFlowComplete} onBack={onBack} />
       ),
       backup: ({ onBack }) => (
         <BackupPanel
@@ -703,7 +750,7 @@ export default function TabLayout() {
       editingContact,
       editingAccountId,
       activeTrustedApps,
-      handleSettingsClose,
+      handleAccountFlowComplete,
       openLink,
       t,
     ]
@@ -912,32 +959,52 @@ export default function TabLayout() {
             />
           }
           settingsContent={
-            <SettingsSheet
+            <PanelHost
               visible={settingsVisible}
-              onClose={handleSettingsClose}
-              optionValues={settingsOptionValues}
-              panelRegistry={panelRegistry}
+              registry={panelRegistry}
               initialPanels={settingsInitialPanels}
-              developerNetworksEnabled={developerNetworks}
-              onDeveloperNetworksToggle={toggleDeveloperNetworks}
-              analyticsEnabled={analyticsConsent}
-              onAnalyticsToggle={setAnalyticsConsent}
-              onRemoveWallet={handleRemoveWallet}
-              onRemoveAllWallets={handleRemoveAllWallets}
               onHeaderChange={handleSettingsHeaderChange}
-            />
+              baseTitle={t('settings.title')}
+              resolvePanelTitle={resolvePanelTitle}
+              dynamicHeaderScreens={DYNAMIC_HEADER_SCREENS}
+            >
+              {() => (
+                <SettingsSheet
+                  visible={settingsVisible}
+                  onClose={handleSettingsClose}
+                  optionValues={settingsOptionValues}
+                  developerNetworksEnabled={developerNetworks}
+                  onDeveloperNetworksToggle={toggleDeveloperNetworks}
+                  analyticsEnabled={analyticsConsent}
+                  onAnalyticsToggle={setAnalyticsConsent}
+                  onRemoveWallet={handleRemoveWallet}
+                  onRemoveAllWallets={handleRemoveAllWallets}
+                />
+              )}
+            </PanelHost>
           }
           walletsContent={
-            <WalletSwitcherSheet
+            <PanelHost
               visible={walletSwitcherVisible}
-              onClose={handleWalletSwitcherClose}
-              accounts={accounts}
-              activeAccountId={accountId ?? ''}
-              onSelectAccount={handleSelectAccount}
-              onAddAccount={handleAddAccount}
-              onEditAccount={handleEditAccount}
-              onDeleteAccount={handleDeleteAccount}
-            />
+              registry={panelRegistry}
+              onHeaderChange={handleWalletsHeaderChange}
+              baseTitle={t('settings.wallets.your_wallets')}
+              resolvePanelTitle={resolvePanelTitle}
+              dynamicHeaderScreens={DYNAMIC_HEADER_SCREENS}
+            >
+              {() => (
+                <WalletSwitcherSheet
+                  visible={walletSwitcherVisible}
+                  onClose={handleWalletSwitcherClose}
+                  accounts={accounts}
+                  activeAccountId={accountId ?? ''}
+                  onSelectAccount={handleSelectAccount}
+                  onAddAccount={handleAddAccount}
+                  onEditAccount={handleEditAccount}
+                  onDeleteAccount={handleDeleteAccount}
+                />
+              )}
+            </PanelHost>
           }
         />
       </View>
