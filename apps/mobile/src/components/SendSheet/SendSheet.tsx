@@ -24,6 +24,7 @@ import { useTaskChromeClaim } from '../../contexts/TaskChromeContext';
 import { StepTokenSelect } from './StepTokenSelect';
 import { StepAddressAmount } from './StepAddressAmount';
 import { StepConfirmation } from './StepConfirmation';
+import { SendFailure } from './SendFailure';
 import { TransactionSuccessScreen } from '../TransactionSuccessScreen';
 import type { SendSheetProps, SendStep, SendToken } from './types';
 
@@ -96,6 +97,10 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   // to know a transfer is in flight.
   const sendHook = useSendTransaction({ account, blockchain });
   const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
+  // A failure the user can still act on. It is only ever reached from
+  // `sendTransaction` — a fee estimate that fails sets `feeEstimateFailed`, not
+  // this — so `failed` always means the passage is already under way.
+  const sendFailed = sendHook.status === 'failed';
 
   const resetFlowState = useCallback(() => {
     if (skipTokenSelect && tokens.length > 0) {
@@ -151,8 +156,16 @@ export const SendSheet: React.FC<SendSheetProps> = ({
    * then sink it — a flash, not a passage. Publishing the task-chrome claim in
    * the same commit that hides the sheet means the home disassembles behind
    * the sheet's ebb (DESIGN.md §The sink and the float).
+   *
+   * **A failure keeps the screen.** Letting `failed` fall out of this
+   * predicate rewound the whole passage — the sheet rose, the home
+   * reassembled, and the next attempt wound all of it up again; on a flaky
+   * network that read as the UI breaking. The work is no longer in flight, so
+   * the wait stops (see `showWait`), but the surface it stood on does not go
+   * anywhere: the failure is reported on it, retry is fired from it, and the
+   * only thing that unwinds the passage is the user leaving the flow.
    */
-  const taskOwnsScreen = isSending || step === 'success';
+  const taskOwnsScreen = isSending || sendFailed || step === 'success';
   const taskOwnsScreenRef = useRef(taskOwnsScreen);
   taskOwnsScreenRef.current = taskOwnsScreen;
 
@@ -258,6 +271,14 @@ export const SendSheet: React.FC<SendSheetProps> = ({
       if (isSending) {
         return true;
       }
+      // The failure surface has exactly one way out, and it is the same one
+      // its own control offers: leave the flow. Falling through to the step
+      // handlers would change the step underneath a surface that is still on
+      // screen, because `sendFailed` — not the step — is what holds it there.
+      if (sendFailed) {
+        handleClose();
+        return true;
+      }
       if (step === 'success') {
         handleSuccessContinue();
       } else if (previousStep) {
@@ -271,7 +292,16 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     });
 
     return () => backHandler.remove();
-  }, [visible, step, previousStep, handleClose, handleSuccessContinue, isSending, goToStep]);
+  }, [
+    visible,
+    step,
+    previousStep,
+    handleClose,
+    handleSuccessContinue,
+    isSending,
+    sendFailed,
+    goToStep,
+  ]);
 
   const handleSelectToken = useCallback(
     (token: SendToken) => {
@@ -307,6 +337,36 @@ export const SendSheet: React.FC<SendSheetProps> = ({
     },
     [goToStep]
   );
+
+  /**
+   * Commit the transfer. It lives here rather than in the confirmation step
+   * for the same reason the hook does: the step unmounts the instant the
+   * screen is handed over, and retry has to be able to fire the *same*
+   * transaction from the task surface the step is no longer on.
+   *
+   * Firing it straight into the hook is also what keeps retry from flashing:
+   * `sendFailed` holds the task surface right up to the commit in which
+   * `creating` replaces it, so the predicate above never dips false and
+   * neither the sheet nor the home gets a frame to reassemble in.
+   */
+  const submitSend = useCallback(async () => {
+    if (!selectedToken) return;
+    try {
+      const result = await sendHook.sendTransaction({
+        token: {
+          address: selectedToken.address,
+          decimals: selectedToken.decimals ?? 9,
+          symbol: selectedToken.symbol,
+        },
+        recipientAddress,
+        resolvedRecipientAddress,
+        amount: parseFloat(amount),
+      });
+      handleSuccess(result.txId);
+    } catch {
+      // The hook's `failed` status is the report; the task surface renders it.
+    }
+  }, [sendHook, selectedToken, recipientAddress, resolvedRecipientAddress, amount, handleSuccess]);
 
   // Back button handler for the header
   const handleBackPress = useCallback(() => {
@@ -422,6 +482,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
                 onBack={handleBackToAddressAmount}
                 onCancel={handleClose}
                 onSuccess={handleSuccess}
+                onConfirm={submitSend}
                 sendHook={sendHook}
               />
             </ReAnimated.View>
@@ -444,6 +505,42 @@ export const SendSheet: React.FC<SendSheetProps> = ({
           onExited={onWaveGone}
         />
       )}
+
+      {/* The failure, on the very surface the wait was standing on. Its own
+          window for the same reason the receipt has one: the sheet is gone and
+          the home is disassembled, and this is what the passage shows instead.
+          The wave cut rather than ebbing (DESIGN.md §The wait: on a failure
+          "nothing surfaces"), so the report floats up into the space it left —
+          the verb's arriving half, and the only movement here. */}
+      <Modal
+        visible={sendFailed}
+        animationType="none"
+        presentationStyle="fullScreen"
+        onRequestClose={handleClose}
+        testID="send-failure-modal"
+      >
+        <View style={[styles.taskSurface, { paddingTop: insets.top }]}>
+          <DepthBackground />
+          <ScalesBackground variant="deepField" />
+          <ReAnimated.View
+            key="send-failure-surface"
+            testID="send-failure-surface"
+            style={styles.failureSurface}
+            entering={floatEntering(isReduceMotionEnabled)}
+          >
+            <SendFailure
+              title={t('transaction.sendFailed')}
+              // The hook hands back a translation key, never a raw chain error.
+              message={t(sendHook.error ?? 'transaction.errors.generic')}
+              retryLabel={t('actions.retry')}
+              dismissLabel={t('transaction.continue')}
+              onRetry={submitSend}
+              onDismiss={handleClose}
+              bottomInset={insets.bottom}
+            />
+          </ReAnimated.View>
+        </View>
+      </Modal>
 
       {/* The receipt. Its own window, but the same water as everything else —
           the depth ramp and the deep-field scales, exactly as the swap task
@@ -491,6 +588,10 @@ const styles = StyleSheet.create({
   taskSurface: {
     flex: 1,
     backgroundColor: semantic.depth.column,
+  },
+  /** The failure's report fills the task surface it inherited from the wait. */
+  failureSurface: {
+    flex: 1,
   },
   // The two halves of a step change overlap: one sinks while the other floats
   // up in the same box, so the steps are stacked, not laid out in sequence.

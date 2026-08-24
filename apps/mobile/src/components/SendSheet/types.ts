@@ -24,6 +24,12 @@ export type { SendStep, SendToken, BlockchainType, StepTokenSelectProps };
  */
 export interface StepConfirmationProps extends StepConfirmationPropsBase {
   sendHook: ReturnType<typeof useSendTransaction>;
+  /**
+   * Commit the transfer. The call is the sheet's, not this step's: retry has
+   * to fire the same transaction from the task surface this step has already
+   * been unmounted from, so both entry points go through one function.
+   */
+  onConfirm: () => void;
 }
 
 /**

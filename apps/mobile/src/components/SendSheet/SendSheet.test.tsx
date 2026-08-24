@@ -52,6 +52,9 @@ jest.mock('react-i18next', () => ({
  */
 let sendController: { commit: () => void; land: () => void; fail: () => void } | null = null;
 
+/** Every commit the sheet fired, so retry can be told apart from the first go. */
+const mockSendTransaction = jest.fn();
+
 jest.mock('@salmon/shared', () => ({
   SOL_CONSTANTS: { ADDRESS: 'So11111111111111111111111111111111111111112' },
   useSendTransaction: () => {
@@ -64,12 +67,18 @@ jest.mock('@salmon/shared', () => ({
     };
     return {
       estimateFee: jest.fn(),
-      sendTransaction: jest.fn(),
+      // Never resolves on its own: a test drives the outcome through the
+      // controller, exactly as the chain would.
+      sendTransaction: (...args: unknown[]) => {
+        mockSendTransaction(...args);
+        setStatus('sending');
+        return new Promise(() => {});
+      },
       status,
       settling: false,
       feeEstimateFailed: false,
-      error: null,
-      isError: false,
+      error: status === 'failed' ? 'transaction.errors.generic' : null,
+      isError: status === 'failed',
       reset: () => {
         mockSendHookReset();
         setStatus('idle');
@@ -204,13 +213,32 @@ let lastConfirmationSuccess: ((txId: string) => void) | null = null;
 jest.mock('./StepConfirmation', () => {
   const { Text: RNText } = jest.requireActual('react-native');
   return {
-    StepConfirmation: ({ onSuccess }: { onSuccess: (txId: string) => void }) => {
+    StepConfirmation: ({
+      onSuccess,
+      onConfirm,
+    }: {
+      onSuccess: (txId: string) => void;
+      onConfirm: () => void;
+    }) => {
       lastConfirmationSuccess = onSuccess;
       return (
-        <RNText testID="step-confirmation" onPress={() => onSuccess('tx-1')}>
+        <RNText testID="step-confirmation" onPress={() => onConfirm()}>
           confirmation
         </RNText>
       );
+    },
+  };
+});
+
+/** Every props object the failure report has been rendered with. */
+const failureProps: Record<string, any>[] = [];
+
+jest.mock('./SendFailure', () => {
+  const { Text: RNText } = jest.requireActual('react-native');
+  return {
+    SendFailure: (props: Record<string, unknown>) => {
+      failureProps.push(props);
+      return <RNText testID="send-failure">failure</RNText>;
     },
   };
 });
@@ -461,6 +489,10 @@ describe('SendSheet — the send passage', () => {
     layoutByKey.length = 0;
     sheetVisible.length = 0;
     chromeClaims.length = 0;
+    failureProps.length = 0;
+    successProps.length = 0;
+    mockSendTransaction.mockClear();
+    mockSendHookReset.mockClear();
     mockReduceMotion = false;
   });
 
@@ -537,6 +569,139 @@ describe('SendSheet — the send passage', () => {
 
     expect(chromeClaims[chromeClaims.length - 1]).toBe(false);
     expect(screen.queryByTestId('success-screen')).toBeNull();
+    expect(mockSendHookReset).toHaveBeenCalled();
+  });
+});
+
+/**
+ * The failure does not rewind the passage.
+ *
+ * Letting `failed` drop the task claim rose the sheet and reassembled the home
+ * behind it, and the next attempt wound the whole thing up again — on a flaky
+ * network that read as the UI breaking. The screen the wait stood on is kept,
+ * the failure is reported on it, and the only thing that unwinds the passage
+ * is the user leaving the flow.
+ */
+describe('SendSheet — a failure keeps the passage', () => {
+  beforeEach(() => {
+    headerProps.length = 0;
+    layoutByKey.length = 0;
+    sheetVisible.length = 0;
+    chromeClaims.length = 0;
+    failureProps.length = 0;
+    mockSendTransaction.mockClear();
+    mockSendHookReset.mockClear();
+    mockReduceMotion = false;
+  });
+
+  /** Index of the claim the commit published — the passage starting. */
+  let claimedAt = -1;
+
+  /**
+   * How many times the claim actually went from engaged to released since
+   * `from`. The claim is re-published on every render, so what matters is the
+   * falling edge, not how many identical values were pushed.
+   */
+  const releases = (from: number) => {
+    const claims = chromeClaims.slice(from);
+    return claims.filter((engaged, i) => !engaged && claims[i - 1] === true).length;
+  };
+
+  /** Through the steps, commit for real, then let the chain refuse it. */
+  const fail = (onClose = jest.fn()) => {
+    const utils = render(
+      <SendSheet
+        visible
+        onClose={onClose}
+        tokens={[solToken]}
+        blockchain="solana"
+        account={account}
+      />
+    );
+    fireEvent.press(screen.getByTestId('step-token-select'));
+    fireEvent.press(screen.getByTestId('step-address-amount'));
+    fireEvent.press(screen.getByTestId('step-confirmation'));
+    act(() => sendController!.fail());
+    // The claim published by the commit. Everything a test cares about happens
+    // after this point; the `false`s before it are the flow still being a sheet.
+    claimedAt = chromeClaims.lastIndexOf(true);
+    // The hook's own mount reset is not the flow being torn down.
+    mockSendHookReset.mockClear();
+    return utils;
+  };
+
+  it('keeps the task engaged and the sheet closed when the transfer fails', () => {
+    fail();
+
+    // The wait is gone — nothing is in flight — but nothing else came back.
+    expect(screen.queryByTestId('send-wait')).toBeNull();
+    expect(screen.getByTestId('send-failure')).toBeTruthy();
+    expect(sheetVisible[sheetVisible.length - 1]).toBe(false);
+    expect(chromeClaims[chromeClaims.length - 1]).toBe(true);
+    // The claim was published on the commit and never withdrawn since.
+    expect(chromeClaims.slice(claimedAt)).not.toContain(false);
+    expect(releases(claimedAt)).toBe(0);
+    // And the confirmation step is not on screen to report the error twice.
+    expect(screen.queryByTestId('step-confirmation')).toBeNull();
+  });
+
+  it('reports what went wrong on the surface the wait left', () => {
+    fail();
+    const report = failureProps[failureProps.length - 1];
+    expect(report.message).toBe('transaction.errors.generic');
+    expect(report.title).toBe('transaction.sendFailed');
+  });
+
+  it('does not reset the flow out from under the failure', () => {
+    fail();
+    // A reset here would clear the send hook, drop `failed`, and tear the
+    // report off the screen the user is looking at.
+    expect(mockSendHookReset).not.toHaveBeenCalled();
+    expect(screen.getByTestId('send-failure')).toBeTruthy();
+  });
+
+  it('brings the wait straight back on retry, with nothing reassembling in between', async () => {
+    fail();
+    const claimsBefore = chromeClaims.length;
+    const sheetVisibleBefore = sheetVisible.length;
+
+    await act(async () => {
+      failureProps[failureProps.length - 1].onRetry();
+    });
+
+    // The same transaction, fired again.
+    expect(mockSendTransaction).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('send-wait')).toBeTruthy();
+    expect(screen.queryByTestId('send-failure')).toBeNull();
+    // Not one frame of the home coming back or the sheet rising: the claim was
+    // never re-published because it was never released, and the sheet stayed
+    // closed the whole way across.
+    expect(chromeClaims.slice(claimsBefore)).not.toContain(false);
+    expect(sheetVisible.slice(sheetVisibleBefore).every((v) => v === false)).toBe(true);
+  });
+
+  it('releases the claim exactly once on the way out of the failure', () => {
+    const onClose = jest.fn();
+    const { rerender } = fail(onClose);
+
+    act(() => failureProps[failureProps.length - 1].onDismiss());
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    // The parent takes the sheet away; that is the flow ending.
+    rerender(
+      <SendSheet
+        visible={false}
+        onClose={onClose}
+        tokens={[solToken]}
+        blockchain="solana"
+        account={account}
+      />
+    );
+
+    // Exactly one release since the passage began, and it is the last word.
+    expect(releases(claimedAt)).toBe(1);
+    expect(chromeClaims[chromeClaims.length - 1]).toBe(false);
+    expect(screen.queryByTestId('send-failure')).toBeNull();
     expect(mockSendHookReset).toHaveBeenCalled();
   });
 });

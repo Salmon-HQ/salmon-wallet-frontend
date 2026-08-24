@@ -154,6 +154,9 @@ const baseProps = {
   onBack: () => {},
   onCancel: () => {},
   onSuccess: () => {},
+  // The commit is the sheet's now: retry has to fire it from a surface this
+  // step has already been unmounted from.
+  onConfirm: () => {},
   // The hook is the sheet's now: the step unmounts mid-flight, so it cannot
   // be the transaction's only observer.
   sendHook: {

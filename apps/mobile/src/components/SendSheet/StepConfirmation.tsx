@@ -33,9 +33,8 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
   recipientAddress,
   resolvedRecipientAddress,
   amount,
-  onBack,
   onCancel,
-  onSuccess,
+  onConfirm,
   sendHook,
 }) => {
   const { t } = useTranslation();
@@ -84,25 +83,6 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally mount-only: estimate fee once with initial values
   }, []);
 
-  // Handle confirm press
-  const handleConfirm = useCallback(async () => {
-    try {
-      const result = await sendHook.sendTransaction({
-        token: {
-          address: token.address,
-          decimals: token.decimals ?? 9,
-          symbol: token.symbol,
-        },
-        recipientAddress,
-        resolvedRecipientAddress,
-        amount: parseFloat(amount),
-      });
-      onSuccess(result.txId);
-    } catch {
-      // Error is captured by the hook's error state
-    }
-  }, [sendHook, token, recipientAddress, resolvedRecipientAddress, amount, onSuccess]);
-
   // Handle copy address — copies the address the transfer will actually pay,
   // not the domain that was typed.
   const handleCopy = useCallback(async () => {
@@ -115,14 +95,11 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
     }
   }, [destinationAddress, showCopied]);
 
-  // Clears the failure and re-arms the confirm button. It does not resend on its
-  // own, which is why the label reads "Confirm Again" rather than "Retry".
-  const handleRetry = useCallback(() => {
-    sendHook.reset();
-  }, [sendHook]);
-
+  // A failed transfer is not reported here. Committing hands the screen to the
+  // task surface and unmounts this step, and the surface keeps the screen on a
+  // failure too — so the error and its retry live there, where the user
+  // actually is. Rendering a second copy here would be a copy nobody can see.
   const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
-  const isFailed = sendHook.status === 'failed';
 
   return (
     <View style={styles.container}>
@@ -184,9 +161,6 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
             {t('send.fee_estimate_failed', 'Fee could not be estimated')}
           </Text>
         ) : null}
-
-        {/* Error Message */}
-        {isFailed && sendHook.error && <Text style={styles.errorText}>{t(sendHook.error)}</Text>}
       </View>
 
       {/* Bottom Buttons */}
@@ -194,7 +168,7 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
         <SecondaryButton
           testID="send-confirm-cancel-button"
           style={styles.rowButton}
-          onPress={isFailed ? onBack : onCancel}
+          onPress={onCancel}
           disabled={isSending}
         >
           {t('actions.cancel', 'Cancel')}
@@ -203,16 +177,14 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
         <PrimaryButton
           testID="send-confirm-button"
           style={styles.rowButton}
-          onPress={isFailed ? handleRetry : handleConfirm}
+          onPress={onConfirm}
           // No spinner: the confirm tap hands the screen to the wait, and the
           // passage is the answer. DESIGN.md makes send the second deliberate
           // exception to the button-loader rule — a loader on a button that is
           // leaving the screen says the same thing twice.
           disabled={isSending}
         >
-          {isFailed
-            ? t('token.send.confirmAgain', 'Confirm Again')
-            : t('actions.confirm', 'Confirm')}
+          {t('actions.confirm', 'Confirm')}
         </PrimaryButton>
       </View>
     </View>
