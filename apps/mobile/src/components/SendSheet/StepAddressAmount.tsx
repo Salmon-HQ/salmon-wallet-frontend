@@ -407,7 +407,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
           onPress={handleReview}
           disabled={!isValid}
         >
-          {t('token.send.reviewAndSend', 'Review & Send')}
+          {t('token.send.reviewAndSend', 'Review')}
         </PrimaryButton>
       </View>
 
@@ -523,7 +523,8 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.sm),
     fontFamily: fontFamilyNative.regular,
     color: colors.text.secondary,
-    marginTop: vs(spacing.xs),
+    marginTop: vs(spacing.sm),
+    paddingHorizontal: s(spacing.xs),
   },
   validationMessageError: {
     color: semantic.status.danger,

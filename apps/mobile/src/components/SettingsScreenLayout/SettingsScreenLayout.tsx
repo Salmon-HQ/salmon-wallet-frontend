@@ -86,7 +86,10 @@ export function SettingsScreenLayout({
       */}
       <KeyboardAvoidingView
         style={styles.keyboardAvoider}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // Android needs an explicit behavior too: left undefined, the view is
+        // inert and a field near the bottom of the scroll area stays under the
+        // keyboard, with no way to see what is being typed.
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <SafeAreaView style={styles.safeArea} edges={['bottom']}>
           {showHeader && (

@@ -9,6 +9,7 @@ import {
   type DerivedKeyCache,
   type LockedVault,
 } from '../crypto/encryption';
+import type { SecretVault } from '../utils/account-secret';
 import {
   getStashItem,
   getStorageItem,
@@ -24,7 +25,7 @@ interface EncryptedMnemonics extends LockedVault {
   isEncrypted: true;
 }
 
-export type StoredMnemonics = Record<string, string> | EncryptedMnemonics;
+export type StoredMnemonics = SecretVault | EncryptedMnemonics;
 
 export function isEncryptedMnemonics(mnemonics: StoredMnemonics): mnemonics is EncryptedMnemonics {
   if (typeof mnemonics !== 'object' || mnemonics === null) {
@@ -74,15 +75,12 @@ export async function resolveMnemonicsWithPassword(
   storedMnemonics: StoredMnemonics,
   password: string,
   options: { upgradeOutdatedVault?: boolean } = {}
-): Promise<Record<string, string>> {
+): Promise<SecretVault> {
   if (!isEncryptedMnemonics(storedMnemonics)) {
     return storedMnemonics;
   }
 
-  const { data, keyCache } = await unlockAndGetKey<Record<string, string>>(
-    storedMnemonics,
-    password
-  );
+  const { data, keyCache } = await unlockAndGetKey<SecretVault>(storedMnemonics, password);
   await setStashItem(STASH_KEYS.DERIVED_KEY, keyCache);
 
   if (options.upgradeOutdatedVault && needsMnemonicUpgrade(storedMnemonics)) {
@@ -97,12 +95,12 @@ export async function resolveMnemonicsWithPassword(
 export async function resolveMnemonicsWithCachedKey(
   storedMnemonics: StoredMnemonics,
   keyCache: DerivedKeyCache
-): Promise<Record<string, string>> {
+): Promise<SecretVault> {
   if (!isEncryptedMnemonics(storedMnemonics)) {
     return storedMnemonics;
   }
 
-  const mnemonics = unlockWithKey<Record<string, string>>(storedMnemonics, keyCache);
+  const mnemonics = unlockWithKey<SecretVault>(storedMnemonics, keyCache);
   await setStashItem(STASH_KEYS.DERIVED_KEY, refreshCachedKey(keyCache));
 
   return mnemonics;
@@ -113,10 +111,7 @@ export async function changeStoredPassword(
   oldPassword: string,
   newPassword: string
 ): Promise<void> {
-  const { data: mnemonics } = await unlockAndGetKey<Record<string, string>>(
-    storedMnemonics,
-    oldPassword
-  );
+  const { data: mnemonics } = await unlockAndGetKey<SecretVault>(storedMnemonics, oldPassword);
   const newVault = await lock(mnemonics, newPassword);
 
   // Single persisted write, flagged as encrypted like every other vault
@@ -128,8 +123,8 @@ export async function changeStoredPassword(
 }
 
 export async function finalizeUnlockedAccounts(
-  mnemonics: Record<string, string>,
-  loadAccounts: (mnemonics: Record<string, string>) => Promise<void>,
+  mnemonics: SecretVault,
+  loadAccounts: (mnemonics: SecretVault) => Promise<void>,
   setLocked: (locked: boolean) => void
 ): Promise<void> {
   await loadAccounts(mnemonics);
@@ -138,7 +133,7 @@ export async function finalizeUnlockedAccounts(
 }
 
 interface InitializeAccountsSecurityParams {
-  loadAccounts: (mnemonics: Record<string, string>) => Promise<void>;
+  loadAccounts: (mnemonics: SecretVault) => Promise<void>;
   loadMetadata: () => Promise<void>;
   setLoaded: (loaded: boolean) => void;
   setLocked: (locked: boolean) => void;

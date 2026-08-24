@@ -13,13 +13,18 @@
  */
 
 import { getRandomAvatar } from '../utils/avatar';
-import { generateAccountId, createBlockchainAccountForNetwork } from '../utils/account';
+import {
+  generateAccountId,
+  createBlockchainAccountForNetwork,
+  createBlockchainAccountFromPrivateKey,
+} from '../utils/account';
 import type {
   Account,
   NetworksAccounts,
   NetworkPathIndexes,
   CreateAccountOptions,
   CreateAccountResult,
+  ImportAccountOptions,
 } from '../types/account';
 import type { BlockchainAccount } from '../types/blockchain';
 
@@ -97,8 +102,57 @@ export async function createAccount(options: CreateAccountOptions): Promise<Crea
     id,
     name,
     avatar,
-    mnemonic,
+    secret: { kind: 'mnemonic', mnemonic },
     pathIndexes,
+    networksAccounts,
+  };
+
+  return { account, blockchainAccounts: networksAccounts };
+}
+
+/**
+ * Creates an Account from an imported private key.
+ *
+ * Kept apart from {@link createAccount} on purpose: an import has no
+ * derivation index and no multi-chain fan-out, so it owns exactly one address
+ * on one network. Callers get the same {@link CreateAccountResult} shape, so
+ * the account lands in storage through the ordinary `addAccount` path.
+ *
+ * @param options - Import options (name, base58 private key, network)
+ * @returns Promise resolving to the account and its single blockchain account
+ * @throws When the key does not belong to a supported Solana network
+ *
+ * @example
+ * ```typescript
+ * const { account } = await importAccountFromPrivateKey({
+ *   name: 'Imported',
+ *   privateKey: '4wBqpZM9...',
+ * });
+ * ```
+ */
+export async function importAccountFromPrivateKey(
+  options: ImportAccountOptions
+): Promise<CreateAccountResult> {
+  const {
+    id = generateAccountId(),
+    name,
+    avatar = getRandomAvatar(),
+    privateKey,
+    networkId = 'solana-mainnet',
+  } = options;
+
+  const blockchainAccount = await createBlockchainAccountFromPrivateKey(networkId, privateKey);
+
+  const networksAccounts: NetworksAccounts = { [networkId]: [blockchainAccount] };
+
+  const account: Account = {
+    id,
+    name,
+    avatar,
+    secret: { kind: 'privateKey', privateKey, networkId },
+    // Index 0 is the only slot an imported key occupies; it is not a
+    // derivation index, just the position the rest of the app indexes by.
+    pathIndexes: { [networkId]: [0] },
     networksAccounts,
   };
 

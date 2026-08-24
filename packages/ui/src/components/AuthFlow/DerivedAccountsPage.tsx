@@ -18,6 +18,7 @@ import {
   type BlockchainAccount,
   type DerivedAccountInfo,
   useAccountsContext,
+  getAccountMnemonic,
 } from '@salmon/shared';
 import { TreeStructureIcon } from '../../icons';
 import { styled } from '../../utils/styled';
@@ -97,7 +98,8 @@ export function DerivedAccountsPage({ onComplete }: DerivedAccountsPageProps): R
   const [failedNetworks, setFailedNetworks] = useState<string[]>([]);
   const [scanToken, setScanToken] = useState(0);
 
-  const mnemonic = activeAccount?.mnemonic;
+  // Only a mnemonic account has a derivation tree to scan.
+  const mnemonic = getAccountMnemonic(activeAccount);
 
   useEffect(() => {
     let cancelled = false;

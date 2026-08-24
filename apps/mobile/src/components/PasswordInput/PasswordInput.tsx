@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.sm,
-    marginTop: spacing.xs,
+    marginTop: spacing.sm,
     paddingHorizontal: spacing.xs,
   },
 });

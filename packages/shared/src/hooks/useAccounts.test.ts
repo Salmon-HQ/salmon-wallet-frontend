@@ -164,6 +164,12 @@ vi.mock('../utils/account', async () => {
       }
       return null;
     }),
+    createBlockchainAccountFromPrivateKey: vi.fn(async (networkId: string) => ({
+      path: "m/44'/501'/0'/0'",
+      index: 0,
+      network: { id: networkId, name: networkId, blockchain: 'SOLANA' },
+      getReceiveAddress: () => 'ImportedAddress1111111111111111111111111',
+    })),
   };
 });
 
@@ -216,7 +222,7 @@ function createMockAccount(): Account {
     id: MOCK_ACCOUNT_ID,
     name: 'Test Account',
     avatar: 'default',
-    mnemonic: MOCK_MNEMONIC,
+    secret: { kind: 'mnemonic' as const, mnemonic: MOCK_MNEMONIC },
     pathIndexes: {
       'solana-mainnet': [0],
     },
@@ -383,8 +389,8 @@ describe('useAccounts Hook', () => {
       expect(state.accounts[0].id).toBe(mockAccount.id);
       expect(state.accounts[0].name).toBe(mockAccount.name);
       expect(state.accounts[0].avatar).toBe(mockAccount.avatar);
-      // Mnemonic should be empty placeholder (not decrypted)
-      expect(state.accounts[0].mnemonic).toBe('');
+      // Secret should be the empty placeholder (not decrypted)
+      expect(state.accounts[0].secret).toEqual({ kind: 'mnemonic', mnemonic: '' });
       // Networks should be empty (not loaded until unlock)
       expect(state.accounts[0].networksAccounts).toEqual({});
     });
@@ -534,6 +540,75 @@ describe('useAccounts Hook', () => {
 
       // Password is no longer stored in stash (security fix: only DerivedKeyCache is cached)
       expect(storage.setStashItem).not.toHaveBeenCalledWith('password', expect.anything());
+    });
+
+    it('restores an imported private-key account on unlock', async () => {
+      // The regression this guards: an account whose secret is a private key
+      // has no mnemonic to re-derive from, so a restore that assumes one would
+      // drop it — the wallet would vanish from the list at the first unlock.
+      const encryptedData = {
+        isEncrypted: true,
+        nonce: 'test-nonce',
+        salt: 'test-salt',
+        ciphertext: 'encrypted-data',
+        // Current KDF parameters, so unlock does not take the vault-upgrade
+        // branch — this test is about the restored account, not re-encryption.
+        digest: 'sha512',
+        iterations: 210000,
+      };
+
+      (storage.getStorageItem as any).mockImplementation((key: string) => {
+        if (key === 'salmon_mnemonics') return Promise.resolve(encryptedData);
+        if (key === 'salmon_accounts')
+          return Promise.resolve([
+            {
+              id: 'imported-id',
+              name: 'Imported',
+              avatar: 'default',
+              pathIndexes: { 'solana-mainnet': [0] },
+            },
+          ]);
+        if (key === 'salmon_wallets') return Promise.resolve(null);
+        return Promise.resolve(null);
+      });
+
+      (encryption.unlockAndGetKey as any).mockResolvedValue({
+        data: {
+          'imported-id': {
+            kind: 'privateKey',
+            privateKey: 'base58-secret-key',
+            networkId: 'solana-mainnet',
+          },
+        },
+        keyCache: {
+          salt: 'test-salt',
+          derivedKey: new Uint8Array(32),
+          createdAt: Date.now(),
+        },
+      });
+
+      const { result } = renderHook(() => useAccounts());
+
+      await waitFor(() => {
+        expect(result.current[0].ready).toBe(true);
+      });
+
+      await act(async () => {
+        expect(await result.current[1].unlockAccounts(MOCK_PASSWORD)).toBe(true);
+      });
+
+      await waitFor(() => {
+        expect(result.current[0].locked).toBe(false);
+      });
+
+      const restored = result.current[0].accounts[0];
+      expect(restored.id).toBe('imported-id');
+      expect(restored.secret).toEqual({
+        kind: 'privateKey',
+        privateKey: 'base58-secret-key',
+        networkId: 'solana-mainnet',
+      });
+      expect(restored.networksAccounts['solana-mainnet']?.[0]).toBeTruthy();
     });
 
     it('should fail to unlock with incorrect password', async () => {
@@ -752,7 +827,7 @@ describe('useAccounts Hook', () => {
       expect(result.current[0].locked).toBe(true);
       expect(result.current[0].requiredLock).toBe(true);
       expect(result.current[0].accounts).toHaveLength(1);
-      expect(result.current[0].accounts[0].mnemonic).toBe('');
+      expect(result.current[0].accounts[0].secret).toEqual({ kind: 'mnemonic', mnemonic: '' });
       expect(result.current[0].accounts[0].networksAccounts).toEqual({});
     });
   });

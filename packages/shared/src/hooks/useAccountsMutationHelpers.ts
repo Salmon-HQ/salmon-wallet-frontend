@@ -1,15 +1,7 @@
 import { removeStorageItem, setStorageItem, STORAGE_KEYS } from '../storage';
 import type { Account, StoredAccount } from '../types/account';
 
-export function buildMnemonicMap(accounts: Account[]): Record<string, string> {
-  return accounts.reduce(
-    (mnemonics, { id, mnemonic }) => {
-      mnemonics[id] = mnemonic;
-      return mnemonics;
-    },
-    {} as Record<string, string>
-  );
-}
+export { buildSecretVault } from '../utils/account-secret';
 
 export function getPreferredNetworkId(account: Account, currentNetworkId: string | null): string {
   if (currentNetworkId) {

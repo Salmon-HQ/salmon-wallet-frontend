@@ -4,7 +4,8 @@ import { isKeyCacheValid, type DerivedKeyCache } from '../crypto/encryption';
 import { removeStashItem } from '../storage';
 import { migrateLegacyWallets } from '../utils/legacy-migration';
 import { clearUnlockPenalty, getUnlockPenalty, recordFailedUnlock } from '../utils/unlock-throttle';
-import type { Account, StoredAccount } from '../types/account';
+import type { Account, AccountSecret, StoredAccount } from '../types/account';
+import type { SecretVault } from '../utils/account-secret';
 import {
   getStoredMnemonics,
   changeStoredPassword,
@@ -23,11 +24,11 @@ interface UseAccountsSecurityParams {
   setLoaded: Dispatch<SetStateAction<boolean>>;
   setError: Dispatch<SetStateAction<string | null>>;
   loadMetadata: () => Promise<void>;
-  loadAccounts: (mnemonics: Record<string, string>) => Promise<void>;
+  loadAccounts: (mnemonics: SecretVault) => Promise<void>;
   restoreAccount: (options: {
     name?: string;
     avatar?: string;
-    mnemonic: string;
+    secret: AccountSecret;
     pathIndexes?: Record<string, (number | null)[]>;
   }) => Promise<Account>;
   formatAccountForStorage: (account: Account) => StoredAccount;
@@ -129,7 +130,7 @@ export function useAccountsSecurity({
           return true;
         }
 
-        let mnemonics: Record<string, string>;
+        let mnemonics: SecretVault;
         try {
           mnemonics = await resolveMnemonicsWithPassword(storedMnemonics, password, {
             upgradeOutdatedVault: true,

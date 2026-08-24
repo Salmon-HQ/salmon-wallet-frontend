@@ -132,7 +132,11 @@ export function SecurityPanel({
             placeholder={t('settings.security.new_password')}
             testID="security-new-password-input"
           />
-          {newPassword.length > 0 && <PasswordStrengthBar strength={passwordValidation.strength} />}
+          {newPassword.length > 0 && (
+            <View style={styles.strengthContainer}>
+              <PasswordStrengthBar strength={passwordValidation.strength} />
+            </View>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
@@ -219,6 +223,10 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     marginBottom: spacing.md,
+  },
+  strengthContainer: {
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
   errorText: {
     color: semantic.status.danger,

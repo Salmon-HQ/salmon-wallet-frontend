@@ -21,7 +21,11 @@ import { useAccountsMutations } from './useAccountsMutations';
 import { useAccountsNetworkPreferences } from './useAccountsNetworkPreferences';
 import { useAccountsSelection } from './useAccountsSelection';
 import { useAccountsSecurity } from './useAccountsSecurity';
-import { generateAccountId, createBlockchainAccountForNetwork } from '../utils';
+import {
+  generateAccountId,
+  createBlockchainAccountForNetwork,
+  createBlockchainAccountFromPrivateKey,
+} from '../utils';
 import { getRandomAvatar } from '../utils/avatar';
 import type { BlockchainAccount } from '../types/blockchain';
 import type {
@@ -30,6 +34,7 @@ import type {
   Account,
   EditAccountParams,
   RestoreAccountOptions,
+  AccountSecret,
 } from '../types/account';
 import type { TrustedApp, TrustedApps } from '../types/trusted-app';
 import type { TokenInfo, CustomTokens, TokenToImport } from '../types/token';
@@ -159,9 +164,31 @@ function formatAccountForStorage(account: Account): StoredAccount {
  * Supports creating accounts for Solana, Bitcoin, and Ethereum networks.
  */
 async function restoreAccount(options: RestoreAccountOptions): Promise<Account> {
-  const { name, avatar, mnemonic, pathIndexes = {} } = options;
+  const { name, avatar, secret, pathIndexes = {} } = options;
 
   const id = generateAccountId();
+
+  // An imported key owns one address on one network: there is no derivation
+  // tree to walk, so it is rebuilt directly instead of going through the
+  // path-index fan-out below (which would ask a mnemonic-shaped API for a
+  // mnemonic this account does not have).
+  if (secret.kind === 'privateKey') {
+    const account = await createBlockchainAccountFromPrivateKey(
+      secret.networkId,
+      secret.privateKey
+    );
+
+    return {
+      id,
+      name: name ?? `Account ${id.slice(-4)}`,
+      avatar: avatar ?? getRandomAvatar(),
+      secret,
+      pathIndexes: { [secret.networkId]: [0] },
+      networksAccounts: { [secret.networkId]: [account] },
+    };
+  }
+
+  const { mnemonic } = secret;
   // Default to Solana mainnet if no path indexes provided
   const defaultPathIndexes =
     Object.keys(pathIndexes).length > 0 ? pathIndexes : { 'solana-mainnet': [0] };
@@ -211,7 +238,7 @@ async function restoreAccount(options: RestoreAccountOptions): Promise<Account> 
     id,
     name: name ?? `Account ${id.slice(-4)}`,
     avatar: avatar ?? getRandomAvatar(),
-    mnemonic,
+    secret,
     pathIndexes: defaultPathIndexes,
     networksAccounts,
   };
@@ -221,12 +248,12 @@ async function restoreAccount(options: RestoreAccountOptions): Promise<Account> 
  * Creates multiple accounts from stored data.
  */
 async function restoreManyAccounts(
-  data: Array<StoredAccount & { mnemonic: string }>
+  data: Array<StoredAccount & { secret: AccountSecret }>
 ): Promise<Account[]> {
   return Promise.all(
     data.map(async (item) => {
       const account = await restoreAccount({
-        mnemonic: item.mnemonic,
+        secret: item.secret,
         pathIndexes: item.pathIndexes,
       });
 

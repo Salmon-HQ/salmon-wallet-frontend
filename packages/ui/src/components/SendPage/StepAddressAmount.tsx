@@ -7,7 +7,7 @@
  * - Recipient address input
  * - Amount input with quick-fill percentage buttons (25%, 50%, MAX)
  * - USD conversion display
- * - Cancel and Review & Send action buttons
+ * - Cancel and Review action buttons
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
@@ -226,7 +226,9 @@ const ValidationMessage = styled(Typography)<{
   fontSize: fontSize.sm,
   lineHeight: `${fontSize.sm * lineHeight.condensed}px`,
   fontFamily: fontFamily.sans,
-  marginTop: spacing.xs,
+  marginTop: spacing.sm,
+  paddingLeft: spacing.xs,
+  paddingRight: spacing.xs,
   color:
     $messageType === 'error'
       ? semantic.status.danger

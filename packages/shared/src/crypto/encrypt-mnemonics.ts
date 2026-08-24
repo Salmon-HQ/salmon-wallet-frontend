@@ -8,6 +8,7 @@ import {
   type DerivedKeyCache,
 } from './encryption';
 import { getStashItem, setStashItem, STASH_KEYS } from '../storage';
+import type { SecretVault } from '../utils/account-secret';
 
 /**
  * Thrown when `encryptMnemonics` is called without a password and without
@@ -28,7 +29,7 @@ export class EncryptionMaterialMissingError extends Error {
 }
 
 export interface EncryptMnemonicsResult {
-  vault: (LockedVault & { isEncrypted: true }) | Record<string, string>;
+  vault: (LockedVault & { isEncrypted: true }) | SecretVault;
   requiredLock: boolean;
 }
 
@@ -62,7 +63,7 @@ export interface EncryptMnemonicsOptions {
  *    for the password) rather than degrade the vault to plaintext.
  */
 export async function encryptMnemonics(
-  mnemonics: Record<string, string>,
+  mnemonics: SecretVault,
   password?: string,
   options?: EncryptMnemonicsOptions
 ): Promise<EncryptMnemonicsResult> {
@@ -97,4 +98,19 @@ export async function encryptMnemonics(
   }
 
   throw new EncryptionMaterialMissingError();
+}
+
+/**
+ * Whether the vault can be re-encrypted right now without asking for the
+ * password.
+ *
+ * The derived key is cached for a few minutes of inactivity (KEY_CACHE_TTL).
+ * Callers
+ * that are about to build something expensive — an account, a set of derived
+ * accounts — use this to ask for the password *before* the work rather than
+ * failing at the write and having to explain a dead end afterwards.
+ */
+export async function isVaultKeyCached(): Promise<boolean> {
+  const cachedKey = await getStashItem<DerivedKeyCache>(STASH_KEYS.DERIVED_KEY);
+  return isKeyCacheValid(cachedKey);
 }

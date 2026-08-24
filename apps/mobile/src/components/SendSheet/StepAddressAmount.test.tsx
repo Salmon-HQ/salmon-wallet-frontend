@@ -281,7 +281,7 @@ describe('StepAddressAmount', () => {
 
     fireEvent.press(screen.getByText('Vault'));
     fireEvent.press(screen.getByText('general.max'));
-    fireEvent.press(screen.getByText('Review & Send'));
+    fireEvent.press(screen.getByText('Review'));
 
     expect(screen.getByDisplayValue('4')).toBeTruthy();
     expect(screen.getByText('8.00 USD')).toBeTruthy();
@@ -337,7 +337,7 @@ describe('StepAddressAmount', () => {
 
     fireEvent.press(screen.getByText('Vault'));
     fireEvent.press(screen.getByText('general.max'));
-    fireEvent.press(screen.getByText('Review & Send'));
+    fireEvent.press(screen.getByText('Review'));
 
     expect(screen.getByDisplayValue('10.5')).toBeTruthy();
     expect(onReview).toHaveBeenCalledWith(

@@ -19,6 +19,7 @@ import {
   semantic,
   spacing,
   useAccountsContext,
+  getAccountMnemonic,
 } from '@salmon/shared';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
@@ -53,8 +54,12 @@ export function BackupPanel({
   const { copied, trigger: showCopied } = useCopyFeedback();
   const [copyFailed, setCopyFailed] = useState(false);
 
-  const mnemonic = useMemo(() => activeAccount?.mnemonic || '', [activeAccount]);
+  // An account imported from a private key has no seed phrase to back up.
+  const mnemonic = useMemo(() => getAccountMnemonic(activeAccount) ?? '', [activeAccount]);
   const words = useMemo(() => mnemonic.split(' ').filter(Boolean), [mnemonic]);
+  // An account imported from a private key has no phrase behind it: without
+  // this the screen renders an empty grid under a "tap to reveal" overlay.
+  const hasNoMnemonic = words.length === 0;
 
   // An unlocked session is not proof of identity — it only proves the phone was
   // left open. Biometrics count as the same proof as the password here, so a
@@ -100,30 +105,36 @@ export function BackupPanel({
         <Text style={styles.warningText}>{t('wallet.create.messageBody')}</Text>
       </View>
 
-      <View style={styles.seedContainer} testID="backup-seed-phrase">
-        {!showSeedPhrase && (
-          <TouchableOpacity
-            style={styles.revealOverlay}
-            onPress={handleReveal}
-            activeOpacity={0.8}
-            testID="backup-seed-reveal-overlay"
-            accessibilityRole="button"
-          >
-            <EyeIcon size={iconSize.xl} color={semantic.text.primary} />
-            <Text style={styles.revealText}>{t('settings.wallets.tap_to_reveal')}</Text>
-          </TouchableOpacity>
-        )}
-        <View style={styles.wordsGrid}>
-          {words.map((word, index) => (
-            <View key={index} style={styles.wordContainer}>
-              <Text style={styles.wordIndex}>{index + 1}</Text>
-              <Text style={styles.wordText}>{showSeedPhrase ? word : '******'}</Text>
-            </View>
-          ))}
+      {hasNoMnemonic ? (
+        <Text style={styles.warningText} testID="backup-no-seed-phrase">
+          {t('settings.no_seed_phrase')}
+        </Text>
+      ) : (
+        <View style={styles.seedContainer} testID="backup-seed-phrase">
+          {!showSeedPhrase && (
+            <TouchableOpacity
+              style={styles.revealOverlay}
+              onPress={handleReveal}
+              activeOpacity={0.8}
+              testID="backup-seed-reveal-overlay"
+              accessibilityRole="button"
+            >
+              <EyeIcon size={iconSize.xl} color={semantic.text.primary} />
+              <Text style={styles.revealText}>{t('settings.wallets.tap_to_reveal')}</Text>
+            </TouchableOpacity>
+          )}
+          <View style={styles.wordsGrid}>
+            {words.map((word, index) => (
+              <View key={index} style={styles.wordContainer}>
+                <Text style={styles.wordIndex}>{index + 1}</Text>
+                <Text style={styles.wordText}>{showSeedPhrase ? word : '******'}</Text>
+              </View>
+            ))}
+          </View>
         </View>
-      </View>
+      )}
 
-      {showSeedPhrase && (
+      {showSeedPhrase && !hasNoMnemonic && (
         <View testID="backup-seed-clipboard-warning">
           <WarningNotice
             tone="warning"
