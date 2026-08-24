@@ -179,8 +179,13 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   // the closing wave has actually left the screen (DESIGN.md §The wait: "que
   // no se pase a la siguiente screen hasta que la última onda salga de la
   // pantalla … Esto aplica siempre").
-  const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isSending);
-  const showWait = isSending || (isWaveHeld && step === 'success');
+  // One wait spans the whole commit, signature through settle, the way swap
+  // does it. Gated on `isSending` alone it ended at the signature, and the
+  // receipt then raised a second wait of its own for the indexer — two waits
+  // back to back, identical but for where their tips sat.
+  const isCommitted = isSending || sendHook.settling;
+  const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
+  const showWait = isCommitted || (isWaveHeld && step === 'success');
   const showReceipt = step === 'success' && !isWaveHeld && !!successTxId && !!selectedToken;
 
   // Handle close; state reset is driven by the visible -> false transition so
@@ -567,7 +572,6 @@ export const SendSheet: React.FC<SendSheetProps> = ({
                 successTxId
               )}
               onContinue={handleSuccessContinue}
-              settling={sendHook.settling}
             />
           )}
         </View>
