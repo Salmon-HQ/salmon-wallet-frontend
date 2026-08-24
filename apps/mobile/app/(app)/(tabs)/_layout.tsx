@@ -392,14 +392,7 @@ export default function TabLayout() {
       };
     }
     return undefined;
-  }, [
-    gateState,
-    settingsHeaderTitle,
-    settingsHeaderBack,
-    walletsHeaderTitle,
-    walletsHeaderBack,
-    t,
-  ]);
+  }, [gateState, settingsHeaderTitle, settingsHeaderBack, walletsHeaderTitle, walletsHeaderBack]);
 
   // Derived values
   const accountName = activeAccount?.name || t('wallet.unnamed_account', 'Account');
@@ -968,19 +961,17 @@ export default function TabLayout() {
               resolvePanelTitle={resolvePanelTitle}
               dynamicHeaderScreens={DYNAMIC_HEADER_SCREENS}
             >
-              {() => (
-                <SettingsSheet
-                  visible={settingsVisible}
-                  onClose={handleSettingsClose}
-                  optionValues={settingsOptionValues}
-                  developerNetworksEnabled={developerNetworks}
-                  onDeveloperNetworksToggle={toggleDeveloperNetworks}
-                  analyticsEnabled={analyticsConsent}
-                  onAnalyticsToggle={setAnalyticsConsent}
-                  onRemoveWallet={handleRemoveWallet}
-                  onRemoveAllWallets={handleRemoveAllWallets}
-                />
-              )}
+              <SettingsSheet
+                visible={settingsVisible}
+                onClose={handleSettingsClose}
+                optionValues={settingsOptionValues}
+                developerNetworksEnabled={developerNetworks}
+                onDeveloperNetworksToggle={toggleDeveloperNetworks}
+                analyticsEnabled={analyticsConsent}
+                onAnalyticsToggle={setAnalyticsConsent}
+                onRemoveWallet={handleRemoveWallet}
+                onRemoveAllWallets={handleRemoveAllWallets}
+              />
             </PanelHost>
           }
           walletsContent={
@@ -992,18 +983,16 @@ export default function TabLayout() {
               resolvePanelTitle={resolvePanelTitle}
               dynamicHeaderScreens={DYNAMIC_HEADER_SCREENS}
             >
-              {() => (
-                <WalletSwitcherSheet
-                  visible={walletSwitcherVisible}
-                  onClose={handleWalletSwitcherClose}
-                  accounts={accounts}
-                  activeAccountId={accountId ?? ''}
-                  onSelectAccount={handleSelectAccount}
-                  onAddAccount={handleAddAccount}
-                  onEditAccount={handleEditAccount}
-                  onDeleteAccount={handleDeleteAccount}
-                />
-              )}
+              <WalletSwitcherSheet
+                visible={walletSwitcherVisible}
+                onClose={handleWalletSwitcherClose}
+                accounts={accounts}
+                activeAccountId={accountId ?? ''}
+                onSelectAccount={handleSelectAccount}
+                onAddAccount={handleAddAccount}
+                onEditAccount={handleEditAccount}
+                onDeleteAccount={handleDeleteAccount}
+              />
             </PanelHost>
           }
         />

@@ -63,14 +63,8 @@ export interface PanelHostProps {
   resolvePanelTitle: (screen: SettingsScreen) => string;
   /** Screens that report their own header and may override the fallback. */
   dynamicHeaderScreens?: ReadonlySet<SettingsScreen>;
-  /**
-   * The base screen, given the stack's navigation.
-   *
-   * A render prop rather than a node: the surface that mounts the host is
-   * usually the one that needs to push panels from it, and a component cannot
-   * consume a context it provides itself.
-   */
-  children: (navigation: PanelNavigation) => React.ReactNode;
+  /** The base screen. It reaches the stack through `usePanelNavigation`. */
+  children: React.ReactNode;
 }
 
 export function PanelHost({
@@ -218,7 +212,7 @@ export function PanelHost({
   return (
     <SettingsHeaderContext.Provider value={headerContextValue}>
       <PanelNavigationContext.Provider value={navigationValue}>
-        {children(navigationValue)}
+        {children}
 
         {hasPanels && registry && (
           <View style={styles.panelOverlay}>

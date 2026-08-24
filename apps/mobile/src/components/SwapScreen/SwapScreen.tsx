@@ -28,7 +28,7 @@ import { BridgeRecipientScreen } from '../BridgeScreen/BridgeRecipientScreen';
 import { BridgeReviewScreen } from '../BridgeScreen/BridgeReviewScreen';
 import { WarningNotice } from '../WarningNotice';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
-import { useTaskChrome } from '../../contexts/TaskChromeContext';
+import { useTaskChromeClaim } from '../../contexts/TaskChromeContext';
 import type { SwapScreenProps } from './types';
 
 /**
@@ -201,12 +201,12 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   // and the tab bar sinks during the beat, before the window covers them —
   // and held until the window has actually gone, so on the way back the
   // chrome returns exactly as the shell's delayed input float begins.
-  const { setTaskEngaged } = useTaskChrome();
+  const engageTaskChrome = useTaskChromeClaim();
   useEffect(() => {
-    setTaskEngaged(isTaskStep || isTaskWindowVisible);
-  }, [isTaskStep, isTaskWindowVisible, setTaskEngaged]);
+    engageTaskChrome(isTaskStep || isTaskWindowVisible);
+  }, [isTaskStep, isTaskWindowVisible, engageTaskChrome]);
   // Leaving the swap tab entirely must hand the chrome back.
-  useEffect(() => () => setTaskEngaged(false), [setTaskEngaged]);
+  // Release on unmount is the claim hook's own job now.
 
   const handleTaskDismiss = useCallback(() => {
     if (isCommitted) return;

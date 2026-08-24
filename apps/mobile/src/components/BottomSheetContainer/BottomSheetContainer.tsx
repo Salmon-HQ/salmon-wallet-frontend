@@ -56,11 +56,33 @@ const SPRING_CONFIG = {
 // Types
 // ============================================================================
 
+/**
+ * How long the sheet takes to leave.
+ *
+ * Exported because sequencing a passage around the sheet's departure used to
+ * mean guessing — `SendSheet` carried its own `ANIMATION_DURATION = 300`,
+ * which did not match this at all.
+ */
+export const SHEET_EXIT_MS = motionMs.ebb;
+
+/** Slack before the watchdog decides the exit callback is not coming. */
+const EXIT_WATCHDOG_GRACE_MS = 120;
+
 export interface BottomSheetContainerProps {
   /** Controls sheet visibility */
   visible: boolean;
-  /** Close callback */
+  /** Close callback — the request to leave, fired the moment it is asked for. */
   onClose: () => void;
+  /**
+   * Fired once the sheet has actually left the screen.
+   *
+   * `onClose` is the request; this is the arrival. A caller sequencing
+   * anything after the sheet — chrome that should not move while a backdrop
+   * still covers it — needs the second, not the first. Also fires when a
+   * swipe dismiss ends, where `onClose` runs while the sheet is still
+   * travelling.
+   */
+  onClosed?: () => void;
   /** Content to render inside the sheet */
   children: React.ReactNode;
   /**
@@ -151,6 +173,7 @@ export interface BottomSheetContainerProps {
 export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   visible,
   onClose,
+  onClosed,
   children,
   title,
   headerContent,
@@ -187,16 +210,27 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
   const enter = timing(motionMs.rise, isReduceMotionEnabled);
   const exit = timing(motionMs.ebb, isReduceMotionEnabled, curve.sink);
 
+  // A fresh departure may report again.
+  useEffect(() => {
+    if (visible) closedReportedRef.current = false;
+  }, [visible]);
+
   // Worklet-safe close reference
   const closeSheet = useCallback(() => {
     onClose();
   }, [onClose]);
 
+  const closedReportedRef = useRef(false);
   const completeClose = useCallback(() => {
     setIsRendered(false);
     dragY.value = 0;
     backdropOpacity.value = 0;
-  }, [dragY, backdropOpacity]);
+    // Reported once per departure: the watchdog below and the animation's own
+    // callback both land here, and whichever arrives second must stay quiet.
+    if (closedReportedRef.current) return;
+    closedReportedRef.current = true;
+    onClosed?.();
+  }, [dragY, backdropOpacity, onClosed]);
 
   // Animate in / out when `visible` changes
   useEffect(() => {
@@ -212,7 +246,15 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
         }
       });
       backdropOpacity.value = withTiming(0, exit);
+
+      // The callback above only fires on `finished === true`: an animation
+      // cancelled mid-exit — a re-show, a shared-value reassignment — used to
+      // leave the sheet mounted with no way back. The watchdog closes it
+      // anyway, a beat after the exit was due.
+      const watchdog = setTimeout(completeClose, SHEET_EXIT_MS + EXIT_WATCHDOG_GRACE_MS);
+      return () => clearTimeout(watchdog);
     }
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, isRendered, completeClose]);
 

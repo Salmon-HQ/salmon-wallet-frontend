@@ -4,7 +4,7 @@
  * SettingsPanelStack.
  */
 
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -38,8 +38,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useReducedMotion } from 'react-native-reanimated';
-import { SettingsPanelStack } from '../SettingsPanelStack';
 import { usePanelNavigation } from '../PanelHost';
 import {
   colors,
@@ -49,18 +47,13 @@ import {
   fontSize,
   componentSizes,
   fontFamilyNative,
-  useSettingsPanelStack,
   getSettingsItemTestId,
   type SettingsScreen,
-  type SettingsPanelEntry,
   letterSpacing,
-  motionMs,
-  resolveMotionMs,
   semantic,
 } from '@salmon/shared';
 
 import type { SettingsSheetProps, SettingsOption, SettingsSection } from './types';
-import type { MobilePanelRegistry } from '../SettingsPanelStack';
 
 // ============================================================================
 // Constants
@@ -177,31 +170,22 @@ const SETTINGS_SECTIONS: SettingsSection[] = [
 // Extended props (adds panelRegistry)
 // ============================================================================
 
-interface SettingsSheetWithPanelsProps extends SettingsSheetProps {
-  panelRegistry?: MobilePanelRegistry;
-  initialPanels?: SettingsPanelEntry[];
-  /** Reports current header title and back action to parent (GateContainer) */
-  onHeaderChange?: (title: string, onBack: (() => void) | undefined) => void;
-}
-
 // ============================================================================
 // Component
 // ============================================================================
 
 export function SettingsSheet({
-  visible,
+  // The host above owns opening and closing now; the sheet is a base screen.
+  visible: _visible,
   onClose,
-  panelRegistry,
-  initialPanels,
   developerNetworksEnabled = false,
   onDeveloperNetworksToggle,
   analyticsEnabled = false,
   onAnalyticsToggle,
   onRemoveWallet,
   onRemoveAllWallets,
-  onHeaderChange,
   optionValues,
-}: SettingsSheetWithPanelsProps): React.ReactElement {
+}: SettingsSheetProps): React.ReactElement {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   // Top fade gradient opacity
