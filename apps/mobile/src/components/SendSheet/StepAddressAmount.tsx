@@ -407,7 +407,7 @@ export const StepAddressAmount: React.FC<StepAddressAmountProps> = ({
           onPress={handleReview}
           disabled={!isValid}
         >
-          {t('token.send.reviewAndSend', 'Review & Send')}
+          {t('token.send.reviewAndSend', 'Review')}
         </PrimaryButton>
       </View>
 

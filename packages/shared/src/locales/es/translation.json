@@ -353,7 +353,7 @@
       "addressBook": "Libreta de Direcciones",
       "recipient": "Destinatario",
       "amountLabel": "Monto",
-      "reviewAndSend": "Revisar y Enviar",
+      "reviewAndSend": "Revisar",
       "blockchainAddress": "Dirección {{blockchain}}",
       "networkFee": "Comisión de Red",
       "confirmAgain": "Confirmar de nuevo",

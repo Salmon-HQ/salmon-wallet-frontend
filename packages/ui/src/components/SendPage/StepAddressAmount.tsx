@@ -7,7 +7,7 @@
  * - Recipient address input
  * - Amount input with quick-fill percentage buttons (25%, 50%, MAX)
  * - USD conversion display
- * - Cancel and Review & Send action buttons
+ * - Cancel and Review action buttons
  */
 
 import React, { useCallback, useMemo, useState } from 'react';

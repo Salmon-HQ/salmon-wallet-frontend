@@ -353,7 +353,7 @@
       "addressBook": "Address Book",
       "recipient": "Recipient",
       "amountLabel": "Amount",
-      "reviewAndSend": "Review & Send",
+      "reviewAndSend": "Review",
       "blockchainAddress": "{{blockchain}} Address",
       "networkFee": "Network Fee",
       "confirmAgain": "Confirm Again",
