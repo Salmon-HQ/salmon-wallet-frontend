@@ -442,8 +442,23 @@ const tipsAnchor = {
   right: spacing['2xl'],
 } as const;
 
+/**
+ * The tip block's reserved geometry.
+ *
+ * Tips rotate and are not all the same length. Sized by its content, the block
+ * grew upward from its bottom anchor, so the label above it travelled every
+ * time the sentence changed line count. Reserving the tallest case keeps the
+ * label still and lets the sentence use the room below it.
+ */
+const TIP_LINE_HEIGHT_PX = Math.round(fontSize.base * lineHeight.tokenListItem);
+const MAX_TIP_LINES = 3;
+
 const TipsContainer = styled('div')({
   textAlign: 'center',
+  height:
+    Math.round(fontSize.sm * lineHeight.condensed) +
+    spacing.sm +
+    TIP_LINE_HEIGHT_PX * MAX_TIP_LINES,
 });
 
 const TipLabel = styled('div')({
@@ -464,6 +479,10 @@ const TipText = styled('div')<{ $fading: boolean }>(({ $fading }) => ({
   fontWeight: fontWeight.regular,
   fontSize: fontSize.base,
   lineHeight: `${fontSize.base * lineHeight.tokenListItem}px`,
+  display: '-webkit-box',
+  WebkitBoxOrient: 'vertical',
+  WebkitLineClamp: MAX_TIP_LINES,
+  overflow: 'hidden',
   textAlign: 'center',
   opacity: $fading ? 0 : 1,
   transition: `opacity ${duration.slower} ${easing.easeInOut}`,
