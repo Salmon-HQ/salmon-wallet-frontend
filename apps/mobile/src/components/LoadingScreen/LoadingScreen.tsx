@@ -46,7 +46,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, type LayoutChangeEvent } from 'react-native';
+import { Modal, View, Text, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
@@ -230,6 +230,7 @@ function centreOf(
 
 export function LoadingScreen({
   visible,
+  fullScreen = false,
   title,
   subtitle,
   tips = DEFAULT_WALLET_TIP_KEYS as unknown as string[],
@@ -678,7 +679,7 @@ export function LoadingScreen({
   // Don't render if not visible
   if (!isVisible) return null;
 
-  return (
+  const wait = (
     <Animated.View style={[styles.overlay, overlayStyle]}>
       <LinearGradient
         colors={[colors.background.primary, colors.background.secondary]}
@@ -787,6 +788,25 @@ export function LoadingScreen({
         </View>
       </LinearGradient>
     </Animated.View>
+  );
+
+  if (!fullScreen) return wait;
+
+  // Its own window, so the wait covers chrome that is drawn outside this
+  // component's parent — the gate header above a settings panel, for one.
+  // `animationType="none"` because the wait animates itself; letting the
+  // window animate too would double the entrance.
+  return (
+    <Modal
+      visible
+      transparent
+      animationType="none"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={() => undefined}
+    >
+      {wait}
+    </Modal>
   );
 }
 

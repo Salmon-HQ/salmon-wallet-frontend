@@ -282,19 +282,22 @@ export function SettingsSheet({
     }, popDurationMs);
   }, [animating, canGoBack, finishAnimation, pop, popDurationMs]);
 
-  // Push initial panels when drawer opens
-  const initialPanelsPushedRef = React.useRef(false);
-  useEffect(() => {
-    if (visible && initialPanels && initialPanels.length > 0 && !initialPanelsPushedRef.current) {
-      initialPanelsPushedRef.current = true;
-      for (const entry of initialPanels) {
-        push(entry.screen, entry.props);
-      }
+  /**
+   * Seed the stack for a drawer that opens straight onto a panel.
+   *
+   * Done at render time, not in an effect: an effect runs after the first
+   * paint, so the settings root — the list with its sub-tabs — flashed past on
+   * the way to the panel the user actually asked for. Opening on an edit
+   * screen showed two of them. Setting state during render of the same commit
+   * means the first frame is already the right screen.
+   */
+  const [openStateSeeded, setOpenStateSeeded] = React.useState(visible);
+  if (visible !== openStateSeeded) {
+    setOpenStateSeeded(visible);
+    if (visible) {
+      reset(initialPanels ?? []);
     }
-    if (!visible) {
-      initialPanelsPushedRef.current = false;
-    }
-  }, [visible, initialPanels, push]);
+  }
 
   const handleOptionPress = useCallback(
     (option: SettingsOption) => {

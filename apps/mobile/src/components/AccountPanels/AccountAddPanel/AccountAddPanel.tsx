@@ -608,6 +608,9 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     <>
       <LoadingScreen
         visible={loading}
+        // Its own window: rendered inline it sits under the gate's header, so
+        // the chevron and close button stayed tappable over a flow in flight.
+        fullScreen
         title={
           selectedDerived
             ? t('settings.account_add.confirm_create')

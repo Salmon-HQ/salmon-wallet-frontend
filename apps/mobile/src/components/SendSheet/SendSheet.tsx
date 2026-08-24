@@ -265,7 +265,17 @@ export const SendSheet: React.FC<SendSheetProps> = ({
 
   // Drawn only when the step it would return to exists.
   const showBackButton = previousStep !== undefined && !isSending;
-  const showHeader = step !== 'success';
+  const showHeader = step !== 'success' && !isSending;
+  /**
+   * A send in flight, and the receipt that follows it, own the screen.
+   *
+   * Up to that point the sheet is a card the user is filling in over their
+   * wallet, and the wallet behind it is worth seeing. Once the transaction is
+   * signed there is nothing to go back to and nothing else to look at, so the
+   * surface stops being a card — the wait and the receipt run full height,
+   * with no handle, no rounded lip and no backdrop showing through above them.
+   */
+  const ownsScreen = isSending || step === 'success';
 
   const headerContent = (
     <BottomSheetTitleHeader
@@ -304,7 +314,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
       onClose={handleClose}
       dismissible={!isSending}
       headerContent={showHeader ? headerContent : undefined}
-      style={style}
+      style={[style, ownsScreen && styles.ownsScreen]}
     >
       {/* Content */}
       <View style={styles.content}>
@@ -398,6 +408,14 @@ export const SendSheet: React.FC<SendSheetProps> = ({
 const styles = StyleSheet.create({
   content: {
     flex: 1,
+  },
+  /** The full-height presentation the wait and the receipt take over. */
+  ownsScreen: {
+    minHeight: '100%',
+    maxHeight: '100%',
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderTopWidth: 0,
   },
   // The two halves of a step change overlap: one sinks while the other floats
   // up in the same box, so the steps are stacked, not laid out in sequence.
