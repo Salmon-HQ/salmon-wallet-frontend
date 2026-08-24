@@ -345,7 +345,10 @@ describe('bridge partner fee disclosure', () => {
     }
 
     const source = readFileSync(servicePath, 'utf8');
-    const match = source.match(/STEALTHEX_PARTNER_FEE\s*=\s*'([\d.]+)'/);
+    // The backend renamed this from STEALTHEX_PARTNER_FEE and dropped the
+    // quotes; the pattern accepts either spelling so a rename does not read as
+    // a fee drift, which is the only thing this check is here to catch.
+    const match = source.match(/(?:STEALTHEX_PARTNER_FEE|PARTNER_FEE_PERCENT)\s*=\s*'?([\d.]+)'?/);
 
     expect(match).not.toBeNull();
     expect(Number(match?.[1])).toBe(BRIDGE_PARTNER_FEE_PERCENT);
