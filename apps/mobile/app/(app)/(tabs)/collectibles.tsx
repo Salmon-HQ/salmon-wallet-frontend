@@ -493,9 +493,6 @@ export default function CollectiblesScreen() {
   // Some pages arrived and a later one did not. The list renders, but it is
   // short, and saying so is the difference between resilient and quietly wrong.
   const partialLoad = mainnetQuery.partial || (developerNetworks && devnetQuery.partial);
-  // What the wallet holds but this screen is not showing. Only mainnet: the
-  // devnet section exists solely in developer mode, where nothing is hidden.
-  const hiddenCount = developerNetworks ? 0 : mainnetQuery.hiddenCount;
 
   // Check if all visible sections are empty (after loading).
   // A failed load is not "you have no collectibles" — the error state owns
@@ -631,14 +628,6 @@ export default function CollectiblesScreen() {
                   }
                 />
               </View>
-            )}
-
-            {/* What the wallet holds and this screen is not showing. Without
-                it a wallet of 1000 shows 26 and reads as loss, not filtering. */}
-            {hiddenCount > 0 && (
-              <Text style={styles.hiddenNotice} testID="collectibles-hidden-count">
-                {t('collectibles.hidden', { count: hiddenCount })}
-              </Text>
             )}
 
             {/* Empty State */}
@@ -850,13 +839,6 @@ const styles = StyleSheet.create({
   // skeletons while the section loads.
   sectionHeaderBlock: {
     marginBottom: vs(8),
-  },
-  hiddenNotice: {
-    color: colors.text.secondary,
-    fontSize: fontSize.sm,
-    fontFamily: fontFamilyNative.regular,
-    paddingHorizontal: s(18),
-    marginBottom: vs(12),
   },
   loadingHeader: {
     flexDirection: 'row',

@@ -89,12 +89,6 @@ interface BackendPagination {
   offset: number;
   hasMore: boolean;
   nextOffset: number | null;
-  /**
-   * What the backend dropped from THIS page. `spam` counts only while the spam
-   * filter is on — asking for spam explicitly makes it zero. `total` above is
-   * the provider's raw count and is not comparable to what arrives.
-   */
-  hidden?: { spam: number; fungible: number };
 }
 
 type BackendNftResponse = { data: BackendNft[]; pagination?: BackendPagination } | BackendNft[];
@@ -121,19 +115,6 @@ const MAX_PAGES = 25;
 export interface SolanaNftPageWalk {
   nfts: Nft[];
   partial: boolean;
-  /**
-   * NFTs the backend judged spam and withheld, summed over the pages that were
-   * actually walked. Zero when the caller asked for spam.
-   */
-  hiddenSpam: number;
-  /**
-   * NFTs this client dropped because they carry no image. Counted here because
-   * nothing else does, and without it the arithmetic on screen cannot close:
-   * on a 1000-NFT spam wallet the backend withholds 940 and sends 77, of which
-   * 51 have no media — so 26 render. Reporting only the backend's number would
-   * leave 51 unaccounted for.
-   */
-  hiddenWithoutMedia: number;
 }
 
 export async function getSolanaNfts(
@@ -144,7 +125,6 @@ export async function getSolanaNfts(
 ): Promise<SolanaNftPageWalk> {
   const raw: BackendNft[] = [];
   let partial = false;
-  let hiddenSpam = 0;
   let offset = 0;
 
   for (let page = 0; page < MAX_PAGES; page += 1) {
@@ -182,7 +162,6 @@ export async function getSolanaNfts(
     }
 
     raw.push(...(data.data ?? []));
-    hiddenSpam += data.pagination?.hidden?.spam ?? 0;
 
     // The spam filter runs after the page slice on the backend, so `pagination`
     // describes the unfiltered list and its offsets stay consistent across pages.
@@ -195,11 +174,5 @@ export async function getSolanaNfts(
 
   // Backend already drops blacklisted / spamScore>0 NFTs unless `?includeSpam=true`.
   const normalized = raw.map((nft) => normalizeBackendNft(nft, publicKey));
-  const withMedia = normalized.filter((nft) => nft.media);
-  return {
-    nfts: withMedia,
-    partial,
-    hiddenSpam,
-    hiddenWithoutMedia: normalized.length - withMedia.length,
-  };
+  return { nfts: normalized.filter((nft) => nft.media), partial };
 }

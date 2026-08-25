@@ -45,19 +45,19 @@ export const NftCarouselSectionSkeleton = memo<NftCarouselSectionSkeletonProps>(
     return (
       <Container style={style} className={className}>
         <HeaderRow>
-          <StyledSkeleton variant="circular" width={24} height={24} animation="wave" />
+          <StyledSkeleton variant="circular" width={24} height={24} animation="pulse" />
           <StyledSkeleton
             variant="rounded"
             width={80}
             height={18}
-            animation="wave"
+            animation="pulse"
             sx={{ borderRadius: `${borderRadius.sm}px` }}
           />
           <StyledSkeleton
             variant="rounded"
             width={28}
             height={14}
-            animation="wave"
+            animation="pulse"
             sx={{ borderRadius: `${borderRadius.sm}px` }}
           />
         </HeaderRow>
