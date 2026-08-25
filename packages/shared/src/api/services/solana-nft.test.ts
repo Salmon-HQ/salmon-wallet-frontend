@@ -41,7 +41,7 @@ describe('solana-nft service', () => {
       },
     });
 
-    const result = await getSolanaNfts('solana-mainnet', 'Owner111', true);
+    const { nfts: result } = await getSolanaNfts('solana-mainnet', 'Owner111', true);
 
     expect(mockApiClientGet).toHaveBeenCalledWith('/v1/solana-mainnet/nft', {
       params: { publicKey: 'Owner111', noCache: true, limit: 100, offset: 0 },
@@ -77,24 +77,24 @@ describe('solana-nft service', () => {
       },
     });
 
-    const result = await getSolanaNfts('solana-mainnet', 'Owner111', false);
+    const { nfts: result } = await getSolanaNfts('solana-mainnet', 'Owner111', false);
 
     expect(result).toHaveLength(1);
     expect(result[0]?.mint.address).toBe('Mint111');
   });
 
-  it('walks every page so wallets holding more than one page are not truncated', async () => {
-    const page = (mints: string[], pagination: Record<string, unknown>) => ({
-      data: {
-        data: mints.map((mint) => ({
-          mint,
-          owner: 'Owner111',
-          media: `https://example.com/${mint}.png`,
-        })),
-        pagination,
-      },
-    });
+  const page = (mints: string[], pagination: Record<string, unknown>) => ({
+    data: {
+      data: mints.map((mint) => ({
+        mint,
+        owner: 'Owner111',
+        media: `https://example.com/${mint}.png`,
+      })),
+      pagination,
+    },
+  });
 
+  it('walks every page so wallets holding more than one page are not truncated', async () => {
     mockApiClientGet
       .mockResolvedValueOnce(
         page(['Mint111'], { total: 2, limit: 100, offset: 0, hasMore: true, nextOffset: 100 })
@@ -103,7 +103,7 @@ describe('solana-nft service', () => {
         page(['Mint222'], { total: 2, limit: 100, offset: 100, hasMore: false, nextOffset: null })
       );
 
-    const result = await getSolanaNfts('solana-mainnet', 'Owner111', false);
+    const { nfts: result } = await getSolanaNfts('solana-mainnet', 'Owner111', false);
 
     expect(mockApiClientGet).toHaveBeenCalledTimes(2);
     expect(mockApiClientGet).toHaveBeenLastCalledWith('/v1/solana-mainnet/nft', {
@@ -111,6 +111,36 @@ describe('solana-nft service', () => {
       timeout: 15000,
     });
     expect(result.map((nft) => nft.mint.address)).toEqual(['Mint111', 'Mint222']);
+  });
+
+  it('keeps the pages that arrived when a later page fails', async () => {
+    // The failure this pins: one 500 on page ten used to reject the whole walk,
+    // so a wallet whose first nine pages loaded rendered zero NFTs.
+    mockApiClientGet
+      .mockResolvedValueOnce(
+        page(['Mint111'], { total: 3, limit: 100, offset: 0, hasMore: true, nextOffset: 100 })
+      )
+      .mockResolvedValueOnce(
+        page(['Mint222'], { total: 3, limit: 100, offset: 100, hasMore: true, nextOffset: 200 })
+      )
+      .mockRejectedValueOnce(new Error('server_error'));
+
+    const { nfts, partial } = await getSolanaNfts('solana-mainnet', 'Owner111', false);
+
+    expect(nfts.map((nft) => nft.mint.address)).toEqual(['Mint111', 'Mint222']);
+    // Short, and it says so — a partial list must never pass for a complete one.
+    expect(partial).toBe(true);
+  });
+
+  it('throws when the very first page fails, instead of returning an empty list', async () => {
+    // Nothing arrived, so there is nothing to show. An empty list here would
+    // render as "you own no NFTs", which is the lie the error state exists to
+    // prevent.
+    mockApiClientGet.mockRejectedValueOnce(new Error('server_error'));
+
+    await expect(getSolanaNfts('solana-mainnet', 'Owner111', false)).rejects.toThrow(
+      'server_error'
+    );
   });
 });
 
@@ -157,7 +187,7 @@ describe.skipIf(!backendBaseUrl)('solana-nft service integration', () => {
         } as { data: unknown };
       });
 
-      const nfts = await getSolanaNfts('solana-mainnet', testOwner, true);
+      const { nfts } = await getSolanaNfts('solana-mainnet', testOwner, true);
 
       expect(Array.isArray(nfts)).toBe(true);
       for (const nft of nfts) {

@@ -236,5 +236,8 @@ export const fetchSolanaAccountBalance: SolanaAccountApiFunctions['fetchBalance'
 export const solanaApiFunctions: SolanaAccountApiFunctions = {
   fetchBalance: fetchSolanaAccountBalance,
   fetchTransactions: getSolanaTransactions,
-  fetchNfts: getSolanaNfts,
+  // The avatar picker and SolanaReadAccount.getAllNfts want a plain list; the
+  // partial flag is only meaningful where it can be shown.
+  fetchNfts: async (networkId, publicKey, noCache, opts) =>
+    (await getSolanaNfts(networkId, publicKey, noCache ?? false, opts ?? {})).nfts,
 };

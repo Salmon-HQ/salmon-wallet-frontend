@@ -103,13 +103,28 @@ const PAGE_LIMIT = 100;
 /** Safety stop so a misbehaving `hasMore` cannot spin forever. */
 const MAX_PAGES = 25;
 
+/**
+ * A page walk that ran out of pages, and whether it finished the walk.
+ *
+ * `partial` is true when a page failed after at least one had succeeded. It is
+ * derived from the HTTP failure, never from the payload: the backend's listing
+ * contract is a flat shape with no `partial` or `errors[]` field, and by its
+ * own rule it never answers 200 with a degraded body. So a short answer is
+ * indistinguishable from a complete one — the status code is the only signal.
+ */
+export interface SolanaNftPageWalk {
+  nfts: Nft[];
+  partial: boolean;
+}
+
 export async function getSolanaNfts(
   networkId: string,
   publicKey: string,
   noCache: boolean,
   opts: { includeSpam?: boolean } = {}
-): Promise<Nft[]> {
+): Promise<SolanaNftPageWalk> {
   const raw: BackendNft[] = [];
+  let partial = false;
   let offset = 0;
 
   for (let page = 0; page < MAX_PAGES; page += 1) {
@@ -123,10 +138,22 @@ export async function getSolanaNfts(
       params.includeSpam = 'true';
     }
 
-    const { data } = await apiClient.get<BackendNftResponse>(`/v1/${networkId}/nft`, {
-      params,
-      timeout: 15000,
-    });
+    let data: BackendNftResponse;
+    try {
+      ({ data } = await apiClient.get<BackendNftResponse>(`/v1/${networkId}/nft`, {
+        params,
+        timeout: 15000,
+      }));
+    } catch (err) {
+      // Nothing yet means nothing to show: let the error state own the screen
+      // rather than rendering an empty grid that looks like an empty wallet.
+      if (raw.length === 0) throw err;
+      // Otherwise keep the pages that did arrive. One bad page used to reject
+      // the whole walk, so a wallet with nine good pages and a tenth that
+      // 500s rendered zero NFTs.
+      partial = true;
+      break;
+    }
 
     // Older/array-shaped responses carry no pagination envelope — one page is all there is.
     if (Array.isArray(data)) {
@@ -147,5 +174,5 @@ export async function getSolanaNfts(
 
   // Backend already drops blacklisted / spamScore>0 NFTs unless `?includeSpam=true`.
   const normalized = raw.map((nft) => normalizeBackendNft(nft, publicKey));
-  return normalized.filter((nft) => nft.media);
+  return { nfts: normalized.filter((nft) => nft.media), partial };
 }
