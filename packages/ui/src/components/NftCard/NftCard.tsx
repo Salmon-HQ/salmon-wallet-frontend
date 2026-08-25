@@ -47,6 +47,12 @@ const Container = styled(Box)<{ $clickable: boolean }>(({ $clickable }) => ({
   borderRadius: CARD_BORDER_RADIUS,
   overflow: 'hidden',
   position: 'relative',
+  // Off-screen cards skip layout and paint entirely, and the reserved size
+  // keeps the scrollbar honest while they are skipped so the page does not
+  // jump as they scroll in. Pairs with the image's `loading="lazy"`: this
+  // skips the work of painting, that one the work of decoding.
+  contentVisibility: 'auto',
+  containIntrinsicSize: `${componentSizes.nftCardHeight}px`,
   cursor: $clickable ? 'pointer' : 'default',
   boxShadow: shadowsCSS.md,
   transition: `opacity ${duration.normal} ${easing.ease}`,
@@ -170,9 +176,18 @@ export function NftCard({ nft, onPress, style, className, testID }: NftCardProps
         <FallbackGradient />
       ) : (
         <>
+          {/* A wallet with hundreds of NFTs mounts hundreds of these at once:
+              the collectibles grid renders the whole list, with no
+              virtualization. `lazy` lets the browser skip fetching and decoding
+              what is far from the viewport, which is the difference between a
+              few decoded bitmaps and all of them. The platform does this
+              natively — a virtualization library would be a dependency bought
+              to get the same thing back. */}
           <NftImage
             src={nft.image}
             alt={t('nft.detail.imageAlt', 'NFT image for {{name}}', { name: displayName })}
+            loading="lazy"
+            decoding="async"
             onLoad={handleImageLoad}
             onError={handleImageError}
           />
