@@ -77,6 +77,8 @@ export type { UseSendTransactionParams, UseSendTransactionResult } from './useSe
 // Private-key import hook
 export { useImportPrivateKey } from './useImportPrivateKey';
 export type { UseImportPrivateKeyParams, UseImportPrivateKeyResult } from './useImportPrivateKey';
+export { useImportWatchOnly } from './useImportWatchOnly';
+export type { UseImportWatchOnlyParams, UseImportWatchOnlyResult } from './useImportWatchOnly';
 
 // Swap hook
 export { useSwap } from './useSwap';

@@ -12,6 +12,7 @@
 
 import { useState, useCallback } from 'react';
 import type { BlockchainAccount } from '../types/blockchain';
+import { isSignableAccount } from '../utils/account';
 import type { NftData, SolanaNftData } from '../utils/nft';
 import { useSettleUntilChanged } from '../query/invalidation';
 import { trackEvent } from '../analytics';
@@ -63,6 +64,13 @@ export function useNftTransfer({
     async (nft: NftData, recipientAddress: string): Promise<{ txId: string }> => {
       if (!account) {
         throw new Error('No account available');
+      }
+      // The cast below would otherwise hand a watch-only account to the
+      // signer, where it dies reading `keyPair` off undefined.
+      if (!isSignableAccount(account)) {
+        setError('transaction.errors.watchOnlyAccount');
+        setStatus('failed');
+        throw new Error('transaction.errors.watchOnlyAccount');
       }
 
       setStatus('sending');

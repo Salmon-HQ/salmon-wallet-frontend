@@ -47,6 +47,9 @@ const mockAccount = {
   getReceiveAddress: () => 'mock-address',
   getNetworkId: () => 'solana-mainnet',
   network: { networkId: 'solana-mainnet' },
+  // The hook refuses any account that cannot sign, so the mock has to say it
+  // holds key material the way a real SolanaAccount does.
+  canSign: true as const,
 };
 
 // ============================================================================

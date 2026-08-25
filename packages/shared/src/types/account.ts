@@ -67,6 +67,13 @@ export type AccountSecret =
       privateKey: string;
       /** The single network this key owns an address on */
       networkId: string;
+    }
+  | {
+      kind: 'watchOnly';
+      /** The base58 address being watched — public, not secret */
+      address: string;
+      /** The single network this address is watched on */
+      networkId: string;
     };
 
 /**
@@ -140,6 +147,26 @@ export interface ImportAccountOptions {
   /** Base58-encoded 64-byte ed25519 secret key */
   privateKey: string;
   /** Network to import the key on (defaults to 'solana-mainnet') */
+  networkId?: string;
+}
+
+/**
+ * Options for importing a watch-only account from a public address.
+ *
+ * Separate from {@link ImportAccountOptions} for the same reason that one is
+ * separate from {@link CreateAccountOptions}: there is no key here, and a
+ * shared bag would invite a caller to pass one.
+ */
+export interface ImportWatchOnlyOptions {
+  /** Optional custom ID (generates UUID if not provided) */
+  id?: string;
+  /** Account name (e.g., "Watched wallet") */
+  name: string;
+  /** Avatar URL (generates random if not provided) */
+  avatar?: string;
+  /** Base58 Solana address to watch */
+  address: string;
+  /** Network to watch the address on (defaults to 'solana-mainnet') */
   networkId?: string;
 }
 

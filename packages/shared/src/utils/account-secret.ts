@@ -65,3 +65,16 @@ export function getAccountMnemonic(account: Account | null | undefined): string 
 export function isImportedAccount(account: Account | null | undefined): boolean {
   return account?.secret.kind === 'privateKey';
 }
+
+/**
+ * True when the account is watch-only: an address the wallet follows without
+ * holding its key.
+ *
+ * Note for anyone tempted to save a row: a watch-only account must still write
+ * its tagged entry into the vault. `toAccountSecret` reads a missing entry as a
+ * mnemonic (see above), so an account with no row comes back as a mnemonic
+ * account with an empty phrase and takes the derivation branch on every unlock.
+ */
+export function isWatchOnlyAccount(account: Account | null | undefined): boolean {
+  return account?.secret.kind === 'watchOnly';
+}

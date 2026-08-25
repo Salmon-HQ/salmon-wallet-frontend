@@ -1,6 +1,11 @@
-import { createKeyPairSignerFromBytes, createKeyPairSignerFromPrivateKeyBytes } from '@solana/kit';
+import {
+  address,
+  createKeyPairSignerFromBytes,
+  createKeyPairSignerFromPrivateKeyBytes,
+} from '@solana/kit';
 import HDKey from 'micro-key-producer/slip10.js';
 import { SolanaAccount, type SolanaSigningKey } from './SolanaAccount';
+import { WatchOnlySolanaAccount } from './WatchOnlySolanaAccount';
 import type { SolanaNetwork } from '../../types/blockchain';
 
 // Re-export for backward compatibility — canonical definition is in ./networks
@@ -211,4 +216,25 @@ export async function createSolanaAccountFromSecretKey(
     index,
     apiFunctions
   );
+}
+
+/**
+ * Creates a watch-only Solana account for an address the wallet does not hold
+ * the key to.
+ *
+ * @param network - Network configuration
+ * @param watchedAddress - Base58 address to follow
+ * @param apiFunctions - API functions for dependency injection
+ * @returns WatchOnlySolanaAccount instance
+ */
+export function createWatchOnlySolanaAccount(
+  network: SolanaNetwork,
+  watchedAddress: string,
+  apiFunctions: SolanaAccountApiFunctions
+): WatchOnlySolanaAccount {
+  return new WatchOnlySolanaAccount({
+    network,
+    publicKey: address(watchedAddress),
+    ...apiFunctions,
+  });
 }

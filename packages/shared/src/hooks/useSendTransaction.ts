@@ -31,6 +31,7 @@ import type {
   FeeEstimateResult,
   SendTransactionStatus,
 } from '../types/send';
+import { isSignableAccount } from '../utils/account';
 import { useSettleUntilChanged } from '../query/invalidation';
 import { usePendingTransactionsOptional } from '../contexts/PendingTransactionsContext';
 import { trackEvent, trackFirstTime } from '../analytics';
@@ -130,6 +131,9 @@ export function useSendTransaction({
   const estimateFee = useCallback(
     async (params: SendTransactionParams): Promise<FeeEstimateResult | null> => {
       if (!account) return null;
+      // A watch-only account has no key to pay or sign with. Nothing should
+      // route a send here, but this hook is the last thing before the chain.
+      if (!isSignableAccount(account)) return null;
 
       const attempt = beginAttempt();
       setStatus('estimating-fee');
@@ -173,6 +177,13 @@ export function useSendTransaction({
     async (params: SendTransactionParams): Promise<{ txId: string }> => {
       if (!account) {
         throw new Error('No account available');
+      }
+      if (!isSignableAccount(account)) {
+        // The UI disables every path that reaches this, so arriving here means
+        // one of them was missed. Refuse rather than trust the screen.
+        setError('transaction.errors.watchOnlyAccount');
+        setStatus('failed');
+        throw new Error('transaction.errors.watchOnlyAccount');
       }
 
       // Claims the shared state for this send: any estimate still in flight is

@@ -25,6 +25,7 @@ import {
   generateAccountId,
   createBlockchainAccountForNetwork,
   createBlockchainAccountFromPrivateKey,
+  createBlockchainAccountForWatchOnly,
 } from '../utils';
 import { getRandomAvatar } from '../utils/avatar';
 import type { BlockchainAccount } from '../types/blockchain';
@@ -177,6 +178,21 @@ async function restoreAccount(options: RestoreAccountOptions): Promise<Account> 
       secret.networkId,
       secret.privateKey
     );
+
+    return {
+      id,
+      name: name ?? `Account ${id.slice(-4)}`,
+      avatar: avatar ?? getRandomAvatar(),
+      secret,
+      pathIndexes: { [secret.networkId]: [0] },
+      networksAccounts: { [secret.networkId]: [account] },
+    };
+  }
+
+  // A watched address has no key and nothing to derive either — same shape as
+  // an imported key, minus the secret.
+  if (secret.kind === 'watchOnly') {
+    const account = await createBlockchainAccountForWatchOnly(secret.networkId, secret.address);
 
     return {
       id,
