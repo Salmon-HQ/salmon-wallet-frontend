@@ -27,9 +27,11 @@ import {
   getShortAddress,
   getInitials,
   useAccountsContext,
+  isWatchOnlyAccount,
   type Account,
 } from '@salmon/shared';
 import { getAccountAddress } from '@salmon/shared/utils/account';
+import { WatchOnlyBadge } from '../WatchOnlyBadge';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { ConfirmDialog } from '../ConfirmDialog';
 import type { AccountsPanelProps } from './types';
@@ -199,17 +201,22 @@ export function AccountsPanel({
                 >
                   {account.name}
                 </Typography>
-                {truncated && (
-                  <Typography
-                    noWrap
-                    sx={{
-                      color: colors.text.secondary,
-                      fontSize: fontSize.caption,
-                    }}
-                  >
-                    {truncated}
-                  </Typography>
-                )}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: `${spacing.xs}px` }}>
+                  {truncated && (
+                    <Typography
+                      noWrap
+                      sx={{
+                        color: colors.text.secondary,
+                        fontSize: fontSize.caption,
+                      }}
+                    >
+                      {truncated}
+                    </Typography>
+                  )}
+                  {isWatchOnlyAccount(account) && (
+                    <WatchOnlyBadge testID={`account-item-watch-only-${account.id}`} />
+                  )}
+                </Box>
               </AccountInfo>
 
               <ActionButtons>

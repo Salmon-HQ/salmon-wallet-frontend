@@ -27,6 +27,8 @@ vi.mock('@salmon/shared', async () => ({
   ...(await vi.importActual('../../../../shared/src/types/settings')),
   getShortAddress: (address: string) => address.slice(0, 6),
   getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
+  isWatchOnlyAccount: (account: { secret?: { kind?: string } }) =>
+    account?.secret?.kind === 'watchOnly',
   useAccountsContext: () => [
     {
       accountId: ACTIVE_ID,
