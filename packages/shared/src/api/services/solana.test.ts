@@ -296,13 +296,18 @@ describe('solana service', () => {
   });
 
   it('wires solana api functions to the expected dependencies', async () => {
-    mockGetSolanaNfts.mockResolvedValueOnce([{ mint: { address: 'nft-1' } }] as never);
+    // getSolanaNfts reports whether the page walk finished; this wiring drops
+    // that flag, because the account-level callers have nowhere to show it.
+    mockGetSolanaNfts.mockResolvedValueOnce({
+      nfts: [{ mint: { address: 'nft-1' } }],
+      partial: false,
+    } as never);
 
     await expect(
       solanaApiFunctions.fetchNfts('solana-mainnet', 'wallet-1', false)
     ).resolves.toEqual([{ mint: { address: 'nft-1' } }]);
 
-    expect(mockGetSolanaNfts).toHaveBeenCalledWith('solana-mainnet', 'wallet-1', false);
+    expect(mockGetSolanaNfts).toHaveBeenCalledWith('solana-mainnet', 'wallet-1', false, {});
   });
 });
 

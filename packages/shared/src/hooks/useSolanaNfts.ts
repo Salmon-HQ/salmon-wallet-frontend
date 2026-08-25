@@ -11,7 +11,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../query/keys';
-import { getSolanaNfts } from '../api/services/solana-nft';
+import { getSolanaNfts, type SolanaNftPageWalk } from '../api/services/solana-nft';
 import type { Nft } from '../types/nft';
 import type { NetworkId } from '../types/blockchain';
 
@@ -43,6 +43,12 @@ export interface UseSolanaNftsResult {
    * in-flight affordance. Skeletons belong to `!hasData`, never to `refreshing`.
    */
   hasData: boolean;
+  /**
+   * True when some pages loaded and a later one failed, so the list on screen
+   * is short. Distinct from `isError`, which means nothing loaded at all: a
+   * partial list is worth showing, it just must not be presented as complete.
+   */
+  partial: boolean;
   /** Error message if the fetch failed */
   error: string | null;
   /** Whether an error occurred */
@@ -60,7 +66,7 @@ export function useSolanaNfts(params: UseSolanaNftsParams): UseSolanaNftsResult 
   const isEnabled = !!enabled && !!publicKey && !!networkId;
   const accountId = publicKey ?? '';
 
-  const query = useQuery<Nft[], Error>({
+  const query = useQuery<SolanaNftPageWalk, Error>({
     queryKey: queryKeys.solanaNfts({
       accountId,
       networkId: (networkId ?? 'solana-mainnet') as NetworkId,
@@ -72,10 +78,11 @@ export function useSolanaNfts(params: UseSolanaNftsParams): UseSolanaNftsResult 
   });
 
   return {
-    nfts: query.data ?? [],
+    nfts: query.data?.nfts ?? [],
     loading: query.isPending && isEnabled,
     refreshing: query.isFetching && !query.isPending,
     hasData: query.data !== undefined,
+    partial: query.data?.partial ?? false,
     error: query.error?.message ?? null,
     isError: query.isError,
     refresh: () => query.refetch().then(() => undefined),

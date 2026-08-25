@@ -490,6 +490,9 @@ export default function CollectiblesScreen() {
   // Load failure on any visible section — keep partial data visible.
   const loadError =
     mainnetQuery.error !== null || (developerNetworks && devnetQuery.error !== null);
+  // Some pages arrived and a later one did not. The list renders, but it is
+  // short, and saying so is the difference between resilient and quietly wrong.
+  const partialLoad = mainnetQuery.partial || (developerNetworks && devnetQuery.partial);
 
   // Check if all visible sections are empty (after loading).
   // A failed load is not "you have no collectibles" — the error state owns
@@ -596,6 +599,29 @@ export default function CollectiblesScreen() {
                       onPress={handleRefresh}
                       accessibilityRole="button"
                       testID="collectibles-retry-button"
+                    >
+                      <Text style={styles.retryText}>{t('actions.retry', 'Retry')}</Text>
+                    </TouchableOpacity>
+                  }
+                />
+              </View>
+            )}
+
+            {/* A short list, not a failed one: the grid below is real, it is
+                just missing whatever the failed page held. */}
+            {!loadError && partialLoad && (
+              <View style={styles.loadErrorBanner} testID="collectibles-partial-load">
+                <WarningNotice
+                  tone="warning"
+                  title={t(
+                    'collectibles.partial_error',
+                    'Some of your collectibles could not be loaded. Pull to refresh to try again.'
+                  )}
+                  action={
+                    <TouchableOpacity
+                      onPress={handleRefresh}
+                      accessibilityRole="button"
+                      testID="collectibles-partial-retry-button"
                     >
                       <Text style={styles.retryText}>{t('actions.retry', 'Retry')}</Text>
                     </TouchableOpacity>

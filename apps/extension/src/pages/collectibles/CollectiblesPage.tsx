@@ -156,6 +156,9 @@ export function CollectiblesPage({
 
   const loadError =
     mainnetQuery.error !== null || (developerNetworks && devnetQuery.error !== null);
+  // Some pages arrived and a later one did not. The list renders, but it is
+  // short, and saying so is the difference between resilient and quietly wrong.
+  const partialLoad = mainnetQuery.partial || (developerNetworks && devnetQuery.partial);
   // A failed load is not "you have no collectibles" — the error state owns it.
   const isEmpty =
     !isLoading && !loadError && visibleKeys.every((key) => nftsBySections[key].nfts.length === 0);
@@ -198,6 +201,28 @@ export function CollectiblesPage({
             title={t('collectibles.load_error', "Your collectibles couldn't be loaded right now.")}
             action={
               <TextButton onClick={handleRetry} testID="collectibles-retry-button">
+                {t('actions.retry', 'Retry')}
+              </TextButton>
+            }
+          />
+        </Box>
+      )}
+
+      {/* A short list, not a failed one: the grid below is real, it is just
+          missing whatever the failed page held. */}
+      {!loadError && partialLoad && (
+        <Box
+          sx={{ paddingLeft: `${spacing.lg}px`, paddingRight: `${spacing.lg}px` }}
+          data-testid="collectibles-partial-load"
+        >
+          <WarningNotice
+            tone="warning"
+            title={t(
+              'collectibles.partial_error',
+              'Some of your collectibles could not be loaded. Pull to refresh to try again.'
+            )}
+            action={
+              <TextButton onClick={handleRetry} testID="collectibles-partial-retry-button">
                 {t('actions.retry', 'Retry')}
               </TextButton>
             }

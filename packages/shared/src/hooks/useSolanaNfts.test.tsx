@@ -49,7 +49,7 @@ describe('useSolanaNfts (react-query)', () => {
   });
 
   it('fetches NFTs on mount and exposes them via `nfts`', async () => {
-    mockGetSolanaNfts.mockResolvedValue([sampleNft]);
+    mockGetSolanaNfts.mockResolvedValue({ nfts: [sampleNft], partial: false });
 
     const { wrapper } = makeWrapper();
     const { result } = renderHook(
@@ -68,7 +68,7 @@ describe('useSolanaNfts (react-query)', () => {
   });
 
   it('does not fetch when publicKey is missing', async () => {
-    mockGetSolanaNfts.mockResolvedValue([]);
+    mockGetSolanaNfts.mockResolvedValue({ nfts: [], partial: false });
 
     const { wrapper } = makeWrapper();
     const { result } = renderHook(
@@ -86,8 +86,11 @@ describe('useSolanaNfts (react-query)', () => {
 
   it('refresh() triggers a refetch', async () => {
     mockGetSolanaNfts
-      .mockResolvedValueOnce([sampleNft])
-      .mockResolvedValueOnce([sampleNft, { ...sampleNft, mint: { address: 'mint-2' } }]);
+      .mockResolvedValueOnce({ nfts: [sampleNft], partial: false })
+      .mockResolvedValueOnce({
+        nfts: [sampleNft, { ...sampleNft, mint: { address: 'mint-2' } }],
+        partial: false,
+      });
 
     const { wrapper } = makeWrapper();
     const { result } = renderHook(
@@ -110,7 +113,7 @@ describe('useSolanaNfts (react-query)', () => {
   });
 
   it('configures staleTime to 60s on the underlying RQ query', async () => {
-    mockGetSolanaNfts.mockResolvedValue([sampleNft]);
+    mockGetSolanaNfts.mockResolvedValue({ nfts: [sampleNft], partial: false });
 
     const { client, wrapper } = makeWrapper();
     renderHook(
@@ -128,7 +131,7 @@ describe('useSolanaNfts (react-query)', () => {
   });
 
   it('passes includeSpam through to the API', async () => {
-    mockGetSolanaNfts.mockResolvedValue([]);
+    mockGetSolanaNfts.mockResolvedValue({ nfts: [], partial: false });
 
     const { wrapper } = makeWrapper();
     renderHook(
