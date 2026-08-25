@@ -15,11 +15,18 @@ import {
   semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { ContentLoader, Rect } from '@salmon/shared';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { BlurContainer } from '../BlurContainer';
 import type { NftCardProps, NftCardSkeletonProps } from './types';
 
@@ -27,6 +34,10 @@ import type { NftCardProps, NftCardSkeletonProps } from './types';
  * Orange gradient colors for fallback background
  * Gradient: linear-gradient(91.6deg, rgb(255, 92, 69) 12%, rgba(161, 42, 42, 0.9) 83%)
  */
+/** A full cycle of the skeleton pulse, and how far down it dips. */
+const PULSE_MS = 900;
+const PULSE_MIN_OPACITY = 0.45;
+
 const FALLBACK_GRADIENT = {
   colors: [...gradients.primaryButton.colors],
   start: { x: 0.12, y: 0.5 },
@@ -244,8 +255,21 @@ export const NftCardSkeleton = React.memo<NftCardSkeletonProps>(
     const badgeHorizontal = s(8);
     const badgeBorderRadius = ms(9);
 
+    // The gradient sweep alone is too quiet against this palette: a grid of
+    // placeholders read as a finished, empty grid rather than one still
+    // loading. A pulse on the whole card is legible at a glance.
+    const pulse = useSharedValue(1);
+    const isReduceMotionEnabled = useReducedMotion();
+
+    useEffect(() => {
+      if (!animated || isReduceMotionEnabled) return;
+      pulse.value = withRepeat(withTiming(PULSE_MIN_OPACITY, { duration: PULSE_MS }), -1, true);
+    }, [animated, isReduceMotionEnabled, pulse]);
+
+    const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
+
     return (
-      <View style={[styles.container, style]} testID={testID}>
+      <Animated.View style={[styles.container, style, pulseStyle]} testID={testID}>
         <ContentLoader
           speed={animated ? 1.5 : 0}
           width={cardWidth}
@@ -274,7 +298,7 @@ export const NftCardSkeleton = React.memo<NftCardSkeletonProps>(
             height={badgeHeight}
           />
         </ContentLoader>
-      </View>
+      </Animated.View>
     );
   }
 );
