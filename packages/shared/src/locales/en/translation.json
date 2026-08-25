@@ -295,10 +295,8 @@
       "confirm_import": "Import Account",
       "confirm": "Confirm",
       "creation_error": "Failed to create account. Please try again.",
-      "session_expired": "Your session expired. Unlock the wallet again to add an account.",
       "import_private_key": "Import private key",
       "import_private_key_description": "Add a wallet you already own using its private key",
-      "session_expired_title": "Session expired",
       "reauth_title": "Confirm your password",
       "reauth_body": "Your wallet has been idle for a few minutes, so the key that encrypts it is no longer held in memory. Enter your password to finish adding this account — nothing you entered is lost.",
       "reauth_confirm": "Confirm and add"
@@ -452,6 +450,7 @@
     "biometric_prompt": "Authenticate to unlock your wallet",
     "biometric_enroll_prompt": "Confirm to enable biometric unlock",
     "password_placeholder": "Password",
+    "password_label": "Password",
     "error": {
       "empty_password": "Please enter your password",
       "invalid_password": "Invalid password",
@@ -559,12 +558,9 @@
       "label": "Private key",
       "placeholder": "Paste your private key",
       "help": "Paste the key exactly as your other wallet gave it to you.",
-      "show": "Show private key",
-      "hide": "Hide private key",
       "warning_title": "Never share your private key",
       "warning_body": "Anyone who has it can move every asset in this wallet. Salmon will never ask you for it.",
       "resolved_address": "Wallet to import",
-      "continue": "Continue",
       "errors": {
         "empty": "Enter your private key to continue.",
         "format": "That does not look like a private key. Copy it again from the wallet you are moving it from.",

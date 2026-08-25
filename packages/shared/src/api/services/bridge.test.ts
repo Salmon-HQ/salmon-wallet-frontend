@@ -150,7 +150,17 @@ describe('bridge service', () => {
     expect(result).toEqual({ min: 0.1, max: null });
   });
 
-  it('coerces string min_amount and max_amount to numbers', async () => {
+  it('reads the numeric min_amount and max_amount salmon-api sends', async () => {
+    mockApiClientGet.mockResolvedValueOnce({
+      data: { min_amount: 0.39081023, max_amount: 250 },
+    });
+
+    const result = await getBridgeMinimalAmount('SOL', 'BTC');
+
+    expect(result).toEqual({ min: 0.39081023, max: 250 });
+  });
+
+  it('still coerces the decimal strings older backend deploys sent', async () => {
     mockApiClientGet.mockResolvedValueOnce({
       data: { min_amount: '0.39359748097612175282', max_amount: '250' },
     });
@@ -271,19 +281,21 @@ describe('bridge service integration', () => {
     // conditions. Query it first so the integration test stays valid as the
     // min amount changes. Apply a 50% safety buffer to absorb sub-second
     // fluctuations between the minimal query and the exchange call.
-    const minimalResponse = await client.get<{ min_amount: string; max_amount?: string }>(
+    const minimalResponse = await client.get<{ min_amount: number; max_amount?: number }>(
       '/v1/bridge/minimal',
       {
         params: { symbolIn: 'sol', symbolOut: 'btc' },
       }
     );
 
-    // Contract: min_amount is a decimal string; max_amount is additive and,
-    // when present, must also be a positive decimal string.
-    expect(typeof minimalResponse.data?.min_amount).toBe('string');
+    // Contract: min_amount is a JSON number; max_amount is additive and, when
+    // present, must also be a positive number. It was a decimal string until
+    // salmon-api moved to StealthEX v4 — the service boundary still accepts
+    // both, but the wire form asserted here is the one the backend ships.
+    expect(typeof minimalResponse.data?.min_amount).toBe('number');
     if (minimalResponse.data?.max_amount !== undefined) {
-      expect(typeof minimalResponse.data.max_amount).toBe('string');
-      expect(Number(minimalResponse.data.max_amount)).toBeGreaterThan(0);
+      expect(typeof minimalResponse.data.max_amount).toBe('number');
+      expect(minimalResponse.data.max_amount).toBeGreaterThan(0);
     }
 
     const minAmount = Number(minimalResponse.data?.min_amount);

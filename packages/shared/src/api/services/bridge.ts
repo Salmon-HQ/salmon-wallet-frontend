@@ -120,9 +120,10 @@ export async function getBridgeEstimatedAmount(
  *
  * Endpoint: GET /v1/bridge/minimal
  *
- * The backend returns both amounts as decimal strings and omits `max_amount`
- * when the pair has no upstream cap; this boundary coerces them to numbers
- * (see {@link BridgeMinimalResponse}).
+ * The backend returns both amounts as JSON numbers and omits `max_amount`
+ * when the pair has no upstream cap; this boundary coerces them and accepts
+ * the decimal strings older backend deploys sent (see
+ * {@link BridgeMinimalResponse}).
  *
  * @param symbolIn - Input token symbol
  * @param symbolOut - Output token symbol
