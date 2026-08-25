@@ -9,7 +9,7 @@ import {
   type DAppSignMessageRequest,
   type DAppSignOffchainMessageRequest,
 } from '@salmon/shared';
-import { isSolanaAccount } from '@salmon/shared/utils/account';
+import { isSignableSolanaAccount } from '@salmon/shared/utils/account';
 
 interface Props {
   origin: string;
@@ -61,7 +61,7 @@ export function DAppSignMessageApprovalPage({
   }, [onDismiss, sendToBackground]);
 
   const handleApprove = useCallback(async () => {
-    if (!account || !isSolanaAccount(account)) {
+    if (!account || !isSignableSolanaAccount(account)) {
       sendToBackground({ error: 'Solana account not available' });
       onDismiss(false);
       return;

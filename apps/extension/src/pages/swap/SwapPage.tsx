@@ -4,6 +4,7 @@
  * Wrapper around SwapScreen from extension components.
  * Wires useSwap, useBridge, useMultiChainTokens hooks.
  */
+import { isSignableAccount } from '@salmon/shared/utils/account';
 import { useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '../../utils/styled';
@@ -319,6 +320,12 @@ export function SwapPage({ onNavigateHome, onFlowLockChange, onTaskChange }: Swa
       amount: number
     ): Promise<{ txId: string }> => {
       if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
+      // The bridge deposit is an ordinary transfer, so it needs a key like any
+      // send does. A watch-only wallet never reaches the swap tab, but this is
+      // the last thing before the chain.
+      if (!isSignableAccount(activeBlockchainAccount)) {
+        throw new Error('transaction.errors.watchOnlyAccount');
+      }
       return activeBlockchainAccount.transfer(depositAddress, tokenAddress, amount);
     },
     [activeBlockchainAccount]

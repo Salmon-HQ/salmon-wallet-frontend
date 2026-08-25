@@ -7,7 +7,7 @@ import {
   type BlockchainAccount,
   type DAppSignInRequest,
 } from '@salmon/shared';
-import { isSolanaAccount } from '@salmon/shared/utils/account';
+import { isSignableSolanaAccount } from '@salmon/shared/utils/account';
 
 interface Props {
   origin: string;
@@ -35,7 +35,7 @@ export function DAppSignInApprovalPage({
   // Same builder the signing path uses, so the preview is exactly what gets
   // signed. null when the request is structurally invalid (view blocks approval).
   const prepared = useMemo(() => {
-    if (!account || !isSolanaAccount(account)) return null;
+    if (!account || !isSignableSolanaAccount(account)) return null;
     try {
       return prepareSignInMessage(input ?? {}, origin, account.getReceiveAddress());
     } catch {
@@ -64,7 +64,7 @@ export function DAppSignInApprovalPage({
   }, [onDismiss, sendToBackground]);
 
   const handleApprove = useCallback(async () => {
-    if (!account || !isSolanaAccount(account)) {
+    if (!account || !isSignableSolanaAccount(account)) {
       sendToBackground({ error: 'Solana account not available' });
       onDismiss(false);
       return;

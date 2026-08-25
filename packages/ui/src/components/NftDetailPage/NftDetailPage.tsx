@@ -246,6 +246,7 @@ export function NftDetailPage({
   onBack,
   onSendPress,
   onBurnPress,
+  actionsUnavailable = false,
   burnStep = 'idle',
   burnSettling = false,
   burnPreview,
@@ -581,7 +582,7 @@ export function NftDetailPage({
                   </PrimaryButtonBase>
                 </ActionButtonsContainer>
               </>
-            ) : (
+            ) : actionsUnavailable ? null : (
               <ActionButtonsContainer>
                 <PrimaryButtonBase
                   onClick={handleSendPress}

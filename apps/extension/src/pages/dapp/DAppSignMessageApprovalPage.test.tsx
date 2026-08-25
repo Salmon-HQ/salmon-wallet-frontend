@@ -21,6 +21,7 @@ vi.mock('@salmon/shared', () => ({
 
 vi.mock('@salmon/shared/utils/account', () => ({
   isSolanaAccount: () => true,
+  isSignableSolanaAccount: () => true,
 }));
 
 vi.mock('@salmon/ui', () => ({

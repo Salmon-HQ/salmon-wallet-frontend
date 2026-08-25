@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
   useAccountsContext,
+  isWatchOnlyAccount,
   useAvailableNetworks,
   useBalance,
   usePrefetchBalances,
@@ -128,6 +129,22 @@ const Container = styled(Box)({
   flexDirection: 'column',
   height: '100vh',
   backgroundColor: colors.background.primary,
+});
+
+/**
+ * The single line that explains every refusal on this screen. Quiet on
+ * purpose: it states why the controls are closed, it is not an alarm.
+ */
+const WatchOnlyNotice = styled(Box)({
+  color: semantic.text.secondary,
+  fontSize: fontSize.caption,
+  textAlign: 'center',
+  marginTop: `-${spacing.lg}px`,
+  marginBottom: `${spacing['2xl']}px`,
+  paddingLeft: `${spacing.lg}px`,
+  paddingRight: `${spacing.lg}px`,
+  position: 'relative',
+  zIndex: 1,
 });
 
 const Main = styled(Box)({
@@ -402,6 +419,10 @@ export function HomePage(): React.ReactElement {
 
   // Bitcoin chart state
   const [bitcoinChartPeriod, setBitcoinChartPeriod] = useState<PriceChartPeriod>('1M');
+
+  // A watch-only wallet holds no key, so every flow that spends is closed to
+  // it. The refusal is enforced in shared; this only keeps the UI honest.
+  const isWatchOnly = isWatchOnlyAccount(activeAccount);
 
   // Filter networks to only those the user has accounts for
   const allNetworks = useMemo(() => {
@@ -938,7 +959,7 @@ export function HomePage(): React.ReactElement {
           <TabButton
             active={activeTab === 'swap'}
             onClick={() => setActiveTab('swap')}
-            disabled={flowLocked}
+            disabled={flowLocked || isWatchOnly}
             data-testid="tab-swap"
           >
             {t('tabs.swap', 'Swap')}
@@ -970,8 +991,17 @@ export function HomePage(): React.ReactElement {
                 onSendPress={handleSendPress}
                 onReceivePress={handleReceivePress}
                 onActivityPress={handleActivityPress}
+                sendDisabled={isWatchOnly}
                 style={{ marginTop: spacing['2xl'], marginBottom: spacing['2xl'] }}
               />
+
+              {/* One explanation for every refusal on this screen, rather than
+                  a tooltip per control the user has to go hunting for. */}
+              {isWatchOnly && (
+                <WatchOnlyNotice data-testid="home-watch-only-notice">
+                  {t('wallet.watchOnly.disabled_action')}
+                </WatchOnlyNotice>
+              )}
 
               {/* Partial-load failure: keep whatever data loaded visible;
                   retry is the header refresh button. */}
