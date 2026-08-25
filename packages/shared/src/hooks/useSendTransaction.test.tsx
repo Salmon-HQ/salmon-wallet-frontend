@@ -97,6 +97,115 @@ describe('useSendTransaction', () => {
     );
   });
 
+  it('ignores a fee estimate that resolves after a send has started', async () => {
+    // The send screen fires estimateFee on mount and the Confirm button does
+    // not wait for it. On a slow RPC the estimate can resolve *after* the user
+    // has confirmed — and it used to write `status: 'idle'` over the live
+    // send, which unwound every predicate the send UI derives from `status`
+    // (sheet reopening, chrome reassembling, the wait unmounting mid-flight)
+    // while the transaction was genuinely in the air.
+    let releaseEstimate: (value: typeof FEE_RESULT) => void = () => {};
+    mockAccount.estimateTransferFee.mockReturnValueOnce(
+      new Promise((resolve) => {
+        releaseEstimate = resolve;
+      })
+    );
+
+    let releaseTransfer: (value: typeof TX_RESULT) => void = () => {};
+    mockAccount.transfer.mockReturnValueOnce(
+      new Promise((resolve) => {
+        releaseTransfer = resolve;
+      })
+    );
+
+    const { result } = renderHook(
+      () =>
+        useSendTransaction({
+          account: mockAccount as any,
+          blockchain: 'solana',
+        }),
+      { wrapper: makeWrapper() }
+    );
+
+    const params = {
+      token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+      recipientAddress: RESOLVED_RECIPIENT,
+      amount: AMOUNT,
+    };
+
+    let estimatePromise: Promise<unknown> = Promise.resolve();
+    act(() => {
+      estimatePromise = result.current.estimateFee(params);
+    });
+    await waitFor(() => expect(result.current.status).toBe('estimating-fee'));
+
+    let sendPromise: Promise<unknown> = Promise.resolve();
+    act(() => {
+      sendPromise = result.current.sendTransaction(params);
+    });
+    await waitFor(() => expect(result.current.status).toBe('sending'));
+
+    // The stale estimate lands mid-flight.
+    await act(async () => {
+      releaseEstimate(FEE_RESULT);
+      await estimatePromise;
+    });
+
+    expect(result.current.status).toBe('sending');
+
+    await act(async () => {
+      releaseTransfer(TX_RESULT);
+      await sendPromise;
+    });
+
+    expect(result.current.status).toBe('success');
+  });
+
+  it('ignores a fee estimate superseded by a newer one', async () => {
+    let failFirst: (reason: Error) => void = () => {};
+    mockAccount.estimateTransferFee.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        failFirst = reject;
+      })
+    );
+
+    const { result } = renderHook(
+      () =>
+        useSendTransaction({
+          account: mockAccount as any,
+          blockchain: 'solana',
+        }),
+      { wrapper: makeWrapper() }
+    );
+
+    const params = {
+      token: { address: TOKEN_ADDRESS, decimals: 6, symbol: 'USDC' },
+      recipientAddress: RESOLVED_RECIPIENT,
+      amount: AMOUNT,
+    };
+
+    let firstPromise: Promise<unknown> = Promise.resolve();
+    act(() => {
+      firstPromise = result.current.estimateFee(params);
+    });
+    await waitFor(() => expect(result.current.status).toBe('estimating-fee'));
+
+    // A second estimate (the user edited the amount) starts and finishes.
+    await act(async () => {
+      await result.current.estimateFee({ ...params, amount: AMOUNT * 2 });
+    });
+    expect(result.current.status).toBe('idle');
+
+    // The first estimate fails late. It must not raise feeEstimateFailed for
+    // an estimate nobody is waiting on any more.
+    await act(async () => {
+      failFirst(new Error('too late'));
+      await firstPromise;
+    });
+
+    expect(result.current.feeEstimateFailed).toBe(false);
+  });
+
   it('uses the resolved recipient address for transfer execution when provided', async () => {
     const { result } = renderHook(
       () =>

@@ -183,6 +183,12 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   // does it. Gated on `isSending` alone it ended at the signature, and the
   // receipt then raised a second wait of its own for the indexer — two waits
   // back to back, identical but for where their tips sat.
+  //
+  // `isCommitted` governs both halves of that: whether the wait is mounted
+  // *and* whether it is visible. Mounting on the commit while passing
+  // `visible={isSending}` split them — the wait began leaving at the signature
+  // and finished its exit while `settling` still held the receipt back, so a
+  // slow indexer left the screen empty between the two.
   const isCommitted = isSending || sendHook.settling;
   const { held: isWaveHeld, onExited: onWaveGone } = useWaitExit(isCommitted);
   const showWait = isCommitted || (isWaveHeld && step === 'success');
@@ -414,10 +420,16 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   // The receipt is no longer a step in here at all: it has its own window
   // below, and it arrives whole (DESIGN.md §The receipt: "A send or NFT
   // receipt arrives whole"), with no entrance of its own.
-  const stepExiting = sinkExiting(isReduceMotionEnabled);
-  const stepEntering = stepped
-    ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
-    : undefined;
+  //
+  // Memoized because these are layout-animation configs handed to live views,
+  // and this sheet re-renders with its host: during a send the settle poll
+  // refetches balances every couple of seconds, and a fresh closure each time
+  // re-serializes the animation to the UI thread mid-passage.
+  const stepExiting = useMemo(() => sinkExiting(isReduceMotionEnabled), [isReduceMotionEnabled]);
+  const stepEntering = useMemo(
+    () => (stepped ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS }) : undefined),
+    [isReduceMotionEnabled, stepped]
+  );
 
   return (
     <>
@@ -502,7 +514,7 @@ export const SendSheet: React.FC<SendSheetProps> = ({
       {showWait && (
         <LoadingScreen
           fullScreen
-          visible={isSending}
+          visible={isCommitted}
           waves
           title={t('transaction.pendingSend')}
           subtitle={summary}

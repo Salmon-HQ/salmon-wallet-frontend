@@ -23,7 +23,7 @@
  * ```
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 
 import type { BlockchainType, BlockchainAccount } from '../types/blockchain';
 import type {
@@ -96,12 +96,34 @@ export function useSendTransaction({
   const settleUntilChanged = useSettleUntilChanged();
   const pendingTransactions = usePendingTransactionsOptional();
 
+  // Every write to `status`/`error` is stamped with the attempt that asked for
+  // it, and a stale attempt's write is dropped.
+  //
+  // Without this, a fee estimate that resolves late reports `idle` over a send
+  // that is already in the air — and the send UI derives everything from this
+  // one string. On mobile, `status` decides whether the sheet is up, whether
+  // the app chrome is stowed, and whether the wait is mounted, so a single
+  // stale `idle` reassembles the whole screen mid-flight and then tears it
+  // down again when the transfer finally resolves. That is not a rendering
+  // glitch to paper over downstream: the screen was told the send had ended.
+  //
+  // The screens make this reachable rather than theoretical — the confirm step
+  // estimates on mount and its Confirm button does not wait for the estimate,
+  // so a slow RPC is all it takes.
+  const attemptRef = useRef(0);
+  const beginAttempt = useCallback(() => {
+    attemptRef.current += 1;
+    return attemptRef.current;
+  }, []);
+  const isCurrent = useCallback((attempt: number) => attemptRef.current === attempt, []);
+
   const reset = useCallback(() => {
+    beginAttempt();
     setStatus('idle');
     setSettling(false);
     setError(null);
     setFeeEstimateFailed(false);
-  }, []);
+  }, [beginAttempt]);
 
   // ---- Fee Estimation ----
 
@@ -109,6 +131,7 @@ export function useSendTransaction({
     async (params: SendTransactionParams): Promise<FeeEstimateResult | null> => {
       if (!account) return null;
 
+      const attempt = beginAttempt();
       setStatus('estimating-fee');
       setError(null);
 
@@ -122,11 +145,18 @@ export function useSendTransaction({
           params.amount
         );
 
+        // A newer estimate, or a send, started while this one was in flight.
+        // The caller still gets its answer; the shared state belongs to
+        // whatever is current.
+        if (!isCurrent(attempt)) return result;
+
         setStatus('idle');
         setFeeEstimateFailed(false);
         return result;
       } catch (err) {
         console.error('[useSendTransaction] Fee estimation failed:', err);
+        if (!isCurrent(attempt)) return null;
+
         setStatus('idle');
         // Don't treat fee estimation failure as a blocking error, but surface
         // it so the UI can warn that the shown fee is unknown.
@@ -134,7 +164,7 @@ export function useSendTransaction({
         return null;
       }
     },
-    [account]
+    [account, beginAttempt, isCurrent]
   );
 
   // ---- Transaction Execution ----
@@ -145,6 +175,9 @@ export function useSendTransaction({
         throw new Error('No account available');
       }
 
+      // Claims the shared state for this send: any estimate still in flight is
+      // now stale and its late write is dropped.
+      beginAttempt();
       setStatus('creating');
       setError(null);
 
@@ -220,7 +253,7 @@ export function useSendTransaction({
         throw err;
       }
     },
-    [account, settleUntilChanged, pendingTransactions]
+    [account, settleUntilChanged, pendingTransactions, beginAttempt]
   );
 
   // Stable return identity: consumers hang effects off this object (and off
