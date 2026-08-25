@@ -1,12 +1,17 @@
 // Solana Account
 export { SolanaAccount } from './SolanaAccount';
 export type { SolanaAccountOptions, SolanaBalance, SolanaSigningKey } from './SolanaAccount';
+export { SolanaReadAccount } from './SolanaReadAccount';
+export type { SolanaReadAccountOptions } from './SolanaReadAccount';
+export { WatchOnlySolanaAccount } from './WatchOnlySolanaAccount';
+export type { WatchOnlySolanaAccountOptions } from './WatchOnlySolanaAccount';
 
 // Factory functions and utilities
 export {
   createSolanaAccount,
   createSolanaAccountFromKeyPair,
   createSolanaAccountFromSecretKey,
+  createWatchOnlySolanaAccount,
   deriveSolanaAccounts,
   generateKeyPair,
   getSolanaDerivationPath,

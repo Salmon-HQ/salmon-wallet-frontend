@@ -12,6 +12,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { parseSolanaPrivateKey, type PrivateKeyErrorReason } from '../crypto/private-key';
 import type { Account } from '../types/account';
+import { collectSolanaAddresses } from '../utils/account';
 
 /** Networks a private key can be imported on. Solana only, for now. */
 const IMPORT_NETWORK_ID = 'solana-mainnet';
@@ -47,20 +48,6 @@ export interface UseImportPrivateKeyResult {
   reset: () => void;
   /** Network the import targets. */
   networkId: string;
-}
-
-/** Every Solana address the wallet already holds, across accounts and indexes. */
-function collectSolanaAddresses(accounts: Account[]): Set<string> {
-  const addresses = new Set<string>();
-  for (const account of accounts) {
-    for (const networkAccounts of Object.values(account.networksAccounts)) {
-      for (const blockchainAccount of networkAccounts ?? []) {
-        const address = blockchainAccount?.getReceiveAddress?.();
-        if (address) addresses.add(address);
-      }
-    }
-  }
-  return addresses;
 }
 
 export function useImportPrivateKey({

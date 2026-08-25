@@ -23,6 +23,12 @@ export interface NftDetailPageProps {
   onSendPress?: () => void;
   /** Callback when Burn button is pressed */
   onBurnPress?: () => void;
+  /**
+   * Hides the actions that move the NFT, for a wallet that cannot sign.
+   * Hidden rather than disabled: a watch-only wallet will never be able to
+   * send or burn, so a greyed control is a promise the wallet cannot keep.
+   */
+  actionsUnavailable?: boolean;
   /** Burn flow step shown inside the detail page */
   burnStep?: 'idle' | 'review' | 'success';
   /** Prepared burn transaction flow metadata */

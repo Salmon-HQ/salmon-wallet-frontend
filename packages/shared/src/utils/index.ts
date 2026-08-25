@@ -26,12 +26,16 @@ export {
   getChainDisplayName,
   getAccountBlockchainType,
   isSolanaAccount,
+  isSignableSolanaAccount,
+  isSignableAccount,
   isBitcoinAccount,
   isEthereumAccount,
   generateAccountId,
   generateAccountName,
   createBlockchainAccountForNetwork,
   createBlockchainAccountFromPrivateKey,
+  createBlockchainAccountForWatchOnly,
+  collectSolanaAddresses,
   buildNetworkListFromAccount,
   getAccountKeysForNetwork,
   getAccountAddress,
@@ -45,6 +49,7 @@ export {
   buildSecretVault,
   getAccountMnemonic,
   isImportedAccount,
+  isWatchOnlyAccount,
 } from './account-secret';
 export type { StoredSecret, SecretVault } from './account-secret';
 

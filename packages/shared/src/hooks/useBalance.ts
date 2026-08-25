@@ -23,7 +23,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { SolanaAccount } from '../blockchain/solana';
+import type { SolanaReadAccount } from '../blockchain/solana';
 import type { BitcoinAccount } from '../blockchain/bitcoin';
 import type { EthereumAccount } from '../blockchain/ethereum';
 import type { BlockchainAccount, NetworkId } from '../types/blockchain';
@@ -96,7 +96,9 @@ export interface UseBalanceResult {
 // ============================================================================
 
 async function fetchSolanaBalance(
-  solanaAccount: SolanaAccount,
+  // Reading a balance needs an address, not a key: watch-only accounts come
+  // through here too.
+  solanaAccount: SolanaReadAccount,
   includeSpam: boolean
 ): Promise<WalletBalance> {
   try {
@@ -257,7 +259,7 @@ export async function fetchBalanceForAccount(
     return fetchEthereumBalance(account);
   }
   // Fallback: treat as Solana for backwards compatibility
-  return fetchSolanaBalance(account as SolanaAccount, includeSpam);
+  return fetchSolanaBalance(account as SolanaReadAccount, includeSpam);
 }
 
 // ============================================================================

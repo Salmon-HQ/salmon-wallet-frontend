@@ -16,7 +16,8 @@ import {
   classifyTransactionError,
   type NftData,
 } from '@salmon/shared';
-import { isSolanaAccount } from '@salmon/shared/utils/account';
+import { isSignableSolanaAccount } from '@salmon/shared/utils/account';
+import { isWatchOnlyAccount } from '@salmon/shared';
 import { NftDetailPage, NftSendDialog } from '@salmon/ui';
 
 export function NftDetailRoute(): React.ReactElement {
@@ -43,14 +44,14 @@ export function NftDetailRoute(): React.ReactElement {
     const preferredNetworkIds = ['solana-mainnet', 'solana-devnet'] as const;
     for (const networkId of preferredNetworkIds) {
       const account = networksAccounts[networkId]?.[0];
-      if (account && isSolanaAccount(account)) {
+      if (account && isSignableSolanaAccount(account)) {
         return account;
       }
     }
 
     for (const accounts of Object.values(networksAccounts)) {
       for (const account of accounts ?? []) {
-        if (account && isSolanaAccount(account)) {
+        if (account && isSignableSolanaAccount(account)) {
           return account;
         }
       }
@@ -192,6 +193,7 @@ export function NftDetailRoute(): React.ReactElement {
         onBack={handleBack}
         onSendPress={handleSendPress}
         onBurnPress={handleBurnPress}
+        actionsUnavailable={isWatchOnlyAccount(activeAccount)}
         burnStep={burnStep}
         burnPreview={burnPreview}
         burnPreparing={burnPreparing}

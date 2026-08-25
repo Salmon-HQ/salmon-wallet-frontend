@@ -51,6 +51,8 @@ vi.mock('@salmon/shared', () => ({
   signAndSendPreparedSolanaTransactions: (...args: unknown[]) =>
     mockSignAndSendPreparedSolanaTransactions(...args),
   isSolanaAccount: () => true,
+  isSignableSolanaAccount: () => true,
+  isWatchOnlyAccount: () => false,
   useNftBurn: () => ({
     burnNft: (...args: unknown[]) => mockSignAndSendPreparedSolanaTransactions(...args),
     settling: false,
@@ -58,12 +60,14 @@ vi.mock('@salmon/shared', () => ({
   useSettleAfterTx: () => vi.fn().mockResolvedValue(undefined),
 }));
 
-// NftDetailRoute imports isSolanaAccount from the deep sub-path
+// NftDetailRoute imports isSignableSolanaAccount from the deep sub-path
 // '@salmon/shared/utils/account', a different specifier than the barrel mock
 // above — without mocking it too, the real module loads and its @bonfida
 // import runs a PDA derivation at load time that crashes under Vitest's jsdom.
 vi.mock('@salmon/shared/utils/account', () => ({
   isSolanaAccount: () => true,
+  isSignableSolanaAccount: () => true,
+  isWatchOnlyAccount: () => false,
 }));
 
 vi.mock('@salmon/ui', () => ({

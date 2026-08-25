@@ -33,7 +33,9 @@ import {
   componentSizes,
   duration,
   easing,
+  isWatchOnlyAccount,
 } from '@salmon/shared';
+import { WatchOnlyBadge } from '../WatchOnlyBadge';
 import { BaseSheetDialog } from '../BaseSheetDialog';
 import { ConfirmDialog } from '../ConfirmDialog';
 
@@ -197,7 +199,17 @@ function AccountListItem({ account, isActive, onSelect, onEdit, onDelete }: Acco
       </ListItemAvatar>
       <ListItemText
         primary={<AccountName>{account.name}</AccountName>}
-        secondary={<AccountAddress>{truncatedAddress}</AccountAddress>}
+        secondary={
+          <Box
+            component="span"
+            sx={{ display: 'flex', alignItems: 'center', gap: `${spacing.xs}px` }}
+          >
+            <AccountAddress>{truncatedAddress}</AccountAddress>
+            {isWatchOnlyAccount(account) && (
+              <WatchOnlyBadge testID={`wallet-switcher-watch-only-${account.id}`} />
+            )}
+          </Box>
+        }
         sx={{ marginRight: spacing.lg }}
       />
       <ListItemSecondaryAction>

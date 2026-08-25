@@ -2,13 +2,14 @@
  * Account utilities for wallet derivation path handling and blockchain type detection.
  */
 
-import type { SolanaAccount } from '../blockchain/solana';
+import type { SolanaAccount, WatchOnlySolanaAccount } from '../blockchain/solana';
 import type { BitcoinAccount } from '../blockchain/bitcoin';
 import type { EthereumAccount } from '../blockchain/ethereum';
 import bs58 from 'bs58';
 import {
   createSolanaAccount,
   createSolanaAccountFromSecretKey,
+  createWatchOnlySolanaAccount,
   SOLANA_NETWORKS,
 } from '../blockchain/solana';
 import { createBitcoinAccount, BITCOIN_NETWORKS } from '../blockchain/bitcoin';
@@ -72,10 +73,52 @@ export function getAccountBlockchainType(account: BlockchainAccount): Blockchain
 }
 
 /**
- * Type guard to check if account is a SolanaAccount.
+ * Type guard to check if account is a Solana account of any kind.
+ *
+ * Read paths want this one: a watch-only account reads exactly like a
+ * signable one. Anything that signs wants `isSignableSolanaAccount`.
  */
-export function isSolanaAccount(account: BlockchainAccount): account is SolanaAccount {
+export function isSolanaAccount(
+  account: BlockchainAccount
+): account is SolanaAccount | WatchOnlySolanaAccount {
   return getAccountBlockchainType(account) === 'solana';
+}
+
+/**
+ * Type guard to check if account is a Solana account that holds key material.
+ *
+ * This is the guard every signing path must use. `isSolanaAccount` is true for
+ * a watch-only account too — it reads like any other — and duck-typing on
+ * `getRpc` cannot tell them apart, because a watch-only account needs RPC
+ * access to read balances at all.
+ */
+export function isSignableSolanaAccount(account: BlockchainAccount): account is SolanaAccount {
+  return (
+    getAccountBlockchainType(account) === 'solana' &&
+    'canSign' in account &&
+    account.canSign === true
+  );
+}
+
+/**
+ * Any account that holds key material, on any chain.
+ *
+ * The `canSign` literal on the two Solana classes is what makes this `Exclude`
+ * work: without it they would be structurally interchangeable and the watch-only
+ * type would not be removable from the union.
+ */
+export type SignableBlockchainAccount = Exclude<BlockchainAccount, WatchOnlySolanaAccount>;
+
+/**
+ * Type guard for an account that can sign, on any chain.
+ *
+ * Chain-agnostic flows (send, fee estimation) want this one; it is the single
+ * gate that keeps a watch-only account out of them.
+ */
+export function isSignableAccount(
+  account: BlockchainAccount
+): account is SignableBlockchainAccount {
+  return !isSolanaAccount(account) || isSignableSolanaAccount(account);
 }
 
 /**
@@ -221,6 +264,53 @@ export async function createBlockchainAccountFromPrivateKey(
   return createSolanaAccountFromSecretKey(network, bs58.decode(privateKey), 0, solanaApiFunctions);
 }
 
+/**
+ * Every Solana address the wallet already holds, across accounts and indexes.
+ *
+ * Both import flows reject an address that is already present: importing one
+ * twice shows the same balance in two places and makes "which one do I send
+ * from" unanswerable.
+ */
+export function collectSolanaAddresses(accounts: Account[]): Set<string> {
+  const addresses = new Set<string>();
+  for (const account of accounts) {
+    for (const networkAccounts of Object.values(account.networksAccounts)) {
+      for (const blockchainAccount of networkAccounts ?? []) {
+        const address = blockchainAccount?.getReceiveAddress?.();
+        if (address) addresses.add(address);
+      }
+    }
+  }
+  return addresses;
+}
+
+/**
+ * Creates a watch-only blockchain account for an address the wallet does not
+ * hold the key to.
+ *
+ * @param networkId - Solana network the address is watched on
+ * @param watchedAddress - Base58 Solana address
+ * @returns A read-only account for that address
+ * @throws When the network is unknown, not a Solana network, or disabled
+ */
+export async function createBlockchainAccountForWatchOnly(
+  networkId: string,
+  watchedAddress: string
+): Promise<BlockchainAccount> {
+  await fetchAndMergeNetworkConfigs();
+
+  if (getBlockchainFromNetworkId(networkId) !== 'solana') {
+    throw new Error(`Watch-only import is not supported for network: ${networkId}`);
+  }
+
+  const network = SOLANA_NETWORKS[networkId];
+  if (!network) {
+    throw new Error(`Unknown Solana network: ${networkId}`);
+  }
+
+  return createWatchOnlySolanaAccount(network, watchedAddress, solanaApiFunctions);
+}
+
 // ============================================================================
 // Derivation Path Utilities
 // ============================================================================
@@ -311,8 +401,11 @@ export function getActiveSolanaApprovalAccount(
   activeBlockchainAccount: BlockchainAccount | null | undefined,
   pathIndex = 0
 ): SolanaAccount | null {
+  // A watch-only active account must fail closed here, not fall through to the
+  // loop below — that would answer a dApp request with a different, signable
+  // account than the one the user has selected.
   if (activeBlockchainAccount && isSolanaAccount(activeBlockchainAccount)) {
-    return activeBlockchainAccount;
+    return isSignableSolanaAccount(activeBlockchainAccount) ? activeBlockchainAccount : null;
   }
 
   if (!activeAccount?.networksAccounts) return null;
@@ -329,13 +422,13 @@ export function getActiveSolanaApprovalAccount(
     if (!networkAccounts?.length) continue;
 
     const preferred = networkAccounts[pathIndex];
-    if (preferred && isSolanaAccount(preferred)) {
+    if (preferred && isSignableSolanaAccount(preferred)) {
       return preferred;
     }
 
     const fallback = networkAccounts.find((account): account is SolanaAccount => {
       if (!account) return false;
-      return isSolanaAccount(account);
+      return isSignableSolanaAccount(account);
     });
     if (fallback) return fallback;
   }
@@ -359,6 +452,7 @@ export function getAccountKeysForNetwork(
 
   return networkAccounts
     .filter((account): account is NonNullable<typeof account> => account !== null)
+    .filter((account) => !isSolanaAccount(account) || isSignableSolanaAccount(account))
     .map((account) => ({
       path: account.path,
       address: account.getReceiveAddress(),

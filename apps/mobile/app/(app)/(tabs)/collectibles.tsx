@@ -119,6 +119,13 @@ const GRID_HORIZONTAL_PADDING = s(18);
 // Main Component
 // ============================================================================
 
+/**
+ * Skeleton rows shown while a section loads. Three rows overflow the fold on
+ * the shortest supported device, so the placeholder never reads as a short,
+ * finished grid.
+ */
+const SKELETON_ROWS = ['a', 'b', 'c'] as const;
+
 export default function CollectiblesScreen() {
   const { t } = useTranslation();
   const { headerContentOffset, scrollBottomPadding } = useTabChrome();
@@ -633,14 +640,25 @@ export default function CollectiblesScreen() {
                 style={styles.sectionSelector}
               />
               {nftSection.loading && (
-                <View style={styles.gridContainer}>
-                  <View style={styles.gridRow}>
-                    <NftCardSkeleton style={styles.gridCard} />
-                    <NftCardSkeleton style={styles.gridCard} />
+                <View testID="collectibles-loading">
+                  {/* Four lonely cards read as an empty grid that finished
+                      loading, and the shimmer alone is too quiet against this
+                      palette to say otherwise. The spinner and the line say it
+                      outright; the skeletons fill the fold so the screen looks
+                      like a grid arriving rather than a grid that is over. */}
+                  <View style={styles.loadingHeader}>
+                    <ActivityIndicator size="small" color={colors.accent.primary} />
+                    <Text style={styles.loadingHeaderText}>
+                      {t('collectibles.loading', 'Loading your collectibles…')}
+                    </Text>
                   </View>
-                  <View style={styles.gridRow}>
-                    <NftCardSkeleton style={styles.gridCard} />
-                    <NftCardSkeleton style={styles.gridCard} />
+                  <View style={styles.gridContainer}>
+                    {SKELETON_ROWS.map((rowKey) => (
+                      <View key={rowKey} style={styles.gridRow}>
+                        <NftCardSkeleton style={styles.gridCard} />
+                        <NftCardSkeleton style={styles.gridCard} />
+                      </View>
+                    ))}
                   </View>
                 </View>
               )}
@@ -795,6 +813,18 @@ const styles = StyleSheet.create({
   // skeletons while the section loads.
   sectionHeaderBlock: {
     marginBottom: vs(8),
+  },
+  loadingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: s(8),
+    paddingHorizontal: s(18),
+    marginBottom: vs(12),
+  },
+  loadingHeaderText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    fontFamily: fontFamilyNative.medium,
   },
   sectionHeader: {
     flexDirection: 'row',

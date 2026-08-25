@@ -299,7 +299,9 @@
       "import_private_key_description": "Add a wallet you already own using its private key",
       "reauth_title": "Confirm your password",
       "reauth_body": "Your wallet has been idle for a few minutes, so the key that encrypts it is no longer held in memory. Enter your password to finish adding this account — nothing you entered is lost.",
-      "reauth_confirm": "Confirm and add"
+      "reauth_confirm": "Confirm and add",
+      "import_watch_only": "Watch a wallet",
+      "import_watch_only_description": "Follow any wallet using its address, without being able to move its funds"
     },
     "security": {
       "title": "Security",
@@ -569,6 +571,21 @@
         "invalidKey": "That key is not valid. Check you copied all of it.",
         "duplicate": "This wallet is already in your list."
       }
+    },
+    "watchOnly": {
+      "title": "Watch a wallet",
+      "label": "Wallet address",
+      "placeholder": "Paste a Solana address",
+      "help": "You will see this wallet’s balance and activity. You will not be able to move anything in it.",
+      "resolved_address": "Wallet to watch",
+      "badge": "Watch-only",
+      "disabled_action": "This is a watch-only wallet. It was added with an address only, so Salmon holds no key for it and cannot sign.",
+      "errors": {
+        "empty": "Enter a wallet address to continue.",
+        "format": "That is not a Solana address. Check you copied all of it.",
+        "looksLikeSecret": "That looks like a private key, not an address. Only paste an address here — never your private key.",
+        "duplicate": "This wallet is already in your list."
+      }
     }
   },
   "transactions": {
@@ -819,7 +836,8 @@
       "quoteExpired": "The quote changed before it could execute. Review and confirm again.",
       "slippage": "The price moved beyond your slippage tolerance. Try again or adjust the amount.",
       "noRoute": "No swap route is available for this pair right now. Try a different amount or token.",
-      "generic": "The transaction failed. Please try again."
+      "generic": "The transaction failed. Please try again.",
+      "watchOnlyAccount": "This is a watch-only wallet, so it cannot sign."
     },
     "viewOnExplorer": "View on Explorer",
     "continue": "Back to wallet"
@@ -878,7 +896,8 @@
     "no_nfts": "No collectibles found",
     "no_account_for_network": "No account available for this network.",
     "developer_banner": "Developer Mode - Showing testnet NFTs",
-    "load_error": "Your collectibles couldn't be loaded right now."
+    "load_error": "Your collectibles couldn't be loaded right now.",
+    "loading": "Loading your collectibles…"
   },
   "common": {
     "cancel": "Cancel",

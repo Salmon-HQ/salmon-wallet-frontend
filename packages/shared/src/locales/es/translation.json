@@ -299,7 +299,9 @@
       "import_private_key_description": "Agregá una billetera que ya tenés usando su clave privada",
       "reauth_title": "Confirmá tu contraseña",
       "reauth_body": "La billetera estuvo inactiva unos minutos, así que la clave que la cifra ya no está en memoria. Ingresá tu contraseña para terminar de agregar esta cuenta — no se pierde nada de lo que cargaste.",
-      "reauth_confirm": "Confirmar y agregar"
+      "reauth_confirm": "Confirmar y agregar",
+      "import_watch_only": "Seguir una billetera",
+      "import_watch_only_description": "Seguí cualquier billetera con su dirección, sin poder mover sus fondos"
     },
     "security": {
       "title": "Seguridad",
@@ -569,6 +571,21 @@
         "invalidKey": "Esa clave no es válida. Fijate que la hayas copiado entera.",
         "duplicate": "Esta billetera ya está en tu lista."
       }
+    },
+    "watchOnly": {
+      "title": "Seguir una billetera",
+      "label": "Dirección de la billetera",
+      "placeholder": "Pegá una dirección de Solana",
+      "help": "Vas a ver el saldo y la actividad de esta billetera. No vas a poder mover nada de lo que tenga.",
+      "resolved_address": "Billetera a seguir",
+      "badge": "Solo lectura",
+      "disabled_action": "Esta es una billetera de solo lectura. Se agregó solo con una dirección, así que Salmon no tiene ninguna clave suya y no puede firmar.",
+      "errors": {
+        "empty": "Ingresá una dirección para continuar.",
+        "format": "Eso no es una dirección de Solana. Fijate que la hayas copiado entera.",
+        "looksLikeSecret": "Eso parece una clave privada, no una dirección. Acá pegá solo una dirección — nunca tu clave privada.",
+        "duplicate": "Esta billetera ya está en tu lista."
+      }
     }
   },
   "transactions": {
@@ -819,7 +836,8 @@
       "quoteExpired": "La cotización cambió antes de ejecutarse. Revisá y confirmá de nuevo.",
       "slippage": "El precio se movió más allá de tu tolerancia de slippage. Volvé a intentarlo o ajustá el monto.",
       "noRoute": "No hay ninguna ruta disponible para este par en este momento. Probá con otro monto u otro token.",
-      "generic": "La transacción falló. Volvé a intentarlo."
+      "generic": "La transacción falló. Volvé a intentarlo.",
+      "watchOnlyAccount": "Esta es una billetera de solo lectura, así que no puede firmar."
     },
     "viewOnExplorer": "Ver en Explorer",
     "continue": "Volver a la billetera"
@@ -878,7 +896,8 @@
     "no_nfts": "No se encontraron coleccionables",
     "no_account_for_network": "No hay una cuenta disponible para esta red.",
     "developer_banner": "Modo Desarrollador - Mostrando NFTs de testnet",
-    "load_error": "Tus coleccionables no se pudieron cargar en este momento."
+    "load_error": "Tus coleccionables no se pudieron cargar en este momento.",
+    "loading": "Cargando tus coleccionables…"
   },
   "common": {
     "cancel": "Cancelar",

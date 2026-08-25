@@ -34,6 +34,7 @@ import {
   s,
   isSolanaNft,
   isBitcoinNft,
+  isSignableAccount,
   getSatRarityColor,
   getShortAddress,
   borderWidth,
@@ -465,8 +466,17 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           : step === 'detail'
             ? detailHeaderContent
             : undefined;
-  const canConfirmSend = addressValid && !sending && nft?.blockchain !== 'bitcoin';
-  const canConfirmBurn = !burnPreparing && !burnError && !!burnPreview;
+  // A watch-only account reads like any other but cannot sign — see
+  // `isSignableAccount`. Every send/burn trigger, entry and confirm alike,
+  // must refuse for it.
+  const canSignAccount = !!account && isSignableAccount(account);
+  // Two different states that must not be conflated: an account that is still
+  // resolving (keep the controls, disabled) versus one that is known to hold no
+  // key (drop them — it will never be able to sign).
+  const accountCannotEverSign = !!account && !isSignableAccount(account);
+  const canConfirmSend =
+    addressValid && !sending && nft?.blockchain !== 'bitcoin' && canSignAccount;
+  const canConfirmBurn = !burnPreparing && !burnError && !!burnPreview && canSignAccount;
   const lutInfo = burnPreview?.lookupTable;
   const burnBusyLabel = burnPreview
     ? t('nft.burn.submitting', 'Burning NFT...')
@@ -530,61 +540,69 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
         </View>
       </BlurContainer>
 
-      <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity
-          testID="nft-detail-send-button"
-          style={styles.buttonWrapper}
-          onPress={handleOpenSendStep}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel={t('nft.send.title', 'Send NFT')}
-        >
-          <LinearGradient
-            colors={[...gradients.primaryButton.colors]}
-            start={gradients.primaryButton.start}
-            end={gradients.primaryButton.end}
-            style={styles.primaryButton}
+      {/* Gone, not greyed. A watch-only wallet can never send or burn, so a
+          disabled control would be a promise the wallet cannot keep — and a
+          disabled burn button in particular read as live, because only Send
+          carried a disabled style. Web and extension already hide these. */}
+      {!accountCannotEverSign && (
+        <View style={styles.actionButtonsContainer}>
+          <TouchableOpacity
+            testID="nft-detail-send-button"
+            style={styles.buttonWrapper}
+            onPress={handleOpenSendStep}
+            disabled={!canSignAccount}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={t('nft.send.title', 'Send NFT')}
           >
-            {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
+            <LinearGradient
+              colors={[...gradients.primaryButton.colors]}
+              start={gradients.primaryButton.start}
+              end={gradients.primaryButton.end}
+              style={[styles.primaryButton, !canSignAccount && styles.primaryButtonDisabled]}
+            >
+              {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
                 fill. Every band is paler than the fill, so it can only raise
                 the luminance under the label. */}
-            <FleshBackground />
-            <ArrowUpRightIcon weight="bold" size={ms(15)} color={semantic.accent.onFill} />
-            <Text style={styles.primaryButtonText}>{t('actions.send', 'Send')}</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+              <FleshBackground />
+              <ArrowUpRightIcon weight="bold" size={ms(15)} color={semantic.accent.onFill} />
+              <Text style={styles.primaryButtonText}>{t('actions.send', 'Send')}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
 
-        {/* Burn destroys the thing on screen and nothing brings it back, so
+          {/* Burn destroys the thing on screen and nothing brings it back, so
             the trigger says so before the confirm step does — the same danger
             vocabulary the review's `isDanger` speaks, on three channels: the
             danger tint and its edge, the flame glyph, and the announced
             irreversibility. Send stays the peer it is; this is not one. */}
-        <BlurContainer
-          style={styles.secondaryButtonWrapper}
-          blurIntensity={2.5}
-          backgroundColor={semantic.status.dangerTint}
-          borderColor={semantic.status.danger}
-          borderWidth={borderWidth.actionButton}
-        >
-          <TouchableOpacity
-            testID="nft-detail-burn-button"
-            style={styles.secondaryButtonContent}
-            onPress={handleOpenBurnStep}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel={t('nft.burn.reviewTitle', 'Burn NFT')}
-            accessibilityHint={t(
-              'nft.burn.reviewBody',
-              'This action is irreversible. Confirm only if you want to permanently burn this NFT.'
-            )}
+          <BlurContainer
+            style={styles.secondaryButtonWrapper}
+            blurIntensity={2.5}
+            backgroundColor={semantic.status.dangerTint}
+            borderColor={semantic.status.danger}
+            borderWidth={borderWidth.actionButton}
           >
-            <FireIcon weight="fill" size={ms(18)} color={semantic.status.danger} />
-            <Text style={[styles.buttonText, styles.burnButtonText]}>
-              {t('nft.burn_nft', 'Burn')}
-            </Text>
-          </TouchableOpacity>
-        </BlurContainer>
-      </View>
+            <TouchableOpacity
+              testID="nft-detail-burn-button"
+              style={[styles.secondaryButtonContent, !canSignAccount && styles.buttonDisabled]}
+              onPress={handleOpenBurnStep}
+              disabled={!canSignAccount}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={t('nft.burn.reviewTitle', 'Burn NFT')}
+              accessibilityHint={t(
+                'nft.burn.reviewBody',
+                'This action is irreversible. Confirm only if you want to permanently burn this NFT.'
+              )}
+            >
+              <FireIcon weight="fill" size={ms(18)} color={semantic.status.danger} />
+              <Text style={[styles.buttonText, styles.burnButtonText]}>
+                {t('nft.burn_nft', 'Burn')}
+              </Text>
+            </TouchableOpacity>
+          </BlurContainer>
+        </View>
+      )}
     </ScrollView>
   );
 
@@ -1174,6 +1192,13 @@ const styles = StyleSheet.create({
     gap: s(spacing.sm),
     paddingHorizontal: s(spacing.lg),
     borderRadius: ms(borderRadius.button),
+  },
+  // The one disabled treatment for every action in this sheet. Send used to be
+  // the only control that dimmed, so Burn could carry `disabled` and still read
+  // as live — a control that looks pressable and answers nothing. Anything that
+  // takes `disabled` here takes this too.
+  buttonDisabled: {
+    opacity: 0.45,
   },
   primaryButtonDisabled: {
     opacity: 0.45,

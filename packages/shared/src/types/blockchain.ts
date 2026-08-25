@@ -9,7 +9,7 @@
  * @module types/blockchain
  */
 
-import type { SolanaAccount } from '../blockchain/solana';
+import type { SolanaAccount, WatchOnlySolanaAccount } from '../blockchain/solana';
 import type { BitcoinAccount } from '../blockchain/bitcoin';
 import type { EthereumAccount } from '../blockchain/ethereum';
 import type { NetworkCapabilities } from './settings';
@@ -29,7 +29,8 @@ export type BlockchainType = 'solana' | 'bitcoin' | 'ethereum';
  *
  * Previously duplicated in useAccounts and useBalance.
  */
-export type BlockchainAccount = SolanaAccount | BitcoinAccount | EthereumAccount;
+export type BlockchainAccount =
+  SolanaAccount | WatchOnlySolanaAccount | BitcoinAccount | EthereumAccount;
 
 /**
  * Union type for all supported network configurations.

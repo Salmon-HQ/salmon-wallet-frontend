@@ -112,6 +112,7 @@ jest.mock('@salmon/shared', () => ({
     loadMore: jest.fn(),
     refresh: jest.fn(),
   }),
+  isWatchOnlyAccount: () => false,
 }));
 
 jest.mock('../src/components', () => {

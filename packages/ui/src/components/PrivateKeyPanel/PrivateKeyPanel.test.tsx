@@ -43,6 +43,9 @@ vi.mock('@salmon/shared', async () => ({
               path: "m/44'/501'/0'/0'",
               getReceiveAddress: () => FAKE_ADDRESS,
               retrieveSecurePrivateKey: () => FAKE_PRIVATE_KEY,
+              // getAccountKeysForNetwork skips accounts that cannot sign, so
+              // the mock has to declare it the way a real SolanaAccount does.
+              canSign: true as const,
             },
           ],
         },

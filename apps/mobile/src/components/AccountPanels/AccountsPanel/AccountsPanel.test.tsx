@@ -20,10 +20,11 @@ jest.mock('@salmon/shared', () => ({
     accent: { ink: SALMON },
     state: { selectedEdge: SALMON },
     border: { default: '#58637B' },
+    surface: { raised: '#161C2D' },
   },
-  colors: { background: { card: '#111' } },
+  colors: { background: { card: '#111' }, text: { secondary: '#A7B1C4' } },
   spacing: { xxs: 2, xs: 4, sm: 8, md: 12 },
-  borderRadius: { r1: 4, r3: 12, full: 9999 },
+  borderRadius: { sm: 8, r1: 4, r3: 12, full: 9999 },
   borderWidth: { thin: 1 },
   fontSize: { caption: 12, mono: 13, bodyLg: 16 },
   lineHeight: { none: 1, snug: 1.4, normal: 1.5 },
@@ -33,6 +34,7 @@ jest.mock('@salmon/shared', () => ({
   getInitials: (name: string) => name.slice(0, 2),
   getAccountAddress: () => '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
   getShortAddress: (address: string) => `${address.slice(0, 4)}...${address.slice(-4)}`,
+  isWatchOnlyAccount: () => false,
 }));
 
 jest.mock('expo-image', () => {

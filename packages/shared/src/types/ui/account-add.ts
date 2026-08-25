@@ -6,6 +6,7 @@ export type AccountAddStep =
   | 'derive-scan'
   | 'import-seed'
   | 'import-private-key'
+  | 'import-watch-only'
   | 'set-name'
   /** Vault key expired mid-flow; the password is asked for on its own screen. */
   | 'reauth'

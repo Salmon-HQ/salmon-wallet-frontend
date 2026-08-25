@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef } from 'react';
+import { isSignableAccount } from '@salmon/shared/utils/account';
 import { styled } from '@salmon/ui';
 import Box from '@mui/material/Box';
 import {
@@ -295,7 +296,12 @@ export function SwapTab({
       tokenAddress: string,
       amount: number
     ): Promise<{ txId: string }> => {
-      if (!activeBlockchainAccount) return { txId: '' };
+      // The bridge deposit is an ordinary transfer, so it needs a key like any
+      // send does. A watch-only wallet never reaches the swap tab, but this is
+      // the last thing before the chain.
+      if (!activeBlockchainAccount || !isSignableAccount(activeBlockchainAccount)) {
+        return { txId: '' };
+      }
       return activeBlockchainAccount.transfer(depositAddress, tokenAddress, amount);
     },
     [activeBlockchainAccount]

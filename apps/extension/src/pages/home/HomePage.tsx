@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {
   useAccountsContext,
+  isWatchOnlyAccount,
   useAvailableNetworks,
   useBalance,
   useUserConfig,
@@ -57,7 +58,7 @@ import {
   usePrefetchBalances,
   useNftBurn,
 } from '@salmon/shared';
-import { isSolanaAccount } from '@salmon/shared/utils/account';
+import { isSignableSolanaAccount } from '@salmon/shared/utils/account';
 import { sessionArea } from '../../utils/storageCompat';
 import {
   WalletHeader,
@@ -146,6 +147,22 @@ const Container = styled(Box)({
   flexDirection: 'column',
   height: '100vh',
   backgroundColor: colors.background.primary,
+});
+
+/**
+ * The single line that explains every refusal on this screen. Quiet on
+ * purpose: it states why the controls are closed, it is not an alarm.
+ */
+const WatchOnlyNotice = styled(Box)({
+  color: semantic.text.secondary,
+  fontSize: fontSize.caption,
+  textAlign: 'center',
+  marginTop: `-${spacing.lg}px`,
+  marginBottom: `${spacing['2xl']}px`,
+  paddingLeft: `${spacing.lg}px`,
+  paddingRight: `${spacing.lg}px`,
+  position: 'relative',
+  zIndex: 1,
 });
 
 const Main = styled(Box)({
@@ -500,6 +517,16 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
   const [selectedTokenChartPeriod, setSelectedTokenChartPeriod] = useState<PriceChartPeriod>('1M');
 
   // NFT detail page state
+  // A watch-only wallet holds no key, so every flow that spends is closed to
+  // it. The refusal is enforced in shared; this only keeps the UI honest.
+  const isWatchOnly = isWatchOnlyAccount(activeAccount);
+
+  // Switching to a watch-only wallet while standing on Swap would leave the
+  // tab gone and its screen still mounted. Send the user home instead.
+  useEffect(() => {
+    if (isWatchOnly && activeTab === 'swap') setActiveTab('home');
+  }, [isWatchOnly, activeTab, setActiveTab]);
+
   const [selectedNft, setSelectedNft] = useState<NftData | null>(null);
   const collectibleSolanaAccount = useMemo(() => {
     const networksAccounts = activeAccount?.networksAccounts;
@@ -508,14 +535,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
     const preferredNetworkIds = ['solana-mainnet', 'solana-devnet'] as const;
     for (const preferredNetworkId of preferredNetworkIds) {
       const account = networksAccounts[preferredNetworkId]?.[0];
-      if (account && isSolanaAccount(account)) {
+      if (account && isSignableSolanaAccount(account)) {
         return account;
       }
     }
 
     for (const accounts of Object.values(networksAccounts)) {
       for (const account of accounts ?? []) {
-        if (account && isSolanaAccount(account)) {
+        if (account && isSignableSolanaAccount(account)) {
           return account;
         }
       }
@@ -1276,6 +1303,7 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                 onBack={handleNftDetailBack}
                 onSendPress={handleNftSendPress}
                 onBurnPress={handleNftBurnPress}
+                actionsUnavailable={isWatchOnly}
                 burnStep={burnStep}
                 burnPreview={burnPreview}
                 burnPreparing={burnLoading}
@@ -1399,14 +1427,18 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           >
             {t('tabs.collectibles', 'Collectibles')}
           </TabButton>
-          <TabButton
-            active={activeTab === 'swap'}
-            onClick={() => setActiveTab('swap')}
-            disabled={flowLocked}
-            data-testid="tab-swap"
-          >
-            {t('tabs.swap', 'Swap')}
-          </TabButton>
+          {/* Gone, not greyed: a watch-only wallet can never swap or bridge,
+              so the tab is not a door that happens to be locked. */}
+          {!isWatchOnly && (
+            <TabButton
+              active={activeTab === 'swap'}
+              onClick={() => setActiveTab('swap')}
+              disabled={flowLocked}
+              data-testid="tab-swap"
+            >
+              {t('tabs.swap', 'Swap')}
+            </TabButton>
+          )}
         </TabBar>
       )}
 
@@ -1437,8 +1469,17 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
                 onSendPress={handleSendPress}
                 onReceivePress={handleReceivePress}
                 onActivityPress={handleActivityPress}
+                sendDisabled={isWatchOnly}
                 style={{ marginTop: spacing['2xl'], marginBottom: spacing['2xl'] }}
               />
+
+              {/* One explanation for every refusal on this screen, rather than
+                  a tooltip per control the user has to go hunting for. */}
+              {isWatchOnly && (
+                <WatchOnlyNotice data-testid="home-watch-only-notice">
+                  {t('wallet.watchOnly.disabled_action')}
+                </WatchOnlyNotice>
+              )}
 
               {/* Partial-load failure: keep whatever data loaded visible;
                   retry is the header refresh button. */}

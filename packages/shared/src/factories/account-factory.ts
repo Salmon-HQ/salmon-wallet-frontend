@@ -17,6 +17,7 @@ import {
   generateAccountId,
   createBlockchainAccountForNetwork,
   createBlockchainAccountFromPrivateKey,
+  createBlockchainAccountForWatchOnly,
 } from '../utils/account';
 import type {
   Account,
@@ -25,6 +26,7 @@ import type {
   CreateAccountOptions,
   CreateAccountResult,
   ImportAccountOptions,
+  ImportWatchOnlyOptions,
 } from '../types/account';
 import type { BlockchainAccount } from '../types/blockchain';
 
@@ -152,6 +154,53 @@ export async function importAccountFromPrivateKey(
     secret: { kind: 'privateKey', privateKey, networkId },
     // Index 0 is the only slot an imported key occupies; it is not a
     // derivation index, just the position the rest of the app indexes by.
+    pathIndexes: { [networkId]: [0] },
+    networksAccounts,
+  };
+
+  return { account, blockchainAccounts: networksAccounts };
+}
+
+/**
+ * Imports a watch-only account from a public Solana address.
+ *
+ * The account carries an explicit `watchOnly` secret rather than no vault row
+ * at all. That is not bookkeeping: `toAccountSecret` reads a missing row as a
+ * mnemonic, so an account without one would be restored as a mnemonic account
+ * with an empty phrase on every unlock.
+ *
+ * @param options - Watch-only import options
+ * @returns The account and its blockchain accounts
+ *
+ * @example
+ * ```typescript
+ * const { account } = await importWatchOnlyAccount({
+ *   name: 'Watched',
+ *   address: '9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin',
+ * });
+ * ```
+ */
+export async function importWatchOnlyAccount(
+  options: ImportWatchOnlyOptions
+): Promise<CreateAccountResult> {
+  const {
+    id = generateAccountId(),
+    name,
+    avatar = getRandomAvatar(),
+    address,
+    networkId = 'solana-mainnet',
+  } = options;
+
+  const blockchainAccount = await createBlockchainAccountForWatchOnly(networkId, address);
+
+  const networksAccounts: NetworksAccounts = { [networkId]: [blockchainAccount] };
+
+  const account: Account = {
+    id,
+    name,
+    avatar,
+    secret: { kind: 'watchOnly', address, networkId },
+    // Index 0 is the only slot a watched address occupies; nothing was derived.
     pathIndexes: { [networkId]: [0] },
     networksAccounts,
   };

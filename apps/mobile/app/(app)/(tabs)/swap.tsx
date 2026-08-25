@@ -32,6 +32,7 @@ import {
   useJupiterTokenList,
   useMultiChainTokens,
   useSwap,
+  isSignableAccount,
   type SwapQuote as SharedSwapQuote,
   type SolanaAccount,
   type SwapNetworkId,
@@ -353,6 +354,12 @@ export default function SwapScreenPage() {
       amount: number
     ): Promise<{ txId: string }> => {
       if (!activeBlockchainAccount) throw new Error('swap.errors.noActiveAccount');
+      // The bridge deposit is an ordinary transfer, so it needs a key like any
+      // send does. A watch-only wallet never reaches the swap tab, but this is
+      // the last thing before the chain.
+      if (!isSignableAccount(activeBlockchainAccount)) {
+        throw new Error('swap.errors.noActiveAccount');
+      }
       return activeBlockchainAccount.transfer(depositAddress, tokenAddress, amount);
     },
     [activeBlockchainAccount]

@@ -13,6 +13,8 @@ import {
   borderWidth,
   gradients,
   semantic,
+  isWatchOnlyAccount,
+  useAccountsContext,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
@@ -139,10 +141,18 @@ export function GlassTabBar({ state, descriptors: _descriptors, navigation }: Bo
     transform: [{ translateY: sunk.value * SINK_FLOAT_TRAVEL }],
   }));
 
+  // A watch-only wallet cannot swap or bridge, so the tab is gone rather than
+  // greyed. This bar builds its own list from TAB_ORDER and never reads the
+  // navigator's `href`, so hiding the route in the layout is not enough.
+  const [{ activeAccount }] = useAccountsContext();
+  const tabOrder = isWatchOnlyAccount(activeAccount)
+    ? TAB_ORDER.filter((tabName) => tabName !== 'swap')
+    : TAB_ORDER;
+
   // Filter and order routes to only show Home, Collectibles, and Swap
-  const visibleRoutes = TAB_ORDER.map((tabName) =>
-    state.routes.find((route) => route.name === tabName)
-  ).filter((route): route is (typeof state.routes)[0] => route !== undefined);
+  const visibleRoutes = tabOrder
+    .map((tabName) => state.routes.find((route) => route.name === tabName))
+    .filter((route): route is (typeof state.routes)[0] => route !== undefined);
 
   return (
     <Animated.View

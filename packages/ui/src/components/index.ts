@@ -85,6 +85,10 @@ export type {
   PanelRegistry,
 } from './SettingsPanelStack';
 
+// WatchOnlyBadge - Marks a wallet that can be read but not operated
+export { WatchOnlyBadge } from './WatchOnlyBadge';
+export type { WatchOnlyBadgeProps } from './WatchOnlyBadge';
+
 // WalletSwitcherSheet - Account selection dialog
 export { WalletSwitcherSheet } from './WalletSwitcherSheet';
 export type { AccountListItemProps, WalletSwitcherSheetProps } from './WalletSwitcherSheet';

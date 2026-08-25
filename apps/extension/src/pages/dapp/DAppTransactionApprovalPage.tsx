@@ -8,7 +8,7 @@ import {
   type BlockchainAccount,
   type DAppTransactionRequest,
 } from '@salmon/shared';
-import { isSolanaAccount } from '@salmon/shared/utils/account';
+import { isSignableSolanaAccount } from '@salmon/shared/utils/account';
 
 interface Props {
   origin: string;
@@ -28,7 +28,7 @@ export function DAppTransactionApprovalPage({
   const [loading, setLoading] = useState(false);
   const { metadata } = useDAppMetadata(origin);
   const solanaAccount = useMemo(
-    () => (account && isSolanaAccount(account) ? account : null),
+    () => (account && isSignableSolanaAccount(account) ? account : null),
     [account]
   );
   const { details, feeSol, parsingError, effects, effectsLoading } = useSolanaTransactionApproval({
@@ -57,7 +57,7 @@ export function DAppTransactionApprovalPage({
   }, [onDismiss, sendToBackground]);
 
   const handleApprove = useCallback(async () => {
-    if (!account || !isSolanaAccount(account)) {
+    if (!account || !isSignableSolanaAccount(account)) {
       sendToBackground({ error: 'Solana account not available' });
       onDismiss(false);
       return;

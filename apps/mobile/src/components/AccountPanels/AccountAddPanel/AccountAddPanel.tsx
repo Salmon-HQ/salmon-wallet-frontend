@@ -17,7 +17,14 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { CaretRightIcon, FileTextIcon, KeyIcon, TreeStructureIcon, iconSize } from '../../../icons';
+import {
+  CaretRightIcon,
+  EyeIcon,
+  FileTextIcon,
+  KeyIcon,
+  TreeStructureIcon,
+  iconSize,
+} from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -34,8 +41,10 @@ import {
   normalizeMnemonic,
   createAccount,
   importAccountFromPrivateKey,
+  importWatchOnlyAccount,
   isVaultKeyCached,
   useImportPrivateKey,
+  useImportWatchOnly,
   getAccountMnemonic,
   getShortAddress,
   getScanNetworks,
@@ -130,6 +139,8 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
 
   // Private-key import state (shared with web via the same hook)
   const privateKeyImport = useImportPrivateKey({ accounts });
+  // Watch-only import state (shared with web via the same hook)
+  const watchOnlyImport = useImportWatchOnly({ accounts });
 
   // ========================================================================
   // Step handlers
@@ -173,6 +184,17 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     setAccountName(defaultName);
     setStep('set-name');
   }, [privateKeyImport, defaultName]);
+
+  const handleSelectImportWatchOnly = useCallback(() => {
+    watchOnlyImport.reset();
+    setStep('import-watch-only');
+  }, [watchOnlyImport]);
+
+  const handleWatchOnlySubmit = useCallback(() => {
+    if (!watchOnlyImport.validate()) return;
+    setAccountName(defaultName);
+    setStep('set-name');
+  }, [watchOnlyImport, defaultName]);
 
   const handleDerivedSelect = useCallback((account: DerivedAccountInfo) => {
     setSelectedDerived((prev) => (prev?.address === account.address ? null : account));
@@ -223,12 +245,13 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       // The key has done its job; drop it from component state rather than
       // leaving it resident until the panel happens to unmount.
       privateKeyImport.reset();
+      watchOnlyImport.reset();
       // Parked, not fired: dropping `loading` starts the wait's exit, and
       // `handleWaitExited` completes once the last wave has left the screen.
       pendingCompleteRef.current = true;
       setLoading(false);
     },
-    [accountActions, selectedDerived, privateKeyImport]
+    [accountActions, selectedDerived, privateKeyImport, watchOnlyImport]
   );
 
   /**
@@ -240,19 +263,36 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     const name = accountName.trim() || defaultName;
     // A private key owns one address and derives nothing, so it takes the
     // import factory instead of the mnemonic fan-out across networks.
-    return privateKeyImport.privateKey
-      ? importAccountFromPrivateKey({
-          name,
-          privateKey: privateKeyImport.privateKey,
-          networkId: privateKeyImport.networkId,
-        })
-      : createAccount({
-          name,
-          mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
-          networkIds: await getScanNetworks(),
-          startIndex: selectedDerived ? selectedDerived.index : 0,
-        });
-  }, [accountName, defaultName, privateKeyImport, selectedDerived, activeAccount, seedPhrase]);
+    if (privateKeyImport.privateKey) {
+      return importAccountFromPrivateKey({
+        name,
+        privateKey: privateKeyImport.privateKey,
+        networkId: privateKeyImport.networkId,
+      });
+    }
+    // A watched address derives nothing either, and has no key to import.
+    if (watchOnlyImport.address) {
+      return importWatchOnlyAccount({
+        name,
+        address: watchOnlyImport.address,
+        networkId: watchOnlyImport.networkId,
+      });
+    }
+    return createAccount({
+      name,
+      mnemonic: selectedDerived ? (getAccountMnemonic(activeAccount) ?? '') : seedPhrase,
+      networkIds: await getScanNetworks(),
+      startIndex: selectedDerived ? selectedDerived.index : 0,
+    });
+  }, [
+    accountName,
+    defaultName,
+    privateKeyImport,
+    watchOnlyImport,
+    selectedDerived,
+    activeAccount,
+    seedPhrase,
+  ]);
 
   const reportFailure = useCallback(
     (err: unknown) => {
@@ -341,14 +381,21 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     if (step === 'set-name') {
       if (selectedDerived) setStep('derive-scan');
       else if (privateKeyImport.privateKey) setStep('import-private-key');
+      else if (watchOnlyImport.address) setStep('import-watch-only');
       else setStep('import-seed');
-    } else if (step === 'derive-scan' || step === 'import-seed' || step === 'import-private-key') {
+    } else if (
+      step === 'derive-scan' ||
+      step === 'import-seed' ||
+      step === 'import-private-key' ||
+      step === 'import-watch-only'
+    ) {
       if (step === 'import-private-key') privateKeyImport.reset();
+      if (step === 'import-watch-only') watchOnlyImport.reset();
       setStep('select-method');
     } else {
       onBack();
     }
-  }, [step, selectedDerived, privateKeyImport, onBack]);
+  }, [step, selectedDerived, privateKeyImport, watchOnlyImport, onBack]);
 
   // ========================================================================
   // Render helpers
@@ -408,6 +455,25 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
           <Text style={styles.methodTitle}>{t('settings.account_add.import_private_key')}</Text>
           <Text style={styles.methodDescription}>
             {t('settings.account_add.import_private_key_description')}
+          </Text>
+        </View>
+        <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        testID="account-add-method-watch-only"
+        accessibilityRole="button"
+        style={styles.methodCard}
+        onPress={handleSelectImportWatchOnly}
+        activeOpacity={0.7}
+      >
+        <View style={styles.methodIcon}>
+          <EyeIcon size={iconSize.xl} color={semantic.accent.ink} />
+        </View>
+        <View style={styles.methodInfo}>
+          <Text style={styles.methodTitle}>{t('settings.account_add.import_watch_only')}</Text>
+          <Text style={styles.methodDescription}>
+            {t('settings.account_add.import_watch_only_description')}
           </Text>
         </View>
         <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
@@ -533,6 +599,48 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     </View>
   );
 
+  const renderImportWatchOnly = () => (
+    <View>
+      {/* No warning notice and no masked field: an address is public. The
+          private-key step's PasswordInput would imply otherwise. */}
+      <Text style={styles.inputLabel}>{t('wallet.watchOnly.label')}</Text>
+      <TextInput
+        testID="account-add-watch-only-input"
+        style={styles.input}
+        value={watchOnlyImport.value}
+        onChangeText={watchOnlyImport.setValue}
+        placeholder={t('wallet.watchOnly.placeholder')}
+        placeholderTextColor={semantic.text.tertiary}
+        autoFocus
+        returnKeyType="done"
+        onSubmitEditing={handleWatchOnlySubmit}
+      />
+      {/* One slot under the field: the hint stands where the error will
+          stand, so the layout does not shift when a message replaces it. */}
+      <Text
+        testID="account-add-watch-only-message"
+        style={watchOnlyImport.error ? styles.errorText : styles.inputHint}
+      >
+        {watchOnlyImport.error ? t(watchOnlyImport.error) : t('wallet.watchOnly.help')}
+      </Text>
+      {watchOnlyImport.address && (
+        <View style={styles.resolvedAddress} testID="account-add-watch-only-address">
+          <Text style={styles.methodDescription}>{t('wallet.watchOnly.resolved_address')}</Text>
+          <Text style={styles.methodTitle}>{getShortAddress(watchOnlyImport.address)}</Text>
+        </View>
+      )}
+      <View style={styles.buttonContainer}>
+        <PrimaryButton
+          onPress={handleWatchOnlySubmit}
+          disabled={!watchOnlyImport.hasInput}
+          testID="account-add-watch-only-continue-button"
+        >
+          {t('actions.continue')}
+        </PrimaryButton>
+      </View>
+    </View>
+  );
+
   const renderReauth = () => (
     <View>
       <Text style={styles.methodDescription}>{t('settings.account_add.reauth_body')}</Text>
@@ -593,6 +701,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     'derive-scan': t('settings.account_add.create_new'),
     'import-seed': t('settings.account_add.import_seed'),
     'import-private-key': t('wallet.import.title'),
+    'import-watch-only': t('wallet.watchOnly.title'),
     'set-name': t('settings.account_add.set_name'),
     reauth: t('settings.account_add.reauth_title'),
     complete: t('settings.account_add.title'),
@@ -624,6 +733,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         {step === 'derive-scan' && renderDeriveScan()}
         {step === 'import-seed' && renderImportSeed()}
         {step === 'import-private-key' && renderImportPrivateKey()}
+        {step === 'import-watch-only' && renderImportWatchOnly()}
         {step === 'set-name' && renderSetName()}
         {step === 'reauth' && renderReauth()}
       </SettingsScreenLayout>
