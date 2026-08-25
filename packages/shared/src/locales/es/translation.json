@@ -898,7 +898,9 @@
     "developer_banner": "Modo Desarrollador - Mostrando NFTs de testnet",
     "load_error": "Tus coleccionables no se pudieron cargar en este momento.",
     "loading": "Cargando tus coleccionables…",
-    "partial_error": "Algunos de tus coleccionables no se pudieron cargar. Deslizá para reintentar."
+    "partial_error": "Algunos de tus coleccionables no se pudieron cargar. Deslizá para reintentar.",
+    "hidden_one": "{{count}} coleccionable oculto por spam. Activá el Modo Desarrollador en Configuración para verlo.",
+    "hidden_other": "{{count}} coleccionables ocultos por spam. Activá el Modo Desarrollador en Configuración para verlos."
   },
   "common": {
     "cancel": "Cancelar",

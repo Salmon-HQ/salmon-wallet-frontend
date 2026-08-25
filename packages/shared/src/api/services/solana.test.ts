@@ -301,6 +301,8 @@ describe('solana service', () => {
     mockGetSolanaNfts.mockResolvedValueOnce({
       nfts: [{ mint: { address: 'nft-1' } }],
       partial: false,
+      hiddenSpam: 0,
+      hiddenWithoutMedia: 0,
     } as never);
 
     await expect(

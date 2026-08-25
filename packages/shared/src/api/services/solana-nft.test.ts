@@ -132,6 +132,54 @@ describe('solana-nft service', () => {
     expect(partial).toBe(true);
   });
 
+  it('counts what the backend withheld and what this client dropped', async () => {
+    // The arithmetic has to close against the screen. On the spam wallet the
+    // backend withholds 940 of 1000 and sends 77, of which 51 carry no image —
+    // so 26 render. Reporting only the backend's number strands the other 51.
+    mockApiClientGet.mockResolvedValueOnce({
+      data: {
+        data: [
+          { mint: 'Mint111', owner: 'Owner111', media: 'https://example.com/a.png' },
+          { mint: 'Mint222', owner: 'Owner111', media: null },
+        ],
+        pagination: {
+          total: 100,
+          limit: 100,
+          offset: 0,
+          hasMore: false,
+          nextOffset: null,
+          hidden: { spam: 94, fungible: 3 },
+        },
+      },
+    });
+
+    const { nfts, hiddenSpam, hiddenWithoutMedia } = await getSolanaNfts(
+      'solana-mainnet',
+      'Owner111',
+      false
+    );
+
+    expect(nfts).toHaveLength(1);
+    expect(hiddenSpam).toBe(94);
+    expect(hiddenWithoutMedia).toBe(1);
+  });
+
+  it('reports nothing hidden when the backend sends no hidden block', async () => {
+    // Older backends, and the array-shaped response, carry no pagination at all.
+    mockApiClientGet.mockResolvedValueOnce(
+      page(['Mint111'], { total: 1, limit: 100, offset: 0, hasMore: false, nextOffset: null })
+    );
+
+    const { hiddenSpam, hiddenWithoutMedia } = await getSolanaNfts(
+      'solana-mainnet',
+      'Owner111',
+      false
+    );
+
+    expect(hiddenSpam).toBe(0);
+    expect(hiddenWithoutMedia).toBe(0);
+  });
+
   it('throws when the very first page fails, instead of returning an empty list', async () => {
     // Nothing arrived, so there is nothing to show. An empty list here would
     // render as "you own no NFTs", which is the lie the error state exists to

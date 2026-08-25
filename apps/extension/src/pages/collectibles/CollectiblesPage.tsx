@@ -54,6 +54,15 @@ const Container = styled(Box)({
   gap: spacing.lg,
 });
 
+const HiddenNotice = styled(Typography)({
+  fontSize: 13,
+  color: colors.text.secondary,
+  fontFamily: fontFamily.sans,
+  paddingLeft: `${spacing.lg}px`,
+  paddingRight: `${spacing.lg}px`,
+  marginBottom: `${spacing.md}px`,
+});
+
 const EmptyState = styled(Box)({
   padding: `${spacing.xl}px ${spacing.lg}px`,
   textAlign: 'center',
@@ -159,6 +168,9 @@ export function CollectiblesPage({
   // Some pages arrived and a later one did not. The list renders, but it is
   // short, and saying so is the difference between resilient and quietly wrong.
   const partialLoad = mainnetQuery.partial || (developerNetworks && devnetQuery.partial);
+  // What the wallet holds but this screen is not showing. Only mainnet: the
+  // devnet section exists solely in developer mode, where nothing is hidden.
+  const hiddenCount = developerNetworks ? 0 : mainnetQuery.hiddenCount;
   // A failed load is not "you have no collectibles" — the error state owns it.
   const isEmpty =
     !isLoading && !loadError && visibleKeys.every((key) => nftsBySections[key].nfts.length === 0);
@@ -231,6 +243,14 @@ export function CollectiblesPage({
       )}
 
       {/* Empty state */}
+      {/* What the wallet holds and this screen is not showing. Without it a
+          wallet of 1000 shows 26 and reads as loss, not filtering. */}
+      {hiddenCount > 0 && (
+        <HiddenNotice data-testid="collectibles-hidden-count">
+          {t('collectibles.hidden', { count: hiddenCount })}
+        </HiddenNotice>
+      )}
+
       {isEmpty && (
         <EmptyState data-testid="collectibles-empty">
           <EmptyStateText>{t('collectibles.empty', 'No collectibles found')}</EmptyStateText>

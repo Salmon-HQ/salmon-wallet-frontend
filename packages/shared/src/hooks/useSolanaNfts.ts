@@ -49,6 +49,11 @@ export interface UseSolanaNftsResult {
    * partial list is worth showing, it just must not be presented as complete.
    */
   partial: boolean;
+  /**
+   * How many NFTs were withheld from this list, spam and image-less together.
+   * Zero while developer mode is on, because then nothing is withheld.
+   */
+  hiddenCount: number;
   /** Error message if the fetch failed */
   error: string | null;
   /** Whether an error occurred */
@@ -83,6 +88,7 @@ export function useSolanaNfts(params: UseSolanaNftsParams): UseSolanaNftsResult 
     refreshing: query.isFetching && !query.isPending,
     hasData: query.data !== undefined,
     partial: query.data?.partial ?? false,
+    hiddenCount: (query.data?.hiddenSpam ?? 0) + (query.data?.hiddenWithoutMedia ?? 0),
     error: query.error?.message ?? null,
     isError: query.isError,
     refresh: () => query.refetch().then(() => undefined),
