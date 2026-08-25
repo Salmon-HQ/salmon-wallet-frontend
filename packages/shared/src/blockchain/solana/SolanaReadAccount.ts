@@ -1,9 +1,4 @@
-import {
-  address,
-  createSolanaRpc,
-  createSolanaRpcSubscriptions,
-  isAddress,
-} from '@solana/kit';
+import { address, createSolanaRpc, createSolanaRpcSubscriptions, isAddress } from '@solana/kit';
 import type { Address, Commitment } from '@solana/kit';
 import {
   SOLANA_NETWORKS,

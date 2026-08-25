@@ -29,8 +29,7 @@ export type PublicKeyErrorReason =
   | 'wallet.watchOnly.errors.looksLikeSecret';
 
 export type ParsePublicKeyResult =
-  | { ok: true; address: string }
-  | { ok: false; reason: PublicKeyErrorReason };
+  { ok: true; address: string } | { ok: false; reason: PublicKeyErrorReason };
 
 /**
  * A base58 string long enough to be a 64-byte secret key rather than a

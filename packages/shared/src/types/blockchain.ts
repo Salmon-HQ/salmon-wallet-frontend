@@ -30,10 +30,7 @@ export type BlockchainType = 'solana' | 'bitcoin' | 'ethereum';
  * Previously duplicated in useAccounts and useBalance.
  */
 export type BlockchainAccount =
-  | SolanaAccount
-  | WatchOnlySolanaAccount
-  | BitcoinAccount
-  | EthereumAccount;
+  SolanaAccount | WatchOnlySolanaAccount | BitcoinAccount | EthereumAccount;
 
 /**
  * Union type for all supported network configurations.

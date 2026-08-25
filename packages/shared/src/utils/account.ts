@@ -93,7 +93,11 @@ export function isSolanaAccount(
  * access to read balances at all.
  */
 export function isSignableSolanaAccount(account: BlockchainAccount): account is SolanaAccount {
-  return getAccountBlockchainType(account) === 'solana' && 'canSign' in account && account.canSign === true;
+  return (
+    getAccountBlockchainType(account) === 'solana' &&
+    'canSign' in account &&
+    account.canSign === true
+  );
 }
 
 /**
