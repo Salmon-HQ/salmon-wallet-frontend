@@ -21,6 +21,10 @@ jest.mock('@salmon/shared', () => ({
   s: (value: number) => value,
   vs: (value: number) => value,
   ms: (value: number) => value,
+  // The bar drops the swap tab for a watch-only wallet, so it now reads the
+  // active account. These cases are about the membrane and the labels.
+  useAccountsContext: () => [{ activeAccount: null }],
+  isWatchOnlyAccount: () => mockIsWatchOnly,
 }));
 
 jest.mock('react-i18next', () => ({
@@ -68,6 +72,9 @@ jest.mock('../../../hooks/useTabChrome', () => ({
 }));
 
 import { GlassTabBar } from './GlassTabBar.native';
+
+// Flipped per test; the mock factory above closes over it.
+let mockIsWatchOnly = false;
 
 const navigationState = {
   index: 0,
@@ -162,5 +169,28 @@ describe('GlassTabBar labels', () => {
 
     const inactive = StyleSheet.flatten(getByText('Swap').props.style);
     expect(inactive.color).toBe(semantic.text.secondary);
+  });
+});
+
+describe('GlassTabBar watch-only wallet', () => {
+  afterEach(() => {
+    mockIsWatchOnly = false;
+  });
+
+  it('drops the swap tab, because a watch-only wallet can never swap or bridge', () => {
+    // This bar builds its own list from TAB_ORDER and never reads the
+    // navigator's `href`, so hiding the route in the layout does not reach it.
+    mockIsWatchOnly = true;
+    const { queryByText, getByText } = render(<GlassTabBar {...props} />);
+
+    expect(queryByText('Swap')).toBeNull();
+    expect(getByText('Home')).toBeTruthy();
+    expect(getByText('Collectibles')).toBeTruthy();
+  });
+
+  it('keeps the swap tab for a wallet that holds its key', () => {
+    const { getByText } = render(<GlassTabBar {...props} />);
+
+    expect(getByText('Swap')).toBeTruthy();
   });
 });
