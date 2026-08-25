@@ -94,6 +94,7 @@ jest.mock('@salmon/shared', () => ({
   opacity: {
     disabled: 0.5,
   },
+  isWatchOnlyAccount: () => false,
 }));
 
 import { WalletSwitcherSheet } from './WalletSwitcherSheet';

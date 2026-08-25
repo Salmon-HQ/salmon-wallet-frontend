@@ -25,11 +25,13 @@ import {
   getShortAddress,
   getInitials,
   getAccountAddress,
+  isWatchOnlyAccount,
   type Account,
   semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { ConfirmSheet } from '../../ConfirmSheet';
+import { WatchOnlyBadge } from '../../WatchOnlyBadge';
 import type { AccountsPanelProps } from './types';
 
 // ============================================================================
@@ -91,11 +93,16 @@ function AccountListItem({
         <Text style={styles.accountName} numberOfLines={1}>
           {account.name}
         </Text>
-        {truncatedAddress ? (
-          <Text style={styles.accountAddress} numberOfLines={1}>
-            {truncatedAddress}
-          </Text>
-        ) : null}
+        <View style={styles.accountAddressRow}>
+          {truncatedAddress ? (
+            <Text style={styles.accountAddress} numberOfLines={1}>
+              {truncatedAddress}
+            </Text>
+          ) : null}
+          {isWatchOnlyAccount(account) && (
+            <WatchOnlyBadge testID={`account-item-watch-only-${account.id}`} />
+          )}
+        </View>
       </View>
 
       {/* Action Buttons */}
@@ -265,13 +272,19 @@ const styles = StyleSheet.create({
     fontSize: fontSize.bodyLg,
     lineHeight: fontSize.bodyLg * lineHeight.normal,
   },
+  accountAddressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xxs,
+  },
   accountAddress: {
     color: semantic.text.secondary,
     // An address is position-critical, so it reads in mono at the mono step.
     fontFamily: fontFamilyNative.mono,
     fontSize: fontSize.mono,
     lineHeight: fontSize.mono * lineHeight.snug,
-    marginTop: spacing.xxs,
+    flexShrink: 1,
   },
   actionButtons: {
     flexDirection: 'row',

@@ -328,6 +328,9 @@ export { SupportSelector } from './SupportSelector';
 export { AccountsPanel } from './AccountPanels/AccountsPanel';
 export type { AccountsPanelProps } from './AccountPanels/AccountsPanel';
 
+export { WatchOnlyBadge } from './WatchOnlyBadge';
+export type { WatchOnlyBadgeProps } from './WatchOnlyBadge';
+
 export { AccountEditPanel } from './AccountPanels/AccountEditPanel';
 export type { AccountEditPanelProps } from './AccountPanels/AccountEditPanel';
 

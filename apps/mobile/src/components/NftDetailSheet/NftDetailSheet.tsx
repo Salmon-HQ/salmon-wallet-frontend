@@ -34,6 +34,7 @@ import {
   s,
   isSolanaNft,
   isBitcoinNft,
+  isSignableAccount,
   getSatRarityColor,
   getShortAddress,
   borderWidth,
@@ -465,8 +466,13 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           : step === 'detail'
             ? detailHeaderContent
             : undefined;
-  const canConfirmSend = addressValid && !sending && nft?.blockchain !== 'bitcoin';
-  const canConfirmBurn = !burnPreparing && !burnError && !!burnPreview;
+  // A watch-only account reads like any other but cannot sign — see
+  // `isSignableAccount`. Every send/burn trigger, entry and confirm alike,
+  // must refuse for it.
+  const canSignAccount = !!account && isSignableAccount(account);
+  const canConfirmSend =
+    addressValid && !sending && nft?.blockchain !== 'bitcoin' && canSignAccount;
+  const canConfirmBurn = !burnPreparing && !burnError && !!burnPreview && canSignAccount;
   const lutInfo = burnPreview?.lookupTable;
   const burnBusyLabel = burnPreview
     ? t('nft.burn.submitting', 'Burning NFT...')
@@ -535,6 +541,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
           testID="nft-detail-send-button"
           style={styles.buttonWrapper}
           onPress={handleOpenSendStep}
+          disabled={!canSignAccount}
           activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel={t('nft.send.title', 'Send NFT')}
@@ -543,7 +550,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             colors={[...gradients.primaryButton.colors]}
             start={gradients.primaryButton.start}
             end={gradients.primaryButton.end}
-            style={styles.primaryButton}
+            style={[styles.primaryButton, !canSignAccount && styles.primaryButtonDisabled]}
           >
             {/* The flesh: the myosepta of a cut fillet, pressed into the salmon
                 fill. Every band is paler than the fill, so it can only raise
@@ -570,6 +577,7 @@ export const NftDetailSheet: React.FC<NftDetailSheetProps> = ({
             testID="nft-detail-burn-button"
             style={styles.secondaryButtonContent}
             onPress={handleOpenBurnStep}
+            disabled={!canSignAccount}
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel={t('nft.burn.reviewTitle', 'Burn NFT')}

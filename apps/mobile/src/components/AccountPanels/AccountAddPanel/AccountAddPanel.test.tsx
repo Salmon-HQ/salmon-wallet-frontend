@@ -5,10 +5,12 @@ const mockAddAccount = jest.fn();
 const mockScanDerivedAccounts = jest.fn();
 const mockCreateAccount = jest.fn();
 const mockImportAccountFromPrivateKey = jest.fn();
+const mockImportWatchOnlyAccount = jest.fn();
 const SHEET_PASSWORD = 'correct-horse';
 const mockCheckPassword = jest.fn();
 const mockIsVaultKeyCached = jest.fn();
 const mockValidatePrivateKey = jest.fn();
+const mockValidateWatchOnly = jest.fn();
 const mockPrivateKeyImport: {
   value: string;
   setValue: jest.Mock;
@@ -29,6 +31,25 @@ const mockPrivateKeyImport: {
   validating: false,
   hasInput: false,
   validate: mockValidatePrivateKey,
+  reset: jest.fn(),
+  networkId: 'solana-mainnet',
+};
+const mockWatchOnlyImport: {
+  value: string;
+  setValue: jest.Mock;
+  error: string | null;
+  address: string | null;
+  hasInput: boolean;
+  validate: jest.Mock;
+  reset: jest.Mock;
+  networkId: string;
+} = {
+  value: '',
+  setValue: jest.fn(),
+  error: null,
+  address: null,
+  hasInput: false,
+  validate: mockValidateWatchOnly,
   reset: jest.fn(),
   networkId: 'solana-mainnet',
 };
@@ -64,12 +85,14 @@ jest.mock('@salmon/shared', () => ({
   normalizeMnemonic: (value: string) => value.trim().replace(/\s+/g, ' '),
   createAccount: (...args: unknown[]) => mockCreateAccount(...args),
   importAccountFromPrivateKey: (...args: unknown[]) => mockImportAccountFromPrivateKey(...args),
+  importWatchOnlyAccount: (...args: unknown[]) => mockImportWatchOnlyAccount(...args),
   isVaultKeyCached: () => mockIsVaultKeyCached(),
   ...jest.requireActual('@salmon/shared/src/utils/account-secret'),
-  // Stubbed rather than requireActual'd: the real hook reaches @solana/kit,
-  // whose ESM build Jest cannot parse here. Its own behaviour (parsing,
+  // Stubbed rather than requireActual'd: the real hooks reach @solana/kit,
+  // whose ESM build Jest cannot parse here. Their own behaviour (parsing,
   // duplicate rejection) is covered in packages/shared.
   useImportPrivateKey: () => mockPrivateKeyImport,
+  useImportWatchOnly: () => mockWatchOnlyImport,
   getShortAddress: (address: string) => `${address.slice(0, 4)}...${address.slice(-4)}`,
   trackEvent: jest.fn(),
   NETWORK_DISPLAY: { 'solana-mainnet': { blockchain: 'solana' } },

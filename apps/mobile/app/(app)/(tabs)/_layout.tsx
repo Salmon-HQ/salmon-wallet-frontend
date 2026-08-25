@@ -25,6 +25,7 @@ import {
   colors,
   semantic,
   getStashItem,
+  isWatchOnlyAccount,
   type SettingsPanelEntry,
   type AddressBookItem,
   type AddressInput,
@@ -902,7 +903,13 @@ export default function TabLayout() {
                 name="collectibles"
                 options={{ title: t('tabs.collectibles', 'Collectibles') }}
               />
-              <Tabs.Screen name="swap" options={{ title: t('tabs.swap', 'Swap') }} />
+              <Tabs.Screen
+                name="swap"
+                options={{
+                  title: t('tabs.swap', 'Swap'),
+                  href: isWatchOnlyAccount(activeAccount) ? null : undefined,
+                }}
+              />
               <Tabs.Screen
                 name="settings"
                 options={{ href: null, title: t('tabs.settings', 'Settings') }}

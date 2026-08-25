@@ -108,6 +108,7 @@ jest.mock('@salmon/shared', () => ({
   s: (value: number) => value,
   isSolanaNft: () => true,
   isBitcoinNft: () => false,
+  isSignableAccount: () => true,
   getSatRarityColor: () => '#fff',
   getShortAddress: () => 'Mint...111',
   borderWidth: { thin: 1, actionButton: 1 },
@@ -285,6 +286,9 @@ describe('NftDetailSheet', () => {
       collectionName: 'Blur Collection',
     } as any;
 
+    // A signable Solana account: send and burn both gate on isSignableAccount.
+    const account = { getNetworkId: () => 'solana-mainnet', canSign: true } as any;
+
     beforeEach(() => {
       mockSendNft.mockReset();
       // The native-driven step slide never completes under Jest; finish it
@@ -304,7 +308,7 @@ describe('NftDetailSheet', () => {
     };
 
     it('shows a review step with the NFT, collection and recipient before signing', () => {
-      render(<NftDetailSheet visible onClose={jest.fn()} nft={nft} />);
+      render(<NftDetailSheet visible onClose={jest.fn()} nft={nft} account={account} />);
 
       goToReview();
 
@@ -317,7 +321,7 @@ describe('NftDetailSheet', () => {
 
     it('sends only from the review confirm and then shows the success screen', async () => {
       mockSendNft.mockResolvedValue({ txId: 'tx123' });
-      render(<NftDetailSheet visible onClose={jest.fn()} nft={nft} />);
+      render(<NftDetailSheet visible onClose={jest.fn()} nft={nft} account={account} />);
 
       goToReview();
 

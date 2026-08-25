@@ -52,6 +52,7 @@ import {
   usePrefetchBalances,
   useCurrencyContext,
   useTransactions,
+  isWatchOnlyAccount,
   vs,
   getBlockchainFromNetworkId,
   BLOCKCHAIN_TO_COINGECKO,
@@ -752,6 +753,7 @@ export default function HomeScreen() {
           onSendPress={handleSendPress}
           onReceivePress={handleReceivePress}
           onActivityPress={handleActivityPress}
+          sendDisabled={isWatchOnlyAccount(activeAccount)}
           style={styles.actionRow}
         />
       </View>
@@ -766,6 +768,7 @@ export default function HomeScreen() {
       handleSendPress,
       handleReceivePress,
       handleActivityPress,
+      activeAccount,
     ]
   );
 
