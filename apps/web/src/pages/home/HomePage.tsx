@@ -424,6 +424,12 @@ export function HomePage(): React.ReactElement {
   // it. The refusal is enforced in shared; this only keeps the UI honest.
   const isWatchOnly = isWatchOnlyAccount(activeAccount);
 
+  // Switching to a watch-only wallet while standing on Swap would leave the
+  // tab gone and its screen still mounted. Send the user home instead.
+  useEffect(() => {
+    if (isWatchOnly && activeTab === 'swap') setActiveTab('home');
+  }, [isWatchOnly, activeTab, setActiveTab]);
+
   // Filter networks to only those the user has accounts for
   const allNetworks = useMemo(() => {
     if (!activeAccount?.networksAccounts) return availableNetworks;
@@ -956,14 +962,18 @@ export function HomePage(): React.ReactElement {
           >
             {t('tabs.collectibles', 'Collectibles')}
           </TabButton>
-          <TabButton
-            active={activeTab === 'swap'}
-            onClick={() => setActiveTab('swap')}
-            disabled={flowLocked || isWatchOnly}
-            data-testid="tab-swap"
-          >
-            {t('tabs.swap', 'Swap')}
-          </TabButton>
+          {/* Gone, not greyed: a watch-only wallet can never swap or bridge,
+              so the tab is not a door that happens to be locked. */}
+          {!isWatchOnly && (
+            <TabButton
+              active={activeTab === 'swap'}
+              onClick={() => setActiveTab('swap')}
+              disabled={flowLocked}
+              data-testid="tab-swap"
+            >
+              {t('tabs.swap', 'Swap')}
+            </TabButton>
+          )}
         </TabBar>
       )}
 
