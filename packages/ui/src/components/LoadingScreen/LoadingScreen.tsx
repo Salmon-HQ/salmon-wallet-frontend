@@ -718,12 +718,18 @@ export const LoadingScreen = memo(function LoadingScreen({
   if (!isVisible) return null;
 
   return (
+    // `loading-screen` is a test handle with a reason: this overlay is fixed
+    // and covers the viewport, so it swallows clicks for as long as it is
+    // mounted — including the whole exit animation, while the screen
+    // underneath is already visible. Anything waiting to click that screen has
+    // to wait for this to detach, not merely for the screen to appear.
     <Overlay
       ref={contentRef}
       $isFadingOut={isFadingOut}
       $waveOut={isClosing}
       role="status"
       aria-busy="true"
+      data-testid="loading-screen"
     >
       {/* A wait is a screen like any other, and a screen is water. This one is
           the seam the ground has to close: the wait before a swap confirms is

@@ -179,6 +179,10 @@ test('every non-on-chain event in the catalog actually fires', async ({ page, br
   await page.getByTestId('account-add-derive-continue-button').click();
   await page.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
   await expect(page.getByTestId('account-add-button')).toBeVisible({ timeout: 60_000 });
+  // Visible is not clickable here. The wait screen is a fixed, full-viewport
+  // overlay that stays mounted through its whole exit animation, so it goes on
+  // swallowing clicks while the screen underneath is already on show.
+  await expect(page.getByTestId('loading-screen')).toHaveCount(0, { timeout: 30_000 });
 
   // ── wallet_recovered — an IMPORTED seed is a recovery.
   await page.getByTestId('account-add-button').click();
@@ -189,6 +193,7 @@ test('every non-on-chain event in the catalog actually fires', async ({ page, br
   await page.getByTestId('account-add-seed-continue-button').click({ timeout: 30_000 });
   await page.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
   await expect(page.getByTestId('account-add-button')).toBeVisible({ timeout: 90_000 });
+  await expect(page.getByTestId('loading-screen')).toHaveCount(0, { timeout: 30_000 });
 
   await closeSettings(page);
 

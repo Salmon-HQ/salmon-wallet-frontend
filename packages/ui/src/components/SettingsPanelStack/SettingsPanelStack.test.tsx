@@ -157,3 +157,54 @@ describe('SettingsPanelStack — a toggle row announces once', () => {
     expect(onDeveloperNetworksToggle).toHaveBeenCalledWith(true);
   });
 });
+
+describe('SettingsPanelStack — a rebuilt registry does not remount the panel', () => {
+  // The registries in the apps are built by a `useMemo` whose deps include app
+  // state (the active account, among others), so every entry gets a fresh
+  // function identity whenever that state moves. Mounting the entry as a
+  // component type made React read that as a different component and throw the
+  // panel's state away mid-flight: adding an account switched the active
+  // account, tore down the add panel, and lost the completion handoff, so the
+  // panel sat on top of the accounts list instead of returning to it.
+  function Counting(): React.ReactElement {
+    const [count, setCount] = React.useState(0);
+    return (
+      <button type="button" data-testid="panel-counter" onClick={() => setCount((c) => c + 1)}>
+        {count}
+      </button>
+    );
+  }
+
+  function Harness(): React.ReactElement {
+    const [, force] = React.useState(0);
+    // Rebuilt every render, exactly like the app registries.
+    const registry = { ...makeRegistry(), accounts: () => <Counting /> } as PanelRegistry;
+    return (
+      <>
+        <button type="button" data-testid="rerender" onClick={() => force((n) => n + 1)} />
+        <SettingsPanelStack
+          visible
+          onClose={vi.fn()}
+          panelRegistry={registry}
+          developerNetworksEnabled={false}
+          onDeveloperNetworksToggle={vi.fn()}
+          onRemoveWallet={vi.fn()}
+          onRemoveAllWallets={vi.fn()}
+        />
+      </>
+    );
+  }
+
+  it('keeps the open panel’s state when the parent re-renders', async () => {
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'settings.accounts.title' }));
+    await waitFor(() => expect(screen.getByTestId('panel-counter')).toBeTruthy());
+
+    fireEvent.click(screen.getByTestId('panel-counter'));
+    expect(screen.getByTestId('panel-counter').textContent).toBe('1');
+
+    fireEvent.click(screen.getByTestId('rerender'));
+
+    expect(screen.getByTestId('panel-counter').textContent).toBe('1');
+  });
+});

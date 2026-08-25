@@ -51,7 +51,7 @@ import {
 } from '@salmon/shared';
 import { styled } from '../../utils/styled';
 
-import type { SettingsPanelStackProps } from './types';
+import type { PanelContentProps, PanelRenderer, SettingsPanelStackProps } from './types';
 
 // Re-use the same section/item types from the old SettingsSheet
 interface SettingsItem {
@@ -504,8 +504,8 @@ export function SettingsPanelStack({
           // Only render top 2 panels for performance
           if (idx < stack.length - 2) return null;
           const isExiting = isTop && animating && slideDirection === 'out';
-          const Panel = panelRegistry[entry.screen];
-          if (!Panel) {
+          const renderPanel = panelRegistry[entry.screen];
+          if (!renderPanel) {
             console.warn(`SettingsPanelStack: No panel registered for screen "${entry.screen}"`);
             return null;
           }
@@ -516,7 +516,21 @@ export function SettingsPanelStack({
               $animating={animating && isTop}
               $direction={isTop && animating ? slideDirection : 'idle'}
             >
-              <Panel
+              {/*
+                Rendered through a stable host, not mounted as `<Panel />`. A
+                registry entry is a render function (`PanelRenderer`) and the
+                registries are rebuilt by a `useMemo` whose deps include app
+                state such as the active account, so an entry gets a fresh
+                identity whenever that state moves. Mounting the entry itself
+                made React read that new identity as a different component and
+                remount the panel: adding an account switches the active
+                account, which tore the add panel down mid-flight and lost the
+                completion handoff parked behind its wait, leaving the panel
+                sitting on top of the accounts list instead of returning to it.
+                (The mobile stack already calls its registry this way.)
+              */}
+              <PanelHost
+                render={renderPanel}
                 onBack={isExiting ? () => {} : handlePop}
                 onNavigate={isExiting ? () => {} : handlePush}
                 {...(entry.props || {})}
@@ -527,6 +541,16 @@ export function SettingsPanelStack({
       </DrawerPaper>
     </Drawer>
   );
+}
+
+/**
+ * Renders one registry entry.
+ *
+ * A stable component type, so React reconciles the panel by the identity of
+ * the components the entry returns rather than by the entry itself.
+ */
+function PanelHost({ render, ...props }: { render: PanelRenderer } & PanelContentProps) {
+  return render(props);
 }
 
 // ============================================================================
