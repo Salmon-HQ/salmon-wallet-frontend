@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SolanaBalanceItem } from '../../types/transfer';
 import type { SolanaTransaction } from '../../types/transaction';
 import type { ApiSwapExecuteResponse, SwapOrderResponse } from '../../types/swap';
@@ -464,4 +464,33 @@ describe('solana service integration', () => {
       })
     );
   }, 20000);
+});
+
+describe('solana service error reporting', () => {
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+  afterEach(() => {
+    consoleError.mockClear();
+  });
+
+  it('stays quiet on a dropped connection, and still throws', async () => {
+    // The caller owns this one: react-query turns the throw into an error
+    // state. Logging it too opens a LogBox over whatever the user was doing,
+    // for a background refresh they never asked for.
+    mockApiClientGet.mockRejectedValueOnce(
+      new ApiError('Network error: Unable to reach the server', 0, 'NETWORK_ERROR')
+    );
+
+    await expect(getSolanaTransactions('solana-mainnet', 'Owner111')).rejects.toThrow(
+      'Unable to reach the server'
+    );
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it('still reports an error nobody expects', async () => {
+    mockApiClientGet.mockRejectedValueOnce(new ApiError('Boom', 500, 'SERVER_ERROR'));
+
+    await expect(getSolanaTransactions('solana-mainnet', 'Owner111')).rejects.toThrow('Boom');
+    expect(consoleError).toHaveBeenCalled();
+  });
 });

@@ -45,6 +45,25 @@ import type {
 // ============================================================================
 
 /**
+ * Logs an error the caller is about to receive by throw, unless it is a plain
+ * transport failure.
+ *
+ * A dropped connection is not a fault to report — it is expected, transient,
+ * and already the caller's to handle: react-query turns the throw into an error
+ * state and the screen renders it. Logging it as well means reporting the same
+ * event twice, and on a dev client `console.error` opens a full-screen LogBox
+ * over whatever the user was doing, for a request they never asked for. A
+ * background refresh of the activity list would take over the screen.
+ *
+ * Anything that is not a transport failure still gets its breadcrumb: those are
+ * the ones nobody expects and somebody will want to trace.
+ */
+function reportUnexpected(scope: string, error: unknown): void {
+  if (error instanceof ApiError && error.isNetworkError()) return;
+  console.error(scope, error);
+}
+
+/**
  * Get paginated transactions for an address
  *
  * Endpoint: GET /v1/{networkId}/account/{address}/transactions
@@ -99,7 +118,7 @@ export async function getSolanaTransactions(
     if (error instanceof ApiError && error.isNotFound()) {
       return { transactions: [], oldestSignature: null, hasMore: false };
     }
-    console.error('[SolanaService] Failed to get transactions:', error);
+    reportUnexpected('[SolanaService] Failed to get transactions:', error);
     throw error;
   }
 }
@@ -147,7 +166,7 @@ export async function getSwapOrder(
     if (error instanceof ApiError && error.isNotFound()) {
       return null;
     }
-    console.error('[SolanaService] Failed to get swap order:', error);
+    reportUnexpected('[SolanaService] Failed to get swap order:', error);
     throw error;
   }
 }
@@ -189,7 +208,7 @@ export async function executeSwapApi(
         error: error.message,
       };
     }
-    console.error('[SolanaService] Failed to execute swap:', error);
+    reportUnexpected('[SolanaService] Failed to execute swap:', error);
     throw error;
   }
 }
