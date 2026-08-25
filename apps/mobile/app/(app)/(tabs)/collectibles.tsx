@@ -45,7 +45,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
-  ScrollView,
+  SectionList,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -452,6 +452,31 @@ export default function CollectiblesScreen() {
   );
   const showChainLabel = renderedSectionKeys.length > 1;
 
+  // The grid is virtualized, so its unit of data is a ROW of two cards rather
+  // than a card: SectionList mounts and unmounts whole items, and a row is what
+  // lines up with the two-column layout.
+  //
+  // This is the whole point of the screen's rewrite. It used to render every
+  // NFT inside a plain ScrollView, so a wallet with hundreds of them mounted
+  // hundreds of <Image> at once and never unmounted the ones off screen. Each
+  // decoded bitmap lives in the Java heap's large-object space, so the heap
+  // grew until Android's low-memory killer took the app down mid-scroll — on a
+  // 900-NFT wallet, ~145 MB of bitmaps in 200 objects, killed while the user
+  // was scrolling. Virtualizing keeps only the visible rows alive.
+  const listSections = useMemo(
+    () =>
+      renderedSectionKeys.map((sectionKey) => {
+        const section = nftsBySections[sectionKey];
+        const rows: NftData[][] = [];
+        section.nfts.forEach((nft, i) => {
+          if (i % 2 === 0) rows.push([nft]);
+          else rows[rows.length - 1].push(nft);
+        });
+        return { key: sectionKey, section, data: section.loading ? [] : rows };
+      }),
+    [renderedSectionKeys, nftsBySections]
+  );
+
   // Check if Solana section is loading
   const isLoading = nftsBySections.solana.loading;
 
@@ -497,7 +522,9 @@ export default function CollectiblesScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView
+      <SectionList
+        sections={listSections}
+        keyExtractor={(row, index) => row[0]?.mint ?? `row-${index}`}
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
@@ -505,6 +532,13 @@ export default function CollectiblesScreen() {
           { paddingTop: headerOffset + vs(8) },
         ]}
         showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
+        // The window is what bounds memory: only rows within it stay mounted,
+        // so the number of decoded bitmaps alive at once is bounded too.
+        initialNumToRender={6}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        removeClippedSubviews
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -513,96 +547,92 @@ export default function CollectiblesScreen() {
             colors={[colors.accent.primary]}
           />
         }
-      >
-        {/* The visible "My Collectibles" heading sat directly under the
-            Collectibles tab, repeating a label the user had just tapped. It is
-            not deleted, only unpainted: React Native has no DOM and therefore
-            no `visuallyHidden` clip rectangle, so the platform equivalent is a
-            1x1 transparent node that stays in the accessibility tree with
-            `accessibilityRole="header"`. Screen-reader users keep a heading to
-            orient by; the eye gets ~78px of vertical chrome back. Zero width
-            or `display: none` would drop it from the tree on Android, which is
-            why the box is 1x1 rather than 0x0. */}
-        <Text
-          style={styles.assistiveHeading}
-          accessibilityRole="header"
-          importantForAccessibility="yes"
-        >
-          {t('wallet.my_nfts', 'My Collectibles')}
-        </Text>
-
-        {/* Developer Mode Banner */}
-        {developerNetworks && (
-          <View style={styles.devModeBanner}>
-            <Text style={styles.devModeBannerText}>
-              {t('collectibles.developer_banner', 'Developer Mode - Showing testnet NFTs')}
+        ListHeaderComponent={
+          <>
+            {/* The visible "My Collectibles" heading sat directly under the
+                Collectibles tab, repeating a label the user had just tapped. It is
+                not deleted, only unpainted: React Native has no DOM and therefore
+                no `visuallyHidden` clip rectangle, so the platform equivalent is a
+                1x1 transparent node that stays in the accessibility tree with
+                `accessibilityRole="header"`. Screen-reader users keep a heading to
+                orient by; the eye gets ~78px of vertical chrome back. Zero width
+                or `display: none` would drop it from the tree on Android, which is
+                why the box is 1x1 rather than 0x0. */}
+            <Text
+              style={styles.assistiveHeading}
+              accessibilityRole="header"
+              importantForAccessibility="yes"
+            >
+              {t('wallet.my_nfts', 'My Collectibles')}
             </Text>
-          </View>
-        )}
 
-        {/* Load failure banner — explicit retry (pull-to-refresh also works) */}
-        {loadError && (
-          <View style={styles.loadErrorBanner} testID="collectibles-load-error">
-            <WarningNotice
-              tone="warning"
-              title={t(
-                'collectibles.load_error',
-                "Your collectibles couldn't be loaded right now."
-              )}
-              action={
-                <TouchableOpacity
-                  onPress={handleRefresh}
-                  accessibilityRole="button"
-                  testID="collectibles-retry-button"
-                >
-                  <Text style={styles.retryText}>{t('actions.retry', 'Retry')}</Text>
-                </TouchableOpacity>
-              }
-            />
-          </View>
-        )}
+            {/* Developer Mode Banner */}
+            {developerNetworks && (
+              <View style={styles.devModeBanner}>
+                <Text style={styles.devModeBannerText}>
+                  {t('collectibles.developer_banner', 'Developer Mode - Showing testnet NFTs')}
+                </Text>
+              </View>
+            )}
 
-        {/* Empty State */}
-        {isEmpty && (
-          <View style={styles.emptyContainer} testID="collectibles-empty">
-            <Text style={styles.emptyText}>{t('nft.emptyTitle', 'No Collectibles')}</Text>
-            <Text style={styles.emptySubtext}>
-              {t(
-                'nft.emptySubtitle',
-                'Your NFTs and Ordinals will appear here once you receive some'
-              )}
-            </Text>
-          </View>
-        )}
+            {/* Load failure banner — explicit retry (pull-to-refresh also works) */}
+            {loadError && (
+              <View style={styles.loadErrorBanner} testID="collectibles-load-error">
+                <WarningNotice
+                  tone="warning"
+                  title={t(
+                    'collectibles.load_error',
+                    "Your collectibles couldn't be loaded right now."
+                  )}
+                  action={
+                    <TouchableOpacity
+                      onPress={handleRefresh}
+                      accessibilityRole="button"
+                      testID="collectibles-retry-button"
+                    >
+                      <Text style={styles.retryText}>{t('actions.retry', 'Retry')}</Text>
+                    </TouchableOpacity>
+                  }
+                />
+              </View>
+            )}
 
-        {/* Render visible sections — Solana only, grid layout */}
-        {renderedSectionKeys.map((sectionKey) => {
-          const section = nftsBySections[sectionKey];
-          const title = getNftSectionTitle(sectionKey, section);
+            {/* Empty State */}
+            {isEmpty && (
+              <View style={styles.emptyContainer} testID="collectibles-empty">
+                <Text style={styles.emptyText}>{t('nft.emptyTitle', 'No Collectibles')}</Text>
+                <Text style={styles.emptySubtext}>
+                  {t(
+                    'nft.emptySubtitle',
+                    'Your NFTs and Ordinals will appear here once you receive some'
+                  )}
+                </Text>
+              </View>
+            )}
+          </>
+        }
+        renderSectionHeader={({ section }) => {
+          const sectionKey = section.key;
+          const nftSection = section.section;
+          const title = getNftSectionTitle(sectionKey, nftSection);
           const subAccounts = sectionSubAccounts[sectionKey] ?? [];
 
           return (
-            <View key={sectionKey} style={styles.sectionContainer}>
-              {/* Section header — only when the chain label distinguishes
-                  something. One chain painting means it distinguishes nothing. */}
+            <View style={styles.sectionHeaderBlock}>
               {showChainLabel && (
                 <View style={styles.sectionHeader}>
                   <SolanaSvgIcon size={ms(24)} color={colors.text.primary} />
                   <Text style={styles.sectionHeaderTitle}>{title}</Text>
-                  <Text style={styles.sectionHeaderCount}>({section.nfts.length})</Text>
+                  <Text style={styles.sectionHeaderCount}>({nftSection.nfts.length})</Text>
                 </View>
               )}
-
-              {/* Sub-account selector */}
               <SubAccountSelector
                 accounts={subAccounts}
                 activeIndex={sectionIndexes[sectionKey]}
                 onSelect={(index) => handleSectionIndexChange(sectionKey, index)}
                 style={styles.sectionSelector}
               />
-
-              {/* Grid or Skeleton */}
-              {section.loading ? (
+              {nftSection.loading && (
                 <View style={styles.gridContainer}>
                   <View style={styles.gridRow}>
                     <NftCardSkeleton style={styles.gridCard} />
@@ -612,64 +642,24 @@ export default function CollectiblesScreen() {
                     <NftCardSkeleton style={styles.gridCard} />
                     <NftCardSkeleton style={styles.gridCard} />
                   </View>
-                  <View style={styles.gridRow}>
-                    <NftCardSkeleton style={styles.gridCard} />
-                    <NftCardSkeleton style={styles.gridCard} />
-                  </View>
-                </View>
-              ) : (
-                <View style={styles.gridContainer}>
-                  {section.nfts
-                    .reduce<NftData[][]>((rows, nft, i) => {
-                      if (i % 2 === 0) rows.push([nft]);
-                      else rows[rows.length - 1].push(nft);
-                      return rows;
-                    }, [])
-                    .map((pair, rowIndex) => (
-                      <View key={rowIndex} style={styles.gridRow}>
-                        {pair.map((nft) => (
-                          <NftCard
-                            key={nft.mint}
-                            nft={nft}
-                            onPress={() => handleNftPress(nft, sectionKey)}
-                            style={styles.gridCard}
-                          />
-                        ))}
-                      </View>
-                    ))}
                 </View>
               )}
             </View>
           );
-        })}
-
-        {/* Original carousel rendering (commented out):
-        {visibleSectionKeys.map((sectionKey) => {
-          const section = nftsBySections[sectionKey];
-          if (section.loading || section.nfts.length === 0) return null;
-          const title = getNftSectionTitle(sectionKey, section);
-          const subAccounts = sectionSubAccounts[sectionKey] ?? [];
-          return (
-            <NftCarouselSection
-              key={sectionKey}
-              title={title}
-              blockchain={section.blockchain}
-              nfts={section.nfts}
-              onNftPress={(nft) => handleNftPress(nft, sectionKey)}
-              onSeeAllPress={() => handleSeeAllPress(sectionKey)}
-              renderBeforeCarousel={
-                <SubAccountSelector
-                  accounts={subAccounts}
-                  activeIndex={sectionIndexes[sectionKey]}
-                  onSelect={(index) => handleSectionIndexChange(sectionKey, index)}
-                  style={styles.sectionSelector}
-                />
-              }
-            />
-          );
-        })}
-        */}
-      </ScrollView>
+        }}
+        renderItem={({ item: row, section }) => (
+          <View style={styles.gridRow}>
+            {row.map((nft) => (
+              <NftCard
+                key={nft.mint}
+                nft={nft}
+                onPress={() => handleNftPress(nft, section.key)}
+                style={styles.gridCard}
+              />
+            ))}
+          </View>
+        )}
+      />
 
       {/* NFT Detail Sheet */}
       <NftDetailSheet
@@ -799,6 +789,12 @@ const styles = StyleSheet.create({
   // Grid layout styles (matching NftSeeAllSheet pattern)
   sectionContainer: {
     marginBottom: vs(16),
+  },
+  // The section header block carries what used to be the top of
+  // `sectionContainer`: the chain label, the sub-account selector, and the
+  // skeletons while the section loads.
+  sectionHeaderBlock: {
+    marginBottom: vs(8),
   },
   sectionHeader: {
     flexDirection: 'row',
