@@ -394,7 +394,11 @@ export const SendSheet: React.FC<SendSheetProps> = ({
   const showHeader = step !== 'success' && !isSending;
 
   const summary = selectedToken
-    ? `${amount} ${selectedToken.symbol} to ${getShortAddress(recipientAddress) ?? recipientAddress}`
+    ? t('transaction.sendSummary', {
+        amount,
+        symbol: selectedToken.symbol,
+        recipient: getShortAddress(recipientAddress) ?? recipientAddress,
+      })
     : '';
 
   const headerContent = (

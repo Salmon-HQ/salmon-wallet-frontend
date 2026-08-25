@@ -631,7 +631,21 @@
       "nftMediaAlt": "Contenido del NFT"
     },
     "tapToViewDetails": "Tocá para ver los detalles de la transacción",
-    "share_message": "Mirá esta transacción: {{url}}"
+    "share_message": "Mirá esta transacción: {{url}}",
+    "description": {
+      "swap": "{{from}} a {{to}}",
+      "swapMany": "{{fromCount}} tokens a {{toCount}} tokens",
+      "sendTo": "A {{address}}",
+      "send": "Tokens enviados",
+      "receiveFrom": "De {{address}}",
+      "receive": "Tokens recibidos",
+      "mint": "Token acuñado",
+      "burn": "Token quemado",
+      "stake": "Operación de staking",
+      "loan": "Operación de préstamo",
+      "interaction": "Interacción con contrato",
+      "fallback": "Transacción"
+    }
   },
   "nft": {
     "send_nft": "Enviar",
@@ -796,6 +810,7 @@
     "sendFailed": "No se pudo enviar",
     "swapComplete": "Swap Completado",
     "pendingSend": "Enviando fondos",
+    "sendSummary": "{{amount}} {{symbol}} a {{recipient}}",
     "pendingSwap": "Procesando swap",
     "errors": {
       "insufficientFeeSol": "Necesitás una pequeña cantidad de SOL para pagar la fee de red. Agregá SOL a esta cuenta y volvé a intentarlo.",

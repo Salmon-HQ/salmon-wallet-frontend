@@ -257,7 +257,11 @@ export function SendPage({
   // What moved, in one line. The wait announces it and the receipt repeats it,
   // so the two read as the same event rather than two reports of it.
   const transferSummary = selectedToken
-    ? `${amount} ${selectedToken.symbol} to ${getShortAddress(recipientAddress) ?? recipientAddress}`
+    ? t('transaction.sendSummary', {
+        amount,
+        symbol: selectedToken.symbol,
+        recipient: getShortAddress(recipientAddress) ?? recipientAddress,
+      })
     : '';
 
   return (

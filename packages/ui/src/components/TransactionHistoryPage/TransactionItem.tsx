@@ -414,10 +414,11 @@ export function TransactionItem({
     onPress?.(transaction);
   }, [onPress, transaction]);
 
-  const descriptionText = useMemo(
-    () => getTransactionDescription(type, inputs, outputs, source, description),
-    [type, inputs, outputs, source, description]
-  );
+  // Named in `packages/shared`, said here — see `TransactionDescription`.
+  const descriptionText = useMemo(() => {
+    const described = getTransactionDescription(type, inputs, outputs, source, description);
+    return t(described.key, described.values);
+  }, [type, inputs, outputs, source, description, t]);
 
   // Render logo
   const renderLogo = () => {

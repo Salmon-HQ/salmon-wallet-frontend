@@ -79,7 +79,7 @@ describe('transaction utils', () => {
     });
   });
 
-  it('builds readable descriptions for send receive and swap transactions', () => {
+  it('names send receive and swap descriptions with the parts to interpolate', () => {
     expect(
       getTransactionDescription(
         'send',
@@ -94,7 +94,10 @@ describe('transaction utils', () => {
           },
         ]
       )
-    ).toContain('To ');
+    ).toEqual({
+      key: 'transactions.description.sendTo',
+      values: { address: expect.any(String) },
+    });
 
     expect(
       getTransactionDescription(
@@ -102,7 +105,10 @@ describe('transaction utils', () => {
         [{ amount: '1', decimals: 9, symbol: 'SOL', contract: 'mint', source: 'ABCDEFGH12345678' }],
         []
       )
-    ).toContain('From ');
+    ).toEqual({
+      key: 'transactions.description.receiveFrom',
+      values: { address: expect.any(String) },
+    });
 
     expect(
       getTransactionDescription(
@@ -110,14 +116,54 @@ describe('transaction utils', () => {
         [{ amount: '1', decimals: 9, symbol: 'SOL', contract: 'sol' }],
         [{ amount: '2', decimals: 6, symbol: 'USDC', contract: 'usdc' }]
       )
-    ).toBe('USDC to SOL');
+    ).toEqual({
+      key: 'transactions.description.swap',
+      values: { from: 'USDC', to: 'SOL' },
+    });
   });
 
   it('falls back to transaction type labels when description is missing or unknown', () => {
-    expect(getTransactionDescription('mint', [], [], undefined, 'Unknown instruction')).toBe(
-      'Token minted'
+    expect(getTransactionDescription('mint', [], [], undefined, 'Unknown instruction')).toEqual({
+      key: 'transactions.description.mint',
+    });
+    expect(getTransactionDescription('interaction', [], [])).toEqual({
+      key: 'transactions.description.interaction',
+    });
+  });
+
+  it('passes the indexer description through as its own text', () => {
+    // Not a key: `t()` returns an unknown key unchanged, which is what keeps
+    // backend wording intact without a second branch at the call site.
+    expect(getTransactionDescription('interaction', [], [], undefined, 'Staked 1 SOL')).toEqual({
+      key: 'Staked 1 SOL',
+    });
+  });
+
+  it('describes every key it can emit in both locales', async () => {
+    const [en, es] = await Promise.all([
+      import('../locales/en/translation.json'),
+      import('../locales/es/translation.json'),
+    ]);
+    const enKeys = Object.keys(en.default.transactions.description);
+    const esKeys = Object.keys(es.default.transactions.description);
+
+    expect(esKeys).toEqual(enKeys);
+    expect(enKeys).toEqual(
+      expect.arrayContaining([
+        'swap',
+        'swapMany',
+        'sendTo',
+        'send',
+        'receiveFrom',
+        'receive',
+        'mint',
+        'burn',
+        'stake',
+        'loan',
+        'interaction',
+        'fallback',
+      ])
     );
-    expect(getTransactionDescription('interaction', [], [])).toBe('Contract interaction');
   });
 
   it('passes through swapRoute from the backend SolanaTransaction unchanged', () => {

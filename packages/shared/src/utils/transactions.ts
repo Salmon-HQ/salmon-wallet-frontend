@@ -139,7 +139,28 @@ function inferTransactionType(
 // ============================================================================
 
 /**
- * Returns a human-readable description for a transaction.
+ * What a transaction row should say, ready for the render layer to translate.
+ *
+ * This module has no `t` and must not grow one: it runs in three apps and in
+ * tests, and a description built here would be frozen in whatever language it
+ * was built in — including in a list that re-renders after the user switches
+ * language. So it names the sentence and supplies the parts; the component
+ * says it. Same shape as `classifyTransactionError`, which returns keys for
+ * the same reason.
+ */
+export interface TransactionDescription {
+  /**
+   * A translation key — or, for the indexer's own description, that literal
+   * text. `t()` returns its input unchanged when no such key exists, so the
+   * passthrough needs no separate branch at the call site.
+   */
+  key: string;
+  /** Interpolation values for `key`, when it takes any. */
+  values?: Record<string, string | number>;
+}
+
+/**
+ * Describes a transaction for its history row.
  */
 export function getTransactionDescription(
   type: TransactionType,
@@ -147,44 +168,58 @@ export function getTransactionDescription(
   outputs: TransactionTokenAmount[],
   _source?: string,
   description?: string
-): string {
+): TransactionDescription {
   if (type === 'swap') {
     const outputSymbols = [...new Set(outputs.map((o) => o.symbol))];
     const inputSymbols = [...new Set(inputs.map((i) => i.symbol))];
 
     if (outputSymbols.length <= 2 && inputSymbols.length <= 2) {
-      return `${outputSymbols.join(', ')} to ${inputSymbols.join(', ')}`;
+      return {
+        key: 'transactions.description.swap',
+        values: { from: outputSymbols.join(', '), to: inputSymbols.join(', ') },
+      };
     }
-    return `${outputSymbols.length} tokens to ${inputSymbols.length} tokens`;
+    return {
+      key: 'transactions.description.swapMany',
+      values: { fromCount: outputSymbols.length, toCount: inputSymbols.length },
+    };
   }
 
+  // The indexer's own wording, which we cannot translate and should not
+  // discard — it is more specific than any label below.
   if (description && description.length > 0 && !description.includes('Unknown')) {
-    return description;
+    return { key: description };
   }
 
   switch (type) {
     case 'send':
       if (outputs[0]?.destination) {
-        return `To ${getShortAddress(outputs[0].destination, 4) ?? ''}`;
+        return {
+          key: 'transactions.description.sendTo',
+          values: { address: getShortAddress(outputs[0].destination, 4) ?? '' },
+        };
       }
-      return 'Sent tokens';
+      return { key: 'transactions.description.send' };
     case 'receive':
       if (inputs[0]?.source) {
-        return `From ${getShortAddress(inputs[0].source, 4) ?? ''}`;
+        return {
+          key: 'transactions.description.receiveFrom',
+          values: { address: getShortAddress(inputs[0].source, 4) ?? '' },
+        };
       }
-      return 'Received tokens';
+      return { key: 'transactions.description.receive' };
     case 'mint':
-      return 'Token minted';
+      return { key: 'transactions.description.mint' };
     case 'burn':
-      return 'Token burned';
+      return { key: 'transactions.description.burn' };
     case 'stake':
-      return 'Staking operation';
+      return { key: 'transactions.description.stake' };
     case 'loan':
-      return 'Loan operation';
+      return { key: 'transactions.description.loan' };
     case 'interaction':
-      return 'Contract interaction';
+      return { key: 'transactions.description.interaction' };
     default:
-      return 'Transaction';
+      return { key: 'transactions.description.fallback' };
   }
 }
 
