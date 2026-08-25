@@ -896,7 +896,8 @@
     "no_nfts": "No se encontraron coleccionables",
     "no_account_for_network": "No hay una cuenta disponible para esta red.",
     "developer_banner": "Modo Desarrollador - Mostrando NFTs de testnet",
-    "load_error": "Tus coleccionables no se pudieron cargar en este momento."
+    "load_error": "Tus coleccionables no se pudieron cargar en este momento.",
+    "loading": "Cargando tus coleccionables…"
   },
   "common": {
     "cancel": "Cancelar",

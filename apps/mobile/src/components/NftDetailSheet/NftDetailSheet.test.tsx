@@ -56,6 +56,9 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+// Flipped per test; the mock factory below closes over it.
+let mockIsSignable = true;
+
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme/durations'),
   // "Deep Water" semantic tokens. Components read these directly now; the
@@ -108,7 +111,7 @@ jest.mock('@salmon/shared', () => ({
   s: (value: number) => value,
   isSolanaNft: () => true,
   isBitcoinNft: () => false,
-  isSignableAccount: () => true,
+  isSignableAccount: () => mockIsSignable,
   getSatRarityColor: () => '#fff',
   getShortAddress: () => 'Mint...111',
   borderWidth: { thin: 1, actionButton: 1 },
@@ -331,5 +334,83 @@ describe('NftDetailSheet', () => {
       expect(mockSendNft).toHaveBeenCalledWith(nft, 'DestAddr111');
       expect(screen.getByTestId('transaction-success-screen')).toBeTruthy();
     });
+  });
+});
+
+describe('NftDetailSheet with a watch-only wallet', () => {
+  afterEach(() => {
+    mockIsSignable = true;
+  });
+
+  it('hides send and burn entirely, rather than leaving them looking live', () => {
+    // Burn used to carry `disabled` with no disabled style, so it read as an
+    // enabled control that silently did nothing. Web and extension hide these.
+    mockIsSignable = false;
+
+    render(
+      <NftDetailSheet
+        visible
+        onClose={() => {}}
+        account={{ getNetworkId: () => 'solana-mainnet', canSign: false } as any}
+        nft={
+          {
+            mint: 'Mint111',
+            name: 'Blur NFT',
+            image: 'https://example.com/nft.png',
+            blockchain: 'solana',
+          } as any
+        }
+      />
+    );
+
+    expect(screen.queryByTestId('nft-detail-send-button')).toBeNull();
+    expect(screen.queryByTestId('nft-detail-burn-button')).toBeNull();
+  });
+
+  it('dims Burn whenever it is disabled, the way Send already did', () => {
+    // The root defect, independent of watch-only: Burn took `disabled` and no
+    // disabled style, so any disabled state — here, an account still resolving
+    // — rendered a control that looked pressable and answered nothing.
+    render(
+      <NftDetailSheet
+        visible
+        onClose={() => {}}
+        nft={
+          {
+            mint: 'Mint111',
+            name: 'Blur NFT',
+            image: 'https://example.com/nft.png',
+            blockchain: 'solana',
+          } as any
+        }
+      />
+    );
+
+    const burn = screen.getByTestId('nft-detail-burn-button');
+    expect(burn.props.accessibilityState?.disabled ?? burn.props.disabled).toBe(true);
+
+    const burnStyle = StyleSheet.flatten(burn.props.style) as { opacity?: number };
+    expect(burnStyle.opacity).toBeLessThan(1);
+  });
+
+  it('keeps them for a wallet that holds its key', () => {
+    render(
+      <NftDetailSheet
+        visible
+        onClose={() => {}}
+        account={{ getNetworkId: () => 'solana-mainnet', canSign: true } as any}
+        nft={
+          {
+            mint: 'Mint111',
+            name: 'Blur NFT',
+            image: 'https://example.com/nft.png',
+            blockchain: 'solana',
+          } as any
+        }
+      />
+    );
+
+    expect(screen.getByTestId('nft-detail-send-button')).toBeTruthy();
+    expect(screen.getByTestId('nft-detail-burn-button')).toBeTruthy();
   });
 });

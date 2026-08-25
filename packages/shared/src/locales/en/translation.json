@@ -896,7 +896,8 @@
     "no_nfts": "No collectibles found",
     "no_account_for_network": "No account available for this network.",
     "developer_banner": "Developer Mode - Showing testnet NFTs",
-    "load_error": "Your collectibles couldn't be loaded right now."
+    "load_error": "Your collectibles couldn't be loaded right now.",
+    "loading": "Loading your collectibles…"
   },
   "common": {
     "cancel": "Cancel",
