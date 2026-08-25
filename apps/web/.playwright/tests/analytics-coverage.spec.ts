@@ -178,13 +178,17 @@ test('every non-on-chain event in the catalog actually fires', async ({ page, br
   await derived.click();
   await page.getByTestId('account-add-derive-continue-button').click();
   await page.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
-  await expect(page.getByTestId('account-add-button')).toBeVisible({ timeout: 60_000 });
-  // Visible is not clickable here. The wait screen is a fixed, full-viewport
-  // overlay that stays mounted through its whole exit animation, so it goes on
-  // swallowing clicks while the screen underneath is already on show.
-  await expect(page.getByTestId('loading-screen')).toHaveCount(0, { timeout: 30_000 });
+  // Adding an account closes settings: the wait owns the viewport and its last
+  // wave leaves over home, not over the sidebar. Waiting on the overlay's
+  // detachment rather than on anything underneath — it is fixed and
+  // full-viewport, so it goes on swallowing clicks while the screen behind it
+  // is already on show.
+  await expect(page.getByTestId('loading-screen')).toHaveCount(0, { timeout: 120_000 });
+  await expect(page.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
   // ── wallet_recovered — an IMPORTED seed is a recovery.
+  await openSettings(page);
+  await page.getByTestId('settings-item-accounts').click();
   await page.getByTestId('account-add-button').click();
   await page.getByTestId('account-add-method-import').click();
   await page
@@ -192,10 +196,8 @@ test('every non-on-chain event in the catalog actually fires', async ({ page, br
     .fill(process.env.SALMON_TEST_SEED_B ?? '');
   await page.getByTestId('account-add-seed-continue-button').click({ timeout: 30_000 });
   await page.getByTestId('account-add-confirm-button').click({ timeout: 30_000 });
-  await expect(page.getByTestId('account-add-button')).toBeVisible({ timeout: 90_000 });
-  await expect(page.getByTestId('loading-screen')).toHaveCount(0, { timeout: 30_000 });
-
-  await closeSettings(page);
+  await expect(page.getByTestId('loading-screen')).toHaveCount(0, { timeout: 120_000 });
+  await expect(page.getByTestId('home-screen')).toBeVisible({ timeout: 30_000 });
 
   // ── wallet_switched — the switcher now holds three accounts; pick another.
   await page.getByTestId('wallet-header-account-switcher').first().click();

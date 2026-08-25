@@ -52,6 +52,7 @@
  *   looping, and only then is the exit planned — see the visibility effect.
  */
 import { memo, useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { keyframes } from '@emotion/react';
 import { styled } from '../../utils/styled';
@@ -717,7 +718,7 @@ export const LoadingScreen = memo(function LoadingScreen({
   // Don't render if not visible
   if (!isVisible) return null;
 
-  return (
+  const overlay = (
     // `loading-screen` is a test handle with a reason: this overlay is fixed
     // and covers the viewport, so it swallows clicks for as long as it is
     // mounted — including the whole exit animation, while the screen
@@ -795,4 +796,14 @@ export const LoadingScreen = memo(function LoadingScreen({
       </Cluster>
     </Overlay>
   );
+
+  // **Mounted on the body, not where it was written.** `position: fixed`
+  // resolves against the nearest ancestor carrying a `transform` — not against
+  // the viewport — so a wait rendered inside a sliding panel (the settings
+  // stack keeps `translateX(0)` as its resting state) was clipped to that
+  // panel. The overlay covers the app or it is not a wait, and the transform it
+  // was trapped under is load-bearing for the slide, so the overlay leaves the
+  // subtree instead. Everything else — context, the measurement pass, the
+  // `loading-screen` handle — is unchanged: a portal keeps the React tree.
+  return typeof document === 'undefined' ? overlay : createPortal(overlay, document.body);
 });

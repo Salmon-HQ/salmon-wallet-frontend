@@ -54,8 +54,13 @@ vi.mock('@salmon/shared', () => {
     opacity: { full: 1, half: 0.5, disabled: 0.5 },
     componentSizes: { backButtonSize: 40, drawerWidth: 320 },
     durationMs: { fast: 150, normal: 300, medium: 250, slow: 400 },
+    useWaitExit: (showWait: boolean) => ({ held: showWait, onExited: vi.fn() }),
   };
 });
+
+vi.mock('../LoadingScreen', () => ({
+  LoadingScreen: ({ title }: { title?: string }) => <div data-testid="loading-screen">{title}</div>,
+}));
 
 import { SettingsPanelStack } from './SettingsPanelStack';
 import type { PanelRegistry } from './types';
@@ -75,12 +80,12 @@ const makeRegistry = (): PanelRegistry => ({
   support: () => <div data-testid="panel-support">A</div>,
 });
 
-const renderStack = () =>
+const renderStack = (overrides?: { onClose?: () => void; panelRegistry?: PanelRegistry }) =>
   render(
     <SettingsPanelStack
       visible
-      onClose={vi.fn()}
-      panelRegistry={makeRegistry()}
+      onClose={overrides?.onClose ?? vi.fn()}
+      panelRegistry={overrides?.panelRegistry ?? makeRegistry()}
       developerNetworksEnabled={false}
       onDeveloperNetworksToggle={vi.fn()}
       onRemoveWallet={vi.fn()}
@@ -206,5 +211,49 @@ describe('SettingsPanelStack — a rebuilt registry does not remount the panel',
     fireEvent.click(screen.getByTestId('rerender'));
 
     expect(screen.getByTestId('panel-counter').textContent).toBe('1');
+  });
+});
+
+describe('SettingsPanelStack — a panel raises the wait on the stack', () => {
+  // The wait a panel raises is hosted by the stack, outside the drawer: the
+  // add-account flow closes settings the moment its work lands, and a wait
+  // rendered inside the drawer would be unmounted with it mid-wave.
+  const waitingRegistry = (): PanelRegistry => ({
+    ...makeRegistry(),
+    about: ({ onWait }) => (
+      <button data-testid="panel-wait-trigger" onClick={() => onWait({ title: 'Adding' })}>
+        wait
+      </button>
+    ),
+    support: ({ onClose }) => (
+      <button data-testid="panel-close-trigger" onClick={onClose}>
+        close
+      </button>
+    ),
+  });
+
+  it('shows the wait the panel asked for', async () => {
+    renderStack({ panelRegistry: waitingRegistry() });
+    fireEvent.click(screen.getByRole('button', { name: 'settings.about' }));
+
+    await waitFor(() => screen.getByTestId('panel-wait-trigger'));
+    expect(screen.queryByTestId('loading-screen')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('panel-wait-trigger'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('loading-screen').textContent).toBe('Adding');
+    });
+  });
+
+  it('lets a panel close the whole settings surface', async () => {
+    const onClose = vi.fn();
+    renderStack({ onClose, panelRegistry: waitingRegistry() });
+    fireEvent.click(screen.getByRole('button', { name: 'settings.help_support' }));
+
+    await waitFor(() => screen.getByTestId('panel-close-trigger'));
+    fireEvent.click(screen.getByTestId('panel-close-trigger'));
+
+    expect(onClose).toHaveBeenCalled();
   });
 });
