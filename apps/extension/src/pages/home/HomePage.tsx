@@ -1230,7 +1230,14 @@ export function HomePage({ onAddAccount: _onAddAccount }: HomePageProps) {
           onBack={onBack}
         />
       ),
-      'account-add': ({ onBack }) => <AccountAddPanel onComplete={onBack} onBack={onBack} />,
+      'account-add': ({ onBack, onWait, onClose }) => (
+        <AccountAddPanel
+          onComplete={onBack}
+          onBack={onBack}
+          onWait={onWait}
+          onCloseSettings={onClose}
+        />
+      ),
     }),
     [
       currency,

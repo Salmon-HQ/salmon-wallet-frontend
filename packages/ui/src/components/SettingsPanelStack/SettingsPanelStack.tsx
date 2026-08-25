@@ -48,10 +48,12 @@ import {
   opacity,
   componentSizes,
   durationMs,
+  useWaitExit,
 } from '@salmon/shared';
 import { styled } from '../../utils/styled';
+import { LoadingScreen } from '../LoadingScreen';
 
-import type { SettingsPanelStackProps } from './types';
+import type { PanelContentProps, PanelRenderer, PanelWait, SettingsPanelStackProps } from './types';
 
 // Re-use the same section/item types from the old SettingsSheet
 interface SettingsItem {
@@ -351,6 +353,28 @@ export function SettingsPanelStack({
     onClose();
   }, [onClose]);
 
+  /**
+   * The wait a panel raises, hosted **here** rather than inside the panel.
+   *
+   * Two reasons, and both are about lifetime rather than looks. A wait stands
+   * over the whole app, and the flows that wait in settings (adding an account)
+   * finish by closing settings — so the drawer is torn down while the closing
+   * wave is still crossing. A wait rendered inside a panel goes with it and the
+   * wave plays nowhere, which is the exact cut `useWaitExit` exists to prevent.
+   * Rendered as a sibling of the drawer, the wait outlives the surface that
+   * raised it and leaves over the screen underneath.
+   *
+   * `wait` is kept after it is lowered so the copy survives the exit ramp —
+   * only `waiting` flips, which is what starts the wait's own passage out.
+   */
+  const [wait, setWait] = useState<PanelWait | null>(null);
+  const [waiting, setWaiting] = useState(false);
+  const handleWait = useCallback((next: PanelWait | null) => {
+    if (next) setWait(next);
+    setWaiting(next !== null);
+  }, []);
+  const { held: waitHeld, onExited: onWaitExited } = useWaitExit(waiting);
+
   // ---- Settings menu (panel 0) ----
 
   const handleItemClick = useCallback(
@@ -465,68 +489,104 @@ export function SettingsPanelStack({
   );
 
   return (
-    <Drawer
-      anchor="right"
-      open={visible}
-      onClose={handleClose}
-      disableEnforceFocus
-      PaperProps={{
-        sx: {
-          backgroundColor: 'transparent',
-          boxShadow: shadowsCSS.none,
-        },
-      }}
-      slotProps={{
-        backdrop: {
+    <>
+      {waitHeld && wait && (
+        <LoadingScreen
+          visible={waiting}
+          title={wait.title}
+          subtitle={wait.subtitle}
+          onExited={onWaitExited}
+        />
+      )}
+      <Drawer
+        anchor="right"
+        open={visible}
+        onClose={handleClose}
+        disableEnforceFocus
+        PaperProps={{
           sx: {
-            backgroundColor: colors.dialog.overlay,
+            backgroundColor: 'transparent',
+            boxShadow: shadowsCSS.none,
           },
-        },
-      }}
-    >
-      <DrawerPaper>
-        {/* Base: Settings Menu (panel 0) */}
-        <Header>
-          <HeaderTitle>{t('settings.title', 'Settings')}</HeaderTitle>
-          <CloseButton
-            onClick={handleClose}
-            aria-label={t('actions.close', 'Close')}
-            data-testid="settings-close-button"
-          >
-            <XIcon />
-          </CloseButton>
-        </Header>
-        <MenuContent>{SETTINGS_SECTIONS.map(renderSection)}</MenuContent>
-
-        {/* Stacked panels */}
-        {stack.map((entry, idx) => {
-          const isTop = idx === stack.length - 1;
-          // Only render top 2 panels for performance
-          if (idx < stack.length - 2) return null;
-          const isExiting = isTop && animating && slideDirection === 'out';
-          const Panel = panelRegistry[entry.screen];
-          if (!Panel) {
-            console.warn(`SettingsPanelStack: No panel registered for screen "${entry.screen}"`);
-            return null;
-          }
-          return (
-            <PanelWrapper
-              key={`${entry.screen}-${idx}`}
-              $isTop={isTop}
-              $animating={animating && isTop}
-              $direction={isTop && animating ? slideDirection : 'idle'}
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: colors.dialog.overlay,
+            },
+          },
+        }}
+      >
+        <DrawerPaper>
+          {/* Base: Settings Menu (panel 0) */}
+          <Header>
+            <HeaderTitle>{t('settings.title', 'Settings')}</HeaderTitle>
+            <CloseButton
+              onClick={handleClose}
+              aria-label={t('actions.close', 'Close')}
+              data-testid="settings-close-button"
             >
-              <Panel
-                onBack={isExiting ? () => {} : handlePop}
-                onNavigate={isExiting ? () => {} : handlePush}
-                {...(entry.props || {})}
-              />
-            </PanelWrapper>
-          );
-        })}
-      </DrawerPaper>
-    </Drawer>
+              <XIcon />
+            </CloseButton>
+          </Header>
+          <MenuContent>{SETTINGS_SECTIONS.map(renderSection)}</MenuContent>
+
+          {/* Stacked panels */}
+          {stack.map((entry, idx) => {
+            const isTop = idx === stack.length - 1;
+            // Only render top 2 panels for performance
+            if (idx < stack.length - 2) return null;
+            const isExiting = isTop && animating && slideDirection === 'out';
+            const renderPanel = panelRegistry[entry.screen];
+            if (!renderPanel) {
+              console.warn(`SettingsPanelStack: No panel registered for screen "${entry.screen}"`);
+              return null;
+            }
+            return (
+              <PanelWrapper
+                key={`${entry.screen}-${idx}`}
+                $isTop={isTop}
+                $animating={animating && isTop}
+                $direction={isTop && animating ? slideDirection : 'idle'}
+              >
+                {/*
+                Rendered through a stable host, not mounted as `<Panel />`. A
+                registry entry is a render function (`PanelRenderer`) and the
+                registries are rebuilt by a `useMemo` whose deps include app
+                state such as the active account, so an entry gets a fresh
+                identity whenever that state moves. Mounting the entry itself
+                made React read that new identity as a different component and
+                remount the panel: adding an account switches the active
+                account, which tore the add panel down mid-flight and lost the
+                completion handoff parked behind its wait, leaving the panel
+                sitting on top of the accounts list instead of returning to it.
+                (The mobile stack already calls its registry this way.)
+              */}
+                <PanelHost
+                  render={renderPanel}
+                  onBack={isExiting ? () => {} : handlePop}
+                  onNavigate={isExiting ? () => {} : handlePush}
+                  onWait={handleWait}
+                  onClose={handleClose}
+                  {...(entry.props || {})}
+                />
+              </PanelWrapper>
+            );
+          })}
+        </DrawerPaper>
+      </Drawer>
+    </>
   );
+}
+
+/**
+ * Renders one registry entry.
+ *
+ * A stable component type, so React reconciles the panel by the identity of
+ * the components the entry returns rather than by the entry itself.
+ */
+function PanelHost({ render, ...props }: { render: PanelRenderer } & PanelContentProps) {
+  return render(props);
 }
 
 // ============================================================================

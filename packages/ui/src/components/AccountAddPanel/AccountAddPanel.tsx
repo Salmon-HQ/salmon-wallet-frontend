@@ -8,7 +8,7 @@
  * 4. set-name: Choose account name
  */
 
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -51,12 +51,10 @@ import {
   type AccountAddStep,
   type DerivedAccountInfo,
   componentSizes,
-  useWaitExit,
 } from '@salmon/shared';
 import { SettingsPanelContent } from '../SettingsPanelContent';
 import { PrimaryButton } from '../Button';
 import { DerivedAccountCard } from '../DerivedAccountCard';
-import { LoadingScreen } from '../LoadingScreen';
 import { WarningNotice } from '../WarningNotice';
 import { SeedPhraseEntry } from '../SeedPhrase';
 import { PasswordInput } from '../PasswordInput';
@@ -124,7 +122,12 @@ const StyledTextField = styled(TextField)({
 // Component
 // ============================================================================
 
-export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): React.ReactElement {
+export function AccountAddPanel({
+  onComplete,
+  onBack,
+  onWait,
+  onCloseSettings,
+}: AccountAddPanelProps): React.ReactElement {
   const { t } = useTranslation();
   const [accountState, accountActions] = useAccountsContext();
   const { activeAccount, accounts, counter } = accountState;
@@ -148,28 +151,34 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   const [reauthPassword, setReauthPassword] = useState('');
   const [reauthError, setReauthError] = useState('');
   const [reauthChecking, setReauthChecking] = useState(false);
-  const [loading, setLoading] = useState(false);
   const privateKeyImport = useImportPrivateKey({ accounts });
   const watchOnlyImport = useImportWatchOnly({ accounts });
 
   /**
-   * The wait's exit, held. This panel renders inside the settings panel stack,
-   * a drawer with its own choreography, so it takes only the half of the
-   * passage that is its own: the wait stays mounted with `visible={false}` —
-   * which is what starts its exit — and the completion handoff is parked
-   * behind `onExited`, because completing earlier unmounts the panel and cuts
-   * the closing wave mid-crossing (DESIGN.md §The wait). The wait's own
-   * watchdog guarantees the report, so the handoff cannot be stranded. It does
-   * not sink: a sheet's content never speaks the verb.
+   * The wait is **not rendered here**. This panel lives inside the settings
+   * drawer, and the add finishes by closing that drawer — a wait mounted in
+   * here would be torn down with it and its closing wave would play nowhere,
+   * which is the exact cut `useWaitExit` exists to prevent. The panel raises
+   * the wait on the stack (`onWait`), which hosts it outside the drawer, and
+   * the wait then leaves over the screen the user is returned to.
    */
-  const { held, onExited } = useWaitExit(loading);
-  const pendingCompleteRef = useRef(false);
-  const handleWaitExited = useCallback(() => {
-    onExited();
-    if (!pendingCompleteRef.current) return;
-    pendingCompleteRef.current = false;
-    onComplete();
-  }, [onExited, onComplete]);
+  const raiseWait = useCallback(() => {
+    onWait({
+      title: selectedDerived
+        ? t('settings.account_add.confirm_create')
+        : t('settings.account_add.confirm_import'),
+      subtitle: t('general.loading'),
+    });
+  }, [onWait, selectedDerived, t]);
+
+  // A wait this panel raised may not outlive the panel unnoticed: if the user
+  // dismisses settings mid-flight, nothing else would ever lower it. Read
+  // through a ref so only unmount — never a new `onWait` identity — lowers it.
+  const onWaitRef = useRef(onWait);
+  useEffect(() => {
+    onWaitRef.current = onWait;
+  }, [onWait]);
+  useEffect(() => () => onWaitRef.current(null), []);
 
   const defaultName = useMemo(
     () => t('settings.account_add.default_name', { number: counter + 1 }),
@@ -316,12 +325,22 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       // leaving it resident until the panel happens to unmount.
       privateKeyImport.reset();
       watchOnlyImport.reset();
-      // Parked, not fired: dropping `loading` starts the wait's exit, and
-      // `handleWaitExited` completes once the last wave has left the screen.
-      pendingCompleteRef.current = true;
-      setLoading(false);
+      // The account has landed, so the surface that added it is done: the wait
+      // is lowered — which is what starts its exit — and settings closes under
+      // it, so the last wave crosses the home screen rather than a sidebar.
+      onWait(null);
+      onComplete();
+      onCloseSettings();
     },
-    [accountActions, selectedDerived, privateKeyImport, watchOnlyImport]
+    [
+      accountActions,
+      selectedDerived,
+      privateKeyImport,
+      watchOnlyImport,
+      onWait,
+      onComplete,
+      onCloseSettings,
+    ]
   );
 
   const handleConfirm = useCallback(async () => {
@@ -335,12 +354,12 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       return;
     }
 
-    setLoading(true);
+    raiseWait();
     try {
       const { account } = await buildAccount();
       await persistAccount(account);
     } catch (err) {
-      setLoading(false);
+      onWait(null);
       // The cache can still lapse between the check and the write.
       if (err instanceof EncryptionMaterialMissingError) {
         setStep('reauth');
@@ -349,7 +368,7 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       console.error('Failed to add account:', err);
       setConfirmError(t('settings.account_add.creation_error'));
     }
-  }, [buildAccount, persistAccount, t]);
+  }, [buildAccount, persistAccount, raiseWait, onWait, t]);
 
   /**
    * Completes the add with a password the user just supplied. Verifies it
@@ -379,17 +398,17 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     }
 
     setReauthError('');
-    setLoading(true);
+    raiseWait();
     try {
       const { account } = await buildAccount();
       await persistAccount(account, reauthPassword);
       setReauthPassword('');
     } catch (err) {
-      setLoading(false);
+      onWait(null);
       console.error('Failed to add account after re-auth:', err);
       setConfirmError(t('settings.account_add.creation_error'));
     }
-  }, [reauthPassword, accountActions, buildAccount, persistAccount, t]);
+  }, [reauthPassword, accountActions, buildAccount, persistAccount, raiseWait, onWait, t]);
 
   const handleStepBack = useCallback(() => {
     if (step === 'reauth') {
@@ -430,18 +449,6 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
 
   return (
     <>
-      {held && (
-        <LoadingScreen
-          visible={loading}
-          title={
-            selectedDerived
-              ? t('settings.account_add.confirm_create')
-              : t('settings.account_add.confirm_import')
-          }
-          subtitle={t('general.loading')}
-          onExited={handleWaitExited}
-        />
-      )}
       <SettingsPanelContent title={stepTitles[step]} onBack={handleStepBack}>
         <Box sx={{ padding: `0 ${spacing.lg}px` }}>
           {step === 'select-method' && (
