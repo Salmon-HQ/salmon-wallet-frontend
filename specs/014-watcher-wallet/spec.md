@@ -1,10 +1,10 @@
 # Feature Specification: A wallet that can only watch — import by public key
 
-**Feature Branch**: `lucamazza02/dev-10-importar-watcher-wallet-usando-una-public-key` (not yet created)
+**Feature Branch**: `dev-10-import-watch-only-wallet-by-public-key`
 
 **Created**: 2026-08-25
 
-**Status**: Draft — audit complete, no code written
+**Status**: Decided — audit complete, implementation in progress
 
 **Input**: Linear [DEV-10 — *Importar Watcher Wallet usando una public key*](https://linear.app/salmon-wallet/issue/DEV-10/importar-watcher-wallet-usando-una-public-key). The ticket's own words set the bar: *"No alcanza con deshabilitar los botones visualmente: la lógica interna también debe impedir que una Watcher Wallet llegue a cualquier flujo de firma o ejecución de transacciones."*
 
