@@ -66,6 +66,11 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
+// Flipped per test; the mock factory below closes over it.
+let mockActiveAccount: { secret: { kind: string; mnemonic?: string; address?: string } } = {
+  secret: { kind: 'mnemonic', mnemonic: 'owner mnemonic' },
+};
+
 jest.mock('@salmon/shared', () => ({
   // The real design tokens: hand-listing the subset a screen happens to read
   // breaks this test whenever the panel starts reading one more (see
@@ -74,7 +79,7 @@ jest.mock('@salmon/shared', () => ({
   useAccountsContext: () => [
     {
       accounts: [{ id: 'a1' }, { id: 'a2' }],
-      activeAccount: { secret: { kind: 'mnemonic', mnemonic: 'owner mnemonic' } },
+      activeAccount: mockActiveAccount,
     },
     { addAccount: mockAddAccount, checkPassword: mockCheckPassword },
   ],
@@ -521,5 +526,37 @@ describe('AccountAddPanel failure notice', () => {
       expect(screen.getByText('general.error')).toBeTruthy();
     });
     expect(screen.getByText('settings.account_add.creation_error')).toBeTruthy();
+  });
+});
+
+describe('AccountAddPanel derive card', () => {
+  afterEach(() => {
+    mockActiveAccount = { secret: { kind: 'mnemonic', mnemonic: 'owner mnemonic' } };
+  });
+
+  it('offers deriving when the active account has a seed phrase', () => {
+    render(<AccountAddPanel onComplete={() => {}} onBack={() => {}} />);
+
+    expect(screen.getByTestId('account-add-method-derive')).toBeTruthy();
+  });
+
+  it('does not offer deriving from an account imported by private key', () => {
+    // The card used to render for every account and its handler returned
+    // silently without a mnemonic, so tapping it did nothing at all.
+    mockActiveAccount = { secret: { kind: 'privateKey', address: 'Addr111' } };
+
+    render(<AccountAddPanel onComplete={() => {}} onBack={() => {}} />);
+
+    expect(screen.queryByTestId('account-add-method-derive')).toBeNull();
+    // The other methods stay: importing is still possible from here.
+    expect(screen.getByTestId('account-add-method-import')).toBeTruthy();
+  });
+
+  it('does not offer deriving from a watch-only account either', () => {
+    mockActiveAccount = { secret: { kind: 'watchOnly', address: 'Addr222' } };
+
+    render(<AccountAddPanel onComplete={() => {}} onBack={() => {}} />);
+
+    expect(screen.queryByTestId('account-add-method-derive')).toBeNull();
   });
 });
