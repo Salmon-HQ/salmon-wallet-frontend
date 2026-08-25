@@ -295,10 +295,8 @@
       "confirm_import": "Importar Cuenta",
       "confirm": "Confirmar",
       "creation_error": "Error al crear la cuenta. Por favor, intentalo de nuevo.",
-      "session_expired": "Tu sesión expiró. Volvé a desbloquear la billetera para agregar una cuenta.",
       "import_private_key": "Importar clave privada",
       "import_private_key_description": "Agregá una billetera que ya tenés usando su clave privada",
-      "session_expired_title": "Sesión expirada",
       "reauth_title": "Confirmá tu contraseña",
       "reauth_body": "La billetera estuvo inactiva unos minutos, así que la clave que la cifra ya no está en memoria. Ingresá tu contraseña para terminar de agregar esta cuenta — no se pierde nada de lo que cargaste.",
       "reauth_confirm": "Confirmar y agregar"
@@ -452,6 +450,7 @@
     "biometric_prompt": "Autenticate para desbloquear tu billetera",
     "biometric_enroll_prompt": "Confirmá para activar el desbloqueo biométrico",
     "password_placeholder": "Contraseña",
+    "password_label": "Contraseña",
     "error": {
       "empty_password": "Por favor ingresá tu contraseña",
       "invalid_password": "La contraseña es incorrecta",
@@ -559,12 +558,9 @@
       "label": "Clave privada",
       "placeholder": "Pegá tu clave privada",
       "help": "Pegá la clave tal cual te la dio tu otra billetera.",
-      "show": "Mostrar clave privada",
-      "hide": "Ocultar clave privada",
       "warning_title": "Nunca compartas tu clave privada",
       "warning_body": "Quien la tenga puede mover todos los activos de esta billetera. Salmon nunca te la va a pedir.",
       "resolved_address": "Billetera a importar",
-      "continue": "Continuar",
       "errors": {
         "empty": "Ingresá tu clave privada para continuar.",
         "format": "Eso no parece una clave privada. Copiala de nuevo desde la billetera de la que la estás trayendo.",
