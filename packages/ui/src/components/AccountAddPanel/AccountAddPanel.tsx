@@ -177,6 +177,12 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   );
   const [accountName, setAccountName] = useState('');
 
+  // Deriving needs a seed phrase to derive from. An account imported from a
+  // private key, or a watch-only one, has none — so the card is not offered
+  // rather than offered and inert. This reads the same value the handler
+  // guards on, so the two cannot drift apart.
+  const canDerive = !!getAccountMnemonic(activeAccount);
+
   const handleSelectDerive = useCallback(async () => {
     const mnemonic = getAccountMnemonic(activeAccount);
     if (!mnemonic) return;
@@ -440,27 +446,29 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         <Box sx={{ padding: `0 ${spacing.lg}px` }}>
           {step === 'select-method' && (
             <>
-              <MethodCard onClick={handleSelectDerive} data-testid="account-add-method-derive">
-                <MethodIcon>
-                  <TreeStructureIcon color={colors.accent.primary} size={iconSize.xl} />
-                </MethodIcon>
-                <MethodInfo>
-                  <Typography
-                    sx={{
-                      color: colors.text.primary,
-                      fontWeight: fontWeight.semibold,
-                      fontSize: fontSize.body,
-                      marginBottom: spacing.xxs,
-                    }}
-                  >
-                    {t('settings.account_add.create_new')}
-                  </Typography>
-                  <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
-                    {t('settings.account_add.create_new_description')}
-                  </Typography>
-                </MethodInfo>
-                <CaretRightIcon color={colors.text.secondary} />
-              </MethodCard>
+              {canDerive && (
+                <MethodCard onClick={handleSelectDerive} data-testid="account-add-method-derive">
+                  <MethodIcon>
+                    <TreeStructureIcon color={colors.accent.primary} size={iconSize.xl} />
+                  </MethodIcon>
+                  <MethodInfo>
+                    <Typography
+                      sx={{
+                        color: colors.text.primary,
+                        fontWeight: fontWeight.semibold,
+                        fontSize: fontSize.body,
+                        marginBottom: spacing.xxs,
+                      }}
+                    >
+                      {t('settings.account_add.create_new')}
+                    </Typography>
+                    <Typography sx={{ color: colors.text.secondary, fontSize: fontSize.caption }}>
+                      {t('settings.account_add.create_new_description')}
+                    </Typography>
+                  </MethodInfo>
+                  <CaretRightIcon color={colors.text.secondary} />
+                </MethodCard>
+              )}
 
               <MethodCard onClick={handleSelectImport} data-testid="account-add-method-import">
                 <MethodIcon>

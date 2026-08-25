@@ -146,6 +146,12 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   // Step handlers
   // ========================================================================
 
+  // Deriving needs a seed phrase to derive from. An account imported from a
+  // private key, or a watch-only one, has none — so the card is not offered
+  // rather than offered and inert. This reads the same value the handler
+  // guards on, so the two cannot drift apart.
+  const canDerive = !!getAccountMnemonic(activeAccount);
+
   const handleSelectDerive = useCallback(async () => {
     const mnemonic = getAccountMnemonic(activeAccount);
     if (!mnemonic) return;
@@ -403,24 +409,26 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
 
   const renderSelectMethod = () => (
     <View style={styles.methodContainer}>
-      <TouchableOpacity
-        testID="account-add-method-derive"
-        accessibilityRole="button"
-        style={styles.methodCard}
-        onPress={handleSelectDerive}
-        activeOpacity={0.7}
-      >
-        <View style={styles.methodIcon}>
-          <TreeStructureIcon size={iconSize.xl} color={semantic.accent.ink} />
-        </View>
-        <View style={styles.methodInfo}>
-          <Text style={styles.methodTitle}>{t('settings.account_add.create_new')}</Text>
-          <Text style={styles.methodDescription}>
-            {t('settings.account_add.create_new_description')}
-          </Text>
-        </View>
-        <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
-      </TouchableOpacity>
+      {canDerive && (
+        <TouchableOpacity
+          testID="account-add-method-derive"
+          accessibilityRole="button"
+          style={styles.methodCard}
+          onPress={handleSelectDerive}
+          activeOpacity={0.7}
+        >
+          <View style={styles.methodIcon}>
+            <TreeStructureIcon size={iconSize.xl} color={semantic.accent.ink} />
+          </View>
+          <View style={styles.methodInfo}>
+            <Text style={styles.methodTitle}>{t('settings.account_add.create_new')}</Text>
+            <Text style={styles.methodDescription}>
+              {t('settings.account_add.create_new_description')}
+            </Text>
+          </View>
+          <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity
         testID="account-add-method-import"
