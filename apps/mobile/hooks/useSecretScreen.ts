@@ -12,17 +12,16 @@
  *   blocks screenshots, screen recording / MediaProjection, and blanks the
  *   Recents (app-switcher) thumbnail. A real block.
  *
- * - iOS: Apple exposes no API to block a screenshot, so this is weaker.
- *   `preventScreenCaptureAsync` relies on an undocumented side effect of
- *   `UITextField.isSecureTextEntry` to make the captured image come out
- *   blank, and covers the UI when `UIScreen.isCaptured` flips during a
- *   recording. `enableAppSwitcherProtectionAsync` is the documented half: it
- *   blurs the window on `willResignActive`, which is what keeps key material
- *   out of the app-switcher snapshot the OS takes before JS can react.
- *
- * Android does not need the app-switcher call — FLAG_SECURE already covers
- * Recents — and the iOS-only native function throws when it is missing, so
- * it is guarded by platform.
+ * - iOS: only `enableAppSwitcherProtectionAsync`, which blurs the window on
+ *   `willResignActive` and keeps key material out of the app-switcher
+ *   snapshot. Screenshot prevention is deliberately NOT attempted on iOS:
+ *   Apple exposes no API for it, and `preventScreenCaptureAsync`'s
+ *   workaround — reparenting the visible layers into a secure
+ *   `UITextField` — renders the LIVE screen black on some devices, not just
+ *   the captured image (expo/expo#24041; reproduced on a physical device in
+ *   the 1.0.3 (14) TestFlight build, where every secret surface opened
+ *   black, and on the iOS Simulator). A wallet screen the user cannot see
+ *   is a worse failure than a screenshot the user chooses to take.
  */
 import { useEffect, useId } from 'react';
 import { Platform } from 'react-native';
@@ -32,30 +31,12 @@ import {
   enableAppSwitcherProtectionAsync,
   disableAppSwitcherProtectionAsync,
 } from 'expo-screen-capture';
-import { DEBUG_FORCE_CAPTURE_GUARD_IN_DEV } from '../src/debug/captureGuard';
-
-/**
- * The iOS Simulator renders "secure" surfaces (the isSecureTextEntry trick
- * behind preventScreenCaptureAsync) as a black display, not just a black
- * screenshot — a secret screen becomes unusable while developing. No
- * JS-visible signal separates simulator from physical device in this dev
- * client (measured: Constants.platform.ios lost its model id in SDK 55,
- * Platform.constants carries no flag, hostUri reports the LAN IP on both),
- * and expo-device is a native module whose addition would invalidate the
- * installed dev builds. So the guard is skipped in iOS development builds
- * altogether — `__DEV__` is compiled false in release, where the guard
- * always runs — with a debug flag to force it back on when the protection
- * itself is being verified on a physical device.
- */
-function shouldSkipCaptureGuard(): boolean {
-  return __DEV__ && Platform.OS === 'ios' && !DEBUG_FORCE_CAPTURE_GUARD_IN_DEV;
-}
 
 /**
  * Several secret components can be mounted at once (for example one
  * SeedWordInput per word). `enableAppSwitcherProtectionAsync` has no key
  * argument, so it is reference counted here: enable on the first mount,
- * disable only once the last one unmounts. `usePreventScreenCapture` does
+ * disable only once the last one unmounts. `preventScreenCaptureAsync` does
  * its own keyed refcounting, which is why each caller passes a unique key.
  */
 let appSwitcherRefCount = 0;
@@ -84,10 +65,10 @@ function releaseAppSwitcherProtection(): void {
 export function useSecretScreen(label: string): void {
   const instanceId = useId();
 
-  // Inlined usePreventScreenCapture so the simulator can skip it (a hook
-  // cannot be called conditionally); same keyed refcounting underneath.
+  // Android only: FLAG_SECURE, the real block. On iOS the equivalent call
+  // blacks out the live screen on some devices — see the header comment.
   useEffect(() => {
-    if (shouldSkipCaptureGuard()) return;
+    if (Platform.OS !== 'android') return;
     const key = `${label}:${instanceId}`;
     void preventScreenCaptureAsync(key).catch(() => {});
     return () => {

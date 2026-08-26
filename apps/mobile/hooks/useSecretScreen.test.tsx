@@ -4,21 +4,12 @@
  * These assertions are the reason the hook exists: a secret screen that
  * acquires protection but never releases it leaves the whole app unable to
  * screenshot, and one that releases too early re-exposes key material while
- * a sibling secret component is still mounted.
+ * a sibling secret component is still mounted. Capture prevention is
+ * Android-only — on iOS the workaround behind it blacks out the live screen
+ * on some devices (expo/expo#24041), so iOS gets only the app-switcher blur.
  */
 import { Text } from 'react-native';
 import { render } from '@testing-library/react-native';
-
-// The guard is skipped in iOS dev builds (the simulator renders secure
-// surfaces black); forcing the debug flag on lets these tests exercise the
-// real protection behavior under jest's __DEV__=true. The flag is read
-// lazily per mount, so the skip case below can flip it.
-let mockForceGuardInDev = true;
-jest.mock('../src/debug/captureGuard', () => ({
-  get DEBUG_FORCE_CAPTURE_GUARD_IN_DEV() {
-    return mockForceGuardInDev;
-  },
-}));
 
 const mockPreventScreenCaptureAsync = jest.fn((_key: string) => Promise.resolve());
 const mockAllowScreenCaptureAsync = jest.fn((_key: string) => Promise.resolve());
@@ -61,6 +52,15 @@ function SecretScreen({ label = 'test-secret' }: { label?: string }) {
 }
 
 describe('useSecretScreen', () => {
+  // Capture prevention is Android-only now; run the refcounting suite there.
+  const originalOS = Platform.OS;
+  beforeAll(() => {
+    Platform.OS = 'android';
+  });
+  afterAll(() => {
+    Platform.OS = originalOS;
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     __resetAppSwitcherRefCountForTests();
@@ -121,6 +121,9 @@ describe('useSecretScreen', () => {
 
       // Reference counted: enabled once, not once per component.
       expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
+      // Never on iOS: the secure-field workaround blacks out the live screen
+      // on some devices (expo/expo#24041).
+      expect(mockPreventScreenCaptureAsync).not.toHaveBeenCalled();
 
       first.unmount();
       expect(mockDisableAppSwitcherProtectionAsync).not.toHaveBeenCalled();
@@ -148,34 +151,5 @@ describe('useSecretScreen', () => {
       screen.unmount();
       expect(mockDisableAppSwitcherProtectionAsync).not.toHaveBeenCalled();
     });
-  });
-});
-
-describe('useSecretScreen in iOS development (default: guard skipped)', () => {
-  const originalOS = Platform.OS;
-
-  beforeAll(() => {
-    Platform.OS = 'ios';
-    mockForceGuardInDev = false; // the shipped default of the debug flag
-  });
-  afterAll(() => {
-    Platform.OS = originalOS;
-    mockForceGuardInDev = true;
-  });
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    __resetAppSwitcherRefCountForTests();
-  });
-
-  it('skips capture prevention (the sim renders secure surfaces black) but keeps app-switcher protection', () => {
-    const screen = render(<SecretScreen label="sim-secret" />);
-
-    expect(mockPreventScreenCaptureAsync).not.toHaveBeenCalled();
-    expect(mockEnableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
-
-    screen.unmount();
-    expect(mockAllowScreenCaptureAsync).not.toHaveBeenCalled();
-    expect(mockDisableAppSwitcherProtectionAsync).toHaveBeenCalledTimes(1);
   });
 });
