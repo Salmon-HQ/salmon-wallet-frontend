@@ -34,7 +34,7 @@ reachable backend with wrong behaviour **does** fail them.
 The complete gate before tagging a release (`web/v*` tag, store submission,
 or extension zip). Ordered so the cheap layers fail first. Steps 1–2 are
 machine-run; 3–5 are local because they need things CI does not have (the
-Docker backend, funded test wallets, an iOS simulator).
+Docker backend, test wallets you create and fund yourself, an iOS simulator).
 
 **1. PR checks already green** — every merged PR passed
 `typecheck + lint + test + check:i18n` (ci.yml). Nothing to re-run.
@@ -48,7 +48,7 @@ comes from step 3. A PR can opt into this workflow with the `e2e` label.
 
 **3. Playwright suites at full depth (local)** — with `../salmon-wallet-backend` running
 in Docker and real `.env.test` files (copied from `.env.test.example`, filled
-with the funded test seeds):
+with seeds for test wallets you create and fund with a small amount of SOL):
 
 ```bash
 pnpm --filter @salmon/web e2e          # all 3 browser projects
@@ -56,8 +56,9 @@ pnpm --filter @salmon/extension e2e    # headed by default
 ```
 
 Expected: green, with only the on-chain specs skipped (they are gated by
-`SALMON_E2E_ONCHAIN=1` because they spend real SOL — run them only when the
-release touches send/burn paths, and expect a small balance drain).
+`SALMON_E2E_ONCHAIN=1` because they spend real SOL from your test wallets —
+run them only when the release touches send/burn paths, and expect a small
+balance drain).
 
 **4. Maestro (mobile, local — needs a booted iOS simulator or Android
 emulator with the Expo dev build installed)**:
