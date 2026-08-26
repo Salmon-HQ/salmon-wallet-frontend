@@ -111,7 +111,7 @@ A **SALMON** token exists only as a "proposed ownership coin, not a live token".
 
 ### Platform fees — resolved: both rates are disclosed
 
-Salmon takes a **0.5% Jupiter swap referral** (server-side; the frontend has no referral logic at all) and a **0.4% StealthEX bridge partner fee** (`STEALTHEX_PARTNER_FEE` in `../salmon-api`, sent upstream as `partner_fee` and netted into the estimate StealthEX returns).
+Salmon takes a **0.5% Jupiter swap referral** (server-side; the frontend has no referral logic at all) and a **0.4% StealthEX bridge partner fee** (`STEALTHEX_PARTNER_FEE` in `../salmon-wallet-backend`, sent upstream as `partner_fee` and netted into the estimate StealthEX returns).
 
 The manifesto promises "No hidden gatekeepers. No opaque control." The tension this section used to record — disclose the cut or keep it quiet — was **resolved in favour of disclosure**. Both review screens now name the rate: swap shows "Salmon fee" with the percentage the backend reports, and bridge shows the same row against `BRIDGE_PARTNER_FEE_PERCENT`, with the please-note copy stating that the estimate already has the fee deducted.
 

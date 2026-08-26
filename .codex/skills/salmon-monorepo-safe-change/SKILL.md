@@ -7,7 +7,7 @@ Thin pointer — the canonical rules live elsewhere; do not duplicate them here.
 
 1. Apply the **Changing or removing existing code**, **Security-sensitive
    areas**, and **Verification** sections of the repo-root `AGENTS.md`
-   (consumer checks, export stability, `../salmon-api` cross-check, targeted
+   (consumer checks, export stability, `../salmon-wallet-backend` cross-check, targeted
    tests before/after).
 2. For placement or ownership questions raised by the change, follow
    `.agent/skills/salmon-repo-rules/SKILL.md`.

@@ -328,7 +328,7 @@ Asserting a rendered Y across screens is the test that matches the requirement. 
 - Web and extension share every onboarding screen through `packages/ui/src/components/AuthFlow/`; the app-level files are adapters. The grid is therefore built twice, not three times: once in `packages/ui`, once in `apps/mobile`.
 - `packages/shared/src/theme/brand.ts` is the canonical mark and both `LoadingScreen` components are the reference implementations of drawing it. The extraction is from existing code, not new code.
 - The six-value spacing rhythm at `DESIGN.md:517` (4, 8, 12, 16, 24, 32, plus 48) is the rule for this work, and the one-off tokens named there — including the four `lockScreen*` values — are the debt this spec is entitled to retire.
-- No backend contract is touched; `../salmon-api` is unaffected.
+- No backend contract is touched; `../salmon-wallet-backend` is unaffected.
 - The Ethereum surface is untouched.
 
 ## Decisions taken by the product owner (2026-08-18)

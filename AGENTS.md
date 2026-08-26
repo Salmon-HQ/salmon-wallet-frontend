@@ -58,7 +58,7 @@ Shared code has three consumers. Before modifying or deleting anything in
 2. Preserve stable export paths and barrels unless the task explicitly
    allows breakage — renames ripple through three apps at once.
 3. If backend-facing behavior changes, check the sibling backend repo
-   `../salmon-api` (clone it next to this repo if needed) —
+   `../salmon-wallet-backend` (clone it next to this repo if needed) —
    `packages/shared/src/api` is the canonical frontend contract with it.
 4. Run the smallest relevant tests before and after the change, and report
    what was verified and what was intentionally preserved.
@@ -139,8 +139,8 @@ Package names: `@salmon/shared`, `@salmon/ui`, `@salmon/mobile`,
   the failure is user-relevant.
 - Prefer unit and integration coverage in the owning package before adding
   E2E coverage — E2E is slower and flakier per bug caught.
-- Backend-dependent E2E tests may target `../salmon-api` running in Docker.
-  Before adding one, check whether `../salmon-api` already covers the
+- Backend-dependent E2E tests may target `../salmon-wallet-backend` running in Docker.
+  Before adding one, check whether `../salmon-wallet-backend` already covers the
   behavior to avoid redundant tests.
 - Tests that depend on backend availability must **skip** when the backend
   is unreachable, but must **fail** (not skip) when the backend is reachable

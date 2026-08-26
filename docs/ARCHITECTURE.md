@@ -193,7 +193,7 @@ Prioridad:
 
 - unit e integration tests para lógica compartida
 - UI tests solo cuando el comportamiento visible sea importante
-- E2E contra backend solo si no hay cobertura suficiente en `../salmon-api`
+- E2E contra backend solo si no hay cobertura suficiente en `../salmon-wallet-backend`
 
 ## Señales de mala ubicación
 

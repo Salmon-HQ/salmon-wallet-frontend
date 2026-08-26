@@ -19,16 +19,16 @@ Withdrawing consent **clears the queue and the install id**.
 
 ## Where each thing lives
 
-| Piece                             | Location                                                  |
-| --------------------------------- | --------------------------------------------------------- |
-| Catalog (source of truth)         | `packages/shared/src/analytics/events.ts`                 |
-| Payload guardrail                 | `packages/shared/src/analytics/schema.ts`                 |
-| Client (consent, batching, retry) | `packages/shared/src/analytics/client.ts`                 |
-| HTTP transport                    | `packages/shared/src/analytics/transport.ts`              |
-| "First-time" events               | `packages/shared/src/analytics/first-time.ts`             |
-| Consent hook                      | `packages/shared/src/hooks/useAnalyticsConsent.ts`        |
-| Backend mirror                    | `salmon-api/src/analytics/event-schema.js`                |
-| Backend ingest                    | `salmon-api/src/analytics/handler.js` (`POST /v1/events`) |
+| Piece                             | Location                                                             |
+| --------------------------------- | -------------------------------------------------------------------- |
+| Catalog (source of truth)         | `packages/shared/src/analytics/events.ts`                            |
+| Payload guardrail                 | `packages/shared/src/analytics/schema.ts`                            |
+| Client (consent, batching, retry) | `packages/shared/src/analytics/client.ts`                            |
+| HTTP transport                    | `packages/shared/src/analytics/transport.ts`                         |
+| "First-time" events               | `packages/shared/src/analytics/first-time.ts`                        |
+| Consent hook                      | `packages/shared/src/hooks/useAnalyticsConsent.ts`                   |
+| Backend mirror                    | `salmon-wallet-backend/src/analytics/event-schema.js`                |
+| Backend ingest                    | `salmon-wallet-backend/src/analytics/handler.js` (`POST /v1/events`) |
 
 > The wallet catalog and the `salmon-api` mirror **must be kept in sync**. A change in one forces the other.
 
@@ -206,7 +206,7 @@ Events fire from the committed flows in `apps/mobile/.maestro/`. Since consent i
 The local `salmon-api` stack (`docker-compose.yml`) serves the wallet API **and** the analytics ingest on the same port, with a file-sink to NDJSON:
 
 ```bash
-# in ../salmon-api
+# in ../salmon-wallet-backend
 docker compose up -d           # mysql + redis + backend (serverless-offline)
 ```
 
@@ -232,15 +232,15 @@ When set, the transport posts there instead of to `API_URL`.
 Inspect what was ingested:
 
 ```bash
-cat ../salmon-api/.analytics-local/events.ndjson | jq -r .event | sort | uniq -c
+cat ../salmon-wallet-backend/.analytics-local/events.ndjson | jq -r .event | sort | uniq -c
 ```
 
 ## Where the data goes
 
-Once emitted (with consent), a batch is POSTed to an **isolated ingest Lambda** (`salmon-api/src/analytics/handler.js`), separate from the wallet API so a traffic spike cannot compete with it. The backend re-validates the batch against the allow-list and forwards it to **Google Analytics 4** via the Measurement Protocol.
+Once emitted (with consent), a batch is POSTed to an **isolated ingest Lambda** (`salmon-wallet-backend/src/analytics/handler.js`), separate from the wallet API so a traffic spike cannot compete with it. The backend re-validates the batch against the allow-list and forwards it to **Google Analytics 4** via the Measurement Protocol.
 
 The privacy posture holds end-to-end. The handler never reads the client IP, and because GA4 attributes an event to whoever calls it — the backend — **the user's IP never reaches Google; only the server's does.** No Google or Firebase SDK runs in the app, so no device ever talks to Google directly. Each event carries `client_id = install_id`: a random, PII-free per-install token, the only persistent identifier involved.
 
-Delivery is best-effort: the Measurement Protocol answers `2xx` for a well-formed request without validating event contents, so a data point can be lost server-side without an error. It can also be lost **before it leaves the device** — if the app is closed before the batch flushes, that in-memory queue is dropped (it is not persisted). Both are the inherent trade-off of lightweight pseudonymous analytics. See `salmon-api/docs/ANALYTICS.md` for the sink and the one-time GA4 console setup.
+Delivery is best-effort: the Measurement Protocol answers `2xx` for a well-formed request without validating event contents, so a data point can be lost server-side without an error. It can also be lost **before it leaves the device** — if the app is closed before the batch flushes, that in-memory queue is dropped (it is not persisted). Both are the inherent trade-off of lightweight pseudonymous analytics. See `salmon-wallet-backend/docs/ANALYTICS.md` for the sink and the one-time GA4 console setup.
 
 The infrastructure that stores and serves this data is documented separately for operators (it is not needed to understand what the wallet collects).

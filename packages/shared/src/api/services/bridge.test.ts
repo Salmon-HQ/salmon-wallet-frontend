@@ -341,18 +341,18 @@ describe('bridge partner fee disclosure', () => {
     expect(formatPercent(BRIDGE_PARTNER_FEE_PERCENT)).toBe('0.40%');
   });
 
-  it('matches STEALTHEX_PARTNER_FEE in the sibling salmon-api repo', async () => {
+  it('matches STEALTHEX_PARTNER_FEE in the sibling salmon-wallet-backend repo', async () => {
     // The fee lives in the backend; this constant only discloses it. If the
     // sibling repo is not checked out next to this one, there is nothing to
-    // compare against — skip rather than fail (CI has no salmon-api).
+    // compare against — skip rather than fail (CI has no salmon-wallet-backend).
     const { readFileSync, existsSync } = await import('node:fs');
     const servicePath = new URL(
-      '../../../../../../salmon-api/src/services/shared/bridge-service.js',
+      '../../../../../../salmon-wallet-backend/src/services/shared/bridge-service.js',
       import.meta.url
     ).pathname;
 
     if (!existsSync(servicePath)) {
-      console.log('Skipping partner-fee drift check: ../salmon-api not present');
+      console.log('Skipping partner-fee drift check: ../salmon-wallet-backend not present');
       return;
     }
 
