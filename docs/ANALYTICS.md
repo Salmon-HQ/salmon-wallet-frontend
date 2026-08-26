@@ -19,14 +19,14 @@ Withdrawing consent **clears the queue and the install id**.
 
 ## Where each thing lives
 
-| Piece                             | Location                                                  |
-| --------------------------------- | --------------------------------------------------------- |
-| Catalog (source of truth)         | `packages/shared/src/analytics/events.ts`                 |
-| Payload guardrail                 | `packages/shared/src/analytics/schema.ts`                 |
-| Client (consent, batching, retry) | `packages/shared/src/analytics/client.ts`                 |
-| HTTP transport                    | `packages/shared/src/analytics/transport.ts`              |
-| "First-time" events               | `packages/shared/src/analytics/first-time.ts`             |
-| Consent hook                      | `packages/shared/src/hooks/useAnalyticsConsent.ts`        |
+| Piece                             | Location                                                             |
+| --------------------------------- | -------------------------------------------------------------------- |
+| Catalog (source of truth)         | `packages/shared/src/analytics/events.ts`                            |
+| Payload guardrail                 | `packages/shared/src/analytics/schema.ts`                            |
+| Client (consent, batching, retry) | `packages/shared/src/analytics/client.ts`                            |
+| HTTP transport                    | `packages/shared/src/analytics/transport.ts`                         |
+| "First-time" events               | `packages/shared/src/analytics/first-time.ts`                        |
+| Consent hook                      | `packages/shared/src/hooks/useAnalyticsConsent.ts`                   |
 | Backend mirror                    | `salmon-wallet-backend/src/analytics/event-schema.js`                |
 | Backend ingest                    | `salmon-wallet-backend/src/analytics/handler.js` (`POST /v1/events`) |
 
