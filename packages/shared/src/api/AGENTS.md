@@ -2,7 +2,7 @@
 
 Refines the repo-root `AGENTS.md` (canonical rules) for this folder.
 This folder is the canonical frontend contract with the backend
-(`../salmon-api`) — verify consumer impact before changing request or
+(`../salmon-wallet-backend`) — verify consumer impact before changing request or
 response assumptions.
 
 ## Responsibility
@@ -19,7 +19,7 @@ response assumptions.
   reimplementing them in apps — app-local copies drift when the backend
   changes.
 - If an endpoint change affects frontend behavior, check the sibling
-  backend repo `../salmon-api` — the two repos must agree on the wire
+  backend repo `../salmon-wallet-backend` — the two repos must agree on the wire
   contract.
 
 ## Testing

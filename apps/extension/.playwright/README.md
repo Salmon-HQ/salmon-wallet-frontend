@@ -75,7 +75,7 @@ these scripts.
    real production data.
 
 3. **`salmon-api` backend** running on `127.0.0.1:3001` (see sibling repo
-   `../salmon-api`, `npm run serverless:start:local`). Verify with
+   `../salmon-wallet-backend`, `npm run serverless:start:local`). Verify with
    `curl http://127.0.0.1:3001/local/health`.
 
 4. **`apps/extension/.playwright/.env.test`** populated (copy from `.env.test.example`):

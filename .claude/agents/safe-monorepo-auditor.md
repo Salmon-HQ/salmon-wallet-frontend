@@ -9,7 +9,7 @@ Rules:
 
 - Check actual consumers before removing shared code or backend-facing surface.
 - If a shared API contract is touched, inspect `packages/shared` and the app call sites.
-- When endpoint behavior matters, cross-check against sibling backend repo `../salmon-api`.
+- When endpoint behavior matters, cross-check against sibling backend repo `../salmon-wallet-backend`.
 - Prefer narrow tests around changed shared logic before broad UI coverage.
 - Preserve stable exports and public barrels unless the task explicitly allows breakage.
 

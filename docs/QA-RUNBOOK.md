@@ -8,7 +8,7 @@ does not promise coverage that isn't there.
 Scope: the monorepo's three runtimes — `apps/web` (React + MUI), `apps/extension`
 (wxt + MUI), `apps/mobile` (React Native / Expo) — plus the shared packages
 (`packages/shared`, `packages/ui`). The backend lives in the sibling repo
-`../salmon-api` and runs in Docker.
+`../salmon-wallet-backend` and runs in Docker.
 
 ---
 
@@ -23,7 +23,7 @@ node scripts/check-i18n.mjs          # en/es key parity + orphans
 ```
 
 The e2e suites and Lighthouse below need the backend up and are run per-surface
-(see each section). They **skip** when `../salmon-api` is unreachable, so they
+(see each section). They **skip** when `../salmon-wallet-backend` is unreachable, so they
 never fail a machine that simply doesn't have the backend running — but a
 reachable backend with wrong behaviour **does** fail them.
 
@@ -46,7 +46,7 @@ Playwright suites headless every night and on demand
 backend or seeded wallets, so backend/seed-gated specs skip — full depth
 comes from step 3. A PR can opt into this workflow with the `e2e` label.
 
-**3. Playwright suites at full depth (local)** — with `../salmon-api` running
+**3. Playwright suites at full depth (local)** — with `../salmon-wallet-backend` running
 in Docker and real `.env.test` files (copied from `.env.test.example`, filled
 with the funded test seeds):
 
@@ -74,7 +74,7 @@ one-time setup and `.maestro/AGENTS.md` for known failure modes.
 
 **5. Backend-live integration tests (local)** — the `packages/shared` API
 tests marked with the skipIf-backend pattern only exercise the real contract
-when `../salmon-api` answers on `http://127.0.0.1:3001`:
+when `../salmon-wallet-backend` answers on `http://127.0.0.1:3001`:
 
 ```bash
 pnpm --filter @salmon/shared test      # with the backend up: live blocks run instead of skipping
@@ -106,7 +106,7 @@ a stop.
 
 ## Environment & prerequisites
 
-- **Backend**: `../salmon-api` in Docker, reachable at `http://127.0.0.1:3001`
+- **Backend**: `../salmon-wallet-backend` in Docker, reachable at `http://127.0.0.1:3001`
   (a `404` on `/` means it's alive). e2e/Lighthouse skip if it's down.
 - **Playwright browsers** (web cross-browser + extension):
   `pnpm exec playwright install chromium firefox webkit`

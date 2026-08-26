@@ -28,7 +28,7 @@ spec must name the actual consumers across all apps and packages. Export paths
 and barrels stay stable unless breakage is explicitly in scope. An export that
 looks dead in one app may be load-bearing in another.
 
-Backend-facing changes are checked against the sibling repo `../salmon-api`;
+Backend-facing changes are checked against the sibling repo `../salmon-wallet-backend`;
 `packages/shared/src/api` is the canonical frontend contract with it.
 
 ### III. Wallet safety over everything (NON-NEGOTIABLE)
