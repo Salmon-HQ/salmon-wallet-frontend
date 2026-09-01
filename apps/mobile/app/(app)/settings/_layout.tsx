@@ -1,8 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
-
-import { DepthBackground, ScalesBackground } from '../../../src/components';
 
 /**
  * Settings is a screen of the `(app)` stack, not a tab.
@@ -12,6 +9,12 @@ import { DepthBackground, ScalesBackground } from '../../../src/components';
  * it — the gear cut to Settings while Wallets, Activity and Send all slid.
  * Registered on the `(app)` stack, this sub-stack inherits that push like the
  * send flow does.
+ *
+ * Every screen in it paints its own water (`SettingsScreenLayout` mounts the
+ * same two layers every pushed screen does), and the cards stay opaque. The
+ * water used to be painted once here with transparent cards on top, which
+ * let the outgoing list show through the incoming panel for the length of
+ * the slide — a ghost of the list behind every sub-screen as it arrived.
  *
  * No `initialRouteName` anchor: with one set, a push toward the navigator can
  * stack a fresh instance showing the anchor — tapping a row reopened the list
@@ -23,32 +26,15 @@ import { DepthBackground, ScalesBackground } from '../../../src/components';
  */
 export default function SettingsLayout() {
   return (
-    <View style={styles.container}>
-      {/* The water. It used to come from the tabs layout, which no longer sits
-          under these screens. Painted once for the whole sub-stack, so a push
-          slides the content over still water instead of over a second copy. */}
-      <DepthBackground />
-      <ScalesBackground variant="deepField" />
-
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: 'slide_from_right',
-          gestureDirection: 'horizontal',
-          // Transparent so the shared water above shows through; an opaque
-          // card would paint the theme background over it.
-          contentStyle: { backgroundColor: 'transparent' },
-        }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="[panel]" />
-      </Stack>
-    </View>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+        gestureDirection: 'horizontal',
+      }}
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="[panel]" />
+    </Stack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});

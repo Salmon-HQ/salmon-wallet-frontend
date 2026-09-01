@@ -23,16 +23,11 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DepthBackground } from '../DepthBackground';
+import { ScalesBackground } from '../ScalesBackground';
 import { ScreenHeader } from '../ScreenHeader';
 
-import {
-  spacing,
-  contentPadding,
-  fontSize,
-  fontFamilyNative,
-  lineHeight,
-  semantic,
-} from '@salmon/shared';
+import { spacing, contentPadding, fontSize, fontFamilyNative, lineHeight, s, semantic, vs } from '@salmon/shared';
 
 // ============================================================================
 // Types
@@ -74,6 +69,13 @@ export function SettingsScreenLayout({
   const { t } = useTranslation();
   return (
     <View style={styles.container}>
+      {/* Pushed over the tab shell, so the screen paints its own water — the
+          same two layers every non-Home screen mounts. Painted per screen
+          rather than once by the sub-stack, so the cards stay opaque and the
+          list never ghosts through a panel sliding in over it. */}
+      <DepthBackground />
+      <ScalesBackground variant="deepField" />
+
       {/*
         Settings panels host the label, address, seed and password fields.
         iOS floats the keyboard over the app, so the fields and their save
@@ -164,12 +166,15 @@ const styles = StyleSheet.create({
   staticContent: {
     flex: 1,
   },
+  // The component gap (DESIGN.md §Layout): every top-level block a panel
+  // hands in is a sibling component, 20 from the next, ending on the same 20.
+  // The header block already ends 20 above the content; a headerless body
+  // still owns its own top padding.
   scrollContent: {
-    // The header block already ends 20 above the content; a headerless body
-    // still owns its own top padding.
     paddingTop: 0,
-    paddingHorizontal: contentPadding.screen,
-    paddingBottom: spacing['2xl'],
+    paddingHorizontal: s(spacing.screenGutter),
+    paddingBottom: vs(spacing.screenGutter),
+    gap: vs(spacing.screenGutter),
   },
   scrollContentHeaderless: {
     paddingTop: spacing.md,

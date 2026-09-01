@@ -48,7 +48,14 @@ import {
   type LanguageCode,
   type SettingsScreen,
 } from '@salmon/shared';
-import { IconBubble, ListRow, ScreenHeader, SectionLabel } from '../../../src/components';
+import {
+  DepthBackground,
+  IconBubble,
+  ListRow,
+  ScalesBackground,
+  ScreenHeader,
+  SectionLabel,
+} from '../../../src/components';
 import { useLanguage } from '../../../src/i18n';
 import { useBiometricAuth } from '../../../hooks/useBiometricAuth';
 
@@ -340,6 +347,10 @@ export default function SettingsScreenIndex() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Pushed over the tab shell, so it mounts its own water. */}
+      <DepthBackground />
+      <ScalesBackground variant="deepField" />
+
       <ScreenHeader
         onBack={() => router.back()}
         title={t('settings.title', 'Settings')}
