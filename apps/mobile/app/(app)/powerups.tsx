@@ -321,12 +321,21 @@ const styles = StyleSheet.create({
     fontSize: s(fontSize.mono),
     color: semantic.text.primary,
   },
+  // Section label to its card/row group, and card→card or row→row within
+  // the group, are both sibling seams per DESIGN.md's component gap rule —
+  // one `gap` covers both since every child here (label, Card, ListRow) is
+  // a flat sibling of the next.
   section: {
-    gap: vs(spacing.md),
+    gap: vs(spacing.xl),
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    // Tiles are siblings too, but 20 on both axes doesn't fit 3-per-row at
+    // 30% basis on a 350-350px screen (3*29%+2*20 already overflows a
+    // 320-360pt content width) — kept at 12 (spacing.md) here, a deliberate
+    // exception to the sibling-seam rule so the 3-tile grid the spec calls
+    // for (POWERUPS 01/02 installed row) doesn't wrap on narrow devices.
     columnGap: s(spacing.md),
     rowGap: vs(spacing.md),
   },

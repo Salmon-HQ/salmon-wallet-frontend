@@ -225,9 +225,13 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
 // ============================================================================
 
 const styles = StyleSheet.create({
-  /** List glue only — the row's ground, radius and padding are the kit's. */
+  /**
+   * List glue only — the row's ground, radius and padding are the kit's.
+   * The component gap (DESIGN.md §Layout): every card sits 20 from its
+   * sibling — the day label above it included — not a tighter in-run value.
+   */
   rowSpacing: {
-    marginBottom: vs(spacing.md),
+    marginTop: vs(spacing.screenGutter),
   },
   rightSection: {
     alignItems: 'flex-end',

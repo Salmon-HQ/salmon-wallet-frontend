@@ -40,7 +40,9 @@ export function Chip({
   testID,
 }: ChipProps) {
   const metrics = SIZES[size];
-  const isSelected = variant === 'filter' && selected;
+  // `tag` carries the same selected/idle ink-well behaviour as `filter` — it
+  // only differs in radius and uppercase label (the Activity filters, CORE 08).
+  const isSelected = (variant === 'filter' || variant === 'tag') && selected;
 
   const body = (
     <>
@@ -50,6 +52,7 @@ export function Chip({
           styles.label,
           { fontSize: s(metrics.font) },
           isSelected ? styles.labelSelected : styles.labelIdle,
+          variant === 'tag' && styles.labelTag,
         ]}
         numberOfLines={1}
         maxFontSizeMultiplier={fontScaleCap.chrome}
@@ -67,6 +70,8 @@ export function Chip({
     },
     variant === 'outline' && styles.outline,
     variant === 'filter' && (isSelected ? styles.filterSelected : styles.filterIdle),
+    variant === 'tag' && styles.tagRadius,
+    variant === 'tag' && (isSelected ? styles.filterSelected : styles.filterIdle),
     style,
   ];
 
@@ -106,6 +111,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderColor: semantic.border.raised,
   },
+  // The squared filter tag (CORE 08): `r1`, the scale's own "chips, tags"
+  // step — not a pill.
+  tagRadius: {
+    borderRadius: borderRadius.sm,
+  },
   filterIdle: {
     backgroundColor: 'transparent',
     borderColor: semantic.border.hairline,
@@ -126,5 +136,10 @@ const styles = StyleSheet.create({
   },
   labelSelected: {
     color: semantic.text.primary,
+  },
+  // The tag's label is always uppercase — a scan-mode dressing the copy
+  // itself never carries (i18n strings stay "Sent"/"Enviadas").
+  labelTag: {
+    textTransform: 'uppercase',
   },
 });

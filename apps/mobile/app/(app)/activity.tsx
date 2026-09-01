@@ -199,6 +199,7 @@ export default function ActivityScreen() {
           options={filterOptions}
           value={filter}
           onChange={(key) => setFilter(key as ActivityFilter)}
+          variant="tag"
           style={styles.filters}
         />
 
@@ -265,11 +266,16 @@ const styles = StyleSheet.create({
   },
   filters: {
     flexGrow: 0,
-    marginBottom: vs(spacing.md),
   },
-  /** The day label introduces the run under it, not the row above it. */
+  /**
+   * The component gap (DESIGN.md §Layout): 20 between every sibling on the
+   * root content stack — filters, a day label, and each card all sit 20
+   * apart. Carried as `marginTop` on the item that opens the next block
+   * (the label) so it also supplies the filters→first-label gap without a
+   * second margin compounding on top of it.
+   */
   groupLabel: {
-    marginBottom: vs(spacing.sm),
+    marginTop: vs(spacing.screenGutter),
   },
   loadingMore: {
     paddingVertical: vs(spacing.lg),

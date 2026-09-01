@@ -287,12 +287,12 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
 
 const styles = StyleSheet.create({
   // The card ground, radius and hairline are `Card`'s; what stays here is the
-  // list glue — how far one row sits from the next. The screen gutter is the
-  // list content container's, not the row's: the row used to carry 24 while
-  // the rest of Home sat at `screenGutter` (20), so the columns did not line
-  // up with the balance above them.
+  // list glue — how far one row sits from the next. Card→card is a
+  // sibling-component seam per DESIGN.md's component gap rule, so it takes
+  // the same `screenGutter` (20) as the screen's side gutters, not an
+  // internal-anatomy step.
   cardSpacing: {
-    marginBottom: vs(spacing.md),
+    marginBottom: vs(spacing.screenGutter),
   },
 
   // Secondary line: "SOL · $159.58 · +4.2%", drawn as one shrinking segment
