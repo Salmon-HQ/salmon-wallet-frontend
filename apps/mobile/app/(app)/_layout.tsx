@@ -157,6 +157,15 @@ export default function AppLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="wallets" />
         <Stack.Screen name="activity" />
+        {/* Settings is a sub-stack too (the list plus one screen per
+            `SettingsScreen` key). It used to be a `href: null` tab, which is
+            why it never slid: a tab switch is not a stack push. On the stack it
+            takes the same right slide as everything else — and the lock overlay
+            below now covers it, which an overlay above the tabs never did. */}
+        <Stack.Screen name="settings" />
+        {/* The send flow is its own sub-stack (spec 018): four screens that
+            share the flow's state, taking this stack's right slide. */}
+        <Stack.Screen name="send" />
         {/* Powerups browse is a full-height presentation, not a card: the owner
             wants it to cover the Home header entirely, and a card modal leaves
             the parent peeking above it. `fullScreenModal` gives iOS the

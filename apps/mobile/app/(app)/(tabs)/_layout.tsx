@@ -17,7 +17,9 @@ import { TaskChromeProvider } from '../../../src/contexts/TaskChromeContext';
  * Renders the shared chrome once for all tabs: the water column. The wallet
  * header row belongs to Home alone — it is that screen's identity line, and
  * mounted here it painted over the title of every screen pushed on top
- * (owner, on device). Settings and Wallets are stack screens of their own.
+ * (owner, on device). Settings and Wallets are stack screens of their own —
+ * Settings included: it lived here as a hidden tab and got no push
+ * transition, and it now sits on the `(app)` stack next to Wallets.
  *
  * The lock overlay is NOT mounted here — it lives in `(app)/_layout.tsx`, a
  * level up, because a screen pushed on the `(app)` stack (Wallets, Activity,
@@ -90,10 +92,6 @@ export default function TabLayout() {
                   title: t('tabs.swap', 'Swap'),
                   href: null,
                 }}
-              />
-              <Tabs.Screen
-                name="settings"
-                options={{ href: null, title: t('tabs.settings', 'Settings') }}
               />
             </Tabs>
           </BlurTargetProvider>

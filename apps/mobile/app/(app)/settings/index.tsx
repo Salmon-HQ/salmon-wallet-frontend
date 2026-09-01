@@ -31,7 +31,7 @@ import {
   UserCircleIcon,
   UsersIcon,
   iconSize,
-} from '../../../../src/icons';
+} from '../../../src/icons';
 import {
   useAccountsContext,
   useAnalyticsConsent,
@@ -48,10 +48,10 @@ import {
   type LanguageCode,
   type SettingsScreen,
 } from '@salmon/shared';
-import { IconBubble, ListRow, ScreenHeader, SectionLabel } from '../../../../src/components';
-import { useLanguage } from '../../../../src/i18n';
-import { useBiometricAuth } from '../../../../hooks/useBiometricAuth';
-import { useTabChrome } from '../../../../hooks/useTabChrome';
+import { IconBubble, ListRow, ScreenHeader, SectionLabel } from '../../../src/components';
+import { useLanguage } from '../../../src/i18n';
+import { useBiometricAuth } from '../../../hooks/useBiometricAuth';
+import { useTabChrome } from '../../../hooks/useTabChrome';
 
 /** The leading well every settings row carries. */
 const ROW_BUBBLE_SIZE = 40;

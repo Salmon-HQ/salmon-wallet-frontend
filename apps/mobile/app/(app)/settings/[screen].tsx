@@ -6,15 +6,20 @@
  * are real stack entries with the platform's back gesture, instead of panels
  * pushed onto a stack the gate owned.
  *
+ * Every panel body pulls its own data through `useSettingsPanelRegistry`
+ * (accounts, address book, networks, currency), so this route renders the same
+ * whether the user walked in from the Settings list or landed here cold from a
+ * deep link or from Wallets' rename/add.
+ *
  * The bodies are the existing panels, unchanged: each one already draws its
  * title and back through `SettingsScreenLayout`.
  */
 import React, { useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import type { SettingsScreen } from '@salmon/shared';
 
-import { useSettingsPanelRegistry } from '../../../../src/settings/panelRegistry';
+import { useSettingsPanelRegistry } from '../../../src/settings/panelRegistry';
 
 export default function SettingsPanelRoute() {
   const router = useRouter();
@@ -35,8 +40,10 @@ export default function SettingsPanelRoute() {
     [router]
   );
 
+  // An unknown or missing key used to render an empty view, which is a blank
+  // screen with no way out. Settings is the only sane destination.
   const render = screen ? registry[screen] : undefined;
-  if (!render) return <View style={styles.container} testID="settings-panel-missing" />;
+  if (!render) return <Redirect href="/settings" />;
 
   const { screen: _screen, ...panelProps } = params;
 
