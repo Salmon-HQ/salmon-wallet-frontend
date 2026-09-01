@@ -133,10 +133,13 @@ export const TokenSelectList: React.FC<StepTokenSelectProps> = ({
 };
 
 const styles = StyleSheet.create({
-  // The component gap — search to list, and row to row — is the screen's 20.
+  // The component gap — sheet title to search, search to list, and row to
+  // row — is the screen's 20. The top gap used to be a stray margin on the
+  // title itself; it belongs to this container, the content below the title.
   container: {
     flex: 1,
     paddingHorizontal: s(spacing.screenGutter),
+    paddingTop: vs(spacing.screenGutter),
     gap: vs(spacing.screenGutter),
   },
   list: {

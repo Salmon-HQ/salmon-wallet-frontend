@@ -1,8 +1,6 @@
 // SwapScreen - Complete swap interface
 export { SwapScreen } from './SwapScreen';
-export { SwapTabSelector } from './SwapTabSelector';
 export { SwapAmountInput } from './SwapAmountInput';
-export { SwapDetailRow } from './SwapDetailRow';
 export { SwapDetailsCard } from './SwapDetailsCard';
 export { SwapReviewExchange } from './SwapReviewExchange';
 export { SwapReviewButtons } from './SwapReviewButtons';
@@ -17,9 +15,7 @@ export type {
   SwapStep,
   SwapChainType,
   SwapScreenProps,
-  SwapTabSelectorProps,
   SwapAmountInputProps,
-  SwapDetailRowProps,
   SwapDetailItem,
   SwapDetailsCardProps,
   SwapReviewExchangeProps,

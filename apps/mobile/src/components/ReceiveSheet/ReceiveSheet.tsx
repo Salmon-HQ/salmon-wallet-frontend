@@ -10,7 +10,6 @@ import {
   ms,
   s,
   vs,
-  lineHeight,
   semantic,
 } from '@salmon/shared';
 import React, { useCallback, useEffect } from 'react';
@@ -27,7 +26,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
-import { BottomSheetContainer } from '../BottomSheetContainer';
+import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { BrandMark } from '../BrandMark';
 import { Thermocline } from '../Thermocline';
 import { FleshBackground } from '../FleshBackground';
@@ -100,7 +99,7 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
     }
   }, [onCopy, showCopied]);
 
-  const title = <Text style={styles.title}>{t('token.receive.title')}</Text>;
+  const title = <SheetTitle>{t('token.receive.title')}</SheetTitle>;
 
   // A deposit made on the wrong chain is gone for good, so the chain is named
   // twice: an opaque badge with a label (never a tint — DESIGN.md) and a
@@ -228,14 +227,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     borderTopLeftRadius: borderRadius.card,
     borderTopRightRadius: borderRadius.card,
-  },
-  title: {
-    fontSize: ms(fontSize.headline),
-    fontFamily: fontFamilyNative.semiBold,
-    color: colors.text.primary,
-    textAlign: 'center',
-    letterSpacing: letterSpacing.snug,
-    lineHeight: ms(24 * lineHeight.condensed),
   },
   content: {
     alignItems: 'center',

@@ -8,12 +8,11 @@
  * here instead of inline on either screen so the two call sites cannot drift.
  */
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { fontFamilyNative, fontSize, letterSpacing, lineHeight, ms, semantic } from '@salmon/shared';
 import type { SendToken } from '@salmon/shared';
 
-import { BottomSheetContainer } from '../BottomSheetContainer';
+import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { Thermocline } from '../Thermocline';
 import { TokenSelectList } from './TokenSelectList';
 
@@ -43,7 +42,7 @@ export function TokenPickerSheet({
       onClose={onClose}
       testID={testID}
       style={styles.sheet}
-      title={<Text style={styles.title}>{t('wallet.select_token', 'Select Token')}</Text>}
+      title={<SheetTitle>{t('wallet.select_token', 'Select Token')}</SheetTitle>}
       // The sheet's ground is the thermocline at its thick tier, the same
       // material Receive rides.
       background={<Thermocline tier="thick" style={styles.thermocline} />}
@@ -68,16 +67,6 @@ const styles = StyleSheet.create({
   },
   thermocline: {
     ...StyleSheet.absoluteFillObject,
-  },
-  // The title Receive draws: 24 semibold, centred.
-  title: {
-    fontSize: ms(fontSize.headline),
-    fontFamily: fontFamilyNative.semiBold,
-    color: semantic.text.primary,
-    textAlign: 'center',
-    letterSpacing: letterSpacing.snug,
-    lineHeight: ms(fontSize.headline * lineHeight.condensed),
-    marginBottom: ms(12),
   },
 });
 

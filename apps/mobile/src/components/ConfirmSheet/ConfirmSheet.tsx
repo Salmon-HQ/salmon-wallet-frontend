@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { WarningIcon } from '../../icons';
 import { colors, spacing, fontSize, fontFamilyNative, vs, semantic } from '@salmon/shared';
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
-import { BottomSheetContainer } from '../BottomSheetContainer';
+import { BottomSheetContainer, SheetTitle } from '../BottomSheetContainer';
 import { PrimaryButton } from '../Button/PrimaryButton';
 import { SecondaryButton } from '../Button/SecondaryButton';
 import { PasswordInput } from '../PasswordInput';
@@ -143,11 +143,12 @@ export function ConfirmSheet({
       visible={visible}
       onClose={onClose}
       title={
-        <View style={styles.titleRow}>
-          {/* Colour is never the only channel: glyph, fill and label all say it */}
-          {isDanger && <WarningIcon size={fontSize.lg} color={semantic.status.danger} />}
-          <Text style={styles.title}>{title}</Text>
-        </View>
+        <SheetTitle
+          // Colour is never the only channel: glyph, fill and label all say it
+          leading={isDanger && <WarningIcon size={fontSize.lg} color={semantic.status.danger} />}
+        >
+          {title}
+        </SheetTitle>
       }
       style={styles.sheet}
     >
@@ -226,19 +227,6 @@ export default ConfirmSheet;
 const styles = StyleSheet.create({
   sheet: {
     maxHeight: undefined,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  title: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.lg,
-    textAlign: 'center',
-    paddingHorizontal: spacing.lg,
   },
   content: {
     paddingHorizontal: spacing.lg,

@@ -44,15 +44,11 @@ export type {
 } from './Button';
 
 export {
-  WalletSvgIcon,
   ContentCopySvgIcon,
   SettingsSvgIcon,
   SolanaSvgIcon,
   BitcoinSvgIcon,
   EthereumSvgIcon,
-  GridViewSvgIcon,
-  HomeSvgIcon,
-  SwapSvgIcon,
 } from './Icon';
 
 export { PasswordInput, PasswordStrengthBar } from './PasswordInput';
@@ -87,13 +83,11 @@ export type { PendingValueProps } from './PendingValue';
 export { default as QRCode } from './QRCode';
 export type { QRCodeProps } from './QRCode';
 
-export { QRScanner, default as QRScannerDefault } from './QRScanner';
+export { QRScanner } from './QRScanner';
 export type { QRScannerProps, QRScanResult } from './QRScanner';
 
 export {
-  InputAddress,
   useAddressValidation,
-  type InputAddressProps,
   type BlockchainType,
   type ValidationState,
   type ValidationCallbackResult,
@@ -123,9 +117,6 @@ export type { WarningNoticeProps, WarningNoticeTone } from './WarningNotice';
 // Layout & Background
 // ---------------------------------------------------------------------------
 
-export { GradientBackground } from './GradientBackground';
-export type { GradientBackgroundProps } from './GradientBackground';
-
 export { ScalesBackground } from './ScalesBackground';
 export type { ScalesBackgroundProps } from './ScalesBackground';
 
@@ -140,6 +131,9 @@ export type { BlurContainerProps, BlurTint } from './BlurContainer';
 
 export { BottomSheetTitleHeader } from './BottomSheetTitleHeader';
 export type { BottomSheetTitleHeaderProps } from './BottomSheetTitleHeader';
+
+export { BottomSheetContainer, SheetTitle } from './BottomSheetContainer';
+export type { BottomSheetContainerProps, SheetTitleProps } from './BottomSheetContainer';
 
 export { Thermocline } from './Thermocline';
 export type { ThermoclineProps, ThermoclineTier } from './Thermocline';
@@ -187,10 +181,9 @@ export type {
   TokenListSkeletonProps,
 } from './TokenList';
 
-export { TokenSelector, TokenSelectorModal, useTokenSearch } from './TokenSelector';
+export { TokenSelectorModal, useTokenSearch } from './TokenSelector';
 export type {
   TokenSelectorToken,
-  TokenSelectorProps,
   TokenSelectorModalProps,
   UseTokenSearchResult,
 } from './TokenSelector';
@@ -277,9 +270,7 @@ export type { RecipientInputProps, SendFailureProps, TokenPickerSheetProps } fro
 
 export {
   SwapScreen,
-  SwapTabSelector,
   SwapAmountInput,
-  SwapDetailRow,
   SwapReviewExchange,
   SwapInputScreen,
   SwapReviewScreen,
@@ -291,9 +282,7 @@ export type {
   SwapStep,
   SwapChainType,
   SwapScreenProps,
-  SwapTabSelectorProps,
   SwapAmountInputProps,
-  SwapDetailRowProps,
   SwapReviewExchangeProps,
   SwapInputScreenProps,
   SwapReviewScreenProps,

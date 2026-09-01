@@ -84,7 +84,6 @@ jest.mock('../Icon', () => {
   return {
     ContentCopySvgIcon: glyph('header-glyph-copy'),
     SettingsSvgIcon: glyph('header-glyph-gear'),
-    WalletSvgIcon: glyph('header-glyph-wallet'),
   };
 });
 
@@ -338,8 +337,6 @@ describe('WalletHeader identity swap', () => {
     renderHeader('https://example.test/avatar.png');
 
     expect(screen.getByTestId('header-avatar-image')).toBeTruthy();
-    // The generic wallet glyph said nothing about which wallet is open.
-    expect(screen.queryByTestId('header-glyph-wallet')).toBeNull();
   });
 
   it('falls back to the brand mark when the account has no picture', () => {
