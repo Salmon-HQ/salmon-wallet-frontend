@@ -56,7 +56,6 @@ import {
   PlusIcon,
   iconSize,
 } from '../../src/icons';
-import { useTabChrome } from '../../hooks/useTabChrome';
 
 /** The wallet thumb, per `.pen` CORE 10. */
 const WALLET_BUBBLE_SIZE = 44;
@@ -68,7 +67,6 @@ const INCLUDE_ICON_SIZE = 22;
 export default function WalletsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { scrollBottomPadding } = useTabChrome();
 
   const [accountState, accountActions] = useAccountsContext();
   const { accounts, accountId, activeBlockchainAccount, networkId } = accountState;
@@ -179,7 +177,7 @@ export default function WalletsScreen() {
       <ScrollView
         testID="wallets-screen"
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollBottomPadding }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: vs(spacing.screenGutter) }]}
         showsVerticalScrollIndicator={false}
       >
         {/* The aggregated total. Ink, because it is a different object from the

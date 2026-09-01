@@ -51,7 +51,6 @@ import {
 import { IconBubble, ListRow, ScreenHeader, SectionLabel } from '../../../src/components';
 import { useLanguage } from '../../../src/i18n';
 import { useBiometricAuth } from '../../../hooks/useBiometricAuth';
-import { useTabChrome } from '../../../hooks/useTabChrome';
 
 /** The leading well every settings row carries. */
 const ROW_BUBBLE_SIZE = 40;
@@ -135,7 +134,6 @@ const SETTINGS_GROUPS: SettingsGroup[] = [
 export default function SettingsScreenIndex() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { scrollBottomPadding } = useTabChrome();
 
   const [accountState, accountActions] = useAccountsContext();
   const { activeAccount, activeBlockchainAccount, networkId } = accountState;
@@ -350,7 +348,7 @@ export default function SettingsScreenIndex() {
       <ScrollView
         testID="settings-screen"
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollBottomPadding }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: vs(spacing.screenGutter) }]}
         showsVerticalScrollIndicator={false}
       >
         {SETTINGS_GROUPS.map((group) => (

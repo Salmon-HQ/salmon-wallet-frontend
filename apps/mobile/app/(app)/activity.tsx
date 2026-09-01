@@ -55,7 +55,6 @@ import {
 } from '../../src/components';
 import { BottomSheetContainer } from '../../src/components/BottomSheetContainer';
 import { useDeveloperMode } from '../../src/contexts/DeveloperModeContext';
-import { useTabChrome } from '../../hooks/useTabChrome';
 
 // ============================================================================
 // Screen
@@ -64,7 +63,6 @@ import { useTabChrome } from '../../hooks/useTabChrome';
 export default function ActivityScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { scrollBottomPadding } = useTabChrome();
   const developerMode = useDeveloperMode();
 
   const [accountState] = useAccountsContext();
@@ -223,7 +221,7 @@ export default function ActivityScreen() {
             data={rows}
             renderItem={renderRow}
             keyExtractor={(item) => item.key}
-            contentContainerStyle={{ paddingBottom: scrollBottomPadding }}
+            contentContainerStyle={{ paddingBottom: vs(spacing.screenGutter) }}
             showsVerticalScrollIndicator={false}
             onEndReached={handleEndReached}
             onEndReachedThreshold={0.5}

@@ -64,7 +64,6 @@ import {
 } from '../../../src/components';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { useTokenDetail } from '../../../hooks/useTokenDetail';
-import { useTabChrome } from '../../../hooks/useTabChrome';
 
 const TOKEN_LOGO_SIZE = 42;
 
@@ -72,7 +71,6 @@ export default function TokenDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { scrollBottomPadding } = useTabChrome();
   const [, { formatValue }] = useCurrencyContext();
 
   const [accountState] = useAccountsContext();
@@ -167,7 +165,7 @@ export default function TokenDetailScreen() {
       <ScrollView
         testID="token-detail-screen"
         style={styles.body}
-        contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPadding }]}
+        contentContainerStyle={[styles.content, { paddingBottom: vs(spacing.screenGutter) }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Asset balance block — CORE 02: bubble + name, amount, fiat. */}
