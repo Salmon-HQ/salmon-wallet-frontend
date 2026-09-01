@@ -8,7 +8,6 @@
   "tabs": {
     "swap": "Swap",
     "collectibles": "Collectibles",
-    "settings": "Settings",
     "home": "Home",
     "portfolio": "Portfolio",
     "nfts": "NFTs"
@@ -42,7 +41,6 @@
     "terms_and_conditions": "Terms & Conditions",
     "yes": "Yes",
     "no": "No",
-    "ok": "OK",
     "page": "Page",
     "go_home": "Go to Home",
     "not_supported": "Not Supported",
@@ -210,7 +208,6 @@
     "about_website": "Website",
     "about_terms": "Terms of Service",
     "about_privacy": "Privacy Policy",
-    "about_build": "Build {{build}}",
     "about_version_label": "Version",
     "about_build_label": "Build",
     "about_copyright": "© {{year}} Salmon Wallet.\nAll rights reserved.",
@@ -240,12 +237,8 @@
     "remove_wallet_error": "Failed to remove wallet. Please try again.",
     "remove_wallets_error": "Failed to remove wallets. Please try again.",
     "wallets": {
-      "your_wallets": "Your Wallets",
-      "add_new_wallet": "Add New Account",
-      "delete_account": "Delete Account",
       "delete_confirm_title": "Delete Account?",
       "delete_confirm_message": "Are you sure you want to delete this account? This action cannot be undone.",
-      "cannot_delete_last": "Cannot delete the last account",
       "remove_wallet": "Remove Account",
       "remove_all_wallets": "Remove All Accounts",
       "remove_all_wallets_description": "You're about to disconnect all your accounts. Keep in mind that you will need your seed phrases or private keys to connect them again.",
@@ -679,7 +672,6 @@
       "innerCount": "{{count}} inner",
       "copyTransactionHash": "Copy transaction hash",
       "chooseExplorer": "Choose Explorer",
-      "explorerHint": "Opens transaction in blockchain explorer",
       "copyAddressHint": "Copies the address to clipboard",
       "nftMediaAlt": "NFT media"
     },
@@ -1032,7 +1024,6 @@
     }
   },
   "powerups": {
-    "title": "Powerups",
     "installed": "INSTALLED",
     "browse_title": "Browse Powerups",
     "browse_subtitle": "Featured, official and community",

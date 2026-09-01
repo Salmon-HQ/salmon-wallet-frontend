@@ -8,7 +8,6 @@
   "tabs": {
     "swap": "Intercambiar",
     "collectibles": "Coleccionables",
-    "settings": "Configuracion",
     "home": "Inicio",
     "portfolio": "Portfolio",
     "nfts": "NFTs"
@@ -42,7 +41,6 @@
     "terms_and_conditions": "Términos y Condiciones",
     "yes": "Sí",
     "no": "No",
-    "ok": "OK",
     "page": "Página",
     "go_home": "Ir al Inicio",
     "not_supported": "No soportado",
@@ -210,7 +208,6 @@
     "about_website": "Sitio Web",
     "about_terms": "Términos de Servicio",
     "about_privacy": "Política de Privacidad",
-    "about_build": "Compilación {{build}}",
     "about_version_label": "Versión",
     "about_build_label": "Compilación",
     "about_copyright": "© {{year}} Salmon Wallet.\nTodos los derechos reservados.",
@@ -240,12 +237,8 @@
     "remove_wallet_error": "Error al eliminar la billetera. Por favor, intentalo de nuevo.",
     "remove_wallets_error": "Error al eliminar las billeteras. Por favor, intentalo de nuevo.",
     "wallets": {
-      "your_wallets": "Tus Billeteras",
-      "add_new_wallet": "Agregar Cuenta",
-      "delete_account": "Eliminar Cuenta",
       "delete_confirm_title": "¿Eliminar Cuenta?",
       "delete_confirm_message": "¿Estás seguro de que querés eliminar esta cuenta? Esta acción no se puede deshacer.",
-      "cannot_delete_last": "No se puede eliminar la última cuenta",
       "remove_wallet": "Remover Cuenta",
       "remove_all_wallets": "Remover todas las Cuentas",
       "remove_all_wallets_description": "Estás a punto de desconectar todas tus cuentas. Tené en cuenta que necesitarás tus seed-phrases o claves privadas para volver a conectarlas.",
@@ -679,7 +672,6 @@
       "innerCount": "{{count}} internas",
       "copyTransactionHash": "Copiar hash de transacción",
       "chooseExplorer": "Elegí un explorador",
-      "explorerHint": "Abre la transacción en el explorador de blockchain",
       "copyAddressHint": "Copia la dirección al portapapeles",
       "nftMediaAlt": "Contenido del NFT"
     },
@@ -1032,7 +1024,6 @@
     }
   },
   "powerups": {
-    "title": "Powerups",
     "installed": "INSTALADOS",
     "browse_title": "Explorar Powerups",
     "browse_subtitle": "Destacados, oficiales y de la comunidad",
