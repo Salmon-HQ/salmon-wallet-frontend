@@ -127,8 +127,8 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
     return null;
   }
 
-  // Derive explorer target from the active network (same pattern as
-  // SendSheet / NftDetailSheet) instead of hardcoding Solana mainnet.
+  // Derive explorer target from the active network (the same pattern the send
+  // and NFT flows use) instead of hardcoding Solana mainnet.
   const explorerNetworkId = networkId ?? 'solana-mainnet';
   const explorerBlockchain = getBlockchainFromNetworkId(
     explorerNetworkId

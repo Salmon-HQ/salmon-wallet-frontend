@@ -24,12 +24,23 @@ import { usePressMotion } from '../../../hooks/usePressMotion';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
+/**
+ * `danger` is the destructive variant: the same outlined control, drawn in
+ * danger ink with a danger edge. It exists so a destructive action can be the
+ * secondary of a pair without borrowing the salmon fill or reading as a peer
+ * of the primary beside it.
+ */
+type SecondaryButtonTone = 'default' | 'danger';
+
 interface SecondaryButtonProps extends Testable {
   onPress: () => void;
   children: string;
   disabled?: boolean;
   loading?: boolean;
+  tone?: SecondaryButtonTone;
   style?: ViewStyle;
+  /** Announced consequence — the third channel a destructive control needs. */
+  accessibilityHint?: string;
   /** Optional glyph before the label. The label stays the accessible name. */
   icon?: ReactNode;
   /**
@@ -44,12 +55,15 @@ export function SecondaryButton({
   children,
   disabled,
   loading,
+  tone = 'default',
   style,
   icon,
   trailingIcon,
   testID,
+  accessibilityHint,
 }: SecondaryButtonProps) {
   const isDisabled = disabled || loading;
+  const isDanger = tone === 'danger';
   const { pressStyle, pressHandlers, specular } = usePressMotion();
 
   return (
@@ -57,19 +71,26 @@ export function SecondaryButton({
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={children}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!isDisabled, busy: !!loading }}
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={0.8}
       {...pressHandlers}
-      style={[styles.button, isDisabled && styles.disabled, style, pressStyle]}
+      style={[
+        styles.button,
+        isDanger && styles.buttonDanger,
+        isDisabled && styles.disabled,
+        style,
+        pressStyle,
+      ]}
     >
       {loading ? (
         <ActivityIndicator color={semantic.text.primary} />
       ) : (
         <>
           {icon}
-          <Text style={styles.text}>{children}</Text>
+          <Text style={[styles.text, isDanger && styles.textDanger]}>{children}</Text>
           {trailingIcon}
         </>
       )}
@@ -95,6 +116,9 @@ const styles = StyleSheet.create({
     // Clip the press specular to the control's own radius.
     overflow: 'hidden',
   },
+  buttonDanger: {
+    borderColor: semantic.status.danger,
+  },
   disabled: {
     opacity: colors.button.disabledOpacity,
   },
@@ -104,5 +128,8 @@ const styles = StyleSheet.create({
     fontSize: fontSize.bodyLg,
     letterSpacing: letterSpacing.normal,
     textAlign: 'center',
+  },
+  textDanger: {
+    color: semantic.status.danger,
   },
 });

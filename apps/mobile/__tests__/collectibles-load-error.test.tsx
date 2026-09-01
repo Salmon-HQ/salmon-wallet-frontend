@@ -70,8 +70,8 @@ jest.mock('../src/components/NftCard', () => {
   return { NftCard: () => <View />, NftCardSkeleton: () => <View /> };
 });
 
-jest.mock('../src/components/NftDetailSheet', () => ({
-  NftDetailSheet: () => null,
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn() }),
 }));
 
 jest.mock('../src/components/Icon', () => {

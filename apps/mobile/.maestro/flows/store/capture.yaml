@@ -98,14 +98,18 @@ appId: io.salmonwallet.app
 - waitForAnimationToEnd:
     timeout: 15000
 - takeScreenshot: ${OUT}/05-nft-detail
-- runFlow: ../../subflows/dismiss-bottom-sheet.yaml
+# The NFT detail is a pushed screen now (spec 019 D7), not a bottom sheet:
+# it leaves by the platform back, not by dragging a handle.
+- back
 - extendedWaitUntil:
     visible: 'My Collectibles'
     timeout: 20000
 - tapOn:
     id: 'portfolio-tab-portfolio'
 
-# ----------------------------------------------------------- 06 token info --
+# ------------------------------------------------ 06 token detail (screen) --
+# Was a sheet; the row now pushes `/token/[id]` (spec 019), so this capture is
+# a screen, not a modal — nothing to dismiss afterward.
 - extendedWaitUntil:
     visible:
       id: 'token-row-SOL'

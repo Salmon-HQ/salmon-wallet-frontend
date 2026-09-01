@@ -50,7 +50,9 @@ appId: io.salmonwallet.app
 - waitForAnimationToEnd:
     timeout: 45000
 - takeScreenshot: ${OUT}/05-nft-detail
-- runFlow: ../../subflows/dismiss-bottom-sheet.yaml
+# The NFT detail is a pushed screen now (spec 019 D7), not a bottom sheet:
+# it leaves by the platform back, not by dragging a handle.
+- back
 - extendedWaitUntil:
     visible: 'My Collectibles'
     timeout: 20000
