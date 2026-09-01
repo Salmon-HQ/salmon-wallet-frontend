@@ -242,16 +242,25 @@ export type { NftSectionKey, NftSection, NftsTabProps } from './NftsTab';
 // Transaction
 // ---------------------------------------------------------------------------
 
-export { TransactionHistorySheet, TransactionItem } from './TransactionHistorySheet';
+export {
+  ACTIVITY_FILTER_KEYS,
+  GROUP_LABEL_KEYS,
+  groupByDay,
+  matchesFilter,
+  TransactionItem,
+  EmptyState as ActivityEmptyState,
+  ErrorState as ActivityErrorState,
+  TransactionListSkeleton,
+} from './Activity';
+export type { ActivityFilter, ActivityGroup, ActivityRow } from './Activity';
 export type {
-  TransactionHistorySheetProps,
   TransactionItemProps,
   Transaction,
   TransactionType,
   TransactionStatus,
   TransactionTokenAmount,
   TransactionFee,
-} from './TransactionHistorySheet';
+} from './Activity';
 
 export { TransactionDetail } from './TransactionDetail';
 export type { TransactionDetailProps } from './TransactionDetail';

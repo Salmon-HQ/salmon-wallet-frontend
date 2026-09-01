@@ -26,11 +26,9 @@ import {
   ActivityIndicator,
   Animated,
   LayoutChangeEvent,
-  Linking,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -55,7 +53,6 @@ import {
   useBalance,
   usePrefetchBalances,
   useCurrencyContext,
-  useTransactions,
   isWatchOnlyAccount,
   vs,
   getBlockchainFromNetworkId,
@@ -83,27 +80,16 @@ import {
   TokenListItem,
   TokenListSkeleton,
   TokenMarketData,
-  TransactionHistorySheet,
   WalletHeader,
   WarningNotice,
   type BlockchainBalance,
   type BlockchainId,
   type MarketData,
-  type Transaction,
 } from '../../../src/components';
 import { useDeveloperMode } from '../../../src/contexts/DeveloperModeContext';
 import { useTaskChrome } from '../../../src/contexts/TaskChromeContext';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../../src/utils/sinkAndFloat';
 import { useTabChrome } from '../../../hooks/useTabChrome';
-
-/**
- * Maps context networkId to transaction API networkId format.
- * Since network IDs now match the API format directly, this is mostly a passthrough.
- */
-function getTransactionNetworkId(networkId: string | null): string {
-  if (!networkId) return 'solana-mainnet';
-  return networkId;
-}
 
 /**
  * Convert TokenBalanceWithPrice to Token for TokenList
@@ -214,9 +200,6 @@ export default function HomeScreen() {
   // SendSheet visibility
   const [sendSheetVisible, setSendSheetVisible] = useState(false);
 
-  // TransactionHistorySheet visibility
-  const [transactionHistoryVisible, setTransactionHistoryVisible] = useState(false);
-
   // Get account state and actions from shared context
   const [accountState, accountActions] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId, pathIndex, switchingNetwork } =
@@ -228,7 +211,6 @@ export default function HomeScreen() {
     setTokenSheetVisible(false);
     setReceiveSheetVisible(false);
     setSendSheetVisible(false);
-    setTransactionHistoryVisible(false);
     // Powerups is a route now, not a sheet — it closes itself on lock (see
     // `app/(app)/powerups.tsx`), because it sits ABOVE the tab shell that
     // mounts the lock overlay and Home cannot reach it from here.
@@ -337,22 +319,7 @@ export default function HomeScreen() {
     }
   }, [loading, switchingNetwork, accountActions]);
 
-  // Get transaction history for current account
   const address = activeBlockchainAccount?.getReceiveAddress() ?? '';
-  const {
-    transactions: historyTransactions,
-    loading: transactionsLoading,
-    loadingMore: transactionsLoadingMore,
-    error: transactionsError,
-    hasMore: transactionsHasMore,
-    loadMore: transactionsLoadMore,
-    refresh: transactionsRefresh,
-  } = useTransactions({
-    address,
-    networkId: getTransactionNetworkId(networkId) as NetworkId,
-    skip: !ready || !activeBlockchainAccount,
-    account: activeBlockchainAccount,
-  });
 
   // Create blockchain balances array for carousel
   // Maps available networks from useAvailableNetworks to BlockchainBalance objects
@@ -617,9 +584,11 @@ export default function HomeScreen() {
     }
   }, [activeBlockchainAccount]);
 
+  // Activity is a screen of its own (CORE 08) — the pill is a route, not a
+  // sheet toggle, and the list owns its own transaction state there.
   const handleActivityPress = useCallback(() => {
-    setTransactionHistoryVisible(true);
-  }, []);
+    router.push('/activity');
+  }, [router]);
 
   const handleTokenPress = useCallback((token: Token) => {
     // Reset previous token data
@@ -639,49 +608,6 @@ export default function HomeScreen() {
       setSelectedToken(null);
     }, 300);
   }, []);
-
-  const handleTransactionHistoryClose = useCallback(() => {
-    setTransactionHistoryVisible(false);
-  }, []);
-
-  // Handler for tap on transaction. The detail is a step inside the activity
-  // sheet, so the sheet owns the step; this only marks the touch.
-  const handleTransactionPress = useCallback((_transaction: Transaction) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, []);
-
-  // Handler to view transaction in explorer (from the detail step)
-  const handleViewExplorer = useCallback(
-    (transaction: Transaction) => {
-      const explorerUrl =
-        networkId === 'solana-devnet'
-          ? `https://solscan.io/tx/${transaction.id}?cluster=devnet`
-          : `https://solscan.io/tx/${transaction.id}`;
-      Linking.openURL(explorerUrl);
-    },
-    [networkId]
-  );
-
-  // Handler to share transaction (from the detail step)
-  const handleShareTransaction = useCallback(
-    async (transaction: Transaction) => {
-      const explorerUrl =
-        networkId === 'solana-devnet'
-          ? `https://solscan.io/tx/${transaction.id}?cluster=devnet`
-          : `https://solscan.io/tx/${transaction.id}`;
-      try {
-        await Share.share({
-          message: t('transactions.share_message', 'Check out this transaction: {{url}}', {
-            url: explorerUrl,
-          }),
-          url: explorerUrl,
-        });
-      } catch (error) {
-        console.error('Failed to share transaction:', error);
-      }
-    },
-    [networkId, t]
-  );
 
   const handleSelectedTokenChartPeriodChange = useCallback((period: PriceChartPeriod) => {
     setSelectedTokenChartPeriod(period);
@@ -862,7 +788,7 @@ export default function HomeScreen() {
     );
   }
 
-  // address is already defined above for useTransactions hook
+  // `address` is defined above, next to the account state it comes from.
 
   // The block above the content, shared by both sub-tabs. On Portfolio it is
   // pinned; on NFTs it is the grid's list header, so it scrolls away.
@@ -1146,25 +1072,6 @@ export default function HomeScreen() {
         account={activeBlockchainAccount}
         onSuccess={handleSendSuccess}
         showUnverifiedTokens={developerNetworks}
-      />
-
-      {/* Transaction History Sheet */}
-      <TransactionHistorySheet
-        visible={transactionHistoryVisible}
-        onClose={handleTransactionHistoryClose}
-        transactions={historyTransactions as Transaction[]}
-        loading={transactionsLoading}
-        loadingMore={transactionsLoadingMore}
-        hasMore={transactionsHasMore}
-        onLoadMore={transactionsLoadMore}
-        hiddenBalance={hiddenBalance}
-        onTransactionPress={handleTransactionPress}
-        error={transactionsError}
-        onRetry={transactionsRefresh}
-        onViewExplorer={handleViewExplorer}
-        onShare={handleShareTransaction}
-        developerMode={developerNetworks}
-        networkId={networkId}
       />
 
     </View>

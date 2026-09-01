@@ -56,12 +56,12 @@ appId: io.salmonwallet.app
     id: 'home-activity-button'
 - extendedWaitUntil:
     visible:
-      id: 'activity-list'
+      id: 'activity-screen'
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 8000
 - takeScreenshot: ${OUT}/03-transactions
-- runFlow: ../../subflows/dismiss-bottom-sheet.yaml
+- runFlow: ../../subflows/settings-back.yaml
 - extendedWaitUntil:
     visible:
       id: 'wallet-header-account-switcher'

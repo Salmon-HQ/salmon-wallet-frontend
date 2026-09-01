@@ -179,7 +179,6 @@ jest.mock('../src/components', () => {
     TokenListSkeleton: () => <Text testID="token-list-skeleton">skeleton</Text>,
     TokenMarketData: () => <View />,
     TransactionDetailModal: () => null,
-    TransactionHistorySheet: () => null,
     WarningNotice: ({ title }: { title: string }) => <Text>{title}</Text>,
   };
 });

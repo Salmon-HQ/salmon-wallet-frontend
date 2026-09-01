@@ -928,12 +928,20 @@
     "password_check_failed": "Failed to verify password",
     "password_required": "Password is required"
   },
+  "activity": {
+    "emptyFiltered": "No transactions match this filter",
+    "filters": {
+      "all": "All",
+      "send": "Sent",
+      "receive": "Received",
+      "other": "Other"
+    }
+  },
   "home": {
     "no_tokens": "No tokens found",
     "no_tokens_hint": "Your tokens will appear here once you receive some",
     "unnamed_account": "Account",
     "total_balance": "Total balance",
-    "history": "History",
     "change_period_24h": "24h"
   },
   "send": {

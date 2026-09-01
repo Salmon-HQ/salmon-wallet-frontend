@@ -26,7 +26,7 @@ const SKELETON_ROW_HEIGHT = 92;
 
 /**
  * Skeleton loader for a single transaction row — the kit row's shape:
- * leading mark, verb + protocol chip, description, amount column, time.
+ * leading mark, verb, counterparty, amount column, time.
  */
 const TransactionItemSkeleton: React.FC = () => (
   <View style={styles.skeletonRow}>
@@ -44,8 +44,6 @@ const TransactionItemSkeleton: React.FC = () => (
 
       {/* Type label */}
       <Rect x="72" y="26" rx="4" ry="4" width="70" height="16" />
-      {/* Source badge */}
-      <Rect x="148" y="27" rx="4" ry="4" width="50" height="14" />
       {/* Description */}
       <Rect x="72" y="50" rx="4" ry="4" width="100" height="14" />
 
@@ -71,14 +69,18 @@ export const TransactionListSkeleton: React.FC<{ count?: number }> = ({ count = 
 );
 
 /**
- * Empty state when no transactions
+ * Empty state when no transactions.
+ *
+ * The subtitle is overridable because "your transaction history will appear
+ * here" is a lie under an active filter — the history is there, this slice of
+ * it is not.
  */
-export const EmptyState: React.FC = () => {
+export const EmptyState: React.FC<{ subtitle?: string }> = ({ subtitle }) => {
   const { t } = useTranslation();
   return (
     <View style={styles.centred} testID="activity-empty">
       <Text style={styles.title}>{t('transactions.noTransactions')}</Text>
-      <Text style={styles.body}>{t('transactions.emptySubtitle')}</Text>
+      <Text style={styles.body}>{subtitle ?? t('transactions.emptySubtitle')}</Text>
     </View>
   );
 };

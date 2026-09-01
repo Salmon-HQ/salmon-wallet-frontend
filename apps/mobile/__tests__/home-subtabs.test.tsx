@@ -155,16 +155,21 @@ jest.mock('../src/components', () => {
       activeIndex,
       blockchains,
       onBlockchainChange,
+      onActivityPress,
     }: {
       activeIndex?: number;
       blockchains?: Array<{ network: { id: string; blockchain: string } }>;
       onBlockchainChange?: (blockchain: string, index: number) => void;
+      onActivityPress?: () => void;
     }) => (
       <View
         testID="balance-header"
         // The chain the block is actually showing, so a test can read it.
         accessibilityLabel={blockchains?.[activeIndex ?? 0]?.network.blockchain}
       >
+        <Text testID="home-activity-button" onPress={onActivityPress}>
+          activity
+        </Text>
         {(blockchains ?? []).map((chain, index) => (
           <Text
             key={chain.network.id}
@@ -206,7 +211,6 @@ jest.mock('../src/components', () => {
     TokenListItem: () => <View />,
     TokenListSkeleton: () => <View />,
     TokenMarketData: () => <View />,
-    TransactionHistorySheet: () => null,
     WarningNotice: ({ title }: { title: string }) => <Text>{title}</Text>,
   };
 });
@@ -248,6 +252,16 @@ describe('home sub-tabs', () => {
     const grid = screen.getByTestId('nfts-tab');
     expect(within(grid).getByTestId('balance-header')).toBeTruthy();
     expect(screen.queryByTestId('token-list')).toBeNull();
+  });
+
+  it('sends the balance pill to the Activity screen, not to a sheet', () => {
+    render(<HomeScreen />);
+
+    fireEvent.press(screen.getByTestId('home-activity-button'));
+
+    // Activity is a route now (CORE 08): Home holds no transaction state and
+    // opens nothing of its own.
+    expect(mockRouter.push).toHaveBeenCalledWith('/activity');
   });
 
   it('keeps the powerups FAB on both sub-tabs', () => {

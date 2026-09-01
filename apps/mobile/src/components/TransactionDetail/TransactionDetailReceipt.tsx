@@ -26,7 +26,7 @@ import * as Haptics from '../../utils/haptics';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { Card } from '../Card';
 import { KeyValueRow } from '../KeyValueRow';
-import { AddressCopyRow } from '../TransactionHistorySheet/AddressCopyRow';
+import { AddressCopyRow } from '../Activity/AddressCopyRow';
 import type { Transaction } from './types';
 
 /** How much of the signature is shown before it elides. */

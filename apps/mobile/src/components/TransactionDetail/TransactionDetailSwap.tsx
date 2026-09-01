@@ -27,8 +27,8 @@ import {
 import { Card } from '../Card';
 import { Chip } from '../Chip';
 import { TokenLogo } from '../TokenLogo';
-import { ConversionRateDisplay } from '../TransactionHistorySheet/ConversionRateDisplay';
-import { PriceImpactBadge } from '../TransactionHistorySheet/PriceImpactBadge';
+import { ConversionRateDisplay } from '../Activity/ConversionRateDisplay';
+import { PriceImpactBadge } from '../Activity/PriceImpactBadge';
 import type { SwapConversionRate, Transaction } from './types';
 
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a

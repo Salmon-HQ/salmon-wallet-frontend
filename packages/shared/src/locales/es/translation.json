@@ -928,12 +928,20 @@
     "password_check_failed": "No se pudo verificar la contraseña",
     "password_required": "La contraseña es obligatoria"
   },
+  "activity": {
+    "emptyFiltered": "Ninguna transacción coincide con este filtro",
+    "filters": {
+      "all": "Todas",
+      "send": "Enviadas",
+      "receive": "Recibidas",
+      "other": "Otras"
+    }
+  },
   "home": {
     "no_tokens": "No se encontraron tokens",
     "no_tokens_hint": "Tus tokens van a aparecer acá cuando recibas alguno",
     "unnamed_account": "Cuenta",
     "total_balance": "Balance total",
-    "history": "Historial",
     "change_period_24h": "24h"
   },
   "send": {

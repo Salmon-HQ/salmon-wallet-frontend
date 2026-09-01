@@ -102,7 +102,7 @@ jest.mock('../TokenLogo', () => ({
   TokenLogo: () => null,
 }));
 
-jest.mock('../TransactionHistorySheet/AddressCopyRow', () => ({
+jest.mock('../Activity/AddressCopyRow', () => ({
   AddressCopyRow: ({ label, address }: { label: string; address: string }) => {
     const React = require('react');
     const { Text } = require('react-native');
@@ -110,7 +110,7 @@ jest.mock('../TransactionHistorySheet/AddressCopyRow', () => ({
   },
 }));
 
-jest.mock('../TransactionHistorySheet/ExplorerLinkButton', () => ({
+jest.mock('../Activity/ExplorerLinkButton', () => ({
   ExplorerLinkButton: ({
     onPress,
     ...props
@@ -135,7 +135,7 @@ jest.mock('../TransactionHistorySheet/ExplorerLinkButton', () => ({
   },
 }));
 
-jest.mock('../TransactionHistorySheet/PriceImpactBadge', () => ({
+jest.mock('../Activity/PriceImpactBadge', () => ({
   PriceImpactBadge: ({ value }: { value: string }) => {
     const React = require('react');
     const { Text } = require('react-native');
@@ -143,7 +143,7 @@ jest.mock('../TransactionHistorySheet/PriceImpactBadge', () => ({
   },
 }));
 
-jest.mock('../TransactionHistorySheet/ConversionRateDisplay', () => ({
+jest.mock('../Activity/ConversionRateDisplay', () => ({
   ConversionRateDisplay: ({
     fromSymbol,
     toSymbol,

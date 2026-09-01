@@ -31,11 +31,11 @@ import { Chip } from '../Chip';
 import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { TextButton } from '../Button';
-import { ExplorerLinkButton } from '../TransactionHistorySheet/ExplorerLinkButton';
+import { ExplorerLinkButton } from '../Activity/ExplorerLinkButton';
 import {
   TRANSACTION_TYPE_CONFIG,
   TYPE_LABEL_KEYS,
-} from '../TransactionHistorySheet/transactionTypes';
+} from '../Activity/transactionTypes';
 import { TransactionDetailDeveloper } from './TransactionDetailDeveloper';
 import { TransactionDetailReceipt } from './TransactionDetailReceipt';
 import { TransactionDetailSwap } from './TransactionDetailSwap';

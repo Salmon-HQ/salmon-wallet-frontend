@@ -10,13 +10,13 @@ import {
   fontScaleCap,
   formatRawAmount,
   formatRelativeTimeCompact,
+  getShortAddress,
   getTransactionDescription,
   lineHeight,
   spacing,
   semantic,
   tabularNums,
 } from '@salmon/shared';
-import { Chip } from '../Chip';
 import { ListRow } from '../ListRow';
 import { TRANSACTION_TYPE_CONFIG, TYPE_LABEL_KEYS, TransactionMark } from './transactionTypes';
 import type { TransactionItemProps, TransactionTokenAmount } from './types';
@@ -34,8 +34,8 @@ const HIDDEN_VALUE = '****';
 /** Maximum amounts to show before collapsing */
 const MAX_VISIBLE_AMOUNTS = 2;
 
-/** Widest the protocol chip may grow, in design px, before it truncates */
-const SOURCE_BADGE_MAX_WIDTH = 116;
+/** How much of the counterparty address the row keeps at each end. */
+const ADDRESS_CHARS = 4;
 
 /** The amount column reserves this width, so the chip can never reach it */
 const AMOUNT_COLUMN_MIN_WIDTH = 104;
@@ -79,9 +79,13 @@ const AmountDisplay: React.FC<{
  *
  * The kit's `ListRow` (a `Card` at padding md / radius xl) laid out as
  * leading mark, title stack and amount column — the row no longer draws a box
- * of its own. The protocol name is a `Chip sm` in the title row's accessory
- * slot, so an unbounded upstream name (`SOLANA_PROGRAM_LIBRARY`) drops to its
- * own line instead of truncating the verb to "Receive…".
+ * of its own.
+ *
+ * There is no protocol chip: CORE 08 draws none, and an upstream program name
+ * (`SOLANA_PROGRAM_LIBRARY`) is not what the user is scanning for. The
+ * subtitle is the counterparty instead — the address book's name for it when
+ * the book knows it, and the short address otherwise. The protocol still
+ * shows in the detail, which is where a program name belongs.
  *
  * @example
  * ```tsx
@@ -96,6 +100,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   transaction,
   onPress,
   hiddenBalance = false,
+  contacts,
   style,
 }) => {
   const { t } = useTranslation();
@@ -110,11 +115,30 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     onPress?.(transaction);
   }, [onPress, transaction]);
 
+  // The other side of the transfer, when there is one: who it went to, or who
+  // it came from.
+  const counterparty =
+    type === 'send' ? outputs[0]?.destination : type === 'receive' ? inputs[0]?.source : undefined;
+
   // Named in `packages/shared`, said here — see `TransactionDescription`.
+  //
+  // A transfer with a counterparty always says "To/From <someone>", even when
+  // the indexer sent prose of its own: the address book's name outranks it,
+  // and the short address is the same form the wallet header uses. Everything
+  // else keeps the shared description.
   const descriptionText = useMemo(() => {
+    if (counterparty) {
+      const name = contacts?.[counterparty] ?? getShortAddress(counterparty, ADDRESS_CHARS) ?? '';
+      return t(
+        type === 'send'
+          ? 'transactions.description.sendTo'
+          : 'transactions.description.receiveFrom',
+        { address: name }
+      );
+    }
     const described = getTransactionDescription(type, inputs, outputs, source, description);
     return t(described.key, described.values);
-  }, [type, inputs, outputs, source, description, t]);
+  }, [counterparty, contacts, type, inputs, outputs, source, description, t]);
 
   const typeLabel = t(TYPE_LABEL_KEYS[type] ?? TYPE_LABEL_KEYS.unknown, config.label);
 
@@ -178,17 +202,6 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
       onPress={handlePress}
       leading={<TransactionMark transaction={transaction} />}
       title={typeLabel}
-      titleAccessory={
-        source ? (
-          <Chip
-            testID="tx-row-source"
-            label={source}
-            size="sm"
-            variant="outline"
-            style={styles.sourceChip}
-          />
-        ) : undefined
-      }
       subtitle={descriptionText}
       trailing={
         <View style={styles.rightSection}>
@@ -215,14 +228,6 @@ const styles = StyleSheet.create({
   /** List glue only — the row's ground, radius and padding are the kit's. */
   rowSpacing: {
     marginBottom: vs(spacing.md),
-  },
-  sourceChip: {
-    // The chip is bounded twice: it may shrink, and it may never claim more
-    // than this much of the row however long the upstream protocol name is.
-    // Past that the title row wraps it onto its own line — the verb never
-    // pays for the protocol's name.
-    flexShrink: 1,
-    maxWidth: s(SOURCE_BADGE_MAX_WIDTH),
   },
   rightSection: {
     alignItems: 'flex-end',

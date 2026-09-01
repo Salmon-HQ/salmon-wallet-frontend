@@ -252,7 +252,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
               testID="home-activity-button"
               size="sm"
               variant="outline"
-              label={t('home.history', 'History')}
+              label={t('actions.activity', 'Activity')}
               leadingIcon={
                 <ClockIcon size={ms(componentSizes.iconSizeXxs)} color={semantic.text.secondary} />
               }
