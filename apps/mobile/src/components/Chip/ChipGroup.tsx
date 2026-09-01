@@ -6,7 +6,7 @@
  * come and go.
  */
 import React, { useCallback } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { s, spacing } from '@salmon/shared';
 
 import { Chip } from './Chip';
@@ -18,10 +18,32 @@ export function ChipGroup({
   onChange,
   size = 'md',
   variant = 'filter',
+  fill = false,
   style,
   testID,
 }: ChipGroupProps) {
   const handlePress = useCallback((key: string) => () => onChange(key), [onChange]);
+
+  const chips = options.map((option) => (
+    <Chip
+      key={option.key}
+      testID={`${testID ?? 'chip-group'}-${option.key}`}
+      label={option.label}
+      selected={option.key === value}
+      onPress={handlePress(option.key)}
+      size={size}
+      variant={variant}
+      style={fill ? styles.fillChip : undefined}
+    />
+  ));
+
+  if (fill) {
+    return (
+      <View testID={testID} style={[styles.content, style]}>
+        {chips}
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -31,17 +53,7 @@ export function ChipGroup({
       style={style}
       contentContainerStyle={styles.content}
     >
-      {options.map((option) => (
-        <Chip
-          key={option.key}
-          testID={`${testID ?? 'chip-group'}-${option.key}`}
-          label={option.label}
-          selected={option.key === value}
-          onPress={handlePress(option.key)}
-          size={size}
-          variant={variant}
-        />
-      ))}
+      {chips}
     </ScrollView>
   );
 }
@@ -51,5 +63,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: s(spacing.sm),
+  },
+  fillChip: {
+    flex: 1,
   },
 });

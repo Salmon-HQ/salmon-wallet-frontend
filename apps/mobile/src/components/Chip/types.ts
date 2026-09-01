@@ -41,5 +41,10 @@ export interface ChipGroupProps extends Testable {
   onChange: (key: string) => void;
   size?: ChipSize;
   variant?: ChipVariant;
+  /**
+   * A fixed set that shares the row equally instead of scrolling — the amount
+   * shortcuts (CORE 05 draws four `fill_container` pills across the gutter).
+   */
+  fill?: boolean;
   style?: StyleProp<ViewStyle>;
 }

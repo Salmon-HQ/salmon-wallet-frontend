@@ -8,6 +8,7 @@
  * here instead of inline on either screen so the two call sites cannot drift.
  */
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import type { SendToken } from '@salmon/shared';
 
 import { BottomSheetContainer } from '../BottomSheetContainer';
@@ -33,7 +34,7 @@ export function TokenPickerSheet({
   testID = 'send-token-picker',
 }: TokenPickerSheetProps) {
   return (
-    <BottomSheetContainer visible={visible} onClose={onClose} testID={testID}>
+    <BottomSheetContainer visible={visible} onClose={onClose} testID={testID} style={styles.sheet}>
       <TokenSelectList
         tokens={tokens}
         loading={loading}
@@ -43,5 +44,14 @@ export function TokenPickerSheet({
     </BottomSheetContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  // A sheet hugs its content, and a virtualised list has none to hug — it
+  // fills whatever it is given. So this one sheet is given a height, or the
+  // list collapses to the handle.
+  sheet: {
+    height: '70%',
+  },
+});
 
 export default TokenPickerSheet;

@@ -168,10 +168,14 @@ export default function SendAmountScreen() {
   // The fee, asked for once the screen settles. The context no-ops a request
   // for a pair it already holds, so the debounce only spares the first frames
   // of a token change — it is not what keeps the request count at one.
+  // `hasAmount` is a dependency because the context refuses to price an
+  // empty amount: the request has to fire again the moment there is one.
+  const hasAmount = parseFloat(amount) > 0;
   useEffect(() => {
+    if (!hasAmount) return undefined;
     const timer = setTimeout(estimateFee, FEE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [estimateFee]);
+  }, [estimateFee, hasAmount]);
 
   const actionBottomPadding =
     keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
@@ -240,6 +244,7 @@ export default function SendAmountScreen() {
           value=""
           onChange={handleShortcut}
           size="md"
+          fill
           variant="outline"
           style={styles.shortcuts}
         />

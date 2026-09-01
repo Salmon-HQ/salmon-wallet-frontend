@@ -369,13 +369,21 @@ describe('the amount screen — what the frames put on it', () => {
     expect(screen.getByTestId('send-selected-token').props.accessibilityRole).toBeUndefined();
   });
 
-  it('asks the flow for the fee and draws it beside the arrival', () => {
+  it('asks the flow for the fee once there is an amount, and draws it beside the arrival', () => {
     jest.useFakeTimers();
     try {
+      // No amount, no estimate: pricing an empty amount threw in the chain
+      // builder ("number is not integral").
+      const { unmount } = render(<SendAmountScreen />);
+      jest.runOnlyPendingTimers();
+      expect(mockFlow.estimateFee).not.toHaveBeenCalled();
+      unmount();
+
+      mockFlow.amount = '1';
       render(<SendAmountScreen />);
       jest.runOnlyPendingTimers();
-
       expect(mockFlow.estimateFee).toHaveBeenCalled();
+      mockFlow.amount = '';
     } finally {
       jest.useRealTimers();
     }

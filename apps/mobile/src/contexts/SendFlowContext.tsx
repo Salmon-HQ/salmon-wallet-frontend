@@ -173,6 +173,11 @@ export function SendFlowProvider({ children }: { children: React.ReactNode }) {
 
   const estimateFee = useCallback(() => {
     if (!token || !recipient || !feeKey) return;
+    // No estimate without an amount: the chain adapters build the transfer to
+    // price it, and `parseFloat('')` is NaN — Solana's builder throws
+    // "number is not integral" turning that into lamports. The amount screen
+    // asks again once a positive amount is typed.
+    if (!(parseFloat(amountRef.current) > 0)) return;
     if (feeRequestedFor.current === feeKey) return;
     feeRequestedFor.current = feeKey;
     void (async () => {
