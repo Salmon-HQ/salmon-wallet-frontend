@@ -1,12 +1,12 @@
 /**
- * LockContent — Content rendered inside GateContainer when state is 'locked'
+ * LockContent — the lock screen's body, rendered inside `LockOverlay`.
  *
  * Contains all lock screen business logic:
  * - Biometric auto-prompt (Face ID / Touch ID)
  * - Password fallback input
  * - Forgot password / reset wallet
  *
- * Does NOT contain any animation logic — that's handled by GateContainer.
+ * Coverage and touch blocking are the overlay's job, not this component's.
  */
 
 import {

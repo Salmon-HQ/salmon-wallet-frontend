@@ -21,7 +21,7 @@ export function useTabChrome() {
     const headerTopInset = topInset;
     // The header no longer paints a band: it is the screen's top padding
     // (safe area + `screenTop`) followed by the header row, on the same plane
-    // as the balance below it. `GateContainer` computes the same three terms
+    // as the balance below it. `WalletHeader` computes the same three terms
     // for its collapse math — keep them in step or the header and the content
     // overlap. Unscaled, like every other expression defining this slot.
     // The last term is the row's own height (its 38px thumb), never the 56px

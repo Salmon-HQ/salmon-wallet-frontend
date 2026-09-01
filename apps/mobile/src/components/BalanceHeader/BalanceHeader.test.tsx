@@ -8,7 +8,7 @@
  * there is the whole point of the privacy toggle.
  */
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, within } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/theme'),
@@ -91,8 +91,15 @@ jest.mock('react-native-gesture-handler', () => {
   };
 });
 
-// The textures are SVG and say nothing about behaviour.
-jest.mock('../FleshBackground', () => ({ FleshBackground: () => null }));
+// A marker View stands in for the SVG texture, so a test can assert whether
+// it mounted without asserting anything about the drawing itself.
+jest.mock('../FleshBackground', () => {
+  const ReactActual = require('react');
+  const { View: RNView } = require('react-native');
+  return {
+    FleshBackground: () => ReactActual.createElement(RNView, { testID: 'flesh-background' }),
+  };
+});
 jest.mock('../PressSpecular', () => ({ PressSpecular: () => null }));
 jest.mock('../../../hooks/usePressMotion', () => ({
   usePressMotion: () => ({
@@ -218,6 +225,39 @@ describe('BalanceHeader', () => {
         expect(isInside(control, wrapper)).toBe(false);
       }
     }
+  });
+});
+
+describe('BalanceHeader value swap', () => {
+  it('does not play the float on mount, only on a real chain change', () => {
+    // Home moves this block between the pinned wrapper and the NFT grid's list
+    // header, so switching sub-tabs unmounts and remounts it. With an entering
+    // animation on first mount, an in-page tab change on the SAME chain looked
+    // exactly like a chain switch (owner, on device).
+    const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+    expect(view.getByTestId('balance-amount').props.entering).toBeUndefined();
+
+    // A remount with the same chain is a fresh component: still no float.
+    view.unmount();
+    const remounted = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+    expect(remounted.getByTestId('balance-amount').props.entering).toBeUndefined();
+
+    // The chain actually changing is the one event that owes the gesture.
+    remounted.rerender(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={1} />);
+    expect(remounted.getByTestId('balance-amount').props.entering).toBeDefined();
+  });
+});
+
+describe('BalanceHeader flesh', () => {
+  it('draws the flesh on the salmon-filled Send circle and never on the outline Receive circle', () => {
+    const view = render(<BalanceHeader blockchains={BLOCKCHAINS} activeIndex={0} />);
+
+    expect(
+      within(view.getByTestId('home-send-button')).getByTestId('flesh-background')
+    ).toBeTruthy();
+    expect(
+      within(view.getByTestId('home-receive-button')).queryByTestId('flesh-background')
+    ).toBeNull();
   });
 });
 

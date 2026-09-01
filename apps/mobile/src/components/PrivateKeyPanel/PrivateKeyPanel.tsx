@@ -33,7 +33,6 @@ import { PrimaryButton, SecondaryButton } from '../Button';
 import { ConfirmSheet } from '../ConfirmSheet';
 import { WarningNotice } from '../WarningNotice';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
-import { useSettingsHeaderOverride } from '../SettingsHeaderContext';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { BitcoinSvgIcon, EthereumSvgIcon, SolanaSvgIcon } from '../Icon/SvgIcons';
@@ -185,14 +184,8 @@ export function PrivateKeyPanel({
     setCopyFailedIndex(null);
     setReauthIndex(null);
   }, [resetCopied]);
-  const currentTitle = selectedNetworkId ? t('settings.private_key') : t('settings.select_network');
   const currentBackAction =
     selectedNetworkId && networks.length > 1 ? handleBackToNetworks : onBack;
-
-  useSettingsHeaderOverride({
-    title: currentTitle,
-    onBack: currentBackAction,
-  });
 
   // ========================================================================
   // Step 1: Network Selection

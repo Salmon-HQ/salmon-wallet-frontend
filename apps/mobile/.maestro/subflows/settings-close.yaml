@@ -1,7 +1,10 @@
 appId: io.salmonwallet.app
 ---
-# Tap close (X) in settings sheet header (top-right).
+# Leave the Settings screen. There is no X any more: Settings is a stack screen,
+# so the back well in its header is the one way out (and the system back gesture
+# behind it). Kept as its own subflow because the flows that call it mean "leave
+# settings entirely", which from the settings root is exactly one back.
 - tapOn:
-    id: 'sheet-close-button'
+    id: 'screen-header-back-button'
 - waitForAnimationToEnd:
     timeout: 2000

@@ -58,7 +58,6 @@ import {
   semantic,
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
-import { useSettingsHeaderOverride } from '../../SettingsHeaderContext';
 import { PrimaryButton } from '../../Button';
 import { ConfirmSheet } from '../../ConfirmSheet';
 import { DerivedAccountCard } from '../../DerivedAccountCard';
@@ -715,11 +714,6 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
     complete: t('settings.account_add.title'),
   };
   const currentTitle = stepTitles[step];
-
-  useSettingsHeaderOverride({
-    title: currentTitle,
-    onBack: handleStepBack,
-  });
 
   return (
     <>

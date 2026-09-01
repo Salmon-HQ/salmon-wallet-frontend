@@ -1,13 +1,404 @@
-import { View, Text } from 'react-native';
+/**
+ * Settings — the screen, not a panel behind a header.
+ *
+ * The information architecture is the one the gate's sheet carried; what
+ * changed is the surface under it. Sections are `SectionLabel` caps over a
+ * `Card` group of `ListRow`s, each row a leading `IconBubble` and a trailing
+ * value or chevron. Every entry pushes its own sub-screen.
+ */
+import React, { useCallback, useMemo, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Placeholder route body: the real settings UI renders as a sheet from the
-// tabs layout Gate, so this screen is normally never visible.
-export default function SettingsOptionsScreen() {
+import {
+  AddressBookIcon,
+  ArrowSquareOutIcon,
+  CaretRightIcon,
+  ChartBarIcon,
+  CodeIcon,
+  InfoIcon,
+  KeyIcon,
+  LockIcon,
+  MoneyIcon,
+  QuestionIcon,
+  ShieldCheckIcon,
+  SignOutIcon,
+  SquaresFourIcon,
+  TranslateIcon,
+  TrashIcon,
+  UserCircleIcon,
+  UsersIcon,
+  iconSize,
+} from '../../../../src/icons';
+import {
+  useAccountsContext,
+  useAnalyticsConsent,
+  useCurrencyContext,
+  useUserConfig,
+  getSettingsItemTestId,
+  fontFamilyNative,
+  fontSize,
+  s,
+  semantic,
+  spacing,
+  vs,
+  LANGUAGE_NAMES,
+  type LanguageCode,
+  type SettingsScreen,
+} from '@salmon/shared';
+import { IconBubble, ListRow, ScreenHeader, SectionLabel } from '../../../../src/components';
+import { useLanguage } from '../../../../src/i18n';
+import { useBiometricAuth } from '../../../../hooks/useBiometricAuth';
+import { useTabChrome } from '../../../../hooks/useTabChrome';
+
+/** The leading well every settings row carries. */
+const ROW_BUBBLE_SIZE = 40;
+
+type RowId = SettingsScreen | 'developerNetworks' | 'analytics';
+
+interface SettingsRow {
+  id: RowId;
+  icon: React.ComponentType<{ size?: number; color?: string }>;
+  labelKey: string;
+  /** A row that flips a switch in place rather than pushing a screen. */
+  isToggle?: boolean;
+  /** A row that runs a destructive action rather than pushing a screen. */
+  isAction?: boolean;
+  isDanger?: boolean;
+}
+
+interface SettingsGroup {
+  titleKey: string;
+  isDanger?: boolean;
+  rows: SettingsRow[];
+}
+
+const SETTINGS_GROUPS: SettingsGroup[] = [
+  {
+    titleKey: 'settings.sections.account',
+    rows: [
+      { id: 'accounts', icon: UsersIcon, labelKey: 'settings.accounts.title' },
+      { id: 'avatar', icon: UserCircleIcon, labelKey: 'settings.profile_picture' },
+      { id: 'security', icon: ShieldCheckIcon, labelKey: 'settings.security.title' },
+      { id: 'backup', icon: KeyIcon, labelKey: 'settings.backup' },
+      { id: 'privateKey', icon: LockIcon, labelKey: 'settings.private_key' },
+    ],
+  },
+  {
+    titleKey: 'settings.sections.preferences',
+    rows: [
+      { id: 'language', icon: TranslateIcon, labelKey: 'settings.display_language' },
+      { id: 'currency', icon: MoneyIcon, labelKey: 'settings.currency' },
+      { id: 'explorer', icon: ArrowSquareOutIcon, labelKey: 'settings.select_explorer' },
+    ],
+  },
+  {
+    titleKey: 'settings.sections.advanced',
+    rows: [
+      { id: 'addressBook', icon: AddressBookIcon, labelKey: 'settings.address_book' },
+      { id: 'trustedApps', icon: SquaresFourIcon, labelKey: 'settings.trusted_apps' },
+      { id: 'network', icon: CodeIcon, labelKey: 'settings.developer_networks', isToggle: true },
+      { id: 'analytics', icon: ChartBarIcon, labelKey: 'settings.analytics', isToggle: true },
+    ],
+  },
+  {
+    titleKey: 'settings.sections.support',
+    rows: [
+      { id: 'support', icon: QuestionIcon, labelKey: 'settings.help_support' },
+      { id: 'about', icon: InfoIcon, labelKey: 'settings.about' },
+    ],
+  },
+  {
+    titleKey: 'settings.sections.danger_zone',
+    isDanger: true,
+    rows: [
+      {
+        id: 'removeWallet',
+        icon: TrashIcon,
+        labelKey: 'settings.wallets.remove_wallet',
+        isAction: true,
+        isDanger: true,
+      },
+      {
+        id: 'removeAll',
+        icon: SignOutIcon,
+        labelKey: 'settings.wallets.remove_all_wallets',
+        isAction: true,
+        isDanger: true,
+      },
+    ],
+  },
+];
+
+export default function SettingsScreenIndex() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const { scrollBottomPadding } = useTabChrome();
+
+  const [accountState, accountActions] = useAccountsContext();
+  const { activeAccount, activeBlockchainAccount, networkId } = accountState;
+  const [removing, setRemoving] = useState(false);
+
+  const userConfigAccount = useMemo(
+    () => ({
+      network: {
+        environment: (activeBlockchainAccount ? networkId || 'solana-mainnet' : 'solana-mainnet') as
+          | 'solana-mainnet'
+          | 'solana-devnet',
+        blockchain: 'solana',
+      },
+    }),
+    [activeBlockchainAccount, networkId]
+  );
+  const { developerNetworks, toggleDeveloperNetworks, explorer } = useUserConfig({
+    activeBlockchainAccount: userConfigAccount,
+  });
+  const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
+  const { currentLanguage } = useLanguage();
+  const [{ currency }] = useCurrencyContext();
+  const { setEnableBiometric } = useBiometricAuth();
+
+  // What the three choosable rows currently read. Proper nouns and a currency
+  // code — identical in both languages, so the list states the user's own
+  // choice without inventing copy.
+  const rowValues: Partial<Record<RowId, string | undefined>> = useMemo(
+    () => ({
+      language: LANGUAGE_NAMES[currentLanguage as LanguageCode] || currentLanguage,
+      currency: currency?.toUpperCase(),
+      explorer: explorer?.name,
+    }),
+    [currentLanguage, currency, explorer]
+  );
+
+  const handleRemoveAllWallets = useCallback(() => {
+    Alert.alert(
+      t('settings.remove_all_title'),
+      t('settings.wallets.remove_all_wallets_description'),
+      [
+        { text: t('actions.cancel'), style: 'cancel' },
+        {
+          text: t('actions.remove_all'),
+          style: 'destructive',
+          onPress: async () => {
+            if (removing) return;
+            setRemoving(true);
+            try {
+              await setEnableBiometric(false);
+              await accountActions.removeAllAccounts();
+              router.replace('/(auth)');
+            } catch (error) {
+              console.error('Failed to remove all wallets:', error);
+              Alert.alert(t('general.error'), t('settings.remove_wallets_error'));
+            } finally {
+              setRemoving(false);
+            }
+          },
+        },
+      ]
+    );
+  }, [accountActions, removing, router, setEnableBiometric, t]);
+
+  const handleRemoveWallet = useCallback(() => {
+    const currentAccount = activeAccount;
+    if (!currentAccount) return;
+
+    if (accountState.accounts.length <= 1) {
+      handleRemoveAllWallets();
+      return;
+    }
+
+    Alert.alert(
+      t('settings.remove_wallet_title'),
+      t('settings.wallets.remove_wallet_description'),
+      [
+        { text: t('actions.cancel'), style: 'cancel' },
+        {
+          text: t('settings.confirm_remove'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await accountActions.removeAccount(currentAccount.id);
+              router.back();
+            } catch (error) {
+              console.error('Failed to remove wallet:', error);
+              Alert.alert(t('general.error'), t('settings.remove_wallet_error'));
+            }
+          },
+        },
+      ]
+    );
+  }, [accountState.accounts.length, activeAccount, accountActions, handleRemoveAllWallets, router, t]);
+
+  const handleRowPress = useCallback(
+    (row: SettingsRow) => {
+      if (row.isAction) {
+        if (row.id === 'removeWallet') handleRemoveWallet();
+        else if (row.id === 'removeAll') handleRemoveAllWallets();
+        return;
+      }
+      router.push(`/settings/${row.id}`);
+    },
+    [handleRemoveAllWallets, handleRemoveWallet, router]
+  );
+
+  const renderRow = useCallback(
+    (row: SettingsRow) => {
+      const label = t(row.labelKey);
+      const testID = getSettingsItemTestId(row.id);
+
+      if (row.isToggle) {
+        const isAnalytics = row.id === 'analytics';
+        const checked = isAnalytics ? analyticsConsent : developerNetworks;
+        const descriptionKey = isAnalytics
+          ? 'settings.analytics_description'
+          : 'settings.developer_networks_description';
+        const toggleTestId = isAnalytics
+          ? 'settings-analytics-toggle'
+          : 'settings-developer-networks-toggle';
+        return (
+          <ListRow
+            key={row.id}
+            testID={testID}
+            leading={
+              <IconBubble
+                size={ROW_BUBBLE_SIZE}
+                shape="rounded"
+                tone="surface"
+                icon={row.icon}
+                iconSize={iconSize.md}
+              />
+            }
+            title={label}
+            subtitle={t(descriptionKey)}
+            trailing={
+              // The switch semantics live on the Switch itself — a wrapper
+              // carrying role="switch" around a real Switch announced twice.
+              <Switch
+                testID={toggleTestId}
+                accessibilityLabel={label}
+                accessibilityHint={t(descriptionKey)}
+                value={checked}
+                onValueChange={(value) =>
+                  isAnalytics ? setAnalyticsConsent(value) : toggleDeveloperNetworks()
+                }
+                trackColor={{ false: semantic.border.default, true: semantic.accent.ink }}
+                thumbColor={semantic.text.primary}
+              />
+            }
+          />
+        );
+      }
+
+      const value = rowValues[row.id];
+      return (
+        <ListRow
+          key={row.id}
+          testID={testID}
+          leading={
+            <IconBubble
+              size={ROW_BUBBLE_SIZE}
+              shape="rounded"
+              tone="surface"
+              icon={row.icon}
+              iconSize={iconSize.md}
+              iconColor={row.isDanger ? semantic.status.danger : undefined}
+            />
+          }
+          title={label}
+          onPress={() => handleRowPress(row)}
+          trailing={
+            value ? (
+              <Text
+                testID={`${testID}-value`}
+                style={styles.rowValue}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {value}
+              </Text>
+            ) : (
+              <CaretRightIcon
+                size={iconSize.sm}
+                color={row.isDanger ? semantic.status.danger : semantic.text.tertiary}
+              />
+            )
+          }
+          style={row.isDanger ? styles.dangerRow : undefined}
+        />
+      );
+    },
+    [
+      analyticsConsent,
+      developerNetworks,
+      handleRowPress,
+      rowValues,
+      setAnalyticsConsent,
+      t,
+      toggleDeveloperNetworks,
+    ]
+  );
+
   return (
-    <View>
-      <Text>{t('settings.title', 'Settings')}</Text>
-    </View>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <ScreenHeader
+        onBack={() => router.back()}
+        title={t('settings.title', 'Settings')}
+        subtitle={t('settings.subtitle')}
+      />
+      <ScrollView
+        testID="settings-screen"
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollBottomPadding }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {SETTINGS_GROUPS.map((group) => (
+          <View key={group.titleKey} style={styles.section}>
+            <SectionLabel variant="caps" style={group.isDanger ? styles.dangerLabel : undefined}>
+              {t(group.titleKey)}
+            </SectionLabel>
+            {/* A plain group, not a card: every row already draws its own,
+                and a card of cards paints the membrane twice. */}
+            <View testID={`settings-section-${group.titleKey}`} style={styles.sectionCard}>
+              {group.rows.map(renderRow)}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: s(spacing.screenGutter),
+    // No top padding: the header block already ends 20 above the content.
+    gap: vs(spacing.xl),
+  },
+  section: {
+    gap: vs(spacing.sm),
+  },
+  sectionCard: {
+    gap: vs(spacing.xs),
+  },
+  dangerLabel: {
+    color: semantic.status.danger,
+  },
+  dangerRow: {
+    backgroundColor: semantic.status.dangerTint,
+  },
+  rowValue: {
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.bold,
+    fontSize: fontSize.caption,
+    maxWidth: '45%',
+    textAlign: 'right',
+  },
+});

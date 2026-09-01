@@ -14,12 +14,14 @@ import { fireEvent, render, screen, within } from '@testing-library/react-native
 import HomeScreen from '../app/(app)/(tabs)/index';
 
 const mockChangeNetwork = jest.fn(() => Promise.resolve());
+const mockRouter = { push: jest.fn(), back: jest.fn(), replace: jest.fn() };
 
 const networksState = {
   networkId: 'solana-mainnet',
   allNetworks: [{ id: 'solana-mainnet', name: 'Solana' }] as Array<{ id: string; name: string }>,
 };
 
+jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
@@ -142,6 +144,13 @@ jest.mock('../src/components', () => {
   const { Text, View } = require('react-native');
 
   return {
+    // The identity line. Its own suite covers it; here it only has to render
+    // so the Home tree mounts.
+    WalletHeader: ({ accountName }: { accountName?: string }) => (
+      <View testID="wallet-header">
+        <Text>{accountName}</Text>
+      </View>
+    ),
     BalanceHeader: ({
       activeIndex,
       blockchains,
@@ -185,8 +194,9 @@ jest.mock('../src/components', () => {
         ))}
       </View>
     ),
-    PowerupsFab: () => <View testID="powerups-fab" />,
-    PowerupsLauncherSheet: () => null,
+    PowerupsFab: ({ onPress }: { onPress: () => void }) => (
+      <View testID="powerups-fab" onPress={onPress} />
+    ),
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
     SendSheet: () => null,
@@ -266,6 +276,43 @@ describe('home sub-tabs', () => {
     expect(mockChangeNetwork).toHaveBeenCalledTimes(1);
     expect(mockChangeNetwork).toHaveBeenCalledWith('solana-mainnet');
     expect(screen.getByTestId('balance-header').props.accessibilityLabel).toBe('solana');
+  });
+
+  it('leaves the chain alone when NFTs is opened from Solana', () => {
+    // The snap is one-way. Re-reporting the chain the block is already on
+    // remounts the value wrappers for nothing, and on device that read as a
+    // chain switch (owner).
+    render(<HomeScreen />);
+
+    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
+
+    expect(mockChangeNetwork).not.toHaveBeenCalled();
+    expect(screen.getByTestId('balance-header').props.accessibilityLabel).toBe('solana');
+  });
+
+  it('counts devnet as Solana in developer mode', () => {
+    // `blockchain` is the network id minus `-mainnet`, so devnet reads as
+    // `solana-devnet`: the old equality test against `'solana'` bounced a
+    // developer-mode user back to mainnet every time they opened NFTs.
+    networksState.networkId = 'solana-devnet';
+    networksState.allNetworks = [
+      { id: 'solana-devnet', name: 'Solana Devnet' },
+      { id: 'bitcoin-mainnet', name: 'Bitcoin' },
+    ];
+
+    render(<HomeScreen />);
+    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
+
+    expect(mockChangeNetwork).not.toHaveBeenCalled();
+    expect(screen.getByTestId('nfts-tab')).toBeTruthy();
+  });
+
+  it('opens the powerups browse screen from the FAB', () => {
+    render(<HomeScreen />);
+
+    fireEvent.press(screen.getByTestId('powerups-fab'));
+
+    expect(mockRouter.push).toHaveBeenCalledWith('/powerups');
   });
 
   it('lets the user swipe back to Bitcoin on NFTs without losing the tab', () => {

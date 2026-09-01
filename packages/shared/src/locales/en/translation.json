@@ -248,7 +248,17 @@
       "remove_wallet_description": "You're about to remove this account. Keep in mind that, to use it again, you will need to use your seed phrase.",
       "edit_name_disclaimer": "Keep in mind that this name works locally for you to easily identify your account. None of this data is reflected on the blockchain.",
       "tap_to_reveal": "Tap to Reveal",
-      "edit_name_empty": "Account name cannot be empty"
+      "edit_name_empty": "Account name cannot be empty",
+      "screen_title": "Wallets",
+      "screen_subtitle": "Switch or manage your accounts.",
+      "total_title": "Total balance",
+      "included_count": "{{included}} of {{total}} wallets included",
+      "include_in_total": "Include in total",
+      "include_hint": "Check to include",
+      "add_wallet": "Add wallet",
+      "keep_one_included": "At least one wallet has to stay in the total.",
+      "include_in_total_a11y": "Include {{name}} in the total",
+      "exclude_from_total_a11y": "Exclude {{name}} from the total"
     },
     "profile_picture": "Profile Picture",
     "avatar_presets": "Avatars",
@@ -337,7 +347,8 @@
     "remove_wallet_description": "Are you sure you want to remove this wallet? Make sure you have backed up your recovery phrase before removing.",
     "tap_to_reveal": "Tap to reveal",
     "trusted_apps_revoke": "Revoke",
-    "copy_failed": "Copy failed — nothing was copied to the clipboard"
+    "copy_failed": "Copy failed — nothing was copied to the clipboard",
+    "subtitle": "Manage your wallet and preferences."
   },
   "token": {
     "action": {
@@ -594,6 +605,8 @@
     "unknown": "Unknown",
     "from": "From",
     "to": "To",
+    "groupToday": "Today",
+    "groupEarlier": "Earlier",
     "noTransactions": "No Transactions",
     "emptySubtitle": "Your transaction history will appear here",
     "loadError": "Failed to load transactions",
@@ -902,7 +915,6 @@
     "no_account_for_network": "No account available for this network.",
     "developer_banner": "Developer Mode - Showing testnet NFTs",
     "load_error": "Your collectibles couldn't be loaded right now.",
-    "loading": "Loading your collectibles…",
     "partial_error": "Some of your collectibles could not be loaded. Pull to refresh to try again."
   },
   "common": {
@@ -983,6 +995,41 @@
       "official": "Official",
       "community": "Community",
       "featured": "Featured"
+    },
+    "search_placeholder": "Search powerups",
+    "empty_section": "Nothing here yet",
+    "filters": {
+      "all": "All",
+      "featured": "Featured",
+      "official": "Official",
+      "community": "Community"
+    },
+    "sections": {
+      "featured": "FEATURED",
+      "official": "OFFICIAL",
+      "community": "COMMUNITY"
+    },
+    "catalog": {
+      "swap": {
+        "name": "Swap",
+        "description": "Swap tokens and bridge across chains"
+      },
+      "wallet_guard": {
+        "name": "Wallet Guard",
+        "description": "Simulate transactions and flag risky signatures."
+      },
+      "staking": {
+        "name": "Staking",
+        "description": "Built and maintained by Salmon"
+      },
+      "auto_compound": {
+        "name": "Auto-compound",
+        "description": "Automate staking rewards"
+      },
+      "nft_floor_watch": {
+        "name": "NFT Floor Watch",
+        "description": "Track collection floor prices"
+      }
     }
   }
 }

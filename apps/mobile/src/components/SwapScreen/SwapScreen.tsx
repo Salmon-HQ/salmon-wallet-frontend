@@ -205,7 +205,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
     return () => clearTimeout(timer);
   }, [isTaskStep, isTaskWindowVisible, isReduceMotionEnabled, stepSwap.fromSuccess]);
 
-  // The compuerta and the pill (owner, on-device): the shell's chrome is part
+  // The header row and the pill (owner, on-device): the shell's chrome is part
   // of the transition. Engaged the moment the task begins — the gate rises
   // and the tab bar sinks during the beat, before the window covers them —
   // and held until the window has actually gone, so on the way back the

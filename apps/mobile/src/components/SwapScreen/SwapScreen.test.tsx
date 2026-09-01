@@ -274,14 +274,14 @@ describe('SwapScreen task window choreography', () => {
 });
 
 /**
- * The compuerta. The gate header and the floating pill are shell chrome —
+ * The task-chrome claim. The wallet header row and the floating pill are shell chrome —
  * outside the step, outside the modal — so the verb reaches them through
  * TaskChromeContext. The contract: engaged the moment the task step begins
  * (the chrome leaves during the beat, before the window covers it), and held
  * until the window has actually gone, so the chrome's return lands exactly
  * on the shell's delayed input float.
  */
-describe('SwapScreen compuerta signal', () => {
+describe('SwapScreen task-chrome signal', () => {
   const reviewLogic = {
     step: 'review',
     quote: { outAmount: '1' },
@@ -317,7 +317,7 @@ describe('SwapScreen compuerta signal', () => {
     jest.useRealTimers();
   });
 
-  it('raises the compuerta the moment review begins — before the window appears', () => {
+  it('claims the chrome the moment review begins — before the window appears', () => {
     setLogic({ step: 'input' });
     const view = renderWithProbe();
     expect(screen.getByTestId('task-chrome-probe').props.children).toBe('false');
@@ -330,7 +330,7 @@ describe('SwapScreen compuerta signal', () => {
     expect(screen.getByTestId('task-chrome-probe').props.children).toBe('true');
   });
 
-  it('holds the compuerta up until the window has gone, then lowers it', () => {
+  it('holds the claim until the window has gone, then releases it', () => {
     setLogic(reviewLogic);
     const view = renderWithProbe();
     act(() => {

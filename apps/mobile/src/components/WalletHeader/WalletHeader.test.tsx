@@ -89,11 +89,15 @@ jest.mock('../Icon', () => {
 });
 
 // The wallet thumb (38x38) and settings avatar (36x36) are hard-coded
-// constants inside HeaderContent.tsx, not tokens read off `@salmon/shared` —
+// constants inside WalletHeader.tsx, not tokens read off `@salmon/shared` —
 // the hit-area assertions below use those literal values directly.
 const WALLET_THUMB_SIZE = 38;
 const SETTINGS_AVATAR_SIZE = 36;
 const SPACING = { headerPadding: 20, base: 12, sm: 8, xs: 4 };
+
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 44, bottom: 0, left: 0, right: 0 }),
+}));
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
@@ -104,7 +108,8 @@ jest.mock('@salmon/shared', () => ({
   fontSize: { micro: 10, caption: 12, body: 14 },
   fontWeight: { medium: '500', semibold: '600', bold: '700' },
   letterSpacing: { normal: 0, label: 0.3 },
-  spacing: { headerPadding: 20, screenGutter: 20, base: 12, sm: 8, xs: 4 },
+  componentSizes: { walletHeaderRowHeight: 38 },
+  spacing: { headerPadding: 20, screenGutter: 20, screenTop: 0, base: 12, sm: 8, xs: 4 },
   motionMs: { feedbackHold: 1500, drift: 280, ebb: 180, stagger: 24, swell: 300 },
   motionEasing: {
     sink: { native: [0.4, 0, 1, 1] },
@@ -121,14 +126,14 @@ jest.mock('@salmon/shared', () => ({
   semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
 }));
 
-import { HeaderContent } from './HeaderContent';
+import { WalletHeader } from './WalletHeader';
 
 /** Minimum effective hit area on the smaller platform floor (iOS 44pt);
  * Android's 48dp floor is covered too since `hitSlop` values below already
  * clear it once summed with the base style dimensions. */
 const MIN_HIT_TARGET = 44;
 
-describe('HeaderContent copy address', () => {
+describe('WalletHeader copy address', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -144,7 +149,7 @@ describe('HeaderContent copy address', () => {
     const onCopyAddress = jest.fn();
 
     render(
-      <HeaderContent
+      <WalletHeader
         accountName="Account 1"
         address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
         onCopyAddress={onCopyAddress}
@@ -170,7 +175,7 @@ describe('HeaderContent copy address', () => {
   });
 });
 
-describe('HeaderContent chain swap', () => {
+describe('WalletHeader chain swap', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -184,7 +189,7 @@ describe('HeaderContent chain swap', () => {
 
   it('re-keys the account text on address change without remounting the copy button', () => {
     render(
-      <HeaderContent
+      <WalletHeader
         accountName="Account 1"
         address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
         onCopyAddress={jest.fn()}
@@ -199,7 +204,7 @@ describe('HeaderContent chain swap', () => {
     expect(screen.getByLabelText('actions.copied')).toBeTruthy();
 
     screen.rerender(
-      <HeaderContent
+      <WalletHeader
         accountName="Account 1"
         address="bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
         onCopyAddress={jest.fn()}
@@ -215,7 +220,7 @@ describe('HeaderContent chain swap', () => {
 
   it('does not remount the account text when only unrelated props change', () => {
     render(
-      <HeaderContent
+      <WalletHeader
         accountName="Account 1"
         address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
       />
@@ -224,17 +229,17 @@ describe('HeaderContent chain swap', () => {
     const mountIdBefore = screen.getByTestId('wallet-header-account-text').props.mountId;
 
     screen.rerender(
-      <HeaderContent accountName="Renamed" address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" />
+      <WalletHeader accountName="Renamed" address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" />
     );
 
     expect(screen.getByTestId('wallet-header-account-text').props.mountId).toBe(mountIdBefore);
   });
 });
 
-describe('HeaderContent touch targets', () => {
+describe('WalletHeader touch targets', () => {
   const renderHeader = () =>
     render(
-      <HeaderContent
+      <WalletHeader
         accountName="Account 1"
         address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
         accountId="acct-1"
@@ -260,7 +265,7 @@ describe('HeaderContent touch targets', () => {
     renderHeader();
     const button = screen.getByTestId('wallet-header-copy-address');
     const { hitSlop } = button.props;
-    // Icon is a literal 23px (see the comment in HeaderContent.tsx), padded
+    // Icon is a literal 23px (see the comment in WalletHeader.tsx), padded
     // by spacing.xs on each side.
     const baseSize = 23 + SPACING.xs * 2;
     const width = baseSize + hitSlop.left + hitSlop.right;
@@ -280,14 +285,14 @@ describe('HeaderContent touch targets', () => {
   });
 });
 
-describe('HeaderContent account name', () => {
+describe('WalletHeader account name', () => {
   it('opens the account switcher from the name, not only the avatar', () => {
     // The name is what the user reads and reaches for; leaving it inert made
     // the small avatar the only way in.
     const onWalletPress = jest.fn();
 
     render(
-      <HeaderContent
+      <WalletHeader
         accountName="Vault"
         address="Vault11111111111111111111111111111"
         onCopyAddress={jest.fn()}
@@ -301,10 +306,10 @@ describe('HeaderContent account name', () => {
   });
 });
 
-describe('HeaderContent identity block', () => {
+describe('WalletHeader identity block', () => {
   it('draws the name and the short address as two lines, not one parenthesised string', () => {
     render(
-      <HeaderContent
+      <WalletHeader
         accountName="Account 1"
         address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
       />
@@ -318,10 +323,10 @@ describe('HeaderContent identity block', () => {
   });
 });
 
-describe('HeaderContent identity swap', () => {
+describe('WalletHeader identity swap', () => {
   const renderHeader = (avatarUrl?: string) =>
     render(
-      <HeaderContent
+      <WalletHeader
         accountName="Account 1"
         address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
         avatarUrl={avatarUrl}
@@ -355,7 +360,7 @@ describe('HeaderContent identity swap', () => {
   it('opens settings from the gear', () => {
     const onSettingsPress = jest.fn();
     render(
-      <HeaderContent
+      <WalletHeader
         accountName="Account 1"
         address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
         onSettingsPress={onSettingsPress}

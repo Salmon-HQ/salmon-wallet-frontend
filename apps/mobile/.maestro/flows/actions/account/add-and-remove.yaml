@@ -1,17 +1,25 @@
 appId: io.salmonwallet.app
 ---
-# Recover Wallet A → add Account 2 → remove Account 2. Full account
-# lifecycle on a clean install.
+# Recover Wallet A → add Account 2 from the Wallets screen → remove it from
+# Settings → Accounts. Full account lifecycle on a clean install.
+#
+# Add and remove live on two different screens by design: Wallets is where a
+# wallet is chosen, renamed and added (CORE 10); removing one is a destructive
+# action and stays in Settings → Accounts, next to the other destructive rows.
 - runFlow: ../../../subflows/onboard-walletA.yaml
-# Open WalletSwitcher
-- tapOn: 'Switch wallet account'
+# Open the Wallets screen
+- tapOn:
+    id: 'wallet-header-account-switcher'
 - waitForAnimationToEnd:
     timeout: 3000
-- assertVisible: 'Your Wallets'
-- assertVisible: 'Add New Account'
+- assertVisible:
+    id: 'wallets-screen'
+- assertVisible:
+    id: 'wallets-add-wallet'
 - takeScreenshot: screenshots/actions/account/wallets-before-add
 # Add Account 2
-- tapOn: 'Add New Account'
+- tapOn:
+    id: 'wallets-add-wallet'
 - waitForAnimationToEnd:
     timeout: 4000
 - assertVisible: 'Add Account'
@@ -37,26 +45,23 @@ appId: io.salmonwallet.app
 - tapOn: 'Confirm'
 - waitForAnimationToEnd:
     timeout: 15000
-# Confirm pops the panel back to the Settings sheet (not Home). Close it, then
-# re-open the wallet switcher to verify the new account.
+# Back on Wallets, with the new wallet active.
 - extendedWaitUntil:
-    visible: 'Settings'
+    visible:
+      id: 'wallets-screen'
     timeout: 30000
-- runFlow: ../../../subflows/settings-close.yaml
-- extendedWaitUntil:
-    visible: 'Switch wallet account'
-    timeout: 20000
-- tapOn: 'Switch wallet account'
-- extendedWaitUntil:
-    visible: 'Your Wallets'
-    timeout: 8000
 # The row's accessibility text is "Account 2, <short address>", and Maestro
 # full-matches, so a bare "Account 2" never matches.
 - assertVisible: 'Account 2, .*'
 - takeScreenshot: screenshots/actions/account/account-2-added
-# Trash icon on the Account 2 row.
+# Remove it from Settings → Accounts.
 - tapOn:
-    point: '83%,26%'
+    id: 'screen-header-back-button'
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow: ../../../subflows/open-accounts-panel.yaml
+- tapOn:
+    id: 'account-remove-.*'
 - extendedWaitUntil:
     visible: 'Delete Account?'
     timeout: 5000
@@ -64,14 +69,5 @@ appId: io.salmonwallet.app
 - tapOn: 'Yes, remove'
 - waitForAnimationToEnd:
     timeout: 5000
-# Re-open switcher to verify Account 2 gone
-- runFlow:
-    when:
-      notVisible: 'Your Wallets'
-    commands:
-      - tapOn: 'Switch wallet account'
-      - waitForAnimationToEnd:
-          timeout: 3000
-- assertVisible: 'Your Wallets'
 - assertNotVisible: 'Account 2, .*'
 - takeScreenshot: screenshots/actions/account/account-2-removed

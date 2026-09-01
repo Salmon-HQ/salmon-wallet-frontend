@@ -248,7 +248,17 @@
       "remove_wallet_description": "Estás a punto de eliminar esta cuenta. Tené en cuenta que, para usarlo nuevamente, deberás usar tu seed-phrase.",
       "edit_name_disclaimer": "Tené en cuenta que el nombre funciona únicamente para identificar tu cuenta localmente. Esta información no se guarda en el blockchain.",
       "tap_to_reveal": "Tocá para ver",
-      "edit_name_empty": "El nombre de la cuenta no puede estar vacío"
+      "edit_name_empty": "El nombre de la cuenta no puede estar vacío",
+      "screen_title": "Billeteras",
+      "screen_subtitle": "Cambiá o administrá tus cuentas.",
+      "total_title": "Balance total",
+      "included_count": "{{included}} de {{total}} billeteras incluidas",
+      "include_in_total": "Incluir en el total",
+      "include_hint": "Marcá para incluir",
+      "add_wallet": "Agregar billetera",
+      "keep_one_included": "Al menos una billetera tiene que quedar en el total.",
+      "include_in_total_a11y": "Incluir {{name}} en el total",
+      "exclude_from_total_a11y": "Excluir {{name}} del total"
     },
     "profile_picture": "Foto de Perfil",
     "avatar_presets": "Avatares",
@@ -337,7 +347,8 @@
     "remove_wallet_description": "¿Estás seguro de que querés eliminar esta billetera? Asegurate de haber respaldado tu frase de recuperación antes de eliminarla.",
     "tap_to_reveal": "Tocá para revelar",
     "trusted_apps_revoke": "Revocar",
-    "copy_failed": "Falló el copiado — no se copió nada al portapapeles"
+    "copy_failed": "Falló el copiado — no se copió nada al portapapeles",
+    "subtitle": "Administrá tu billetera y preferencias."
   },
   "token": {
     "action": {
@@ -594,6 +605,8 @@
     "unknown": "Desconocido",
     "from": "De",
     "to": "Para",
+    "groupToday": "Hoy",
+    "groupEarlier": "Anteriores",
     "noTransactions": "Sin Transacciones",
     "emptySubtitle": "Tu historial de transacciones aparecerá aquí",
     "loadError": "Error al cargar transacciones",
@@ -902,7 +915,6 @@
     "no_account_for_network": "No hay una cuenta disponible para esta red.",
     "developer_banner": "Modo Desarrollador - Mostrando NFTs de testnet",
     "load_error": "Tus coleccionables no se pudieron cargar en este momento.",
-    "loading": "Cargando tus coleccionables…",
     "partial_error": "Algunos de tus coleccionables no se pudieron cargar. Deslizá para reintentar."
   },
   "common": {
@@ -983,6 +995,41 @@
       "official": "Oficial",
       "community": "Comunidad",
       "featured": "Destacado"
+    },
+    "search_placeholder": "Buscar powerups",
+    "empty_section": "Todavía no hay nada aquí",
+    "filters": {
+      "all": "Todos",
+      "featured": "Destacados",
+      "official": "Oficiales",
+      "community": "Comunidad"
+    },
+    "sections": {
+      "featured": "DESTACADOS",
+      "official": "OFICIALES",
+      "community": "COMUNIDAD"
+    },
+    "catalog": {
+      "swap": {
+        "name": "Swap",
+        "description": "Intercambia tokens y transfiere entre redes"
+      },
+      "wallet_guard": {
+        "name": "Wallet Guard",
+        "description": "Simula transacciones y marca firmas riesgosas."
+      },
+      "staking": {
+        "name": "Staking",
+        "description": "Creado y mantenido por Salmon"
+      },
+      "auto_compound": {
+        "name": "Auto-compound",
+        "description": "Automatiza las recompensas de staking"
+      },
+      "nft_floor_watch": {
+        "name": "NFT Floor Watch",
+        "description": "Seguimiento del precio piso de colecciones"
+      }
     }
   }
 }

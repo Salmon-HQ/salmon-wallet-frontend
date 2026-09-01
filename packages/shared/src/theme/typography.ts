@@ -95,8 +95,8 @@ export const fontSize = {
   headline: 24,
   /** 36px - the largest heading role */
   display: 36,
-  /** 60px - the total balance, and nothing else (off-ramp hero size) */
-  balance: 60,
+  /** 38px - the total balance, and nothing else */
+  balance: 38,
 
   // ---------------------------------------------------------------------
   // Legacy aliases — re-pointed at the scale, kept so consumers keep working

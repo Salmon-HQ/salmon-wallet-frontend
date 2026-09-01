@@ -58,6 +58,7 @@ export { ChartPieIcon } from 'phosphor-react-native/src/icons/ChartPie';
 export { ChatsCircleIcon } from 'phosphor-react-native/src/icons/ChatsCircle';
 export { CheckIcon } from 'phosphor-react-native/src/icons/Check';
 export { CheckCircleIcon } from 'phosphor-react-native/src/icons/CheckCircle';
+export { CircleIcon } from 'phosphor-react-native/src/icons/Circle';
 export { ClockIcon } from 'phosphor-react-native/src/icons/Clock';
 export { CloudIcon } from 'phosphor-react-native/src/icons/Cloud';
 export { CloudSlashIcon } from 'phosphor-react-native/src/icons/CloudSlash';

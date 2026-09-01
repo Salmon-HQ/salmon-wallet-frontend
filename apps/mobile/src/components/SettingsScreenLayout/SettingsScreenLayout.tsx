@@ -1,14 +1,13 @@
 /**
  * SettingsScreenLayout - Reusable layout component for settings screens
  *
- * Provides a consistent layout structure for all settings screens including:
- * - Gradient background
- * - Safe area handling
- * - Header with back navigation
- * - Title and optional subtitle
- * - Scrollable content area
+ * Every settings panel is a stack screen now, so the layout draws the chrome
+ * the gate used to draw for it: the kit's `ScreenHeader` (a 38pt back well and
+ * the title), the safe area on both edges, an optional subtitle, and the
+ * scrollable body with the screen gutter.
  *
- * This component eliminates ~150 lines of duplicated code per settings screen.
+ * `showHeader` stays for the rare body that owns its own header row; it
+ * defaults to on, because a screen without a back well has no way out.
  */
 
 import React, { type ReactNode } from 'react';
@@ -18,22 +17,19 @@ import {
   StyleSheet,
   ScrollView,
   View,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CaretLeftIcon } from '../../icons';
+import { ScreenHeader } from '../ScreenHeader';
 
 import {
   spacing,
   contentPadding,
   fontSize,
   fontFamilyNative,
-  componentSizes,
-  letterSpacing,
   lineHeight,
   semantic,
 } from '@salmon/shared';
@@ -57,7 +53,7 @@ export interface SettingsScreenLayoutProps {
   scrollable?: boolean;
   /** Optional style override for the content container */
   contentContainerStyle?: StyleProp<ViewStyle>;
-  /** Whether to render the internal header. Default: false */
+  /** Whether to render the screen header. Default: true */
   showHeader?: boolean;
 }
 
@@ -73,7 +69,7 @@ export function SettingsScreenLayout({
   showsVerticalScrollIndicator = false,
   scrollable = true,
   contentContainerStyle,
-  showHeader = false,
+  showHeader = true,
 }: SettingsScreenLayoutProps) {
   const { t } = useTranslation();
   return (
@@ -91,30 +87,18 @@ export function SettingsScreenLayout({
         // keyboard, with no way to see what is being typed.
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
           {showHeader && (
-            <View style={styles.header}>
-              <TouchableOpacity
-                onPress={onBack}
-                style={styles.backButton}
-                // backButtonSize is 40 — the slop takes the touch target
-                // past the 44pt minimum.
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityLabel={t('accessibility.go_back', 'Go back')}
-                accessibilityRole="button"
-              >
-                <CaretLeftIcon size={componentSizes.iconSizeMedium} color={semantic.text.primary} />
-              </TouchableOpacity>
-              <Text style={styles.title} numberOfLines={2}>
-                {title}
-              </Text>
-            </View>
+            <ScreenHeader
+              onBack={onBack}
+              backLabel={t('accessibility.go_back', 'Go back')}
+              title={title}
+              subtitle={subtitle}
+            />
           )}
 
-          {subtitle && (
-            <Text style={[styles.subtitle, !showHeader && styles.subtitleStandalone]}>
-              {subtitle}
-            </Text>
+          {subtitle && !showHeader && (
+            <Text style={[styles.subtitle, styles.subtitleStandalone]}>{subtitle}</Text>
           )}
 
           {scrollable ? (
@@ -163,28 +147,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-  backButton: {
-    width: componentSizes.backButtonSize,
-    height: componentSizes.backButtonSize,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    marginRight: spacing.sm,
-  },
-  // The `title` role (600, 20, −0.12): a panel title is a card/panel-level
-  // heading on the type scale, not the 18/bold one-off it used to be.
-  title: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: fontSize.title,
-    letterSpacing: letterSpacing.snug,
-    flex: 1,
-  },
   subtitle: {
     color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
@@ -203,7 +165,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: spacing.lg,
+    // The header block already ends 20 above the content; a headerless body
+    // still owns its own top padding.
+    paddingTop: 0,
     paddingHorizontal: contentPadding.screen,
     paddingBottom: spacing['2xl'],
   },

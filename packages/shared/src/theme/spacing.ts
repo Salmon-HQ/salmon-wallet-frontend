@@ -51,8 +51,15 @@ export const spacing = {
   '7xl': 80,
   /** 20px - Redesigned screen horizontal padding (both sides) */
   screenGutter: 20,
-  /** 28px - Redesigned screen top padding, below the safe-area top inset */
-  screenTop: 28,
+  /**
+   * 0px - Redesigned screen top padding, added below the safe-area top inset.
+   * The inset already clears the island on every device that has one, so the
+   * header row's top edge sits exactly at `insets.top`; anything on top of it
+   * read as empty water. Kept as a named term rather than deleted: the header
+   * slot, `useTabChrome` and `ScreenHeader` all derive from it, and a future
+   * device may need it back.
+   */
+  screenTop: 0,
   /** 20px - Redesigned screen bottom padding, added to the safe-area bottom inset */
   screenBottom: 20,
 } as const;
@@ -163,6 +170,21 @@ export const componentSizes = {
    * how large the material reads.
    */
   buttonFleshScale: 1,
+  /**
+   * Tile scale for the flesh texture inside a filled `IconBubble` (Send, the
+   * powerups FAB) rather than a full-width pill.
+   *
+   * The tile is 150×88 and `Pattern` is `patternUnits="userSpaceOnUse"`, so it
+   * tiles from the SVG's own (0,0) with no offset. A 42px bubble at scale 1
+   * only ever shows a single fixed 42×42 corner of that tile — and because
+   * every band thins to its minimum width at the tile's top/bottom edges
+   * (`flesh.ts`'s swell profile), that corner is exactly where the veins are
+   * thinnest, which is why the fill read as flat salmon with no visible
+   * texture on device. At 0.5 the effective tile is 75×44: its full height
+   * fits inside a 42-44px bubble, so the swelled mid-band always appears
+   * somewhere in the visible window instead of only its thin tips.
+   */
+  bubbleFleshScale: 0.5,
 
   // ActionButtonRow
   actionButtonWidth: 112,

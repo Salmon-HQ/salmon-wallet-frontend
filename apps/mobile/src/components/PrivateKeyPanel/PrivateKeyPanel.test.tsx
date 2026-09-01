@@ -53,10 +53,6 @@ jest.mock('../../../hooks/useSecretScreen', () => ({
   useSecretScreen: (label: string) => mockUseSecretScreen(label),
 }));
 
-jest.mock('../SettingsHeaderContext', () => ({
-  useSettingsHeaderOverride: jest.fn(),
-}));
-
 jest.mock('../SettingsScreenLayout', () => {
   const { View: RNView } = require('react-native');
   return {

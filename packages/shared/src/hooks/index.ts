@@ -171,6 +171,9 @@ export { useSolanaNfts } from './useSolanaNfts';
 export type { UseSolanaNftsParams, UseSolanaNftsResult } from './useSolanaNfts';
 
 // Settings panel stack hook
+export { useWalletTotals, sumIncludedTotals } from './useWalletTotals';
+export type { UseWalletTotalsParams, UseWalletTotalsResult } from './useWalletTotals';
+
 export { useSettingsPanelStack } from './useSettingsPanelStack';
 export type { UseSettingsPanelStackResult } from './useSettingsPanelStack';
 

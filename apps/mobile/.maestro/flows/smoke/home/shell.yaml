@@ -2,11 +2,11 @@ appId: io.salmonwallet.app
 ---
 # Walk the Home shell that replaced the bottom tab bar: the balance block with
 # its eye toggle and money actions, the in-page Portfolio | NFTs sub-tabs, and
-# the powerups FAB with its launcher sheet.
+# the powerups FAB with the browse screen it pushes.
 #
 # Read-only: the eye toggle is never tapped (it persists), the sub-tabs only
-# change what is drawn, and the launcher sheet is a stub with nothing to
-# commit. Everything is asserted by testID — the labels are localised.
+# change what is drawn, and the browse screen installs nothing. Everything
+# is asserted by testID — the labels are localised.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - assertVisible:
     id: 'home-screen'
@@ -39,14 +39,23 @@ appId: io.salmonwallet.app
 - waitForAnimationToEnd:
     timeout: 5000
 
-# The `+` opens the powerups launcher (POWERUPS 01 stub in this lote).
+# The `+` pushes POWERUPS 02 · Browse as a full-height screen. The same FAB
+# stays in the same spot, turned to the close mark, and taps again to dismiss —
+# one control, so the flow uses one selector for both directions.
 - tapOn:
     id: 'powerups-fab'
 - extendedWaitUntil:
     visible:
-      id: 'powerups-launcher-sheet'
+      id: 'powerups-browse-screen'
     timeout: 20000
 - takeScreenshot: screenshots/smoke/home/shell-powerups
-- runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
+- tapOn:
+    id: 'powerups-fab'
+# Home is never unmounted underneath, so its own id proves nothing here: what
+# has to be gone is the screen that covered it.
+- extendedWaitUntil:
+    notVisible:
+      id: 'powerups-browse-screen'
+    timeout: 20000
 - assertVisible:
     id: 'powerups-fab'

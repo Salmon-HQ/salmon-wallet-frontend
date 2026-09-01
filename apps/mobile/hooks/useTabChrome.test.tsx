@@ -1,7 +1,7 @@
 /**
  * The header's vertical arithmetic, pinned.
  *
- * `GateContainer` draws the collapsed header and `useTabChrome` tells every
+ * `WalletHeader` draws the header row and `useTabChrome` tells every
  * screen where that header ends. They are two expressions of one layout, and
  * when they drift the header either overlaps the content or floats above it.
  * This suite pins the formula so the drift is a test failure, not a screenshot.
@@ -37,7 +37,7 @@ describe('useTabChrome header metrics', () => {
 
     // The regression this pins: reserving `headerHeight` centred the 38px row
     // inside 56px, dropping the header 9px and stealing 18px from the content.
-    expect(result.current.headerChromeHeight).toBe(insets.top + 28 + 38);
+    expect(result.current.headerChromeHeight).toBe(insets.top + 0 + 38);
     expect(result.current.headerChromeHeight).not.toBe(
       insets.top + spacing.screenTop + componentSizes.headerHeight
     );

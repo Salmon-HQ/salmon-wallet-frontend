@@ -13,11 +13,14 @@ appId: io.salmonwallet.app
 # need a second wallet loaded without a clearState, which would wipe the first.
 #
 # Starts from Home and returns to Home.
-- tapOn: 'Switch wallet account'
+- tapOn:
+    id: 'wallet-header-account-switcher'
 - waitForAnimationToEnd:
     timeout: 3000
-- assertVisible: 'Your Wallets'
-- tapOn: 'Add New Account'
+- assertVisible:
+    id: 'wallets-screen'
+- tapOn:
+    id: 'wallets-add-wallet'
 - extendedWaitUntil:
     visible:
       id: 'account-add-method-import'
@@ -55,12 +58,15 @@ appId: io.salmonwallet.app
     id: 'account-add-confirm-button'
 - waitForAnimationToEnd:
     timeout: 30000
-# The panel pops back to the Settings sheet once the account is added. Adding an
-# account derives addresses across every supported network, which is slow.
+# `returnTo=wallets` lands the finished flow back on the Wallets screen. Adding
+# an account derives addresses across every supported network, which is slow.
 - extendedWaitUntil:
-    visible: 'Settings'
+    visible:
+      id: 'wallets-screen'
     timeout: 60000
-- runFlow: ./settings-close.yaml
+- tapOn:
+    id: 'screen-header-back-button'
 - extendedWaitUntil:
-    visible: 'Switch wallet account'
+    visible:
+      id: 'wallet-header-account-switcher'
     timeout: 20000

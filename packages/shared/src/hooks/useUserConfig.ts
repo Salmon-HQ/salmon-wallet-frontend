@@ -48,6 +48,10 @@ export interface UseUserConfigResult {
   developerNetworks: boolean;
   /** Toggles the developer networks setting */
   toggleDeveloperNetworks: () => Promise<void>;
+  /** Wallet ids the user has taken out of the aggregated balance total */
+  excludedFromTotal: string[];
+  /** Includes or excludes one wallet from the aggregated balance total */
+  setIncludedInTotal: (walletId: string, included: boolean) => Promise<void>;
   /** Whether the configuration is still loading */
   isLoading: boolean;
 }
@@ -115,6 +119,7 @@ export function useUserConfig({
   const [explorer, setExplorer] = useState<Explorer | undefined>();
   const [availableExplorers, setAvailableExplorers] = useState<ExplorerWithKey[]>([]);
   const [developerNetworks, setDeveloperNetworks] = useState<boolean>(false);
+  const [excludedFromTotal, setExcludedFromTotal] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Derived values from active account
@@ -183,6 +188,7 @@ export function useUserConfig({
         }
 
         setDeveloperNetworks(config.developerNetworks);
+        setExcludedFromTotal(config.excludedFromTotal ?? []);
       } catch (error) {
         console.error('Failed to load user config:', error);
         // Set defaults on error
@@ -259,6 +265,37 @@ export function useUserConfig({
     }
   }, [userConfig, developerNetworks]);
 
+  /**
+   * Includes or excludes one wallet from the aggregated balance total.
+   *
+   * Only exclusions are stored, so a wallet the user has never touched — and
+   * every wallet created after this shipped — counts by default.
+   */
+  const setIncludedInTotal = useCallback(
+    async (walletId: string, included: boolean): Promise<void> => {
+      if (!userConfig) return;
+
+      const next = included
+        ? excludedFromTotal.filter((id) => id !== walletId)
+        : excludedFromTotal.includes(walletId)
+          ? excludedFromTotal
+          : [...excludedFromTotal, walletId];
+      if (next === excludedFromTotal) return;
+
+      const updatedConfig: UserConfig = { ...userConfig, excludedFromTotal: next };
+      setUserConfig(updatedConfig);
+      setExcludedFromTotal(next);
+
+      try {
+        const storage = getStorage();
+        await storage.setItem(USER_CONFIG_KEY, updatedConfig);
+      } catch (error) {
+        console.error('Failed to save wallet total preference:', error);
+      }
+    },
+    [userConfig, excludedFromTotal]
+  );
+
   return {
     userConfig,
     explorer,
@@ -266,6 +303,8 @@ export function useUserConfig({
     changeExplorer,
     developerNetworks,
     toggleDeveloperNetworks,
+    excludedFromTotal,
+    setIncludedInTotal,
     isLoading,
   };
 }

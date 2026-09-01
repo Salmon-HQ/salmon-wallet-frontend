@@ -1,7 +1,7 @@
 appId: io.salmonwallet.app
 ---
 # Regression: the wallet header's copy-address button must confirm the
-# copy with a checkmark, on the real mounting path (GateContainer inside
+# copy with a checkmark, on the real mounting path (WalletHeader inside
 # app/(app)/(tabs)/_layout.tsx), not just in a component-level Jest render.
 #
 # Jest cannot catch this class of bug — a prior fix (de0be9f1) passed its

@@ -197,6 +197,8 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
       });
     });
 
@@ -285,6 +287,8 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
       });
     });
 
@@ -345,6 +349,8 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -378,6 +384,8 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -406,6 +414,8 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -431,6 +441,8 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -458,6 +470,8 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -483,6 +497,8 @@ describe('useAvailableNetworks Hook', () => {
         explorers: [],
         changeExplorer: vi.fn(),
         toggleDeveloperNetworks: vi.fn(),
+        excludedFromTotal: [],
+        setIncludedInTotal: vi.fn(),
       });
 
       const { result } = renderHook(() =>

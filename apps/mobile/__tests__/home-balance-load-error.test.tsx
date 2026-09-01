@@ -123,6 +123,9 @@ jest.mock('../src/components', () => {
   const { Text, View } = require('react-native');
 
   return {
+    // The identity line. Its own suite covers it; here it only has to render
+    // so the Home tree mounts.
+    WalletHeader: () => <View testID="wallet-header" />,
     BalanceHeader: () => <View testID="balance-header" />,
     NftsTab: ({ listHeader }: { listHeader?: React.ReactNode }) => (
       <View testID="nfts-tab">{listHeader}</View>
@@ -143,7 +146,6 @@ jest.mock('../src/components', () => {
       </View>
     ),
     PowerupsFab: () => <View testID="powerups-fab" />,
-    PowerupsLauncherSheet: () => null,
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
     SendSheet: () => null,

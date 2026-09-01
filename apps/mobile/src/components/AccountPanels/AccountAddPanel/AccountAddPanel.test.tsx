@@ -53,7 +53,6 @@ const mockWatchOnlyImport: {
   reset: jest.fn(),
   networkId: 'solana-mainnet',
 };
-const mockHeaderOverride = jest.fn();
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -112,10 +111,6 @@ jest.mock('@salmon/shared', () => ({
 
 jest.mock('../../SettingsScreenLayout', () => ({
   SettingsScreenLayout: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-}));
-
-jest.mock('../../SettingsHeaderContext', () => ({
-  useSettingsHeaderOverride: (...args: unknown[]) => mockHeaderOverride(...args),
 }));
 
 jest.mock('../../Button', () => ({

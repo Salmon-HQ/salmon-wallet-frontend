@@ -3,10 +3,9 @@
  *
  * A task lives in its own window (swap's review modal, the send flow's
  * full-screen wait), but the verb plays in the shell before that window
- * appears: the gate header is a COMPUERTA that rises out of the frame while
- * the step content sinks, and the floating tab bar sinks with the content.
- * This context is how a deep flow tells the shell-level chrome
- * (GateContainer) that a task is engaged.
+ * appears: the wallet header row sinks with the step content and floats back
+ * with it. This context is how a deep flow tells the shell-level chrome
+ * (`WalletHeader`) that a task is engaged.
  *
  * The signal is held from the moment the task begins — so the chrome leaves
  * during the beat, before the window covers it — until the window has

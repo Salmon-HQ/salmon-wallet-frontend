@@ -175,10 +175,16 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   if (chainSwap.chain !== currentBlockchainId) {
     setChainSwap({ chain: currentBlockchainId, hasPrior: true });
   }
+  // No entering animation on the block's FIRST mount — not even an undelayed
+  // one. Home moves this block between the pinned wrapper and the NFT grid's
+  // list header, so switching sub-tabs unmounts and remounts it, and the value
+  // wrappers replayed the float: an in-page tab change looked exactly like a
+  // chain switch. The float belongs to a real chain change, which is the only
+  // thing that sets `hasPrior`.
   const swapMotion = {
-    entering: floatEntering(isReduceMotionEnabled, {
-      delayMs: chainSwap.hasPrior ? FLOAT_DELAY_MS : 0,
-    }),
+    entering: chainSwap.hasPrior
+      ? floatEntering(isReduceMotionEnabled, { delayMs: FLOAT_DELAY_MS })
+      : undefined,
     exiting: sinkExiting(isReduceMotionEnabled),
   };
 
@@ -345,10 +351,10 @@ const styles = StyleSheet.create({
     letterSpacing: letterSpacing.label,
   },
   balance: {
-    // `display` (36), not `balance` (60): the `.pen` draws 38 and the number
-    // now sits beside the Send/Receive circles rather than alone on a card, so
-    // it no longer needs `adjustsFontSizeToFit` to survive a long total.
-    fontSize: ms(fontSize.display),
+    // `balance` is 38 now, the size the `.pen` draws: the number sits beside
+    // the Send/Receive circles rather than alone on a card, so it no longer
+    // needs `adjustsFontSizeToFit` to survive a long total.
+    fontSize: ms(fontSize.balance),
     fontFamily: fontFamilyNative.bold,
     color: semantic.text.primary,
     letterSpacing: letterSpacing.balance,

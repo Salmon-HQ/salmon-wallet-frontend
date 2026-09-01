@@ -146,8 +146,15 @@ export type { ThermoclineProps, ThermoclineTier } from './Thermocline';
 // Sheets & Modals
 // ---------------------------------------------------------------------------
 
-export { WalletSwitcherSheet } from './WalletSwitcherSheet';
-export type { WalletSwitcherSheetProps, AccountListItemProps } from './WalletSwitcherSheet';
+// ---------------------------------------------------------------------------
+// Wallet shell chrome
+// ---------------------------------------------------------------------------
+
+export { WalletHeader } from './WalletHeader';
+export type { WalletHeaderProps } from './WalletHeader';
+
+export { LockOverlay, LockContent } from './LockOverlay';
+export type { LockOverlayProps, LockContentProps } from './LockOverlay';
 
 export { ReceiveSheet } from './ReceiveSheet';
 export type { ReceiveSheetProps } from './ReceiveSheet';
@@ -168,8 +175,6 @@ export type { PortfolioSubTab, PortfolioSubTabsProps } from './PortfolioSubTabs'
 export { PowerupsFab } from './PowerupsFab';
 export type { PowerupsFabProps } from './PowerupsFab';
 
-export { PowerupsLauncherSheet } from './PowerupsLauncherSheet';
-export type { PowerupsLauncherSheetProps } from './PowerupsLauncherSheet';
 
 export { TokenList, TokenListItem, TokenListSkeleton } from './TokenList';
 export type {
@@ -307,26 +312,8 @@ export type {
 // Settings
 // ---------------------------------------------------------------------------
 
-export { SettingsSheet } from './SettingsSheet';
-export type { SettingsSheetProps, SettingsOption, SettingsSection } from './SettingsSheet';
-
-export { SettingsPanelStack } from './SettingsPanelStack';
-export type {
-  MobilePanelContentProps,
-  MobilePanelRenderer,
-  MobilePanelRegistry,
-  MobileSettingsPanelStackProps,
-} from './SettingsPanelStack';
-
 export { SettingsScreenLayout } from './SettingsScreenLayout';
 export type { SettingsScreenLayoutProps } from './SettingsScreenLayout';
-
-export {
-  SettingsHeaderContext,
-  useSettingsHeader,
-  useSettingsHeaderOverride,
-} from './SettingsHeaderContext';
-export type { SettingsHeaderState } from './SettingsHeaderContext';
 
 // Settings Selectors
 export { LanguageSelector } from './SettingsSelectors/LanguageSelector';

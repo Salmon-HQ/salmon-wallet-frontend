@@ -2,12 +2,12 @@
  * HomeScreen - Main wallet overview screen
  *
  * Displays:
- * - GateContainer header: Account name, address, settings navigation
+ * - WalletHeader row: Account name, address, settings navigation
  * - BalanceHeader: swipeable per-chain balance + Send / Receive / History
  * - PortfolioSubTabs: in-page "Portfolio | NFTs" row (the bottom tab bar is gone)
  * - Portfolio content: TokenList, or the Bitcoin chart/market/about column
  * - NFTs content: NftsTab
- * - PowerupsFab: the floating `+` that opens the Powerups launcher
+ * - PowerupsFab: the floating `+` that opens the Powerups browse screen
  *
  * Features:
  * - Pull-to-refresh for balance updates
@@ -17,6 +17,7 @@
  */
 
 import * as Clipboard from 'expo-clipboard';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -73,7 +74,6 @@ import {
   NftsTab,
   PortfolioSubTabs,
   PowerupsFab,
-  PowerupsLauncherSheet,
   PriceChart,
   ReceiveSheet,
   SendSheet,
@@ -84,6 +84,7 @@ import {
   TokenListSkeleton,
   TokenMarketData,
   TransactionHistorySheet,
+  WalletHeader,
   WarningNotice,
   type BlockchainBalance,
   type BlockchainId,
@@ -157,6 +158,7 @@ type SubTabKey = 'portfolio' | 'nfts';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { headerContentOffset, floatingBottomOffset } = useTabChrome();
   // A task that takes the screen owns it: the home content leaves with the
   // same verb the chrome does, so the flow finds empty water behind it.
@@ -180,9 +182,6 @@ export default function HomeScreen() {
 
   // In-page sub-tab (replaces the removed bottom tab bar)
   const [activeSubTab, setActiveSubTab] = useState<SubTabKey>('portfolio');
-
-  // Powerups launcher sheet visibility
-  const [powerupsVisible, setPowerupsVisible] = useState(false);
 
   // Measured once per layout so the sticky sub-tab row knows how far the
   // balance block has to travel before it pins, and how much room to reserve
@@ -230,7 +229,9 @@ export default function HomeScreen() {
     setReceiveSheetVisible(false);
     setSendSheetVisible(false);
     setTransactionHistoryVisible(false);
-    setPowerupsVisible(false);
+    // Powerups is a route now, not a sheet — it closes itself on lock (see
+    // `app/(app)/powerups.tsx`), because it sits ABOVE the tab shell that
+    // mounts the lock overlay and Home cannot reach it from here.
   }, [accountState.locked]);
 
   // Developer mode — shared via context from _layout.tsx (single source of truth)
@@ -597,6 +598,13 @@ export default function HomeScreen() {
     [refresh]
   );
 
+  // The header's copy affordance. Silent by design: the row shows its own
+  // checkmark, so a toast on top of it would say the same thing twice.
+  const handleHeaderCopyAddress = useCallback(async () => {
+    if (!activeBlockchainAccount) return;
+    await Clipboard.setStringAsync(activeBlockchainAccount.getReceiveAddress());
+  }, [activeBlockchainAccount]);
+
   const handleReceiveSheetCopy = useCallback(async () => {
     if (!activeBlockchainAccount) return false;
     try {
@@ -731,11 +739,19 @@ export default function HomeScreen() {
   const handleSubTabChange = useCallback(
     (key: string) => {
       if (key === 'nfts') {
-        const solanaIndex = blockchainBalances.findIndex(
-          (balance) => balance.network.blockchain === 'solana'
-        );
-        if (solanaIndex >= 0 && solanaIndex !== activeBlockchainIndex) {
-          handleBlockchainChange('solana', solanaIndex);
+        // `blockchain` is the network id minus `-mainnet`, so devnet reads as
+        // `solana-devnet`: an equality test against `'solana'` sent a
+        // developer-mode user on devnet back to mainnet every time they opened
+        // NFTs. The whole Solana family counts, and the snap stays one-way —
+        // if the active chain is already Solana, nothing moves.
+        const activeBlockchain = blockchainBalances[activeBlockchainIndex]?.network.blockchain ?? '';
+        if (!activeBlockchain.startsWith('solana')) {
+          const solanaIndex = blockchainBalances.findIndex((balance) =>
+            balance.network.blockchain.startsWith('solana')
+          );
+          if (solanaIndex >= 0) {
+            handleBlockchainChange('solana', solanaIndex);
+          }
         }
       }
       // Each sub-tab has its own scroll view, so the offsets the fade and the
@@ -751,15 +767,12 @@ export default function HomeScreen() {
   // then, so the row's geometry is already the final one.
   const handlePortfolioVisibilityPress = useCallback(() => {}, []);
 
-  // The FAB is a toggle: open the launcher, or close it from the same mark
-  // it turned into.
+  // The launcher sheet is gone: the FAB pushes the browse screen, which
+  // mounts its own FAB in the same spot already turned. The two instances read
+  // as one control, so Home does not track an open state at all.
   const handlePowerupsPress = useCallback(() => {
-    setPowerupsVisible((visible) => !visible);
-  }, []);
-
-  const handlePowerupsClose = useCallback(() => {
-    setPowerupsVisible(false);
-  }, []);
+    router.push('/powerups');
+  }, [router]);
 
   // The sticky sub-tab row rides the NFT grid's own scroll offset: it starts
   // directly under the balance block and stops once it reaches the chrome, so
@@ -829,7 +842,7 @@ export default function HomeScreen() {
   );
 
   // Loading state - wait for hook to be ready
-  // Note: If we're on this screen, the GateContainer lock state has been
+  // Note: If we're on this screen, the lock overlay has been
   // dismissed, which means unlock succeeded and accounts should be loaded
   if (!ready) {
     return (
@@ -891,9 +904,25 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container} testID="home-screen">
+      {/* The identity line. It belongs to Home and is mounted here rather than
+          in the tab shell: the shell renders under every pushed screen, so a
+          header mounted there painted over the title of Settings and Wallets.
+          It sits on the same plane as the balance below it — no lift, no panel
+          behind it — and sinks and floats with the content when a task takes
+          the screen. */}
+      <WalletHeader
+        accountName={activeAccount?.name || t('wallet.unnamed_account', 'Account')}
+        address={activeBlockchainAccount?.getReceiveAddress() || ''}
+        onCopyAddress={handleHeaderCopyAddress}
+        onSettingsPress={() => router.push('/settings')}
+        onWalletPress={() => router.push('/wallets')}
+        developerMode={developerNetworks}
+        avatarUrl={activeAccount?.avatar}
+        accountId={activeAccount?.id}
+      />
       {/* The balance, the sub-tabs, the content and the FAB are CONTENT, not
           chrome: when a task engages the shell they leave with the verb at
-          full depth (the chrome's half depth is GateContainer's business, not
+          full depth (the chrome's half depth is the header row's business, not
           theirs). Conditional render is the mechanism — the same one the
           swap's step changes use — so unmount plays the sink and remount plays
           the float. The wrapper sits inside the screen, which is itself a
@@ -1069,11 +1098,7 @@ export default function HomeScreen() {
             </View>
           )}
 
-          <PowerupsFab
-            onPress={handlePowerupsPress}
-            open={powerupsVisible}
-            bottomOffset={floatingBottomOffset}
-          />
+          <PowerupsFab onPress={handlePowerupsPress} bottomOffset={floatingBottomOffset} />
         </Reanimated.View>
       )}
 
@@ -1142,11 +1167,6 @@ export default function HomeScreen() {
         networkId={networkId}
       />
 
-      {/* Powerups launcher (POWERUPS 01) */}
-      <PowerupsLauncherSheet
-        visible={powerupsVisible}
-        onClose={handlePowerupsClose}
-      />
     </View>
   );
 }

@@ -1,11 +1,20 @@
 /**
- * HeaderContent — Content rendered inside GateContainer when collapsed
+ * WalletHeader — the wallet's top row: avatar, account name, address, copy, gear.
  *
- * Displays the wallet header bar: avatar, account name, address, copy, settings.
- * No positioning or animation — GateContainer handles that.
+ * It is a header and nothing more. It sits on the same plane as the balance
+ * below it, owns its own slot (safe area + `spacing.screenTop` + the row), and
+ * never lifts, slides, or reveals a panel from behind itself. When a task
+ * takes the screen it leaves and returns with the content's own sink/float
+ * verb at chrome scale — a conditional mount, the same mechanism the Home
+ * content uses.
+ *
+ * The slot is absolutely positioned at the top of the tab shell; `useTabChrome`
+ * computes the identical three terms as `headerChromeHeight`, so the Home
+ * content starts exactly where this row ends. Keep the two in step.
  */
 
 import {
+  componentSizes,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
@@ -22,6 +31,7 @@ import {
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 import { CheckIcon } from '../../icons';
@@ -35,8 +45,9 @@ import {
   sinkExiting,
   SINK_FLOAT_TRAVEL,
 } from '../../utils/sinkAndFloat';
+import { useTaskChrome } from '../../contexts/TaskChromeContext';
 
-/** Left thumb — the account's own face, 38x38 r12, opens the wallet switcher. */
+/** Left thumb — the account's own face, a 38pt circle; opens the wallet switcher. */
 const WALLET_THUMB_SIZE = 38;
 /** Right control (settings) — 36x36 circle. */
 const SETTINGS_BUTTON_SIZE = 36;
@@ -48,7 +59,7 @@ const SETTINGS_GLYPH_SIZE = 18;
 // Props
 // ============================================================================
 
-export interface HeaderContentProps {
+export interface WalletHeaderProps {
   accountName: string;
   address: string;
   onCopyAddress?: () => void;
@@ -63,7 +74,7 @@ export interface HeaderContentProps {
 // Component
 // ============================================================================
 
-export function HeaderContent({
+export function WalletHeader({
   accountName,
   address,
   onCopyAddress,
@@ -71,11 +82,20 @@ export function HeaderContent({
   onWalletPress,
   developerMode = false,
   avatarUrl,
-}: HeaderContentProps) {
+}: WalletHeaderProps) {
   const { t } = useTranslation();
   const [imgError, setImgError] = useState(false);
   const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
   const isReduceMotionEnabled = useReducedMotion();
+  const insets = useSafeAreaInsets();
+  // The signal a task flow publishes while it owns the screen.
+  const { isTaskEngaged } = useTaskChrome();
+
+  // The redesign's screen top: safe area, then `screenTop`, then the row
+  // itself. Deliberately unscaled — `useTabChrome` computes the same three
+  // terms as `headerChromeHeight` so the Home content starts where this ends.
+  const headerTopPadding = insets.top + spacing.screenTop;
+  const slotHeight = headerTopPadding + componentSizes.walletHeaderRowHeight;
 
   // Chrome-scale sink and float for the account text: when the active chain
   // switches, the address half of the line changes, so the text is keyed on
@@ -104,7 +124,23 @@ export function HeaderContent({
   const truncatedAddress = getShortAddress(address, developerMode ? 8 : 4) ?? address;
 
   return (
-    <View style={styles.container}>
+    <View pointerEvents="box-none" style={[styles.slot, { height: slotHeight }]}>
+      <View style={{ height: headerTopPadding }} />
+      {isTaskEngaged ? null : (
+        <Reanimated.View
+          testID="wallet-header-bar"
+          style={styles.container}
+          entering={floatEntering(isReduceMotionEnabled, {
+            distance: SINK_FLOAT_TRAVEL / 2,
+            scale: CHROME_SCALE,
+            durationMs: motionMs.drift,
+          })}
+          exiting={sinkExiting(isReduceMotionEnabled, {
+            distance: SINK_FLOAT_TRAVEL / 2,
+            scale: CHROME_SCALE,
+            durationMs: motionMs.ebb,
+          })}
+        >
       {/* Left side - wallet thumb + Account info */}
       <View style={styles.leftSection}>
         {/* The wallet thumb is the account's own picture: the identity the
@@ -114,9 +150,11 @@ export function HeaderContent({
         <IconBubble
           testID="wallet-header-account-switcher"
           size={WALLET_THUMB_SIZE}
-          shape="rounded"
-          // r12, per `.pen` CORE 01 — the kit's default rounded corner is r16.
-          radius="lg"
+          // A circle, matching the gear circle at the other end of the row:
+          // the two ends of the header are the same object at the same size,
+          // and a rounded square on the left made them read as two different
+          // kinds of control (owner, on device).
+          shape="circle"
           tone="ink"
           onPress={handleWalletPress}
           accessibilityLabel={t('accessibility.switch_wallet')}
@@ -208,7 +246,7 @@ export function HeaderContent({
                 and the Animated.View (stripped entirely, still no paint), and
                 the header coming from the navigator's `screenOptions`
                 (`headerShown` is false; this is a plain `headerContent` prop
-                inside GateContainer). Adding a `key` per branch was tried and
+                inside the header row). Adding a `key` per branch was tried and
                 removed — the two branches are different component types, so
                 React already unmounts and remounts across them and a key
                 changes nothing.
@@ -224,7 +262,7 @@ export function HeaderContent({
                 <CheckIcon size={s(23)} color={semantic.status.success} />
               </Animated.View>
             ) : (
-              <ContentCopySvgIcon size={s(23)} color={semantic.text.accent} />
+              <ContentCopySvgIcon size={s(23)} color={semantic.text.secondary} />
             )}
           </TouchableOpacity>
         </View>
@@ -243,6 +281,8 @@ export function HeaderContent({
         accessibilityLabel={t('accessibility.open_settings')}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       />
+        </Reanimated.View>
+      )}
     </View>
   );
 }
@@ -252,7 +292,18 @@ export function HeaderContent({
 // ============================================================================
 
 const styles = StyleSheet.create({
+  // The header's slot in the tab shell. Absolute, so the content below scrolls
+  // under it exactly as it always has; `useTabChrome` reserves the same height.
+  slot: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
   container: {
+    // The row is exactly as tall as its own content — the 38pt account thumb.
+    height: componentSizes.walletHeaderRowHeight,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -293,7 +344,9 @@ const styles = StyleSheet.create({
     fontSize: ms(fontSize.caption),
     fontFamily: fontFamilyNative.medium,
     fontWeight: fontWeight.medium,
-    color: semantic.text.secondary,
+    // The `.pen`'s muted address: no salmon in the header, and the name is
+    // the line that has to carry.
+    color: semantic.text.tertiary,
     letterSpacing: letterSpacing.label,
     lineHeight: vs(15),
   },

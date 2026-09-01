@@ -222,4 +222,11 @@ export interface UserConfig {
   explorers: DefaultExplorers;
   /** Whether to show developer/test networks */
   developerNetworks: boolean;
+  /**
+   * Wallet ids the user has taken out of the aggregated total on the wallets
+   * screen. Absent or empty means every wallet counts, which is the default a
+   * fresh install and every pre-existing config get for free — inclusion is
+   * the norm, so only the exceptions are stored.
+   */
+  excludedFromTotal?: string[];
 }
