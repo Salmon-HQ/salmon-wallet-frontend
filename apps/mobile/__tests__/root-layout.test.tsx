@@ -75,31 +75,45 @@ jest.mock('../src/components/WalletInitErrorScreen', () => {
   };
 });
 
-jest.mock('@salmon/shared', () => ({
-  colors: {
-    background: { primary: '#000' },
-  },
-  AccountsProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-  CurrencyProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-  useAccountsContext: () => mockUseAccountsContext(),
-  useInactivityTimeout: jest.fn(),
-  createQueryClient: () => ({}),
-  QueryClientProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-  BridgeSettlementProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-  PendingTransactionsProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-  usePendingActivity: () => ({ items: [], dismiss: jest.fn() }),
-  semantic: {
-    text: { secondary: '#A7B1C4', tertiary: '#8B96AD' },
+jest.mock('@salmon/shared', () => {
+  // Declared inside the factory: `jest.mock` is hoisted above every
+  // module-scope const, so a reference to one from out here is undefined by
+  // the time the mocked module is first required.
+  const MOCK_SEMANTIC = {
+    text: { primary: '#EDF1F7', secondary: '#A7B1C4', tertiary: '#8B96AD' },
     status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
     surface: { crest: '#1B2233' },
-    border: { raised: '#6F7B95' },
+    border: { raised: '#6F7B95', default: '#58637B' },
     depth: { abyss: '#000' },
-  },
-  borderRadius: { lg: 16 },
-  fontSize: { xs: 10, sm: 12 },
-  fontWeight: { semibold: '600' },
-  spacing: { xs: 4, sm: 8, md: 12 },
-}));
+    accent: { ink: '#FF5C45' },
+  };
+
+  return {
+    colors: {
+      background: { primary: '#000' },
+    },
+    AccountsProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    CurrencyProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    useAccountsContext: () => mockUseAccountsContext(),
+    useInactivityTimeout: jest.fn(),
+    createQueryClient: () => ({}),
+    QueryClientProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    BridgeSettlementProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    PendingTransactionsProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    usePendingActivity: () => ({ items: [], dismiss: jest.fn() }),
+    semantic: MOCK_SEMANTIC,
+    // The root layout derives the navigator's palette and the status bar style
+    // from the mode, so the mock has to carry the theme layer as well as the
+    // tokens. Dark, which is what this file has always rendered.
+    createSemantic: () => MOCK_SEMANTIC,
+    ThemeProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    useTheme: () => ({ mode: 'dark', semantic: MOCK_SEMANTIC }),
+    borderRadius: { lg: 16 },
+    fontSize: { xs: 10, sm: 12 },
+    fontWeight: { semibold: '600' },
+    spacing: { xs: 4, sm: 8, md: 12 },
+  };
+});
 
 describe('RootLayout mobile lock lifecycle', () => {
   let listeners: Record<string, Array<(...args: any[]) => void>>;

@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useAccountsContext, useUserConfig, semantic } from '@salmon/shared';
 import { DepthBackground, ScalesBackground, BlurTargetProvider } from '../../../src/components';
 import { DeveloperModeProvider } from '../../../src/contexts/DeveloperModeContext';
+import { useThemeMode } from '../../../src/theme/useThemedStyles';
 
 /**
  * Tab Layout for Salmon Wallet
@@ -29,6 +30,7 @@ import { DeveloperModeProvider } from '../../../src/contexts/DeveloperModeContex
  */
 export default function TabLayout() {
   const { t } = useTranslation();
+  const mode = useThemeMode();
   const blurTargetRef = useRef<View>(null);
 
   const [accountState] = useAccountsContext();
@@ -51,7 +53,11 @@ export default function TabLayout() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      {/* The tab shell mounts its own bar because it is the screen the status
+          bar sits directly on the water for. The style follows the mode: a
+          hardcoded `light` left the clock white on the pale ground (owner, on
+          device). The rest of this file's colour is step 3's to migrate. */}
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
 
       {/* Background layers wrapped in BlurTargetView for Android blur targeting */}
       <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>

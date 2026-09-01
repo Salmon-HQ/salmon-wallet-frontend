@@ -48,6 +48,7 @@ const DARK_SNAPSHOT = {
     successFill: '#14795C',
     dangerFill: '#A32036',
     warningFill: '#7A5205',
+    onFill: '#EDF1F7',
     successTint: 'rgba(76, 175, 80, 0.1)',
     dangerTint: 'rgba(239, 68, 68, 0.1)',
     warningTint: 'rgba(255, 171, 0, 0.1)',
@@ -154,6 +155,9 @@ describe('createSemantic: what the light mode is allowed to change', () => {
         'overlay.backdrop',
         'overlay.highlight',
         'overlay.scrim',
+        // The one part of the underwater material that crosses into light:
+        // the deep field turns coral (owner, 2026-09-01).
+        'scales.deepFieldStroke',
         'sheet.handle',
         'skeleton.base',
         'skeleton.highlight',
@@ -172,6 +176,10 @@ describe('createSemantic: what the light mode is allowed to change', () => {
         'step.inactive',
         'surface.bedrock',
         'surface.crest',
+        // White at high alpha, not deep-neutral ink — see the membrane test
+        // below.
+        'surface.membraneThick',
+        'surface.membraneThin',
         'surface.raised',
         'surface.shelf',
         'text.accent',
@@ -249,6 +257,7 @@ describe('createSemantic: the invariants a mode switch may not touch', () => {
       expect(tokens.status.successFill).toBe(success[700]);
       expect(tokens.status.dangerFill).toBe(danger[700]);
       expect(tokens.status.warningFill).toBe(warning[700]);
+      expect(tokens.status.onFill).toBe(neutral[50]);
     }
   });
 
@@ -256,11 +265,27 @@ describe('createSemantic: the invariants a mode switch may not touch', () => {
     expect(light.scanner).toEqual(dark.scanner);
   });
 
-  it('keeps the underwater material untouched until its own pass', () => {
-    expect(light.scales).toEqual(dark.scales);
+  it('draws the deep field in coral on a light ground', () => {
+    // The one part of the material that crosses into light (owner,
+    // 2026-09-01). Cold near-white on a pale ground is nothing; the brand's
+    // own hue at a low alpha is a scale field.
+    expect(dark.scales.deepFieldStroke).toBe('rgba(199, 211, 232, 0.03)');
+    expect(light.scales.deepFieldStroke).toBe('rgba(255, 92, 69, 0.06)');
+    expect(light.scales.deepFieldScale).toBe(dark.scales.deepFieldScale);
+    expect(light.scales.deepFieldFloor).toBe(dark.scales.deepFieldFloor);
+  });
+
+  it('keeps the rest of the underwater material untouched until its own pass', () => {
+    expect(light.scales.refractionSweep).toEqual(dark.scales.refractionSweep);
     expect(light.flesh).toEqual(dark.flesh);
     expect(light.water).toEqual(dark.water);
-    expect(light.surface.membraneThin).toBe(dark.surface.membraneThin);
-    expect(light.surface.membraneThick).toBe(dark.surface.membraneThick);
+  });
+
+  it('inverts the membrane ink rather than leaving the card dark on a light ground', () => {
+    // The first light screenshot showed every card as a grey slab: a
+    // deep-neutral alpha over `neutral-25` (owner, 2026-09-01). A card on a
+    // pale ground is white at high alpha — the ground still shows through.
+    expect(light.surface.membraneThin).toBe('rgba(255, 255, 255, 0.85)');
+    expect(light.surface.membraneThick).toBe('rgba(255, 255, 255, 0.95)');
   });
 });

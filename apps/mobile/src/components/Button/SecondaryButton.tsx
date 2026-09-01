@@ -15,9 +15,10 @@ import {
   fontSize,
   letterSpacing,
   spacing,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { PressSpecular } from '../PressSpecular';
 import { usePressMotion } from '../../../hooks/usePressMotion';
 
@@ -29,7 +30,7 @@ const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
  * secondary of a pair without borrowing the salmon fill or reading as a peer
  * of the primary beside it.
  */
-type SecondaryButtonTone = 'default' | 'danger';
+type SecondaryButtonTone = 'default' | 'danger' | 'danger-fill';
 
 interface SecondaryButtonProps extends Testable {
   onPress: () => void;
@@ -63,6 +64,9 @@ export function SecondaryButton({
 }: SecondaryButtonProps) {
   const isDisabled = disabled || loading;
   const isDanger = tone === 'danger';
+  const isDangerFill = tone === 'danger-fill';
+  const styles = useThemedStyles(stylesFor);
+  const { text, status } = useSemantic();
   const { pressStyle, pressHandlers, specular } = usePressMotion();
 
   return (
@@ -79,17 +83,26 @@ export function SecondaryButton({
       style={[
         styles.button,
         isDanger && styles.buttonDanger,
+        isDangerFill && styles.buttonDangerFill,
         isDisabled && styles.disabled,
         style,
         pressStyle,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={semantic.text.primary} />
+        <ActivityIndicator color={isDangerFill ? status.onFill : text.primary} />
       ) : (
         <>
           {icon}
-          <Text style={[styles.text, isDanger && styles.textDanger]}>{children}</Text>
+          <Text
+            style={[
+              styles.text,
+              isDanger && styles.textDanger,
+              isDangerFill && styles.textOnDangerFill,
+            ]}
+          >
+            {children}
+          </Text>
           {trailingIcon}
         </>
       )}
@@ -98,37 +111,53 @@ export function SecondaryButton({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    width: '100%',
-    minHeight: componentSizes.buttonHeight,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: 'transparent',
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.border.raised,
-    borderRadius: componentSizes.buttonRadius,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Clip the press specular to the control's own radius.
-    overflow: 'hidden',
-  },
-  buttonDanger: {
-    borderColor: semantic.status.danger,
-  },
-  disabled: {
-    opacity: semantic.state.disabledOpacity,
-  },
-  text: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.bodyLg,
-    letterSpacing: letterSpacing.normal,
-    textAlign: 'center',
-  },
-  textDanger: {
-    color: semantic.status.danger,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    button: {
+      width: '100%',
+      minHeight: componentSizes.buttonHeight,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      backgroundColor: 'transparent',
+      borderWidth: borderWidth.thin,
+      borderColor: t.border.raised,
+      borderRadius: componentSizes.buttonRadius,
+      flexDirection: 'row',
+      gap: spacing.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+      // Clip the press specular to the control's own radius.
+      overflow: 'hidden',
+    },
+    buttonDanger: {
+      borderColor: t.status.danger,
+    },
+    /**
+     * The filled destructive control — a `danger-700` plane, not an outline.
+     * Its label is `status.onFill` and nothing else: the fill is invariant, so
+     * the only ink that clears AA on it in *both* modes is the light one
+     * (`text.primary` is `neutral-850` in light and measures 2.69:1 there).
+     * Pairing the two here rather than at the call site is what keeps a screen
+     * from filling the plane and forgetting the ink.
+     */
+    buttonDangerFill: {
+      backgroundColor: t.status.dangerFill,
+      borderColor: t.status.dangerFill,
+    },
+    disabled: {
+      opacity: t.state.disabledOpacity,
+    },
+    text: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: fontSize.bodyLg,
+      letterSpacing: letterSpacing.normal,
+      textAlign: 'center',
+    },
+    textDanger: {
+      color: t.status.danger,
+    },
+    textOnDangerFill: {
+      color: t.status.onFill,
+    },
+  });

@@ -7,11 +7,21 @@
  */
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
-import { fontFamilyNative, fontSize, letterSpacing, lineHeight, s, semantic } from '@salmon/shared';
+import {
+  fontFamilyNative,
+  fontSize,
+  letterSpacing,
+  lineHeight,
+  s,
+  type Semantic,
+} from '@salmon/shared';
 
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import type { SectionLabelProps } from './types';
 
 export function SectionLabel({ children, variant, style, testID }: SectionLabelProps) {
+  const styles = useThemedStyles(stylesFor);
+
   return (
     <Text testID={testID} accessibilityRole="header" style={[styles[variant], style]}>
       {variant === 'caps' ? children.toUpperCase() : children}
@@ -19,24 +29,25 @@ export function SectionLabel({ children, variant, style, testID }: SectionLabelP
   );
 }
 
-const styles = StyleSheet.create({
-  caps: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.micro),
-    lineHeight: s(fontSize.micro) * lineHeight.snug,
-    letterSpacing: letterSpacing.label,
-    color: semantic.text.secondary,
-  },
-  group: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
-    color: semantic.text.secondary,
-  },
-  title: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.bodyLg),
-    lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
-    color: semantic.text.primary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    caps: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.micro),
+      lineHeight: s(fontSize.micro) * lineHeight.snug,
+      letterSpacing: letterSpacing.label,
+      color: t.text.secondary,
+    },
+    group: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * lineHeight.snug,
+      color: t.text.secondary,
+    },
+    title: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.bodyLg),
+      lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
+      color: t.text.primary,
+    },
+  });

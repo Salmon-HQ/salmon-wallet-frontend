@@ -196,7 +196,7 @@ export function ConfirmSheet({
                 <SecondaryButton
                   onPress={handleConfirm}
                   disabled={!canConfirm || loading}
-                  style={styles.dangerButton}
+                  tone="danger-fill"
                 >
                   {confirmText || t('actions.confirm', 'Confirm')}
                 </SecondaryButton>
@@ -245,15 +245,5 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: vs(spacing.sm),
-  },
-  /**
-   * `status.dangerFill` (`danger-700`) under `SecondaryButton`'s own
-   * `text.primary` label: 6.58:1. It replaces a `status.danger` (`danger-500`)
-   * fill, which put the same light ink at 2.50:1 — below even the
-   * white-on-salmon pairing DESIGN.md bans at 3.06:1. `danger-500` is the
-   * system's danger *ink*; `danger-700` is its fill.
-   */
-  dangerButton: {
-    backgroundColor: semantic.status.dangerFill,
   },
 });

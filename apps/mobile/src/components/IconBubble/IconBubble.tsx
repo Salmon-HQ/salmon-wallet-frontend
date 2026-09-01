@@ -23,9 +23,10 @@ import {
   componentSizes,
   fontFamilyNative,
   s,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 
+import { useSemantic } from '../../theme/useThemedStyles';
 import { usePressMotion } from '../../../hooks/usePressMotion';
 import { FleshBackground } from '../FleshBackground';
 import { PressSpecular } from '../PressSpecular';
@@ -34,22 +35,24 @@ import type { IconBubbleProps, IconBubbleRadius, IconBubbleTone } from './types'
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 /** Ground + ink per tone. The ink is not a choice the call site gets to make. */
-const TONES: Record<IconBubbleTone, { background: string; ink: string; border?: string }> = {
-  ink: { background: semantic.depth.abyss, ink: semantic.text.primary },
-  accent: { background: semantic.accent.fill, ink: semantic.accent.onFill },
-  'accent-tint': { background: semantic.accent.tint, ink: semantic.accent.ink },
-  surface: { background: semantic.surface.raised, ink: semantic.text.primary },
-  'success-tint': { background: semantic.status.successTint, ink: semantic.status.success },
+const tonesFor = (
+  t: Semantic
+): Record<IconBubbleTone, { background: string; ink: string; border?: string }> => ({
+  ink: { background: t.depth.abyss, ink: t.text.primary },
+  accent: { background: t.accent.fill, ink: t.accent.onFill },
+  'accent-tint': { background: t.accent.tint, ink: t.accent.ink },
+  surface: { background: t.surface.raised, ink: t.text.primary },
+  'success-tint': { background: t.status.successTint, ink: t.status.success },
   outline: {
     background: 'transparent',
-    ink: semantic.text.primary,
-    border: semantic.border.raised,
+    ink: t.text.primary,
+    border: t.border.raised,
   },
-  ghost: { background: 'transparent', ink: semantic.text.secondary },
-};
+  ghost: { background: 'transparent', ink: t.text.secondary },
+});
 
 /** A disabled control is a different object, not a dimmed one. */
-const DISABLED = { background: semantic.surface.crest, ink: semantic.text.disabled };
+const disabledFor = (t: Semantic) => ({ background: t.surface.crest, ink: t.text.disabled });
 
 /** The two card corners a rounded bubble can take — `Card`'s own two steps. */
 const RADII: Record<IconBubbleRadius, number> = {
@@ -80,6 +83,7 @@ export function IconBubble({
   accessibilityHint,
   testID,
 }: IconBubbleProps) {
+  const t = useSemantic();
   const { scale: pressScale, pressHandlers, specular } = usePressMotion();
 
   // One `transform`, built once. The press scale and a caller-supplied
@@ -96,7 +100,7 @@ export function IconBubble({
     background,
     ink: toneInk,
     border,
-  } = isDisabled ? { ...DISABLED, border: undefined } : TONES[tone];
+  } = isDisabled ? { ...disabledFor(t), border: undefined } : tonesFor(t)[tone];
   // A disabled control is one object: its ink is not the call site's to pick.
   const ink = isDisabled ? toneInk : (iconColor ?? toneInk);
   const box = s(size);

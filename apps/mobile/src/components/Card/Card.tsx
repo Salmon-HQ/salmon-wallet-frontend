@@ -8,8 +8,9 @@
  */
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { borderRadius, borderWidth, s, semantic, spacing } from '@salmon/shared';
+import { borderRadius, borderWidth, s, spacing, type Semantic } from '@salmon/shared';
 
+import { useSemantic } from '../../theme/useThemedStyles';
 import type { CardPadding, CardProps, CardRadius, CardTone } from './types';
 
 /**
@@ -21,12 +22,12 @@ import type { CardPadding, CardProps, CardRadius, CardTone } from './types';
  * through a little) — the water column's scales read faintly behind every
  * token row and content card built on `Card`/`ListRow`.
  */
-const TONES: Record<CardTone, { background: string; border: string }> = {
-  surface: { background: semantic.surface.membraneThin, border: semantic.border.hairline },
-  accent: { background: semantic.accent.tint, border: semantic.border.hairline },
-  warning: { background: semantic.status.warningTint, border: semantic.status.warningTintBorder },
-  ink: { background: semantic.depth.abyss, border: semantic.border.hairline },
-};
+const tonesFor = (t: Semantic): Record<CardTone, { background: string; border: string }> => ({
+  surface: { background: t.surface.membraneThin, border: t.border.hairline },
+  accent: { background: t.accent.tint, border: t.border.hairline },
+  warning: { background: t.status.warningTint, border: t.status.warningTintBorder },
+  ink: { background: t.depth.abyss, border: t.border.hairline },
+});
 
 /**
  * `md` is 14: the spacing scale steps 12 → 16 with nothing between, and the
@@ -59,7 +60,10 @@ export function Card({
   children,
   testID,
 }: CardProps) {
-  const { background, border } = TONES[tone];
+  // A record of strings, not a stylesheet: built at render through
+  // `useSemantic` rather than cached by `useThemedStyles`, which is for
+  // `StyleSheet.create` blocks only.
+  const { background, border } = tonesFor(useSemantic())[tone];
   const box = [
     styles.card,
     {

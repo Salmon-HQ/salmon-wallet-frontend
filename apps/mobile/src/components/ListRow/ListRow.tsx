@@ -13,10 +13,11 @@ import {
   fontSize,
   lineHeight,
   s,
-  semantic,
   spacing,
+  type Semantic,
 } from '@salmon/shared';
 
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { Card } from '../Card';
 import type { ListRowProps } from './types';
 
@@ -35,6 +36,7 @@ export function ListRow({
   style,
   testID,
 }: ListRowProps) {
+  const styles = useThemedStyles(stylesFor);
   const spokenName =
     accessibilityLabel ?? (typeof subtitle === 'string' ? `${title}, ${subtitle}` : title);
 
@@ -79,44 +81,45 @@ export function ListRow({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.md),
-  },
-  text: {
-    flex: 1,
-    minWidth: 0,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minWidth: 0,
-    // The accessory sits beside the title while it fits, and drops to its own
-    // line when it does not. Without the wrap the two competed for one line
-    // and the token rows shipped "SOL · $101.39 · -1.1…" with the badges
-    // squeezing the name (owner, first device run).
-    flexWrap: 'wrap',
-    columnGap: s(spacing.sm),
-    rowGap: s(spacing.xxs),
-  },
-  title: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.bodyLg),
-    lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
-    color: semantic.text.primary,
-    flexShrink: 1,
-    minWidth: 0,
-  },
-  titleStrong: {
-    fontSize: s(fontSize.heading),
-    lineHeight: s(fontSize.heading) * lineHeight.snug,
-  },
-  subtitle: {
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-    color: semantic.text.secondary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.md),
+    },
+    text: {
+      flex: 1,
+      minWidth: 0,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      minWidth: 0,
+      // The accessory sits beside the title while it fits, and drops to its own
+      // line when it does not. Without the wrap the two competed for one line
+      // and the token rows shipped "SOL · $101.39 · -1.1…" with the badges
+      // squeezing the name (owner, first device run).
+      flexWrap: 'wrap',
+      columnGap: s(spacing.sm),
+      rowGap: s(spacing.xxs),
+    },
+    title: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.bodyLg),
+      lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
+      color: t.text.primary,
+      flexShrink: 1,
+      minWidth: 0,
+    },
+    titleStrong: {
+      fontSize: s(fontSize.heading),
+      lineHeight: s(fontSize.heading) * lineHeight.snug,
+    },
+    subtitle: {
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      color: t.text.secondary,
+    },
+  });

@@ -15,8 +15,10 @@ import {
   fontSize,
   s,
   spacing,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
+
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { WarningNoticeProps } from './types';
 
 export function WarningNotice({
@@ -27,8 +29,10 @@ export function WarningNotice({
   style,
   testID,
 }: WarningNoticeProps): React.ReactElement {
-  const accent = tone === 'warning' ? semantic.status.warning : semantic.status.danger;
-  const background = tone === 'warning' ? semantic.status.warningTint : semantic.status.dangerTint;
+  const styles = useThemedStyles(stylesFor);
+  const { status } = useSemantic();
+  const accent = tone === 'warning' ? status.warning : status.danger;
+  const background = tone === 'warning' ? status.warningTint : status.dangerTint;
 
   return (
     <View
@@ -46,37 +50,38 @@ export function WarningNotice({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    width: '100%',
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    gap: spacing.sm,
-  },
-  icon: {
-    flexShrink: 0,
-    marginTop: 1,
-  },
-  textColumn: {
-    flex: 1,
-    minWidth: 0,
-  },
-  title: {
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: s(fontSize.caption),
-    marginBottom: spacing.xxs,
-  },
-  action: {
-    marginTop: 6,
-    alignSelf: 'flex-start',
-  },
-  body: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * 1.45,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      width: '100%',
+      padding: spacing.md,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      gap: spacing.sm,
+    },
+    icon: {
+      flexShrink: 0,
+      marginTop: 1,
+    },
+    textColumn: {
+      flex: 1,
+      minWidth: 0,
+    },
+    title: {
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: s(fontSize.caption),
+      marginBottom: spacing.xxs,
+    },
+    action: {
+      marginTop: 6,
+      alignSelf: 'flex-start',
+    },
+    body: {
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      lineHeight: s(fontSize.caption) * 1.45,
+    },
+  });

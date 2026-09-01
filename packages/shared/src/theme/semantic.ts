@@ -90,19 +90,30 @@ export function createSemantic(mode: ThemeMode) {
      * bright backdrop. `contrast.test.ts` asserts `text.primary` stays ≥4.5:1
      * against that ground.
      *
-     * Mode-invariant for now: the thermocline's light re-tune is a dedicated
-     * pass (spec 021, "flesh/scales/water" row). Until then a light-mode
-     * surface does not use the membrane tiers.
+     * The light values are the same idea with the ink inverted: a card on a
+     * pale ground is *white at high alpha*, not deep-neutral ink, so the
+     * ground still shows through and the card still reads as a white plane
+     * with a `border.default` hairline. `rgba(11, 15, 25, 0.48)` over
+     * `neutral-25` is a grey slab — which is exactly what the first light
+     * screenshot showed (owner, 2026-09-01).
      */
-    membraneThin: 'rgba(11, 15, 25, 0.48)',
+    membraneThin: pick({
+      dark: 'rgba(11, 15, 25, 0.48)',
+      light: 'rgba(255, 255, 255, 0.85)',
+    }),
     /**
      * Translucent tier 2 — pair with blur.
      *
      * Lowered from 0.80 (2026-09-01, same ruling). Still measured against
-     * `water.gradient`'s worst case in `contrast.test.ts`. Mode-invariant for
-     * the same reason as `membraneThin`.
+     * `water.gradient`'s worst case in `contrast.test.ts`. The light value is
+     * white at a higher alpha than the thin tier, for the same reason the dark
+     * pair differ: chrome that floats over scrolling content lets less
+     * through than a card does.
      */
-    membraneThick: 'rgba(11, 15, 25, 0.66)',
+    membraneThick: pick({
+      dark: 'rgba(11, 15, 25, 0.66)',
+      light: 'rgba(255, 255, 255, 0.95)',
+    }),
     /** Opaque by rule: approval and seed screens forbid translucency */
     bedrock: pick({ dark: neutral[975], light: neutral[0] }),
   } as const;
@@ -199,6 +210,19 @@ export function createSemantic(mode: ThemeMode) {
     successFill: success[700],
     dangerFill: danger[700],
     warningFill: warning[700],
+    /**
+     * The only ink allowed on a `*Fill`, and mode-invariant like the fills
+     * themselves.
+     *
+     * A filled status control is the `700` step in both modes, so what it
+     * carries is light ink in both modes. In dark that happens to equal
+     * `text.primary`, which is how the destructive button was written before
+     * this token existed; in light `text.primary` is `neutral-850` and
+     * measures 2.69:1 on the success fill. Naming the pairing is what stops a
+     * light-mode migration from carrying that bug in mechanically.
+     * `contrast.test.ts` asserts AA on all three fills, in both modes.
+     */
+    onFill: neutral[50],
     /** Tinted notice surface under success ink. */
     successTint: pick({ dark: 'rgba(76, 175, 80, 0.1)', light: success[50] }),
     /** Tinted notice surface under danger ink. */
@@ -280,9 +304,18 @@ export function createSemantic(mode: ThemeMode) {
    *
    * `patternHeight` is a multiplier on the drawing's native 26px tile.
    *
-   * Mode-invariant: the underwater material's light re-tune is a dedicated
-   * pass. Until it lands, light-mode backgrounds render their ground flat and
-   * the motif is simply not drawn (spec 021).
+   * The deep field is the one part of the material that crosses into light
+   * (owner, 2026-09-01): on the pale ground the scales are **coral**, drawn in
+   * `salmon-500` rather than in the cold near-white, because a light ink on a
+   * light ground has nothing left to say. The alpha doubles to 0.06 — light
+   * neutrals sit at the compressed end of the luminance curve, so the dark
+   * field's 0.03 measures ~1.03:1 there, exactly on the visibility floor. At
+   * 0.06 it reads as a faint coral scale field (~1.07:1) and stays far under
+   * the 1.4:1 decorative ceiling; `contrast.test.ts` pins both ends.
+   *
+   * The rest of the group is still mode-invariant: `fish` and `refraction`
+   * have no call site, and the water ramp, the snow and the membrane tiers
+   * wait for the material's own light pass (spec 021).
    */
   const scales = {
     /**
@@ -293,7 +326,10 @@ export function createSemantic(mode: ThemeMode) {
      * ~1.05:1 on `depth.column`, above the ~1.03:1 floor — but noticeably
      * fainter than before. Opacity only; `deepFieldScale` is unchanged.
      */
-    deepFieldStroke: 'rgba(199, 211, 232, 0.03)',
+    deepFieldStroke: pick({
+      dark: 'rgba(199, 211, 232, 0.03)',
+      light: 'rgba(255, 92, 69, 0.06)',
+    }),
     deepFieldScale: 3.2,
     /**
      * How much of the deep field survives at the bottom of its container.

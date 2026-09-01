@@ -16,18 +16,21 @@ import {
   fontSize,
   letterSpacing,
   s,
-  semantic,
   spacing,
   vs,
+  type Semantic,
 } from '@salmon/shared';
 
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import type { ChipProps, ChipSize } from './types';
 
-const SIZES: Record<ChipSize, { paddingVertical: number; paddingHorizontal: number; font: number }> =
-  {
-    sm: { paddingVertical: spacing.xs, paddingHorizontal: spacing.sm, font: fontSize.micro },
-    md: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md, font: fontSize.body },
-  };
+const SIZES: Record<
+  ChipSize,
+  { paddingVertical: number; paddingHorizontal: number; font: number }
+> = {
+  sm: { paddingVertical: spacing.xs, paddingHorizontal: spacing.sm, font: fontSize.micro },
+  md: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md, font: fontSize.body },
+};
 
 export function Chip({
   label,
@@ -40,6 +43,7 @@ export function Chip({
   style,
   testID,
 }: ChipProps) {
+  const styles = useThemedStyles(stylesFor);
   const metrics = SIZES[size];
   const isSelected = variant === 'filter' && selected;
 
@@ -94,38 +98,39 @@ export function Chip({
   );
 }
 
-const styles = StyleSheet.create({
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: s(spacing.xs),
-    borderRadius: borderRadius.full,
-    borderWidth: borderWidth.thin,
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderColor: semantic.border.raised,
-  },
-  filterIdle: {
-    backgroundColor: 'transparent',
-    borderColor: semantic.border.hairline,
-  },
-  // The selected filter is the inverse well, not a louder fill: a filter that
-  // is on should read as a different object, not as a second call to action
-  // competing with the screen's one salmon element.
-  filterSelected: {
-    backgroundColor: semantic.depth.abyss,
-    borderColor: semantic.border.strong,
-  },
-  label: {
-    fontFamily: fontFamilyNative.bold,
-    letterSpacing: letterSpacing.label,
-  },
-  labelIdle: {
-    color: semantic.text.secondary,
-  },
-  labelSelected: {
-    color: semantic.text.primary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(spacing.xs),
+      borderRadius: borderRadius.full,
+      borderWidth: borderWidth.thin,
+    },
+    outline: {
+      backgroundColor: 'transparent',
+      borderColor: t.border.raised,
+    },
+    filterIdle: {
+      backgroundColor: 'transparent',
+      borderColor: t.border.hairline,
+    },
+    // The selected filter is the inverse well, not a louder fill: a filter that
+    // is on should read as a different object, not as a second call to action
+    // competing with the screen's one salmon element.
+    filterSelected: {
+      backgroundColor: t.depth.abyss,
+      borderColor: t.border.strong,
+    },
+    label: {
+      fontFamily: fontFamilyNative.bold,
+      letterSpacing: letterSpacing.label,
+    },
+    labelIdle: {
+      color: t.text.secondary,
+    },
+    labelSelected: {
+      color: t.text.primary,
+    },
+  });

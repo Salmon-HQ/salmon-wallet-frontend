@@ -20,11 +20,13 @@ import {
   letterSpacing,
   lineHeight,
   s,
-  semantic,
   spacing,
   vs,
+  type Semantic,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
+
+import { useThemedStyles } from '../../theme/useThemedStyles';
 import { StepIndicator } from '../StepIndicator';
 import { IconBubble } from '../IconBubble';
 
@@ -72,6 +74,7 @@ export function ScreenHeader({
   testID,
 }: ScreenHeaderProps) {
   const { t } = useTranslation();
+  const styles = useThemedStyles(stylesFor);
   const Glyph = glyph === 'close' ? XIcon : CaretLeftIcon;
   // The `.pen`'s "Receive header", shared by CORE 03/04/05/10 and every
   // settings sub-screen: the back well and the title on ONE row, the subtitle
@@ -170,80 +173,81 @@ export function ScreenHeader({
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    width: '100%',
-  },
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: contentPadding.screen,
-    height: componentSizes.headerHeight,
-  },
-  backButton: {
-    width: s(BACK_BUBBLE_SIZE),
-    height: s(BACK_BUBBLE_SIZE),
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  // The glyph dims; the well stays, so the target never moves or disappears.
-  backDisabled: {
-    opacity: semantic.state.disabledOpacity,
-  },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  spacer: {
-    width: s(BACK_BUBBLE_SIZE),
-  },
-  titleBlock: {
-    paddingHorizontal: contentPadding.screen,
-    paddingTop: vs(spacing.sm),
-    gap: vs(spacing.xs),
-  },
-  // `.pen` CORE 04 "Send header": `screenTop` under the safe area, the
-  // screen gutter at the sides, 20 of air before the content starts, and a
-  // vertical stack with gap 12 between the navigation row and the subtitle.
-  titledWrapper: {
-    width: '100%',
-    paddingTop: vs(spacing.screenTop),
-    paddingBottom: vs(spacing.xl),
-    paddingHorizontal: s(spacing.screenGutter),
-    gap: vs(spacing.md),
-  },
-  // `.pen` "Send navigation": row, gap 12, `alignItems: center` — the row's
-  // cross-axis centre does the centring, not the title's baseline.
-  titledRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.md),
-  },
-  // The headline role (DESIGN.md §Hierarchy): 24/700; the subtitle steps
-  // with it to 14/500.
-  //
-  // Centring: the mock ("Send navigation", CORE 04) gives the title a text
-  // box exactly as tall as the back well (38) with the glyphs centred inside
-  // it. That is what `titleBox` reproduces — a well-height container that
-  // centres the Text — so iOS and Android land identically, with no
-  // font-metric nudges. The Text keeps its natural line box.
-  titleBox: {
-    flexShrink: 1,
-    height: BACK_BUBBLE_SIZE,
-    justifyContent: 'center',
-  },
-  title: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.headline),
-    letterSpacing: letterSpacing.snug,
-    color: semantic.text.primary,
-    includeFontPadding: false,
-  },
-  subtitle: {
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-    color: semantic.text.secondary,
-  },
-});
+const stylesFor = (tokens: Semantic) =>
+  StyleSheet.create({
+    wrapper: {
+      width: '100%',
+    },
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: contentPadding.screen,
+      height: componentSizes.headerHeight,
+    },
+    backButton: {
+      width: s(BACK_BUBBLE_SIZE),
+      height: s(BACK_BUBBLE_SIZE),
+      alignItems: 'flex-start',
+      justifyContent: 'center',
+    },
+    // The glyph dims; the well stays, so the target never moves or disappears.
+    backDisabled: {
+      opacity: tokens.state.disabledOpacity,
+    },
+    center: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    spacer: {
+      width: s(BACK_BUBBLE_SIZE),
+    },
+    titleBlock: {
+      paddingHorizontal: contentPadding.screen,
+      paddingTop: vs(spacing.sm),
+      gap: vs(spacing.xs),
+    },
+    // `.pen` CORE 04 "Send header": `screenTop` under the safe area, the
+    // screen gutter at the sides, 20 of air before the content starts, and a
+    // vertical stack with gap 12 between the navigation row and the subtitle.
+    titledWrapper: {
+      width: '100%',
+      paddingTop: vs(spacing.screenTop),
+      paddingBottom: vs(spacing.xl),
+      paddingHorizontal: s(spacing.screenGutter),
+      gap: vs(spacing.md),
+    },
+    // `.pen` "Send navigation": row, gap 12, `alignItems: center` — the row's
+    // cross-axis centre does the centring, not the title's baseline.
+    titledRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.md),
+    },
+    // The headline role (DESIGN.md §Hierarchy): 24/700; the subtitle steps
+    // with it to 14/500.
+    //
+    // Centring: the mock ("Send navigation", CORE 04) gives the title a text
+    // box exactly as tall as the back well (38) with the glyphs centred inside
+    // it. That is what `titleBox` reproduces — a well-height container that
+    // centres the Text — so iOS and Android land identically, with no
+    // font-metric nudges. The Text keeps its natural line box.
+    titleBox: {
+      flexShrink: 1,
+      height: BACK_BUBBLE_SIZE,
+      justifyContent: 'center',
+    },
+    title: {
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.headline),
+      letterSpacing: letterSpacing.snug,
+      color: tokens.text.primary,
+      includeFontPadding: false,
+    },
+    subtitle: {
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      color: tokens.text.secondary,
+    },
+  });

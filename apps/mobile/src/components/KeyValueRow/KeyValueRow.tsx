@@ -14,23 +14,24 @@ import {
   fontSize,
   lineHeight,
   s,
-  semantic,
   spacing,
   tabularNums,
+  type Semantic,
 } from '@salmon/shared';
 
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import type { KeyValueRowProps, KeyValueTone } from './types';
 
 // `tabularNums.native` types its array as readonly; RN's TextStyle wants a
 // mutable one, so the spread is the copy that satisfies it.
 const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 
-const VALUE_INK: Record<KeyValueTone, string> = {
-  primary: semantic.text.primary,
-  success: semantic.status.success,
-  danger: semantic.status.danger,
-  secondary: semantic.text.secondary,
-};
+const valueInkFor = (t: Semantic): Record<KeyValueTone, string> => ({
+  primary: t.text.primary,
+  success: t.status.success,
+  danger: t.status.danger,
+  secondary: t.text.secondary,
+});
 
 export function KeyValueRow({
   label,
@@ -41,6 +42,9 @@ export function KeyValueRow({
   style,
   testID,
 }: KeyValueRowProps) {
+  const styles = useThemedStyles(stylesFor);
+  const valueInk = valueInkFor(useSemantic());
+
   return (
     <View style={[styles.row, style]} testID={testID}>
       <Text
@@ -52,7 +56,7 @@ export function KeyValueRow({
       <View style={styles.valueGroup}>
         {typeof value === 'string' ? (
           <Text
-            style={[styles.value, { color: VALUE_INK[valueTone] }]}
+            style={[styles.value, { color: valueInk[valueTone] }]}
             maxFontSizeMultiplier={fontScaleCap.dense}
             numberOfLines={1}
           >
@@ -67,34 +71,35 @@ export function KeyValueRow({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: s(spacing.md),
-  },
-  label: {
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-    color: semantic.text.secondary,
-  },
-  labelEmphasised: {
-    fontFamily: fontFamilyNative.semiBold,
-  },
-  valueGroup: {
-    flexShrink: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-  },
-  value: {
-    flexShrink: 1,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-    textAlign: 'right',
-    ...TABULAR,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: s(spacing.md),
+    },
+    label: {
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      color: t.text.secondary,
+    },
+    labelEmphasised: {
+      fontFamily: fontFamilyNative.semiBold,
+    },
+    valueGroup: {
+      flexShrink: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+    },
+    value: {
+      flexShrink: 1,
+      fontFamily: fontFamilyNative.bold,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      textAlign: 'right',
+      ...TABULAR,
+    },
+  });

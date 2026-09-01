@@ -12,9 +12,11 @@ import {
   spacing,
   fontSize,
   letterSpacing,
-  semantic,
+  type Semantic,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
+
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 
 interface TextButtonProps extends Testable {
   onPress: () => void;
@@ -38,6 +40,8 @@ export function TextButton({
   testID,
 }: TextButtonProps) {
   const isDisabled = disabled || loading;
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
 
   return (
     <TouchableOpacity
@@ -51,7 +55,7 @@ export function TextButton({
       style={[styles.button, isDisabled && styles.disabled, style]}
     >
       {loading ? (
-        <ActivityIndicator color={color || semantic.text.accent} />
+        <ActivityIndicator color={color || text.accent} />
       ) : (
         <>
           {icon}
@@ -62,22 +66,23 @@ export function TextButton({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    height: componentSizes.buttonHeightSmall,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.lg,
-  },
-  disabled: {
-    opacity: semantic.state.disabledOpacity,
-  },
-  text: {
-    color: semantic.text.accent,
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: fontSize.body,
-    letterSpacing: letterSpacing.normal,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    button: {
+      height: componentSizes.buttonHeightSmall,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.lg,
+    },
+    disabled: {
+      opacity: t.state.disabledOpacity,
+    },
+    text: {
+      color: t.text.accent,
+      fontFamily: fontFamilyNative.semiBold,
+      fontSize: fontSize.body,
+      letterSpacing: letterSpacing.normal,
+    },
+  });

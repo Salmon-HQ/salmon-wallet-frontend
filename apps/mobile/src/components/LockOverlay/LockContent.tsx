@@ -17,10 +17,10 @@ import {
   borderWidth,
   componentSizes,
   s,
-  semantic,
   useUnlockThrottle,
   FLOAT_DELAY_MS,
   FLOAT_IN_MS,
+  type Semantic,
 } from '@salmon/shared';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -38,6 +38,7 @@ import {
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 
+import { useSemantic, useThemeMode, useThemedStyles } from '../../theme/useThemedStyles';
 import { useWaitPassage } from '../../utils/useWaitPassage';
 import { PrimaryButton, TextButton } from '../Button';
 import { DepthBackground } from '../DepthBackground';
@@ -87,6 +88,9 @@ export function LockContent({
   biometric,
 }: LockContentProps) {
   const { t } = useTranslation();
+  const mode = useThemeMode();
+  const semantic = useSemantic();
+  const styles = useThemedStyles(stylesFor);
 
   // Extract biometric properties
   const biometricState = biometric?.state;
@@ -417,7 +421,9 @@ export function LockContent({
 
   return (
     <>
-      <StatusBar style="light" />
+      {/* The bar's glyphs are the inverse of the ground under them, and the
+          lock's ground is the app's own water. */}
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       {/*
         The lock carries the water column (DESIGN.md §the lock screen): the
         same ground the swap task modal mounts — depth ramp, deep-field
@@ -575,56 +581,57 @@ export function LockContent({
 // Styles
 // ============================================================================
 
-const styles = StyleSheet.create({
-  /** The water column's host — the one layer of this screen that never moves. */
-  ground: {
-    flex: 1,
-    backgroundColor: semantic.depth.column,
-  },
-  /** The form's travel frame for the passage into and out of the wait. */
-  passage: {
-    flex: 1,
-  },
-  inputContainer: {
-    width: '100%',
-  },
-  forgotRow: {
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  /**
-   * The system input, not a variant of it. The field used to sit at
-   * `borderRadius.badge` (9) with a scaled 54pt height — its own control
-   * shape, on the one screen a returning user sees most.
-   */
-  input: {
-    width: '100%',
-    height: componentSizes.inputHeight,
-    backgroundColor: semantic.input.ground,
-    borderWidth: borderWidth.sheet,
-    borderRadius: componentSizes.inputRadius,
-    paddingHorizontal: spacing.lg,
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.bodyLg),
-  },
-  errorText: {
-    color: semantic.status.danger,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.caption),
-    lineHeight: fontSize.caption * lineHeight.normal,
-    textAlign: 'center',
-  },
-  /**
-   * The error's shape in the warning ink — a message, not a card. The full
-   * WarningNotice is ~94pt against the assist band's 60, and a card that
-   * overflows its band moves the very controls the grid exists to pin.
-   */
-  throttleText: {
-    color: semantic.status.warning,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.caption),
-    lineHeight: fontSize.caption * lineHeight.normal,
-    textAlign: 'center',
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    /** The water column's host — the one layer of this screen that never moves. */
+    ground: {
+      flex: 1,
+      backgroundColor: t.depth.column,
+    },
+    /** The form's travel frame for the passage into and out of the wait. */
+    passage: {
+      flex: 1,
+    },
+    inputContainer: {
+      width: '100%',
+    },
+    forgotRow: {
+      alignItems: 'center',
+      marginTop: spacing.sm,
+    },
+    /**
+     * The system input, not a variant of it. The field used to sit at
+     * `borderRadius.badge` (9) with a scaled 54pt height — its own control
+     * shape, on the one screen a returning user sees most.
+     */
+    input: {
+      width: '100%',
+      height: componentSizes.inputHeight,
+      backgroundColor: t.input.ground,
+      borderWidth: borderWidth.sheet,
+      borderRadius: componentSizes.inputRadius,
+      paddingHorizontal: spacing.lg,
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.bodyLg),
+    },
+    errorText: {
+      color: t.status.danger,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      lineHeight: fontSize.caption * lineHeight.normal,
+      textAlign: 'center',
+    },
+    /**
+     * The error's shape in the warning ink — a message, not a card. The full
+     * WarningNotice is ~94pt against the assist band's 60, and a card that
+     * overflows its band moves the very controls the grid exists to pin.
+     */
+    throttleText: {
+      color: t.status.warning,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.caption),
+      lineHeight: fontSize.caption * lineHeight.normal,
+      textAlign: 'center',
+    },
+  });

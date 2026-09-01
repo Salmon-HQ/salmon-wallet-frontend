@@ -7,8 +7,18 @@
  */
 import React from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
-import { borderRadius, fontFamilyNative, fontSize, ms, s, semantic, spacing, vs } from '@salmon/shared';
+import {
+  borderRadius,
+  fontFamilyNative,
+  fontSize,
+  ms,
+  s,
+  spacing,
+  vs,
+  type Semantic,
+} from '@salmon/shared';
 
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { MagnifyingGlassIcon } from '../../icons';
 import type { SearchFieldProps } from './types';
 
@@ -23,16 +33,19 @@ export function SearchField({
   style,
   testID,
 }: SearchFieldProps) {
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
+
   return (
     <View style={[styles.pill, style]}>
-      <MagnifyingGlassIcon size={ms(GLYPH_SIZE)} color={semantic.text.secondary} />
+      <MagnifyingGlassIcon size={ms(GLYPH_SIZE)} color={text.secondary} />
       <TextInput
         testID={testID}
         style={styles.input}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={semantic.text.tertiary}
+        placeholderTextColor={text.tertiary}
         autoCapitalize="none"
         autoCorrect={false}
         returnKeyType="search"
@@ -42,21 +55,22 @@ export function SearchField({
   );
 }
 
-const styles = StyleSheet.create({
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-    paddingHorizontal: s(spacing.lg),
-    height: vs(44),
-    borderRadius: borderRadius.full,
-    backgroundColor: semantic.surface.raised,
-  },
-  input: {
-    flex: 1,
-    padding: 0,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.mono),
-    color: semantic.text.primary,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    pill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+      paddingHorizontal: s(spacing.lg),
+      height: vs(44),
+      borderRadius: borderRadius.full,
+      backgroundColor: t.surface.raised,
+    },
+    input: {
+      flex: 1,
+      padding: 0,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: s(fontSize.mono),
+      color: t.text.primary,
+    },
+  });

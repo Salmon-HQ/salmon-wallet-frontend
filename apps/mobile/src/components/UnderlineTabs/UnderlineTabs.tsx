@@ -31,11 +31,12 @@ import {
   lineHeight,
   motionMs,
   s,
-  semantic,
   spacing,
   vs,
+  type Semantic,
 } from '@salmon/shared';
 
+import { useSemantic, useThemedStyles } from '../../theme/useThemedStyles';
 import { timing } from '../../utils/motion';
 import type { UnderlineTabsProps, UnderlineTabsSize } from './types';
 
@@ -94,6 +95,8 @@ const UnderlineTab: React.FC<UnderlineTabProps> = ({
   onLayoutMeasured,
   onPress,
 }) => {
+  const styles = useThemedStyles(stylesFor);
+  const { text } = useSemantic();
   const progress = useSharedValue(isActive ? 1 : 0);
 
   useEffect(() => {
@@ -101,11 +104,7 @@ const UnderlineTab: React.FC<UnderlineTabProps> = ({
   }, [isActive, isReduceMotionEnabled, progress]);
 
   const animatedTextStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(
-      progress.value,
-      [0, 1],
-      [semantic.text.secondary, semantic.text.primary]
-    ),
+    color: interpolateColor(progress.value, [0, 1], [text.secondary, text.primary]),
     // fontFamily cannot interpolate — the weight switches at the crossfade's
     // midpoint, timed alongside the color it lands with.
     fontFamily: progress.value > 0.5 ? fontFamilyNative.bold : fontFamilyNative.semiBold,
@@ -158,6 +157,7 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
   style,
   testID,
 }) => {
+  const styles = useThemedStyles(stylesFor);
   const isReduceMotionEnabled = useReducedMotion();
   const metrics = SIZES[size];
 
@@ -227,27 +227,28 @@ export const UnderlineTabs: React.FC<UnderlineTabsProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  tabs: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    position: 'relative',
-    paddingBottom: vs(spacing.xxs) + vs(UNDERLINE_HEIGHT),
-  },
-  tab: {
-    alignItems: 'center',
-  },
-  uppercase: {
-    textTransform: 'uppercase',
-  },
-  underline: {
-    position: 'absolute',
-    left: 0,
-    bottom: 0,
-    height: vs(UNDERLINE_HEIGHT),
-    borderRadius: borderRadius.r1,
-    backgroundColor: semantic.accent.fill,
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    tabs: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      position: 'relative',
+      paddingBottom: vs(spacing.xxs) + vs(UNDERLINE_HEIGHT),
+    },
+    tab: {
+      alignItems: 'center',
+    },
+    uppercase: {
+      textTransform: 'uppercase',
+    },
+    underline: {
+      position: 'absolute',
+      left: 0,
+      bottom: 0,
+      height: vs(UNDERLINE_HEIGHT),
+      borderRadius: borderRadius.r1,
+      backgroundColor: t.accent.fill,
+    },
+  });
 
 export default UnderlineTabs;

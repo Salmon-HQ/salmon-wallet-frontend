@@ -30,3 +30,25 @@ export const moderateScale = (size: number): number => size;
 export const ms = moderateScale;
 export const moderateVerticalScale = (size: number): number => size;
 export const mvs = moderateVerticalScale;
+
+/**
+ * The theme context, for components that read the active mode.
+ *
+ * `useThemedStyles` / `useSemantic` go through `useTheme`, so a mock of the
+ * `@salmon/shared` barrel that carries the tokens but not the provider makes
+ * every migrated component throw "useTheme must be used within a
+ * ThemeProvider" — an error about the mock, not about the component. The
+ * module is imported by path rather than through the barrel for the same
+ * reason the tokens are: the barrel drags `@solana/kit` in with it.
+ *
+ * Pair with `renderWithTheme` (below in this folder) to mount the provider.
+ */
+export {
+  ThemeContext,
+  ThemeProvider,
+  useTheme,
+} from '../../../packages/shared/src/contexts/ThemeContext';
+export type {
+  ThemePreference,
+  SystemScheme,
+} from '../../../packages/shared/src/contexts/ThemeContext';

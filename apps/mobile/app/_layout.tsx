@@ -2,13 +2,18 @@
 // This ensures they're available BEFORE expo-router loads any modules
 
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, ThemeProvider } from '@react-navigation/native';
-import { semantic } from '@salmon/shared';
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider as NavigationThemeProvider,
+} from '@react-navigation/native';
+import { createSemantic, type ThemeMode } from '@salmon/shared';
 import { useFonts } from 'expo-font';
+import { StatusBar } from 'expo-status-bar';
 import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, AppState, type AppStateStatus } from 'react-native';
+import { View, StyleSheet, AppState, useColorScheme, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -27,6 +32,8 @@ import {
   BridgeSettlementProvider,
   PendingTransactionsProvider,
   usePendingActivity,
+  ThemeProvider,
+  useTheme,
 } from '@salmon/shared';
 
 export {
@@ -44,6 +51,13 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [queryClient] = useState(() => createQueryClient());
+  // The OS reader lives here: `packages/shared` stays runtime-agnostic, so the
+  // platform's colour scheme is passed in rather than looked up inside the
+  // provider. Under the 'system' preference this is what picks the mode.
+  // React Native reports a third value, 'unspecified', for a platform that
+  // cannot tell; the provider's own "cannot tell" is `null`, which falls back
+  // to deep water.
+  const systemScheme = useColorScheme();
   const [loaded, error] = useFonts({
     DMSansRegular: require('@salmon/assets/src/fonts/DMSans-Regular.ttf'),
     DMSansMedium: require('@salmon/assets/src/fonts/DMSans-Medium.ttf'),
@@ -74,7 +88,9 @@ export default function RootLayout() {
         <PendingTransactionsProvider>
           <AccountsProvider>
             <CurrencyProvider>
-              <RootLayoutNav />
+              <ThemeProvider systemScheme={systemScheme === 'unspecified' ? null : systemScheme}>
+                <RootLayoutNav />
+              </ThemeProvider>
             </CurrencyProvider>
           </AccountsProvider>
         </PendingTransactionsProvider>
@@ -83,18 +99,53 @@ export default function RootLayout() {
   );
 }
 
-// Custom dark theme with app background color matching header
-const CustomDarkTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    background: 'transparent', // Transparent to let layout backgrounds show through
-    card: semantic.depth.abyss,
-  },
-};
+/**
+ * The navigator's own palette, derived from the mode.
+ *
+ * React Navigation keeps its theme in a plain object, so it cannot read the
+ * token hook — it is handed a value instead, rebuilt whenever the mode
+ * changes. Two of these colours are deliberately not the mapping the spec
+ * table suggests, and both deviations are structural rather than chromatic:
+ *
+ * - `background` stays `'transparent'` in both modes. The ground is painted by
+ *   the layouts (`DepthBackground`), and an opaque navigator background would
+ *   sit in front of it.
+ * - `card` is `depth.abyss`, the value the dark theme has shipped, rather than
+ *   `surface.raised`. It is the plane behind a screen during a transition —
+ *   the deepest ground, not a card — and in light it resolves to the light
+ *   ramp's own deepest step.
+ *
+ * Everything else follows the tokens. Dark is byte-for-byte what
+ * `CustomDarkTheme` was, plus the four colours it left at React Navigation's
+ * defaults (`text`, `border`, `primary`, `notification`) — every screen sets
+ * `headerShown: false`, so those four have no live consumer today and naming
+ * them costs nothing but makes the light theme complete.
+ */
+function navigationTheme(mode: ThemeMode) {
+  const t = createSemantic(mode);
+  const base = mode === 'dark' ? DarkTheme : DefaultTheme;
+
+  return {
+    ...base,
+    dark: mode === 'dark',
+    colors: {
+      ...base.colors,
+      background: 'transparent',
+      card: t.depth.abyss,
+      text: t.text.primary,
+      border: t.border.default,
+      primary: t.accent.ink,
+      notification: t.accent.ink,
+    },
+  };
+}
 
 function RootLayoutNav() {
-  // Always use dark theme for the wallet app
+  const { mode } = useTheme();
+  const navTheme = navigationTheme(mode);
+  // The bar's glyphs are the inverse of the ground under them: light glyphs on
+  // deep water, dark ones on the pale ground.
+  const barStyle = mode === 'dark' ? 'light' : 'dark';
   const [state, actions] = useAccountsContext();
   const segments = useSegments();
   const navigationState = useRootNavigationState();
@@ -226,18 +277,20 @@ function RootLayoutNav() {
   if (initFailed) {
     return (
       <I18nProvider>
-        <ThemeProvider value={CustomDarkTheme}>
+        <NavigationThemeProvider value={navTheme}>
+          <StatusBar style={barStyle} />
           <View style={styles.container}>
             <WalletInitErrorScreen onRetry={actions.retryInit} />
           </View>
-        </ThemeProvider>
+        </NavigationThemeProvider>
       </I18nProvider>
     );
   }
 
   return (
     <I18nProvider>
-      <ThemeProvider value={CustomDarkTheme}>
+      <NavigationThemeProvider value={navTheme}>
+        <StatusBar style={barStyle} />
         {/* One gesture root for the whole app: every GestureDetector (balance
             chain swipe, sheets) resolves to this instead of carrying its own. */}
         <GestureHandlerRootView style={styles.container}>
@@ -268,7 +321,7 @@ function RootLayoutNav() {
             </View>
           </SafeAreaProvider>
         </GestureHandlerRootView>
-      </ThemeProvider>
+      </NavigationThemeProvider>
     </I18nProvider>
   );
 }

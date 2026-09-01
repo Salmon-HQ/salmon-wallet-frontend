@@ -152,6 +152,69 @@ describe('contrast: the membrane tiers over the water column', () => {
   }
 });
 
+/**
+ * The card material on a light ground.
+ *
+ * The dark block above measures a deep-neutral membrane against the water
+ * column; the light one is the same test with the ink inverted — white at high
+ * alpha over `depth.column`, which is the only ground a light card ever sits
+ * on (the water ramp is dark-only until the material's own pass). Body text
+ * has to clear AA on both tiers, and the tiers have to stay distinguishable
+ * from the ground they float over, or a card stops reading as an object.
+ */
+describe('contrast: the membrane tiers on a light ground', () => {
+  const light = createSemantic('light');
+
+  for (const [tier, tierValue] of [
+    ['membraneThin', light.surface.membraneThin],
+    ['membraneThick', light.surface.membraneThick],
+  ] as const) {
+    const ground = compositeOver(tierValue, light.depth.column);
+
+    it(`text.primary meets AA on ${tier}`, () => {
+      expect(contrast(light.text.primary, ground)).toBeGreaterThanOrEqual(AA_TEXT);
+    });
+
+    it(`text.secondary meets AA on ${tier}`, () => {
+      expect(contrast(light.text.secondary, ground)).toBeGreaterThanOrEqual(AA_TEXT);
+    });
+  }
+});
+
+/**
+ * The coral deep field — the one part of the underwater material that crosses
+ * into light (owner, 2026-09-01).
+ *
+ * Same two bounds the dark field is held to, on the other ground: visible on a
+ * real display, and under the decorative ceiling so it can be painted behind
+ * type without becoming a data channel. The alpha is doubled because light
+ * neutrals sit at the compressed end of the luminance curve — 0.03 coral on
+ * `neutral-25` lands on the floor rather than above it.
+ */
+describe('contrast: the coral deep field on a light ground', () => {
+  const light = createSemantic('light');
+  const field = compositeOver(light.scales.deepFieldStroke, light.depth.column);
+
+  it('stays under the decorative ceiling', () => {
+    expect(contrast(field, light.depth.column)).toBeLessThan(MOTIF_CEILING);
+  });
+
+  it('clears the visibility floor', () => {
+    expect(contrast(field, light.depth.column)).toBeGreaterThanOrEqual(1.03);
+  });
+
+  it('is still under the ceiling at the floor it fades to', () => {
+    const [r, g, b, alpha] = light.scales.deepFieldStroke
+      .match(/rgba\((\d+), (\d+), (\d+), ([\d.]+)\)/)!
+      .slice(1)
+      .map(Number);
+    const faded = `rgba(${r}, ${g}, ${b}, ${alpha * light.scales.deepFieldFloor})`;
+    expect(contrast(compositeOver(faded, light.depth.column), light.depth.column)).toBeLessThan(
+      MOTIF_CEILING
+    );
+  });
+});
+
 describe.each(MODES)('contrast: the salmon fill rule (%s)', (_mode, tokens) => {
   it('allows text.onAccent on a salmon fill', () => {
     expect(contrast(tokens.text.onAccent, tokens.accent.fill)).toBeGreaterThanOrEqual(AA_TEXT);
@@ -179,7 +242,7 @@ describe.each(MODES)('contrast: the salmon fill rule (%s)', (_mode, tokens) => {
  *
  * The fills are the `*-700` steps, and `text.primary` is what they carry.
  */
-describe.each(MODES)('contrast: the status fill rule (%s)', (mode, tokens) => {
+describe.each(MODES)('contrast: the status fill rule (%s)', (_mode, tokens) => {
   const fills = [
     ['success', tokens.status.successFill],
     ['danger', tokens.status.dangerFill],
@@ -190,10 +253,10 @@ describe.each(MODES)('contrast: the status fill rule (%s)', (mode, tokens) => {
    * The ink a status fill carries. The fills are invariant `700` steps, so in
    * both modes the label on one is *light* ink — in light mode that is **not**
    * `text.primary`, which is `neutral-850` there and measures 2.69:1 on the
-   * success fill. There is no `status.onFill` token yet; the light mobile
-   * migration has to reach for `neutral-50` explicitly (spec 021 open item).
+   * success fill. `status.onFill` is that ink, invariant like the fills, and
+   * this is the assertion that keeps the pair legible in both modes.
    */
-  const fillInk = mode === 'dark' ? tokens.text.primary : neutral[50];
+  const fillInk = tokens.status.onFill;
 
   for (const [name, fill] of fills) {
     it(`the destructive label meets AA on the ${name} fill`, () => {
