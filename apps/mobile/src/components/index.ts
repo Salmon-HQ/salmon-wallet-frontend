@@ -32,6 +32,9 @@ export type { ChipGroupProps, ChipOption, ChipProps, ChipSize, ChipVariant } fro
 export { SectionLabel } from './SectionLabel';
 export type { SectionLabelProps, SectionLabelVariant } from './SectionLabel';
 
+export { StateBlock } from './StateBlock';
+export type { StateBlockProps, StateBlockTone } from './StateBlock';
+
 export { PowerupBadge } from './PowerupBadge';
 export type { PowerupBadgeProps, PowerupTier } from './PowerupBadge';
 

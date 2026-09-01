@@ -22,7 +22,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
   Animated,
   LayoutChangeEvent,
   NativeScrollEvent,
@@ -30,16 +29,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 
 import {
-  borderRadius,
   colors,
   componentSizes,
-  fontFamilyNative,
   fontSize,
   s,
   spacing,
@@ -67,6 +63,7 @@ import {
   PortfolioSubTabs,
   PriceChart,
   ReceiveSheet,
+  StateBlock,
   TokenAbout,
   TokenList,
   TokenListItem,
@@ -610,30 +607,20 @@ export default function HomeScreen() {
   const ListEmptyComponent = useMemo(
     () =>
       balanceState === 'error' ? (
-        <View style={styles.emptyState} testID="token-list-error">
-          <Text style={styles.emptyStateText}>
-            {t('wallet.tokens_load_error', "Your tokens couldn't be loaded right now.")}
-          </Text>
-          <TouchableOpacity
-            onPress={refresh}
-            accessibilityRole="button"
-            testID="token-list-retry-button"
-          >
-            <Text style={styles.retryText}>{t('actions.retry', 'Retry')}</Text>
-          </TouchableOpacity>
-        </View>
+        <StateBlock
+          tone="error"
+          testID="token-list-error"
+          title={t('wallet.tokens_load_error', "Your tokens couldn't be loaded right now.")}
+          onRetry={refresh}
+          retryLabel={t('actions.retry', 'Retry')}
+          retryTestID="token-list-retry-button"
+        />
       ) : (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>
-            {t('wallet.no_tokens_found', 'No tokens found')}
-          </Text>
-          <Text style={styles.emptyStateSubtext}>
-            {t(
-              'wallet.tokens_empty_subtitle',
-              'Your tokens will appear here once you receive some'
-            )}
-          </Text>
-        </View>
+        <StateBlock
+          tone="empty"
+          title={t('wallet.no_tokens_found', 'No tokens found')}
+          body={t('wallet.tokens_empty_subtitle', 'Your tokens will appear here once you receive some')}
+        />
       ),
     [balanceState, refresh, t]
   );
@@ -641,11 +628,15 @@ export default function HomeScreen() {
   // Loading state - wait for hook to be ready
   // Note: If we're on this screen, the lock overlay has been
   // dismissed, which means unlock succeeded and accounts should be loaded
+  // DESIGN.md §Sheets: the loading state is the `ContentLoader` pulse rather
+  // than a spinner. The screen below (once `ready`) shows this same skeleton
+  // while `balanceState === 'loading'` (see the sub-tabs content further
+  // down), so a bare mount waiting on the accounts hook gets the identical
+  // shape rather than a second, spinner-based idiom for the same wait.
   if (!ready) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.accent.primary} />
-        <Text style={styles.loadingText}>{t('wallet.loading_wallet', 'Loading wallet...')}</Text>
+      <View style={[styles.container, styles.tabGutter]} testID="home-loading">
+        <TokenListSkeleton count={5} />
       </View>
     );
   }
@@ -1007,35 +998,6 @@ const styles = StyleSheet.create({
     top: 0,
     height: componentSizes.sheetFadeGradientHeight,
     zIndex: 1,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing['5xl'],
-    paddingHorizontal: spacing['2xl'],
-    marginHorizontal: spacing.lg,
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.xl,
-  },
-  emptyStateText: {
-    fontSize: fontSize.bodyLg,
-    fontFamily: fontFamilyNative.medium,
-    fontWeight: '500',
-    color: semantic.text.secondary,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  emptyStateSubtext: {
-    fontSize: fontSize.base,
-    color: colors.text.disabled,
-    textAlign: 'center',
-  },
-  retryText: {
-    fontSize: fontSize.base,
-    fontFamily: fontFamilyNative.semiBold,
-    color: colors.accent.primary,
-    textAlign: 'center',
-    paddingVertical: spacing.sm,
   },
   // Bitcoin view styles
   bitcoinCard: {

@@ -3,23 +3,16 @@
  *
  * They are one file because they are the same slot on the same surface, and
  * keeping them out of the sheet leaves that file about the two steps it
- * actually orchestrates.
+ * actually orchestrates. `EmptyState`/`ErrorState` are thin aliases over the
+ * shared `StateBlock` (D9, research-mobile.md §5) — kept here, under these
+ * names, so `activity.tsx` and its tests stay untouched.
  */
 import React from 'react';
-import { View, Text, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import {
-  borderRadius,
-  colors,
-  fontFamilyNative,
-  fontSize,
-  lineHeight,
-  s,
-  semantic,
-  spacing,
-  vs,
-} from '@salmon/shared';
+import { borderRadius, colors, semantic, spacing, vs } from '@salmon/shared';
 import { ContentLoader, Rect } from '@salmon/shared';
+import { StateBlock } from '../StateBlock';
 
 /** The row the skeleton stands in for, at the kit's `ListRow` height. */
 const SKELETON_ROW_HEIGHT = 92;
@@ -78,10 +71,12 @@ export const TransactionListSkeleton: React.FC<{ count?: number }> = ({ count = 
 export const EmptyState: React.FC<{ subtitle?: string }> = ({ subtitle }) => {
   const { t } = useTranslation();
   return (
-    <View style={styles.centred} testID="activity-empty">
-      <Text style={styles.title}>{t('transactions.noTransactions')}</Text>
-      <Text style={styles.body}>{subtitle ?? t('transactions.emptySubtitle')}</Text>
-    </View>
+    <StateBlock
+      tone="empty"
+      testID="activity-empty"
+      title={t('transactions.noTransactions')}
+      body={subtitle ?? t('transactions.emptySubtitle')}
+    />
   );
 };
 
@@ -91,16 +86,13 @@ export const EmptyState: React.FC<{ subtitle?: string }> = ({ subtitle }) => {
 export const ErrorState: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => {
   const { t } = useTranslation();
   return (
-    <View style={styles.centred}>
-      <Text style={styles.title}>{t('transactions.loadError')}</Text>
-      {onRetry && (
-        <TouchableWithoutFeedback onPress={onRetry}>
-          <View style={styles.retryButton} testID="activity-retry-button">
-            <Text style={styles.retryText}>{t('transactions.tapToRetry')}</Text>
-          </View>
-        </TouchableWithoutFeedback>
-      )}
-    </View>
+    <StateBlock
+      tone="error"
+      title={t('transactions.loadError')}
+      onRetry={onRetry}
+      retryLabel={t('transactions.tapToRetry')}
+      retryTestID="activity-retry-button"
+    />
   );
 };
 
@@ -113,36 +105,5 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.r4,
     marginBottom: vs(spacing.md),
     overflow: 'hidden',
-  },
-  centred: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: vs(spacing.md),
-    paddingVertical: vs(spacing['5.5xl']),
-  },
-  title: {
-    fontSize: s(fontSize.heading),
-    lineHeight: s(fontSize.heading) * lineHeight.snug,
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.text.primary,
-  },
-  body: {
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.secondary,
-    textAlign: 'center',
-  },
-  retryButton: {
-    paddingVertical: vs(spacing.md),
-    paddingHorizontal: s(spacing['2xl']),
-    backgroundColor: semantic.accent.fill,
-    borderRadius: borderRadius.r3,
-  },
-  retryText: {
-    fontSize: s(fontSize.body),
-    fontFamily: fontFamilyNative.bold,
-    color: semantic.accent.onFill,
   },
 });

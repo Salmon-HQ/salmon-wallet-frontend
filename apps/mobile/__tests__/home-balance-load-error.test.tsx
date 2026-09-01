@@ -182,6 +182,33 @@ jest.mock('../src/components', () => {
     TokenMarketData: () => <View />,
     TransactionDetailModal: () => null,
     WarningNotice: ({ title }: { title: string }) => <Text>{title}</Text>,
+    // Mirrors the real StateBlock contract closely enough for this suite:
+    // a labelled wrapper, and a pressable retry when one is offered.
+    StateBlock: ({
+      title,
+      body,
+      onRetry,
+      retryLabel,
+      retryTestID,
+      testID,
+    }: {
+      title: string;
+      body?: string;
+      onRetry?: () => void;
+      retryLabel?: string;
+      retryTestID?: string;
+      testID?: string;
+    }) => (
+      <View testID={testID}>
+        <Text>{title}</Text>
+        {body && <Text>{body}</Text>}
+        {onRetry && (
+          <Text testID={retryTestID ?? testID} onPress={onRetry}>
+            {retryLabel}
+          </Text>
+        )}
+      </View>
+    ),
   };
 });
 

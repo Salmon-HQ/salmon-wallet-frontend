@@ -34,6 +34,7 @@ import {
   ScalesBackground,
   ScreenHeader,
   SectionLabel,
+  StateBlock,
   UnderlineTabs,
   SearchField,
 } from '../../src/components';
@@ -126,9 +127,7 @@ export default function PowerupsScreen() {
   );
 
   const emptyState = (key: string) => (
-    <Text testID={`powerups-empty-${key}`} style={styles.empty}>
-      {t('powerups.empty_section')}
-    </Text>
+    <StateBlock testID={`powerups-empty-${key}`} tone="empty" title={t('powerups.empty_section')} />
   );
 
   return (
@@ -351,11 +350,5 @@ const styles = StyleSheet.create({
     fontSize: s(fontSize.caption),
     lineHeight: s(fontSize.caption) * lineHeight.snug,
     color: semantic.text.secondary,
-  },
-  empty: {
-    fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
-    color: semantic.text.tertiary,
   },
 });

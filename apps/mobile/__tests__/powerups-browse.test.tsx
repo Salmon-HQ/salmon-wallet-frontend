@@ -124,6 +124,11 @@ jest.mock('../src/components', () => {
       </View>
     ),
     PowerupBadge: ({ tier }: { tier: string }) => <Text>{`badge:${tier}`}</Text>,
+    StateBlock: ({ testID, title }: { testID?: string; title: string }) => (
+      <View testID={testID}>
+        <Text>{title}</Text>
+      </View>
+    ),
     UnderlineTabs: ({
       tabs,
       activeKey,
