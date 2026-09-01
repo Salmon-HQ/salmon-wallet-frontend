@@ -1,8 +1,13 @@
 import type { ViewStyle } from 'react-native';
 import type { TransactionDetailModalPropsBase } from '@salmon/shared';
 
-// Re-export Transaction for consumers
-export type { Transaction } from '@salmon/shared';
+// Re-export the transaction shapes the detail's variant files consume
+export type {
+  NftAttribute,
+  SwapConversionRate,
+  Transaction,
+  TransactionTokenAmount,
+} from '@salmon/shared';
 
 /**
  * Props for the TransactionDetail component (React Native).

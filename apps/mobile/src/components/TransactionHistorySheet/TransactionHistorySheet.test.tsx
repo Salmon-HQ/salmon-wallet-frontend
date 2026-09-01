@@ -34,22 +34,11 @@ jest.mock('react-native-reanimated', () => {
 });
 
 jest.mock('@salmon/shared', () => ({
+  // The real tokens: the sheet now composes `SectionLabel`, which reads more
+  // of the theme than a hand-listed mock keeps up with.
+  ...jest.requireActual('../../../test-utils/themeTokens'),
   ContentLoader: () => null,
   Rect: () => null,
-  colors: {
-    accent: { primary: '#FF5C45' },
-    background: { tokenItem: '#111' },
-    skeleton: { base: '#222', highlight: '#333' },
-    text: { primary: '#fff', secondary: '#999', tertiary: '#666' },
-  },
-  semantic: { accent: { onFill: '#000' } },
-  borderRadius: { lg: 16 },
-  fontSize: { headline: 20, xl: 18, bodyLg: 16 },
-  fontFamilyNative: { medium: 'System', regular: 'System', semiBold: 'System' },
-  spacing: { sm: 8, md: 12, lg: 16, base: 12, '2xl': 24, '5.5xl': 64, headerPadding: 20 },
-  ms: (v: number) => v,
-  s: (v: number) => v,
-  vs: (v: number) => v,
 }));
 
 jest.mock('../../../hooks/useBottomSheetChrome', () => ({
@@ -126,7 +115,18 @@ jest.mock('./TransactionItem', () => {
 
 import { TransactionHistorySheet } from './TransactionHistorySheet';
 
+/** `Transaction.timestamp` is in seconds — 1 and 2 are 1970, i.e. "Earlier". */
+const TODAY_SECONDS = Date.now() / 1000;
+
 const TRANSACTIONS = [
+  {
+    id: 'tx-0',
+    type: 'receive',
+    status: 'completed',
+    timestamp: TODAY_SECONDS,
+    inputs: [],
+    outputs: [],
+  },
   { id: 'tx-1', type: 'swap', status: 'completed', timestamp: 1, inputs: [], outputs: [] },
   { id: 'tx-2', type: 'send', status: 'completed', timestamp: 2, inputs: [], outputs: [] },
 ] as never;
@@ -190,6 +190,15 @@ describe('TransactionHistorySheet — the detail is a step, not a second sheet',
 
     // Coming back is a step, and a step floats.
     expect(listEntering()).toBe('float');
+  });
+
+  it('introduces each day run with a kit `SectionLabel`', () => {
+    renderSheet();
+
+    // One label per run, in reading order, and the rows sit under their own.
+    expect(screen.getByTestId('activity-group-today')).toBeTruthy();
+    expect(screen.getByTestId('activity-group-earlier')).toBeTruthy();
+    expect(screen.getByTestId('activity-group-today').props.accessibilityRole).toBe('header');
   });
 
   it('reduce motion still swaps the step', () => {

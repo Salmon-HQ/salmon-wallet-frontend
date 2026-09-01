@@ -5,6 +5,7 @@
  * ink. It carried an opaque slate fill, which read as a second filled
  * button competing with the salmon one beside it.
  */
+import type { ReactNode } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
@@ -29,6 +30,13 @@ interface SecondaryButtonProps extends Testable {
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
+  /** Optional glyph before the label. The label stays the accessible name. */
+  icon?: ReactNode;
+  /**
+   * Optional glyph after the label — a caret when the control opens a picker
+   * rather than acting directly.
+   */
+  trailingIcon?: ReactNode;
 }
 
 export function SecondaryButton({
@@ -37,6 +45,8 @@ export function SecondaryButton({
   disabled,
   loading,
   style,
+  icon,
+  trailingIcon,
   testID,
 }: SecondaryButtonProps) {
   const isDisabled = disabled || loading;
@@ -57,7 +67,11 @@ export function SecondaryButton({
       {loading ? (
         <ActivityIndicator color={semantic.text.primary} />
       ) : (
-        <Text style={styles.text}>{children}</Text>
+        <>
+          {icon}
+          <Text style={styles.text}>{children}</Text>
+          {trailingIcon}
+        </>
       )}
       {!isDisabled && <PressSpecular {...specular} />}
     </AnimatedTouchable>
@@ -74,6 +88,8 @@ const styles = StyleSheet.create({
     borderWidth: borderWidth.thin,
     borderColor: semantic.border.raised,
     borderRadius: componentSizes.buttonRadius,
+    flexDirection: 'row',
+    gap: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
     // Clip the press specular to the control's own radius.

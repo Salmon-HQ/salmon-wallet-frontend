@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
-  Text,
-  TouchableWithoutFeedback,
   FlatList,
   StyleSheet,
   ActivityIndicator,
@@ -14,112 +12,38 @@ import {
 } from 'react-native';
 import ReAnimated, { useReducedMotion } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { ContentLoader, Rect } from '@salmon/shared';
-import {
-  colors,
-  ms,
-  vs,
-  s,
-  spacing,
-  fontSize,
-  fontFamilyNative,
-  borderRadius,
-  semantic,
-} from '@salmon/shared';
+import { ms, vs, s, spacing, fontSize, semantic } from '@salmon/shared';
 
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { FLOAT_DELAY_MS, floatEntering, sinkExiting } from '../../utils/sinkAndFloat';
 import { BottomSheetContainer } from '../BottomSheetContainer';
 import { BottomSheetTitleHeader } from '../BottomSheetTitleHeader';
+import { SectionLabel } from '../SectionLabel';
+import { EmptyState, ErrorState, TransactionListSkeleton } from './ActivityStates';
 import { TransactionDetail } from '../TransactionDetail';
 import { TransactionItem } from './TransactionItem';
 import type { TransactionHistorySheetProps, Transaction } from './types';
 
 // ============================================================================
-// Skeleton Components
+// Day grouping
 // ============================================================================
 
-/**
- * Skeleton loader for a single transaction item
- * Matches the new TransactionItem layout with type badge and source badge
- */
-const TransactionItemSkeleton: React.FC = () => {
-  return (
-    <View style={styles.skeletonContainer}>
-      <ContentLoader
-        speed={1.5}
-        width="100%"
-        height={92}
-        backgroundColor={colors.skeleton.base}
-        foregroundColor={colors.skeleton.highlight}
-      >
-        {/* Token logo (main) */}
-        <Rect x="18" y="26" rx="20" ry="20" width="40" height="40" />
-        {/* Type badge on logo */}
-        <Rect x="46" y="22" rx="9" ry="9" width="18" height="18" />
+/** The two runs CORE 08 draws above the activity list. */
+type ActivityGroup = 'today' | 'earlier';
 
-        {/* Type label */}
-        <Rect x="72" y="26" rx="4" ry="4" width="70" height="16" />
-        {/* Source badge */}
-        <Rect x="148" y="27" rx="4" ry="4" width="50" height="14" />
-        {/* Description */}
-        <Rect x="72" y="50" rx="4" ry="4" width="100" height="14" />
-
-        {/* Amount line 1 (right side) */}
-        <Rect x="75%" y="24" rx="4" ry="4" width="25%" height="14" />
-        {/* Amount line 2 (right side) */}
-        <Rect x="78%" y="42" rx="4" ry="4" width="22%" height="14" />
-        {/* Time (right side) */}
-        <Rect x="85%" y="62" rx="4" ry="4" width="15%" height="12" />
-      </ContentLoader>
-    </View>
-  );
+const GROUP_LABEL_KEYS: Record<ActivityGroup, string> = {
+  today: 'transactions.groupToday',
+  earlier: 'transactions.groupEarlier',
 };
 
 /**
- * Skeleton loader for multiple transaction items
+ * One entry in the flat list: a day label, or a transaction. The labels ride
+ * in the same `FlatList` as the rows so pagination, the scroll offset the top
+ * fade reads, and the footer all keep working unchanged.
  */
-const TransactionListSkeleton: React.FC<{ count?: number }> = ({ count = 5 }) => {
-  return (
-    <View style={styles.skeletonList}>
-      {Array.from({ length: count }).map((_, index) => (
-        <TransactionItemSkeleton key={`skeleton-${index}`} />
-      ))}
-    </View>
-  );
-};
-
-/**
- * Empty state when no transactions
- */
-const EmptyState: React.FC = () => {
-  const { t } = useTranslation();
-  return (
-    <View style={styles.emptyContainer} testID="activity-empty">
-      <Text style={styles.emptyTitle}>{t('transactions.noTransactions')}</Text>
-      <Text style={styles.emptySubtitle}>{t('transactions.emptySubtitle')}</Text>
-    </View>
-  );
-};
-
-/**
- * Error state with retry option
- */
-const ErrorState: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => {
-  const { t } = useTranslation();
-  return (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorTitle}>{t('transactions.loadError')}</Text>
-      {onRetry && (
-        <TouchableWithoutFeedback onPress={onRetry}>
-          <View style={styles.retryButton} testID="activity-retry-button">
-            <Text style={styles.retryText}>{t('transactions.tapToRetry')}</Text>
-          </View>
-        </TouchableWithoutFeedback>
-      )}
-    </View>
-  );
-};
+type ActivityRow =
+  | { kind: 'header'; key: string; group: ActivityGroup }
+  | { kind: 'transaction'; key: string; transaction: Transaction };
 
 // ============================================================================
 // Main Component
@@ -245,16 +169,52 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
     }
   }, [loadingMore, hasMore, onLoadMore]);
 
-  // Render individual transaction item
-  const renderTransaction = useCallback(
-    ({ item }: { item: Transaction }) => (
-      <TransactionItem
-        transaction={item}
-        onPress={handleTransactionPress}
-        hiddenBalance={hiddenBalance}
-      />
-    ),
-    [handleTransactionPress, hiddenBalance]
+  // The list is grouped by day, as CORE 08 draws it: one "Today" run and one
+  // "Earlier" run, each introduced by a `SectionLabel`. The rows arrive
+  // newest-first, so a single pass over them is enough — no sort, no
+  // SectionList, and the group label is just another row in the same list.
+  const rows = useMemo<ActivityRow[]>(() => {
+    const midnight = new Date();
+    midnight.setHours(0, 0, 0, 0);
+    // `Transaction.timestamp` is in seconds (see `formatRelativeTimeCompact`).
+    const startOfTodaySeconds = midnight.getTime() / 1000;
+
+    const items: ActivityRow[] = [];
+    let openGroup: ActivityGroup | null = null;
+
+    for (const transaction of transactions) {
+      const group: ActivityGroup =
+        transaction.timestamp >= startOfTodaySeconds ? 'today' : 'earlier';
+      if (group !== openGroup) {
+        openGroup = group;
+        items.push({ kind: 'header', key: `activity-group-${group}`, group });
+      }
+      items.push({ kind: 'transaction', key: transaction.id, transaction });
+    }
+
+    return items;
+  }, [transactions]);
+
+  // Render one row: a day label, or a transaction
+  const renderRow = useCallback(
+    ({ item }: { item: ActivityRow }) => {
+      if (item.kind === 'header') {
+        return (
+          <SectionLabel variant="group" testID={item.key} style={styles.groupLabel}>
+            {t(GROUP_LABEL_KEYS[item.group])}
+          </SectionLabel>
+        );
+      }
+
+      return (
+        <TransactionItem
+          transaction={item.transaction}
+          onPress={handleTransactionPress}
+          hiddenBalance={hiddenBalance}
+        />
+      );
+    },
+    [handleTransactionPress, hiddenBalance, t]
   );
 
   // Render footer (loading more indicator)
@@ -262,7 +222,7 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
     if (!loadingMore) return null;
     return (
       <View style={styles.loadingMoreContainer}>
-        <ActivityIndicator size="small" color={colors.accent.primary} />
+        <ActivityIndicator size="small" color={semantic.accent.fill} />
       </View>
     );
   }, [loadingMore]);
@@ -314,9 +274,9 @@ export const TransactionHistorySheet: React.FC<TransactionHistorySheetProps> = (
               {!loading && !error && transactions.length > 0 && (
                 <FlatList
                   testID="activity-list"
-                  data={transactions}
-                  renderItem={renderTransaction}
-                  keyExtractor={(item) => item.id}
+                  data={rows}
+                  renderItem={renderRow}
+                  keyExtractor={(item) => item.key}
                   contentContainerStyle={[
                     styles.listContent,
                     { paddingBottom: standardContentBottomPadding },
@@ -370,63 +330,14 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: s(spacing.headerPadding),
+    paddingHorizontal: s(spacing.screenGutter),
+  },
+  /** The day label introduces the run under it, not the row above it. */
+  groupLabel: {
+    marginBottom: vs(spacing.sm),
   },
   listContent: {
     flexGrow: 1,
-  },
-  // Skeleton styles
-  skeletonList: {
-    paddingTop: vs(spacing.sm),
-  },
-  skeletonContainer: {
-    backgroundColor: colors.background.tokenItem,
-    borderRadius: borderRadius.lg,
-    marginBottom: vs(spacing.md),
-    overflow: 'hidden',
-  },
-  // Empty state styles
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: vs(spacing['5.5xl']),
-  },
-  emptyTitle: {
-    fontSize: ms(fontSize.xl),
-    fontFamily: fontFamilyNative.medium,
-    color: colors.text.primary,
-    marginBottom: vs(spacing.base),
-  },
-  emptySubtitle: {
-    fontSize: ms(fontSize.bodyLg),
-    fontFamily: fontFamilyNative.regular,
-    color: colors.text.secondary,
-    textAlign: 'center',
-  },
-  // Error state styles
-  errorContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: vs(spacing['5.5xl']),
-  },
-  errorTitle: {
-    fontSize: ms(fontSize.xl),
-    fontFamily: fontFamilyNative.medium,
-    color: colors.text.primary,
-    marginBottom: vs(spacing.base),
-  },
-  retryButton: {
-    paddingVertical: vs(spacing.md),
-    paddingHorizontal: s(spacing['2xl']),
-    backgroundColor: colors.accent.primary,
-    borderRadius: 10,
-  },
-  retryText: {
-    fontSize: ms(fontSize.bodyLg),
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.accent.onFill,
   },
   // Loading more
   loadingMoreContainer: {

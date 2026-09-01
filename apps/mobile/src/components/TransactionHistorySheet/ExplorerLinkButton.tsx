@@ -21,6 +21,7 @@ import {
   semantic,
 } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
+import { SecondaryButton } from '../Button';
 
 // ============================================================================
 // Types
@@ -150,34 +151,22 @@ export function ExplorerLinkButton({
 
   return (
     <>
-      {/* `BlurContainer`'s default border is the glassy radial sheen: opaque
-          near two opposite corners, fully transparent across the middle band.
-          On a card that reads as light catching an edge; on a short, full-width
-          button it erases the long top and bottom runs and leaves the two short
-          side runs standing alone — the broken border. A link affordance needs
-          a border that closes, so this one opts out of the sheen and draws
-          solid. */}
-      <BlurContainer
-        borderColor={semantic.text.accent}
-        useGradientBorder={false}
-        style={[styles.blurWrapper, style]}
+      {/* The kit's outlined control. The leading mark says "off to the web",
+          the caret says "and you get to pick where" — the picker's own
+          affordance, kept from the hand-drawn button this replaced. */}
+      <SecondaryButton
+        testID="tx-detail-explorer-link"
+        onPress={handlePress}
+        style={style}
+        icon={<ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.primary} />}
+        trailingIcon={
+          showMenu && availableExplorers.length > 1 ? (
+            <CaretDownIcon size={iconSize.sm} color={semantic.text.primary} />
+          ) : undefined
+        }
       >
-        <TouchableOpacity
-          testID="tx-detail-explorer-link"
-          style={styles.button}
-          onPress={handlePress}
-          activeOpacity={0.7}
-          accessibilityRole="link"
-          accessibilityLabel={buttonText}
-          accessibilityHint={t('transactions.detail.explorerHint')}
-        >
-          <ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.accent} style={styles.icon} />
-          <Text style={styles.buttonText}>{buttonText}</Text>
-          {showMenu && availableExplorers.length > 1 && (
-            <CaretDownIcon size={14} color={semantic.text.accent} style={styles.chevron} />
-          )}
-        </TouchableOpacity>
-      </BlurContainer>
+        {buttonText}
+      </SecondaryButton>
 
       {/* Explorer menu modal */}
       {showMenu && availableExplorers.length > 1 && (
@@ -217,33 +206,6 @@ export function ExplorerLinkButton({
 // ============================================================================
 
 const styles = StyleSheet.create({
-  blurWrapper: {
-    borderRadius: borderRadius.md,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: vs(spacing.md),
-    paddingHorizontal: s(spacing.lg),
-  },
-  icon: {
-    marginRight: s(spacing.sm),
-  },
-  /**
-   * A link off to an explorer. It was reading `palette.amber` — a decorative
-   * badge hue with no semantic meaning, close enough to salmon to be mistaken
-   * for it and not close enough to be it. Links are the textbook case for
-   * accent ink: `text.accent`, 6.07:1.
-   */
-  buttonText: {
-    fontSize: ms(fontSize.base),
-    fontFamily: fontFamilyNative.medium,
-    color: semantic.text.accent,
-  },
-  chevron: {
-    marginLeft: s(spacing.xs),
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: colors.dialog.overlay,

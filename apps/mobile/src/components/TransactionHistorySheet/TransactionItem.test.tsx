@@ -16,48 +16,55 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
-  borderRadius: { lg: 16, sm: 8, badge: 9, iconLg: 12, iconContainer: 12 },
-  borderWidth: { medium: 2, thin: 1 },
-  colors: {
-    accent: { primary: '#FF5C45' },
-    background: { card: '#111', secondary: '#0B0F19' },
-    change: { negative: '#f44', positive: '#4f4' },
-    palette: {
-      purple: '#90f',
-      cyan: '#0ff',
-      orange: '#f90',
-      green: '#0f0',
-      amber: '#fc0',
-      blue: '#09f',
-    },
-    text: { primary: '#fff', secondary: '#999', tertiary: '#666' },
-  },
-  semantic: { status: { danger: '#f00', warning: '#fc0', success: '#0f0' } },
-  fontFamilyNative: { medium: 'System', regular: 'System', mono: 'GeistMonoRegular' },
-  fontSize: { xs: 10, sm: 12, base: 14, lg: 18, mono: 13 },
-  letterSpacing: { semiWide: 0.3 },
-  spacing: { xxs: 2, xs: 4, sm: 8, md: 12, lg: 16, headerPadding: 20 },
-  tabularNums: { native: { fontVariant: ['tabular-nums'] }, css: {} },
-  ms: (value: number) => value,
-  s: (value: number) => value,
-  vs: (value: number) => value,
+  // The real tokens: the row is a `ListRow` now, and the kit primitives it
+  // composes read far more of the theme than the row itself does.
+  ...jest.requireActual('../../../test-utils/themeTokens'),
   formatRawAmount: (amount: string | number, decimals: number) =>
     `${Number(amount) / 10 ** decimals}`,
   formatRelativeTimeCompact: () => '2h',
   getTransactionDescription: () => 'description',
 }));
 
-jest.mock('../BlurContainer', () => ({
-  BlurContainer: ({ children }: { children?: React.ReactNode }) => {
-    const React = require('react');
-    return React.createElement(React.Fragment, null, children);
-  },
+// No worklets runtime in Jest: the kit's pressable bubble pulls reanimated in,
+// so the animated touchable, the press hook and the two textures need
+// plain-JS stand-ins (same shape as the IconBubble suite's).
+jest.mock('react-native-reanimated', () => {
+  const ReactActual = require('react');
+  const { View: RNView } = require('react-native');
+  return {
+    __esModule: true,
+    default: {
+      View: RNView,
+      createAnimatedComponent: (Component: React.ComponentType<Record<string, unknown>>) =>
+        ReactActual.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+          ReactActual.createElement(Component, { ...props, ref })
+        ),
+    },
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: (fn: () => unknown) => fn(),
+    useReducedMotion: () => false,
+    withTiming: (target: unknown) => target,
+  };
+});
+
+jest.mock('../../../hooks/usePressMotion', () => ({
+  usePressMotion: () => ({
+    pressStyle: {},
+    scale: { value: 1 },
+    pressHandlers: { onPressIn: () => {}, onPressOut: () => {} },
+    specular: { x: { value: 0 }, y: { value: 0 }, opacity: { value: 0 } },
+  }),
 }));
+
+jest.mock('../FleshBackground', () => ({ FleshBackground: () => null }));
+
+jest.mock('../PressSpecular', () => ({ PressSpecular: () => null, SPECULAR_OPACITY: 0.12 }));
 
 jest.mock('../TokenLogo', () => ({
   TokenLogo: () => null,
 }));
 
+import { borderRadius, semantic } from '@salmon/shared';
 import { TransactionItem } from './TransactionItem';
 
 /** The longest protocol name the Helius source enum can produce. */
@@ -85,6 +92,21 @@ describe('TransactionItem layout', () => {
     // The chip's label truncates rather than overflowing its box.
     const label = screen.getByText(LONGEST_SOURCE);
     expect(label.props.numberOfLines).toBe(1);
+  });
+
+  it('is a kit row: one `Card` ground, one radius, a pill for the protocol', () => {
+    render(<TransactionItem transaction={RECEIVE_TRANSACTION} />);
+
+    // The row no longer draws its own box: `ListRow` wraps it in `Card`, so
+    // the ground and the corner are the kit's, not this file's.
+    const row = StyleSheet.flatten(screen.getByTestId('activity-tx-row').props.style);
+    expect(row.borderRadius).toBe(borderRadius.r4);
+    expect(row.backgroundColor).toBe(semantic.surface.membraneThin);
+
+    // And the protocol name is a `Chip` — a pill that may drop below the
+    // title, never a slab that pushes it into "Receive…".
+    const chip = StyleSheet.flatten(screen.getByTestId('tx-row-source').props.style);
+    expect(chip.borderRadius).toBe(borderRadius.full);
   });
 
   it('keeps the amount in its own reserved, right-aligned column', () => {
