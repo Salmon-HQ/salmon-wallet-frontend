@@ -24,8 +24,10 @@ export type { Colors, Gradients } from './colors';
 // services and hooks.
 export { palette } from './palette';
 export type { Neutral, Salmon, Palette } from './palette';
-export { semantic } from './semantic';
-export type { Semantic } from './semantic';
+// `semantic` is the deep-water set resolved at module load; `createSemantic`
+// is the resolver behind it, for the provider that follows the active mode.
+export { semantic, createSemantic } from './semantic';
+export type { Semantic, ThemeMode } from './semantic';
 
 // Brand geometry — the mark as path data every platform can draw.
 export {
@@ -147,8 +149,8 @@ export type {
 } from './typography';
 
 // Re-export all tokens from shadows
-export { shadows, shadowsCSS } from './shadows';
-export type { Shadows, ShadowsCSS } from './shadows';
+export { shadows, shadowsCSS, createShadows } from './shadows';
+export type { Shadows, ShadowsCSS, ShadowStyle, ShadowTable } from './shadows';
 
 // Re-export all tokens from durations.
 // `motionMs` / `motionDuration` / `motionEasing` are the vocabulary; the

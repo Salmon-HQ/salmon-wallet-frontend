@@ -19,6 +19,16 @@ export type {
   CurrencyProviderProps,
 } from './CurrencyContext';
 
+// Theme context (appearance preference → active mode → resolved tokens)
+export { ThemeContext, ThemeProvider, useTheme } from './ThemeContext';
+
+export type {
+  ThemePreference,
+  SystemScheme,
+  ThemeContextValue,
+  ThemeProviderProps,
+} from './ThemeContext';
+
 // Bridge settlement context (background cross-chain settlement)
 export {
   BridgeSettlementContext,

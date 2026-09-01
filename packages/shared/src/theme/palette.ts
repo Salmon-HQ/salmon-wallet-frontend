@@ -66,8 +66,15 @@ export const salmon = {
 /**
  * Status ramps, hue-separated from salmon on purpose so a red error and a
  * salmon call-to-action never read as the same object on a narrow surface.
+ *
+ * The `50` steps are the tinted notice surfaces the light mode wears — the
+ * pale washes `product.pen` draws (`success-soft`, `danger-soft`,
+ * `warning-soft`) landed on the ramps rather than kept as loose hex. They are
+ * grounds, never ink: the `700` step is what sits on them.
  */
 export const success = {
+  /** Light-mode notice wash — `.pen` success-soft. */
+  50: '#EAF8F1',
   300: '#7BEFCB',
   /** Default ink — 9.99:1 */
   500: '#33D6A6',
@@ -75,6 +82,8 @@ export const success = {
 } as const;
 
 export const danger = {
+  /** Light-mode notice wash — `.pen` danger-soft. */
+  50: '#FDECEF',
   300: '#FF9FAF',
   /** Default ink — 6.80:1. Deliberately rosier than salmon-500. */
   500: '#FF6B85',
@@ -82,6 +91,8 @@ export const danger = {
 } as const;
 
 export const warning = {
+  /** Light-mode notice wash — `.pen` warning-soft. */
+  50: '#FFF6DD',
   300: '#FFD37A',
   /** Default ink — 10.14:1 */
   500: '#FFB020',

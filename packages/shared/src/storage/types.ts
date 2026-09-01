@@ -204,6 +204,8 @@ export const STORAGE_KEYS = {
   CURRENCY: 'salmon_currency',
   /** User's preferred language (useLanguage) */
   LANGUAGE: 'salmon_language',
+  /** Appearance preference: 'system' | 'light' | 'dark' (ThemeContext) */
+  APPEARANCE: 'salmon_appearance',
   /** Address book / contacts (useAddressbook) */
   CONTACTS: 'salmon_contacts',
   /** Balance visibility preference */
