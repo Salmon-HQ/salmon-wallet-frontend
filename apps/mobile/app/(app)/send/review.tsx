@@ -16,18 +16,22 @@
  * task surface the layout owns, and the surface keeps the screen on a failure
  * too — the error and its retry live there, where the user actually is.
  */
-import React, { useCallback, useEffect } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   chunkAddress,
+  fontFamilyNative,
+  fontSize,
   formatTokenAmount,
   getShortAddress,
   s,
+  semantic,
   spacing,
   vs,
+  type SendToken,
 } from '@salmon/shared';
 
 import {
@@ -38,6 +42,7 @@ import {
   ScalesBackground,
   ScreenHeader,
   SecondaryButton,
+  TokenPickerSheet,
 } from '../../../src/components';
 import { WarningNotice } from '../../../src/components/WarningNotice';
 import { useSendFlow } from '../../../src/contexts/SendFlowContext';
@@ -47,8 +52,42 @@ export default function SendReviewScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { floatingBottomOffset } = useTabChrome();
-  const { token, recipient, amount, sendHook, submit, reset, estimatedFee, estimateFee } =
-    useSendFlow();
+  const {
+    token,
+    setToken,
+    tokens,
+    tokensLoading,
+    showUnverifiedTokens,
+    recipient,
+    amount,
+    sendHook,
+    submit,
+    reset,
+    estimatedFee,
+    estimateFee,
+  } = useSendFlow();
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  // A token picked here may not cover the amount already typed on the
+  // previous screen — the fee re-estimates itself (`estimateFee` is keyed on
+  // token:recipient, so a new token drops the stale estimate), but the
+  // amount is the one thing this screen cannot fix on its own. So: send the
+  // user back to `/send/amount` with the new token already selected when it
+  // no longer fits, and stay put otherwise.
+  const handleSelectToken = useCallback(
+    (next: SendToken) => {
+      setToken(next);
+      setPickerOpen(false);
+      const numAmount = parseFloat(amount);
+      const nextBalance =
+        typeof next.uiAmount === 'string' ? parseFloat(next.uiAmount) : (next.uiAmount ?? 0);
+      if (!isNaN(numAmount) && numAmount > nextBalance) {
+        router.dismissTo('/send/amount');
+      }
+    },
+    [amount, router, setToken]
+  );
 
   const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
 
@@ -96,10 +135,23 @@ export default function SendReviewScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Card padding="lg" gap={spacing.md} testID="send-review-summary">
+          {/* The one row that carries an action: a wrong token picked on
+              `/send` is fixed here rather than by starting the flow over
+              (owner ruling 2026-09-01). */}
           <KeyValueRow
             testID="send-confirm-amount"
             label={t('token.send.amountLabel')}
             value={amountDisplay}
+            action={
+              <TouchableOpacity
+                testID="send-review-change-token"
+                onPress={() => setPickerOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={t('actions.change')}
+              >
+                <Text style={styles.changeLink}>{t('actions.change')}</Text>
+              </TouchableOpacity>
+            }
           />
           <KeyValueRow
             label={t('transactions.to')}
@@ -151,6 +203,15 @@ export default function SendReviewScreen() {
           {t('actions.confirm')}
         </PrimaryButton>
       </View>
+
+      <TokenPickerSheet
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        tokens={tokens}
+        loading={tokensLoading}
+        showUnverifiedTokens={showUnverifiedTokens}
+        onSelectToken={handleSelectToken}
+      />
     </SafeAreaView>
   );
 }
@@ -169,6 +230,11 @@ const styles = StyleSheet.create({
   },
   notice: {
     marginTop: 0,
+  },
+  changeLink: {
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: s(fontSize.caption),
+    color: semantic.text.accent,
   },
   // The cancel sits above the commit: the decision reads down to the control
   // that performs it.

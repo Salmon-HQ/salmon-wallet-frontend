@@ -65,6 +65,7 @@
     "remove_all": "Eliminar todas",
     "confirm": "Confirmar",
     "cancel": "Cancelar",
+    "change": "Cambiar",
     "done": "Listo",
     "send": "Enviar",
     "receive": "Recibir",
@@ -410,7 +411,9 @@
       "readLess": "Leer menos"
     },
     "detail": {
-      "title": "Información del Token"
+      "title": "Información del Token",
+      "currentPrice": "Precio actual",
+      "periodChange": "Cambio {{period}}"
     },
     "chart": {
       "noData": "No hay datos disponibles",
@@ -697,7 +700,9 @@
       "title": "Detalle del NFT",
       "backToDetails": "Volver al detalle del NFT",
       "imageAlt": "Imagen del NFT {{name}}",
-      "cardLabel": "NFT: {{name}}"
+      "cardLabel": "NFT: {{name}}",
+      "collection": "Colección",
+      "mintAddress": "Mint address"
     },
     "send": {
       "title": "Enviar NFT",

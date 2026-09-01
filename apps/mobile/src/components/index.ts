@@ -196,23 +196,20 @@ export type {
 export { TokenLogo } from './TokenLogo';
 
 // ---------------------------------------------------------------------------
-// Token Detail (TokenInformationSheet + sub-components)
+// Token Detail
+//
+// TokenInformationSheet is gone (spec 019 — token detail is a screen,
+// `app/(app)/token/[id].tsx`, not a sheet, DESIGN.md §Sheets' state rule).
+// TokenAbout and TokenMarketData survive here because Home's Bitcoin column
+// still renders them; the screen composes its own Card/KeyValueRow sections
+// instead of reusing this BlurContainer-based pair.
 // ---------------------------------------------------------------------------
 
-export { TokenInformationSheet } from './TokenInformationSheet';
-export type { TokenInformationSheetProps, CoinInfo } from './TokenInformationSheet';
+export { TokenAbout } from './TokenDetail/TokenAbout';
+export type { TokenAboutProps } from './TokenDetail/TokenAbout';
 
-export { TokenAbout } from './TokenInformationSheet/TokenAbout';
-export type { TokenAboutProps } from './TokenInformationSheet/TokenAbout';
-
-export { TokenMarketData } from './TokenInformationSheet/TokenMarketData';
-export type { TokenMarketDataProps, MarketData } from './TokenInformationSheet/TokenMarketData';
-
-export { TokenFeatures } from './TokenInformationSheet/TokenFeatures';
-export type { TokenFeaturesProps } from './TokenInformationSheet/TokenFeatures';
-
-export { TokenInfo } from './TokenInformationSheet/TokenInfo';
-export type { TokenInfoProps } from './TokenInformationSheet/TokenInfo';
+export { TokenMarketData } from './TokenDetail/TokenMarketData';
+export type { TokenMarketDataProps, MarketData } from './TokenDetail/TokenMarketData';
 
 export { PriceChart } from './PriceChart';
 export type { PriceChartProps } from './PriceChart';
@@ -234,8 +231,6 @@ export type {
   BitcoinNftData,
 } from './NftCard';
 
-export { NftDetailSheet } from './NftDetailSheet';
-export type { NftDetailSheetProps, NftDetailData } from './NftDetailSheet';
 
 export { NftsTab } from './NftsTab';
 export type { NftSectionKey, NftSection, NftsTabProps } from './NftsTab';
@@ -275,8 +270,8 @@ export { TransactionSuccessScreen } from './TransactionSuccessScreen';
 
 // The send flow is four screens under `app/(app)/send` (spec 018); what is
 // left here are the pieces those screens share.
-export { RecipientInput, SendFailure, TokenSelectList } from './Send';
-export type { RecipientInputProps, SendFailureProps } from './Send';
+export { RecipientInput, SendFailure, TokenPickerSheet, TokenSelectList } from './Send';
+export type { RecipientInputProps, SendFailureProps, TokenPickerSheetProps } from './Send';
 
 export {
   SwapScreen,

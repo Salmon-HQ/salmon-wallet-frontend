@@ -37,6 +37,7 @@ export function KeyValueRow({
   value,
   valueTone = 'primary',
   labelWeight = 500,
+  action,
   style,
   testID,
 }: KeyValueRowProps) {
@@ -48,13 +49,16 @@ export function KeyValueRow({
       >
         {label}
       </Text>
-      <Text
-        style={[styles.value, { color: VALUE_INK[valueTone] }]}
-        maxFontSizeMultiplier={fontScaleCap.dense}
-        numberOfLines={1}
-      >
-        {value}
-      </Text>
+      <View style={styles.valueGroup}>
+        <Text
+          style={[styles.value, { color: VALUE_INK[valueTone] }]}
+          maxFontSizeMultiplier={fontScaleCap.dense}
+          numberOfLines={1}
+        >
+          {value}
+        </Text>
+        {action}
+      </View>
     </View>
   );
 }
@@ -74,6 +78,12 @@ const styles = StyleSheet.create({
   },
   labelEmphasised: {
     fontFamily: fontFamilyNative.semiBold,
+  },
+  valueGroup: {
+    flexShrink: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: s(spacing.sm),
   },
   value: {
     flexShrink: 1,

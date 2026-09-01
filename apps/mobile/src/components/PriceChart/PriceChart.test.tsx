@@ -30,6 +30,10 @@ jest.mock('@salmon/shared', () => ({
   resolveMotionMs: (ms: number, reduced: boolean) => (reduced ? 0 : ms),
 }));
 
+// The period selector is the kit's UnderlineTabs, whose own tokens the partial
+// mock above does not carry; nothing here renders the selector.
+jest.mock('../UnderlineTabs', () => ({ UnderlineTabs: () => null }));
+
 jest.mock('react-native-reanimated', () => {
   const { View } = jest.requireActual('react-native');
   return {

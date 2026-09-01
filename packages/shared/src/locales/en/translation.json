@@ -65,6 +65,7 @@
     "remove_all": "Yes, remove all",
     "confirm": "Confirm",
     "cancel": "Cancel",
+    "change": "Change",
     "done": "Done",
     "send": "Send",
     "receive": "Receive",
@@ -410,7 +411,9 @@
       "readLess": "Read less"
     },
     "detail": {
-      "title": "Token Information"
+      "title": "Token Information",
+      "currentPrice": "Current price",
+      "periodChange": "{{period}} change"
     },
     "chart": {
       "noData": "No data available",
@@ -697,7 +700,9 @@
       "title": "NFT Detail",
       "backToDetails": "Back to NFT details",
       "imageAlt": "NFT image for {{name}}",
-      "cardLabel": "NFT: {{name}}"
+      "cardLabel": "NFT: {{name}}",
+      "collection": "Collection",
+      "mintAddress": "Mint address"
     },
     "send": {
       "title": "Send NFT",

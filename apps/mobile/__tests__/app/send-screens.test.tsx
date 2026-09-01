@@ -9,7 +9,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-const mockRouter = { back: jest.fn(), push: jest.fn(), replace: jest.fn() };
+const mockRouter = { back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismissTo: jest.fn() };
 
 /** What `useAddressValidation` reports. Reset per case. */
 let mockValidation = {
@@ -31,14 +31,32 @@ let mockAccountState: Record<string, unknown> = {
 
 let mockIsWatchOnly = false;
 
+/** The two tokens the picker stub offers — SOL (the default) and a USDC
+ * whose balance is deliberately under what the review tests will type, so
+ * switching to it is the one that has to bounce back to the amount screen. */
+const SOL_TOKEN = {
+  address: 'So11111111111111111111111111111111111111112',
+  symbol: 'SOL',
+  name: 'Solana',
+  decimals: 9,
+  uiAmount: 2.5,
+};
+const USDC_TOKEN = {
+  address: 'Usdc11111111111111111111111111111111111111',
+  symbol: 'USDC',
+  name: 'USD Coin',
+  decimals: 6,
+  uiAmount: 1,
+};
+
 const mockFlow = {
   blockchain: 'solana',
   networkId: 'solana-mainnet',
   account: { getReceiveAddress: () => 'Sender1111111111111111111111111111111111111' },
-  tokens: [] as unknown[],
+  tokens: [SOL_TOKEN, USDC_TOKEN] as unknown[],
   tokensLoading: false,
   showUnverifiedTokens: false,
-  token: { address: 'So11111111111111111111111111111111111111112', symbol: 'SOL', decimals: 9 },
+  token: SOL_TOKEN as unknown,
   setToken: jest.fn(),
   liveBalance: 2.5,
   nativeBalance: 2.5,
@@ -122,7 +140,36 @@ jest.mock('../../src/components/BottomSheetContainer', () => ({
   BottomSheetContainer: ({ visible, children }: { visible: boolean; children?: React.ReactNode }) =>
     visible ? children : null,
 }));
-jest.mock('../../src/components/Send/TokenSelectList', () => ({ TokenSelectList: () => null }));
+// A working stub, not a null one: the picker sheet's only job worth testing
+// here is that a tap on one of its rows reaches `onSelectToken`.
+jest.mock('../../src/components/Send/TokenSelectList', () => {
+  const ReactActual = require('react');
+  const { TouchableOpacity, Text } = require('react-native');
+  return {
+    TokenSelectList: ({
+      tokens,
+      onSelectToken,
+    }: {
+      tokens: Array<{ address: string; symbol: string }>;
+      onSelectToken: (token: unknown) => void;
+    }) =>
+      ReactActual.createElement(
+        ReactActual.Fragment,
+        null,
+        tokens.map((token) =>
+          ReactActual.createElement(
+            TouchableOpacity,
+            {
+              key: token.address,
+              testID: `send-token-row-${token.symbol}`,
+              onPress: () => onSelectToken(token),
+            },
+            ReactActual.createElement(Text, null, token.symbol)
+          )
+        )
+      ),
+  };
+});
 
 jest.mock('../../hooks/useTabChrome', () => ({
   useTabChrome: () => ({ floatingBottomOffset: 0, scrollBottomPadding: 0, insets: { top: 0, bottom: 0 } }),
@@ -156,6 +203,7 @@ jest.mock('react-native-reanimated', () => {
 
 import SendRecipientScreen from '../../app/(app)/send/index';
 import SendAmountScreen from '../../app/(app)/send/amount';
+import SendReviewScreen from '../../app/(app)/send/review';
 import SendLayout from '../../app/(app)/send/_layout';
 
 beforeEach(() => {
@@ -171,6 +219,8 @@ beforeEach(() => {
   };
   mockFlow.amount = '';
   mockFlow.recipient = { address: 'Dest111111111111111111111111111111111111111' };
+  mockFlow.token = SOL_TOKEN;
+  mockFlow.tokens = [SOL_TOKEN, USDC_TOKEN];
   mockFlow.liveBalance = 2.5;
   mockFlow.nativeBalance = 2.5;
   mockFlow.estimatedFee = null;
@@ -314,8 +364,9 @@ describe('the amount screen — what the frames put on it', () => {
 
     expect(screen.getByText('Available')).toBeTruthy();
     expect(screen.getByText('2.5 SOL')).toBeTruthy();
-    // A bare row, but still the door to the token picker.
-    expect(screen.getByTestId('send-selected-token').props.accessibilityRole).toBe('button');
+    // The token is chosen a screen back now (owner ruling 2026-09-01), so
+    // this row is a caption, not a door: no press affordance left on it.
+    expect(screen.getByTestId('send-selected-token').props.accessibilityRole).toBeUndefined();
   });
 
   it('asks the flow for the fee and draws it beside the arrival', () => {
@@ -344,6 +395,55 @@ describe('the amount screen — what the frames put on it', () => {
     render(<SendAmountScreen />);
 
     expect(screen.getByText('~0.000005 SOL')).toBeTruthy();
+  });
+});
+
+describe('token choice — first screen, changeable on Review', () => {
+  it('a token picked on the recipient screen reaches the flow', () => {
+    render(<SendRecipientScreen />);
+
+    fireEvent.press(screen.getByTestId('send-selected-token'));
+    fireEvent.press(screen.getByTestId('send-token-row-USDC'));
+
+    expect(mockFlow.setToken).toHaveBeenCalledWith(USDC_TOKEN);
+  });
+
+  it('the amount screen reads whatever token the flow is holding, read-only', () => {
+    mockFlow.token = USDC_TOKEN;
+    mockFlow.liveBalance = 1;
+
+    render(<SendAmountScreen />);
+
+    expect(screen.getByText('1 USDC')).toBeTruthy();
+    expect(screen.getByTestId('send-selected-token').props.accessibilityRole).toBeUndefined();
+  });
+
+  it('review keeps the amount and the token in sync when the new one still covers it', () => {
+    mockFlow.amount = '0.5';
+
+    render(<SendReviewScreen />);
+
+    fireEvent.press(screen.getByTestId('send-review-change-token'));
+    fireEvent.press(screen.getByTestId('send-token-row-USDC'));
+
+    expect(mockFlow.setToken).toHaveBeenCalledWith(USDC_TOKEN);
+    // USDC's own balance (1) still covers 0.5 — nothing to fix on the amount
+    // screen, so Review stays put.
+    expect(mockRouter.dismissTo).not.toHaveBeenCalledWith('/send/amount');
+  });
+
+  it('changing the token on Review to one that cannot cover the amount goes back to amount', () => {
+    mockFlow.amount = '5';
+
+    render(<SendReviewScreen />);
+
+    fireEvent.press(screen.getByTestId('send-review-change-token'));
+    fireEvent.press(screen.getByTestId('send-token-row-USDC'));
+
+    expect(mockFlow.setToken).toHaveBeenCalledWith(USDC_TOKEN);
+    // USDC's balance is 1, the typed amount is 5 — the flow cannot fix
+    // that on Review, so it sends the user back to fix it where it can.
+    expect(mockRouter.dismissTo).toHaveBeenCalledWith('/send/amount');
   });
 });
 

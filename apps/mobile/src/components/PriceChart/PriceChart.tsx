@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Circle, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import Animated, {
   useAnimatedProps,
@@ -14,9 +14,6 @@ import { ContentLoader, Rect } from '@salmon/shared';
 import {
   colors,
   spacing,
-  borderRadius,
-  fontFamilyNative,
-  fontWeight,
   isPositivePerformance,
   PRICE_CHART_PERIODS,
   fontSize,
@@ -26,6 +23,7 @@ import {
 } from '@salmon/shared';
 import { curve, timing } from '../../utils/motion';
 import type { PriceChartPeriod, PriceDataPoint } from '@salmon/shared';
+import { UnderlineTabs } from '../UnderlineTabs';
 import type { PriceChartProps } from './types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -324,6 +322,12 @@ export const PriceChart: React.FC<PriceChartProps> = ({
         : `${lineD.value} L ${lineWidth} ${chartHeight} L 0 ${chartHeight} Z`,
   }));
 
+  // Built here, not at module scope: tests mock the shared barrel partially.
+  const periodTabs = useMemo(
+    () => PRICE_CHART_PERIODS.map((period) => ({ key: period, label: period })),
+    []
+  );
+
   // Handle period selection
   const handlePeriodPress = useCallback(
     (period: PriceChartPeriod) => {
@@ -395,32 +399,16 @@ export const PriceChart: React.FC<PriceChartProps> = ({
       {loading ? (
         <PeriodSelectorSkeleton />
       ) : (
-        <View style={styles.periodContainer}>
-          {PRICE_CHART_PERIODS.map((period) => {
-            const isSelected = period === selectedPeriod;
-            return (
-              <TouchableOpacity
-                key={period}
-                style={[styles.periodButton, isSelected && styles.periodButtonSelected]}
-                onPress={() => handlePeriodPress(period)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel={t(
-                  'accessibility.select_period',
-                  'Select {{period}} time period',
-                  { period }
-                )}
-                accessibilityState={{ selected: isSelected }}
-              >
-                <Text
-                  style={[styles.periodButtonText, isSelected && styles.periodButtonTextSelected]}
-                >
-                  {period}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        // Selection is an underline, never a pill (DESIGN.md §Selection):
+        // the same travelling rule the sub-tabs and the activity filters use.
+        <UnderlineTabs
+          size="sm"
+          tabs={periodTabs}
+          activeKey={selectedPeriod}
+          onChange={(key) => handlePeriodPress(key as PriceChartPeriod)}
+          tabTestIDPrefix="price-chart-period"
+          style={styles.periodTabs}
+        />
       )}
     </View>
   );
@@ -440,32 +428,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
-  periodButton: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'transparent',
-    minWidth: 35,
-    alignItems: 'center',
-  },
-  periodButtonSelected: {
-    // A selected period is a state, not an action: `accent.tint` is a tinted
-    // ground under salmon ink (5.29:1 composite), not a fill, so the chart no
-    // longer spends the screen's one salmon fill on a 35px puck.
-    backgroundColor: semantic.accent.tint,
-  },
-  periodButtonText: {
-    fontSize: 13,
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-    opacity: opacity.soft,
-    fontFamily: fontFamilyNative.bold,
-  },
-  periodButtonTextSelected: {
-    // Full opacity: `opacity.soft` here would drag the ink below the 5.29:1
-    // salmon measures on the tint composite.
-    color: semantic.text.accent,
-    opacity: 1,
+  periodTabs: {
+    alignSelf: 'center',
   },
   emptyState: {
     flex: 1,

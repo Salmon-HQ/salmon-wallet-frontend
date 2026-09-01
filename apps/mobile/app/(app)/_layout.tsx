@@ -172,6 +172,10 @@ export default function AppLayout() {
         {/* The send flow is its own sub-stack (spec 018): four screens that
             share the flow's state, taking this stack's right slide. */}
         <Stack.Screen name="send" />
+        {/* Token and NFT detail are screens of this stack (spec 019), pushed
+            from the Portfolio and NFT lists with the same right slide. */}
+        <Stack.Screen name="token/[id]" />
+        <Stack.Screen name="nft/[id]" />
         {/* Powerups rises from the bottom instead of sliding from the right,
             and swipes down to dismiss. It is a plain screen of THIS stack, not
             a modal: a modal is its own native window and nothing — not the

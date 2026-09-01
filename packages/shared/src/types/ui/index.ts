@@ -35,7 +35,6 @@ export type { PendingValuePropsBase } from './pending-value';
 export type {
   SendStep,
   SendToken,
-  SendSheetPropsBase,
   StepTokenSelectProps,
   StepAddressAmountPropsBase,
   StepConfirmationProps,
@@ -48,10 +47,7 @@ export type {
 export type { WarningNoticeTone, WarningNoticePropsBase } from './warning-notice';
 
 // Transaction History
-export type {
-  TransactionItemPropsBase,
-  TransactionHistorySheetPropsBase,
-} from './transaction-history';
+export type { TransactionItemPropsBase } from './transaction-history';
 
 // Input Address
 export type { InputAddressPropsBase } from './input-address';
@@ -104,11 +100,9 @@ export type {
   BridgeReviewScreenPropsBase,
 } from './bridge-screen';
 
-// Token Information Sheet
-export type {
-  TokenInformationSheetPropsBase,
-  TokenBadgesSectionPropsBase,
-} from './token-information-sheet';
+// Token Badges (formerly co-located with the retired TokenInformationSheet
+// contract — see AGENTS.md's ownership rules on removing shared exports)
+export type { TokenBadgesSectionPropsBase } from './token-information-sheet';
 
 // Transaction Detail Modal
 export type { TransactionDetailModalPropsBase } from './transaction-detail-modal';

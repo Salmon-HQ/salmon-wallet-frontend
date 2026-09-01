@@ -25,6 +25,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
+  formatTokenAmount,
   getShortAddress,
   s,
   semantic,
@@ -47,6 +48,8 @@ import {
   ScalesBackground,
   ScreenHeader,
   SectionLabel,
+  TokenLogo,
+  TokenPickerSheet,
   WarningNotice,
 } from '../../../src/components';
 import type { QRScanResult } from '../../../src/components';
@@ -75,10 +78,29 @@ export default function SendRecipientScreen() {
   const router = useRouter();
   const { floatingBottomOffset } = useTabChrome();
   const keyboardHeight = useKeyboardHeight();
-  const { account, blockchain, networkId, recipient, setRecipient } = useSendFlow();
+  const {
+    account,
+    blockchain,
+    networkId,
+    recipient,
+    setRecipient,
+    token,
+    setToken,
+    tokens,
+    tokensLoading,
+    showUnverifiedTokens,
+    liveBalance,
+  } = useSendFlow();
 
   const [address, setAddress] = useState(recipient?.address ?? '');
   const [showScanner, setShowScanner] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const tokenBalance = useMemo(() => {
+    if (typeof liveBalance === 'number' && Number.isFinite(liveBalance)) return liveBalance;
+    const fallback = token?.uiAmount;
+    return typeof fallback === 'string' ? parseFloat(fallback) : (fallback ?? 0);
+  }, [liveBalance, token?.uiAmount]);
 
   const senderAddress = account?.getReceiveAddress() ?? '';
   const { contacts, ownWallets } = useSendContacts(senderAddress);
@@ -220,6 +242,18 @@ export default function SendRecipientScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        {/* The token is chosen here, first — amount's row becomes read-only
+            once this screen has already asked (owner ruling 2026-09-01). */}
+        <ListRow
+          testID="send-selected-token"
+          onPress={() => setPickerOpen(true)}
+          accessibilityLabel={t('wallet.select_token', 'Select Token')}
+          leading={<TokenLogo uri={token?.logo || undefined} symbol={token?.symbol} size={s(38)} />}
+          title={token?.name ?? ''}
+          subtitle={`${formatTokenAmount(tokenBalance)} ${token?.symbol ?? ''}`}
+          trailing={<CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />}
+        />
+
         <RecipientInput
           value={address}
           onChangeText={setAddress}
@@ -264,6 +298,18 @@ export default function SendRecipientScreen() {
         blockchain={blockchain}
         onScan={handleScan}
         onClose={() => setShowScanner(false)}
+      />
+
+      <TokenPickerSheet
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        tokens={tokens}
+        loading={tokensLoading}
+        showUnverifiedTokens={showUnverifiedTokens}
+        onSelectToken={(next) => {
+          setToken(next);
+          setPickerOpen(false);
+        }}
       />
     </SafeAreaView>
   );

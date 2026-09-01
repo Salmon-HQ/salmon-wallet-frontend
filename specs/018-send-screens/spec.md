@@ -8,7 +8,9 @@ Send becomes four stack screens per the state rule (`DESIGN.md` §Sheets): recip
 ## User Stories
 
 ### US1 — Choose a recipient (P1)
-Send circle on Home pushes `/send`: `ScreenHeader` ("Send", "Choose who will receive your assets."), address input (existing `InputAddress` incl. QR scan and validation), "Recent" `SectionLabel` + recent/contact rows (`ListRow` in `Card`: initial avatar 38 accent-tint, name 14/700, short address 12/500, chevron), sticky `PrimaryButton` "Continue".
+Send circle on Home pushes `/send`: `ScreenHeader` ("Send", "Choose who will receive your assets."), a token row above the address input (`ListRow`, `send-selected-token`, opens the shared `TokenPickerSheet`), address input (existing `InputAddress` incl. QR scan and validation), "Recent" `SectionLabel` + recent/contact rows (`ListRow` in `Card`: initial avatar 38 accent-tint, name 14/700, short address 12/500, chevron), sticky `PrimaryButton` "Continue".
+
+**Owner ruling (2026-09-01)**: the token is chosen here, first, not on the amount screen — the amount screen's copy of the row is read-only. Review keeps a "Change" affordance that reopens the same `TokenPickerSheet`; picking a token whose balance no longer covers the typed amount sends the user back to `/send/amount` to fix it, otherwise Review stays put.
 1. Valid address or recipient tap → Continue enabled → `/send/amount`.
 2. **04A**: address from another network → inline warning card ("Not a Solana address…"), Continue disabled.
 3. **04B**: valid but uninitialized account → informational warning ("The first transfer will initialize this account…"), Continue enabled.
@@ -16,7 +18,7 @@ Send circle on Home pushes `/send`: `ScreenHeader` ("Send", "Choose who will rec
 
 ### US2 — Enter the amount (P1)
 `/send/amount`: header "Send {TICKER}" + "Enter the amount to send."; "Available" `KeyValueRow`; amount entry `Card` (value 46/700 tabular, ticker 14/700, fiat approx 13/500); shortcuts `ChipGroup` 25%/50%/75%/Max; recipient summary `Card` (`KeyValueRow` To / Address); optional memo input; fee `Card` (`KeyValueRow` network fee / estimated arrival); `PrimaryButton` "Review send".
-1. Token comes from the flow's context (Home's active chain; token picker if the flow already has one — reuse `SendSheet`'s logic).
+1. Token comes from the flow's context, chosen on `/send` (US1); this screen's token row is read-only and only restates the balance the header's "Send {TICKER}" already named.
 2. Max accounts for fees exactly as today; invalid/zero amounts keep Review disabled; balance-exceeded shows today's error.
 
 ### US3 — Review and sign (P1)

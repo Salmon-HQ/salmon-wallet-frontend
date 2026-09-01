@@ -15,30 +15,6 @@ export interface SendToken extends Token {
 }
 
 /**
- * Props for the SendSheet component (base - platform-agnostic)
- */
-export interface SendSheetPropsBase<TStyle> {
-  /** Whether the sheet is visible */
-  visible: boolean;
-  /** Callback when the sheet should close */
-  onClose: () => void;
-  /** Available tokens from useBalance */
-  tokens: SendToken[];
-  /** Blockchain type for address validation and transfer routing */
-  blockchain: BlockchainType;
-  /** The active blockchain account */
-  account: BlockchainAccount;
-  /** Callback when transaction completes successfully */
-  onSuccess?: (txId: string) => void;
-  /** Show unverified/unknown tokens (developer mode) */
-  showUnverifiedTokens?: boolean;
-  /** Whether token data is still loading */
-  loading?: boolean;
-  /** Additional styles */
-  style?: TStyle;
-}
-
-/**
  * Props for the token selection step
  */
 export interface StepTokenSelectProps {

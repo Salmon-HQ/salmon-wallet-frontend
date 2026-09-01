@@ -148,7 +148,6 @@ jest.mock('../src/components', () => {
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
     TokenAbout: () => <View />,
-    TokenInformationSheet: () => null,
     // Mirrors the real TokenList contract: a skeleton while `loading`, the
     // provided empty component once the load settled with no rows.
     TokenList: ({

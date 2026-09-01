@@ -207,7 +207,6 @@ jest.mock('../src/components', () => {
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
     TokenAbout: () => <View />,
-    TokenInformationSheet: () => null,
     TokenList: () => <View testID="token-list" />,
     TokenListItem: () => <View />,
     TokenListSkeleton: () => <View />,

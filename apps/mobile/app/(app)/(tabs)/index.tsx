@@ -43,8 +43,6 @@ import {
   fontSize,
   getCoinInfo,
   getMarketChart,
-  getTokenMarketChart,
-  getTokenCoinInfo,
   s,
   spacing,
   useAccountsContext,
@@ -72,7 +70,6 @@ import {
   PriceChart,
   ReceiveSheet,
   TokenAbout,
-  TokenInformationSheet,
   TokenList,
   TokenListItem,
   TokenListSkeleton,
@@ -179,18 +176,6 @@ export default function HomeScreen() {
   const [bitcoinDataLoading, setBitcoinDataLoading] = useState(false);
   const [bitcoinChartError, setBitcoinChartError] = useState(false);
 
-  // TokenInformationSheet states
-  const [tokenSheetVisible, setTokenSheetVisible] = useState(false);
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
-  const [selectedTokenChartData, setSelectedTokenChartData] = useState<PriceDataPoint[]>([]);
-  const [selectedTokenCoinInfo, setSelectedTokenCoinInfo] = useState<CoinInfo | null>(null);
-  const [selectedTokenChartPeriod, setSelectedTokenChartPeriod] = useState<PriceChartPeriod>('1M');
-  const [selectedTokenMarketData, setSelectedTokenMarketData] = useState<MarketData | undefined>(
-    undefined
-  );
-  const [selectedTokenLoading, setSelectedTokenLoading] = useState(false);
-  const [selectedTokenChartError, setSelectedTokenChartError] = useState(false);
-
   // ReceiveSheet visibility
   const [receiveSheetVisible, setReceiveSheetVisible] = useState(false);
 
@@ -202,11 +187,11 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!accountState.locked) return;
 
-    setTokenSheetVisible(false);
     setReceiveSheetVisible(false);
     // Powerups is a route now, not a sheet — it closes itself on lock (see
     // `app/(app)/powerups.tsx`), because it sits ABOVE the tab shell that
-    // mounts the lock overlay and Home cannot reach it from here.
+    // mounts the lock overlay and Home cannot reach it from here. Token
+    // detail is a route too (spec 019) — same story, it closes itself.
   }, [accountState.locked]);
 
   // Developer mode — shared via context from _layout.tsx (single source of truth)
@@ -456,68 +441,6 @@ export default function HomeScreen() {
     loadBitcoinCoinInfo();
   }, [currentBlockchain, bitcoinCoinInfo, currency]);
 
-  // Load selected token chart data when token is selected or period changes
-  // (classic endpoint by coingeckoId, contract-address fallback by mint;
-  // null means "no chart" and keeps the chart section hidden without error)
-  useEffect(() => {
-    const loadSelectedTokenChartData = async () => {
-      if (!selectedToken || !tokenSheetVisible) return;
-
-      if (!selectedToken.coingeckoId && !selectedToken.address) return;
-
-      setSelectedTokenLoading(true);
-      setSelectedTokenChartError(false);
-      try {
-        const days = PERIOD_TO_DAYS[selectedTokenChartPeriod];
-        const chartResponse = await getTokenMarketChart(
-          { coingeckoId: selectedToken.coingeckoId ?? undefined, address: selectedToken.address },
-          days,
-          currency
-        );
-
-        if (chartResponse?.prices) {
-          const priceData: PriceDataPoint[] = chartResponse.prices.map(([timestamp, price]) => ({
-            timestamp,
-            price,
-          }));
-          setSelectedTokenChartData(priceData);
-        }
-      } catch (error) {
-        console.error('Failed to load token chart data:', error);
-        setSelectedTokenChartError(true);
-      } finally {
-        setSelectedTokenLoading(false);
-      }
-    };
-
-    loadSelectedTokenChartData();
-  }, [selectedToken, selectedTokenChartPeriod, tokenSheetVisible, currency]);
-
-  // Load selected token coin info when token is selected
-  useEffect(() => {
-    const loadSelectedTokenCoinInfo = async () => {
-      if (!selectedToken || !tokenSheetVisible) return;
-
-      if (!selectedToken.coingeckoId && !selectedToken.address) return;
-
-      try {
-        const infoResponse = await getTokenCoinInfo(
-          { coingeckoId: selectedToken.coingeckoId ?? undefined, address: selectedToken.address },
-          currency
-        );
-        if (infoResponse) {
-          setSelectedTokenCoinInfo(infoResponse);
-
-          setSelectedTokenMarketData(coinInfoToMarketData(infoResponse));
-        }
-      } catch (error) {
-        console.error('Failed to load token coin info:', error);
-      }
-    };
-
-    loadSelectedTokenCoinInfo();
-  }, [selectedToken, tokenSheetVisible, currency]);
-
   // Handle chart period change
   const handleChartPeriodChange = useCallback((period: PriceChartPeriod) => {
     setBitcoinChartPeriod(period);
@@ -590,28 +513,15 @@ export default function HomeScreen() {
     router.push('/activity');
   }, [router]);
 
-  const handleTokenPress = useCallback((token: Token) => {
-    // Reset previous token data
-    setSelectedTokenChartData([]);
-    setSelectedTokenCoinInfo(null);
-    setSelectedTokenMarketData(undefined);
-    setSelectedTokenChartPeriod('1M');
-    // Set selected token and show sheet
-    setSelectedToken(token);
-    setTokenSheetVisible(true);
-  }, []);
-
-  const handleTokenSheetClose = useCallback(() => {
-    setTokenSheetVisible(false);
-    // Clear selected token after animation
-    setTimeout(() => {
-      setSelectedToken(null);
-    }, 300);
-  }, []);
-
-  const handleSelectedTokenChartPeriodChange = useCallback((period: PriceChartPeriod) => {
-    setSelectedTokenChartPeriod(period);
-  }, []);
+  // Token detail is a screen now, not a sheet (spec 019) — the row pushes
+  // `/token/[id]` with the mint as `id`; the route resolves the token itself
+  // from the same reactive balance list this screen reads.
+  const handleTokenPress = useCallback(
+    (token: Token) => {
+      router.push({ pathname: '/token/[id]', params: { id: token.address } });
+    },
+    [router]
+  );
 
   const handleBlockchainChange = useCallback(
     (_blockchain: BlockchainId, index: number) => {
@@ -1043,26 +953,6 @@ export default function HomeScreen() {
             </View>
           )}
         </Reanimated.View>
-      )}
-
-      {/* Token Information Sheet */}
-      {selectedToken && (
-        <TokenInformationSheet
-          visible={tokenSheetVisible}
-          onClose={handleTokenSheetClose}
-          token={selectedToken}
-          // networkId is the single chain source for sheet props — the
-          // carousel index (currentBlockchain) can lag behind it during a
-          // chain switch.
-          blockchain={getBlockchainFromNetworkId(networkId ?? 'solana-mainnet')}
-          chartData={selectedTokenChartData}
-          chartPeriod={selectedTokenChartPeriod}
-          onChartPeriodChange={handleSelectedTokenChartPeriodChange}
-          coinInfo={selectedTokenCoinInfo}
-          marketData={selectedTokenMarketData}
-          loading={selectedTokenLoading && selectedTokenChartData.length === 0}
-          chartError={selectedTokenChartError && selectedTokenChartData.length === 0}
-        />
       )}
 
       {/* Receive Sheet */}

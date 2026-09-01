@@ -23,8 +23,8 @@
  * field. A memo has to reach the transaction builder, which is a
  * transaction-path change and is not made here. See the spec report.
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -53,9 +53,7 @@ import {
   PrimaryButton,
   ScalesBackground,
   ScreenHeader,
-  TokenSelectList,
 } from '../../../src/components';
-import { BottomSheetContainer } from '../../../src/components/BottomSheetContainer';
 import { WarningNotice } from '../../../src/components/WarningNotice';
 import { useSendFlow } from '../../../src/contexts/SendFlowContext';
 import { useTabChrome } from '../../../hooks/useTabChrome';
@@ -100,10 +98,6 @@ export default function SendAmountScreen() {
   const {
     blockchain,
     token,
-    setToken,
-    tokens,
-    tokensLoading,
-    showUnverifiedTokens,
     liveBalance,
     nativeBalance,
     recipient,
@@ -112,8 +106,6 @@ export default function SendAmountScreen() {
     estimatedFee,
     estimateFee,
   } = useSendFlow();
-
-  const [pickerOpen, setPickerOpen] = useState(false);
 
   const tokenBalance = useMemo(() => {
     if (typeof liveBalance === 'number' && Number.isFinite(liveBalance)) return liveBalance;
@@ -208,21 +200,17 @@ export default function SendAmountScreen() {
           </WarningNotice>
         )}
 
-        {/* The balance, and the door to the token picker. A bare row, not a
-            card: the frames give it no ground of its own — it is a caption on
-            the amount entry below it, and a card here would read as a second
-            object competing with the one thing this screen is for. */}
-        <Pressable
+        {/* The token is chosen a screen back now (owner ruling 2026-09-01);
+            this row only restates the balance the header's "Send {TICKER}"
+            already named. A bare row, not a card: the frames give it no
+            ground of its own — it is a caption on the amount entry below
+            it, and a card here would read as a second object competing
+            with the one thing this screen is for. */}
+        <KeyValueRow
           testID="send-selected-token"
-          onPress={() => setPickerOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel={t('wallet.select_token', 'Select Token')}
-        >
-          <KeyValueRow
-            label={t('send.screens.available')}
-            value={`${formatTokenAmount(tokenBalance)} ${token?.symbol ?? ''}`}
-          />
-        </Pressable>
+          label={t('send.screens.available')}
+          value={`${formatTokenAmount(tokenBalance)} ${token?.symbol ?? ''}`}
+        />
 
         {/* The amount. Tabular, so a repoll never reflows the digits. */}
         <Card padding="lg" gap={spacing.base} style={styles.amountCard}>
@@ -288,25 +276,6 @@ export default function SendAmountScreen() {
           {t('send.screens.reviewTitle')}
         </PrimaryButton>
       </View>
-
-      {/* The picker: one thing to choose, and the next tap dismisses it —
-          which is what a sheet is for (DESIGN.md §Sheets, the state rule). */}
-      <BottomSheetContainer
-        visible={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        testID="send-token-picker"
-      >
-        <TokenSelectList
-          tokens={tokens}
-          loading={tokensLoading}
-          showUnverifiedTokens={showUnverifiedTokens}
-          onSelectToken={(next) => {
-            setToken(next);
-            setAmount('');
-            setPickerOpen(false);
-          }}
-        />
-      </BottomSheetContainer>
     </SafeAreaView>
   );
 }
