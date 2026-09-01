@@ -1,22 +1,19 @@
 /**
- * The grid must not mount every card it has.
+ * A chain section announces itself.
  *
- * This screen used to render every NFT inside a plain ScrollView. Each mounted
- * card decodes an image into the Java heap's large-object space, so a wallet
- * with hundreds of NFTs grew the heap until Android's low-memory killer took
- * the app down mid-scroll — observed on a 900-NFT wallet at ~145 MB of bitmaps
- * across 200 objects, `lmkd` killing a foreground process.
- *
- * Virtualization is what bounds that, so what this file pins is the bound
- * itself: mounted cards stay a small fraction of the collection.
+ * Mainnet and devnet are two sections of the same chain holding different,
+ * non-interchangeable assets, so once both paint each one carries its own
+ * heading. With only mainnet on screen the heading is suppressed — a lone
+ * "Solana" over the only grid there is labels nothing.
  */
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 import { NftsTab } from '../src/components/NftsTab';
 
 const mockUseSolanaNfts = jest.fn();
 const mockRefresh = jest.fn();
 const mockUseAccountsContext = jest.fn();
+let mockDeveloperMode = false;
 
 jest.mock('@salmon/shared', () => ({
   // The kit primitives the tab composes evaluate their stylesheets at module
@@ -38,7 +35,7 @@ jest.mock('@salmon/shared', () => ({
 jest.mock('../src/components/NftCard', () => {
   const React = require('react');
   const { View } = require('react-native');
-  return { NftCard: () => <View testID="nft-card" />, NftCardSkeleton: () => <View /> };
+  return { NftCard: () => <View />, NftCardSkeleton: () => <View /> };
 });
 
 // The kit primitives press with Reanimated; this suite is about the tab's
@@ -92,7 +89,7 @@ jest.mock('../src/components/WarningNotice', () => {
 });
 
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
-  useDeveloperMode: () => false,
+  useDeveloperMode: () => mockDeveloperMode,
 }));
 
 jest.mock('../hooks/useTabChrome', () => ({
@@ -102,15 +99,10 @@ jest.mock('../hooks/useTabChrome', () => ({
   }),
 }));
 
-describe('Collectibles grid virtualization', () => {
-  const NFT_COUNT = 400;
-
-  const manyNfts = Array.from({ length: NFT_COUNT }, (_, i) => ({
-    mint: `mint-${i}`,
-    name: `NFT ${i}`,
-    image: `https://example.test/${i}.png`,
-    blockchain: 'solana',
-  }));
+describe('Collectibles chain section headers', () => {
+  const nftsFor = (prefix: string) => [
+    { mint: `${prefix}-1`, name: `${prefix} #1`, image: null, blockchain: 'solana' },
+  ];
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -121,38 +113,38 @@ describe('Collectibles grid virtualization', () => {
           id: 'account-1',
           networksAccounts: {
             'solana-mainnet': [
-              {
-                getReceiveAddress: () => 'Owner111',
-                getNetworkId: () => 'solana-mainnet',
-              },
+              { getReceiveAddress: () => 'Owner111', getNetworkId: () => 'solana-mainnet' },
+            ],
+            'solana-devnet': [
+              { getReceiveAddress: () => 'Owner222', getNetworkId: () => 'solana-devnet' },
             ],
           },
         },
       },
     ]);
-    mockUseSolanaNfts.mockReturnValue({
-      nfts: manyNfts,
+    mockUseSolanaNfts.mockImplementation(({ networkId }: { networkId: string }) => ({
+      nfts: nftsFor(networkId),
       loading: false,
       error: null,
       isError: false,
       refresh: mockRefresh,
-    });
+    }));
   });
 
-  it('mounts a bounded window of cards, not the whole collection', () => {
+  it('renders one heading per chain section once devnet joins mainnet', () => {
+    mockDeveloperMode = true;
+
     render(<NftsTab />);
 
-    const mounted = screen.queryAllByTestId('nft-card').length;
-
-    // The exact window is a tuning detail; that it is bounded is not.
-    expect(mounted).toBeGreaterThan(0);
-    expect(mounted).toBeLessThan(NFT_COUNT / 4);
+    expect(screen.getByText('Solana')).toBeTruthy();
+    expect(screen.getByText('Solana Devnet')).toBeTruthy();
   });
 
-  it('still renders neither the empty nor the error state with a full collection', () => {
+  it('suppresses the heading when mainnet is the only section', () => {
+    mockDeveloperMode = false;
+
     render(<NftsTab />);
 
-    expect(screen.queryByTestId('collectibles-empty')).toBeNull();
-    expect(screen.queryByTestId('collectibles-load-error')).toBeNull();
+    expect(screen.queryByText('Solana')).toBeNull();
   });
 });

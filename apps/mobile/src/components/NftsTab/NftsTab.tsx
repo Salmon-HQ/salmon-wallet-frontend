@@ -1,29 +1,22 @@
 /**
- * NftsTab - NFT Gallery (Netflix-Style)
+ * NftsTab — the NFTs sub-tab of Home: a virtualised two-column grid of
+ * collectibles, grouped by chain section (mainnet, plus devnet when Developer
+ * Networks is on).
  *
- * Displays NFTs grouped by blockchain in horizontal carousels.
- * - Always shows mainnet NFTs for all blockchains
- * - When developer mode is enabled, also shows devnet/testnet NFTs
- *
- * Features:
- * - Pull-to-refresh
- * - Loading skeleton state
- * - Empty state
- * - "See All" sheets for each blockchain
- * - Parallel multi-chain fetching
- * - Developer mode support for test networks
+ * It is built from the kit: `Card` for the developer banner, `SectionLabel`
+ * for the chain headings, `StateBlock` for the empty and failed answers,
+ * `NftCard` / `NftCardSkeleton` for the tiles. The blocks above the grid sit
+ * the component gap (20) apart; inside the grid the tiles sit 12 apart,
+ * which is anatomy, not a seam between components.
  */
 
 import {
   SECTION_TO_NETWORK as SHARED_SECTION_TO_NETWORK,
   canonicalNftToSolanaNftData,
-  borderRadius,
-  fontFamilyNative,
   fontSize,
   spacing,
   getNftSectionTitle,
   getShortAddress,
-  ms,
   s,
   useAccountsContext,
   useSolanaNfts,
@@ -40,15 +33,15 @@ import {
   SectionList,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
-import { NftCard, NftCardSkeleton, type NftBlockchain, type NftData } from '../NftCard';
-import { SolanaSvgIcon } from '../Icon';
-import { SubAccountSelector, type SubAccount } from '../SubAccountSelector';
-import { WarningNotice } from '../WarningNotice';
+
+import { NftCard, type NftBlockchain, type NftData } from '../NftCard';
+import type { SubAccount } from '../SubAccountSelector';
 import { useDeveloperMode } from '../../contexts/DeveloperModeContext';
 import { useTabChrome } from '../../../hooks/useTabChrome';
+import { NftSectionHeader } from './NftSectionHeader';
+import { NftsTabHeader } from './NftsTabHeader';
 import type { NftSectionKey, NftSection, NftsTabProps } from './types';
 
 // ============================================================================
@@ -70,12 +63,12 @@ const SECTION_META: Record<
   'solana-devnet': { blockchain: 'solana', isTestnet: true },
 };
 
-// Grid layout constants (matching NftSeeAllSheet pattern)
-const GRID_GAP = s(18);
-
-// ============================================================================
-// Main Component
-// ============================================================================
+/**
+ * The gap between tiles. A tile's neighbour inside the grid is anatomy, not a
+ * seam between components, so it takes the 12 step rather than the component
+ * gap of 20 the blocks above the grid sit at (DESIGN.md §Layout).
+ */
+const GRID_GAP = spacing.md;
 
 /**
  * Skeleton rows shown while a section loads. Three rows overflow the fold on
@@ -83,6 +76,10 @@ const GRID_GAP = s(18);
  * finished grid.
  */
 const SKELETON_ROWS = ['a', 'b', 'c'] as const;
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 export function NftsTab({
   listHeader,
@@ -98,7 +95,6 @@ export function NftsTab({
   const [sectionIndexes, setSectionIndexes] =
     useState<Record<NftSectionKey, number>>(INITIAL_SECTION_INDEXES);
 
-  // Get account context
   const [accountState] = useAccountsContext();
   const { ready, activeAccount } = accountState;
 
@@ -225,12 +221,10 @@ export function NftsTab({
   );
 
   // Get ordered section keys to display (Solana only)
-  const visibleSectionKeys = useMemo<NftSectionKey[]>(() => {
-    if (developerNetworks) {
-      return ['solana', 'solana-devnet'];
-    }
-    return ['solana'];
-  }, [developerNetworks]);
+  const visibleSectionKeys = useMemo<NftSectionKey[]>(
+    () => (developerNetworks ? ['solana', 'solana-devnet'] : ['solana']),
+    [developerNetworks]
+  );
 
   // Sections that actually paint. Mainnet and devnet count as two distinct
   // chains: same base chain, different networks and different assets, and a
@@ -238,9 +232,6 @@ export function NftsTab({
   // two as interchangeable, which is the confusion the label exists to
   // prevent. Devnet only appears once Developer Networks is on, so that user
   // has already opted into the distinction.
-  //
-  // Derived from data the screen already holds; no hook, service or network
-  // call is involved.
   const renderedSectionKeys = useMemo(
     () =>
       visibleSectionKeys.filter(
@@ -275,7 +266,6 @@ export function NftsTab({
     [renderedSectionKeys, nftsBySections]
   );
 
-  // Check if Solana section is loading
   const isLoading = nftsBySections.solana.loading;
 
   // Load failure on any visible section — keep partial data visible.
@@ -310,7 +300,6 @@ export function NftsTab({
         keyExtractor={(row, index) => row[0]?.mint ?? `row-${index}`}
         style={styles.scrollView}
         contentContainerStyle={[
-          styles.scrollContent,
           { paddingBottom: scrollBottomPadding },
           // The top padding is the host screen's to give (Home passes the same
           // `contentTopOffset` the Portfolio tab uses). Computing a second one
@@ -340,139 +329,28 @@ export function NftsTab({
           />
         }
         ListHeaderComponent={
-          <>
-            {/* Home's balance block on the NFTs sub-tab. It is the list's
-                header rather than a pinned sibling, so it scrolls away with
-                the grid while the sub-tab row above stays reachable — and the
-                grid keeps being the screen's only scroll view. */}
-            {listHeader}
-
-            {/* The visible "My Collectibles" heading sat directly under the
-                Collectibles tab, repeating a label the user had just tapped. It is
-                not deleted, only unpainted: React Native has no DOM and therefore
-                no `visuallyHidden` clip rectangle, so the platform equivalent is a
-                1x1 transparent node that stays in the accessibility tree with
-                `accessibilityRole="header"`. Screen-reader users keep a heading to
-                orient by; the eye gets ~78px of vertical chrome back. Zero width
-                or `display: none` would drop it from the tree on Android, which is
-                why the box is 1x1 rather than 0x0. */}
-            <Text
-              style={styles.assistiveHeading}
-              accessibilityRole="header"
-              importantForAccessibility="yes"
-            >
-              {t('wallet.my_nfts', 'My Collectibles')}
-            </Text>
-
-            {/* Developer Mode Banner */}
-            {developerNetworks && (
-              <View style={styles.devModeBanner}>
-                <Text style={styles.devModeBannerText}>
-                  {t('collectibles.developer_banner', 'Developer Mode - Showing testnet NFTs')}
-                </Text>
-              </View>
-            )}
-
-            {/* Load failure banner — explicit retry (pull-to-refresh also works) */}
-            {loadError && (
-              <View style={styles.loadErrorBanner} testID="collectibles-load-error">
-                <WarningNotice
-                  tone="warning"
-                  title={t(
-                    'collectibles.load_error',
-                    "Your collectibles couldn't be loaded right now."
-                  )}
-                  action={
-                    <TouchableOpacity
-                      onPress={handleRefresh}
-                      accessibilityRole="button"
-                      testID="collectibles-retry-button"
-                    >
-                      <Text style={styles.retryText}>{t('actions.retry', 'Retry')}</Text>
-                    </TouchableOpacity>
-                  }
-                />
-              </View>
-            )}
-
-            {/* A short list, not a failed one: the grid below is real, it is
-                just missing whatever the failed page held. */}
-            {!loadError && partialLoad && (
-              <View style={styles.loadErrorBanner} testID="collectibles-partial-load">
-                <WarningNotice
-                  tone="warning"
-                  title={t(
-                    'collectibles.partial_error',
-                    'Some of your collectibles could not be loaded. Pull to refresh to try again.'
-                  )}
-                  action={
-                    <TouchableOpacity
-                      onPress={handleRefresh}
-                      accessibilityRole="button"
-                      testID="collectibles-partial-retry-button"
-                    >
-                      <Text style={styles.retryText}>{t('actions.retry', 'Retry')}</Text>
-                    </TouchableOpacity>
-                  }
-                />
-              </View>
-            )}
-
-            {/* Empty State */}
-            {isEmpty && (
-              <View style={styles.emptyContainer} testID="collectibles-empty">
-                <Text style={styles.emptyText}>{t('nft.emptyTitle', 'No Collectibles')}</Text>
-                <Text style={styles.emptySubtext}>
-                  {t(
-                    'nft.emptySubtitle',
-                    'Your NFTs and Ordinals will appear here once you receive some'
-                  )}
-                </Text>
-              </View>
-            )}
-          </>
+          <NftsTabHeader
+            listHeader={listHeader}
+            developerMode={!!developerNetworks}
+            loadError={!!loadError}
+            partialLoad={!!partialLoad}
+            isEmpty={isEmpty}
+            onRetry={handleRefresh}
+          />
         }
-        renderSectionHeader={({ section }) => {
-          const sectionKey = section.key;
-          const nftSection = section.section;
-          const title = getNftSectionTitle(sectionKey, nftSection);
-          const subAccounts = sectionSubAccounts[sectionKey] ?? [];
-
-          return (
-            <View style={styles.sectionHeaderBlock}>
-              {showChainLabel && (
-                <View style={styles.sectionHeader}>
-                  <SolanaSvgIcon size={ms(24)} color={semantic.text.primary} />
-                  <Text style={styles.sectionHeaderTitle}>{title}</Text>
-                  <Text style={styles.sectionHeaderCount}>({nftSection.nfts.length})</Text>
-                </View>
-              )}
-              <SubAccountSelector
-                accounts={subAccounts}
-                activeIndex={sectionIndexes[sectionKey]}
-                onSelect={(index) => handleSectionIndexChange(sectionKey, index)}
-                style={styles.sectionSelector}
-              />
-              {nftSection.loading && (
-                <View testID="collectibles-loading">
-                  {/* Four lonely cards read as an empty grid that finished
-                      loading, and the shimmer alone is too quiet against this
-                      palette to say otherwise. The skeletons fill the fold so
-                      the screen looks like a grid arriving rather than a grid
-                      that is over — the grid itself is the loading signal. */}
-                  <View>
-                    {SKELETON_ROWS.map((rowKey) => (
-                      <View key={rowKey} style={styles.gridRow}>
-                        <NftCardSkeleton style={styles.gridCard} />
-                        <NftCardSkeleton style={styles.gridCard} />
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              )}
-            </View>
-          );
-        }}
+        renderSectionHeader={({ section }) => (
+          <NftSectionHeader
+            title={showChainLabel ? getNftSectionTitle(section.key, section.section) : undefined}
+            count={section.section.nfts.length}
+            loading={section.section.loading}
+            subAccounts={sectionSubAccounts[section.key] ?? []}
+            activeIndex={sectionIndexes[section.key]}
+            onSelectSubAccount={(index) => handleSectionIndexChange(section.key, index)}
+            skeletonRows={SKELETON_ROWS}
+            rowStyle={styles.gridRow}
+            cardStyle={styles.gridCard}
+          />
+        )}
         renderItem={({ item: row, section }) => (
           <View style={styles.gridRow}>
             {row.map((nft) => (
@@ -507,7 +385,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: semantic.text.secondary,
-    fontSize: ms(fontSize.bodyLg),
+    fontSize: s(fontSize.bodyLg),
     marginTop: vs(spacing.screenGutter),
   },
   scrollView: {
@@ -515,95 +393,12 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 0,
   },
-  scrollContent: {},
-  /** Present to assistive tech, absent to the eye. See the render comment. */
-  assistiveHeading: {
-    position: 'absolute',
-    width: 1,
-    height: 1,
-    opacity: 0,
-  },
-  devModeBanner: {
-    backgroundColor: semantic.accent.tint,
-    borderWidth: 1,
-    borderColor: semantic.accent.ink,
-    borderRadius: ms(borderRadius.md),
-    paddingVertical: vs(spacing.sm),
-    paddingHorizontal: s(spacing.md),
-    marginBottom: vs(spacing.screenGutter),
-  },
-  devModeBannerText: {
-    fontFamily: fontFamilyNative.medium,
-    fontSize: ms(fontSize.caption),
-    color: semantic.accent.ink,
-    textAlign: 'center',
-  },
-  // Empty State
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: vs(spacing.screenGutter),
-    paddingHorizontal: s(spacing.screenGutter),
-    marginTop: vs(spacing.screenGutter),
-  },
-  emptyText: {
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(fontSize.heading),
-    color: semantic.text.secondary,
-    marginBottom: vs(spacing.sm),
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontFamily: fontFamilyNative.regular,
-    fontSize: ms(fontSize.body),
-    color: semantic.text.disabled,
-    textAlign: 'center',
-  },
-  sectionSelector: {
-    marginBottom: vs(spacing.screenGutter),
-  },
-  loadErrorBanner: {
-    marginBottom: vs(spacing.screenGutter),
-  },
-  retryText: {
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(fontSize.caption),
-    color: semantic.accent.ink,
-  },
-  // Grid layout styles (matching NftSeeAllSheet pattern)
-  sectionContainer: {
-    marginBottom: vs(spacing.screenGutter),
-  },
-  // The section header block carries what used to be the top of
-  // `sectionContainer`: the chain label, the sub-account selector, and the
-  // skeletons while the section loads.
-  sectionHeaderBlock: {
-    marginBottom: vs(spacing.screenGutter),
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(8),
-    marginBottom: vs(spacing.screenGutter),
-  },
-  sectionHeaderTitle: {
-    fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(fontSize.bodyLg),
-    color: semantic.text.primary,
-    flex: 1,
-  },
-  sectionHeaderCount: {
-    fontFamily: fontFamilyNative.regular,
-    fontSize: ms(fontSize.mono),
-    color: semantic.text.secondary,
-  },
   gridRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: GRID_GAP,
+    gap: s(GRID_GAP),
+    marginBottom: s(GRID_GAP),
   },
   gridCard: {
     flex: 1,
-    maxWidth: `${(100 - 2) / 2}%`,
   },
 });
