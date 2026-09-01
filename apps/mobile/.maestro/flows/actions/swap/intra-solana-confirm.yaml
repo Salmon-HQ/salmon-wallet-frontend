@@ -14,8 +14,10 @@ appId: io.salmonwallet.app
 # picked straight from the selector's holdings list. Searching is avoided —
 # rows in the search results do not respond to taps on their text node.
 - runFlow: ../../../subflows/onboard-walletA.yaml
-- tapOn:
-    id: 'tab-swap'
+# TODO(redesign): swap leaves the tab bar and becomes a powerup — re-point at
+# the powerups FAB once the launcher lists it.
+# - tapOn:
+#     id: 'tab-swap'
 - waitForAnimationToEnd:
     timeout: 8000
 

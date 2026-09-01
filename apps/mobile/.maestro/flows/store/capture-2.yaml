@@ -30,7 +30,7 @@ appId: io.salmonwallet.app
 # Mindfolk Founder #5154 replaces Mad Lads #8420: it is the one NFT the test
 # wallet genuinely holds. The grid itself is unchanged.
 - tapOn:
-    id: 'tab-collectibles'
+    id: 'portfolio-tab-nfts'
 - extendedWaitUntil:
     visible: 'My Collectibles'
     timeout: 30000
@@ -56,8 +56,10 @@ appId: io.salmonwallet.app
     timeout: 20000
 
 # ----------------------------------------------------------------- 07 swap --
-- tapOn:
-    id: 'tab-swap'
+# TODO(redesign): swap leaves the tab bar and becomes a powerup — re-point at
+# the powerups FAB once the launcher lists it.
+# - tapOn:
+#     id: 'tab-swap'
 - extendedWaitUntil:
     visible:
       id: 'swap-from-token'
@@ -151,7 +153,7 @@ appId: io.salmonwallet.app
 
 # ---------------------------------------------------------------- 09 about --
 - tapOn:
-    id: 'tab-home'
+    id: 'portfolio-tab-portfolio'
 - extendedWaitUntil:
     visible:
       id: 'wallet-header-account-switcher'

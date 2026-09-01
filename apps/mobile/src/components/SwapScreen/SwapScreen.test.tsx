@@ -12,6 +12,7 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 const mockLogic: Record<string, unknown> = {};
+const mockAccount: { watchOnly: boolean } = { watchOnly: false };
 
 // Reanimated pulls the Worklets native module, which does not exist under
 // Jest; the step transitions only need a View and the reduce-motion flag.
@@ -36,6 +37,8 @@ jest.mock('@salmon/shared', () => ({
   // exactly when the wait leaves and the receipt is allowed in.
   ...jest.requireActual('@salmon/shared/src/hooks/useWaitExit'),
   useSwapScreenLogic: () => mockLogic,
+  useAccountsContext: () => [{ activeAccount: mockAccount }],
+  isWatchOnlyAccount: (account: { watchOnly?: boolean } | undefined) => !!account?.watchOnly,
   useBridgeSettlement: () => ({
     trackBridgeExchange: jest.fn(),
     isStalled: false,
@@ -168,7 +171,7 @@ const setLogic = (overrides: Record<string, unknown>) => {
 };
 
 describe('SwapScreen task surface', () => {
-  it('mounts the water column — ramp, snow, and deep-field scales — behind the success screen', () => {
+  it('mounts the water column — ramp and deep-field scales — behind the success screen', () => {
     setLogic({ step: 'success' });
     render(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
 
@@ -441,6 +444,29 @@ describe('SwapScreen confirm choreography — sink, wave, float', () => {
       jest.advanceTimersByTime(FLOAT_DELAY_MS);
     });
     expect(screen.queryByTestId('swap-task-modal')).toBeNull();
+    expect(screen.getByTestId('swap-input-screen')).toBeTruthy();
+  });
+});
+
+describe('SwapScreen watch-only guard', () => {
+  afterEach(() => {
+    mockAccount.watchOnly = false;
+  });
+
+  it('refuses the whole screen for a watch-only wallet', () => {
+    // The swap route's `href` gate is unconditional now, so the tab no longer
+    // hides this screen from a keyless wallet — the screen has to refuse.
+    mockAccount.watchOnly = true;
+    render(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
+
+    expect(screen.getByTestId('swap-watch-only-notice')).toBeTruthy();
+    expect(screen.queryByTestId('swap-input-screen')).toBeNull();
+  });
+
+  it('renders the form for a signable wallet', () => {
+    render(<SwapScreen tokens={[]} onGetQuote={jest.fn()} onSwap={jest.fn()} />);
+
+    expect(screen.queryByTestId('swap-watch-only-notice')).toBeNull();
     expect(screen.getByTestId('swap-input-screen')).toBeTruthy();
   });
 });

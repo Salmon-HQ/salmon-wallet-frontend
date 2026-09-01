@@ -1,0 +1,52 @@
+appId: io.salmonwallet.app
+---
+# Walk the Home shell that replaced the bottom tab bar: the balance block with
+# its eye toggle and money actions, the in-page Portfolio | NFTs sub-tabs, and
+# the powerups FAB with its launcher sheet.
+#
+# Read-only: the eye toggle is never tapped (it persists), the sub-tabs only
+# change what is drawn, and the launcher sheet is a stub with nothing to
+# commit. Everything is asserted by testID — the labels are localised.
+- runFlow: ../../../subflows/onboard-walletA.yaml
+- assertVisible:
+    id: 'home-screen'
+- assertVisible:
+    id: 'balance-eye-toggle'
+- assertVisible:
+    id: 'home-send-button'
+- assertVisible:
+    id: 'portfolio-tab-portfolio'
+- assertVisible:
+    id: 'portfolio-tab-nfts'
+- assertVisible:
+    id: 'powerups-fab'
+- takeScreenshot: screenshots/smoke/home/shell-portfolio
+
+# The sub-tabs are offered on every chain; NFTs takes the balance back to
+# Solana on its own when it needs to.
+- tapOn:
+    id: 'portfolio-tab-nfts'
+- extendedWaitUntil:
+    visible: 'My Collectibles'
+    timeout: 30000
+# The sub-tab row stays reachable on the NFTs tab — that is the whole point of
+# it sticking rather than scrolling away with the balance.
+- assertVisible:
+    id: 'portfolio-tab-portfolio'
+- takeScreenshot: screenshots/smoke/home/shell-nfts
+- tapOn:
+    id: 'portfolio-tab-portfolio'
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# The `+` opens the powerups launcher (POWERUPS 01 stub in this lote).
+- tapOn:
+    id: 'powerups-fab'
+- extendedWaitUntil:
+    visible:
+      id: 'powerups-launcher-sheet'
+    timeout: 20000
+- takeScreenshot: screenshots/smoke/home/shell-powerups
+- runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
+- assertVisible:
+    id: 'powerups-fab'

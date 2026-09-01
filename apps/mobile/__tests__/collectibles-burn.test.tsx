@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import CollectiblesScreen from '../app/(app)/(tabs)/collectibles';
+import { NftsTab } from '../src/components/NftsTab';
 
 const mockCreateBurnTransaction = jest.fn();
 const mockSignAndSendPreparedSolanaTransactions = jest.fn();
@@ -95,7 +95,7 @@ jest.mock('@salmon/shared', () => ({
   vs: (value: number) => value,
 }));
 
-jest.mock('../src/components', () => {
+jest.mock('../src/components/NftCard', () => {
   const React = require('react');
   const { Pressable, Text, View } = require('react-native');
 
@@ -106,6 +106,14 @@ jest.mock('../src/components', () => {
       </Pressable>
     ),
     NftCardSkeleton: () => <View />,
+  };
+});
+
+jest.mock('../src/components/NftDetailSheet', () => {
+  const React = require('react');
+  const { Pressable, Text, View } = require('react-native');
+
+  return {
     NftDetailSheet: ({
       visible,
       onBurnPress,
@@ -125,9 +133,19 @@ jest.mock('../src/components', () => {
           </Pressable>
         </View>
       ) : null,
-    SolanaSvgIcon: () => <View />,
-    SubAccountSelector: () => <View />,
   };
+});
+
+jest.mock('../src/components/Icon', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return { SolanaSvgIcon: () => <View /> };
+});
+
+jest.mock('../src/components/SubAccountSelector', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return { SubAccountSelector: () => <View /> };
 });
 
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
@@ -183,7 +201,7 @@ describe('Collectibles burn reconciliation', () => {
   });
 
   it('wires burn preparation and signing through the shared contracts', async () => {
-    render(<CollectiblesScreen />);
+    render(<NftsTab />);
 
     await screen.findByText('Burnable NFT');
 

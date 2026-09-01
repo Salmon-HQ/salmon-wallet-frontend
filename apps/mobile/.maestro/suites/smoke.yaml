@@ -10,7 +10,10 @@ appId: io.salmonwallet.app
 - runFlow: ../flows/smoke/auth/unlock.yaml
 # Home + tabs + sheets
 - runFlow: ../flows/smoke/home/balance-display.yaml
-- runFlow: ../flows/smoke/home/tab-navigation.yaml
+# tab-navigation.yaml was removed with the bottom tab bar (redesign lote 1);
+# shell.yaml is its replacement — it walks the in-page sub-tabs and the
+# powerups FAB that took over the bar's entry points.
+- runFlow: ../flows/smoke/home/shell.yaml
 - runFlow: ../flows/smoke/home/blockchain-switcher.yaml
 - runFlow: ../flows/smoke/home/copy-address-checkmark.yaml
 - runFlow: ../flows/smoke/receive/sheet.yaml

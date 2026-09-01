@@ -24,7 +24,7 @@ appId: io.salmonwallet.app
 # full-matches text, and the phishing NFT's name is padded with zero-width spaces.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - tapOn:
-    id: 'tab-collectibles'
+    id: 'portfolio-tab-nfts'
 - extendedWaitUntil:
     visible: 'My Collectibles'
     timeout: 20000
@@ -41,4 +41,4 @@ appId: io.salmonwallet.app
 - runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
 - assertVisible: 'My Collectibles'
 - tapOn:
-    id: 'tab-home'
+    id: 'portfolio-tab-portfolio'

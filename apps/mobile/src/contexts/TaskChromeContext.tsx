@@ -6,7 +6,7 @@
  * appears: the gate header is a COMPUERTA that rises out of the frame while
  * the step content sinks, and the floating tab bar sinks with the content.
  * This context is how a deep flow tells the shell-level chrome
- * (GateContainer, GlassTabBar) that a task is engaged.
+ * (GateContainer) that a task is engaged.
  *
  * The signal is held from the moment the task begins — so the chrome leaves
  * during the beat, before the window covers it — until the window has

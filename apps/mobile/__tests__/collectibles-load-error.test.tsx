@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import CollectiblesScreen from '../app/(app)/(tabs)/collectibles';
+import { NftsTab } from '../src/components/NftsTab';
 
 const mockUseSolanaNfts = jest.fn();
 const mockRefresh = jest.fn();
@@ -64,16 +64,32 @@ jest.mock('@salmon/shared', () => ({
   vs: (value: number) => value,
 }));
 
-jest.mock('../src/components', () => {
+jest.mock('../src/components/NftCard', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return { NftCard: () => <View />, NftCardSkeleton: () => <View /> };
+});
+
+jest.mock('../src/components/NftDetailSheet', () => ({
+  NftDetailSheet: () => null,
+}));
+
+jest.mock('../src/components/Icon', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return { SolanaSvgIcon: () => <View /> };
+});
+
+jest.mock('../src/components/SubAccountSelector', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return { SubAccountSelector: () => <View /> };
+});
+
+jest.mock('../src/components/WarningNotice', () => {
   const React = require('react');
   const { Text, View } = require('react-native');
-
   return {
-    NftCard: () => <View />,
-    NftCardSkeleton: () => <View />,
-    NftDetailSheet: () => null,
-    SolanaSvgIcon: () => <View />,
-    SubAccountSelector: () => <View />,
     WarningNotice: ({ title, action }: { title: string; action?: React.ReactNode }) => (
       <View>
         <Text>{title}</Text>
@@ -124,7 +140,7 @@ describe('Collectibles load-error vs empty', () => {
       refresh: mockRefresh,
     });
 
-    render(<CollectiblesScreen />);
+    render(<NftsTab />);
 
     expect(screen.getByTestId('collectibles-load-error')).toBeTruthy();
     expect(screen.queryByTestId('collectibles-empty')).toBeNull();
@@ -142,7 +158,7 @@ describe('Collectibles load-error vs empty', () => {
       refresh: mockRefresh,
     });
 
-    render(<CollectiblesScreen />);
+    render(<NftsTab />);
 
     expect(screen.getByTestId('collectibles-empty')).toBeTruthy();
     expect(screen.queryByTestId('collectibles-load-error')).toBeNull();

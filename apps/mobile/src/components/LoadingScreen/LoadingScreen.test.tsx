@@ -194,7 +194,7 @@ describe('LoadingScreen', () => {
       expect(emitter.left).toBeUndefined();
     });
 
-    it('keeps the water out of the cluster, so the snow never travels with it', () => {
+    it('keeps the water out of the cluster, so the ground never travels with it', () => {
       // The ground is the ground: the departing transform lives on the
       // cluster, and anything under it would sink with the words on exit.
       render(<LoadingScreen visible title="Processing swap" />);

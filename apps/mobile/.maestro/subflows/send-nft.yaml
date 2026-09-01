@@ -9,7 +9,7 @@ appId: io.salmonwallet.app
 #         NFT_MINT: CNM8...
 #         DEST_ADDRESS: ${SALMON_TEST_WALLET_B_ADDR}
 #
-# Starts from Home and leaves the app back on the Collectibles tab.
+# Starts from Home and leaves the app on the in-page NFTs sub-tab.
 #
 # Do not declare an `env:` defaults block in this file. Maestro lets the default
 # win over the value passed by `runFlow`, and the selector silently degrades to
@@ -19,7 +19,7 @@ appId: io.salmonwallet.app
 # name: Maestro full-matches text, and the test wallets hold phishing airdrops
 # whose names are padded with zero-width spaces.
 - tapOn:
-    id: 'tab-collectibles'
+    id: 'portfolio-tab-nfts'
 - extendedWaitUntil:
     visible: 'My Collectibles'
     timeout: 20000
