@@ -81,7 +81,7 @@ export function ScreenHeader({
   if (title) {
     return (
       <View style={styles.titledWrapper}>
-        <View style={styles.titledRow}>
+        <View style={styles.titledRow} testID="screen-header-title-row">
           {/* No `onBack` ⇒ no well at all. An empty touch target still spent
               the row's gap, so a screen that cannot be backed out of (the
               powerups browse screen, dismissed by its own FAB) started with a
@@ -108,9 +108,11 @@ export function ScreenHeader({
             </TouchableOpacity>
           )}
           {titleGlyph}
-          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-            {title}
-          </Text>
+          <View style={styles.titleBox} testID="screen-header-title-box">
+            <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+              {title}
+            </Text>
+          </View>
         </View>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
@@ -202,30 +204,42 @@ const styles = StyleSheet.create({
     paddingTop: vs(spacing.sm),
     gap: vs(spacing.xs),
   },
-  // The `.pen` block: `screenTop` under the safe area, the screen gutter at
-  // the sides, and 20 of air before the content starts.
+  // `.pen` CORE 04 "Send header": `screenTop` under the safe area, the
+  // screen gutter at the sides, 20 of air before the content starts, and a
+  // vertical stack with gap 12 between the navigation row and the subtitle.
   titledWrapper: {
     width: '100%',
     paddingTop: vs(spacing.screenTop),
     paddingBottom: vs(spacing.xl),
     paddingHorizontal: s(spacing.screenGutter),
-    gap: vs(spacing.base),
+    gap: vs(spacing.md),
   },
+  // `.pen` "Send navigation": row, gap 12, `alignItems: center` — the row's
+  // cross-axis centre does the centring, not the title's baseline.
   titledRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: s(spacing.base),
+    gap: s(spacing.md),
   },
-  // The headline role (DESIGN.md §Hierarchy): a screen header is the loudest
-  // type on the screen after the balance, so it takes 24/700 rather than the
-  // 20 it first shipped at — and the subtitle steps with it to 14/500.
-  title: {
+  // The headline role (DESIGN.md §Hierarchy): 24/700; the subtitle steps
+  // with it to 14/500.
+  //
+  // Centring: the mock ("Send navigation", CORE 04) gives the title a text
+  // box exactly as tall as the back well (38) with the glyphs centred inside
+  // it. That is what `titleBox` reproduces — a well-height container that
+  // centres the Text — so iOS and Android land identically, with no
+  // font-metric nudges. The Text keeps its natural line box.
+  titleBox: {
     flexShrink: 1,
+    height: BACK_BUBBLE_SIZE,
+    justifyContent: 'center',
+  },
+  title: {
     fontFamily: fontFamilyNative.bold,
     fontSize: s(fontSize.headline),
-    lineHeight: s(fontSize.headline) * lineHeight.tight,
     letterSpacing: letterSpacing.snug,
     color: semantic.text.primary,
+    includeFontPadding: false,
   },
   subtitle: {
     fontFamily: fontFamilyNative.medium,

@@ -406,7 +406,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: s(spacing.screenGutter),
     // No top padding: the header block already ends 20 above the content.
-    gap: vs(spacing.sm),
+    // The component gap (DESIGN.md §Layout): 20 between sibling blocks.
+    gap: vs(spacing.screenGutter),
   },
   totalLabelRow: {
     flexDirection: 'row',
@@ -436,7 +437,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: vs(spacing.base),
   },
   headingHint: {
     color: semantic.text.tertiary,
