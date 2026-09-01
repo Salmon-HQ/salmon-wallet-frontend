@@ -16,7 +16,7 @@ const flatten = (style: unknown) =>
   Object.assign({}, ...(Array.isArray(style) ? style : [style]).flat(Infinity).filter(Boolean));
 
 describe('Card', () => {
-  it('grounds on the raised membrane by default and on the ink well when asked', () => {
+  it('grounds on the thin-tier membrane by default and on the ink well when asked', () => {
     render(
       <>
         <Card testID="plain">
@@ -29,7 +29,7 @@ describe('Card', () => {
     );
 
     expect(flatten(screen.getByTestId('plain').props.style).backgroundColor).toBe(
-      semantic.surface.raised
+      semantic.surface.membraneThin
     );
     expect(flatten(screen.getByTestId('inked').props.style).backgroundColor).toBe(
       semantic.depth.abyss

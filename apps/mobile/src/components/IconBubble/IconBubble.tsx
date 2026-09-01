@@ -17,7 +17,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import { borderRadius, borderWidth, fontFamilyNative, s, semantic } from '@salmon/shared';
+import {
+  borderRadius,
+  borderWidth,
+  componentSizes,
+  fontFamilyNative,
+  s,
+  semantic,
+} from '@salmon/shared';
 
 import { usePressMotion } from '../../../hooks/usePressMotion';
 import { FleshBackground } from '../FleshBackground';
@@ -119,17 +126,20 @@ export function IconBubble({
     </>
   );
 
+  // A salmon fill is mass, so it carries the flesh; every other ground is
+  // surface and carries none. The call site can still say otherwise. This
+  // applies whether or not the bubble is pressable — an inert accent well is
+  // still a solid accent fill.
+  const showFlesh = (flesh ?? tone === 'accent') && !isDisabled;
+
   if (!onPress) {
     return (
       <View testID={testID} accessibilityLabel={accessibilityLabel} style={shell}>
+        {showFlesh && <FleshBackground scale={componentSizes.bubbleFleshScale} />}
         {body}
       </View>
     );
   }
-
-  // A salmon fill is mass, so it carries the flesh; every other ground is
-  // surface and carries none. The call site can still say otherwise.
-  const showFlesh = (flesh ?? tone === 'accent') && !isDisabled;
 
   return (
     <AnimatedTouchable
@@ -144,7 +154,7 @@ export function IconBubble({
       {...pressHandlers}
       style={[...shell, motionStyle]}
     >
-      {showFlesh && <FleshBackground />}
+      {showFlesh && <FleshBackground scale={componentSizes.bubbleFleshScale} />}
       {body}
       {!isDisabled && <PressSpecular {...specular} />}
     </AnimatedTouchable>

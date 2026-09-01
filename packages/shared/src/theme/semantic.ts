@@ -40,10 +40,25 @@ export const surface = {
   raised: neutral[900],
   /** Opaque top elevation — menus, opaque sheets */
   crest: neutral[925],
-  /** Translucent tier 1 — pair with blur; see the material model */
-  membraneThin: 'rgba(11, 15, 25, 0.62)',
-  /** Translucent tier 2 — pair with blur */
-  membraneThick: 'rgba(11, 15, 25, 0.80)',
+  /**
+   * Translucent tier 1 — pair with blur; see the material model.
+   *
+   * Lowered from 0.62 (2026-09-01, owner: what lies under a sheet or a card
+   * must show through). The thermocline's only remaining thin-tier consumer
+   * is content — Card's `surface` tone, and the token rows built on it — so
+   * the worst case that governs the alpha is what actually sits under a
+   * card: the water column's own ground (`water.gradient`), not an arbitrary
+   * bright backdrop. `contrast.test.ts` asserts `text.primary` stays ≥4.5:1
+   * against that ground.
+   */
+  membraneThin: 'rgba(11, 15, 25, 0.48)',
+  /**
+   * Translucent tier 2 — pair with blur.
+   *
+   * Lowered from 0.80 (2026-09-01, same ruling). Still measured against
+   * `water.gradient`'s worst case in `contrast.test.ts`.
+   */
+  membraneThick: 'rgba(11, 15, 25, 0.66)',
   /** Opaque by rule: approval and seed screens forbid translucency */
   bedrock: neutral[975],
 } as const;
@@ -175,8 +190,15 @@ export const accent = {
  * `patternHeight` is a multiplier on the drawing's native 26px tile.
  */
 export const scales = {
-  /** Deep field — the column's own texture, top to bottom of the ground. */
-  deepFieldStroke: 'rgba(199, 211, 232, 0.06)',
+  /**
+   * Deep field — the column's own texture, top to bottom of the ground.
+   *
+   * Halved from 0.06 (2026-09-01, owner: the water column scales should
+   * read as farther away). Still visible on an OLED at full brightness —
+   * ~1.05:1 on `depth.column`, above the ~1.03:1 floor — but noticeably
+   * fainter than before. Opacity only; `deepFieldScale` is unchanged.
+   */
+  deepFieldStroke: 'rgba(199, 211, 232, 0.03)',
   deepFieldScale: 3.2,
   /**
    * @deprecated The field is no longer a band. It filled 180px and dissolved
@@ -207,7 +229,7 @@ export const scales = {
    */
   fishStroke: 'rgba(7, 9, 17, 0.10)',
   fishScale: 1,
-  /** Seigaiha tile scale shared by the refraction and membrane variants. */
+  /** Seigaiha tile scale the refraction variant uses. */
   refractionScale: 0.5,
   /**
    * The strip's horizontal sweep — caustic cyan through `salmon-300` to
@@ -215,17 +237,6 @@ export const scales = {
    * iridescence; composites measure under the 1.4:1 decorative ceiling.
    */
   refractionSweep: ['#9FE0EF', salmon[300], success[300]],
-  /**
-   * The membrane field's ink — the 0.5× seigaiha over the *whole* thermocline
-   * surface, drawn dark (owner, 2026-08-19: "quiero que estén oscuras las
-   * escamas"). Dark grain in the membrane's own ink, one continuous field with
-   * no brighter edge — the light sweep read as a seam where the strip and the
-   * field overlapped. Near-black at 0.45 measures ~1.06:1 on `surface.crest`,
-   * under the 1.4:1 decorative ceiling. Alpha lives here, deep-field style;
-   * the container paints it at full opacity. Texture, not transparency, so it
-   * survives the opaque rung.
-   */
-  membraneFieldStroke: 'rgba(7, 9, 17, 0.45)',
 } as const;
 
 /**

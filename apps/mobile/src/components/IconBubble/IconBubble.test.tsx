@@ -40,16 +40,21 @@ jest.mock('../../../hooks/usePressMotion', () => ({
   }),
 }));
 
-jest.mock('../FleshBackground', () => ({
-  FleshBackground: () => null,
-}));
+jest.mock('../FleshBackground', () => {
+  const ReactActual = require('react');
+  const { View: RNView } = require('react-native');
+  return {
+    FleshBackground: ({ scale }: { scale?: number }) =>
+      ReactActual.createElement(RNView, { testID: 'flesh-background', scale }),
+  };
+});
 
 jest.mock('../PressSpecular', () => ({
   PressSpecular: () => null,
   SPECULAR_OPACITY: 0.12,
 }));
 
-import { borderRadius, borderWidth, semantic } from '@salmon/shared';
+import { borderRadius, borderWidth, componentSizes, semantic } from '@salmon/shared';
 import { IconBubble } from './IconBubble';
 
 const flatten = (style: unknown) =>
@@ -188,5 +193,39 @@ describe('IconBubble', () => {
     );
     // A disabled control is one object — the override does not survive it.
     expect(DisabledSpy.mock.calls[0]?.[0].color).toBe(semantic.text.disabled);
+  });
+
+  it('carries the flesh texture, at the bubble scale, on every accent fill — pressable or not', () => {
+    render(
+      <>
+        <IconBubble testID="well" size={42} tone="accent" />
+        <IconBubble testID="pressable" size={42} tone="accent" onPress={() => {}} />
+      </>
+    );
+
+    const wellFlesh = screen.getAllByTestId('flesh-background')[0];
+    const pressableFlesh = screen.getAllByTestId('flesh-background')[1];
+    expect(wellFlesh.props.scale).toBe(componentSizes.bubbleFleshScale);
+    expect(pressableFlesh.props.scale).toBe(componentSizes.bubbleFleshScale);
+  });
+
+  it('never draws the flesh texture on a non-accent ground', () => {
+    render(
+      <>
+        <IconBubble testID="outline" size={42} tone="outline" onPress={() => {}} />
+        <IconBubble testID="surface" size={42} tone="surface" />
+        <IconBubble testID="ink" size={42} tone="ink" onPress={() => {}} />
+      </>
+    );
+
+    expect(screen.queryByTestId('flesh-background')).toBeNull();
+  });
+
+  it('drops the flesh when a pressable accent bubble is disabled — the salmon is either alive or absent', () => {
+    render(
+      <IconBubble testID="send" size={42} tone="accent" onPress={() => {}} disabled />
+    );
+
+    expect(screen.queryByTestId('flesh-background')).toBeNull();
   });
 });

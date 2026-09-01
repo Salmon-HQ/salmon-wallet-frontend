@@ -13,7 +13,6 @@ jest.mock('@salmon/shared', () => ({
       refractionScale: 0.5,
       refractionSweep: ['#ff0000', '#00ff00', '#0000ff'],
       refractionOpacity: 0.08,
-      membraneFieldStroke: 'rgba(7, 9, 17, 0.45)',
     },
   },
 }));
@@ -92,28 +91,5 @@ describe('ScalesBackground refraction variant', () => {
     const { getAllByType } = renderRefraction();
     const [mask] = getAllByType(Mask);
     expect(mask.props.maskUnits).toBe('userSpaceOnUse');
-  });
-});
-
-describe('ScalesBackground membrane variant', () => {
-  it('is a flat dark ink — pattern fill, no sweep, no mask, no fade', () => {
-    const api = render(<ScalesBackground variant="membrane" />);
-
-    // One dark ink through the tile, no mask indirection at all: any second
-    // layer or gradient here is what read as a band in the membrane.
-    expect(api.UNSAFE_queryAllByType(Mask)).toHaveLength(0);
-
-    const rects = api.UNSAFE_getAllByType(Rect) as unknown as TestInstance[];
-    const painted = rects.find((rect) => /^url\(#/.test(String(rect.props.fill)));
-    expect(painted).toBeDefined();
-    expect(painted!.props.mask).toBeUndefined();
-
-    const paths = api.UNSAFE_getAllByType(
-      jest.requireActual('react-native-svg').Path
-    ) as unknown as TestInstance[];
-    expect(paths.length).toBeGreaterThan(0);
-    for (const path of paths) {
-      expect(path.props.stroke).toBe('rgba(7, 9, 17, 0.45)');
-    }
   });
 });

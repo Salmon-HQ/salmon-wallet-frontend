@@ -15,9 +15,14 @@ import type { CardPadding, CardProps, CardRadius, CardTone } from './types';
 /**
  * Ground and edge per tone. Every border is the decorative hairline except
  * `warning`, which keeps the amber stroke the tint ships with.
+ *
+ * `surface` grounds on the thin-tier membrane rather than the opaque
+ * `surface.raised` (2026-09-01, owner: what lies under a card must show
+ * through a little) — the water column's scales read faintly behind every
+ * token row and content card built on `Card`/`ListRow`.
  */
 const TONES: Record<CardTone, { background: string; border: string }> = {
-  surface: { background: semantic.surface.raised, border: semantic.border.hairline },
+  surface: { background: semantic.surface.membraneThin, border: semantic.border.hairline },
   accent: { background: semantic.accent.tint, border: semantic.border.hairline },
   warning: { background: semantic.status.warningTint, border: semantic.status.warningTintBorder },
   ink: { background: semantic.depth.abyss, border: semantic.border.hairline },

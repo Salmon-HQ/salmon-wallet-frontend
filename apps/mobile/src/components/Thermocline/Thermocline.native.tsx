@@ -3,7 +3,6 @@ import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useMembraneMaterial } from '../../../hooks/useMembraneMaterial';
-import { ScalesBackground } from '../ScalesBackground';
 import type { ThermoclineProps, ThermoclineTier } from './types';
 
 /** Scrim per tier — the floor, always painted, never negotiated. */
@@ -17,23 +16,6 @@ const OPAQUE: Record<ThermoclineTier, string> = {
   thin: semantic.surface.raised,
   thick: semantic.surface.crest,
 };
-
-/**
- * The membrane field — the 0.5× seigaiha over the whole surface, drawn as a
- * flat dark ink (owner, 2026-08-19: dark scales, one continuous field). The
- * former 24px refraction strip is merged into this field: a second, brighter
- * copy clipped to the top edge stacked over the field there and read as a
- * band that broke the material — screenshots, tab bar and ReceiveSheet. One
- * layer, one ink, edge to edge. Texture, not transparency: it renders on
- * every rung, opaque included.
- */
-function ScalesField() {
-  return (
-    <View style={styles.scalesField} pointerEvents="none" testID="thermocline-field">
-      <ScalesBackground variant="membrane" />
-    </View>
-  );
-}
 
 /**
  * Thermocline — the P3 membrane material, named after the phenomenon it is.
@@ -53,6 +35,10 @@ function ScalesField() {
  * `surface.bedrock`, never this. Renders background only — no pointer
  * events, no children. Evolves the former `Membrane` component; the
  * `surface.membrane*` tokens keep their name.
+ *
+ * The material is tint + scrim only (2026-09-01) — the membrane field, the
+ * flat dark scales layer that used to cover the whole surface, is retired.
+ * See DESIGN.md §The thermocline, "The membrane field."
  */
 export function Thermocline({ tier = 'thin', style }: ThermoclineProps) {
   const material = useMembraneMaterial();
@@ -83,19 +69,12 @@ export function Thermocline({ tier = 'thin', style }: ThermoclineProps) {
           testID="thermocline-scrim"
         />
       )}
-      <ScalesField />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
-    overflow: 'hidden',
-  },
-  // No container opacity — the field's subtlety is the ink's own alpha
-  // (`scales.membraneFieldStroke`), so there is exactly one knob.
-  scalesField: {
-    ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
   },
 });

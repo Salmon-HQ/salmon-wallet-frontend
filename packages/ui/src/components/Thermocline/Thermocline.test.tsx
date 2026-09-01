@@ -14,19 +14,10 @@ vi.mock('@salmon/shared', () => ({
     surface: {
       raised: '#161C2D',
       crest: '#111624',
-      membraneThin: 'rgba(11, 15, 25, 0.62)',
-      membraneThick: 'rgba(11, 15, 25, 0.80)',
-    },
-    scales: {
-      membraneFieldStroke: 'rgba(7, 9, 17, 0.45)',
+      membraneThin: 'rgba(11, 15, 25, 0.48)',
+      membraneThick: 'rgba(11, 15, 25, 0.66)',
     },
   },
-}));
-
-vi.mock('../ScalesBackground', () => ({
-  ScalesBackground: ({ variant }: { variant: string }) => (
-    <div data-testid="scales-background" data-variant={variant} />
-  ),
 }));
 
 import { Thermocline } from './Thermocline';
@@ -80,36 +71,16 @@ describe('Thermocline (DOM)', () => {
     expect(screen.queryByTestId('thermocline-scrim')).toBeNull();
   });
 
-  describe('the membrane field', () => {
-    it('is one continuous dark field — the membrane variant, edge to edge', () => {
-      render(<Thermocline />);
+  it('the membrane field is retired — no field layer renders (2026-09-01)', () => {
+    render(<Thermocline />);
 
-      const field = screen.getByTestId('thermocline-field');
-      expect(
-        field.querySelector('[data-testid="scales-background"]')?.getAttribute('data-variant')
-      ).toBe('membrane');
-    });
+    expect(screen.queryByTestId('thermocline-field')).toBeNull();
+  });
 
-    it('has no separate refraction strip — a brighter top band broke the material (owner, 2026-08-19)', () => {
-      render(<Thermocline />);
+  it('ignores the deprecated refraction prop', () => {
+    render(<Thermocline refraction={false} />);
 
-      expect(screen.queryByTestId('thermocline-refraction')).toBeNull();
-    });
-
-    it('ignores the deprecated refraction prop', () => {
-      render(<Thermocline refraction={false} />);
-
-      expect(screen.getByTestId('thermocline-field')).toBeTruthy();
-      expect(screen.queryByTestId('thermocline-refraction')).toBeNull();
-    });
-
-    it('is texture, not transparency — it survives the opaque rung', () => {
-      reducedTransparency = true;
-
-      render(<Thermocline />);
-
-      expect(screen.getByTestId('thermocline').dataset.rung).toBe('opaque');
-      expect(screen.getByTestId('thermocline-field')).toBeTruthy();
-    });
+    expect(screen.getByTestId('thermocline').dataset.rung).toBe('tint');
+    expect(screen.queryByTestId('thermocline-refraction')).toBeNull();
   });
 });

@@ -19,21 +19,11 @@ export type ScalesVariant =
    */
   | 'fish'
   /**
-   * The refraction strip — the 24px band clipped to the top edge of every
-   * thermocline (membrane) surface. Same 0.5× geometry as the membrane
-   * field, but the ink is the horizontal `scales.refractionSweep` gradient;
-   * the band's 0.08 opacity is applied by the mounting container. Part of the material —
-   * never mounted free-standing.
+   * @deprecated No call site remains — the refraction strip was retired
+   * into the (now also retired) membrane field. Kept because this union is
+   * a public export with three apps behind it.
    */
-  | 'refraction'
-  /**
-   * The membrane field — the thermocline's own texture, edge to edge. Same
-   * 0.5× geometry as the refraction strip but a flat *dark* ink
-   * (`scales.membraneFieldStroke`; owner, 2026-08-19: dark scales, one
-   * continuous field, no brighter band). Part of the material — never
-   * mounted free-standing.
-   */
-  | 'membrane';
+  | 'refraction';
 
 export interface ScalesBackgroundProps {
   /** Which of the sanctioned appearances to draw. Defaults to `deepField`. */

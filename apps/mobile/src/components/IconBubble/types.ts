@@ -85,8 +85,9 @@ export interface IconBubbleProps extends Testable {
    */
   disabled?: boolean;
   /**
-   * The myoseptal texture inside a salmon fill. Defaults to on for a pressable
-   * `accent` bubble (a filled control is mass) and off everywhere else.
+   * The myoseptal texture inside a salmon fill. Defaults to on for any
+   * `accent` bubble, pressable or not (a filled control is mass), and off
+   * everywhere else.
    */
   flesh?: boolean;
   /**

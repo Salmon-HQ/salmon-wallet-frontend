@@ -1,11 +1,11 @@
 import React from 'react';
-import { render, waitFor, within } from '@testing-library/react-native';
+import { render, waitFor } from '@testing-library/react-native';
 import { AccessibilityInfo, StyleSheet } from 'react-native';
 
 const RAISED = '#161C2D';
 const CREST = '#111624';
-const THIN = 'rgba(11, 15, 25, 0.62)';
-const THICK = 'rgba(11, 15, 25, 0.80)';
+const THIN = 'rgba(11, 15, 25, 0.48)';
+const THICK = 'rgba(11, 15, 25, 0.66)';
 
 jest.mock('@salmon/shared', () => ({
   semantic: {
@@ -15,20 +15,8 @@ jest.mock('@salmon/shared', () => ({
       membraneThin: THIN,
       membraneThick: THICK,
     },
-    scales: {
-      membraneFieldStroke: 'rgba(7, 9, 17, 0.45)',
-    },
   },
 }));
-
-jest.mock('../ScalesBackground', () => {
-  const ReactActual = jest.requireActual('react');
-  const { View } = jest.requireActual('react-native');
-  return {
-    ScalesBackground: (props: Record<string, unknown>) =>
-      ReactActual.createElement(View, { ...props, testID: 'scales-background' }),
-  };
-});
 
 import { Thermocline } from './Thermocline.native';
 
@@ -89,42 +77,18 @@ describe('Thermocline', () => {
     expect(opaque.backgroundColor).toBe(RAISED);
   });
 
-  describe('the membrane field', () => {
-    it('is one continuous dark field — the membrane variant, edge to edge, no container opacity', () => {
-      const { getByTestId } = render(<Thermocline style={GEOMETRY} />);
+  it('the membrane field is retired — no field layer renders (2026-09-01)', () => {
+    const { queryByTestId } = render(<Thermocline style={GEOMETRY} />);
 
-      const field = getByTestId('thermocline-field');
-      const style = StyleSheet.flatten(field.props.style);
-      // Subtlety lives in the ink's alpha, not a second knob on the container.
-      expect(style.opacity).toBeUndefined();
-      // Full-surface: absoluteFill, no height cap.
-      expect(style.top).toBe(0);
-      expect(style.bottom).toBe(0);
-      expect(within(field).getByTestId('scales-background').props.variant).toBe('membrane');
-    });
+    expect(queryByTestId('thermocline-field')).toBeNull();
+  });
 
-    it('has no separate refraction strip — a brighter top band broke the material (owner, 2026-08-19)', () => {
-      const { queryByTestId } = render(<Thermocline style={GEOMETRY} />);
+  it('ignores the deprecated refraction prop', () => {
+    const { getByTestId, queryByTestId } = render(
+      <Thermocline refraction={false} style={GEOMETRY} />
+    );
 
-      expect(queryByTestId('thermocline-refraction')).toBeNull();
-    });
-
-    it('ignores the deprecated refraction prop', () => {
-      const { getByTestId, queryByTestId } = render(
-        <Thermocline refraction={false} style={GEOMETRY} />
-      );
-
-      expect(getByTestId('thermocline-field')).toBeTruthy();
-      expect(queryByTestId('thermocline-refraction')).toBeNull();
-    });
-
-    it('is texture, not transparency — it survives the opaque rung', async () => {
-      jest.spyOn(AccessibilityInfo, 'isReduceTransparencyEnabled').mockResolvedValue(true);
-
-      const { getByTestId, queryByTestId } = render(<Thermocline style={GEOMETRY} />);
-
-      await waitFor(() => expect(queryByTestId('thermocline-opaque')).toBeTruthy());
-      expect(getByTestId('thermocline-field')).toBeTruthy();
-    });
+    expect(getByTestId('thermocline-scrim')).toBeTruthy();
+    expect(queryByTestId('thermocline-refraction')).toBeNull();
   });
 });

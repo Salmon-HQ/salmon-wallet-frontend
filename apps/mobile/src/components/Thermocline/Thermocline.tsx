@@ -2,7 +2,6 @@ import { semantic } from '@salmon/shared';
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { ScalesBackground } from '../ScalesBackground';
 import type { ThermoclineProps, ThermoclineTier } from './types';
 
 const SCRIM: Record<ThermoclineTier, string> = {
@@ -33,6 +32,10 @@ function prefersReducedTransparency(): boolean {
  * as the native file: the tint alone (adopted 2026-08-19), collapsing to the
  * opaque plane when the OS asks for reduced transparency. See
  * `Thermocline.native.tsx` for the material's full story.
+ *
+ * The material is tint + scrim only (2026-09-01) — the membrane field, the
+ * flat dark scales layer that used to cover the whole surface, is retired.
+ * See DESIGN.md §The thermocline, "The membrane field."
  */
 export function Thermocline({ tier = 'thin', style }: ThermoclineProps) {
   const scrim = SCRIM[tier];
@@ -60,26 +63,12 @@ export function Thermocline({ tier = 'thin', style }: ThermoclineProps) {
           testID="thermocline-scrim"
         />
       )}
-      {/* The membrane field — the 0.5× seigaiha as one flat dark ink, edge
-          to edge; the former refraction strip is merged into it (it stacked
-          over the field in the top 24px and read as a band). Texture, not
-          transparency, so it renders on every rung. See
-          Thermocline.native.tsx. */}
-      <View style={styles.scalesField} pointerEvents="none" testID="thermocline-field">
-        <ScalesBackground variant="membrane" />
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
-    overflow: 'hidden',
-  },
-  // No container opacity — the field's subtlety is the ink's own alpha
-  // (`scales.membraneFieldStroke`), so there is exactly one knob.
-  scalesField: {
-    ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
   },
 });

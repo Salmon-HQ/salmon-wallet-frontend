@@ -4,10 +4,8 @@
  * What this suite protects: the sheet's ground. A sheet is a membrane, and
  * the thermocline is the material a membrane is made of — see DESIGN.md
  * §The thermocline is the sheet material. The rules that can regress are the
- * default (a sheet grounds on the thick tier), the override (a caller's own
- * ground wins outright), and the one that cost the most to learn: the
- * material carries exactly one scales layer, because a second copy reads as
- * a band — see §The membrane field.
+ * default (a sheet grounds on the thick tier) and the override (a caller's
+ * own ground wins outright).
  */
 
 import React from 'react';
@@ -35,19 +33,10 @@ vi.mock('@salmon/shared', () => ({
     surface: {
       raised: '#161C2D',
       crest: '#111624',
-      membraneThin: 'rgba(11, 15, 25, 0.62)',
-      membraneThick: 'rgba(11, 15, 25, 0.80)',
+      membraneThin: 'rgba(11, 15, 25, 0.48)',
+      membraneThick: 'rgba(11, 15, 25, 0.66)',
     },
-    scales: { membraneFieldStroke: 'rgba(7, 9, 17, 0.45)' },
   },
-}));
-
-// The seigaiha drawing is pinned by its own suite; here it only needs to be
-// countable, because the rule under test is how many copies of it exist.
-vi.mock('../ScalesBackground', () => ({
-  ScalesBackground: ({ variant }: { variant: string }) => (
-    <div data-testid="scales-background" data-variant={variant} />
-  ),
 }));
 
 import { BaseSheetDialog } from './BaseSheetDialog';
@@ -79,13 +68,13 @@ describe('BaseSheetDialog ground', () => {
     expect(screen.queryByTestId('thermocline')).toBeNull();
   });
 
-  it('carries exactly one scales layer — a second copy would read as a band', () => {
+  it('carries no scales layer — the membrane field is retired (2026-09-01)', () => {
     render(
       <BaseSheetDialog visible onClose={vi.fn()}>
         <div>sheet body</div>
       </BaseSheetDialog>
     );
 
-    expect(screen.getAllByTestId('scales-background')).toHaveLength(1);
+    expect(screen.queryByTestId('scales-background')).toBeNull();
   });
 });

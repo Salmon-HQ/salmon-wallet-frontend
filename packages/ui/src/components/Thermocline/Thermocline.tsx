@@ -15,12 +15,15 @@
  * Renders background only — `pointer-events: none`, no children. The
  * `surface.membrane*` tokens keep their name; the material is the thing
  * that got named.
+ *
+ * The material is tint + scrim only (2026-09-01) — the membrane field, the
+ * flat dark scales layer that used to cover the whole surface, is retired.
+ * See DESIGN.md §The thermocline, "The membrane field."
  */
 import { useEffect, useState, type CSSProperties } from 'react';
 import Box from '@mui/material/Box';
 import { semantic } from '@salmon/shared';
 import { styled } from '../../utils/styled';
-import { ScalesBackground } from '../ScalesBackground';
 
 export type ThermoclineTier = 'thin' | 'thick';
 
@@ -88,21 +91,6 @@ const Layer = styled(Box)<{ $background: string }>(({ $background }) => ({
   background: $background,
 }));
 
-/**
- * The membrane field — the 0.5× seigaiha over the whole surface as one flat
- * dark ink (owner, 2026-08-19: dark scales, one continuous field). The
- * former 24px refraction strip is merged into this field: a second, brighter
- * copy clipped to the top edge stacked over the field there and read as a
- * band that broke the material. No container opacity — the subtlety is the
- * ink's own alpha (`scales.membraneFieldStroke`), one knob. Texture, not
- * transparency: painted on every rung.
- */
-const ScalesField = styled(Box)({
-  position: 'absolute',
-  inset: 0,
-  overflow: 'hidden',
-});
-
 export function Thermocline({ tier = 'thin', style, className }: ThermoclineProps) {
   const reduced = usePrefersReducedTransparency();
   const rung = reduced ? 'opaque' : 'tint';
@@ -114,9 +102,6 @@ export function Thermocline({ tier = 'thin', style, className }: ThermoclineProp
       ) : (
         <Layer $background={SCRIM[tier]} data-testid="thermocline-scrim" />
       )}
-      <ScalesField data-testid="thermocline-field">
-        <ScalesBackground variant="membrane" />
-      </ScalesField>
     </Root>
   );
 }

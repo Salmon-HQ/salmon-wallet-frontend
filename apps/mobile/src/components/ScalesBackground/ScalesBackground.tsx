@@ -14,7 +14,7 @@ const { scales } = semantic;
  * compression noise rather than as water. Each variant now has a job, a
  * distance, and a stroke actually visible at that distance.
  */
-export type ScalesVariant = 'deepField' | 'fish' | 'refraction' | 'membrane';
+export type ScalesVariant = 'deepField' | 'fish' | 'refraction';
 
 const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boolean }> = {
   /** The far water, in the balance card's upper region. Dissolves downward. */
@@ -25,22 +25,11 @@ const VARIANTS: Record<ScalesVariant, { stroke: string; scale: number; fade: boo
    */
   fish: { stroke: scales.fishStroke, scale: scales.fishScale, fade: false },
   /**
-   * The refraction strip — the top edge of every thermocline surface. Same
-   * 0.5× geometry as the membrane field, but the stroke is the horizontal
-   * sweep (`scales.refractionSweep`) rather than a flat ink; the white here
-   * is the mask ink the component paints the sweep through. The band's 0.08
-   * opacity is applied by the mounting container (`scales.refractionOpacity`),
-   * keeping this file about geometry and ink.
+   * @deprecated No call site remains — the refraction strip was retired into
+   * the (now also retired) membrane field. Kept because `ScalesVariant` is a
+   * shared union with three apps behind it.
    */
   refraction: { stroke: '#FFFFFF', scale: scales.refractionScale, fade: false },
-  /**
-   * The membrane field — the thermocline's own texture, edge to edge. Same
-   * 0.5× geometry as the refraction strip but drawn as a flat *dark* ink
-   * (owner, 2026-08-19: dark scales, one continuous field, no brighter
-   * band). No sweep, no fade — any per-region difference reads as a seam in
-   * the material.
-   */
-  membrane: { stroke: scales.membraneFieldStroke, scale: scales.refractionScale, fade: false },
 };
 
 export interface ScalesBackgroundProps {

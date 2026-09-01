@@ -59,6 +59,50 @@ describe('contrast: text on opaque surfaces', () => {
   }
 });
 
+/**
+ * The card material. `Card`'s `surface` tone (and everything built on it —
+ * `ListRow`, `TokenListItem`) grounds on `membraneThin` instead of the
+ * opaque `surface.raised` (2026-09-01, owner: what lies under a card must
+ * show through a little). A card's real backdrop is the app's own ground,
+ * not an arbitrary bright image the way a floating sheet's can be, so the
+ * worst case that governs the card material's alpha is `water.gradient`'s
+ * own lighter stop — the brightest the column ever paints behind a card.
+ *
+ * This is what let `membraneThin` and `membraneThick` drop from 0.62/0.80
+ * to 0.48/0.66: body text stays comfortably above AA against the ground a
+ * card actually sits on, at either gradient stop.
+ */
+describe('contrast: the membrane tiers over the water column', () => {
+  /** A straight-alpha composite of a translucent token over an opaque one. */
+  const composite = (translucent: string, backdrop: string): string => {
+    const [r, g, b, alpha] = translucent
+      .match(/rgba\((\d+), (\d+), (\d+), ([\d.]+)\)/)!
+      .slice(1)
+      .map(Number);
+    const base = [0, 2, 4].map((i) => parseInt(backdrop.replace('#', '').slice(i, i + 2), 16));
+    return `#${[r, g, b]
+      .map((channel, i) =>
+        Math.round(channel * alpha + base[i] * (1 - alpha))
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')}`;
+  };
+
+  for (const [tier, tierValue] of [
+    ['membraneThin', surface.membraneThin],
+    ['membraneThick', surface.membraneThick],
+  ] as const) {
+    for (const groundStop of water.gradient) {
+      it(`text.primary meets AA on ${tier} over the water column`, () => {
+        expect(contrast(text.primary, composite(tierValue, groundStop))).toBeGreaterThanOrEqual(
+          AA_TEXT
+        );
+      });
+    }
+  }
+});
+
 describe('contrast: the salmon fill rule', () => {
   it('allows text.onAccent on a salmon fill', () => {
     expect(contrast(text.onAccent, salmon[500])).toBeGreaterThanOrEqual(AA_TEXT);
@@ -281,7 +325,7 @@ describe('contrast: the water column', () => {
 
   it('the deep field it frames is under the same ceiling', () => {
     // Sanity: the snow is meant to sit beside the scales, not out-read them.
-    const scalesOver = composite('#C7D3E8', depth.column, 0.06);
+    const scalesOver = composite('#C7D3E8', depth.column, 0.03);
     const snowOver = composite(SNOW_HEX, depth.column, SNOW_ALPHA);
     expect(contrast(scalesOver, depth.column)).toBeLessThan(MOTIF_CEILING);
     expect(contrast(snowOver, depth.column)).toBeLessThan(MOTIF_CEILING);
@@ -291,10 +335,18 @@ describe('contrast: the water column', () => {
     // The scales no longer fade to nothing, they fade to `deepFieldFloor`, so
     // the bottom of the column carries a real stroke and it has to be measured
     // rather than assumed harmless because it is faint.
-    const alpha = 0.06 * scales.deepFieldFloor;
+    const alpha = 0.03 * scales.deepFieldFloor;
     for (const ground of [rampTop, rampFloor]) {
       expect(contrast(composite('#C7D3E8', ground, alpha), ground)).toBeLessThan(MOTIF_CEILING);
     }
+  });
+
+  it('the deep field still clears the visibility floor on an OLED at full brightness', () => {
+    // Halved 2026-09-01 (owner: the field should read as farther away). The
+    // floor is ~1.03:1 on `depth.column` — below that the stroke is
+    // indistinguishable from the ground on the darkest real display.
+    const scalesOver = composite('#C7D3E8', depth.column, 0.03);
+    expect(contrast(scalesOver, depth.column)).toBeGreaterThanOrEqual(1.03);
   });
 });
 
@@ -411,16 +463,22 @@ describe('contrast: why the warning notice is not a membrane', () => {
 });
 
 /**
- * The tab bar on the thermocline. The membrane tiers only guarantee contrast
- * over their documented scrim, so every ink the tab bar wears is measured
- * against `membraneThick`'s worst-case composite — the tint over pure white,
- * the brightest backdrop a scrolling NFT thumbnail can put behind it.
+ * The tab bar on the thermocline — retired (§Navigation, 2026-09-01), and
+ * this block with it in spirit: the tab bar is gone, so nothing composites
+ * ink over `membraneThick` against an arbitrary bright backdrop any more.
+ * `accent.inkOnMembrane` and the numbers below stay in `semantic.ts` and
+ * here as a contract surface with no live consumer, same standing as the
+ * refraction tokens — removing them outright needs a human's sign-off.
  *
- * Icons are graphics (1.4.11, 3:1) and may keep the brand step; labels are
- * small text (1.4.3, 4.5:1) and need the lighter salmon — which is why
- * `accent.inkOnMembrane` exists at all.
+ * What changed under this block (2026-09-01): `membraneThick` dropped from
+ * 0.80 to 0.66 so cards show the water column through them (§Cards,
+ * `contrast: the membrane tiers over the water column` above). That alpha
+ * is chosen for the tier's live consumer — a card over its own dark ground
+ * — not for a pure-white worst case, so the old pure-white guarantee this
+ * block used to assert no longer holds. The assertions below now record
+ * that honestly instead of pinning a guarantee nothing ships any more.
  */
-describe('contrast: the tab bar on the thermocline', () => {
+describe('contrast: the tab bar on the thermocline (retired)', () => {
   /** `surface.membraneThick` composited over white, straight alpha in sRGB. */
   const membrane = (() => {
     const [r, g, b, alpha] = surface.membraneThick
@@ -436,21 +494,14 @@ describe('contrast: the tab bar on the thermocline', () => {
       .join('')}`;
   })();
 
-  it('the active label ink clears AA text on the worst-case composite', () => {
-    expect(contrast(accent.inkOnMembrane, membrane)).toBeGreaterThanOrEqual(AA_TEXT);
+  it('no longer clears AA text on the old pure-white worst case, thin as the tier now is', () => {
+    expect(contrast(accent.inkOnMembrane, membrane)).toBeLessThan(AA_TEXT);
+    expect(contrast(text.secondary, membrane)).toBeLessThan(AA_TEXT);
   });
 
-  it('the inactive label ink clears AA text on the worst-case composite', () => {
-    expect(contrast(text.secondary, membrane)).toBeGreaterThanOrEqual(AA_TEXT);
-  });
-
-  it('both icon inks clear the graphics threshold', () => {
-    expect(contrast(accent.ink, membrane)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-    expect(contrast(text.tertiary, membrane)).toBeGreaterThanOrEqual(AA_NON_TEXT);
-  });
-
-  it('brand salmon really is below AA text here, which is why the label steps up', () => {
-    expect(contrast(accent.ink, membrane)).toBeLessThan(AA_TEXT);
+  it('no longer clears the graphics threshold either, at 0.66', () => {
+    expect(contrast(accent.ink, membrane)).toBeLessThan(AA_NON_TEXT);
+    expect(contrast(text.tertiary, membrane)).toBeLessThan(AA_NON_TEXT);
   });
 });
 

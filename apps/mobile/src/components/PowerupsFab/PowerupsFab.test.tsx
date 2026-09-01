@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, within } from '@testing-library/react-native';
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
@@ -69,7 +69,13 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
-jest.mock('../FleshBackground', () => ({ FleshBackground: () => null }));
+jest.mock('../FleshBackground', () => {
+  const ReactActual = require('react');
+  const { View: RNView } = require('react-native');
+  return {
+    FleshBackground: () => ReactActual.createElement(RNView, { testID: 'flesh-background' }),
+  };
+});
 jest.mock('../PressSpecular', () => ({ PressSpecular: () => null, SPECULAR_OPACITY: 0.12 }));
 
 // The real press motion, deliberately: mocking it away hid the bug this suite
@@ -93,6 +99,11 @@ jest.mock('../../icons', () => {
 import { PowerupsFab } from './PowerupsFab';
 
 describe('PowerupsFab', () => {
+  it('carries the flesh texture — the FAB is a solid accent fill', () => {
+    const { getByTestId } = render(<PowerupsFab onPress={jest.fn()} bottomOffset={20} />);
+    expect(within(getByTestId('powerups-fab')).getByTestId('flesh-background')).toBeTruthy();
+  });
+
   it('calls onPress when tapped', () => {
     const onPress = jest.fn();
     const { getByTestId } = render(<PowerupsFab onPress={onPress} bottomOffset={20} />);
