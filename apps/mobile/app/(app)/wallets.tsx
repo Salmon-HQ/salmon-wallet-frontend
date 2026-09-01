@@ -133,7 +133,7 @@ export default function WalletsScreen() {
   const handleRename = useCallback(
     (id: string) => {
       // The same rename screen Settings → Accounts → Edit reaches.
-      router.push({ pathname: '/settings/[screen]', params: { screen: 'account-name', accountId: id } });
+      router.push({ pathname: '/settings/[panel]', params: { panel: 'account-name', accountId: id } });
     },
     [router]
   );
@@ -142,8 +142,8 @@ export default function WalletsScreen() {
     // One add-wallet screen; `returnTo` lands the finished flow back here with
     // the new wallet already active.
     router.push({
-      pathname: '/settings/[screen]',
-      params: { screen: 'account-add', returnTo: 'wallets' },
+      pathname: '/settings/[panel]',
+      params: { panel: 'account-add', returnTo: 'wallets' },
     });
   }, [router]);
 

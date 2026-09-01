@@ -3,7 +3,7 @@
  *
  * It used to live inline in the tabs layout, where the gate mounted the whole
  * tree behind the header. Settings is a stack of real screens now, so the
- * registry is a hook the `[screen]` route calls: the route owns navigation and
+ * registry is a hook the `[panel]` route calls: the route owns navigation and
  * the header, the registry owns what the body is and which data it needs.
  *
  * Every panel keeps the props it already had, so the bodies themselves are

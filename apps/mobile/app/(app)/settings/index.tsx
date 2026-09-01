@@ -238,7 +238,7 @@ export default function SettingsScreenIndex() {
         else if (row.id === 'removeAll') handleRemoveAllWallets();
         return;
       }
-      router.push({ pathname: '/settings/[screen]', params: { screen: row.id } });
+      router.push({ pathname: '/settings/[panel]', params: { panel: row.id } });
     },
     [handleRemoveAllWallets, handleRemoveWallet, router]
   );
@@ -382,11 +382,14 @@ const styles = StyleSheet.create({
     // No top padding: the header block already ends 20 above the content.
     gap: vs(spacing.xl),
   },
+  // The component gap (DESIGN.md §Layout): the caps label, and every row card
+  // under it, are sibling components — 20 between each, as the `.pen` draws
+  // them (CORE 10: heading y=140/h16 → first card y=176).
   section: {
-    gap: vs(spacing.sm),
+    gap: vs(spacing.screenGutter),
   },
   sectionCard: {
-    gap: vs(spacing.xs),
+    gap: vs(spacing.screenGutter),
   },
   dangerLabel: {
     color: semantic.status.danger,

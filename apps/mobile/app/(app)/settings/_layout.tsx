@@ -41,7 +41,7 @@ export default function SettingsLayout() {
         }}
       >
         <Stack.Screen name="index" />
-        <Stack.Screen name="[screen]" />
+        <Stack.Screen name="[panel]" />
       </Stack>
     </View>
   );

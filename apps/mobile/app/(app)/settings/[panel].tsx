@@ -6,6 +6,13 @@
  * are real stack entries with the platform's back gesture, instead of panels
  * pushed onto a stack the gate owned.
  *
+ * The segment is `[panel]`, not `[screen]`: `screen` is the key React
+ * Navigation and expo-router use to address a nested navigator's child, and
+ * expo-router strips it from the params while building the push action
+ * (`global-state/routing.js`, `getPayloadFromStateRoute`). A `[screen]`
+ * segment therefore mounts with empty params — every row bounced back to the
+ * list. `__tests__/app/settings-route-param.test.tsx` pins this.
+ *
  * Every panel body pulls its own data through `useSettingsPanelRegistry`
  * (accounts, address book, networks, currency), so this route renders the same
  * whether the user walked in from the Settings list or landed here cold from a
@@ -23,10 +30,8 @@ import { useSettingsPanelRegistry } from '../../../src/settings/panelRegistry';
 
 export default function SettingsPanelRoute() {
   const router = useRouter();
-  const params = useLocalSearchParams<Record<string, string>>();
+  const { panel, ...panelProps } = useLocalSearchParams<Record<string, string>>();
   const registry = useSettingsPanelRegistry();
-
-  const screen = params.screen as SettingsScreen | undefined;
 
   const onBack = useCallback(() => {
     if (router.canGoBack()) router.back();
@@ -35,20 +40,20 @@ export default function SettingsPanelRoute() {
 
   const onNavigate = useCallback(
     (next: SettingsScreen, props?: Record<string, string>) => {
-      router.push({ pathname: '/settings/[screen]', params: { screen: next, ...(props ?? {}) } });
+      router.push({ pathname: '/settings/[panel]', params: { panel: next, ...(props ?? {}) } });
     },
     [router]
   );
 
   // An unknown or missing key used to render an empty view, which is a blank
   // screen with no way out. Settings is the only sane destination.
-  const render = screen ? registry[screen] : undefined;
-  if (!render) return <Redirect href="/settings" />;
-
-  const { screen: _screen, ...panelProps } = params;
+  const render = panel ? registry[panel as SettingsScreen] : undefined;
+  if (!render) {
+    return <Redirect href="/settings" />;
+  }
 
   return (
-    <View style={styles.container} testID={`settings-panel-${screen}`}>
+    <View style={styles.container} testID={`settings-panel-${panel}`}>
       {render({ onBack, onNavigate, ...panelProps })}
     </View>
   );
