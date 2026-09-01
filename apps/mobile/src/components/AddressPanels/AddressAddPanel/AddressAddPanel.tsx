@@ -1,28 +1,31 @@
 /**
  * AddressAddPanel - Add new contact to address book (mobile)
+ *
+ * Each field is a `Card` (the shell `RecipientInput` and `AccountNamePanel`
+ * both wear) — the placeholder carries the label, so the form has no heading
+ * of its own above a control.
  */
 
 import React, { useCallback, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, TextInput, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { QrCodeIcon, iconSize } from '../../../icons';
 
 import {
-  colors,
-  spacing,
-  borderRadius,
   fontFamilyNative,
-  useAddressBookForm,
-  type AddressBookAddBaseProps,
-  type BlockchainType,
   fontSize,
   semantic,
+  useAccountsContext,
+  useAddressBookForm,
+  useAddressValidation,
+  type AddressBookAddBaseProps,
+  type BlockchainType,
 } from '@salmon/shared';
-import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { Card } from '../../Card';
 import { PrimaryButton } from '../../Button';
-import { InputAddress } from '../../InputAddress';
 import { QRScanner } from '../../QRScanner';
 import type { QRScanResult } from '../../QRScanner';
+import { RecipientInput } from '../../Send';
+import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 
 // ============================================================================
 // Component
@@ -36,8 +39,15 @@ export function AddressAddPanel({
   onBack,
 }: AddressBookAddBaseProps) {
   const { t } = useTranslation();
+  const [accountState] = useAccountsContext();
   const form = useAddressBookForm({ networkId: activeNetworkId });
   const [showScanner, setShowScanner] = useState(false);
+
+  const { validationState, isValidating } = useAddressValidation(
+    form.address,
+    accountState.activeBlockchainAccount,
+    { debounceMs: 500, onValidation: form.handleValidation }
+  );
 
   const handleScan = useCallback(
     (result: QRScanResult) => {
@@ -54,63 +64,46 @@ export function AddressAddPanel({
 
   return (
     <SettingsScreenLayout title={t('settings.addressbook.add', 'Add Address')} onBack={onBack}>
-      {/* Label */}
-      <Text style={styles.fieldLabel}>{t('settings.addressbook.label', 'Label')}</Text>
-      <TextInput
-        testID="address-book-label-input"
-        style={styles.textInput}
-        value={form.label}
-        onChangeText={form.setLabel}
-        placeholder={t('settings.addressbook.label', 'Label')}
-        placeholderTextColor={semantic.text.tertiary}
-        autoCapitalize="words"
-        autoCorrect={false}
+      <Card padding="lg" accessibilityLabel={t('settings.addressbook.label', 'Label')}>
+        <TextInput
+          testID="address-book-label-input"
+          style={styles.input}
+          value={form.label}
+          onChangeText={form.setLabel}
+          placeholder={t('settings.addressbook.label', 'Label')}
+          placeholderTextColor={semantic.text.tertiary}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+      </Card>
+
+      <RecipientInput
+        testID="address-book-address"
+        value={form.address}
+        onChangeText={form.setAddress}
+        onScanPress={() => setShowScanner(true)}
+        scanLabel={t('qrScanner.scanButton', 'Scan QR code')}
+        placeholder={t('general.name_or_address', {
+          token: activeBlockchain,
+          defaultValue: 'Enter address or domain',
+        })}
+        validationState={validationState}
+        isValidating={isValidating}
       />
 
-      {/* Address */}
-      <View style={styles.addressSection}>
-        <InputAddress
-          address={form.address}
-          onChange={form.setAddress}
-          onValidation={form.handleValidation}
-          label={t('general.address', 'Address')}
-          placeholder={t('general.name_or_address', {
-            token: activeBlockchain,
-            defaultValue: 'Enter address or domain',
-          })}
-          testID="address-book-address"
-        />
-        <TouchableOpacity
-          testID="address-book-scan-button"
-          accessibilityRole="button"
-          accessibilityLabel={t('qrScanner.scanButton', 'Scan QR code')}
-          style={styles.scanButton}
-          onPress={() => setShowScanner(true)}
-          activeOpacity={0.7}
-        >
-          <QrCodeIcon size={iconSize.sm} color={semantic.accent.ink} />
-          <Text style={styles.scanButtonText}>{t('qrScanner.scanButton', 'Scan QR code')}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Network (read-only) */}
-      <Text style={styles.fieldLabel}>{t('settings.addressbook.network')}</Text>
-      <View style={styles.networkDisplay}>
+      <Card padding="md" accessibilityLabel={t('settings.addressbook.network')}>
         <Text style={styles.networkText}>
           {activeBlockchain.charAt(0).toUpperCase() + activeBlockchain.slice(1)}
         </Text>
-      </View>
+      </Card>
 
-      {/* Save Button */}
-      <View style={styles.saveButtonContainer}>
-        <PrimaryButton
-          testID="address-book-save-button"
-          onPress={handleSave}
-          disabled={!form.canSave}
-        >
-          {t('settings.addressbook.save', 'Save Address')}
-        </PrimaryButton>
-      </View>
+      <PrimaryButton
+        testID="address-book-save-button"
+        onPress={handleSave}
+        disabled={!form.canSave}
+      >
+        {t('settings.addressbook.save', 'Save Address')}
+      </PrimaryButton>
 
       <QRScanner
         visible={showScanner}
@@ -129,48 +122,15 @@ export default AddressAddPanel;
 // ============================================================================
 
 const styles = StyleSheet.create({
-  fieldLabel: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.body,
-    marginBottom: spacing.sm,
-    marginTop: spacing.lg,
-  },
-  textInput: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.r2,
-    padding: spacing.md,
+  input: {
     color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
-  },
-  addressSection: {
-    marginTop: spacing.lg,
-  },
-  scanButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-    alignSelf: 'flex-start',
-    padding: spacing.xs,
-  },
-  scanButtonText: {
-    color: semantic.accent.ink,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.body,
-  },
-  networkDisplay: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.r2,
-    padding: spacing.md,
+    padding: 0,
   },
   networkText: {
     color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
-  },
-  saveButtonContainer: {
-    marginTop: spacing['2xl'],
   },
 });

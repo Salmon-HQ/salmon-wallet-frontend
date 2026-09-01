@@ -1,24 +1,30 @@
 /**
  * AddressEditPanel - Edit an existing contact in the address book (mobile)
+ *
+ * Same field shells as `AddressAddPanel`, seeded from the contact being
+ * edited.
  */
 
-import React, { useCallback } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Text, TextInput, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import {
-  colors,
-  spacing,
-  borderRadius,
   fontFamilyNative,
-  useAddressBookForm,
-  type AddressBookEditBaseProps,
   fontSize,
   semantic,
+  useAccountsContext,
+  useAddressBookForm,
+  useAddressValidation,
+  type AddressBookEditBaseProps,
+  type BlockchainType,
 } from '@salmon/shared';
-import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { Card } from '../../Card';
 import { PrimaryButton } from '../../Button';
-import { InputAddress } from '../../InputAddress';
+import { QRScanner } from '../../QRScanner';
+import type { QRScanResult } from '../../QRScanner';
+import { RecipientInput } from '../../Send';
+import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 
 // ============================================================================
 // Component
@@ -31,6 +37,7 @@ export function AddressEditPanel({
   onBack,
 }: AddressBookEditBaseProps) {
   const { t } = useTranslation();
+  const [accountState] = useAccountsContext();
   const form = useAddressBookForm({
     label: contact.name,
     address: contact.domain || contact.address,
@@ -38,57 +45,74 @@ export function AddressEditPanel({
     resolvedAddress: contact.address,
     isDomain: !!contact.domain,
   });
+  const [showScanner, setShowScanner] = useState(false);
+
+  const { validationState, isValidating } = useAddressValidation(
+    form.address,
+    accountState.activeBlockchainAccount,
+    { debounceMs: 500, onValidation: form.handleValidation }
+  );
+
+  const handleScan = useCallback(
+    (result: QRScanResult) => {
+      form.setAddress(result.address);
+      setShowScanner(false);
+    },
+    [form]
+  );
 
   const handleSave = useCallback(async () => {
     if (!form.canSave) return;
     await onSave(contact.address, form.buildInput());
   }, [form, onSave, contact.address]);
 
+  const networkName =
+    contact.networkId.split('-')[0].charAt(0).toUpperCase() + contact.networkId.split('-')[0].slice(1);
+
   return (
     <SettingsScreenLayout title={t('settings.addressbook.edit', 'Edit Address')} onBack={onBack}>
-      {/* Label */}
-      <Text style={styles.fieldLabel}>{t('settings.addressbook.label', 'Label')}</Text>
-      <TextInput
-        testID="address-book-label-input"
-        style={styles.textInput}
-        value={form.label}
-        onChangeText={form.setLabel}
-        placeholder={t('settings.addressbook.label', 'Label')}
-        placeholderTextColor={semantic.text.tertiary}
-        autoCapitalize="words"
-        autoCorrect={false}
+      <Card padding="lg" accessibilityLabel={t('settings.addressbook.label', 'Label')}>
+        <TextInput
+          testID="address-book-label-input"
+          style={styles.input}
+          value={form.label}
+          onChangeText={form.setLabel}
+          placeholder={t('settings.addressbook.label', 'Label')}
+          placeholderTextColor={semantic.text.tertiary}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+      </Card>
+
+      <RecipientInput
+        testID="address-book-address"
+        value={form.address}
+        onChangeText={form.setAddress}
+        onScanPress={() => setShowScanner(true)}
+        scanLabel={t('qrScanner.scanButton', 'Scan QR code')}
+        placeholder={t('send.enter_address_or_domain')}
+        validationState={validationState}
+        isValidating={isValidating}
       />
 
-      {/* Address */}
-      <View style={styles.addressSection}>
-        <InputAddress
-          address={form.address}
-          onChange={form.setAddress}
-          onValidation={form.handleValidation}
-          label={t('general.address', 'Address')}
-          testID="address-book-address"
-        />
-      </View>
+      <Card padding="md" accessibilityLabel={t('settings.addressbook.network')}>
+        <Text style={styles.networkText}>{networkName}</Text>
+      </Card>
 
-      {/* Network (read-only) */}
-      <Text style={styles.fieldLabel}>{t('settings.addressbook.network')}</Text>
-      <View style={styles.networkDisplay}>
-        <Text style={styles.networkText}>
-          {contact.networkId.split('-')[0].charAt(0).toUpperCase() +
-            contact.networkId.split('-')[0].slice(1)}
-        </Text>
-      </View>
+      <PrimaryButton
+        testID="address-book-save-button"
+        onPress={handleSave}
+        disabled={!form.canSave}
+      >
+        {t('settings.addressbook.save', 'Save Address')}
+      </PrimaryButton>
 
-      {/* Save Button */}
-      <View style={styles.saveButtonContainer}>
-        <PrimaryButton
-          testID="address-book-save-button"
-          onPress={handleSave}
-          disabled={!form.canSave}
-        >
-          {t('settings.addressbook.save', 'Save Address')}
-        </PrimaryButton>
-      </View>
+      <QRScanner
+        visible={showScanner}
+        blockchain={contact.networkId.split('-')[0] as BlockchainType}
+        onScan={handleScan}
+        onClose={() => setShowScanner(false)}
+      />
     </SettingsScreenLayout>
   );
 }
@@ -100,35 +124,15 @@ export default AddressEditPanel;
 // ============================================================================
 
 const styles = StyleSheet.create({
-  fieldLabel: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.body,
-    marginBottom: spacing.sm,
-    marginTop: spacing.lg,
-  },
-  textInput: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.r2,
-    padding: spacing.md,
+  input: {
     color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
-  },
-  addressSection: {
-    marginTop: spacing.lg,
-  },
-  networkDisplay: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.r2,
-    padding: spacing.md,
+    padding: 0,
   },
   networkText: {
     color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
-  },
-  saveButtonContainer: {
-    marginTop: spacing['2xl'],
   },
 });

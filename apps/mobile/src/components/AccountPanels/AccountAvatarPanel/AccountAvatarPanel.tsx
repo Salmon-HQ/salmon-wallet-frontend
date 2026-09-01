@@ -21,7 +21,6 @@ import {
 import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import {
-  colors,
   spacing,
   contentPadding,
   borderRadius,
@@ -36,6 +35,7 @@ import {
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { PrimaryButton } from '../../Button';
+import { UnderlineTabs } from '../../UnderlineTabs';
 
 // ============================================================================
 // Constants
@@ -182,29 +182,19 @@ export function AccountAvatarPanel({
   return (
     <SettingsScreenLayout title={t('settings.profile_picture')} onBack={onBack} scrollable={false}>
       <View style={styles.container}>
-        {/* Tab Bar */}
-        <View style={styles.tabBar}>
-          <TouchableOpacity
-            testID="avatar-tab-presets"
-            style={[styles.tab, activeTab === 'presets' && styles.tabActive]}
-            onPress={() => setActiveTab('presets')}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabText, activeTab === 'presets' && styles.tabTextActive]}>
-              {t('settings.avatar_presets')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            testID="avatar-tab-nfts"
-            style={[styles.tab, activeTab === 'nfts' && styles.tabActive]}
-            onPress={() => setActiveTab('nfts')}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabText, activeTab === 'nfts' && styles.tabTextActive]}>
-              {t('settings.avatar_nfts')}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Lateral choice takes the travelling underline, never a boxed or
+            filled container — DESIGN.md §Navigation. */}
+        <UnderlineTabs
+          testID="avatar-tabs"
+          tabs={[
+            { key: 'presets', label: t('settings.avatar_presets') },
+            { key: 'nfts', label: t('settings.avatar_nfts') },
+          ]}
+          activeKey={activeTab}
+          onChange={(key) => setActiveTab(key as Tab)}
+          tabTestIDPrefix="avatar-tab"
+          style={styles.tabs}
+        />
 
         {activeTab === 'presets' ? (
           <FlatList
@@ -259,35 +249,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  tabBar: {
-    flexDirection: 'row',
+  tabs: {
     marginBottom: spacing.lg,
-    gap: spacing.sm,
   },
   list: {
     flex: 1,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    borderRadius: borderRadius.r2,
-    backgroundColor: colors.background.card,
-  },
-  // The panel's one accent is spent on Save. An active tab is chrome, and a
-  // salmon tab beside a salmon Save put two of them on one panel.
-  tabActive: {
-    backgroundColor: semantic.surface.crest,
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.border.raised,
-  },
-  tabText: {
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.caption,
-    color: semantic.text.secondary,
-  },
-  tabTextActive: {
-    color: semantic.text.primary,
   },
   gridContent: {
     paddingBottom: spacing.lg,

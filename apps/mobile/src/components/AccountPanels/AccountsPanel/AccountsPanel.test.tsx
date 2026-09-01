@@ -9,27 +9,11 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-const MONO = 'GeistMonoRegular';
-const SALMON = '#FF5C45';
-const GREEN = '#33D6A6';
-
+// The theme folder imports nothing but itself, so the real tokens can be
+// pulled in directly — the barrel would drag in `@solana/kit`, which
+// jest-expo does not transform. See `test-utils/themeTokens.ts`.
 jest.mock('@salmon/shared', () => ({
-  semantic: {
-    status: { success: GREEN, danger: '#FF6B85' },
-    text: { primary: '#EDF1F7', secondary: '#A7B1C4' },
-    accent: { ink: SALMON },
-    state: { selectedEdge: SALMON },
-    border: { default: '#58637B' },
-    surface: { raised: '#161C2D' },
-  },
-  colors: { background: { card: '#111' }, text: { secondary: '#A7B1C4' } },
-  spacing: { xxs: 2, xs: 4, sm: 8, md: 12 },
-  borderRadius: { sm: 8, r1: 4, r3: 12, full: 9999 },
-  borderWidth: { thin: 1 },
-  fontSize: { caption: 12, mono: 13, bodyLg: 16 },
-  lineHeight: { none: 1, snug: 1.4, normal: 1.5 },
-  fontFamilyNative: { mono: MONO, medium: 'System', regular: 'System', bold: 'System' },
-  componentSizes: { iconSizeLarge: 40 },
+  ...jest.requireActual('../../../../test-utils/themeTokens'),
   getAvatarColor: () => '#333',
   getInitials: (name: string) => name.slice(0, 2),
   getAccountAddress: () => '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
@@ -52,6 +36,40 @@ jest.mock('../../SettingsScreenLayout', () => {
 });
 
 jest.mock('../../ConfirmSheet', () => ({ ConfirmSheet: () => null }));
+
+// No worklets runtime in Jest: `IconBubble` (the avatar, rename, delete and
+// active-check wells this panel renders) needs the same plain-JS stand-ins
+// as the IconBubble suite itself.
+jest.mock('react-native-reanimated', () => {
+  const ReactActual = require('react');
+  const { View: RNView } = require('react-native');
+  return {
+    __esModule: true,
+    default: {
+      View: RNView,
+      createAnimatedComponent: (Component: React.ComponentType<Record<string, unknown>>) =>
+        ReactActual.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+          ReactActual.createElement(Component, { ...props, ref })
+        ),
+    },
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: (fn: () => unknown) => fn(),
+    useReducedMotion: () => false,
+    withTiming: (target: unknown) => target,
+  };
+});
+
+jest.mock('../../../../hooks/usePressMotion', () => ({
+  usePressMotion: () => ({
+    pressStyle: {},
+    scale: { value: 1 },
+    pressHandlers: { onPressIn: () => {}, onPressOut: () => {} },
+    specular: { x: { value: 0 }, y: { value: 0 }, opacity: { value: 0 } },
+  }),
+}));
+
+jest.mock('../../FleshBackground', () => ({ FleshBackground: () => null }));
+jest.mock('../../PressSpecular', () => ({ PressSpecular: () => null, SPECULAR_OPACITY: 0.12 }));
 
 import { AccountsPanel } from './AccountsPanel';
 
@@ -79,7 +97,11 @@ describe('AccountsPanel address', () => {
     renderPanel();
 
     const address = screen.getAllByText('7xKX...gAsU')[0];
-    expect(StyleSheet.flatten(address.props.style).fontFamily).toBe(MONO);
+    const { semantic, fontFamilyNative } = jest.requireActual('../../../../test-utils/themeTokens');
+    expect(StyleSheet.flatten(address.props.style).fontFamily).toBe(fontFamilyNative.mono);
+    // Sanity: the fixture's mono face is distinct from body text.
+    expect(fontFamilyNative.mono).not.toBe(fontFamilyNative.bold);
+    void semantic;
   });
 });
 
@@ -87,8 +109,9 @@ describe('AccountsPanel selected state', () => {
   it('marks the active account with the salmon check, not a status green', () => {
     renderPanel();
 
-    const check = screen.UNSAFE_getAllByProps({ color: SALMON }).length;
+    const { semantic } = jest.requireActual('../../../../test-utils/themeTokens');
+    const check = screen.UNSAFE_getAllByProps({ color: semantic.accent.ink }).length;
     expect(check).toBeGreaterThan(0);
-    expect(screen.UNSAFE_queryAllByProps({ color: GREEN })).toHaveLength(0);
+    expect(screen.UNSAFE_queryAllByProps({ color: semantic.status.success })).toHaveLength(0);
   });
 });

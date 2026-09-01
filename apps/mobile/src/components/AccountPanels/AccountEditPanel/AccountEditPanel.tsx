@@ -1,31 +1,23 @@
 /**
- * AccountEditPanel - Account editing options for mobile
+ * AccountEditPanel - account editing options for mobile.
  *
- * Displays a settings-style list with sections for editing name, avatar,
- * backing up seed phrase, and exporting private key.
+ * A `ListRow` group, same idiom as Settings' own section list: each row
+ * pushes a sub-panel, so none of them carries a chevron (a push sinks and
+ * floats on the vertical, a right caret would promise a slide).
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { KeyIcon, LockIcon, TextTIcon, UserCircleIcon, iconSize } from '../../../icons';
-import type { IconComponent } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
-import {
-  colors,
-  componentSizes,
-  spacing,
-  borderRadius,
-  fontSize,
-  fontFamilyNative,
-  semantic,
-} from '@salmon/shared';
+import { KeyIcon, LockIcon, TextTIcon, UserCircleIcon, iconSize } from '../../../icons';
+import type { IconComponent } from '../../../icons';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { IconBubble } from '../../IconBubble';
+import { ListRow } from '../../ListRow';
 import type { AccountEditPanelProps } from './types';
 
-// ============================================================================
-// Types
-// ============================================================================
+/** The leading well every row carries — Settings' own row bubble size. */
+const ROW_BUBBLE_SIZE = 40;
 
 interface SectionItem {
   labelKey: string;
@@ -33,10 +25,6 @@ interface SectionItem {
   onPress: () => void;
   testID: string;
 }
-
-// ============================================================================
-// Component
-// ============================================================================
 
 export function AccountEditPanel({
   account,
@@ -81,63 +69,25 @@ export function AccountEditPanel({
       subtitle={account.name}
       onBack={onBack}
     >
-      <View style={styles.sectionContainer}>
-        {sections.map((item, index) => (
-          <TouchableOpacity
-            key={item.labelKey}
-            testID={item.testID}
-            style={[styles.row, index < sections.length - 1 && styles.rowBorder]}
-            onPress={item.onPress}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={t(item.labelKey)}
-          >
-            <View style={styles.iconContainer}>
-              <item.icon size={iconSize.lg} color={semantic.text.primary} />
-            </View>
-            {/* No chevron: these rows push a panel, and the push sinks and
-                floats on the vertical — a right caret would promise a slide. */}
-            <Text style={styles.rowLabel}>{t(item.labelKey)}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {sections.map((item) => (
+        <ListRow
+          key={item.labelKey}
+          testID={item.testID}
+          leading={
+            <IconBubble
+              size={ROW_BUBBLE_SIZE}
+              shape="rounded"
+              tone="surface"
+              icon={item.icon}
+              iconSize={iconSize.md}
+            />
+          }
+          title={t(item.labelKey)}
+          onPress={item.onPress}
+          // No trailing node: these rows push a panel, and the push sinks
+          // and floats on the vertical — a right caret would promise a slide.
+        />
+      ))}
     </SettingsScreenLayout>
   );
 }
-
-// ============================================================================
-// Styles
-// ============================================================================
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.r3,
-    overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-  },
-  rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: semantic.border.default,
-  },
-  iconContainer: {
-    width: componentSizes.iconSize2XL,
-    height: componentSizes.iconSize2XL,
-    borderRadius: borderRadius.r2,
-    backgroundColor: colors.background.tertiary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  rowLabel: {
-    flex: 1,
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.bodyLg,
-  },
-});

@@ -1,12 +1,15 @@
 /**
- * SettingsSelectorList - Generic reusable list for settings selection screens
+ * SettingsSelectorList - the shared single-choice list for Language,
+ * Currency, Explorer and Network.
  *
- * Replaces the duplicated list rendering pattern across LanguageSelector,
- * NetworkSelector, CurrencySelector, and ExplorerSelector.
+ * A vertical set of mutually exclusive choices is not a lateral one, so it
+ * does not take the travelling underline (DESIGN.md §Navigation) — it is a
+ * Card-per-row list and the chosen row is marked by a trailing check in the
+ * accent ink, a state rather than an action, never an accent fill on the row.
  */
 
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CheckCircleIcon, iconSize } from '../../../icons';
 import {
@@ -16,15 +19,21 @@ import {
   Rect,
   spacing,
   borderRadius,
-  borderWidth,
   fontFamilyNative,
   fontSize,
+  s,
   semantic,
+  vs,
 } from '@salmon/shared';
+import { IconBubble } from '../../IconBubble';
+import { ListRow } from '../../ListRow';
 
-// Mirrors a rendered row: bodyLg text plus `spacing.md` padding either side.
-const SKELETON_ROW_HEIGHT = 56;
+/** Mirrors a rendered card row, so the loading state does not jump on swap. */
+const SKELETON_ROW_HEIGHT = 72;
 const SKELETON_ROW_COUNT = 3;
+
+/** The leading well every option row carries when a selector has no art of its own. */
+const ROW_BUBBLE_SIZE = 40;
 
 // ============================================================================
 // Types
@@ -78,44 +87,32 @@ export function SettingsSelectorList<T>({
   const renderItem = useCallback(
     (item: T) => {
       const selected = isSelected(item);
+      const key = getKey(item);
+
+      // No art of its own (Explorer, Network): the row still carries a
+      // leading well, filled with the same short code its subtitle already
+      // states, rather than mixing bare and bubbled rows in one list.
+      const leading = renderLeadingElement?.(item) ?? (
+        <IconBubble size={ROW_BUBBLE_SIZE} tone="surface">
+          {(getSecondaryText?.(item) ?? getPrimaryText(item)).slice(0, 2).toUpperCase()}
+        </IconBubble>
+      );
 
       return (
-        <TouchableOpacity
-          key={getKey(item)}
-          testID={testIdPrefix ? `${testIdPrefix}-${getKey(item)}` : undefined}
-          style={[styles.option, selected && styles.optionSelected]}
+        <ListRow
+          key={key}
+          testID={testIdPrefix ? `${testIdPrefix}-${key}` : undefined}
           onPress={() => onSelect(item)}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityState={{ selected }}
-        >
-          <View style={styles.info}>
-            {renderLeadingElement?.(item)}
-            <View style={[styles.textContainer, renderLeadingElement && styles.textWithLeading]}>
-              <Text style={styles.primaryText} numberOfLines={1} ellipsizeMode="tail">
-                {getPrimaryText(item)}
-              </Text>
-              {getSecondaryText && (
-                <Text style={styles.secondaryText} numberOfLines={1} ellipsizeMode="tail">
-                  {getSecondaryText(item)}
-                </Text>
-              )}
-            </View>
-          </View>
-
-          {selected && <CheckCircleIcon size={iconSize.lg} color={semantic.accent.ink} />}
-        </TouchableOpacity>
+          leading={leading}
+          title={getPrimaryText(item)}
+          subtitle={getSecondaryText?.(item)}
+          trailing={
+            selected ? <CheckCircleIcon size={iconSize.lg} color={semantic.accent.ink} /> : undefined
+          }
+        />
       );
     },
-    [
-      isSelected,
-      getKey,
-      onSelect,
-      getPrimaryText,
-      getSecondaryText,
-      renderLeadingElement,
-      testIdPrefix,
-    ]
+    [isSelected, getKey, onSelect, getPrimaryText, getSecondaryText, renderLeadingElement, testIdPrefix]
   );
 
   if (loading) {
@@ -123,7 +120,7 @@ export function SettingsSelectorList<T>({
     // the rows they stand in for, as the token list and chart already do.
     const skeletonWidth = windowWidth - contentPadding.screen * 2;
     const skeletonHeight =
-      SKELETON_ROW_COUNT * SKELETON_ROW_HEIGHT + (SKELETON_ROW_COUNT - 1) * spacing.sm;
+      SKELETON_ROW_COUNT * SKELETON_ROW_HEIGHT + (SKELETON_ROW_COUNT - 1) * spacing.xl;
     return (
       <ContentLoader
         speed={1.5}
@@ -138,9 +135,9 @@ export function SettingsSelectorList<T>({
           <Rect
             key={index}
             x="0"
-            y={index * (SKELETON_ROW_HEIGHT + spacing.sm)}
-            rx={borderRadius.r3}
-            ry={borderRadius.r3}
+            y={index * (SKELETON_ROW_HEIGHT + spacing.xl)}
+            rx={borderRadius.r4}
+            ry={borderRadius.r4}
             width={skeletonWidth}
             height={SKELETON_ROW_HEIGHT}
           />
@@ -163,50 +160,11 @@ export default SettingsSelectorList;
 // ============================================================================
 
 const styles = StyleSheet.create({
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.background.card,
-    // Control Radius Rule: a settings list row is a control — r3, not r2.
-    borderRadius: borderRadius.r3,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    // Constant border; selection only swaps its color. A border that appears
-    // on selection shifted every row's content by 1px.
-    borderWidth: borderWidth.thin,
-    borderColor: 'transparent',
-  },
-  optionSelected: {
-    borderColor: semantic.state.selectedEdge,
-  },
-  info: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  textWithLeading: {
-    gap: spacing.xxs,
-  },
-  primaryText: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.bodyLg,
-  },
-  secondaryText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
-  },
   emptyText: {
     color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
+    fontSize: s(fontSize.body),
     textAlign: 'center',
-    padding: spacing.xl,
+    padding: vs(spacing.xl),
   },
 });

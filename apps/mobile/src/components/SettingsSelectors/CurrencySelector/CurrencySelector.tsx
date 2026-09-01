@@ -6,20 +6,10 @@
  */
 
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import {
-  colors,
-  componentSizes,
-  spacing,
-  borderRadius,
-  fontFamilyNative,
-  type CurrencySelectorBaseProps,
-  type CurrencySelectorItem,
-  fontSize,
-  semantic,
-} from '@salmon/shared';
+import { type CurrencySelectorBaseProps, type CurrencySelectorItem } from '@salmon/shared';
+import { IconBubble } from '../../IconBubble';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { SettingsSelectorList } from '../SettingsSelectorList';
 
@@ -42,9 +32,9 @@ export function CurrencySelector({
 
   const renderSymbol = useCallback(
     (item: CurrencySelectorItem) => (
-      <View style={styles.symbolContainer}>
-        <Text style={styles.symbolText}>{item.symbol}</Text>
-      </View>
+      <IconBubble size={40} tone="surface">
+        {item.symbol}
+      </IconBubble>
     ),
     []
   );
@@ -66,24 +56,3 @@ export function CurrencySelector({
 }
 
 export default CurrencySelector;
-
-// ============================================================================
-// Styles
-// ============================================================================
-
-const styles = StyleSheet.create({
-  symbolContainer: {
-    width: componentSizes.iconSize2XL,
-    height: componentSizes.iconSize2XL,
-    borderRadius: borderRadius.r2,
-    backgroundColor: colors.background.tertiary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  symbolText: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.heading,
-  },
-});

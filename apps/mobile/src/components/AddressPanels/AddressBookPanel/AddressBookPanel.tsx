@@ -6,25 +6,32 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { PencilSimpleIcon, PlusCircleIcon, TrashIcon, UserIcon, iconSize } from '../../../icons';
+import { View, Text, StyleSheet } from 'react-native';
+import { CaretRightIcon, PlusIcon, TrashIcon, iconSize } from '../../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
-  colors,
-  componentSizes,
-  spacing,
-  borderRadius,
   fontFamilyNative,
-  getNetworkName,
+  fontSize,
   getShortAddress,
+  s,
+  semantic,
+  spacing,
   type AddressBookSelectorBaseProps,
   type AddressBookItem,
-  fontSize,
-  semantic,
 } from '@salmon/shared';
+import { Card } from '../../Card';
+import { IconBubble } from '../../IconBubble';
+import { ListRow } from '../../ListRow';
+import { SecondaryButton } from '../../Button';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
+import { WarningNotice } from '../../WarningNotice';
 import { ConfirmSheet } from '../../ConfirmSheet';
+
+/** The initial the avatar bubble carries, same idiom as the send recipients. */
+function initialOf(contact: AddressBookItem): string {
+  return (contact.name.trim()[0] ?? contact.address[0] ?? '?').toUpperCase();
+}
 
 // ============================================================================
 // Component
@@ -42,10 +49,6 @@ export function AddressBookPanel({
   const { t } = useTranslation();
   const [contactToRemove, setContactToRemove] = useState<AddressBookItem | null>(null);
 
-  const handleRemove = useCallback((contact: AddressBookItem) => {
-    setContactToRemove(contact);
-  }, []);
-
   const handleRemoveConfirmed = useCallback(async () => {
     if (!contactToRemove) return;
     await onRemoveContact(contactToRemove.address);
@@ -53,111 +56,98 @@ export function AddressBookPanel({
 
   const renderContactItem = useCallback(
     (contact: AddressBookItem) => (
-      <View
+      <ListRow
         key={contact.address}
-        style={styles.contactItem}
         testID={`address-book-contact-${contact.address}`}
-      >
-        <View style={styles.contactInfo}>
-          <View style={styles.contactIconPlaceholder}>
-            <UserIcon size={iconSize.md} color={semantic.text.secondary} />
+        leading={
+          <IconBubble size={40} tone="accent-tint">
+            {initialOf(contact)}
+          </IconBubble>
+        }
+        title={contact.name}
+        subtitle={contact.domain || (getShortAddress(contact.address, 6) ?? contact.address)}
+        trailing={
+          // Two presses, not one row press: a row that also carried its own
+          // `onPress` would wrap the trash button in a nested touchable, and
+          // RN's touch responder does not reliably hand the tap to the inner
+          // one. The chevron is what opens edit, exactly as the rule says.
+          <View style={styles.trailing}>
+            <IconBubble
+              testID={`address-book-remove-${contact.address}`}
+              size={36}
+              tone="ghost"
+              icon={TrashIcon}
+              iconColor={semantic.status.danger}
+              onPress={() => setContactToRemove(contact)}
+              accessibilityLabel={t('actions.remove', 'Remove')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            />
+            <IconBubble
+              testID={`address-book-edit-${contact.address}`}
+              size={36}
+              tone="ghost"
+              icon={CaretRightIcon}
+              onPress={() => onEditContact(contact)}
+              accessibilityLabel={t('actions.edit', 'Edit')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            />
           </View>
-          <View style={styles.contactText}>
-            <Text style={styles.contactName} numberOfLines={1}>
-              {contact.name}
-            </Text>
-            <Text style={styles.contactAddress} numberOfLines={1}>
-              {contact.domain || getShortAddress(contact.address, 6)}
-            </Text>
-            <Text style={styles.contactNetwork} numberOfLines={1}>
-              {getNetworkName(contact.networkId)}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onEditContact(contact)}
-            activeOpacity={0.7}
-            testID={`address-book-edit-${contact.address}`}
-            accessibilityRole="button"
-            accessibilityLabel={t('actions.edit', 'Edit')}
-          >
-            <PencilSimpleIcon size={iconSize.sm} color={semantic.text.secondary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => handleRemove(contact)}
-            activeOpacity={0.7}
-            testID={`address-book-remove-${contact.address}`}
-            accessibilityRole="button"
-            accessibilityLabel={t('actions.remove', 'Remove')}
-          >
-            <TrashIcon size={iconSize.sm} color={semantic.status.danger} />
-          </TouchableOpacity>
-        </View>
-      </View>
+        }
+      />
     ),
-    [onEditContact, handleRemove, t]
+    [onEditContact, t]
+  );
+
+  // The one action that is not a contact: outlined, so it reads as an empty
+  // slot rather than a card with nothing in it — same idiom as Wallets'
+  // "Add wallet" row.
+  const addAction = (
+    <Card
+      testID="address-book-add-button"
+      padding="lg"
+      onPress={onAddContact}
+      accessibilityLabel={t('settings.addressbook.addnew', 'Add New Address')}
+      style={styles.addCard}
+    >
+      <View style={styles.addRow}>
+        <PlusIcon size={iconSize.md} color={semantic.accent.ink} />
+        <Text style={styles.addLabel}>{t('settings.addressbook.addnew', 'Add New Address')}</Text>
+      </View>
+    </Card>
   );
 
   return (
     <SettingsScreenLayout title={t('settings.address_book', 'Address Book')} onBack={onBack}>
       {error ? (
-        <View style={styles.emptyContainer} testID="address-book-error">
-          <Text style={styles.emptyText}>
-            {t('settings.addressbook.load_error', "Couldn't load your contacts")}
-          </Text>
-          {onRetry && (
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={onRetry}
-              activeOpacity={0.7}
-              testID="address-book-retry-button"
-              accessibilityRole="button"
-            >
-              <Text style={styles.addButtonText}>{t('transactions.tapToRetry')}</Text>
-            </TouchableOpacity>
-          )}
+        <View testID="address-book-error">
+          <WarningNotice
+            tone="error"
+            title={t('settings.addressbook.load_error', "Couldn't load your contacts")}
+            action={
+              onRetry ? (
+                <SecondaryButton testID="address-book-retry-button" onPress={onRetry}>
+                  {t('transactions.tapToRetry')}
+                </SecondaryButton>
+              ) : undefined
+            }
+          />
         </View>
       ) : contacts.length > 0 ? (
         <>
           {contacts.map(renderContactItem)}
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={onAddContact}
-            activeOpacity={0.7}
-            testID="address-book-add-button"
-            accessibilityRole="button"
-          >
-            <PlusCircleIcon size={iconSize.md} color={semantic.accent.ink} />
-            <Text style={styles.addButtonText}>
-              {t('settings.addressbook.addnew', 'Add New Address')}
-            </Text>
-          </TouchableOpacity>
+          {addAction}
         </>
       ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
-            {t(
+        <>
+          <WarningNotice
+            tone="warning"
+            title={t(
               'settings.addressbook.empty',
               'Looks empty in here.\nAdd your first contact clicking the button.'
             )}
-          </Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={onAddContact}
-            activeOpacity={0.7}
-            testID="address-book-add-button"
-            accessibilityRole="button"
-          >
-            <PlusCircleIcon size={iconSize.md} color={semantic.accent.ink} />
-            <Text style={styles.addButtonText}>
-              {t('settings.addressbook.addnew', 'Add New Address')}
-            </Text>
-          </TouchableOpacity>
-        </View>
+          />
+          {addAction}
+        </>
       )}
 
       <ConfirmSheet
@@ -183,80 +173,25 @@ export default AddressBookPanel;
 // ============================================================================
 
 const styles = StyleSheet.create({
-  contactItem: {
+  trailing: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.background.card,
-    // Control Radius Rule: a settings list row is a control — r3, not r2.
-    borderRadius: borderRadius.r3,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    gap: s(spacing.xs),
   },
-  contactInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: spacing.sm,
+  addCard: {
+    backgroundColor: 'transparent',
+    borderStyle: 'dashed',
+    borderColor: semantic.border.raised,
   },
-  contactIconPlaceholder: {
-    width: componentSizes.iconSizeXL,
-    height: componentSizes.iconSizeXL,
-    borderRadius: borderRadius.iconContainer,
-    backgroundColor: colors.card.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  contactText: {
-    flex: 1,
-    marginLeft: spacing.md,
-    gap: spacing.xxs,
-  },
-  contactName: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.bodyLg,
-  },
-  contactAddress: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.mono,
-  },
-  contactNetwork: {
-    color: semantic.text.disabled,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  actionButton: {
-    padding: spacing.sm,
-  },
-  addButton: {
+  addRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.lg,
+    gap: s(spacing.sm),
   },
-  addButtonText: {
+  addLabel: {
     color: semantic.accent.ink,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.body,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing['3xl'],
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-  },
-  emptyText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
-    textAlign: 'center',
+    fontFamily: fontFamilyNative.bold,
+    fontSize: s(fontSize.body),
   },
 });
