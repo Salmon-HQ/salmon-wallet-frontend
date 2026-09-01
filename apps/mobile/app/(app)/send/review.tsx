@@ -2,9 +2,12 @@
  * Send · review and sign — CORE 06.
  *
  * The last screen before the money moves, and the one place in this flow where
- * nothing was allowed to change shape. The fee is estimated once, on mount,
- * with exactly the parameters the transfer will carry — the same effect the
- * confirmation step ran, mount-only for the same reason. Confirm calls the
+ * nothing was allowed to change shape. The fee is estimated once for the whole
+ * flow, with exactly the parameters the transfer will carry: the amount screen
+ * already asked for it and the context is holding it, so this screen reads
+ * that estimate rather than paying for a second one. Arriving here without one
+ * — a deep link, or an estimate that failed upstream — asks again, which is
+ * what `estimateFee` is for; it no-ops when the answer is already held. Confirm calls the
  * flow's `submit`, which is the sheet's `submitSend` moved up a level, not
  * rewritten. There is no spinner on the control: the tap hands the screen to
  * the wait, and the passage is the answer (DESIGN.md §Buttons).
@@ -13,7 +16,7 @@
  * task surface the layout owns, and the surface keeps the screen on a failure
  * too — the error and its retry live there, where the user actually is.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -44,9 +47,8 @@ export default function SendReviewScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { floatingBottomOffset } = useTabChrome();
-  const { token, recipient, amount, sendHook, submit, reset } = useSendFlow();
-
-  const [estimatedFee, setEstimatedFee] = useState<string | null>(null);
+  const { token, recipient, amount, sendHook, submit, reset, estimatedFee, estimateFee } =
+    useSendFlow();
 
   const isSending = sendHook.status === 'creating' || sendHook.status === 'sending';
 
@@ -61,25 +63,10 @@ export default function SendReviewScreen() {
       ? recipient.address
       : null;
 
-  // Estimate fee on mount — the same call, the same parameters, once.
+  // Ask only if the flow is not already holding the answer for this pair.
   useEffect(() => {
-    if (!token || !recipient) return;
-    const doEstimate = async () => {
-      const result = await sendHook.estimateFee({
-        token: {
-          address: token.address,
-          decimals: token.decimals ?? 9,
-          symbol: token.symbol,
-        },
-        recipientAddress: recipient.address,
-        resolvedRecipientAddress: recipient.resolvedAddress,
-        amount: parseFloat(amount),
-      });
-      if (result) setEstimatedFee(result.fee);
-    };
-    doEstimate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally mount-only: estimate fee once with initial values
-  }, []);
+    if (!estimatedFee) estimateFee();
+  }, [estimatedFee, estimateFee]);
 
   // Cancel leaves the flow entirely: the amount and the recipient are two
   // screens back, and this control is the way out, not the way back.

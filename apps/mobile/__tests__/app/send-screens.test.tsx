@@ -47,6 +47,8 @@ const mockFlow = {
   amount: '',
   setAmount: jest.fn(),
   sendHook: { status: 'idle', settling: false, error: null, feeEstimateFailed: false, reset: jest.fn(), estimateFee: jest.fn(), sendTransaction: jest.fn() },
+  estimatedFee: null as string | null,
+  estimateFee: jest.fn(),
   txId: null,
   submit: jest.fn(),
   reset: jest.fn(),
@@ -171,6 +173,7 @@ beforeEach(() => {
   mockFlow.recipient = { address: 'Dest111111111111111111111111111111111111111' };
   mockFlow.liveBalance = 2.5;
   mockFlow.nativeBalance = 2.5;
+  mockFlow.estimatedFee = null;
 });
 
 describe('the recipient screen — 04A and 04B', () => {
@@ -302,6 +305,45 @@ describe('the amount screen — the shortcuts', () => {
 
     expect(screen.getByText('You need SOL to send')).toBeTruthy();
     expect(screen.getByTestId('send-review-button').props.accessibilityState.disabled).toBe(true);
+  });
+});
+
+describe('the amount screen — what the frames put on it', () => {
+  it('states the balance as a bare row, not inside a card', () => {
+    render(<SendAmountScreen />);
+
+    expect(screen.getByText('Available')).toBeTruthy();
+    expect(screen.getByText('2.5 SOL')).toBeTruthy();
+    // A bare row, but still the door to the token picker.
+    expect(screen.getByTestId('send-selected-token').props.accessibilityRole).toBe('button');
+  });
+
+  it('asks the flow for the fee and draws it beside the arrival', () => {
+    jest.useFakeTimers();
+    try {
+      render(<SendAmountScreen />);
+      jest.runOnlyPendingTimers();
+
+      expect(mockFlow.estimateFee).toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+
+    expect(screen.getByTestId('send-amount-fee')).toBeTruthy();
+    expect(screen.getByText('Network Fee')).toBeTruthy();
+    expect(screen.getByText('Estimated arrival')).toBeTruthy();
+    expect(screen.getByText('A few seconds')).toBeTruthy();
+    // Nothing estimated yet reads as a dash, never as a zero fee.
+    expect(screen.getByTestId('send-amount-network-fee')).toBeTruthy();
+    expect(screen.getByText('—')).toBeTruthy();
+  });
+
+  it('shows the estimate the flow is holding', () => {
+    mockFlow.estimatedFee = '0.000005 SOL';
+
+    render(<SendAmountScreen />);
+
+    expect(screen.getByText('~0.000005 SOL')).toBeTruthy();
   });
 });
 

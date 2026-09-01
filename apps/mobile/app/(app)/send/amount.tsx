@@ -14,14 +14,17 @@
  * The SOL shortfall block is said before the form for the reason it always
  * was: without the fee there is no transfer to compose.
  *
- * What the frames ask for and this screen does not carry: a memo field, and a
- * fee estimate beside the amount. A memo would have to reach the transaction
- * builder, and the fee is estimated once, on the review screen, where it
- * always has been — both are transaction-path changes and neither is made
- * here. See the spec report.
+ * The fee is drawn here as well as on the review screen, and it is one
+ * estimate, not two: the flow's context holds it keyed on the token and the
+ * recipient, so this screen asking for it is what the review screen later
+ * reads (see `SendFlowContext`).
+ *
+ * What the frames ask for and this screen still does not carry: the memo
+ * field. A memo has to reach the transaction builder, which is a
+ * transaction-path change and is not made here. See the spec report.
  */
-import React, { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -62,6 +65,19 @@ import { useKeyboardHeight } from '../../../hooks/useKeyboardHeight';
 // mutable one.
 const TABULAR = { fontVariant: [...tabularNums.native.fontVariant] };
 
+/**
+ * The amount being typed, at the size the frames draw it (CORE 05, 46/700).
+ *
+ * Deliberately a local constant rather than a new step in `fontSize`: the
+ * scale tops out at the balance's 38 and this is the one number in the app
+ * larger than the total balance — a size this screen owns, not a role the
+ * type system offers.
+ */
+const AMOUNT_ENTRY_FONT = 46;
+
+/** How long the fee estimate waits before firing, in ms. */
+const FEE_DEBOUNCE_MS = 300;
+
 /** The four fills the frames draw. `1` is MAX — the whole balance, as today. */
 const SHORTCUTS = [
   { key: '25', value: 0.25 },
@@ -93,6 +109,8 @@ export default function SendAmountScreen() {
     recipient,
     amount,
     setAmount,
+    estimatedFee,
+    estimateFee,
   } = useSendFlow();
 
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -136,8 +154,8 @@ export default function SendAmountScreen() {
   const tokenPrice = token?.price;
   const fiatDisplay = useMemo(() => {
     const numAmount = parseFloat(amount) || 0;
-    if (!tokenPrice || numAmount === 0) return `${formatPrecise(0)} ${currency.toUpperCase()}`;
-    return `${formatPrecise(numAmount * tokenPrice)} ${currency.toUpperCase()}`;
+    const fiat = !tokenPrice || numAmount === 0 ? 0 : numAmount * tokenPrice;
+    return `≈ ${formatPrecise(fiat)} ${currency.toUpperCase()}`;
   }, [amount, tokenPrice, formatPrecise, currency]);
 
   const shortcutOptions = useMemo(
@@ -150,10 +168,18 @@ export default function SendAmountScreen() {
   );
 
   const recipientShort = recipient
-    ? (getShortAddress(recipient.resolvedAddress || recipient.address) ??
+    ? (getShortAddress(recipient.resolvedAddress || recipient.address, 4) ??
       recipient.resolvedAddress ??
       recipient.address)
     : '';
+
+  // The fee, asked for once the screen settles. The context no-ops a request
+  // for a pair it already holds, so the debounce only spares the first frames
+  // of a token change — it is not what keeps the request count at one.
+  useEffect(() => {
+    const timer = setTimeout(estimateFee, FEE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [estimateFee]);
 
   const actionBottomPadding =
     keyboardHeight > 0 ? keyboardHeight + vs(spacing.sm) : floatingBottomOffset;
@@ -182,22 +208,24 @@ export default function SendAmountScreen() {
           </WarningNotice>
         )}
 
-        {/* The balance, and the door to the token picker: the row states what
-            can be spent and tapping it says "not this asset". */}
-        <Card
+        {/* The balance, and the door to the token picker. A bare row, not a
+            card: the frames give it no ground of its own — it is a caption on
+            the amount entry below it, and a card here would read as a second
+            object competing with the one thing this screen is for. */}
+        <Pressable
           testID="send-selected-token"
-          padding="md"
           onPress={() => setPickerOpen(true)}
+          accessibilityRole="button"
           accessibilityLabel={t('wallet.select_token', 'Select Token')}
         >
           <KeyValueRow
             label={t('send.screens.available')}
             value={`${formatTokenAmount(tokenBalance)} ${token?.symbol ?? ''}`}
           />
-        </Card>
+        </Pressable>
 
         {/* The amount. Tabular, so a repoll never reflows the digits. */}
-        <Card padding="xl" style={styles.amountCard}>
+        <Card padding="lg" gap={spacing.base} style={styles.amountCard}>
           <View style={styles.amountRow}>
             <TextInput
               testID="send-amount-input"
@@ -223,15 +251,31 @@ export default function SendAmountScreen() {
           // the fill, so the group never carries a value.
           value=""
           onChange={handleShortcut}
-          size="sm"
+          size="md"
           variant="outline"
           style={styles.shortcuts}
         />
 
         {/* Who this pays, restated where the amount is decided. */}
-        <Card padding="md" gap={spacing.sm} testID="send-amount-recipient">
+        <Card padding="sm" gap={spacing.sm} testID="send-amount-recipient">
           <KeyValueRow label={t('transactions.to')} value={recipient?.name ?? recipientShort} />
           <KeyValueRow label={t('send.screens.address')} value={recipientShort} />
+        </Card>
+
+        {/* What the transfer costs and how long it takes — the two questions
+            the amount raises, answered before Review rather than after it. The
+            estimate is the flow's, so the review screen does not ask twice. */}
+        <Card padding="sm" gap={spacing.sm} testID="send-amount-fee">
+          <KeyValueRow
+            testID="send-amount-network-fee"
+            label={t('token.send.networkFee')}
+            value={estimatedFee ? `~${estimatedFee}` : '—'}
+            valueTone={estimatedFee ? 'primary' : 'secondary'}
+          />
+          <KeyValueRow
+            label={t('send.screens.estimatedArrival')}
+            value={t('send.screens.arrivalSeconds')}
+          />
         </Card>
       </ScrollView>
 
@@ -241,7 +285,7 @@ export default function SendAmountScreen() {
           onPress={() => router.push('/send/review')}
           disabled={!isValid}
         >
-          {t('token.send.reviewAndSend')}
+          {t('send.screens.reviewTitle')}
         </PrimaryButton>
       </View>
 
@@ -281,20 +325,17 @@ const styles = StyleSheet.create({
   },
   amountCard: {
     alignItems: 'center',
-    gap: vs(spacing.xs),
   },
   amountRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: s(spacing.sm),
   },
-  // The frames draw 46; the type scale's largest step is the balance's 38, and
-  // a screen does not mint a size of its own (DESIGN.md §Typography).
   amountInput: {
     ...TABULAR,
     minWidth: s(80),
-    fontSize: s(fontSize.balance),
-    lineHeight: s(fontSize.balance) * lineHeight.snug,
+    fontSize: s(AMOUNT_ENTRY_FONT),
+    lineHeight: s(AMOUNT_ENTRY_FONT) * lineHeight.snug,
     fontFamily: fontFamilyNative.bold,
     color: semantic.text.primary,
     textAlign: 'right',

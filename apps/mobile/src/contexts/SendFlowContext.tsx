@@ -20,6 +20,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -71,6 +72,18 @@ export interface SendFlowValue {
 
   /** The transfer itself. Never re-implemented per screen. */
   sendHook: ReturnType<typeof useSendTransaction>;
+
+  /**
+   * The network fee, estimated once per (token, recipient) pair and shared.
+   *
+   * The amount screen shows it beside the amount and the review screen shows
+   * it again before signing; one estimate serves both. `null` means "not
+   * estimated yet, or the pair changed" — a stale estimate is never shown for
+   * a pair it was not measured on.
+   */
+  estimatedFee: string | null;
+  /** Estimate the fee for the current pair. A no-op when one is already held. */
+  estimateFee: () => void;
   /** Set once the transfer comes back; the receipt screen reads it. */
   txId: string | null;
   /** Commit the transfer. Review fires it; the failure surface retries it. */
@@ -135,7 +148,54 @@ export function SendFlowProvider({ children }: { children: React.ReactNode }) {
     [tokens]
   );
 
+  /**
+   * The fee estimate, held against the pair it was measured on.
+   *
+   * Solana charges per signature, not per lamport, so the estimate does not
+   * move with the amount being typed — keying it on the token and the
+   * recipient is what lets the amount screen show a fee without firing a
+   * request per keystroke. The pair changing (a different token from the
+   * picker) drops the estimate rather than showing yesterday's number.
+   */
+  const [fee, setFee] = useState<{ key: string; value: string } | null>(null);
+  const feeRequestedFor = useRef<string | null>(null);
+  const feeKey = token && recipient ? `${token.address}:${recipient.address}` : null;
+  const estimatedFee = fee && fee.key === feeKey ? fee.value : null;
+
+  // The estimate is not keyed on the amount, but the call still carries one,
+  // so the latest is kept beside the request rather than in its closure —
+  // otherwise every keystroke would rebuild `estimateFee` and re-arm the
+  // amount screen's debounce.
+  const amountRef = useRef(amount);
+  useEffect(() => {
+    amountRef.current = amount;
+  }, [amount]);
+
+  const estimateFee = useCallback(() => {
+    if (!token || !recipient || !feeKey) return;
+    if (feeRequestedFor.current === feeKey) return;
+    feeRequestedFor.current = feeKey;
+    void (async () => {
+      const result = await sendHook.estimateFee({
+        token: {
+          address: token.address,
+          decimals: token.decimals ?? 9,
+          symbol: token.symbol,
+        },
+        recipientAddress: recipient.address,
+        resolvedRecipientAddress: recipient.resolvedAddress,
+        amount: parseFloat(amountRef.current),
+      });
+      // A failed estimate releases the key so the next screen can try again;
+      // the hook's own `feeEstimateFailed` is what surfaces the failure.
+      if (result) setFee({ key: feeKey, value: result.fee });
+      else if (feeRequestedFor.current === feeKey) feeRequestedFor.current = null;
+    })();
+  }, [feeKey, token, recipient, sendHook]);
+
   const reset = useCallback(() => {
+    setFee(null);
+    feeRequestedFor.current = null;
     setToken(null);
     setRecipient(null);
     setAmount('');
@@ -187,6 +247,8 @@ export function SendFlowProvider({ children }: { children: React.ReactNode }) {
       amount,
       setAmount,
       sendHook,
+      estimatedFee,
+      estimateFee,
       txId,
       submit,
       reset,
@@ -204,6 +266,8 @@ export function SendFlowProvider({ children }: { children: React.ReactNode }) {
       recipient,
       amount,
       sendHook,
+      estimatedFee,
+      estimateFee,
       txId,
       submit,
       reset,
