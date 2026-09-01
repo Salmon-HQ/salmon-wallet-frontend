@@ -28,7 +28,6 @@ import { TokenListItem } from '../TokenList';
 import { PriceChart } from '../PriceChart';
 import { TokenMarketData } from './TokenMarketData';
 import { TokenAbout } from './TokenAbout';
-import { TokenBadgesSection } from './TokenBadgesSection';
 import type { TokenInformationSheetProps } from './types';
 
 /**
@@ -178,8 +177,6 @@ export const TokenInformationSheet: React.FC<TokenInformationSheetProps> = ({
           style={{ marginHorizontal: 0 }}
         />
 
-        {/* TokenBadgesSection - Before About */}
-        <TokenBadgesSection tags={token.tags} loading={loading} style={{ marginHorizontal: 0 }} />
 
         {/* TokenAbout - At the bottom */}
         <TokenAbout

@@ -3,9 +3,11 @@
  *
  * Displays:
  * - GateContainer header: Account name, address, settings navigation
- * - BalanceCardCarousel: Swipeable balance cards for multiple blockchains
- * - ActionButtonRow: Send, Receive, Activity buttons
- * - TokenList: List of token holdings
+ * - BalanceHeader: swipeable per-chain balance + Send / Receive / History
+ * - PortfolioSubTabs: in-page "Portfolio | NFTs" row (the bottom tab bar is gone)
+ * - Portfolio content: TokenList, or the Bitcoin chart/market/about column
+ * - NFTs content: NftsTab
+ * - PowerupsFab: the floating `+` that opens the Powerups launcher
  *
  * Features:
  * - Pull-to-refresh for balance updates
@@ -22,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Animated,
+  LayoutChangeEvent,
   Linking,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -44,7 +47,7 @@ import {
   getMarketChart,
   getTokenMarketChart,
   getTokenCoinInfo,
-  getShortAddress,
+  s,
   spacing,
   useAccountsContext,
   useAvailableNetworks,
@@ -66,12 +69,14 @@ import {
   semantic,
 } from '@salmon/shared';
 import {
-  ActionButtonRow,
-  BalanceCardCarousel,
+  BalanceHeader,
+  NftsTab,
+  PortfolioSubTabs,
+  PowerupsFab,
+  PowerupsLauncherSheet,
   PriceChart,
   ReceiveSheet,
   SendSheet,
-  SubAccountSelector,
   TokenAbout,
   TokenInformationSheet,
   TokenList,
@@ -80,11 +85,9 @@ import {
   TokenMarketData,
   TransactionHistorySheet,
   WarningNotice,
-  depthParallaxScroll,
   type BlockchainBalance,
   type BlockchainId,
   type MarketData,
-  type SubAccount,
   type Transaction,
 } from '../../../src/components';
 import { useDeveloperMode } from '../../../src/contexts/DeveloperModeContext';
@@ -143,26 +146,49 @@ function mapBalanceToToken(item: {
   };
 }
 
+/** Scroll distance over which the top fade gradient reaches full opacity. */
+const TOP_FADE_SCROLL_RANGE = 30;
+
+/** Fraction of the balance block's travel after which the sticky row grounds. */
+const STICKY_SCRIM_START = 0.6;
+
+/** The two in-page sub-tabs. NFTs only exist on Solana — see `handleSubTabChange`. */
+type SubTabKey = 'portfolio' | 'nfts';
+
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const { scrollBottomPadding } = useTabChrome();
+  const { headerContentOffset, floatingBottomOffset } = useTabChrome();
   // A task that takes the screen owns it: the home content leaves with the
   // same verb the chrome does, so the flow finds empty water behind it.
   const { isTaskEngaged } = useTaskChrome();
   const isReduceMotionEnabled = useReducedMotion();
   const [{ currency }] = useCurrencyContext();
 
+  // Everything the screen owns starts below the absolute wallet header, one
+  // `.pen` vertical gap under it. The header's own top padding (safe area +
+  // `screenTop`) is already inside `headerContentOffset`.
+  const contentTopOffset = headerContentOffset + vs(spacing.xl);
+
   // Top fade gradient opacity - animated based on scroll position
   const topFadeOpacity = useRef(new Animated.Value(0)).current;
+  // Raw scroll offset of whichever sub-tab owns the screen. On NFTs it also
+  // drives the sticky sub-tab row (see `subTabsTranslateY`).
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   // Active blockchain index for carousel
   const [activeBlockchainIndex, setActiveBlockchainIndex] = useState(0);
 
-  // Sub-account switching state (for showing skeleton during switch)
-  const [switchingSubAccount, setSwitchingSubAccount] = useState(false);
-  const [pendingSubAccountIndex, setPendingSubAccountIndex] = useState<number | undefined>(
-    undefined
-  );
+  // In-page sub-tab (replaces the removed bottom tab bar)
+  const [activeSubTab, setActiveSubTab] = useState<SubTabKey>('portfolio');
+
+  // Powerups launcher sheet visibility
+  const [powerupsVisible, setPowerupsVisible] = useState(false);
+
+  // Measured once per layout so the sticky sub-tab row knows how far the
+  // balance block has to travel before it pins, and how much room to reserve
+  // for itself inside the NFT list header.
+  const [balanceBlockHeight, setBalanceBlockHeight] = useState(0);
+  const [subTabsHeight, setSubTabsHeight] = useState(0);
 
   // Bitcoin-specific data states
   const [bitcoinChartData, setBitcoinChartData] = useState<PriceDataPoint[]>([]);
@@ -204,6 +230,7 @@ export default function HomeScreen() {
     setReceiveSheetVisible(false);
     setSendSheetVisible(false);
     setTransactionHistoryVisible(false);
+    setPowerupsVisible(false);
   }, [accountState.locked]);
 
   // Developer mode — shared via context from _layout.tsx (single source of truth)
@@ -240,14 +267,32 @@ export default function HomeScreen() {
     return availableNetworks.filter((network) => userNetworkIds.includes(network.id));
   }, [availableNetworks, activeAccount?.networksAccounts]);
 
-  // Sync carousel index with persisted networkId on mount / network change
+  // Sync the carousel index with the persisted networkId — but only when that
+  // id actually changes.
+  //
+  // `changeNetwork` is async, so a chain switch sets the index optimistically
+  // and the persisted id catches up a beat later. This effect also re-runs
+  // whenever `allNetworks` changes identity, and it does on nearly every
+  // render (the accounts context hands back a fresh `activeAccount`, so the
+  // filter memo above recomputes). Re-running it inside that beat re-derived
+  // the index from the OLD networkId and pulled the balance straight back to
+  // the chain the user had just left — which is why opening NFTs from Bitcoin
+  // called `changeNetwork('solana-mainnet')` and still showed Bitcoin (owner,
+  // device run). Guarding on the id makes it a sync, not a continuous
+  // assertion.
+  // Keyed on account AND network: two accounts can sit on the same network id,
+  // so keying on the network alone made a wallet switch look like "already
+  // synced" and left the balance on the previous account's chain index.
+  const syncedNetworkIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!networkId || allNetworks.length === 0) return;
+    const syncKey = `${activeAccount?.id ?? ''}:${networkId}`;
+    if (syncedNetworkIdRef.current === syncKey) return;
     const idx = allNetworks.findIndex((n) => n.id === networkId);
-    if (idx >= 0) {
-      setActiveBlockchainIndex(idx);
-    }
-  }, [networkId, allNetworks]);
+    if (idx < 0) return;
+    syncedNetworkIdRef.current = syncKey;
+    setActiveBlockchainIndex(idx);
+  }, [networkId, allNetworks, activeAccount?.id]);
 
   // Get balance data for current network (active)
   const {
@@ -256,7 +301,6 @@ export default function HomeScreen() {
     changePercent,
     changeAmount,
     loading,
-    refreshing,
     hasData,
     state: balanceState,
     refresh,
@@ -383,61 +427,6 @@ export default function HomeScreen() {
   // BE drops unknown-only-tagged SPL tokens by default; developer mode opts
   // in via `includeSpam` on `useBalance` above. Trust the BE list as-is.
   const tokenListItems = useMemo(() => tokens.map(mapBalanceToToken), [tokens]);
-
-  // Compute sub-accounts for the current network (for path index switching)
-  const subAccounts = useMemo((): SubAccount[] => {
-    if (!activeAccount || !networkId) return [];
-    const networkAccounts = activeAccount.networksAccounts[networkId];
-    if (!networkAccounts) return [];
-    return networkAccounts
-      .map((acc, idx) =>
-        acc ? { index: idx, address: getShortAddress(acc.getReceiveAddress(), 4) ?? '' } : null
-      )
-      .filter((item): item is SubAccount => item !== null);
-  }, [activeAccount, networkId]);
-
-  // Debounce timer ref to prevent rapid sub-account switching from spamming API
-  const subAccountChangeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleSubAccountChange = useCallback(
-    (index: number) => {
-      // Don't do anything if already on this account
-      if (index === pathIndex) return;
-
-      // Clear any pending change
-      if (subAccountChangeTimerRef.current) {
-        clearTimeout(subAccountChangeTimerRef.current);
-      }
-
-      // Immediately show switching state (activate skeletons)
-      setSwitchingSubAccount(true);
-      setPendingSubAccountIndex(index);
-
-      // Debounce the change by 300ms to prevent API spam on rapid taps
-      subAccountChangeTimerRef.current = setTimeout(() => {
-        accountActions.changePathIndex(index);
-        subAccountChangeTimerRef.current = null;
-      }, 300);
-    },
-    [accountActions, pathIndex]
-  );
-
-  // Clear switching state when loading completes
-  useEffect(() => {
-    if (!loading && !refreshing && switchingSubAccount) {
-      setSwitchingSubAccount(false);
-      setPendingSubAccountIndex(undefined);
-    }
-  }, [loading, refreshing, switchingSubAccount]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (subAccountChangeTimerRef.current) {
-        clearTimeout(subAccountChangeTimerRef.current);
-      }
-    };
-  }, []);
 
   // Load Bitcoin chart data when user swipes to Bitcoin or changes period
   useEffect(() => {
@@ -692,15 +681,19 @@ export default function HomeScreen() {
 
   const handleBlockchainChange = useCallback(
     (_blockchain: BlockchainId, index: number) => {
-      setActiveBlockchainIndex(index);
-      // Switch to the selected network
       const selectedBalance = blockchainBalances[index];
-      if (selectedBalance) {
-        const newNetworkId = selectedBalance.network.id;
-        accountActions.changeNetwork(newNetworkId);
-      }
+      if (!selectedBalance) return;
+      const newNetworkId = selectedBalance.network.id;
+      // `changeNetwork` returns silently when the account has no derivation for
+      // the target. Writing the index optimistically regardless left the dots
+      // and the amount pointing at a chain the wallet never switched to.
+      if (!activeAccount?.networksAccounts?.[newNetworkId]) return;
+      setActiveBlockchainIndex(index);
+      void accountActions
+        .changeNetwork(newNetworkId)
+        .catch((error) => console.warn('[home] changeNetwork failed:', error));
     },
-    [blockchainBalances, accountActions]
+    [blockchainBalances, accountActions, activeAccount]
   );
 
   // Handle scroll to show/hide top fade gradient dynamically
@@ -708,68 +701,94 @@ export default function HomeScreen() {
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offsetY = event.nativeEvent.contentOffset.y;
       // Fade in when scrolled down, fade out when at top
-      const opacity = Math.min(offsetY / 30, 1); // Fully visible after 30px scroll
+      const opacity = Math.min(offsetY / TOP_FADE_SCROLL_RANGE, 1);
       topFadeOpacity.setValue(opacity);
-      // The water column parallaxes against this list. Writing the shared
-      // value is the only thing that crosses to the UI thread — the field's
-      // own drift and the parallax transform both run there.
-      depthParallaxScroll.value = offsetY;
+      scrollY.setValue(offsetY);
     },
-    [topFadeOpacity]
+    [topFadeOpacity, scrollY]
   );
 
-  // The parallax offset is one value for the whole water column, and this list
-  // is the only surface that writes it. Nothing used to clear it, so a list
-  // that went away scrolled — a wait taking the screen, a tab change — left
-  // its last offset standing, and the next list mounting at the top displaced
-  // every field by a fifth of it in a single frame. The ground never travels
-  // on its own (DESIGN.md §The water column), so the writer gives the value
-  // back when it stops writing it.
-  useEffect(
-    () => () => {
-      depthParallaxScroll.value = 0;
-    },
-    []
+  const handleBalanceBlockLayout = useCallback((event: LayoutChangeEvent) => {
+    setBalanceBlockHeight(event.nativeEvent.layout.height);
+  }, []);
+
+  const handleSubTabsLayout = useCallback((event: LayoutChangeEvent) => {
+    setSubTabsHeight(event.nativeEvent.layout.height);
+  }, []);
+
+  const subTabs = useMemo(
+    () => [
+      { key: 'portfolio', label: t('tabs.portfolio', 'Portfolio') },
+      { key: 'nfts', label: t('tabs.nfts', 'NFTs') },
+    ],
+    [t]
   );
 
-  // Memoize the fixed header component (Balance Card + Action Buttons)
-  // IMPORTANT: This hook must be called BEFORE any early returns to follow React's Rules of Hooks
-  const FixedHeaderComponent = useMemo(
-    () => (
-      <View style={styles.fixedHeader}>
-        {/* Balance Card Carousel */}
-        <BalanceCardCarousel
-          blockchains={blockchainBalances}
-          hiddenBalance={hiddenBalance}
-          onToggleVisibility={toggleHidden}
-          onBlockchainChange={handleBlockchainChange}
-          activeIndex={activeBlockchainIndex}
-          showNetworkLabel={developerNetworks}
-          style={styles.balanceCard}
-        />
+  // NFTs live on Solana only. Rather than hiding the tab on other chains, the
+  // tap takes the balance home first — through the very same handler the page
+  // dots use, so the chain-switch animation and the network change are the
+  // ones the user already knows.
+  const handleSubTabChange = useCallback(
+    (key: string) => {
+      if (key === 'nfts') {
+        const solanaIndex = blockchainBalances.findIndex(
+          (balance) => balance.network.blockchain === 'solana'
+        );
+        if (solanaIndex >= 0 && solanaIndex !== activeBlockchainIndex) {
+          handleBlockchainChange('solana', solanaIndex);
+        }
+      }
+      // Each sub-tab has its own scroll view, so the offsets the fade and the
+      // sticky row read must start over with it.
+      scrollY.setValue(0);
+      topFadeOpacity.setValue(0);
+      setActiveSubTab(key as SubTabKey);
+    },
+    [activeBlockchainIndex, blockchainBalances, handleBlockchainChange, scrollY, topFadeOpacity]
+  );
 
-        {/* Action Buttons with 24px vertical spacing */}
-        <ActionButtonRow
-          onSendPress={handleSendPress}
-          onReceivePress={handleReceivePress}
-          onActivityPress={handleActivityPress}
-          sendDisabled={isWatchOnlyAccount(activeAccount)}
-          style={styles.actionRow}
-        />
-      </View>
-    ),
-    [
-      blockchainBalances,
-      hiddenBalance,
-      toggleHidden,
-      handleBlockchainChange,
-      activeBlockchainIndex,
-      developerNetworks,
-      handleSendPress,
-      handleReceivePress,
-      handleActivityPress,
-      activeAccount,
-    ]
+  // CORE 16 lands in a later lote; the control renders and does nothing until
+  // then, so the row's geometry is already the final one.
+  const handlePortfolioVisibilityPress = useCallback(() => {}, []);
+
+  // The FAB is a toggle: open the launcher, or close it from the same mark
+  // it turned into.
+  const handlePowerupsPress = useCallback(() => {
+    setPowerupsVisible((visible) => !visible);
+  }, []);
+
+  const handlePowerupsClose = useCallback(() => {
+    setPowerupsVisible(false);
+  }, []);
+
+  // The sticky sub-tab row rides the NFT grid's own scroll offset: it starts
+  // directly under the balance block and stops once it reaches the chrome, so
+  // the user can switch back without scrolling to the top. One scroll view,
+  // no nesting.
+  const subTabsTranslateY = useMemo(
+    () =>
+      balanceBlockHeight > 0
+        ? scrollY.interpolate({
+            inputRange: [0, balanceBlockHeight],
+            outputRange: [balanceBlockHeight, 0],
+            extrapolate: 'clamp',
+          })
+        : 0,
+    [balanceBlockHeight, scrollY]
+  );
+
+  // The row only earns an opaque ground once it actually covers the grid;
+  // before that it sits over open water and must not paint a band.
+  const subTabsScrimOpacity = useMemo(
+    () =>
+      balanceBlockHeight > 0
+        ? scrollY.interpolate({
+            inputRange: [balanceBlockHeight * STICKY_SCRIM_START, balanceBlockHeight],
+            outputRange: [0, 1],
+            extrapolate: 'clamp',
+          })
+        : 0,
+    [balanceBlockHeight, scrollY]
   );
 
   // Memoize the empty component
@@ -832,152 +851,231 @@ export default function HomeScreen() {
 
   // address is already defined above for useTransactions hook
 
+  // The block above the content, shared by both sub-tabs. On Portfolio it is
+  // pinned; on NFTs it is the grid's list header, so it scrolls away.
+  const balanceBlock = (
+    <BalanceHeader
+      blockchains={blockchainBalances}
+      hiddenBalance={hiddenBalance}
+      onToggleVisibility={toggleHidden}
+      onBlockchainChange={handleBlockchainChange}
+      activeIndex={activeBlockchainIndex}
+      showNetworkLabel={developerNetworks}
+      onSendPress={handleSendPress}
+      onReceivePress={handleReceivePress}
+      onActivityPress={handleActivityPress}
+      sendDisabled={isWatchOnlyAccount(activeAccount)}
+    />
+  );
+
+  const subTabsRow = (
+    <PortfolioSubTabs
+      tabs={subTabs}
+      activeKey={activeSubTab}
+      onChange={handleSubTabChange}
+      onVisibilityPress={handlePortfolioVisibilityPress}
+    />
+  );
+
+  const topFade = (
+    <Animated.View
+      style={[styles.topFadeGradient, { opacity: topFadeOpacity }]}
+      pointerEvents="none"
+    >
+      <LinearGradient
+        colors={[colors.background.primary, 'transparent']}
+        style={StyleSheet.absoluteFill}
+      />
+    </Animated.View>
+  );
+
   return (
     <View style={styles.container} testID="home-screen">
-      {/* The balance card, the actions and the sub-account selector are
-          CONTENT, not chrome: when a task engages the shell they leave with
-          the verb at full depth (the chrome's half depth is GateContainer's
-          and the tab bar's business, not theirs). Conditional render is the
-          mechanism — the same one the swap's step changes use — so unmount
-          plays the sink and remount plays the float. The wrapper sits inside
-          the screen, which is itself a sibling of the mounted ground in
-          `(tabs)/_layout.tsx`: the water never travels with it. */}
+      {/* The balance, the sub-tabs, the content and the FAB are CONTENT, not
+          chrome: when a task engages the shell they leave with the verb at
+          full depth (the chrome's half depth is GateContainer's business, not
+          theirs). Conditional render is the mechanism — the same one the
+          swap's step changes use — so unmount plays the sink and remount plays
+          the float. The wrapper sits inside the screen, which is itself a
+          sibling of the mounted ground in `(tabs)/_layout.tsx`: the water
+          never travels with it. */}
       {!isTaskEngaged && (
         <Reanimated.View
           testID="home-content"
+          style={styles.content}
           entering={floatEntering(isReduceMotionEnabled, { delayMs: contentFloatDelayMs })}
           exiting={sinkExiting(isReduceMotionEnabled)}
         >
-          {/* Fixed Header: Balance Card + Action Buttons */}
-          {FixedHeaderComponent}
+          {activeSubTab === 'portfolio' ? (
+            <>
+              {/* Portfolio pins the balance and the sub-tabs: only the assets
+                  travel under them. */}
+              <View style={[styles.pinnedHeader, { paddingTop: contentTopOffset }]}>
+                {balanceBlock}
+                <View style={styles.pinnedSubTabs}>{subTabsRow}</View>
+              </View>
 
-          {/* Sub-account selector — only visible with 2+ derived accounts */}
-          <SubAccountSelector
-            accounts={subAccounts}
-            activeIndex={pathIndex}
-            onSelect={handleSubAccountChange}
-            pendingIndex={pendingSubAccountIndex}
-            style={styles.subAccountSelector}
+              {/* Partial-load failure: keep whatever data loaded visible;
+                  retry is pull-to-refresh on the token list. Only 'ready'
+                  carries data, so a total failure is left to the list's own
+                  error state rather than told "shown data may be incomplete". */}
+              {balanceError && balanceState === 'ready' && !switchingNetwork && (
+                <View style={styles.balanceErrorBanner} testID="balance-load-error">
+                  <WarningNotice
+                    tone="warning"
+                    title={t(
+                      'wallet.partial_load_error',
+                      "Some balances couldn't be loaded. Shown data may be incomplete."
+                    )}
+                  />
+                </View>
+              )}
+
+              {/* Scrollable Token List or Bitcoin View.
+                  Keyed by chain so switching chains swaps the whole container
+                  with the sink and the float: the outgoing chain's content
+                  sinks 12dp as its light goes, the incoming one floats up into
+                  place. The frame above holds still; only the content travels.
+                  Under reduce motion both props are undefined and the swap
+                  stays instant. */}
+              <View style={styles.listContainer}>
+                <Reanimated.View
+                  key={currentBlockchain}
+                  style={styles.chainContent}
+                  entering={floatEntering(isReduceMotionEnabled, { delayMs: contentFloatDelayMs })}
+                  exiting={sinkExiting(isReduceMotionEnabled)}
+                >
+                  {currentBlockchain === 'bitcoin' ? (
+                    // Bitcoin lives inside Portfolio with chart, market data
+                    // and about — it has no asset-detail screen of its own.
+                    <ScrollView
+                      style={styles.bitcoinScrollView}
+                      contentContainerStyle={[
+                        styles.bitcoinContent,
+                        styles.tabGutter,
+                        { paddingBottom: floatingBottomOffset },
+                      ]}
+                      showsVerticalScrollIndicator={false}
+                      onScroll={handleScroll}
+                      scrollEventThrottle={16}
+                    >
+                      {/* Price Chart */}
+                      <PriceChart
+                        data={bitcoinChartData}
+                        selectedPeriod={bitcoinChartPeriod}
+                        onPeriodChange={handleChartPeriodChange}
+                        loading={bitcoinDataLoading && bitcoinChartData.length === 0}
+                        error={bitcoinChartError && bitcoinChartData.length === 0}
+                        height={180}
+                      />
+
+                      {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
+                      {balanceState === 'loading' ? (
+                        <TokenListSkeleton count={1} />
+                      ) : balanceState === 'error' ? (
+                        /* A load that failed with nothing cached owes the user
+                           the error state and its retry, never an endless
+                           skeleton. */
+                        ListEmptyComponent
+                      ) : (
+                        bitcoinToken && (
+                          <TokenListItem
+                            token={bitcoinToken}
+                            hiddenBalance={hiddenBalance}
+                            blockchain="bitcoin"
+                          />
+                        )
+                      )}
+
+                      {/* Market Data */}
+                      <TokenMarketData
+                        data={bitcoinMarketData}
+                        symbol="BTC"
+                        loading={bitcoinDataLoading && !bitcoinCoinInfo}
+                      />
+
+                      {/* About Section - at the end */}
+                      <TokenAbout
+                        description={bitcoinCoinInfo?.description}
+                        loading={bitcoinDataLoading && !bitcoinCoinInfo}
+                      />
+                    </ScrollView>
+                  ) : (
+                    // Normal token list for Solana/Ethereum
+                    <TokenList
+                      tokens={tokenListItems}
+                      loading={balanceState === 'loading'}
+                      onTokenPress={handleTokenPress}
+                      hiddenBalance={hiddenBalance}
+                      ListEmptyComponent={ListEmptyComponent}
+                      onRefresh={refresh}
+                      onScroll={handleScroll}
+                      scrollEventThrottle={16}
+                      contentContainerStyle={[
+                        styles.listContent,
+                        styles.tabGutter,
+                        { paddingBottom: floatingBottomOffset },
+                      ]}
+                      blockchain={getBlockchainFromNetworkId(currentBlockchain)}
+                    />
+                  )}
+                </Reanimated.View>
+                {/* Top fade gradient - shows only when scrolled, fades in dynamically */}
+                {topFade}
+              </View>
+            </>
+          ) : (
+            // NFTs: the grid owns the only scroll view. The balance rides
+            // inside its list header and scrolls away; the sub-tab row is an
+            // overlay driven by the same offset, so it pins under the chrome
+            // instead of leaving with the balance.
+            <View style={styles.listContainer}>
+              <NftsTab
+                // One top offset for both sub-tabs: NftsTab used to compute its
+                // own and the balance jumped ~12dp on every switch.
+                contentContainerStyle={[styles.tabGutter, { paddingTop: contentTopOffset }]}
+                listHeader={
+                  <View>
+                    <View style={styles.nftBalanceBlock} onLayout={handleBalanceBlockLayout}>
+                      {balanceBlock}
+                    </View>
+                    {/* Room the pinned sub-tab row occupies above the grid. */}
+                    <View style={{ height: subTabsHeight }} />
+                  </View>
+                }
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+              />
+              {/* Until the balance block has reported its height the row has
+                  no offset to ride, so it would paint its first frame directly
+                  over the balance. It measures invisibly, then appears. */}
+              <Animated.View
+                testID="home-subtabs-sticky"
+                pointerEvents={balanceBlockHeight > 0 ? 'auto' : 'none'}
+                style={[
+                  styles.stickySubTabs,
+                  { top: contentTopOffset, transform: [{ translateY: subTabsTranslateY }] },
+                  balanceBlockHeight === 0 && styles.stickySubTabsUnmeasured,
+                ]}
+                onLayout={handleSubTabsLayout}
+              >
+                <Animated.View
+                  pointerEvents="none"
+                  style={[styles.stickySubTabsScrim, { opacity: subTabsScrimOpacity }]}
+                />
+                {subTabsRow}
+              </Animated.View>
+              {topFade}
+            </View>
+          )}
+
+          <PowerupsFab
+            onPress={handlePowerupsPress}
+            open={powerupsVisible}
+            bottomOffset={floatingBottomOffset}
           />
         </Reanimated.View>
       )}
-
-      {/* Partial-load failure: keep whatever data loaded visible;
-          retry is pull-to-refresh on the token list. Only 'ready' carries
-          data, so a total failure is left to the list's own error state
-          rather than told "shown data may be incomplete" over nothing. */}
-      {balanceError && balanceState === 'ready' && !switchingNetwork && (
-        <View style={styles.balanceErrorBanner} testID="balance-load-error">
-          <WarningNotice
-            tone="warning"
-            title={t(
-              'wallet.partial_load_error',
-              "Some balances couldn't be loaded. Shown data may be incomplete."
-            )}
-          />
-        </View>
-      )}
-
-      {/* Scrollable Token List or Bitcoin View.
-          Keyed by chain so switching chains swaps the whole container with
-          the sink and the float: the outgoing chain's content sinks 12dp as
-          its light goes, the incoming one floats up into place — the
-          fade-through it upgrades, given the vertical the rest of the system
-          already speaks. The frame above (balance card, chain selector) holds
-          still; only the content travels. Under reduce motion both props are
-          undefined and the swap stays instant. */}
-      <View style={styles.listContainer}>
-        {!isTaskEngaged && (
-          <Reanimated.View
-            key={currentBlockchain}
-            style={styles.chainContent}
-            entering={floatEntering(isReduceMotionEnabled, { delayMs: contentFloatDelayMs })}
-            exiting={sinkExiting(isReduceMotionEnabled)}
-          >
-            {currentBlockchain === 'bitcoin' ? (
-              // Bitcoin view with chart, about, and market data
-              <ScrollView
-                style={styles.bitcoinScrollView}
-                contentContainerStyle={[
-                  styles.bitcoinContent,
-                  { paddingBottom: scrollBottomPadding },
-                ]}
-                showsVerticalScrollIndicator={false}
-              >
-                {/* Price Chart */}
-                <View style={styles.bitcoinSection}>
-                  <PriceChart
-                    data={bitcoinChartData}
-                    selectedPeriod={bitcoinChartPeriod}
-                    onPeriodChange={handleChartPeriodChange}
-                    loading={bitcoinDataLoading && bitcoinChartData.length === 0}
-                    error={bitcoinChartError && bitcoinChartData.length === 0}
-                    height={180}
-                  />
-                </View>
-
-                {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
-                {balanceState === 'loading' ? (
-                  <TokenListSkeleton count={1} />
-                ) : balanceState === 'error' ? (
-                  /* A load that failed with nothing cached owes the user the
-                   error state and its retry, never an endless skeleton. */
-                  ListEmptyComponent
-                ) : (
-                  bitcoinToken && (
-                    <TokenListItem
-                      token={bitcoinToken}
-                      hiddenBalance={hiddenBalance}
-                      blockchain="bitcoin"
-                    />
-                  )
-                )}
-
-                {/* Market Data */}
-                <View style={styles.bitcoinSection}>
-                  <TokenMarketData
-                    data={bitcoinMarketData}
-                    symbol="BTC"
-                    loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                  />
-                </View>
-
-                {/* About Section - at the end */}
-                <View style={styles.bitcoinSection}>
-                  <TokenAbout
-                    description={bitcoinCoinInfo?.description}
-                    loading={bitcoinDataLoading && !bitcoinCoinInfo}
-                  />
-                </View>
-              </ScrollView>
-            ) : (
-              // Normal token list for Solana/Ethereum
-              <TokenList
-                tokens={tokenListItems}
-                loading={balanceState === 'loading'}
-                onTokenPress={handleTokenPress}
-                hiddenBalance={hiddenBalance}
-                ListEmptyComponent={ListEmptyComponent}
-                onRefresh={refresh}
-                onScroll={handleScroll}
-                scrollEventThrottle={16}
-                contentContainerStyle={[styles.listContent, { paddingBottom: scrollBottomPadding }]}
-                blockchain={getBlockchainFromNetworkId(currentBlockchain)}
-              />
-            )}
-          </Reanimated.View>
-        )}
-        {/* Top fade gradient - shows only when scrolled, fades in dynamically */}
-        <Animated.View
-          style={[styles.topFadeGradient, { opacity: topFadeOpacity }]}
-          pointerEvents="none"
-        >
-          <LinearGradient
-            colors={[colors.background.primary, 'transparent']}
-            style={StyleSheet.absoluteFill}
-          />
-        </Animated.View>
-      </View>
 
       {/* Token Information Sheet */}
       {selectedToken && (
@@ -1043,6 +1141,12 @@ export default function HomeScreen() {
         developerMode={developerNetworks}
         networkId={networkId}
       />
+
+      {/* Powerups launcher (POWERUPS 01) */}
+      <PowerupsLauncherSheet
+        visible={powerupsVisible}
+        onClose={handlePowerupsClose}
+      />
     </View>
   );
 }
@@ -1063,11 +1167,40 @@ const styles = StyleSheet.create({
     fontSize: fontSize.bodyLg,
     marginTop: spacing.lg,
   },
-  fixedHeader: {
-    // Fixed header containing balance card and action buttons
+  content: {
+    flex: 1,
   },
-  subAccountSelector: {
-    marginBottom: vs(spacing.md),
+  // The one gutter every Home sub-tab is held to. It lives on the content
+  // containers here, not inside the tab components — a tab that drew its own
+  // padding (or forgot to, as the NFTs grid did) is how the columns drifted.
+  tabGutter: {
+    paddingHorizontal: s(spacing.screenGutter),
+  },
+  pinnedHeader: {
+    paddingHorizontal: s(spacing.screenGutter),
+    paddingBottom: vs(spacing.md),
+  },
+  pinnedSubTabs: {
+    marginTop: vs(spacing.xl),
+  },
+  nftBalanceBlock: {
+    paddingBottom: vs(spacing.xl),
+  },
+  stickySubTabs: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    paddingHorizontal: s(spacing.screenGutter),
+    paddingBottom: vs(spacing.sm),
+    zIndex: 2,
+  },
+  // Measuring, not yet placed: the row must not paint over the balance.
+  stickySubTabsUnmeasured: {
+    opacity: 0,
+  },
+  stickySubTabsScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.background.primary,
   },
   listContainer: {
     flex: 1,
@@ -1076,21 +1209,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   balanceErrorBanner: {
-    marginHorizontal: spacing.lg,
+    marginHorizontal: s(spacing.screenGutter),
     marginBottom: vs(spacing.md),
   },
   listContent: {
     paddingTop: 0,
     paddingBottom: vs(componentSizes.tabBarScrollPadding),
-  },
-  balanceCard: {
-    // Card now extends behind the header - no negative margin needed
-    // The card's internal paddingTop handles the header offset
-  },
-  actionRow: {
-    // 24px vertical spacing moved from ActionButtonRow to create space for card shadow
-    marginTop: vs(spacing['2xl']), // Space for card shadow to be visible
-    marginBottom: vs(spacing['2xl']), // Gap before token list
   },
   topFadeGradient: {
     position: 'absolute',
@@ -1137,8 +1261,5 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: vs(componentSizes.tabBarScrollPadding),
     gap: vs(spacing.md),
-  },
-  bitcoinSection: {
-    // gap is handled by bitcoinContent container
   },
 });

@@ -10,6 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, AppState, type AppStateStatus } from 'react-native';
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { I18nProvider } from '../src/i18n';
@@ -237,32 +238,36 @@ function RootLayoutNav() {
   return (
     <I18nProvider>
       <ThemeProvider value={CustomDarkTheme}>
-        <SafeAreaProvider>
-          <View style={styles.container}>
-            <Stack screenOptions={{ headerShown: false }}>
-              {/* Auth flow - onboarding screens */}
-              <Stack.Screen
-                name="(auth)"
-                options={{
-                  // Prevent going back to auth after completing onboarding
-                  gestureEnabled: false,
-                }}
-              />
+        {/* One gesture root for the whole app: every GestureDetector (balance
+            chain swipe, sheets) resolves to this instead of carrying its own. */}
+        <GestureHandlerRootView style={styles.container}>
+          <SafeAreaProvider>
+            <View style={styles.container}>
+              <Stack screenOptions={{ headerShown: false }}>
+                {/* Auth flow - onboarding screens */}
+                <Stack.Screen
+                  name="(auth)"
+                  options={{
+                    // Prevent going back to auth after completing onboarding
+                    gestureEnabled: false,
+                  }}
+                />
 
-              {/* Main app - tabs and other screens */}
-              <Stack.Screen
-                name="(app)"
-                options={{
-                  // Prevent going back
-                  gestureEnabled: false,
-                }}
-              />
-            </Stack>
-            <PendingActivity />
-            {/* Wait preview. Off by default; see src/debug/forceWait.ts. */}
-            {DEBUG_FORCE_WAIT && <WaitPreview />}
-          </View>
-        </SafeAreaProvider>
+                {/* Main app - tabs and other screens */}
+                <Stack.Screen
+                  name="(app)"
+                  options={{
+                    // Prevent going back
+                    gestureEnabled: false,
+                  }}
+                />
+              </Stack>
+              <PendingActivity />
+              {/* Wait preview. Off by default; see src/debug/forceWait.ts. */}
+              {DEBUG_FORCE_WAIT && <WaitPreview />}
+            </View>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
       </ThemeProvider>
     </I18nProvider>
   );

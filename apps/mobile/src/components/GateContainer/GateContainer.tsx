@@ -46,9 +46,7 @@ import type { GateContainerProps, GateState } from './types';
 import { curve, timing } from '../../utils/motion';
 import {
   CHROME_SCALE,
-  FLOAT_IN_MS,
   SINK_FLOAT_TRAVEL,
-  SINK_OUT_MS,
   floatEntering,
   sinkExiting,
 } from '../../utils/sinkAndFloat';
@@ -80,7 +78,12 @@ export function GateContainer({
   const { isTaskEngaged: concealed } = useTaskChrome();
   const { height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const headerHeight = insets.top + componentSizes.headerHeight;
+  // The collapsed slice is the redesign's screen top: safe area, then
+  // `screenTop`, then the header row itself. It is deliberately unscaled —
+  // `useTabChrome` computes the same three terms so the Home content starts
+  // exactly where this ends (see `headerContentOffset`).
+  const headerTopPadding = insets.top + spacing.screenTop;
+  const headerHeight = headerTopPadding + componentSizes.walletHeaderRowHeight;
 
   // On Android with 3-button navigation, useWindowDimensions().height may report
   // the content-area height (excluding the nav bar) while the gate's rendered
@@ -88,6 +91,15 @@ export function GateContainer({
   // via onLayout so collapsedY positions the gate correctly on all nav bar modes.
   const [gateHeight, setGateHeight] = useState(screenHeight);
   const collapsedY = -(gateHeight - headerHeight);
+
+  // The gate is only chrome once it has finished moving. While the unlock
+  // slide is still in flight the surface still covers the screen, so letting
+  // touches through (`box-none`) hands taps to whatever is underneath a gate
+  // that is visibly still there — a press on the lock screen landing on the
+  // home behind it. Directly-mounted collapsed there is no slide, so it starts
+  // settled.
+  const [isSettled, setIsSettled] = useState(state === 'collapsed');
+  const collapsedPointerEvents = state === 'collapsed' && isSettled ? 'box-none' : 'auto';
 
   const prevStateRef = useRef<GateState>(state);
   // Track last expanded content/header so we can keep them visible during close animation
@@ -117,6 +129,7 @@ export function GateContainer({
 
     switch (state) {
       case 'locked':
+        setIsSettled(false);
         // Drop the close-animation snapshot: locking is not a close, so no
         // expanded panel may survive it. Without this the settings/wallets
         // subtree stays mounted next to the lock content — visible, and fully
@@ -129,11 +142,16 @@ export function GateContainer({
         break;
 
       case 'collapsed':
+        // Arriving from somewhere else means a slide is about to play, and the
+        // gate keeps every touch until it lands. Re-running for a geometry
+        // change (`collapsedY`) while already collapsed is not a transition.
+        if (prevState !== 'collapsed') setIsSettled(false);
         if (prevState === 'locked') {
           // Unlock: slide up to header position, then fade in header
           translateY.value = withTiming(collapsedY, slideIn, (finished) => {
             if (finished) {
               headerContentOpacity.value = withTiming(1, headerFade);
+              runOnJS(setIsSettled)(true);
               if (onUnlockAnimationComplete) {
                 runOnJS(onUnlockAnimationComplete)();
               }
@@ -146,6 +164,7 @@ export function GateContainer({
           translateY.value = withTiming(collapsedY, slideOut, (finished) => {
             if (finished) {
               headerContentOpacity.value = withTiming(1, headerFade);
+              runOnJS(setIsSettled)(true);
               // Clear snapshot after slide + fade complete
               runOnJS(setLastExpandedContent)(null);
             }
@@ -156,6 +175,7 @@ export function GateContainer({
 
       case 'settings':
       case 'wallets':
+        setIsSettled(false);
         // Track which content is expanded (for snapshot on close)
         setLastExpandedContent(state);
         lastExpandedHeaderRef.current = expandedHeader;
@@ -168,34 +188,13 @@ export function GateContainer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, collapsedY]);
 
-  // The compuerta: while a task window owns the screen, the collapsed header
-  // leaves upward — the whole gate travels one headerHeight further up, on
-  // the verb's own numbers (sink out, float back). It runs after the state
-  // effect above so that on a same-commit change the concealment wins.
-  // Reduce motion: `timing` resolves to a cut. Only the collapsed state
-  // conceals — every other state owns translateY through the effect above.
-  //
-  // It may only touch translateY when `concealed` actually flips. This effect
-  // also re-runs on every collapsedY/gateHeight change and on the
-  // locked→collapsed transition, and reassigning a shared value cancels the
-  // animation in flight — which fired the unlock slideIn's completion
-  // callback with finished=false, so headerContentOpacity never faded in and
-  // the home header rendered as an empty dark band (owner bug, 2026-08-18).
-  const prevConcealedRef = useRef(false);
-  useEffect(() => {
-    if (state !== 'collapsed') return;
-    if (concealed === prevConcealedRef.current) return;
-    prevConcealedRef.current = concealed;
-    if (concealed) {
-      translateY.value = withTiming(
-        -gateHeight,
-        timing(SINK_OUT_MS, isReduceMotionEnabled, curve.sink)
-      );
-    } else {
-      translateY.value = withTiming(collapsedY, timing(FLOAT_IN_MS, isReduceMotionEnabled));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [concealed, state, collapsedY, gateHeight, isReduceMotionEnabled]);
+  // The header is no longer a gate. It used to lift the whole surface one
+  // headerHeight further up while a task window owned the screen — the
+  // "compuerta". In the redesign the header sits on the same plane as the
+  // balance, so a task engaging is a plain content swap: the row leaves and
+  // returns with the same sink/float verb the Home content uses, at chrome
+  // scale. `translateY` is owned solely by the state effect above now.
+  const headerConcealed = state === 'collapsed' && concealed;
 
   // Android back button for expanded states
   useEffect(() => {
@@ -268,34 +267,29 @@ export function GateContainer({
       {/* The Gate surface */}
       <Animated.View
         testID="gate-root"
+        // Collapsed AND settled, the gate is chrome sitting on the same plane
+        // as the content below it: it must never swallow a touch aimed at the
+        // balance block it no longer covers. Mid-slide it still covers that
+        // block, so it keeps every touch until the animation lands.
+        pointerEvents={collapsedPointerEvents}
         style={[styles.gate, gateAnimatedStyle]}
         onLayout={(e) => setGateHeight(e.nativeEvent.layout.height)}
       >
         {/* Shared visual surface. The ground is the material, the same thick
             tier every sheet grounds on — the gate no longer keeps a ground of
-            its own. While locked the lock content mounts its own ground (the
-            water column), so nothing is painted over it. */}
+            its own. Collapsed it paints nothing at all: no band, no rounded
+            bottom edge, no shadow, because the header row is on the balance's
+            own plane. While locked the lock content mounts its own ground. */}
         <View
           testID="gate-surface"
+          pointerEvents={collapsedPointerEvents}
           style={[
             styles.surface,
-            state === 'locked' && styles.surfaceLocked,
             showExpanded && styles.surfaceFloor,
             DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.gateSurface },
           ]}
         >
-          {/* The collapsed header's scrim floor. Expanded, `surfaceFloor`
-              gives the whole gate a defined backdrop; collapsed, the gate is
-              full-height and an opaque fill would cover the screen, so the
-              floor is cut to the header's own slot. Mounted *under* the
-              material so the header reads as the same thermocline the
-              settings surface stands on — see DESIGN.md §The scrim floor. */}
-          {state !== 'locked' && !showExpanded && (
-            <View
-              style={[styles.headerFloor, { height: insets.top + componentSizes.headerHeight }]}
-            />
-          )}
-          {state !== 'locked' && <Thermocline tier="thick" style={styles.thermocline} />}
+          {showExpanded && <Thermocline tier="thick" style={styles.thermocline} />}
 
           {/* Lock content — full screen */}
           {state === 'locked' && <View style={styles.lockContentContainer}>{lockContent}</View>}
@@ -381,28 +375,39 @@ export function GateContainer({
             </View>
           )}
 
-          {/* Header content — always rendered at the bottom (the "floor"), fades in/out.
-              Height is pinned to the same slot used for the collapse math
-              (insets.top + headerHeight) so the row starts flush at insets.top
-              instead of leaving unaccounted space above it: the row is shorter
-              than headerHeight, and without an explicit height the bottom-pinned
-              container shrinks to fit its content, pushing that slack above the
-              spacer instead of below the row. */}
-          {state !== 'locked' && (
+          {/* Header content — pinned to the bottom of the gate, which is the
+              only part visible while collapsed. Height is the same slot the
+              collapse math reserves (safe area + `screenTop` + the row), so
+              the row starts flush under the screen's top padding and the Home
+              content below it begins exactly where this ends.
+
+              Task engaged: the row leaves and returns with the content's own
+              verb at chrome scale — a conditional mount, the same mechanism
+              the Home content uses, so the sink plays on unmount and the
+              float on remount. Locked owns the whole screen and has no row. */}
+          {state !== 'locked' && !headerConcealed && (
             <View
-              style={[
-                styles.headerContentContainer,
-                { height: insets.top + componentSizes.headerHeight },
-              ]}
+              pointerEvents="box-none"
+              style={[styles.headerContentContainer, { height: headerHeight }]}
             >
               <View
                 style={[
-                  { height: insets.top },
+                  { height: headerTopPadding },
                   DEBUG_LAYER_COLORS && { backgroundColor: DEBUG_LAYER_COLOR.headerTopSpacer },
                 ]}
               />
               <Animated.View
                 testID="gate-header-bar"
+                entering={floatEntering(isReduceMotionEnabled, {
+                  distance: SINK_FLOAT_TRAVEL / 2,
+                  scale: CHROME_SCALE,
+                  durationMs: motionMs.drift,
+                })}
+                exiting={sinkExiting(isReduceMotionEnabled, {
+                  distance: SINK_FLOAT_TRAVEL / 2,
+                  scale: CHROME_SCALE,
+                  durationMs: motionMs.ebb,
+                })}
                 style={[
                   styles.headerBar,
                   headerFadeStyle,
@@ -447,13 +452,9 @@ const styles = StyleSheet.create({
     flex: 1,
     // No fill of its own: the Thermocline mounted inside carries the ground,
     // the same thick tier `BottomSheetContainer` hardwires for every sheet.
-    // Radii and shadow stay here — the material clips itself to them.
+    // Radii and shadow moved to `surfaceFloor` — they belong to the expanded
+    // panel, which is a sheet. Collapsed, the header has no edge of its own.
     backgroundColor: 'transparent',
-    // 24 is a documented off-scale one-off (the scale's "header corners"
-    // annotation) — deliberate, not a missed r-step.
-    borderBottomLeftRadius: borderRadius['2xl'],
-    borderBottomRightRadius: borderRadius['2xl'],
-    ...shadows.topSheet,
   },
   // The material fills the gate and clips itself to the gate's own bottom
   // corners — the mirror of the sheet container's `thermocline` style.
@@ -476,13 +477,11 @@ const styles = StyleSheet.create({
   // over content and reads as it always has, and locked keeps its own ground.
   surfaceFloor: {
     backgroundColor: semantic.surface.crest,
-  },
-  surfaceLocked: {
-    // The shadow goes with the ground: `surface` keeps `shadows.topSheet` for
-    // the sheet states, and on iOS a shadow with a transparent background
-    // composites over the lock content as a ghost band. Elevation for Android.
-    shadowOpacity: 0,
-    elevation: 0,
+    // 24 is a documented off-scale one-off (the scale's "header corners"
+    // annotation) — deliberate, not a missed r-step.
+    borderBottomLeftRadius: borderRadius['2xl'],
+    borderBottomRightRadius: borderRadius['2xl'],
+    ...shadows.topSheet,
   },
   lockContentContainer: {
     flex: 1,
@@ -498,70 +497,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    // Horizontal padding lives in HeaderContent (its sole consumer) — this
-    // wrapper used to double-apply spacing.headerPadding on top of it,
-    // pushing the avatar/label and the icon buttons in ~2x further than
-    // intended.
-    // Explicit height, not content-sized: the row's natural height (~44,
-    // from the avatar touch target) is shorter than componentSizes.headerHeight
-    // (56) — the slot the collapse math reserves for it. Left content-sized,
-    // that 12px gap fell inside headerContentContainer, below this row,
-    // exposing `surface`'s own rounded-bottom-corner + shadow there — a
-    // second card edge stacked under this one. Filling the slot makes this
-    // row's bottom coincide with `surface`'s, so there is exactly one edge.
-    // NOT `vs()`. This is the one height in the collapsed-header path that was
-    // device-scaled, and every other expression defining the same slot is the
-    // raw token: the collapse math, the floor, the slot itself and
-    // `useTabChrome`'s `headerChromeHeight`. `vs` is a ratio against a 956dp
-    // reference, so on anything shorter the row underfilled its slot and the
-    // surplus pooled at the bottom — 9dp on a 360x800 phone — while on a taller
-    // one (a Pixel 9 Pro measures 1088) it overflowed and hung past the gate's
-    // own rounded corner. Both are the same line. The comment below says this
-    // row's bottom must coincide with `surface`'s; the scale is what stopped it
-    // from doing so anywhere except on the reference device.
-    height: componentSizes.headerHeight,
-    // No fill, and no shadow of its own. Both were correct when `surface`
-    // painted the gate's shelf; `surface` is transparent now and the
-    // Thermocline carries the ground, so an opaque row here printed a flat
-    // band across the material — a different value from the inset strip
-    // directly above it, which was already showing the material through. The
-    // seam that produced is what this removes. The edge is `surface`'s own:
-    // this row's bottom coincides with it, so a second shadow drew the same
-    // line twice, and on iOS a shadow under a transparent background
-    // composites as a ghost band (see `surfaceLocked`).
+    // Horizontal padding lives in HeaderContent (its sole consumer), which
+    // now uses `spacing.screenGutter` — the same gutter the Home content below
+    // it uses, so the thumb and the balance share one left edge.
+    // The row is exactly as tall as its own content — the 38px account thumb.
+    // It used to be `componentSizes.headerHeight` (56), a slot the row's 38px
+    // content was centred inside: 9px of that slack sat *above* the thumb, so
+    // the header started at `safe area + screenTop + 9` instead of
+    // `safe area + screenTop`, and the collapse math handed the content below
+    // 18px it did not need.
+    // NOT `vs()`. Every other expression defining this row is the raw token:
+    // the collapse math, the slot itself and `useTabChrome`'s
+    // `headerChromeHeight`. `vs` is a ratio against a 956dp reference, so on
+    // anything shorter the row underfilled its slot and on a taller one it
+    // overflowed.
+    height: componentSizes.walletHeaderRowHeight,
+    // No fill and no edge. The header sits on the balance's own plane now:
+    // whatever the water column is painting behind it is the ground.
     backgroundColor: 'transparent',
-  },
-  // Cut to the header slot and pinned to the gate's bottom edge, which is
-  // where the collapsed gate ends. Carries the gate's corner so the floor
-  // never squares off under the material's rounded one.
-  headerFloor: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: semantic.surface.crest,
-    borderBottomLeftRadius: borderRadius['2xl'],
-    borderBottomRightRadius: borderRadius['2xl'],
-    // The shadow lives here because this is the only opaque thing in the
-    // collapsed gate. `surface` still declares `shadows.topSheet`, but a shadow
-    // needs an opaque body to be cast from: once the gate went transparent and
-    // handed its ground to the material, that declaration stopped drawing
-    // anything. The header row's own shadow was the one still working, and
-    // removing it as a duplicate took the last one with it. Expanded, the gate
-    // is opaque again through `surfaceFloor`, so `surface`'s shadow draws and
-    // this floor is not mounted.
-    ...Platform.select({
-      ios: {
-        shadowColor: shadows.header.shadowColor,
-        shadowOffset: shadows.header.shadowOffset,
-        shadowOpacity: shadows.header.shadowOpacity,
-        shadowRadius: shadows.header.shadowRadius,
-      },
-      android: {
-        elevation: shadows.header.elevation,
-      },
-      default: {},
-    }),
   },
   expandedContentContainer: {
     flex: 1,

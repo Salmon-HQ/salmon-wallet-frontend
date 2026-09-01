@@ -9,7 +9,9 @@
     "swap": "Swap",
     "collectibles": "Collectibles",
     "settings": "Settings",
-    "home": "Home"
+    "home": "Home",
+    "portfolio": "Portfolio",
+    "nfts": "NFTs"
   },
   "general": {
     "address": "Address",
@@ -887,7 +889,10 @@
     "nft_view_hint": "Double tap to view NFT details",
     "loading_account_info": "Loading account information",
     "swap_tab": "Swap tab",
-    "bridge_tab": "Bridge tab"
+    "bridge_tab": "Bridge tab",
+    "portfolio_visibility": "Portfolio visibility settings",
+    "open_powerups": "Open Powerups",
+    "close_powerups": "Close Powerups"
   },
   "collectibles": {
     "title": "Collectibles",
@@ -914,7 +919,10 @@
   "home": {
     "no_tokens": "No tokens found",
     "no_tokens_hint": "Your tokens will appear here once you receive some",
-    "unnamed_account": "Account"
+    "unnamed_account": "Account",
+    "total_balance": "Total balance",
+    "history": "History",
+    "change_period_24h": "24h"
   },
   "send": {
     "fee_estimate_failed": "Fee could not be estimated",
@@ -964,6 +972,17 @@
       "weak": "Weak",
       "medium": "Medium",
       "strong": "Strong"
+    }
+  },
+  "powerups": {
+    "title": "Powerups",
+    "installed": "INSTALLED",
+    "browse_title": "Browse Powerups",
+    "browse_subtitle": "Featured, official and community",
+    "badge": {
+      "official": "Official",
+      "community": "Community",
+      "featured": "Featured"
     }
   }
 }

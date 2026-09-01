@@ -9,7 +9,9 @@
     "swap": "Intercambiar",
     "collectibles": "Coleccionables",
     "settings": "Configuracion",
-    "home": "Inicio"
+    "home": "Inicio",
+    "portfolio": "Portfolio",
+    "nfts": "NFTs"
   },
   "general": {
     "address": "Dirección",
@@ -887,7 +889,10 @@
     "nft_view_hint": "Tocá dos veces para ver los detalles del NFT",
     "loading_account_info": "Cargando información de la cuenta",
     "swap_tab": "Pestaña de Swap",
-    "bridge_tab": "Pestaña de Bridge"
+    "bridge_tab": "Pestaña de Bridge",
+    "portfolio_visibility": "Configuracion de visibilidad del portfolio",
+    "open_powerups": "Abrir Powerups",
+    "close_powerups": "Cerrar Powerups"
   },
   "collectibles": {
     "title": "Coleccionables",
@@ -914,7 +919,10 @@
   "home": {
     "no_tokens": "No se encontraron tokens",
     "no_tokens_hint": "Tus tokens van a aparecer acá cuando recibas alguno",
-    "unnamed_account": "Cuenta"
+    "unnamed_account": "Cuenta",
+    "total_balance": "Balance total",
+    "history": "Historial",
+    "change_period_24h": "24h"
   },
   "send": {
     "fee_estimate_failed": "No se pudo estimar la comisión",
@@ -964,6 +972,17 @@
       "weak": "Débil",
       "medium": "Media",
       "strong": "Fuerte"
+    }
+  },
+  "powerups": {
+    "title": "Powerups",
+    "installed": "INSTALADOS",
+    "browse_title": "Explorar Powerups",
+    "browse_subtitle": "Destacados, oficiales y de la comunidad",
+    "badge": {
+      "official": "Oficial",
+      "community": "Comunidad",
+      "featured": "Destacado"
     }
   }
 }

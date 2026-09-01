@@ -1,8 +1,8 @@
 /**
  * The home content leaves and returns with the verb when a task engages the
- * shell (DESIGN.md §The sink and the float). The balance card, the action row
- * and the sub-account selector are content, not chrome: while a flow owns the
- * screen they are unmounted, so the flow finds an empty home behind it.
+ * shell (DESIGN.md §The sink and the float). The balance block, the sub-tab row,
+ * the content and the powerups FAB are content, not chrome: while a flow owns
+ * the screen they are unmounted, so the flow finds an empty home behind it.
  */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
@@ -41,13 +41,18 @@ jest.mock('../src/contexts/TaskChromeContext', () => ({
 }));
 
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
-  useDeveloperMode: () => ({ developerNetworks: false }),
+  useDeveloperMode: () => false,
 }));
 jest.mock('../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ scrollBottomPadding: 0, onScroll: jest.fn() }),
+  useTabChrome: () => ({
+    headerContentOffset: 0,
+    floatingBottomOffset: 0,
+    scrollBottomPadding: 0,
+    onScroll: jest.fn(),
+  }),
 }));
 jest.mock('../src/utils/sinkAndFloat', () => ({
-  FLOAT_DELAY_MS: { base: 0, step: 0 },
+  FLOAT_DELAY_MS: 0,
   floatEntering: () => undefined,
   sinkExiting: () => undefined,
 }));
@@ -73,6 +78,7 @@ jest.mock('@salmon/shared', () => ({
   fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', bold: 'System' },
   fontSize: { xs: 11, sm: 13, base: 15, md: 16, bodyLg: 16, lg: 18, xl: 20, '2xl': 24, '3xl': 30 },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, headerPadding: 16 },
+  s: (value: number) => value,
   vs: (value: number) => value,
   getShortAddress: () => 'Wall...et11',
   getCoinInfo: jest.fn().mockResolvedValue(null),
@@ -120,12 +126,30 @@ jest.mock('../src/components', () => {
   const { Text, View } = require('react-native');
 
   return {
-    ActionButtonRow: () => <View />,
-    BalanceCardCarousel: () => <View />,
+    BalanceHeader: () => <View testID="balance-header" />,
+    NftsTab: ({ listHeader }: { listHeader?: React.ReactNode }) => (
+      <View testID="nfts-tab">{listHeader}</View>
+    ),
+    PortfolioSubTabs: ({
+      tabs,
+      onChange,
+    }: {
+      tabs: Array<{ key: string; label: string }>;
+      onChange: (key: string) => void;
+    }) => (
+      <View>
+        {tabs.map((tab) => (
+          <Text key={tab.key} testID={`portfolio-tab-${tab.key}`} onPress={() => onChange(tab.key)}>
+            {tab.label}
+          </Text>
+        ))}
+      </View>
+    ),
+    PowerupsFab: () => <View testID="powerups-fab" />,
+    PowerupsLauncherSheet: () => null,
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
     SendSheet: () => null,
-    SubAccountSelector: () => <View />,
     TokenAbout: () => <View />,
     TokenInformationSheet: () => null,
     // Mirrors the real TokenList contract: a skeleton while `loading`, the
@@ -155,7 +179,6 @@ jest.mock('../src/components', () => {
     TransactionDetailModal: () => null,
     TransactionHistorySheet: () => null,
     WarningNotice: ({ title }: { title: string }) => <Text>{title}</Text>,
-    depthParallaxScroll: { value: 0 },
   };
 });
 
@@ -199,7 +222,7 @@ describe('home content vs an engaged task', () => {
     });
   });
 
-  it('shows the balance card, actions, selector and token list while no task is engaged', () => {
+  it('shows the balance block, sub-tabs and token list while no task is engaged', () => {
     render(<HomeScreen />);
 
     expect(screen.getByTestId('home-content')).toBeTruthy();

@@ -10,6 +10,8 @@ import {
   formatEffectiveRate,
   formatPercent,
   useBridgeSettlement,
+  useAccountsContext,
+  isWatchOnlyAccount,
   fontFamilyNative,
   fontSize,
   semantic,
@@ -44,6 +46,13 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
   const insets = useSafeAreaInsets();
 
   const { trackBridgeExchange, isStalled, retryNow } = useBridgeSettlement();
+
+  // A watch-only wallet holds no key, so nothing here can be signed. The swap
+  // route's `href` gate is unconditional now (swap became a powerup), so the
+  // screen is reachable by deep link and by any future entry point — the
+  // refusal has to live on the screen, not on the tab that used to hide it.
+  const [{ activeAccount }] = useAccountsContext();
+  const isWatchOnly = isWatchOnlyAccount(activeAccount);
 
   const isReduceMotionEnabled = useReducedMotion();
 
@@ -241,6 +250,25 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
     </View>
   ) : null;
 
+  // Same refusal the home screen shows beside its disabled Send: one
+  // explanation, not a tooltip per control.
+  if (isWatchOnly) {
+    return (
+      <View
+        testID="swap-watch-only-notice"
+        style={[styles.container, styles.watchOnlyContainer, style]}
+      >
+        <WarningNotice
+          tone="warning"
+          title={t('wallet.watchOnly.badge')}
+          style={styles.watchOnlyNotice}
+        >
+          {t('wallet.watchOnly.disabled_action')}
+        </WarningNotice>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, style]}>
       {!isTaskStep && stalledBanner}
@@ -297,7 +325,7 @@ export const SwapScreen: React.FC<SwapScreenProps> = (props) => {
           {/* Its own window, but the same water. The task modal covers the tab
               shell — and with it the water column the shell paints — so it
               mounts the same ground the DOM task steps sit over: the depth
-              ramp, the marine snow, and the deep-field scales. The receipt is
+              ramp and the deep-field scales. The receipt is
               not a wall; it arrives over the same water as everything else. */}
           <DepthBackground />
           <ScalesBackground variant="deepField" />
@@ -445,6 +473,13 @@ const styles = StyleSheet.create({
   taskSurface: {
     flex: 1,
     backgroundColor: semantic.depth.column,
+  },
+  watchOnlyContainer: {
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  watchOnlyNotice: {
+    marginBottom: spacing.lg,
   },
   stalledBanner: {
     paddingHorizontal: spacing.lg,

@@ -25,7 +25,6 @@ import {
   colors,
   semantic,
   getStashItem,
-  isWatchOnlyAccount,
   type SettingsPanelEntry,
   type AddressBookItem,
   type AddressInput,
@@ -42,7 +41,6 @@ import {
 import {
   DepthBackground,
   ScalesBackground,
-  GlassTabBar,
   SettingsSheet,
   WalletSwitcherSheet,
   LanguageSelector,
@@ -863,20 +861,17 @@ export default function TabLayout() {
         {/* Background layers wrapped in BlurTargetView for Android blur targeting */}
         <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
           {/* Layer 1: the water column — a depth ramp that darkens toward the
-            bottom, plus the marine snow field across the top. The ramp starts
-            at the ground the app already painted, so nothing above it seams;
-            the snow is spent before the first token row, which is what keeps
-            it on the right side of The Scales Exclusion Rule. */}
+            bottom. The ramp starts at the ground the app already painted, so
+            nothing above it seams. */}
           <DepthBackground />
 
           {/* Layer 2: the deep field. It belongs here and only here — on the
-            ground, in the same plane as the ramp and the snow. It used to
+            ground, in the same plane as the ramp. It used to
             tile behind whole tabs *and* live inside the balance card; the
             card is content and has lost it, because the motif belongs to the
-            water and content stays plain. Here it is safe for the reason the
-            snow is: everything that carries a value — rows, cards, inputs —
-            is opaque and covers it. The snow is what gives the 3.2× scale
-            something to be large against rather than merely near. */}
+            water and content stays plain. Here it is safe because everything
+            that carries a value — rows, cards, inputs — is opaque and covers
+            it. */}
           <ScalesBackground variant="deepField" />
 
           {/* Layer 3: Bottom fade gradient. Ends on the ramp's own floor rather
@@ -892,7 +887,7 @@ export default function TabLayout() {
         <DeveloperModeProvider value={{ developerNetworks }}>
           <BlurTargetProvider value={blurTargetRef}>
             <Tabs
-              tabBar={(props) => <GlassTabBar {...props} />}
+              tabBar={() => null}
               screenOptions={{
                 headerShown: false,
                 tabBarStyle: { display: 'none' },
@@ -900,14 +895,10 @@ export default function TabLayout() {
             >
               <Tabs.Screen name="index" options={{ title: t('tabs.home', 'Home') }} />
               <Tabs.Screen
-                name="collectibles"
-                options={{ title: t('tabs.collectibles', 'Collectibles') }}
-              />
-              <Tabs.Screen
                 name="swap"
                 options={{
                   title: t('tabs.swap', 'Swap'),
-                  href: isWatchOnlyAccount(activeAccount) ? null : undefined,
+                  href: null,
                 }}
               />
               <Tabs.Screen

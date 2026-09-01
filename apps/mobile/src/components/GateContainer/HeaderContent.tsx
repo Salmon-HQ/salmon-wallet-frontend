@@ -6,37 +6,43 @@
  */
 
 import {
-  borderRadius,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
   fontWeight,
   letterSpacing,
-  componentSizes,
   ms,
   s,
   spacing,
   vs,
   getShortAddress,
-  getAvatarColor,
-  getInitials,
   motionMs,
   semantic,
 } from '@salmon/shared';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 import { CheckIcon } from '../../icons';
 import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
-import { ContentCopySvgIcon, SettingsSvgIcon, WalletSvgIcon } from '../Icon';
+import { BrandMark } from '../BrandMark';
+import { IconBubble } from '../IconBubble';
+import { ContentCopySvgIcon, SettingsSvgIcon } from '../Icon';
 import {
   CHROME_SCALE,
   floatEntering,
   sinkExiting,
   SINK_FLOAT_TRAVEL,
 } from '../../utils/sinkAndFloat';
+
+/** Left thumb — the account's own face, 38x38 r12, opens the wallet switcher. */
+const WALLET_THUMB_SIZE = 38;
+/** Right control (settings) — 36x36 circle. */
+const SETTINGS_BUTTON_SIZE = 36;
+/** The salmon mark standing in for a missing avatar, and the gear glyph. */
+const WALLET_THUMB_GLYPH_SIZE = 18;
+const SETTINGS_GLYPH_SIZE = 18;
 
 // ============================================================================
 // Props
@@ -65,7 +71,6 @@ export function HeaderContent({
   onWalletPress,
   developerMode = false,
   avatarUrl,
-  accountId,
 }: HeaderContentProps) {
   const { t } = useTranslation();
   const [imgError, setImgError] = useState(false);
@@ -97,42 +102,37 @@ export function HeaderContent({
   }, [onWalletPress]);
 
   const truncatedAddress = getShortAddress(address, developerMode ? 8 : 4) ?? address;
-  const displayText = `${accountName} (${truncatedAddress})`;
-
-  const avatarColor = useMemo(
-    () => (accountId ? getAvatarColor(accountId) : semantic.text.secondary),
-    [accountId]
-  );
-  const initials = useMemo(() => getInitials(accountName), [accountName]);
 
   return (
     <View style={styles.container}>
-      {/* Left side - Avatar/Wallet icon + Account info */}
+      {/* Left side - wallet thumb + Account info */}
       <View style={styles.leftSection}>
-        <TouchableOpacity
+        {/* The wallet thumb is the account's own picture: the identity the
+            user recognises sits where the identity switcher is. A generic
+            wallet glyph said nothing about *which* wallet is open. The salmon
+            mark stands in when the account has no avatar. */}
+        <IconBubble
           testID="wallet-header-account-switcher"
-          style={styles.walletIconContainer}
+          size={WALLET_THUMB_SIZE}
+          shape="rounded"
+          // r12, per `.pen` CORE 01 — the kit's default rounded corner is r16.
+          radius="lg"
+          tone="ink"
           onPress={handleWalletPress}
-          activeOpacity={0.7}
-          accessibilityRole="button"
           accessibilityLabel={t('accessibility.switch_wallet')}
-          hitSlop={{ top: 2, bottom: 2, left: 8, right: 8 }}
+          hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
         >
           {avatarUrl && !imgError ? (
             <Image
               source={{ uri: avatarUrl }}
-              style={styles.headerAvatar}
+              style={styles.avatarImage}
               contentFit="cover"
               onError={() => setImgError(true)}
             />
-          ) : accountId ? (
-            <View style={[styles.headerAvatarFallback, { backgroundColor: avatarColor }]}>
-              <Text style={styles.headerAvatarText}>{initials}</Text>
-            </View>
           ) : (
-            <WalletSvgIcon size={s(28)} color={semantic.text.secondary} />
+            <BrandMark size={s(WALLET_THUMB_GLYPH_SIZE)} />
           )}
-        </TouchableOpacity>
+        </IconBubble>
 
         <View style={styles.accountInfo}>
           {/* Only the text travels — the copy button and its feedback state
@@ -153,9 +153,11 @@ export function HeaderContent({
               durationMs: motionMs.ebb,
             })}
           >
-            {/* The name is the same affordance as the avatar beside it: both
-                open the account switcher. Only the avatar was tappable, which
-                left the obvious target — the name the user is reading — inert. */}
+            {/* Two lines per `.pen` CORE 01: the name the user named the
+                wallet, and the short address under it. Both are the same
+                affordance as the thumb beside them — they open the account
+                switcher. Only the avatar was tappable once, which left the
+                obvious target (the name the user is reading) inert. */}
             <TouchableOpacity
               testID="wallet-header-account-name"
               onPress={handleWalletPress}
@@ -165,12 +167,20 @@ export function HeaderContent({
               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
             >
               <Text
-                style={styles.accountText}
+                style={styles.accountName}
                 numberOfLines={1}
                 ellipsizeMode="tail"
                 maxFontSizeMultiplier={fontScaleCap.chrome}
               >
-                {displayText}
+                {accountName}
+              </Text>
+              <Text
+                style={styles.accountAddress}
+                numberOfLines={1}
+                ellipsizeMode="middle"
+                maxFontSizeMultiplier={fontScaleCap.chrome}
+              >
+                {truncatedAddress}
               </Text>
             </TouchableOpacity>
           </Reanimated.View>
@@ -220,18 +230,19 @@ export function HeaderContent({
         </View>
       </View>
 
-      {/* Right side - Settings button */}
-      <TouchableOpacity
+      {/* Right side - the gear, opens Settings. It reads as what it does; the
+          avatar it replaced read as an identity and pointed at the wrong
+          screen. */}
+      <IconBubble
         testID="wallet-header-settings-button"
-        style={styles.settingsButton}
+        size={SETTINGS_BUTTON_SIZE}
+        tone="ink"
+        icon={SettingsSvgIcon}
+        iconSize={SETTINGS_GLYPH_SIZE}
         onPress={handleSettingsPress}
-        activeOpacity={0.7}
-        accessibilityRole="button"
         accessibilityLabel={t('accessibility.open_settings')}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <SettingsSvgIcon size={s(30)} color={semantic.text.secondary} />
-      </TouchableOpacity>
+      />
     </View>
   );
 }
@@ -245,19 +256,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: s(spacing.headerPadding),
+    // The redesign's one gutter: the thumb's left edge and the balance's left
+    // edge below it are the same line.
+    paddingHorizontal: s(spacing.screenGutter),
   },
   leftSection: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: s(spacing.base),
-  },
-  walletIconContainer: {
-    width: s(componentSizes.iconSizeLarge),
-    height: vs(componentSizes.buttonHeightSmall),
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   accountInfo: {
     flex: 1,
@@ -271,40 +278,31 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  accountText: {
-    fontSize: ms(fontSize.caption),
-    fontFamily: fontFamilyNative.semiBold,
-    fontWeight: fontWeight.semibold,
+  // `.pen` draws 14/700 over 11/500. 14 is `fontSize.body`; there is no 11
+  // step, so the address takes the nearest one (`caption`, 12) — the scale is
+  // the contract, the frame is the sketch.
+  accountName: {
+    fontSize: ms(fontSize.body),
+    fontFamily: fontFamilyNative.bold,
+    fontWeight: fontWeight.bold,
     color: semantic.text.primary,
     letterSpacing: letterSpacing.normal,
-    lineHeight: vs(22),
+    lineHeight: vs(18),
+  },
+  accountAddress: {
+    fontSize: ms(fontSize.caption),
+    fontFamily: fontFamilyNative.medium,
+    fontWeight: fontWeight.medium,
+    color: semantic.text.secondary,
+    letterSpacing: letterSpacing.label,
+    lineHeight: vs(15),
   },
   copyButton: {
     flexShrink: 0,
     padding: s(spacing.xs),
   },
-  settingsButton: {
-    width: s(componentSizes.iconSizeLarge),
-    height: vs(componentSizes.iconSizeLarge),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerAvatar: {
-    width: s(componentSizes.iconSizeMButton),
-    height: s(componentSizes.iconSizeMButton),
-    borderRadius: borderRadius.full,
-  },
-  headerAvatarFallback: {
-    width: s(componentSizes.iconSizeMButton),
-    height: s(componentSizes.iconSizeMButton),
-    borderRadius: borderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerAvatarText: {
-    color: semantic.text.primary,
-    fontSize: ms(fontSize.micro),
-    fontFamily: fontFamilyNative.bold,
-    fontWeight: fontWeight.bold,
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
 });

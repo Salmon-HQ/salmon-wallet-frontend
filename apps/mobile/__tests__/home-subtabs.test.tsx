@@ -1,0 +1,288 @@
+/**
+ * The in-page sub-tabs replaced the bottom tab bar, and they carry two rules
+ * that are not visible from the component itself:
+ *
+ * 1. NFTs only exist on Solana, so tapping the tab from another chain has to
+ *    take the balance home first — through the same handler the page dots use,
+ *    not a silent network write.
+ * 2. Portfolio pins the balance above its list; NFTs hand it to the grid as a
+ *    list header so it scrolls away. One scroll view either way.
+ */
+import React from 'react';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
+
+import HomeScreen from '../app/(app)/(tabs)/index';
+
+const mockChangeNetwork = jest.fn(() => Promise.resolve());
+
+const networksState = {
+  networkId: 'solana-mainnet',
+  allNetworks: [{ id: 'solana-mainnet', name: 'Solana' }] as Array<{ id: string; name: string }>,
+};
+
+jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn() }));
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn(),
+  ImpactFeedbackStyle: { Light: 'light', Medium: 'medium' },
+}));
+jest.mock('expo-linear-gradient', () => {
+  const { View } = require('react-native');
+  return { LinearGradient: View };
+});
+
+jest.mock('react-native-reanimated', () => {
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: { View },
+    useReducedMotion: () => false,
+  };
+});
+
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
+}));
+
+jest.mock('../src/contexts/DeveloperModeContext', () => ({
+  useDeveloperMode: () => false,
+}));
+jest.mock('../hooks/useTabChrome', () => ({
+  useTabChrome: () => ({
+    headerContentOffset: 0,
+    floatingBottomOffset: 0,
+    scrollBottomPadding: 0,
+    onScroll: jest.fn(),
+  }),
+}));
+jest.mock('../src/utils/sinkAndFloat', () => ({
+  FLOAT_DELAY_MS: 0,
+  floatEntering: () => undefined,
+  sinkExiting: () => undefined,
+}));
+
+jest.mock('@salmon/shared', () => ({
+  borderRadius: { sm: 8, md: 12, lg: 16, xl: 20, full: 999 },
+  colors: {
+    accent: { primary: '#00ff99', tint: '#003322', border: '#00aa66' },
+    text: { primary: '#fff', secondary: '#aaa', tertiary: '#888', disabled: '#666' },
+    background: { primary: '#000', secondary: '#111', tertiary: '#222' },
+    border: { primary: '#333', secondary: '#444' },
+    status: { success: '#0f0', danger: '#f00', warning: '#fa0' },
+  },
+  semantic: {
+    accent: { fill: '#FF5C45', onFill: '#070911', ink: '#FF5C45' },
+    text: { primary: '#F6F8FB', secondary: '#A7B1C4', tertiary: '#8B96AD', disabled: '#6F7B95' },
+    border: { default: '#58637B', raised: '#6F7B95', strong: '#8B96AD' },
+    surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
+    status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
+    state: { hover: 'rgba(199,211,232,0.06)', selectedEdge: '#FF5C45' },
+  },
+  componentSizes: { icon: { sm: 16, md: 20, lg: 24 }, button: { height: 44 } },
+  fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', bold: 'System' },
+  fontSize: { xs: 11, sm: 13, base: 15, md: 16, bodyLg: 16, lg: 18, xl: 20, '2xl': 24, '3xl': 30 },
+  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32, headerPadding: 16 },
+  s: (value: number) => value,
+  vs: (value: number) => value,
+  getShortAddress: () => 'Wall...et11',
+  getCoinInfo: jest.fn().mockResolvedValue(null),
+  getMarketChart: jest.fn().mockResolvedValue(null),
+  getTokenMarketChart: jest.fn().mockResolvedValue(null),
+  getTokenCoinInfo: jest.fn().mockResolvedValue(null),
+  coinInfoToMarketData: () => undefined,
+  getBlockchainFromNetworkId: () => 'solana',
+  BLOCKCHAIN_TO_COINGECKO: { solana: 'solana', bitcoin: 'bitcoin' },
+  PERIOD_TO_DAYS: { '1D': 1, '1M': 30 },
+  useAccountsContext: () => [
+    {
+      ready: true,
+      activeAccount: {
+        getReceiveAddress: () => 'Wallet111',
+        networksAccounts: { 'solana-mainnet': [], 'bitcoin-mainnet': [] },
+      },
+      activeBlockchainAccount: { getReceiveAddress: () => 'Wallet111' },
+      networkId: networksState.networkId,
+      pathIndex: 0,
+      switchingNetwork: false,
+    },
+    { clearSwitchingNetwork: jest.fn(), changeNetwork: mockChangeNetwork },
+  ],
+  useAvailableNetworks: () => ({ allNetworks: networksState.allNetworks }),
+  useBalance: () => ({
+    tokens: [],
+    usdTotal: 0,
+    changePercent: 0,
+    changeAmount: 0,
+    loading: false,
+    refreshing: false,
+    hasData: true,
+    state: 'ready' as const,
+    refresh: jest.fn(),
+    error: null,
+    isError: false,
+    hiddenBalance: false,
+    toggleHidden: jest.fn(),
+    lastUpdated: null,
+  }),
+  usePrefetchBalances: () => undefined,
+  useCurrencyContext: () => [{ currency: 'USD' }],
+  useTransactions: () => ({
+    transactions: [],
+    loading: false,
+    loadingMore: false,
+    error: null,
+    hasMore: false,
+    loadMore: jest.fn(),
+    refresh: jest.fn(),
+  }),
+  isWatchOnlyAccount: () => false,
+}));
+
+jest.mock('../src/components', () => {
+  const React = require('react');
+  const { Text, View } = require('react-native');
+
+  return {
+    BalanceHeader: ({
+      activeIndex,
+      blockchains,
+      onBlockchainChange,
+    }: {
+      activeIndex?: number;
+      blockchains?: Array<{ network: { id: string; blockchain: string } }>;
+      onBlockchainChange?: (blockchain: string, index: number) => void;
+    }) => (
+      <View
+        testID="balance-header"
+        // The chain the block is actually showing, so a test can read it.
+        accessibilityLabel={blockchains?.[activeIndex ?? 0]?.network.blockchain}
+      >
+        {(blockchains ?? []).map((chain, index) => (
+          <Text
+            key={chain.network.id}
+            testID={`swipe-to-${chain.network.blockchain}`}
+            onPress={() => onBlockchainChange?.(chain.network.blockchain, index)}
+          >
+            {chain.network.id}
+          </Text>
+        ))}
+      </View>
+    ),
+    NftsTab: ({ listHeader }: { listHeader?: React.ReactNode }) => (
+      <View testID="nfts-tab">{listHeader}</View>
+    ),
+    PortfolioSubTabs: ({
+      tabs,
+      onChange,
+    }: {
+      tabs: Array<{ key: string; label: string }>;
+      onChange: (key: string) => void;
+    }) => (
+      <View>
+        {tabs.map((tab) => (
+          <Text key={tab.key} testID={`portfolio-tab-${tab.key}`} onPress={() => onChange(tab.key)}>
+            {tab.label}
+          </Text>
+        ))}
+      </View>
+    ),
+    PowerupsFab: () => <View testID="powerups-fab" />,
+    PowerupsLauncherSheet: () => null,
+    PriceChart: () => <View />,
+    ReceiveSheet: () => null,
+    SendSheet: () => null,
+    TokenAbout: () => <View />,
+    TokenInformationSheet: () => null,
+    TokenList: () => <View testID="token-list" />,
+    TokenListItem: () => <View />,
+    TokenListSkeleton: () => <View />,
+    TokenMarketData: () => <View />,
+    TransactionHistorySheet: () => null,
+    WarningNotice: ({ title }: { title: string }) => <Text>{title}</Text>,
+  };
+});
+
+describe('home sub-tabs', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    networksState.networkId = 'solana-mainnet';
+    networksState.allNetworks = [{ id: 'solana-mainnet', name: 'Solana' }];
+  });
+
+  it('takes the balance back to Solana when NFTs is opened from Bitcoin', () => {
+    networksState.networkId = 'bitcoin-mainnet';
+    networksState.allNetworks = [
+      { id: 'solana-mainnet', name: 'Solana' },
+      { id: 'bitcoin-mainnet', name: 'Bitcoin' },
+    ];
+
+    render(<HomeScreen />);
+
+    // The tab is offered on every chain — it never hides per chain.
+    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
+
+    expect(mockChangeNetwork).toHaveBeenCalledWith('solana-mainnet');
+    expect(screen.getByTestId('nfts-tab')).toBeTruthy();
+  });
+
+  it('pins the balance above the list on Portfolio and hands it to the grid on NFTs', () => {
+    render(<HomeScreen />);
+
+    // Portfolio: the balance is a sibling of the list, not part of it.
+    expect(screen.getByTestId('balance-header')).toBeTruthy();
+    expect(screen.getByTestId('token-list')).toBeTruthy();
+    expect(screen.queryByTestId('nfts-tab')).toBeNull();
+
+    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
+
+    // NFTs: the balance rides inside the grid's list header, so it scrolls away.
+    const grid = screen.getByTestId('nfts-tab');
+    expect(within(grid).getByTestId('balance-header')).toBeTruthy();
+    expect(screen.queryByTestId('token-list')).toBeNull();
+  });
+
+  it('keeps the powerups FAB on both sub-tabs', () => {
+    render(<HomeScreen />);
+    expect(screen.getByTestId('powerups-fab')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
+    expect(screen.getByTestId('powerups-fab')).toBeTruthy();
+  });
+
+  it('moves the balance to Solana when NFTs is opened from Bitcoin, before the network write lands', () => {
+    // On device `changeNetwork` is async: the persisted `networkId` is still
+    // bitcoin for a beat after the tap. The block must already be on Solana —
+    // the owner saw it stay on Bitcoin.
+    networksState.networkId = 'bitcoin-mainnet';
+    networksState.allNetworks = [
+      { id: 'solana-mainnet', name: 'Solana' },
+      { id: 'bitcoin-mainnet', name: 'Bitcoin' },
+    ];
+
+    render(<HomeScreen />);
+    expect(screen.getByTestId('balance-header').props.accessibilityLabel).toBe('bitcoin');
+
+    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
+
+    expect(mockChangeNetwork).toHaveBeenCalledTimes(1);
+    expect(mockChangeNetwork).toHaveBeenCalledWith('solana-mainnet');
+    expect(screen.getByTestId('balance-header').props.accessibilityLabel).toBe('solana');
+  });
+
+  it('lets the user swipe back to Bitcoin on NFTs without losing the tab', () => {
+    // Tab drives chain, never the other way round (owner decision).
+    networksState.networkId = 'solana-mainnet';
+    networksState.allNetworks = [
+      { id: 'solana-mainnet', name: 'Solana' },
+      { id: 'bitcoin-mainnet', name: 'Bitcoin' },
+    ];
+
+    render(<HomeScreen />);
+    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
+    expect(screen.getByTestId('nfts-tab')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('swipe-to-bitcoin'));
+
+    expect(screen.getByTestId('nfts-tab')).toBeTruthy();
+    expect(screen.getByTestId('balance-header').props.accessibilityLabel).toBe('bitcoin');
+  });
+});

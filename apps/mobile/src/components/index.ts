@@ -6,6 +6,35 @@
 // Foundation
 // ---------------------------------------------------------------------------
 
+// --- Primitive kit (redesign) ---------------------------------------------
+
+export { Card } from './Card';
+export type { CardPadding, CardProps, CardRadius, CardTone } from './Card';
+
+export { KeyValueRow } from './KeyValueRow';
+export type { KeyValueRowProps, KeyValueTone } from './KeyValueRow';
+
+export { ListRow } from './ListRow';
+export type { ListRowPadding, ListRowProps } from './ListRow';
+
+export { IconBubble } from './IconBubble';
+export type {
+  IconBubbleProps,
+  IconBubbleShape,
+  IconBubbleSize,
+  IconBubbleTone,
+  IconGlyphProps,
+} from './IconBubble';
+
+export { Chip, ChipGroup } from './Chip';
+export type { ChipGroupProps, ChipOption, ChipProps, ChipSize, ChipVariant } from './Chip';
+
+export { SectionLabel } from './SectionLabel';
+export type { SectionLabelProps, SectionLabelVariant } from './SectionLabel';
+
+export { PowerupBadge } from './PowerupBadge';
+export type { PowerupBadgeProps, PowerupTier } from './PowerupBadge';
+
 export { HoldToCopyButton, PrimaryButton, SecondaryButton, TextButton } from './Button';
 export type {
   HoldToCopyButtonProps,
@@ -98,11 +127,7 @@ export type { GradientBackgroundProps } from './GradientBackground';
 export { ScalesBackground } from './ScalesBackground';
 export type { ScalesBackgroundProps } from './ScalesBackground';
 
-export {
-  DepthBackground,
-  depthParallaxScroll,
-  useDepthParallaxScrollHandler,
-} from './DepthBackground';
+export { DepthBackground } from './DepthBackground';
 export type { DepthBackgroundProps } from './DepthBackground';
 
 export { FleshBackground } from './FleshBackground';
@@ -113,9 +138,6 @@ export type { BlurContainerProps, BlurTint } from './BlurContainer';
 
 export { BottomSheetTitleHeader } from './BottomSheetTitleHeader';
 export type { BottomSheetTitleHeaderProps } from './BottomSheetTitleHeader';
-
-export { GlassTabBar } from './GlassTabBar';
-export type { GlassTabBarProps, TabConfig } from './GlassTabBar';
 
 export { Thermocline } from './Thermocline';
 export type { ThermoclineProps, ThermoclineTier } from './Thermocline';
@@ -134,24 +156,26 @@ export type { ReceiveSheetProps } from './ReceiveSheet';
 // Home
 // ---------------------------------------------------------------------------
 
-export { BalanceCard, BalanceCardCarousel } from './BalanceCard';
-export type {
-  BalanceCardProps,
-  BalanceCardCarouselProps,
-  BlockchainId,
-  BlockchainBalance,
-  BlockchainNetworkInfo,
-} from './BalanceCard';
+export { BalanceHeader } from './BalanceHeader';
+export type { BalanceHeaderProps } from './BalanceHeader';
+// The chain shapes the balance block speaks are shared contracts; they used to
+// reach consumers through `./BalanceCard`, which the redesign deleted.
+export type { BlockchainId, BlockchainBalance, BlockchainNetworkInfo } from '@salmon/shared';
 
-export { ActionButtonRow } from './ActionButtonRow';
-export type { ActionButtonRowProps, ActionButton } from './ActionButtonRow';
+export { PortfolioSubTabs } from './PortfolioSubTabs';
+export type { PortfolioSubTab, PortfolioSubTabsProps } from './PortfolioSubTabs';
 
-export { TokenList, TokenListItem, TokenListSkeleton, TokenBadges } from './TokenList';
+export { PowerupsFab } from './PowerupsFab';
+export type { PowerupsFabProps } from './PowerupsFab';
+
+export { PowerupsLauncherSheet } from './PowerupsLauncherSheet';
+export type { PowerupsLauncherSheetProps } from './PowerupsLauncherSheet';
+
+export { TokenList, TokenListItem, TokenListSkeleton } from './TokenList';
 export type {
   TokenListProps,
   TokenListItemProps,
   TokenListSkeletonProps,
-  TokenBadgesProps,
 } from './TokenList';
 
 export { TokenSelector, TokenSelectorModal, useTokenSearch } from './TokenSelector';
@@ -206,14 +230,8 @@ export type {
 export { NftDetailSheet } from './NftDetailSheet';
 export type { NftDetailSheetProps, NftDetailData } from './NftDetailSheet';
 
-export { NftCarouselSection, NftCarouselSectionSkeleton } from './NftCarouselSection';
-export type {
-  NftCarouselSectionProps,
-  NftCarouselSectionSkeletonProps,
-} from './NftCarouselSection';
-
-export { NftSeeAllSheet } from './NftSeeAllSheet';
-export type { NftSeeAllSheetProps } from './NftSeeAllSheet';
+export { NftsTab } from './NftsTab';
+export type { NftSectionKey, NftSection, NftsTabProps } from './NftsTab';
 
 // ---------------------------------------------------------------------------
 // Transaction

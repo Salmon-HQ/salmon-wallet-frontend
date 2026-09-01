@@ -9,6 +9,15 @@ const mockUseAccountsContext = jest.fn();
 
 jest.mock('react-native-reanimated', () => ({}));
 
+// The root `GestureHandlerRootView` reaches the native module at import time
+// (`_RNGestureHandlerModule.default.install`), which does not exist under
+// Jest. Same targeted stand-in `BottomSheetContainer` and `BalanceHeader`
+// already use — the root view is real app wiring and must stay in `_layout`.
+jest.mock('react-native-gesture-handler', () => {
+  const { View: RNView } = jest.requireActual('react-native');
+  return { GestureHandlerRootView: RNView };
+});
+
 jest.mock('expo-font', () => ({
   useFonts: jest.fn(() => [true, null]),
 }));

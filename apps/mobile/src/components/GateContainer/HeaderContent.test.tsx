@@ -8,27 +8,65 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('expo-image', () => ({
-  Image: () => null,
-}));
+jest.mock('expo-image', () => {
+  const ReactActual = require('react');
+  const { View } = require('react-native');
+  return {
+    Image: (props: Record<string, unknown>) =>
+      ReactActual.createElement(View, { ...props, testID: 'header-avatar-image' }),
+  };
+});
+
+jest.mock('../BrandMark', () => {
+  const ReactActual = require('react');
+  const { View } = require('react-native');
+  return {
+    BrandMark: () => ReactActual.createElement(View, { testID: 'header-brand-mark' }),
+  };
+});
 
 // Minimal Reanimated stand-in. `Reanimated.View` renders a plain View that
 // carries a per-mount id, so tests can tell a remount (new key) from a
 // re-render (same key) without reaching into fibers.
 jest.mock('react-native-reanimated', () => {
-  const React = require('react');
+  const ReactActual = require('react');
   const { View } = require('react-native');
   let mountCount = 0;
   const AnimatedView = (props: Record<string, unknown>) => {
-    const [mountId] = React.useState(() => (mountCount += 1));
-    return React.createElement(View, { ...props, mountId });
+    const [mountId] = ReactActual.useState(() => (mountCount += 1));
+    return ReactActual.createElement(View, { ...props, mountId });
   };
   return {
     __esModule: true,
-    default: { View: AnimatedView },
+    default: {
+      View: AnimatedView,
+      createAnimatedComponent: (Component: React.ComponentType<Record<string, unknown>>) =>
+        ReactActual.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+          ReactActual.createElement(Component, { ...props, ref })
+        ),
+    },
     useReducedMotion: () => false,
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: (fn: () => unknown) => fn(),
+    withTiming: (target: unknown) => target,
   };
 });
+// The bubble is a control now: it pulls the repo's press idiom (motion hook,
+// flesh, specular), none of which says anything about this component.
+jest.mock('../../../hooks/usePressMotion', () => ({
+  usePressMotion: () => ({
+    pressStyle: {},
+    scale: { value: 1 },
+    pressHandlers: { onPressIn: () => {}, onPressOut: () => {} },
+    specular: { x: { value: 0 }, y: { value: 0 }, opacity: { value: 0 } },
+  }),
+}));
+jest.mock('../../../src/components/FleshBackground', () => ({ FleshBackground: () => null }));
+jest.mock('../../../src/components/PressSpecular', () => ({
+  PressSpecular: () => null,
+  SPECULAR_OPACITY: 0.12,
+}));
+
 
 // The real module pulls Reanimated worklets and shared easing tables; the
 // component only forwards its return values to `entering`/`exiting`.
@@ -39,29 +77,34 @@ jest.mock('../../utils/sinkAndFloat', () => ({
   sinkExiting: () => undefined,
 }));
 
-jest.mock('../Icon', () => ({
-  ContentCopySvgIcon: () => null,
-  SettingsSvgIcon: () => null,
-  WalletSvgIcon: () => null,
-}));
+jest.mock('../Icon', () => {
+  const ReactActual = require('react');
+  const { View } = require('react-native');
+  const glyph = (testID: string) => () => ReactActual.createElement(View, { testID });
+  return {
+    ContentCopySvgIcon: glyph('header-glyph-copy'),
+    SettingsSvgIcon: glyph('header-glyph-gear'),
+    WalletSvgIcon: glyph('header-glyph-wallet'),
+  };
+});
 
-// Mirrors packages/shared/src/theme/spacing.ts. The values here were
-// transposed (iconSizeLarge and iconSizeMButton swapped, buttonHeightSmall
-// 28 against a real 44), so the hit-area assertions were measuring a control
-// that does not exist.
-const COMPONENT_SIZES = { iconSizeLarge: 32, iconSizeMButton: 28, buttonHeightSmall: 44 };
+// The wallet thumb (38x38) and settings avatar (36x36) are hard-coded
+// constants inside HeaderContent.tsx, not tokens read off `@salmon/shared` —
+// the hit-area assertions below use those literal values directly.
+const WALLET_THUMB_SIZE = 38;
+const SETTINGS_AVATAR_SIZE = 36;
 const SPACING = { headerPadding: 20, base: 12, sm: 8, xs: 4 };
 
 jest.mock('@salmon/shared', () => ({
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  borderRadius: { full: 9999 },
-  fontFamilyNative: { bold: 'System', semiBold: 'System' },
+  borderRadius: { full: 9999, r3: 12, r4: 16 },
+  borderWidth: { actionButton: 0.5, thin: 1 },
+  fontFamilyNative: { bold: 'System', semiBold: 'System', medium: 'System' },
   fontScaleCap: { chrome: 1.2 },
-  fontSize: { micro: 10, caption: 12 },
-  fontWeight: { semibold: '600', bold: '700' },
-  letterSpacing: { normal: 0 },
-  componentSizes: { iconSizeLarge: 32, iconSizeMButton: 28, buttonHeightSmall: 44 },
-  spacing: { headerPadding: 20, base: 12, sm: 8, xs: 4 },
+  fontSize: { micro: 10, caption: 12, body: 14 },
+  fontWeight: { medium: '500', semibold: '600', bold: '700' },
+  letterSpacing: { normal: 0, label: 0.3 },
+  spacing: { headerPadding: 20, screenGutter: 20, base: 12, sm: 8, xs: 4 },
   motionMs: { feedbackHold: 1500, drift: 280, ebb: 180, stagger: 24, swell: 300 },
   motionEasing: {
     sink: { native: [0.4, 0, 1, 1] },
@@ -72,12 +115,10 @@ jest.mock('@salmon/shared', () => ({
   s: (value: number) => value,
   vs: (value: number) => value,
   getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
-  getAvatarColor: () => '#123456',
-  getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
-  semantic: {
-    text: { primary: '#fff', secondary: '#999', accent: '#f54' },
-    status: { success: '#0f0' },
-  },
+  // The real palette rather than a four-key stub: the thumb and the avatar
+  // are `IconBubble`s now, and the bubble reads every tone's ground at module
+  // load, so a hand-listed subset breaks on a tone this file never renders.
+  semantic: jest.requireActual('@salmon/shared/src/theme/semantic').semantic,
 }));
 
 import { HeaderContent } from './HeaderContent';
@@ -209,8 +250,8 @@ describe('HeaderContent touch targets', () => {
     renderHeader();
     const button = screen.getByTestId('wallet-header-account-switcher');
     const { hitSlop } = button.props;
-    const width = COMPONENT_SIZES.iconSizeLarge + hitSlop.left + hitSlop.right;
-    const height = COMPONENT_SIZES.buttonHeightSmall + hitSlop.top + hitSlop.bottom;
+    const width = WALLET_THUMB_SIZE + hitSlop.left + hitSlop.right;
+    const height = WALLET_THUMB_SIZE + hitSlop.top + hitSlop.bottom;
     expect(width).toBeGreaterThanOrEqual(MIN_HIT_TARGET);
     expect(height).toBeGreaterThanOrEqual(MIN_HIT_TARGET);
   });
@@ -232,8 +273,8 @@ describe('HeaderContent touch targets', () => {
     renderHeader();
     const button = screen.getByTestId('wallet-header-settings-button');
     const { hitSlop } = button.props;
-    const width = COMPONENT_SIZES.iconSizeLarge + hitSlop.left + hitSlop.right;
-    const height = COMPONENT_SIZES.iconSizeLarge + hitSlop.top + hitSlop.bottom;
+    const width = SETTINGS_AVATAR_SIZE + hitSlop.left + hitSlop.right;
+    const height = SETTINGS_AVATAR_SIZE + hitSlop.top + hitSlop.bottom;
     expect(width).toBeGreaterThanOrEqual(MIN_HIT_TARGET);
     expect(height).toBeGreaterThanOrEqual(MIN_HIT_TARGET);
   });
@@ -257,5 +298,72 @@ describe('HeaderContent account name', () => {
     fireEvent.press(screen.getByTestId('wallet-header-account-name'));
 
     expect(onWalletPress).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('HeaderContent identity block', () => {
+  it('draws the name and the short address as two lines, not one parenthesised string', () => {
+    render(
+      <HeaderContent
+        accountName="Account 1"
+        address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+      />
+    );
+
+    // `.pen` CORE 01: name over short address. It used to render
+    // "Account 1 (7xKX...gAsU)" on a single line.
+    expect(screen.getByText('Account 1')).toBeTruthy();
+    expect(screen.getByText('7xKX...gAsU')).toBeTruthy();
+    expect(screen.queryByText('Account 1 (7xKX...gAsU)')).toBeNull();
+  });
+});
+
+describe('HeaderContent identity swap', () => {
+  const renderHeader = (avatarUrl?: string) =>
+    render(
+      <HeaderContent
+        accountName="Account 1"
+        address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+        avatarUrl={avatarUrl}
+        onSettingsPress={jest.fn()}
+      />
+    );
+
+  it('puts the account picture on the left, where the wallet switcher is', () => {
+    renderHeader('https://example.test/avatar.png');
+
+    expect(screen.getByTestId('header-avatar-image')).toBeTruthy();
+    // The generic wallet glyph said nothing about which wallet is open.
+    expect(screen.queryByTestId('header-glyph-wallet')).toBeNull();
+  });
+
+  it('falls back to the brand mark when the account has no picture', () => {
+    renderHeader();
+
+    expect(screen.queryByTestId('header-avatar-image')).toBeNull();
+    expect(screen.getByTestId('header-brand-mark')).toBeTruthy();
+  });
+
+  it('puts the gear on the right, where settings opens', () => {
+    renderHeader('https://example.test/avatar.png');
+
+    const settings = screen.getByTestId('wallet-header-settings-button');
+    expect(settings.props.accessibilityLabel).toBe('accessibility.open_settings');
+    expect(screen.getByTestId('header-glyph-gear')).toBeTruthy();
+  });
+
+  it('opens settings from the gear', () => {
+    const onSettingsPress = jest.fn();
+    render(
+      <HeaderContent
+        accountName="Account 1"
+        address="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+        onSettingsPress={onSettingsPress}
+      />
+    );
+
+    fireEvent.press(screen.getByTestId('wallet-header-settings-button'));
+
+    expect(onSettingsPress).toHaveBeenCalledTimes(1);
   });
 });

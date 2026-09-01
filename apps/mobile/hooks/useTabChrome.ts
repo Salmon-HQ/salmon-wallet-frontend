@@ -3,17 +3,15 @@ import { useMemo } from 'react';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const TAB_BAR_CONTENT_HEIGHT = componentSizes.tabBarItemHeight + 8;
-const TAB_BAR_TOP_PADDING = spacing.lg;
-const TAB_BAR_EXTRA_BOTTOM_GAP = spacing.sm;
-const FLOATING_CTA_GAP = spacing.sm;
 const STICKY_CTA_SCROLL_GAP = spacing['2xl'];
 
 /**
  * Shared chrome metrics for the tab shell.
  *
- * Screens inside the tabs render under an absolute header and tab bar, so they
- * must all reserve the same top and bottom space to avoid overlapping system UI.
+ * Screens inside the tabs render under an absolute header, so they must all
+ * reserve the same top space to avoid overlapping system UI. Bottom spacing
+ * for floating CTAs and scrollable content now derives from the safe-area
+ * bottom inset alone — there is no bottom tab bar to clear.
  */
 export function useTabChrome() {
   const insets = useSafeAreaInsets();
@@ -21,18 +19,25 @@ export function useTabChrome() {
 
   return useMemo(() => {
     const headerTopInset = topInset;
-    const headerChromeHeight = headerTopInset + componentSizes.headerHeight;
-    const headerContentOffset = headerTopInset + componentSizes.headerInnerHeight;
+    // The header no longer paints a band: it is the screen's top padding
+    // (safe area + `screenTop`) followed by the header row, on the same plane
+    // as the balance below it. `GateContainer` computes the same three terms
+    // for its collapse math — keep them in step or the header and the content
+    // overlap. Unscaled, like every other expression defining this slot.
+    // The last term is the row's own height (its 38px thumb), never the 56px
+    // `headerHeight` slot: a slot centres the row and drops it 9px below the
+    // screen's top padding while stealing 18px from the content underneath.
+    const headerChromeHeight =
+      headerTopInset + spacing.screenTop + componentSizes.walletHeaderRowHeight;
+    // Content starts exactly where the header row ends; the gap between them
+    // is the consumer's (`index.tsx` adds the `.pen`'s 20).
+    const headerContentOffset = headerChromeHeight;
 
     // The balance hero intentionally underlaps the Android status bar area while
     // keeping the wallet header itself below the system UI.
     const heroCardTopInset = Platform.OS === 'ios' ? topInset : 0;
 
-    const tabBarBottomPadding =
-      Math.max(bottomInset, componentSizes.tabBarMinBottomPadding) + vs(TAB_BAR_EXTRA_BOTTOM_GAP);
-    const tabBarTotalHeight =
-      vs(TAB_BAR_TOP_PADDING) + vs(TAB_BAR_CONTENT_HEIGHT) + tabBarBottomPadding;
-    const floatingBottomOffset = tabBarTotalHeight + vs(FLOATING_CTA_GAP);
+    const floatingBottomOffset = bottomInset + vs(spacing.screenBottom);
 
     return {
       insets,
@@ -41,17 +46,12 @@ export function useTabChrome() {
       headerChromeHeight,
       headerContentOffset,
       heroCardTopInset,
-      tabBarBottomPadding,
-      tabBarTotalHeight,
       floatingBottomOffset,
       stickyCtaScrollPadding:
         floatingBottomOffset + vs(componentSizes.buttonHeightCompact + STICKY_CTA_SCROLL_GAP),
-      scrollBottomPadding: Math.max(
-        vs(componentSizes.tabBarScrollPadding),
-        tabBarTotalHeight + vs(spacing['3xl'])
-      ),
+      scrollBottomPadding: floatingBottomOffset + vs(spacing['3xl']),
     };
-  }, [bottomInset, insets, topInset]);
+  }, [bottomInset, topInset, insets]);
 }
 
 export default useTabChrome;

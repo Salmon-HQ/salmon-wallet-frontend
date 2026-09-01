@@ -23,10 +23,17 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 jest.mock('react-native-reanimated', () => {
+  const ReactActual = require('react');
   const { View } = require('react-native');
   return {
     __esModule: true,
-    default: { View },
+    default: {
+      View,
+      createAnimatedComponent: (Component: React.ComponentType<Record<string, unknown>>) =>
+        ReactActual.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+          ReactActual.createElement(Component, { ...props, ref })
+        ),
+    },
     useSharedValue: (initial: number) => ({ value: initial }),
     useAnimatedStyle: () => ({}),
     useReducedMotion: () => false,
@@ -41,6 +48,22 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+// The bubble is a control now: it pulls the repo's press idiom (motion hook,
+// flesh, specular), none of which says anything about this component.
+jest.mock('../hooks/usePressMotion', () => ({
+  usePressMotion: () => ({
+    pressStyle: {},
+    scale: { value: 1 },
+    pressHandlers: { onPressIn: () => {}, onPressOut: () => {} },
+    specular: { x: { value: 0 }, y: { value: 0 }, opacity: { value: 0 } },
+  }),
+}));
+jest.mock('../src/components/FleshBackground', () => ({ FleshBackground: () => null }));
+jest.mock('../src/components/PressSpecular', () => ({
+  PressSpecular: () => null,
+  SPECULAR_OPACITY: 0.12,
+}));
+
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) =>
@@ -54,6 +77,9 @@ jest.mock('../src/components/Icon', () => ({
   SettingsSvgIcon: () => null,
   WalletSvgIcon: () => null,
 }));
+jest.mock('../src/components/BrandMark', () => ({
+  BrandMark: () => null,
+}));
 
 // The gate's ground. Its own suite asserts the material; here it only has to
 // mount without pulling the scales field's tokens through the mocked barrel.
@@ -66,51 +92,13 @@ jest.mock('../src/components/Thermocline', () => {
   };
 });
 
+// Real design tokens (theme is self-contained; scalers are identities) so a
+// component reading a token this mock never anticipated fails on the
+// component, not on the mock. See test-utils/themeTokens.ts.
 jest.mock('@salmon/shared', () => ({
+  ...jest.requireActual('../test-utils/themeTokens'),
   ...jest.requireActual('@salmon/shared/src/hooks/useCopyFeedback'),
-  ...jest.requireActual('@salmon/shared/src/theme/durations'),
-  colors: {
-    background: { primary: '#000', card: '#111' },
-    text: { primary: '#fff' },
-    border: { default: '#222' },
-    dialog: { overlay: 'rgba(0,0,0,0.5)' },
-  },
-  fontFamilyNative: { bold: 'DMSansBold', semiBold: 'DMSansSemi' },
-  fontScaleCap: { chrome: 1.2 },
-  fontSize: { xs: 10, sm: 14, lg: 18 },
-  fontWeight: { semibold: '600', bold: '700' },
-  letterSpacing: { header: 0 },
-  borderRadius: { '2xl': 24, header: 24, iconLg: 20 },
-  componentSizes: {
-    headerHeight: 56,
-    iconSizeLarge: 28,
-    iconSizeMButton: 32,
-    buttonHeightSmall: 28,
-  },
-  motionMs: { feedbackHold: 1500 },
-  shadows: {
-    topSheet: {},
-    header: {
-      shadowColor: '#000',
-      shadowOffset: {},
-      shadowOpacity: 0,
-      shadowRadius: 0,
-      elevation: 0,
-    },
-  },
-  spacing: { lg: 16, md: 12, headerPadding: 16, base: 12, sm: 8, xs: 4 },
-  ms: (value: number) => value,
-  s: (value: number) => value,
-  vs: (value: number) => value,
   getShortAddress: (value: string, size = 4) => `${value.slice(0, size)}...${value.slice(-size)}`,
-  getAvatarColor: () => '#123456',
-  getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
-  semantic: {
-    text: { primary: '#fff', secondary: '#999', accent: '#f54' },
-    status: { success: '#0f0' },
-    border: { raised: '#333', default: '#222' },
-    surface: { shelf: '#10131C' },
-  },
 }));
 
 describe('GateContainer + HeaderContent (real mounting path)', () => {

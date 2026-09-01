@@ -49,6 +49,12 @@ export const spacing = {
   '5.5xl': 60,
   /** 80px */
   '7xl': 80,
+  /** 20px - Redesigned screen horizontal padding (both sides) */
+  screenGutter: 20,
+  /** 28px - Redesigned screen top padding, below the safe-area top inset */
+  screenTop: 28,
+  /** 20px - Redesigned screen bottom padding, added to the safe-area bottom inset */
+  screenBottom: 20,
 } as const;
 
 /**
@@ -230,6 +236,13 @@ export const componentSizes = {
 
   // Header
   headerHeight: 56,
+  /**
+   * 38px - the mobile wallet header row. It is the height of its own tallest
+   * child (the 38px account thumb), not a slot: a taller slot centres the row
+   * inside it and pushes the header down by half the slack, which is exactly
+   * how the row drifted 9px below `safe area + screenTop`.
+   */
+  walletHeaderRowHeight: 38,
   /** 44px - Header action buttons */
   headerButtonSize: 44,
   backButtonSize: 40,

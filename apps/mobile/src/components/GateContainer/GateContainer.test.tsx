@@ -51,9 +51,9 @@ jest.mock('@salmon/shared', () => ({
   },
   fontFamilyNative: { bold: 'System' },
   fontSize: { heading: 18 },
-  spacing: { lg: 16, md: 12 },
+  spacing: { lg: 16, md: 12, screenTop: 28, screenGutter: 20 },
   borderRadius: { '2xl': 24, header: 24, iconLg: 20 },
-  componentSizes: { headerHeight: 56, backButtonSize: 40 },
+  componentSizes: { headerHeight: 56, walletHeaderRowHeight: 38, backButtonSize: 40 },
   semantic: {
     text: { primary: '#fff' },
     border: { raised: '#6F7B95' },
@@ -137,11 +137,19 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+const mockTaskChrome = { engaged: false };
+jest.mock('../../contexts/TaskChromeContext', () => ({
+  useTaskChrome: () => ({ isTaskEngaged: mockTaskChrome.engaged, setTaskEngaged: jest.fn() }),
+}));
+
 import { GateContainer } from './GateContainer';
 
 const GATE_HEIGHT = 800;
-const HEADER_HEIGHT = 56;
-const COLLAPSED_Y = -(GATE_HEIGHT - HEADER_HEIGHT);
+const SCREEN_TOP = 28;
+const HEADER_ROW_HEIGHT = 38;
+// The collapsed slice: safe area (0 in this suite) + `screenTop` + the row.
+const HEADER_SLOT = SCREEN_TOP + HEADER_ROW_HEIGHT;
+const COLLAPSED_Y = -(GATE_HEIGHT - HEADER_SLOT);
 
 const renderGate = (state: 'locked' | 'collapsed') =>
   render(<GateContainer state={state} lockContent={null} headerContent={<Text>header</Text>} />);
@@ -255,17 +263,38 @@ describe('GateContainer collapsed header with the task context at rest', () => {
     expect(surfaceBackground()).toBe(semantic.surface.crest);
   });
 
-  it('keeps the floor out while collapsed — there the gate is chrome over content', () => {
+  it('paints nothing at all while collapsed — the header is on the balance plane', () => {
     renderGate('collapsed');
 
-    expect(screen.getByTestId('gate-thermocline').props.tier).toBe('thick');
+    // No material, no floor, no rounded edge: the band the header used to
+    // draw overlapped the balance block below it (owner, first device run).
+    expect(screen.queryByTestId('gate-thermocline')).toBeNull();
     expect(surfaceBackground()).toBe('transparent');
+
+    const surface = StyleSheet.flatten(screen.getByTestId('gate-surface').props.style) as {
+      borderBottomLeftRadius?: number;
+      shadowOpacity?: number;
+    };
+    expect(surface.borderBottomLeftRadius).toBeUndefined();
+    expect(surface.shadowOpacity).toBeUndefined();
   });
 
   it('leaves the material out while locked — the lock content owns that ground', () => {
     renderGate('locked');
 
     expect(screen.queryByTestId('gate-thermocline')).toBeNull();
+  });
+
+  it('leaves the collapsed header room for the screen top padding above the row', () => {
+    renderGate('collapsed');
+
+    // The row fills `headerHeight`; the padding above it is the screen's own
+    // top (safe area + screenTop), which is what `useTabChrome` reserves.
+    const rowHeight = (
+      StyleSheet.flatten(screen.getByTestId('gate-header-bar').props.style) as { height?: number }
+    ).height;
+    expect(rowHeight).toBe(componentSizes.walletHeaderRowHeight);
+    expect(HEADER_SLOT).toBe(SCREEN_TOP + componentSizes.walletHeaderRowHeight);
   });
 
   it('mounts the back chevron through its verb wrapper only while a back target exists', () => {
@@ -325,6 +354,46 @@ describe('the collapsed header stands on the same ground as the surface above it
     // unscaled, and a scaled row underfills the slot on a short screen and
     // overflows the gate's rounded corner on a tall one. This has drifted
     // silently in this file twice now.
-    expect(height).toBe(componentSizes.headerHeight);
+    expect(height).toBe(componentSizes.walletHeaderRowHeight);
+  });
+});
+
+describe('the collapsed header while a task owns the screen', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    mockTaskChrome.engaged = false;
+    jest.useRealTimers();
+  });
+
+  it('leaves with the content instead of lifting the whole gate', () => {
+    const view = renderGate('collapsed');
+    act(() => {
+      fireEvent(screen.getByTestId('gate-root'), 'layout', {
+        nativeEvent: { layout: { height: GATE_HEIGHT } },
+      });
+    });
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(screen.getByTestId('gate-header-bar')).toBeTruthy();
+
+    mockTaskChrome.engaged = true;
+    view.rerender(
+      <GateContainer state="collapsed" lockContent={null} headerContent={<Text>header</Text>} />
+    );
+
+    // The row unmounts (its sink plays on the way out); the gate itself never
+    // travels — the compuerta is gone.
+    expect(screen.queryByTestId('gate-header-bar')).toBeNull();
+    expect(translateYOf('gate-root')).toBe(COLLAPSED_Y);
+
+    mockTaskChrome.engaged = false;
+    view.rerender(
+      <GateContainer state="collapsed" lockContent={null} headerContent={<Text>header</Text>} />
+    );
+    expect(screen.getByTestId('gate-header-bar')).toBeTruthy();
+    expect(translateYOf('gate-root')).toBe(COLLAPSED_Y);
   });
 });

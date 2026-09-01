@@ -136,9 +136,12 @@ describe('GateContainer lock state', () => {
     expect(surfaceColor(locked)).toBe('transparent');
     expect(locked.queryByTestId('gate-thermocline')).toBeNull();
 
+    // Collapsed the gate is the screen's top padding plus the header row, on
+    // the balance's own plane: no material, no floor, no edge. The material
+    // belongs to the expanded panel, which is a sheet.
     const collapsed = renderGate('collapsed');
     expect(surfaceColor(collapsed)).toBe('transparent');
-    expect(collapsed.getByTestId('gate-thermocline').props.tier).toBe('thick');
+    expect(collapsed.queryByTestId('gate-thermocline')).toBeNull();
   });
 
   it('unmounts the wallets panel when the app locks from the wallets state', () => {
@@ -156,6 +159,42 @@ describe('GateContainer lock state', () => {
     );
 
     expect(queryByTestId('wallets-content')).toBeNull();
+  });
+
+  it('swallows every touch while locked', () => {
+    // The gate covers the screen while locked. `box-none` there would let a
+    // press pass through the password prompt to the home underneath it.
+    const view = renderGate('locked');
+
+    expect(view.getByTestId('gate-root').props.pointerEvents).not.toBe('box-none');
+    expect(view.getByTestId('gate-surface').props.pointerEvents).not.toBe('box-none');
+  });
+
+  it('keeps the touches through the unlock slide, and lets them go once it lands', () => {
+    // The same trap one frame later: the gate reads `collapsed` while it is
+    // still visibly sliding up, and `box-none` there hands taps to the home
+    // under a surface that is still covering it. This suite's `withTiming`
+    // never calls its completion callback, which is exactly the mid-slide
+    // frame — the gate must still be `auto`.
+    const gate = (state: 'locked' | 'collapsed') => (
+      <GateContainer
+        state={state}
+        lockContent={<Text testID="lock-content">lock</Text>}
+        headerContent={<Text testID="header-content">header</Text>}
+        settingsContent={<Text testID="settings-content">settings</Text>}
+        walletsContent={<Text testID="wallets-content">wallets</Text>}
+        expandedHeader={{ title: 'Settings', onClose: jest.fn() }}
+      />
+    );
+    const view = render(gate('locked'));
+
+    view.rerender(gate('collapsed'));
+    expect(view.getByTestId('gate-root').props.pointerEvents).toBe('auto');
+    expect(view.getByTestId('gate-surface').props.pointerEvents).toBe('auto');
+
+    // A gate mounted already collapsed never slid, so it is chrome from the
+    // first frame.
+    expect(renderGate('collapsed').getByTestId('gate-root').props.pointerEvents).toBe('box-none');
   });
 
   it('does not restore the pre-lock panel when the user unlocks', () => {

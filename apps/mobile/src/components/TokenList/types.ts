@@ -61,11 +61,3 @@ export interface TokenListSkeletonProps {
   /** Number of skeleton items to show */
   count?: number;
 }
-
-/**
- * Props for the TokenBadges component
- */
-export interface TokenBadgesProps {
-  /** Array of token tags to display as badges */
-  tags?: string[];
-}

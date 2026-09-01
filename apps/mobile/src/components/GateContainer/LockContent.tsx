@@ -420,8 +420,8 @@ export function LockContent({
       <StatusBar style="light" />
       {/*
         The lock carries the water column (DESIGN.md §the lock screen): the
-        same ground the swap task modal mounts — depth ramp, marine snow,
-        deep-field scales. It is mounted *outside* the layout, the way the
+        same ground the swap task modal mounts — depth ramp, deep-field
+        scales. It is mounted *outside* the layout, the way the
         swap task modal mounts it outside its steps, because the ground never
         travels: when the unlock wait rises, the form below sinks and the
         water stays. The ground color sits under the ramp so nothing behind
