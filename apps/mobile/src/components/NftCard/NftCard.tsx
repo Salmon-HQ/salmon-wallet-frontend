@@ -14,29 +14,18 @@ import {
   semantic,
 } from '@salmon/shared';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { ContentLoader, Rect } from '@salmon/shared';
-import Animated, {
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
 import { BlurContainer } from '../BlurContainer';
+import { ShimmerRect } from '../ShimmerRect';
 import type { NftCardProps, NftCardSkeletonProps } from './types';
 
 /**
  * Orange gradient colors for fallback background
  * Gradient: linear-gradient(91.6deg, rgb(255, 92, 69) 12%, rgba(161, 42, 42, 0.9) 83%)
  */
-/** A full cycle of the skeleton pulse, and how far down it dips. */
-const PULSE_MS = 900;
-const PULSE_MIN_OPACITY = 0.45;
-
 const FALLBACK_GRADIENT = {
   colors: [...gradients.primaryButton.colors],
   start: { x: 0.12, y: 0.5 },
@@ -234,73 +223,20 @@ const styles = StyleSheet.create({
 /**
  * NftCardSkeleton component for loading state
  *
- * Uses ContentLoader with proper skeleton colors to match the project's
- * skeleton loading pattern. Replicates the visual structure of NftCard:
- * - Main card background (rounded rectangle)
- * - Name badge at bottom (rounded rectangle)
- *
- * Dimensions match NftCard: ~194x193px with 18px border radius
+ * A `ShimmerRect` (D1, research-mobile.md §2) at `NftCard`'s own aspect —
+ * ~194x193px with the card's own border radius.
  */
-export const NftCardSkeleton = React.memo<NftCardSkeletonProps>(
-  ({ style, testID, animated = true }) => {
-    // Card dimensions matching NftCard
-    const cardWidth = s(componentSizes.nftCardWidth);
-    const cardHeight = vs(componentSizes.nftCardHeight);
-    const cardBorderRadius = ms(borderRadius.iconContainer);
+export const NftCardSkeleton = React.memo<NftCardSkeletonProps>(({ style, testID }) => {
+  const cardWidth = s(componentSizes.nftCardWidth);
+  const cardHeight = vs(componentSizes.nftCardHeight);
+  const cardBorderRadius = ms(borderRadius.iconContainer);
 
-    // Badge dimensions
-    const badgeHeight = vs(25); // 6px padding * 2 + 13px text
-    const badgeBottom = vs(8);
-    const badgeHorizontal = s(8);
-    const badgeBorderRadius = ms(borderRadius.badge);
-
-    // The gradient sweep alone is too quiet against this palette: a grid of
-    // placeholders read as a finished, empty grid rather than one still
-    // loading. A pulse on the whole card is legible at a glance.
-    const pulse = useSharedValue(1);
-    const isReduceMotionEnabled = useReducedMotion();
-
-    useEffect(() => {
-      if (!animated || isReduceMotionEnabled) return;
-      pulse.value = withRepeat(withTiming(PULSE_MIN_OPACITY, { duration: PULSE_MS }), -1, true);
-    }, [animated, isReduceMotionEnabled, pulse]);
-
-    const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
-
-    return (
-      <Animated.View style={[styles.container, style, pulseStyle]} testID={testID}>
-        <ContentLoader
-          speed={animated ? 1.5 : 0}
-          width={cardWidth}
-          height={cardHeight}
-          viewBox={`0 0 ${cardWidth} ${cardHeight}`}
-          backgroundColor={semantic.skeleton.base}
-          foregroundColor={semantic.skeleton.highlight}
-        >
-          {/* Main card background */}
-          <Rect
-            x="0"
-            y="0"
-            rx={cardBorderRadius}
-            ry={cardBorderRadius}
-            width={cardWidth}
-            height={cardHeight}
-          />
-
-          {/* Name badge at bottom */}
-          <Rect
-            x={badgeHorizontal}
-            y={cardHeight - badgeHeight - badgeBottom}
-            rx={badgeBorderRadius}
-            ry={badgeBorderRadius}
-            width={cardWidth - badgeHorizontal * 2}
-            height={badgeHeight}
-          />
-        </ContentLoader>
-      </Animated.View>
-    );
-  }
-);
+  return (
+    <View style={[styles.container, style]} testID={testID}>
+      <ShimmerRect width={cardWidth} height={cardHeight} borderRadius={cardBorderRadius} />
+    </View>
+  );
+});
 
 NftCardSkeleton.displayName = 'NftCardSkeleton';
 

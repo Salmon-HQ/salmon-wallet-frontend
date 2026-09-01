@@ -53,11 +53,3 @@ export interface TokenListProps {
   /** How often to fire scroll events (ms) */
   scrollEventThrottle?: number;
 }
-
-/**
- * Props for the TokenListSkeleton component
- */
-export interface TokenListSkeletonProps {
-  /** Number of skeleton items to show */
-  count?: number;
-}

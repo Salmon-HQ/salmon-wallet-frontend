@@ -20,7 +20,7 @@ jest.mock('@salmon/shared', () => ({
   spacing: { sm: 8 },
 }));
 jest.mock('../../src/components/TokenList/TokenListItem', () => 'TokenListItem');
-jest.mock('../../src/components/TokenList/TokenListSkeleton', () => 'TokenListSkeleton');
+jest.mock('../../src/components/Skeleton', () => ({ SkeletonRow: 'SkeletonRow' }));
 
 import TokenList from '../../src/components/TokenList/TokenList';
 

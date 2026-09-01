@@ -36,6 +36,4 @@ export interface NftCardSkeletonProps {
   style?: StyleProp<ViewStyle>;
   /** Test ID for testing */
   testID?: string;
-  /** Whether to animate the skeleton (default: true) */
-  animated?: boolean;
 }

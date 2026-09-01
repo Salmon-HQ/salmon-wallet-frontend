@@ -1,7 +1,8 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, FlatList, StyleSheet, ListRenderItem, RefreshControl } from 'react-native';
 import TokenListItem from './TokenListItem';
-import TokenListSkeleton from './TokenListSkeleton';
+import { SkeletonRow } from '../Skeleton';
 import { semantic, spacing } from '@salmon/shared';
 import type { Token } from '@salmon/shared';
 import type { TokenListProps } from './types';
@@ -54,6 +55,8 @@ const TokenList: React.FC<TokenListProps> = ({
   onScroll,
   scrollEventThrottle = 16,
 }) => {
+  const { t } = useTranslation();
+
   // Render item callback - memoized for performance
   // Must be defined before any conditional returns to comply with Rules of Hooks
   const renderItem: ListRenderItem<Token> = React.useCallback(
@@ -92,7 +95,17 @@ const TokenList: React.FC<TokenListProps> = ({
   // Show skeleton while loading (only when no header component is provided)
   // When header is provided, the skeleton should be shown inline
   if (loading && !ListHeaderComponent) {
-    return <TokenListSkeleton count={5} />;
+    return (
+      <View style={styles.container}>
+        <SkeletonRow
+          padding="lg"
+          leadingSize={44}
+          trailingWidth={64}
+          count={5}
+          accessibilityLabel={t('accessibility.loading_token_info', 'Loading token information')}
+        />
+      </View>
+    );
   }
 
   // Create refresh control if onRefresh is provided.
@@ -115,7 +128,17 @@ const TokenList: React.FC<TokenListProps> = ({
   ) : undefined;
 
   // Determine empty component - show skeleton if loading with header, otherwise use provided component
-  const emptyComponent = loading ? <TokenListSkeleton count={5} /> : ListEmptyComponent;
+  const emptyComponent = loading ? (
+    <SkeletonRow
+      padding="lg"
+      leadingSize={44}
+      trailingWidth={64}
+      count={5}
+      accessibilityLabel={t('accessibility.loading_token_info', 'Loading token information')}
+    />
+  ) : (
+    ListEmptyComponent
+  );
 
   return (
     <View style={styles.container}>

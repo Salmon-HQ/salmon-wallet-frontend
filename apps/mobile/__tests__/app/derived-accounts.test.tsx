@@ -58,7 +58,7 @@ jest.mock('../../src/components', () => {
   const { View } = require('react-native');
   return {
     DerivedAccountCard: () => null,
-    DerivedAccountCardSkeleton: () => null,
+    SkeletonRow: () => null,
     PrimaryButton: () => null,
     SecondaryButton: () => null,
     ReservedSlot: ({ children }: { children?: React.ReactNode }) => <View>{children}</View>,

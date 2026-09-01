@@ -12,9 +12,3 @@ export interface DerivedAccountCardProps {
   style?: ViewStyle;
   testID?: string;
 }
-
-export interface DerivedAccountCardSkeletonProps {
-  style?: ViewStyle;
-  testID?: string;
-  animated?: boolean;
-}

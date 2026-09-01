@@ -39,7 +39,6 @@ import {
 } from '@salmon/shared';
 import {
   DerivedAccountCard,
-  DerivedAccountCardSkeleton,
   OnboardingDescription,
   OnboardingLayout,
   OnboardingTitle,
@@ -47,6 +46,7 @@ import {
   ReservedSlot,
   ScreenHeader,
   SecondaryButton,
+  SkeletonRow,
   WarningNotice,
 } from '../../src/components';
 import { router } from 'expo-router';
@@ -62,9 +62,12 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 function LoadingSkeleton() {
   return (
     <View style={styles.skeletonContainer}>
-      <DerivedAccountCardSkeleton />
-      <DerivedAccountCardSkeleton />
-      <DerivedAccountCardSkeleton />
+      <SkeletonRow
+        leadingSize={componentSizes.checkboxSize}
+        trailingWidth={70}
+        padding="lg"
+        count={3}
+      />
     </View>
   );
 }

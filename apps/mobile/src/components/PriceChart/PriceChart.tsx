@@ -10,7 +10,6 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { ContentLoader, Rect } from '@salmon/shared';
 import {
   spacing,
   isPositivePerformance,
@@ -23,6 +22,7 @@ import {
 } from '@salmon/shared';
 import { curve, timing } from '../../utils/motion';
 import type { PriceChartPeriod, PriceDataPoint } from '@salmon/shared';
+import { ShimmerRect } from '../ShimmerRect';
 import { UnderlineTabs } from '../UnderlineTabs';
 import type { PriceChartProps } from './types';
 
@@ -131,20 +131,9 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 /**
  * ChartSkeleton - Loading placeholder for the chart
  */
-const ChartSkeleton: React.FC<{ height: number; width: number }> = ({ height, width }) => {
-  return (
-    <ContentLoader
-      speed={1.5}
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      backgroundColor={semantic.skeleton.base}
-      foregroundColor={semantic.skeleton.highlight}
-    >
-      <Rect x="0" y="0" rx="0" ry="0" width={width} height={height} />
-    </ContentLoader>
-  );
-};
+const ChartSkeleton: React.FC<{ height: number; width: number }> = ({ height, width }) => (
+  <ShimmerRect width={width} height={height} borderRadius={0} />
+);
 
 /**
  * PeriodSelectorSkeleton - Loading placeholder for period buttons
@@ -152,31 +141,12 @@ const ChartSkeleton: React.FC<{ height: number; width: number }> = ({ height, wi
 const PeriodSelectorSkeleton: React.FC = () => {
   const buttonWidth = 36;
   const buttonHeight = 24;
-  const gap = spacing.xs;
-  const totalWidth = PRICE_CHART_PERIODS.length * (buttonWidth + gap) - gap;
 
   return (
     <View style={styles.periodContainer}>
-      <ContentLoader
-        speed={1.5}
-        width={totalWidth}
-        height={buttonHeight}
-        viewBox={`0 0 ${totalWidth} ${buttonHeight}`}
-        backgroundColor={semantic.skeleton.base}
-        foregroundColor={semantic.skeleton.highlight}
-      >
-        {PRICE_CHART_PERIODS.map((_, index) => (
-          <Rect
-            key={index}
-            x={index * (buttonWidth + gap)}
-            y="0"
-            rx="12"
-            ry="12"
-            width={buttonWidth}
-            height={buttonHeight}
-          />
-        ))}
-      </ContentLoader>
+      {PRICE_CHART_PERIODS.map((period) => (
+        <ShimmerRect key={period} width={buttonWidth} height={buttonHeight} borderRadius={12} />
+      ))}
     </View>
   );
 };

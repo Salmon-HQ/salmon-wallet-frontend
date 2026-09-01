@@ -7,8 +7,8 @@ import {
   StyleSheet,
   TextLayoutEventData,
   NativeSyntheticEvent,
+  useWindowDimensions,
 } from 'react-native';
-import { ContentLoader, Rect } from '@salmon/shared';
 import {
   semantic,
   fontFamilyNative,
@@ -21,6 +21,7 @@ import {
   spacing,
 } from '@salmon/shared';
 import { BlurContainer } from '../../BlurContainer';
+import { ShimmerRect } from '../../ShimmerRect';
 import type { TokenAboutProps } from './types';
 
 /**
@@ -51,6 +52,7 @@ export const TokenAbout: React.FC<TokenAboutProps> = ({
   const resolvedTitle = title ?? t('token.info.about', 'About');
   const [expanded, setExpanded] = useState(false);
   const [shouldShowReadMore, setShouldShowReadMore] = useState(false);
+  const { width: windowWidth } = useWindowDimensions();
 
   const handleTextLayout = useCallback(
     (e: NativeSyntheticEvent<TextLayoutEventData>) => {
@@ -66,22 +68,19 @@ export const TokenAbout: React.FC<TokenAboutProps> = ({
   }, []);
 
   if (loading) {
+    // The card's own content width — the window minus the screen gutters and
+    // the card's own padding — so the description lines read as text
+    // filling the card rather than an arbitrary block.
+    const lineWidth = windowWidth - 2 * s(spacing.screenGutter) - 2 * s(spacing.md);
+
     return (
       <BlurContainer style={[styles.glassWrapper, style]}>
-        <View style={styles.container}>
-          <ContentLoader
-            speed={1.5}
-            width="100%"
-            height={100}
-            backgroundColor={semantic.skeleton.base}
-            foregroundColor={semantic.skeleton.highlight}
-          >
-            <Rect x="0" y="0" rx="4" ry="4" width="60" height="18" />
-            <Rect x="0" y="28" rx="4" ry="4" width="100%" height="12" />
-            <Rect x="0" y="46" rx="4" ry="4" width="95%" height="12" />
-            <Rect x="0" y="64" rx="4" ry="4" width="90%" height="12" />
-            <Rect x="0" y="82" rx="4" ry="4" width="70%" height="12" />
-          </ContentLoader>
+        <View style={[styles.container, styles.skeletonLines]}>
+          <ShimmerRect width={s(60)} height={vs(18)} />
+          <ShimmerRect width={lineWidth} height={vs(12)} />
+          <ShimmerRect width={lineWidth * 0.95} height={vs(12)} />
+          <ShimmerRect width={lineWidth * 0.9} height={vs(12)} />
+          <ShimmerRect width={lineWidth * 0.7} height={vs(12)} />
         </View>
       </BlurContainer>
     );
@@ -137,6 +136,9 @@ const styles = StyleSheet.create({
   },
   container: {
     padding: s(spacing.md),
+  },
+  skeletonLines: {
+    gap: vs(spacing.sm),
   },
   title: {
     fontSize: ms(fontSize.body),

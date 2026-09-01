@@ -1,7 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet } from 'react-native';
-import { ContentLoader, Rect } from '@salmon/shared';
 import {
   semantic,
   fontFamilyNative,
@@ -17,7 +16,11 @@ import {
   spacing,
 } from '@salmon/shared';
 import { BlurContainer } from '../../BlurContainer';
+import { ShimmerRect } from '../../ShimmerRect';
 import type { TokenMarketDataProps } from './types';
+
+/** How many label/value rows the skeleton stands in for. */
+const SKELETON_ROW_COUNT = 5;
 
 /**
  * Single market data row component (label left, value right)
@@ -71,31 +74,17 @@ export const TokenMarketData: React.FC<TokenMarketDataProps> = ({
     return (
       <BlurContainer style={[styles.glassWrapper, style]}>
         <View style={styles.container}>
-          <ContentLoader
-            speed={1.5}
-            width="100%"
-            height={136}
-            backgroundColor={semantic.skeleton.base}
-            foregroundColor={semantic.skeleton.highlight}
-          >
-            {/* Title — ms(14) height, marginBottom vs(8) */}
-            <Rect x="0" y="0" rx="4" ry="4" width="40" height="14" />
-            {/* Row 1 — y = 14 + 8 = 22, row height 13, gap vs(11) */}
-            <Rect x="0" y="22" rx="4" ry="4" width="80" height="13" />
-            <Rect x="80%" y="22" rx="4" ry="4" width="20%" height="13" />
-            {/* Row 2 — y = 22 + 13 + 11 = 46 */}
-            <Rect x="0" y="46" rx="4" ry="4" width="60" height="13" />
-            <Rect x="80%" y="46" rx="4" ry="4" width="20%" height="13" />
-            {/* Row 3 — y = 46 + 13 + 11 = 70 */}
-            <Rect x="0" y="70" rx="4" ry="4" width="90" height="13" />
-            <Rect x="80%" y="70" rx="4" ry="4" width="20%" height="13" />
-            {/* Row 4 — y = 70 + 13 + 11 = 94 */}
-            <Rect x="0" y="94" rx="4" ry="4" width="100" height="13" />
-            <Rect x="80%" y="94" rx="4" ry="4" width="20%" height="13" />
-            {/* Row 5 — y = 94 + 13 + 11 = 118 */}
-            <Rect x="0" y="118" rx="4" ry="4" width="120" height="13" />
-            <Rect x="80%" y="118" rx="4" ry="4" width="20%" height="13" />
-          </ContentLoader>
+          <View style={styles.skeletonTitle}>
+            <ShimmerRect width={s(40)} height={ms(14)} />
+          </View>
+          <View style={styles.rowsContainer}>
+            {Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
+              <View key={index} style={styles.row}>
+                <ShimmerRect width={s(80 - index * 5)} height={ms(13)} />
+                <ShimmerRect width={s(48)} height={ms(13)} />
+              </View>
+            ))}
+          </View>
         </View>
       </BlurContainer>
     );
@@ -278,6 +267,9 @@ const styles = StyleSheet.create({
     color: semantic.text.primary,
     marginBottom: vs(spacing.sm),
     letterSpacing: ms(-0.07, 0.3),
+  },
+  skeletonTitle: {
+    marginBottom: vs(spacing.sm),
   },
   rowsContainer: {
     gap: vs(spacing.md),

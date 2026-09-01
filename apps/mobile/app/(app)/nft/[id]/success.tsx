@@ -1,12 +1,16 @@
 /**
  * NFT · the receipt.
  *
- * The sheet rendered `TransactionSuccessScreen` for both an NFT send and an
- * NFT burn, so the screen does too — same component, same props, same
- * `settling` gate holding the CTA until the indexer has caught up. Only the
- * container changed: it is a route now instead of a step, so the receipt gets
- * its own water and its own safe area, and there is no back gesture behind it
- * (the layout takes it off; the hardware back does what the one control does).
+ * Shares the same CORE 07 composition as `send/success.tsx` now —
+ * `ReceiptScreen tone="transfer"` — rather than the exchange-graphic
+ * component swap renders. Only the container stays route-owned: its own
+ * water, its own safe area, and no back gesture behind it (the layout takes
+ * it off; the hardware back does what the one control does).
+ *
+ * `successSettling` gates the primary and the explorer link rather than
+ * swapping in a separate loader — pressing "Continue" while the indexer has
+ * not caught up would send the user home to a stale balance, so the CTA
+ * stays disabled until it clears.
  */
 import React, { useCallback, useEffect } from 'react';
 import { BackHandler, StyleSheet } from 'react-native';
@@ -15,11 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getShortAddress } from '@salmon/shared';
 
-import {
-  DepthBackground,
-  ScalesBackground,
-  TransactionSuccessScreen,
-} from '../../../../src/components';
+import { DepthBackground, ReceiptScreen, ScalesBackground } from '../../../../src/components';
 import { useNftFlow } from '../../../../src/contexts/NftFlowContext';
 
 export default function NftSuccessScreen() {
@@ -59,10 +59,10 @@ export default function NftSuccessScreen() {
       <DepthBackground />
       <ScalesBackground variant="deepField" />
 
-      <TransactionSuccessScreen
+      <ReceiptScreen
+        tone="transfer"
         title={isBurn ? t('nft.burn.successTitle') : t('nft.send.successTitle')}
-        pendingTitle={isBurn ? t('nft.burn.submitting') : t('nft.send.sending')}
-        summary={
+        body={
           isBurn
             ? t('nft.burn.successSummary', { name })
             : t('nft.send.successSummary', {
@@ -71,9 +71,16 @@ export default function NftSuccessScreen() {
                 address: getShortAddress(resolvedRecipient ?? recipient) ?? recipient,
               })
         }
-        explorerUrl={explorerUrl}
-        onContinue={handleContinue}
+        rows={[
+          {
+            label: t('send.screens.status'),
+            value: t('transactions.detail.confirmed'),
+            valueTone: 'success',
+          },
+        ]}
+        explorerUrl={explorerUrl ?? undefined}
         settling={successSettling}
+        primary={{ label: t('transaction.continue'), onPress: handleContinue, testID: 'tx-success-continue-button' }}
       />
     </SafeAreaView>
   );

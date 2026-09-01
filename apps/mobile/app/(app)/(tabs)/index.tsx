@@ -62,11 +62,11 @@ import {
   PortfolioSubTabs,
   PriceChart,
   ReceiveSheet,
+  SkeletonRow,
   StateBlock,
   TokenAbout,
   TokenList,
   TokenListItem,
-  TokenListSkeleton,
   TokenMarketData,
   WalletHeader,
   WarningNotice,
@@ -631,7 +631,7 @@ export default function HomeScreen() {
   // Loading state - wait for hook to be ready
   // Note: If we're on this screen, the lock overlay has been
   // dismissed, which means unlock succeeded and accounts should be loaded
-  // DESIGN.md §Sheets: the loading state is the `ContentLoader` pulse rather
+  // DESIGN.md §Sheets: the loading state is the `ShimmerRect` pulse rather
   // than a spinner. The screen below (once `ready`) shows this same skeleton
   // while `balanceState === 'loading'` (see the sub-tabs content further
   // down), so a bare mount waiting on the accounts hook gets the identical
@@ -639,7 +639,7 @@ export default function HomeScreen() {
   if (!ready) {
     return (
       <View style={[styles.container, styles.tabGutter]} testID="home-loading">
-        <TokenListSkeleton count={5} />
+        <SkeletonRow padding="lg" leadingSize={44} trailingWidth={64} count={5} />
       </View>
     );
   }
@@ -806,7 +806,7 @@ export default function HomeScreen() {
 
                       {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
                       {balanceState === 'loading' ? (
-                        <TokenListSkeleton count={1} />
+                        <SkeletonRow padding="lg" leadingSize={44} trailingWidth={50} />
                       ) : balanceState === 'error' ? (
                         /* A load that failed with nothing cached owes the user
                            the error state and its retry, never an endless
