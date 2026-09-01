@@ -22,7 +22,7 @@ remove file once consumers migrate.
 | `ChipGroup` | new | `options: {key,label}[]`, `value`, `onChange`, `size`, scrollable horizontal | CORE 08, P02 |
 | `SectionLabel` | new | `children`, `variant: 'caps'(11/700 letter-spaced, "INSTALLED") \| 'group'(12/700, "Today") \| 'title'(16/700, "Recent activity")` | CORE 02, 04, 08, P01, P02 |
 | `PowerupBadge` | new | `tier: 'official' \| 'community' \| 'featured'` (the 3 reusable `.pen` components) | P02, P03 |
-| `ScreenHeader` | keep, restyle | existing props (`onBack`, `glyph`, `steps`) + new `title` 20/700, `subtitle?` 13/500; back = `IconBubble` 38 surface circle | CORE 02–06, 09, P02, P03 |
+| `ScreenHeader` | keep, restyle | existing props (`onBack`, `glyph`, `steps`) + `title` 24/700 (headline role, `letterSpacing.snug`), `subtitle?` 14/500 `text.secondary`, `titleGlyph?` node before the title; back = `IconBubble` 38 surface circle, omitted entirely when `onBack` is absent (POWERUPS 02) | CORE 02–06, 09, P02, P03 |
 | `PrimaryButton` / `SecondaryButton` / `TextButton` | keep, restyle | unchanged props; primary = accent fill + flesh texture; secondary = outline; text = ghost. `.pen` refs: `brand:jFb7J`→Primary, `brand:tyCKk`→Secondary, `brand:Y4dKM3`→Text | all CTAs |
 | `WarningNotice` | keep | `tone` already exists (`.pen` `brand:Ogdne` security notice; P03 risk preview = tone warning with icon + title + body) | CORE 03, 06, P03 |
 | `TokenLogo` | keep | unchanged; fallback letter bubble = `IconBubble` ink | asset rows, CORE 02, 09 |
@@ -108,8 +108,8 @@ motion, no texture.
 - **CORE 07 Send success**: `IconBubble` 88 ink + icon 48 success, title 28/700, body 14/500, `Card` receipt (`KeyValueRow`×4), `SecondaryButton` + `PrimaryButton`. Existing `TransactionSuccessScreen`.
 - **CORE 08 Activity**: title 24/700 + `ChipGroup`(ALL/SEND/RECEIVE/OTHER, md) + `SectionLabel` group + `ListRow`(`IconBubble` 40 circle ink/accent-tint, title, subtitle, value). Existing `TransactionHistorySheet` → screen.
 - **CORE 09 Transaction detail**: `ScreenHeader` + status (`IconBubble` 48 accent-tint, title 21/700 + `Chip` sm provider, status line) + `Card`(`KeyValueRow`) + `Card` conversion (two token columns `IconBubble` 42 + amount 19/700 + ticker 11/600, arrow, rate row hairline top) + `Card` accent (`KeyValueRow`×2) + `Card` route + `SecondaryButton` + `TextButton`. Existing `TransactionDetail`.
-- **POWERUPS 01 launcher**: `PowerupsLauncherSheet` (heading, `SectionLabel` caps, grid of tiles, browse `ListRow` accent-tint, close toggle = `PowerupsFab` rotated 45°).
-- **POWERUPS 02 Browse**: `ScreenHeader`(title+subtitle) + search field (r999 surface, icon + placeholder 13/500) + `ChipGroup` sm + `SectionLabel` caps + `Card` ink featured (`IconBubble` 48 rounded accent + badges + title 18/700 + desc 12/500) + `ListRow`(`IconBubble` 44 rounded accent-tint, title, subtitle, `PowerupBadge`).
+- **POWERUPS 01 launcher**: retired 2026-09-01. `PowerupsLauncherSheet` is deleted; the FAB pushes POWERUPS 02 as a full-height screen and the installed grid is that screen's first section.
+- **POWERUPS 02 Browse**: `ScreenHeader`(title+subtitle, `titleGlyph` lightning 17 accent, no back well) + search field (r999 surface, icon + placeholder 13/500) + `ChipGroup` sm + `SectionLabel` caps + `Card` ink featured (`IconBubble` 48 rounded accent + badges + title 18/700 + desc 12/500) + `ListRow`(`IconBubble` 44 rounded accent-tint, title, subtitle, `PowerupBadge`).
 - **POWERUPS 03 Community detail**: `ScreenHeader` + hero (`IconBubble` 76 rounded accent-tint, title 24/700, `PowerupBadge`, "by …" 12/600) + description 14/500 + `Card`(caps label + permission rows icon 17 + 13/600) + `WarningNotice` warning + `PrimaryButton`.
 
 ## Resolved with the owner (2026-09-01)

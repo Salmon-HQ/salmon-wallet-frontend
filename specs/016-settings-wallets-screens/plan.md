@@ -57,3 +57,35 @@ address 11/500 muted; balance 38/700; gap 20. Keep responsiveness (`s()`/`vs()`)
    (nearest step to 11).
 4. Profile picture: no accent ring/border; neutral hairline at most. Size stays 38; if it
    still competes after 1–3, drop to 36 (owner's call, ask).
+
+## Rulings folded in (2026-09-01, afternoon)
+
+- `spacing.screenTop` = 12 (status bar already breathes; 28 read as empty water).
+- Wallet header row is Home-only; pushed screens never show it.
+- Pushed-screen header = `.pen` "Receive header": back well 38 + title 20/700 in a row (gap 12), subtitle 13/500 below.
+- Avatar (left) is a circle, like the gear.
+- Thermocline: membrane scales field retired; membrane alphas lowered; `Card` tone `surface` = thin membrane + hairline (background shows through cards).
+- Sub-tabs: sliding underline + interpolated type, N tabs; "Loading your collectibles…" header removed.
+- Flesh texture on every solid accent fill (Send, FAB, PrimaryButton, accent tiles).
+
+## Powerups: FAB opens Browse as a full-height screen (owner ruling 2026-09-01, evening)
+
+- The `+` FAB pushes a full-height screen that slides up from the bottom and covers
+  everything (header included): it IS POWERUPS 02 · Browse — title "Browse Powerups"
+  (lightning 17 accent + 20/700) + subtitle 12/500, **no back chevron**; search pill;
+  filters All / Featured / Official / Community (`ChipGroup` sm); first section
+  **INSTALLED** (grid tiles, ex-launcher POWERUPS 01: tile = `Card` p[12,8] + `IconBubble`
+  48 rounded + label 12/700 — Swap is the one real installed powerup today); then
+  FEATURED (`Card` ink: `IconBubble` 48 rounded accent, `PowerupBadge`s, title 18/700,
+  description 12/500), OFFICIAL and COMMUNITY (`ListRow` in `Card`: `IconBubble` 44
+  rounded accent-tint, title 14/700, subtitle 11/500, trailing `PowerupBadge`).
+- The same FAB stays on the Browse screen in the same spot, rotated to × (`open`);
+  tapping it (or the system back / swipe-down) dismisses the screen downward and the
+  FAB returns to +.
+- `PowerupsLauncherSheet` is deleted (files included).
+- Catalogue: mock entries from the `.pen` (Wallet Guard, Staking, Auto-compound, NFT
+  Floor Watch) live behind a developer flag (`useDeveloperMode` / an explicit
+  `SHOW_MOCK_POWERUPS` constant); without the flag only the real catalogue (Swap,
+  installed) renders and the other sections show their empty state.
+- Screen header type (2026-09-01 evening): title `headline` 24/700, subtitle `body` 14/500 — the `.pen`'s 20/13 read too small on device; DESIGN.md's headline role for screen headers wins.
+- Sub-tab switch on Solana must not replay the balance entering animation (remount artefact); Solana family match includes devnet.
