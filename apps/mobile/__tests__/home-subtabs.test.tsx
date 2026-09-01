@@ -204,9 +204,6 @@ jest.mock('../src/components', () => {
         ))}
       </View>
     ),
-    PowerupsFab: ({ onPress }: { onPress: () => void }) => (
-      <View testID="powerups-fab" onPress={onPress} />
-    ),
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
     TokenAbout: () => <View />,
@@ -268,14 +265,6 @@ describe('home sub-tabs', () => {
     expect(mockRouter.push).toHaveBeenCalledWith('/activity');
   });
 
-  it('keeps the powerups FAB on both sub-tabs', () => {
-    render(<HomeScreen />);
-    expect(screen.getByTestId('powerups-fab')).toBeTruthy();
-
-    fireEvent.press(screen.getByTestId('portfolio-tab-nfts'));
-    expect(screen.getByTestId('powerups-fab')).toBeTruthy();
-  });
-
   it('moves the balance to Solana when NFTs is opened from Bitcoin, before the network write lands', () => {
     // On device `changeNetwork` is async: the persisted `networkId` is still
     // bitcoin for a beat after the tap. The block must already be on Solana —
@@ -323,14 +312,6 @@ describe('home sub-tabs', () => {
 
     expect(mockChangeNetwork).not.toHaveBeenCalled();
     expect(screen.getByTestId('nfts-tab')).toBeTruthy();
-  });
-
-  it('opens the powerups browse screen from the FAB', () => {
-    render(<HomeScreen />);
-
-    fireEvent.press(screen.getByTestId('powerups-fab'));
-
-    expect(mockRouter.push).toHaveBeenCalledWith('/powerups');
   });
 
   it('lets the user swipe back to Bitcoin on NFTs without losing the tab', () => {

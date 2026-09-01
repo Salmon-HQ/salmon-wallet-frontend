@@ -3,8 +3,8 @@
  *
  * The rules that are not visible from the markup: the mock catalogue is
  * developer-only, a powerup appears in exactly one section, the search and the
- * chips filter the same list, and the FAB on this screen is the Home FAB
- * turned — it closes the screen rather than opening a second one.
+ * chips filter the same list, and this screen draws no FAB of its own — the
+ * one control lives above the stack in `(app)/_layout.tsx`.
  */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
@@ -41,7 +41,7 @@ jest.mock('@salmon/shared', () => ({
 }));
 
 jest.mock('../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ topInset: 0, scrollBottomPadding: 0, floatingBottomOffset: 0 }),
+  useTabChrome: () => ({ topInset: 0, scrollBottomPadding: 0 }),
 }));
 
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
@@ -51,7 +51,8 @@ jest.mock('../src/contexts/DeveloperModeContext', () => ({
 jest.mock('../src/icons', () => {
   const ReactActual = require('react');
   const { View } = require('react-native');
-  const glyph = (name: string) => () => ReactActual.createElement(View, { testID: `glyph-${name}` });
+  const glyph = (name: string) => () =>
+    ReactActual.createElement(View, { testID: `glyph-${name}` });
   return {
     ArrowsLeftRightIcon: glyph('swap'),
     ImageIcon: glyph('image'),
@@ -134,9 +135,6 @@ jest.mock('../src/components', () => {
         ))}
       </View>
     ),
-    PowerupsFab: ({ open, onPress }: { open?: boolean; onPress: () => void }) => (
-      <View testID="powerups-fab" accessibilityState={{ expanded: !!open }} onPress={onPress} />
-    ),
   };
 });
 
@@ -206,16 +204,13 @@ describe('powerups browse', () => {
     expect(screen.queryByTestId('powerups-tile-swap')).toBeNull();
   });
 
-  it('wears the FAB open and closes the screen with it', () => {
+  it('draws no FAB of its own — the one above the stack owns both routes', () => {
     render(<PowerupsScreen />);
 
-    const fab = screen.getByTestId('powerups-fab');
-    expect(fab.props.accessibilityState.expanded).toBe(true);
-
-    fireEvent.press(fab);
-
-    expect(mockRouter.back).toHaveBeenCalledTimes(1);
-    expect(mockRouter.push).not.toHaveBeenCalled();
+    // Two instances is what the `fullScreenModal` presentation forced; the
+    // single hoisted control (see `(app)/_layout.tsx`) is what makes the turn
+    // visible while this screen rises.
+    expect(screen.queryByTestId('powerups-fab')).toBeNull();
   });
 
   it('dismisses itself before opening swap — the tab shell is behind it', () => {

@@ -9,7 +9,6 @@ import { useTranslation } from 'react-i18next';
 import { useAccountsContext, useUserConfig, colors, semantic } from '@salmon/shared';
 import { DepthBackground, ScalesBackground, BlurTargetProvider } from '../../../src/components';
 import { DeveloperModeProvider } from '../../../src/contexts/DeveloperModeContext';
-import { TaskChromeProvider } from '../../../src/contexts/TaskChromeContext';
 
 /**
  * Tab Layout for Salmon Wallet
@@ -24,7 +23,9 @@ import { TaskChromeProvider } from '../../../src/contexts/TaskChromeContext';
  * The lock overlay is NOT mounted here — it lives in `(app)/_layout.tsx`, a
  * level up, because a screen pushed on the `(app)` stack (Wallets, Activity,
  * Settings) sits above this layout and an overlay mounted here would sit
- * behind it.
+ * behind it. `TaskChromeProvider` moved up for the same reason: the powerups
+ * FAB now mounts beside that overlay, outside the tabs, and still has to
+ * leave when a task engages.
  */
 export default function TabLayout() {
   const { t } = useTranslation();
@@ -49,55 +50,53 @@ export default function TabLayout() {
   const { developerNetworks } = useUserConfig({ activeBlockchainAccount: userConfigAccount });
 
   return (
-    <TaskChromeProvider>
-      <View style={styles.container}>
-        <StatusBar style="light" />
+    <View style={styles.container}>
+      <StatusBar style="light" />
 
-        {/* Background layers wrapped in BlurTargetView for Android blur targeting */}
-        <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
-          {/* Layer 1: the water column — a depth ramp that darkens toward the
+      {/* Background layers wrapped in BlurTargetView for Android blur targeting */}
+      <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
+        {/* Layer 1: the water column — a depth ramp that darkens toward the
             bottom. Edge to edge, to the physical top of the screen: the status
             bar sits ON the water, not on a band painted over it. There used to
             be an opaque `topSafeAreaOverlay` the height of the top inset here,
             which cut the scales off in a straight line under the notch. */}
-          <DepthBackground />
+        <DepthBackground />
 
-          {/* Layer 2: the deep field. It belongs here and only here — on the
+        {/* Layer 2: the deep field. It belongs here and only here — on the
             ground, in the same plane as the ramp. */}
-          <ScalesBackground variant="deepField" />
+        <ScalesBackground variant="deepField" />
 
-          {/* Layer 3: Bottom fade gradient. Ends on the ramp's own floor rather
+        {/* Layer 3: Bottom fade gradient. Ends on the ramp's own floor rather
             than the old flat ground, which would have lightened the abyss. */}
-          <LinearGradient
-            colors={['transparent', semantic.water.gradient[1]]}
-            style={styles.bottomFadeGradient}
-            pointerEvents="none"
-          />
-        </BlurTargetView>
+        <LinearGradient
+          colors={['transparent', semantic.water.gradient[1]]}
+          style={styles.bottomFadeGradient}
+          pointerEvents="none"
+        />
+      </BlurTargetView>
 
-        {/* Tab screens fill the remaining space */}
-        <DeveloperModeProvider value={{ developerNetworks }}>
-          <BlurTargetProvider value={blurTargetRef}>
-            <Tabs
-              tabBar={() => null}
-              screenOptions={{
-                headerShown: false,
-                tabBarStyle: { display: 'none' },
+      {/* Tab screens fill the remaining space */}
+      <DeveloperModeProvider value={{ developerNetworks }}>
+        <BlurTargetProvider value={blurTargetRef}>
+          <Tabs
+            tabBar={() => null}
+            screenOptions={{
+              headerShown: false,
+              tabBarStyle: { display: 'none' },
+            }}
+          >
+            <Tabs.Screen name="index" options={{ title: t('tabs.home', 'Home') }} />
+            <Tabs.Screen
+              name="swap"
+              options={{
+                title: t('tabs.swap', 'Swap'),
+                href: null,
               }}
-            >
-              <Tabs.Screen name="index" options={{ title: t('tabs.home', 'Home') }} />
-              <Tabs.Screen
-                name="swap"
-                options={{
-                  title: t('tabs.swap', 'Swap'),
-                  href: null,
-                }}
-              />
-            </Tabs>
-          </BlurTargetProvider>
-        </DeveloperModeProvider>
-      </View>
-    </TaskChromeProvider>
+            />
+          </Tabs>
+        </BlurTargetProvider>
+      </DeveloperModeProvider>
+    </View>
   );
 }
 

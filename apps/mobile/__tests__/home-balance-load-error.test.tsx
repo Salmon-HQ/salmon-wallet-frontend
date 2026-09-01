@@ -145,7 +145,6 @@ jest.mock('../src/components', () => {
         ))}
       </View>
     ),
-    PowerupsFab: () => <View testID="powerups-fab" />,
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
     TokenAbout: () => <View />,

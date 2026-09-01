@@ -4,8 +4,8 @@
  * The rule is a navigation contract, not a per-screen decision: Wallets,
  * Activity and each settings sub-screen slide in from the right and leave the
  * way they came, and the horizontal gesture is that motion run by hand.
- * Powerups is the one exception, and it is an exception on purpose — it is a
- * full-height presentation that covers the Home header.
+ * Powerups is the one exception, and it is an exception on purpose — it rises
+ * from the bottom over the Home header, as a plain screen of the same stack.
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
@@ -30,7 +30,7 @@ jest.mock('expo-router', () => {
     return ReactActual.createElement(ReactActual.Fragment, null, children);
   };
   Stack.Screen = Screen;
-  return { Stack, useRouter: () => ({ replace: jest.fn() }) };
+  return { Stack, useRouter: () => ({ replace: jest.fn() }), usePathname: () => '/' };
 });
 
 jest.mock('@salmon/shared', () => ({
@@ -61,11 +61,15 @@ jest.mock('../../src/components', () => ({
   LockContent: () => null,
   DepthBackground: () => null,
   ScalesBackground: () => null,
+  PowerupsFab: () => null,
+}));
+
+jest.mock('../../hooks/useTabChrome', () => ({
+  useTabChrome: () => ({ floatingBottomOffset: 0 }),
 }));
 
 import AppLayout from '../../app/(app)/_layout';
-import SettingsLayout, {
-} from '../../app/(app)/settings/_layout';
+import SettingsLayout from '../../app/(app)/settings/_layout';
 
 describe('the app stack', () => {
   beforeEach(() => {
@@ -99,14 +103,16 @@ describe('the app stack', () => {
     expect(screensByName.send).toBeUndefined();
   });
 
-  it('keeps Powerups the one bottom-up presentation', () => {
+  it('keeps Powerups the one bottom-up screen — a screen of this stack, not a modal', () => {
     render(<AppLayout />);
 
     expect(screensByName.powerups).toMatchObject({
-      presentation: 'fullScreenModal',
       animation: 'slide_from_bottom',
       gestureDirection: 'vertical',
     });
+    // No `presentation`: a modal is its own native window, and nothing —
+    // neither the lock overlay nor the powerups control — can float above one.
+    expect(screensByName.powerups).not.toHaveProperty('presentation');
   });
 
   it('gives the settings sub-stack the same right slide', () => {
@@ -121,7 +127,7 @@ describe('the app stack', () => {
     // An initialRouteName made pushes toward the navigator stack a fresh
     // instance showing the list instead of the tapped panel; a cold sub-route
     // gets out via the panel's replace('/settings') fallback instead.
-     
+
     const layoutModule = require('../../app/(app)/settings/_layout');
     expect(layoutModule.unstable_settings).toBeUndefined();
   });

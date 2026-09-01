@@ -3,20 +3,20 @@
  *
  * The launcher sheet is gone: a sheet left the Home header showing above it,
  * and the catalogue is a place you go rather than a panel you peek at. This
- * is a full-height screen presented from the bottom, so it covers Home
- * entirely, and the same FAB that opened it sits in the same spot rotated to
- * a close mark — one control, not two.
+ * is a full-height screen that rises from the bottom, so it covers Home
+ * entirely, and the FAB that opened it — mounted above the stack, never
+ * unmounted — turns to a close mark as the screen rises. One control, one
+ * instance.
  *
  * There is no back well: the FAB, the system back and the swipe are the three
  * ways out, and a chevron would be a fourth that means the same thing.
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import {
   borderRadius,
-  useAccountsContext,
   fontFamilyNative,
   fontSize,
   lineHeight,
@@ -32,7 +32,6 @@ import {
   IconBubble,
   ListRow,
   PowerupBadge,
-  PowerupsFab,
   ScalesBackground,
   ScreenHeader,
   SectionLabel,
@@ -67,37 +66,25 @@ function matchesFilter(powerup: Powerup, filter: FilterKey): boolean {
 export default function PowerupsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  // `topInset` rather than a `SafeAreaView`: this screen is presented as a
-  // `fullScreenModal`, so its native views hang off a separate view
-  // controller and the native `SafeAreaView` finds no `SafeAreaProvider`
-  // above it — it padded 0 and the title landed under the clock. The JS
-  // context crosses the React tree regardless of the native hierarchy.
-  // Top only: the bottom inset is already inside `floatingBottomOffset`
-  // (FAB) and `scrollBottomPadding` (content), so padding it here too would
-  // count it twice.
-  const { topInset, scrollBottomPadding, floatingBottomOffset } = useTabChrome();
+  // `topInset` rather than a `SafeAreaView`: the hook is already here for the
+  // scroll padding, so the inset costs nothing and a wrapper view would.
+  // (The screen is a plain stack screen now, so a native `SafeAreaView` would
+  // in fact resolve — it just would not buy anything.) Top only: the bottom
+  // inset is already inside `scrollBottomPadding`, so padding it here too
+  // would count it twice.
+  const { topInset, scrollBottomPadding } = useTabChrome();
   const developerMode = useDeveloperMode();
 
-  // The lock overlay mounts in `(app)/_layout.tsx`, above the whole stack —
-  // that covers every plain pushed screen (Wallets, Activity). Powerups is
-  // the one exception: `presentation: 'fullScreenModal'` (see the Stack
-  // config in `(app)/_layout.tsx`) gives iOS its own native window, stacked
-  // above the entire React tree, so no React-level overlay — however high —
-  // can paint over it. This screen has to close itself instead.
-  const [{ locked }] = useAccountsContext();
-  useEffect(() => {
-    if (locked) router.back();
-  }, [locked, router]);
+  // No close-on-lock effect: this is a plain screen of the `(app)` stack now,
+  // so the lock overlay in `(app)/_layout.tsx` covers it like every other
+  // pushed screen.
 
   const [filter, setFilter] = useState<FilterKey>('all');
   const [query, setQuery] = useState('');
 
   // The mock catalogue is developer-only: without the flag the screen shows
   // the one powerup the wallet can actually open, and says so everywhere else.
-  const catalogue = useMemo(
-    () => getPowerups({ includeMocks: developerMode }),
-    [developerMode]
-  );
+  const catalogue = useMemo(() => getPowerups({ includeMocks: developerMode }), [developerMode]);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -157,11 +144,7 @@ export default function PowerupsScreen() {
         title={t('powerups.browse_title')}
         subtitle={t('powerups.browse_subtitle')}
         titleGlyph={
-          <LightningIcon
-            weight="bold"
-            size={ms(TITLE_GLYPH_SIZE)}
-            color={semantic.accent.ink}
-          />
+          <LightningIcon weight="bold" size={ms(TITLE_GLYPH_SIZE)} color={semantic.accent.ink} />
         }
       />
 
@@ -297,8 +280,9 @@ export default function PowerupsScreen() {
         })}
       </ScrollView>
 
-      {/* The same control that opened the screen, in the same spot, turned. */}
-      <PowerupsFab open onPress={() => router.back()} bottomOffset={floatingBottomOffset} />
+      {/* The control that opened this screen floats above the whole stack (see
+          `(app)/_layout.tsx`) — the same mounted button, turned, not a second
+          one drawn here. */}
     </View>
   );
 }

@@ -7,7 +7,6 @@
  * - PortfolioSubTabs: in-page "Portfolio | NFTs" row (the bottom tab bar is gone)
  * - Portfolio content: TokenList, or the Bitcoin chart/market/about column
  * - NFTs content: NftsTab
- * - PowerupsFab: the floating `+` that opens the Powerups browse screen
  *
  * Features:
  * - Pull-to-refresh for balance updates
@@ -70,7 +69,6 @@ import {
   BalanceHeader,
   NftsTab,
   PortfolioSubTabs,
-  PowerupsFab,
   PriceChart,
   ReceiveSheet,
   TokenAbout,
@@ -678,7 +676,8 @@ export default function HomeScreen() {
         // developer-mode user on devnet back to mainnet every time they opened
         // NFTs. The whole Solana family counts, and the snap stays one-way —
         // if the active chain is already Solana, nothing moves.
-        const activeBlockchain = blockchainBalances[activeBlockchainIndex]?.network.blockchain ?? '';
+        const activeBlockchain =
+          blockchainBalances[activeBlockchainIndex]?.network.blockchain ?? '';
         if (!activeBlockchain.startsWith('solana')) {
           const solanaIndex = blockchainBalances.findIndex((balance) =>
             balance.network.blockchain.startsWith('solana')
@@ -700,13 +699,6 @@ export default function HomeScreen() {
   // CORE 16 lands in a later lote; the control renders and does nothing until
   // then, so the row's geometry is already the final one.
   const handlePortfolioVisibilityPress = useCallback(() => {}, []);
-
-  // The launcher sheet is gone: the FAB pushes the browse screen, which
-  // mounts its own FAB in the same spot already turned. The two instances read
-  // as one control, so Home does not track an open state at all.
-  const handlePowerupsPress = useCallback(() => {
-    router.push('/powerups');
-  }, [router]);
 
   // The sticky sub-tab row rides the NFT grid's own scroll offset: it starts
   // directly under the balance block and stops once it reaches the chrome, so
@@ -1050,8 +1042,6 @@ export default function HomeScreen() {
               {topFade}
             </View>
           )}
-
-          <PowerupsFab onPress={handlePowerupsPress} bottomOffset={floatingBottomOffset} />
         </Reanimated.View>
       )}
 

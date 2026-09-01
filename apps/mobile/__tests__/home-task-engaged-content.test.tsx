@@ -1,8 +1,10 @@
 /**
  * The home content leaves and returns with the verb when a task engages the
  * shell (DESIGN.md §The sink and the float). The balance block, the sub-tab row,
- * the content and the powerups FAB are content, not chrome: while a flow owns
- * the screen they are unmounted, so the flow finds an empty home behind it.
+ * the content are content, not chrome: while a flow owns the screen they are
+ * unmounted, so the flow finds an empty home behind it. The powerups FAB obeys
+ * the same rule from a level up now — it mounts in `(app)/_layout.tsx` and
+ * reads the same signal (`powerups-fab.test.tsx`).
  */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
@@ -153,7 +155,6 @@ jest.mock('../src/components', () => {
         ))}
       </View>
     ),
-    PowerupsFab: () => <View testID="powerups-fab" />,
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
     TokenAbout: () => <View />,

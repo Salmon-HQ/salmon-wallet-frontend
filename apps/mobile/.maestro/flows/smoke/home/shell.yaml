@@ -39,9 +39,12 @@ appId: io.salmonwallet.app
 - waitForAnimationToEnd:
     timeout: 5000
 
-# The `+` pushes POWERUPS 02 · Browse as a full-height screen. The same FAB
-# stays in the same spot, turned to the close mark, and taps again to dismiss —
-# one control, so the flow uses one selector for both directions.
+# The `+` pushes POWERUPS 02 · Browse as a full-height screen. The FAB is
+# mounted ONCE, above the stack (`(app)/_layout.tsx`), so it stays in the same
+# spot across both routes, turned to the close mark, and taps again to dismiss.
+# One mounted instance means `id: powerups-fab` can never match two views —
+# it used to be mounted twice (Home's and the browse screen's) and only the
+# fullScreenModal window kept the two apart.
 - tapOn:
     id: 'powerups-fab'
 - extendedWaitUntil:
