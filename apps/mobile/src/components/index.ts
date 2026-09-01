@@ -316,6 +316,7 @@ export type { SettingsScreenLayoutProps } from './SettingsScreenLayout';
 
 // Settings Selectors
 export { LanguageSelector } from './SettingsSelectors/LanguageSelector';
+export { AppearanceSelector } from './SettingsSelectors/AppearanceSelector';
 export { NetworkSelector } from './SettingsSelectors/NetworkSelector';
 export { CurrencySelector } from './SettingsSelectors/CurrencySelector';
 export { ExplorerSelector } from './SettingsSelectors/ExplorerSelector';

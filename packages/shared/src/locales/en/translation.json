@@ -196,6 +196,13 @@
     "security_notice": "Salmon Wallet team will never ask for your seed phrase or private keys. Never share this information with anyone.",
     "security_notice_title": "Never share your keys",
     "currency": "Display Currency",
+    "appearance": "Appearance",
+    "appearance_options": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "appearance_system_hint": "Follows your device",
     "backup": "Backup Seed Phrase",
     "private_key": "Private Key",
     "select_network": "Select Network",

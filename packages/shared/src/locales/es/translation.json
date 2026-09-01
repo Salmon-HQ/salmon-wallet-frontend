@@ -196,6 +196,13 @@
     "security_notice": "El equipo de Salmon Wallet nunca te va a pedir tu frase de recuperación ni tus claves privadas. No compartas esta información con nadie.",
     "security_notice_title": "Nunca compartas tus claves",
     "currency": "Moneda de visualización",
+    "appearance": "Apariencia",
+    "appearance_options": {
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro"
+    },
+    "appearance_system_hint": "Sigue a tu dispositivo",
     "backup": "Respaldar Seed Phrase",
     "private_key": "Clave Privada",
     "select_network": "Seleccionar Red",

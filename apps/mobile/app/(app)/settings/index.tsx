@@ -17,6 +17,7 @@ import {
   ArrowSquareOutIcon,
   CaretRightIcon,
   ChartBarIcon,
+  CircleHalfIcon,
   CodeIcon,
   InfoIcon,
   KeyIcon,
@@ -36,6 +37,7 @@ import {
   useAccountsContext,
   useAnalyticsConsent,
   useCurrencyContext,
+  useTheme,
   useUserConfig,
   getSettingsItemTestId,
   fontFamilyNative,
@@ -98,6 +100,7 @@ const SETTINGS_GROUPS: SettingsGroup[] = [
       { id: 'language', icon: TranslateIcon, labelKey: 'settings.display_language' },
       { id: 'currency', icon: MoneyIcon, labelKey: 'settings.currency' },
       { id: 'explorer', icon: ArrowSquareOutIcon, labelKey: 'settings.select_explorer' },
+      { id: 'appearance', icon: CircleHalfIcon, labelKey: 'settings.appearance' },
     ],
   },
   {
@@ -163,9 +166,19 @@ export default function SettingsScreenIndex() {
   const { consent: analyticsConsent, setConsent: setAnalyticsConsent } = useAnalyticsConsent();
   const { currentLanguage } = useLanguage();
   const [{ currency }] = useCurrencyContext();
+  const { preference: appearancePreference } = useTheme();
   const { setEnableBiometric } = useBiometricAuth();
 
-  // What the three choosable rows currently read. Proper nouns and a currency
+  const appearanceLabels: Record<typeof appearancePreference, string> = useMemo(
+    () => ({
+      system: t('settings.appearance_options.system', 'System'),
+      light: t('settings.appearance_options.light', 'Light'),
+      dark: t('settings.appearance_options.dark', 'Dark'),
+    }),
+    [t]
+  );
+
+  // What the four choosable rows currently read. Proper nouns and a currency
   // code — identical in both languages, so the list states the user's own
   // choice without inventing copy.
   const rowValues: Partial<Record<RowId, string | undefined>> = useMemo(
@@ -173,8 +186,9 @@ export default function SettingsScreenIndex() {
       language: LANGUAGE_NAMES[currentLanguage as LanguageCode] || currentLanguage,
       currency: currency?.toUpperCase(),
       explorer: explorer?.name,
+      appearance: appearanceLabels[appearancePreference],
     }),
-    [currentLanguage, currency, explorer]
+    [currentLanguage, currency, explorer, appearanceLabels, appearancePreference]
   );
 
   const handleRemoveAllWallets = useCallback(() => {

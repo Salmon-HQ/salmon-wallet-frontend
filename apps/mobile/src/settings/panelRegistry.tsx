@@ -20,6 +20,7 @@ import {
   useAvailableNetworks,
   useCurrencyContext,
   useAddressbook,
+  useTheme,
   AddressbookError,
   useOpenLink,
   buildNetworkListFromAccount,
@@ -31,6 +32,7 @@ import {
   type AddressInput,
   type CurrencyCode,
   type LanguageCode,
+  type AppearancePreference,
   type ExplorerSelectorItem,
   type NetworkSelectorItem,
   type TrustedAppItem,
@@ -45,6 +47,7 @@ import {
   LanguageSelector,
   CurrencySelector,
   ExplorerSelector,
+  AppearanceSelector,
   NetworkSelector,
   TrustedAppsSelector,
   SupportSelector,
@@ -97,6 +100,7 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
 
   const { currentLanguage, availableLanguages, changeLanguage } = useLanguage();
   const [{ currency }, { changeCurrency }] = useCurrencyContext();
+  const { preference: appearancePreference, setPreference: setAppearancePreference } = useTheme();
   const { allNetworks } = useAvailableNetworks({
     activeBlockchainAccount: userConfigAccount,
     developerNetworks,
@@ -236,6 +240,16 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
           />
         );
       },
+      appearance: ({ onBack }) => (
+        <AppearanceSelector
+          activePreference={appearancePreference}
+          onSelectPreference={async (pref: AppearancePreference) => {
+            await setAppearancePreference(pref);
+            onBack();
+          }}
+          onBack={onBack}
+        />
+      ),
       explorer: ({ onBack }) => {
         const explorerItems: ExplorerSelectorItem[] = explorers.map((e) => ({
           key: e.key,
@@ -442,6 +456,8 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
       changeLanguage,
       currency,
       changeCurrency,
+      appearancePreference,
+      setAppearancePreference,
       explorers,
       explorer,
       changeExplorer,

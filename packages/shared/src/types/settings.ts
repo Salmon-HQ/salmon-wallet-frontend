@@ -13,6 +13,7 @@ export type SettingsScreen =
   | 'network'
   | 'language'
   | 'currency'
+  | 'appearance'
   | 'about'
   | 'backup'
   | 'privateKey'
@@ -171,6 +172,25 @@ export interface LanguageSelectorBaseProps {
   activeLanguageCode: string;
   /** Called when the user selects a language */
   onSelectLanguage: (code: string) => void;
+  /** Called when the user navigates back */
+  onBack: () => void;
+}
+
+// ============================================================================
+// Appearance Selector
+// ============================================================================
+
+/** A theme preference option as displayed in the appearance selector UI. */
+export type AppearancePreference = 'system' | 'light' | 'dark';
+
+/**
+ * Base props shared between mobile and extension AppearanceSelector components.
+ */
+export interface AppearanceSelectorBaseProps {
+  /** Currently active preference */
+  activePreference: AppearancePreference;
+  /** Called when the user selects a preference */
+  onSelectPreference: (preference: AppearancePreference) => void;
   /** Called when the user navigates back */
   onBack: () => void;
 }
@@ -362,6 +382,7 @@ export const SETTINGS_ITEM_SLUGS: Record<string, string> = {
   privateKey: 'private-key',
   language: 'display-language',
   currency: 'display-currency',
+  appearance: 'appearance',
   explorer: 'block-explorer',
   addressBook: 'address-book',
   trustedApps: 'trusted-apps',

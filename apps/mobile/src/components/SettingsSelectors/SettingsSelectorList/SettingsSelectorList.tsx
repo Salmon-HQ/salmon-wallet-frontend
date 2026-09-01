@@ -38,8 +38,8 @@ export interface SettingsSelectorListProps<T> {
   onSelect: (item: T) => void;
   /** Primary display text */
   getPrimaryText: (item: T) => string;
-  /** Optional secondary display text */
-  getSecondaryText?: (item: T) => string;
+  /** Optional secondary display text (return undefined to omit the row's subtitle) */
+  getSecondaryText?: (item: T) => string | undefined;
   /** Optional custom element before the text (e.g., currency symbol) */
   renderLeadingElement?: (item: T) => React.ReactNode;
   /** Show loading spinner instead of items */
