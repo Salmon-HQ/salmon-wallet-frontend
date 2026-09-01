@@ -1,21 +1,27 @@
 /**
- * BackupPanel – Backup/Export seed phrase panel.
- * Extracted from the route file for use in the SettingsPanelStack.
+ * BackupPanel — the settings surface that re-shows a wallet's seed phrase.
+ *
+ * The phrase is exhibited on `SeedWordGrid`, the same primitive the onboarding
+ * grid uses (DESIGN.md §Hierarchy, The Seed Phrase Rule): bedrock cells,
+ * mono words, tertiary numbers, one implementation. Everything around it is
+ * kit — a `WarningNotice` for the standing warning, a bedrock cover for the
+ * reveal gate, kit buttons — handed flat to `SettingsScreenLayout`.
+ *
+ * The gate itself is unchanged: an unlocked session is not proof of identity.
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { EyeIcon, WarningIcon, iconSize } from '../../icons';
+import { EyeIcon, iconSize } from '../../icons';
 import { useTranslation } from 'react-i18next';
 
 import {
   borderRadius,
-  colors,
   fontFamilyNative,
   fontSize,
-  fontWeight,
   lineHeight,
+  s,
   semantic,
   spacing,
   useAccountsContext,
@@ -25,6 +31,7 @@ import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 import { SettingsScreenLayout } from '../SettingsScreenLayout';
 import { PrimaryButton, SecondaryButton } from '../Button';
 import { ConfirmSheet } from '../ConfirmSheet';
+import { SeedWordGrid } from '../SeedPhrase';
 import { WarningNotice } from '../WarningNotice';
 import { useSecretScreen } from '../../../hooks/useSecretScreen';
 
@@ -34,6 +41,10 @@ interface BackupPanelProps {
   authenticateWithBiometric?: () => Promise<string | null>;
 }
 
+/** What a covered cell shows. Same character count for every word, so the
+ *  covered grid gives away nothing about the phrase's shape. */
+const MASK = '••••••';
+
 export function BackupPanel({
   onBack,
   biometricAvailable,
@@ -41,9 +52,9 @@ export function BackupPanel({
 }: BackupPanelProps) {
   const { t } = useTranslation();
 
-  // This panel renders its own word grid rather than SeedWordGrid, so it has
-  // to opt in explicitly. Protection covers the whole panel, not just the
-  // revealed state — the mnemonic is in memory and one tap away throughout.
+  // `SeedWordGrid` protects the frames it is mounted for; the panel holds the
+  // mnemonic in memory for its whole lifetime, including before the reveal, so
+  // it opts in on its own behalf too.
   useSecretScreen('backup-panel');
 
   const [accountState, accountActions] = useAccountsContext();
@@ -60,6 +71,10 @@ export function BackupPanel({
   // An account imported from a private key has no phrase behind it: without
   // this the screen renders an empty grid under a "tap to reveal" overlay.
   const hasNoMnemonic = words.length === 0;
+  const shownWords = useMemo(
+    () => (showSeedPhrase ? words : words.map(() => MASK)),
+    [showSeedPhrase, words]
+  );
 
   // An unlocked session is not proof of identity — it only proves the phone was
   // left open. Biometrics count as the same proof as the password here, so a
@@ -100,20 +115,20 @@ export function BackupPanel({
 
   return (
     <SettingsScreenLayout title={t('general.seed_phrase')} onBack={onBack}>
-      <View style={styles.warningContainer}>
-        <WarningIcon size={iconSize.md} color={semantic.status.warning} />
-        <Text style={styles.warningText}>{t('wallet.create.messageBody')}</Text>
-      </View>
+      <WarningNotice tone="warning" title={t('wallet.create.messageTitle')}>
+        {t('wallet.create.messageBody')}
+      </WarningNotice>
 
       {hasNoMnemonic ? (
-        <Text style={styles.warningText} testID="backup-no-seed-phrase">
+        <Text style={styles.emptyText} testID="backup-no-seed-phrase">
           {t('settings.no_seed_phrase')}
         </Text>
       ) : (
         <View style={styles.seedContainer} testID="backup-seed-phrase">
+          <SeedWordGrid words={shownWords} columns={3} />
           {!showSeedPhrase && (
             <TouchableOpacity
-              style={styles.revealOverlay}
+              style={styles.revealCover}
               onPress={handleReveal}
               activeOpacity={0.8}
               testID="backup-seed-reveal-overlay"
@@ -123,38 +138,20 @@ export function BackupPanel({
               <Text style={styles.revealText}>{t('settings.wallets.tap_to_reveal')}</Text>
             </TouchableOpacity>
           )}
-          <View style={styles.wordsGrid}>
-            {words.map((word, index) => (
-              <View key={index} style={styles.wordContainer}>
-                <Text style={styles.wordIndex}>{index + 1}</Text>
-                <Text style={styles.wordText}>{showSeedPhrase ? word : '******'}</Text>
-              </View>
-            ))}
-          </View>
         </View>
       )}
 
       {showSeedPhrase && !hasNoMnemonic && (
         <View testID="backup-seed-clipboard-warning">
-          <WarningNotice
-            tone="warning"
-            title={t('settings.clipboard_warning_title')}
-            style={styles.clipboardWarning}
-          >
+          <WarningNotice tone="warning" title={t('settings.clipboard_warning_title')}>
             {t('settings.clipboard_warning_description')}
           </WarningNotice>
         </View>
       )}
 
-      {copyFailed && (
-        <WarningNotice
-          tone="error"
-          title={t('settings.copy_failed')}
-          style={styles.copyFailedNotice}
-        />
-      )}
+      {copyFailed && <WarningNotice tone="error" title={t('settings.copy_failed')} />}
 
-      <View style={styles.buttonContainer}>
+      <View style={styles.actions}>
         <SecondaryButton
           onPress={handleCopy}
           disabled={!showSeedPhrase}
@@ -182,89 +179,35 @@ export function BackupPanel({
 }
 
 const styles = StyleSheet.create({
-  warningContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: semantic.status.warningTint,
-    borderRadius: borderRadius.r2,
-    padding: spacing.md,
-    marginBottom: spacing.xl,
-    gap: spacing.sm,
-  },
-  warningText: {
-    flex: 1,
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
-    lineHeight: fontSize.body * lineHeight.snug,
-  },
-  // The Bedrock Rule (DESIGN.md): a surface that exhibits a seed phrase is
-  // `surface.bedrock`, α 1.00 — never a translucent card that lets the water
-  // show through the words.
   seedContainer: {
     position: 'relative',
-    backgroundColor: semantic.surface.bedrock,
-    borderRadius: borderRadius.r3,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
   },
-  revealOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.overlay.dark,
+  // The Bedrock Rule (DESIGN.md): the cover over an unrevealed phrase is
+  // opaque bedrock, not a translucent scrim — a scrim over masked cells reads
+  // as a loading state, and it lets the water column through the gate.
+  revealCover: {
+    ...StyleSheet.absoluteFillObject,
+    // Declared, not implied by sibling order: a reorder must not uncover the gate.
+    zIndex: 10,
+    backgroundColor: semantic.surface.bedrock,
     borderRadius: borderRadius.r3,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
-    gap: spacing.sm,
+    gap: s(spacing.sm),
   },
   revealText: {
     color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.bodyLg,
+    fontSize: s(fontSize.bodyLg),
   },
-  wordsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  emptyText: {
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: s(fontSize.body),
+    lineHeight: s(fontSize.body) * lineHeight.snug,
   },
-  wordContainer: {
-    width: '48%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background.tertiary,
-    borderRadius: borderRadius.r1,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  // Seed Phrase Rule (DESIGN.md): cell numbers are `text.tertiary` at label
-  // size so they are never mistaken for part of the phrase.
-  wordIndex: {
-    color: semantic.text.tertiary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.label,
-    marginRight: spacing.sm,
-    minWidth: 20,
-  },
-  // Seed Phrase Rule: Geist Mono at the larger mono size, weight 500.
-  wordText: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.mono,
-    fontWeight: fontWeight.medium,
-    fontSize: fontSize.monoLg,
-  },
-  buttonContainer: {
-    gap: spacing.md,
-  },
-  copyFailedNotice: {
-    marginBottom: spacing.lg,
-  },
-  clipboardWarning: {
-    marginBottom: spacing.lg,
+  actions: {
+    gap: s(spacing.md),
   },
 });
 

@@ -9,14 +9,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
 import {
   CaretRightIcon,
   EyeIcon,
@@ -28,13 +21,12 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import {
-  colors,
-  componentSizes,
   spacing,
-  borderRadius,
-  borderWidth,
   fontSize,
   fontFamilyNative,
+  lineHeight,
+  s,
+  vs,
   useAccountsContext,
   scanDerivedAccounts,
   validateMnemonic,
@@ -59,7 +51,11 @@ import {
 } from '@salmon/shared';
 import { SettingsScreenLayout } from '../../SettingsScreenLayout';
 import { PrimaryButton } from '../../Button';
+import { Card } from '../../Card';
 import { ConfirmSheet } from '../../ConfirmSheet';
+import { IconBubble } from '../../IconBubble';
+import { ListRow } from '../../ListRow';
+import { SectionLabel } from '../../SectionLabel';
 import { DerivedAccountCard } from '../../DerivedAccountCard';
 import { LoadingScreen } from '../../LoadingScreen';
 import { WarningNotice } from '../../WarningNotice';
@@ -72,6 +68,9 @@ import type { AccountAddPanelProps } from './types';
 // ============================================================================
 // Component
 // ============================================================================
+
+/** The leading well every settings row carries. */
+const ROW_BUBBLE_SIZE = 40;
 
 export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): React.ReactElement {
   const { t } = useTranslation();
@@ -406,144 +405,125 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
   // Render helpers
   // ========================================================================
 
-  const renderSelectMethod = () => (
-    <View style={styles.methodContainer}>
-      {canDerive && (
-        <TouchableOpacity
-          testID="account-add-method-derive"
-          accessibilityRole="button"
-          style={styles.methodCard}
-          onPress={handleSelectDerive}
-          activeOpacity={0.7}
-        >
-          <View style={styles.methodIcon}>
-            <TreeStructureIcon size={iconSize.xl} color={semantic.accent.ink} />
-          </View>
-          <View style={styles.methodInfo}>
-            <Text style={styles.methodTitle}>{t('settings.account_add.create_new')}</Text>
-            <Text style={styles.methodDescription}>
-              {t('settings.account_add.create_new_description')}
-            </Text>
-          </View>
-          <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
-        </TouchableOpacity>
-      )}
+  // Deriving is offered only when there is a phrase to derive from, so the
+  // list is built per render rather than declared at module scope.
+  const methods: {
+    id: string;
+    icon: React.ComponentType<{ size?: number; color?: string }>;
+    titleKey: string;
+    descriptionKey: string;
+    onPress: () => void;
+  }[] = [
+    ...(canDerive
+      ? [
+          {
+            id: 'derive',
+            icon: TreeStructureIcon,
+            titleKey: 'settings.account_add.create_new',
+            descriptionKey: 'settings.account_add.create_new_description',
+            onPress: handleSelectDerive,
+          },
+        ]
+      : []),
+    {
+      id: 'import',
+      icon: FileTextIcon,
+      titleKey: 'settings.account_add.import_seed',
+      descriptionKey: 'settings.account_add.import_seed_description',
+      onPress: handleSelectImport,
+    },
+    {
+      id: 'private-key',
+      icon: KeyIcon,
+      titleKey: 'settings.account_add.import_private_key',
+      descriptionKey: 'settings.account_add.import_private_key_description',
+      onPress: handleSelectImportPrivateKey,
+    },
+    {
+      id: 'watch-only',
+      icon: EyeIcon,
+      titleKey: 'settings.account_add.import_watch_only',
+      descriptionKey: 'settings.account_add.import_watch_only_description',
+      onPress: handleSelectImportWatchOnly,
+    },
+  ];
 
-      <TouchableOpacity
-        testID="account-add-method-import"
-        accessibilityRole="button"
-        style={styles.methodCard}
-        onPress={handleSelectImport}
-        activeOpacity={0.7}
-      >
-        <View style={styles.methodIcon}>
-          <FileTextIcon size={iconSize.xl} color={semantic.accent.ink} />
-        </View>
-        <View style={styles.methodInfo}>
-          <Text style={styles.methodTitle}>{t('settings.account_add.import_seed')}</Text>
-          <Text style={styles.methodDescription}>
-            {t('settings.account_add.import_seed_description')}
-          </Text>
-        </View>
-        <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
-      </TouchableOpacity>
+  const renderSelectMethod = () =>
+    methods.map((method) => (
+      <ListRow
+        key={method.id}
+        testID={`account-add-method-${method.id}`}
+        leading={
+          <IconBubble
+            size={ROW_BUBBLE_SIZE}
+            shape="rounded"
+            tone="accent-tint"
+            icon={method.icon}
+            iconSize={iconSize.md}
+          />
+        }
+        title={t(method.titleKey)}
+        subtitle={t(method.descriptionKey)}
+        onPress={method.onPress}
+        trailing={<CaretRightIcon size={iconSize.sm} color={semantic.text.tertiary} />}
+      />
+    ));
 
-      <TouchableOpacity
-        testID="account-add-method-private-key"
-        accessibilityRole="button"
-        style={styles.methodCard}
-        onPress={handleSelectImportPrivateKey}
-        activeOpacity={0.7}
-      >
-        <View style={styles.methodIcon}>
-          <KeyIcon size={iconSize.xl} color={semantic.accent.ink} />
-        </View>
-        <View style={styles.methodInfo}>
-          <Text style={styles.methodTitle}>{t('settings.account_add.import_private_key')}</Text>
-          <Text style={styles.methodDescription}>
-            {t('settings.account_add.import_private_key_description')}
-          </Text>
-        </View>
-        <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        testID="account-add-method-watch-only"
-        accessibilityRole="button"
-        style={styles.methodCard}
-        onPress={handleSelectImportWatchOnly}
-        activeOpacity={0.7}
-      >
-        <View style={styles.methodIcon}>
-          <EyeIcon size={iconSize.xl} color={semantic.accent.ink} />
-        </View>
-        <View style={styles.methodInfo}>
-          <Text style={styles.methodTitle}>{t('settings.account_add.import_watch_only')}</Text>
-          <Text style={styles.methodDescription}>
-            {t('settings.account_add.import_watch_only_description')}
-          </Text>
-        </View>
-        <CaretRightIcon size={iconSize.md} color={semantic.text.secondary} />
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderDeriveScan = () => (
-    <View>
-      {scanning ? (
-        <View style={styles.loadingContainer}>
+  const renderDeriveScan = () => {
+    if (scanning) {
+      return (
+        <View style={styles.scanState}>
           <ActivityIndicator size="large" color={semantic.accent.ink} />
-          <Text style={styles.loadingText}>{t('settings.account_add.scanning')}</Text>
+          <Text style={styles.scanStateText}>{t('settings.account_add.scanning')}</Text>
         </View>
-      ) : derivedAccounts.length === 0 && failedNetworks.length > 0 ? (
-        <View style={styles.scanErrorContainer} testID="derived-scan-error">
-          <Text style={styles.scanErrorTitle}>{t('wallet.derived.scan_failed_title')}</Text>
-          <Text style={styles.scanErrorBody}>{t('wallet.derived.scan_failed_body')}</Text>
-          <View style={styles.buttonContainer}>
-            <PrimaryButton onPress={handleSelectDerive} testID="derived-scan-retry-button">
-              {t('transactions.tapToRetry')}
-            </PrimaryButton>
-          </View>
+      );
+    }
+
+    if (derivedAccounts.length === 0 && failedNetworks.length > 0) {
+      return (
+        <View style={styles.stack} testID="derived-scan-error">
+          <WarningNotice tone="error" title={t('wallet.derived.scan_failed_title')}>
+            {t('wallet.derived.scan_failed_body')}
+          </WarningNotice>
+          <PrimaryButton onPress={handleSelectDerive} testID="derived-scan-retry-button">
+            {t('transactions.tapToRetry')}
+          </PrimaryButton>
         </View>
-      ) : (
-        <>
-          {failedNetworks.length > 0 && (
-            <WarningNotice
-              tone="warning"
-              title={t('wallet.derived.scan_partial')}
-              style={styles.partialWarning}
-            />
-          )}
-          {derivedAccounts.map((item: DerivedAccountInfo) => (
-            <DerivedAccountCard
-              key={`${item.networkId}-${item.address}`}
-              address={item.address}
-              networkName={item.networkName}
-              path={item.path}
-              balanceFormatted={item.balanceFormatted}
-              selected={selectedDerived?.address === item.address}
-              dimmed={item.balance === 0}
-              onToggle={() => handleDerivedSelect(item)}
-              blockchain={NETWORK_DISPLAY[item.networkId]?.blockchain}
-            />
-          ))}
-          <View style={styles.buttonContainer}>
-            <PrimaryButton
-              onPress={handleDerivedContinue}
-              disabled={!selectedDerived}
-              testID="account-add-derive-continue-button"
-            >
-              {t('actions.continue')}
-            </PrimaryButton>
-          </View>
-        </>
-      )}
-    </View>
-  );
+      );
+    }
+
+    return (
+      <View style={styles.stack}>
+        {failedNetworks.length > 0 && (
+          <WarningNotice tone="warning" title={t('wallet.derived.scan_partial')} />
+        )}
+        {derivedAccounts.map((item: DerivedAccountInfo) => (
+          <DerivedAccountCard
+            key={`${item.networkId}-${item.address}`}
+            address={item.address}
+            networkName={item.networkName}
+            path={item.path}
+            balanceFormatted={item.balanceFormatted}
+            selected={selectedDerived?.address === item.address}
+            dimmed={item.balance === 0}
+            onToggle={() => handleDerivedSelect(item)}
+            blockchain={NETWORK_DISPLAY[item.networkId]?.blockchain}
+          />
+        ))}
+        <PrimaryButton
+          onPress={handleDerivedContinue}
+          disabled={!selectedDerived}
+          testID="account-add-derive-continue-button"
+        >
+          {t('actions.continue')}
+        </PrimaryButton>
+      </View>
+    );
+  };
 
   const renderImportSeed = () => (
-    <View>
-      <Text style={styles.inputLabel}>{t('settings.account_add.import_seed')}</Text>
+    <View style={styles.stack}>
+      <SectionLabel variant="caps">{t('settings.account_add.import_seed')}</SectionLabel>
       <SeedPhraseEntry
         testID="account-add-seed"
         words={seedWords}
@@ -558,24 +538,18 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       ) : seedError ? (
         <Text style={styles.errorText}>{seedError}</Text>
       ) : null}
-      <View style={styles.buttonContainer}>
-        <PrimaryButton onPress={handleSeedSubmit} testID="account-add-seed-continue-button">
-          {t('actions.continue')}
-        </PrimaryButton>
-      </View>
+      <PrimaryButton onPress={handleSeedSubmit} testID="account-add-seed-continue-button">
+        {t('actions.continue')}
+      </PrimaryButton>
     </View>
   );
 
   const renderImportPrivateKey = () => (
-    <View>
-      <WarningNotice
-        tone="warning"
-        title={t('wallet.import.warning_title')}
-        style={styles.partialWarning}
-      >
-        <Text style={styles.methodDescription}>{t('wallet.import.warning_body')}</Text>
+    <View style={styles.stack}>
+      <WarningNotice tone="warning" title={t('wallet.import.warning_title')}>
+        {t('wallet.import.warning_body')}
       </WarningNotice>
-      <Text style={styles.inputLabel}>{t('wallet.import.label')}</Text>
+      <SectionLabel variant="caps">{t('wallet.import.label')}</SectionLabel>
       <PasswordInput
         testID="account-add-private-key-input"
         value={privateKeyImport.value}
@@ -587,71 +561,71 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
       />
       {/* One slot under the field: the hint stands where the error will stand,
           so the layout does not shift when a message replaces it. */}
-      {!privateKeyImport.error && <Text style={styles.inputHint}>{t('wallet.import.help')}</Text>}
+      {!privateKeyImport.error && <Text style={styles.hintText}>{t('wallet.import.help')}</Text>}
       {privateKeyImport.address && (
-        <View style={styles.resolvedAddress} testID="account-add-private-key-address">
-          <Text style={styles.methodDescription}>{t('wallet.import.resolved_address')}</Text>
-          <Text style={styles.methodTitle}>{getShortAddress(privateKeyImport.address)}</Text>
-        </View>
+        <Card padding="md" gap={spacing.xxs} testID="account-add-private-key-address">
+          <Text style={styles.hintText}>{t('wallet.import.resolved_address')}</Text>
+          <Text style={styles.addressText}>{getShortAddress(privateKeyImport.address)}</Text>
+        </Card>
       )}
-      <View style={styles.buttonContainer}>
-        <PrimaryButton
-          onPress={handlePrivateKeySubmit}
-          disabled={!privateKeyImport.hasInput || privateKeyImport.validating}
-          testID="account-add-private-key-continue-button"
-        >
-          {t('actions.continue')}
-        </PrimaryButton>
-      </View>
+      <PrimaryButton
+        onPress={handlePrivateKeySubmit}
+        disabled={!privateKeyImport.hasInput || privateKeyImport.validating}
+        testID="account-add-private-key-continue-button"
+      >
+        {t('actions.continue')}
+      </PrimaryButton>
     </View>
   );
 
   const renderImportWatchOnly = () => (
-    <View>
+    <View style={styles.stack}>
       {/* No warning notice and no masked field: an address is public. The
           private-key step's PasswordInput would imply otherwise. */}
-      <Text style={styles.inputLabel}>{t('wallet.watchOnly.label')}</Text>
-      <TextInput
-        testID="account-add-watch-only-input"
-        style={styles.input}
-        value={watchOnlyImport.value}
-        onChangeText={watchOnlyImport.setValue}
-        placeholder={t('wallet.watchOnly.placeholder')}
-        placeholderTextColor={semantic.text.tertiary}
-        autoFocus
-        returnKeyType="done"
-        onSubmitEditing={handleWatchOnlySubmit}
-      />
+      <SectionLabel variant="caps">{t('wallet.watchOnly.label')}</SectionLabel>
+      <Card padding="md">
+        <TextInput
+          testID="account-add-watch-only-input"
+          style={styles.addressInput}
+          value={watchOnlyImport.value}
+          onChangeText={watchOnlyImport.setValue}
+          placeholder={t('wallet.watchOnly.placeholder')}
+          placeholderTextColor={semantic.text.tertiary}
+          autoFocus
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="done"
+          onSubmitEditing={handleWatchOnlySubmit}
+        />
+      </Card>
       {/* One slot under the field: the hint stands where the error will
           stand, so the layout does not shift when a message replaces it. */}
       <Text
         testID="account-add-watch-only-message"
-        style={watchOnlyImport.error ? styles.errorText : styles.inputHint}
+        style={watchOnlyImport.error ? styles.errorText : styles.hintText}
       >
         {watchOnlyImport.error ? t(watchOnlyImport.error) : t('wallet.watchOnly.help')}
       </Text>
       {watchOnlyImport.address && (
-        <View style={styles.resolvedAddress} testID="account-add-watch-only-address">
-          <Text style={styles.methodDescription}>{t('wallet.watchOnly.resolved_address')}</Text>
-          <Text style={styles.methodTitle}>{getShortAddress(watchOnlyImport.address)}</Text>
-        </View>
+        <Card padding="md" gap={spacing.xxs} testID="account-add-watch-only-address">
+          <Text style={styles.hintText}>{t('wallet.watchOnly.resolved_address')}</Text>
+          <Text style={styles.addressText}>{getShortAddress(watchOnlyImport.address)}</Text>
+        </Card>
       )}
-      <View style={styles.buttonContainer}>
-        <PrimaryButton
-          onPress={handleWatchOnlySubmit}
-          disabled={!watchOnlyImport.hasInput}
-          testID="account-add-watch-only-continue-button"
-        >
-          {t('actions.continue')}
-        </PrimaryButton>
-      </View>
+      <PrimaryButton
+        onPress={handleWatchOnlySubmit}
+        disabled={!watchOnlyImport.hasInput}
+        testID="account-add-watch-only-continue-button"
+      >
+        {t('actions.continue')}
+      </PrimaryButton>
     </View>
   );
 
   const renderReauth = () => (
-    <View>
-      <Text style={styles.methodDescription}>{t('settings.account_add.reauth_body')}</Text>
-      <Text style={styles.inputLabel}>{t('lock.password_label', 'Password')}</Text>
+    <View style={styles.stack}>
+      <Text style={styles.bodyText}>{t('settings.account_add.reauth_body')}</Text>
+      <SectionLabel variant="caps">{t('lock.password_label', 'Password')}</SectionLabel>
       <PasswordInput
         testID="account-add-reauth-password"
         value={reauthPassword}
@@ -664,38 +638,36 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
         onSubmitEditing={handleReauthConfirm}
         autoFocus
       />
-      <View style={styles.buttonContainer}>
-        <PrimaryButton
-          onPress={handleReauthConfirm}
-          disabled={!reauthPassword || reauthChecking}
-          testID="account-add-reauth-confirm-button"
-        >
-          {t('settings.account_add.reauth_confirm')}
-        </PrimaryButton>
-      </View>
+      <PrimaryButton
+        onPress={handleReauthConfirm}
+        disabled={!reauthPassword || reauthChecking}
+        testID="account-add-reauth-confirm-button"
+      >
+        {t('settings.account_add.reauth_confirm')}
+      </PrimaryButton>
     </View>
   );
 
   const renderSetName = () => (
-    <View>
-      <Text style={styles.inputLabel}>{t('settings.account_add.set_name')}</Text>
-      <TextInput
-        testID="account-add-name-input"
-        style={styles.input}
-        value={accountName}
-        onChangeText={setAccountName}
-        placeholder={t('settings.account_add.set_name_placeholder')}
-        placeholderTextColor={semantic.text.tertiary}
-        autoFocus
-        maxLength={32}
-        returnKeyType="done"
-        onSubmitEditing={handleConfirm}
-      />
-      <View style={styles.buttonContainer}>
-        <PrimaryButton onPress={handleConfirm} testID="account-add-confirm-button">
-          {t('settings.account_add.confirm')}
-        </PrimaryButton>
-      </View>
+    <View style={styles.stack}>
+      <SectionLabel variant="caps">{t('settings.account_add.set_name')}</SectionLabel>
+      <Card padding="md">
+        <TextInput
+          testID="account-add-name-input"
+          style={styles.nameInput}
+          value={accountName}
+          onChangeText={setAccountName}
+          placeholder={t('settings.account_add.set_name_placeholder')}
+          placeholderTextColor={semantic.text.tertiary}
+          autoFocus
+          maxLength={32}
+          returnKeyType="done"
+          onSubmitEditing={handleConfirm}
+        />
+      </Card>
+      <PrimaryButton onPress={handleConfirm} testID="account-add-confirm-button">
+        {t('settings.account_add.confirm')}
+      </PrimaryButton>
     </View>
   );
 
@@ -761,108 +733,59 @@ export function AccountAddPanel({ onComplete, onBack }: AccountAddPanelProps): R
 // ============================================================================
 
 const styles = StyleSheet.create({
-  methodContainer: {
-    gap: spacing.md,
+  /**
+   * The inside of one step. 12 binds a label to its field and a field to its
+   * hint; the 20 between steps' blocks is the layout's own (DESIGN.md
+   * §Layout, the component gap).
+   */
+  stack: {
+    gap: s(spacing.md),
+  },
+  scanState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: vs(spacing['3xl']),
+    gap: s(spacing.md),
+  },
+  scanStateText: {
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: s(fontSize.bodyLg),
+  },
+  bodyText: {
+    color: semantic.text.secondary,
+    fontFamily: fontFamilyNative.regular,
+    fontSize: s(fontSize.body),
+    lineHeight: s(fontSize.body) * lineHeight.snug,
   },
   /** Matches PasswordInput's own error text, so hint and error share a slot. */
-  inputHint: {
+  hintText: {
     color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.xs,
-  },
-  resolvedAddress: {
-    marginTop: spacing.lg,
-    gap: spacing.xxs,
-  },
-  methodCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.r3,
-    padding: spacing.lg,
-  },
-  methodIcon: {
-    width: componentSizes.iconSize3XL,
-    height: componentSizes.iconSize3XL,
-    borderRadius: borderRadius.r2,
-    backgroundColor: colors.background.tertiary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  methodInfo: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  methodTitle: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.bodyLg,
-    marginBottom: spacing.xxs,
-  },
-  methodDescription: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing['3xl'],
-    gap: spacing.md,
-  },
-  loadingText: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-  },
-  buttonContainer: {
-    marginTop: spacing.xl,
-  },
-  scanErrorContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing['2xl'],
-  },
-  scanErrorTitle: {
-    color: semantic.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.bodyLg,
-    textAlign: 'center',
-  },
-  scanErrorBody: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-  },
-  partialWarning: {
-    marginBottom: spacing.md,
+    fontSize: s(fontSize.caption),
+    paddingHorizontal: s(spacing.xs),
   },
   errorText: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
-    marginTop: spacing.sm,
-    marginLeft: spacing.xs,
+    fontSize: s(fontSize.caption),
+    paddingHorizontal: s(spacing.xs),
   },
-  inputLabel: {
-    color: semantic.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.caption,
-    marginBottom: spacing.sm,
+  addressText: {
+    color: semantic.text.primary,
+    fontFamily: fontFamilyNative.mono,
+    fontSize: s(fontSize.mono),
   },
-  input: {
-    backgroundColor: colors.background.card,
-    borderRadius: borderRadius.r2,
-    borderWidth: borderWidth.thin,
-    borderColor: semantic.border.default,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+  // An address is read character by character, so the field it is typed into
+  // is mono like every other address surface in the app.
+  addressInput: {
+    color: semantic.text.primary,
+    fontFamily: fontFamilyNative.mono,
+    fontSize: s(fontSize.mono),
+  },
+  nameInput: {
     color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
+    fontSize: s(fontSize.bodyLg),
   },
 });

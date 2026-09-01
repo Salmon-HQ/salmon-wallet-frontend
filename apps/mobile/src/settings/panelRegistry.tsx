@@ -175,10 +175,12 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
           />
         );
       },
-      security: ({ onBack }) => (
+      security: ({ onBack, onNavigate }) => (
         <SecurityPanel
           onBack={onBack}
+          onNavigate={onNavigate}
           isBiometricAvailable={biometricState.isAvailable && biometricState.isEnrolled}
+          biometricType={biometricState.biometricType}
           isBiometricEnabled={enableBiometric}
           onToggleBiometric={async (enabled: boolean) => {
             await setEnableBiometric(enabled);

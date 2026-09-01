@@ -73,7 +73,7 @@ export function Card({
 
   if (!onPress) {
     return (
-      <View testID={testID} style={box}>
+      <View testID={testID} style={box} accessibilityLabel={accessibilityLabel}>
         {children}
       </View>
     );

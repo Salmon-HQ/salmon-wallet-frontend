@@ -109,6 +109,41 @@ jest.mock('@salmon/shared', () => ({
   },
 }));
 
+// No worklets runtime in Jest: the kit's animated blocks (IconBubble, the
+// pressable Card under every method row) need plain-JS stand-ins.
+jest.mock('react-native-reanimated', () => {
+  const ReactActual = require('react');
+  const { View: RNView } = require('react-native');
+  return {
+    __esModule: true,
+    default: {
+      View: RNView,
+      createAnimatedComponent: (Component: React.ComponentType<Record<string, unknown>>) =>
+        ReactActual.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+          ReactActual.createElement(Component, { ...props, ref })
+        ),
+    },
+    useSharedValue: (value: unknown) => ({ value }),
+    useAnimatedStyle: (fn: () => unknown) => fn(),
+    useReducedMotion: () => false,
+    withTiming: (target: unknown) => target,
+  };
+});
+
+jest.mock('../../../../hooks/usePressMotion', () => ({
+  usePressMotion: () => ({
+    pressStyle: {},
+    scale: { value: 1 },
+    pressHandlers: { onPressIn: () => {}, onPressOut: () => {} },
+    specular: { x: { value: 0 }, y: { value: 0 }, opacity: { value: 0 } },
+  }),
+}));
+
+jest.mock('../../PressSpecular', () => ({
+  PressSpecular: () => null,
+  SPECULAR_OPACITY: 0.12,
+}));
+
 jest.mock('../../SettingsScreenLayout', () => ({
   SettingsScreenLayout: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
