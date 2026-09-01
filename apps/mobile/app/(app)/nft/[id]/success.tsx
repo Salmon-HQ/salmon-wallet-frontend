@@ -80,7 +80,11 @@ export default function NftSuccessScreen() {
         ]}
         explorerUrl={explorerUrl ?? undefined}
         settling={successSettling}
-        primary={{ label: t('transaction.continue'), onPress: handleContinue, testID: 'tx-success-continue-button' }}
+        primary={{
+          label: t('transaction.continue'),
+          onPress: handleContinue,
+          testID: 'tx-success-continue-button',
+        }}
       />
     </SafeAreaView>
   );

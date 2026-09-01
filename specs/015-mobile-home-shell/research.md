@@ -37,20 +37,20 @@ aesthetics: `DESIGN.md` (deep-water first; a light mode follows later, so the
 
 ## Element map
 
-| # | `.pen` element | Today | Where | Change |
-|---|---|---|---|---|
-| 1 | Wallet thumb + "Main Wallet" + `7xKf…9mQ2` | ✅ | `src/components/GateContainer/HeaderContent.tsx` (`wallet-header-account-switcher`, `-account-name`, `-copy-address`) | Keep switcher trigger; copy affordance TBD (not in `.pen`). |
-| 2 | Avatar top-right | ⚠️ | `HeaderContent.tsx` `wallet-header-settings-button` | Same slot, avatar instead of gear; opens `SettingsSheet` → CORE 11. |
-| 3 | "Total balance" + eye toggle | ✅ | `BalanceCard/BalanceCardCarousel.tsx` `onToggleVisibility` (`balance-eye-toggle`); state `hiddenBalance`/`toggleHidden` in `app/(app)/(tabs)/index.tsx` | Contract `BalanceCardPropsBase` (shared). |
-| 4 | `$12,480.62` | ✅ | `BalanceCardCarousel` `usdTotal` | Card with logo/caustics → plain number (DESIGN.md `balance` type style). |
-| 5 | "+2.8% this week" | ✅ | `BlockchainBalance.changePercent/changeAmount`, rendered in `BalanceCard.tsx` | Data exists. |
-| 6 | "History" pill | ✅ | `ActionButtonRow.tsx` `home-activity-button` → `TransactionHistorySheet` | Big 3rd button → pill; sheet → full screen (CORE 08). |
-| 7 | Dots + "→ BTC" | ✅ | `BalanceCardCarousel.tsx` `balance-carousel-dot-{i}`, `onBlockchainChange` | Per-chain carousel already exists. |
-| 8 | Send / Receive 42px circles | ✅ | `ActionButtonRow.tsx` `home-send-button`, `home-receive-button` → `SendSheet` / `ReceiveSheet` | Contract `ActionButtonRowPropsBase` (send/receive/activity). |
-| 9 | In-page tabs Portfolio \| NFTs | ⚠️ | Routes in `GlassTabBar`: `index`, `collectibles` | Bottom tab bar → in-page segmented; `collectibles.tsx` content becomes the NFTs tab. |
-| 10 | Portfolio visibility button (36px) | ❌ | none (no hide-token / spam / zero-balance logic in shared or mobile) | New → CORE 16. |
-| 11 | Asset row card | ✅ | `TokenList/TokenListItem.tsx` `token-row-{SYMBOL}`, `TokenLogo`, `TokenBadges` → `TokenInformationSheet` (→ CORE 02) | Row → card r16, pad 16. |
-| 12 | `+` FAB powerups | ❌ | none; `powerup` absent from `apps/mobile` and `packages/shared` | New. Swap today = `app/(app)/(tabs)/swap.tsx` + `SwapScreen` (hidden for watch-only). |
+| #   | `.pen` element                             | Today | Where                                                                                                                                                   | Change                                                                                |
+| --- | ------------------------------------------ | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 1   | Wallet thumb + "Main Wallet" + `7xKf…9mQ2` | ✅    | `src/components/GateContainer/HeaderContent.tsx` (`wallet-header-account-switcher`, `-account-name`, `-copy-address`)                                   | Keep switcher trigger; copy affordance TBD (not in `.pen`).                           |
+| 2   | Avatar top-right                           | ⚠️    | `HeaderContent.tsx` `wallet-header-settings-button`                                                                                                     | Same slot, avatar instead of gear; opens `SettingsSheet` → CORE 11.                   |
+| 3   | "Total balance" + eye toggle               | ✅    | `BalanceCard/BalanceCardCarousel.tsx` `onToggleVisibility` (`balance-eye-toggle`); state `hiddenBalance`/`toggleHidden` in `app/(app)/(tabs)/index.tsx` | Contract `BalanceCardPropsBase` (shared).                                             |
+| 4   | `$12,480.62`                               | ✅    | `BalanceCardCarousel` `usdTotal`                                                                                                                        | Card with logo/caustics → plain number (DESIGN.md `balance` type style).              |
+| 5   | "+2.8% this week"                          | ✅    | `BlockchainBalance.changePercent/changeAmount`, rendered in `BalanceCard.tsx`                                                                           | Data exists.                                                                          |
+| 6   | "History" pill                             | ✅    | `ActionButtonRow.tsx` `home-activity-button` → `TransactionHistorySheet`                                                                                | Big 3rd button → pill; sheet → full screen (CORE 08).                                 |
+| 7   | Dots + "→ BTC"                             | ✅    | `BalanceCardCarousel.tsx` `balance-carousel-dot-{i}`, `onBlockchainChange`                                                                              | Per-chain carousel already exists.                                                    |
+| 8   | Send / Receive 42px circles                | ✅    | `ActionButtonRow.tsx` `home-send-button`, `home-receive-button` → `SendSheet` / `ReceiveSheet`                                                          | Contract `ActionButtonRowPropsBase` (send/receive/activity).                          |
+| 9   | In-page tabs Portfolio \| NFTs             | ⚠️    | Routes in `GlassTabBar`: `index`, `collectibles`                                                                                                        | Bottom tab bar → in-page segmented; `collectibles.tsx` content becomes the NFTs tab.  |
+| 10  | Portfolio visibility button (36px)         | ❌    | none (no hide-token / spam / zero-balance logic in shared or mobile)                                                                                    | New → CORE 16.                                                                        |
+| 11  | Asset row card                             | ✅    | `TokenList/TokenListItem.tsx` `token-row-{SYMBOL}`, `TokenLogo`, `TokenBadges` → `TokenInformationSheet` (→ CORE 02)                                    | Row → card r16, pad 16.                                                               |
+| 12  | `+` FAB powerups                           | ❌    | none; `powerup` absent from `apps/mobile` and `packages/shared`                                                                                         | New. Swap today = `app/(app)/(tabs)/swap.tsx` + `SwapScreen` (hidden for watch-only). |
 
 ## Removed from Home
 
@@ -71,14 +71,14 @@ CORE 02 Asset detail · 03 Receive · 04 Send recipient (+04A wrong network,
 
 Rule: when the mock omits something a component has today, ask before dropping.
 
-| Delta | Ruling |
-|---|---|
-| Token rows: per-token price + 24h change | **Keep** (secondary line: ticker · price · change) |
-| Header avatar fallback: initials on per-account colour | **Drop** — salmon mark always when no image (as `.pen`) |
-| Balance change: absolute amount next to % | **Keep** ("+$61.45 · +2.8% 24h") |
-| Copy-address button in header | Keep |
-| Pull-to-refresh, top fade gradient, dev-mode network label | Keep |
-| Asset detail (CORE 02, later): chart time-range selector | **Keep** — owner's example; `PriceChart` periods stay |
+| Delta                                                      | Ruling                                                  |
+| ---------------------------------------------------------- | ------------------------------------------------------- |
+| Token rows: per-token price + 24h change                   | **Keep** (secondary line: ticker · price · change)      |
+| Header avatar fallback: initials on per-account colour     | **Drop** — salmon mark always when no image (as `.pen`) |
+| Balance change: absolute amount next to %                  | **Keep** ("+$61.45 · +2.8% 24h")                        |
+| Copy-address button in header                              | Keep                                                    |
+| Pull-to-refresh, top fade gradient, dev-mode network label | Keep                                                    |
+| Asset detail (CORE 02, later): chart time-range selector   | **Keep** — owner's example; `PriceChart` periods stay   |
 
 - Balance next-chain hint: arrow points in the swipe direction ("→ BTC" on Solana, "← SOL" on Bitcoin).
 - Tab ↔ chain coupling is one-way (owner ruling 2026-09-01, UX rationale: never block a
@@ -101,19 +101,20 @@ Rule: when the mock omits something a component has today, ask before dropping.
 
 ## Sheet vs screen — final inventory (owner rulings 2026-09-01)
 
-| Surface today | Ruling | Feature |
-|---|---|---|
-| `ReceiveSheet` | sheet | — |
-| `ConfirmSheet` | sheet | — |
-| `TokenSelectorModal` | sheet | — |
-| `PowerupsLauncherSheet` | sheet | 015 |
-| `TokenInformationSheet` | **screen** (CORE 02, keeps chart ranges, market data, about) | 017 |
-| `SendSheet` | **screens** CORE 04–07 | 017 |
-| `TransactionHistorySheet` | **screens** CORE 08 + 09 | 017 |
-| `NftDetailSheet` | **screen** | 017 |
-| `SettingsSheet` (gate) | **screen** + sub-screens, current IA restyled until the `.pen` CORE 11 is drawn (frame is empty today) | 016 |
-| `WalletSwitcherSheet` (gate) | **screen** CORE 10 (new: aggregated balance, include-in-total, rename, add) | 016 |
-| `NftSeeAllSheet`, `NftCarouselSection` (+skeleton) | **delete** — dead code, commented out in `NftsTab` | 015 cleanup |
+| Surface today                                      | Ruling                                                                                                 | Feature     |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------- |
+| `ReceiveSheet`                                     | sheet                                                                                                  | —           |
+| `ConfirmSheet`                                     | sheet                                                                                                  | —           |
+| `TokenSelectorModal`                               | sheet                                                                                                  | —           |
+| `PowerupsLauncherSheet`                            | sheet                                                                                                  | 015         |
+| `TokenInformationSheet`                            | **screen** (CORE 02, keeps chart ranges, market data, about)                                           | 017         |
+| `SendSheet`                                        | **screens** CORE 04–07                                                                                 | 017         |
+| `TransactionHistorySheet`                          | **screens** CORE 08 + 09                                                                               | 017         |
+| `NftDetailSheet`                                   | **screen**                                                                                             | 017         |
+| `SettingsSheet` (gate)                             | **screen** + sub-screens, current IA restyled until the `.pen` CORE 11 is drawn (frame is empty today) | 016         |
+| `WalletSwitcherSheet` (gate)                       | **screen** CORE 10 (new: aggregated balance, include-in-total, rename, add)                            | 016         |
+| `NftSeeAllSheet`, `NftCarouselSection` (+skeleton) | **delete** — dead code, commented out in `NftsTab`                                                     | 015 cleanup |
+
 - 2026-09-01 (afternoon): token badges removed everywhere on mobile (`TokenBadges`,
   `tokenTagMeta`, `TokenBadgesSection` deleted; shared `Token.tags` stays for web/ext).
   Header: profile picture (38, rounded) on the LEFT → wallet switcher; gear (36 circle)

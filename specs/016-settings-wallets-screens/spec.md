@@ -19,6 +19,7 @@ The top row (profile picture, wallet name + short address, gear) sits on the sam
 **Independent Test**: launch, unlock, open Send, cancel; watch the header.
 
 **Acceptance Scenarios**:
+
 1. **Given** Home, **When** any surface opens (Send, Receive, Powerups, Settings, Wallets), **Then** the header does not translate vertically and no panel unfolds from behind it.
 2. **Given** a task is engaged, **When** it starts and ends, **Then** the header uses the same sink/float beat as the content.
 3. **Given** the wallet is locked, **When** the lock screen shows, **Then** it fully covers Home and blocks touches exactly as today (unchanged).
@@ -32,6 +33,7 @@ Tapping the gear pushes a Settings screen with the current sections (Account: Ac
 **Independent Test**: gear → every entry → back.
 
 **Acceptance Scenarios**:
+
 1. **Given** Home, **When** the gear is tapped, **Then** a Settings screen pushes with `ScreenHeader` (back + title), screen padding, and rows built from the kit (`Card` + `ListRow`).
 2. **Given** Settings, **When** an entry is tapped, **Then** its sub-screen pushes; back returns to Settings; system back gesture works.
 3. **Given** a sub-screen that reveals secrets (Backup, Private key), **Then** `useSecretScreen` protection is unchanged.
@@ -45,6 +47,7 @@ Tapping the profile picture / name pushes a Wallets screen: title "Wallets", sub
 **Independent Test**: tap identity → Wallets → select another wallet → back to Home shows it.
 
 **Acceptance Scenarios**:
+
 1. **Given** Wallets, **When** a wallet card is tapped, **Then** it becomes active and the screen pops back to Home with that wallet.
 2. **Given** Wallets, **When** the include checkmark is toggled, **Then** the aggregated balance and the "N of M" line update; the choice persists.
 3. **Given** Wallets, **When** "Add wallet" is tapped, **Then** the SAME add-wallet flow that Settings → Accounts → Add opens (one implementation, two entry points); on completion the user lands back on Wallets with the new wallet active.

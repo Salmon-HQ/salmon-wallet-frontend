@@ -82,10 +82,7 @@ jest.mock('@salmon/shared', () => ({
     `${address.slice(0, chars)}...${address.slice(-chars)}`,
   useAccountsContext: () => [mockAccountState, {}],
   useBalance: () => mockBalanceState,
-  useCurrencyContext: () => [
-    { currency: 'usd' },
-    { formatValue: (value: number) => `$${value}` },
-  ],
+  useCurrencyContext: () => [{ currency: 'usd' }, { formatValue: (value: number) => `$${value}` }],
   // Real implementations — the mocked `api/services` module above is their
   // only external dependency, so exercising them here catches wiring bugs a
   // hand-stubbed hook return would hide.
@@ -137,15 +134,8 @@ jest.mock('../../src/components', () => {
       ReactActual.createElement(View, { testID: testID ?? 'token-detail-about' }),
     ScalesBackground: () => null,
     IconBubble: () => null,
-    KeyValueRow: ({
-      label,
-      value,
-      testID,
-    }: {
-      label: string;
-      value: string;
-      testID?: string;
-    }) => ReactActual.createElement(Text, { testID }, `${label}: ${value}`),
+    KeyValueRow: ({ label, value, testID }: { label: string; value: string; testID?: string }) =>
+      ReactActual.createElement(Text, { testID }, `${label}: ${value}`),
     ListRow: ({
       title,
       subtitle,
@@ -204,11 +194,13 @@ describe('token detail screen', () => {
     expect(screen.queryByTestId('redirect')).toBeNull();
 
     // Flush the query so no promise settles after the test tears down.
-    await waitFor(() => expect(mockGetTokenMarketChart).toHaveBeenCalledWith(
-      { coingeckoId: 'known-token', address: 'MintKnown11111111111111111111111111111111' },
-      30,
-      'usd'
-    ));
+    await waitFor(() =>
+      expect(mockGetTokenMarketChart).toHaveBeenCalledWith(
+        { coingeckoId: 'known-token', address: 'MintKnown11111111111111111111111111111111' },
+        30,
+        'usd'
+      )
+    );
   });
 
   it('redirects home for an id that matches no token in the active list', () => {

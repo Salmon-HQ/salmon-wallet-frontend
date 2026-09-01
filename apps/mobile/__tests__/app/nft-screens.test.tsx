@@ -59,7 +59,10 @@ jest.mock('expo-router', () => ({
 
 jest.mock('react-native-safe-area-context', () => {
   const { View } = require('react-native');
-  return { SafeAreaView: View, useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) };
+  return {
+    SafeAreaView: View,
+    useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  };
 });
 
 jest.mock('react-i18next', () => {
@@ -242,9 +245,9 @@ describe('the NFT send screen', () => {
 
     fireEvent.changeText(screen.getByTestId('send-recipient-input'), 'OtherAddr222');
 
-    expect(
-      screen.getByTestId('nft-send-continue-button').props.accessibilityState.disabled
-    ).toBe(true);
+    expect(screen.getByTestId('nft-send-continue-button').props.accessibilityState.disabled).toBe(
+      true
+    );
   });
 
   it('offers no way forward for an ordinal, which cannot be transferred yet', () => {
@@ -327,7 +330,11 @@ describe('the NFT burn screen', () => {
   it('discloses the lookup table cost before the confirm', () => {
     mockFlow.burnPreview = {
       transaction: 'burn-transaction',
-      lookupTable: { estimatedRentLamports: 5_000_000, addressCount: 12, extendTransactionCount: 1 },
+      lookupTable: {
+        estimatedRentLamports: 5_000_000,
+        addressCount: 12,
+        extendTransactionCount: 1,
+      },
     };
 
     render(<NftBurnScreen />);

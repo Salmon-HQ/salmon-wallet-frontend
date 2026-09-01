@@ -28,7 +28,6 @@ describe('Chip', () => {
 
     expect(flatten(screen.getByTestId('badge').props.style).backgroundColor).toBe('transparent');
   });
-
 });
 
 describe('ChipGroup', () => {
@@ -46,12 +45,10 @@ describe('ChipGroup', () => {
       />
     );
 
-    expect(
-      screen.getByTestId('activity-filters-all').props.accessibilityState.selected
-    ).toBe(true);
-    expect(
-      screen.getByTestId('activity-filters-send').props.accessibilityState.selected
-    ).toBe(false);
+    expect(screen.getByTestId('activity-filters-all').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('activity-filters-send').props.accessibilityState.selected).toBe(
+      false
+    );
 
     fireEvent.press(screen.getByTestId('activity-filters-send'));
     expect(onChange).toHaveBeenCalledWith('send');

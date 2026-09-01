@@ -32,10 +32,7 @@ import { IconBubble } from '../IconBubble';
 import { KeyValueRow } from '../KeyValueRow';
 import { TextButton } from '../Button';
 import { ExplorerLinkButton } from '../Activity/ExplorerLinkButton';
-import {
-  transactionTypeConfigFor,
-  TYPE_LABEL_KEYS,
-} from '../Activity/transactionTypes';
+import { transactionTypeConfigFor, TYPE_LABEL_KEYS } from '../Activity/transactionTypes';
 import { TransactionDetailDeveloper } from './TransactionDetailDeveloper';
 import { TransactionDetailReceipt } from './TransactionDetailReceipt';
 import { TransactionDetailSwap } from './TransactionDetailSwap';

@@ -145,13 +145,13 @@ describe('TransactionItem — the counterparty, not the program', () => {
     expect(screen.queryByText(LONGEST_SOURCE)).toBeNull();
   });
 
-  it('says who it came from, in the header\'s short form', () => {
+  it("says who it came from, in the header's short form", () => {
     render(<TransactionItem transaction={RECEIVE_TRANSACTION} />);
 
     expect(screen.getByText('From 9mpJ…SAd3')).toBeTruthy();
   });
 
-  it('says who it went to, in the header\'s short form', () => {
+  it("says who it went to, in the header's short form", () => {
     render(<TransactionItem transaction={SEND_TRANSACTION} />);
 
     expect(screen.getByText('To 9mpJ…SAd3')).toBeTruthy();
@@ -159,10 +159,7 @@ describe('TransactionItem — the counterparty, not the program', () => {
 
   it('prefers the address book name over the address', () => {
     render(
-      <TransactionItem
-        transaction={SEND_TRANSACTION}
-        contacts={{ [COUNTERPARTY]: 'Alice' }}
-      />
+      <TransactionItem transaction={SEND_TRANSACTION} contacts={{ [COUNTERPARTY]: 'Alice' }} />
     );
 
     expect(screen.getByText('To Alice')).toBeTruthy();

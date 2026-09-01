@@ -55,16 +55,17 @@ const TokenAmountRow: React.FC<{ token: TransactionTokenAmount; sign: '+' | '-' 
           {token.symbol}
         </Text>
         {token.name && (
-          <Text style={styles.tokenName} numberOfLines={1} maxFontSizeMultiplier={fontScaleCap.dense}>
+          <Text
+            style={styles.tokenName}
+            numberOfLines={1}
+            maxFontSizeMultiplier={fontScaleCap.dense}
+          >
             {token.name}
           </Text>
         )}
       </View>
       <Text
-        style={[
-          styles.tokenAmount,
-          { color: sign === '+' ? status.success : status.danger },
-        ]}
+        style={[styles.tokenAmount, { color: sign === '+' ? status.success : status.danger }]}
         maxFontSizeMultiplier={fontScaleCap.dense}
       >
         {sign} {formatRawAmount(token.amount, token.decimals)}

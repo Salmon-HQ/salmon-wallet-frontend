@@ -56,27 +56,27 @@ export function StateBlock({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-  wrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: vs(spacing.xl),
-  },
-  card: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: s(fontSize.heading),
-    lineHeight: s(fontSize.heading) * lineHeight.snug,
-    fontFamily: fontFamilyNative.bold,
-    color: t.text.primary,
-    textAlign: 'center',
-  },
-  body: {
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-    fontFamily: fontFamilyNative.medium,
-    color: t.text.secondary,
-    textAlign: 'center',
-  },
-});
+    wrapper: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: vs(spacing.xl),
+    },
+    card: {
+      width: '100%',
+      alignItems: 'center',
+    },
+    title: {
+      fontSize: s(fontSize.heading),
+      lineHeight: s(fontSize.heading) * lineHeight.snug,
+      fontFamily: fontFamilyNative.bold,
+      color: t.text.primary,
+      textAlign: 'center',
+    },
+    body: {
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+      textAlign: 'center',
+    },
+  });

@@ -26,7 +26,9 @@ let mockAccountState: Record<string, unknown> = {
   locked: false,
   networkId: 'solana-mainnet',
   activeAccount: { id: 'a1' },
-  activeBlockchainAccount: { getReceiveAddress: () => 'Sender1111111111111111111111111111111111111' },
+  activeBlockchainAccount: {
+    getReceiveAddress: () => 'Sender1111111111111111111111111111111111111',
+  },
 };
 
 let mockIsWatchOnly = false;
@@ -64,7 +66,15 @@ const mockFlow = {
   setRecipient: jest.fn(),
   amount: '',
   setAmount: jest.fn(),
-  sendHook: { status: 'idle', settling: false, error: null, feeEstimateFailed: false, reset: jest.fn(), estimateFee: jest.fn(), sendTransaction: jest.fn() },
+  sendHook: {
+    status: 'idle',
+    settling: false,
+    error: null,
+    feeEstimateFailed: false,
+    reset: jest.fn(),
+    estimateFee: jest.fn(),
+    sendTransaction: jest.fn(),
+  },
   estimatedFee: null as string | null,
   estimateFee: jest.fn(),
   txId: null,
@@ -116,7 +126,14 @@ jest.mock('@salmon/shared', () => ({
   useAccountsContext: () => [mockAccountState, {}],
   useAddressValidation: () => mockValidation,
   useSendContacts: () => ({
-    contacts: [{ name: 'Ana', address: 'Contact11111111111111111111111111111111111', networkName: 'Solana', blockchain: 'solana' }],
+    contacts: [
+      {
+        name: 'Ana',
+        address: 'Contact11111111111111111111111111111111111',
+        networkName: 'Solana',
+        blockchain: 'solana',
+      },
+    ],
     ownWallets: [],
     isLoading: false,
   }),
@@ -137,8 +154,13 @@ jest.mock('../../src/components/DepthBackground', () => ({ DepthBackground: () =
 jest.mock('../../src/components/ScalesBackground', () => ({ ScalesBackground: () => null }));
 jest.mock('../../src/components/QRScanner', () => ({ QRScanner: () => null }));
 jest.mock('../../src/components/BottomSheetContainer', () => ({
-  BottomSheetContainer: ({ visible, children }: { visible: boolean; children?: React.ReactNode }) =>
-    visible ? children : null,
+  BottomSheetContainer: ({
+    visible,
+    children,
+  }: {
+    visible: boolean;
+    children?: React.ReactNode;
+  }) => (visible ? children : null),
 }));
 // A working stub, not a null one: the picker sheet's only job worth testing
 // here is that a tap on one of its rows reaches `onSelectToken`.
@@ -172,7 +194,11 @@ jest.mock('../../src/components/Send/TokenSelectList', () => {
 });
 
 jest.mock('../../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ floatingBottomOffset: 0, scrollBottomPadding: 0, insets: { top: 0, bottom: 0 } }),
+  useTabChrome: () => ({
+    floatingBottomOffset: 0,
+    scrollBottomPadding: 0,
+    insets: { top: 0, bottom: 0 },
+  }),
 }));
 jest.mock('../../hooks/useKeyboardHeight', () => ({ useKeyboardHeight: () => 0 }));
 jest.mock('../../src/contexts/DeveloperModeContext', () => ({ useDeveloperMode: () => false }));
@@ -258,11 +284,18 @@ describe('the recipient screen — 04A and 04B', () => {
         'This account does not exist on-chain yet. The recipient will need to fund it.'
       )
     ).toBeTruthy();
-    expect(screen.getByTestId('send-continue-button').props.accessibilityState.disabled).toBe(false);
+    expect(screen.getByTestId('send-continue-button').props.accessibilityState.disabled).toBe(
+      false
+    );
   });
 
   it('holds Continue while the validator is still deciding', () => {
-    mockValidation = { ...mockValidation, validationState: 'loading', isValidating: true, isValid: true };
+    mockValidation = {
+      ...mockValidation,
+      validationState: 'loading',
+      isValidating: true,
+      isValid: true,
+    };
 
     render(<SendRecipientScreen />);
 

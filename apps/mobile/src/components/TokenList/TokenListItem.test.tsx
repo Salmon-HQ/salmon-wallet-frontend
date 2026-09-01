@@ -17,8 +17,11 @@ jest.mock('@salmon/shared', () => ({
   showPercentage: (value: number) => `${value >= 0 ? '+' : ''}${value}%`,
   formatTokenAmount: (value: unknown) => String(value),
   formatLargeNumber: (value: number) =>
-    value >= 1_000_000 ? `${(value / 1_000_000).toFixed(2)}M` :
-    value >= 1_000 ? `${(value / 1_000).toFixed(2)}K` : String(value),
+    value >= 1_000_000
+      ? `${(value / 1_000_000).toFixed(2)}M`
+      : value >= 1_000
+        ? `${(value / 1_000).toFixed(2)}K`
+        : String(value),
   useCurrencyContext: () => [
     {},
     {

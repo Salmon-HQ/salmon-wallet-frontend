@@ -358,11 +358,8 @@ describe.each(MODES)('contrast: status and state (%s)', (_mode, tokens) => {
     });
 
     it(`status.${name} is readable as ink on its own tint`, () => {
-      const tint =
-        tokens.status[`${name}Tint` as 'successTint' | 'dangerTint' | 'warningTint'];
-      const ground = tint.startsWith('rgba')
-        ? compositeOver(tint, tokens.surface.shelf)
-        : tint;
+      const tint = tokens.status[`${name}Tint` as 'successTint' | 'dangerTint' | 'warningTint'];
+      const ground = tint.startsWith('rgba') ? compositeOver(tint, tokens.surface.shelf) : tint;
       expect(contrast(value, ground)).toBeGreaterThanOrEqual(AA_TEXT);
     });
   }

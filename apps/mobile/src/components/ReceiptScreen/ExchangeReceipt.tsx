@@ -208,11 +208,7 @@ export function ExchangeReceipt({
               importantForAccessibility="no-hide-descendants"
               entering={floatEntering(isReduceMotionEnabled, { delayMs: beat(1) })}
             >
-              <ArrowDownIcon
-                weight="bold"
-                size={GRAPHIC_ICON_SIZE}
-                color={text.secondary}
-              />
+              <ArrowDownIcon weight="bold" size={GRAPHIC_ICON_SIZE} color={text.secondary} />
             </Animated.View>
             <Animated.View
               style={styles.tokenLine}
@@ -400,177 +396,177 @@ export function ExchangeReceipt({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: s(spacing.headerPadding),
-  },
-  // The receipt column: actions on the bottom edge, and the cluster centred in
-  // whatever is left above them. The report belongs in the middle of the
-  // corridor, not pinned under the top chrome with a void below.
-  // The wait keeps `container`'s own centring: a loader with nothing under it
-  // is centred the same way.
-  receipt: {
-    justifyContent: 'flex-start',
-    paddingTop: vs(spacing['5xl']),
-  },
-  // The centred report. Stretched so the amount can use the full width, and
-  // flex: 1 so it owns the corridor between the top padding and the actions.
-  cluster: {
-    flex: 1,
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-    marginBottom: vs(spacing.md),
-  },
-  // The headline. This screen's job is to report *what happened*, so the
-  // sentence that says it outranks the figures it happened to — a 10px
-  // uppercase status over a 36px amount had the ranking backwards. The state
-  // keeps all three channels: the glyph's colour, the glyph, and the label.
-  statusGlyph: {
-    fontSize: ms(fontSize.headline),
-    color: t.status.success,
-    fontFamily: fontFamilyNative.bold,
-    fontWeight: fontWeight.bold,
-  },
-  statusLabel: {
-    fontSize: ms(fontSize.headline),
-    fontFamily: fontFamilyNative.semiBold,
-    color: t.text.primary,
-    letterSpacing: letterSpacing.snug,
-  },
-  amountContainer: {
-    alignItems: 'center',
-    marginBottom: vs(spacing['2xl']),
-  },
-  // The exchange, read down the screen: what left on top, the arrow between,
-  // what arrived below with its tick. Each amount travels with its own mark.
-  exchangeBlock: {
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    gap: vs(spacing.xs),
-    marginBottom: vs(spacing.lg),
-  },
-  tokenLine: {
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: s(spacing.sm),
-  },
-  trackRow: {
-    alignItems: 'center',
-  },
-  // The tick's place, reserved on both lines so the two amounts sit on one
-  // vertical axis — the same reservation the assist band makes below, for the
-  // same reason. Only the received line puts a glyph in it.
-  tickSlot: {
-    width: s(GRAPHIC_ICON_SIZE),
-    alignItems: 'center',
-  },
-  amountCell: {
-    flex: 1,
-  },
-  // Secondary rank: one step down from the headline in size and one in weight.
-  // It keeps `text.primary` — a number on a receipt may be smaller than the
-  // sentence above it, but never dimmer than it is legible.
-  amount: {
-    ...TABULAR,
-    fontSize: ms(fontSize.title),
-    fontFamily: fontFamilyNative.medium,
-    color: t.text.primary,
-    textAlign: 'center',
-    lineHeight: ms(fontSize.title * lineHeight.tight),
-    // On the exchange line the two amounts share the row with two marks and
-    // an arrow; shrinking is how the line stays a line without eliding a
-    // digit. It costs nothing on the single-string variant, where the text is
-    // the column's only child.
-    flexShrink: 1,
-  },
-  // What was spent steps down one rank so what arrived reads louder: the
-  // receipt's subject is the amount that landed, and the exchange line lost
-  // that emphasis when the hero left its card.
-  amountSpent: {
-    fontSize: ms(fontSize.bodyLg),
-    fontFamily: fontFamilyNative.regular,
-    color: t.text.secondary,
-    lineHeight: ms(fontSize.bodyLg * lineHeight.tight),
-  },
-  // The quiet receipt: label left, value right, no card — secondary rank
-  // under the amount, above the bridge details when there are any.
-  receiptRows: {
-    alignSelf: 'stretch',
-    gap: vs(spacing.sm),
-    marginBottom: vs(spacing.xl),
-    paddingHorizontal: s(spacing.base),
-  },
-  receiptRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: s(spacing.md),
-  },
-  receiptLabel: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.regular,
-    color: t.text.tertiary,
-  },
-  receiptValue: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.medium,
-    color: t.text.secondary,
-    textAlign: 'right',
-    flexShrink: 1,
-  },
-  bridgeInfoBox: {
-    width: '100%',
-    backgroundColor: t.surface.raised,
-    borderRadius: borderRadius.card,
-    padding: s(spacing.lg),
-    marginBottom: vs(spacing.xl),
-  },
-  bridgeLabel: {
-    fontSize: ms(fontSize.sm),
-    fontFamily: fontFamilyNative.regular,
-    color: t.text.tertiary,
-    marginBottom: vs(spacing.xs),
-  },
-  bridgeValue: {
-    ...TABULAR,
-    fontSize: ms(fontSize.base),
-    fontFamily: fontFamilyNative.medium,
-    color: t.text.primary,
-    marginBottom: vs(spacing.md),
-  },
-  // The bottom of the column, on the onboarding ending's bands: the assist
-  // band (a quiet text button) directly over the action band's primary, with
-  // the grid's `spacing.lg` of air between them. The auto margin separates
-  // the report from the actions without inventing a spacer.
-  actionGroup: {
-    marginTop: 'auto',
-    alignSelf: 'stretch',
-  },
-  // Reserved at the grid's assist height whether or not a link is rendered,
-  // so the primary sits at one Y across every ending.
-  assistBand: {
-    height: vs(endingBands.assist),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // The action band, exactly as the onboarding layout draws it: the grid's air
-  // over the primary and the grid's air under it, with the button on the
-  // bottom edge of the column. Nothing is reserved below it, which is what
-  // pins its Y.
-  actionBand: {
-    alignSelf: 'stretch',
-    height: vs(endingBands.action),
-    paddingTop: vs(spacing.lg),
-    paddingBottom: vs(spacing['2xl']),
-  },
-});
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: s(spacing.headerPadding),
+    },
+    // The receipt column: actions on the bottom edge, and the cluster centred in
+    // whatever is left above them. The report belongs in the middle of the
+    // corridor, not pinned under the top chrome with a void below.
+    // The wait keeps `container`'s own centring: a loader with nothing under it
+    // is centred the same way.
+    receipt: {
+      justifyContent: 'flex-start',
+      paddingTop: vs(spacing['5xl']),
+    },
+    // The centred report. Stretched so the amount can use the full width, and
+    // flex: 1 so it owns the corridor between the top padding and the actions.
+    cluster: {
+      flex: 1,
+      alignSelf: 'stretch',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    statusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+      marginBottom: vs(spacing.md),
+    },
+    // The headline. This screen's job is to report *what happened*, so the
+    // sentence that says it outranks the figures it happened to — a 10px
+    // uppercase status over a 36px amount had the ranking backwards. The state
+    // keeps all three channels: the glyph's colour, the glyph, and the label.
+    statusGlyph: {
+      fontSize: ms(fontSize.headline),
+      color: t.status.success,
+      fontFamily: fontFamilyNative.bold,
+      fontWeight: fontWeight.bold,
+    },
+    statusLabel: {
+      fontSize: ms(fontSize.headline),
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.primary,
+      letterSpacing: letterSpacing.snug,
+    },
+    amountContainer: {
+      alignItems: 'center',
+      marginBottom: vs(spacing['2xl']),
+    },
+    // The exchange, read down the screen: what left on top, the arrow between,
+    // what arrived below with its tick. Each amount travels with its own mark.
+    exchangeBlock: {
+      alignSelf: 'stretch',
+      alignItems: 'center',
+      gap: vs(spacing.xs),
+      marginBottom: vs(spacing.lg),
+    },
+    tokenLine: {
+      alignSelf: 'stretch',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(spacing.sm),
+    },
+    trackRow: {
+      alignItems: 'center',
+    },
+    // The tick's place, reserved on both lines so the two amounts sit on one
+    // vertical axis — the same reservation the assist band makes below, for the
+    // same reason. Only the received line puts a glyph in it.
+    tickSlot: {
+      width: s(GRAPHIC_ICON_SIZE),
+      alignItems: 'center',
+    },
+    amountCell: {
+      flex: 1,
+    },
+    // Secondary rank: one step down from the headline in size and one in weight.
+    // It keeps `text.primary` — a number on a receipt may be smaller than the
+    // sentence above it, but never dimmer than it is legible.
+    amount: {
+      ...TABULAR,
+      fontSize: ms(fontSize.title),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.primary,
+      textAlign: 'center',
+      lineHeight: ms(fontSize.title * lineHeight.tight),
+      // On the exchange line the two amounts share the row with two marks and
+      // an arrow; shrinking is how the line stays a line without eliding a
+      // digit. It costs nothing on the single-string variant, where the text is
+      // the column's only child.
+      flexShrink: 1,
+    },
+    // What was spent steps down one rank so what arrived reads louder: the
+    // receipt's subject is the amount that landed, and the exchange line lost
+    // that emphasis when the hero left its card.
+    amountSpent: {
+      fontSize: ms(fontSize.bodyLg),
+      fontFamily: fontFamilyNative.regular,
+      color: t.text.secondary,
+      lineHeight: ms(fontSize.bodyLg * lineHeight.tight),
+    },
+    // The quiet receipt: label left, value right, no card — secondary rank
+    // under the amount, above the bridge details when there are any.
+    receiptRows: {
+      alignSelf: 'stretch',
+      gap: vs(spacing.sm),
+      marginBottom: vs(spacing.xl),
+      paddingHorizontal: s(spacing.base),
+    },
+    receiptRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: s(spacing.md),
+    },
+    receiptLabel: {
+      fontSize: ms(fontSize.sm),
+      fontFamily: fontFamilyNative.regular,
+      color: t.text.tertiary,
+    },
+    receiptValue: {
+      fontSize: ms(fontSize.sm),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.secondary,
+      textAlign: 'right',
+      flexShrink: 1,
+    },
+    bridgeInfoBox: {
+      width: '100%',
+      backgroundColor: t.surface.raised,
+      borderRadius: borderRadius.card,
+      padding: s(spacing.lg),
+      marginBottom: vs(spacing.xl),
+    },
+    bridgeLabel: {
+      fontSize: ms(fontSize.sm),
+      fontFamily: fontFamilyNative.regular,
+      color: t.text.tertiary,
+      marginBottom: vs(spacing.xs),
+    },
+    bridgeValue: {
+      ...TABULAR,
+      fontSize: ms(fontSize.base),
+      fontFamily: fontFamilyNative.medium,
+      color: t.text.primary,
+      marginBottom: vs(spacing.md),
+    },
+    // The bottom of the column, on the onboarding ending's bands: the assist
+    // band (a quiet text button) directly over the action band's primary, with
+    // the grid's `spacing.lg` of air between them. The auto margin separates
+    // the report from the actions without inventing a spacer.
+    actionGroup: {
+      marginTop: 'auto',
+      alignSelf: 'stretch',
+    },
+    // Reserved at the grid's assist height whether or not a link is rendered,
+    // so the primary sits at one Y across every ending.
+    assistBand: {
+      height: vs(endingBands.assist),
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    // The action band, exactly as the onboarding layout draws it: the grid's air
+    // over the primary and the grid's air under it, with the button on the
+    // bottom edge of the column. Nothing is reserved below it, which is what
+    // pins its Y.
+    actionBand: {
+      alignSelf: 'stretch',
+      height: vs(endingBands.action),
+      paddingTop: vs(spacing.lg),
+      paddingBottom: vs(spacing['2xl']),
+    },
+  });

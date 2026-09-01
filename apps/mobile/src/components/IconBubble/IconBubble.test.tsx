@@ -237,9 +237,7 @@ describe('IconBubble', () => {
   });
 
   it('drops the flesh when a pressable accent bubble is disabled — the salmon is either alive or absent', () => {
-    render(
-      <IconBubble testID="send" size={42} tone="accent" onPress={() => {}} disabled />
-    );
+    render(<IconBubble testID="send" size={42} tone="accent" onPress={() => {}} disabled />);
 
     expect(screen.queryByTestId('flesh-background')).toBeNull();
   });

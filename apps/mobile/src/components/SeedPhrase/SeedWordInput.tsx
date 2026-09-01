@@ -169,77 +169,77 @@ const secretInputProps = {
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-  container: {
-    width: '100%',
-  },
-  label: {
-    color: t.text.secondary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.caption,
-    marginBottom: spacing.xs,
-  },
-  compactBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: componentSizes.buttonHeightSmall,
-    backgroundColor: t.input.ground,
-    borderWidth: borderWidth.thin,
-    borderRadius: componentSizes.inputRadius,
-    paddingHorizontal: spacing.sm,
-    gap: spacing.xs,
-  },
-  denseBox: {
-    height: componentSizes.buttonHeightCompact,
-    paddingHorizontal: spacing.xs,
-    gap: spacing.xxs,
-  },
-  /**
-   * The index's period, in the brand salmon.
-   *
-   * Decoration only (product, 2026-08-18). Three things it must never do, on a
-   * screen where a stray character is a wrong seed:
-   *
-   * - **Never reach the value.** It is markup, not content: it is not in `value`,
-   *   never passes through `onChangeText`, and cannot survive into the mnemonic
-   *   that gets validated or stored.
-   * - **Never be announced.** The `accessibilityLabel` on the wrapping `Text` is
-   *   the bare number, which takes precedence over the rendered children, so a
-   *   screen reader says "1", not "one full stop".
-   * - **Never move the word.** It is nested inside the index's existing
-   *   right-aligned box rather than added beside it, so "1." (about 12dp) still
-   *   fits the box's `minWidth` and the word after it does not shift at all.
-   */
-  indexDot: {
-    color: t.text.accent,
-  },
-  compactIndex: {
-    color: t.text.tertiary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.caption,
-    minWidth: spacing.lg,
-    textAlign: 'right',
-  },
-  // The typed word is Geist Mono (Seed Phrase Rule) — a seed word must be
-  // readable character by character, exactly like a displayed one.
-  compactInput: {
-    flex: 1,
-    height: '100%',
-    color: t.text.primary,
-    fontFamily: fontFamilyNative.mono,
-    fontSize: fontSize.body,
-    padding: 0,
-  },
-  input: {
-    width: '100%',
-    minHeight: componentSizes.inputHeight,
-    paddingVertical: spacing.xs,
-    backgroundColor: t.input.ground,
-    borderWidth: borderWidth.thin,
-    borderRadius: componentSizes.inputRadius,
-    paddingHorizontal: spacing.lg,
-    color: t.text.primary,
-    // Seed Phrase Rule: the typed word renders in the mono face.
-    fontFamily: fontFamilyNative.mono,
-    fontSize: fontSize.bodyLg,
-  },
-});
+    container: {
+      width: '100%',
+    },
+    label: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: fontSize.caption,
+      marginBottom: spacing.xs,
+    },
+    compactBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      height: componentSizes.buttonHeightSmall,
+      backgroundColor: t.input.ground,
+      borderWidth: borderWidth.thin,
+      borderRadius: componentSizes.inputRadius,
+      paddingHorizontal: spacing.sm,
+      gap: spacing.xs,
+    },
+    denseBox: {
+      height: componentSizes.buttonHeightCompact,
+      paddingHorizontal: spacing.xs,
+      gap: spacing.xxs,
+    },
+    /**
+     * The index's period, in the brand salmon.
+     *
+     * Decoration only (product, 2026-08-18). Three things it must never do, on a
+     * screen where a stray character is a wrong seed:
+     *
+     * - **Never reach the value.** It is markup, not content: it is not in `value`,
+     *   never passes through `onChangeText`, and cannot survive into the mnemonic
+     *   that gets validated or stored.
+     * - **Never be announced.** The `accessibilityLabel` on the wrapping `Text` is
+     *   the bare number, which takes precedence over the rendered children, so a
+     *   screen reader says "1", not "one full stop".
+     * - **Never move the word.** It is nested inside the index's existing
+     *   right-aligned box rather than added beside it, so "1." (about 12dp) still
+     *   fits the box's `minWidth` and the word after it does not shift at all.
+     */
+    indexDot: {
+      color: t.text.accent,
+    },
+    compactIndex: {
+      color: t.text.tertiary,
+      fontFamily: fontFamilyNative.medium,
+      fontSize: fontSize.caption,
+      minWidth: spacing.lg,
+      textAlign: 'right',
+    },
+    // The typed word is Geist Mono (Seed Phrase Rule) — a seed word must be
+    // readable character by character, exactly like a displayed one.
+    compactInput: {
+      flex: 1,
+      height: '100%',
+      color: t.text.primary,
+      fontFamily: fontFamilyNative.mono,
+      fontSize: fontSize.body,
+      padding: 0,
+    },
+    input: {
+      width: '100%',
+      minHeight: componentSizes.inputHeight,
+      paddingVertical: spacing.xs,
+      backgroundColor: t.input.ground,
+      borderWidth: borderWidth.thin,
+      borderRadius: componentSizes.inputRadius,
+      paddingHorizontal: spacing.lg,
+      color: t.text.primary,
+      // Seed Phrase Rule: the typed word renders in the mono face.
+      fontFamily: fontFamilyNative.mono,
+      fontSize: fontSize.bodyLg,
+    },
+  });

@@ -71,7 +71,11 @@ export default function TokenDetailScreen() {
   const [accountState] = useAccountsContext();
   const { ready, activeAccount, activeBlockchainAccount, networkId } = accountState;
 
-  const { tokens, state: balanceState, hiddenBalance } = useBalance({
+  const {
+    tokens,
+    state: balanceState,
+    hiddenBalance,
+  } = useBalance({
     account: activeBlockchainAccount,
     networkId: (networkId ?? undefined) as NetworkId | undefined,
     skip: !ready || !activeBlockchainAccount,

@@ -58,7 +58,9 @@ const TABS = [
   { key: 'nfts', label: 'NFTs' },
 ];
 
-const layout = (x: number, width: number) => ({ nativeEvent: { layout: { x, y: 0, width, height: 20 } } });
+const layout = (x: number, width: number) => ({
+  nativeEvent: { layout: { x, y: 0, width, height: 20 } },
+});
 
 afterEach(() => {
   mockUseReducedMotion.mockReturnValue(false);
@@ -120,9 +122,7 @@ describe('PortfolioSubTabs', () => {
       expect.arrayContaining([expect.objectContaining({ width: 60 })])
     );
     expect(underlineStyle).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ transform: [{ translateX: 0 }] }),
-      ])
+      expect.arrayContaining([expect.objectContaining({ transform: [{ translateX: 0 }] })])
     );
     // First measurement snaps directly to the measured layout — no travel
     // from a stale default. (Labels still run their own mount-time crossfade

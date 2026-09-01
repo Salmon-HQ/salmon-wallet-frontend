@@ -116,11 +116,7 @@ export default function NftSendScreen() {
       <DepthBackground />
       <ScalesBackground variant="deepField" />
 
-      <ScreenHeader
-        onBack={() => router.back()}
-        title={t('nft.send.title')}
-        subtitle={nft?.name}
-      />
+      <ScreenHeader onBack={() => router.back()} title={t('nft.send.title')} subtitle={nft?.name} />
 
       <ScrollView
         testID="nft-send-screen"

@@ -177,7 +177,6 @@ export type { UnderlineTab, UnderlineTabsProps, UnderlineTabsSize } from './Unde
 export { PowerupsFab } from './PowerupsFab';
 export type { PowerupsFabProps } from './PowerupsFab';
 
-
 export { TokenList, TokenListItem } from './TokenList';
 export type { TokenListProps, TokenListItemProps } from './TokenList';
 
@@ -222,7 +221,6 @@ export type {
   SolanaNftData,
   BitcoinNftData,
 } from './NftCard';
-
 
 export { NftsTab } from './NftsTab';
 export type { NftSectionKey, NftSection, NftsTabProps } from './NftsTab';

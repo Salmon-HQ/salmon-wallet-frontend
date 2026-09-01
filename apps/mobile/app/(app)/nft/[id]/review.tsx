@@ -38,8 +38,16 @@ export default function NftSendReviewScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { floatingBottomOffset } = useTabChrome();
-  const { nft, account, recipient, validatedRecipient, resolvedRecipient, sending, sendError, submitSend } =
-    useNftFlow();
+  const {
+    nft,
+    account,
+    recipient,
+    validatedRecipient,
+    resolvedRecipient,
+    sending,
+    sendError,
+    submitSend,
+  } = useNftFlow();
 
   const canSignAccount = !!account && isSignableAccount(account);
   // The sheet's `canConfirmSend`, with its `addressValid` restored as the
@@ -55,7 +63,8 @@ export default function NftSendReviewScreen() {
   // address is the destination — showing only the domain here would ask the
   // user to sign for something this screen never displayed.
   const destination = resolvedRecipient ?? recipient;
-  const resolvedFromDomain = resolvedRecipient && resolvedRecipient !== recipient ? recipient : null;
+  const resolvedFromDomain =
+    resolvedRecipient && resolvedRecipient !== recipient ? recipient : null;
 
   const handleConfirm = useCallback(() => {
     void submitSend();
@@ -103,9 +112,7 @@ export default function NftSendReviewScreen() {
           )}
         </Card>
 
-        {!!sendError && (
-          <WarningNotice tone="error" title={t(sendError)} style={styles.notice} />
-        )}
+        {!!sendError && <WarningNotice tone="error" title={t(sendError)} style={styles.notice} />}
       </ScrollView>
 
       <View style={[styles.action, { paddingBottom: floatingBottomOffset }]}>

@@ -625,7 +625,10 @@ export default function HomeScreen() {
         <StateBlock
           tone="empty"
           title={t('wallet.no_tokens_found', 'No tokens found')}
-          body={t('wallet.tokens_empty_subtitle', 'Your tokens will appear here once you receive some')}
+          body={t(
+            'wallet.tokens_empty_subtitle',
+            'Your tokens will appear here once you receive some'
+          )}
         />
       ),
     [balanceState, refresh, t]
@@ -927,96 +930,97 @@ export default function HomeScreen() {
   );
 }
 
-const stylesFor = (t: Semantic) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    color: t.text.secondary,
-    fontSize: s(fontSize.bodyLg),
-    marginTop: spacing.lg,
-  },
-  content: {
-    flex: 1,
-  },
-  // The one gutter every Home sub-tab is held to. It lives on the content
-  // containers here, not inside the tab components — a tab that drew its own
-  // padding (or forgot to, as the NFTs grid did) is how the columns drifted.
-  tabGutter: {
-    paddingHorizontal: s(spacing.screenGutter),
-  },
-  // Block seams are the component gap (20): balance block → sub-tabs row is
-  // `pinnedSubTabs`' marginTop, sub-tabs row → list is this padding. The
-  // anatomy inside each block keeps the finer 4/8/12 steps.
-  pinnedHeader: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.xl),
-  },
-  pinnedSubTabs: {
-    marginTop: vs(spacing.xl),
-  },
-  nftBalanceBlock: {
-    paddingBottom: vs(spacing.xl),
-  },
-  // On NFTs the row is an overlay, so its own bottom padding IS the seam to
-  // the grid (it is also the height the list header reserves) — same 20.
-  stickySubTabs: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.xl),
-    zIndex: 2,
-  },
-  // Measuring, not yet placed: the row must not paint over the balance.
-  stickySubTabsUnmeasured: {
-    opacity: 0,
-  },
-  stickySubTabsScrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: t.depth.abyss,
-  },
-  listContainer: {
-    flex: 1,
-  },
-  chainContent: {
-    flex: 1,
-  },
-  balanceErrorBanner: {
-    marginHorizontal: s(spacing.screenGutter),
-    marginBottom: vs(spacing.xl),
-  },
-  listContent: {
-    paddingTop: 0,
-    paddingBottom: vs(componentSizes.tabBarScrollPadding),
-  },
-  topFadeGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: componentSizes.sheetFadeGradientHeight,
-    zIndex: 1,
-  },
-  // Bitcoin view styles
-  bitcoinCard: {
-    marginBottom: 0,
-  },
-  bitcoinScrollView: {
-    flex: 1,
-  },
-  bitcoinContent: {
-    paddingTop: 0,
-    paddingBottom: vs(componentSizes.tabBarScrollPadding),
-    // The component gap (DESIGN.md §Layout): chart, market data and About are
-    // sibling components on this surface.
-    gap: vs(spacing.screenGutter),
-  },
-});
+const stylesFor = (t: Semantic) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: 'transparent',
+    },
+    loadingContainer: {
+      flex: 1,
+      backgroundColor: 'transparent',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadingText: {
+      color: t.text.secondary,
+      fontSize: s(fontSize.bodyLg),
+      marginTop: spacing.lg,
+    },
+    content: {
+      flex: 1,
+    },
+    // The one gutter every Home sub-tab is held to. It lives on the content
+    // containers here, not inside the tab components — a tab that drew its own
+    // padding (or forgot to, as the NFTs grid did) is how the columns drifted.
+    tabGutter: {
+      paddingHorizontal: s(spacing.screenGutter),
+    },
+    // Block seams are the component gap (20): balance block → sub-tabs row is
+    // `pinnedSubTabs`' marginTop, sub-tabs row → list is this padding. The
+    // anatomy inside each block keeps the finer 4/8/12 steps.
+    pinnedHeader: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingBottom: vs(spacing.xl),
+    },
+    pinnedSubTabs: {
+      marginTop: vs(spacing.xl),
+    },
+    nftBalanceBlock: {
+      paddingBottom: vs(spacing.xl),
+    },
+    // On NFTs the row is an overlay, so its own bottom padding IS the seam to
+    // the grid (it is also the height the list header reserves) — same 20.
+    stickySubTabs: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingBottom: vs(spacing.xl),
+      zIndex: 2,
+    },
+    // Measuring, not yet placed: the row must not paint over the balance.
+    stickySubTabsUnmeasured: {
+      opacity: 0,
+    },
+    stickySubTabsScrim: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: t.depth.abyss,
+    },
+    listContainer: {
+      flex: 1,
+    },
+    chainContent: {
+      flex: 1,
+    },
+    balanceErrorBanner: {
+      marginHorizontal: s(spacing.screenGutter),
+      marginBottom: vs(spacing.xl),
+    },
+    listContent: {
+      paddingTop: 0,
+      paddingBottom: vs(componentSizes.tabBarScrollPadding),
+    },
+    topFadeGradient: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      height: componentSizes.sheetFadeGradientHeight,
+      zIndex: 1,
+    },
+    // Bitcoin view styles
+    bitcoinCard: {
+      marginBottom: 0,
+    },
+    bitcoinScrollView: {
+      flex: 1,
+    },
+    bitcoinContent: {
+      paddingTop: 0,
+      paddingBottom: vs(componentSizes.tabBarScrollPadding),
+      // The component gap (DESIGN.md §Layout): chart, market data and About are
+      // sibling components on this surface.
+      gap: vs(spacing.screenGutter),
+    },
+  });

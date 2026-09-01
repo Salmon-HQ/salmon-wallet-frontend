@@ -49,7 +49,11 @@ import { AppearanceSelector } from './AppearanceSelector';
 describe('AppearanceSelector', () => {
   it('renders System, Light and Dark options', () => {
     render(
-      <AppearanceSelector activePreference="system" onSelectPreference={jest.fn()} onBack={jest.fn()} />
+      <AppearanceSelector
+        activePreference="system"
+        onSelectPreference={jest.fn()}
+        onBack={jest.fn()}
+      />
     );
 
     expect(screen.getByText('System')).toBeTruthy();
@@ -59,7 +63,11 @@ describe('AppearanceSelector', () => {
 
   it('marks the active preference with a selected row', () => {
     render(
-      <AppearanceSelector activePreference="dark" onSelectPreference={jest.fn()} onBack={jest.fn()} />
+      <AppearanceSelector
+        activePreference="dark"
+        onSelectPreference={jest.fn()}
+        onBack={jest.fn()}
+      />
     );
 
     expect(screen.getByTestId('appearance-option-dark')).toBeTruthy();

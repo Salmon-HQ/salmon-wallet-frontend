@@ -11,15 +11,17 @@ import React, { useCallback } from 'react';
 import { Animated, Linking, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as Clipboard from 'expo-clipboard';
-import { fontFamilyNative, fontSize, lineHeight, s, spacing, vs, type Semantic } from '@salmon/shared';
-
 import {
-  ArrowSquareOutIcon,
-  CheckIcon,
-  CopyIcon,
-  GlobeIcon,
-  iconSize,
-} from '../../icons';
+  fontFamilyNative,
+  fontSize,
+  lineHeight,
+  s,
+  spacing,
+  vs,
+  type Semantic,
+} from '@salmon/shared';
+
+import { ArrowSquareOutIcon, CheckIcon, CopyIcon, GlobeIcon, iconSize } from '../../icons';
 import { Card } from '../Card';
 import { IconBubble } from '../IconBubble';
 import { ListRow } from '../ListRow';
@@ -63,7 +65,14 @@ export function AboutCard({
   }, [website]);
 
   if (loading) {
-    return <SkeletonRow testID={testID} lines={2} count={2} accessibilityLabel={t('token.info.about', 'About')} />;
+    return (
+      <SkeletonRow
+        testID={testID}
+        lines={2}
+        count={2}
+        accessibilityLabel={t('token.info.about', 'About')}
+      />
+    );
   }
 
   if (!description && !contractAddress && !website) return null;

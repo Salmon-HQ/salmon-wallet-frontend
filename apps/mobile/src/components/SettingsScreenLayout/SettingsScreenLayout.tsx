@@ -31,7 +31,16 @@ import { DepthBackground } from '../DepthBackground';
 import { ScalesBackground } from '../ScalesBackground';
 import { ScreenHeader } from '../ScreenHeader';
 
-import { spacing, contentPadding, fontSize, fontFamilyNative, lineHeight, s, vs, type Semantic } from '@salmon/shared';
+import {
+  spacing,
+  contentPadding,
+  fontSize,
+  fontFamilyNative,
+  lineHeight,
+  s,
+  vs,
+  type Semantic,
+} from '@salmon/shared';
 
 import { useThemedStyles } from '../../theme/useThemedStyles';
 
@@ -153,47 +162,47 @@ export function SettingsScreenLayout({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardAvoider: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  subtitle: {
-    color: t.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
-    paddingHorizontal: contentPadding.screen,
-    marginBottom: vs(spacing.screenGutter),
-  },
-  subtitleStandalone: {
-    marginTop: spacing.md,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  staticContent: {
-    flex: 1,
-  },
-  // The component gap (DESIGN.md §Layout): every top-level block a panel
-  // hands in is a sibling component, 20 from the next, ending on the same 20.
-  // The header block already ends 20 above the content; a headerless body
-  // still owns its own top padding.
-  scrollContent: {
-    paddingTop: 0,
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingBottom: vs(spacing.screenGutter),
-    gap: vs(spacing.screenGutter),
-  },
-  scrollContentHeaderless: {
-    paddingTop: spacing.md,
-  },
-  footer: {
-    paddingHorizontal: s(spacing.screenGutter),
-    paddingTop: vs(spacing.md),
-  },
-});
+    container: {
+      flex: 1,
+    },
+    keyboardAvoider: {
+      flex: 1,
+    },
+    safeArea: {
+      flex: 1,
+    },
+    subtitle: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      lineHeight: s(fontSize.body) * lineHeight.snug,
+      paddingHorizontal: contentPadding.screen,
+      marginBottom: vs(spacing.screenGutter),
+    },
+    subtitleStandalone: {
+      marginTop: spacing.md,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    staticContent: {
+      flex: 1,
+    },
+    // The component gap (DESIGN.md §Layout): every top-level block a panel
+    // hands in is a sibling component, 20 from the next, ending on the same 20.
+    // The header block already ends 20 above the content; a headerless body
+    // still owns its own top padding.
+    scrollContent: {
+      paddingTop: 0,
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingBottom: vs(spacing.screenGutter),
+      gap: vs(spacing.screenGutter),
+    },
+    scrollContentHeaderless: {
+      paddingTop: spacing.md,
+    },
+    footer: {
+      paddingHorizontal: s(spacing.screenGutter),
+      paddingTop: vs(spacing.md),
+    },
+  });

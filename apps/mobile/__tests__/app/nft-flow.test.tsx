@@ -173,7 +173,11 @@ describe('the NFT flow provider', () => {
   it('flags an insufficient balance for the lookup table rent', async () => {
     mockCreateBurnTransaction.mockResolvedValue({
       transaction: 'burn-transaction',
-      lookupTable: { estimatedRentLamports: 5_000_000, addressCount: 12, extendTransactionCount: 1 },
+      lookupTable: {
+        estimatedRentLamports: 5_000_000,
+        addressCount: 12,
+        extendTransactionCount: 1,
+      },
     });
     mockGetCredit.mockResolvedValue(1_000);
 

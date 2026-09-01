@@ -6,7 +6,7 @@ All scans complete. Here is the audit.
 
 Read: `AGENTS.md`, `DESIGN.md` (§Colors 241–302, §Two modes 303–315, §Typography 317–418, §Layout 420–434, §Hierarchy 393–418, shipped-status table 184–239), all of `packages/shared/src/theme/*`, all of `packages/shared/src/types/ui/*`. Every count below comes from a script or grep run against the working tree at `feat/redesign-mobile-home`.
 
-**Headline:** the token layer is in far better shape than the file sizes suggest. Mobile has **6 hardcoded hex literals in 3 files** and 4 `rgba()` literals — the "no hardcoded styles" goal is essentially already met. The real blockers are (a) **two parallel color layers** (`colors` legacy + `semantic`), and (b) **106 module-scope `StyleSheet.create` blocks** that freeze token values at import time. Both must be resolved before a light theme is possible, and (a) should be resolved *first* because it halves the surface of (b).
+**Headline:** the token layer is in far better shape than the file sizes suggest. Mobile has **6 hardcoded hex literals in 3 files** and 4 `rgba()` literals — the "no hardcoded styles" goal is essentially already met. The real blockers are (a) **two parallel color layers** (`colors` legacy + `semantic`), and (b) **106 module-scope `StyleSheet.create` blocks** that freeze token values at import time. Both must be resolved before a light theme is possible, and (a) should be resolved _first_ because it halves the surface of (b).
 
 ---
 
@@ -42,19 +42,19 @@ packages/shared/src/theme/
 
 Everything below resolves a hex at **module-evaluation time**. RN's `StyleSheet.create` result is captured into a component's closure at import; mutating a module object afterwards cannot retroactively change it, and remounting does not re-run module init. Every one of these is a hard blocker.
 
-| Blocker | Location | Count |
-|---|---|---|
-| **Module-scope `StyleSheet.create` reading `semantic.*`** | `apps/mobile/src` + `apps/mobile/app` | **80 files / 80 blocks** |
-| **Module-scope `StyleSheet.create` reading `colors.*` only** | same | **26 files** |
-| Module-scope `StyleSheet.create`, no color token (spacing/type only) | same | 34 files — no work needed |
-| `semantic.*` used in JSX props / inline style, not in a stylesheet | same | **27 files** — these become correct *for free* once `semantic` comes from a hook |
-| Function-scope `StyleSheet.create` already | same | **0** — there is no existing dynamic pattern to build on |
-| `semantic` destructured at module scope into MUI `createTheme` | `packages/ui/src/theme/index.ts:33` | 1 (web/ext — later cycle) |
-| Ditto in RN background components | `apps/mobile/src/components/ScalesBackground/ScalesBackground.tsx:6`, `.../DepthBackground/DepthBackground.tsx:24` | 2 |
-| `CustomDarkTheme` handed to `@react-navigation/native` `ThemeProvider` | `apps/mobile/app/_layout.tsx:5, 229, 240` | 1 |
-| `contrast.test.ts` (25 KB) asserts ratios against a single hard-imported palette | `packages/shared/src/theme/contrast.test.ts` | must be parameterized over modes |
+| Blocker                                                                          | Location                                                                                                           | Count                                                                            |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| **Module-scope `StyleSheet.create` reading `semantic.*`**                        | `apps/mobile/src` + `apps/mobile/app`                                                                              | **80 files / 80 blocks**                                                         |
+| **Module-scope `StyleSheet.create` reading `colors.*` only**                     | same                                                                                                               | **26 files**                                                                     |
+| Module-scope `StyleSheet.create`, no color token (spacing/type only)             | same                                                                                                               | 34 files — no work needed                                                        |
+| `semantic.*` used in JSX props / inline style, not in a stylesheet               | same                                                                                                               | **27 files** — these become correct _for free_ once `semantic` comes from a hook |
+| Function-scope `StyleSheet.create` already                                       | same                                                                                                               | **0** — there is no existing dynamic pattern to build on                         |
+| `semantic` destructured at module scope into MUI `createTheme`                   | `packages/ui/src/theme/index.ts:33`                                                                                | 1 (web/ext — later cycle)                                                        |
+| Ditto in RN background components                                                | `apps/mobile/src/components/ScalesBackground/ScalesBackground.tsx:6`, `.../DepthBackground/DepthBackground.tsx:24` | 2                                                                                |
+| `CustomDarkTheme` handed to `@react-navigation/native` `ThemeProvider`           | `apps/mobile/app/_layout.tsx:5, 229, 240`                                                                          | 1                                                                                |
+| `contrast.test.ts` (25 KB) asserts ratios against a single hard-imported palette | `packages/shared/src/theme/contrast.test.ts`                                                                       | must be parameterized over modes                                                 |
 
-**Migration surface: 106 files.** 480 total color-token references across the 80 semantic files — **average 6 per file**, max 24 (`AccountAddPanel.tsx`), min 1 (5 files). This is mechanical, not architectural. 46 of the 106 read *both* `colors.*` and `semantic.*`, which is exactly why §1.5 (retire `colors`) must land first: otherwise every one of those files gets touched twice and both layers need light values.
+**Migration surface: 106 files.** 480 total color-token references across the 80 semantic files — **average 6 per file**, max 24 (`AccountAddPanel.tsx`), min 1 (5 files). This is mechanical, not architectural. 46 of the 106 read _both_ `colors.*` and `semantic.*`, which is exactly why §1.5 (retire `colors`) must land first: otherwise every one of those files gets touched twice and both layers need light values.
 
 ### 1.3 Proposed light-theme infrastructure
 
@@ -71,7 +71,7 @@ Keeping `export const semantic` alive is what makes this non-breaking: the 27 JS
 
 Three values are theme-invariant by ruling and must be asserted as such (DESIGN.md:313): `accent.fill` = `salmon-500`, `accent.onFill`/`text.onAccent` = `neutral-1000`. One asymmetry is already known and must live in the resolver, not in a later bug report (DESIGN.md:312): light borders step to `neutral-500`, not the mirrored `neutral-300`, which measures 2.16:1 on white and fails 1.4.11.
 
-⚠️ **Clarification gate before this package is planned.** DESIGN.md:311–313 carries a concrete index-flip table (`depth.abyss`→`neutral-25`, `surface.shelf`→`neutral-0`, `text.primary`→`neutral-950`, `text.accent`→`salmon-700`…) explicitly marked as *"the starting draft, not deleted"*. The owner now says the `.pen` light values are the source. These are two sources for the same numbers. Someone has to say which wins, per token, before implementation — and DESIGN.md:307 flags the genuinely hard part: `shadows.ts` and the light/shadow alternation are calibrated against a ground measured at 16/255 and **do not survive a ramp flip**. Light shadows must be rebuilt from the rules, not inverted.
+⚠️ **Clarification gate before this package is planned.** DESIGN.md:311–313 carries a concrete index-flip table (`depth.abyss`→`neutral-25`, `surface.shelf`→`neutral-0`, `text.primary`→`neutral-950`, `text.accent`→`salmon-700`…) explicitly marked as _"the starting draft, not deleted"_. The owner now says the `.pen` light values are the source. These are two sources for the same numbers. Someone has to say which wins, per token, before implementation — and DESIGN.md:307 flags the genuinely hard part: `shadows.ts` and the light/shadow alternation are calibrated against a ground measured at 16/255 and **do not survive a ramp flip**. Light shadows must be rebuilt from the rules, not inverted.
 
 **Where the provider lives — `packages/shared/src/contexts/ThemeContext.tsx`, RN-agnostic.**
 
@@ -82,6 +82,7 @@ The one RN-specific piece is reading the OS scheme (`Appearance.getColorScheme()
 ```ts
 <ThemeProvider systemScheme={useColorScheme()}>   // mobile supplies it
 ```
+
 Provider resolves `preference ('system'|'light'|'dark') + systemScheme → mode`, memoizes `createSemantic(mode)`, exposes `useTheme(): { mode, preference, setPreference, semantic, colors }`.
 
 **How mobile consumes it — `useThemedStyles(factory)`.**
@@ -91,11 +92,14 @@ Provider resolves `preference ('system'|'light'|'dark') + systemScheme → mode`
 const cache = new WeakMap<Factory, Partial<Record<ThemeMode, Styles>>>();
 export function useThemedStyles<T>(factory: (s: Semantic) => T): T { … }
 ```
+
 Per-file diff, all 80 semantic files:
+
 ```diff
 -const styles = StyleSheet.create({ …semantic.text.primary… });
 +const stylesFor = (t: Semantic) => StyleSheet.create({ …t.text.primary… });
 ```
+
 plus one `const styles = useThemedStyles(stylesFor);` inside the component. Three structural lines plus a `semantic.` → `t.` rename that is safely codemoddable. The WeakMap keyed on the factory means each file's styles are still built once per mode, so there is no per-render cost — the thing `StyleSheet.create` at module scope was buying is preserved.
 
 I considered and rejected two lazier options: mutating a module-level `semantic` object (RN captures style objects into closures at import — it does not work), and hoisting only color properties to inline `style={[styles.x, {color: t...}]}` (larger diff than the factory, and it scatters the token surface).
@@ -109,9 +113,11 @@ The hook/service the owner asked about is `packages/shared/src/hooks/useUserConf
 /** Appearance preference: 'system' | 'light' | 'dark' */
 APPEARANCE: 'salmon_appearance',
 ```
+
 `getStorage().getItem/setItem` — identical to `CurrencyContext.tsx:134-135, 181-182`. No new persistence machinery.
 
 **Order of migration.**
+
 1. `createSemantic(mode)` + light resolver map + `contrast.test.ts` parameterized over both modes (dark assertions must not move).
 2. `STORAGE_KEYS.APPEARANCE` + `ThemeContext` in shared, mounted in `apps/mobile/app/_layout.tsx` beside `CurrencyProvider`.
 3. `useThemedStyles` + migrate the 80 semantic files, screen by screen.
@@ -135,7 +141,7 @@ All 68 leaves classified by grep across `apps/mobile`, `apps/web`, `apps/extensi
 
 ### 1.5 The structural finding: two color layers, both live
 
-`colors.ts` is documented as legacy (`semantic.ts:12-14`: *"components move over as they are touched, rather than in one sweeping rename"*). Three years of "as they are touched" has produced a stable split, not a migration: **46 mobile files read both layers**, and `colors.ts:8` imports `{ scales, surface }` *from* `semantic.ts`, so the legacy layer is now downstream of the new one.
+`colors.ts` is documented as legacy (`semantic.ts:12-14`: _"components move over as they are touched, rather than in one sweeping rename"_). Three years of "as they are touched" has produced a stable split, not a migration: **46 mobile files read both layers**, and `colors.ts:8` imports `{ scales, surface }` _from_ `semantic.ts`, so the legacy layer is now downstream of the new one.
 
 For the light theme this is the difference between one resolver and two. **Retiring `colors` in mobile is the single highest-leverage change in this audit** and belongs before the light-theme package, not after.
 
@@ -147,23 +153,24 @@ For the light theme this is the difference between one resolver and two. **Retir
 
 **True dead — zero consumers anywhere outside the barrel (6):**
 
-| Symbol | Location |
-|---|---|
-| `AddressBookPanelPropsBase` | `packages/shared/src/types/ui/address-book-panel.ts:6` |
-| `AddressAddPanelPropsBase` | `packages/shared/src/types/ui/address-book-panel.ts:18` |
-| `AddressEditPanelPropsBase` | `packages/shared/src/types/ui/address-book-panel.ts:28` |
-| `BalanceCardSkeletonPropsBase` | `packages/shared/src/types/ui/balance-card.ts:86` |
-| `SendContact` | `packages/shared/src/types/ui/send-sheet.ts:77` |
-| `SendOwnWallet` | `packages/shared/src/types/ui/send-sheet.ts:93` |
+| Symbol                         | Location                                                |
+| ------------------------------ | ------------------------------------------------------- |
+| `AddressBookPanelPropsBase`    | `packages/shared/src/types/ui/address-book-panel.ts:6`  |
+| `AddressAddPanelPropsBase`     | `packages/shared/src/types/ui/address-book-panel.ts:18` |
+| `AddressEditPanelPropsBase`    | `packages/shared/src/types/ui/address-book-panel.ts:28` |
+| `BalanceCardSkeletonPropsBase` | `packages/shared/src/types/ui/balance-card.ts:86`       |
+| `SendContact`                  | `packages/shared/src/types/ui/send-sheet.ts:77`         |
+| `SendOwnWallet`                | `packages/shared/src/types/ui/send-sheet.ts:93`         |
 
 `packages/shared/src/types/ui/address-book-panel.ts` is **entirely** unconsumed — the only such file in the directory.
 
 **Zero mobile consumers, live only in `packages/ui` (17):** `AboutPanelPropsBase`, `BackupPanelPropsBase`, `ActionButtonBase`, `ActionButtonRowPropsBase`, `BalanceCardPropsBase`, `PrivateKeyPanelPropsBase`, `SecurityPanelPropsBase`, `TokenInfoPropsBase`, `TokenFeaturesPropsBase`, `WalletHeaderPropsBase`, `WalletSwitcherSheetPropsBase`, `AccountListItemPropsBase`, `TokenBadgesSectionPropsBase`, `SendStep`, `StepConfirmationProps`, `StepAddressAmountPropsBase`, `UseSendContactsResult`.
 
 **Recommendation.**
+
 - **Delete now:** the whole of `address-book-panel.ts` + its 3 barrel lines, plus `BalanceCardSkeletonPropsBase`. Zero blast radius in any package — this needs no breaking-change allowance at all.
-- **Delete with the barrel entries, cheap:** `SendContact` / `SendOwnWallet` are referenced only by `StepConfirmationProps` *in the same file*, which itself is `packages/ui`-only. Inline them into `StepConfirmationProps` or drop all three together when web is redesigned.
-- **Keep:** the 17 `packages/ui`-only contracts. The owner allows breaking web/extension, but these are not "web code" — they are the cross-platform contracts the redesign of web/extension will be *written against*, and deleting a `*PropsBase` deletes the shape a future mobile implementation would extend. Deleting them buys ~40 lines and costs the contract. **Do not touch.**
+- **Delete with the barrel entries, cheap:** `SendContact` / `SendOwnWallet` are referenced only by `StepConfirmationProps` _in the same file_, which itself is `packages/ui`-only. Inline them into `StepConfirmationProps` or drop all three together when web is redesigned.
+- **Keep:** the 17 `packages/ui`-only contracts. The owner allows breaking web/extension, but these are not "web code" — they are the cross-platform contracts the redesign of web/extension will be _written against_, and deleting a `*PropsBase` deletes the shape a future mobile implementation would extend. Deleting them buys ~40 lines and costs the contract. **Do not touch.**
 - `UseSendContactsResult` looks mobile-dead but is live at `packages/shared/src/hooks/useSendContacts.ts:19,31`. Not dead.
 
 ---
@@ -182,9 +189,9 @@ Every other file in `apps/mobile/src/utils` and `apps/mobile/hooks` is correctly
 
 **Overlapping hooks — one real overlap, and it is the same file.**
 
-`apps/mobile/hooks/useTokenDetail.ts` hand-rolls two `useEffect` fetches with manual `loading`/`chartError` state, calling `getTokenCoinInfo` + `getTokenMarketChart`. `packages/shared/src/hooks/useCoinMarketData.ts` calls **the same two shared API functions** as a React Query hook — and its own header comment (lines 1-10) says it exists to *"replace duplicated `useState + useEffect` blocks in web/extension HomePage Bitcoin and selected-token detail flows."* The hook built to retire this pattern shipped, and mobile still owns the pattern. Consequences: mobile gets no query-key dedup, no `keepPreviousData`, and no propagation of future caching/error fixes.
+`apps/mobile/hooks/useTokenDetail.ts` hand-rolls two `useEffect` fetches with manual `loading`/`chartError` state, calling `getTokenCoinInfo` + `getTokenMarketChart`. `packages/shared/src/hooks/useCoinMarketData.ts` calls **the same two shared API functions** as a React Query hook — and its own header comment (lines 1-10) says it exists to _"replace duplicated `useState + useEffect` blocks in web/extension HomePage Bitcoin and selected-token detail flows."_ The hook built to retire this pattern shipped, and mobile still owns the pattern. Consequences: mobile gets no query-key dedup, no `keepPreviousData`, and no propagation of future caching/error fixes.
 
-The fix collapses both findings into one change: point `apps/mobile/app/(app)/token/[id].tsx` at `useCoinMarketData` and delete `useTokenDetail`. Nothing needs to *move* into shared — the shared hook already exists.
+The fix collapses both findings into one change: point `apps/mobile/app/(app)/token/[id].tsx` at `useCoinMarketData` and delete `useTokenDetail`. Nothing needs to _move_ into shared — the shared hook already exists.
 
 No other mobile-local counterpart exists for `useBalance`, `useMultiChainTokens`, `useJupiterTokenList`, or `useTransactions`; mobile screens consume those directly.
 
@@ -196,7 +203,7 @@ No other mobile-local counterpart exists for `useBalance`, `useMultiChainTokens`
 
 - `semantic`: `text.onGlass`, `state.loadingOpacity`, `accent.inkOnMembrane`, `scales.deepFieldHeight` (already self-documented `@deprecated` at `semantic.ts:205-211`).
 - `spacing`: `lockScreenGap`, `lockScreenSectionGap`, `lockScreenPadding`, `paginationGap`, `tabBarPadding`.
-- `componentSizes`: **19 of 102** — `actionButtonWidth`, `logoSizeLarge`, `successCircleSize`, `blockchainIcon`, `headerInnerHeight`, `tabBarRadius`, `tabBarPaddingTop`, `tabBarMinBottomPadding`, `tabBarItemHeight`, `tabBarHeight`, `sheetHandleWidth`, `sheetHandleHeight`, `descentTrackWidth`, `descentTrackHeight`, `descentSegmentHeight`, `swapReviewCardMinHeight`, `lockScreenLogoSize`, `lockScreenLogoSizeExtension`, `biometricButtonSize`. A further 43 have no *mobile* consumer but are live in web/`packages/ui` (`sheetWidth*`, `dialogWidth*`, `scrollbarWidth*`, `breakpointDesktop`, `drawerWidth`…) — those are correctly DOM-only and should stay.
+- `componentSizes`: **19 of 102** — `actionButtonWidth`, `logoSizeLarge`, `successCircleSize`, `blockchainIcon`, `headerInnerHeight`, `tabBarRadius`, `tabBarPaddingTop`, `tabBarMinBottomPadding`, `tabBarItemHeight`, `tabBarHeight`, `sheetHandleWidth`, `sheetHandleHeight`, `descentTrackWidth`, `descentTrackHeight`, `descentSegmentHeight`, `swapReviewCardMinHeight`, `lockScreenLogoSize`, `lockScreenLogoSizeExtension`, `biometricButtonSize`. A further 43 have no _mobile_ consumer but are live in web/`packages/ui` (`sheetWidth*`, `dialogWidth*`, `scrollbarWidth*`, `breakpointDesktop`, `drawerWidth`…) — those are correctly DOM-only and should stay.
 - `shadows`: `imageHero`, `topSheet`. `shadowsCSS.card` is dead; the other 9 `shadowsCSS` entries are web/ext-only and correct.
 - `gradients`: the 9 listed in §1.4.
 - `fontSize.iconMd`; `borderWidth.accent`/`thick`; `blur.lg`; `letterSpacing.tight`/`loose`/`header`.
@@ -222,9 +229,10 @@ The five `settings.*` look like leftovers from a naming that was superseded by `
 - **205 type-only exports**, of which **52** are hook-signature types (`Use*Params` / `Use*Result` / `Use*Options`). These are deliberate API documentation, consumed structurally. **Not dead code — do not delete them.**
 
 Spot-checking dissolved a large fraction of the runtime list into three benign tiers, and any cleanup must sort by tier rather than deleting from the list:
-- *Internal-only, correctly not exported further* — e.g. `unlockDelayMs` (`utils/unlock-throttle.ts:61`) is called at lines 88 and 113 of its own file; it is merely over-exported through `utils/index.ts:308`.
-- *Test-covered, no production caller* — e.g. `getRequiredSol`, `isSameChain`, `getSolscanUrl`, `mergeTokenLists`, `formatUsdValue`. These have real test files; some are genuinely orphaned features, some are pre-built API.
-- *Genuinely orphaned* — `packages/shared/src/motion/wavefront.ts:257` `planWavefront` has a test that says so in its own comment: *"`planWavefront` has no caller since the riders were removed (product…)"*. `motion/crest.ts` has 14 dead exports of the same vintage.
+
+- _Internal-only, correctly not exported further_ — e.g. `unlockDelayMs` (`utils/unlock-throttle.ts:61`) is called at lines 88 and 113 of its own file; it is merely over-exported through `utils/index.ts:308`.
+- _Test-covered, no production caller_ — e.g. `getRequiredSol`, `isSameChain`, `getSolscanUrl`, `mergeTokenLists`, `formatUsdValue`. These have real test files; some are genuinely orphaned features, some are pre-built API.
+- _Genuinely orphaned_ — `packages/shared/src/motion/wavefront.ts:257` `planWavefront` has a test that says so in its own comment: _"`planWavefront` has no caller since the riders were removed (product…)"_. `motion/crest.ts` has 14 dead exports of the same vintage.
 
 Two areas are out of scope for change proposals per the brief and are listed as notes only: `crypto` (7 runtime, incl. `deriveEncryptionKey`, `isValidVault`) and `storage` (20 runtime, incl. every adapter factory — those are almost certainly wired dynamically by platform and the scan should not be trusted there). **Flag, do not touch.**
 
@@ -262,7 +270,7 @@ Files: `apps/mobile/hooks/useTokenDetail.ts` (delete), `apps/mobile/app/(app)/to
 Dependency: none. Direct change.
 Brief: point the token-detail screen at `packages/shared/src/hooks/useCoinMarketData.ts` — the hook written to retire exactly this `useState`+`useEffect` pattern — and delete the mobile copy; mobile gains query-key dedup and `keepPreviousData` for free.
 
-**WP5 — Collapse `colors` into `semantic` across mobile.** ← *the load-bearing one*
+**WP5 — Collapse `colors` into `semantic` across mobile.** ← _the load-bearing one_
 Files: the 26 `colors`-only + 46 mixed mobile files (72 files), plus new `semantic` tokens for the 6-leaf `colors.scanner.*` sub-system.
 Dependency: WP1 (do not migrate tokens you are about to delete).
 Spec-kit spec — the scanner tokens are a design decision, and the mapping table wants review before 72 files move.

@@ -96,9 +96,7 @@ export default function SendReviewScreen() {
   // What the transfer will actually pay. When a `.sol` domain was typed, the
   // resolved address is the destination — showing the domain here would ask
   // the user to sign for something this screen never displayed.
-  const destinationAddress = recipient
-    ? recipient.resolvedAddress || recipient.address
-    : '';
+  const destinationAddress = recipient ? recipient.resolvedAddress || recipient.address : '';
   const resolvedFromDomain =
     recipient?.resolvedAddress && recipient.resolvedAddress !== recipient.address
       ? recipient.address
@@ -157,7 +155,7 @@ export default function SendReviewScreen() {
           />
           <KeyValueRow
             label={t('transactions.to')}
-            value={recipient?.name ?? (getShortAddress(destinationAddress) ?? destinationAddress)}
+            value={recipient?.name ?? getShortAddress(destinationAddress) ?? destinationAddress}
           />
           {/* Mono in 4-character chunks: fixed-width chunks are what let the
               eye compare a prefix and suffix positionally. */}

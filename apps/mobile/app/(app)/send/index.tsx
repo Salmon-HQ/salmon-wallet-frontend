@@ -140,7 +140,7 @@ export default function SendRecipientScreen() {
       seen.add(destination);
       rows.push({
         key: `recent-${destination}`,
-        name: contactsByAddress[destination] ?? (getShortAddress(destination) ?? destination),
+        name: contactsByAddress[destination] ?? getShortAddress(destination) ?? destination,
         address: destination,
       });
       if (rows.length === MAX_RECENTS) break;
@@ -209,9 +209,7 @@ export default function SendRecipientScreen() {
             }
             title={option.name}
             subtitle={getShortAddress(option.address) ?? option.address}
-            trailing={
-              <CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />
-            }
+            trailing={<CaretRightIcon size={iconSize.md} color={semantic.text.tertiary} />}
           />
         ))}
       </View>

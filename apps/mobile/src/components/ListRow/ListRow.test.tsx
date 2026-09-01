@@ -35,7 +35,9 @@ describe('ListRow', () => {
   });
 
   it('names itself with the subtitle so identical titles stay distinguishable', () => {
-    render(<ListRow leading={<Text>L</Text>} title="Ana" subtitle="9xQe…4f2" onPress={jest.fn()} />);
+    render(
+      <ListRow leading={<Text>L</Text>} title="Ana" subtitle="9xQe…4f2" onPress={jest.fn()} />
+    );
 
     expect(screen.getByLabelText('Ana, 9xQe…4f2')).toBeTruthy();
   });

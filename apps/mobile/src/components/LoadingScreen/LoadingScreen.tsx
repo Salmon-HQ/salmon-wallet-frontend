@@ -961,6 +961,6 @@ const stylesFor = (t: Semantic) =>
       textAlign: 'center',
       paddingHorizontal: spacing.lg,
     },
-});
+  });
 
 export default LoadingScreen;

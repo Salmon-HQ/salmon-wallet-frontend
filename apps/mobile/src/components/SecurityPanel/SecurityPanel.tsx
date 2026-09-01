@@ -162,9 +162,7 @@ export function SecurityPanel({
           />
         }
         title={t(
-          safeguards.isStrong
-            ? 'settings.security.score_strong'
-            : 'settings.security.score_partial'
+          safeguards.isStrong ? 'settings.security.score_strong' : 'settings.security.score_partial'
         )}
         subtitle={t('settings.security.score_detail', {
           enabled: safeguards.enabled,
@@ -192,9 +190,7 @@ export function SecurityPanel({
                 size="sm"
                 variant="outline"
                 label={t(
-                  isBiometricEnabled
-                    ? 'settings.security.state_on'
-                    : 'settings.security.state_off'
+                  isBiometricEnabled ? 'settings.security.state_on' : 'settings.security.state_off'
                 )}
                 testID="security-biometric-state"
               />

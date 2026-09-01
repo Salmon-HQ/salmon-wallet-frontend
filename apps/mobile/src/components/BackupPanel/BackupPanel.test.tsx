@@ -65,7 +65,6 @@ jest.mock('../PressSpecular', () => ({
   SPECULAR_OPACITY: 0.12,
 }));
 
-
 jest.mock('../../../hooks/useSecretScreen', () => ({
   useSecretScreen: jest.fn(),
 }));

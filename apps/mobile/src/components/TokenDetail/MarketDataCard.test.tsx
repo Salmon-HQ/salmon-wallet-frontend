@@ -43,8 +43,7 @@ jest.mock('../Skeleton', () => {
   const ReactActual = require('react');
   const { View } = require('react-native');
   return {
-    SkeletonRow: ({ testID }: { testID?: string }) =>
-      ReactActual.createElement(View, { testID }),
+    SkeletonRow: ({ testID }: { testID?: string }) => ReactActual.createElement(View, { testID }),
   };
 });
 

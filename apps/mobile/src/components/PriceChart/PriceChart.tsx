@@ -292,9 +292,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({
   const lineAnimatedProps = useAnimatedProps(() => ({ d: lineD.value }));
   const areaAnimatedProps = useAnimatedProps(() => ({
     d:
-      lineD.value === ''
-        ? ''
-        : `${lineD.value} L ${lineWidth} ${chartHeight} L 0 ${chartHeight} Z`,
+      lineD.value === '' ? '' : `${lineD.value} L ${lineWidth} ${chartHeight} L 0 ${chartHeight} Z`,
   }));
 
   // Built here, not at module scope: tests mock the shared barrel partially.
@@ -347,11 +345,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({
             />
 
             {/* Current price point: the halo breathes, the dot holds. */}
-            <AnimatedCircle
-              animatedProps={haloAnimatedProps}
-              cx={lineWidth}
-              fill={chartColor}
-            />
+            <AnimatedCircle animatedProps={haloAnimatedProps} cx={lineWidth} fill={chartColor} />
             <AnimatedCircle
               animatedProps={dotAnimatedProps}
               cx={lineWidth}

@@ -40,7 +40,6 @@ import {
   type CurrencySelectorItem,
   type NetworkAdapter,
   type BlockchainType,
-
 } from '@salmon/shared';
 
 import {
@@ -81,9 +80,9 @@ export function useSettingsPanelRegistry(): MobilePanelRegistry {
   const userConfigAccount = useMemo(
     () => ({
       network: {
-        environment: (activeBlockchainAccount ? networkId || 'solana-mainnet' : 'solana-mainnet') as
-          | 'solana-mainnet'
-          | 'solana-devnet',
+        environment: (activeBlockchainAccount
+          ? networkId || 'solana-mainnet'
+          : 'solana-mainnet') as 'solana-mainnet' | 'solana-devnet',
         blockchain: 'solana',
       },
     }),

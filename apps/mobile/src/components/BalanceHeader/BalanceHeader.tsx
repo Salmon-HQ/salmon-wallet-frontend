@@ -286,7 +286,11 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
 
           {/* The value stays readable while it is being recalculated — the
               number breathes, it is never replaced by a placeholder. */}
-          <Animated.View key={`amount-${currentBlockchainId}`} testID="balance-amount" {...swapMotion}>
+          <Animated.View
+            key={`amount-${currentBlockchainId}`}
+            testID="balance-amount"
+            {...swapMotion}
+          >
             <PendingValue pending={loading}>
               <Text
                 style={styles.balance}
@@ -311,10 +315,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
             >
               <PendingValue pending={loading}>
                 <Text
-                  style={[
-                    styles.change,
-                    { color: hiddenBalance ? text.secondary : changeColor },
-                  ]}
+                  style={[styles.change, { color: hiddenBalance ? text.secondary : changeColor }]}
                 >
                   {hiddenBalance
                     ? `${hiddenValue} · ${hiddenValue}`

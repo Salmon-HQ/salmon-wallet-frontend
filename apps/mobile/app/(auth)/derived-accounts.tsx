@@ -61,10 +61,12 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 // ============================================================================
 
 function LoadingSkeleton() {
+  const { t } = useTranslation();
   const styles = useThemedStyles(stylesFor);
   return (
     <View style={styles.skeletonContainer}>
       <SkeletonRow
+        accessibilityLabel={t('accessibility.loading_account_info')}
         leadingSize={componentSizes.checkboxSize}
         trailingWidth={70}
         padding="lg"
@@ -299,7 +301,9 @@ export default function DerivedAccountsScreen() {
         float
         // The derivation tree: one key, many branches — which is what this
         // screen scans. One semantic glyph per flow step, consent's pattern.
-        mark={<TreeStructureIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
+        mark={
+          <TreeStructureIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />
+        }
         chrome={<ScreenHeader />}
         title={<OnboardingTitle>{t('wallet.derived.title')}</OnboardingTitle>}
         description={<OnboardingDescription>{t('wallet.derived.subtitle')}</OnboardingDescription>}

@@ -15,28 +15,32 @@ Token information and the NFT detail leave their sheets and become stack screens
 
 ## Deltas — exists today, absent from the mock (rulings needed)
 
-| # | Today (`TokenInformationSheet`) | CORE 02 | Proposal |
-|---|---|---|---|
-| D1 | `PriceChart` with period selector (1D/1W/1M/…) | single 7-day line, no selector | **Keep periods** (already ruled in handoff). Selector = `UnderlineTabs` inside the card; "7D change" row becomes "{period} change". |
-| D2 | `TokenMarketData` (market cap, volume, supply…) | absent | **Keep** (handoff ruling) as a `Card` of `KeyValueRow`s under Performance. |
-| D3 | `TokenAbout` (description) + contract address copy + website link | absent | **Keep** (handoff ruling) as the last `Card`. |
-| D4 | — | Send / Receive actions on the asset | New. Send pushes `/send` with the token preselected (needs the send flow context to accept an initial token); Receive opens the existing Receive sheet (CORE 03). Ruling: build now or defer? |
-| D5 | — | Recent activity per asset | New. Filter `useTransactions` rows by mint/symbol, take 3, row tap → today's transaction detail; "See all" → `/activity`. Ruling: build now or defer to CORE 09? |
-| D6 | Bitcoin | — | **No BTC detail** (handoff ruling): BTC row on Portfolio is not pressable. |
-| D7 | `NftDetailSheet` 1265 lines: image, attributes, send (address → review → success) and burn (review → success) as in-sheet steps | no frame | Screen with image hero + attributes `Card` + actions; send/burn become pushed steps (`/nft/[id]/send`, `/nft/[id]/burn`) reusing the sheet's step bodies and `useNftTransfer`. Ruling: confirm shape, or keep the sheet for now and ship token detail alone. |
+| #   | Today (`TokenInformationSheet`)                                                                                                 | CORE 02                             | Proposal                                                                                                                                                                                                                                                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| D1  | `PriceChart` with period selector (1D/1W/1M/…)                                                                                  | single 7-day line, no selector      | **Keep periods** (already ruled in handoff). Selector = `UnderlineTabs` inside the card; "7D change" row becomes "{period} change".                                                                                                                          |
+| D2  | `TokenMarketData` (market cap, volume, supply…)                                                                                 | absent                              | **Keep** (handoff ruling) as a `Card` of `KeyValueRow`s under Performance.                                                                                                                                                                                   |
+| D3  | `TokenAbout` (description) + contract address copy + website link                                                               | absent                              | **Keep** (handoff ruling) as the last `Card`.                                                                                                                                                                                                                |
+| D4  | —                                                                                                                               | Send / Receive actions on the asset | New. Send pushes `/send` with the token preselected (needs the send flow context to accept an initial token); Receive opens the existing Receive sheet (CORE 03). Ruling: build now or defer?                                                                |
+| D5  | —                                                                                                                               | Recent activity per asset           | New. Filter `useTransactions` rows by mint/symbol, take 3, row tap → today's transaction detail; "See all" → `/activity`. Ruling: build now or defer to CORE 09?                                                                                             |
+| D6  | Bitcoin                                                                                                                         | —                                   | **No BTC detail** (handoff ruling): BTC row on Portfolio is not pressable.                                                                                                                                                                                   |
+| D7  | `NftDetailSheet` 1265 lines: image, attributes, send (address → review → success) and burn (review → success) as in-sheet steps | no frame                            | Screen with image hero + attributes `Card` + actions; send/burn become pushed steps (`/nft/[id]/send`, `/nft/[id]/burn`) reusing the sheet's step bodies and `useNftTransfer`. Ruling: confirm shape, or keep the sheet for now and ship token detail alone. |
 
 ## User Stories
 
 ### US1 — Open a token (P1)
+
 Portfolio row tap pushes `/token/[id]` (Solana mint or `sol`). Screen = CORE 02 with D1–D3 kept. Data loading exactly as Home does today (`getTokenMarketChart`, `getTokenCoinInfo`, `coinInfoToMarketData`) but moved out of `(tabs)/index.tsx` into a hook the route owns; Home loses the eight `selectedToken*` states.
 
 ### US2 — Act on a token (P2, pending D4/D5)
+
 Send / Receive actions and Recent activity as ruled.
 
 ### US3 — Open an NFT (P1, pending D7)
+
 NFT card tap pushes `/nft/[id]`; send/burn as pushed steps.
 
 ## Requirements
+
 - FR-001 Routes `/token/[id]` and `/nft/[id]` on the `(app)` stack, right-slide. Route params: never name a dynamic segment `[screen]` (reserved — see `settings/[panel].tsx`).
 - FR-002 Reuse `PriceChart`, `TokenMarketData`, `TokenAbout`, `useTransactions`, `useNftTransfer`; delete `TokenInformationSheet` and `NftDetailSheet` (+ barrels, tests, README) once nothing imports them. Ask before deleting `TokenInformationSheetPropsBase` in shared (web/extension consumers).
 - FR-003 Kit-only composition; 20-pt sibling gaps; `ScreenHeader` 24/700 + 14/500 (DESIGN.md wins over the mock's 20/13).

@@ -8,7 +8,6 @@
 import type { ViewStyle } from 'react-native';
 import type { TransactionItemPropsBase } from '@salmon/shared';
 
-
 // Re-export shared types for convenience
 export type {
   TransactionType,

@@ -123,7 +123,11 @@ describe('ReceiptScreen — transfer tone', () => {
           { label: 'Amount', value: '5 SOL' },
           { label: 'To', value: 'bob.sol' },
         ]}
-        primary={{ label: 'Back to wallet', onPress: onPrimary, testID: 'tx-success-continue-button' }}
+        primary={{
+          label: 'Back to wallet',
+          onPress: onPrimary,
+          testID: 'tx-success-continue-button',
+        }}
         secondary={{ label: 'Share', onPress: onSecondary, testID: 'tx-success-share' }}
         testID="tx-success-screen"
       />
@@ -146,7 +150,11 @@ describe('ReceiptScreen — transfer tone', () => {
         tone="transfer"
         title="NFT sent"
         rows={[]}
-        primary={{ label: 'Back to wallet', onPress: jest.fn(), testID: 'tx-success-continue-button' }}
+        primary={{
+          label: 'Back to wallet',
+          onPress: jest.fn(),
+          testID: 'tx-success-continue-button',
+        }}
         secondary={{ label: 'Share', onPress: jest.fn(), testID: 'tx-success-share' }}
         explorerUrl="https://solscan.io/tx/abc"
         settling

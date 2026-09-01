@@ -27,7 +27,9 @@ const mockAccountState = {
   ready: true,
   locked: false,
   networkId: 'solana-mainnet',
-  activeBlockchainAccount: { getReceiveAddress: () => 'MyOwnAddress1111111111111111111111111111111' },
+  activeBlockchainAccount: {
+    getReceiveAddress: () => 'MyOwnAddress1111111111111111111111111111111',
+  },
 };
 
 jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
@@ -113,9 +115,7 @@ jest.mock('../../src/components/BottomSheetContainer', () => {
       children?: React.ReactNode;
       testID?: string;
     }) =>
-      visible
-        ? ReactActual.createElement(ReactActual.Fragment, { key: testID }, children)
-        : null,
+      visible ? ReactActual.createElement(ReactActual.Fragment, { key: testID }, children) : null,
   };
 });
 
@@ -175,8 +175,22 @@ import { groupByDay, matchesFilter } from '../../src/components/Activity/activit
 const NOW_SECONDS = Date.now() / 1000;
 
 const TRANSACTIONS = [
-  { id: 'tx-send', type: 'send', status: 'completed', timestamp: NOW_SECONDS, inputs: [], outputs: [] },
-  { id: 'tx-receive', type: 'receive', status: 'completed', timestamp: NOW_SECONDS, inputs: [], outputs: [] },
+  {
+    id: 'tx-send',
+    type: 'send',
+    status: 'completed',
+    timestamp: NOW_SECONDS,
+    inputs: [],
+    outputs: [],
+  },
+  {
+    id: 'tx-receive',
+    type: 'receive',
+    status: 'completed',
+    timestamp: NOW_SECONDS,
+    inputs: [],
+    outputs: [],
+  },
   { id: 'tx-swap', type: 'swap', status: 'completed', timestamp: 1, inputs: [], outputs: [] },
 ];
 

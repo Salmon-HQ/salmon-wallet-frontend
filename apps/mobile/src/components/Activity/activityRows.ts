@@ -64,8 +64,7 @@ export function groupByDay(transactions: Transaction[], now = Date.now()): Activ
   let openGroup: ActivityGroup | null = null;
 
   for (const transaction of transactions) {
-    const group: ActivityGroup =
-      transaction.timestamp >= startOfTodaySeconds ? 'today' : 'earlier';
+    const group: ActivityGroup = transaction.timestamp >= startOfTodaySeconds ? 'today' : 'earlier';
     if (group !== openGroup) {
       openGroup = group;
       items.push({ kind: 'header', key: `activity-group-${group}`, group });

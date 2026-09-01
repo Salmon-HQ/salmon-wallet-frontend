@@ -84,9 +84,9 @@ export default function WalletsScreen() {
   const userConfigAccount = useMemo(
     () => ({
       network: {
-        environment: (activeBlockchainAccount ? networkId || 'solana-mainnet' : 'solana-mainnet') as
-          | 'solana-mainnet'
-          | 'solana-devnet',
+        environment: (activeBlockchainAccount
+          ? networkId || 'solana-mainnet'
+          : 'solana-mainnet') as 'solana-mainnet' | 'solana-devnet',
         blockchain: 'solana',
       },
     }),
@@ -140,7 +140,10 @@ export default function WalletsScreen() {
   const handleRename = useCallback(
     (id: string) => {
       // The same rename screen Settings → Accounts → Edit reaches.
-      router.push({ pathname: '/settings/[panel]', params: { panel: 'account-name', accountId: id } });
+      router.push({
+        pathname: '/settings/[panel]',
+        params: { panel: 'account-name', accountId: id },
+      });
     },
     [router]
   );

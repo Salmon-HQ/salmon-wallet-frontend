@@ -2,12 +2,7 @@
  * PasswordStrengthBar - Visual indicator of password strength
  */
 import { View, Text, StyleSheet } from 'react-native';
-import {
-  spacing,
-  borderRadius,
-  fontSize,
-  fontFamilyNative,
-} from '@salmon/shared';
+import { spacing, borderRadius, fontSize, fontFamilyNative } from '@salmon/shared';
 import { PasswordStrength, getPasswordStrengthLabel } from '@salmon/shared';
 
 import { useSemantic } from '../../theme/useThemedStyles';

@@ -102,7 +102,16 @@ export function SettingsSelectorList<T>({
         />
       );
     },
-    [isSelected, getKey, onSelect, getPrimaryText, getSecondaryText, renderLeadingElement, testIdPrefix, accent]
+    [
+      isSelected,
+      getKey,
+      onSelect,
+      getPrimaryText,
+      getSecondaryText,
+      renderLeadingElement,
+      testIdPrefix,
+      accent,
+    ]
   );
 
   if (loading) {
@@ -132,11 +141,11 @@ export default SettingsSelectorList;
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-  emptyText: {
-    color: t.text.secondary,
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    textAlign: 'center',
-    padding: vs(spacing.xl),
-  },
-});
+    emptyText: {
+      color: t.text.secondary,
+      fontFamily: fontFamilyNative.regular,
+      fontSize: s(fontSize.body),
+      textAlign: 'center',
+      padding: vs(spacing.xl),
+    },
+  });

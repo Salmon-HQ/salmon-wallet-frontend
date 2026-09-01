@@ -16,9 +16,7 @@ describe('SheetTitle', () => {
   });
 
   it('renders a leading element alongside the title', () => {
-    render(
-      <SheetTitle leading={<Text testID="leading-icon">!</Text>}>Confirm</SheetTitle>
-    );
+    render(<SheetTitle leading={<Text testID="leading-icon">!</Text>}>Confirm</SheetTitle>);
 
     expect(screen.getByTestId('leading-icon')).toBeTruthy();
     expect(screen.getByText('Confirm')).toBeTruthy();

@@ -71,27 +71,27 @@ export function StepIndicator({ totalSteps, currentStep }: StepIndicatorProps) {
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-  container: {
-    justifyContent: 'center',
-  },
-  track: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: componentSizes.stepDotGap,
-  },
-  dot: {
-    width: componentSizes.stepDotSize,
-    height: componentSizes.stepDotSize,
-    borderRadius: componentSizes.stepDotSize / 2,
-  },
-  active: {
-    position: 'absolute',
-    left: 0,
-  },
-  dotActive: {
-    backgroundColor: t.step.active,
-  },
-  dotInactive: {
-    backgroundColor: t.step.inactive,
-  },
-});
+    container: {
+      justifyContent: 'center',
+    },
+    track: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: componentSizes.stepDotGap,
+    },
+    dot: {
+      width: componentSizes.stepDotSize,
+      height: componentSizes.stepDotSize,
+      borderRadius: componentSizes.stepDotSize / 2,
+    },
+    active: {
+      position: 'absolute',
+      left: 0,
+    },
+    dotActive: {
+      backgroundColor: t.step.active,
+    },
+    dotInactive: {
+      backgroundColor: t.step.inactive,
+    },
+  });

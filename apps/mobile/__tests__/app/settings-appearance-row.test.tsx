@@ -37,7 +37,12 @@ jest.mock('@salmon/shared', () => ({
   getSettingsItemTestId: (id: string) => `settings-item-${id}`,
   LANGUAGE_NAMES: { en: 'English' },
   useAccountsContext: () => [
-    { activeAccount: null, activeBlockchainAccount: null, networkId: 'solana-mainnet', accounts: [] },
+    {
+      activeAccount: null,
+      activeBlockchainAccount: null,
+      networkId: 'solana-mainnet',
+      accounts: [],
+    },
     { removeAllAccounts: jest.fn(), removeAccount: jest.fn() },
   ],
   useAnalyticsConsent: () => ({ consent: false, setConsent: jest.fn() }),
@@ -55,7 +60,10 @@ jest.mock('../../src/icons', () => {
   const Stub = () => <View />;
   return new Proxy(
     { iconSize: { sm: 16, md: 20, lg: 24, xl: 28 } },
-    { get: (target, prop) => (prop in target ? (target as Record<string, unknown>)[prop as string] : Stub) }
+    {
+      get: (target, prop) =>
+        prop in target ? (target as Record<string, unknown>)[prop as string] : Stub,
+    }
   );
 });
 

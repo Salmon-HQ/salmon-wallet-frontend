@@ -144,103 +144,103 @@ export function WalletHeader({
             durationMs: motionMs.ebb,
           })}
         >
-      {/* Left side - wallet thumb + Account info */}
-      <View style={styles.leftSection}>
-        {/* The wallet thumb is the account's own picture: the identity the
+          {/* Left side - wallet thumb + Account info */}
+          <View style={styles.leftSection}>
+            {/* The wallet thumb is the account's own picture: the identity the
             user recognises sits where the identity switcher is. A generic
             wallet glyph said nothing about *which* wallet is open. The salmon
             mark stands in when the account has no avatar. */}
-        <IconBubble
-          testID="wallet-header-account-switcher"
-          size={WALLET_THUMB_SIZE}
-          // A circle, matching the gear circle at the other end of the row:
-          // the two ends of the header are the same object at the same size,
-          // and a rounded square on the left made them read as two different
-          // kinds of control (owner, on device).
-          shape="circle"
-          tone="ink"
-          onPress={handleWalletPress}
-          accessibilityLabel={t('accessibility.switch_wallet')}
-          hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
-        >
-          {avatarUrl && !imgError ? (
-            <Image
-              source={{ uri: avatarUrl }}
-              style={styles.avatarImage}
-              contentFit="cover"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <BrandMark size={s(WALLET_THUMB_GLYPH_SIZE)} />
-          )}
-        </IconBubble>
+            <IconBubble
+              testID="wallet-header-account-switcher"
+              size={WALLET_THUMB_SIZE}
+              // A circle, matching the gear circle at the other end of the row:
+              // the two ends of the header are the same object at the same size,
+              // and a rounded square on the left made them read as two different
+              // kinds of control (owner, on device).
+              shape="circle"
+              tone="ink"
+              onPress={handleWalletPress}
+              accessibilityLabel={t('accessibility.switch_wallet')}
+              hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
+            >
+              {avatarUrl && !imgError ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={styles.avatarImage}
+                  contentFit="cover"
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <BrandMark size={s(WALLET_THUMB_GLYPH_SIZE)} />
+              )}
+            </IconBubble>
 
-        <View style={styles.accountInfo}>
-          {/* Only the text travels — the copy button and its feedback state
+            <View style={styles.accountInfo}>
+              {/* Only the text travels — the copy button and its feedback state
               stay mounted (remounting would reset the tick mid-hold). */}
-          <Reanimated.View
-            key={address}
-            testID="wallet-header-account-text"
-            style={styles.accountTextWrapper}
-            entering={floatEntering(isReduceMotionEnabled, {
-              distance: SINK_FLOAT_TRAVEL / 2,
-              scale: CHROME_SCALE,
-              durationMs: motionMs.drift,
-              delayMs: addressSwap.hasPrior ? motionMs.ebb + motionMs.stagger : 0,
-            })}
-            exiting={sinkExiting(isReduceMotionEnabled, {
-              distance: SINK_FLOAT_TRAVEL / 2,
-              scale: CHROME_SCALE,
-              durationMs: motionMs.ebb,
-            })}
-          >
-            {/* Two lines per `.pen` CORE 01: the name the user named the
+              <Reanimated.View
+                key={address}
+                testID="wallet-header-account-text"
+                style={styles.accountTextWrapper}
+                entering={floatEntering(isReduceMotionEnabled, {
+                  distance: SINK_FLOAT_TRAVEL / 2,
+                  scale: CHROME_SCALE,
+                  durationMs: motionMs.drift,
+                  delayMs: addressSwap.hasPrior ? motionMs.ebb + motionMs.stagger : 0,
+                })}
+                exiting={sinkExiting(isReduceMotionEnabled, {
+                  distance: SINK_FLOAT_TRAVEL / 2,
+                  scale: CHROME_SCALE,
+                  durationMs: motionMs.ebb,
+                })}
+              >
+                {/* Two lines per `.pen` CORE 01: the name the user named the
                 wallet, and the short address under it. Both are the same
                 affordance as the thumb beside them — they open the account
                 switcher. Only the avatar was tappable once, which left the
                 obvious target (the name the user is reading) inert. */}
-            <TouchableOpacity
-              testID="wallet-header-account-name"
-              onPress={handleWalletPress}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={t('accessibility.switch_wallet')}
-              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-            >
-              <Text
-                style={styles.accountName}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-                maxFontSizeMultiplier={fontScaleCap.chrome}
+                <TouchableOpacity
+                  testID="wallet-header-account-name"
+                  onPress={handleWalletPress}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('accessibility.switch_wallet')}
+                  hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                >
+                  <Text
+                    style={styles.accountName}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    maxFontSizeMultiplier={fontScaleCap.chrome}
+                  >
+                    {accountName}
+                  </Text>
+                  <Text
+                    style={styles.accountAddress}
+                    numberOfLines={1}
+                    ellipsizeMode="middle"
+                    maxFontSizeMultiplier={fontScaleCap.chrome}
+                  >
+                    {truncatedAddress}
+                  </Text>
+                </TouchableOpacity>
+              </Reanimated.View>
+              <TouchableOpacity
+                testID="wallet-header-copy-address"
+                onPress={handleCopyPress}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  copied
+                    ? t('actions.copied')
+                    : t('accessibility.copy_address', { address: truncatedAddress })
+                }
+                style={styles.copyButton}
+                hitSlop={{ top: 9, bottom: 9, left: 9, right: 9 }}
               >
-                {accountName}
-              </Text>
-              <Text
-                style={styles.accountAddress}
-                numberOfLines={1}
-                ellipsizeMode="middle"
-                maxFontSizeMultiplier={fontScaleCap.chrome}
-              >
-                {truncatedAddress}
-              </Text>
-            </TouchableOpacity>
-          </Reanimated.View>
-          <TouchableOpacity
-            testID="wallet-header-copy-address"
-            onPress={handleCopyPress}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={
-              copied
-                ? t('actions.copied')
-                : t('accessibility.copy_address', { address: truncatedAddress })
-            }
-            style={styles.copyButton}
-            hitSlop={{ top: 9, bottom: 9, left: 9, right: 9 }}
-          >
-            {/* 23 not 30: the copy glyph fills ~77% of its 24px viewBox vs the
+                {/* 23 not 30: the copy glyph fills ~77% of its 24px viewBox vs the
                 settings glyph's ~60%, so it renders larger at the same size. */}
-            {/* UNRESOLVED: this swap does not paint on device.
+                {/* UNRESOLVED: this swap does not paint on device.
                 Instrumented on the real mount path: the handler fires,
                 `copied` flips true and reverts 1519ms later, matching
                 `motionMs.feedbackHold` almost exactly — so the state and the
@@ -260,30 +260,30 @@ export function WalletHeader({
                 `.maestro/flows/smoke/home/copy-address-checkmark.yaml` asserts
                 the real behaviour on a device; Jest cannot, because its
                 renderer does not reproduce native paint. */}
-            {copied ? (
-              <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-                <CheckIcon size={s(23)} color={status.success} />
-              </Animated.View>
-            ) : (
-              <ContentCopySvgIcon size={s(23)} color={text.secondary} />
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+                {copied ? (
+                  <Animated.View style={{ transform: [{ scale: tickScale }] }}>
+                    <CheckIcon size={s(23)} color={status.success} />
+                  </Animated.View>
+                ) : (
+                  <ContentCopySvgIcon size={s(23)} color={text.secondary} />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
 
-      {/* Right side - the gear, opens Settings. It reads as what it does; the
+          {/* Right side - the gear, opens Settings. It reads as what it does; the
           avatar it replaced read as an identity and pointed at the wrong
           screen. */}
-      <IconBubble
-        testID="wallet-header-settings-button"
-        size={SETTINGS_BUTTON_SIZE}
-        tone="ink"
-        icon={SettingsSvgIcon}
-        iconSize={SETTINGS_GLYPH_SIZE}
-        onPress={handleSettingsPress}
-        accessibilityLabel={t('accessibility.open_settings')}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      />
+          <IconBubble
+            testID="wallet-header-settings-button"
+            size={SETTINGS_BUTTON_SIZE}
+            tone="ink"
+            icon={SettingsSvgIcon}
+            iconSize={SETTINGS_GLYPH_SIZE}
+            onPress={handleSettingsPress}
+            accessibilityLabel={t('accessibility.open_settings')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          />
         </Reanimated.View>
       )}
     </View>

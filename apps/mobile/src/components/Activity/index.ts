@@ -8,12 +8,7 @@
  */
 
 export { TransactionItem } from './TransactionItem';
-export {
-  ACTIVITY_FILTER_KEYS,
-  GROUP_LABEL_KEYS,
-  groupByDay,
-  matchesFilter,
-} from './activityRows';
+export { ACTIVITY_FILTER_KEYS, GROUP_LABEL_KEYS, groupByDay, matchesFilter } from './activityRows';
 export { EmptyState, ErrorState, TransactionListSkeleton } from './ActivityStates';
 export { transactionTypeConfigFor, TYPE_LABEL_KEYS, TransactionMark } from './transactionTypes';
 export { PriceImpactBadge } from './PriceImpactBadge';

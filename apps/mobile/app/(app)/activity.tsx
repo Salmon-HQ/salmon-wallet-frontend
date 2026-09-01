@@ -11,14 +11,7 @@
  * fewer rows in it. The selection is screen state and leaves with the screen.
  */
 import React, { useCallback, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  Share,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Share, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -77,21 +70,13 @@ export default function ActivityScreen() {
   const address = activeBlockchainAccount?.getReceiveAddress() ?? '';
   const explorerNetworkId = (networkId ?? 'solana-mainnet') as NetworkId;
 
-  const {
-    transactions,
-    loading,
-    loadingMore,
-    refreshing,
-    error,
-    hasMore,
-    loadMore,
-    refresh,
-  } = useTransactions({
-    address,
-    networkId: explorerNetworkId,
-    skip: !ready || !activeBlockchainAccount,
-    account: activeBlockchainAccount,
-  });
+  const { transactions, loading, loadingMore, refreshing, error, hasMore, loadMore, refresh } =
+    useTransactions({
+      address,
+      networkId: explorerNetworkId,
+      skip: !ready || !activeBlockchainAccount,
+      account: activeBlockchainAccount,
+    });
 
   // The app's one balance-visibility preference, not a second one for this
   // screen. Skipped, so mounting costs no balance request.

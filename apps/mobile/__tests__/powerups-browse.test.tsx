@@ -82,7 +82,12 @@ jest.mock('../src/components', () => {
       onChangeText: (text: string) => void;
       placeholder: string;
     }) => (
-      <TextInput testID={testID} value={value} onChangeText={onChangeText} placeholder={placeholder} />
+      <TextInput
+        testID={testID}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+      />
     ),
     ScalesBackground: () => null,
     IconBubble: () => null,

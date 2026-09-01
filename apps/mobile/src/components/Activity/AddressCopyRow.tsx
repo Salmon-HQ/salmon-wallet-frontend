@@ -134,6 +134,7 @@ export const AddressCopyRow: React.FC<AddressCopyRowProps> = ({
           accessibilityLabel={
             copied ? t('actions.copied') : t('transactions.detail.copyAddressLabel', { label })
           }
+          accessibilityHint={t('transactions.detail.copyAddressHint')}
         >
           {copied ? (
             <Animated.View style={{ transform: [{ scale: tickScale }] }}>

@@ -155,14 +155,11 @@ export function NftFlowProvider({
     setResolvedRecipient(null);
   }, []);
 
-  const setValidatedRecipient = useCallback(
-    (address: string, resolvedAddress: string | null) => {
-      setRecipientState(address);
-      setValidatedRecipientState(address);
-      setResolvedRecipient(resolvedAddress);
-    },
-    []
-  );
+  const setValidatedRecipient = useCallback((address: string, resolvedAddress: string | null) => {
+    setRecipientState(address);
+    setValidatedRecipientState(address);
+    setResolvedRecipient(resolvedAddress);
+  }, []);
 
   const { sendNft, settling: sendSettling } = useNftTransfer({ account });
 

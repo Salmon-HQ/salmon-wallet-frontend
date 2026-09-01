@@ -67,7 +67,6 @@ jest.mock('../../../src/components/PressSpecular', () => ({
   SPECULAR_OPACITY: 0.12,
 }));
 
-
 // The real module pulls Reanimated worklets and shared easing tables; the
 // component only forwards its return values to `entering`/`exiting`.
 jest.mock('../../utils/sinkAndFloat', () => ({

@@ -34,8 +34,7 @@ export default function SendSuccessScreen() {
 
   const amountDisplay = token ? `${formatTokenAmount(parseFloat(amount))} ${token.symbol}` : '';
   const destination = recipient ? recipient.resolvedAddress || recipient.address : '';
-  const recipientName =
-    recipient?.name ?? (getShortAddress(destination) ?? destination);
+  const recipientName = recipient?.name ?? getShortAddress(destination) ?? destination;
 
   const explorerUrl =
     txId && account
@@ -81,7 +80,11 @@ export default function SendSuccessScreen() {
           },
         ]}
         explorerUrl={explorerUrl ?? undefined}
-        primary={{ label: t('transaction.continue'), onPress: handleReturnHome, testID: 'tx-success-continue-button' }}
+        primary={{
+          label: t('transaction.continue'),
+          onPress: handleReturnHome,
+          testID: 'tx-success-continue-button',
+        }}
       />
     </SafeAreaView>
   );

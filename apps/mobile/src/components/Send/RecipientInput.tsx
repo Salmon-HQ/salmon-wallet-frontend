@@ -122,21 +122,21 @@ export function RecipientInput({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-  field: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(spacing.sm),
-  },
-  input: {
-    flex: 1,
-    minWidth: 0,
-    fontSize: s(fontSize.mono),
-    fontFamily: fontFamilyNative.mono,
-    color: t.text.primary,
-    paddingVertical: 0,
-  },
-  mark: {
-    fontSize: s(fontSize.bodyLg),
-    fontFamily: fontFamilyNative.bold,
-  },
-});
+    field: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: s(spacing.sm),
+    },
+    input: {
+      flex: 1,
+      minWidth: 0,
+      fontSize: s(fontSize.mono),
+      fontFamily: fontFamilyNative.mono,
+      color: t.text.primary,
+      paddingVertical: 0,
+    },
+    mark: {
+      fontSize: s(fontSize.bodyLg),
+      fontFamily: fontFamilyNative.bold,
+    },
+  });

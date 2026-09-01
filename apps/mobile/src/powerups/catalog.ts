@@ -11,13 +11,7 @@
  */
 import type { ComponentType } from 'react';
 
-import {
-  ArrowsLeftRightIcon,
-  ImageIcon,
-  ShieldCheckIcon,
-  StackIcon,
-  TrendUpIcon,
-} from '../icons';
+import { ArrowsLeftRightIcon, ImageIcon, ShieldCheckIcon, StackIcon, TrendUpIcon } from '../icons';
 import type { IconGlyphProps } from '../components/IconBubble';
 
 /**

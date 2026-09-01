@@ -155,9 +155,9 @@ export default function SettingsScreenIndex() {
   const userConfigAccount = useMemo(
     () => ({
       network: {
-        environment: (activeBlockchainAccount ? networkId || 'solana-mainnet' : 'solana-mainnet') as
-          | 'solana-mainnet'
-          | 'solana-devnet',
+        environment: (activeBlockchainAccount
+          ? networkId || 'solana-mainnet'
+          : 'solana-mainnet') as 'solana-mainnet' | 'solana-devnet',
         blockchain: 'solana',
       },
     }),
@@ -251,7 +251,14 @@ export default function SettingsScreenIndex() {
         },
       ]
     );
-  }, [accountState.accounts.length, activeAccount, accountActions, handleRemoveAllWallets, router, t]);
+  }, [
+    accountState.accounts.length,
+    activeAccount,
+    accountActions,
+    handleRemoveAllWallets,
+    router,
+    t,
+  ]);
 
   const handleRowPress = useCallback(
     (row: SettingsRow) => {

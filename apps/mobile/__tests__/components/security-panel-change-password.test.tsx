@@ -37,7 +37,6 @@ jest.mock('@salmon/shared', () => ({
   ],
 }));
 
-
 // No worklets runtime in Jest: the kit's animated blocks (IconBubble, Card's
 // pressable form) need plain-JS stand-ins.
 jest.mock('react-native-reanimated', () => {
@@ -193,26 +192,20 @@ describe('SecurityPanel — the score counts what this device actually has', () 
   it('counts only the password when the device has no biometrics', () => {
     const screen = renderPanel();
 
-    expect(
-      screen.getByText('settings.security.score_detail:{"enabled":1,"total":1}')
-    ).toBeTruthy();
+    expect(screen.getByText('settings.security.score_detail:{"enabled":1,"total":1}')).toBeTruthy();
   });
 
   it('counts the biometric safeguard as available but off until it is enabled', () => {
     const screen = renderPanel({ isBiometricAvailable: true });
 
-    expect(
-      screen.getByText('settings.security.score_detail:{"enabled":1,"total":2}')
-    ).toBeTruthy();
+    expect(screen.getByText('settings.security.score_detail:{"enabled":1,"total":2}')).toBeTruthy();
     expect(screen.getByText('settings.security.state_off')).toBeTruthy();
   });
 
   it('reads two of two once biometric unlock is on', () => {
     const screen = renderPanel({ isBiometricAvailable: true, isBiometricEnabled: true });
 
-    expect(
-      screen.getByText('settings.security.score_detail:{"enabled":2,"total":2}')
-    ).toBeTruthy();
+    expect(screen.getByText('settings.security.score_detail:{"enabled":2,"total":2}')).toBeTruthy();
     expect(screen.getByText('settings.security.score_strong')).toBeTruthy();
   });
 });

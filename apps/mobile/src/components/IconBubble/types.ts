@@ -33,13 +33,7 @@ export type IconBubbleRadius = 'lg' | 'xl';
  * balance eye toggle).
  */
 export type IconBubbleTone =
-  | 'ink'
-  | 'accent'
-  | 'accent-tint'
-  | 'surface'
-  | 'success-tint'
-  | 'outline'
-  | 'ghost';
+  'ink' | 'accent' | 'accent-tint' | 'surface' | 'success-tint' | 'outline' | 'ghost';
 
 /** The shape of a glyph component from `src/icons.ts` (Phosphor) or a local SVG. */
 export interface IconGlyphProps {

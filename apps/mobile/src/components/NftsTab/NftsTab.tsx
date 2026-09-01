@@ -377,32 +377,32 @@ export function NftsTab({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    color: t.text.secondary,
-    fontSize: s(fontSize.bodyLg),
-    marginTop: vs(spacing.screenGutter),
-  },
-  scrollView: {
-    flex: 1,
-    position: 'relative',
-    zIndex: 0,
-  },
-  gridRow: {
-    flexDirection: 'row',
-    gap: s(GRID_GAP),
-    marginBottom: s(GRID_GAP),
-  },
-  gridCard: {
-    flex: 1,
-  },
-});
+    container: {
+      flex: 1,
+      backgroundColor: 'transparent',
+    },
+    loadingContainer: {
+      flex: 1,
+      backgroundColor: 'transparent',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadingText: {
+      color: t.text.secondary,
+      fontSize: s(fontSize.bodyLg),
+      marginTop: vs(spacing.screenGutter),
+    },
+    scrollView: {
+      flex: 1,
+      position: 'relative',
+      zIndex: 0,
+    },
+    gridRow: {
+      flexDirection: 'row',
+      gap: s(GRID_GAP),
+      marginBottom: s(GRID_GAP),
+    },
+    gridCard: {
+      flex: 1,
+    },
+  });

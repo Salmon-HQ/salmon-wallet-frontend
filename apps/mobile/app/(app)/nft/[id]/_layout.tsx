@@ -63,11 +63,7 @@ export default function NftLayout() {
   const subAccountIndex = Number.parseInt(params.sub ?? '0', 10) || 0;
 
   return (
-    <NftFlowProvider
-      mint={params.id}
-      sectionKey={sectionKey}
-      subAccountIndex={subAccountIndex}
-    >
+    <NftFlowProvider mint={params.id} sectionKey={sectionKey} subAccountIndex={subAccountIndex}>
       {/* Headers stay hidden: every screen draws the kit's own `ScreenHeader`.
           The right slide is inherited from the app stack — an NFT screen is a
           pushed screen like any other and must not arrive from a different
@@ -81,10 +77,7 @@ export default function NftLayout() {
             out is "Return home", so the back gesture is taken off it. */}
         <Stack.Screen name="success" options={{ gestureEnabled: false }} />
       </Stack>
-      <NftPassage
-        mint={params.id}
-        query={`?section=${sectionKey}&sub=${subAccountIndex}`}
-      />
+      <NftPassage mint={params.id} query={`?section=${sectionKey}&sub=${subAccountIndex}`} />
     </NftFlowProvider>
   );
 }

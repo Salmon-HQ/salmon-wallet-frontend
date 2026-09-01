@@ -220,83 +220,83 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
 
 const stylesFor = (t: Semantic) =>
   StyleSheet.create({
-  sheetContainer: {
-    maxHeight: '92%',
-    overflow: 'hidden',
-  },
-  // The material fills the sheet and clips itself to the sheet's own top
-  // corners; the refraction strip rides its top edge.
-  thermocline: {
-    ...StyleSheet.absoluteFillObject,
-    borderTopLeftRadius: borderRadius.card,
-    borderTopRightRadius: borderRadius.card,
-  },
-  content: {
-    alignItems: 'center',
-    paddingHorizontal: s(CONTENT_PADDING_HORIZONTAL),
-    gap: vs(componentSizes.receiveContentGap),
-  },
-  // The badge sits `spacing.md` over the QR it labels — clearly tighter than
-  // the content gap that separates the group from the sheet title above it.
-  qrGroup: {
-    alignItems: 'center',
-    gap: vs(spacing.md),
-    marginTop: vs(spacing.headerPadding),
-  },
-  qrContainer: {
-    borderRadius: ms(borderRadius.xl),
-    borderWidth: componentSizes.qrBorderWidth,
-    borderColor: t.text.primary,
-    overflow: 'hidden',
-  },
-  qrLogoOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  qrLogoKnockout: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: t.text.primary,
-  },
-  chainBadge: {
-    backgroundColor: t.surface.raised,
-    // A text chip takes the chip step, not a pill: the Control Radius Rule
-    // reserves `full` for what genuinely is a circle (avatars, toggles).
-    borderRadius: ms(borderRadius.r1),
-    borderWidth: 1,
-    borderColor: t.border.raised,
-    paddingVertical: vs(spacing.xs),
-    paddingHorizontal: s(spacing.md),
-  },
-  chainBadgeText: {
-    fontSize: ms(fontSize.caption),
-    fontFamily: fontFamilyNative.semiBold,
-    color: t.text.primary,
-    letterSpacing: letterSpacing.label,
-  },
-  copyButton: {
-    flexDirection: 'row',
-    // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: t.accent.fill,
-    borderRadius: ms(borderRadius.lg),
-    minWidth: s(componentSizes.copyButtonWidth),
-    maxWidth: '100%',
-    minHeight: vs(componentSizes.buttonHeightCompact),
-    paddingVertical: vs(spacing.xs),
-    paddingHorizontal: s(spacing.lg),
-    gap: s(spacing.xs),
-  },
-  copyButtonText: {
-    flexShrink: 1,
-    fontSize: ms(fontSize.bodyLg),
-    fontFamily: fontFamilyNative.bold,
-    color: t.accent.onFill,
-    textAlign: 'center',
-  },
-});
+    sheetContainer: {
+      maxHeight: '92%',
+      overflow: 'hidden',
+    },
+    // The material fills the sheet and clips itself to the sheet's own top
+    // corners; the refraction strip rides its top edge.
+    thermocline: {
+      ...StyleSheet.absoluteFillObject,
+      borderTopLeftRadius: borderRadius.card,
+      borderTopRightRadius: borderRadius.card,
+    },
+    content: {
+      alignItems: 'center',
+      paddingHorizontal: s(CONTENT_PADDING_HORIZONTAL),
+      gap: vs(componentSizes.receiveContentGap),
+    },
+    // The badge sits `spacing.md` over the QR it labels — clearly tighter than
+    // the content gap that separates the group from the sheet title above it.
+    qrGroup: {
+      alignItems: 'center',
+      gap: vs(spacing.md),
+      marginTop: vs(spacing.headerPadding),
+    },
+    qrContainer: {
+      borderRadius: ms(borderRadius.xl),
+      borderWidth: componentSizes.qrBorderWidth,
+      borderColor: t.text.primary,
+      overflow: 'hidden',
+    },
+    qrLogoOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    qrLogoKnockout: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: t.text.primary,
+    },
+    chainBadge: {
+      backgroundColor: t.surface.raised,
+      // A text chip takes the chip step, not a pill: the Control Radius Rule
+      // reserves `full` for what genuinely is a circle (avatars, toggles).
+      borderRadius: ms(borderRadius.r1),
+      borderWidth: 1,
+      borderColor: t.border.raised,
+      paddingVertical: vs(spacing.xs),
+      paddingHorizontal: s(spacing.md),
+    },
+    chainBadgeText: {
+      fontSize: ms(fontSize.caption),
+      fontFamily: fontFamilyNative.semiBold,
+      color: t.text.primary,
+      letterSpacing: letterSpacing.label,
+    },
+    copyButton: {
+      flexDirection: 'row',
+      // The flesh is drawn at absolute-fill; clip it to the pill's own radius.
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: t.accent.fill,
+      borderRadius: ms(borderRadius.lg),
+      minWidth: s(componentSizes.copyButtonWidth),
+      maxWidth: '100%',
+      minHeight: vs(componentSizes.buttonHeightCompact),
+      paddingVertical: vs(spacing.xs),
+      paddingHorizontal: s(spacing.lg),
+      gap: s(spacing.xs),
+    },
+    copyButtonText: {
+      flexShrink: 1,
+      fontSize: ms(fontSize.bodyLg),
+      fontFamily: fontFamilyNative.bold,
+      color: t.accent.onFill,
+      textAlign: 'center',
+    },
+  });
 
 export default ReceiveSheet;

@@ -70,7 +70,8 @@ export function AddressEditPanel({
   }, [form, onSave, contact.address]);
 
   const networkName =
-    contact.networkId.split('-')[0].charAt(0).toUpperCase() + contact.networkId.split('-')[0].slice(1);
+    contact.networkId.split('-')[0].charAt(0).toUpperCase() +
+    contact.networkId.split('-')[0].slice(1);
 
   return (
     <SettingsScreenLayout title={t('settings.addressbook.edit', 'Edit Address')} onBack={onBack}>

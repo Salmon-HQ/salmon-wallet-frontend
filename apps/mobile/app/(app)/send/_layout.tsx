@@ -41,7 +41,12 @@ import {
   type Semantic,
 } from '@salmon/shared';
 
-import { DepthBackground, LoadingScreen, ScalesBackground, SendFailure } from '../../../src/components';
+import {
+  DepthBackground,
+  LoadingScreen,
+  ScalesBackground,
+  SendFailure,
+} from '../../../src/components';
 import { SendFlowProvider, useSendFlow } from '../../../src/contexts/SendFlowContext';
 import { useThemedStyles } from '../../../src/theme/useThemedStyles';
 import { floatEntering } from '../../../src/utils/sinkAndFloat';

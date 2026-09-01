@@ -11,10 +11,7 @@ interface SvgIconProps {
  * Content copy icon from Figma assets
  * Used in HeaderContent for copy address action
  */
-export const ContentCopySvgIcon: React.FC<SvgIconProps> = ({
-  size = 24,
-  color,
-}) => {
+export const ContentCopySvgIcon: React.FC<SvgIconProps> = ({ size = 24, color }) => {
   // The default ink is the mode's, resolved at render — a default parameter
   // would freeze the dark palette at import.
   const { text } = useSemantic();
@@ -33,10 +30,7 @@ export const ContentCopySvgIcon: React.FC<SvgIconProps> = ({
  * Settings/sliders icon from Figma assets
  * Used in HeaderContent for settings navigation
  */
-export const SettingsSvgIcon: React.FC<SvgIconProps> = ({
-  size = 24,
-  color,
-}) => {
+export const SettingsSvgIcon: React.FC<SvgIconProps> = ({ size = 24, color }) => {
   // The default ink is the mode's, resolved at render — a default parameter
   // would freeze the dark palette at import.
   const { text } = useSemantic();
@@ -56,10 +50,7 @@ export const SettingsSvgIcon: React.FC<SvgIconProps> = ({
  * Used for displaying Solana network/chain identifier
  * viewBox cropped to content bounds (24,15 to 67,72) to match Bitcoin/Ethereum visual size
  */
-export const SolanaSvgIcon: React.FC<SvgIconProps> = ({
-  size = 24,
-  color,
-}) => {
+export const SolanaSvgIcon: React.FC<SvgIconProps> = ({ size = 24, color }) => {
   // The default ink is the mode's, resolved at render — a default parameter
   // would freeze the dark palette at import.
   const { text } = useSemantic();
@@ -78,10 +69,7 @@ export const SolanaSvgIcon: React.FC<SvgIconProps> = ({
  * Bitcoin blockchain logo icon
  * Used for displaying Bitcoin network/chain identifier
  */
-export const BitcoinSvgIcon: React.FC<SvgIconProps> = ({
-  size = 24,
-  color,
-}) => {
+export const BitcoinSvgIcon: React.FC<SvgIconProps> = ({ size = 24, color }) => {
   // The default ink is the mode's, resolved at render — a default parameter
   // would freeze the dark palette at import.
   const { text } = useSemantic();
@@ -100,10 +88,7 @@ export const BitcoinSvgIcon: React.FC<SvgIconProps> = ({
  * Ethereum blockchain logo icon
  * Used for displaying Ethereum network/chain identifier
  */
-export const EthereumSvgIcon: React.FC<SvgIconProps> = ({
-  size = 24,
-  color,
-}) => {
+export const EthereumSvgIcon: React.FC<SvgIconProps> = ({ size = 24, color }) => {
   // The default ink is the mode's, resolved at render — a default parameter
   // would freeze the dark palette at import.
   const { text } = useSemantic();
@@ -129,4 +114,3 @@ export const EthereumSvgIcon: React.FC<SvgIconProps> = ({
     </Svg>
   );
 };
-

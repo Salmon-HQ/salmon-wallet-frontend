@@ -44,7 +44,14 @@ export function MarketDataCard({
   const [, { formatValue }] = useCurrencyContext();
 
   if (loading) {
-    return <SkeletonRow testID={testID} lines={1} count={5} accessibilityLabel={t('token.marketData.title', 'Market data')} />;
+    return (
+      <SkeletonRow
+        testID={testID}
+        lines={1}
+        count={5}
+        accessibilityLabel={t('token.marketData.title', 'Market data')}
+      />
+    );
   }
 
   if (!data) return null;
