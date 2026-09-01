@@ -34,6 +34,8 @@ const DARK_SNAPSHOT = {
     disabled: '#6F7B95',
     accent: '#FF5C45',
     onAccent: '#070911',
+    onScrim: '#EDF1F7',
+    onScrimSecondary: '#A7B1C4',
   },
   border: {
     default: '#58637B',
@@ -117,7 +119,7 @@ describe('createSemantic: the dark mode is unmoved', () => {
 
   it('keeps the water ramp a two-stop tuple, which the gradient renderers need', () => {
     expect(dark.water.gradient).toHaveLength(2);
-    expect(light.water.gradient).toEqual(dark.water.gradient);
+    expect(light.water.gradient).toHaveLength(2);
   });
 });
 
@@ -155,8 +157,6 @@ describe('createSemantic: what the light mode is allowed to change', () => {
         'overlay.backdrop',
         'overlay.highlight',
         'overlay.scrim',
-        // The one part of the underwater material that crosses into light:
-        // the deep field turns coral (owner, 2026-09-01).
         'scales.deepFieldStroke',
         'sheet.handle',
         'skeleton.base',
@@ -176,8 +176,6 @@ describe('createSemantic: what the light mode is allowed to change', () => {
         'step.inactive',
         'surface.bedrock',
         'surface.crest',
-        // White at high alpha, not deep-neutral ink — see the membrane test
-        // below.
         'surface.membraneThick',
         'surface.membraneThin',
         'surface.raised',
@@ -187,6 +185,7 @@ describe('createSemantic: what the light mode is allowed to change', () => {
         'text.primary',
         'text.secondary',
         'text.tertiary',
+        'water.gradient',
       ].sort()
     );
   });
@@ -278,7 +277,11 @@ describe('createSemantic: the invariants a mode switch may not touch', () => {
   it('keeps the rest of the underwater material untouched until its own pass', () => {
     expect(light.scales.refractionSweep).toEqual(dark.scales.refractionSweep);
     expect(light.flesh).toEqual(dark.flesh);
-    expect(light.water).toEqual(dark.water);
+    // The ramp itself is flat in light (spec 021: no depth ramp until the
+    // material's own pass); everything else about the water is untouched.
+    const { gradient: _lightRamp, ...lightWater } = light.water;
+    const { gradient: _darkRamp, ...darkWater } = dark.water;
+    expect(lightWater).toEqual(darkWater);
   });
 
   it('inverts the membrane ink rather than leaving the card dark on a light ground', () => {

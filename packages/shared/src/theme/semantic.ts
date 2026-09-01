@@ -155,6 +155,13 @@ export function createSemantic(mode: ThemeMode) {
      * one, and one of the two theme-invariant values (DESIGN.md §Two modes).
      * The `.pen` draws white on the brand fill; rejected at 3.06:1.
      */
+    /**
+     * Ink on a dark scrim band (an NFT tile's name over its artwork). The
+     * scrim is dark in both modes, so its ink is invariant: never the mode's
+     * primary, which is dark in light.
+     */
+    onScrim: neutral[50],
+    onScrimSecondary: neutral[300],
     onAccent: neutral[1000],
   } as const;
 
@@ -413,7 +420,13 @@ export function createSemantic(mode: ThemeMode) {
    */
   const water = {
     /** Ground ramp, top → bottom. Nearer water above, abyss below. */
-    gradient: [neutral[950], neutral[1000]] as const,
+    // Light has no depth ramp yet (spec 021: the material's own pass comes
+    // later), so its column is flat: the fade that ends on this token ends on
+    // the ground itself.
+    gradient: pick({
+      dark: [neutral[950], neutral[1000]] as const,
+      light: [neutral[25], neutral[25]] as const,
+    }),
     /**
      * Marine snow, brightest floc. Particle opacities scale this down.
      *

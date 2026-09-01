@@ -136,7 +136,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const styles = useThemedStyles(stylesFor);
   const semantic = useSemantic();
-  const { headerContentOffset, floatingBottomOffset } = useTabChrome();
+  const { headerChromeHeight, headerContentOffset, floatingBottomOffset } = useTabChrome();
   // A task that takes the screen owns it: the home content leaves with the
   // same verb the chrome does, so the flow finds empty water behind it.
   const { isTaskEngaged } = useTaskChrome();
@@ -689,11 +689,24 @@ export default function HomeScreen() {
 
   const topFade = (
     <Animated.View
-      style={[styles.topFadeGradient, { opacity: topFadeOpacity }]}
+      style={[
+        styles.topFadeGradient,
+        {
+          height: headerChromeHeight + componentSizes.sheetFadeGradientHeight,
+          opacity: topFadeOpacity,
+        },
+      ]}
       pointerEvents="none"
     >
+      {/* The header band is opaque ground, then the fade: content that
+          scrolls under the wallet header must not show through it. */}
       <LinearGradient
-        colors={[semantic.depth.abyss, 'transparent']}
+        colors={[semantic.depth.column, semantic.depth.column, 'transparent']}
+        locations={[
+          0,
+          headerChromeHeight / (headerChromeHeight + componentSizes.sheetFadeGradientHeight),
+          1,
+        ]}
         style={StyleSheet.absoluteFill}
       />
     </Animated.View>
@@ -1006,7 +1019,6 @@ const stylesFor = (t: Semantic) =>
       left: 0,
       right: 0,
       top: 0,
-      height: componentSizes.sheetFadeGradientHeight,
       zIndex: 1,
     },
     // Bitcoin view styles

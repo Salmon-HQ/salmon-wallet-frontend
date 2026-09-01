@@ -189,13 +189,13 @@ const stylesFor = (t: Semantic) =>
       fontFamily: fontFamilyNative.semiBold,
       fontSize: s(fontSize.body),
       lineHeight: s(fontSize.body) * lineHeight.snug,
-      color: t.text.primary,
+      color: t.text.onScrim,
     },
     collection: {
       fontFamily: fontFamilyNative.regular,
       fontSize: s(fontSize.caption),
       lineHeight: s(fontSize.caption) * lineHeight.snug,
-      color: t.text.secondary,
+      color: t.text.onScrimSecondary,
     },
   });
 
