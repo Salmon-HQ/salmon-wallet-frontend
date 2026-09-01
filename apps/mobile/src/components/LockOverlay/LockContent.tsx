@@ -485,6 +485,7 @@ export function LockContent({
                         testID="lock-forgot-password-button"
                         onPress={handleForgotPassword}
                         disabled={isLoading}
+                        color={semantic.text.primary}
                       >
                         {t('lock.forgot_password')}
                       </TextButton>
