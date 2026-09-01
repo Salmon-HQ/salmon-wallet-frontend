@@ -11,35 +11,6 @@
  * ```
  */
 
-import { colors, gradients } from './colors';
-import {
-  spacing,
-  borderRadius,
-  borderWidth,
-  componentSizes,
-  contentPadding,
-  opacity,
-  blur,
-} from './spacing';
-import {
-  fontFamily,
-  fontFamilyNative,
-  fontSize,
-  lineHeight,
-  fontWeight,
-  letterSpacing,
-} from './typography';
-import { shadows, shadowsCSS } from './shadows';
-import {
-  duration,
-  durationMs,
-  easing,
-  motionDuration,
-  motionEasing,
-  motionMs,
-  reducedMotion,
-} from './durations';
-
 // Re-export all tokens from colors
 export { colors, gradients, getScalesColorForBlockchain, isOpaqueColor } from './colors';
 export type { Colors, Gradients } from './colors';
@@ -202,36 +173,3 @@ export type {
   DurationMs,
   Easing,
 } from './durations';
-
-/**
- * Complete theme object combining all tokens
- * Useful for theme providers
- */
-export const theme = {
-  colors,
-  gradients,
-  spacing,
-  borderRadius,
-  borderWidth,
-  componentSizes,
-  contentPadding,
-  fontFamily,
-  fontFamilyNative,
-  fontSize,
-  fontWeight,
-  lineHeight,
-  letterSpacing,
-  opacity,
-  blur,
-  shadows,
-  shadowsCSS,
-  motionMs,
-  motionDuration,
-  motionEasing,
-  reducedMotion,
-  duration,
-  durationMs,
-  easing,
-} as const;
-
-export type Theme = typeof theme;

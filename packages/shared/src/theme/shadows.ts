@@ -69,27 +69,6 @@ export const shadows = {
     shadowRadius: 9,
     elevation: 6,
   },
-  /** Hero image heavy drop shadow — matches shadowsCSS.header */
-  imageHero: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.9,
-    shadowRadius: 20,
-    elevation: 16,
-  },
-  /**
-   * Shadow Vocabulary — the gate/top-sheet surface when expanded. Same
-   * rationale as `header`: the gate is a sheet-like surface whose bottom
-   * edge needs an ambient to separate it from what it covers. Registered
-   * into the vocabulary as-is (values unchanged).
-   */
-  topSheet: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
-  },
   /** Bottom sheet upward shadow */
   sheet: {
     shadowColor: '#000000',
@@ -113,8 +92,6 @@ export const shadowsCSS = {
   lg: '0 4px 8px -2px rgba(0, 0, 0, 0.3), 0 8px 16px -4px rgba(0, 0, 0, 0.2)',
   /** Header/card elements (Figma: 0px 10px 20px rgba(0,0,0,0.9)) */
   header: '0 10px 20px rgba(0, 0, 0, 0.9)',
-  /** Balance card shadow */
-  card: '0 12px 16px rgba(0, 0, 0, 0.8)',
   /**
    * Elevation E2 — the ambient a raised card casts on the plane below it.
    * A real offset and a real blur, rather than a bigger version of `card`:

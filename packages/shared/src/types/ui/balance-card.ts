@@ -79,15 +79,3 @@ export interface BalanceCardCarouselPropsBase<TStyle> {
   /** Test ID for testing */
   testID?: string;
 }
-
-/**
- * Props for the BalanceCardSkeleton component (base - platform-agnostic)
- */
-export interface BalanceCardSkeletonPropsBase<TStyle> {
-  /** Optional custom styles for the container */
-  style?: TStyle;
-  /** Test ID for testing */
-  testID?: string;
-  /** Whether to animate the skeleton (default: true) */
-  animated?: boolean;
-}

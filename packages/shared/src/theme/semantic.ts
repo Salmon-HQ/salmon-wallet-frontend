@@ -77,8 +77,6 @@ export const text = {
   accent: salmon[500],
   /** 6.50:1 on a salmon fill. The only text color allowed on one. */
   onAccent: neutral[1000],
-  /** Text over any membrane; the scrim floor guarantees the ratio */
-  onGlass: neutral[50],
 } as const;
 
 /**
@@ -153,7 +151,6 @@ export const state = {
   selectedFill: 'rgba(255, 92, 69, 0.12)',
   selectedEdge: salmon[500],
   disabledOpacity: 0.45,
-  loadingOpacity: 0.5,
 } as const;
 
 /** Salmon-tinted backgrounds that sit *under* salmon ink (5.29:1 composite). */
@@ -200,15 +197,6 @@ export const scales = {
    */
   deepFieldStroke: 'rgba(199, 211, 232, 0.03)',
   deepFieldScale: 3.2,
-  /**
-   * @deprecated The field is no longer a band. It filled 180px and dissolved
-   * to nothing, which put the entire motif under the balance card and left
-   * the lower half of every screen — the empty half — bare. It is now the
-   * height of whatever it is mounted in, thinning with depth via
-   * `deepFieldFloor` instead of stopping. Kept as an export because
-   * `semantic` is read by three apps; no renderer uses it.
-   */
-  deepFieldHeight: 180,
   /**
    * How much of the deep field survives at the bottom of its container.
    *

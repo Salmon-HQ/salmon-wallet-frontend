@@ -59,7 +59,6 @@ export type {
   BlockchainBalance,
   BalanceCardPropsBase,
   BalanceCardCarouselPropsBase,
-  BalanceCardSkeletonPropsBase,
 } from './balance-card';
 
 // Action Button Row
@@ -139,13 +138,6 @@ export type { BackupPanelPropsBase } from './backup-panel';
 
 // Private Key Panel
 export type { PrivateKeyPanelPropsBase } from './private-key-panel';
-
-// Address Book Panels
-export type {
-  AddressBookPanelPropsBase,
-  AddressAddPanelPropsBase,
-  AddressEditPanelPropsBase,
-} from './address-book-panel';
 
 // About Panel
 export type { AboutPanelPropsBase } from './about-panel';
