@@ -26,7 +26,7 @@ import type { ChipProps, ChipSize } from './types';
 const SIZES: Record<ChipSize, { paddingVertical: number; paddingHorizontal: number; font: number }> =
   {
     sm: { paddingVertical: spacing.xs, paddingHorizontal: spacing.sm, font: fontSize.micro },
-    md: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md, font: fontSize.caption },
+    md: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md, font: fontSize.body },
   };
 
 export function Chip({

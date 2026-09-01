@@ -101,20 +101,20 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.snug,
+    fontSize: s(fontSize.bodyLg),
+    lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
     color: semantic.text.primary,
     flexShrink: 1,
     minWidth: 0,
   },
   titleStrong: {
-    fontSize: s(fontSize.bodyLg),
-    lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
+    fontSize: s(fontSize.heading),
+    lineHeight: s(fontSize.heading) * lineHeight.snug,
   },
   subtitle: {
     fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
+    fontSize: s(fontSize.body),
+    lineHeight: s(fontSize.body) * lineHeight.snug,
     color: semantic.text.secondary,
   },
 });

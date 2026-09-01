@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   },
   changeLink: {
     fontFamily: fontFamilyNative.semiBold,
-    fontSize: s(fontSize.caption),
+    fontSize: s(fontSize.body),
     color: semantic.text.accent,
   },
   // The cancel sits above the commit: the decision reads down to the control

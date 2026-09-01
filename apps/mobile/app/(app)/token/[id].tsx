@@ -190,8 +190,11 @@ export default function TokenDetailScreen() {
 
         {/* Performance — current price, the chart with its own period
             selector (kept per the spec 019 D1 ruling), and the selected
-            period's own change. */}
-        <Card padding="lg" gap={spacing.md} testID="token-detail-performance">
+            period's own change. No card around it (owner, 2026-09-01): the
+            curve runs off the left screen edge and stops a gutter short of
+            the right with its pulsing endpoint, the way Home's Bitcoin column
+            draws it; a card would clip both. */}
+        <View style={styles.performance} testID="token-detail-performance">
           <KeyValueRow
             label={t('token.detail.currentPrice', 'Current price')}
             value={token.price != null ? formatValue(token.price) : '—'}
@@ -203,7 +206,7 @@ export default function TokenDetailScreen() {
               onPeriodChange={setChartPeriod}
               loading={loading}
               error={chartError}
-              style={styles.chartBleed}
+              bleed
             />
           )}
           {periodChangePercent != null && (
@@ -216,7 +219,7 @@ export default function TokenDetailScreen() {
               valueTone={periodChangePercent >= 0 ? 'success' : 'danger'}
             />
           )}
-        </Card>
+        </View>
 
         {/* Market data — spec 019 D2 ruling: kept as a Card of KeyValueRows. */}
         {marketData && (
@@ -354,11 +357,9 @@ const styles = StyleSheet.create({
     lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
     color: semantic.text.primary,
   },
-  // The chart bleeds edge to edge inside the card, the one exception to the
-  // card's own padding (DESIGN.md §Layout notes the same bleed on Home's
-  // Bitcoin chart).
-  chartBleed: {
-    marginHorizontal: -s(spacing.lg),
+  // The block's own anatomy: rows and chart at the in-component step.
+  performance: {
+    gap: vs(spacing.md),
   },
   aboutText: {
     gap: vs(spacing.sm),

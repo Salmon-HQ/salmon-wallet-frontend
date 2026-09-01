@@ -72,8 +72,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
+    fontSize: s(fontSize.body),
+    lineHeight: s(fontSize.body) * lineHeight.snug,
     color: semantic.text.secondary,
   },
   labelEmphasised: {
@@ -88,8 +88,8 @@ const styles = StyleSheet.create({
   value: {
     flexShrink: 1,
     fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
+    fontSize: s(fontSize.body),
+    lineHeight: s(fontSize.body) * lineHeight.snug,
     textAlign: 'right',
     ...TABULAR,
   },
