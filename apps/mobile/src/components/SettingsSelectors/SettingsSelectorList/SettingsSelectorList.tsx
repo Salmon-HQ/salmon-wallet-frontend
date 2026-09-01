@@ -9,26 +9,15 @@
  */
 
 import React, { useCallback } from 'react';
-import { Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CheckCircleIcon, iconSize } from '../../../icons';
-import {
-  contentPadding,
-  ContentLoader,
-  Rect,
-  spacing,
-  borderRadius,
-  fontFamilyNative,
-  fontSize,
-  s,
-  semantic,
-  vs,
-} from '@salmon/shared';
+import { fontFamilyNative, fontSize, s, semantic, spacing, vs } from '@salmon/shared';
 import { IconBubble } from '../../IconBubble';
 import { ListRow } from '../../ListRow';
+import { SkeletonRow } from '../../Skeleton';
 
 /** Mirrors a rendered card row, so the loading state does not jump on swap. */
-const SKELETON_ROW_HEIGHT = 72;
 const SKELETON_ROW_COUNT = 3;
 
 /** The leading well every option row carries when a selector has no art of its own. */
@@ -81,7 +70,6 @@ export function SettingsSelectorList<T>({
   testIdPrefix,
 }: SettingsSelectorListProps<T>) {
   const { t } = useTranslation();
-  const { width: windowWidth } = useWindowDimensions();
 
   const renderItem = useCallback(
     (item: T) => {
@@ -115,33 +103,14 @@ export function SettingsSelectorList<T>({
   );
 
   if (loading) {
-    // The app's skeleton idiom: row-shaped ContentLoader rects in place of
-    // the rows they stand in for, as the token list and chart already do.
-    const skeletonWidth = windowWidth - contentPadding.screen * 2;
-    const skeletonHeight =
-      SKELETON_ROW_COUNT * SKELETON_ROW_HEIGHT + (SKELETON_ROW_COUNT - 1) * spacing.xl;
+    // SkeletonRow's default shape (leading well + two lines) already mirrors
+    // this list's rows (D1, research-mobile.md §2 D2).
     return (
-      <ContentLoader
-        speed={1.5}
-        width={skeletonWidth}
-        height={skeletonHeight}
-        viewBox={`0 0 ${skeletonWidth} ${skeletonHeight}`}
-        backgroundColor={semantic.skeleton.base}
-        foregroundColor={semantic.skeleton.highlight}
+      <SkeletonRow
+        count={SKELETON_ROW_COUNT}
+        leadingSize={ROW_BUBBLE_SIZE}
         accessibilityLabel={t('general.loading')}
-      >
-        {Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
-          <Rect
-            key={index}
-            x="0"
-            y={index * (SKELETON_ROW_HEIGHT + spacing.xl)}
-            rx={borderRadius.r4}
-            ry={borderRadius.r4}
-            width={skeletonWidth}
-            height={SKELETON_ROW_HEIGHT}
-          />
-        ))}
-      </ContentLoader>
+      />
     );
   }
 

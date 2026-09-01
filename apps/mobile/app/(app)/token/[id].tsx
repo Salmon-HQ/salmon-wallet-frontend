@@ -18,12 +18,11 @@
  * DEFERRED to a later spec (spec 019 D4/D5, not ruled yet): Send/Receive
  * actions on this screen, and a per-token "Recent activity" section.
  */
-import React, { useCallback, useMemo, useState } from 'react';
-import { Animated, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Clipboard from 'expo-clipboard';
 
 import {
   coinInfoToMarketData,
@@ -49,24 +48,15 @@ import {
   type Token,
 } from '@salmon/shared';
 import {
-  ArrowSquareOutIcon,
-  CheckIcon,
-  CopyIcon,
-  GlobeIcon,
-  iconSize,
-} from '../../../src/icons';
-import {
-  Card,
+  AboutCard,
   DepthBackground,
-  IconBubble,
   KeyValueRow,
-  ListRow,
+  MarketDataCard,
   PriceChart,
   ScalesBackground,
   ScreenHeader,
   TokenLogo,
 } from '../../../src/components';
-import { useCopyFeedback } from '../../../hooks/useCopyFeedback';
 
 const TOKEN_LOGO_SIZE = 42;
 
@@ -127,20 +117,7 @@ export default function TokenDetailScreen() {
   const loading = chartLoading && chartData.length === 0;
   const chartError = !!chartFetchError && chartData.length === 0;
 
-  const { copied, scale: tickScale, trigger: showCopied } = useCopyFeedback();
-
-  const handleCopyAddress = useCallback(async () => {
-    if (!token) return;
-    await Clipboard.setStringAsync(token.address);
-    showCopied();
-  }, [token, showCopied]);
-
   const website = coinInfo?.links?.homepage;
-  const handleOpenWebsite = useCallback(async () => {
-    if (!website) return;
-    const supported = await Linking.canOpenURL(website);
-    if (supported) await Linking.openURL(website);
-  }, [website]);
 
   // The chart's own first/last point, not the wallet's 24h figure — the
   // period selector redraws the chart, and the row under it answers "what did
@@ -176,8 +153,6 @@ export default function TokenDetailScreen() {
     : token.usdBalance != null
       ? formatValue(token.usdBalance)
       : null;
-
-  const contractShort = getShortAddress(token.address, 6) ?? token.address;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -245,89 +220,21 @@ export default function TokenDetailScreen() {
           )}
         </View>
 
-        {/* Market data — spec 019 D2 ruling: kept as a Card of KeyValueRows. */}
-        {marketData && (
-          <Card padding="lg" gap={spacing.md} testID="token-detail-market-data">
-            <Text style={styles.cardTitle}>{t('token.marketData.title', 'Market data')}</Text>
-            {marketData.marketCap !== undefined && (
-              <KeyValueRow
-                label={t('token.marketData.marketCap', 'Market Cap')}
-                value={formatValue(marketData.marketCap)}
-              />
-            )}
-            {marketData.volume24h !== undefined && (
-              <KeyValueRow
-                label={t('token.marketData.volume24h', '24h Volume')}
-                value={formatValue(marketData.volume24h)}
-              />
-            )}
-            {marketData.circulatingSupply !== undefined && (
-              <KeyValueRow
-                label={t('token.marketData.circulatingSupply', 'Circulating Supply')}
-                value={`${formatLargeNumber(marketData.circulatingSupply)} ${token.symbol}`}
-              />
-            )}
-            {marketData.totalSupply != null && (
-              <KeyValueRow
-                label={t('token.marketData.totalSupply', 'Total Supply')}
-                value={`${formatLargeNumber(marketData.totalSupply)} ${token.symbol}`}
-              />
-            )}
-            {marketData.ath !== undefined && (
-              <KeyValueRow
-                label={t('token.marketData.allTimeHigh', 'All-Time High')}
-                value={formatValue(marketData.ath)}
-              />
-            )}
-          </Card>
-        )}
+        {/* Market data — spec 019 D2 ruling: kept as a Card of KeyValueRows,
+            shared with Home's Bitcoin column. */}
+        <MarketDataCard data={marketData} symbol={token.symbol} />
 
         {/* About — spec 019 D3 ruling: description, contract address copy
-            row and website link, kept as today. The contract row has no data
-            dependency of its own (the mint is always known), so the card
-            always renders even for a token CoinGecko has nothing to say
-            about. */}
-        <Card padding="lg" gap={spacing.md} testID="token-detail-about">
-          {coinInfo?.description && (
-            <View style={styles.aboutText}>
-              <Text style={styles.cardTitle}>{t('token.info.about', 'About')}</Text>
-              <Text style={styles.description}>{coinInfo.description}</Text>
-            </View>
-          )}
-
-          <ListRow
-            testID="token-detail-contract-address"
-            onPress={handleCopyAddress}
-            accessibilityLabel={
-              copied
-                ? t('actions.copied')
-                : t('accessibility.copy_contract_address', 'Copy contract address')
-            }
-            leading={<IconBubble size={36} tone="surface" icon={CopyIcon} iconSize={iconSize.sm} />}
-            title={t('token.info.contractAddress', 'Contract Address')}
-            subtitle={contractShort}
-            trailing={
-              copied ? (
-                <Animated.View style={{ transform: [{ scale: tickScale }] }}>
-                  <CheckIcon size={iconSize.sm} color={semantic.status.success} />
-                </Animated.View>
-              ) : undefined
-            }
-          />
-
-          {website && (
-            <ListRow
-              testID="token-detail-website"
-              onPress={handleOpenWebsite}
-              accessibilityLabel={t('accessibility.open_website', 'Open website: {{url}}', {
-                url: website,
-              })}
-              leading={<IconBubble size={36} tone="surface" icon={GlobeIcon} iconSize={iconSize.sm} />}
-              title={t('token.info.visitWebsite', 'Visit Website')}
-              trailing={<ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.secondary} />}
-            />
-          )}
-        </Card>
+            row and website link, kept as today, shared with Home's Bitcoin
+            column. The contract row has no data dependency of its own (the
+            mint is always known), so the card always renders even for a
+            token CoinGecko has nothing to say about. */}
+        <AboutCard
+          description={coinInfo?.description}
+          contractAddress={token.address}
+          contractAddressShort={getShortAddress(token.address, 6) ?? token.address}
+          website={website}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -375,23 +282,8 @@ const styles = StyleSheet.create({
     lineHeight: s(fontSize.body) * lineHeight.snug,
     color: semantic.text.secondary,
   },
-  cardTitle: {
-    fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.bodyLg),
-    lineHeight: s(fontSize.bodyLg) * lineHeight.snug,
-    color: semantic.text.primary,
-  },
   // The block's own anatomy: rows and chart at the in-component step.
   performance: {
     gap: vs(spacing.md),
-  },
-  aboutText: {
-    gap: vs(spacing.sm),
-  },
-  description: {
-    fontFamily: fontFamilyNative.regular,
-    fontSize: s(fontSize.body),
-    lineHeight: s(fontSize.body) * lineHeight.relaxed,
-    color: semantic.text.secondary,
   },
 });

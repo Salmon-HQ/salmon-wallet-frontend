@@ -57,17 +57,17 @@ import {
   semantic,
 } from '@salmon/shared';
 import {
+  AboutCard,
   BalanceHeader,
+  MarketDataCard,
   NftsTab,
   PortfolioSubTabs,
   PriceChart,
   ReceiveSheet,
   SkeletonRow,
   StateBlock,
-  TokenAbout,
   TokenList,
   TokenListItem,
-  TokenMarketData,
   WalletHeader,
   WarningNotice,
   type BlockchainBalance,
@@ -407,7 +407,7 @@ export default function HomeScreen() {
     setBitcoinChartPeriod(period);
   }, []);
 
-  // Transform CoinInfo to MarketData for TokenMarketData component
+  // Transform CoinInfo to MarketData for MarketDataCard
   const bitcoinMarketData: MarketData | undefined = useMemo(() => {
     if (!bitcoinCoinInfo) return undefined;
     return coinInfoToMarketData(bitcoinCoinInfo);
@@ -827,14 +827,14 @@ export default function HomeScreen() {
                       )}
 
                       {/* Market Data */}
-                      <TokenMarketData
+                      <MarketDataCard
                         data={bitcoinMarketData}
                         symbol="BTC"
                         loading={bitcoinDataLoading && !bitcoinCoinInfo}
                       />
 
                       {/* About Section - at the end */}
-                      <TokenAbout
+                      <AboutCard
                         description={bitcoinCoinInfo?.description}
                         loading={bitcoinDataLoading && !bitcoinCoinInfo}
                       />

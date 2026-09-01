@@ -195,16 +195,13 @@ export { TokenLogo } from './TokenLogo';
 //
 // TokenInformationSheet is gone (spec 019 — token detail is a screen,
 // `app/(app)/token/[id].tsx`, not a sheet, DESIGN.md §Sheets' state rule).
-// TokenAbout and TokenMarketData survive here because Home's Bitcoin column
-// still renders them; the screen composes its own Card/KeyValueRow sections
-// instead of reusing this BlurContainer-based pair.
+// MarketDataCard/AboutCard are kit-composed and shared with Home's Bitcoin
+// column (spec 019 D2/D3, research-mobile.md §2 D2) — the legacy
+// BlurContainer-based TokenMarketData/TokenAbout pair is gone.
 // ---------------------------------------------------------------------------
 
-export { TokenAbout } from './TokenDetail/TokenAbout';
-export type { TokenAboutProps } from './TokenDetail/TokenAbout';
-
-export { TokenMarketData } from './TokenDetail/TokenMarketData';
-export type { TokenMarketDataProps, MarketData } from './TokenDetail/TokenMarketData';
+export { MarketDataCard, AboutCard } from './TokenDetail';
+export type { MarketDataCardProps, AboutCardProps, MarketData } from './TokenDetail';
 
 export { PriceChart } from './PriceChart';
 export type { PriceChartProps } from './PriceChart';

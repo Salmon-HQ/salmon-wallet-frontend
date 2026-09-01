@@ -167,7 +167,7 @@ jest.mock('../src/components', () => {
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
     SkeletonRow: () => <View />,
-    TokenAbout: () => <View />,
+    AboutCard: () => <View />,
     // Mirrors the real TokenList contract: a skeleton while `loading`, the
     // provided empty component once the load settled with no rows.
     TokenList: ({
@@ -190,7 +190,7 @@ jest.mock('../src/components', () => {
       </View>
     ),
     TokenListItem: () => <View />,
-    TokenMarketData: () => <View />,
+    MarketDataCard: () => <View />,
     TransactionDetailModal: () => null,
     WarningNotice: ({ title }: { title: string }) => <Text>{title}</Text>,
   };
