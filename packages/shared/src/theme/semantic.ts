@@ -301,6 +301,94 @@ export const water = {
   light: '#9FE0EF',
 } as const;
 
+/**
+ * Loading-state shimmer. Two neutral steps, not one, so the sweep between
+ * them reads as motion. `surface.crest` only cleared 1.07:1 against
+ * `surface.raised` — not enough to see move — so the highlight steps to
+ * `neutral-800`, the nearest ramp step that clears the visibility floor
+ * (1.38:1, asserted in `contrast.test.ts`).
+ *
+ * From the legacy `colors.skeleton.base`/`colors.skeleton.highlight`
+ * (`rgba(64, 73, 98, 0.3)`/`rgba(64, 73, 98, 0.5)`). Consumer: `Skeleton`.
+ */
+export const skeleton = {
+  base: surface.raised,
+  highlight: neutral[800],
+} as const;
+
+/**
+ * Text-entry fields. From the legacy `colors.input.background`
+ * (`rgba(64, 73, 98, 0.2)`, composited it lands within a few hex steps of
+ * `surface.raised`) and `colors.input.border` (`neutral-600`). Placeholder
+ * ink reuses `text.tertiary`, the same role the legacy `colors.text.tertiary`
+ * doc comment already named as "also used as placeholder color".
+ * Consumers: `TextField`, `AmountInput`, `RecipientInput`.
+ */
+export const input = {
+  ground: surface.raised,
+  edge: border.default,
+  placeholder: text.tertiary,
+} as const;
+
+/**
+ * Full-bleed scrims — the wash behind a sheet, dialog, or hovered/pressed
+ * row. Both are `depth.abyss` at the alpha the legacy layer already used, so
+ * the migration is a rename of the alpha, not a re-tune of it.
+ *
+ * `backdrop` takes `colors.dialog.overlay`'s alpha (0.7) rather than
+ * `colors.sheet.backdrop`'s fully-opaque black — the dialog value is the one
+ * every current sheet/dialog consumer actually renders; the plain-opaque
+ * form is a stronger scrim than any live surface uses today.
+ * Consumers: `BaseDialog`, `BaseSheetDialog` (`backdrop`); hover/press
+ * overlays on dark imagery (`scrim`, from `colors.overlay.darkHover`).
+ */
+export const overlay = {
+  backdrop: 'rgba(7, 9, 17, 0.7)',
+  scrim: 'rgba(7, 9, 17, 0.9)',
+} as const;
+
+/**
+ * The bottom-sheet drag handle. From `colors.sheet.handle` (`#b9b9b9`,
+ * 4.85:1 on `surface.shelf`) — close enough to `text.tertiary` that the step
+ * is a rename, not a re-tune. Consumer: `BottomSheetContainer`'s handle bar.
+ */
+export const sheet = {
+  handle: text.tertiary,
+} as const;
+
+/**
+ * Step/progress indicators (onboarding dots, multi-step forms). From
+ * `colors.step.active` (`#FF5C45`, exactly `salmon-500`) and
+ * `colors.step.inactive` (`rgba(255, 255, 255, 0.3)`, an translucent white
+ * that reads as `border.default` opaque on the deep-water ground).
+ * Consumer: `StepIndicator`.
+ */
+export const step = {
+  active: accent.ink,
+  inactive: border.default,
+} as const;
+
+/**
+ * The QR scanner overlay — its own isolated sub-system, same as it was in
+ * `colors.scanner`. The legacy hexes (`#1a1a2e`, `#2a2a4e`, `#8b8b9e`,
+ * `#6b6b7e`, `#4a4a6e`) were off-palette (no hue-222 blue bias); every step
+ * below is the nearest ramp/role that reads the same depth on the ground.
+ * Consumer: `QRScanner` / `ScanScreen`.
+ */
+export const scanner = {
+  /** From `colors.scanner.background` (`#1a1a2e`) — the camera view's ground. */
+  ground: depth.abyss,
+  /** From `colors.scanner.surface` (`#2a2a4e`) — the mask panel around the scan window. */
+  frame: surface.raised,
+  /** From `colors.scanner.button` (`#4a4a6e`) — the viewfinder corner brackets. */
+  corner: border.strong,
+  /**
+   * From `colors.scanner.textSecondary`/`textTertiary` (`#8b8b9e`/`#6b6b7e`,
+   * two tones collapsed to one) — the instruction copy under the scan window.
+   */
+  hint: text.secondary,
+} as const;
+
 export const semantic = {
   depth,
   water,
@@ -313,6 +401,12 @@ export const semantic = {
   accent,
   scales,
   flesh,
+  skeleton,
+  input,
+  overlay,
+  sheet,
+  step,
+  scanner,
 } as const;
 
 export type Semantic = typeof semantic;

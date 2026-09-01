@@ -2,7 +2,21 @@ import { describe, expect, it } from 'vitest';
 
 import { neutral, salmon } from './palette';
 import { AVATAR_COLORS } from '../types/settings';
-import { accent, border, depth, scales, state, status, surface, text, water } from './semantic';
+import {
+  accent,
+  border,
+  depth,
+  input,
+  scales,
+  scanner,
+  skeleton,
+  state,
+  status,
+  step,
+  surface,
+  text,
+  water,
+} from './semantic';
 import { colors, isOpaqueColor } from './colors';
 import { shadowsCSS } from './shadows';
 import { componentSizes } from './spacing';
@@ -524,6 +538,31 @@ describe('contrast: avatar initials on the depth ramp', () => {
       expect(fill.toLowerCase()).not.toBe(surface.shelf.toLowerCase());
       expect(fill.toLowerCase()).not.toBe(surface.raised.toLowerCase());
     }
+  });
+});
+
+/**
+ * The eight `colors.*` groups migrated to `semantic.ts` in the 2026-09-01
+ * cleanup (`specs/020-codebase-cleanup`). Each pairing below is the one an
+ * ink actually sits on at a live call site.
+ */
+describe('contrast: the migrated colors.* groups', () => {
+  it('input.placeholder meets AA on input.ground', () => {
+    expect(contrast(input.placeholder, input.ground)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it('scanner.hint meets AA on scanner.ground', () => {
+    expect(contrast(scanner.hint, scanner.ground)).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
+  it('step.active clears the 3:1 UI-boundary floor on depth.column', () => {
+    expect(contrast(step.active, depth.column)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+
+  it('skeleton.highlight is visibly distinct from skeleton.base', () => {
+    // Not a WCAG ratio — a shimmer that doesn't move isn't a shimmer. 1.3:1 is
+    // the smallest step that reads as motion rather than a rounding error.
+    expect(contrast(skeleton.highlight, skeleton.base)).toBeGreaterThanOrEqual(1.3);
   });
 });
 

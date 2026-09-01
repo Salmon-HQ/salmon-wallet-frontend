@@ -79,3 +79,26 @@ export const wordmarkToSvg = (fill: string, width?: number): string => {
   const paths = wordmarkPaths.map((d) => `<path fill="${fill}" d="${d}"/>`).join('');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${wordmarkViewBoxAttr}">${paths}</svg>`;
 };
+
+/**
+ * Per-chain brand marks — badges, avatars, and tags that need a chain's own
+ * hue rather than a depth of the water column.
+ *
+ * These are brand marks, not theme colours: a chain's identity color is
+ * fixed by that chain's own brand, not by "Deep Water"'s ramp, so they live
+ * here rather than in `semantic.ts`. Moved from `colors.palette` (2026-09-01
+ * cleanup), which now re-exports these same values — `apps/web` and
+ * `apps/extension` still read `colors.palette` directly.
+ */
+export const chainMarks = {
+  orange: '#FF5C45',
+  green: '#10B981',
+  purple: '#8B5CF6',
+  amber: '#F59E0B',
+  blue: '#3B82F6',
+  pink: '#EC4899',
+  cyan: '#06B6D4',
+  indigo: '#6366F1',
+} as const;
+
+export type ChainMarks = typeof chainMarks;

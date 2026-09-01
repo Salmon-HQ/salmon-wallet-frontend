@@ -5,6 +5,7 @@
 
 import type { BlockchainId } from '../types/ui/balance-card';
 import { danger, neutral, salmon, success } from './palette';
+import { chainMarks } from './brand';
 import { scales, surface } from './semantic';
 
 export const colors = {
@@ -117,17 +118,15 @@ export const colors = {
     textTertiary: '#6b6b7e',
     button: '#4a4a6e',
   },
-  /** Decorative palette for badges, avatars, tags */
-  palette: {
-    orange: '#FF5C45',
-    green: '#10B981',
-    purple: '#8B5CF6',
-    amber: '#F59E0B',
-    blue: '#3B82F6',
-    pink: '#EC4899',
-    cyan: '#06B6D4',
-    indigo: '#6366F1',
-  },
+  /**
+   * Decorative palette for badges, avatars, tags.
+   *
+   * Values live in `brand.ts` as `chainMarks` (2026-09-01 cleanup) — these
+   * are per-chain brand marks, not theme colours. Kept here, referencing
+   * `chainMarks`, because `apps/web` and `apps/extension` still read
+   * `colors.palette` directly.
+   */
+  palette: chainMarks,
 } as const;
 
 /**

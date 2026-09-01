@@ -16,7 +16,26 @@ Sources: `research-shared.md`, `research-mobile.md` (two read-only audits, 2026-
 - FR-006 Verification per package: `pnpm turbo run typecheck lint test` on shared/ui/mobile after each package; the full CI set (`format:check`, all-package `typecheck lint test`, `scripts/check-i18n.mjs`) at the end.
 
 ## Rulings taken while the owner was away ⚠
-- **New semantic groups** (added to `packages/shared/src/theme/semantic.ts`, mapped to the existing ramp, with contrast assertions): `skeleton.base/highlight` (surface.raised / surface.crest), `input.ground/edge` (surface.raised / border.default), `overlay.backdrop/scrim` (depth.abyss at the sheet/dialog alphas already in `colors`), `sheet.handle` (text.tertiary), `step.active/inactive` (accent.ink / border.default), `scanner.ground/frame/corner/hint` (depth tokens replacing the off-palette `#1a1a2e` family). `colors.palette.*` (per-chain brand marks) moves to `brand.ts` as `chainMarks`. These are the eight groups the audit could not migrate mechanically; the owner reviews the mapping on return.
+- **New semantic groups — final mapping (2026-09-01, ruling closed)**. Added to `packages/shared/src/theme/semantic.ts`, mapped to the existing ramp, each with contrast assertions in `contrast.test.ts`:
+
+  | Token | Ramp step | Legacy `colors.*` origin | Contrast |
+  | --- | --- | --- | --- |
+  | `skeleton.base` | `surface.raised` (`neutral-900`) | `skeleton.base` | — |
+  | `skeleton.highlight` | `neutral-800` (nearest visible step; `surface.crest` only cleared 1.07:1) | `skeleton.highlight` | 1.38:1 vs `skeleton.base` |
+  | `input.ground` | `surface.raised` (`neutral-900`) | `input.background` | — |
+  | `input.edge` | `border.default` (`neutral-600`) | `input.border` | — |
+  | `input.placeholder` | `text.tertiary` (`neutral-400`) | the placeholder ink `colors.text.tertiary` already doubled as | 5.71:1 on `input.ground` |
+  | `overlay.backdrop` | `rgba(depth.abyss, 0.7)` | `dialog.overlay`'s alpha (the live sheet/dialog consumer; `sheet.backdrop`'s plain-opaque black is stronger than any current use) | — |
+  | `overlay.scrim` | `rgba(depth.abyss, 0.9)` | `overlay.darkHover` | — |
+  | `sheet.handle` | `text.tertiary` (`neutral-400`) | `sheet.handle` (`#b9b9b9`) | — |
+  | `step.active` | `accent.ink` (`salmon-500`) | `step.active` (`#FF5C45`, exact) | 6.26:1 on `depth.column` |
+  | `step.inactive` | `border.default` (`neutral-600`) | `step.inactive` (translucent white) | — |
+  | `scanner.ground` | `depth.abyss` (`neutral-1000`) | `scanner.background` (`#1a1a2e`) | — |
+  | `scanner.frame` | `surface.raised` (`neutral-900`) | `scanner.surface` (`#2a2a4e`) | — |
+  | `scanner.corner` | `border.strong` (`neutral-400`) | `scanner.button` (`#4a4a6e`) | — |
+  | `scanner.hint` | `text.secondary` (`neutral-300`) | `scanner.textSecondary`/`textTertiary` (two tones collapsed to one) | 9.21:1 on `scanner.ground` |
+
+  `colors.palette.*` (per-chain brand marks) moved to `brand.ts` as `chainMarks`; `colors.palette` now re-exports it unchanged so `apps/web`/`apps/extension` keep compiling. These were the eight groups the audit could not migrate mechanically; the mapping above is final.
 - **DESIGN.md drift**: `accent.inkOnMembrane` / `text.onGlass` have no renderer (DESIGN.md:224 says shipped). Left in place per the audit's warning; flagged for the owner.
 - **`(tabs)/_layout.tsx` is a Stack wearing a Tabs costume**: navigation change, not styling — left for an explicit ruling.
 
