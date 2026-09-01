@@ -7,7 +7,7 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({ ...jest.requireActual('../../../test-utils/themeTokens') }));
 
-import { borderRadius, semantic } from '@salmon/shared';
+import { semantic } from '@salmon/shared';
 import { Chip } from './Chip';
 import { ChipGroup } from './ChipGroup';
 
@@ -29,24 +29,6 @@ describe('Chip', () => {
     expect(flatten(screen.getByTestId('badge').props.style).backgroundColor).toBe('transparent');
   });
 
-  it('the tag variant is squared, not a pill, and fills selected like a filter', () => {
-    const { rerender } = render(<Chip testID="tag-all" label="All" variant="tag" selected />);
-
-    let chip = screen.getByTestId('tag-all');
-    expect(flatten(chip.props.style).borderRadius).toBe(borderRadius.sm);
-    expect(flatten(chip.props.style).backgroundColor).toBe(semantic.depth.abyss);
-
-    rerender(<Chip testID="tag-all" label="All" variant="tag" selected={false} />);
-    chip = screen.getByTestId('tag-all');
-    expect(flatten(chip.props.style).backgroundColor).toBe('transparent');
-  });
-
-  it('the tag variant renders the label uppercase, whatever case the copy is', () => {
-    render(<Chip testID="tag-sent" label="Sent" variant="tag" />);
-
-    const label = screen.getByText('Sent');
-    expect(flatten(label.props.style).textTransform).toBe('uppercase');
-  });
 });
 
 describe('ChipGroup', () => {

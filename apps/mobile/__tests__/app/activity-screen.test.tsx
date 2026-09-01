@@ -149,6 +149,8 @@ jest.mock('react-native-reanimated', () => {
     withTiming: identity,
     withDelay: (_delay: number, value: unknown) => value,
     withSpring: identity,
+    interpolateColor: (value: number, _input: number[], output: string[]) =>
+      value >= 1 ? output[1] : output[0],
   };
 });
 

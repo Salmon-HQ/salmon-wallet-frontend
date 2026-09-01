@@ -74,9 +74,16 @@ jest.mock('../FleshBackground', () => ({ FleshBackground: () => null }));
 
 jest.mock('../PressSpecular', () => ({ PressSpecular: () => null, SPECULAR_OPACITY: 0.12 }));
 
-jest.mock('../TokenLogo', () => ({
-  TokenLogo: () => null,
-}));
+// The mark IS the token: the logo stands in for itself so the row's leading
+// identity can be asserted without a network image.
+jest.mock('../TokenLogo', () => {
+  const ReactActual = require('react');
+  const { View: RNView } = require('react-native');
+  return {
+    TokenLogo: ({ symbol, size }: { symbol?: string; size?: number }) =>
+      ReactActual.createElement(RNView, { testID: `token-logo-${symbol}`, style: { width: size } }),
+  };
+});
 
 import { borderRadius, semantic } from '@salmon/shared';
 import { TransactionItem } from './TransactionItem';
@@ -86,13 +93,28 @@ const LONGEST_SOURCE = 'SOLANA_PROGRAM_LIBRARY';
 
 const COUNTERPARTY = '9mpJqL4v2wRz1TgN7YbXcDeFgHiJkLmNoPqRsTuVSAd3';
 
+const USDC_LOGO = 'https://example.test/usdc.png';
+const SOL_LOGO = 'https://example.test/sol.png';
+
 const RECEIVE_TRANSACTION = {
   id: 'tx-1',
   type: 'receive',
   status: 'completed',
   source: LONGEST_SOURCE,
   timestamp: 1710000000000,
-  inputs: [{ amount: '6773100', decimals: 6, symbol: 'USDC', source: COUNTERPARTY }],
+  inputs: [
+    { amount: '6773100', decimals: 6, symbol: 'USDC', source: COUNTERPARTY, logo: USDC_LOGO },
+  ],
+  outputs: [],
+} as never;
+
+/** Same shape, no logo anywhere — the mark's fallback path. */
+const LOGOLESS_TRANSACTION = {
+  id: 'tx-4',
+  type: 'receive',
+  status: 'completed',
+  timestamp: 1710000000000,
+  inputs: [{ amount: '1000000', decimals: 6, symbol: 'USDC', source: COUNTERPARTY }],
   outputs: [],
 } as never;
 
@@ -111,8 +133,8 @@ const SWAP_TRANSACTION = {
   status: 'completed',
   source: LONGEST_SOURCE,
   timestamp: 1710000000000,
-  inputs: [{ amount: '1000000', decimals: 6, symbol: 'USDC' }],
-  outputs: [{ amount: '2000000000', decimals: 9, symbol: 'SOL' }],
+  inputs: [{ amount: '1000000', decimals: 6, symbol: 'USDC', logo: USDC_LOGO }],
+  outputs: [{ amount: '2000000000', decimals: 9, symbol: 'SOL', logo: SOL_LOGO }],
 } as never;
 
 describe('TransactionItem — the counterparty, not the program', () => {
@@ -180,5 +202,26 @@ describe('TransactionItem layout', () => {
     render(<TransactionItem transaction={RECEIVE_TRANSACTION} hiddenBalance />);
 
     expect(screen.getByTestId('tx-row-amount').props.children).toContain('****');
+  });
+});
+
+describe('TransactionItem — the leading mark is the token, badged with the type', () => {
+  it('leads with the token that moved, not a bare type glyph', () => {
+    render(<TransactionItem transaction={RECEIVE_TRANSACTION} />);
+
+    expect(screen.getByTestId('token-logo-USDC')).toBeTruthy();
+  });
+
+  it('a swap leads with both sides, the overlapped pair', () => {
+    render(<TransactionItem transaction={SWAP_TRANSACTION} />);
+
+    expect(screen.getByTestId('token-logo-USDC')).toBeTruthy();
+    expect(screen.getByTestId('token-logo-SOL')).toBeTruthy();
+  });
+
+  it('falls back to the kit well when the token has no logo', () => {
+    render(<TransactionItem transaction={LOGOLESS_TRANSACTION} />);
+
+    expect(screen.queryByTestId('token-logo-USDC')).toBeNull();
   });
 });

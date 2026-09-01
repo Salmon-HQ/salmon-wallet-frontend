@@ -7,11 +7,13 @@ export type ChipSize = 'sm' | 'md';
 
 /**
  * `filter` carries a selected state — the ink well the frames draw when a
- * filter is on. `outline` never fills: it is a label wearing an edge. `tag`
- * is the same ink-well behaviour squared off and uppercase — CORE 08's
- * ALL/SENT/RECEIVED/OTHER row, never a pill.
+ * filter is on. `outline` never fills: it is a label wearing an edge.
+ *
+ * A chip is for actions and badges, never for selection state in a row of
+ * mutually exclusive options — that is `UnderlineTabs` (DESIGN.md
+ * §Navigation).
  */
-export type ChipVariant = 'filter' | 'outline' | 'tag';
+export type ChipVariant = 'filter' | 'outline';
 
 export interface ChipProps extends Testable {
   label: string;

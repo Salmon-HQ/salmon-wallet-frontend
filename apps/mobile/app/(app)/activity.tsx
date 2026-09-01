@@ -39,7 +39,6 @@ import {
   ACTIVITY_FILTER_KEYS,
   ActivityEmptyState,
   ActivityErrorState,
-  ChipGroup,
   DepthBackground,
   ScalesBackground,
   ScreenHeader,
@@ -47,6 +46,7 @@ import {
   TransactionDetail,
   TransactionItem,
   TransactionListSkeleton,
+  UnderlineTabs,
   GROUP_LABEL_KEYS,
   groupByDay,
   matchesFilter,
@@ -194,12 +194,16 @@ export default function ActivityScreen() {
       />
 
       <View testID="activity-screen" style={styles.body}>
-        <ChipGroup
+        {/* Lateral choices take the travelling underline, never a boxed or
+            filled container — DESIGN.md §Navigation. Same component as the
+            home sub-tabs, one size down. */}
+        <UnderlineTabs
           testID="activity-filters"
-          options={filterOptions}
-          value={filter}
+          tabs={filterOptions}
+          activeKey={filter}
           onChange={(key) => setFilter(key as ActivityFilter)}
-          variant="tag"
+          size="sm"
+          tabTestIDPrefix="activity-filters"
           style={styles.filters}
         />
 
@@ -265,7 +269,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(spacing.screenGutter),
   },
   filters: {
-    flexGrow: 0,
+    alignSelf: 'flex-start',
   },
   /**
    * The component gap (DESIGN.md §Layout): 20 between every sibling on the
