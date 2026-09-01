@@ -20,17 +20,25 @@ import {
   iconSize,
 } from '../../icons';
 import type { IconComponent } from '../../icons';
-import { borderRadius, borderWidth, colors, s, semantic, spacing } from '@salmon/shared';
+import {
+  borderRadius,
+  borderWidth,
+  chainMarks,
+  componentSizes,
+  s,
+  semantic,
+  spacing,
+} from '@salmon/shared';
 
 import { IconBubble } from '../IconBubble';
 import { TokenLogo } from '../TokenLogo';
 import type { Transaction, TransactionType } from './types';
 
 /** The kit's activity mark: a 40 circle (component inventory, CORE 08). */
-export const LEADING_SIZE = 40;
+export const LEADING_SIZE = componentSizes.iconSize2XL;
 
 /** The type badge riding the token logo — a mark on a mark, not a bubble. */
-const TYPE_BADGE_SIZE = 18;
+const TYPE_BADGE_SIZE = componentSizes.iconSizeXSmall;
 
 /** The overlapping logo in a swap pair, sized so the pair still reads at 40. */
 const SWAP_LOGO_SIZE = 30;
@@ -39,15 +47,15 @@ export const TRANSACTION_TYPE_CONFIG: Record<
   TransactionType,
   { label: string; icon: IconComponent; color: string }
 > = {
-  send: { label: 'Sent', icon: ArrowUpIcon, color: colors.change.negative },
-  receive: { label: 'Received', icon: ArrowDownIcon, color: colors.change.positive },
-  swap: { label: 'Swapped', icon: ArrowsLeftRightIcon, color: colors.palette.purple },
-  mint: { label: 'Minted', icon: PlusCircleIcon, color: colors.palette.cyan },
-  burn: { label: 'Burned', icon: FireIcon, color: colors.palette.orange },
-  stake: { label: 'Staked', icon: LockIcon, color: colors.palette.green },
-  loan: { label: 'Loan', icon: MoneyIcon, color: colors.palette.amber },
-  interaction: { label: 'Interaction', icon: CubeIcon, color: colors.palette.blue },
-  unknown: { label: 'Unknown', icon: QuestionIcon, color: colors.text.secondary },
+  send: { label: 'Sent', icon: ArrowUpIcon, color: semantic.change.negative },
+  receive: { label: 'Received', icon: ArrowDownIcon, color: semantic.change.positive },
+  swap: { label: 'Swapped', icon: ArrowsLeftRightIcon, color: chainMarks.purple },
+  mint: { label: 'Minted', icon: PlusCircleIcon, color: chainMarks.cyan },
+  burn: { label: 'Burned', icon: FireIcon, color: chainMarks.orange },
+  stake: { label: 'Staked', icon: LockIcon, color: chainMarks.green },
+  loan: { label: 'Loan', icon: MoneyIcon, color: chainMarks.amber },
+  interaction: { label: 'Interaction', icon: CubeIcon, color: chainMarks.blue },
+  unknown: { label: 'Unknown', icon: QuestionIcon, color: semantic.text.secondary },
 };
 
 /** Translation keys for the verbs above — resolved via `t()` at the call site. */
@@ -70,7 +78,7 @@ const TypeBadge: React.FC<{ icon: IconComponent; color: string; single?: boolean
   single = false,
 }) => (
   <View style={[styles.typeBadge, single && styles.typeBadgeSingle, { backgroundColor: color }]}>
-    <Icon size={10} color={colors.text.primary} />
+    <Icon size={10} color={semantic.text.primary} />
   </View>
 );
 

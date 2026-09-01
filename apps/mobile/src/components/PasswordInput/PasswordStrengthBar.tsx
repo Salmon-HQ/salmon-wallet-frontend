@@ -3,7 +3,6 @@
  */
 import { View, Text, StyleSheet } from 'react-native';
 import {
-  colors,
   spacing,
   borderRadius,
   fontSize,
@@ -52,7 +51,7 @@ export function PasswordStrengthBar({ strength, t }: PasswordStrengthBarProps) {
             key={index}
             style={[
               styles.bar,
-              { backgroundColor: index < activeCount ? barColor : colors.step.inactive },
+              { backgroundColor: index < activeCount ? barColor : semantic.step.inactive },
             ]}
           />
         ))}
@@ -79,6 +78,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
   },
 });

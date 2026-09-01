@@ -14,7 +14,7 @@
  */
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fontFamilyNative, fontSize, ms, s, semantic, spacing, vs } from '@salmon/shared';
+import { fontFamilyNative, fontSize, ms, s, semantic, spacing, vs } from '@salmon/shared';
 
 import { PrimaryButton, SecondaryButton } from '../Button';
 
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: ms(fontSize.xl),
     fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     textAlign: 'center',
   },
   message: {

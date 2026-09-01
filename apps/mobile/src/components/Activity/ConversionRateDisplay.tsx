@@ -2,13 +2,13 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, type ViewStyle } from 'react-native';
 import { ArrowsLeftRightIcon } from '../../icons';
 import {
-  colors,
   ms,
   s,
   spacing,
   fontSize,
   formatConversionRate,
   fontFamilyNative,
+  semantic,
 } from '@salmon/shared';
 
 // ============================================================================
@@ -69,7 +69,7 @@ export const ConversionRateDisplay: React.FC<ConversionRateDisplayProps> = ({
     // Compact format: "1:150.25"
     return (
       <View style={[styles.container, styles.containerSmall, style]}>
-        <ArrowsLeftRightIcon size={12} color={colors.text.secondary} style={styles.iconSmall} />
+        <ArrowsLeftRightIcon size={12} color={semantic.text.secondary} style={styles.iconSmall} />
         <Text style={styles.compactText}>1:{formattedRate}</Text>
       </View>
     );
@@ -78,7 +78,7 @@ export const ConversionRateDisplay: React.FC<ConversionRateDisplayProps> = ({
   // Full format: "1 SOL = 150.25 USDC"
   return (
     <View style={[styles.container, style]}>
-      <ArrowsLeftRightIcon size={14} color={colors.text.secondary} style={styles.icon} />
+      <ArrowsLeftRightIcon size={14} color={semantic.text.secondary} style={styles.icon} />
       <Text style={styles.text}>
         <Text style={styles.symbolText}>1 {fromSymbol}</Text>
         <Text style={styles.equalsText}> = </Text>
@@ -108,25 +108,25 @@ const styles = StyleSheet.create({
     marginRight: s(spacing.xs),
   },
   text: {
-    fontSize: ms(fontSize.sm),
-    color: colors.text.secondary,
+    fontSize: ms(fontSize.caption),
+    color: semantic.text.secondary,
   },
   symbolText: {
     fontFamily: fontFamilyNative.medium,
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
   },
   equalsText: {
     fontFamily: fontFamilyNative.regular,
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
   },
   rateText: {
     fontFamily: fontFamilyNative.regular,
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
   },
   compactText: {
-    fontSize: ms(fontSize.xs),
+    fontSize: ms(fontSize.micro),
     fontFamily: fontFamilyNative.regular,
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
   },
 });
 

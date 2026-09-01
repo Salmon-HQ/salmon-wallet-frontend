@@ -64,16 +64,17 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import {
-  colors,
   CREST_FADE_FROM,
   crestStops,
   crestTrain,
   DEFAULT_WALLET_TIP_KEYS,
   fontFamilyNative,
   letterSpacing,
+  lineHeight,
   markPaths,
   markViewBoxAttr,
   motionMs,
+  s,
   semantic,
   spacing,
   fontSize,
@@ -695,7 +696,7 @@ export function LoadingScreen({
   const wait = (
     <Animated.View style={[styles.overlay, overlayStyle]}>
       <LinearGradient
-        colors={[colors.background.primary, colors.background.secondary]}
+        colors={[semantic.depth.abyss, semantic.surface.raised]}
         style={styles.container}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
@@ -884,18 +885,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.semiBold,
-    fontSize: fontSize.headline,
-    lineHeight: 32,
+    fontSize: s(fontSize.headline),
+    lineHeight: fontSize.headline * lineHeight.snug,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   subtitle: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
-    lineHeight: 24,
+    fontSize: s(fontSize.bodyLg),
+    lineHeight: fontSize.bodyLg * lineHeight.tight,
     textAlign: 'center',
   },
   /**
@@ -940,18 +941,18 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   tipLabel: {
-    color: colors.accent.primary,
+    color: semantic.accent.ink,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.sm,
-    lineHeight: 16,
+    fontSize: s(fontSize.caption),
+    lineHeight: fontSize.caption * lineHeight.snug,
     textTransform: 'uppercase',
     letterSpacing: letterSpacing.widest,
     marginBottom: spacing.sm,
   },
   tipText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontSize: s(fontSize.body),
     lineHeight: TIP_LINE_HEIGHT,
     textAlign: 'center',
     paddingHorizontal: spacing.lg,

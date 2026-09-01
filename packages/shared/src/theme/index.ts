@@ -41,6 +41,7 @@ export {
   wordmarkText,
   wordmarkTypeface,
   wordmarkToSvg,
+  chainMarks,
 } from './brand';
 
 // The onboarding slot grid — five reserved-height tables, read by all three apps.

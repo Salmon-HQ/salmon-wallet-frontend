@@ -90,6 +90,7 @@ jest.mock('@salmon/shared', () => ({
     surface: { shelf: '#10131C', raised: '#161C2D', crest: '#1B2233' },
     status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
     state: { hover: 'rgba(199,211,232,0.06)', selectedEdge: '#FF5C45' },
+    depth: { abyss: '#10131C' },
   },
   componentSizes: { icon: { sm: 16, md: 20, lg: 24 }, button: { height: 44 } },
   fontFamilyNative: { regular: 'System', medium: 'System', semiBold: 'System', bold: 'System' },

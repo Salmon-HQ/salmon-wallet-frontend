@@ -19,7 +19,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { colors, componentSizes, motionMs } from '@salmon/shared';
+import { componentSizes, motionMs, semantic } from '@salmon/shared';
 import { timing } from '../../utils/motion';
 import type { StepIndicatorProps } from './types';
 
@@ -86,9 +86,9 @@ const styles = StyleSheet.create({
     left: 0,
   },
   dotActive: {
-    backgroundColor: colors.step.active,
+    backgroundColor: semantic.step.active,
   },
   dotInactive: {
-    backgroundColor: colors.step.inactive,
+    backgroundColor: semantic.step.inactive,
   },
 });

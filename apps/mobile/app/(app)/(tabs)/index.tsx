@@ -34,7 +34,6 @@ import {
 import Reanimated, { useReducedMotion } from 'react-native-reanimated';
 
 import {
-  colors,
   componentSizes,
   fontSize,
   s,
@@ -688,7 +687,7 @@ export default function HomeScreen() {
       pointerEvents="none"
     >
       <LinearGradient
-        colors={[colors.background.primary, 'transparent']}
+        colors={[semantic.depth.abyss, 'transparent']}
         style={StyleSheet.absoluteFill}
       />
     </Animated.View>
@@ -938,7 +937,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: semantic.text.secondary,
-    fontSize: fontSize.bodyLg,
+    fontSize: s(fontSize.bodyLg),
     marginTop: spacing.lg,
   },
   content: {
@@ -979,7 +978,7 @@ const styles = StyleSheet.create({
   },
   stickySubTabsScrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.background.primary,
+    backgroundColor: semantic.depth.abyss,
   },
   listContainer: {
     flex: 1,

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, FlatList, StyleSheet, ListRenderItem, RefreshControl } from 'react-native';
 import TokenListItem from './TokenListItem';
 import TokenListSkeleton from './TokenListSkeleton';
-import { colors, spacing } from '@salmon/shared';
+import { semantic, spacing } from '@salmon/shared';
 import type { Token } from '@salmon/shared';
 import type { TokenListProps } from './types';
 
@@ -109,8 +109,8 @@ const TokenList: React.FC<TokenListProps> = ({
     <RefreshControl
       refreshing={pulling}
       onRefresh={handlePull}
-      tintColor={colors.accent.primary}
-      colors={[colors.accent.primary]}
+      tintColor={semantic.accent.ink}
+      colors={[semantic.accent.ink]}
     />
   ) : undefined;
 

@@ -17,13 +17,14 @@
 import { InfoIcon } from '../../src/icons';
 import {
   borderRadius,
-  colors,
   componentSizes,
   onboardingIdentityGridFull,
   contentPadding,
   fontFamilyNative,
   fontSize,
   lineHeight,
+  s,
+  semantic,
   spacing,
 } from '@salmon/shared';
 import {
@@ -91,10 +92,10 @@ export default function SuccessScreen() {
         assist={
           <TextButton
             onPress={toggleDialog}
-            color={colors.text.secondary}
+            color={semantic.text.secondary}
             // The glyph belongs to the component, not the string — it used to
             // ride inside the translation as a literal "ⓘ".
-            icon={<InfoIcon size={componentSizes.iconSizeXs} color={colors.text.secondary} />}
+            icon={<InfoIcon size={componentSizes.iconSizeXs} color={semantic.text.secondary} />}
             testID="success-info-button"
           >
             {t('wallet.create.derivable_info_icon')}
@@ -141,31 +142,31 @@ const styles = StyleSheet.create({
   // Dialog styles
   dialogOverlay: {
     flex: 1,
-    backgroundColor: colors.dialog.overlay,
+    backgroundColor: semantic.overlay.backdrop,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: contentPadding.screen,
   },
   dialogContent: {
     width: '100%',
-    backgroundColor: colors.background.primary,
+    backgroundColor: semantic.depth.abyss,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: colors.border.default,
+    borderColor: semantic.border.default,
     padding: spacing['2xl'],
   },
   dialogTitle: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.title,
+    fontSize: s(fontSize.title),
     lineHeight: fontSize.title * lineHeight.snug,
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
   dialogBody: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
+    fontSize: s(fontSize.body),
     lineHeight: fontSize.body * lineHeight.normal,
     textAlign: 'center',
     marginBottom: spacing['2xl'],

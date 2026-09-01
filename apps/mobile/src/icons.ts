@@ -15,7 +15,7 @@
  *   success checkmark. `duotone` is never used.
  * - Size comes from `iconSize` below (or `componentSizes` for legacy steps).
  *   16 is the floor — a thinner box loses the stroke.
- * - Color comes from a text token (`colors.text.*`), never a literal:
+ * - Color comes from a text token (`semantic.text.*`), never a literal:
  *   decorative reads `text.tertiary`, actionable `text.primary`, destructive
  *   `danger-500` (`semantic.status.danger`).
  *

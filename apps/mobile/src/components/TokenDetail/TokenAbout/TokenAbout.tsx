@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { ContentLoader, Rect } from '@salmon/shared';
 import {
-  colors,
+  semantic,
   fontFamilyNative,
   fontSize,
   lineHeight,
@@ -73,8 +73,8 @@ export const TokenAbout: React.FC<TokenAboutProps> = ({
             speed={1.5}
             width="100%"
             height={100}
-            backgroundColor={colors.skeleton.base}
-            foregroundColor={colors.skeleton.highlight}
+            backgroundColor={semantic.skeleton.base}
+            foregroundColor={semantic.skeleton.highlight}
           >
             <Rect x="0" y="0" rx="4" ry="4" width="60" height="18" />
             <Rect x="0" y="28" rx="4" ry="4" width="100%" height="12" />
@@ -139,23 +139,23 @@ const styles = StyleSheet.create({
     padding: s(spacing.md),
   },
   title: {
-    fontSize: ms(fontSize.base),
+    fontSize: ms(fontSize.body),
     fontFamily: fontFamilyNative.semiBold,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     marginBottom: vs(spacing.sm),
     letterSpacing: ms(-0.07, 0.3),
   },
   description: {
-    fontSize: ms(fontSize.xs),
+    fontSize: ms(fontSize.micro),
     fontFamily: fontFamilyNative.regular,
-    color: colors.text.primary,
-    lineHeight: ms(9) * lineHeight.tokenListItem,
+    color: semantic.text.primary,
+    lineHeight: ms(fontSize.body) * lineHeight.normal,
     letterSpacing: ms(-0.045, 0.3),
   },
   readMore: {
-    fontSize: ms(fontSize.sm),
+    fontSize: ms(fontSize.caption),
     fontFamily: fontFamilyNative.medium,
-    color: colors.accent.primary,
+    color: semantic.accent.ink,
     marginTop: vs(spacing.sm),
   },
 });

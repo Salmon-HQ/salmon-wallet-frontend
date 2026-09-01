@@ -9,7 +9,6 @@ import React from 'react';
 import { Modal, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
-  colors,
   spacing,
   borderRadius,
   fontFamilyNative,
@@ -80,7 +79,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.scanner.background,
+    backgroundColor: semantic.scanner.ground,
   },
   header: {
     flexDirection: 'row',
@@ -89,10 +88,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: colors.scanner.surface,
+    borderBottomColor: semantic.scanner.frame,
   },
   title: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.heading,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
     color: semantic.text.primary,
@@ -101,7 +100,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   closeButtonText: {
-    color: colors.scanner.textSecondary,
+    color: semantic.scanner.hint,
     fontSize: fontSize.bodyLg,
   },
   content: {
@@ -114,16 +113,16 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.scanner.surface,
+    backgroundColor: semantic.scanner.frame,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing['2xl'],
   },
   icon: {
-    fontSize: fontSize['4xl'],
+    fontSize: fontSize.display,
   },
   messageTitle: {
-    fontSize: fontSize.xl,
+    fontSize: fontSize.title,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
     color: semantic.text.primary,
@@ -132,13 +131,13 @@ const styles = StyleSheet.create({
   },
   messageText: {
     fontSize: fontSize.bodyLg,
-    color: colors.scanner.textSecondary,
+    color: semantic.scanner.hint,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   messageSubtext: {
-    fontSize: fontSize.base,
-    color: colors.scanner.textTertiary,
+    fontSize: fontSize.body,
+    color: semantic.scanner.hint,
     textAlign: 'center',
   },
   footer: {
@@ -146,7 +145,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing['2xl'],
   },
   button: {
-    backgroundColor: colors.scanner.button,
+    backgroundColor: semantic.scanner.corner,
     paddingVertical: 14,
     paddingHorizontal: spacing['2xl'],
     borderRadius: borderRadius.lg,

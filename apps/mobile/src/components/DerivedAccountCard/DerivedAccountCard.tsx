@@ -2,12 +2,12 @@ import { CheckIcon, iconSize } from '../../icons';
 import {
   borderRadius,
   borderWidth,
-  colors,
   componentSizes,
   spacing,
   fontSize,
   fontFamilyNative,
   opacity,
+  s,
   semantic,
 } from '@salmon/shared';
 import React from 'react';
@@ -20,11 +20,11 @@ const ICON_SIZE = 16;
 const BlockchainIcon: React.FC<{ blockchain?: string }> = ({ blockchain }) => {
   switch (blockchain) {
     case 'solana':
-      return <SolanaSvgIcon size={ICON_SIZE} color={colors.text.tertiary} />;
+      return <SolanaSvgIcon size={ICON_SIZE} color={semantic.text.tertiary} />;
     case 'bitcoin':
-      return <BitcoinSvgIcon size={ICON_SIZE} color={colors.text.tertiary} />;
+      return <BitcoinSvgIcon size={ICON_SIZE} color={semantic.text.tertiary} />;
     case 'ethereum':
-      return <EthereumSvgIcon size={ICON_SIZE} color={colors.text.tertiary} />;
+      return <EthereumSvgIcon size={ICON_SIZE} color={semantic.text.tertiary} />;
     default:
       return null;
   }
@@ -79,10 +79,10 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card.background,
+    backgroundColor: semantic.surface.raised,
     borderRadius: borderRadius.xl,
     borderWidth: borderWidth.thin,
-    borderColor: colors.card.border,
+    borderColor: semantic.border.raised,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -93,21 +93,21 @@ const styles = StyleSheet.create({
     width: componentSizes.checkboxSize,
     height: componentSizes.checkboxSize,
     borderRadius: 6,
-    backgroundColor: colors.interactive.highlight,
+    backgroundColor: semantic.overlay.highlight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.lg,
   },
   checkboxSelected: {
-    backgroundColor: colors.accent.primary,
+    backgroundColor: semantic.accent.ink,
   },
   info: {
     flex: 1,
   },
   address: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
+    fontSize: s(fontSize.bodyLg),
   },
   networkRow: {
     flexDirection: 'row',
@@ -116,17 +116,17 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxs,
   },
   path: {
-    color: colors.text.tertiary,
+    color: semantic.text.tertiary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    fontSize: s(fontSize.caption),
   },
   balanceContainer: {
     alignItems: 'flex-end',
   },
   balance: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.base,
+    fontSize: s(fontSize.body),
   },
   dimmed: {
     opacity: opacity.faint,

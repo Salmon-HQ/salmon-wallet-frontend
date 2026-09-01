@@ -5,9 +5,9 @@ import { ContentLoader, Rect } from '@salmon/shared';
 import {
   borderRadius,
   borderWidth,
-  colors,
   componentSizes,
   contentPadding,
+  semantic,
   spacing,
 } from '@salmon/shared';
 import type { DerivedAccountCardSkeletonProps } from './types';
@@ -48,8 +48,8 @@ const DerivedAccountCardSkeletonComponent: React.FC<DerivedAccountCardSkeletonPr
         width={cardInnerWidth}
         height={totalHeight}
         viewBox={`0 0 ${cardInnerWidth} ${totalHeight}`}
-        backgroundColor={colors.skeleton.base}
-        foregroundColor={colors.skeleton.highlight}
+        backgroundColor={semantic.skeleton.base}
+        foregroundColor={semantic.skeleton.highlight}
         accessibilityLabel={t('accessibility.loading_account_info', 'Loading account information')}
       >
         {/* Checkbox */}
@@ -110,10 +110,10 @@ export const DerivedAccountCardSkeleton = React.memo(DerivedAccountCardSkeletonC
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card.background,
+    backgroundColor: semantic.surface.raised,
     borderRadius: borderRadius.xl,
     borderWidth: borderWidth.thin,
-    borderColor: colors.card.border,
+    borderColor: semantic.border.raised,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },

@@ -19,12 +19,12 @@
  */
 
 import {
-  colors,
   componentSizes,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
   lineHeight,
+  s,
   semantic,
 } from '@salmon/shared';
 import { WarningIcon } from '../../src/icons';
@@ -102,7 +102,7 @@ export default function SeedWarningScreen() {
         stays on welcome and the lock only. The gate names itself: this step
         exists to be read as a warning, so it wears one.
       */
-      mark={<WarningIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+      mark={<WarningIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
       title={<OnboardingTitle>{t('wallet.create.messageTitle')}</OnboardingTitle>}
       body={
         <ScrollView
@@ -137,9 +137,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   body: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
+    fontSize: s(fontSize.bodyLg),
     lineHeight: fontSize.bodyLg * lineHeight.normal,
     textAlign: 'center',
   },

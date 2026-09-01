@@ -1,6 +1,5 @@
 import {
   borderRadius,
-  colors,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
@@ -73,7 +72,7 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
   // Get the label type for coloring the percentage
   const percentageChange = last24HoursChange?.perc ?? 0;
   const labelType = getLabelValue(percentageChange);
-  const changeColor = colors.change[labelType];
+  const changeColor = semantic.change[labelType];
 
   // Format display values
   const displayPrice = hiddenBalance ? hiddenValue : price != null ? formatValue(price) : null;

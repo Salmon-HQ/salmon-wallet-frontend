@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet } from 'react-native';
 import { ContentLoader, Rect } from '@salmon/shared';
 import {
-  colors,
+  semantic,
   fontFamilyNative,
   fontSize,
   ms,
@@ -75,8 +75,8 @@ export const TokenMarketData: React.FC<TokenMarketDataProps> = ({
             speed={1.5}
             width="100%"
             height={136}
-            backgroundColor={colors.skeleton.base}
-            foregroundColor={colors.skeleton.highlight}
+            backgroundColor={semantic.skeleton.base}
+            foregroundColor={semantic.skeleton.highlight}
           >
             {/* Title — ms(14) height, marginBottom vs(8) */}
             <Rect x="0" y="0" rx="4" ry="4" width="40" height="14" />
@@ -122,16 +122,16 @@ export const TokenMarketData: React.FC<TokenMarketDataProps> = ({
   const athChangeColor =
     data.athChangePercentage !== undefined
       ? data.athChangePercentage >= 0
-        ? colors.change.positive
-        : colors.change.negative
+        ? semantic.change.positive
+        : semantic.change.negative
       : undefined;
 
   // Determine color for ATL change
   const atlChangeColor =
     data.atlChangePercentage !== undefined
       ? data.atlChangePercentage >= 0
-        ? colors.change.positive
-        : colors.change.negative
+        ? semantic.change.positive
+        : semantic.change.negative
       : undefined;
 
   return (
@@ -273,9 +273,9 @@ const styles = StyleSheet.create({
     padding: s(spacing.md),
   },
   title: {
-    fontSize: ms(fontSize.base),
+    fontSize: ms(fontSize.body),
     fontFamily: fontFamilyNative.semiBold,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     marginBottom: vs(spacing.sm),
     letterSpacing: ms(-0.07, 0.3),
   },
@@ -288,15 +288,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rowLabel: {
-    fontSize: ms(fontSize.sm),
+    fontSize: ms(fontSize.caption),
     fontFamily: fontFamilyNative.medium,
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     letterSpacing: ms(-0.065, 0.3),
   },
   rowValue: {
-    fontSize: ms(fontSize.sm),
+    fontSize: ms(fontSize.caption),
     fontFamily: fontFamilyNative.semiBold,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     letterSpacing: ms(-0.065, 0.3),
   },
 });

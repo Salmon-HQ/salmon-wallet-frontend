@@ -17,12 +17,12 @@
  */
 
 import {
-  colors,
   componentSizes,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
   lineHeight,
+  s,
   semantic,
   useAnalyticsConsent,
 } from '@salmon/shared';
@@ -70,7 +70,7 @@ export default function AnalyticsConsentScreen() {
         The metrics glyph takes the top slot the fish used to hold — one icon
         on the screen, not two, and the same asset the body carried before.
       */
-      mark={<ChartBarIcon size={ICON_SIZE} color={colors.text.primary} />}
+      mark={<ChartBarIcon size={ICON_SIZE} color={semantic.text.primary} />}
       title={<OnboardingTitle>{t('settings.analytics_prompt_title')}</OnboardingTitle>}
       body={
         <ScrollView contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   copy: {
     color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
+    fontSize: s(fontSize.bodyLg),
     lineHeight: fontSize.bodyLg * lineHeight.normal,
     textAlign: 'center',
   },
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   foot: {
     color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
+    fontSize: s(fontSize.body),
     lineHeight: fontSize.body * lineHeight.normal,
     textAlign: 'center',
   },

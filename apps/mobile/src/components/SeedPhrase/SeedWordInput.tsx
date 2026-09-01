@@ -12,7 +12,6 @@ import {
   type TextInputKeyPressEventData,
 } from 'react-native';
 import {
-  colors,
   spacing,
   componentSizes,
   fontSize,
@@ -93,7 +92,7 @@ export function SeedWordInput({
       case 'incorrect':
         return semantic.status.danger;
       default:
-        return colors.input.border;
+        return semantic.input.edge;
     }
   };
 
@@ -113,7 +112,7 @@ export function SeedWordInput({
           style={styles.compactInput}
           value={value}
           onChangeText={onChangeText}
-          placeholderTextColor={colors.text.tertiary}
+          placeholderTextColor={semantic.text.tertiary}
           onKeyPress={onKeyPress}
           autoFocus={autoFocus}
           onSubmitEditing={onSubmitEditing}
@@ -136,7 +135,7 @@ export function SeedWordInput({
         value={value}
         onChangeText={onChangeText}
         placeholder={t('wallet.create.enter_word_number', { position })}
-        placeholderTextColor={colors.text.tertiary}
+        placeholderTextColor={semantic.text.tertiary}
         onKeyPress={onKeyPress}
         autoFocus={autoFocus}
         onSubmitEditing={onSubmitEditing}
@@ -170,16 +169,16 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   label: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginBottom: spacing.xs,
   },
   compactBox: {
     flexDirection: 'row',
     alignItems: 'center',
     height: componentSizes.buttonHeightSmall,
-    backgroundColor: colors.input.background,
+    backgroundColor: semantic.input.ground,
     borderWidth: borderWidth.thin,
     borderRadius: componentSizes.inputRadius,
     paddingHorizontal: spacing.sm,
@@ -210,9 +209,9 @@ const styles = StyleSheet.create({
     color: semantic.text.accent,
   },
   compactIndex: {
-    color: colors.text.tertiary,
+    color: semantic.text.tertiary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     minWidth: spacing.lg,
     textAlign: 'right',
   },
@@ -221,20 +220,20 @@ const styles = StyleSheet.create({
   compactInput: {
     flex: 1,
     height: '100%',
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.mono,
-    fontSize: fontSize.base,
+    fontSize: fontSize.body,
     padding: 0,
   },
   input: {
     width: '100%',
     minHeight: componentSizes.inputHeight,
     paddingVertical: spacing.xs,
-    backgroundColor: colors.input.background,
+    backgroundColor: semantic.input.ground,
     borderWidth: borderWidth.thin,
     borderRadius: componentSizes.inputRadius,
     paddingHorizontal: spacing.lg,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     // Seed Phrase Rule: the typed word renders in the mono face.
     fontFamily: fontFamilyNative.mono,
     fontSize: fontSize.bodyLg,

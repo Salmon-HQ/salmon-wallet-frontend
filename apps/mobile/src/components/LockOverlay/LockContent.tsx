@@ -10,13 +10,13 @@
  */
 
 import {
-  colors,
   fontFamilyNative,
   fontSize,
   lineHeight,
   spacing,
   borderWidth,
   componentSizes,
+  s,
   semantic,
   useUnlockThrottle,
   FLOAT_DELAY_MS,
@@ -412,7 +412,7 @@ export function LockContent({
   const getInputBorderColor = () => {
     if (error) return semantic.status.danger;
     if (isFocused) return semantic.accent.ink;
-    return colors.input.border;
+    return semantic.input.edge;
   };
 
   return (
@@ -600,18 +600,18 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     height: componentSizes.inputHeight,
-    backgroundColor: colors.input.background,
+    backgroundColor: semantic.input.ground,
     borderWidth: borderWidth.sheet,
     borderRadius: componentSizes.inputRadius,
     paddingHorizontal: spacing.lg,
     color: semantic.text.primary,
     fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.bodyLg,
+    fontSize: s(fontSize.bodyLg),
   },
   errorText: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
+    fontSize: s(fontSize.caption),
     lineHeight: fontSize.caption * lineHeight.normal,
     textAlign: 'center',
   },
@@ -623,7 +623,7 @@ const styles = StyleSheet.create({
   throttleText: {
     color: semantic.status.warning,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
+    fontSize: s(fontSize.caption),
     lineHeight: fontSize.caption * lineHeight.normal,
     textAlign: 'center',
   },

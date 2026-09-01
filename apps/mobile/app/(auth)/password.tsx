@@ -33,7 +33,6 @@
 
 import {
   ApiError,
-  colors,
   createAccount,
   fontFamilyNative,
   generateAccountName,
@@ -45,6 +44,7 @@ import {
   fontSize,
   lineHeight,
   removeStashItem,
+  s,
   spacing,
   STASH_KEYS,
   trackOnboardingEvent,
@@ -371,7 +371,7 @@ export default function PasswordScreen() {
           The lock: what the password buys. The fish leaves the flow screens
           — one semantic glyph per step, consent's pattern and size.
         */
-            mark={<LockIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+            mark={<LockIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
             chrome={
               <ScreenHeader
                 onBack={handleBack}
@@ -520,20 +520,20 @@ const styles = StyleSheet.create({
   generalError: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
+    fontSize: s(fontSize.caption),
     lineHeight: fontSize.caption * lineHeight.snug,
     marginBottom: spacing.lg,
     textAlign: 'center',
     width: '100%',
   },
   termsText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.caption,
+    fontSize: s(fontSize.caption),
     lineHeight: fontSize.caption * lineHeight.normal,
     textAlign: 'center',
   },
   termsHighlight: {
-    color: colors.step.active,
+    color: semantic.step.active,
   },
 });

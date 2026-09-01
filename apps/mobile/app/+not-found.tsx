@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 
 import { Text, View } from 'react-native';
-import { colors, fontFamilyNative, fontSize, spacing } from '@salmon/shared';
+import { fontFamilyNative, fontSize, s, semantic, spacing } from '@salmon/shared';
 
 export default function NotFoundScreen() {
   const { t } = useTranslation();
@@ -33,17 +33,16 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   title: {
-    fontSize: fontSize.xl,
+    fontSize: s(fontSize.title),
     fontFamily: fontFamilyNative.bold,
-    fontWeight: 'bold',
-    color: colors.text.primary,
+    color: semantic.text.primary,
   },
   link: {
     marginTop: spacing.lg,
     paddingVertical: spacing.lg,
   },
   linkText: {
-    fontSize: fontSize.base,
-    color: colors.accent.primary,
+    fontSize: s(fontSize.body),
+    color: semantic.accent.ink,
   },
 });

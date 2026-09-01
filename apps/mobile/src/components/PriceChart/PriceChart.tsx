@@ -12,13 +12,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { ContentLoader, Rect } from '@salmon/shared';
 import {
-  colors,
   spacing,
   isPositivePerformance,
   PRICE_CHART_PERIODS,
   fontSize,
   motionMs,
   opacity,
+  s,
   semantic,
 } from '@salmon/shared';
 import { curve, timing } from '../../utils/motion';
@@ -138,8 +138,8 @@ const ChartSkeleton: React.FC<{ height: number; width: number }> = ({ height, wi
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
-      backgroundColor={colors.skeleton.base}
-      foregroundColor={colors.skeleton.highlight}
+      backgroundColor={semantic.skeleton.base}
+      foregroundColor={semantic.skeleton.highlight}
     >
       <Rect x="0" y="0" rx="0" ry="0" width={width} height={height} />
     </ContentLoader>
@@ -162,8 +162,8 @@ const PeriodSelectorSkeleton: React.FC = () => {
         width={totalWidth}
         height={buttonHeight}
         viewBox={`0 0 ${totalWidth} ${buttonHeight}`}
-        backgroundColor={colors.skeleton.base}
-        foregroundColor={colors.skeleton.highlight}
+        backgroundColor={semantic.skeleton.base}
+        foregroundColor={semantic.skeleton.highlight}
       >
         {PRICE_CHART_PERIODS.map((_, index) => (
           <Rect
@@ -437,8 +437,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyStateText: {
-    fontSize: fontSize.base,
-    color: colors.text.secondary,
+    fontSize: s(fontSize.body),
+    color: semantic.text.secondary,
   },
 });
 

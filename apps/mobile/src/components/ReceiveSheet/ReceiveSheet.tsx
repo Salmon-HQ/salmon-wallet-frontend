@@ -1,5 +1,4 @@
 import {
-  colors,
   fontSize,
   getChainDisplayName,
   letterSpacing,
@@ -243,7 +242,7 @@ const styles = StyleSheet.create({
   qrContainer: {
     borderRadius: ms(borderRadius.xl),
     borderWidth: componentSizes.qrBorderWidth,
-    borderColor: colors.text.primary,
+    borderColor: semantic.text.primary,
     overflow: 'hidden',
   },
   qrLogoOverlay: {
@@ -267,7 +266,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(spacing.md),
   },
   chainBadgeText: {
-    fontSize: ms(fontSize.sm),
+    fontSize: ms(fontSize.caption),
     fontFamily: fontFamilyNative.semiBold,
     color: semantic.text.primary,
     letterSpacing: letterSpacing.label,
@@ -278,7 +277,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.button.primaryBackground,
+    backgroundColor: semantic.accent.fill,
     borderRadius: ms(borderRadius.lg),
     minWidth: s(componentSizes.copyButtonWidth),
     maxWidth: '100%',
@@ -291,7 +290,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: ms(fontSize.bodyLg),
     fontFamily: fontFamilyNative.bold,
-    color: colors.button.primaryText,
+    color: semantic.accent.onFill,
     textAlign: 'center',
   },
 });

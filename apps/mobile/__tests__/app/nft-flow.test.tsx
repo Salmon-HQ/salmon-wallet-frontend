@@ -46,6 +46,9 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('@salmon/shared', () => ({
+  // The components barrel the flow imports evaluates kit stylesheets at module
+  // scope, so the theme has to be real here even though nothing renders it.
+  ...jest.requireActual('../../test-utils/themeTokens'),
   SECTION_TO_NETWORK: { solana: 'solana-mainnet', 'solana-devnet': 'solana-devnet' },
   canonicalNftToSolanaNftData: (...args: unknown[]) => mockCanonicalNftToSolanaNftData(...args),
   classifyTransactionError: () => 'transaction.errors.generic',

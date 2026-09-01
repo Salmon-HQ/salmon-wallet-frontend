@@ -1,6 +1,6 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
-import { colors } from '@salmon/shared';
+import { semantic } from '@salmon/shared';
 
 interface SvgIconProps {
   size?: number;
@@ -13,7 +13,7 @@ interface SvgIconProps {
  */
 export const ContentCopySvgIcon: React.FC<SvgIconProps> = ({
   size = 24,
-  color = colors.text.secondary,
+  color = semantic.text.secondary,
 }) => {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -31,7 +31,7 @@ export const ContentCopySvgIcon: React.FC<SvgIconProps> = ({
  */
 export const SettingsSvgIcon: React.FC<SvgIconProps> = ({
   size = 24,
-  color = colors.text.secondary,
+  color = semantic.text.secondary,
 }) => {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -50,7 +50,7 @@ export const SettingsSvgIcon: React.FC<SvgIconProps> = ({
  */
 export const SolanaSvgIcon: React.FC<SvgIconProps> = ({
   size = 24,
-  color = colors.text.primary,
+  color = semantic.text.primary,
 }) => {
   return (
     <Svg width={size} height={size} viewBox="24 15 43 57" fill="none">
@@ -68,7 +68,7 @@ export const SolanaSvgIcon: React.FC<SvgIconProps> = ({
  */
 export const BitcoinSvgIcon: React.FC<SvgIconProps> = ({
   size = 24,
-  color = colors.text.primary,
+  color = semantic.text.primary,
 }) => {
   return (
     <Svg width={size} height={size} viewBox="0 0 43 57" fill="none">
@@ -86,7 +86,7 @@ export const BitcoinSvgIcon: React.FC<SvgIconProps> = ({
  */
 export const EthereumSvgIcon: React.FC<SvgIconProps> = ({
   size = 24,
-  color = colors.text.primary,
+  color = semantic.text.primary,
 }) => {
   return (
     <Svg width={size} height={size} viewBox="0 0 34 54" fill="none">

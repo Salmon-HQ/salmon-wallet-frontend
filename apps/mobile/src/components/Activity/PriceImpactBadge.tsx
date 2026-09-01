@@ -73,13 +73,13 @@ const SIZE_CONFIG: Record<
 > = {
   small: {
     iconSize: 12,
-    fontSize: fontSize.xs,
+    fontSize: fontSize.micro,
     paddingH: spacing.xs,
     paddingV: 2,
   },
   medium: {
     iconSize: 14,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     paddingH: spacing.sm,
     paddingV: 4,
   },

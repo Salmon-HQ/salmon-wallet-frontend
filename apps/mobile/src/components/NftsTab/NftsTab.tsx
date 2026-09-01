@@ -18,7 +18,6 @@ import {
   SECTION_TO_NETWORK as SHARED_SECTION_TO_NETWORK,
   canonicalNftToSolanaNftData,
   borderRadius,
-  colors,
   fontFamilyNative,
   fontSize,
   spacing,
@@ -298,7 +297,7 @@ export function NftsTab({
   if (!ready) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.accent.primary} />
+        <ActivityIndicator size="large" color={semantic.accent.ink} />
         <Text style={styles.loadingText}>{t('wallet.loading_wallet', 'Loading wallet...')}</Text>
       </View>
     );
@@ -336,8 +335,8 @@ export function NftsTab({
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={colors.text.primary}
-            colors={[colors.accent.primary]}
+            tintColor={semantic.text.primary}
+            colors={[semantic.accent.ink]}
           />
         }
         ListHeaderComponent={
@@ -443,7 +442,7 @@ export function NftsTab({
             <View style={styles.sectionHeaderBlock}>
               {showChainLabel && (
                 <View style={styles.sectionHeader}>
-                  <SolanaSvgIcon size={ms(24)} color={colors.text.primary} />
+                  <SolanaSvgIcon size={ms(24)} color={semantic.text.primary} />
                   <Text style={styles.sectionHeaderTitle}>{title}</Text>
                   <Text style={styles.sectionHeaderCount}>({nftSection.nfts.length})</Text>
                 </View>
@@ -509,7 +508,7 @@ const styles = StyleSheet.create({
   loadingText: {
     color: semantic.text.secondary,
     fontSize: ms(fontSize.bodyLg),
-    marginTop: vs(spacing.lg),
+    marginTop: vs(spacing.screenGutter),
   },
   scrollView: {
     flex: 1,
@@ -525,80 +524,78 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   devModeBanner: {
-    backgroundColor: colors.accent.tint,
+    backgroundColor: semantic.accent.tint,
     borderWidth: 1,
-    borderColor: colors.accent.border,
+    borderColor: semantic.accent.ink,
     borderRadius: ms(borderRadius.md),
     paddingVertical: vs(spacing.sm),
     paddingHorizontal: s(spacing.md),
-    marginBottom: vs(spacing.lg),
+    marginBottom: vs(spacing.screenGutter),
   },
   devModeBannerText: {
     fontFamily: fontFamilyNative.medium,
-    fontSize: ms(fontSize.sm),
-    color: colors.accent.primary,
+    fontSize: ms(fontSize.caption),
+    color: semantic.accent.ink,
     textAlign: 'center',
   },
   // Empty State
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: vs(48),
-    paddingHorizontal: s(24),
-    marginTop: vs(40),
+    paddingVertical: vs(spacing.screenGutter),
+    paddingHorizontal: s(spacing.screenGutter),
+    marginTop: vs(spacing.screenGutter),
   },
   emptyText: {
     fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(fontSize.lg),
-    fontWeight: '600',
+    fontSize: ms(fontSize.heading),
     color: semantic.text.secondary,
     marginBottom: vs(spacing.sm),
     textAlign: 'center',
   },
   emptySubtext: {
     fontFamily: fontFamilyNative.regular,
-    fontSize: ms(fontSize.base),
-    color: colors.text.disabled,
+    fontSize: ms(fontSize.body),
+    color: semantic.text.disabled,
     textAlign: 'center',
   },
   sectionSelector: {
-    marginBottom: vs(8),
+    marginBottom: vs(spacing.screenGutter),
   },
   loadErrorBanner: {
-    marginBottom: vs(spacing.lg),
+    marginBottom: vs(spacing.screenGutter),
   },
   retryText: {
     fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(fontSize.sm),
-    color: colors.accent.primary,
+    fontSize: ms(fontSize.caption),
+    color: semantic.accent.ink,
   },
   // Grid layout styles (matching NftSeeAllSheet pattern)
   sectionContainer: {
-    marginBottom: vs(16),
+    marginBottom: vs(spacing.screenGutter),
   },
   // The section header block carries what used to be the top of
   // `sectionContainer`: the chain label, the sub-account selector, and the
   // skeletons while the section loads.
   sectionHeaderBlock: {
-    marginBottom: vs(8),
+    marginBottom: vs(spacing.screenGutter),
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: s(8),
-    marginBottom: vs(8),
+    marginBottom: vs(spacing.screenGutter),
   },
   sectionHeaderTitle: {
     fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(16),
-    fontWeight: '600',
-    color: colors.text.primary,
+    fontSize: ms(fontSize.bodyLg),
+    color: semantic.text.primary,
     flex: 1,
   },
   sectionHeaderCount: {
     fontFamily: fontFamilyNative.regular,
-    fontSize: ms(13),
-    color: colors.text.secondary,
+    fontSize: ms(fontSize.mono),
+    color: semantic.text.secondary,
   },
   gridRow: {
     flexDirection: 'row',

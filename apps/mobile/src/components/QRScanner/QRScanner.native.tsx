@@ -3,7 +3,6 @@ import { AppState, Linking, Modal, StyleSheet, Text, TouchableOpacity, View } fr
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useTranslation } from 'react-i18next';
 import {
-  colors,
   spacing,
   borderRadius,
   fontFamilyNative,
@@ -144,7 +143,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.scanner.background,
+    backgroundColor: semantic.scanner.ground,
   },
   header: {
     flexDirection: 'row',
@@ -155,7 +154,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing['5xl'],
   },
   title: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.heading,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
     color: semantic.text.primary,
@@ -164,7 +163,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   closeButtonText: {
-    color: colors.scanner.textSecondary,
+    color: semantic.scanner.hint,
     fontSize: fontSize.bodyLg,
   },
   content: {
@@ -180,7 +179,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing['3xl'],
   },
   messageTitle: {
-    fontSize: fontSize.xl,
+    fontSize: fontSize.title,
     fontFamily: fontFamilyNative.semiBold,
     fontWeight: fontWeight.semibold,
     color: semantic.text.primary,
@@ -189,12 +188,12 @@ const styles = StyleSheet.create({
   },
   messageText: {
     fontSize: fontSize.bodyLg,
-    color: colors.scanner.textSecondary,
+    color: semantic.scanner.hint,
     textAlign: 'center',
     marginBottom: spacing['2xl'],
   },
   settingsButton: {
-    backgroundColor: colors.scanner.button,
+    backgroundColor: semantic.scanner.corner,
     paddingVertical: 14,
     paddingHorizontal: spacing['2xl'],
     borderRadius: borderRadius.lg,
@@ -211,7 +210,7 @@ const styles = StyleSheet.create({
     bottom: spacing['5xl'],
     left: spacing.lg,
     right: spacing.lg,
-    backgroundColor: colors.scanner.surface,
+    backgroundColor: semantic.scanner.frame,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
   },

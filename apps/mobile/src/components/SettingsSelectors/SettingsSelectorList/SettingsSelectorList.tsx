@@ -13,7 +13,6 @@ import { Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CheckCircleIcon, iconSize } from '../../../icons';
 import {
-  colors,
   contentPadding,
   ContentLoader,
   Rect,
@@ -127,8 +126,8 @@ export function SettingsSelectorList<T>({
         width={skeletonWidth}
         height={skeletonHeight}
         viewBox={`0 0 ${skeletonWidth} ${skeletonHeight}`}
-        backgroundColor={colors.skeleton.base}
-        foregroundColor={colors.skeleton.highlight}
+        backgroundColor={semantic.skeleton.base}
+        foregroundColor={semantic.skeleton.highlight}
         accessibilityLabel={t('general.loading')}
       >
         {Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (

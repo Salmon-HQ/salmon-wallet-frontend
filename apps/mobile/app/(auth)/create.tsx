@@ -14,7 +14,6 @@
 import { CheckCircleIcon, SparkleIcon, iconSize } from '../../src/icons';
 import {
   borderRadius,
-  colors,
   componentSizes,
   contentPadding,
   fontFamilyNative,
@@ -23,6 +22,7 @@ import {
   generateValidationPositions,
   lineHeight,
   motionMs,
+  s,
   semantic,
   setStashItem,
   spacing,
@@ -120,7 +120,7 @@ function SeedPhraseStep({ mnemonic, onNext, onBack, t }: SeedPhraseStepProps) {
           flow screens (welcome and the lock keep it); each step wears one
           semantic glyph in the mark slot, consent's pattern and size.
         */
-        mark={<SparkleIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+        mark={<SparkleIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
         chrome={
           <ScreenHeader
             onBack={onBack}
@@ -219,7 +219,7 @@ function ValidateStep({ mnemonic, onComplete, onBack, t }: ValidateStepProps) {
       float
       // Same glyph as the phrase it confirms — the step dots carry which half
       // of the creation this is.
-      mark={<SparkleIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+      mark={<SparkleIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
       chrome={
         <ScreenHeader
           onBack={onBack}
@@ -347,16 +347,16 @@ const styles = StyleSheet.create({
   toast: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dialog.overlay,
+    backgroundColor: semantic.overlay.backdrop,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: borderRadius['2xl'],
     gap: spacing.sm,
   },
   toastText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
+    fontSize: s(fontSize.body),
     lineHeight: fontSize.body * lineHeight.snug,
   },
 });

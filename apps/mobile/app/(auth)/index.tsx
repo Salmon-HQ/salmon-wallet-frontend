@@ -23,6 +23,7 @@ import {
   fontSize,
   lineHeight,
   onboardingIdentityGridFull,
+  s,
   semantic,
   useAccountsContext,
 } from '@salmon/shared';
@@ -135,7 +136,7 @@ const styles = StyleSheet.create({
   slogan: {
     color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
+    fontSize: s(fontSize.body),
     lineHeight: fontSize.body * lineHeight.normal,
     textAlign: 'center',
   },

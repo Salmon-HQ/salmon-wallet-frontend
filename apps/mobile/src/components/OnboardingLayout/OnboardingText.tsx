@@ -12,7 +12,6 @@
  * clipping against a hardcoded line-height.
  */
 import {
-  colors,
   fontFamilyNative,
   fontScaleCap,
   fontSize,
@@ -50,7 +49,7 @@ export function OnboardingDescription({ children, testID }: OnboardingTextProps)
 
 const styles = StyleSheet.create({
   title: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.bold,
     fontSize: fontSize.headline,
     lineHeight: fontSize.headline * lineHeight.tight,

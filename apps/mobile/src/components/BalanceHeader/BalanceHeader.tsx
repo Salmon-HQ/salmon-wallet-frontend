@@ -17,7 +17,6 @@
  */
 import {
   borderRadius,
-  colors,
   componentSizes,
   fontFamilyNative,
   fontScaleCap,
@@ -211,7 +210,7 @@ export const BalanceHeader: React.FC<BalanceHeaderProps> = ({
   // unknown, not zero: defaulting it to 0 rendered "+$0.00 · 0% 24h", a
   // flat day the wallet never measured. Unknown renders as an em-dash.
   const hasChange = changePercent !== undefined && changeAmount !== undefined;
-  const changeColor = hasChange ? colors.change[getLabelValue(changePercent)] : semantic.text.secondary;
+  const changeColor = hasChange ? semantic.change[getLabelValue(changePercent)] : semantic.text.secondary;
 
   const networkLabel = showNetworkLabel
     ? (getNetworkLabel(currentBlockchainId) ?? t('general.network_mainnet', 'Mainnet'))

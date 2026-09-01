@@ -10,7 +10,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { borderRadius, colors, semantic, spacing, vs } from '@salmon/shared';
+import { borderRadius, semantic, spacing, vs } from '@salmon/shared';
 import { ContentLoader, Rect } from '@salmon/shared';
 import { StateBlock } from '../StateBlock';
 
@@ -27,8 +27,8 @@ const TransactionItemSkeleton: React.FC = () => (
       speed={1.5}
       width="100%"
       height={SKELETON_ROW_HEIGHT}
-      backgroundColor={colors.skeleton.base}
-      foregroundColor={colors.skeleton.highlight}
+      backgroundColor={semantic.skeleton.base}
+      foregroundColor={semantic.skeleton.highlight}
     >
       {/* Token logo (main) */}
       <Rect x="18" y="26" rx="20" ry="20" width="40" height="40" />
@@ -98,7 +98,7 @@ export const ErrorState: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => {
 
 const styles = StyleSheet.create({
   skeletonList: {
-    paddingTop: vs(spacing.sm),
+    paddingTop: vs(spacing.screenGutter),
   },
   skeletonRow: {
     backgroundColor: semantic.surface.membraneThin,

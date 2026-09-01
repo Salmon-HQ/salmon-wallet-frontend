@@ -19,6 +19,7 @@ import {
   getStashItem,
   lineHeight,
   type DerivedKeyCache,
+  s,
   semantic,
 } from '@salmon/shared';
 import {
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
   error: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
+    fontSize: s(fontSize.body),
     lineHeight: fontSize.body * lineHeight.snug,
     textAlign: 'center',
   },

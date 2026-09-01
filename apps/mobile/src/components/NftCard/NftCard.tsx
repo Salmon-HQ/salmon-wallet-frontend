@@ -1,5 +1,4 @@
 import {
-  colors,
   fontFamilyNative,
   fontSize,
   fontWeight,
@@ -143,7 +142,7 @@ export const NftCard: React.FC<NftCardProps> = ({ nft, onPress, style, testID })
         <BlurContainer
           style={styles.nameBadge}
           blurIntensity={6}
-          backgroundColor={colors.overlay.darkHover}
+          backgroundColor={semantic.overlay.scrim}
           borderColor={semantic.border.raised}
           borderWidth={borderWidth.actionButton}
         >
@@ -225,9 +224,9 @@ const styles = StyleSheet.create({
   nameText: {
     // DM Sans SemiBold, ~13px, color #e0e0e0
     fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(fontSize.sm),
+    fontSize: ms(fontSize.caption),
     fontWeight: fontWeight.semibold,
-    color: colors.text.balance,
+    color: semantic.text.primary,
     textAlign: 'center',
   },
 });
@@ -245,15 +244,15 @@ const styles = StyleSheet.create({
 export const NftCardSkeleton = React.memo<NftCardSkeletonProps>(
   ({ style, testID, animated = true }) => {
     // Card dimensions matching NftCard
-    const cardWidth = s(194);
-    const cardHeight = vs(193);
-    const cardBorderRadius = ms(18);
+    const cardWidth = s(componentSizes.nftCardWidth);
+    const cardHeight = vs(componentSizes.nftCardHeight);
+    const cardBorderRadius = ms(borderRadius.iconContainer);
 
     // Badge dimensions
     const badgeHeight = vs(25); // 6px padding * 2 + 13px text
     const badgeBottom = vs(8);
     const badgeHorizontal = s(8);
-    const badgeBorderRadius = ms(9);
+    const badgeBorderRadius = ms(borderRadius.badge);
 
     // The gradient sweep alone is too quiet against this palette: a grid of
     // placeholders read as a finished, empty grid rather than one still
@@ -275,8 +274,8 @@ export const NftCardSkeleton = React.memo<NftCardSkeletonProps>(
           width={cardWidth}
           height={cardHeight}
           viewBox={`0 0 ${cardWidth} ${cardHeight}`}
-          backgroundColor={colors.skeleton.base}
-          foregroundColor={colors.skeleton.highlight}
+          backgroundColor={semantic.skeleton.base}
+          foregroundColor={semantic.skeleton.highlight}
         >
           {/* Main card background */}
           <Rect

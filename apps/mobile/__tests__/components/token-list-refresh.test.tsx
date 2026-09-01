@@ -16,7 +16,7 @@ import { RefreshControl } from 'react-native';
 import { act, render } from '@testing-library/react-native';
 
 jest.mock('@salmon/shared', () => ({
-  colors: { accent: { primary: '#FF5C45' } },
+  semantic: { accent: { ink: '#FF5C45' } },
   spacing: { sm: 8 },
 }));
 jest.mock('../../src/components/TokenList/TokenListItem', () => 'TokenListItem');

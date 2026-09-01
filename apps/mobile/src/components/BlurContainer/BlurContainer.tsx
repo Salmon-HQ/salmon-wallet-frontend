@@ -1,4 +1,4 @@
-import { colors, isOpaqueColor } from '@salmon/shared';
+import { isOpaqueColor, semantic } from '@salmon/shared';
 import { BlurView } from 'expo-blur';
 import React, { useId, useState } from 'react';
 import { type LayoutChangeEvent, Platform, StyleSheet, View } from 'react-native';
@@ -82,8 +82,8 @@ export function BlurContainer({
   style,
   blurIntensity = 4,
   blurTint = 'dark',
-  backgroundColor = colors.background.tokenItem,
-  borderColor = colors.border.default,
+  backgroundColor = semantic.surface.raised,
+  borderColor = semantic.border.default,
   borderWidth = 1,
   useGradientBorder = true,
   pointerEvents,

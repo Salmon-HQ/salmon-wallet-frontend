@@ -21,6 +21,7 @@ import {
   fontSize,
   lineHeight,
   normalizeMnemonic,
+  s,
   semantic,
   setStashItem,
   spacing,
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
   invalid: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
+    fontSize: s(fontSize.body),
     lineHeight: fontSize.body * lineHeight.snug,
     paddingHorizontal: spacing.sm,
     textAlign: 'center',

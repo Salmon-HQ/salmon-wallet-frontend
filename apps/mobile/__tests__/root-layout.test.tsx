@@ -93,6 +93,7 @@ jest.mock('@salmon/shared', () => ({
     status: { success: '#33D6A6', danger: '#FF6B85', warning: '#FFB020' },
     surface: { crest: '#1B2233' },
     border: { raised: '#6F7B95' },
+    depth: { abyss: '#000' },
   },
   borderRadius: { lg: 16 },
   fontSize: { xs: 10, sm: 12 },

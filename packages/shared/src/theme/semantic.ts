@@ -344,6 +344,8 @@ export const input = {
  */
 export const overlay = {
   backdrop: 'rgba(7, 9, 17, 0.7)',
+  /** The press/selection wash on a card (was colors.interactive.highlight). */
+  highlight: 'rgba(255, 255, 255, 0.2)',
   scrim: 'rgba(7, 9, 17, 0.9)',
 } as const;
 

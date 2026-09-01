@@ -3,7 +3,6 @@
  */
 import { View, Text, StyleSheet } from 'react-native';
 import {
-  colors,
   spacing,
   borderRadius,
   fontSize,
@@ -60,7 +59,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: semantic.surface.bedrock,
     borderWidth: borderWidth.thin,
-    borderColor: colors.card.border,
+    borderColor: semantic.border.raised,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -77,19 +76,19 @@ const styles = StyleSheet.create({
    * accent.
    */
   indexDot: {
-    color: colors.accent.primary,
+    color: semantic.accent.ink,
   },
   // Seed Phrase Rule (DESIGN.md): cell numbers are `text.tertiary` at label
   // size so they are never mistaken for part of the phrase.
   wordIndex: {
-    color: colors.text.tertiary,
+    color: semantic.text.tertiary,
     fontFamily: fontFamilyNative.medium,
     fontSize: fontSize.label,
     minWidth: 20,
   },
   // Seed Phrase Rule: Geist Mono at the larger mono size, weight 500.
   wordText: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.mono,
     fontWeight: fontWeight.medium,
     fontSize: fontSize.monoLg,

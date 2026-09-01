@@ -3,23 +3,21 @@
 jest.mock('@salmon/shared', () => ({
   ContentLoader: () => null,
   Rect: () => null,
-  colors: {
-    skeleton: { base: '#111', highlight: '#222' },
-    text: { primary: '#fff', secondary: '#aaa' },
-  },
   spacing: { xs: 4, sm: 8, screenGutter: 20 },
   borderRadius: { full: 999 },
   fontFamilyNative: { bold: 'Font-Bold' },
   fontWeight: { bold: '700' },
   isPositivePerformance: () => true,
   PRICE_CHART_PERIODS: ['1H', '1D', '1W', '1M', '3M', '1Y'],
-  fontSize: { base: 16 },
+  fontSize: { body: 16 },
+  s: (size: number) => size,
   motionMs: { drift: 280, tide: 720 },
   opacity: { faint: 0.4, soft: 0.7, full: 1 },
   semantic: {
     status: { success: '#0f0', danger: '#f00' },
     accent: { tint: '#fee' },
-    text: { accent: '#f88' },
+    text: { accent: '#f88', primary: '#fff', secondary: '#aaa' },
+    skeleton: { base: '#111', highlight: '#222' },
   },
   motionEasing: {
     current: { native: [0.32, 0.72, 0, 1] },

@@ -3,7 +3,7 @@
 
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
-import { colors } from '@salmon/shared';
+import { semantic } from '@salmon/shared';
 import { useFonts } from 'expo-font';
 import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -89,7 +89,7 @@ const CustomDarkTheme = {
   colors: {
     ...DarkTheme.colors,
     background: 'transparent', // Transparent to let layout backgrounds show through
-    card: colors.background.primary,
+    card: semantic.depth.abyss,
   },
 };
 

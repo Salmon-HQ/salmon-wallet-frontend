@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { ContentLoader, Rect, Circle } from '@salmon/shared';
-import { colors, spacing, borderRadius, borderWidth, componentSizes, s, vs } from '@salmon/shared';
+import { semantic, spacing, borderRadius, borderWidth, componentSizes, s, vs } from '@salmon/shared';
 import { BlurContainer } from '../BlurContainer';
 import type { TokenListSkeletonProps } from './types';
 
@@ -28,8 +28,8 @@ const SkeletonItem: React.FC = () => {
           width={itemWidth}
           height={itemHeight}
           viewBox={`0 0 ${itemWidth} ${itemHeight}`}
-          backgroundColor={colors.skeleton.base}
-          foregroundColor={colors.skeleton.highlight}
+          backgroundColor={semantic.skeleton.base}
+          foregroundColor={semantic.skeleton.highlight}
           accessibilityLabel={t('accessibility.loading_token_info', 'Loading token information')}
         >
           {/* Token logo circle */}
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   // Glass wrapper matching TokenListItem exactly
   glassWrapper: {
     borderRadius: borderRadius.lg,
-    marginBottom: vs(spacing.sm),
+    marginBottom: vs(spacing.screenGutter),
     marginHorizontal: s(spacing['2xl']),
     overflow: 'hidden',
   },

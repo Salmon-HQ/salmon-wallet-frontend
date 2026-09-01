@@ -3,13 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { CaretLeftIcon } from '../../icons';
 import {
-  colors,
   componentSizes,
   fontFamilyNative,
   fontSize,
   letterSpacing,
   ms,
   s,
+  semantic,
   spacing,
   vs,
 } from '@salmon/shared';
@@ -38,7 +38,7 @@ export function BottomSheetTitleHeader({
           accessibilityLabel={resolvedBackLabel}
           accessibilityRole="button"
         >
-          <CaretLeftIcon size={ms(componentSizes.iconSizeMedium)} color={colors.text.primary} />
+          <CaretLeftIcon size={ms(componentSizes.iconSizeMedium)} color={semantic.text.primary} />
         </TouchableOpacity>
       )}
       <View pointerEvents="none" style={styles.titleContainer}>
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: ms(fontSize.title),
     fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     textAlign: 'center',
     letterSpacing: ms(letterSpacing.snug, 0.3),
   },

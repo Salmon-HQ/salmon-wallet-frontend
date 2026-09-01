@@ -4,7 +4,6 @@ import { Text, StyleSheet, TouchableOpacity, Linking, Modal, Pressable } from 'r
 import type { ViewStyle } from 'react-native';
 import { ArrowSquareOutIcon, CaretDownIcon, GlobeIcon, iconSize } from '../../icons';
 import {
-  colors,
   ms,
   vs,
   s,
@@ -187,9 +186,9 @@ export function ExplorerLinkButton({
                     onPress={() => openExplorer(explorer)}
                     activeOpacity={0.7}
                   >
-                    <GlobeIcon size={18} color={colors.text.primary} style={styles.menuItemIcon} />
+                    <GlobeIcon size={18} color={semantic.text.primary} style={styles.menuItemIcon} />
                     <Text style={styles.menuItemText}>{explorer.name}</Text>
-                    <ArrowSquareOutIcon size={iconSize.sm} color={colors.text.tertiary} />
+                    <ArrowSquareOutIcon size={iconSize.sm} color={semantic.text.tertiary} />
                   </TouchableOpacity>
                 ))}
               </BlurContainer>
@@ -208,7 +207,7 @@ export function ExplorerLinkButton({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: colors.dialog.overlay,
+    backgroundColor: semantic.overlay.backdrop,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.lg,
@@ -222,11 +221,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   menuTitle: {
-    fontSize: ms(fontSize.lg),
+    fontSize: ms(fontSize.heading),
     fontFamily: fontFamilyNative.bold,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     textAlign: 'center',
-    marginBottom: vs(spacing.lg),
+    marginBottom: vs(spacing.screenGutter),
   },
   menuItem: {
     flexDirection: 'row',
@@ -234,7 +233,7 @@ const styles = StyleSheet.create({
     paddingVertical: vs(spacing.lg),
     paddingHorizontal: s(spacing.md),
     borderRadius: borderRadius.md,
-    backgroundColor: colors.background.card,
+    backgroundColor: semantic.surface.raised,
     marginBottom: vs(spacing.sm),
   },
   menuItemIcon: {
@@ -242,9 +241,9 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     flex: 1,
-    fontSize: ms(fontSize.base),
+    fontSize: ms(fontSize.body),
     fontFamily: fontFamilyNative.medium,
-    color: colors.text.primary,
+    color: semantic.text.primary,
   },
 });
 

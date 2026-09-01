@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   rowValue: {
     color: semantic.text.secondary,
     fontFamily: fontFamilyNative.bold,
-    fontSize: fontSize.body,
+    fontSize: s(fontSize.body),
     maxWidth: '45%',
     textAlign: 'right',
   },

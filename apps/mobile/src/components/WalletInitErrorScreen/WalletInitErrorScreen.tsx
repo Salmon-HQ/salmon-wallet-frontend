@@ -13,7 +13,6 @@ import React, { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
-  colors,
   componentSizes,
   fontFamilyNative,
   fontSize,
@@ -21,6 +20,7 @@ import {
   s,
   spacing,
   vs,
+  semantic,
 } from '@salmon/shared';
 import { PrimaryButton } from '../Button';
 
@@ -72,19 +72,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: s(spacing['2xl']),
-    backgroundColor: colors.background.primary,
+    backgroundColor: semantic.depth.abyss,
   },
   title: {
     fontFamily: fontFamilyNative.semiBold,
-    fontSize: ms(fontSize.xl),
-    color: colors.text.primary,
+    fontSize: ms(fontSize.title),
+    color: semantic.text.primary,
     textAlign: 'center',
     marginBottom: vs(spacing.md),
   },
   body: {
     fontFamily: fontFamilyNative.regular,
-    fontSize: ms(fontSize.base),
-    color: colors.text.secondary,
+    fontSize: ms(fontSize.body),
+    color: semantic.text.secondary,
     textAlign: 'center',
     marginBottom: vs(spacing['2xl']),
   },

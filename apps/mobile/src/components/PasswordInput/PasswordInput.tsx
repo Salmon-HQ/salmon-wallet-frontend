@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { EyeIcon, EyeSlashIcon } from '../../icons';
 import {
-  colors,
   componentSizes,
   spacing,
   borderWidth,
@@ -42,8 +41,8 @@ export function PasswordInput({
 
   const getBorderColor = () => {
     if (error) return semantic.status.danger;
-    if (isFocused) return colors.accent.primary;
-    return colors.input.border;
+    if (isFocused) return semantic.accent.ink;
+    return semantic.input.edge;
   };
 
   return (
@@ -55,7 +54,7 @@ export function PasswordInput({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder ?? t('lock.password_placeholder')}
-          placeholderTextColor={colors.text.tertiary}
+          placeholderTextColor={semantic.text.tertiary}
           secureTextEntry={!showPassword}
           autoCapitalize="none"
           autoCorrect={false}
@@ -76,9 +75,9 @@ export function PasswordInput({
           style={styles.toggleButton}
         >
           {showPassword ? (
-            <EyeSlashIcon size={componentSizes.iconSizeMedium} color={colors.text.secondary} />
+            <EyeSlashIcon size={componentSizes.iconSizeMedium} color={semantic.text.secondary} />
           ) : (
-            <EyeIcon size={componentSizes.iconSizeMedium} color={colors.text.secondary} />
+            <EyeIcon size={componentSizes.iconSizeMedium} color={semantic.text.secondary} />
           )}
         </TouchableOpacity>
       </View>
@@ -96,14 +95,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: componentSizes.inputHeight,
     paddingVertical: spacing.xs,
-    backgroundColor: colors.input.background,
+    backgroundColor: semantic.input.ground,
     borderWidth: borderWidth.thin,
     borderRadius: componentSizes.inputRadius,
     paddingHorizontal: spacing.lg,
   },
   input: {
     flex: 1,
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
     fontSize: fontSize.bodyLg,
   },
@@ -113,7 +112,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: semantic.status.danger,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.sm,
+    fontSize: fontSize.caption,
     marginTop: spacing.sm,
     paddingHorizontal: spacing.xs,
   },

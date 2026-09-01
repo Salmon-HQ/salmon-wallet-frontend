@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 
-import { useAccountsContext, useUserConfig, colors, semantic } from '@salmon/shared';
+import { useAccountsContext, useUserConfig, semantic } from '@salmon/shared';
 import { DepthBackground, ScalesBackground, BlurTargetProvider } from '../../../src/components';
 import { DeveloperModeProvider } from '../../../src/contexts/DeveloperModeContext';
 
@@ -103,12 +103,13 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: semantic.depth.abyss,
   },
   bottomFadeGradient: {
     position: 'absolute',
     left: 0,
     right: 0,
+    // No componentSizes token fits this fade's height (research-mobile.md §3d).
     height: 180,
     bottom: 0,
   },

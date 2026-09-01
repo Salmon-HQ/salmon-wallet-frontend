@@ -27,9 +27,11 @@ jest.mock('@salmon/shared', () => ({
     accent: { primary: '#FF5C45' },
   },
   semantic: {
-    text: { accent: '#FF5C45', primary: '#EDF1F7' },
+    text: { accent: '#FF5C45', primary: '#EDF1F7', secondary: '#A7B1C4' },
     border: { hairline: 'rgba(199,211,232,0.10)' },
     accent: { ink: '#FF5C45', tint: 'rgba(255, 92, 69, 0.10)' },
+    depth: { abyss: '#10131C' },
+    surface: { raised: '#161C2D' },
   },
   componentSizes: {
     descentTrackWidth: 2,
@@ -38,8 +40,10 @@ jest.mock('@salmon/shared', () => ({
     waveAmplitude: 3,
   },
   fontFamilyNative: { regular: 'DMSansRegular', semiBold: 'DMSansSemiBold', bold: 'DMSansBold' },
-  fontSize: { sm: 12, base: 14, bodyLg: 16, headline: 24 },
+  fontSize: { sm: 12, base: 14, bodyLg: 16, headline: 24, caption: 12, body: 14 },
+  lineHeight: { snug: 1.4, tight: 1.25 },
   letterSpacing: { widest: 1 },
+  s: (value: number) => value,
   motionMs: {
     flick: 90,
     swell: 180,

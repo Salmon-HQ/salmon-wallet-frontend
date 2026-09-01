@@ -19,12 +19,12 @@
 
 import { CloudSlashIcon, TreeStructureIcon, WalletIcon } from '../../src/icons';
 import {
-  colors,
   componentSizes,
   deriveBlockchainAccount,
   fontFamilyNative,
   fontSize,
   lineHeight,
+  s,
   semantic,
   getScanNetworks,
   getShortAddress,
@@ -209,7 +209,7 @@ export default function DerivedAccountsScreen() {
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent.primary} />
+          <ActivityIndicator size="large" color={semantic.accent.ink} />
           <Text style={styles.loadingText}>{t('wallet.derived.searching')}</Text>
           <LoadingSkeleton />
         </View>
@@ -291,7 +291,7 @@ export default function DerivedAccountsScreen() {
         float
         // The derivation tree: one key, many branches — which is what this
         // screen scans. One semantic glyph per flow step, consent's pattern.
-        mark={<TreeStructureIcon size={componentSizes.logoSizeSmall} color={colors.text.primary} />}
+        mark={<TreeStructureIcon size={componentSizes.logoSizeSmall} color={semantic.text.primary} />}
         chrome={<ScreenHeader />}
         title={<OnboardingTitle>{t('wallet.derived.title')}</OnboardingTitle>}
         description={<OnboardingDescription>{t('wallet.derived.subtitle')}</OnboardingDescription>}
@@ -333,9 +333,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
+    fontSize: s(fontSize.bodyLg),
     marginTop: spacing.lg,
     marginBottom: spacing['2xl'],
   },
@@ -347,16 +347,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyTitle: {
-    color: colors.text.primary,
+    color: semantic.text.primary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.bodyLg,
+    fontSize: s(fontSize.bodyLg),
     marginTop: spacing.lg,
     textAlign: 'center',
   },
   emptySubtitle: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
+    fontSize: s(fontSize.body),
     lineHeight: fontSize.body * lineHeight.snug,
     marginTop: spacing.sm,
     textAlign: 'center',
@@ -376,9 +376,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   foundText: {
-    color: colors.text.secondary,
+    color: semantic.text.secondary,
     fontFamily: fontFamilyNative.regular,
-    fontSize: fontSize.body,
+    fontSize: s(fontSize.body),
     marginBottom: spacing.lg,
     textAlign: 'center',
   },
