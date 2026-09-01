@@ -1,14 +1,35 @@
 /**
  * ScreenHeader - Common header for onboarding/auth screens
  *
- * Includes back button, optional step indicator, and spacer for alignment.
+ * Includes back button, optional step indicator, an optional title/subtitle
+ * block, and a spacer for alignment.
+ *
+ * The leading affordance is an `IconBubble`: a bare glyph floating in the
+ * corner gave the eye no target, and the redesign draws every affordance as a
+ * well the glyph sits inside.
  */
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CaretLeftIcon, XIcon } from '../../icons';
-import { colors, componentSizes, contentPadding, semantic } from '@salmon/shared';
+import {
+  colors,
+  componentSizes,
+  contentPadding,
+  fontFamilyNative,
+  fontSize,
+  letterSpacing,
+  lineHeight,
+  s,
+  semantic,
+  spacing,
+  vs,
+} from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 import { StepIndicator } from '../StepIndicator';
+import { IconBubble } from '../IconBubble';
+
+/** The affordance's well — the redesign's 38pt surface circle. */
+const BACK_BUBBLE_SIZE = 38;
 
 export interface ScreenHeaderProps extends Testable {
   /** Callback when back button is pressed */
@@ -28,6 +49,10 @@ export interface ScreenHeaderProps extends Testable {
   };
   /** Disable back button */
   backDisabled?: boolean;
+  /** Screen title, rendered below the affordance row. */
+  title?: string;
+  /** Supporting line under the title. Only meaningful alongside `title`. */
+  subtitle?: string;
 }
 
 export function ScreenHeader({
@@ -36,54 +61,68 @@ export function ScreenHeader({
   backLabel,
   stepIndicator,
   backDisabled,
+  title,
+  subtitle,
   testID,
 }: ScreenHeaderProps) {
   const { t } = useTranslation();
+  const Glyph = glyph === 'close' ? XIcon : CaretLeftIcon;
   return (
-    <View style={styles.container}>
-      {/* Leading affordance: back, or close where declining advances */}
-      <TouchableOpacity
-        testID={testID ?? 'screen-header-back-button'}
-        accessibilityRole="button"
-        accessibilityLabel={backLabel ?? t('accessibility.go_back', 'Go back')}
-        onPress={onBack}
-        disabled={!onBack || backDisabled}
-        style={styles.backButton}
-        // 40pt visual box + 2pt slop per side = the 44pt minimum target
-        // (DESIGN.md: hit-slop, never inflated visual size).
-        hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
-      >
-        {onBack &&
-          (glyph === 'close' ? (
-            <XIcon
-              size={componentSizes.iconSizeMedium}
-              color={backDisabled ? semantic.text.secondary : colors.text.primary}
+    <View style={styles.wrapper}>
+      <View style={styles.container}>
+        {/* Leading affordance: back, or close where declining advances */}
+        <TouchableOpacity
+          testID={testID ?? 'screen-header-back-button'}
+          accessibilityRole="button"
+          accessibilityLabel={backLabel ?? t('accessibility.go_back', 'Go back')}
+          accessibilityState={{ disabled: !onBack || !!backDisabled }}
+          onPress={onBack}
+          disabled={!onBack || backDisabled}
+          style={styles.backButton}
+          // 38pt visual box + 3pt slop per side = the 44pt minimum target
+          // (DESIGN.md: hit-slop, never inflated visual size).
+          hitSlop={{ top: 3, bottom: 3, left: 3, right: 3 }}
+        >
+          {onBack && (
+            <IconBubble
+              size={BACK_BUBBLE_SIZE}
+              shape="circle"
+              tone="surface"
+              icon={Glyph}
+              iconSize={componentSizes.iconSizeSmall}
+              style={backDisabled ? styles.backDisabled : undefined}
             />
-          ) : (
-            <CaretLeftIcon
-              size={componentSizes.iconSizeMedium}
-              color={backDisabled ? semantic.text.secondary : colors.text.primary}
-            />
-          ))}
-      </TouchableOpacity>
+          )}
+        </TouchableOpacity>
 
-      {/* Step indicator (centered) */}
-      <View style={styles.center}>
-        {stepIndicator && (
-          <StepIndicator
-            totalSteps={stepIndicator.totalSteps}
-            currentStep={stepIndicator.currentStep}
-          />
-        )}
+        {/* Step indicator (centered) */}
+        <View style={styles.center}>
+          {stepIndicator && (
+            <StepIndicator
+              totalSteps={stepIndicator.totalSteps}
+              currentStep={stepIndicator.currentStep}
+            />
+          )}
+        </View>
+
+        {/* Spacer for alignment */}
+        <View style={styles.spacer} />
       </View>
 
-      {/* Spacer for alignment */}
-      <View style={styles.spacer} />
+      {title ? (
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>{title}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    width: '100%',
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -92,16 +131,38 @@ const styles = StyleSheet.create({
     height: componentSizes.headerHeight,
   },
   backButton: {
-    width: componentSizes.backButtonSize,
-    height: componentSizes.backButtonSize,
+    width: s(BACK_BUBBLE_SIZE),
+    height: s(BACK_BUBBLE_SIZE),
     alignItems: 'flex-start',
     justifyContent: 'center',
+  },
+  // The glyph dims; the well stays, so the target never moves or disappears.
+  backDisabled: {
+    opacity: colors.button.disabledOpacity,
   },
   center: {
     flex: 1,
     alignItems: 'center',
   },
   spacer: {
-    width: componentSizes.backButtonSize,
+    width: s(BACK_BUBBLE_SIZE),
+  },
+  titleBlock: {
+    paddingHorizontal: contentPadding.screen,
+    paddingTop: vs(spacing.sm),
+    gap: vs(spacing.xs),
+  },
+  title: {
+    fontFamily: fontFamilyNative.bold,
+    fontSize: s(fontSize.title),
+    lineHeight: s(fontSize.title) * lineHeight.tight,
+    letterSpacing: letterSpacing.snug,
+    color: semantic.text.primary,
+  },
+  subtitle: {
+    fontFamily: fontFamilyNative.medium,
+    fontSize: s(fontSize.caption),
+    lineHeight: s(fontSize.caption) * lineHeight.snug,
+    color: semantic.text.secondary,
   },
 });

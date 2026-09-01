@@ -33,6 +33,14 @@ export const PRESS_SCALE = 0.985;
 export interface PressMotion {
   /** Apply to the control's own animated view. */
   pressStyle: AnimatedStyle<ViewStyle>;
+  /**
+   * The raw press scale, for a control that has a transform of its own.
+   * `pressStyle` writes a whole `transform` array, so a caller that also
+   * animates (a rotation, an offset) cannot merge the two by stacking styles —
+   * last write wins and one of them silently disappears. Such a caller builds
+   * one `useAnimatedStyle` and reads this instead.
+   */
+  scale: SharedValue<number>;
   /** Spread onto the touchable. */
   pressHandlers: {
     onPressIn: (event: GestureResponderEvent) => void;
@@ -83,6 +91,7 @@ export function usePressMotion(): PressMotion {
 
   return {
     pressStyle,
+    scale,
     pressHandlers: { onPressIn, onPressOut },
     specular: { x: specularX, y: specularY, opacity: specularOpacity },
   };

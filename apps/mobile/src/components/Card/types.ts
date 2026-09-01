@@ -1,0 +1,32 @@
+import type { ReactNode } from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
+import type { Testable } from '@salmon/shared';
+
+/**
+ * The four grounds a card can take.
+ *
+ * `surface` is the default membrane every list item, receipt and content box
+ * sits on; `accent` is the salmon tint; `warning` the amber notice wash;
+ * `ink` the inverse well used for a featured block that must read as a
+ * different object rather than a louder one.
+ */
+export type CardTone = 'surface' | 'accent' | 'warning' | 'ink';
+
+/** 12 / 14 / 16 / 24 — the four internal paddings the redesign draws. */
+export type CardPadding = 'sm' | 'md' | 'lg' | 'xl';
+
+/** `lg` is the 12px control radius, `xl` the 16px card radius. */
+export type CardRadius = 'lg' | 'xl';
+
+export interface CardProps extends Testable {
+  tone?: CardTone;
+  padding?: CardPadding;
+  /** Gap between children, in px. Use a `spacing` token at the call site. */
+  gap?: number;
+  radius?: CardRadius;
+  /** When present the card becomes a button and takes the pressed feedback. */
+  onPress?: () => void;
+  accessibilityLabel?: string;
+  style?: StyleProp<ViewStyle>;
+  children?: ReactNode;
+}

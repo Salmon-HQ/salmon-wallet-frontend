@@ -45,6 +45,16 @@ import { curve, timing } from '../../utils/motion';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const BACKDROP_OPACITY = 0.8;
+
+/**
+ * The drag handle, redrawn: 44x5 rather than 70x6.
+ *
+ * A handle is a grip, not a rule across the sheet — the wide bar read as a
+ * divider and pushed the sheet's first line down. 44 is also the minimum
+ * touch target, so the grip is exactly as wide as it needs to be grabbable.
+ */
+const HANDLE_WIDTH = 44;
+const HANDLE_HEIGHT = 5;
 const DRAG_THRESHOLD = 150;
 const SPRING_CONFIG = {
   damping: 20,
@@ -420,8 +430,8 @@ const styles = StyleSheet.create({
   sheetContainer: {
     // The background element (thermocline by default) carries the material;
     // the container itself stays transparent.
-    borderTopLeftRadius: borderRadius.card,
-    borderTopRightRadius: borderRadius.card,
+    borderTopLeftRadius: borderRadius.header,
+    borderTopRightRadius: borderRadius.header,
     borderTopWidth: borderWidth.sheet,
     borderTopColor: colors.border.default,
     minHeight: '70%',
@@ -432,8 +442,8 @@ const styles = StyleSheet.create({
   // corners.
   thermocline: {
     ...StyleSheet.absoluteFillObject,
-    borderTopLeftRadius: borderRadius.card,
-    borderTopRightRadius: borderRadius.card,
+    borderTopLeftRadius: borderRadius.header,
+    borderTopRightRadius: borderRadius.header,
   },
   dragArea: {
     // Gesture is attached here; keep it empty so consumers can add dragAreaStyle
@@ -444,8 +454,8 @@ const styles = StyleSheet.create({
     paddingBottom: vs(spacing.sm),
   },
   handle: {
-    width: s(componentSizes.sheetHandleWidth),
-    height: vs(componentSizes.sheetHandleHeight),
+    width: s(HANDLE_WIDTH),
+    height: vs(HANDLE_HEIGHT),
     borderRadius: borderRadius.full,
     backgroundColor: colors.sheet.handle,
     opacity: componentSizes.sheetHandleOpacity,

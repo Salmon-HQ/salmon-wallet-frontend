@@ -1,11 +1,14 @@
 /**
  * SecondaryButton - Secondary action button
  *
- * Dark background with white text, used for secondary actions.
+ * The outlined control: transparent fill, `border.raised` stroke, primary
+ * ink. It carried an opaque slate fill, which read as a second filled
+ * button competing with the salmon one beside it.
  */
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
+  borderWidth,
   colors,
   componentSizes,
   fontFamilyNative,
@@ -67,7 +70,9 @@ const styles = StyleSheet.create({
     minHeight: componentSizes.buttonHeight,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
-    backgroundColor: colors.button.secondaryBackground,
+    backgroundColor: 'transparent',
+    borderWidth: borderWidth.thin,
+    borderColor: semantic.border.raised,
     borderRadius: componentSizes.buttonRadius,
     alignItems: 'center',
     justifyContent: 'center',
@@ -81,7 +86,7 @@ const styles = StyleSheet.create({
     color: semantic.text.primary,
     fontFamily: fontFamilyNative.bold,
     fontSize: fontSize.bodyLg,
-    letterSpacing: letterSpacing.widest,
+    letterSpacing: letterSpacing.normal,
     textAlign: 'center',
   },
 });

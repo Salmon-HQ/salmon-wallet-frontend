@@ -1,7 +1,8 @@
 /**
  * TextButton - Text-only button without background
  *
- * Used for tertiary actions or links.
+ * Used for tertiary actions or links. `text.accent` ink per DESIGN.md
+ * §Buttons — a ghost control that reads as body copy is not a control.
  */
 import type { ReactNode } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
@@ -12,6 +13,7 @@ import {
   spacing,
   fontSize,
   letterSpacing,
+  semantic,
 } from '@salmon/shared';
 import type { Testable } from '@salmon/shared';
 
@@ -50,7 +52,7 @@ export function TextButton({
       style={[styles.button, isDisabled && styles.disabled, style]}
     >
       {loading ? (
-        <ActivityIndicator color={color || colors.text.primary} />
+        <ActivityIndicator color={color || semantic.text.accent} />
       ) : (
         <>
           {icon}
@@ -74,9 +76,9 @@ const styles = StyleSheet.create({
     opacity: colors.button.disabledOpacity,
   },
   text: {
-    color: colors.text.primary,
-    fontFamily: fontFamilyNative.medium,
-    fontSize: fontSize.base,
-    letterSpacing: letterSpacing.wider,
+    color: semantic.text.accent,
+    fontFamily: fontFamilyNative.semiBold,
+    fontSize: fontSize.body,
+    letterSpacing: letterSpacing.normal,
   },
 });

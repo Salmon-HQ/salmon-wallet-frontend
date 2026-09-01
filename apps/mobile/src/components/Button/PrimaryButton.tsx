@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     color: colors.button.primaryText,
     fontFamily: fontFamilyNative.bold,
     fontSize: fontSize.bodyLg,
-    letterSpacing: letterSpacing.widest,
+    letterSpacing: letterSpacing.normal,
     // `adjustsFontSizeToFit` stretches the Text to the full button width, so
     // without an explicit center the label left-aligns (visible on short labels
     // like the swap "Confirm (13)" countdown).
