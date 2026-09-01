@@ -51,10 +51,15 @@ jest.mock('../hooks/useTabChrome', () => ({
     onScroll: jest.fn(),
   }),
 }));
+// The verb itself is covered by its own suite; here the helpers only have to
+// say WHICH wrapper was handed the gesture, and with what beat.
 jest.mock('../src/utils/sinkAndFloat', () => ({
-  FLOAT_DELAY_MS: 0,
-  floatEntering: () => undefined,
-  sinkExiting: () => undefined,
+  FLOAT_DELAY_MS: 120,
+  floatEntering: (_reduceMotion: boolean, options?: { delayMs?: number }) => ({
+    verb: 'float',
+    delayMs: options?.delayMs ?? 0,
+  }),
+  sinkExiting: () => ({ verb: 'sink' }),
 }));
 
 jest.mock('@salmon/shared', () => ({
@@ -151,7 +156,6 @@ jest.mock('../src/components', () => {
     PowerupsFab: () => <View testID="powerups-fab" />,
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
-    SendSheet: () => null,
     TokenAbout: () => <View />,
     TokenInformationSheet: () => null,
     // Mirrors the real TokenList contract: a skeleton while `loading`, the
@@ -251,5 +255,26 @@ describe('home content vs an engaged task', () => {
 
     expect(screen.getByTestId('home-content')).toBeTruthy();
     expect(screen.getByText('SOL')).toBeTruthy();
+  });
+
+  it('lets the screen own the verb on a hand-back, and silences the chain wrapper', () => {
+    // The chain wrapper lives inside `home-content`, so a task hand-back
+    // remounts it too. Animating there stacked a second sink/float on the one
+    // the screen was already playing — one gesture at two depths, which the
+    // verb never does (DESIGN.md rule 5).
+    mockTaskChrome.isTaskEngaged = true;
+    const { rerender } = render(<HomeScreen />);
+
+    mockTaskChrome.isTaskEngaged = false;
+    rerender(<HomeScreen />);
+
+    // The screen floats back, and it is the one that waits out the beat.
+    expect(screen.getByTestId('home-content').props.entering).toEqual({
+      verb: 'float',
+      delayMs: 120,
+    });
+    const chainWrapper = screen.getByTestId('home-chain-content');
+    expect(chainWrapper.props.entering).toBeUndefined();
+    expect(chainWrapper.props.exiting).toBeUndefined();
   });
 });

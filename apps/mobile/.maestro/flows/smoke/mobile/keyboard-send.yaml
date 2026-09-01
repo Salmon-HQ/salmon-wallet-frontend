@@ -1,16 +1,18 @@
 appId: io.salmonwallet.app
 ---
-# Probe KeyboardAvoidingView on Send form. Open Send → Solana → screenshot.
+# Probe the keyboard handling on the send form. Open Send → amount → screenshot.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - tapOn:
     id: 'home-send-button'
-- assertVisible: 'Select Token'
+- extendedWaitUntil:
+    visible:
+      id: 'send-recipient-screen'
+    timeout: 20000
 - tapOn:
-    id: 'send-token-row-SOL'
+    id: 'send-recipient-input'
 - waitForAnimationToEnd:
     timeout: 5000
-- takeScreenshot: screenshots/smoke/mobile/send-step-address-amount
-- runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
-- runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
+- takeScreenshot: screenshots/smoke/mobile/send-recipient
+- runFlow: ../../../subflows/settings-back.yaml
 - assertVisible:
     id: 'wallet-header-account-switcher'

@@ -950,6 +950,20 @@
     "recipient": "Recipient",
     "enter_address_or_domain": "Enter address or domain",
     "resolved_address": "Resolved Address:",
+    "screens": {
+      "recipientSubtitle": "Choose who will receive your assets.",
+      "amountSubtitle": "Enter the amount to send.",
+      "reviewTitle": "Review send",
+      "reviewSubtitle": "Check the details before signing.",
+      "recent": "Recent",
+      "available": "Available",
+      "address": "Address",
+      "status": "Status",
+      "estimatedArrival": "Estimated arrival",
+      "arrivalSeconds": "A few seconds",
+      "successTitle": "Sent successfully",
+      "successBody": "{{amount}} is on its way to {{name}}."
+    },
     "validation": {
       "network_error": "Could not verify address. Check your connection.",
       "invalid": "Invalid address format",

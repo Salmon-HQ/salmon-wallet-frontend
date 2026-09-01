@@ -31,7 +31,7 @@ import {
 import { useBottomSheetChrome } from '../../../hooks/useBottomSheetChrome';
 import { BlurContainer } from '../BlurContainer';
 import { TokenLogo } from '../TokenLogo';
-import type { StepTokenSelectProps, SendToken } from './types';
+import type { StepTokenSelectProps, SendToken } from '@salmon/shared';
 
 // ============================================================================
 // Token Row Component
@@ -165,7 +165,7 @@ const TokenSelectSkeleton: React.FC = () => {
   );
 };
 
-export const StepTokenSelect: React.FC<StepTokenSelectProps> = ({
+export const TokenSelectList: React.FC<StepTokenSelectProps> = ({
   tokens,
   onSelectToken,
   showUnverifiedTokens,
@@ -353,4 +353,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default StepTokenSelect;
+export default TokenSelectList;

@@ -17,35 +17,40 @@ appId: io.salmonwallet.app
 - tapOn:
     id: 'home-send-button'
 - extendedWaitUntil:
-    visible: 'Select Token'
-    timeout: 20000
-- tapOn:
-    id: 'send-token-row-SOL'
-- extendedWaitUntil:
     visible:
-      id: 'send-recipient-input'
+      id: 'send-recipient-screen'
     timeout: 20000
 - tapOn:
     id: 'send-recipient-input'
 - inputText: 'toly.sol'
+- extendedWaitUntil:
+    visible:
+      id: 'send-continue-button'
+    timeout: 30000
 - waitForAnimationToEnd:
-    timeout: 8000
+    timeout: 5000
+- tapOn:
+    id: 'send-continue-button'
+- extendedWaitUntil:
+    visible:
+      id: 'send-amount-input'
+    timeout: 20000
 - tapOn:
     id: 'send-amount-input'
 - inputText: '2.5'
 - waitForAnimationToEnd:
     timeout: 5000
-# Dismiss the keyboard by tapping the "Amount" label. `hideKeyboard` is wrong
-# here: on Android it back-presses, the bottom sheet consumes it, and the shot
-# lands on Home; on iOS it errors out. The form's ScrollView is
-# keyboardShouldPersistTaps="handled", so a tap on a non-interactive label
-# closes the keyboard and leaves the sheet — and Review & Send — on screen.
-- tapOn: 'Amount'
+# Dismiss the keyboard without leaving the screen. `hideKeyboard` is wrong
+# here: on Android it back-presses and pops the screen; on iOS it errors out.
+# The ScrollView is keyboardShouldPersistTaps="handled", so a tap on the fiat
+# readout closes the keyboard and leaves the form on screen.
+- tapOn:
+    id: 'send-amount-fiat'
 - waitForAnimationToEnd:
     timeout: 5000
 - takeScreenshot: ${OUT}/02-send
-- runFlow: ../../subflows/dismiss-bottom-sheet.yaml
-- runFlow: ../../subflows/dismiss-bottom-sheet.yaml
+- runFlow: ../../subflows/settings-back.yaml
+- runFlow: ../../subflows/settings-back.yaml
 - extendedWaitUntil:
     visible:
       id: 'wallet-header-account-switcher'

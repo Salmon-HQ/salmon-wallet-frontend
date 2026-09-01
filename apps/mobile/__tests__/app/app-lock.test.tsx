@@ -78,11 +78,15 @@ describe('the (app) shell', () => {
     accountState.locked = false;
   });
 
-  it('registers Wallets and Activity as pushed screens of this same layout', () => {
+  it('registers Wallets, Activity and Settings as pushed screens of this same layout', () => {
     render(<AppLayout />);
 
     expect('wallets' in screensByName).toBe(true);
     expect('activity' in screensByName).toBe(true);
+    // Settings used to be a hidden tab inside `(tabs)`, which sits BELOW this
+    // layout's overlay — a lock landing on a settings sub-screen left secrets
+    // sitting on top of it. On this stack it is covered like anything else.
+    expect('settings' in screensByName).toBe(true);
   });
 
   it('does not render the lock overlay while unlocked', () => {
@@ -95,11 +99,12 @@ describe('the (app) shell', () => {
     accountState.locked = true;
     const { getByTestId } = render(<AppLayout />);
 
-    // Wallets and Activity are still registered on the same Stack this
-    // layout owns — the overlay is a sibling of that Stack, not a child of
-    // any one screen, so it sits above whichever of them is on top.
+    // Wallets, Activity and Settings are all registered on the same Stack
+    // this layout owns — the overlay is a sibling of that Stack, not a child
+    // of any one screen, so it sits above whichever of them is on top.
     expect('wallets' in screensByName).toBe(true);
     expect('activity' in screensByName).toBe(true);
+    expect('settings' in screensByName).toBe(true);
 
     const overlay = getByTestId('lock-overlay');
     const style = Object.assign({}, ...[overlay.props.style].flat(Infinity).filter(Boolean));

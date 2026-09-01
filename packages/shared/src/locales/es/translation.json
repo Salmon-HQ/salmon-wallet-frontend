@@ -950,6 +950,20 @@
     "recipient": "Destinatario",
     "enter_address_or_domain": "Ingresá una dirección o dominio",
     "resolved_address": "Dirección resuelta:",
+    "screens": {
+      "recipientSubtitle": "Elegí quién va a recibir tus activos.",
+      "amountSubtitle": "Ingresá el monto a enviar.",
+      "reviewTitle": "Revisar envío",
+      "reviewSubtitle": "Revisá los detalles antes de firmar.",
+      "recent": "Recientes",
+      "available": "Disponible",
+      "address": "Dirección",
+      "status": "Estado",
+      "estimatedArrival": "Llegada estimada",
+      "arrivalSeconds": "Unos segundos",
+      "successTitle": "Enviado con éxito",
+      "successBody": "{{amount}} está en camino a {{name}}."
+    },
     "validation": {
       "network_error": "No se pudo verificar la dirección. Revisá tu conexión.",
       "invalid": "Formato de dirección inválido",

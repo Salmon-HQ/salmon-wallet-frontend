@@ -1,33 +1,49 @@
 appId: io.salmonwallet.app
 ---
 # Send 0.001 SOL → Wallet B Solana address. Fires a real on-chain tx.
+#
+# Send is four screens now (spec 018), not a sheet with steps: Home pushes the
+# recipient screen, Continue pushes the amount screen, Review pushes the
+# signature screen, and the receipt replaces it.
 - runFlow: ../../../subflows/onboard-walletA.yaml
 - tapOn:
     id: 'home-send-button'
-- assertVisible: 'Select Token'
-# The token list is populated from the balance query, which is still in flight
-# right after onboarding. Wait for the SOL row instead of tapping into an empty
-# list.
 - extendedWaitUntil:
     visible:
-      id: 'send-token-row-SOL'
-    timeout: 30000
-- tapOn:
-    id: 'send-token-row-SOL'
-- waitForAnimationToEnd:
-    timeout: 4000
+      id: 'send-recipient-screen'
+    timeout: 20000
 - tapOn:
     id: 'send-recipient-input'
 - inputText: ${SALMON_TEST_WALLET_B_ADDR}
+# Validation is debounced and hits the RPC; Continue is dead until it answers.
+- extendedWaitUntil:
+    visible:
+      id: 'send-continue-button'
+    timeout: 30000
 - waitForAnimationToEnd:
     timeout: 3000
+- tapOn:
+    id: 'send-continue-button'
+# The flow opens on the chain's own asset, so no token step stands between the
+# recipient and the amount. The picker is reachable from `send-selected-token`.
+- extendedWaitUntil:
+    visible:
+      id: 'send-amount-input'
+    timeout: 20000
 - tapOn:
     id: 'send-amount-input'
 - inputText: '0.001'
 - waitForAnimationToEnd:
     timeout: 2000
-# Tap Recipient label to dismiss numeric keyboard
-- tapOn: 'Recipient'
+# Tap the token row to dismiss the numeric keyboard without leaving the screen.
+- tapOn:
+    id: 'send-selected-token'
+- runFlow:
+    when:
+      visible:
+        id: 'send-token-picker'
+    commands:
+      - runFlow: ../../../subflows/dismiss-bottom-sheet.yaml
 - waitForAnimationToEnd:
     timeout: 2000
 - tapOn:
@@ -36,15 +52,14 @@ appId: io.salmonwallet.app
     visible:
       id: 'send-confirm-button'
     timeout: 10000
-# The step floats in — it is in the hierarchy, and tappable, before it has
-# finished lighting. Screenshotting on visibility alone catches it at opacity 0.
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: screenshots/actions/send/send-confirm-screen
 - tapOn:
     id: 'send-confirm-button'
 - extendedWaitUntil:
-    visible: 'Send Complete'
+    visible:
+      id: 'tx-success-continue-button'
     timeout: 60000
 - takeScreenshot: screenshots/actions/send/send-success
 - tapOn:

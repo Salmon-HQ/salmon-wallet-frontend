@@ -271,13 +271,10 @@ export { TransactionSuccessScreen } from './TransactionSuccessScreen';
 // Send / Swap / Bridge
 // ---------------------------------------------------------------------------
 
-export { SendSheet } from './SendSheet';
-export type {
-  SendSheetProps,
-  SendToken,
-  SendStep,
-  BlockchainType as SendSheetBlockchainType,
-} from './SendSheet';
+// The send flow is four screens under `app/(app)/send` (spec 018); what is
+// left here are the pieces those screens share.
+export { RecipientInput, SendFailure, TokenSelectList } from './Send';
+export type { RecipientInputProps, SendFailureProps } from './Send';
 
 export {
   SwapScreen,

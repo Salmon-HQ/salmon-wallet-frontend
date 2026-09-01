@@ -148,7 +148,6 @@ jest.mock('../src/components', () => {
     PowerupsFab: () => <View testID="powerups-fab" />,
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
-    SendSheet: () => null,
     TokenAbout: () => <View />,
     TokenInformationSheet: () => null,
     // Mirrors the real TokenList contract: a skeleton while `loading`, the

@@ -56,10 +56,15 @@ jest.mock('../hooks/useTabChrome', () => ({
     onScroll: jest.fn(),
   }),
 }));
+// The verb itself is covered by its own suite; here the helpers only have to
+// say WHICH wrapper was handed the gesture, and with what beat.
 jest.mock('../src/utils/sinkAndFloat', () => ({
-  FLOAT_DELAY_MS: 0,
-  floatEntering: () => undefined,
-  sinkExiting: () => undefined,
+  FLOAT_DELAY_MS: 120,
+  floatEntering: (_reduceMotion: boolean, options?: { delayMs?: number }) => ({
+    verb: 'float',
+    delayMs: options?.delayMs ?? 0,
+  }),
+  sinkExiting: () => ({ verb: 'sink' }),
 }));
 
 jest.mock('@salmon/shared', () => ({
@@ -204,7 +209,6 @@ jest.mock('../src/components', () => {
     ),
     PriceChart: () => <View />,
     ReceiveSheet: () => null,
-    SendSheet: () => null,
     TokenAbout: () => <View />,
     TokenInformationSheet: () => null,
     TokenList: () => <View testID="token-list" />,
@@ -345,5 +349,28 @@ describe('home sub-tabs', () => {
 
     expect(screen.getByTestId('nfts-tab')).toBeTruthy();
     expect(screen.getByTestId('balance-header').props.accessibilityLabel).toBe('bitcoin');
+  });
+
+  it('hands a chain change to the chain wrapper alone, never to the screen', () => {
+    // One depth per gesture (DESIGN.md rule 5). `home-content` is not keyed on
+    // the chain, so a chain change cannot remount it — the screen stays put
+    // and only the list inside it swaps.
+    networksState.networkId = 'solana-mainnet';
+    networksState.allNetworks = [
+      { id: 'solana-mainnet', name: 'Solana' },
+      { id: 'bitcoin-mainnet', name: 'Bitcoin' },
+    ];
+
+    render(<HomeScreen />);
+    const screenWrapper = screen.getByTestId('home-content');
+    // Nothing has swapped yet, so the chain wrapper owes no verb.
+    expect(screen.getByTestId('home-chain-content').props.entering).toBeUndefined();
+
+    fireEvent.press(screen.getByTestId('swipe-to-bitcoin'));
+
+    const chainWrapper = screen.getByTestId('home-chain-content');
+    expect(chainWrapper.props.entering).toBeDefined();
+    expect(chainWrapper.props.exiting).toBeDefined();
+    expect(screen.getByTestId('home-content')).toBe(screenWrapper);
   });
 });

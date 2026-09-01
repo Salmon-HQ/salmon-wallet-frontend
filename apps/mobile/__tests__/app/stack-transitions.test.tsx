@@ -59,10 +59,14 @@ jest.mock('react-native-reanimated', () => ({
 jest.mock('../../src/components', () => ({
   LockOverlay: ({ children }: { children: React.ReactNode }) => children,
   LockContent: () => null,
+  DepthBackground: () => null,
+  ScalesBackground: () => null,
 }));
 
 import AppLayout from '../../app/(app)/_layout';
-import SettingsLayout from '../../app/(app)/(tabs)/settings/_layout';
+import SettingsLayout, {
+  unstable_settings as settingsRouteConfig,
+} from '../../app/(app)/settings/_layout';
 
 describe('the app stack', () => {
   beforeEach(() => {
@@ -79,12 +83,21 @@ describe('the app stack', () => {
     expect(stackOptions.headerShown).toBe(false);
   });
 
-  it('registers Activity as a screen of the stack, taking the stack default', () => {
+  it('registers Activity and the send flow as screens of the stack, taking the stack default', () => {
     render(<AppLayout />);
 
     expect('activity' in screensByName).toBe(true);
     expect(screensByName.activity).toBeUndefined();
     expect(screensByName.wallets).toBeUndefined();
+    // Settings is a stack screen now, not a hidden tab: that is the whole
+    // reason the gear pushes with a slide instead of cutting. No options of
+    // its own — it takes the stack default like Wallets and Activity.
+    expect('settings' in screensByName).toBe(true);
+    expect(screensByName.settings).toBeUndefined();
+    // Send is a sub-stack of its own, and it arrives from the right like any
+    // other pushed screen — no options of its own on this stack.
+    expect('send' in screensByName).toBe(true);
+    expect(screensByName.send).toBeUndefined();
   });
 
   it('keeps Powerups the one bottom-up presentation', () => {
@@ -103,5 +116,9 @@ describe('the app stack', () => {
     expect(stackOptions.animation).toBe('slide_from_right');
     expect(stackOptions.gestureDirection).toBe('horizontal');
     expect(stackOptions.headerShown).toBe(false);
+  });
+
+  it('starts the settings sub-stack on the list, so a cold sub-route has a back', () => {
+    expect(settingsRouteConfig.initialRouteName).toBe('index');
   });
 });
