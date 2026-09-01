@@ -238,7 +238,7 @@ export default function SettingsScreenIndex() {
         else if (row.id === 'removeAll') handleRemoveAllWallets();
         return;
       }
-      router.push(`/settings/${row.id}`);
+      router.push({ pathname: '/settings/[screen]', params: { screen: row.id } });
     },
     [handleRemoveAllWallets, handleRemoveWallet, router]
   );

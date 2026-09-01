@@ -13,16 +13,14 @@ import { DepthBackground, ScalesBackground } from '../../../src/components';
  * Registered on the `(app)` stack, this sub-stack inherits that push like the
  * send flow does.
  *
- * `initialRouteName` is what makes a cold `/settings/<key>` work: the entry is
- * built on top of the list, so `router.canGoBack()` is true and back lands on
- * Settings instead of nowhere. Every panel resolves its data from hooks
+ * No `initialRouteName` anchor: with one set, a push toward the navigator can
+ * stack a fresh instance showing the anchor — tapping a row reopened the list
+ * instead of the panel. A cold `/settings/<key>` still gets out: the panel's
+ * own back falls back to `router.replace('/settings')` when there is nothing
+ * to pop. Every panel resolves its data from hooks
  * (`useSettingsPanelRegistry`), never from state the list captured, so the
  * sub-screen renders the same whether the list was mounted first or not.
  */
-export const unstable_settings = {
-  initialRouteName: 'index',
-};
-
 export default function SettingsLayout() {
   return (
     <View style={styles.container}>

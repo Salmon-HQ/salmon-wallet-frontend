@@ -65,7 +65,6 @@ jest.mock('../../src/components', () => ({
 
 import AppLayout from '../../app/(app)/_layout';
 import SettingsLayout, {
-  unstable_settings as settingsRouteConfig,
 } from '../../app/(app)/settings/_layout';
 
 describe('the app stack', () => {
@@ -118,7 +117,12 @@ describe('the app stack', () => {
     expect(stackOptions.headerShown).toBe(false);
   });
 
-  it('starts the settings sub-stack on the list, so a cold sub-route has a back', () => {
-    expect(settingsRouteConfig.initialRouteName).toBe('index');
+  it('declares no anchor on the settings sub-stack', () => {
+    // An initialRouteName made pushes toward the navigator stack a fresh
+    // instance showing the list instead of the tapped panel; a cold sub-route
+    // gets out via the panel's replace('/settings') fallback instead.
+     
+    const layoutModule = require('../../app/(app)/settings/_layout');
+    expect(layoutModule.unstable_settings).toBeUndefined();
   });
 });
