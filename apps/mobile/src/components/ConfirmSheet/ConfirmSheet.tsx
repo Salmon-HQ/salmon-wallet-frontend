@@ -225,7 +225,6 @@ export default ConfirmSheet;
 
 const styles = StyleSheet.create({
   sheet: {
-    minHeight: undefined,
     maxHeight: undefined,
   },
   titleRow: {

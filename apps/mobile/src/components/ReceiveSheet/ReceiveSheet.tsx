@@ -219,7 +219,6 @@ export const ReceiveSheet: React.FC<ReceiveSheetProps> = ({
 
 const styles = StyleSheet.create({
   sheetContainer: {
-    minHeight: undefined,
     maxHeight: '92%',
     overflow: 'hidden',
   },

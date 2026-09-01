@@ -434,7 +434,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.header,
     borderTopWidth: borderWidth.sheet,
     borderTopColor: colors.border.default,
-    minHeight: '70%',
+    // No minHeight: a sheet hugs its content (a short receipt ends where it
+    // ends); tall content is bounded by maxHeight and scrolls inside.
     maxHeight: '92%',
     ...shadows.sheet,
   },

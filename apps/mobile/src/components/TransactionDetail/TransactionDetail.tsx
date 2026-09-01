@@ -252,7 +252,7 @@ export const TransactionDetail: React.FC<TransactionDetailProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexShrink: 1,
   },
   header: {
     flexDirection: 'row',
@@ -294,7 +294,8 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyNative.bold,
   },
   content: {
-    flex: 1,
+    flexGrow: 0,
+    flexShrink: 1,
   },
   contentContainer: {
     paddingHorizontal: s(spacing.screenGutter),
