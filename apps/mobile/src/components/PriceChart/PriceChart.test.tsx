@@ -7,15 +7,15 @@ jest.mock('@salmon/shared', () => ({
     skeleton: { base: '#111', highlight: '#222' },
     text: { primary: '#fff', secondary: '#aaa' },
   },
-  spacing: { xs: 4, sm: 8 },
+  spacing: { xs: 4, sm: 8, screenGutter: 20 },
   borderRadius: { full: 999 },
   fontFamilyNative: { bold: 'Font-Bold' },
   fontWeight: { bold: '700' },
   isPositivePerformance: () => true,
   PRICE_CHART_PERIODS: ['1H', '1D', '1W', '1M', '3M', '1Y'],
   fontSize: { base: 16 },
-  motionMs: { drift: 280 },
-  opacity: { soft: 0.7, full: 1 },
+  motionMs: { drift: 280, tide: 720 },
+  opacity: { faint: 0.4, soft: 0.7, full: 1 },
   semantic: {
     status: { success: '#0f0', danger: '#f00' },
     accent: { tint: '#fee' },
@@ -40,6 +40,7 @@ jest.mock('react-native-reanimated', () => {
     useDerivedValue: (fn: () => unknown) => ({ value: fn() }),
     useReducedMotion: () => false,
     withTiming: (toValue: unknown) => toValue,
+    withRepeat: (value: unknown) => value,
     Easing: { bezier: () => () => 0 },
   };
 });

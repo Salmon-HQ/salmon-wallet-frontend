@@ -1,12 +1,13 @@
 import React, { useMemo, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import Animated, {
   useAnimatedProps,
   useDerivedValue,
   useReducedMotion,
   useSharedValue,
+  withRepeat,
   withTiming,
 } from 'react-native-reanimated';
 import { ContentLoader, Rect } from '@salmon/shared';
@@ -23,11 +24,22 @@ import {
   opacity,
   semantic,
 } from '@salmon/shared';
-import { timing } from '../../utils/motion';
+import { curve, timing } from '../../utils/motion';
 import type { PriceChartPeriod, PriceDataPoint } from '@salmon/shared';
 import type { PriceChartProps } from './types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+/** The current-price point at the right tip — the `.pen`'s dot and its halo. */
+const ENDPOINT_DOT_RADIUS = 3.5;
+const ENDPOINT_HALO_RADIUS = 9;
+/**
+ * The pulse's config, built once at module scope. Reanimated worklets must not
+ * allocate a fresh easing object per frame — `timing()` returns one holding an
+ * `Easing` instance, and constructing it inside a worklet crashes.
+ */
+// Reduce motion is handled by not looping at all, so the flag is false here.
+const PULSE_TIMING = timing(motionMs.tide, false, curve.settle);
 
 /**
  * Default colors for positive/negative performance
@@ -116,6 +128,7 @@ export const buildLinePath = (ys: number[], width: number): string => {
 };
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 /**
  * ChartSkeleton - Loading placeholder for the chart
@@ -207,11 +220,18 @@ export const PriceChart: React.FC<PriceChartProps> = ({
   color,
   height = 200,
   style,
+  bleed = false,
 }) => {
   const { t } = useTranslation();
-  // Full screen width for edge-to-edge chart
-  const chartWidth = SCREEN_WIDTH;
+  // Edge to edge. `bleed` is the home Bitcoin column's variant: the chart
+  // escapes the column's left gutter to sit on the physical screen edge and
+  // stops one gutter short of the right one, so the curve reads as water
+  // running off the left of the screen rather than as one more inset card.
+  const chartWidth = bleed ? SCREEN_WIDTH - spacing.screenGutter : SCREEN_WIDTH;
   const chartHeight = height;
+  // The line stops a halo short of the box so the endpoint's glow is not
+  // clipped by the container (which hides overflow to keep the fill inside).
+  const lineWidth = chartWidth - ENDPOINT_HALO_RADIUS;
 
   // Determine chart color based on performance
   const chartColor = useMemo(() => {
@@ -265,15 +285,43 @@ export const PriceChart: React.FC<PriceChartProps> = ({
     for (let i = 0; i < to.length; i++) {
       ys[i] = from[i] + (to[i] - from[i]) * p;
     }
-    return buildLinePath(ys, chartWidth);
+    return buildLinePath(ys, lineWidth);
   });
+
+  // The last resampled y, so the dot rides the same morph as the line.
+  const endpointY = useDerivedValue(() => {
+    const to = toYs.value;
+    if (to.length === 0) return 0;
+    const from = fromYs.value.length === to.length ? fromYs.value : to;
+    const i = to.length - 1;
+    return from[i] + (to[i] - from[i]) * progress.value;
+  });
+
+  // One shared value drives both halo props. Reduce motion rests it at the
+  // visible end (1) instead of looping — the point still reads as "now".
+  const pulse = useSharedValue(1);
+  useEffect(() => {
+    if (isReduceMotionEnabled) {
+      pulse.value = 1;
+      return;
+    }
+    pulse.value = 1;
+    pulse.value = withRepeat(withTiming(0, PULSE_TIMING), -1, true);
+  }, [isReduceMotionEnabled, pulse]);
+
+  const dotAnimatedProps = useAnimatedProps(() => ({ cy: endpointY.value }));
+  const haloAnimatedProps = useAnimatedProps(() => ({
+    cy: endpointY.value,
+    r: ENDPOINT_DOT_RADIUS + (ENDPOINT_HALO_RADIUS - ENDPOINT_DOT_RADIUS) * pulse.value,
+    opacity: opacity.faint * (1 - pulse.value),
+  }));
 
   const lineAnimatedProps = useAnimatedProps(() => ({ d: lineD.value }));
   const areaAnimatedProps = useAnimatedProps(() => ({
     d:
       lineD.value === ''
         ? ''
-        : `${lineD.value} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z`,
+        : `${lineD.value} L ${lineWidth} ${chartHeight} L 0 ${chartHeight} Z`,
   }));
 
   // Handle period selection
@@ -285,9 +333,16 @@ export const PriceChart: React.FC<PriceChartProps> = ({
   );
 
   return (
-    <View style={[styles.wrapper, style]}>
+    <View
+      style={[
+        styles.wrapper,
+        { width: chartWidth },
+        bleed && { marginLeft: -spacing.screenGutter },
+        style,
+      ]}
+    >
       {/* Chart area - full width */}
-      <View style={[styles.chartContainer, { height: chartHeight }]}>
+      <View style={[styles.chartContainer, { width: chartWidth, height: chartHeight }]}>
         {loading ? (
           <ChartSkeleton height={chartHeight} width={chartWidth} />
         ) : data.length > 0 ? (
@@ -310,6 +365,19 @@ export const PriceChart: React.FC<PriceChartProps> = ({
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
+            />
+
+            {/* Current price point: the halo breathes, the dot holds. */}
+            <AnimatedCircle
+              animatedProps={haloAnimatedProps}
+              cx={lineWidth}
+              fill={chartColor}
+            />
+            <AnimatedCircle
+              animatedProps={dotAnimatedProps}
+              cx={lineWidth}
+              r={ENDPOINT_DOT_RADIUS}
+              fill={chartColor}
             />
           </Svg>
         ) : (

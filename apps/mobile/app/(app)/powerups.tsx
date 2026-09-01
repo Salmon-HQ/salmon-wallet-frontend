@@ -14,8 +14,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
 import {
   borderRadius,
   useAccountsContext,
@@ -30,7 +28,6 @@ import {
 } from '@salmon/shared';
 import {
   Card,
-  ChipGroup,
   DepthBackground,
   IconBubble,
   ListRow,
@@ -39,6 +36,7 @@ import {
   ScalesBackground,
   ScreenHeader,
   SectionLabel,
+  UnderlineTabs,
 } from '../../src/components';
 import { LightningIcon, MagnifyingGlassIcon } from '../../src/icons';
 import { useTabChrome } from '../../hooks/useTabChrome';
@@ -69,7 +67,15 @@ function matchesFilter(powerup: Powerup, filter: FilterKey): boolean {
 export default function PowerupsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { scrollBottomPadding, floatingBottomOffset } = useTabChrome();
+  // `topInset` rather than a `SafeAreaView`: this screen is presented as a
+  // `fullScreenModal`, so its native views hang off a separate view
+  // controller and the native `SafeAreaView` finds no `SafeAreaProvider`
+  // above it — it padded 0 and the title landed under the clock. The JS
+  // context crosses the React tree regardless of the native hierarchy.
+  // Top only: the bottom inset is already inside `floatingBottomOffset`
+  // (FAB) and `scrollBottomPadding` (content), so padding it here too would
+  // count it twice.
+  const { topInset, scrollBottomPadding, floatingBottomOffset } = useTabChrome();
   const developerMode = useDeveloperMode();
 
   // The lock overlay mounts in `(app)/_layout.tsx`, above the whole stack —
@@ -141,7 +147,7 @@ export default function PowerupsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <View style={[styles.container, { paddingTop: topInset }]}>
       {/* Presented over the tab shell, so it mounts its own water column —
           the shell's ground is behind it, not under it. */}
       <DepthBackground />
@@ -182,12 +188,16 @@ export default function PowerupsScreen() {
           />
         </View>
 
-        <ChipGroup
+        {/* Lateral choices take the travelling underline, never a filled
+            pill — DESIGN.md §Navigation. Same row as the Activity filters. */}
+        <UnderlineTabs
           testID="powerups-filters"
-          size="sm"
-          options={filterOptions}
-          value={filter}
+          tabs={filterOptions}
+          activeKey={filter}
           onChange={(key) => setFilter(key as FilterKey)}
+          size="sm"
+          tabTestIDPrefix="powerups-filters"
+          style={styles.filters}
         />
 
         <View style={styles.section}>
@@ -289,7 +299,7 @@ export default function PowerupsScreen() {
 
       {/* The same control that opened the screen, in the same spot, turned. */}
       <PowerupsFab open onPress={() => router.back()} bottomOffset={floatingBottomOffset} />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -304,6 +314,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: s(spacing.screenGutter),
     gap: vs(spacing.xl),
+  },
+  filters: {
+    alignSelf: 'flex-start',
   },
   searchPill: {
     flexDirection: 'row',

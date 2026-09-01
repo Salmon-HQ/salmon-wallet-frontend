@@ -174,7 +174,6 @@ export const TokenInformationSheet: React.FC<TokenInformationSheetProps> = ({
           symbol={token.symbol}
           title={t('token.marketData.title', 'Info')}
           loading={loading}
-          style={{ marginHorizontal: 0 }}
         />
 
 
@@ -182,7 +181,6 @@ export const TokenInformationSheet: React.FC<TokenInformationSheetProps> = ({
         <TokenAbout
           description={coinInfo?.description}
           loading={loading}
-          style={{ marginHorizontal: 0 }}
         />
       </ScrollView>
     </BottomSheetContainer>

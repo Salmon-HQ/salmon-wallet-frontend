@@ -41,7 +41,7 @@ jest.mock('@salmon/shared', () => ({
 }));
 
 jest.mock('../hooks/useTabChrome', () => ({
-  useTabChrome: () => ({ scrollBottomPadding: 0, floatingBottomOffset: 0 }),
+  useTabChrome: () => ({ topInset: 0, scrollBottomPadding: 0, floatingBottomOffset: 0 }),
 }));
 
 jest.mock('../src/contexts/DeveloperModeContext', () => ({
@@ -110,26 +110,26 @@ jest.mock('../src/components', () => {
       </View>
     ),
     PowerupBadge: ({ tier }: { tier: string }) => <Text>{`badge:${tier}`}</Text>,
-    ChipGroup: ({
-      options,
-      value,
+    UnderlineTabs: ({
+      tabs,
+      activeKey,
       onChange,
-      testID,
+      tabTestIDPrefix,
     }: {
-      options: Array<{ key: string; label: string }>;
-      value: string;
+      tabs: Array<{ key: string; label: string }>;
+      activeKey: string;
       onChange: (key: string) => void;
-      testID?: string;
+      tabTestIDPrefix?: string;
     }) => (
       <View>
-        {options.map((option) => (
+        {tabs.map((tab) => (
           <Text
-            key={option.key}
-            testID={`${testID}-${option.key}`}
-            accessibilityState={{ selected: option.key === value }}
-            onPress={() => onChange(option.key)}
+            key={tab.key}
+            testID={`${tabTestIDPrefix}-${tab.key}`}
+            accessibilityState={{ selected: tab.key === activeKey }}
+            onPress={() => onChange(tab.key)}
           >
-            {option.label}
+            {tab.label}
           </Text>
         ))}
       </View>

@@ -934,6 +934,9 @@ export default function HomeScreen() {
                       scrollEventThrottle={16}
                     >
                       {/* Price Chart */}
+                      {/* The one card that does not sit inside the column's
+                          gutters: it runs off the left screen edge and stops
+                          a gutter short of the right. */}
                       <PriceChart
                         data={bitcoinChartData}
                         selectedPeriod={bitcoinChartPeriod}
@@ -941,6 +944,7 @@ export default function HomeScreen() {
                         loading={bitcoinDataLoading && bitcoinChartData.length === 0}
                         error={bitcoinChartError && bitcoinChartData.length === 0}
                         height={180}
+                        bleed
                       />
 
                       {/* Bitcoin Token Item (non-pressable — detail is already shown inline) */}
@@ -957,6 +961,10 @@ export default function HomeScreen() {
                             token={bitcoinToken}
                             hiddenBalance={hiddenBalance}
                             blockchain="bitcoin"
+                            // The column already spaces its children by 20
+                            // (`gap`); the row's own list margin would make
+                            // it 40 under this one card.
+                            style={styles.bitcoinCard}
                           />
                         )
                       )}
@@ -1189,6 +1197,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   // Bitcoin view styles
+  bitcoinCard: {
+    marginBottom: 0,
+  },
   bitcoinScrollView: {
     flex: 1,
   },

@@ -260,9 +260,13 @@ export const TokenMarketData: React.FC<TokenMarketDataProps> = ({
 };
 
 const styles = StyleSheet.create({
+  // No horizontal margin of its own: the card spans whatever column it is
+  // placed in, and the surface owns its gutters (DESIGN.md §Layout). The 24
+  // that used to live here inset the card inside the home Bitcoin column,
+  // and every other consumer already had to cancel it with
+  // `marginHorizontal: 0`.
   glassWrapper: {
     borderRadius: borderRadius.iconContainer,
-    marginHorizontal: s(spacing['2xl']),
     overflow: 'hidden',
   },
   container: {
