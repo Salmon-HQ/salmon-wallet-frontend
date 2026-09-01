@@ -32,6 +32,7 @@ import {
   vs,
   s,
   spacing,
+  withAlpha,
   type Semantic,
 } from '@salmon/shared';
 import { BlurTargetProvider } from '../BlurContainer';
@@ -398,7 +399,7 @@ export const BottomSheetContainer: React.FC<BottomSheetContainerProps> = ({
                 pointerEvents="none"
               >
                 <LinearGradient
-                  colors={[surface.raised, 'transparent']}
+                  colors={[surface.raised, withAlpha(surface.raised, 0)]}
                   style={StyleSheet.absoluteFill}
                 />
               </Animated.View>

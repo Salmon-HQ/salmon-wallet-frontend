@@ -2,7 +2,7 @@ import { type Semantic } from '@salmon/shared';
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { useSemantic, useThemeMode } from '../../theme/useThemedStyles';
+import { useSemantic } from '../../theme/useThemedStyles';
 
 import { useMembraneMaterial } from '../../../hooks/useMembraneMaterial';
 import type { ThermoclineProps, ThermoclineTier } from './types';
@@ -18,19 +18,6 @@ const opaqueFor = (t: Semantic): Record<ThermoclineTier, string> => ({
   thin: t.surface.raised,
   thick: t.surface.crest,
 });
-
-/**
- * Light mode: the membrane is deferred, and what is left is its edge.
- *
- * `surface.membrane*` are two deep-neutral inks at 48% / 66% — mode-invariant
- * because the underwater material's light values are a dedicated pass (spec
- * 021; DESIGN.md:307 — rebuilt from the material rules, never inverted).
- * Painting them over a `#F6F8FB` app would put a dark grey slab where the
- * design draws a pale one, so until that pass lands a light-mode thermocline
- * renders no field at all: a transparent membrane with a `border.default`
- * hairline, which keeps the strip's geometry and the edge that says chrome
- * ends here, and lets the content behind it read at full contrast.
- */
 
 /**
  * Thermocline — the P3 membrane material, named after the phenomenon it is.
@@ -54,12 +41,16 @@ const opaqueFor = (t: Semantic): Record<ThermoclineTier, string> => ({
  * The material is tint + scrim only (2026-09-01) — the membrane field, the
  * flat dark scales layer that used to cover the whole surface, is retired.
  * See DESIGN.md §The thermocline, "The membrane field."
+ *
+ * The rung is decided by the material preference alone, in both modes:
+ * `opaque` when the OS asks for reduced transparency, `tint` otherwise.
+ * Light's tint tokens (`membraneThin`/`membraneThick`, white 0.85/0.95) are
+ * the ones spec 021 defined for exactly this — there is no light-only rung.
  */
 export function Thermocline({ tier = 'thin', style }: ThermoclineProps) {
-  const mode = useThemeMode();
   const semantic = useSemantic();
   const material = useMembraneMaterial();
-  const rung = mode === 'light' ? 'flat' : material === 'opaque' ? 'opaque' : 'tint';
+  const rung = material === 'opaque' ? 'opaque' : 'tint';
   const scrim = scrimFor(semantic)[tier];
 
   // The root owns the geometry and clips the strip; every rung fills it, so
@@ -71,17 +62,7 @@ export function Thermocline({ tier = 'thin', style }: ThermoclineProps) {
   ];
 
   return (
-    <View
-      style={[
-        styles.root,
-        style,
-        rung === 'flat' && {
-          borderWidth: StyleSheet.hairlineWidth,
-          borderColor: semantic.border.default,
-        },
-      ]}
-      pointerEvents="none"
-    >
+    <View style={[styles.root, style]} pointerEvents="none">
       {rung === 'opaque' && (
         <View
           style={[fill, { backgroundColor: opaqueFor(semantic)[tier] }]}
