@@ -8,6 +8,7 @@
  * corner gave the eye no target, and the redesign draws every affordance as a
  * well the glyph sits inside.
  */
+import type { ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CaretLeftIcon, XIcon } from '../../icons';
@@ -51,6 +52,11 @@ export interface ScreenHeaderProps extends Testable {
   backDisabled?: boolean;
   /** Screen title, rendered below the affordance row. */
   title?: string;
+  /**
+   * A mark drawn immediately before the title — the Powerups lightning. Only
+   * meaningful alongside `title`.
+   */
+  titleGlyph?: ReactNode;
   /** Supporting line under the title. Only meaningful alongside `title`. */
   subtitle?: string;
 }
@@ -62,11 +68,55 @@ export function ScreenHeader({
   stepIndicator,
   backDisabled,
   title,
+  titleGlyph,
   subtitle,
   testID,
 }: ScreenHeaderProps) {
   const { t } = useTranslation();
   const Glyph = glyph === 'close' ? XIcon : CaretLeftIcon;
+  // The `.pen`'s "Receive header", shared by CORE 03/04/05/10 and every
+  // settings sub-screen: the back well and the title on ONE row, the subtitle
+  // on its own line under it. A title stacked below the well left a 56pt band
+  // of nothing across the top of every pushed screen.
+  if (title) {
+    return (
+      <View style={styles.titledWrapper}>
+        <View style={styles.titledRow}>
+          {/* No `onBack` ⇒ no well at all. An empty touch target still spent
+              the row's gap, so a screen that cannot be backed out of (the
+              powerups browse screen, dismissed by its own FAB) started with a
+              12pt indent nothing explained. */}
+          {onBack && (
+            <TouchableOpacity
+              testID={testID ?? 'screen-header-back-button'}
+              accessibilityRole="button"
+              accessibilityLabel={backLabel ?? t('accessibility.go_back', 'Go back')}
+              accessibilityState={{ disabled: !!backDisabled }}
+              onPress={onBack}
+              disabled={backDisabled}
+              // 38pt visual box + 3pt slop per side = the 44pt minimum target.
+              hitSlop={{ top: 3, bottom: 3, left: 3, right: 3 }}
+            >
+              <IconBubble
+                size={BACK_BUBBLE_SIZE}
+                shape="circle"
+                tone="surface"
+                icon={Glyph}
+                iconSize={componentSizes.iconSizeSmall}
+                style={backDisabled ? styles.backDisabled : undefined}
+              />
+            </TouchableOpacity>
+          )}
+          {titleGlyph}
+          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+            {title}
+          </Text>
+        </View>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.wrapper}>
       <View style={styles.container}>
@@ -152,17 +202,35 @@ const styles = StyleSheet.create({
     paddingTop: vs(spacing.sm),
     gap: vs(spacing.xs),
   },
+  // The `.pen` block: `screenTop` under the safe area, the screen gutter at
+  // the sides, and 20 of air before the content starts.
+  titledWrapper: {
+    width: '100%',
+    paddingTop: vs(spacing.screenTop),
+    paddingBottom: vs(spacing.xl),
+    paddingHorizontal: s(spacing.screenGutter),
+    gap: vs(spacing.base),
+  },
+  titledRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: s(spacing.base),
+  },
+  // The headline role (DESIGN.md §Hierarchy): a screen header is the loudest
+  // type on the screen after the balance, so it takes 24/700 rather than the
+  // 20 it first shipped at — and the subtitle steps with it to 14/500.
   title: {
+    flexShrink: 1,
     fontFamily: fontFamilyNative.bold,
-    fontSize: s(fontSize.title),
-    lineHeight: s(fontSize.title) * lineHeight.tight,
+    fontSize: s(fontSize.headline),
+    lineHeight: s(fontSize.headline) * lineHeight.tight,
     letterSpacing: letterSpacing.snug,
     color: semantic.text.primary,
   },
   subtitle: {
     fontFamily: fontFamilyNative.medium,
-    fontSize: s(fontSize.caption),
-    lineHeight: s(fontSize.caption) * lineHeight.snug,
+    fontSize: s(fontSize.body),
+    lineHeight: s(fontSize.body) * lineHeight.snug,
     color: semantic.text.secondary,
   },
 });
